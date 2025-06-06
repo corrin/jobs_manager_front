@@ -112,7 +112,7 @@
     <div v-if="!showSearchResults" class="kanban-container">
       <div class="kanban-board grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8">
         <div
-          v-for="status in statusChoices.filter(s => s.key !== 'archived')"
+          v-for="status in visibleStatusChoices"
           :key="status.key"
           class="kanban-column"
         >
@@ -199,7 +199,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -214,161 +213,39 @@ import {
 } from 'lucide-vue-next'
 import JobCard from '@/components/JobCard.vue'
 import AppLayout from '@/components/AppLayout.vue'
+import { useKanban } from '@/composables/useKanban'
 
-// Types
-interface Job {
-  id: number
-  name: string
-  description: string
-  status: string
-  client: string
-  created_by: string
-  created_date: string
-  paid: boolean
-  job_number: string
-}
+const {
+  // State
+  filteredJobs,
+  isLoading,
+  error,
+  searchQuery,
+  showAdvancedSearch,
+  showSearchResults,
+  showArchived,
+  totalArchivedJobs,
+  advancedFilters,
 
-interface StatusChoice {
-  key: string
-  label: string
-}
+  // Constants
+  statusChoices,
+  visibleStatusChoices,
 
-// State
-const searchQuery = ref('')
-const showAdvancedSearch = ref(false)
-const showSearchResults = ref(false)
-const showArchived = ref(false)
-const jobs = ref<Job[]>([])
-const filteredJobs = ref<Job[]>([])
-const totalArchivedJobs = ref(0)
+  // Computed
+  getJobsByStatus,
+  getJobCountByStatus,
 
-// Advanced filters
-const advancedFilters = ref({
-  jobNumber: '',
-  name: '',
-  description: '',
-  client: '',
-  createdBy: '',
-  status: [] as string[],
-  createdAfter: '',
-  createdBefore: '',
-  paid: ''
-})
-
-// Status choices (hardcoded for now, should come from API)
-const statusChoices: StatusChoice[] = [
-  { key: 'pending', label: 'Pending' },
-  { key: 'in_progress', label: 'In Progress' },
-  { key: 'review', label: 'Review' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'archived', label: 'Archived' }
-]
-
-// Computed
-const getJobsByStatus = (status: string) => {
-  return jobs.value.filter(job => job.status === status)
-}
-
-const getJobCountByStatus = (status: string) => {
-  return getJobsByStatus(status).length
-}
-
-// Methods
-const toggleAdvancedSearch = () => {
-  showAdvancedSearch.value = !showAdvancedSearch.value
-}
-
-const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    // Filter jobs based on search query
-    filteredJobs.value = jobs.value.filter(job =>
-      job.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      job.client.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      job.created_by.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-    showSearchResults.value = true
-  } else {
-    showSearchResults.value = false
-  }
-}
-
-const handleAdvancedSearch = () => {
-  // TODO: Implement advanced search logic
-  console.log('Advanced search:', advancedFilters.value)
-}
-
-const clearFilters = () => {
-  advancedFilters.value = {
-    jobNumber: '',
-    name: '',
-    description: '',
-    client: '',
-    createdBy: '',
-    status: [],
-    createdAfter: '',
-    createdBefore: '',
-    paid: ''
-  }
-}
-
-const backToKanban = () => {
-  showSearchResults.value = false
-  searchQuery.value = ''
-}
-
-const toggleArchive = () => {
-  showArchived.value = !showArchived.value
-}
-
-const shouldShowLoadMore = (status: string) => {
-  // TODO: Implement pagination logic
-  return false
-}
-
-const loadMoreJobs = (status: string) => {
-  // TODO: Implement load more functionality
-  console.log('Load more jobs for status:', status)
-}
-
-const viewJob = (job: Job) => {
-  // TODO: Navigate to job detail view
-  console.log('View job:', job)
-}
-
-const loadJobs = async () => {
-  // TODO: Load jobs from API
-  // For now, using mock data
-  jobs.value = [
-    {
-      id: 1,
-      name: 'Sample Job 1',
-      description: 'This is a sample job',
-      status: 'pending',
-      client: 'Client A',
-      created_by: 'User 1',
-      created_date: '2025-01-01',
-      paid: false,
-      job_number: 'JOB-001'
-    },
-    {
-      id: 2,
-      name: 'Sample Job 2',
-      description: 'Another sample job',
-      status: 'in_progress',
-      client: 'Client B',
-      created_by: 'User 2',
-      created_date: '2025-01-02',
-      paid: true,
-      job_number: 'JOB-002'
-    }
-  ]
-}
-
-// Lifecycle
-onMounted(() => {
-  loadJobs()
-})
+  // Methods
+  handleSearch,
+  handleAdvancedSearch,
+  clearFilters,
+  toggleAdvancedSearch,
+  backToKanban,
+  toggleArchive,
+  shouldShowLoadMore,
+  loadMoreJobs,
+  viewJob
+} = useKanban()
 </script>
 
 <style scoped>

@@ -14,28 +14,23 @@
           <!-- Navigation Links -->
           <nav class="hidden md:flex space-x-8">
             <router-link
-              to="/kanban"
+              v-for="item in navigationItems"
+              :key="item.name"
+              :to="item.to"
               class="text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors"
               active-class="text-foreground bg-accent"
             >
-              Kanban
-            </router-link>
-            <router-link
-              to="/dashboard"
-              class="text-muted-foreground hover:text-foreground px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              active-class="text-foreground bg-accent"
-            >
-              Dashboard
+              {{ item.label }}
             </router-link>
           </nav>
 
           <!-- User Menu -->
           <div class="flex items-center space-x-4">
             <span class="text-sm text-muted-foreground">
-              {{ authStore.fullName || authStore.user?.username }}
+              {{ userInfo.displayName }}
             </span>
             <Button variant="outline" size="sm" @click="handleLogout">
-              Sair
+              Sign Out
             </Button>
           </div>
         </div>
@@ -50,15 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import { Button } from '@/components/ui/button'
+import { useAppLayout } from '@/composables/useAppLayout'
 
-const router = useRouter()
-const authStore = useAuthStore()
-
-const handleLogout = async () => {
-  await authStore.logout()
-  router.push('/login')
-}
+const { navigationItems, userInfo, handleLogout } = useAppLayout()
 </script>

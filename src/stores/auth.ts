@@ -1,28 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
-import Cookies from 'js-cookie'
-
-export interface User {
-  id: number
-  username: string
-  email: string
-  first_name: string
-  last_name: string
-  is_active: boolean
-  is_staff: boolean
-}
-
-export interface LoginCredentials {
-  username: string
-  password: string
-}
-
-export interface LoginResponse {
-  access: string
-  refresh: string
-  user: User
-}
+import { authService } from '@/services/auth.service'
+import { tokenStorageService } from '@/services/token-storage.service'
+import type { User, LoginCredentials, AuthState } from '@/types/auth.types'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -34,101 +14,101 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Getters
   const isAuthenticated = computed(() => !!token.value && !!user.value)
+
   const fullName = computed(() => {
     if (!user.value) return ''
     return `${user.value.first_name} ${user.value.last_name}`.trim()
   })
 
-  // Actions
+  // Private helper methods
+  const clearAuthState = (): void => {
+    token.value = null
+    refreshToken.value = null
+    user.value = null
+    tokenStorageService.clearRefreshToken()
+    authService.clearAuthorizationHeader()
+  }
+
+  const setAuthState = (accessToken: string, refreshTokenValue: string, userData: User): void => {
+    token.value = accessToken
+    refreshToken.value = refreshTokenValue
+    user.value = userData
+
+    tokenStorageService.storeRefreshToken(refreshTokenValue)
+    authService.setAuthorizationHeader(accessToken)
+  }
+
+  const clearError = (): void => {
+    error.value = null
+  }
+
+  const setLoading = (loading: boolean): void => {
+    isLoading.value = loading
+  }
+
+  const setError = (errorMessage: string): void => {
+    error.value = errorMessage
+  }
+
+  // Public actions
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
+    setLoading(true)
+    clearError()
+
     try {
-      isLoading.value = true
-      error.value = null
+      const response = await authService.authenticate(credentials)
+      const { access, refresh, user: userData } = response
 
-      const response = await axios.post<LoginResponse>(
-        'http://localhost:8000/accounts/api/token/',
-        credentials
-      )
-
-      const { access, refresh, user: userData } = response.data
-
-      // Store tokens
-      token.value = access
-      refreshToken.value = refresh
-      user.value = userData
-
-      // Set httpOnly cookie for refresh token
-      Cookies.set('refresh_token', refresh, {
-        httpOnly: false, // Note: js-cookie can't set true httpOnly, but we'll handle this on backend
-        secure: false, // Set to true in production with HTTPS
-        sameSite: 'lax',
-        expires: 7 // 7 days
-      })
-
-      // Set Authorization header for future requests
-      axios.defaults.headers.common['Authorization'] = `Bearer ${access}`
-
+      setAuthState(access, refresh, userData)
       return true
     } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || 'Login error. Please check if the server is running.'
+      setError(errorMessage)
       console.error('Login error:', err.code || err.message || 'Network error')
-      error.value = err.response?.data?.detail || 'Login error. Please check if the server is running.'
       return false
     } finally {
-      isLoading.value = false
+      setLoading(false)
     }
   }
 
   const logout = async (): Promise<void> => {
     try {
-      // Call backend logout endpoint if needed
-      await axios.post('http://localhost:8000/accounts/logout/')
+      await authService.logout()
     } catch (err) {
       console.warn('Logout backend call failed:', err)
     } finally {
-      // Clear local state
-      token.value = null
-      refreshToken.value = null
-      user.value = null
-
-      // Remove cookies
-      Cookies.remove('refresh_token')
-
-      // Remove Authorization header
-      delete axios.defaults.headers.common['Authorization']
+      clearAuthState()
     }
   }
 
   const fetchCurrentUser = async (): Promise<boolean> => {
+    setLoading(true)
+
     try {
-      isLoading.value = true
-      const response = await axios.get<User>('http://localhost:8000/accounts/me/')
-      user.value = response.data
+      const userData = await authService.getCurrentUser()
+      user.value = userData
       return true
     } catch (err) {
       console.error('Fetch user error:', err)
       await logout() // Clear invalid session
       return false
     } finally {
-      isLoading.value = false
+      setLoading(false)
     }
   }
 
   const refreshAccessToken = async (): Promise<boolean> => {
+    const storedRefreshToken = refreshToken.value || tokenStorageService.getRefreshToken()
+
+    if (!storedRefreshToken) {
+      await logout()
+      return false
+    }
+
     try {
-      const storedRefreshToken = refreshToken.value || Cookies.get('refresh_token')
-
-      if (!storedRefreshToken) {
-        await logout()
-        return false
-      }
-
-      const response = await axios.post('http://localhost:8000/accounts/api/token/refresh/', {
-        refresh: storedRefreshToken
-      })
-
-      token.value = response.data.access
-      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`
-
+      const response = await authService.refreshToken(storedRefreshToken)
+      token.value = response.access
+      authService.setAuthorizationHeader(response.access)
       return true
     } catch (err) {
       console.error('Token refresh error:', err)
@@ -138,15 +118,17 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const initializeAuth = async (): Promise<void> => {
-    const storedRefreshToken = Cookies.get('refresh_token')
+    const storedRefreshToken = tokenStorageService.getRefreshToken()
 
-    if (storedRefreshToken) {
-      refreshToken.value = storedRefreshToken
-      const refreshSuccess = await refreshAccessToken()
+    if (!storedRefreshToken) {
+      return
+    }
 
-      if (refreshSuccess) {
-        await fetchCurrentUser()
-      }
+    refreshToken.value = storedRefreshToken
+    const refreshSuccess = await refreshAccessToken()
+
+    if (refreshSuccess) {
+      await fetchCurrentUser()
     }
   }
 

@@ -15,7 +15,7 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: LoginView,
-      meta: { 
+      meta: {
         requiresGuest: true,
         title: 'Login - Jobs Manager'
       }
@@ -24,7 +24,7 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView,
-      meta: { 
+      meta: {
         requiresAuth: true,
         title: 'Dashboard - Jobs Manager'
       }
@@ -33,12 +33,11 @@ const router = createRouter({
       path: '/kanban',
       name: 'kanban',
       component: KanbanView,
-      meta: { 
+      meta: {
         requiresAuth: true,
         title: 'Kanban Board - Jobs Manager'
       }
     },
-    // Rota equivalente ao Django accounts/login para compatibilidade
     {
       path: '/accounts/login',
       redirect: '/login'
@@ -49,18 +48,18 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-  
+
   // Set page title
   if (to.meta.title) {
     document.title = to.meta.title as string
   }
-  
+
   // Check if route requires authentication
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
       // Try to initialize auth from stored tokens
       await authStore.initializeAuth()
-      
+
       if (!authStore.isAuthenticated) {
         // Redirect to login with return path
         next({
@@ -71,13 +70,13 @@ router.beforeEach(async (to, from, next) => {
       }
     }
   }
-  
+
   // Check if route requires guest (not logged in)
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     next({ name: 'dashboard' })
     return
   }
-  
+
   next()
 })
 

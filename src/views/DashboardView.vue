@@ -6,26 +6,26 @@
         <h2>Welcome to Jobs Manager</h2>
         <p>Work and project management system</p>
 
-        <div class="user-details" v-if="authStore.user">
+        <div class="user-details" v-if="hasUser && userStats">
           <h3>User Information</h3>
           <div class="user-grid">
             <div class="user-item">
-              <strong>ID:</strong> {{ authStore.user.id }}
+              <strong>ID:</strong> {{ userStats.id }}
             </div>
             <div class="user-item">
-              <strong>Username:</strong> {{ authStore.user.username }}
+              <strong>Username:</strong> {{ userStats.username }}
             </div>
             <div class="user-item">
-              <strong>Email:</strong> {{ authStore.user.email }}
+              <strong>Email:</strong> {{ userStats.email }}
             </div>
             <div class="user-item">
-              <strong>Name:</strong> {{ authStore.user.first_name }} {{ authStore.user.last_name }}
+              <strong>Name:</strong> {{ userStats.firstName }} {{ userStats.lastName }}
             </div>
             <div class="user-item">
-              <strong>Active:</strong> {{ authStore.user.is_active ? 'Yes' : 'No' }}
+              <strong>Active:</strong> {{ userStats.isActive ? 'Yes' : 'No' }}
             </div>
             <div class="user-item">
-              <strong>Staff:</strong> {{ authStore.user.is_staff ? 'Yes' : 'No' }}
+              <strong>Staff:</strong> {{ userStats.isStaff ? 'Yes' : 'No' }}
             </div>
           </div>
         </div>
@@ -51,10 +51,10 @@
 </template>
 
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/auth'
+import { useDashboard } from '@/composables/useDashboard'
 import AppLayout from '@/components/AppLayout.vue'
 
-const authStore = useAuthStore()
+const { userStats, hasUser } = useDashboard()
 </script>
 
 <style scoped>

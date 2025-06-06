@@ -35,16 +35,16 @@
           />
         </div>
 
-        <div v-if="authStore.error" class="error-message">
-          {{ authStore.error }}
+        <div v-if="error" class="error-message">
+          {{ error }}
         </div>
 
         <button
           type="submit"
           class="btn-login"
-          :disabled="authStore.isLoading || !isFormValid"
+          :disabled="isLoading || !isFormValid"
         >
-          <span v-if="authStore.isLoading">Signing in...</span>
+          <span v-if="isLoading">Signing in...</span>
           <span v-else>Sign In</span>
         </button>
       </form>
@@ -53,44 +53,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import type { LoginCredentials } from '@/stores/auth'
+import { useLogin } from '@/composables/useLogin'
 
-const router = useRouter()
-const authStore = useAuthStore()
-
-const credentials = ref<LoginCredentials>({
-  username: '',
-  password: ''
-})
-
-const hasError = ref(false)
-
-const isFormValid = computed(() => {
-  return credentials.value.username.trim() !== '' &&
-         credentials.value.password.trim() !== ''
-})
-
-const handleLogin = async () => {
-  hasError.value = false
-
-  if (!isFormValid.value) {
-    hasError.value = true
-    return
-  }
-
-  const success = await authStore.login(credentials.value)
-
-  if (success) {
-    // Redirect to dashboard or intended route
-    const redirectTo = router.currentRoute.value.query.redirect as string || '/dashboard'
-    router.push(redirectTo)
-  } else {
-    hasError.value = true
-  }
-}
+const {
+  credentials,
+  hasError,
+  isFormValid,
+  isLoading,
+  error,
+  handleLogin
+} = useLogin()
 </script>
 
 <style scoped>
