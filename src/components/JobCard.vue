@@ -1,7 +1,14 @@
 <template>
   <Card
-    class="job-card cursor-pointer hover:shadow-md transition-shadow duration-200 border-l-4"
-    :class="statusConfig.borderClass"
+    class="job-card cursor-pointer hover:shadow-md transition-all duration-200 border-l-4"
+    :class="[
+      statusConfig.borderClass,
+      {
+        'cursor-grabbing': isDragging,
+        'hover:scale-105': !isDragging,
+        'opacity-50': isDragging
+      }
+    ]"
     @click="handleClick"
   >
     <CardHeader class="pb-2">
@@ -35,16 +42,16 @@
       </p>
 
       <div class="flex justify-between items-center text-xs text-muted-foreground">
-        <span class="truncate">{{ job.client }}</span>
+        <span class="truncate">{{ job.client_name }}</span>
         <div class="flex items-center gap-1">
           <Calendar class="h-3 w-3" />
           <span>{{ formattedDate }}</span>
         </div>
       </div>
 
-      <div class="flex items-center gap-1 text-xs text-muted-foreground">
+      <div v-if="job.contact_person" class="flex items-center gap-1 text-xs text-muted-foreground">
         <User class="h-3 w-3" />
-        <span class="truncate">{{ job.created_by }}</span>
+        <span class="truncate">{{ job.contact_person }}</span>
       </div>
     </CardContent>
   </Card>
@@ -55,17 +62,20 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Calendar, User, Hash, DollarSign } from 'lucide-vue-next'
 import { useJobCard } from '@/composables/useJobCard'
-import type { Job } from '@/types/kanban.types'
+import type { Job } from '@/schemas/kanban.schemas'
 
 interface JobCardProps {
   job: Job
+  isDragging?: boolean
 }
 
 interface JobCardEmits {
   (e: 'click', job: Job): void
 }
 
-const props = defineProps<JobCardProps>()
+const props = withDefaults(defineProps<JobCardProps>(), {
+  isDragging: false
+})
 const emit = defineEmits<JobCardEmits>()
 
 const { statusConfig, formattedDate, formatStatus, handleClick } = useJobCard(props.job, emit)

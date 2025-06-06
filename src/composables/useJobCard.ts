@@ -1,6 +1,10 @@
 import { computed } from 'vue'
-import type { Job } from '@/types/kanban.types'
-import type { StatusConfig } from '@/types/job-card.types'
+import type { Job } from '@/schemas/kanban.schemas'
+
+interface StatusConfig {
+  variant: 'default' | 'secondary' | 'outline'
+  borderClass: string
+}
 
 export function useJobCard(job: Job, emit: (e: 'click', job: Job) => void) {
   const statusConfig = computed((): StatusConfig => {
@@ -27,20 +31,20 @@ export function useJobCard(job: Job, emit: (e: 'click', job: Job) => void) {
       }
     }
 
-    return configs[job.status] || configs.pending
+    return configs[job.status || 'pending'] || configs.pending
   })
 
   const formattedDate = computed(() => {
-    if (!job.created_date) return ''
+    if (!job.created_at) return ''
 
     try {
-      return new Date(job.created_date).toLocaleDateString('en-NZ', {
+      return new Date(job.created_at).toLocaleDateString('en-NZ', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric'
       })
     } catch {
-      return job.created_date
+      return job.created_at
     }
   })
 

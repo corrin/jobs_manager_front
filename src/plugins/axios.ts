@@ -1,19 +1,16 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
-// Set default base URL
+// Set default base URL and enable credentials for httpOnly cookies
 axios.defaults.baseURL = 'http://localhost:8000'
 axios.defaults.timeout = 10000
+axios.defaults.withCredentials = true // Important: include httpOnly cookies
 
-// Request interceptor to add auth token
+// Request interceptor - no need to manually add auth headers with httpOnly cookies
 axios.interceptors.request.use(
   (config) => {
-    const authStore = useAuthStore()
-
-    if (authStore.token) {
-      config.headers.Authorization = `Bearer ${authStore.token}`
-    }
-
+    // With httpOnly cookies, auth tokens are automatically included
+    // No manual header setting needed
     return config
   },
   (error) => {
@@ -21,29 +18,33 @@ axios.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle token refresh
+// Response interceptor to handle auth errors
 axios.interceptors.response.use(
   (response) => {
     return response
   },
   async (error) => {
     const authStore = useAuthStore()
-    const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-
-      const refreshSuccess = await authStore.refreshAccessToken()
-
-      if (refreshSuccess) {
-        // Retry the original request with new token
-        originalRequest.headers.Authorization = `Bearer ${authStore.token}`
-        return axios(originalRequest)
-      } else {
-        // Refresh failed, redirect to login
-        await authStore.logout()
-        window.location.href = '/login'
+    if (error.response?.status === 401) {
+      console.warn('Authentication failed - cookies may have expired')
+      
+      // Try to refresh token (the refresh endpoint should handle httpOnly cookies automatically)
+      try {
+        const refreshSuccess = await authStore.refreshAccessToken()
+        
+        if (refreshSuccess && !error.config._retry) {
+          // Retry the original request
+          error.config._retry = true
+          return axios(error.config)
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError)
       }
+      
+      // If refresh failed or this is a retry, logout and redirect
+      await authStore.logout()
+      window.location.href = '/login'
     }
 
     return Promise.reject(error)

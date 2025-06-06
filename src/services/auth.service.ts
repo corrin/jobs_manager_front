@@ -1,51 +1,28 @@
-import axios from 'axios'
-import type { LoginCredentials, LoginResponse, User } from '@/types/auth.types'
-
-const API_BASE_URL = 'http://localhost:8000'
+import api from '@/services/api'
+import type { LoginCredentials, User } from '@/types/auth.types'
 
 class AuthService {
-  private getApiUrl(endpoint: string): string {
-    return `${API_BASE_URL}${endpoint}`
-  }
-
-  async authenticate(credentials: LoginCredentials): Promise<LoginResponse> {
-    const response = await axios.post<LoginResponse>(
-      this.getApiUrl('/accounts/api/token/'),
-      credentials
-    )
-    return response.data
-  }
-
-  async refreshToken(refreshToken: string): Promise<{ access: string }> {
-    const response = await axios.post<{ access: string }>(
-      this.getApiUrl('/accounts/api/token/refresh/'),
-      { refresh: refreshToken }
-    )
-    return response.data
+  async authenticate(credentials: LoginCredentials): Promise<void> {
+    await api.post('/accounts/api/token/', credentials)
   }
 
   async getCurrentUser(): Promise<User> {
-    const response = await axios.get<User>(
-      this.getApiUrl('/accounts/me/')
-    )
+    const response = await api.get<User>('/accounts/me/')
     return response.data
   }
 
   async logout(): Promise<void> {
+    await api.post('/accounts/logout/')
+  }
+
+  // Check if user is authenticated by attempting to get current user
+  async userIsLogged(): Promise<boolean> {
     try {
-      await axios.post(this.getApiUrl('/accounts/logout/'))
+      await this.getCurrentUser()
+      return true
     } catch (error) {
-      // Backend logout failure is not critical
-      console.warn('Backend logout failed:', error)
+      return false
     }
-  }
-
-  setAuthorizationHeader(token: string): void {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-  }
-
-  clearAuthorizationHeader(): void {
-    delete axios.defaults.headers.common['Authorization']
   }
 }
 

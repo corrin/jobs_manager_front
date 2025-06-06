@@ -1,12 +1,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { JobService } from '@/services/job.service'
-import type { Job, StatusChoice, AdvancedFilters } from '@/types/kanban.types'
+import type { Job, StatusChoice, AdvancedFilters } from '@/schemas/kanban.schemas'
 
 export function useKanban() {
   const jobService = JobService.getInstance()
 
   // State
   const jobs = ref<Job[]>([])
+  const archivedJobs = ref<Job[]>([])
   const filteredJobs = ref<Job[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
@@ -15,28 +16,21 @@ export function useKanban() {
   const showSearchResults = ref(false)
   const showArchived = ref(false)
   const totalArchivedJobs = ref(0)
+  const statusChoices = ref<StatusChoice[]>([])
 
   // Advanced filters
   const advancedFilters = ref<AdvancedFilters>({
-    jobNumber: '',
+    job_number: '',
     name: '',
     description: '',
-    client: '',
-    createdBy: '',
+    client_name: '',
+    contact_person: '',
+    created_by: '',
     status: [],
-    createdAfter: '',
-    createdBefore: '',
+    created_after: '',
+    created_before: '',
     paid: ''
   })
-
-  // Constants
-  const statusChoices: StatusChoice[] = [
-    { key: 'pending', label: 'Pending' },
-    { key: 'in_progress', label: 'In Progress' },
-    { key: 'review', label: 'Review' },
-    { key: 'completed', label: 'Completed' },
-    { key: 'archived', label: 'Archived' }
-  ]
 
   // Computed
   const getJobsByStatus = computed(() => (status: string) => {
@@ -48,7 +42,7 @@ export function useKanban() {
   })
 
   const visibleStatusChoices = computed(() =>
-    statusChoices.filter(s => s.key !== 'archived')
+    statusChoices.value.filter(s => s.key !== 'archived')
   )
 
   // Methods
@@ -59,16 +53,32 @@ export function useKanban() {
       isLoading.value = true
       error.value = null
 
-      const jobsData = await jobService.getAllJobs()
-      jobs.value = jobsData
-
-      // Count archived jobs
-      totalArchivedJobs.value = jobsData.filter(job => job.status === 'archived').length
+      const data = await jobService.getAllJobs()
+      jobs.value = data.activeJobs
+      archivedJobs.value = data.archivedJobs
+      totalArchivedJobs.value = data.totalArchived
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load jobs'
       console.error('Error loading jobs:', err)
     } finally {
       isLoading.value = false
+    }
+  }
+
+  const loadStatusChoices = async (): Promise<void> => {
+    try {
+      const data = await jobService.getStatusChoices()
+      statusChoices.value = data.status_choices
+    } catch (err) {
+      console.error('Error loading status choices:', err)
+      // Fallback to default status choices
+      statusChoices.value = [
+        { key: 'pending', label: 'Pending' },
+        { key: 'in_progress', label: 'In Progress' },
+        { key: 'review', label: 'Review' },
+        { key: 'completed', label: 'Completed' },
+        { key: 'archived', label: 'Archived' }
+      ]
     }
   }
 
@@ -83,21 +93,31 @@ export function useKanban() {
     showSearchResults.value = true
   }
 
-  const handleAdvancedSearch = (): void => {
-    // TODO: Implement advanced search logic with filters
-    console.log('Advanced search:', advancedFilters.value)
+  const handleAdvancedSearch = async (): Promise<void> => {
+    try {
+      isLoading.value = true
+      const response = await jobService.performAdvancedSearch(advancedFilters.value)
+      filteredJobs.value = response.jobs
+      showSearchResults.value = true
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to perform advanced search'
+      console.error('Error performing advanced search:', err)
+    } finally {
+      isLoading.value = false
+    }
   }
 
   const clearFilters = (): void => {
     advancedFilters.value = {
-      jobNumber: '',
+      job_number: '',
       name: '',
       description: '',
-      client: '',
-      createdBy: '',
+      client_name: '',
+      contact_person: '',
+      created_by: '',
       status: [],
-      createdAfter: '',
-      createdBefore: '',
+      created_after: '',
+      created_before: '',
       paid: ''
     }
   }
@@ -131,14 +151,48 @@ export function useKanban() {
     console.log('View job:', job)
   }
 
+  const updateJobStatus = async (jobId: number, newStatus: string): Promise<void> => {
+    try {
+      await jobService.updateJobStatus(jobId.toString(), newStatus)
+      await loadJobs() // Reload jobs after status update
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to update job status'
+      console.error('Error updating job status:', err)
+    }
+  }
+
+  const reorderJob = async (
+    jobId: number,
+    beforeId?: number,
+    afterId?: number,
+    status?: string
+  ): Promise<void> => {
+    try {
+      await jobService.reorderJob(
+        jobId.toString(),
+        beforeId?.toString(),
+        afterId?.toString(),
+        status
+      )
+      await loadJobs() // Reload jobs after reordering
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to reorder job'
+      console.error('Error reordering job:', err)
+    }
+  }
+
   // Initialize on mount
-  onMounted(() => {
-    loadJobs()
+  onMounted(async () => {
+    await Promise.all([
+      loadJobs(),
+      loadStatusChoices()
+    ])
   })
 
   return {
     // State
     jobs,
+    archivedJobs,
     filteredJobs,
     isLoading,
     error,
@@ -159,6 +213,7 @@ export function useKanban() {
 
     // Methods
     loadJobs,
+    loadStatusChoices,
     handleSearch,
     handleAdvancedSearch,
     clearFilters,
@@ -167,6 +222,8 @@ export function useKanban() {
     toggleArchive,
     shouldShowLoadMore,
     loadMoreJobs,
-    viewJob
+    viewJob,
+    updateJobStatus,
+    reorderJob
   }
 }
