@@ -174,7 +174,7 @@
           />
         </div>
 
-        <!-- Archive Section -->
+        <!-- Archive Section as Collapsible Column -->
         <div class="archive-section">
           <Card>
             <CardHeader @click="toggleArchive" class="cursor-pointer hover:bg-accent">
@@ -194,29 +194,19 @@
             </CardHeader>
 
             <CardContent v-if="showArchived" class="pt-0">
-              <div class="archive-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                <JobCard
-                  v-for="job in getJobsByStatus('archived')"
-                  :key="job.id"
-                  :job="job"
-                  @click="viewJob(job)"
-                />
-
-                <!-- Load More Archived -->
-                <div v-if="shouldShowLoadMore('archived')" class="col-span-full">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    class="w-full"
-                    @click="loadMoreJobs('archived')"
-                    :disabled="isLoading"
-                  >
-                    <ChevronDown class="mr-2 h-4 w-4" />
-                    <span v-if="isLoading">Loading...</span>
-                    <span v-else>Load More</span>
-                  </Button>
-                </div>
-              </div>
+              <!-- Use KanbanColumn for archived jobs to enable drag and drop -->
+              <KanbanColumn
+                :status="{ key: 'archived', label: 'Archived Jobs', tooltip: 'Archived jobs' }"
+                :jobs="getJobsByStatus('archived')"
+                :show-load-more="shouldShowLoadMore('archived')"
+                :is-loading="isLoading"
+                :is-dragging="isDragging"
+                :is-archive="true"
+                @job-click="viewJob"
+                @load-more="loadMoreJobs('archived')"
+                @sortable-ready="handleSortableReady"
+                class="archive-kanban-column"
+              />
             </CardContent>
           </Card>
         </div>

@@ -34,10 +34,16 @@ export function useKanban() {
 
   // Computed
   const getJobsByStatus = computed(() => (status: string) => {
-    return jobs.value.filter(job => job.status === status)
+    if (status === 'archived') {
+      return archivedJobs.value
+    }
+    return jobs.value.filter(job => job.status_key === status)
   })
 
   const getJobCountByStatus = computed(() => (status: string) => {
+    if (status === 'archived') {
+      return archivedJobs.value.length
+    }
     return getJobsByStatus.value(status).length
   })
 
@@ -57,6 +63,12 @@ export function useKanban() {
       jobs.value = data.activeJobs
       archivedJobs.value = data.archivedJobs
       totalArchivedJobs.value = data.totalArchived
+
+      console.log('Jobs loaded:', {
+        activeJobs: data.activeJobs.length,
+        archivedJobs: data.archivedJobs.length,
+        totalArchived: data.totalArchived
+      })
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load jobs'
       console.error('Error loading jobs:', err)
@@ -68,7 +80,12 @@ export function useKanban() {
   const loadStatusChoices = async (): Promise<void> => {
     try {
       const data = await jobService.getStatusChoices()
-      statusChoices.value = data.status_choices
+      // Convert statuses object to array format expected by the frontend
+      statusChoices.value = Object.entries(data.statuses).map(([key, label]) => ({
+        key,
+        label,
+        tooltip: data.tooltips[key] || ''
+      }))
     } catch (err) {
       console.error('Error loading status choices:', err)
       // Fallback to default status choices
@@ -89,7 +106,9 @@ export function useKanban() {
       return
     }
 
-    filteredJobs.value = jobService.searchJobs(jobs.value, searchQuery.value)
+    // Combine active and archived jobs for search
+    const allJobs = [...jobs.value, ...archivedJobs.value]
+    filteredJobs.value = jobService.searchJobs(allJobs, searchQuery.value)
     showSearchResults.value = true
   }
 
@@ -151,9 +170,9 @@ export function useKanban() {
     console.log('View job:', job)
   }
 
-  const updateJobStatus = async (jobId: number, newStatus: string): Promise<void> => {
+  const updateJobStatus = async (jobId: string, newStatus: string): Promise<void> => {
     try {
-      await jobService.updateJobStatus(jobId.toString(), newStatus)
+      await jobService.updateJobStatus(jobId, newStatus)
       await loadJobs() // Reload jobs after status update
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update job status'

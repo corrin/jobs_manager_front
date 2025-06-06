@@ -2,6 +2,7 @@ import api from '@/services/api'
 import type { AxiosResponse } from 'axios'
 import {
   JobsApiResponseSchema,
+  AllJobsApiResponseSchema,
   StatusApiResponseSchema,
   ApiErrorResponseSchema,
   UpdateJobStatusRequestSchema,
@@ -11,6 +12,7 @@ import {
 import type {
   Job,
   JobsApiResponse,
+  AllJobsApiResponse,
   StatusApiResponse,
   AdvancedFilters,
   UpdateJobStatusRequest,
@@ -56,13 +58,9 @@ export class JobService {
   async getAllJobs(): Promise<{ activeJobs: Job[], archivedJobs: Job[], totalArchived: number }> {
     try {
       const response = await api.get('/api/jobs/fetch-all/')
-      const data = this.handleApiResponse<JobsApiResponse & { active_jobs: Job[], archived_jobs: Job[], total_archived: number }>(
+      const data = this.handleApiResponse<AllJobsApiResponse>(
         response,
-        JobsApiResponseSchema.extend({
-          active_jobs: JobsApiResponseSchema.shape.jobs,
-          archived_jobs: JobsApiResponseSchema.shape.jobs,
-          total_archived: JobsApiResponseSchema.shape.total
-        })
+        AllJobsApiResponseSchema
       )
 
       return {
@@ -166,10 +164,10 @@ export class JobService {
     const searchTerm = query.toLowerCase()
     return jobs.filter(job =>
       job.name.toLowerCase().includes(searchTerm) ||
-      job.description.toLowerCase().includes(searchTerm) ||
+      (job.description && job.description.toLowerCase().includes(searchTerm)) ||
       job.client_name.toLowerCase().includes(searchTerm) ||
       (job.contact_person && job.contact_person.toLowerCase().includes(searchTerm)) ||
-      job.job_number.toLowerCase().includes(searchTerm)
+      job.job_number.toString().includes(searchTerm)
     )
   }
 }

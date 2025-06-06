@@ -8,16 +8,17 @@ export const PersonSchema = z.object({
 })
 
 export const JobSchema = z.object({
-  id: z.number(),
+  id: z.string(), // UUIDs are strings
   name: z.string(),
-  description: z.string(),
-  job_number: z.string(),
+  description: z.string().nullable().optional(), // Can be null
+  job_number: z.number(), // Backend returns numbers for job_number
   client_name: z.string(),
-  contact_person: z.string().optional(),
+  contact_person: z.string().nullable().optional(), // Can be null
   people: z.array(PersonSchema).default([]),
   status: z.string(),
+  status_key: z.string(), // Added status_key field
   paid: z.boolean(),
-  created_by_id: z.number().nullable().optional(),
+  created_by_id: z.string().nullable().optional(), // UUIDs are strings
   created_at: z.string().optional(),
   priority: z.number().optional()
 })
@@ -49,11 +50,17 @@ export const JobsApiResponseSchema = z.object({
   filtered_count: z.number().optional()
 })
 
+export const AllJobsApiResponseSchema = z.object({
+  success: z.boolean(),
+  active_jobs: z.array(JobSchema),
+  archived_jobs: z.array(JobSchema),
+  total_archived: z.number()
+})
+
 export const StatusApiResponseSchema = z.object({
   success: z.boolean(),
   statuses: z.record(z.string()),
-  tooltips: z.record(z.string()),
-  status_choices: z.array(StatusChoiceSchema)
+  tooltips: z.record(z.string())
 })
 
 export const UpdateJobStatusRequestSchema = z.object({
@@ -77,6 +84,7 @@ export type Job = z.infer<typeof JobSchema>
 export type StatusChoice = z.infer<typeof StatusChoiceSchema>
 export type AdvancedFilters = z.infer<typeof AdvancedFiltersSchema>
 export type JobsApiResponse = z.infer<typeof JobsApiResponseSchema>
+export type AllJobsApiResponse = z.infer<typeof AllJobsApiResponseSchema>
 export type StatusApiResponse = z.infer<typeof StatusApiResponseSchema>
 export type UpdateJobStatusRequest = z.infer<typeof UpdateJobStatusRequestSchema>
 export type ReorderJobRequest = z.infer<typeof ReorderJobRequestSchema>
