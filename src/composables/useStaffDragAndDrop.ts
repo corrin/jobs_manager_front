@@ -30,6 +30,23 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       }
     }
 
+    // Detectar se é dispositivo touch para aplicar configurações mínimas
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    const isMobile = window.innerWidth < 768
+    
+    console.log('Staff device detection:', {
+      width: window.innerWidth,
+      isTouch,
+      isMobile,
+      deviceType: isMobile ? 'mobile' : (isTouch ? 'tablet/touch' : 'desktop')
+    })
+
+    // Se for mobile, não inicializar sortable
+    if (isMobile) {
+      console.log('Mobile detected - skipping staff sortable initialization')
+      return null
+    }
+
     try {
       const sortableInstance = new Sortable(staffPanelElement, {
         group: {
@@ -42,6 +59,14 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         ghostClass: 'staff-sortable-ghost',
         chosenClass: 'staff-sortable-chosen',
         dragClass: 'staff-sortable-drag',
+        filter: '.no-drag',
+        preventOnFilter: true,
+        
+        // Configurações para dispositivos touch (tablet/iPad)
+        ...(isTouch && {
+          delay: 120,
+          touchStartThreshold: 8,
+        }),
 
         onStart: () => {
           isStaffDragging.value = true
@@ -97,6 +122,16 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       }
     }
 
+    // Detectar se é dispositivo touch para aplicar configurações mínimas
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    const isMobile = window.innerWidth < 768
+    
+    // Se for mobile, não inicializar sortable
+    if (isMobile) {
+      console.log('Mobile detected - skipping job staff sortable initialization')
+      return null
+    }
+
     try {
       const sortableInstance = new Sortable(jobStaffElement, {
         group: {
@@ -108,6 +143,14 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         ghostClass: 'staff-sortable-ghost',
         chosenClass: 'staff-sortable-chosen',
         dragClass: 'staff-sortable-drag',
+        filter: '.no-drag',
+        preventOnFilter: true,
+        
+        // Configurações para dispositivos touch (tablet/iPad)
+        ...(isTouch && {
+          delay: 120,
+          touchStartThreshold: 8,
+        }),
 
         onStart: () => {
           isStaffDragging.value = true

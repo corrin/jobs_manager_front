@@ -10,4 +10,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    allowedHosts: [
+      'localhost',
+      'roughy-loved-ostrich.ngrok-free.app'
+    ]
+  },
 })

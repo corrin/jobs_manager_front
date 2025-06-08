@@ -1,9 +1,9 @@
 <template>
-  <div>
-    <!-- Botão Flutuante Movimentável -->
+  <div>    <!-- Botão Flutuante Movimentável -->
     <div
       ref="draggableButton"
-      :style="{ left: position.x + 'px', top: position.y + 'px' }"      class="fixed z-50"
+      :style="{ left: position.x + 'px', top: position.y + 'px' }"
+      class="fixed z-[100]"
       @mousedown="startDrag"
       @touchstart.passive="handleTouchStart"
     >      <button
@@ -11,12 +11,13 @@
         @dragover.prevent="handleDragOver"
         @dragleave="handleDragLeave"
         @drop="handleDrop"
-        class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center relative cursor-pointer"
+        class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2.5 sm:p-3 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center relative cursor-pointer border-2 border-white"
         :class="{ 
           'bg-blue-700': showArchived,
           'bg-green-500 scale-110 shadow-xl border-2 border-white': isDragOver,
           'animate-pulse': isDragOver
         }"
+        style="min-width: 56px; min-height: 56px;"
       >
         <Archive class="h-5 w-5" />
         <span 
@@ -127,8 +128,44 @@ const emit = defineEmits<FloatingArchivedButtonEmits>()
 // Estado do overlay
 const showArchived = ref(false)
 
-// Posição do botão (salva no localStorage)
-const position = ref({ x: 20, y: 300 })
+// Posição do botão (salva no localStorage) - Posicionamento melhor para tablets
+const getInitialPosition = () => {
+  const savedPosition = localStorage.getItem('floating-archived-button-position')
+  if (savedPosition) {
+    const parsed = JSON.parse(savedPosition)
+    // Verificar se a posição salva é válida (dentro da tela)
+    const maxX = window.innerWidth - 80 // Largura do botão
+    const maxY = window.innerHeight - 80 // Altura do botão
+    
+    if (parsed.x >= 0 && parsed.x <= maxX && parsed.y >= 100 && parsed.y <= maxY) {
+      return parsed
+    }
+  }
+    // Posição padrão baseada no tamanho da tela
+  const windowWidth = window.innerWidth
+  const windowHeight = window.innerHeight
+    if (windowWidth < 768) {
+    // Mobile: posição no canto inferior direito, mais visível e acessível
+    return { 
+      x: Math.max(15, windowWidth - 80), // 15px da direita, botão menor para mobile
+      y: Math.max(100, windowHeight - 120) // 120px do fundo para melhor visibilidade
+    }
+  } else if (windowWidth < 1024) {
+    // Tablet: posição lateral direita, meio da tela
+    return { 
+      x: Math.max(20, windowWidth - 100),
+      y: Math.max(120, Math.min(250, windowHeight / 2))
+    }
+  } else {
+    // Desktop: posição padrão
+    return { 
+      x: 20, 
+      y: Math.max(120, Math.min(250, windowHeight / 2))
+    }
+  }
+}
+
+const position = ref(getInitialPosition())
 
 // Refs
 const draggableButton = ref<HTMLElement>()
@@ -247,10 +284,14 @@ const cleanupDragState = () => {
 
 // Carrega posição salva do localStorage
 onMounted(() => {
-  const savedPosition = localStorage.getItem('floating-archived-button-position')
-  if (savedPosition) {
-    position.value = JSON.parse(savedPosition)
-  }
+  // Recarregar posição usando a função getInitialPosition
+  position.value = getInitialPosition()
+  console.log('FloatingArchivedButton mounted at position:', position.value)
+  console.log('Window dimensions:', { width: window.innerWidth, height: window.innerHeight })
+  
+  // Adicionar listeners globais para drag de jobs arquivados
+  document.addEventListener('mousemove', handleGlobalMouseMove)
+  document.addEventListener('mouseup', handleGlobalMouseUp)
 })
 
 // Salva posição no localStorage

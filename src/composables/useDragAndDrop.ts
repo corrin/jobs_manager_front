@@ -33,6 +33,23 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
       return null
     }
 
+    // Detectar se é dispositivo touch para aplicar configurações mínimas
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    const isMobile = window.innerWidth < 768
+    
+    console.log('Device detection for drag:', {
+      width: window.innerWidth,
+      isTouch,
+      isMobile,
+      deviceType: isMobile ? 'mobile' : (isTouch ? 'tablet/touch' : 'desktop')
+    })
+
+    // Se for mobile, não inicializar sortable
+    if (isMobile) {
+      console.log('Mobile detected - skipping sortable initialization')
+      return null
+    }
+
     try {
       const sortableInstance = new Sortable(element, {
         group: {
@@ -46,8 +63,14 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
         dragClass: 'sortable-drag',
         fallbackOnBody: true,
         swapThreshold: 0.65,
-        forceFallback: false,
+        filter: '.no-drag',
         preventOnFilter: true,
+        
+        // Configurações para dispositivos touch (tablet/iPad)
+        ...(isTouch && {
+          delay: 150,
+          touchStartThreshold: 10,
+        }),
         
         onStart: (evt) => {
           isDragging.value = true

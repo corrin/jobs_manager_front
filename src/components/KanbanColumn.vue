@@ -8,9 +8,11 @@
       </div>
 
       <div ref="jobListRef" :data-status="status.key"
-        class="p-1 space-y-1 min-h-[420px] max-h-[475px] overflow-y-auto transition-colors duration-200" :class="{
+        class="mobile-scroll-container p-1 space-y-1 min-h-[420px] max-h-[475px] md:min-h-[300px] md:max-h-[300px] lg:min-h-[450px] lg:max-h-[450px] overflow-y-auto transition-colors duration-200" :class="{
           'bg-blue-50 border-blue-200': isDragging
-        }">
+        }"
+        style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"
+      >
         <JobCard
           v-for="job in jobs"
           :key="job.id"
@@ -144,7 +146,7 @@ onMounted(() => {
     emit('sortable-ready', jobListRef.value, props.status.key)
     isSortableInitialized.value = true
   }
-  
+
   // Add event listener for archived job drops on this column
   if (jobListRef.value) {
     jobListRef.value.addEventListener('archived-job-drop', handleArchivedJobDrop as EventListener)
@@ -153,7 +155,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   isSortableInitialized.value = false
-  
+
   // Remove event listener
   if (jobListRef.value) {
     jobListRef.value.removeEventListener('archived-job-drop', handleArchivedJobDrop as EventListener)
@@ -178,6 +180,15 @@ watch(
   min-width: 150px;
   max-width: 160px;
   width: 155px;
+}
+
+/* Tablet responsive adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .kanban-column {
+    min-width: 200px;
+    max-width: 280px;
+    width: 100%;
+  }
 }
 
 .kanban-column.archive-column {
@@ -229,6 +240,82 @@ watch(
 :global(.sortable-ghost) {
   opacity: 0.4;
   transform: rotate(5deg);
+}
+
+/* Melhorar barra de scroll no mobile */
+.scrollbar-mobile {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.scrollbar-mobile::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-mobile::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.scrollbar-mobile::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 1px solid #f1f5f9;
+}
+
+.scrollbar-mobile::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Mobile: Tornar scroll mais visível e responsivo */
+@media (max-width: 767px) {
+  .scrollbar-mobile::-webkit-scrollbar {
+    width: 12px;
+  }
+  
+  .scrollbar-mobile::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border: 2px solid #f1f5f9;
+  }
+  
+  /* Mobile scroll improvements */
+.mobile-scroll-container {
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Allow only vertical panning for better touch experience */
+  touch-action: pan-y;
+  /* Ensure scroll area is properly defined */
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+/* Mobile scrollbar visibility */
+@media (max-width: 767px) {
+  .mobile-scroll-container::-webkit-scrollbar {
+    width: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  
+  .mobile-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .mobile-scroll-container::-webkit-scrollbar-thumb:active {
+    background: rgba(0, 0, 0, 0.5);
+  }
+  
+  .mobile-scroll-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+  }
+}
+
+.scrollbar-mobile::-webkit-scrollbar-thumb:active {
+    background: #64748b;
+  }
 }
 
 :global(.sortable-chosen) {

@@ -1,9 +1,11 @@
 <template>  <div 
     :class="[
-      'rounded-full overflow-hidden flex items-center justify-center cursor-pointer shadow-sm transition-transform hover:scale-110 relative',
+      'rounded-full overflow-hidden flex items-center justify-center cursor-pointer shadow-sm transition-all duration-200 relative',
+      'hover:scale-110 hover:shadow-md',
       size === 'sm' ? 'w-5 h-5 text-xs' : 'w-10 h-10',
-      isActive ? 'border-2 border-blue-500 scale-110 shadow-blue-200 shadow-md' : '',
-      isDragging ? 'opacity-80 rotate-1' : ''
+      isActive ? 'border-2 border-blue-500 scale-110 shadow-blue-200 shadow-md ring-2 ring-blue-300 ring-offset-1' : '',
+      isDragging ? 'opacity-80 rotate-1 scale-105 shadow-lg' : '',
+      'staff-avatar-draggable'
     ]"
     :title="staff.display_name"
     :data-staff-id="staff.id"
@@ -100,9 +102,56 @@ const backgroundColor = computed(() => {
   
   const colorIndex = Math.abs(props.staff.display_name.split('').reduce((acc, char) =>
     acc + char.charCodeAt(0), 0)) % predefinedColors.length
-  
-  return predefinedColors[colorIndex]
+    return predefinedColors[colorIndex]
 })
 </script>
+
+<style scoped>
+/* Melhorias visuais para drag and drop em todos os dispositivos */
+.staff-avatar-draggable {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Estados de drag específicos para melhor feedback visual */
+:global(.staff-sortable-chosen) .staff-avatar-draggable {
+  border: 2px solid #3b82f6 !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+  transform: scale(1.1) !important;
+}
+
+:global(.staff-sortable-drag) .staff-avatar-draggable {
+  border: 3px solid #2563eb !important;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4) !important;
+  transform: scale(1.15) rotate(3deg) !important;
+  z-index: 1002 !important;
+  position: relative !important;
+}
+
+/* Tablet específico: melhor feedback visual */
+@media (min-width: 768px) and (max-width: 1023px) {
+  :global(.staff-sortable-chosen) .staff-avatar-draggable {
+    transform: scale(1.15) !important;
+    box-shadow: 0 6px 15px rgba(59, 130, 246, 0.35) !important;
+  }
+  
+  :global(.staff-sortable-drag) .staff-avatar-draggable {
+    transform: scale(1.2) rotate(2deg) !important;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.45) !important;
+    border-width: 3px !important;
+  }
+}
+
+/* Mobile: feedback mais sutil */
+@media (max-width: 767px) {
+  :global(.staff-sortable-chosen) .staff-avatar-draggable {
+    transform: scale(1.08) !important;
+  }
+  
+  :global(.staff-sortable-drag) .staff-avatar-draggable {
+    transform: scale(1.12) rotate(1deg) !important;
+  }
+}
+</style>
 
 
