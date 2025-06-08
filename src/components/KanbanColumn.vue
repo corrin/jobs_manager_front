@@ -1,70 +1,94 @@
 <template>
   <div class="kanban-column" :class="{ 'archive-column': isArchive }">
-    <div v-if="!isArchive" class="column-header bg-card p-3 rounded-t-lg border-b">
-      <h3 class="font-semibold text-sm flex items-center justify-between">
-        <span>{{ status.label }}</span>
-        <Badge variant="secondary" class="ml-2">
-          {{ jobs.length }}
-        </Badge>
-      </h3>
-    </div>
-    
-    <div 
-      ref="jobListRef"
-      :data-status="status.key"
-      :class="[
-        'job-list transition-colors duration-200',
-        isArchive ? 
-          'archive-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 p-4' :
-          'bg-card rounded-b-lg border border-t-0 min-h-[400px] p-2',
-        {
-          'bg-blue-50 border-blue-200': isDragging && !isArchive,
-          'bg-background': !isDragging && !isArchive
-        }
-      ]"
-    >
-      <div
-        v-for="job in jobs"
-        :key="job.id"
-        :data-id="job.id"
-        :class="isArchive ? 'job-item-archive' : 'job-item mb-2'"
-      >
+    <div v-if="!isArchive" class="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div class="p-2 border-b border-gray-200">
+        <h3 class="font-semibold text-gray-900 text-xs">{{ status.label }}</h3>
+        <span class="text-xs text-gray-500">{{ jobs.length }}</span>
+      </div>
+
+      <div ref="jobListRef" :data-status="status.key"
+        class="p-1 space-y-1 min-h-[360px] max-h-[480px] overflow-y-auto transition-colors duration-200" :class="{
+          'bg-blue-50 border-blue-200': isDragging
+        }">
         <JobCard
+          v-for="job in jobs"
+          :key="job.id"
           :job="job"
           :is-dragging="isDragging"
           @click="$emit('job-click', job)"
           @job-ready="$emit('job-ready', $event)"
         />
-      </div>
 
-      <!-- Empty state -->
-      <div 
-        v-if="jobs.length === 0" 
-        :class="[
-          'empty-state flex items-center justify-center text-muted-foreground',
-          isArchive ? 'col-span-full h-20' : 'h-32'
-        ]"
-      >
-        <div class="text-center">
-          <div class="text-sm">No jobs in {{ status.label.toLowerCase() }}</div>
-          <div v-if="!isArchive" class="text-xs mt-1">Drag jobs here to update status</div>
-          <div v-else class="text-xs mt-1">No archived jobs</div>
+        <!-- Empty state -->
+        <div
+          v-if="jobs.length === 0"
+          class="empty-state flex items-center justify-center text-gray-500 h-32"
+        >
+          <div class="text-center">
+            <div class="text-sm">No jobs in {{ status.label.toLowerCase() }}</div>
+            <div class="text-xs mt-1">Drag jobs here to update status</div>
+          </div>
+        </div>
+
+        <!-- Load more button -->
+        <div v-if="showLoadMore && !isLoading" class="text-center">
+          <button
+            @click="$emit('load-more')"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
+          >
+            Load More
+          </button>
+        </div>
+
+        <!-- Loading spinner -->
+        <div v-if="isLoading" class="text-center">
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
         </div>
       </div>
+    </div>
 
-      <!-- Load More Button -->
-      <div v-if="showLoadMore" :class="['load-more-container', isArchive ? 'col-span-full' : 'mt-2']">
-        <Button
-          variant="outline"
-          size="sm"
-          class="w-full"
-          @click="$emit('load-more')"
-          :disabled="isLoading"
+    <!-- Archive layout -->
+    <div v-else class="archive-column">
+      <div
+        ref="jobListRef"
+                :data-status="status.key"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+      >
+        <div
+          v-for="job in jobs"
+          :key="job.id"
+          :data-id="job.id"
+          class="job-item bg-gray-50 p-3 rounded-md border border-gray-200 opacity-75"
         >
-          <ChevronDown class="mr-2 h-4 w-4" />
-          <span v-if="isLoading">Loading...</span>
-          <span v-else>Load More</span>
-        </Button>
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-xs font-medium text-gray-500">#{{ job.job_number }}</span>
+            <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-600">Archived</span>
+          </div>
+          <h4 class="font-medium text-gray-700 text-sm mb-1">{{ job.name }}</h4>
+          <p class="text-xs text-gray-500 mb-2">{{ job.description }}</p>
+          <div class="text-xs text-gray-400">
+            <p>{{ job.client_name }}</p>
+            <p>{{ job.contact_person }}</p>
+          </div>
+        </div>
+
+        <!-- Empty state for archive -->
+        <div v-if="jobs.length === 0" class="col-span-full text-center py-8">
+          <div class="text-xs text-gray-500">No archived jobs</div>
+        </div>
+
+        <!-- Load more button for archive -->
+        <div v-if="showLoadMore && !isLoading" class="col-span-full text-center">
+          <button @click="$emit('load-more')"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors">
+            Load More Archived
+          </button>
+        </div>
+
+        <!-- Loading spinner for archive -->
+        <div v-if="isLoading" class="col-span-full text-center">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mx-auto"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -72,9 +96,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ChevronDown } from 'lucide-vue-next'
 import JobCard from '@/components/JobCard.vue'
 import type { Job, StatusChoice } from '@/types'
 
@@ -132,8 +153,9 @@ watch(
 
 <style scoped>
 .kanban-column {
-  min-width: 280px;
-  max-width: 320px;
+  min-width: 170px;
+  max-width: 170px;
+  width: 210px;
 }
 
 .kanban-column.archive-column {
@@ -143,7 +165,7 @@ watch(
 }
 
 .job-list {
-  max-height: 600px;
+  max-height: 400px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) transparent;

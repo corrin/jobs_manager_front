@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import LoginView from '@/views/LoginView.vue'
-import DashboardView from '@/views/DashboardView.vue'
 import KanbanView from '@/views/KanbanView.vue'
 
 const router = createRouter({
@@ -18,15 +17,6 @@ const router = createRouter({
       meta: {
         requiresGuest: true,
         title: 'Login - Jobs Manager'
-      }
-    },
-    {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: DashboardView,
-      meta: {
-        requiresAuth: true,
-        title: 'Dashboard - Jobs Manager'
       }
     },
     {
@@ -73,7 +63,7 @@ router.beforeEach(async (to, from, next) => {
 
   // Check if route requires guest (not logged in)
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next({ name: 'dashboard' })
+    next({ name: 'kanban' })
     return
   }
 

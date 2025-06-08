@@ -1,53 +1,55 @@
 <template>
-  <div class="login-container">
-    <div class="login-card">
-      <div class="login-header">
-        <h1>Jobs Manager</h1>
-        <p>Sign in with your credentials</p>
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+      <div class="text-center">
+        <h1 class="text-3xl font-bold text-gray-900">Jobs Manager</h1>
+        <p class="mt-2 text-gray-600">Sign in with your credentials</p>
       </div>
 
-      <form @submit.prevent="handleLogin" class="login-form">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input
-            id="username"
-            v-model="credentials.username"
-            type="text"
-            class="form-control"
-            :class="{ 'error': hasError && !credentials.username }"
-            placeholder="Enter your username"
-            required
-            autocomplete="username"
-          />
-        </div>
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+        <form @submit.prevent="handleLogin" class="space-y-6">
+          <div>
+            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input
+              id="username"
+              v-model="credentials.username"
+              type="text"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              :class="{ 'border-red-500': hasError && !credentials.username }"
+              placeholder="Enter your username"
+              required
+              autocomplete="username"
+            />
+          </div>
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            id="password"
-            v-model="credentials.password"
-            type="password"
-            class="form-control"
-            :class="{ 'error': hasError && !credentials.password }"
-            placeholder="Enter your password"
-            required
-            autocomplete="current-password"
-          />
-        </div>
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              id="password"
+              v-model="credentials.password"
+              type="password"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              :class="{ 'border-red-500': hasError && !credentials.password }"
+              placeholder="Enter your password"
+              required
+              autocomplete="current-password"
+            />
+          </div>
 
-        <div v-if="error" class="error-message">
-          {{ error }}
-        </div>
+          <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+            {{ error }}
+          </div>
 
-        <button
-          type="submit"
-          class="btn-login"
-          :disabled="isLoading || !isFormValid"
-        >
-          <span v-if="isLoading">Signing in...</span>
-          <span v-else>Sign In</span>
-        </button>
-      </form>
+          <button
+            type="submit"
+            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="isLoading || !isFormValid"
+          >
+            <span v-if="isLoading">Signing in...</span>
+            <span v-else>Sign In</span>
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 </template>
@@ -64,125 +66,3 @@ const {
   handleLogin
 } = useLogin()
 </script>
-
-<style scoped>
-.login-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1rem;
-}
-
-.login-card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  padding: 3rem;
-  width: 100%;
-  max-width: 400px;
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.login-header h1 {
-  color: #1f2937;
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-}
-
-.login-header p {
-  color: #6b7280;
-  font-size: 1rem;
-}
-
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-weight: 500;
-  color: #374151;
-  font-size: 0.875rem;
-}
-
-.form-control {
-  padding: 0.75rem 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  outline: none;
-}
-
-.form-control:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-control.error {
-  border-color: #ef4444;
-}
-
-.form-control::placeholder {
-  color: #9ca3af;
-}
-
-.error-message {
-  color: #ef4444;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  padding: 0.75rem;
-  font-size: 0.875rem;
-  text-align: center;
-}
-
-.btn-login {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.875rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 1rem;
-}
-
-.btn-login:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-}
-
-.btn-login:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-@media (max-width: 480px) {
-  .login-card {
-    padding: 2rem 1.5rem;
-    margin: 1rem;
-  }
-
-  .login-header h1 {
-    font-size: 1.75rem;
-  }
-}
-</style>

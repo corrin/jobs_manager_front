@@ -1,21 +1,24 @@
-<template>
-  <div 
+<template>  <div 
     :class="[
-      'staff-avatar',
-      size === 'sm' ? 'staff-avatar-sm' : '',
-      isActive ? 'staff-filter-active' : '',
-      isDragging ? 'staff-drag' : ''
+      'rounded-full overflow-hidden flex items-center justify-center cursor-pointer shadow-sm transition-transform hover:scale-110 relative',
+      size === 'sm' ? 'w-5 h-5 text-xs' : 'w-10 h-10',
+      isActive ? 'border-2 border-blue-500 scale-110 shadow-blue-200 shadow-md' : '',
+      isDragging ? 'opacity-80 rotate-1' : ''
     ]"
     :title="staff.display_name"
     :data-staff-id="staff.id"
-    @click="$emit('click')"
   >
     <img
       v-if="staff.avatar_url"
       :src="staff.avatar_url"
       :alt="staff.display_name"
-      class="staff-img"
-    />    <div v-else class="staff-initials" :style="{ backgroundColor: backgroundColor }">
+      class="w-full h-full object-cover"
+    />    <div 
+      v-else 
+      class="w-full h-full flex items-center justify-center text-white font-bold"
+      :class="size === 'sm' ? 'text-xs' : 'text-sm'"
+      :style="{ backgroundColor: backgroundColor }"
+    >
       {{ getInitials(staff) }}
     </div>
   </div>
@@ -102,76 +105,4 @@ const backgroundColor = computed(() => {
 })
 </script>
 
-<style scoped>
-.staff-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  transition: transform 0.2s;
-  position: relative;
-}
 
-.staff-avatar:hover {
-  transform: scale(1.1);
-}
-
-.staff-avatar-sm {
-  width: 30px;
-  height: 30px;
-  font-size: 0.7em;
-}
-
-.staff-initials {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white !important;
-  font-weight: bold;
-  font-size: 14px;
-}
-
-.staff-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.staff-filter-active {
-  border: 2px solid #4285f4;
-  transform: scale(1.1);
-  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
-}
-
-.staff-drag {
-  opacity: 0.8;
-  transform: rotate(2deg);
-}
-
-/* Placeholder styling for empty staff slots */
-.staff-placeholder {
-  border: 2px dashed #ccc;
-  background-color: rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-}
-
-.staff-placeholder:hover {
-  border-color: #4285f4;
-  background-color: rgba(66, 133, 244, 0.05);
-  transform: scale(1.05);
-}
-
-.staff-placeholder::before {
-  content: "+";
-  color: #999;
-  font-size: 20px;
-  font-weight: bold;
-}
-</style>

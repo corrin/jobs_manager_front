@@ -1,16 +1,23 @@
 <template>
-  <div class="staff-panel">
-    <h6 class="staff-panel-title">Team Members</h6>
-    <div ref="staffListRef" class="staff-list">
-      <StaffAvatar
-        v-for="staff in staffMembers"
-        :key="staff.id"
-        :staff="staff"
-        :is-active="activeFilters.includes(staff.id.toString())"
-        @click="toggleStaffFilter(staff.id)"
-        class="draggable-staff"
-        :data-staff-id="staff.id"
-      />
+  <div class="mb-2">
+    <div class="flex justify-center">
+      <div ref="staffListRef" class="flex space-x-2">
+        <div 
+          v-for="staff in staffMembers" 
+          :key="staff.id" 
+          class="flex flex-col items-center cursor-pointer transition-transform hover:scale-110"
+          :class="{ 'scale-110': activeFilters.includes(staff.id.toString()) }"
+          @click="toggleStaffFilter(staff.id)"
+          :data-staff-id="staff.id"
+        >
+          <StaffAvatar
+            :staff="staff"
+            :is-active="activeFilters.includes(staff.id.toString())"
+            class="mb-0.5"
+          />
+          <span class="text-xs text-gray-600">{{ staff.display_name.split(' ')[0] }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -96,44 +103,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.staff-panel {
-  flex: 2;
-  margin-bottom: 0;
-  padding: 10px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background-color: white;
-}
 
-.staff-panel-title {
-  text-align: center;
-  margin-bottom: 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #6c757d;
-}
-
-.staff-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.draggable-staff {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.draggable-staff:hover {
-  transform: scale(1.1);
-}
-
-@media (max-width: 768px) {
-  .staff-panel {
-    width: 100%;
-    flex: none;
-  }
-}
-</style>

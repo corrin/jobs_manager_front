@@ -1,11 +1,11 @@
 <template>
-  <div class="staff-dropdown">
-    <label :for="id" class="block text-sm font-medium mb-1">{{ label }}</label>
+  <div class="relative">
+    <label :for="id" class="block text-sm font-medium text-gray-700 mb-1">{{ label }}</label>
     <div class="relative">
       <select
         :id="id"
         v-model="selectedValue"
-        class="w-full p-2 border rounded-md appearance-none bg-white"
+        class="w-full p-2 border border-gray-200 rounded-md appearance-none bg-white text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50 disabled:cursor-not-allowed transition-colors"
         @change="handleChange"
       >
         <option value="">{{ placeholder }}</option>
@@ -17,7 +17,7 @@
           {{ staff.display_name }}
         </option>
       </select>
-      <div class="dropdown-icon">
+      <div class="absolute top-1/2 right-2 transform -translate-y-1/2 pointer-events-none">
         <ChevronDown class="h-4 w-4 text-gray-400" />
       </div>
     </div>
@@ -79,32 +79,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.staff-dropdown {
-  position: relative;
-}
 
-.dropdown-icon {
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-select {
-  border: 1px solid #e2e8f0;
-  transition: border-color 0.2s ease;
-}
-
-select:focus {
-  outline: none;
-  border-color: #4285f4;
-  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.1);
-}
-
-select:disabled {
-  background-color: #f8f9fa;
-  cursor: not-allowed;
-}
-</style>

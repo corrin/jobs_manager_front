@@ -33,7 +33,7 @@ export function useLogin() {
 
   const getRedirectPath = (): string => {
     const redirectQuery = router.currentRoute.value.query.redirect as string
-    return redirectQuery || '/dashboard'
+    return redirectQuery || '/kanban'
   }
 
   const handleLoginSuccess = (): void => {
