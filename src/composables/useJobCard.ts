@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import type { Job } from '@/schemas/kanban.schemas'
+import type { Job } from '@/types'
 
 interface StatusConfig {
   variant: 'default' | 'secondary' | 'outline'

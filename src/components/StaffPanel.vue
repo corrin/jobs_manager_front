@@ -19,15 +19,9 @@
 import { ref, onMounted, watch, nextTick } from 'vue'
 import StaffAvatar from './StaffAvatar.vue'
 import { staffService } from '@/services/staffService'
-
-interface Staff {
-  id: number
-  first_name: string
-  last_name: string
-  display_name: string
-  initials?: string
-  avatar_url?: string
-}
+import type { Staff } from '@/types'
+import type { StaffPanelState } from '@/types/staff'
+import { PersonSchema } from '@/schemas/kanban.schemas'
 
 interface Props {
   activeFilters?: string[]
@@ -55,7 +49,16 @@ const loadStaffMembers = async (): Promise<void> => {
     isLoading.value = true
     error.value = null
     const data = await staffService.getAllStaff()
-    staffMembers.value = data
+    
+    // Validate data using PersonSchema (API returns UUID strings, not numbers)
+    const validatedStaff = data.map(staffData => {
+      return PersonSchema.parse({
+        ...staffData,
+        display_name: staffData.display_name || `${staffData.first_name} ${staffData.last_name}`.trim()
+      })
+    })
+    
+    staffMembers.value = validatedStaff
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load staff members'
     console.error('Error loading staff members:', err)
@@ -64,14 +67,13 @@ const loadStaffMembers = async (): Promise<void> => {
   }
 }
 
-const toggleStaffFilter = (staffId: number): void => {
-  const staffIdStr = staffId.toString()
-  const index = activeFilters.value.indexOf(staffIdStr)
+const toggleStaffFilter = (staffId: string): void => {
+  const index = activeFilters.value.indexOf(staffId)
   
   if (index !== -1) {
     activeFilters.value.splice(index, 1)
   } else {
-    activeFilters.value.push(staffIdStr)
+    activeFilters.value.push(staffId)
   }
   
   emit('staff-filter-changed', [...activeFilters.value])

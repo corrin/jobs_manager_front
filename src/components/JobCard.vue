@@ -90,7 +90,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Calendar, User, Hash, DollarSign } from 'lucide-vue-next'
 import StaffAvatar from '@/components/StaffAvatar.vue'
 import { useJobCard } from '@/composables/useJobCard'
-import type { Job } from '@/schemas/kanban.schemas'
+import type { Job } from '@/types'
 
 interface JobCardProps {
   job: Job

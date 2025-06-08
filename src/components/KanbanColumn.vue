@@ -76,7 +76,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ChevronDown } from 'lucide-vue-next'
 import JobCard from '@/components/JobCard.vue'
-import type { Job, StatusChoice } from '@/schemas/kanban.schemas'
+import type { Job, StatusChoice } from '@/types'
 
 interface KanbanColumnProps {
   status: StatusChoice

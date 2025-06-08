@@ -1,6 +1,6 @@
 import { ref, nextTick, onBeforeUnmount } from 'vue'
 import Sortable from 'sortablejs'
-import type { Job } from '@/schemas/kanban.schemas'
+import type { Job } from '@/types'
 
 // Using only schema types - no custom interfaces
 type DragAndDropEmits = {

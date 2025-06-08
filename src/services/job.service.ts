@@ -10,14 +10,13 @@ import {
   AdvancedFiltersSchema
 } from '@/schemas/kanban.schemas'
 import type {
-  Job,
   JobsApiResponse,
   AllJobsApiResponse,
   StatusApiResponse,
-  AdvancedFilters,
   UpdateJobStatusRequest,
   ReorderJobRequest
 } from '@/schemas/kanban.schemas'
+import type { Job, AdvancedFilters } from '@/types'
 
 export class JobService {
   private static instance: JobService

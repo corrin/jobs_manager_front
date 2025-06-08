@@ -1,6 +1,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { JobService } from '@/services/job.service'
-import type { Job, StatusChoice, AdvancedFilters } from '@/schemas/kanban.schemas'
+import type { Job, StatusChoice, AdvancedFilters } from '@/types'
 
 export function useKanban() {
   const jobService = JobService.getInstance()

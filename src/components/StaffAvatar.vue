@@ -23,21 +23,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-
-interface Staff {
-  id: number
-  first_name?: string
-  last_name?: string
-  display_name: string
-  initials?: string
-  avatar_url?: string | null
-  icon?: string | null
-  email?: string
-}
+import type { Staff } from '@/types'
+import type { StaffAvatarSize } from '@/types/staff'
 
 interface Props {
   staff: Staff
-  size?: 'normal' | 'sm'
+  size?: StaffAvatarSize
   isActive?: boolean
   isDragging?: boolean
 }
