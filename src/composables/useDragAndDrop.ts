@@ -35,7 +35,11 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
 
     try {
       const sortableInstance = new Sortable(element, {
-        group: 'kanban-jobs',
+        group: {
+          name: 'kanban-jobs',
+          pull: true,
+          put: true // Aceita drops de elementos externos
+        },
         animation: 150,
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
@@ -48,12 +52,32 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
         onStart: (evt) => {
           isDragging.value = true
           document.body.classList.add('is-dragging')
+          
+          // Configurar dados para drops externos usando uma abordagem global
+          const item = evt.item
+          if (item && evt.from?.dataset) {
+            const jobId = item.dataset.id || ''
+            const fromStatus = evt.from.dataset.status || ''
+            
+            // Armazenar dados de drag globalmente para acesso externo
+            const dragData = {
+              jobId,
+              fromStatus
+            };
+            
+            (window as any).__dragData = dragData
+            
+            console.log('Drag started:', dragData)
+          }
         },
 
         onEnd: (evt) => {
           // Clean up dragging state
           isDragging.value = false
           document.body.classList.remove('is-dragging')
+          
+          // Limpar dados globais de drag
+          delete (window as any).__dragData
           
           handleDragEnd(evt, jobs)
         },

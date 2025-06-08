@@ -2,12 +2,13 @@
   <div class="kanban-column" :class="{ 'archive-column': isArchive }">
     <div v-if="!isArchive" class="bg-white rounded-lg shadow-sm border border-gray-200">
       <div class="p-2 border-b border-gray-200">
-        <h3 class="font-semibold text-gray-900 text-xs">{{ status.label }}</h3>
-        <span class="text-xs text-gray-500">{{ jobs.length }}</span>
+        <h3 class="font-semibold text-gray-900 text-xs">
+          {{ status.label }} ({{ jobs.length }})
+        </h3>
       </div>
 
       <div ref="jobListRef" :data-status="status.key"
-        class="p-1 space-y-1 min-h-[360px] max-h-[480px] overflow-y-auto transition-colors duration-200" :class="{
+        class="p-1 space-y-1 min-h-[420px] max-h-[475px] overflow-y-auto transition-colors duration-200" :class="{
           'bg-blue-50 border-blue-200': isDragging
         }">
         <JobCard
@@ -51,7 +52,7 @@
     <div v-else class="archive-column">
       <div
         ref="jobListRef"
-                :data-status="status.key"
+        :data-status="status.key"
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
       >
         <div
@@ -127,15 +128,36 @@ const emit = defineEmits<KanbanColumnEmits>()
 const jobListRef = ref<HTMLElement>()
 const isSortableInitialized = ref(false)
 
+// Handler for archived job drop events
+const handleArchivedJobDrop = (event: CustomEvent) => {
+  console.log('KanbanColumn received archived job drop:', event.detail)
+  // Re-emit to parent KanbanView
+  const dropEvent = new CustomEvent('archived-job-drop', {
+    detail: event.detail,
+    bubbles: true
+  })
+  document.dispatchEvent(dropEvent)
+}
+
 onMounted(() => {
   if (jobListRef.value && !isSortableInitialized.value) {
     emit('sortable-ready', jobListRef.value, props.status.key)
     isSortableInitialized.value = true
   }
+  
+  // Add event listener for archived job drops on this column
+  if (jobListRef.value) {
+    jobListRef.value.addEventListener('archived-job-drop', handleArchivedJobDrop as EventListener)
+  }
 })
 
 onUnmounted(() => {
   isSortableInitialized.value = false
+  
+  // Remove event listener
+  if (jobListRef.value) {
+    jobListRef.value.removeEventListener('archived-job-drop', handleArchivedJobDrop as EventListener)
+  }
 })
 
 // Only re-initialize if jobs change significantly or sortable wasn't initialized
@@ -153,9 +175,9 @@ watch(
 
 <style scoped>
 .kanban-column {
-  min-width: 170px;
-  max-width: 170px;
-  width: 210px;
+  min-width: 150px;
+  max-width: 160px;
+  width: 155px;
 }
 
 .kanban-column.archive-column {

@@ -8,6 +8,7 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-feature-settings: 'cv11', 'ss01';
   font-variation-settings: 'opsz' 32;
+  overflow-y: hidden;
 }
 
 /* Custom styles can be added here if needed */

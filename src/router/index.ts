@@ -29,6 +29,10 @@ const router = createRouter({
       }
     },
     {
+      path: '/jobs',
+      redirect: '/kanban'
+    },
+    {
       path: '/accounts/login',
       redirect: '/login'
     }

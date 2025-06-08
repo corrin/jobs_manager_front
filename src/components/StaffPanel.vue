@@ -1,21 +1,21 @@
 <template>
   <div class="mb-2">
-    <div class="flex justify-center">
-      <div ref="staffListRef" class="flex space-x-2">
+    <div class="flex justify-center px-2">
+      <div ref="staffListRef" class="flex flex-wrap justify-center gap-2 max-w-full">
         <div 
           v-for="staff in staffMembers" 
           :key="staff.id" 
-          class="flex flex-col items-center cursor-pointer transition-transform hover:scale-110"
-          :class="{ 'scale-110': activeFilters.includes(staff.id.toString()) }"
+          class="flex flex-col items-center cursor-pointer transition-transform hover:scale-105 active:scale-95"
+          :class="{ 'scale-105 ring-2 ring-blue-400 ring-offset-1 rounded-lg': activeFilters.includes(staff.id.toString()) }"
           @click="toggleStaffFilter(staff.id)"
           :data-staff-id="staff.id"
         >
           <StaffAvatar
             :staff="staff"
             :is-active="activeFilters.includes(staff.id.toString())"
-            class="mb-0.5"
+            class="mb-1"
           />
-          <span class="text-xs text-gray-600">{{ staff.display_name.split(' ')[0] }}</span>
+          <span class="text-xs text-gray-600 text-center max-w-[60px] truncate">{{ staff.display_name.split(' ')[0] }}</span>
         </div>
       </div>
     </div>

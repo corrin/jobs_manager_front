@@ -17,6 +17,7 @@ export function useKanban() {
   const showArchived = ref(false)
   const totalArchivedJobs = ref(0)
   const statusChoices = ref<StatusChoice[]>([])
+  const selectedMobileStatus = ref('')
 
   // Staff filters
   const activeStaffFilters = ref<string[]>([])
@@ -114,16 +115,27 @@ export function useKanban() {
         label,
         tooltip: data.tooltips[key] || ''
       }))
+      
+      // Initialize selectedMobileStatus with first visible status
+      if (!selectedMobileStatus.value && statusChoices.value.length > 0) {
+        const firstStatus = statusChoices.value.find(s => s.key !== 'archived')
+        selectedMobileStatus.value = firstStatus?.key || statusChoices.value[0].key
+      }
     } catch (err) {
       console.error('Error loading status choices:', err)
       // Fallback to default status choices
       statusChoices.value = [
-        { key: 'pending', label: 'Pending' },
-        { key: 'in_progress', label: 'In Progress' },
-        { key: 'review', label: 'Review' },
-        { key: 'completed', label: 'Completed' },
-        { key: 'archived', label: 'Archived' }
+        { key: 'pending', label: 'Pending', tooltip: '' },
+        { key: 'in_progress', label: 'In Progress', tooltip: '' },
+        { key: 'review', label: 'Review', tooltip: '' },
+        { key: 'completed', label: 'Completed', tooltip: '' },
+        { key: 'archived', label: 'Archived', tooltip: '' }
       ]
+      
+      // Initialize with first non-archived status
+      if (!selectedMobileStatus.value) {
+        selectedMobileStatus.value = 'pending'
+      }
     }
   }
 
@@ -255,6 +267,7 @@ export function useKanban() {
     totalArchivedJobs,
     advancedFilters,
     activeStaffFilters,
+    selectedMobileStatus,
 
     // Constants
     statusChoices,

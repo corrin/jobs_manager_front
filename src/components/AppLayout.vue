@@ -4,7 +4,7 @@
     <AppNavbar />
     
     <!-- Main Content with top padding to account for fixed navbar -->
-    <main class="pt-16">
+    <main class="pt-14 sm:pt-16">
       <slot />
     </main>
   </div>
