@@ -50,17 +50,17 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       // Authenticate with backend - this sets httpOnly cookies
       await api.post('/accounts/api/token/', credentials)
-      
+
       // Get user data to populate store
       const userResponse = await api.get<User>('/accounts/me/')
       user.value = userResponse.data
-      
+
       return true
     } catch (err: any) {
       user.value = null
-      const errorMessage = err.response?.data?.detail || 
-                          err.response?.data?.message ||
-                          'Erro no login. Verifique se o servidor está executando.'
+      const errorMessage = err.response?.data?.detail ||
+              err.response?.data?.message ||
+              'Login error. Check if the server is running.'
       setError(errorMessage)
       console.error('Login error:', err)
       return false

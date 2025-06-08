@@ -1,0 +1,25 @@
+/**
+ * Utility function to get CSRF token from cookies
+ * Based on Django's getCookie implementation
+ */
+export function getCookie(name: string): string | null {
+  let cookieValue = null
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';')
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim()
+      if (cookie.substring(0, name.length + 1) === name + '=') {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1))
+        break
+      }
+    }
+  }
+  return cookieValue
+}
+
+/**
+ * Get CSRF token for Django requests
+ */
+export function getCsrfToken(): string | null {
+  return getCookie('csrftoken')
+}

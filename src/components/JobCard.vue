@@ -9,6 +9,7 @@
         'opacity-50': isDragging
       }
     ]"
+    :data-id="job.id"
     @click="handleClick"
   >
     <CardHeader class="pb-2">
@@ -53,32 +54,72 @@
         <User class="h-3 w-3" />
         <span class="truncate">{{ job.contact_person }}</span>
       </div>
+
+      <!-- Staff Assignments -->
+      <div 
+        ref="jobStaffContainerRef"
+        class="job-assigned-staff flex gap-1 mt-2 min-h-[32px] p-1 rounded border-2 border-dashed border-transparent transition-colors"
+        :class="{
+          'border-blue-300 bg-blue-50': isStaffDragTarget,
+          'bg-gray-50': job.people && job.people.length === 0
+        }"
+      >
+        <StaffAvatar
+          v-for="staff in job.people"
+          :key="staff.id"
+          :staff="staff"
+          size="sm"
+          :title="staff.display_name"
+          :data-staff-id="staff.id"
+        />
+        <div 
+          v-if="!job.people || job.people.length === 0" 
+          class="text-xs text-muted-foreground flex items-center justify-center w-full"
+        >
+          Drag staff here
+        </div>
+      </div>
     </CardContent>
   </Card>
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Calendar, User, Hash, DollarSign } from 'lucide-vue-next'
+import StaffAvatar from '@/components/StaffAvatar.vue'
 import { useJobCard } from '@/composables/useJobCard'
 import type { Job } from '@/schemas/kanban.schemas'
 
 interface JobCardProps {
   job: Job
   isDragging?: boolean
+  isStaffDragTarget?: boolean
 }
 
 interface JobCardEmits {
   (e: 'click', job: Job): void
+  (e: 'job-ready', payload: { jobId: string, element: HTMLElement }): void
 }
 
 const props = withDefaults(defineProps<JobCardProps>(), {
-  isDragging: false
+  isDragging: false,
+  isStaffDragTarget: false
 })
 const emit = defineEmits<JobCardEmits>()
 
+const jobStaffContainerRef = ref<HTMLElement>()
 const { statusConfig, formattedDate, formatStatus, handleClick } = useJobCard(props.job, emit)
+
+onMounted(() => {
+  if (jobStaffContainerRef.value) {
+    emit('job-ready', {
+      jobId: props.job.id.toString(),
+      element: jobStaffContainerRef.value
+    })
+  }
+})
 </script>
 
 <style scoped>

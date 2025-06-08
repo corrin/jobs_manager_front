@@ -224,3 +224,36 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Staff Drag and Drop Styles */
+.staff-sortable-ghost {
+  opacity: 0.4;
+  transform: rotate(5deg);
+}
+
+.staff-sortable-chosen {
+  cursor: grabbing !important;
+  transform: scale(1.05);
+  opacity: 0.8;
+}
+
+.staff-sortable-drag {
+  transform: rotate(5deg);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  cursor: grabbing !important;
+}
+
+.job-assigned-staff.staff-drag-active {
+  border-color: #3b82f6 !important;
+  background-color: #eff6ff !important;
+}
+
+.staff-pool-container.staff-drag-active {
+  border-color: #10b981 !important;
+  background-color: #f0fdf4 !important;
+}
+
+.staff-avatar-dragging {
+  pointer-events: none;
+  user-select: none;
+}

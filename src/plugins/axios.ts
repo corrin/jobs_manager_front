@@ -29,20 +29,8 @@ axios.interceptors.response.use(
     if (error.response?.status === 401) {
       console.warn('Authentication failed - cookies may have expired')
       
-      // Try to refresh token (the refresh endpoint should handle httpOnly cookies automatically)
-      try {
-        const refreshSuccess = await authStore.refreshAccessToken()
-        
-        if (refreshSuccess && !error.config._retry) {
-          // Retry the original request
-          error.config._retry = true
-          return axios(error.config)
-        }
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError)
-      }
-      
-      // If refresh failed or this is a retry, logout and redirect
+      // With httpOnly cookies, if we get 401, the session is invalid
+      // Just logout and redirect to login
       await authStore.logout()
       window.location.href = '/login'
     }

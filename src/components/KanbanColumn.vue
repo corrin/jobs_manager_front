@@ -26,13 +26,14 @@
       <div
         v-for="job in jobs"
         :key="job.id"
-        :data-job-id="job.id"
+        :data-id="job.id"
         :class="isArchive ? 'job-item-archive' : 'job-item mb-2'"
       >
         <JobCard
           :job="job"
           :is-dragging="isDragging"
           @click="$emit('job-click', job)"
+          @job-ready="$emit('job-ready', $event)"
         />
       </div>
 
@@ -90,6 +91,7 @@ interface KanbanColumnEmits {
   (e: 'job-click', job: Job): void
   (e: 'load-more'): void
   (e: 'sortable-ready', element: HTMLElement, status: string): void
+  (e: 'job-ready', payload: { jobId: string, element: HTMLElement }): void
 }
 
 const props = withDefaults(defineProps<KanbanColumnProps>(), {

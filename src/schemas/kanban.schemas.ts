@@ -2,9 +2,14 @@ import { z } from 'zod'
 
 // Base schemas
 export const PersonSchema = z.object({
-  id: z.number(),
+  id: z.string(), // UUIDs are strings, not numbers
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
   display_name: z.string(),
-  icon: z.string().nullable().optional()
+  email: z.string().optional(),
+  initials: z.string().optional(),
+  avatar_url: z.string().nullable().optional(),
+  icon: z.string().nullable().optional() // Keeping for backward compatibility
 })
 
 export const JobSchema = z.object({

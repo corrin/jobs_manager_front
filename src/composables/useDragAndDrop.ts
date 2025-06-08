@@ -82,7 +82,7 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
       return
     }
 
-    const jobId = item.dataset.jobId
+    const jobId = item.dataset.id
     const fromStatus = from.dataset.status
     const toStatus = to.dataset.status
 

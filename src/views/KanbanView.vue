@@ -59,6 +59,14 @@
                   <X class="h-4 w-4" />
                 </Button>
               </div>
+              
+              <!-- Staff Panel -->
+              <StaffPanel
+                :active-filters="activeStaffFilters"
+                @staff-filter-changed="handleStaffFilterChanged"
+                @staff-panel-ready="handleStaffPanelReady"
+                class="mt-4"
+              />
             </div>
           </div>
         </div>
@@ -92,16 +100,22 @@
                 <Input id="description" v-model="advancedFilters.description" />
               </div>
               <div>
-                <label for="client" class="block text-sm font-medium mb-1">Client</label>
-                <Input id="client" v-model="advancedFilters.client_name" />
+                <ClientDropdown
+                  id="client"
+                  label="Client"
+                  v-model="advancedFilters.client_name"
+                />
               </div>
               <div>
                 <label for="contactPerson" class="block text-sm font-medium mb-1">Contact Person</label>
                 <Input id="contactPerson" v-model="advancedFilters.contact_person" />
               </div>
               <div>
-                <label for="createdBy" class="block text-sm font-medium mb-1">Created By</label>
-                <Input id="createdBy" v-model="advancedFilters.created_by" />
+                <StaffDropdown
+                  id="createdBy"
+                  label="Created By"
+                  v-model="advancedFilters.created_by"
+                />
               </div>
               <div>
                 <label for="status" class="block text-sm font-medium mb-1">Status</label>
@@ -171,6 +185,7 @@
             @job-click="viewJob"
             @load-more="loadMoreJobs(status.key)"
             @sortable-ready="handleSortableReady"
+            @job-ready="handleJobReady"
           />
         </div>
 
@@ -205,6 +220,7 @@
                 @job-click="viewJob"
                 @load-more="loadMoreJobs('archived')"
                 @sortable-ready="handleSortableReady"
+                @job-ready="handleJobReady"
                 class="archive-kanban-column"
               />
             </CardContent>
@@ -216,7 +232,7 @@
 </template>
 
 <script setup lang="ts">
-import { onUnmounted } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -233,9 +249,14 @@ import {
 import JobCard from '@/components/JobCard.vue'
 import KanbanColumn from '@/components/KanbanColumn.vue'
 import AppLayout from '@/components/AppLayout.vue'
+import StaffPanel from '@/components/StaffPanel.vue'
+import StaffDropdown from '@/components/StaffDropdown.vue'
+import ClientDropdown from '@/components/ClientDropdown.vue'
 import { useKanban } from '@/composables/useKanban'
 import { useDragAndDrop } from '@/composables/useDragAndDrop'
+import { useStaffDragAndDrop } from '@/composables/useStaffDragAndDrop'
 
+// Staff filters state
 const {
   // State
   jobs,
@@ -249,6 +270,7 @@ const {
   showArchived,
   totalArchivedJobs,
   advancedFilters,
+  activeStaffFilters,
 
   // Constants
   statusChoices,
@@ -270,7 +292,8 @@ const {
   loadMoreJobs,
   viewJob,
   updateJobStatus,
-  reorderJob
+  reorderJob,
+  handleStaffFilterChanged
 } = useKanban()
 
 const {
@@ -291,9 +314,38 @@ const {
   }
 })
 
+// Staff drag and drop composable
+const {
+  isStaffDragging,
+  initializeStaffPool,
+  initializeJobStaffContainer,
+  updateJobStaffContainers
+} = useStaffDragAndDrop(async (event: string, payload?: any) => {
+  if (event === 'staff-assigned') {
+    console.log(`Staff ${payload.staffId} assigned to job ${payload.jobId}`)
+  } else if (event === 'staff-removed') {
+    console.log(`Staff ${payload.staffId} removed from job ${payload.jobId}`)
+  } else if (event === 'jobs-reload-needed') {
+    await loadJobs()
+    // Update staff containers after jobs are reloaded
+    const allJobs = [...jobs.value, ...archivedJobs.value]
+    updateJobStaffContainers(allJobs)
+  }
+})
+
 const handleSortableReady = (element: HTMLElement, status: string) => {
   const allJobs = [...jobs.value, ...archivedJobs.value]
   initializeSortable(element, status, allJobs)
+}
+
+const handleStaffPanelReady = (staffPanelElement: HTMLElement) => {
+  console.log('Staff panel ready, initializing staff pool drag and drop')
+  initializeStaffPool(staffPanelElement)
+}
+
+const handleJobReady = (payload: { jobId: string, element: HTMLElement }) => {
+  console.log(`Job ${payload.jobId} ready, initializing staff container`)
+  initializeJobStaffContainer(payload.element, payload.jobId)
 }
 
 const clearSearch = () => {

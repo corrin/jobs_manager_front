@@ -18,6 +18,9 @@ export function useKanban() {
   const totalArchivedJobs = ref(0)
   const statusChoices = ref<StatusChoice[]>([])
 
+  // Staff filters
+  const activeStaffFilters = ref<string[]>([])
+
   // Advanced filters
   const advancedFilters = ref<AdvancedFilters>({
     job_number: '',
@@ -32,12 +35,37 @@ export function useKanban() {
     paid: ''
   })
 
+  // Helper function to check if job matches staff filters
+  const jobMatchesStaffFilters = (job: Job): boolean => {
+    if (activeStaffFilters.value.length === 0) {
+      return true
+    }
+
+    // Check if job is assigned to any of the filtered staff
+    const assignedStaffIds = job.people?.map((staff: any) => staff.id.toString()) || []
+    const isAssignedToActiveStaff = assignedStaffIds.some((staffId: string) =>
+      activeStaffFilters.value.includes(staffId)
+    )
+
+    // Check if job was created by any of the filtered staff
+    const isCreatedByActiveStaff = job.created_by_id ? 
+      activeStaffFilters.value.includes(job.created_by_id.toString()) : false
+
+    return isAssignedToActiveStaff || isCreatedByActiveStaff
+  }
+
   // Computed
   const getJobsByStatus = computed(() => (status: string) => {
+    let jobList: Job[]
+    
     if (status === 'archived') {
-      return archivedJobs.value
+      jobList = archivedJobs.value
+    } else {
+      jobList = jobs.value.filter(job => job.status_key === status)
     }
-    return jobs.value.filter(job => job.status_key === status)
+
+    // Apply staff filters
+    return jobList.filter(job => jobMatchesStaffFilters(job))
   })
 
   const getJobCountByStatus = computed(() => (status: string) => {
@@ -181,16 +209,16 @@ export function useKanban() {
   }
 
   const reorderJob = async (
-    jobId: number,
-    beforeId?: number,
-    afterId?: number,
+    jobId: string,
+    beforeId?: string,
+    afterId?: string,
     status?: string
   ): Promise<void> => {
     try {
       await jobService.reorderJob(
-        jobId.toString(),
-        beforeId?.toString(),
-        afterId?.toString(),
+        jobId,
+        beforeId,
+        afterId,
         status
       )
       await loadJobs() // Reload jobs after reordering
@@ -198,6 +226,11 @@ export function useKanban() {
       error.value = err instanceof Error ? err.message : 'Failed to reorder job'
       console.error('Error reordering job:', err)
     }
+  }
+
+  // Staff filter management
+  const handleStaffFilterChanged = (staffIds: string[]): void => {
+    activeStaffFilters.value = staffIds
   }
 
   // Initialize on mount
@@ -221,6 +254,7 @@ export function useKanban() {
     showArchived,
     totalArchivedJobs,
     advancedFilters,
+    activeStaffFilters,
 
     // Constants
     statusChoices,
@@ -243,6 +277,7 @@ export function useKanban() {
     loadMoreJobs,
     viewJob,
     updateJobStatus,
-    reorderJob
+    reorderJob,
+    handleStaffFilterChanged
   }
 }
