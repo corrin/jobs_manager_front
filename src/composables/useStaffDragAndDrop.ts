@@ -2,6 +2,7 @@ import { ref, nextTick, onBeforeUnmount } from 'vue'
 import Sortable from 'sortablejs'
 import api from '@/services/api'
 import { getCsrfToken } from '@/utils/csrf'
+import { useDeviceDetection } from '@/composables/useDeviceDetection'
 
 type StaffDragAndDropEmits = {
   (event: 'staff-assigned', payload: { jobId: string, staffId: string }): void
@@ -12,6 +13,9 @@ type StaffDragAndDropEmits = {
 export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
   const staffSortableInstances = ref<Map<string, Sortable>>(new Map())
   const isStaffDragging = ref(false)
+  
+  // Use device detection composable
+  const { isMobile, getStaffDragConfig } = useDeviceDetection()
 
   const initializeStaffPool = (staffPanelElement: HTMLElement) => {
     if (!staffPanelElement) {
@@ -30,43 +34,24 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       }
     }
 
-    // Detectar se é dispositivo touch para aplicar configurações mínimas
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-    const isMobile = window.innerWidth < 768
-    
-    console.log('Staff device detection:', {
-      width: window.innerWidth,
-      isTouch,
-      isMobile,
-      deviceType: isMobile ? 'mobile' : (isTouch ? 'tablet/touch' : 'desktop')
-    })
-
-    // Se for mobile, não inicializar sortable
-    if (isMobile) {
-      console.log('Mobile detected - skipping staff sortable initialization')
-      return null
-    }
+    // Get device-specific configuration for optimal touch experience
+    const staffDragConfig = getStaffDragConfig()
 
     try {
       const sortableInstance = new Sortable(staffPanelElement, {
         group: {
           name: 'staffPool',
           pull: 'clone',
-          put: ['staffOnJob']
+          put: false // Staff pool should only allow items to be pulled (cloned), not dropped into
         },
         sort: false,
         animation: 150,
         ghostClass: 'staff-sortable-ghost',
         chosenClass: 'staff-sortable-chosen',
         dragClass: 'staff-sortable-drag',
-        filter: '.no-drag',
-        preventOnFilter: true,
         
-        // Configurações para dispositivos touch (tablet/iPad)
-        ...(isTouch && {
-          delay: 120,
-          touchStartThreshold: 8,
-        }),
+        // Apply device-specific configuration
+        ...staffDragConfig,
 
         onStart: () => {
           isStaffDragging.value = true
@@ -122,15 +107,8 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       }
     }
 
-    // Detectar se é dispositivo touch para aplicar configurações mínimas
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-    const isMobile = window.innerWidth < 768
-    
-    // Se for mobile, não inicializar sortable
-    if (isMobile) {
-      console.log('Mobile detected - skipping job staff sortable initialization')
-      return null
-    }
+    // Get device-specific configuration
+    const staffDragConfig = getStaffDragConfig()
 
     try {
       const sortableInstance = new Sortable(jobStaffElement, {
@@ -143,14 +121,9 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         ghostClass: 'staff-sortable-ghost',
         chosenClass: 'staff-sortable-chosen',
         dragClass: 'staff-sortable-drag',
-        filter: '.no-drag',
-        preventOnFilter: true,
         
-        // Configurações para dispositivos touch (tablet/iPad)
-        ...(isTouch && {
-          delay: 120,
-          touchStartThreshold: 8,
-        }),
+        // Apply device-specific configuration
+        ...staffDragConfig,
 
         onStart: () => {
           isStaffDragging.value = true

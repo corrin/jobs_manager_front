@@ -1,6 +1,7 @@
 import { ref, nextTick, onBeforeUnmount } from 'vue'
 import Sortable from 'sortablejs'
 import type { Job } from '@/types'
+import { useDeviceDetection } from '@/composables/useDeviceDetection'
 
 // Using only schema types - no custom interfaces
 type DragAndDropEmits = {
@@ -16,8 +17,17 @@ type DragAndDropEmits = {
 export function useDragAndDrop(emit: DragAndDropEmits) {
   const sortableInstances = ref<Map<string, Sortable>>(new Map())
   const isDragging = ref(false)
+  
+  // Use device detection composable
+  const { isMobile, getDragConfig } = useDeviceDetection()
 
   const initializeSortable = (element: HTMLElement, status: string, jobs: Job[]) => {
+    // Special handling for archived jobs
+    if (status === 'archived') {
+      return initializeArchivedSortable(element, status, jobs)
+    }
+    
+    // Regular kanban column initialization
     // Guard clause: validate inputs
     if (!element || !status) {
       console.warn('Invalid element or status for sortable initialization')
@@ -33,29 +43,15 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
       return null
     }
 
-    // Detectar se é dispositivo touch para aplicar configurações mínimas
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-    const isMobile = window.innerWidth < 768
-    
-    console.log('Device detection for drag:', {
-      width: window.innerWidth,
-      isTouch,
-      isMobile,
-      deviceType: isMobile ? 'mobile' : (isTouch ? 'tablet/touch' : 'desktop')
-    })
-
-    // Se for mobile, não inicializar sortable
-    if (isMobile) {
-      console.log('Mobile detected - skipping sortable initialization')
-      return null
-    }
+    // Get device-specific configuration for optimal touch experience
+    const dragConfig = getDragConfig()
 
     try {
       const sortableInstance = new Sortable(element, {
         group: {
           name: 'kanban-jobs',
           pull: true,
-          put: true // Aceita drops de elementos externos
+          put: ['kanban-jobs', 'archived-jobs'] // Accept jobs from kanban columns and archived jobs
         },
         animation: 150,
         ghostClass: 'sortable-ghost',
@@ -63,14 +59,9 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
         dragClass: 'sortable-drag',
         fallbackOnBody: true,
         swapThreshold: 0.65,
-        filter: '.no-drag',
-        preventOnFilter: true,
         
-        // Configurações para dispositivos touch (tablet/iPad)
-        ...(isTouch && {
-          delay: 150,
-          touchStartThreshold: 10,
-        }),
+        // Apply device-specific configuration
+        ...dragConfig,
         
         onStart: (evt) => {
           isDragging.value = true
@@ -116,6 +107,90 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
       return sortableInstance
     } catch (error) {
       console.error('Error initializing sortable:', error)
+      return null
+    }
+  }
+
+  const initializeArchivedSortable = (element: HTMLElement, status: string, jobs: Job[]) => {
+    // Guard clause: validate inputs
+    if (!element || !status) {
+      console.warn('Invalid element or status for archived sortable initialization')
+      return null
+    }
+
+    // Clean up existing instance
+    destroySortable(status)
+
+    // Ensure element is properly mounted
+    if (!element.isConnected) {
+      console.warn('Element not connected to DOM when initializing archived sortable')
+      return null
+    }
+
+    // Get device-specific configuration for optimal touch experience
+    const dragConfig = getDragConfig()
+
+    try {
+      const sortableInstance = new Sortable(element, {
+        group: {
+          name: 'archived-jobs',
+          pull: true,
+          put: false // Archived jobs can only be pulled out, not accept drops
+        },
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        fallbackOnBody: true,
+        swapThreshold: 0.65,
+        
+        // Apply device-specific configuration
+        ...dragConfig,
+        
+        onStart: (evt) => {
+          isDragging.value = true
+          document.body.classList.add('is-dragging')
+          
+          // Configurar dados para drops externos usando uma abordagem global
+          const item = evt.item
+          if (item && evt.from?.dataset) {
+            const jobId = item.dataset.id || ''
+            const fromStatus = evt.from.dataset.status || ''
+            
+            // Armazenar dados de drag globalmente para acesso externo
+            const dragData = {
+              jobId,
+              fromStatus
+            };
+            
+            (window as any).__dragData = dragData
+            
+            console.log('Archived job drag started:', dragData)
+          }
+        },
+
+        onEnd: (evt) => {
+          // Clean up dragging state
+          isDragging.value = false
+          document.body.classList.remove('is-dragging')
+          
+          // Limpar dados globais de drag
+          delete (window as any).__dragData
+          
+          handleDragEnd(evt, jobs)
+        },
+
+        onMove: (evt) => {
+          // Prevent dropping on invalid areas
+          const { related } = evt
+          return !related?.classList.contains('no-drop')
+        }
+      })
+
+      sortableInstances.value.set(status, sortableInstance)
+      return sortableInstance
+    } catch (error) {
+      console.error('Error initializing archived sortable:', error)
       return null
     }
   }

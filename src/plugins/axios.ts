@@ -2,7 +2,7 @@ import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
 // Set default base URL and enable credentials for httpOnly cookies
-axios.defaults.baseURL = 'http://localhost:8000'
+axios.defaults.baseURL = 'http://localhost:8001'
 axios.defaults.timeout = 10000
 axios.defaults.withCredentials = true // Important: include httpOnly cookies
 
@@ -28,7 +28,7 @@ axios.interceptors.response.use(
 
     if (error.response?.status === 401) {
       console.warn('Authentication failed - cookies may have expired')
-      
+
       // With httpOnly cookies, if we get 401, the session is invalid
       // Just logout and redirect to login
       await authStore.logout()

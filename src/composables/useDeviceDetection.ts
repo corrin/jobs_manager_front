@@ -53,27 +53,14 @@ export function useDeviceDetection() {
       userAgent: navigator.userAgent
     })
     
-    if (isMobile.value) {
-      // Desabilitar completamente drag and drop no mobile
-      return {
-        delay: 0,
-        touchStartThreshold: 0,
-        forceFallback: false,
-        filter: '.kanban-card, .staff-avatar, .draggable', // Bloquear todos os elementos draggable
-        preventOnFilter: true,
-        disabled: true // Desabilitar SortableJS completamente
-      }
-    } else {
-      // Desktop e Tablet - usar EXATAMENTE a mesma configuração do desktop
-      console.log('Desktop/Tablet detected - using desktop config')
-      return {
-        delay: 0,
-        touchStartThreshold: 0,
-        forceFallback: false,
-        filter: '.no-drag',
-        preventOnFilter: true,
-        disabled: false
-      }
+    // Configuração padrão otimizada para todos os dispositivos (mobile, tablet, desktop)
+    return {
+      delay: 0,
+      touchStartThreshold: 0,
+      forceFallback: false,
+      filter: '.no-drag',
+      preventOnFilter: true,
+      disabled: false
     }
   }
 
@@ -88,27 +75,14 @@ export function useDeviceDetection() {
       isIpad: isIpad.value
     })
     
-    if (isMobile.value) {
-      // Desabilitar completamente staff drag and drop no mobile
-      return {
-        delay: 0,
-        touchStartThreshold: 0,
-        forceFallback: false,
-        filter: '.staff-avatar, .draggable', // Bloquear staff avatars
-        preventOnFilter: true,
-        disabled: true // Desabilitar SortableJS completamente
-      }
-    } else {
-      // Desktop e Tablet - usar EXATAMENTE a mesma configuração do desktop
-      console.log('Desktop/Tablet detected - using desktop staff config')
-      return {
-        delay: 0,
-        touchStartThreshold: 0,
-        forceFallback: false,
-        filter: '.no-drag',
-        preventOnFilter: true,
-        disabled: false
-      }
+    // Configuração padrão otimizada para todos os dispositivos (mobile, tablet, desktop)
+    return {
+      delay: 0,
+      touchStartThreshold: 0,
+      forceFallback: false,
+      filter: '.no-drag',
+      preventOnFilter: true,
+      disabled: false
     }
   }
 

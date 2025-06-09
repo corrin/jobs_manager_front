@@ -11,7 +11,7 @@
         @dragover.prevent="handleDragOver"
         @dragleave="handleDragLeave"
         @drop="handleDrop"
-        class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2.5 sm:p-3 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center relative cursor-pointer border-2 border-white"
+        class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2.5 sm:p-3 shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center relative cursor-pointer border-2 border-white"
         :class="{ 
           'bg-blue-700': showArchived,
           'bg-green-500 scale-110 shadow-xl border-2 border-white': isDragOver,
@@ -19,13 +19,15 @@
         }"
         style="min-width: 56px; min-height: 56px;"
       >
-        <Archive class="h-5 w-5" />
-        <span 
-          v-if="archivedCount > 0"
-          class="ml-2 px-2 py-1 bg-white text-blue-600 text-xs font-bold rounded-full min-w-[20px] text-center"
-        >
-          {{ archivedCount }}
-        </span>
+        <Archive class="h-5 w-5" v-if="archivedCount === 0" />
+        <div v-else class="flex items-center justify-center">
+          <Archive class="h-5 w-5 mr-2" />
+          <span 
+            class="px-2 py-1 bg-white text-blue-600 text-xs font-bold rounded-full min-w-[20px] text-center"
+          >
+            {{ archivedCount }}
+          </span>
+        </div>
         
         <!-- Drop indicator -->
         <div 
