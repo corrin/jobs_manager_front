@@ -29,6 +29,24 @@ const router = createRouter({
       }
     },
     {
+      path: '/jobs/create',
+      name: 'job-create',
+      component: () => import('@/views/JobCreateView.vue'),
+      meta: {
+        requiresAuth: true,
+        title: 'Create Job - Jobs Manager'
+      }
+    },
+    {
+      path: '/jobs/:id',
+      name: 'job-edit',
+      component: () => import('@/views/JobView.vue'),
+      meta: {
+        requiresAuth: true,
+        title: 'Job - Jobs Manager'
+      }
+    },
+    {
       path: '/jobs',
       redirect: '/kanban'
     },

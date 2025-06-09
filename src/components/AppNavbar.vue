@@ -10,13 +10,12 @@
           <Menu v-if="!showMobileMenu" class="h-4 w-4" />
           <X v-else class="h-4 w-4" />
         </button>
-        <h1 class="text-sm md:text-sm lg:text-xl font-bold text-gray-900">Jobs Manager</h1>
+        <router-link to="/kanban" class="text-sm md:text-sm lg:text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">Jobs Manager</router-link>
       </div>
 
       <!-- Desktop Navigation (Large screens only) -->
       <div class="hidden lg:flex items-center space-x-6">
-        <router-link to="/jobs" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Jobs Kanban</router-link>
-        <a href="#" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Create Job</a>
+        <router-link to="/jobs/create" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Create Job</router-link>
         <a href="#" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Timesheets</a>
 
         <!-- Purchases Dropdown -->
@@ -103,13 +102,6 @@
           <div class="grid grid-cols-1 gap-3">
             <!-- Primary Actions -->
             <div class="space-y-3">
-              <router-link 
-                to="/jobs" 
-                class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all font-medium"
-                @click="closeMobileMenu"
-              >
-                Jobs Kanban
-              </router-link>
               <a href="#" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Create Job</a>
               <a href="#" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Timesheets</a>
               <a href="#" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Xero</a>
