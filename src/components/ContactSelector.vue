@@ -5,7 +5,7 @@
       <span v-if="!optional" class="text-red-500">*</span>
       <span v-else class="text-gray-500 text-xs">(Optional)</span>
     </label>
-    
+
     <!-- Contact Display/Selector -->
     <div class="flex space-x-2">
       <div class="flex-1">
@@ -19,7 +19,7 @@
           @click="handleOpenModal"
         />
       </div>
-      
+
       <!-- Select Contact Button -->
       <button
         type="button"
@@ -29,7 +29,7 @@
       >
         <Users class="w-4 h-4" />
       </button>
-      
+
       <!-- Clear Button -->
       <button
         v-if="selectedContact"
@@ -41,7 +41,7 @@
         <X class="w-4 h-4" />
       </button>
     </div>
-    
+
     <!-- Help text -->
     <p v-if="!clientId" class="mt-1 text-xs text-gray-500">
       Please select a client first
@@ -79,12 +79,14 @@ interface Props {
   clientId: string
   clientName: string
   modelValue?: string
+  initialContactId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: 'No contact selected',
   optional: true,
-  modelValue: ''
+  modelValue: '',
+  initialContactId: ''
 })
 
 // Events
@@ -103,6 +105,7 @@ const {
   displayValue,
   openModal,
   closeModal,
+  loadContactsOnly,
   selectExistingContact: selectFromComposable,
   saveContact,
   clearSelection: clearFromComposable
@@ -110,6 +113,12 @@ const {
 
 // Handle opening modal seguindo early return
 const handleOpenModal = async () => {
+  console.log('ContactSelector - handleOpenModal called:', {
+    clientId: props.clientId,
+    clientName: props.clientName,
+    initialContactId: props.initialContactId
+  })
+  
   // Guard clause - verificar se client está selecionado
   if (!props.clientId) {
     console.warn('Cannot open contact modal without client')
@@ -156,4 +165,18 @@ watch(() => props.clientId, (newClientId, oldClientId) => {
     clearSelection()
   }
 })
+
+// Watch for initial contact ID to set selected contact
+watch(() => [props.clientId, props.initialContactId], async ([clientId, contactId]) => {
+  if (clientId && contactId && contacts.value.length === 0) {
+    // Load contacts first if not loaded
+    await loadContactsOnly(clientId)
+    
+    // Find and select the initial contact
+    const initialContact = contacts.value.find(contact => contact.id === contactId)
+    if (initialContact) {
+      selectFromComposable(initialContact)
+    }
+  }
+}, { immediate: true })
 </script>

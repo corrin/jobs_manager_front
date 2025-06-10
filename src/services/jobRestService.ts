@@ -153,8 +153,14 @@ export class JobRestService {
    */
   async updateJob(jobId: string, data: JobUpdateData): Promise<ApiResponse> {
     try {
-      const response: AxiosResponse<ApiResponse> = await api.put(`/job/rest/jobs/${jobId}/`, data)
-      return this.handleResponse(response)
+      const response: AxiosResponse<JobData> = await api.put(`/job/rest/jobs/${jobId}/`, data)
+      
+      // Transform direct job data response to ApiResponse format
+      return {
+        success: true,
+        data: response.data,
+        message: 'Job updated successfully'
+      }
     } catch (error) {
       return this.handleError(error)
     }

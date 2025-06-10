@@ -86,7 +86,7 @@ export function useContactManagement() {
     }
 
     isLoading.value = true
-      try {
+    try {
       const response = await api.get(`/clients/rest/${clientId}/contacts/`)
       
       if (response.data && response.data.results && Array.isArray(response.data.results)) {
@@ -100,6 +100,11 @@ export function useContactManagement() {
     } finally {
       isLoading.value = false
     }
+  }
+
+  // Load contacts without opening modal
+  const loadContactsOnly = async (clientId: string) => {
+    await loadContacts(clientId)
   }
 
   // Select existing contact
@@ -226,6 +231,7 @@ export function useContactManagement() {
     openModal,
     closeModal,
     loadContacts,
+    loadContactsOnly,
     selectExistingContact,
     createNewContact,
     saveContact,

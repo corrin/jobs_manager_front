@@ -76,6 +76,7 @@ import { jobRestService } from '@/services/jobRestService'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,

@@ -12,7 +12,7 @@
         <option 
           v-for="client in clientOptions" 
           :key="client.id || client.name" 
-          :value="client.id || client.name"
+          :value="client.name"
         >
           {{ client.name }}
         </option>

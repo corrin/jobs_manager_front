@@ -276,8 +276,26 @@ const loadJobData = async () => {
 }
 
 // Handlers para eventos dos componentes
-const handleJobUpdated = (updatedJob: JobData) => {
-  jobData.value = updatedJob
+const handleJobUpdated = (updatedJobResponse: any) => {
+  console.log('JobView - handleJobUpdated called:', updatedJobResponse)
+  
+  // Check if response has the new API structure
+  if (updatedJobResponse && updatedJobResponse.success && updatedJobResponse.data) {
+    // New API structure with success/data
+    const updatedJob = updatedJobResponse.data
+    if (updatedJob && updatedJob.id) {
+      jobData.value = updatedJob
+      console.log('JobView - Job updated successfully:', updatedJob.name)
+    } else {
+      console.error('JobView - Invalid job data in response:', updatedJobResponse)
+    }
+  } else if (updatedJobResponse && updatedJobResponse.id) {
+    // Direct job data structure
+    jobData.value = updatedJobResponse
+    console.log('JobView - Job updated successfully (direct):', updatedJobResponse.name)
+  } else {
+    console.error('JobView - Invalid job data received:', updatedJobResponse)
+  }
 }
 
 const handleDataChanged = (data: any) => {

@@ -130,6 +130,7 @@
               :optional="true"
               :client-id="currentClientId"
               :client-name="currentClientName"
+              :initial-contact-id="localJobData.contact_id"
               v-model="contactDisplayValue"
               @update:selected-contact="handleContactSelected"
             />
@@ -176,6 +177,7 @@ import RichTextEditor from '@/components/RichTextEditor.vue'
 import ClientLookup from '@/components/ClientLookup.vue'
 import ContactSelector from '@/components/ContactSelector.vue'
 import type { Client, ClientContact } from '@/composables/useClientLookup'
+import { toast } from 'vue-sonner'
 import {
   Dialog,
   DialogContent,
@@ -214,9 +216,19 @@ const contactDisplayValue = ref('')
 
 // Computed properties
 const currentClientId = computed(() => {
-  return isChangingClient.value && newClientId.value 
+  const clientId = isChangingClient.value && newClientId.value 
     ? newClientId.value 
     : localJobData.value.client_id || ''
+  
+  // Debug log
+  console.log('JobSettingsModal - currentClientId computed:', {
+    isChangingClient: isChangingClient.value,
+    newClientId: newClientId.value,
+    localJobDataClientId: localJobData.value.client_id,
+    result: clientId
+  })
+  
+  return clientId
 })
 
 const currentClientName = computed(() => {
@@ -227,10 +239,26 @@ const currentClientName = computed(() => {
 
 // Watch for props changes
 watch(() => props.jobData, (newJobData) => {
+  console.log('JobSettingsModal - jobData changed:', newJobData)
+  
   if (newJobData) {
-    localJobData.value = { ...newJobData }
+    // Copy all job data, but ensure we have client_id
+    localJobData.value = { 
+      ...newJobData,
+      // If client_id is missing but we have client info, we need to get it
+      client_id: newJobData.client_id || newJobData.client?.id || ''
+    }
+    
     resetClientChangeState()
     updateContactDisplayValue()
+    
+    console.log('JobSettingsModal - localJobData updated:', {
+      client_id: localJobData.value.client_id,
+      client_name: localJobData.value.client_name,
+      contact_id: localJobData.value.contact_id,
+      contact_name: localJobData.value.contact_name,
+      full_data: localJobData.value
+    })
   }
 }, { immediate: true })
 
@@ -318,6 +346,9 @@ const handleContactSelected = (contact: ClientContact | null) => {
 const saveSettings = async () => {
   // Guard clause - validação básica
   if (!props.jobData || !localJobData.value) {
+    toast.error('Erro de validação', {
+      description: 'Dados do job não encontrados'
+    })
     return
   }
 
@@ -328,14 +359,23 @@ const saveSettings = async () => {
     const result = await jobRestService.updateJob(props.jobData.id, localJobData.value)
 
     if (result.success && result.data) {
+      toast.success('Job atualizado com sucesso!', {
+        description: `${result.data.name} foi salvo`
+      })
+      
+      // Emit with updated data
       emit('job-updated', result.data)
       closeModal()
     } else {
-      throw new Error('Failed to update job')
+      throw new Error('Failed to update job - invalid response')
     }
   } catch (error) {
     console.error('Error saving job settings:', error)
-    alert('Failed to save job settings. Please try again.')
+    
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    toast.error('Falha ao salvar job', {
+      description: `Erro: ${errorMessage}. Tente novamente.`
+    })
   } finally {
     isLoading.value = false
   }
