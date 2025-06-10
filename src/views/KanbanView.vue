@@ -7,12 +7,10 @@
         <!-- Search Section -->
         <div class="mb-2 md:mb-3 space-y-2">
           <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4">
-            <button @click="toggleAdvancedSearch"
+            <button @click="showAdvancedSearchDialog = true"
               class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-all duration-200 flex items-center flex-shrink-0">
               <Search class="mr-1.5 h-3.5 w-3.5" />
-              Advanced
-              <ChevronDown
-                :class="['ml-1.5 h-3.5 w-3.5 transition-transform', showAdvancedSearch ? 'rotate-180' : '']" />
+              Advanced Search
             </button>
 
             <div class="w-full max-w-xs sm:max-w-md">
@@ -22,67 +20,6 @@
                   class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   @input="handleSearch" />
               </div>
-            </div>
-          </div>
-
-          <!-- Advanced Search Panel -->
-          <div v-if="showAdvancedSearch"
-            class="bg-white p-4 sm:p-6 rounded-lg shadow-lg border border-gray-200 transition-all duration-300">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Job Number</label>
-                <input v-model="advancedFilters.job_number" type="text"
-                  class="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Job Name</label>
-                <input v-model="advancedFilters.name" type="text"
-                  class="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
-              </div>
-              <div>
-                <ClientDropdown id="client" label="Client" v-model="advancedFilters.client_name" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select v-model="advancedFilters.status"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                  <option value="">All Status</option>
-                  <option v-for="status in statusChoices" :key="status.key" :value="status.key">{{ status.label }}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <input v-model="advancedFilters.description" type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
-                <input v-model="advancedFilters.contact_person" type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" />
-              </div>
-              <div>
-                <StaffDropdown id="createdBy" label="Created By" v-model="advancedFilters.created_by" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
-                <select v-model="advancedFilters.paid"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                  <option value="">Any</option>
-                  <option value="true">Paid</option>
-                  <option value="false">Unpaid</option>
-                </select>
-              </div>
-            </div>
-            <div class="flex space-x-3">
-              <button @click="handleAdvancedSearch"
-                class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md transition-colors">
-                Search
-              </button>
-              <button @click="clearFilters"
-                class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-md transition-colors">
-                Clear Filters
-              </button>
             </div>
           </div>
         </div>
@@ -207,6 +144,16 @@
       @sortable-ready="handleSortableReady"
       @archive-job="handleArchiveJob"
     />
+
+    <!-- Advanced Search Dialog -->
+    <AdvancedSearchDialog
+      :is-open="showAdvancedSearchDialog"
+      :filters="advancedFilters"
+      :is-loading="isLoading"
+      @close="showAdvancedSearchDialog = false"
+      @search="handleAdvancedSearchFromDialog"
+      @clear-filters="clearFilters"
+    />
   </AppLayout>
 </template>
 
@@ -228,6 +175,7 @@ import StaffPanel from '@/components/StaffPanel.vue'
 import StaffDropdown from '@/components/StaffDropdown.vue'
 import ClientDropdown from '@/components/ClientDropdown.vue'
 import FloatingArchivedButton from '@/components/FloatingArchivedButton.vue'
+import AdvancedSearchDialog from '@/components/AdvancedSearchDialog.vue'
 import { useKanban } from '@/composables/useKanban'
 import { useDragAndDrop } from '@/composables/useDragAndDrop'
 import { useStaffDragAndDrop } from '@/composables/useStaffDragAndDrop'
@@ -270,6 +218,36 @@ const {
   reorderJob,
   handleStaffFilterChanged
 } = useKanban()
+
+// Local state for dialog
+const showAdvancedSearchDialog = ref(false)
+
+// Handle advanced search from dialog seguindo clean code principles
+const handleAdvancedSearchFromDialog = async (filters: any) => {
+  try {
+    // Delegate to existing advanced search functionality
+    Object.assign(advancedFilters.value, filters)
+    await handleAdvancedSearch()
+  } catch (error) {
+    console.error('Error performing advanced search from dialog:', error)
+  }
+}
+
+// Toggle advanced search seguindo early return pattern
+const toggleAdvancedSearchDialog = () => {
+  // Switch between panel and dialog
+  switch (showAdvancedSearch.value) {
+    case true:
+      // Close panel, open dialog
+      showAdvancedSearch.value = false
+      showAdvancedSearchDialog.value = true
+      break
+    case false:
+      // Open dialog directly
+      showAdvancedSearchDialog.value = true
+      break
+  }
+}
 
 const {
   isDragging,

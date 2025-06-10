@@ -73,38 +73,66 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Client
             </label>
-            <div class="flex space-x-2">
-              <input v-model="localJobData.client_name" type="text"
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50"
-                readonly />
-              <button @click="editClient" type="button"
-                class="px-3 py-2 border border-gray-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-600">
-                Edit
-              </button>
+            
+            <!-- Client Change Section -->
+            <div class="space-y-2">
+              <!-- Current Client Display -->
+              <div v-if="!isChangingClient" class="flex space-x-2">
+                <input v-model="localJobData.client_name" type="text"
+                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50"
+                  readonly />
+                <button @click="startClientChange" type="button"
+                  class="px-3 py-2 border border-gray-300 rounded-md text-sm bg-blue-50 hover:bg-blue-100 text-blue-600">
+                  Change
+                </button>
+                <button @click="editCurrentClient" type="button"
+                  class="px-3 py-2 border border-gray-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-600">
+                  Edit
+                </button>
+              </div>
+              
+              <!-- Client Selection Mode -->
+              <div v-else class="space-y-2">
+                <ClientLookup
+                  id="clientChange"
+                  label=""
+                  placeholder="Search for a new client..."
+                  :required="false"
+                  v-model="newClientName"
+                  @update:selected-id="handleNewClientSelected"
+                  @update:selected-client="handleClientLookupSelected"
+                />
+                
+                <div class="flex space-x-2">
+                  <button @click="confirmClientChange" type="button"
+                    class="px-3 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
+                    :disabled="!newClientId">
+                    Confirm Change
+                  </button>
+                  <button @click="cancelClientChange" type="button"
+                    class="px-3 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+              
+              <p class="text-xs text-gray-500">
+                {{ isChangingClient ? 'Select a new client for this job' : 'Change or edit client information' }}
+              </p>
             </div>
-            <p class="text-xs text-gray-500 mt-1">Client cannot be changed, but you can edit client details</p>
           </div>
 
           <!-- Contact Information -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Contact
-            </label>
-            <div class="flex space-x-2">
-              <input v-model="contactDisplayName" type="text"
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50"
-                readonly
-                placeholder="No contact selected" />
-              <button @click="showContactModal = true" type="button"
-                class="px-3 py-2 border border-gray-300 rounded-md text-sm bg-blue-50 hover:bg-blue-100 text-blue-600">
-                Select
-              </button>
-              <button @click="createNewContact" type="button"
-                class="px-3 py-2 border border-gray-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-600">
-                New
-              </button>
-            </div>
-            <p class="text-xs text-gray-500 mt-1">Select existing contact or create a new one</p>
+            <ContactSelector
+              id="contact"
+              label="Contact"
+              :optional="true"
+              :client-id="currentClientId"
+              :client-name="currentClientName"
+              v-model="contactDisplayValue"
+              @update:selected-contact="handleContactSelected"
+            />
           </div>
 
           <!-- Order Number -->
@@ -138,15 +166,6 @@
       </DialogFooter>
     </DialogContent>
   </Dialog>
-
-  <!-- Contact Selection Modal -->
-  <ContactSelectionModal
-    v-if="showContactModal && props.jobData?.client_id"
-    :client-id="props.jobData.client_id"
-    :is-open="showContactModal"
-    @close="showContactModal = false"
-    @contact-selected="handleContactSelected"
-  />
 </template>
 
 <script setup lang="ts">
@@ -154,7 +173,9 @@ import { ref, watch, computed } from 'vue'
 import type { JobData } from '@/services/jobRestService'
 import { jobRestService } from '@/services/jobRestService'
 import RichTextEditor from '@/components/RichTextEditor.vue'
-import ContactSelectionModal from '@/components/ContactSelectionModal.vue'
+import ClientLookup from '@/components/ClientLookup.vue'
+import ContactSelector from '@/components/ContactSelector.vue'
+import type { Client, ClientContact } from '@/composables/useClientLookup'
 import {
   Dialog,
   DialogContent,
@@ -178,58 +199,131 @@ const emit = defineEmits<{
   'job-updated': [job: JobData]
 }>()
 
-// Local state
+// Local state seguindo clean code principles
 const localJobData = ref<Partial<JobData>>({})
-const showContactModal = ref(false)
 const isLoading = ref(false)
 
-// Computed display name for contact
-const contactDisplayName = computed(() => {
-  if (localJobData.value.contact_name) {
-    return localJobData.value.contact_name
-  }
-  return ''
+// Client change state
+const isChangingClient = ref(false)
+const newClientId = ref('')
+const newClientName = ref('')
+const selectedNewClient = ref<Client | null>(null)
+
+// Contact display value for ContactSelector
+const contactDisplayValue = ref('')
+
+// Computed properties
+const currentClientId = computed(() => {
+  return isChangingClient.value && newClientId.value 
+    ? newClientId.value 
+    : localJobData.value.client_id || ''
+})
+
+const currentClientName = computed(() => {
+  return isChangingClient.value && newClientName.value 
+    ? newClientName.value 
+    : localJobData.value.client_name || ''
 })
 
 // Watch for props changes
 watch(() => props.jobData, (newJobData) => {
   if (newJobData) {
     localJobData.value = { ...newJobData }
+    resetClientChangeState()
+    updateContactDisplayValue()
   }
 }, { immediate: true })
 
-// Methods
+// Methods seguindo SRP e early return patterns
+const resetClientChangeState = () => {
+  isChangingClient.value = false
+  newClientId.value = ''
+  newClientName.value = ''
+  selectedNewClient.value = null
+}
+
+const updateContactDisplayValue = () => {
+  contactDisplayValue.value = localJobData.value.contact_name || ''
+}
+
 const closeModal = () => {
   emit('close')
 }
 
-const handleContactSelected = (contact: any) => {
-  localJobData.value.contact_id = contact.id
-  localJobData.value.contact_name = contact.name
-  showContactModal.value = false
+// Client change methods
+const startClientChange = () => {
+  isChangingClient.value = true
 }
 
-const editClient = () => {
-  // TODO: Implementar edição de cliente
-  // Por enquanto, abrir uma nova janela para editar o cliente
-  if (props.jobData?.client_id) {
-    const url = `/clients/${props.jobData.client_id}/edit`
-    window.open(url, '_blank')
+const cancelClientChange = () => {
+  resetClientChangeState()
+}
+
+const handleNewClientSelected = (clientId: string) => {
+  newClientId.value = clientId
+}
+
+const handleClientLookupSelected = (client: Client | null) => {
+  selectedNewClient.value = client
+  
+  if (client) {
+    newClientName.value = client.name
   }
 }
 
-const createNewContact = () => {
-  // TODO: Implementar criação de novo contato
-  // Por enquanto, abrir modal de seleção em modo de criação
-  showContactModal.value = true
+const confirmClientChange = () => {
+  // Guard clause - verificar se novo cliente foi selecionado
+  if (!newClientId.value || !selectedNewClient.value) {
+    console.warn('No new client selected')
+    return
+  }
+
+  // Update job data com novo cliente
+  localJobData.value.client_id = newClientId.value
+  localJobData.value.client_name = selectedNewClient.value.name
+  
+  // Clear contact quando client muda
+  localJobData.value.contact_id = undefined
+  localJobData.value.contact_name = undefined
+  contactDisplayValue.value = ''
+  
+  resetClientChangeState()
+}
+
+const editCurrentClient = () => {
+  // Guard clause - verificar se há cliente atual
+  if (!props.jobData?.client_id) {
+    console.warn('No current client to edit')
+    return
+  }
+
+  // Abrir edição de cliente em nova janela
+  const url = `/clients/${props.jobData.client_id}/edit`
+  window.open(url, '_blank')
+}
+
+// Contact methods
+const handleContactSelected = (contact: ClientContact | null) => {
+  if (contact) {
+    localJobData.value.contact_id = contact.id
+    localJobData.value.contact_name = contact.name
+    contactDisplayValue.value = contact.name
+  } else {
+    localJobData.value.contact_id = undefined
+    localJobData.value.contact_name = undefined
+    contactDisplayValue.value = ''
+  }
 }
 
 const saveSettings = async () => {
-  if (!props.jobData || !localJobData.value) return
+  // Guard clause - validação básica
+  if (!props.jobData || !localJobData.value) {
+    return
+  }
+
+  isLoading.value = true
 
   try {
-    isLoading.value = true
-
     // Call the job update API
     const result = await jobRestService.updateJob(props.jobData.id, localJobData.value)
 

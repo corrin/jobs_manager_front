@@ -90,6 +90,14 @@
       <div class="text-sm font-medium text-blue-900">{{ selectedClient.name }}</div>
       <div v-if="selectedClient.email" class="text-xs text-blue-700">{{ selectedClient.email }}</div>
     </div>
+
+    <!-- Create Client Modal -->
+    <CreateClientModal
+      :is-open="showCreateModal"
+      :initial-name="searchQuery"
+      @update:is-open="showCreateModal = $event"
+      @client-created="handleClientCreated"
+    />
   </div>
 </template>
 
@@ -97,6 +105,7 @@
 import { ref, watch } from 'vue'
 import { Plus, CheckCircle, XCircle } from 'lucide-vue-next'
 import { useClientLookup } from '@/composables/useClientLookup'
+import CreateClientModal from '@/components/CreateClientModal.vue'
 import type { Client } from '@/composables/useClientLookup'
 
 // Props seguindo princípios de clean code
@@ -134,6 +143,9 @@ const {
   createNewClient,
   hideSuggestions
 } = useClientLookup()
+
+// Modal state
+const showCreateModal = ref(false)
 
 // Local state for blur delay
 const blurTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
@@ -182,8 +194,14 @@ const selectClient = (client: Client) => {
 
 // Handle create new client
 const handleCreateNew = () => {
-  createNewClient(searchQuery.value)
+  showCreateModal.value = true
   hideSuggestions()
+}
+
+// Handle client created from modal
+const handleClientCreated = (client: Client) => {
+  // Select the newly created client
+  selectClient(client)
 }
 
 // Watch for external modelValue changes

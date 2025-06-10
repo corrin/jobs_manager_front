@@ -9,9 +9,31 @@ export interface Client {
   contact_person?: string
 }
 
+export interface CreateClientData {
+  name: string
+  email?: string
+  phone?: string
+  address?: string
+  is_account_customer?: boolean
+}
+
+export interface CreateClientResponse {
+  success: boolean
+  client?: {
+    id: string
+    name: string
+    email: string
+    phone: string
+    address: string
+    is_account_customer: boolean
+    xero_contact_id: string
+  }
+  error?: string
+  message?: string
+}
+
 export class ClientService {
   private static instance: ClientService
-  private baseUrl = '/clients/api'
 
   static getInstance(): ClientService {
     if (!ClientService.instance) {
@@ -19,12 +41,35 @@ export class ClientService {
     }
     return ClientService.instance
   }
+
   /**
-   * Get all clients
+   * Create a new client
+   */
+  async createClient(data: CreateClientData): Promise<CreateClientResponse> {
+    try {
+      const response = await api.post('/clients/rest/create/', data)
+      return response.data
+    } catch (error: any) {
+      console.error('Error creating client:', error)
+      
+      // Handle API error response
+      if (error.response?.data) {
+        return {
+          success: false,
+          error: error.response.data.error || 'Failed to create client'
+        }
+      }
+      
+      throw new Error('Failed to create client')
+    }
+  }
+
+  /**
+   * Get all clients - usando endpoint REST correto
    */
   async getAllClients(): Promise<Client[]> {
     try {
-      const response = await api.get(`${this.baseUrl}/all/`)
+      const response = await api.get('/clients/rest/all/')
       
       return Array.isArray(response.data) ? response.data : []
     } catch (error) {
@@ -39,7 +84,9 @@ export class ClientService {
   searchClients(clientList: Client[], searchTerm: string): Client[] {
     if (!searchTerm.trim()) {
       return clientList
-    }    const term = searchTerm.toLowerCase()
+    }
+    
+    const term = searchTerm.toLowerCase()
     return clientList.filter(client => 
       client.name.toLowerCase().includes(term) ||
       client.email?.toLowerCase().includes(term) ||

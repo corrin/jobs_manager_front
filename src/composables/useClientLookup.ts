@@ -141,36 +141,14 @@ export function useClientLookup() {
     }
   }
 
-  // Create new client (opens popup similar to original)
+  // Create new client - agora usando modal em vez de popup
   const createNewClient = (clientName: string) => {
-    const currentClientName = clientName.trim()
-    const newWindow = window.open(
-      `/clients/add/?name=${encodeURIComponent(currentClientName)}`,
-      '_blank',
-      'width=800,height=600'
-    )
+    // Esta função será chamada pelo componente que usa o composable
+    // O componente deve implementar a lógica do modal
+    console.log('Request to create new client:', clientName.trim())
     
-    // Guard clause se popup foi bloqueado
-    if (!newWindow) {
-      console.error('Popup blocked. Please allow popups for this site.')
-      return
-    }
-
-    // Listen for client creation message
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'CLIENT_SELECTED') {
-        selectClient({
-          id: event.data.clientId,
-          name: event.data.clientName,
-          xero_contact_id: event.data.clientXeroId
-        })
-        
-        // Cleanup listener
-        window.removeEventListener('message', handleMessage)
-      }
-    }
-    
-    window.addEventListener('message', handleMessage)
+    // Return the name for the component to handle via modal
+    return clientName.trim()
   }
 
   // Hide suggestions
