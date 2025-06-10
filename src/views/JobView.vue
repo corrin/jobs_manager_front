@@ -279,23 +279,38 @@ const loadJobData = async () => {
 const handleJobUpdated = (updatedJobResponse: any) => {
   console.log('JobView - handleJobUpdated called:', updatedJobResponse)
   
-  // Check if response has the new API structure
-  if (updatedJobResponse && updatedJobResponse.success && updatedJobResponse.data) {
+  // Guard clause - check if response exists
+  if (!updatedJobResponse) {
+    console.error('JobView - No data in handleJobUpdated')
+    return
+  }
+  
+  // Guard clause - extract job data based on response structure
+  let updatedJob: JobData | null = null
+  
+  if (updatedJobResponse.success && updatedJobResponse.data) {
     // New API structure with success/data
-    const updatedJob = updatedJobResponse.data
-    if (updatedJob && updatedJob.id) {
-      jobData.value = updatedJob
-      console.log('JobView - Job updated successfully:', updatedJob.name)
-    } else {
-      console.error('JobView - Invalid job data in response:', updatedJobResponse)
-    }
-  } else if (updatedJobResponse && updatedJobResponse.id) {
+    updatedJob = updatedJobResponse.data
+  } else if (updatedJobResponse.id) {
     // Direct job data structure
-    jobData.value = updatedJobResponse
-    console.log('JobView - Job updated successfully (direct):', updatedJobResponse.name)
+    updatedJob = updatedJobResponse
   } else {
     console.error('JobView - Invalid job data received:', updatedJobResponse)
+    return
   }
+  
+  // Guard clause - validate job data
+  if (!updatedJob || !updatedJob.id) {
+    console.error('JobView - Invalid job data extracted:', updatedJob)
+    return
+  }
+  
+  // Update the reactive jobData
+  jobData.value = { ...jobData.value, ...updatedJob }
+  console.log('JobView - Job data updated:', updatedJob.name)
+  
+  // Reload job events to show the update
+  loadJobEvents()
 }
 
 const handleDataChanged = (data: any) => {

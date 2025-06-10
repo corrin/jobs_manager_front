@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="isOpen" @update:open="(open) => !open && closeModal()">
-    <DialogContent class="sm:max-w-2xl">
+    <DialogContent class="sm:max-w-2xl p-10">
       <DialogHeader>
         <div class="flex items-center justify-between">
           <DialogTitle>Job History</DialogTitle>
@@ -48,7 +48,7 @@
                 </p>
               </div>
               <span class="px-2 py-1 text-xs rounded" :class="getEventTypeClass(event.event_type)">
-                {{ event.event_type }}
+                {{ getEventTypeLabel(event.event_type) }}
               </span>
             </div>
           </div>
@@ -135,14 +135,56 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleString()
 }
 
+const getEventTypeLabel = (eventType: string) => {
+  switch (eventType) {
+    case 'job_created':
+      return 'Created'
+    case 'job_updated':
+      return 'Updated'
+    case 'setting_changed':
+    case 'complex_mode_changed':
+      return 'Setting Changed'
+    case 'status_changed':
+      return 'Status Changed'
+    case 'quote_created':
+    case 'linked_quote_created':
+      return 'Quote Created'
+    case 'manual_note':
+      return 'Note'
+    case 'file_upload':
+      return 'File Upload'
+    case 'email_sent':
+      return 'Email Sent'
+    case 'note':
+      return 'Note'
+    case 'created':
+      return 'Created'
+    case 'updated':
+      return 'Updated'
+    case 'status_change':
+      return 'Status Change'
+    default:
+      return eventType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+  }
+}
+
 const getEventTypeClass = (eventType: string) => {
   switch (eventType) {
+    case 'job_created':
     case 'created':
       return 'bg-green-100 text-green-800'
+    case 'job_updated':
     case 'updated':
       return 'bg-blue-100 text-blue-800'
+    case 'setting_changed':
+    case 'complex_mode_changed':
+    case 'status_changed':
     case 'status_change':
       return 'bg-yellow-100 text-yellow-800'
+    case 'quote_created':
+    case 'linked_quote_created':
+      return 'bg-teal-100 text-teal-800'
+    case 'manual_note':
     case 'note':
       return 'bg-purple-100 text-purple-800'
     case 'file_upload':

@@ -194,21 +194,6 @@ export class JobRestService {
   }
 
   /**
-   * Alterna metodologia de pricing
-   */
-  async togglePricingMethodology(jobId: string, methodology: string): Promise<ApiResponse> {
-    try {
-      const response: AxiosResponse<ApiResponse> = await api.post('/job/rest/jobs/toggle-pricing-methodology/', {
-        job_id: jobId,
-        pricing_methodology: methodology
-      })
-      return this.handleResponse(response)
-    } catch (error) {
-      return this.handleError(error)
-    }
-  }
-
-  /**
    * Adiciona um evento ao Job
    */
   async addJobEvent(jobId: string, description: string): Promise<ApiResponse> {
