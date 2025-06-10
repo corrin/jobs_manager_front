@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="flex flex-col h-screen max-h-screen overflow-hidden">
+    <div class="flex flex-col h-full">
       <!-- Header com informações básicas do job -->
       <div class="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4">
         <div class="flex items-center justify-between">
@@ -21,31 +21,63 @@
             </div>
           </div>
 
-          <!-- Status Badge -->
-          <div v-if="jobData" class="flex items-center space-x-2">
-            <Badge
-              :variant="getStatusVariant(jobData.status)"
-              class="text-xs"
-            >
-              {{ getStatusLabel(jobData.status) }}
-            </Badge>
+          <div class="flex items-center space-x-4">
+            <!-- Action Buttons -->
+            <div class="flex space-x-2">
+              <DraggableButton
+                variant="ghost"
+                @click="showSettingsModal = true"
+                class="text-blue-600 hover:bg-blue-50"
+                size="sm"
+              >
+                <Settings class="w-4 h-4" />
+              </DraggableButton>
+
+              <DraggableButton
+                variant="ghost"
+                @click="showWorkflowModal = true"
+                class="text-green-600 hover:bg-green-50"
+                size="sm"
+              >
+                <Wrench class="w-4 h-4" />
+              </DraggableButton>
+
+              <DraggableButton
+                variant="ghost"
+                @click="showHistoryModal = true"
+                class="text-purple-600 hover:bg-purple-50"
+                size="sm"
+              >
+                <BookOpen class="w-4 h-4" />
+              </DraggableButton>
+
+              <DraggableButton
+                variant="ghost"
+                @click="showAttachmentsModal = true"
+                class="text-orange-600 hover:bg-orange-50"
+                size="sm"
+              >
+                <Paperclip class="w-4 h-4" />
+              </DraggableButton>
+            </div>
+
+            <!-- Status Badge -->
+            <div v-if="jobData" class="flex items-center space-x-2">
+              <Badge
+                :variant="getStatusVariant(jobData.status)"
+                class="text-xs"
+              >
+                {{ getStatusLabel(jobData.status) }}
+              </Badge>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Barra Flutuante de Ações -->
-      <FloatingActionBar
-        :job-id="jobId"
-        @settings-click="showSettingsModal = true"
-        @workflow-click="showWorkflowModal = true"
-        @history-click="showHistoryModal = true"
-        @attachments-click="showAttachmentsModal = true"
-      />
-
       <!-- Conteúdo Principal -->
-      <div class="flex-1 overflow-hidden flex flex-col">
+      <div class="flex-1 flex flex-col min-h-0">
         <!-- Grids de Dados -->
-        <div class="flex-1 p-6 overflow-y-auto">
+        <div class="flex-1 p-6 overflow-y-auto min-h-0">
           <JobPricingGrids
             v-if="jobData"
             :job-data="jobData"
@@ -55,14 +87,14 @@
           />
         </div>
 
-        <!-- Rodapé com Ações Principais -->
-        <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-6 py-4">
-          <div class="flex items-center justify-between">
-            <div class="flex space-x-3">
+        <!-- Rodapé com Ações Principais - Sempre visível -->
+        <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-6 py-4 mt-auto">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <DraggableButton
                 variant="primary"
                 @click="printJobSheet"
-                class="bg-blue-600 hover:bg-blue-700"
+                class="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
               >
                 <Printer class="w-4 h-4 mr-2" />
                 Print Job Sheet
@@ -71,7 +103,7 @@
               <DraggableButton
                 variant="destructive"
                 @click="confirmDeleteJob"
-                class="bg-red-600 hover:bg-red-700"
+                class="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
               >
                 <Trash2 class="w-4 h-4 mr-2" />
                 Delete Job
@@ -81,7 +113,7 @@
             <DraggableButton
               variant="secondary"
               @click="navigateBack"
-              class="bg-gray-600 hover:bg-gray-700"
+              class="bg-gray-600 hover:bg-gray-700 w-full sm:w-auto"
             >
               <X class="w-4 h-4 mr-2" />
               Close
@@ -92,14 +124,12 @@
 
       <!-- Modais -->
       <JobSettingsModal
-        v-if="showSettingsModal"
         :job-data="jobData"
         :is-open="showSettingsModal"
         @close="showSettingsModal = false"
         @job-updated="handleJobUpdated"
       />
       <JobWorkflowModal
-        v-if="showWorkflowModal"
         :job-data="jobData"
         :is-open="showWorkflowModal"
         @close="showWorkflowModal = false"
@@ -107,7 +137,6 @@
       />
 
       <JobHistoryModal
-        v-if="showHistoryModal"
         :job-id="jobId"
         :events="jobEvents"
         :is-open="showHistoryModal"
@@ -116,7 +145,6 @@
       />
 
       <JobAttachmentsModal
-        v-if="showAttachmentsModal"
         :job-id="jobId"
         :is-open="showAttachmentsModal"
         @close="showAttachmentsModal = false"
@@ -134,12 +162,15 @@ import {
   ArrowLeft,
   Printer,
   Trash2,
-  X
+  X,
+  Settings,
+  Wrench,
+  BookOpen,
+  Paperclip
 } from 'lucide-vue-next'
 
 import AppLayout from '@/components/AppLayout.vue'
 import Badge from '@/components/ui/badge/Badge.vue'
-import FloatingActionBar from '@/components/job/FloatingActionBar.vue'
 import JobPricingGrids from '@/components/job/JobPricingGrids.vue'
 import JobSettingsModal from '@/components/job/JobSettingsModal.vue'
 import JobWorkflowModal from '@/components/job/JobWorkflowModal.vue'

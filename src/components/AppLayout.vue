@@ -1,10 +1,12 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="h-screen bg-gray-50 flex flex-col">
     <!-- Fixed Navbar -->
-    <AppNavbar />
+    <div class="flex-shrink-0">
+      <AppNavbar />
+    </div>
     
-    <!-- Main Content with top padding to account for fixed navbar -->
-    <main class="pt-12 md:pt-8 lg:pt-16 xl:pt-20">
+    <!-- Main Content with flex-1 to take remaining space -->
+    <main class="flex-1 pt-12 md:pt-8 lg:pt-16 xl:pt-20 overflow-hidden">
       <slot />
     </main>
   </div>

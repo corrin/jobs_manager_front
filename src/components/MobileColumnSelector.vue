@@ -1,20 +1,16 @@
 <template>
-  <div 
-    v-if="showSelector" 
-    class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
-    @click.self="$emit('cancel')"
-  >
-    <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">      <div class="text-center mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">
-          Move Job
-        </h3>
-        <div v-if="selectedJob" class="text-sm text-gray-600">
+  <Dialog :open="showSelector" @update:open="(open) => !open && $emit('cancel')">
+    <DialogContent class="sm:max-w-sm">
+      <DialogHeader>
+        <DialogTitle>Move Job</DialogTitle>
+        <DialogDescription v-if="selectedJob" class="text-center">
           <div class="font-medium">#{{ selectedJob.job_number }}</div>
           <div class="truncate">{{ selectedJob.name }}</div>
-        </div>
-      </div>
+        </DialogDescription>
+      </DialogHeader>
       
-      <div class="space-y-3 mb-6">        <button
+      <div class="space-y-3">
+        <button
           v-for="status in availableStatuses"
           :key="status.key"
           @click="$emit('column-selected', status.key)"
@@ -26,7 +22,8 @@
           :disabled="status.key === currentStatus"
         >
           <div class="flex items-center justify-between">
-            <span class="font-medium text-gray-900">{{ status.label }}</span>            <span 
+            <span class="font-medium text-gray-900">{{ status.label }}</span>
+            <span 
               v-if="status.key === currentStatus" 
               class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded"
             >
@@ -36,19 +33,28 @@
         </button>
       </div>
       
-      <div class="flex gap-3">        <button
+      <DialogFooter>
+        <button
           @click="$emit('cancel')"
           class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
         >
           Cancel
         </button>
-      </div>
-    </div>
-  </div>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import type { Job, JobStatus } from '@/types'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface ColumnSelectorProps {
   showSelector: boolean

@@ -1,12 +1,14 @@
 <template>
-  <div>    <!-- Botão Flutuante Movimentável -->
+  <div>
+    <!-- Botão Flutuante Movimentável -->
     <div
       ref="draggableButton"
       :style="{ left: position.x + 'px', top: position.y + 'px' }"
       class="fixed z-[100]"
       @mousedown="startDrag"
       @touchstart.passive="handleTouchStart"
-    >      <button
+    >
+      <button
         @click="handleButtonClick"
         @dragover.prevent="handleDragOver"
         @dragleave="handleDragLeave"
@@ -35,7 +37,9 @@
           class="absolute inset-0 rounded-full border-2 border-white border-dashed animate-ping"
         ></div>
       </button>
-    </div>    <!-- Overlay com Grid de Jobs Arquivados -->
+    </div>
+
+    <!-- Overlay com Grid de Jobs Arquivados -->
     <div
       v-if="showArchived"
       class="fixed inset-0 z-40 bg-gray-900 bg-opacity-10"
@@ -62,13 +66,16 @@
           >
             <X class="h-6 w-6" />
           </button>
-        </div>        <!-- Grid de Jobs Arquivados com Scroll -->
+        </div>
+
+        <!-- Grid de Jobs Arquivados com Scroll -->
         <div class="p-4 h-full overflow-y-auto">
           <div
             ref="archivedJobsGrid"
             data-status="archived"
             class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 h-fit"
-          >            <div
+          >
+            <div
               v-for="job in archivedJobs"
               :key="job.id"
               :data-id="job.id"

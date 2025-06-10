@@ -1,170 +1,143 @@
 <template>
-  <div
-    v-if="isOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center"
-    @click.self="$emit('close')"
-  >
-    <!-- Backdrop -->
-    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-    
-    <!-- Modal -->
-    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
-      <!-- Header -->
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900">
-          Mover Job #{{ jobNumber }}
-        </h3>
+  <Dialog :open="isOpen" @update:open="(open) => !open && $emit('close')">
+    <DialogContent class="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>Mover Job #{{ jobNumber }}</DialogTitle>
+        <DialogDescription>
+          Selecione o novo status para este job:
+        </DialogDescription>
+      </DialogHeader>
+
+      <div class="space-y-2">
         <button
-          @click="$emit('close')"
-          class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          v-for="status in availableStatuses"
+          :key="status.value"
+          @click="selectStatus(status.value)"
+          class="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 flex items-center justify-between group"
+          :class="{
+            'border-blue-400 bg-blue-50': selectedStatus === status.value
+          }"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          <div class="flex items-center space-x-3">
+            <div
+              class="w-3 h-3 rounded-full"
+              :class="status.colorClass"
+            ></div>
+            <div>
+              <div class="font-medium text-gray-900">{{ status.label }}</div>
+              <div class="text-xs text-gray-500">{{ status.description }}</div>
+            </div>
+          </div>
+
+          <svg
+            v-if="selectedStatus === status.value"
+            class="w-5 h-5 text-blue-600"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
           </svg>
         </button>
       </div>
-      
-      <!-- Content -->
-      <div class="px-6 py-4">
-        <p class="text-sm text-gray-600 mb-4">
-          Selecione o novo status para este job:
-        </p>
-        
-        <div class="space-y-2">
-          <button
-            v-for="status in availableStatuses"
-            :key="status.value"
-            @click="selectStatus(status.value)"
-            class="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 flex items-center justify-between group"
-            :class="{
-              'border-blue-400 bg-blue-50': selectedStatus === status.value
-            }"
-          >
-            <div class="flex items-center space-x-3">
-              <div 
-                class="w-3 h-3 rounded-full"
-                :class="status.colorClass"
-              ></div>
-              <div>
-                <div class="font-medium text-gray-900">{{ status.label }}</div>
-                <div class="text-xs text-gray-500">{{ status.description }}</div>
-              </div>
-            </div>
-            
-            <svg 
-              v-if="selectedStatus === status.value"
-              class="w-5 h-5 text-blue-600" 
-              fill="currentColor" 
-              viewBox="0 0 20 20"
-            >
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      
-      <!-- Footer -->
-      <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+
+      <DialogFooter>
         <button
           @click="$emit('close')"
-          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
           Cancelar
         </button>
         <button
           @click="confirmMove"
-          :disabled="!selectedStatus"
-          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          :disabled="!selectedStatus || isLoading"
+          class="ml-3 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Mover Job
+          {{ isLoading ? 'Movendo...' : 'Confirmar' }}
         </button>
-      </div>
-    </div>
-  </div>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
-interface MoveJobModalProps {
+// Props
+interface Props {
   isOpen: boolean
   jobId: string | null
-  jobNumber?: string
-  currentStatus?: string
+  jobNumber: string
+  currentStatus: string
 }
 
-interface MoveJobModalEmits {
-  (e: 'close'): void
-  (e: 'move', payload: { jobId: string, newStatus: string }): void
-}
+const props = defineProps<Props>()
 
-const props = withDefaults(defineProps<MoveJobModalProps>(), {
-  jobNumber: '',
-  currentStatus: ''
-})
+// Events
+const emit = defineEmits<{
+  close: []
+  move: [jobId: string, newStatus: string]
+}>()
 
-const emit = defineEmits<MoveJobModalEmits>()
-
+// Local state
 const selectedStatus = ref<string>('')
+const isLoading = ref(false)
 
-const statusOptions = [
+// Available statuses (could be moved to a composable or store)
+const availableStatuses = [
   {
     value: 'pending',
-    label: 'Pendente',
-    description: 'Aguardando início',
-    colorClass: 'bg-yellow-400'
+    label: 'Pending',
+    description: 'Job is waiting to be started',
+    colorClass: 'bg-gray-400'
   },
   {
-    value: 'in_progress', 
-    label: 'Em Progresso',
-    description: 'Trabalho em andamento',
-    colorClass: 'bg-blue-400'
+    value: 'in_progress',
+    label: 'In Progress',
+    description: 'Job is currently being worked on',
+    colorClass: 'bg-blue-500'
   },
   {
     value: 'review',
-    label: 'Revisão',
-    description: 'Aguardando aprovação',
-    colorClass: 'bg-purple-400'
+    label: 'Review',
+    description: 'Job is ready for review',
+    colorClass: 'bg-yellow-500'
   },
   {
     value: 'completed',
-    label: 'Concluído',
-    description: 'Trabalho finalizado',
-    colorClass: 'bg-green-400'
+    label: 'Completed',
+    description: 'Job has been completed',
+    colorClass: 'bg-green-500'
   },
   {
     value: 'archived',
-    label: 'Arquivado',
-    description: 'Job arquivado',
-    colorClass: 'bg-gray-400'
+    label: 'Archived',
+    description: 'Job has been archived',
+    colorClass: 'bg-gray-600'
   }
-]
+].filter(status => status.value !== props.currentStatus)
 
-const availableStatuses = computed(() => {
-  return statusOptions.filter(status => status.value !== props.currentStatus)
-})
-
+// Methods
 const selectStatus = (status: string) => {
   selectedStatus.value = status
 }
 
 const confirmMove = () => {
-  if (selectedStatus.value && props.jobId) {
-    emit('move', {
-      jobId: props.jobId,
-      newStatus: selectedStatus.value
-    })
-    
-    // Reset selection
-    selectedStatus.value = ''
-  }
-}
+  if (!selectedStatus.value || !props.jobId) return
 
-// Reset selection when modal closes
-const closeModal = () => {
-  selectedStatus.value = ''
-  emit('close')
-}
+  isLoading.value = true
+  emit('move', props.jobId, selectedStatus.value)
 
-// Watch for modal open/close to reset state
+  // Reset loading state after a short delay (the parent should handle the actual loading)
+  setTimeout(() => {
+    isLoading.value = false
+  }, 1000)
+}
 </script>

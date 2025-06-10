@@ -86,25 +86,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Summary Section -->
-    <div class="bg-gray-50 rounded-lg p-4">
-      <h3 class="text-lg font-semibold text-gray-900 mb-3">Project Summary</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="text-center">
-          <div class="text-2xl font-bold text-blue-600">${{ formatCurrency(estimates.total) }}</div>
-          <div class="text-sm text-gray-600">Estimated</div>
-        </div>
-        <div class="text-center">
-          <div class="text-2xl font-bold text-green-600">${{ formatCurrency(quotes.total) }}</div>
-          <div class="text-sm text-gray-600">Quoted</div>
-        </div>
-        <div class="text-center">
-          <div class="text-2xl font-bold text-purple-600">${{ formatCurrency(reality.total) }}</div>
-          <div class="text-sm text-gray-600">Actual</div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
