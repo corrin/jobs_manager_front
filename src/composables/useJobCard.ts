@@ -6,7 +6,12 @@ interface StatusConfig {
   borderClass: string
 }
 
-export function useJobCard(job: Job, emit: (e: 'click', job: Job) => void) {
+export function useJobCard(
+  job: Job, 
+  emit: (e: 'click', job: Job) => void,
+  emitMovement?: (e: 'job-selected-for-movement', job: Job) => void,
+  isMovementModeActive?: boolean
+) {
   const statusConfig = computed((): StatusConfig => {
     const configs: Record<string, StatusConfig> = {
       pending: {
@@ -61,7 +66,11 @@ export function useJobCard(job: Job, emit: (e: 'click', job: Job) => void) {
   }
 
   const handleClick = (): void => {
-    emit('click', job)
+    if (isMovementModeActive && emitMovement) {
+      emitMovement('job-selected-for-movement', job)
+    } else {
+      emit('click', job)
+    }
   }
 
   return {

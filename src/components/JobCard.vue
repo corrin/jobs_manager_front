@@ -4,11 +4,20 @@
     :class="{
       'cursor-grabbing': isDragging,
       'opacity-50': isDragging,
-      'shadow-sm': !isDragging
+      'shadow-sm': !isDragging,
+      'ring-2 ring-blue-500 ring-opacity-50 bg-blue-50': isMovementModeActive && isJobSelectedForMovement,
+      'border-blue-400 hover:border-blue-500': isMovementModeActive && !isJobSelectedForMovement,
+      'cursor-pointer': isMovementModeActive
     }"
     :data-id="job.id"
     @click="handleClick"
   >
+    <!-- Movement Mode Indicator -->
+    <div 
+      v-if="isMovementModeActive"
+      class="absolute top-1 right-1 w-3 h-3 rounded-full transition-all duration-200"
+      :class="isJobSelectedForMovement ? 'bg-blue-500' : 'bg-blue-300 opacity-60'"
+    ></div>
     <div class="flex justify-between items-center mb-1">
       <span class="job-number text-xs font-semibold text-blue-600">#{{ job.job_number }}</span>
       <span :class="['w-2 h-2 rounded-full', job.paid ? 'bg-green-500' : 'bg-red-500']"></span>
@@ -60,21 +69,31 @@ interface JobCardProps {
   job: Job
   isDragging?: boolean
   isStaffDragTarget?: boolean
+  isMovementModeActive?: boolean
+  isJobSelectedForMovement?: boolean
 }
 
 interface JobCardEmits {
   (e: 'click', job: Job): void
   (e: 'job-ready', payload: { jobId: string, element: HTMLElement }): void
+  (e: 'job-selected-for-movement', job: Job): void
 }
 
 const props = withDefaults(defineProps<JobCardProps>(), {
   isDragging: false,
-  isStaffDragTarget: false
+  isStaffDragTarget: false,
+  isMovementModeActive: false,
+  isJobSelectedForMovement: false
 })
 const emit = defineEmits<JobCardEmits>()
 
 const jobStaffContainerRef = ref<HTMLElement>()
-const { handleClick } = useJobCard(props.job, emit)
+const { handleClick } = useJobCard(
+  props.job, 
+  (e, job) => emit('click', job),
+  (e, job) => emit('job-selected-for-movement', job),
+  props.isMovementModeActive
+)
 
 onMounted(() => {
   if (jobStaffContainerRef.value) {

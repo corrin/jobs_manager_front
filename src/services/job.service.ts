@@ -56,7 +56,7 @@ export class JobService {
 
   async getAllJobs(): Promise<{ activeJobs: Job[], archivedJobs: Job[], totalArchived: number }> {
     try {
-      const response = await api.get('/api/jobs/fetch-all/')
+      const response = await api.get('/job/api/jobs/fetch-all/')
       const data = this.handleApiResponse<AllJobsApiResponse>(
         response,
         AllJobsApiResponseSchema
@@ -81,7 +81,7 @@ export class JobService {
       }
 
       const response = await api.get(
-        `/api/jobs/fetch/${status}/?${params.toString()}`
+        `/job/api/jobs/fetch/${status}/?${params.toString()}`
       )
 
       return this.handleApiResponse<JobsApiResponse>(response, JobsApiResponseSchema)
@@ -93,7 +93,7 @@ export class JobService {
 
   async getStatusChoices(): Promise<StatusApiResponse> {
     try {
-      const response = await api.get('/api/jobs/status-values/')
+      const response = await api.get('/job/api/jobs/status-values/')
       return this.handleApiResponse<StatusApiResponse>(response, StatusApiResponseSchema)
     } catch (error) {
       console.error('Error fetching status choices:', error)
@@ -105,7 +105,7 @@ export class JobService {
     try {
       const requestData: UpdateJobStatusRequest = UpdateJobStatusRequestSchema.parse({ status })
 
-      await api.post(`/api/jobs/${jobId}/update-status/`, requestData)
+      await api.post(`/job/api/jobs/${jobId}/update-status/`, requestData)
     } catch (error) {
       console.error('Error updating job status:', error)
       throw new Error('Failed to update job status')
@@ -125,7 +125,7 @@ export class JobService {
         status
       })
 
-      await api.post(`/api/jobs/${jobId}/reorder/`, requestData)
+      await api.post(`/job/api/jobs/${jobId}/reorder/`, requestData)
     } catch (error) {
       console.error('Error reordering job:', error)
       throw new Error('Failed to reorder job')
@@ -147,7 +147,7 @@ export class JobService {
       })
 
       const response = await api.get(
-        `/api/jobs/advanced-search/?${params.toString()}`
+        `/job/api/jobs/advanced-search/?${params.toString()}`
       )
 
       return this.handleApiResponse<JobsApiResponse>(response, JobsApiResponseSchema)

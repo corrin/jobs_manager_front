@@ -123,9 +123,8 @@ export function useContactManagement() {
 
     isLoading.value = true
     
-    try {
-      const contactData = {
-        client: currentClientId.value,
+    try {      const contactData = {
+        client_id: currentClientId.value,
         name: newContactForm.value.name.trim(),
         position: newContactForm.value.position?.trim() || '',
         email: newContactForm.value.email?.trim() || '',
@@ -134,14 +133,13 @@ export function useContactManagement() {
         is_primary: newContactForm.value.is_primary
       }
 
-      const response = await api.post('/clients/api/client/contact/', contactData)
-      
-      // Guard clause para response inválido
-      if (!response.data) {
+      const response = await api.post('/clients/rest/contacts/', contactData)
+        // Guard clause para response inválido
+      if (!response.data || !response.data.contact) {
         throw new Error('Invalid response from server')
       }
 
-      const newContact: ClientContact = response.data
+      const newContact: ClientContact = response.data.contact
       
       // Update selected contact
       selectedContact.value = newContact

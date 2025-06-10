@@ -1,9 +1,11 @@
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { JobService } from '@/services/job.service'
 import type { Job, StatusChoice, AdvancedFilters } from '@/types'
 
 export function useKanban() {
   const jobService = JobService.getInstance()
+  const router = useRouter()
 
   // State
   const jobs = ref<Job[]>([])
@@ -206,8 +208,8 @@ export function useKanban() {
   }
 
   const viewJob = (job: Job): void => {
-    // TODO: Navigate to job detail view or emit event
-    console.log('View job:', job)
+    // Navigate to job edit view using the correct route path
+    router.push(`/jobs/${job.id}`)
   }
 
   const updateJobStatus = async (jobId: string, newStatus: string): Promise<void> => {

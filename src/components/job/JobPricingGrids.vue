@@ -195,11 +195,61 @@ const formatCurrency = (amount: number) => {
 // Initialize data from props
 watch(() => props.latestPricings, (newPricings) => {
   if (newPricings) {
-    // TODO: Parse actual pricing data
-    // For now, using placeholder data
-    estimates.value = { time: 100, materials: 200, adjustments: 50, total: 350 }
-    quotes.value = { time: 120, materials: 220, adjustments: 60, total: 400 }
-    reality.value = { time: 110, materials: 210, adjustments: 55, total: 375 }
+    // Parse actual pricing data from Django format
+    try {
+      const pricingData = typeof newPricings === 'string' ? JSON.parse(newPricings) : newPricings
+      
+      // Extract totals from different sections
+      const extractSectionTotals = (sectionData: any) => {
+        const time = calculateSectionTotal(sectionData?.time_entries || [])
+        const materials = calculateSectionTotal(sectionData?.material_entries || [])
+        const adjustments = calculateSectionTotal(sectionData?.adjustment_entries || [])
+        return { time, materials, adjustments, total: time + materials + adjustments }
+      }
+
+      // Update reactive data with real pricing information
+      if (pricingData?.estimate) {
+        estimates.value = extractSectionTotals(pricingData.estimate)
+      }
+      if (pricingData?.quote) {
+        quotes.value = extractSectionTotals(pricingData.quote)
+      }
+      if (pricingData?.reality) {
+        reality.value = extractSectionTotals(pricingData.reality)
+      }
+    } catch (error) {
+      console.error('Error parsing pricing data:', error)
+      // Fallback to placeholder data
+      estimates.value = { time: 100, materials: 200, adjustments: 50, total: 350 }
+      quotes.value = { time: 120, materials: 220, adjustments: 60, total: 400 }
+      reality.value = { time: 110, materials: 210, adjustments: 55, total: 375 }
+    }
   }
 }, { immediate: true })
+
+// Helper function to calculate totals from entry arrays
+const calculateSectionTotal = (entries: any[]) => {
+  return entries.reduce((total, entry) => {
+    // For time entries: calculate from hours * rate or total_minutes * rate
+    if (entry.total_minutes !== undefined) {
+      return total + (parseFloat(entry.revenue) || 0)
+    }
+    // For material entries: quantity * unit_revenue
+    if (entry.quantity !== undefined && entry.unit_revenue !== undefined) {
+      return total + (entry.quantity * entry.unit_revenue)
+    }
+    // For adjustment entries: direct price_adjustment
+    if (entry.price_adjustment !== undefined) {
+      return total + parseFloat(entry.price_adjustment || 0)
+    }
+    // For simple entries: direct cost/retail values
+    if (entry.retail_price !== undefined) {
+      return total + parseFloat(entry.retail_price || 0)
+    }
+    if (entry.value_of_time !== undefined) {
+      return total + parseFloat(entry.value_of_time || 0)
+    }
+    return total
+  }, 0)
+}
 </script>

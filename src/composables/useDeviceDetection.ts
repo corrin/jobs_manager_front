@@ -17,17 +17,34 @@ export function useDeviceDetection() {
     window.removeEventListener('resize', updateDimensions)
   })
 
-  const isMobile = computed(() => windowWidth.value < 768)
-  const isTablet = computed(() => {
-    const isTabletWidth = windowWidth.value >= 768 && windowWidth.value <= 1200 // Expandir para incluir iPad Air
-    console.log('Tablet detection:', { 
-      windowWidth: windowWidth.value, 
-      isTabletWidth,
-      range: '768px-1200px'
-    })
-    return isTabletWidth
+  const isMobile = computed(() => {
+    // Telefones: ATÉ 430x932
+    return windowWidth.value <= 430 && windowHeight.value <= 932
   })
-  const isDesktop = computed(() => windowWidth.value > 1200)
+  
+  const isTablet = computed(() => {
+    // Tablets: ATÉ 1024x1366
+    const isTabletDimensions = (
+      windowWidth.value <= 1024 && 
+      windowHeight.value <= 1366 &&
+      !(windowWidth.value <= 430 && windowHeight.value <= 932) // Não é mobile
+    )
+    
+    console.log('Device detection:', { 
+      windowWidth: windowWidth.value, 
+      windowHeight: windowHeight.value,
+      isTabletDimensions,
+      isMobile: windowWidth.value <= 430 && windowHeight.value <= 932,
+      range: 'Tablet: até 1024x1366, Mobile: até 430x932'
+    })
+    
+    return isTabletDimensions
+  })
+  
+  const isDesktop = computed(() => {
+    // Desktop: tudo que não for tablet nem mobile
+    return !isMobile.value && !isTablet.value
+  })
 
   // Detectar se é um dispositivo touch
   const isTouchDevice = computed(() => {

@@ -20,10 +20,10 @@
               </p>
             </div>
           </div>
-          
+
           <!-- Status Badge -->
           <div v-if="jobData" class="flex items-center space-x-2">
-            <Badge 
+            <Badge
               :variant="getStatusVariant(jobData.status)"
               class="text-xs"
             >
@@ -67,7 +67,7 @@
                 <Printer class="w-4 h-4 mr-2" />
                 Print Job Sheet
               </DraggableButton>
-              
+
               <DraggableButton
                 variant="destructive"
                 @click="confirmDeleteJob"
@@ -77,7 +77,7 @@
                 Delete Job
               </DraggableButton>
             </div>
-            
+
             <DraggableButton
               variant="secondary"
               @click="navigateBack"
@@ -98,12 +98,12 @@
         @close="showSettingsModal = false"
         @job-updated="handleJobUpdated"
       />
-
       <JobWorkflowModal
         v-if="showWorkflowModal"
         :job-data="jobData"
         :is-open="showWorkflowModal"
         @close="showWorkflowModal = false"
+        @workflow-updated="handleWorkflowUpdated"
       />
 
       <JobHistoryModal
@@ -120,6 +120,8 @@
         :job-id="jobId"
         :is-open="showAttachmentsModal"
         @close="showAttachmentsModal = false"
+        @file-uploaded="handleFileUploaded"
+        @file-deleted="handleFileDeleted"
       />
     </div>
   </AppLayout>
@@ -128,11 +130,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { 
-  ArrowLeft, 
-  Printer, 
-  Trash2, 
-  X 
+import {
+  ArrowLeft,
+  Printer,
+  Trash2,
+  X
 } from 'lucide-vue-next'
 
 import AppLayout from '@/components/AppLayout.vue'
@@ -145,9 +147,9 @@ import JobHistoryModal from '@/components/job/JobHistoryModal.vue'
 import JobAttachmentsModal from '@/components/job/JobAttachmentsModal.vue'
 import DraggableButton from '@/components/job/DraggableButton.vue'
 
-import { 
-  jobRestService, 
-  type JobData, 
+import {
+  jobRestService,
+  type JobData,
   type JobDetailResponse,
   type JobEvent,
   type CompanyDefaults
@@ -223,7 +225,7 @@ const loadJobData = async () => {
   try {
     isLoading.value = true
     const response: JobDetailResponse = await jobRestService.getJobForEdit(jobId.value)
-    
+
     if (response.success && response.data) {
       jobData.value = response.data.job
       latestPricings.value = response.data.latest_pricings || {}
@@ -255,6 +257,25 @@ const handleDataChanged = (data: any) => {
 
 const handleEventAdded = (event: JobEvent) => {
   jobEvents.value.unshift(event)
+}
+
+const handleWorkflowUpdated = (workflowData: Partial<JobData>) => {
+  if (jobData.value) {
+    // Update job data with workflow changes
+    Object.assign(jobData.value, workflowData)
+    // TODO: Auto-save changes to backend
+    console.log('Workflow updated:', workflowData)
+  }
+}
+
+const handleFileUploaded = (file: any) => {
+  // TODO: Refresh file list or update state
+  console.log('File uploaded:', file)
+}
+
+const handleFileDeleted = (fileId: string) => {
+  // TODO: Remove from local state
+  console.log('File deleted:', fileId)
 }
 
 // Ações dos botões do rodapé

@@ -18,8 +18,11 @@
           :key="job.id"
           :job="job"
           :is-dragging="isDragging"
+          :is-movement-mode-active="isMovementModeActive"
+          :is-job-selected-for-movement="isJobSelectedForMovement(job.id.toString())"
           @click="$emit('job-click', job)"
           @job-ready="$emit('job-ready', $event)"
+          @job-selected-for-movement="$emit('job-selected-for-movement', $event)"
         />
 
         <!-- Empty state -->
@@ -109,6 +112,8 @@ interface KanbanColumnProps {
   isLoading?: boolean
   isDragging?: boolean
   isArchive?: boolean
+  isMovementModeActive?: boolean
+  isJobSelectedForMovement?: (jobId: string) => boolean
 }
 
 interface KanbanColumnEmits {
@@ -116,13 +121,16 @@ interface KanbanColumnEmits {
   (e: 'load-more'): void
   (e: 'sortable-ready', element: HTMLElement, status: string): void
   (e: 'job-ready', payload: { jobId: string, element: HTMLElement }): void
+  (e: 'job-selected-for-movement', job: Job): void
 }
 
 const props = withDefaults(defineProps<KanbanColumnProps>(), {
   showLoadMore: false,
   isLoading: false,
   isDragging: false,
-  isArchive: false
+  isArchive: false,
+  isMovementModeActive: false,
+  isJobSelectedForMovement: () => false
 })
 
 const emit = defineEmits<KanbanColumnEmits>()

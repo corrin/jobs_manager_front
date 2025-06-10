@@ -53,6 +53,12 @@ export interface JobData {
   pricing_methodology: string
   created_at: string
   updated_at: string
+  // Workflow fields
+  delivery_date?: string
+  quote_acceptance_date?: string
+  quoted?: boolean
+  invoiced?: boolean
+  paid?: boolean
 }
 
 export interface JobEvent {
