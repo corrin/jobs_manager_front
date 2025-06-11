@@ -292,11 +292,13 @@
         :job-data="jobData"
         :is-open="showSettingsModal"
         @close="showSettingsModal = false"
+        @job-updated="handleJobUpdated"
       />
       <JobWorkflowModal
         :job-data="jobData"
         :is-open="showWorkflowModal"
         @close="showWorkflowModal = false"
+        @job-updated="handleJobUpdated"
       />
 
       <JobHistoryModal
@@ -319,7 +321,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
@@ -349,6 +351,9 @@ import {
   type CompanyDefaults
 } from '@/services/jobRestService'
 import { useJobsStore } from '@/stores/jobs'
+import { useJobReactivity } from '@/composables/useJobReactivity'
+import { useJobNotifications } from '@/composables/useJobNotifications'
+import { useJobAutoSync } from '@/composables/useJobAutoSync'
 
 const route = useRoute()
 const router = useRouter()
@@ -356,6 +361,85 @@ const jobsStore = useJobsStore()
 
 // Reactive data seguindo princípios de composição do Vue 3
 const jobId = computed(() => route.params.id as string)
+
+const {
+  updateJobReactively,
+  addEventReactively,
+  updatePricingsReactively,
+  reloadJobDataReactively
+} = useJobReactivity()
+const {
+  notifyJobUpdated,
+  notifyJobError,
+  notifyEventAdded,
+  notifyPricingUpdated,
+  notifyFileUploaded,
+  notifyFileDeleted
+} = useJobNotifications()
+
+// Service layer delegation para carregar dados
+const loadJobData = async () => {
+  if (!jobId.value) {
+    console.error('No job ID provided')
+    router.push({ name: 'kanban' })
+    return
+  }
+
+  try {
+    // Configurar contexto no store
+    jobsStore.setCurrentContext('detail')
+    jobsStore.setCurrentJobId(jobId.value)
+    jobsStore.setLoadingJob(true)
+
+    // Buscar dados da API e salvar no store
+    const response: JobDetailResponse = await jobRestService.getJobForEdit(jobId.value)
+
+    if (response.success && response.data) {
+      // Enriquecer o job com dados complementares antes de salvar no store
+      const enrichedJob = {
+        ...response.data.job,
+        latest_pricings: response.data.latest_pricings || {},
+        events: response.data.events || [],
+        company_defaults: response.data.company_defaults || null
+      }
+
+      // Salvar job enriquecido no store - única fonte de verdade
+      jobsStore.setDetailedJob(enrichedJob)
+    } else {
+      throw new Error('Failed to load job data')
+    }
+  } catch (error) {
+    console.error('Error loading job:', error)
+    
+    // Usar o sistema de notificações para erros
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    notifyJobError(jobId.value, errorMessage)
+    
+    // Fallback para alert se necessário
+    alert('Failed to load job data')
+    navigateBack()
+  } finally {
+    jobsStore.setLoadingJob(false)
+  }
+}
+
+// Auto-sync para manter dados sempre atualizados (opcional - pode ser desabilitado)
+const { 
+  isAutoSyncEnabled,
+  toggleAutoSync,
+  manualSync
+} = useJobAutoSync(
+  jobId.value || '',
+  loadJobData,
+  {
+    interval: 60000, // 1 minuto
+    enabled: false, // Desabilitado por padrão - pode ser ativado se necessário
+    onError: (error) => {
+      console.warn('Auto-sync error:', error.message)
+      // Não mostrar notificação para erros de auto-sync para não incomodar o usuário
+    }
+  }
+)
 
 // jobData é um computed que sempre vem do store - única fonte de verdade
 const jobData = computed(() => {
@@ -365,11 +449,40 @@ const jobData = computed(() => {
   return result
 })
 
-// Dados complementares que não estão no store principal
-const latestPricings = ref<any>({})
-const jobEvents = ref<JobEvent[]>([])
-const companyDefaults = ref<CompanyDefaults | null>(null)
-const isLoading = ref(true)
+// Dados complementares - também reativos baseados no job atual
+const latestPricings = computed(() => {
+  return jobData.value?.latest_pricings || {}
+})
+
+const jobEvents = computed(() => {
+  return jobData.value?.events || []
+})
+
+const companyDefaults = computed(() => {
+  return jobData.value?.company_defaults || null
+})
+
+// Loading vem do store para ser reativo
+const isLoading = computed(() => jobsStore.isLoadingJob)
+
+// Watchers reativos para otimização
+watch(jobData, (newJobData) => {
+  if (newJobData) {
+    console.log('👀 JobView - Job data changed reactively:', {
+      id: newJobData.id,
+      job_status: newJobData.job_status,
+      name: newJobData.name
+    })
+  }
+}, { deep: true })
+
+watch(jobEvents, (newEvents) => {
+  console.log('📝 JobView - Events changed reactively:', newEvents.length, 'events')
+}, { deep: true })
+
+watch(latestPricings, (newPricings) => {
+  console.log('💰 JobView - Pricings changed reactively')
+}, { deep: true })
 
 // Modal states
 const showSettingsModal = ref(false)
@@ -385,82 +498,78 @@ const navigateBack = () => {
   router.push({ name: 'kanban' })
 }
 
-// Service layer delegation para carregar dados
-const loadJobData = async () => {
-  if (!jobId.value) {
-    console.error('No job ID provided')
-    navigateBack()
-    return
-  }
-
-  try {
-    isLoading.value = true
-
-    // Configurar contexto no store
-    jobsStore.setCurrentContext('detail')
-    jobsStore.setCurrentJobId(jobId.value)
-    jobsStore.setLoadingJob(true)
-
-    // Buscar dados da API e salvar no store
-    const response: JobDetailResponse = await jobRestService.getJobForEdit(jobId.value)
-
-    if (response.success && response.data) {
-      // Salvar dados complementares localmente
-      latestPricings.value = response.data.latest_pricings || {}
-      jobEvents.value = response.data.events || []
-      companyDefaults.value = response.data.company_defaults || null
-
-      // Salvar job no store - única fonte de verdade
-      jobsStore.setDetailedJob(response.data.job)
-    } else {
-      throw new Error('Failed to load job data')
-    }
-  } catch (error) {
-    console.error('Error loading job:', error)
-    alert('Failed to load job data')
-    navigateBack()
-  } finally {
-    isLoading.value = false
-    jobsStore.setLoadingJob(false)
-  }
-}
-
 const handleDataChanged = (data: any) => {
-  // Auto-save dos dados do pricing
-  // TODO: Implementar debounce para evitar muitas chamadas
-  console.log('Data changed:', data)
+  // Auto-save dos dados do pricing e atualização reativa no store
+  if (jobId.value && data) {
+    // Usar o composable para manter consistência
+    updatePricingsReactively(jobId.value, data)
+    // Notificação discreta para pricing auto-save
+    notifyPricingUpdated()
+  }
 }
 
 const handleEventAdded = (event: JobEvent) => {
-  jobEvents.value.unshift(event)
+  // Usar o composable para manter consistência
+  if (jobId.value) {
+    addEventReactively(jobId.value, event)
+    notifyEventAdded(event.event_type)
+  }
 }
 
 const handleFileUploaded = (file: any) => {
-  // TODO: Refresh file list or update state
-  console.log('File uploaded:', file)
+  // Atualizar files no store para manter reatividade
+  if (jobId.value && file) {
+    // TODO: Implementar atualização de arquivos no store quando tivermos o campo
+    console.log('📎 File uploaded - store will be updated:', file)
+    notifyFileUploaded(file.name || 'arquivo')
+    // Recarregar dados para pegar mudanças de arquivos
+    loadJobData()
+  }
 }
 
 const handleFileDeleted = (fileId: string) => {
-  // TODO: Remove from local state
-  console.log('File deleted:', fileId)
+  // Remover file do store para manter reatividade
+  if (jobId.value && fileId) {
+    // TODO: Implementar remoção de arquivos no store quando tivermos o campo
+    console.log('🗑️ File deleted - store will be updated:', fileId)
+    notifyFileDeleted('arquivo')
+    // Recarregar dados para pegar mudanças de arquivos
+    loadJobData()
+  }
 }
 
-// Handlers para aba financeira
-const handleQuoteCreated = () => {
-  // TODO: Refresh job data to show new quote status
-  console.log('Quote created')
-  // Switch to financial tab to show the new quote
-  activeTab.value = 'financial'
+// Handler unificado para updates de job vindos dos modais
+const handleJobUpdated = (updatedJob: JobData) => {
+  if (jobId.value) {
+    // Usar o composable para atualizar de forma consistente
+    updateJobReactively(jobId.value, updatedJob)
+    notifyJobUpdated(updatedJob.name || 'Job')
+    console.log('🔄 Job updated from modal - store updated reactively')
+  }
 }
 
-const handleQuoteAccepted = () => {
-  // TODO: Update job status and refresh data
-  console.log('Quote accepted')
+// Handlers para aba financeira - usando composable para reatividade otimizada
+const handleQuoteCreated = async () => {
+  if (jobId.value) {
+    // Usar o composable para recarregar dados de forma reativa
+    await reloadJobDataReactively(jobId.value)
+    // Switch to financial tab to show the new quote
+    activeTab.value = 'financial'
+  }
 }
 
-const handleInvoiceCreated = () => {
-  // TODO: Refresh job data to show new invoice status
-  console.log('Invoice created')
+const handleQuoteAccepted = async () => {
+  if (jobId.value) {
+    // Usar o composable para recarregar dados de forma reativa
+    await reloadJobDataReactively(jobId.value)
+  }
+}
+
+const handleInvoiceCreated = async () => {
+  if (jobId.value) {
+    // Usar o composable para recarregar dados de forma reativa
+    await reloadJobDataReactively(jobId.value)
+  }
 }
 
 // Ações dos botões do rodapé

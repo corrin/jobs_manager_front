@@ -113,7 +113,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
-import type { JobData } from '@/services/jobRestService'
+import type { JobData, JobUpdateData } from '@/services/jobRestService'
 import { JobService } from '@/services/job.service'
 import { jobRestService } from '@/services/jobRestService'
 import { useJobsStore } from '@/stores/jobs'
@@ -260,11 +260,22 @@ const saveWorkflow = async () => {
     const updateData = prepareUpdateData()
     const result = await jobRestService.updateJob(props.jobData.id, updateData)
 
-    if (!result.success || !result.data) {
-      throw new Error('Failed to update workflow - invalid response')
+    if (!result.success) {
+      throw new Error('Failed to update workflow - request failed')
     }
 
-    handleSuccessfulUpdate(result.data)
+    // Se a API retornou dados atualizados, usar eles
+    if (result.data) {
+      handleSuccessfulUpdate(result.data)
+    } else {
+      // Se não retornou dados (apenas success: true), criar dados atualizados manualmente
+      console.log('⚠️ JobWorkflowModal - API returned success but no data, using local updates')
+      const updatedJobData = {
+        ...props.jobData,
+        ...updateData
+      }
+      handleSuccessfulUpdate(updatedJobData)
+    }
     
   } catch (error) {
     handleUpdateError(error)
@@ -274,9 +285,9 @@ const saveWorkflow = async () => {
 }
 
 // Prepare data for update - only include workflow fields
-const prepareUpdateData = () => {
+const prepareUpdateData = (): JobUpdateData => {
   return {
-    job_status: localJobData.value.job_status,
+    job_status: localJobData.value.job_status || '',
     delivery_date: localJobData.value.delivery_date,
     paid: localJobData.value.paid
     // Note: quoted and invoiced are read-only from backend

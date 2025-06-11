@@ -372,7 +372,12 @@ const saveSettings = async () => {
     // Call the job update API
     const result = await jobRestService.updateJob(props.jobData.id, localJobData.value)
 
-    if (result.success && result.data) {
+    if (!result.success) {
+      throw new Error('Failed to update job settings - request failed')
+    }
+
+    // Se a API retornou dados atualizados, usar eles
+    if (result.data) {
       toast.success('Job atualizado com sucesso!', {
         description: `${result.data.name} foi salvo`
       })
@@ -382,7 +387,21 @@ const saveSettings = async () => {
       
       closeModal()
     } else {
-      throw new Error('Failed to update job - invalid response')
+      // Se não retornou dados (apenas success: true), criar dados atualizados manualmente
+      console.log('⚠️ JobSettingsModal - API returned success but no data, using local updates')
+      const updatedJobData = {
+        ...props.jobData,
+        ...localJobData.value
+      }
+      
+      toast.success('Job atualizado com sucesso!', {
+        description: `${updatedJobData.name} foi salvo`
+      })
+
+      // Atualizar a store
+      jobsStore.setDetailedJob(updatedJobData)
+      
+      closeModal()
     }
   } catch (error) {
     console.error('Error saving job settings:', error)

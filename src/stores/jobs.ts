@@ -187,6 +187,54 @@ export const useJobsStore = defineStore('jobs', () => {
     updateKanbanJob(jobId, { job_status: newStatus })
   }
 
+  // Actions específicas para atualizar dados do job de forma reativa
+  const updateJobEvents = (jobId: string, events: any[]): void => {
+    const job = detailedJobs.value.get(jobId)
+    if (job) {
+      const updatedJob = { ...job, events }
+      detailedJobs.value.set(jobId, updatedJob)
+    }
+  }
+
+  const addJobEvent = (jobId: string, event: any): void => {
+    const job = detailedJobs.value.get(jobId)
+    if (job) {
+      const events = job.events || []
+      const updatedJob = { ...job, events: [event, ...events] }
+      detailedJobs.value.set(jobId, updatedJob)
+    }
+  }
+
+  const updateJobPricings = (jobId: string, pricings: any): void => {
+    const job = detailedJobs.value.get(jobId)
+    if (job) {
+      const updatedJob = { ...job, latest_pricings: pricings }
+      detailedJobs.value.set(jobId, updatedJob)
+    }
+  }
+
+  const updateJobCompanyDefaults = (jobId: string, companyDefaults: any): void => {
+    const job = detailedJobs.value.get(jobId)
+    if (job) {
+      const updatedJob = { ...job, company_defaults: companyDefaults }
+      detailedJobs.value.set(jobId, updatedJob)
+    }
+  }
+
+  // Action para atualizar dados específicos sem recarregar tudo
+  const updateJobPartialData = (jobId: string, partialData: Partial<JobData>): void => {
+    const job = detailedJobs.value.get(jobId)
+    if (job) {
+      const updatedJob = { ...job, ...partialData }
+      detailedJobs.value.set(jobId, updatedJob)
+      
+      // Sincronizar dados essenciais com kanban se existir
+      if (kanbanJobs.value.has(jobId)) {
+        updateKanbanJobFromDetailed(updatedJob)
+      }
+    }
+  }
+
   return {
     // State
     detailedJobs,
@@ -218,5 +266,10 @@ export const useJobsStore = defineStore('jobs', () => {
     clearKanbanJobs,
     clearAll,
     updateJobStatus,
+    updateJobEvents,
+    addJobEvent, 
+    updateJobPricings,
+    updateJobCompanyDefaults,
+    updateJobPartialData,
   }
 })

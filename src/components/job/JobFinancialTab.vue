@@ -119,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import type { JobData } from '@/services/jobRestService'
 import { useJobsStore } from '@/stores/jobs'
 
@@ -130,6 +130,15 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+// Debug watcher for delivery_date
+watch(() => props.jobData?.delivery_date, (newDate, oldDate) => {
+  console.log('🏦 JobFinancialTab - delivery_date changed:', {
+    old: oldDate,
+    new: newDate,
+    jobData: props.jobData
+  })
+}, { immediate: true })
 
 // Store
 const jobsStore = useJobsStore()

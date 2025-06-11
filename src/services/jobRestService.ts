@@ -60,6 +60,14 @@ export interface JobData {
   quoted?: boolean
   invoiced?: boolean
   paid?: boolean
+  // Dados adicionais para reatividade - podem estar presentes ou não
+  latest_pricings?: {
+    estimate_pricing?: JobPricingData
+    quote_pricing?: JobPricingData
+    reality_pricing?: JobPricingData
+  }
+  events?: JobEvent[]
+  company_defaults?: CompanyDefaults
 }
 
 export interface JobEvent {
