@@ -110,10 +110,7 @@ const addEvent = async () => {
   if (!newEventDescription.value.trim()) return
 
   try {
-    const result = await jobRestService.addJobEvent(props.jobId, {
-      description: newEventDescription.value,
-      event_type: 'note' // Default type
-    })
+    const result = await jobRestService.addJobEvent(props.jobId, newEventDescription.value)
 
     if (result.success && result.data) {
       emit('event-added', result.data)

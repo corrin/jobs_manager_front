@@ -242,11 +242,11 @@ watch(() => props.jobData, (newJobData) => {
   console.log('JobSettingsModal - jobData changed:', newJobData)
   
   if (newJobData) {
-    // Copy all job data, but ensure we have client_id
+    // Copy all job data
     localJobData.value = { 
       ...newJobData,
-      // If client_id is missing but we have client info, we need to get it
-      client_id: newJobData.client_id || newJobData.client?.id || ''
+      // Ensure we have client_id
+      client_id: newJobData.client_id || ''
     }
     
     resetClientChangeState()

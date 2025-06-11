@@ -308,9 +308,6 @@ const handleJobUpdated = (updatedJobResponse: any) => {
   // Update the reactive jobData
   jobData.value = { ...jobData.value, ...updatedJob }
   console.log('JobView - Job data updated:', updatedJob.name)
-  
-  // Reload job events to show the update
-  loadJobEvents()
 }
 
 const handleDataChanged = (data: any) => {

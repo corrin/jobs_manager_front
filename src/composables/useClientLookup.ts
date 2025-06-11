@@ -14,6 +14,7 @@ export interface Client {
   xero_contact_id?: string
   email?: string
   phone?: string
+  address?: string
 }
 
 export interface ClientContact {
