@@ -76,15 +76,59 @@
 
       <!-- Conteúdo Principal -->
       <div class="flex-1 flex flex-col min-h-0">
-        <!-- Grids de Dados -->
-        <div class="flex-1 p-6 overflow-y-auto min-h-0">
-          <JobPricingGrids
-            v-if="jobData"
-            :job-data="jobData"
-            :latest-pricings="latestPricings"
-            :company-defaults="companyDefaults"
-            @data-changed="handleDataChanged"
-          />
+        <!-- Tabs Navigation -->
+        <div class="flex-shrink-0 bg-white border-b border-gray-200 px-6">
+          <nav class="-mb-px flex space-x-8">
+            <button
+              @click="activeTab = 'pricing'"
+              :class="[
+                'py-4 px-1 border-b-2 font-medium text-sm',
+                activeTab === 'pricing'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ]"
+            >
+              Pricing & Details
+            </button>
+            <button
+              @click="activeTab = 'financial'"
+              :class="[
+                'py-4 px-1 border-b-2 font-medium text-sm',
+                activeTab === 'financial'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ]"
+            >
+              Financial Overview
+            </button>
+          </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="flex-1 overflow-y-auto min-h-0">
+          <!-- Pricing Tab -->
+          <div v-if="activeTab === 'pricing'" class="p-6">
+            <JobPricingGrids
+              v-if="jobData"
+              :job-data="jobData"
+              :latest-pricings="latestPricings"
+              :company-defaults="companyDefaults"
+              @data-changed="handleDataChanged"
+            />
+          </div>
+
+          <!-- Financial Tab -->
+          <div v-if="activeTab === 'financial'" class="p-6">
+            <JobFinancialTab
+              v-if="jobData"
+              :job-data="jobData"
+              :latest-pricings="latestPricings"
+              @quote-created="handleQuoteCreated"
+              @quote-accepted="handleQuoteAccepted"
+              @invoice-created="handleInvoiceCreated"
+              @workflow-updated="handleJobUpdated"
+            />
+          </div>
         </div>
 
         <!-- Rodapé com Ações Principais - Sempre visível -->
@@ -172,6 +216,7 @@ import {
 import AppLayout from '@/components/AppLayout.vue'
 import Badge from '@/components/ui/badge/Badge.vue'
 import JobPricingGrids from '@/components/job/JobPricingGrids.vue'
+import JobFinancialTab from '@/components/job/JobFinancialTab.vue'
 import JobSettingsModal from '@/components/job/JobSettingsModal.vue'
 import JobWorkflowModal from '@/components/job/JobWorkflowModal.vue'
 import JobHistoryModal from '@/components/job/JobHistoryModal.vue'
@@ -202,6 +247,9 @@ const showSettingsModal = ref(false)
 const showWorkflowModal = ref(false)
 const showHistoryModal = ref(false)
 const showAttachmentsModal = ref(false)
+
+// Tab state
+const activeTab = ref<'pricing' | 'financial'>('pricing')
 
 // Status mappings seguindo switch-case pattern
 const getStatusVariant = (status: string) => {
@@ -337,6 +385,24 @@ const handleFileUploaded = (file: any) => {
 const handleFileDeleted = (fileId: string) => {
   // TODO: Remove from local state
   console.log('File deleted:', fileId)
+}
+
+// Handlers para aba financeira
+const handleQuoteCreated = () => {
+  // TODO: Refresh job data to show new quote status
+  console.log('Quote created')
+  // Switch to financial tab to show the new quote
+  activeTab.value = 'financial'
+}
+
+const handleQuoteAccepted = () => {
+  // TODO: Update job status and refresh data
+  console.log('Quote accepted')
+}
+
+const handleInvoiceCreated = () => {
+  // TODO: Refresh job data to show new invoice status
+  console.log('Invoice created')
 }
 
 // Ações dos botões do rodapé

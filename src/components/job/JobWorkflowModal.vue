@@ -4,7 +4,7 @@
       <DialogHeader>
         <DialogTitle>Workflow Settings</DialogTitle>
         <DialogDescription>
-          Configure job status, delivery dates, and workflow actions.
+          Configure job status, delivery dates, and workflow tracking.
         </DialogDescription>
       </DialogHeader>
 
@@ -76,33 +76,6 @@
             </label>
           </div>
         </div>
-
-        <!-- Workflow Actions -->
-        <div class="space-y-3">
-          <h4 class="text-sm font-medium text-gray-700">Workflow Actions</h4>
-
-          <div class="flex flex-wrap gap-2">
-            <button @click="acceptQuote" :disabled="!canAcceptQuote"
-              class="px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed">
-              Accept Quote
-            </button>
-
-            <button @click="createQuote"
-              class="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
-              Create Quote
-            </button>
-
-            <button @click="invoiceJob" :disabled="localJobData.invoiced"
-              class="px-3 py-2 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed">
-              Invoice Job
-            </button>
-
-            <button @click="contactClient"
-              class="px-3 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700">
-              Contact Client
-            </button>
-          </div>
-        </div>
       </div>
 
       <DialogFooter>
@@ -120,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import type { JobData } from '@/services/jobRestService'
 import {
   Dialog,
@@ -155,13 +128,6 @@ watch(() => props.jobData, (newJobData) => {
   }
 }, { immediate: true })
 
-// Computed properties
-const canAcceptQuote = computed(() => {
-  // Can accept quote if there's a total cost greater than 0
-  // This would need to be calculated from pricing data
-  return true // Placeholder
-})
-
 // Methods
 const closeModal = () => {
   emit('close')
@@ -172,30 +138,6 @@ const saveWorkflow = () => {
     emit('workflow-updated', localJobData.value)
   }
   closeModal()
-}
-
-const acceptQuote = () => {
-  if (localJobData.value) {
-    localJobData.value.quote_acceptance_date = new Date().toISOString()
-    localJobData.value.quoted = true
-    // TODO: Lock quote grids, update status
-    console.log('Quote accepted')
-  }
-}
-
-const createQuote = () => {
-  // TODO: Generate and open quote PDF
-  console.log('Creating quote...')
-}
-
-const invoiceJob = () => {
-  // TODO: Create invoice in Xero
-  console.log('Creating invoice...')
-}
-
-const contactClient = () => {
-  // TODO: Open email client with job details
-  console.log('Opening email client...')
 }
 
 const formatDate = (dateString: string) => {

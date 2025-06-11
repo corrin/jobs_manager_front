@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="isOpen" @update:open="(open) => !open && closeModal()">
-    <DialogContent class="sm:max-w-6xl">
+    <DialogContent class="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Job Settings</DialogTitle>
         <DialogDescription>
