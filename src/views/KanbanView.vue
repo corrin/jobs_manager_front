@@ -135,15 +135,7 @@
       </div>
     </div>
 
-    <!-- Floating Archived Button -->
-    <FloatingArchivedButton
-      :archived-jobs="getJobsByStatus('archived')"
-      :archived-count="getJobCountByStatus('archived')"
-      @job-click="viewJob"
-      @job-ready="handleJobReady"
-      @sortable-ready="handleSortableReady"
-      @archive-job="handleArchiveJob"
-    />
+
 
     <!-- Advanced Search Dialog -->
     <AdvancedSearchDialog
@@ -174,7 +166,6 @@ import AppLayout from '@/components/AppLayout.vue'
 import StaffPanel from '@/components/StaffPanel.vue'
 import StaffDropdown from '@/components/StaffDropdown.vue'
 import ClientDropdown from '@/components/ClientDropdown.vue'
-import FloatingArchivedButton from '@/components/FloatingArchivedButton.vue'
 import AdvancedSearchDialog from '@/components/AdvancedSearchDialog.vue'
 import { useKanban } from '@/composables/useKanban'
 import { useDragAndDrop } from '@/composables/useDragAndDrop'
@@ -306,31 +297,13 @@ const clearSearch = () => {
   handleSearch()
 }
 
-const handleArchiveJob = (jobId: string) => {
-  console.log(`Archiving job ${jobId}`)
-  updateJobStatus(jobId, 'archived')
-}
-
-// Handler for archived job drop events
-const handleArchivedJobDrop = (event: CustomEvent) => {
-  console.log('Archived job drop event received:', event.detail)
-  const { jobId, targetStatus } = event.detail
-
-  if (jobId && targetStatus) {
-    console.log(`Moving job ${jobId} from archived to ${targetStatus}`)
-    updateJobStatus(jobId, targetStatus)
-  }
-}
-
-// Setup global event listener for archived job drops
+// Setup drag and drop functionality
 onMounted(async () => {
-  document.addEventListener('archived-job-drop', handleArchivedJobDrop as EventListener)
 })
 
 // Cleanup on unmount
 onUnmounted(() => {
   destroyAllSortables()
-  document.removeEventListener('archived-job-drop', handleArchivedJobDrop as EventListener)
 })
 </script>
 

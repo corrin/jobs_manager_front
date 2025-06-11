@@ -12,24 +12,8 @@
           <form @submit.prevent="handleSubmit" class="space-y-6">
             <!-- Two Column Layout -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <!-- Left Column: Client, Job Name, Contact -->
+              <!-- Left Column: Job Name, Client, Contact -->
               <div class="space-y-6">
-                <!-- Cliente -->
-                <div>
-                  <ClientLookup
-                    id="client"
-                    v-model="formData.client_name"
-                    @update:selected-id="formData.client_id = $event"
-                    @update:selected-client="handleClientSelection"
-                    label="Client"
-                    :required="true"
-                    placeholder="Search for a client..."
-                  />
-                  <p v-if="errors.client_id" class="mt-1 text-sm text-red-600">
-                    {{ errors.client_id }}
-                  </p>
-                </div>
-
                 <!-- Nome do Job -->
                 <div>
                   <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
@@ -46,6 +30,22 @@
                   />
                   <p v-if="errors.name" class="mt-1 text-sm text-red-600">
                     {{ errors.name }}
+                  </p>
+                </div>
+
+                <!-- Cliente -->
+                <div>
+                  <ClientLookup
+                    id="client"
+                    v-model="formData.client_name"
+                    @update:selected-id="formData.client_id = $event"
+                    @update:selected-client="handleClientSelection"
+                    label="Client"
+                    :required="true"
+                    placeholder="Search for a client..."
+                  />
+                  <p v-if="errors.client_id" class="mt-1 text-sm text-red-600">
+                    {{ errors.client_id }}
                   </p>
                 </div>
 
