@@ -8,12 +8,12 @@
         </DialogDescription>
       </DialogHeader>
 
-      <!-- Grid com duas colunas -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Coluna 1: Informações do Job -->
-        <div class="space-y-4">
+      <!-- Grid responsivo: 1 coluna mobile, 2 colunas tablet, 3 colunas desktop -->
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <!-- Coluna 1: Informações Básicas do Job -->
+        <div class="space-y-4 md:col-span-1">
           <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Job Information</h3>
-          
+
           <!-- Nome -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -32,45 +32,40 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Job description..."></textarea>
           </div>
-
-          <!-- Notes -->
-          <div>
-            <RichTextEditor
-              v-model="localJobData.notes"
-              label="Notes"
-              placeholder="Internal notes..."
-              :required="false"
-            />
-          </div>
         </div>
 
-        <!-- Coluna 2: Informações Externas -->
-        <div class="space-y-4">
-          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">External Information</h3>
-          
+        <!-- Coluna 2: Informações de Cliente e Contato -->
+        <div class="space-y-4 md:col-span-1">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Client Information</h3>
+
           <!-- Cliente -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Client
             </label>
-            
+
             <!-- Client Change Section -->
             <div class="space-y-2">
               <!-- Current Client Display -->
-              <div v-if="!isChangingClient" class="flex space-x-2">
+              <div v-if="!isChangingClient" class="space-y-2">
+                <!-- Client Name Input -->
                 <input v-model="localJobData.client_name" type="text"
-                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50"
                   readonly />
-                <button @click="startClientChange" type="button"
-                  class="px-3 py-2 border border-gray-300 rounded-md text-sm bg-blue-50 hover:bg-blue-100 text-blue-600">
-                  Change
-                </button>
-                <button @click="editCurrentClient" type="button"
-                  class="px-3 py-2 border border-gray-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-600">
-                  Edit
-                </button>
+                
+                <!-- Action Buttons - Stack on mobile/tablet, inline on desktop -->
+                <div class="flex flex-col md:flex-col xl:flex-row gap-2 xl:gap-2">
+                  <button @click="startClientChange" type="button"
+                    class="flex-1 xl:flex-none px-3 py-2 border border-gray-300 rounded-md text-sm bg-blue-50 hover:bg-blue-100 text-blue-600">
+                    Change
+                  </button>
+                  <button @click="editCurrentClient" type="button"
+                    class="flex-1 xl:flex-none px-3 py-2 border border-gray-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-600">
+                    Edit
+                  </button>
+                </div>
               </div>
-              
+
               <!-- Client Selection Mode -->
               <div v-else class="space-y-2">
                 <ClientLookup
@@ -82,7 +77,7 @@
                   @update:selected-id="handleNewClientSelected"
                   @update:selected-client="handleClientLookupSelected"
                 />
-                
+
                 <div class="flex space-x-2">
                   <button @click="confirmClientChange" type="button"
                     class="px-3 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700"
@@ -95,7 +90,7 @@
                   </button>
                 </div>
               </div>
-              
+
               <p class="text-xs text-gray-500">
                 {{ isChangingClient ? 'Select a new client for this job' : 'Change or edit client information' }}
               </p>
@@ -125,6 +120,11 @@
               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Customer order number" />
           </div>
+        </div>
+
+        <!-- Coluna 3: Configurações e Notas -->
+        <div class="space-y-4 md:col-span-2 xl:col-span-1">
+          <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Settings & Notes</h3>
 
           <!-- Toggle Itemised Pricing -->
           <div>
@@ -144,6 +144,16 @@
               <option value="time_materials">Time & Materials</option>
               <option value="fixed_price">Fixed Price</option>
             </select>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <RichTextEditor
+              v-model="localJobData.notes"
+              label="Notes"
+              placeholder="Internal notes..."
+              :required="false"
+            />
           </div>
         </div>
       </div>
@@ -216,10 +226,10 @@ const contactDisplayValue = ref('')
 
 // Computed properties
 const currentClientId = computed(() => {
-  const clientId = isChangingClient.value && newClientId.value 
-    ? newClientId.value 
+  const clientId = isChangingClient.value && newClientId.value
+    ? newClientId.value
     : localJobData.value.client_id || ''
-  
+
   // Debug log
   console.log('JobSettingsModal - currentClientId computed:', {
     isChangingClient: isChangingClient.value,
@@ -227,31 +237,31 @@ const currentClientId = computed(() => {
     localJobDataClientId: localJobData.value.client_id,
     result: clientId
   })
-  
+
   return clientId
 })
 
 const currentClientName = computed(() => {
-  return isChangingClient.value && newClientName.value 
-    ? newClientName.value 
+  return isChangingClient.value && newClientName.value
+    ? newClientName.value
     : localJobData.value.client_name || ''
 })
 
 // Watch for props changes
 watch(() => props.jobData, (newJobData) => {
   console.log('JobSettingsModal - jobData changed:', newJobData)
-  
+
   if (newJobData) {
     // Copy all job data
-    localJobData.value = { 
+    localJobData.value = {
       ...newJobData,
       // Ensure we have client_id
       client_id: newJobData.client_id || ''
     }
-    
+
     resetClientChangeState()
     updateContactDisplayValue()
-    
+
     console.log('JobSettingsModal - localJobData updated:', {
       client_id: localJobData.value.client_id,
       client_name: localJobData.value.client_name,
@@ -293,7 +303,7 @@ const handleNewClientSelected = (clientId: string) => {
 
 const handleClientLookupSelected = (client: Client | null) => {
   selectedNewClient.value = client
-  
+
   if (client) {
     newClientName.value = client.name
   }
@@ -309,12 +319,12 @@ const confirmClientChange = () => {
   // Update job data com novo cliente
   localJobData.value.client_id = newClientId.value
   localJobData.value.client_name = selectedNewClient.value.name
-  
+
   // Clear contact quando client muda
   localJobData.value.contact_id = undefined
   localJobData.value.contact_name = undefined
   contactDisplayValue.value = ''
-  
+
   resetClientChangeState()
 }
 
@@ -362,7 +372,7 @@ const saveSettings = async () => {
       toast.success('Job atualizado com sucesso!', {
         description: `${result.data.name} foi salvo`
       })
-      
+
       // Emit with updated data
       emit('job-updated', result.data)
       closeModal()
@@ -371,7 +381,7 @@ const saveSettings = async () => {
     }
   } catch (error) {
     console.error('Error saving job settings:', error)
-    
+
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     toast.error('Falha ao salvar job', {
       description: `Erro: ${errorMessage}. Tente novamente.`

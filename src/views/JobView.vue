@@ -1,9 +1,80 @@
 <template>
   <AppLayout>
     <div class="flex flex-col h-full">
-      <!-- Header com informações básicas do job -->
-      <div class="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4">
-        <div class="flex items-center justify-between">
+      <!-- Mobile Header -->
+      <div class="flex-shrink-0 bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4">
+        <!-- Mobile Layout (stacked) -->
+        <div class="md:hidden">
+          <!-- Top row: Back button and status -->
+          <div class="flex items-center justify-between mb-3">
+            <button
+              @click="navigateBack"
+              class="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <ArrowLeft class="w-5 h-5" />
+            </button>
+            <div v-if="jobData">
+              <Badge
+                :variant="getStatusVariant(jobData.status)"
+                class="text-xs"
+              >
+                {{ getStatusLabel(jobData.status) }}
+              </Badge>
+            </div>
+          </div>
+
+          <!-- Job title and info -->
+          <div class="mb-3">
+            <h1 class="text-lg font-bold text-gray-900 leading-tight">
+              {{ jobData?.name || 'Loading...' }}
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">
+              Job #{{ jobData?.job_number }} • {{ jobData?.client_name }}
+            </p>
+          </div>
+
+          <!-- Action buttons - horizontal scroll on mobile -->
+          <div class="flex space-x-2 overflow-x-auto pb-2">
+            <DraggableButton
+              variant="ghost"
+              @click="showSettingsModal = true"
+              class="text-blue-600 hover:bg-blue-50 flex-shrink-0"
+              size="sm"
+            >
+              <Settings class="w-4 h-4" />
+            </DraggableButton>
+
+            <DraggableButton
+              variant="ghost"
+              @click="showWorkflowModal = true"
+              class="text-green-600 hover:bg-green-50 flex-shrink-0"
+              size="sm"
+            >
+              <Wrench class="w-4 h-4" />
+            </DraggableButton>
+
+            <DraggableButton
+              variant="ghost"
+              @click="showHistoryModal = true"
+              class="text-purple-600 hover:bg-purple-50 flex-shrink-0"
+              size="sm"
+            >
+              <BookOpen class="w-4 h-4" />
+            </DraggableButton>
+
+            <DraggableButton
+              variant="ghost"
+              @click="showAttachmentsModal = true"
+              class="text-orange-600 hover:bg-orange-50 flex-shrink-0"
+              size="sm"
+            >
+              <Paperclip class="w-4 h-4" />
+            </DraggableButton>
+          </div>
+        </div>
+
+        <!-- Desktop/Tablet Layout (original) -->
+        <div class="hidden md:flex items-center justify-between">
           <div class="flex items-center space-x-4">
             <button
               @click="navigateBack"
@@ -76,13 +147,43 @@
 
       <!-- Conteúdo Principal -->
       <div class="flex-1 flex flex-col min-h-0">
-        <!-- Tabs Navigation -->
-        <div class="flex-shrink-0 bg-white border-b border-gray-200 px-6">
+      <!-- Tabs Navigation - Mobile First -->
+      <div class="flex-shrink-0 bg-white border-b border-gray-200">
+        <!-- Mobile Tabs -->
+        <div class="md:hidden">
+          <div class="flex border-b border-gray-200">
+            <button
+              @click="activeTab = 'pricing'"
+              :class="[
+                'flex-1 py-3 px-4 text-sm font-medium text-center border-b-2 transition-colors',
+                activeTab === 'pricing'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              ]"
+            >
+              Pricing
+            </button>
+            <button
+              @click="activeTab = 'financial'"
+              :class="[
+                'flex-1 py-3 px-4 text-sm font-medium text-center border-b-2 transition-colors',
+                activeTab === 'financial'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              ]"
+            >
+              Financial
+            </button>
+          </div>
+        </div>
+
+        <!-- Desktop/Tablet Tabs -->
+        <div class="hidden md:block px-6">
           <nav class="-mb-px flex space-x-8">
             <button
               @click="activeTab = 'pricing'"
               :class="[
-                'py-4 px-1 border-b-2 font-medium text-sm',
+                'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
                 activeTab === 'pricing'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -93,7 +194,7 @@
             <button
               @click="activeTab = 'financial'"
               :class="[
-                'py-4 px-1 border-b-2 font-medium text-sm',
+                'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
                 activeTab === 'financial'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -103,11 +204,12 @@
             </button>
           </nav>
         </div>
+      </div>
 
         <!-- Tab Content -->
         <div class="flex-1 overflow-y-auto min-h-0">
           <!-- Pricing Tab -->
-          <div v-if="activeTab === 'pricing'" class="p-6">
+          <div v-if="activeTab === 'pricing'" class="p-4 md:p-6">
             <JobPricingGrids
               v-if="jobData"
               :job-data="jobData"
@@ -118,7 +220,7 @@
           </div>
 
           <!-- Financial Tab -->
-          <div v-if="activeTab === 'financial'" class="p-6">
+          <div v-if="activeTab === 'financial'" class="p-4 md:p-6">
             <JobFinancialTab
               v-if="jobData"
               :job-data="jobData"
@@ -131,14 +233,52 @@
           </div>
         </div>
 
-        <!-- Rodapé com Ações Principais - Sempre visível -->
-        <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-6 py-4 mt-auto">
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <!-- Footer com Ações Principais - Mobile First -->
+        <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-4 mt-auto">
+          <!-- Mobile Layout (stacked) -->
+          <div class="md:hidden space-y-3">
+            <!-- Primary Actions Row -->
+            <div class="flex space-x-3">
               <DraggableButton
                 variant="primary"
                 @click="printJobSheet"
-                class="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                class="bg-blue-600 hover:bg-blue-700 flex-1"
+                size="sm"
+              >
+                <Printer class="w-4 h-4 mr-2" />
+                Print
+              </DraggableButton>
+
+              <DraggableButton
+                variant="destructive"
+                @click="confirmDeleteJob"
+                class="bg-red-600 hover:bg-red-700 flex-1"
+                size="sm"
+              >
+                <Trash2 class="w-4 h-4 mr-2" />
+                Delete
+              </DraggableButton>
+            </div>
+
+            <!-- Close Button -->
+            <DraggableButton
+              variant="secondary"
+              @click="navigateBack"
+              class="bg-gray-600 hover:bg-gray-700 w-full"
+              size="sm"
+            >
+              <X class="w-4 h-4 mr-2" />
+              Close
+            </DraggableButton>
+          </div>
+
+          <!-- Desktop/Tablet Layout (horizontal) -->
+          <div class="hidden md:flex items-center justify-between">
+            <div class="flex space-x-3">
+              <DraggableButton
+                variant="primary"
+                @click="printJobSheet"
+                class="bg-blue-600 hover:bg-blue-700"
               >
                 <Printer class="w-4 h-4 mr-2" />
                 Print Job Sheet
@@ -147,7 +287,7 @@
               <DraggableButton
                 variant="destructive"
                 @click="confirmDeleteJob"
-                class="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+                class="bg-red-600 hover:bg-red-700"
               >
                 <Trash2 class="w-4 h-4 mr-2" />
                 Delete Job
@@ -157,7 +297,7 @@
             <DraggableButton
               variant="secondary"
               @click="navigateBack"
-              class="bg-gray-600 hover:bg-gray-700 w-full sm:w-auto"
+              class="bg-gray-600 hover:bg-gray-700"
             >
               <X class="w-4 h-4 mr-2" />
               Close
