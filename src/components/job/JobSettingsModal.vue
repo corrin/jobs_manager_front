@@ -183,6 +183,7 @@
 import { ref, watch, computed } from 'vue'
 import type { JobData } from '@/services/jobRestService'
 import { jobRestService } from '@/services/jobRestService'
+import { useJobsStore } from '@/stores/jobs'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import ClientLookup from '@/components/ClientLookup.vue'
 import ContactSelector from '@/components/ContactSelector.vue'
@@ -205,13 +206,15 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Events
+// Events - apenas close, a store cuida do resto
 const emit = defineEmits<{
   close: []
-  'job-updated': [job: JobData]
 }>()
 
-// Local state seguindo clean code principles
+// Store - única fonte de verdade
+const jobsStore = useJobsStore()
+
+// Local state seguindo clean code principles - apenas para dados do form
 const localJobData = ref<Partial<JobData>>({})
 const isLoading = ref(false)
 
@@ -247,6 +250,18 @@ const currentClientName = computed(() => {
     : localJobData.value.client_name || ''
 })
 
+// Helper functions - declared before watchers
+const resetClientChangeState = () => {
+  isChangingClient.value = false
+  newClientId.value = ''
+  newClientName.value = ''
+  selectedNewClient.value = null
+}
+
+const updateContactDisplayValue = () => {
+  contactDisplayValue.value = localJobData.value.contact_name || ''
+}
+
 // Watch for props changes
 watch(() => props.jobData, (newJobData) => {
   console.log('JobSettingsModal - jobData changed:', newJobData)
@@ -273,17 +288,6 @@ watch(() => props.jobData, (newJobData) => {
 }, { immediate: true })
 
 // Methods seguindo SRP e early return patterns
-const resetClientChangeState = () => {
-  isChangingClient.value = false
-  newClientId.value = ''
-  newClientName.value = ''
-  selectedNewClient.value = null
-}
-
-const updateContactDisplayValue = () => {
-  contactDisplayValue.value = localJobData.value.contact_name || ''
-}
-
 const closeModal = () => {
   emit('close')
 }
@@ -373,8 +377,9 @@ const saveSettings = async () => {
         description: `${result.data.name} foi salvo`
       })
 
-      // Emit with updated data
-      emit('job-updated', result.data)
+      // Atualizar a store - a reatividade será automática
+      jobsStore.setDetailedJob(result.data)
+      
       closeModal()
     } else {
       throw new Error('Failed to update job - invalid response')

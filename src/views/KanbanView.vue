@@ -170,6 +170,22 @@ import AdvancedSearchDialog from '@/components/AdvancedSearchDialog.vue'
 import { useKanban } from '@/composables/useKanban'
 import { useDragAndDrop } from '@/composables/useDragAndDrop'
 import { useStaffDragAndDrop } from '@/composables/useStaffDragAndDrop'
+import { useJobsStore } from '@/stores/jobs'
+
+// Initialize store
+const jobsStore = useJobsStore()
+
+// Set kanban context when component mounts
+onMounted(() => {
+  jobsStore.setCurrentContext('kanban')
+})
+
+// Clear context when component unmounts
+onUnmounted(() => {
+  if (jobsStore.currentContext === 'kanban') {
+    jobsStore.setCurrentContext(null)
+  }
+})
 
 // Staff filters state
 const {

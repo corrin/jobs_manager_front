@@ -1,11 +1,12 @@
 /**
  * Job REST Service
- * 
+ *
  * Service layer para operações REST de Jobs no frontend Vue.js
  * Segue princípios de clean code e SRP
  */
 
 import api from '@/services/api'
+import { useJobsStore } from '@/stores/jobs'
 import type { AxiosResponse } from 'axios'
 
 // Types para Job
@@ -27,7 +28,7 @@ export interface JobUpdateData {
   order_number?: string
   notes?: string
   contact_id?: string
-  status?: string
+  job_status?: string  // Changed from 'status' to 'job_status' to match backend
   [key: string]: any
 }
 
@@ -48,7 +49,7 @@ export interface JobData {
   notes?: string
   contact_id?: string
   contact_name?: string
-  status: string
+  job_status: string  // Changed from 'status' to 'job_status' to match backend
   complex_job: boolean
   pricing_methodology: string
   created_at: string
@@ -154,8 +155,11 @@ export class JobRestService {
   async updateJob(jobId: string, data: JobUpdateData): Promise<ApiResponse> {
     try {
       const response: AxiosResponse<JobData> = await api.put(`/job/rest/jobs/${jobId}/`, data)
+
+      // Atualizar a store com os dados mais recentes
+      const jobsStore = useJobsStore()
+      jobsStore.setDetailedJob(response.data)
       
-      // Transform direct job data response to ApiResponse format
       return {
         success: true,
         data: response.data,

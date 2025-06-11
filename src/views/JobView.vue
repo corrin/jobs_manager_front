@@ -5,7 +5,7 @@
       <div class="flex-shrink-0 bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4">
         <!-- Mobile Layout (stacked) -->
         <div class="md:hidden">
-          <!-- Top row: Back button and status -->
+          <!-- Top row: Back button -->
           <div class="flex items-center justify-between mb-3">
             <button
               @click="navigateBack"
@@ -13,14 +13,6 @@
             >
               <ArrowLeft class="w-5 h-5" />
             </button>
-            <div v-if="jobData">
-              <Badge
-                :variant="getStatusVariant(jobData.status)"
-                class="text-xs"
-              >
-                {{ getStatusLabel(jobData.status) }}
-              </Badge>
-            </div>
           </div>
 
           <!-- Job title and info -->
@@ -131,16 +123,6 @@
                 <Paperclip class="w-4 h-4" />
               </DraggableButton>
             </div>
-
-            <!-- Status Badge -->
-            <div v-if="jobData" class="flex items-center space-x-2">
-              <Badge
-                :variant="getStatusVariant(jobData.status)"
-                class="text-xs"
-              >
-                {{ getStatusLabel(jobData.status) }}
-              </Badge>
-            </div>
           </div>
         </div>
       </div>
@@ -228,7 +210,6 @@
               @quote-created="handleQuoteCreated"
               @quote-accepted="handleQuoteAccepted"
               @invoice-created="handleInvoiceCreated"
-              @workflow-updated="handleJobUpdated"
             />
           </div>
         </div>
@@ -311,13 +292,11 @@
         :job-data="jobData"
         :is-open="showSettingsModal"
         @close="showSettingsModal = false"
-        @job-updated="handleJobUpdated"
       />
       <JobWorkflowModal
         :job-data="jobData"
         :is-open="showWorkflowModal"
         @close="showWorkflowModal = false"
-        @workflow-updated="handleWorkflowUpdated"
       />
 
       <JobHistoryModal
@@ -354,7 +333,6 @@ import {
 } from 'lucide-vue-next'
 
 import AppLayout from '@/components/AppLayout.vue'
-import Badge from '@/components/ui/badge/Badge.vue'
 import JobPricingGrids from '@/components/job/JobPricingGrids.vue'
 import JobFinancialTab from '@/components/job/JobFinancialTab.vue'
 import JobSettingsModal from '@/components/job/JobSettingsModal.vue'
@@ -370,13 +348,24 @@ import {
   type JobEvent,
   type CompanyDefaults
 } from '@/services/jobRestService'
+import { useJobsStore } from '@/stores/jobs'
 
 const route = useRoute()
 const router = useRouter()
+const jobsStore = useJobsStore()
 
 // Reactive data seguindo princípios de composição do Vue 3
 const jobId = computed(() => route.params.id as string)
-const jobData = ref<JobData | null>(null)
+
+// jobData é um computed que sempre vem do store - única fonte de verdade
+const jobData = computed(() => {
+  const result = jobId.value ? jobsStore.getJobById(jobId.value) : null
+  console.log('🔍 JobView computed - jobId:', jobId.value)
+  console.log('🔍 JobView computed - result job_status:', result?.job_status || 'NULL')
+  return result
+})
+
+// Dados complementares que não estão no store principal
 const latestPricings = ref<any>({})
 const jobEvents = ref<JobEvent[]>([])
 const companyDefaults = ref<CompanyDefaults | null>(null)
@@ -390,43 +379,6 @@ const showAttachmentsModal = ref(false)
 
 // Tab state
 const activeTab = ref<'pricing' | 'financial'>('pricing')
-
-// Status mappings seguindo switch-case pattern
-const getStatusVariant = (status: string) => {
-  switch (status) {
-    case 'quoting':
-      return 'secondary'
-    case 'accepted_quote':
-      return 'default'
-    case 'in_progress':
-      return 'default'
-    case 'completed':
-      return 'default'
-    case 'archived':
-      return 'secondary'
-    case 'on_hold':
-      return 'destructive'
-    case 'rejected':
-      return 'destructive'
-    default:
-      return 'secondary'
-  }
-}
-
-const getStatusLabel = (status: string) => {
-  const statusLabels: Record<string, string> = {
-    'quoting': 'Quoting',
-    'accepted_quote': 'Accepted Quote',
-    'awaiting_materials': 'Awaiting Materials',
-    'in_progress': 'In Progress',
-    'on_hold': 'On Hold',
-    'special': 'Special',
-    'completed': 'Completed',
-    'rejected': 'Rejected',
-    'archived': 'Archived'
-  }
-  return statusLabels[status] || status
-}
 
 // Early return pattern para navegação
 const navigateBack = () => {
@@ -443,59 +395,34 @@ const loadJobData = async () => {
 
   try {
     isLoading.value = true
+
+    // Configurar contexto no store
+    jobsStore.setCurrentContext('detail')
+    jobsStore.setCurrentJobId(jobId.value)
+    jobsStore.setLoadingJob(true)
+
+    // Buscar dados da API e salvar no store
     const response: JobDetailResponse = await jobRestService.getJobForEdit(jobId.value)
 
     if (response.success && response.data) {
-      jobData.value = response.data.job
+      // Salvar dados complementares localmente
       latestPricings.value = response.data.latest_pricings || {}
       jobEvents.value = response.data.events || []
       companyDefaults.value = response.data.company_defaults || null
+
+      // Salvar job no store - única fonte de verdade
+      jobsStore.setDetailedJob(response.data.job)
     } else {
       throw new Error('Failed to load job data')
     }
   } catch (error) {
     console.error('Error loading job:', error)
-    // TODO: Implementar toast notification
     alert('Failed to load job data')
     navigateBack()
   } finally {
     isLoading.value = false
+    jobsStore.setLoadingJob(false)
   }
-}
-
-// Handlers para eventos dos componentes
-const handleJobUpdated = (updatedJobResponse: any) => {
-  console.log('JobView - handleJobUpdated called:', updatedJobResponse)
-  
-  // Guard clause - check if response exists
-  if (!updatedJobResponse) {
-    console.error('JobView - No data in handleJobUpdated')
-    return
-  }
-  
-  // Guard clause - extract job data based on response structure
-  let updatedJob: JobData | null = null
-  
-  if (updatedJobResponse.success && updatedJobResponse.data) {
-    // New API structure with success/data
-    updatedJob = updatedJobResponse.data
-  } else if (updatedJobResponse.id) {
-    // Direct job data structure
-    updatedJob = updatedJobResponse
-  } else {
-    console.error('JobView - Invalid job data received:', updatedJobResponse)
-    return
-  }
-  
-  // Guard clause - validate job data
-  if (!updatedJob || !updatedJob.id) {
-    console.error('JobView - Invalid job data extracted:', updatedJob)
-    return
-  }
-  
-  // Update the reactive jobData
-  jobData.value = { ...jobData.value, ...updatedJob }
-  console.log('JobView - Job data updated:', updatedJob.name)
 }
 
 const handleDataChanged = (data: any) => {
@@ -506,15 +433,6 @@ const handleDataChanged = (data: any) => {
 
 const handleEventAdded = (event: JobEvent) => {
   jobEvents.value.unshift(event)
-}
-
-const handleWorkflowUpdated = (workflowData: Partial<JobData>) => {
-  if (jobData.value) {
-    // Update job data with workflow changes
-    Object.assign(jobData.value, workflowData)
-    // TODO: Auto-save changes to backend
-    console.log('Workflow updated:', workflowData)
-  }
 }
 
 const handleFileUploaded = (file: any) => {

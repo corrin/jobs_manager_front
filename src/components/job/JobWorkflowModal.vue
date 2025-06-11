@@ -14,12 +14,20 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">
             Job Status
           </label>
-          <select v-model="localJobData.status"
+          <select v-model="localJobData.job_status"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
             <option v-if="isLoadingStatuses" value="">Loading statuses...</option>
-            <option v-for="status in statusChoices" :key="status.key" :value="status.key">
-              {{ status.label }}
-            </option>
+            <template v-else>
+              <!-- Show current status first if it exists and is not in the status choices -->
+              <option 
+                v-if="localJobData.job_status && !statusChoices.find(s => s.key === localJobData.job_status)" 
+                :value="localJobData.job_status">
+                {{ currentStatusLabel }} (Current)
+              </option>
+              <option v-for="status in statusChoices" :key="status.key" :value="status.key">
+                {{ status.label }}
+              </option>
+            </template>
           </select>
         </div>
 
@@ -104,10 +112,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import type { JobData } from '@/services/jobRestService'
 import { JobService } from '@/services/job.service'
 import { jobRestService } from '@/services/jobRestService'
+import { useJobsStore } from '@/stores/jobs'
 import { toast } from 'vue-sonner'
 import {
   Dialog,
@@ -131,29 +140,51 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Events
+// Events - apenas close, a store cuida do resto
 const emit = defineEmits<{
   close: []
-  'workflow-updated': [data: Partial<JobData>]
 }>()
 
-// Services
+// Services e Store
 const jobService = JobService.getInstance()
+const jobsStore = useJobsStore()
 
-// Reactive state
+// Reactive state - dados locais apenas para o form
 const localJobData = ref<Partial<JobData>>({})
 const statusChoices = ref<StatusChoice[]>([])
 const isLoadingStatuses = ref(false)
 const isLoading = ref(false)
 
+// Computed properties
+const currentStatusLabel = computed(() => {
+  if (!localJobData.value.job_status) {
+    return ''
+  }
+  
+  const statusChoice = statusChoices.value.find(s => s.key === localJobData.value.job_status)
+  return statusChoice ? statusChoice.label : localJobData.value.job_status
+})
+
+// Initialize local job data with proper status handling
+const initializeLocalJobData = (jobData: JobData) => {
+  localJobData.value = { 
+    ...jobData,
+    // Preserve existing status or use job's current status
+    job_status: localJobData.value.job_status || jobData.job_status,
+    // Set checkbox values based on job data
+    quoted: !!jobData.quoted,
+    invoiced: !!jobData.invoiced,
+    paid: !!jobData.paid
+  }
+}
+
 // Watch for props changes
 watch(() => props.jobData, (newJobData) => {
-  if (newJobData) {
-    localJobData.value = { ...newJobData }
-    // Set checkbox values based on job data
-    localJobData.value.quoted = !!newJobData.quoted
-    localJobData.value.invoiced = !!newJobData.invoiced
+  if (!newJobData) {
+    return
   }
+  
+  initializeLocalJobData(newJobData)
 }, { immediate: true })
 
 // Load status choices on component mount
@@ -164,15 +195,23 @@ onMounted(async () => {
 // Methods
 const loadStatusChoices = async () => {
   isLoadingStatuses.value = true
+  
   try {
     const response = await jobService.getStatusChoices()
-    if (response.success && response.statuses) {
-      // Convert statuses object to array, same as KanbanView
-      statusChoices.value = Object.entries(response.statuses).map(([key, label]) => ({
-        key,
-        label: label as string
-      }))
+    
+    if (!response.success || !response.statuses) {
+      throw new Error('Invalid response from status choices API')
     }
+
+    // Convert statuses object to array, same as KanbanView
+    statusChoices.value = Object.entries(response.statuses).map(([key, label]) => ({
+      key,
+      label: label as string
+    }))
+
+    // Ensure current job status is preserved after loading choices
+    preserveCurrentJobStatus()
+    
   } catch (error) {
     console.error('Failed to load status choices:', error)
     toast.error('Falha ao carregar opções de status', {
@@ -183,14 +222,34 @@ const loadStatusChoices = async () => {
   }
 }
 
+// Preserve current job status after loading status choices
+const preserveCurrentJobStatus = () => {
+  if (!props.jobData?.job_status) {
+    return
+  }
+
+  // Ensure the current status is selected if not already set
+  if (!localJobData.value.job_status) {
+    localJobData.value.job_status = props.jobData.job_status
+  }
+}
+
 const closeModal = () => {
   emit('close')
 }
 
 const saveWorkflow = async () => {
-  if (!props.jobData || !localJobData.value) {
+  // Guard clauses - early return for invalid states
+  if (!props.jobData) {
     toast.error('Erro', {
       description: 'Dados do job não encontrados'
+    })
+    return
+  }
+
+  if (!localJobData.value) {
+    toast.error('Erro', {
+      description: 'Dados locais não inicializados'
     })
     return
   }
@@ -198,38 +257,57 @@ const saveWorkflow = async () => {
   isLoading.value = true
 
   try {
-    // Prepare data for update - only include workflow fields
-    const updateData = {
-      status: localJobData.value.status,
-      delivery_date: localJobData.value.delivery_date,
-      paid: localJobData.value.paid
-      // Note: quoted and invoiced are read-only from backend
-    }
-
-    // Call the job update API
+    const updateData = prepareUpdateData()
     const result = await jobRestService.updateJob(props.jobData.id, updateData)
 
-    if (result.success && result.data) {
-      toast.success('Workflow atualizado com sucesso!', {
-        description: `Status e configurações do ${result.data.name} foram salvos`
-      })
-
-      // Emit with updated data
-      emit('workflow-updated', result.data)
-      closeModal()
-    } else {
+    if (!result.success || !result.data) {
       throw new Error('Failed to update workflow - invalid response')
     }
-  } catch (error) {
-    console.error('Error saving workflow:', error)
 
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-    toast.error('Falha ao salvar workflow', {
-      description: `Erro: ${errorMessage}. Tente novamente.`
-    })
+    handleSuccessfulUpdate(result.data)
+    
+  } catch (error) {
+    handleUpdateError(error)
   } finally {
     isLoading.value = false
   }
+}
+
+// Prepare data for update - only include workflow fields
+const prepareUpdateData = () => {
+  return {
+    job_status: localJobData.value.job_status,
+    delivery_date: localJobData.value.delivery_date,
+    paid: localJobData.value.paid
+    // Note: quoted and invoiced are read-only from backend
+  }
+}
+
+// Handle successful workflow update
+const handleSuccessfulUpdate = (updatedJobData: JobData) => {
+  console.log('🎯 JobWorkflowModal - handleSuccessfulUpdate called with:', updatedJobData)
+  console.log('🔍 JobWorkflowModal - Updated job_status:', updatedJobData.job_status)
+  
+  toast.success('Workflow atualizado com sucesso!', {
+    description: `Status e configurações do ${updatedJobData.name} foram salvos`
+  })
+
+  // Atualizar a store - a reatividade será automática
+  console.log('📝 JobWorkflowModal - Calling jobsStore.setDetailedJob')
+  jobsStore.setDetailedJob(updatedJobData)
+  
+  console.log('✅ JobWorkflowModal - Store updated successfully')
+  closeModal()
+}
+
+// Handle workflow update errors
+const handleUpdateError = (error: unknown) => {
+  console.error('Error saving workflow:', error)
+
+  const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+  toast.error('Falha ao salvar workflow', {
+    description: `Erro: ${errorMessage}. Tente novamente.`
+  })
 }
 
 const formatDate = (dateString: string) => {

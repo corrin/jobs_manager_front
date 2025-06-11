@@ -121,6 +121,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { JobData } from '@/services/jobRestService'
+import { useJobsStore } from '@/stores/jobs'
 
 // Props
 interface Props {
@@ -130,12 +131,14 @@ interface Props {
 
 const props = defineProps<Props>()
 
+// Store
+const jobsStore = useJobsStore()
+
 // Events
 const emit = defineEmits<{
   'quote-created': []
   'quote-accepted': []
   'invoice-created': []
-  'workflow-updated': [data: Partial<JobData>]
 }>()
 
 // Computed properties for financial data
@@ -219,7 +222,9 @@ const acceptQuote = () => {
       ...props.jobData,
       quote_acceptance_date: new Date().toISOString()
     }
-    emit('workflow-updated', updatedData)
+    
+    // Atualizar a store em vez de emitir evento
+    jobsStore.setDetailedJob(updatedData)
     emit('quote-accepted')
   }
 }

@@ -1,23 +1,21 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { JobService } from '@/services/job.service'
+import { useJobsStore } from '@/stores/jobs'
 import type { Job, StatusChoice, AdvancedFilters } from '@/types'
 
 export function useKanban() {
   const jobService = JobService.getInstance()
   const router = useRouter()
+  const jobsStore = useJobsStore()
 
-  // State
-  const jobs = ref<Job[]>([])
-  const archivedJobs = ref<Job[]>([])
-  const filteredJobs = ref<Job[]>([])
+  // State local (UI específico do kanban)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const searchQuery = ref('')
   const showAdvancedSearch = ref(false)
   const showSearchResults = ref(false)
   const showArchived = ref(false)
-  const totalArchivedJobs = ref(0)
   const statusChoices = ref<StatusChoice[]>([])
   const selectedMobileStatus = ref('')
 
@@ -37,6 +35,12 @@ export function useKanban() {
     created_before: '',
     paid: ''
   })
+
+  // Computed para acessar dados do store
+  const jobs = computed(() => jobsStore.allKanbanJobs.filter(job => job.status_key !== 'archived'))
+  const archivedJobs = computed(() => jobsStore.allKanbanJobs.filter(job => job.status_key === 'archived'))
+  const filteredJobs = ref<Job[]>([])
+  const totalArchivedJobs = computed(() => archivedJobs.value.length)
 
   // Helper function to check if job matches staff filters
   const jobMatchesStaffFilters = (job: Job): boolean => {
@@ -89,13 +93,34 @@ export function useKanban() {
     try {
       isLoading.value = true
       error.value = null
+      
+      // Configurar contexto no store
+      jobsStore.setCurrentContext('kanban')
+      jobsStore.setLoadingKanban(true)
 
       const data = await jobService.getAllJobs()
-      jobs.value = data.activeJobs
-      archivedJobs.value = data.archivedJobs
-      totalArchivedJobs.value = data.totalArchived
+      
+      // Converter jobs para o formato do kanban e salvar no store
+      const kanbanJobs = [...data.activeJobs, ...data.archivedJobs].map(job => ({
+        id: job.id,
+        name: job.name,
+        description: job.description,
+        job_number: job.job_number,
+        client_name: job.client_name,
+        contact_person: job.contact_person,
+        people: job.people || [],
+        status: job.status,
+        status_key: job.status_key,
+        job_status: job.status_key, // Mapear status_key para job_status
+        paid: job.paid,
+        created_by_id: job.created_by_id,
+        created_at: job.created_at,
+        priority: job.priority
+      }))
+      
+      jobsStore.setKanbanJobs(kanbanJobs)
 
-      console.log('Jobs loaded:', {
+      console.log('Jobs loaded and stored:', {
         activeJobs: data.activeJobs.length,
         archivedJobs: data.archivedJobs.length,
         totalArchived: data.totalArchived
@@ -105,6 +130,7 @@ export function useKanban() {
       console.error('Error loading jobs:', err)
     } finally {
       isLoading.value = false
+      jobsStore.setLoadingKanban(false)
     }
   }
 
@@ -215,7 +241,12 @@ export function useKanban() {
   const updateJobStatus = async (jobId: string, newStatus: string): Promise<void> => {
     try {
       await jobService.updateJobStatus(jobId, newStatus)
-      await loadJobs() // Reload jobs after status update
+      
+      // Atualizar no store global
+      jobsStore.updateJobStatus(jobId, newStatus)
+      
+      // Recarregar jobs para garantir sincronização
+      await loadJobs()
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update job status'
       console.error('Error updating job status:', err)

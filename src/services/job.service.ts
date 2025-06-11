@@ -106,6 +106,11 @@ export class JobService {
       const requestData: UpdateJobStatusRequest = UpdateJobStatusRequestSchema.parse({ status })
 
       await api.post(`/job/api/jobs/${jobId}/update-status/`, requestData)
+      
+      // Atualizar a store com o novo status
+      const { useJobsStore } = await import('@/stores/jobs')
+      const jobsStore = useJobsStore()
+      jobsStore.updateJobStatus(jobId, status)
     } catch (error) {
       console.error('Error updating job status:', error)
       throw new Error('Failed to update job status')
@@ -126,6 +131,13 @@ export class JobService {
       })
 
       await api.post(`/job/api/jobs/${jobId}/reorder/`, requestData)
+      
+      // Se o status mudou, atualizar a store
+      if (status) {
+        const { useJobsStore } = await import('@/stores/jobs')
+        const jobsStore = useJobsStore()
+        jobsStore.updateJobStatus(jobId, status)
+      }
     } catch (error) {
       console.error('Error reordering job:', error)
       throw new Error('Failed to reorder job')
