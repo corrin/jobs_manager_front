@@ -217,6 +217,7 @@ const jobsStore = useJobsStore()
 // Local state seguindo clean code principles - apenas para dados do form
 const localJobData = ref<Partial<JobData>>({})
 const isLoading = ref(false)
+const errorMessages = ref<string[]>([])
 
 // Client change state
 const isChangingClient = ref(false)
@@ -264,28 +265,20 @@ const updateContactDisplayValue = () => {
 
 // Watch for props changes
 watch(() => props.jobData, (newJobData) => {
-  console.log('JobSettingsModal - jobData changed:', newJobData)
-
-  if (newJobData) {
-    // Copy all job data
-    localJobData.value = {
-      ...newJobData,
-      // Ensure we have client_id
-      client_id: newJobData.client_id || ''
-    }
-
-    resetClientChangeState()
-    updateContactDisplayValue()
-
-    console.log('JobSettingsModal - localJobData updated:', {
-      client_id: localJobData.value.client_id,
-      client_name: localJobData.value.client_name,
-      contact_id: localJobData.value.contact_id,
-      contact_name: localJobData.value.contact_name,
-      full_data: localJobData.value
-    })
+  console.log('JobSettingsModal - jobData watcher triggered. New jobData:', newJobData)
+  if (!newJobData) {
+    console.log('🚫 JobSettingsModal - Watcher: Received null/undefined jobData, skipping initialization.')
+    // Considere limpar localJobData ou definir um estado padrão se necessário
+    // localJobData.value = {}; // Ou um estado inicial padrão
+    return
   }
-}, { immediate: true })
+  console.log('✅ JobSettingsModal - Watcher: Received valid jobData, initializing. ID:', newJobData.id)
+  // Certifique-se de que client_id seja tratado, mesmo que seja null/undefined inicialmente
+  localJobData.value = { 
+    ...newJobData, 
+    client_id: newJobData.client_id === undefined || newJobData.client_id === null ? '' : newJobData.client_id 
+  }
+}, { immediate: true, deep: true })
 
 // Methods seguindo SRP e early return patterns
 const closeModal = () => {
@@ -358,60 +351,133 @@ const handleContactSelected = (contact: ClientContact | null) => {
 }
 
 const saveSettings = async () => {
-  // Guard clause - validação básica
-  if (!props.jobData || !localJobData.value) {
-    toast.error('Erro de validação', {
-      description: 'Dados do job não encontrados'
-    })
+  if (!props.jobData || !props.jobData.id) {
+    console.error('JobSettingsModal - saveSettings - Error: props.jobData or props.jobData.id is missing.')
+    errorMessages.value = ['Job data is missing, cannot save.']
     return
   }
-
   isLoading.value = true
-
+  errorMessages.value = []
   try {
-    // Call the job update API
+    // Usar JSON.parse(JSON.stringify(...)) para log é uma boa forma de ver o valor real sem referências
+    console.log(`JobSettingsModal - saveSettings - Updating job ID: ${props.jobData.id} with data:`, JSON.parse(JSON.stringify(localJobData.value)))
     const result = await jobRestService.updateJob(props.jobData.id, localJobData.value)
+    // Log do resultado completo da API
+    console.log('JobSettingsModal - saveSettings - API call result:', JSON.parse(JSON.stringify(result)))
 
-    if (!result.success) {
-      throw new Error('Failed to update job settings - request failed')
-    }
-
-    // Se a API retornou dados atualizados, usar eles
-    if (result.data) {
-      toast.success('Job atualizado com sucesso!', {
-        description: `${result.data.name} foi salvo`
-      })
-
-      // Atualizar a store - a reatividade será automática
-      jobsStore.setDetailedJob(result.data)
-      
-      closeModal()
-    } else {
-      // Se não retornou dados (apenas success: true), criar dados atualizados manualmente
-      console.log('⚠️ JobSettingsModal - API returned success but no data, using local updates')
-      const updatedJobData = {
-        ...props.jobData,
-        ...localJobData.value
+    if (result.success) {
+      // Log específico de result.data
+      console.log('JobSettingsModal - saveSettings - API call successful. result.data:', JSON.parse(JSON.stringify(result.data)))
+      if (result.data !== null && result.data !== undefined) { // Checagem mais explícita
+        handleSuccessfulSettingsUpdate(result.data)
+      } else {
+        console.warn('JobSettingsModal - saveSettings - API call successful but result.data is null or undefined. Calling handleFallbackSettingsUpdate.')
+        // Se handleFallbackSettingsUpdate existir e for relevante:
+        // handleFallbackSettingsUpdate(); 
+        // Se não, isso pode ser um erro ou um caso não esperado.
+        errorMessages.value.push('Update seemed successful, but no data was returned from the server.')
+        // Considere não fechar o modal ou tomar outra ação.
       }
-      
-      toast.success('Job atualizado com sucesso!', {
-        description: `${updatedJobData.name} foi salvo`
-      })
-
-      // Atualizar a store
-      jobsStore.setDetailedJob(updatedJobData)
-      
-      closeModal()
+    } else {
+      console.error('JobSettingsModal - saveSettings - API call failed:', result.message)
+      errorMessages.value.push(result.message || 'Failed to update job settings.')
     }
-  } catch (error) {
-    console.error('Error saving job settings:', error)
-
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-    toast.error('Falha ao salvar job', {
-      description: `Erro: ${errorMessage}. Tente novamente.`
-    })
+  } catch (e: any) {
+    console.error('JobSettingsModal - saveSettings - Unexpected error during save:', e)
+    errorMessages.value.push(e.message || 'An unexpected error occurred while saving.')
   } finally {
     isLoading.value = false
   }
+}
+
+const handleSuccessfulSettingsUpdate = (apiData: any) => {
+  console.log('JobSettingsModal - handleSuccessfulSettingsUpdate - Entry. Raw apiData:', JSON.parse(JSON.stringify(apiData)))
+  console.log(`JobSettingsModal - handleSuccessfulSettingsUpdate - Type of apiData: ${typeof apiData}, IsArray: ${Array.isArray(apiData)}`)
+
+  // Verificação inicial de apiData nulo ou indefinido
+  if (apiData === null || apiData === undefined) {
+    console.error('JobSettingsModal - handleSuccessfulSettingsUpdate - Error: apiData is null or undefined at entry.')
+    // Este erro será capturado pela verificação final de jobDataToStore
+  }
+
+  let jobDataToStore: any | undefined = undefined; // Use 'any' temporariamente ou o tipo JobData
+
+  if (typeof apiData === 'object' && apiData !== null) {
+    const keys = Object.keys(apiData);
+    console.log(`JobSettingsModal - handleSuccessfulSettingsUpdate - apiData is object. Keys: ${keys.join(', ')}`);
+
+    // Path 1: apiData.job e apiData.job.id existem (ex: { job: { id: ..., ... } })
+    if (apiData.job && typeof apiData.job === 'object' && apiData.job.id) {
+      console.log('JobSettingsModal - handleSuccessfulSettingsUpdate - Path 1: Extracted from apiData.job');
+      jobDataToStore = { ...apiData.job };
+    // Path 2: apiData.id existe (ex: { id: ..., ... })
+    } else if (apiData.id) {
+      console.log('JobSettingsModal - handleSuccessfulSettingsUpdate - Path 2: Extracted from apiData (root)');
+      jobDataToStore = { ...apiData };
+    // Path 3: apiData.data e apiData.data.id existem (ex: { data: { id: ..., ... } })
+    } else if (apiData.data && typeof apiData.data === 'object' && apiData.data.id) {
+      console.log('JobSettingsModal - handleSuccessfulSettingsUpdate - Path 3: Extracted from apiData.data');
+      jobDataToStore = { ...apiData.data };
+    // Path 4: apiData.data.job e apiData.data.job.id existem (ex: { data: { job: { id: ..., ... } } })
+    } else if (apiData.data && typeof apiData.data === 'object' && apiData.data.job && typeof apiData.data.job === 'object' && apiData.data.job.id) {
+      console.log('JobSettingsModal - handleSuccessfulSettingsUpdate - Path 4: Extracted from apiData.data.job');
+      jobDataToStore = { ...apiData.data.job };
+    } else {
+      console.warn(`JobSettingsModal - handleSuccessfulSettingsUpdate - Could not extract job data using standard object paths. apiData (stringified): ${JSON.stringify(apiData, null, 2)}`);
+    }
+  // Path 5: apiData é um array, e o primeiro elemento tem um id
+  } else if (Array.isArray(apiData) && apiData.length > 0 && apiData[0] && typeof apiData[0] === 'object' && apiData[0].id) {
+    console.log('JobSettingsModal - handleSuccessfulSettingsUpdate - Path 5: apiData is an array, using first element.');
+    jobDataToStore = { ...apiData[0] };
+  } else {
+    // Se apiData não for um objeto ou array tratável, registre.
+    console.warn(`JobSettingsModal - handleSuccessfulSettingsUpdate - apiData is not a processable object or array. Value: ${String(apiData)}`);
+  }
+
+  // Verificação final e crucial para jobDataToStore e jobDataToStore.id
+  if (!jobDataToStore || !jobDataToStore.id) {
+    console.error(`JobSettingsModal - handleSuccessfulSettingsUpdate - FINAL ERROR: Could not derive valid jobDataToStore with an ID. jobDataToStore (stringified): ${JSON.stringify(jobDataToStore, null, 2)}. Original apiData (stringified): ${JSON.stringify(apiData, null, 2)}`);
+    errorMessages.value.push('Failed to process server response. Job data might not be updated correctly. Check console.')
+    // Lançar o erro impede que o modal feche e que o estado da loja seja atualizado incorretamente.
+    throw new Error('Failed to process server response. Job data might not be updated correctly. Check console for details.')
+  } else {
+    console.log('JobSettingsModal - handleSuccessfulSettingsUpdate - Successfully derived jobDataToStore:', JSON.parse(JSON.stringify(jobDataToStore)))
+
+    // Enriquecer client_id se estiver faltando em jobDataToStore mas presente em props.jobData
+    // Isso é importante se o backend não retornar todos os campos que o frontend espera manter.
+    if (props.jobData && props.jobData.client_id && (jobDataToStore.client_id === undefined || jobDataToStore.client_id === null || jobDataToStore.client_id === '')) {
+        // Apenas atualize se props.jobData.client_id tiver um valor significativo
+        if (props.jobData.client_id !== '') {
+             console.log(`JobSettingsModal - Enriching client_id from props.jobData (${props.jobData.client_id}) as it was missing or empty in jobDataToStore.`)
+             jobDataToStore.client_id = props.jobData.client_id
+        }
+    } else if (jobDataToStore.client_id === undefined || jobDataToStore.client_id === null || jobDataToStore.client_id === '') {
+      // Se props.jobData.client_id também não estiver disponível ou for vazio, registre um aviso.
+      // O valor padrão de '' já pode ter sido definido pelo watcher ou pela inicialização.
+      console.warn('JobSettingsModal - jobDataToStore is missing client_id or it is empty, and props.jobData.client_id is also unavailable or empty for enrichment.')
+    }
+    
+    // Garantir que client_id seja uma string, mesmo que vazia, se for esperado no tipo JobData
+    if (jobDataToStore.client_id === undefined || jobDataToStore.client_id === null) {
+        jobDataToStore.client_id = ''
+    }
+
+
+    jobsStore.setDetailedJob(jobDataToStore)
+    console.log(`JobSettingsModal - Called jobsStore.setDetailedJob with job ID: ${jobDataToStore.id}`)
+    emit('job-updated', jobDataToStore) // Emitir os dados atualizados e processados
+    closeModal()
+    console.log('JobSettingsModal - Settings saved, store updated, event emitted, and modal closed.')
+  }
+}
+
+// Handle settings update errors
+const handleSettingsUpdateError = (error: unknown) => {
+  console.error('Error saving job settings:', error)
+
+  const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+  toast.error('Falha ao salvar job', {
+    description: `Erro: ${errorMessage}. Tente novamente.`
+  })
 }
 </script>

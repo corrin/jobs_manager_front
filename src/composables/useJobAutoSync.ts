@@ -24,7 +24,7 @@ export function useJobAutoSync(
   const syncError = ref<Error | null>(null)
   const isSyncing = ref(false)
 
-  let intervalId: NodeJS.Timeout | null = null
+  let intervalId: number | null = null
 
   const performSync = async () => {
     if (!isAutoSyncEnabled.value || isSyncing.value) {

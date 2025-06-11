@@ -10,6 +10,9 @@ export function useJobReactivity() {
   const jobsStore = useJobsStore()
   const { setCachedJob, updateCachedJob, withCache } = useJobCache()
 
+  // Track ongoing operations to prevent duplicate calls
+  const ongoingReloads = new Set<string>()
+
   /**
    * Atualiza dados parciais do job de forma reativa
    */
@@ -48,6 +51,14 @@ export function useJobReactivity() {
    * Usado quando precisamos de dados frescos da API
    */
   const reloadJobDataReactively = async (jobId: string, forceReload = false): Promise<void> => {
+    // Prevent duplicate calls
+    if (ongoingReloads.has(jobId)) {
+      console.log(`⏳ Job ${jobId} reload already in progress, skipping duplicate request`)
+      return
+    }
+
+    ongoingReloads.add(jobId)
+
     try {
       const loadFromAPI = async () => {
         const response = await jobRestService.getJobForEdit(jobId)
@@ -82,6 +93,8 @@ export function useJobReactivity() {
     } catch (error) {
       console.error(`Error reloading job ${jobId}:`, error)
       throw error
+    } finally {
+      ongoingReloads.delete(jobId)
     }
   }
 

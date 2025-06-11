@@ -292,13 +292,11 @@
         :job-data="jobData"
         :is-open="showSettingsModal"
         @close="showSettingsModal = false"
-        @job-updated="handleJobUpdated"
       />
       <JobWorkflowModal
         :job-data="jobData"
         :is-open="showWorkflowModal"
         @close="showWorkflowModal = false"
-        @job-updated="handleJobUpdated"
       />
 
       <JobHistoryModal
@@ -538,15 +536,11 @@ const handleFileDeleted = (fileId: string) => {
   }
 }
 
-// Handler unificado para updates de job vindos dos modais
-const handleJobUpdated = (updatedJob: JobData) => {
-  if (jobId.value) {
-    // Usar o composable para atualizar de forma consistente
-    updateJobReactively(jobId.value, updatedJob)
-    notifyJobUpdated(updatedJob.name || 'Job')
-    console.log('🔄 Job updated from modal - store updated reactively')
-  }
-}
+// Handler unificado para updates - não mais necessário devido à reatividade automática do store
+// Os modais atualizam diretamente o store, JobView é automaticamente reativo
+// const handleJobUpdated = (updatedJob: JobData) => {
+//   console.log('✅ Job updated - automatic reactivity via store')
+// }
 
 // Handlers para aba financeira - usando composable para reatividade otimizada
 const handleQuoteCreated = async () => {

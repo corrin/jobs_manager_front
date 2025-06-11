@@ -164,9 +164,8 @@ export class JobRestService {
     try {
       const response: AxiosResponse<JobData> = await api.put(`/job/rest/jobs/${jobId}/`, data)
 
-      // Atualizar a store com os dados mais recentes
-      const jobsStore = useJobsStore()
-      jobsStore.setDetailedJob(response.data)
+      // Não atualizar a store automaticamente - deixar que os componentes façam isso
+      // para evitar loops de atualização e manter controle sobre quando atualizar
       
       return {
         success: true,

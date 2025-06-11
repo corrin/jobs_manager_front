@@ -47,7 +47,7 @@
             </label>
             <select
               id="status"
-              v-model="localJobData.status"
+              v-model="localJobData.job_status"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="quoting">Quoting</option>
@@ -362,9 +362,9 @@ const handleSave = async () => {
     const updateData = {
       name: localJobData.value.name?.trim(),
       client_id: currentClientId.value,
-      contact_id: localJobData.value.contact_id || null,
+      contact_id: localJobData.value.contact_id || undefined,
       order_number: localJobData.value.order_number || '',
-      status: localJobData.value.status,
+      job_status: localJobData.value.job_status,
       description: localJobData.value.description || '',
       notes: localJobData.value.notes || ''
     }

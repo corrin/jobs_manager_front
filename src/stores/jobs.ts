@@ -23,26 +23,26 @@ export interface JobKanbanData {
 
 export interface JobsStoreState {
   // Jobs completos para visualização detalhada
-  detailedJobs: Map<string, JobData>
-  
+  detailedJobs: Record<string, JobData>
+
   // Jobs resumidos para kanban
-  kanbanJobs: Map<string, JobKanbanData>
-  
+  kanbanJobs: Record<string, JobKanbanData>
+
   // Job atualmente sendo visualizado
   currentJobId: string | null
-  
+
   // Estados de loading
   isLoadingJob: boolean
   isLoadingKanban: boolean
-  
+
   // Contexto atual da aplicação
   currentContext: 'kanban' | 'detail' | null
 }
 
 export const useJobsStore = defineStore('jobs', () => {
-  // State
-  const detailedJobs = ref<Map<string, JobData>>(new Map())
-  const kanbanJobs = ref<Map<string, JobKanbanData>>(new Map())
+  // State - usar objetos reativos ao invés de Maps para melhor reatividade
+  const detailedJobs = ref<Record<string, JobData>>({})
+  const kanbanJobs = ref<Record<string, JobKanbanData>>({})
   const currentJobId = ref<string | null>(null)
   const isLoadingJob = ref(false)
   const isLoadingKanban = ref(false)
@@ -51,101 +51,127 @@ export const useJobsStore = defineStore('jobs', () => {
   // Getters
   const currentJob = computed(() => {
     if (!currentJobId.value) return null
-    return detailedJobs.value.get(currentJobId.value) || null
+    return detailedJobs.value[currentJobId.value] || null
   })
 
   const allKanbanJobs = computed(() => {
-    return Array.from(kanbanJobs.value.values())
+    return Object.values(kanbanJobs.value)
   })
 
   const getJobById = computed(() => {
     return (id: string): JobData | null => {
-      return detailedJobs.value.get(id) || null
+      return detailedJobs.value[id] || null
     }
   })
 
   const getKanbanJobById = computed(() => {
     return (id: string): JobKanbanData | null => {
-      return kanbanJobs.value.get(id) || null
+      return kanbanJobs.value[id] || null
     }
-  })  // Actions para gerenciar jobs detalhados
+  })
+
+  // Actions para gerenciar jobs detalhados
   const setDetailedJob = (job: JobData): void => {
-    console.log('🏪 Store - setDetailedJob called with job:', job.id, 'status:', job.job_status)
-    console.log('🏪 Store - Before update, current job in store:', detailedJobs.value.get(job.id)?.job_status || 'NOT_FOUND')
+    // Guard clause - validar se job e job.id existem e são válidos
+    if (!job) {
+      console.error('🚨 Store - setDetailedJob called with null/undefined job')
+      console.trace('Stack trace for undefined job call')
+      return
+    }
     
-    detailedJobs.value.set(job.id, job)
-    
-    console.log('🏪 Store - After update, job in store:', detailedJobs.value.get(job.id)?.job_status)
-    
+    if (!job.id || typeof job.id !== 'string') {
+      console.error('🚨 Store - setDetailedJob called with invalid job.id:', job.id, 'Full job:', job)
+      console.trace('Stack trace for invalid job.id call')
+      return
+    }
+
+    // Evitar loops infinitos - verificar se o job já existe e é idêntico
+    const existingJob = detailedJobs.value[job.id]
+    if (existingJob && JSON.stringify(existingJob) === JSON.stringify(job)) {
+      console.log('🔄 Store - Job data identical, skipping update to prevent loop:', job.id)
+      return
+    }
+
+    console.log('🏪 Store - setDetailedJob called with job:', job.id, 'job_status:', job.job_status)
+    console.log('🏪 Store - Before update, current job in store:', detailedJobs.value[job.id]?.job_status || 'NOT_FOUND')
+
+    // Criar novo objeto para forçar reatividade
+    const newJob = { ...job }
+    detailedJobs.value = {
+      ...detailedJobs.value,
+      [job.id]: newJob
+    }
+
+    console.log('🏪 Store - After update, job in store:', detailedJobs.value[job.id]?.job_status)
+
     // Atualizar também no kanban se o job existir lá
-    if (kanbanJobs.value.has(job.id)) {
+    if (kanbanJobs.value[job.id]) {
       console.log('🏪 Store - Also updating kanban job')
-      updateKanbanJobFromDetailed(job)
+      updateKanbanJobFromDetailed(newJob)
     }
   }
 
   const updateDetailedJob = (jobId: string, updates: Partial<JobData>): void => {
-    const existingJob = detailedJobs.value.get(jobId)
+    const existingJob = detailedJobs.value[jobId]
     if (existingJob) {
+      // Criar novo objeto para forçar reatividade
       const updatedJob = { ...existingJob, ...updates }
-      detailedJobs.value.set(jobId, updatedJob)
-      
+      detailedJobs.value = {
+        ...detailedJobs.value,
+        [jobId]: updatedJob
+      }
+
       // Atualizar também no kanban se o job existir lá
-      if (kanbanJobs.value.has(jobId)) {
+      if (kanbanJobs.value[jobId]) {
         updateKanbanJobFromDetailed(updatedJob)
       }
     }
   }
 
   const removeDetailedJob = (jobId: string): void => {
-    detailedJobs.value.delete(jobId)
-    
-    // Limpar currentJobId se for o job removido
-    if (currentJobId.value === jobId) {
-      currentJobId.value = null
-    }
+    delete detailedJobs.value[jobId]
   }
 
   // Actions para gerenciar jobs do kanban
   const setKanbanJobs = (jobs: JobKanbanData[]): void => {
-    kanbanJobs.value.clear()
+    // Limpar primeiro e depois popular
+    kanbanJobs.value = {}
     jobs.forEach(job => {
-      kanbanJobs.value.set(job.id, job)
+      kanbanJobs.value[job.id] = job
     })
   }
 
   const setKanbanJob = (job: JobKanbanData): void => {
-    kanbanJobs.value.set(job.id, job)
+    kanbanJobs.value[job.id] = job
   }
 
   const updateKanbanJob = (jobId: string, updates: Partial<JobKanbanData>): void => {
-    const existingJob = kanbanJobs.value.get(jobId)
+    const existingJob = kanbanJobs.value[jobId]
     if (existingJob) {
-      const updatedJob = { ...existingJob, ...updates }
-      kanbanJobs.value.set(jobId, updatedJob)
+      kanbanJobs.value[jobId] = { ...existingJob, ...updates }
     }
   }
 
   const removeKanbanJob = (jobId: string): void => {
-    kanbanJobs.value.delete(jobId)
+    delete kanbanJobs.value[jobId]
   }
 
   // Helper para sincronizar dados do job detalhado para o kanban
   const updateKanbanJobFromDetailed = (detailedJob: JobData): void => {
-    const kanbanJob = kanbanJobs.value.get(detailedJob.id)
+    const kanbanJob = kanbanJobs.value[detailedJob.id]
     if (kanbanJob) {
-      const updatedKanbanJob: JobKanbanData = {
+      kanbanJobs.value[detailedJob.id] = {
         ...kanbanJob,
         name: detailedJob.name,
         job_status: detailedJob.job_status,
         client_name: detailedJob.client_name,
-        // Adicionar outros campos relevantes para o kanban
+        contact_person: detailedJob.contact_name || kanbanJob.contact_person,
+        paid: detailedJob.paid || false,
       }
-      kanbanJobs.value.set(detailedJob.id, updatedKanbanJob)
     }
   }
 
-  // Actions para controle de estado
+  // Actions para navegação
   const setCurrentJobId = (jobId: string | null): void => {
     currentJobId.value = jobId
   }
@@ -164,12 +190,12 @@ export const useJobsStore = defineStore('jobs', () => {
 
   // Actions para limpeza
   const clearDetailedJobs = (): void => {
-    detailedJobs.value.clear()
+    detailedJobs.value = {}
     currentJobId.value = null
   }
 
   const clearKanbanJobs = (): void => {
-    kanbanJobs.value.clear()
+    kanbanJobs.value = {}
   }
 
   const clearAll = (): void => {
@@ -182,55 +208,50 @@ export const useJobsStore = defineStore('jobs', () => {
   const updateJobStatus = (jobId: string, newStatus: string): void => {
     // Atualizar no job detalhado
     updateDetailedJob(jobId, { job_status: newStatus })
-    
+
     // Atualizar no kanban
     updateKanbanJob(jobId, { job_status: newStatus })
   }
 
   // Actions específicas para atualizar dados do job de forma reativa
   const updateJobEvents = (jobId: string, events: any[]): void => {
-    const job = detailedJobs.value.get(jobId)
+    const job = detailedJobs.value[jobId]
     if (job) {
-      const updatedJob = { ...job, events }
-      detailedJobs.value.set(jobId, updatedJob)
+      detailedJobs.value[jobId] = { ...job, events }
     }
   }
 
   const addJobEvent = (jobId: string, event: any): void => {
-    const job = detailedJobs.value.get(jobId)
+    const job = detailedJobs.value[jobId]
     if (job) {
       const events = job.events || []
-      const updatedJob = { ...job, events: [event, ...events] }
-      detailedJobs.value.set(jobId, updatedJob)
+      detailedJobs.value[jobId] = { ...job, events: [event, ...events] }
     }
   }
 
   const updateJobPricings = (jobId: string, pricings: any): void => {
-    const job = detailedJobs.value.get(jobId)
+    const job = detailedJobs.value[jobId]
     if (job) {
-      const updatedJob = { ...job, latest_pricings: pricings }
-      detailedJobs.value.set(jobId, updatedJob)
+      detailedJobs.value[jobId] = { ...job, latest_pricings: pricings }
     }
   }
 
   const updateJobCompanyDefaults = (jobId: string, companyDefaults: any): void => {
-    const job = detailedJobs.value.get(jobId)
+    const job = detailedJobs.value[jobId]
     if (job) {
-      const updatedJob = { ...job, company_defaults: companyDefaults }
-      detailedJobs.value.set(jobId, updatedJob)
+      detailedJobs.value[jobId] = { ...job, company_defaults: companyDefaults }
     }
   }
 
   // Action para atualizar dados específicos sem recarregar tudo
   const updateJobPartialData = (jobId: string, partialData: Partial<JobData>): void => {
-    const job = detailedJobs.value.get(jobId)
+    const job = detailedJobs.value[jobId]
     if (job) {
-      const updatedJob = { ...job, ...partialData }
-      detailedJobs.value.set(jobId, updatedJob)
-      
+      detailedJobs.value[jobId] = { ...job, ...partialData }
+
       // Sincronizar dados essenciais com kanban se existir
-      if (kanbanJobs.value.has(jobId)) {
-        updateKanbanJobFromDetailed(updatedJob)
+      if (kanbanJobs.value[jobId]) {
+        updateKanbanJobFromDetailed(detailedJobs.value[jobId])
       }
     }
   }
@@ -243,13 +264,13 @@ export const useJobsStore = defineStore('jobs', () => {
     isLoadingJob,
     isLoadingKanban,
     currentContext,
-    
+
     // Getters
     currentJob,
     allKanbanJobs,
     getJobById,
     getKanbanJobById,
-    
+
     // Actions
     setDetailedJob,
     updateDetailedJob,
@@ -267,7 +288,7 @@ export const useJobsStore = defineStore('jobs', () => {
     clearAll,
     updateJobStatus,
     updateJobEvents,
-    addJobEvent, 
+    addJobEvent,
     updateJobPricings,
     updateJobCompanyDefaults,
     updateJobPartialData,

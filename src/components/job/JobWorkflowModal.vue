@@ -181,9 +181,11 @@ const initializeLocalJobData = (jobData: JobData) => {
 // Watch for props changes
 watch(() => props.jobData, (newJobData) => {
   if (!newJobData) {
+    console.log('🚫 JobWorkflowModal - Received null/undefined jobData, skipping initialization')
     return
   }
   
+  console.log('✅ JobWorkflowModal - Received valid jobData, initializing:', newJobData.id)
   initializeLocalJobData(newJobData)
 }, { immediate: true })
 
@@ -266,14 +268,29 @@ const saveWorkflow = async () => {
 
     // Se a API retornou dados atualizados, usar eles
     if (result.data) {
+      // A API do JobWorkflowModal retorna dados em result.data (pode ser completa ou simples)
+      // Passar diretamente para handleSuccessfulUpdate que fará a extração correta
       handleSuccessfulUpdate(result.data)
     } else {
       // Se não retornou dados (apenas success: true), criar dados atualizados manualmente
       console.log('⚠️ JobWorkflowModal - API returned success but no data, using local updates')
+      
+      // Guard clause - validar dados antes de criar objeto atualizado
+      if (!props.jobData?.id) {
+        throw new Error('Invalid job data - missing id')
+      }
+      
       const updatedJobData = {
         ...props.jobData,
-        ...updateData
+        ...updateData,
+        id: props.jobData.id // Garantir que o ID sempre existe
       }
+      
+      // Validar se o objeto criado é válido
+      if (!updatedJobData.id) {
+        throw new Error('Failed to create valid updated job data')
+      }
+      
       handleSuccessfulUpdate(updatedJobData)
     }
     
@@ -295,17 +312,60 @@ const prepareUpdateData = (): JobUpdateData => {
 }
 
 // Handle successful workflow update
-const handleSuccessfulUpdate = (updatedJobData: JobData) => {
-  console.log('🎯 JobWorkflowModal - handleSuccessfulUpdate called with:', updatedJobData)
-  console.log('🔍 JobWorkflowModal - Updated job_status:', updatedJobData.job_status)
+const handleSuccessfulUpdate = (updatedJobData: any) => {
+  // Guard clause - early return for null/undefined data
+  if (!updatedJobData) {
+    console.error('🚨 JobWorkflowModal - handleSuccessfulUpdate called with null/undefined data')
+    throw new Error('Invalid job data received - data is null or undefined')
+  }
+
+  // Extract job data using switch-like logic for different response structures
+  let jobData: JobData
+
+  // Use early return pattern for different data structures
+  if (updatedJobData.data?.job?.id) {
+    // Structure: { data: { job: {...}, latest_pricings: {...}, events: [...] } }
+    console.log('🔍 JobWorkflowModal - Processing data.job structure')
+    jobData = {
+      ...updatedJobData.data.job,
+      latest_pricings: updatedJobData.data.latest_pricings || updatedJobData.data.job.latest_pricings,
+      events: updatedJobData.data.events || updatedJobData.data.job.events,
+      company_defaults: updatedJobData.data.company_defaults || updatedJobData.data.job.company_defaults
+    }
+  } else if (updatedJobData.job?.id) {
+    // Structure: { job: {...}, latest_pricings: {...}, events: [...] }
+    console.log('🔍 JobWorkflowModal - Processing job structure')
+    jobData = {
+      ...updatedJobData.job,
+      latest_pricings: updatedJobData.latest_pricings || updatedJobData.job.latest_pricings,
+      events: updatedJobData.events || updatedJobData.job.events,
+      company_defaults: updatedJobData.company_defaults || updatedJobData.job.company_defaults
+    }
+  } else if (updatedJobData.id) {
+    // Structure: direct job data
+    console.log('🔍 JobWorkflowModal - Processing direct job structure')
+    jobData = updatedJobData
+  } else {
+    console.error('🚨 JobWorkflowModal - Invalid data structure:', updatedJobData)
+    throw new Error('Invalid job data received - missing job ID')
+  }
+
+  // Guard clause - validate final job data
+  if (!jobData.id || typeof jobData.id !== 'string' || jobData.id.trim() === '') {
+    console.error('🚨 JobWorkflowModal - Invalid job ID received:', jobData.id)
+    throw new Error('Invalid job ID received')
+  }
+
+  console.log('🎯 JobWorkflowModal - Processing valid job data:', jobData.id)
+  console.log('🔍 JobWorkflowModal - Updated job_status:', jobData.job_status)
   
   toast.success('Workflow atualizado com sucesso!', {
-    description: `Status e configurações do ${updatedJobData.name} foram salvos`
+    description: `Status e configurações do ${jobData.name} foram salvos`
   })
 
-  // Atualizar a store - a reatividade será automática
+  // Update store - this will trigger reactivity throughout the application
   console.log('📝 JobWorkflowModal - Calling jobsStore.setDetailedJob')
-  jobsStore.setDetailedJob(updatedJobData)
+  jobsStore.setDetailedJob(jobData)
   
   console.log('✅ JobWorkflowModal - Store updated successfully')
   closeModal()
