@@ -131,7 +131,7 @@ const expenseEntries = computed(() => {
 
 const timeTotal = computed(() => {
   return timeEntries.value.reduce((total, entry) => {
-    // Usar revenue se disponível, senão calcular com base em minutos e charge_out_rate
+    // Use revenue if available, otherwise calculate using minutes and charge_out_rate
     let entryRevenue = 0
     
     if (entry.revenue !== undefined && entry.revenue !== null && !isNaN(entry.revenue)) {
@@ -148,7 +148,7 @@ const timeTotal = computed(() => {
 
 const materialTotal = computed(() => {
   const materialsTotal = materialEntries.value.reduce((total, entry) => {
-    // Usar revenue se disponível, senão calcular
+    // Use revenue if available, otherwise calculate
     let entryRevenue = 0
     
     if (entry.revenue !== undefined && entry.revenue !== null && !isNaN(entry.revenue)) {
@@ -161,7 +161,7 @@ const materialTotal = computed(() => {
   }, 0)
 
   const adjustmentsTotal = adjustmentEntries.value.reduce((total, entry) => {
-    // Usar revenue se disponível, senão price_adjustment
+    // Use revenue if available, otherwise price_adjustment
     let entryRevenue = 0
     
     if (entry.revenue !== undefined && entry.revenue !== null && !isNaN(entry.revenue)) {
@@ -181,7 +181,7 @@ const grandTotal = computed(() => {
 })
 
 const formatCurrency = (amount: number | undefined | null): string => {
-  // Validação robusta para valores não-numéricos
+  // Robust validation for non-numeric values
   const numericAmount = Number(amount)
   if (isNaN(numericAmount) || amount === null || amount === undefined) {
     return '$0.00'

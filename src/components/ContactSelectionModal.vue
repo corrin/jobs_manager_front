@@ -158,7 +158,7 @@ const emit = defineEmits<{
   'save-contact': []
 }>()
 
-// Methods seguindo clean code principles
+// Methods following clean code principles
 const selectContact = (contact: ClientContact) => {
   emit('select-contact', contact)
 }

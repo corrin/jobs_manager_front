@@ -141,7 +141,7 @@ import { clientService } from '@/services/clientService'
 import { createClientSchema, type CreateClientData, type CreateClientResponse } from '@/schemas/clientSchemas'
 import type { Client } from '@/composables/useClientLookup'
 
-// Props seguindo princípios de clean code
+// Props
 interface Props {
   isOpen: boolean
   initialName?: string
@@ -157,7 +157,7 @@ const emit = defineEmits<{
   'client-created': [client: Client]
 }>()
 
-// Form state seguindo Zod schema
+// Form state based on Zod schema
 const formData = ref<CreateClientData>({
   name: '',
   email: '',
@@ -171,7 +171,7 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const fieldErrors = ref<Record<string, string>>({})
 
-// Computed properties seguindo early return pattern
+// Computed properties using early return pattern
 const isFormValid = computed(() => {
   // Guard clause - check required fields
   if (!formData.value.name.trim()) return false
@@ -182,7 +182,7 @@ const isFormValid = computed(() => {
   return true
 })
 
-// Handle dialog open/close seguindo SRP
+// Handle dialog open/close following SRP
 const handleDialogChange = (open: boolean) => {
   emit('update:isOpen', open)
   
@@ -192,7 +192,7 @@ const handleDialogChange = (open: boolean) => {
   }
 }
 
-// Form validation seguindo Zod patterns
+// Form validation with Zod patterns
 const validateForm = (): boolean => {
   fieldErrors.value = {}
   
@@ -211,7 +211,7 @@ const validateForm = (): boolean => {
   }
 }
 
-// Submit handler seguindo early return e delegação para service layer
+// Submit handler using early return and delegating to the service layer
 const handleSubmit = async () => {
   // Guard clause - validate form
   if (!validateForm()) {
@@ -224,12 +224,12 @@ const handleSubmit = async () => {
   try {
     const result: CreateClientResponse = await clientService.createClient(formData.value)
 
-    // Guard clause para erro da API
+    // Guard clause for API error
     if (!result.success) {
       throw new Error(result.error || 'Failed to create client')
     }
 
-    // Success - emit event e fechar modal
+    // Success - emit event and close modal
     if (result.client) {
       const newClient: Client = {
         id: result.client.id,
@@ -252,12 +252,12 @@ const handleSubmit = async () => {
   }
 }
 
-// Cancel handler seguindo SRP
+// Cancel handler following SRP
 const handleCancel = () => {
   emit('update:isOpen', false)
 }
 
-// Reset form seguindo clean data patterns
+// Reset form using clean data patterns
 const resetForm = () => {
   formData.value = {
     name: '',

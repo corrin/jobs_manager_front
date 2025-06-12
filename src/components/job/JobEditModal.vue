@@ -298,12 +298,12 @@ const jobNotes = computed({
   }
 })
 
-// Validação do formulário seguindo SRP
+// Form validation following SRP
 const isFormValid = computed(() => {
-  // Guard clause - early return se não há dados
+  // Guard clause - early return if no data
   if (!localJobData.value) return false
   
-  // Validação dos campos obrigatórios
+  // Validate required fields
   const hasName = Boolean(localJobData.value.name?.trim())
   const hasClient = Boolean(localJobData.value.client_id)
   
@@ -319,7 +319,7 @@ watch(() => props.jobData, (newJobData) => {
   }
 }, { immediate: true })
 
-// Methods seguindo clean code principles
+// Methods following clean code principles
 const handleClientChange = (clientId: string) => {
   if (clientId !== localJobData.value.client_id) {
     isClientChanged.value = true
@@ -339,7 +339,7 @@ const handleClientSelected = (client: Client | null) => {
 }
 
 const handleOpenContactModal = async () => {
-  // Guard clause - verificar se client está selecionado
+  // Guard clause - check if client is selected
   if (!currentClientId.value) {
     console.warn('Cannot open contact modal without client')
     return
@@ -373,7 +373,7 @@ const clearContact = () => {
 }
 
 const handleSave = async () => {
-  // Guard clause - validação
+  // Guard clause - validation
   if (!isFormValid.value || !props.jobData) {
     return
   }

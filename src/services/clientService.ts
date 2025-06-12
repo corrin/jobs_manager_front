@@ -65,7 +65,7 @@ export class ClientService {
   }
 
   /**
-   * Get all clients - usando endpoint REST correto
+   * Get all clients - using the correct REST endpoint
    */
   async getAllClients(): Promise<Client[]> {
     try {
