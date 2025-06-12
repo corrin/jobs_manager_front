@@ -7,8 +7,8 @@
 
 import api from '@/services/api'
 import type { AxiosResponse } from 'axios'
-import { 
-  JobDetailSchema, 
+import {
+  JobDetailSchema,
   JobUpdateResponseSchema,
   TimeEntryCreateSchema,
   MaterialEntryCreateSchema,
@@ -98,7 +98,7 @@ export class JobRestService {
   async getJobForEdit(jobId: string): Promise<JobDetailResponse> {
     try {
       const response: AxiosResponse = await api.get(`/job/rest/jobs/${jobId}/`)
-      
+
       // Validar resposta com schema
       const validatedData = JobUpdateResponseSchema.parse(response.data)
       return validatedData
@@ -122,7 +122,7 @@ export class JobRestService {
 
       // Não atualizar a store automaticamente - deixar que os componentes façam isso
       // para evitar loops de atualização e manter controle sobre quando atualizar
-      
+
       return {
         success: true,
         data: response.data,
@@ -232,6 +232,30 @@ export class JobRestService {
     } catch (error) {
       throw this.handleError(error)
     }
+  }
+
+  async fetchWorkshopPdf(jobId: string): Promise<Blob> {
+    const response = await api.get(
+      `/job/rest/jobs/${jobId}/workshop-pdf/`,
+      { responseType: 'blob' }
+    )
+
+    return this.handleResponse<Blob>(response);
+  }
+
+  async attachWorkshopPdf(jobId: string, pdfBlob: Blob): Promise<ApiResponse> {
+    const file = new File(
+      [pdfBlob],
+      `workshop_${jobId}.pdf`,
+      { type: 'application/pdf' }
+    )
+
+    const formData = new FormData()
+    formData.append('job_number', jobId)
+    formData.append('files', file)
+
+    const response = await api.post('job/api/job-files', formData)
+    return this.handleResponse<ApiResponse>(response);
   }
 
   /**

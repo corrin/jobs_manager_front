@@ -18,7 +18,7 @@
         <!-- Add Event Form -->
         <div v-if="showAddEventForm" class="p-4 bg-gray-50 rounded">
           <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="block text-sm font-medium text-gray-800 mb-2">
               Event Description
             </label>
             <textarea v-model="newEventDescription" rows="3"

@@ -327,6 +327,13 @@
         @file-uploaded="handleFileUploaded"
         @file-deleted="handleFileDeleted"
       />
+
+      <JobPdfDialog
+        :job-id="jobId"
+        :job-number="jobData?.job_number"
+        :open="showPdfDialog"
+        @update:open="val => showPdfDialog = val"
+      />
     </div>
   </AppLayout>
 </template>
@@ -367,6 +374,7 @@ import { useJobsStore } from '@/stores/jobs'
 import { useJobReactivity } from '@/composables/useJobReactivity'
 import { useJobNotifications } from '@/composables/useJobNotifications'
 import { useJobAutoSync } from '@/composables/useJobAutoSync'
+import JobPdfDialog from '@/components/job/JobPdfDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -416,7 +424,7 @@ const loadJobData = async () => {
         // company_defaults: response.data.company_defaults || null // Removido daqui
       };
       jobsStore.setDetailedJob(enrichedJob);
-      
+
       // Salvar companyDefaults separadamente se vier na resposta
       if (response.data.company_defaults) {
         companyDefaults.value = response.data.company_defaults;
@@ -425,13 +433,13 @@ const loadJobData = async () => {
       } else {
         // Tentar buscar do store se não vier na resposta do job específico
         // ou carregar de um endpoint dedicado se necessário
-        // companyDefaults.value = jobsStore.companyDefaults; 
+        // companyDefaults.value = jobsStore.companyDefaults;
         console.warn('Company defaults not found in job response, ensure they are loaded elsewhere if needed by NewTaskModal.');
       }
 
       // jobEvents e latestPricings são computed e não precisam ser atribuídos manualmente
       // eles são automaticamente atualizados quando jobData muda
-      
+
       // Não fazer isso - são computed readonly:
       // jobEvents.value = response.data.events || [];
       // latestPricings.value = response.data.latest_pricings || [];
@@ -442,11 +450,11 @@ const loadJobData = async () => {
     }
   } catch (error) {
     console.error('Error loading job:', error)
-    
+
     // Usar o sistema de notificações para erros
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
     notifyJobError(jobId.value, errorMessage)
-    
+
     // Fallback para alert se necessário
     alert('Failed to load job data')
     navigateBack()
@@ -456,7 +464,7 @@ const loadJobData = async () => {
 }
 
 // Auto-sync para manter dados sempre atualizados (opcional - pode ser desabilitado)
-const { 
+const {
   isAutoSyncEnabled,
   toggleAutoSync,
   manualSync
@@ -519,6 +527,7 @@ const showSettingsModal = ref(false)
 const showWorkflowModal = ref(false)
 const showHistoryModal = ref(false)
 const showAttachmentsModal = ref(false)
+const showPdfDialog = ref(false)
 
 // Tab state
 const activeTab = ref<'pricing' | 'financial'>('pricing')
@@ -599,9 +608,8 @@ const handleInvoiceCreated = async () => {
 }
 
 // Ações dos botões do rodapé
-const printJobSheet = () => {
-  // TODO: Implementar impressão via PDF
-  console.log('Print job sheet for:', jobId.value)
+const printJobSheet = async () => {
+  showPdfDialog.value = true
 }
 
 const confirmDeleteJob = () => {
@@ -640,7 +648,7 @@ const handleTaskSaved = (taskData: any, addAnother: boolean) => {
   //   if (response.success) {
   //     notifyEventAdded('Time entry added successfully');
   //     // Atualizar os dados do job ou pricings se necessário
-  //     reloadJobDataReactively(); 
+  //     reloadJobDataReactively();
   //   } else {
   //     notifyJobError(response.message || 'Failed to add time entry');
   //   }
