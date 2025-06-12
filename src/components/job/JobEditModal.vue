@@ -143,7 +143,7 @@
               <RichTextEditor
                 id="description"
                 label="Description (for invoice)"
-                v-model="localJobData.description"
+                v-model="jobDescription"
                 placeholder="Enter job description..."
                 help-text="This description will appear on the invoice"
               />
@@ -154,7 +154,7 @@
               <RichTextEditor
                 id="notes"
                 label="Job Notes"
-                v-model="localJobData.notes"
+                v-model="jobNotes"
                 placeholder="Enter internal notes about this job..."
                 help-text="Internal notes - not shown on invoice"
               />
@@ -283,8 +283,31 @@ const contactDisplayName = computed(() => {
   return ''
 })
 
+// Computeds para campos nullable para compatibilidade com RichTextEditor
+const jobDescription = computed({
+  get: () => localJobData.value.description || '',
+  set: (value: string) => {
+    localJobData.value.description = value || null
+  }
+})
+
+const jobNotes = computed({
+  get: () => localJobData.value.notes || '',
+  set: (value: string) => {
+    localJobData.value.notes = value || null
+  }
+})
+
+// Validação do formulário seguindo SRP
 const isFormValid = computed(() => {
-  return !!(localJobData.value.name?.trim() && currentClientId.value)
+  // Guard clause - early return se não há dados
+  if (!localJobData.value) return false
+  
+  // Validação dos campos obrigatórios
+  const hasName = Boolean(localJobData.value.name?.trim())
+  const hasClient = Boolean(localJobData.value.client_id)
+  
+  return hasName && hasClient
 })
 
 // Watch for props changes

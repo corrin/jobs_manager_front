@@ -6,10 +6,23 @@
  */
 
 import api from '@/services/api'
-import { useJobsStore } from '@/stores/jobs'
 import type { AxiosResponse } from 'axios'
+import { 
+  JobDetailSchema, 
+  JobUpdateResponseSchema,
+  TimeEntryCreateSchema,
+  MaterialEntryCreateSchema,
+  AdjustmentEntryCreateSchema,
+  JobEventSchema,
+  type JobDetail,
+  type JobUpdateResponse,
+  type TimeEntryCreate,
+  type MaterialEntryCreate,
+  type AdjustmentEntryCreate,
+  type JobEvent
+} from '@/schemas/jobSchemas'
 
-// Types para Job
+// Legacy types mantidos para compatibilidade (serão removidos gradualmente)
 export interface JobCreateData {
   name: string
   client_id: string
@@ -28,85 +41,19 @@ export interface JobUpdateData {
   order_number?: string
   notes?: string
   contact_id?: string
-  job_status?: string  // Changed from 'status' to 'job_status' to match backend
+  job_status?: string
   [key: string]: any
 }
 
-export interface JobPricingData {
-  time_entries: any[]
-  material_entries: any[]
-  adjustment_entries: any[]
-}
+// Usar schemas para novos tipos
+export type JobData = JobDetail
+export type TimeEntryCreateData = TimeEntryCreate
+export type MaterialEntryCreateData = MaterialEntryCreate
+export type AdjustmentEntryCreateData = AdjustmentEntryCreate
+export type JobDetailResponse = JobUpdateResponse
+export type { JobEvent }
 
-export interface JobData {
-  id: string
-  name: string
-  job_number: number
-  client_id: string
-  client_name: string
-  description?: string
-  order_number?: string
-  notes?: string
-  contact_id?: string
-  contact_name?: string
-  job_status: string  // Changed from 'status' to 'job_status' to match backend
-  complex_job: boolean
-  pricing_methodology: string
-  created_at: string
-  updated_at: string
-  // Workflow fields
-  delivery_date?: string
-  quote_acceptance_date?: string
-  quoted?: boolean
-  invoiced?: boolean
-  paid?: boolean
-  // Dados adicionais para reatividade - podem estar presentes ou não
-  latest_pricings?: {
-    estimate_pricing?: JobPricingData
-    quote_pricing?: JobPricingData
-    reality_pricing?: JobPricingData
-  }
-  events?: JobEvent[]
-  company_defaults?: CompanyDefaults
-}
-
-export interface JobEvent {
-  id: string
-  timestamp: string
-  event_type: string
-  description: string
-  staff: string
-}
-
-export interface CompanyDefaults {
-  materials_markup: number
-  time_markup: number
-  charge_out_rate: number
-  wage_rate: number
-}
-
-export interface JobDetailResponse {
-  success: boolean
-  data: {
-    job: JobData
-    latest_pricings: {
-      estimate_pricing?: JobPricingData
-      quote_pricing?: JobPricingData
-      reality_pricing?: JobPricingData
-    }
-    events: JobEvent[]
-    company_defaults: CompanyDefaults
-  }
-}
-
-export interface JobEvent {
-  id: string
-  timestamp: string
-  event_type: string
-  description: string
-  staff: string
-}
-
+// Legacy interfaces ainda em uso
 export interface CompanyDefaults {
   materials_markup: number
   time_markup: number
@@ -150,9 +97,18 @@ export class JobRestService {
    */
   async getJobForEdit(jobId: string): Promise<JobDetailResponse> {
     try {
-      const response: AxiosResponse<JobDetailResponse> = await api.get(`/job/rest/jobs/${jobId}/`)
-      return this.handleResponse(response)
-    } catch (error) {
+      const response: AxiosResponse = await api.get(`/job/rest/jobs/${jobId}/`)
+      
+      // Validar resposta com schema
+      const validatedData = JobUpdateResponseSchema.parse(response.data)
+      return validatedData
+    } catch (error: any) {
+      // Se erro de validação, usar estrutura legacy
+      if (error.name === 'ZodError') {
+        console.warn('⚠️ Response validation failed, using legacy structure:', error.errors)
+        const response: AxiosResponse = await api.get(`/job/rest/jobs/${jobId}/`)
+        return this.handleResponse(response)
+      }
       throw this.handleError(error)
     }
   }
@@ -212,6 +168,42 @@ export class JobRestService {
       const response: AxiosResponse<ApiResponse> = await api.post(`/job/rest/jobs/${jobId}/events/`, {
         description
       })
+      return this.handleResponse(response)
+    } catch (error) {
+      return this.handleError(error)
+    }
+  }
+
+  /**
+   * Cria uma nova entrada de tempo (TimeEntry)
+   */
+  async createTimeEntry(jobId: string, timeEntryData: TimeEntryCreateData): Promise<JobDetailResponse> {
+    try {
+      const response: AxiosResponse<JobDetailResponse> = await api.post(`/job/rest/jobs/${jobId}/time-entries/`, timeEntryData)
+      return this.handleResponse(response)
+    } catch (error) {
+      return this.handleError(error)
+    }
+  }
+
+  /**
+   * Cria uma nova entrada de material (MaterialEntry)
+   */
+  async createMaterialEntry(jobId: string, materialEntryData: MaterialEntryCreateData): Promise<JobDetailResponse> {
+    try {
+      const response: AxiosResponse<JobDetailResponse> = await api.post(`/job/rest/jobs/${jobId}/material-entries/`, materialEntryData)
+      return this.handleResponse(response)
+    } catch (error) {
+      return this.handleError(error)
+    }
+  }
+
+  /**
+   * Cria uma nova entrada de ajuste (AdjustmentEntry)
+   */
+  async createAdjustmentEntry(jobId: string, adjustmentEntryData: AdjustmentEntryCreateData): Promise<JobDetailResponse> {
+    try {
+      const response: AxiosResponse<JobDetailResponse> = await api.post(`/job/rest/jobs/${jobId}/adjustment-entries/`, adjustmentEntryData)
       return this.handleResponse(response)
     } catch (error) {
       return this.handleError(error)

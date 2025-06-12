@@ -105,7 +105,7 @@
               :optional="true"
               :client-id="currentClientId"
               :client-name="currentClientName"
-              :initial-contact-id="localJobData.contact_id"
+              :initial-contact-id="safeContactId"
               v-model="contactDisplayValue"
               @update:selected-contact="handleContactSelected"
             />
@@ -149,7 +149,7 @@
           <!-- Notes -->
           <div>
             <RichTextEditor
-              v-model="localJobData.notes"
+              v-model="jobNotesComputed"
               label="Notes"
               placeholder="Internal notes..."
               :required="false"
@@ -181,7 +181,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import type { JobData } from '@/services/jobRestService'
+import type { JobData, JobUpdateData } from '@/services/jobRestService'
 import { jobRestService } from '@/services/jobRestService'
 import { useJobsStore } from '@/stores/jobs'
 import RichTextEditor from '@/components/RichTextEditor.vue'
@@ -251,6 +251,19 @@ const currentClientName = computed(() => {
     : localJobData.value.client_name || ''
 })
 
+// Computed para contact_id nullable
+const safeContactId = computed(() => {
+  return localJobData.value.contact_id || undefined
+})
+
+// Computed para notes nullable
+const jobNotesComputed = computed({
+  get: () => localJobData.value.notes || '',
+  set: (value: string) => {
+    localJobData.value.notes = value || null
+  }
+})
+
 // Helper functions - declared before watchers
 const resetClientChangeState = () => {
   isChangingClient.value = false
@@ -279,6 +292,29 @@ watch(() => props.jobData, (newJobData) => {
     client_id: newJobData.client_id === undefined || newJobData.client_id === null ? '' : newJobData.client_id 
   }
 }, { immediate: true, deep: true })
+
+/**
+ * Sanitiza dados do job para compatibilidade com JobUpdateData
+ * Converte valores null para undefined conforme esperado pela API
+ */
+const sanitizeJobData = (data: any): JobUpdateData => {
+  // Guard clause - early return se não há dados
+  if (!data) return {}
+  
+  // Converter null para undefined para campos específicos
+  const sanitized: any = { ...data }
+  
+  // Lista de campos que podem ser null mas devem ser undefined na API
+  const nullableFields = ['description', 'notes', 'contact_id', 'contact_name', 'order_number']
+  
+  nullableFields.forEach(field => {
+    if (sanitized[field] === null) {
+      sanitized[field] = undefined
+    }
+  })
+  
+  return sanitized
+}
 
 // Methods seguindo SRP e early return patterns
 const closeModal = () => {
@@ -359,9 +395,12 @@ const saveSettings = async () => {
   isLoading.value = true
   errorMessages.value = []
   try {
+    // Sanitizar dados antes de enviar para a API
+    const sanitizedData = sanitizeJobData(localJobData.value)
+    
     // Usar JSON.parse(JSON.stringify(...)) para log é uma boa forma de ver o valor real sem referências
-    console.log(`JobSettingsModal - saveSettings - Updating job ID: ${props.jobData.id} with data:`, JSON.parse(JSON.stringify(localJobData.value)))
-    const result = await jobRestService.updateJob(props.jobData.id, localJobData.value)
+    console.log(`JobSettingsModal - saveSettings - Updating job ID: ${props.jobData.id} with data:`, JSON.parse(JSON.stringify(sanitizedData)))
+    const result = await jobRestService.updateJob(props.jobData.id, sanitizedData)
     // Log do resultado completo da API
     console.log('JobSettingsModal - saveSettings - API call result:', JSON.parse(JSON.stringify(result)))
 
@@ -465,7 +504,7 @@ const handleSuccessfulSettingsUpdate = (apiData: any) => {
 
     jobsStore.setDetailedJob(jobDataToStore)
     console.log(`JobSettingsModal - Called jobsStore.setDetailedJob with job ID: ${jobDataToStore.id}`)
-    emit('job-updated', jobDataToStore) // Emitir os dados atualizados e processados
+    // Store gerencia os dados, não precisamos emitir evento
     closeModal()
     console.log('JobSettingsModal - Settings saved, store updated, event emitted, and modal closed.')
   }

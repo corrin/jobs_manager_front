@@ -169,8 +169,12 @@ const emitDataChanged = () => {
 }
 
 // Utility functions
-const formatCurrency = (amount: number) => {
-  return amount.toFixed(2)
+const formatCurrency = (amount: number | undefined | null): string => {
+  const numericAmount = Number(amount)
+  if (isNaN(numericAmount) || amount === null || amount === undefined) {
+    return '0.00'
+  }
+  return numericAmount.toFixed(2)
 }
 
 // Initialize data from props

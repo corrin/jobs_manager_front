@@ -27,6 +27,14 @@
 
           <!-- Action buttons - horizontal scroll on mobile -->
           <div class="flex space-x-2 overflow-x-auto pb-2">
+            <JobAddEntryDropdown
+              v-if="jobData && companyDefaults"
+              :job-id="jobData.id"
+              :job-charge-out-rate="parseFloat(jobData.charge_out_rate || '0')"
+              :company-defaults="companyDefaults"
+              :latest-estimate-pricing-id="jobData.latest_estimate_pricing?.id"
+              class="flex-shrink-0"
+            />
             <DraggableButton
               variant="ghost"
               @click="showSettingsModal = true"
@@ -87,6 +95,13 @@
           <div class="flex items-center space-x-4">
             <!-- Action Buttons -->
             <div class="flex space-x-2">
+              <JobAddEntryDropdown
+                v-if="jobData && companyDefaults"
+                :job-id="jobData.id"
+                :job-charge-out-rate="parseFloat(jobData.charge_out_rate || '0')"
+                :company-defaults="companyDefaults"
+                :latest-estimate-pricing-id="jobData.latest_estimate_pricing?.id"
+              />
               <DraggableButton
                 variant="ghost"
                 @click="showSettingsModal = true"
@@ -192,12 +207,10 @@
         <div class="flex-1 overflow-y-auto min-h-0">
           <!-- Pricing Tab -->
           <div v-if="activeTab === 'pricing'" class="p-4 md:p-6">
-            <JobPricingGrids
+            <PricingSections
               v-if="jobData"
               :job-data="jobData"
-              :latest-pricings="latestPricings"
-              :company-defaults="companyDefaults"
-              @data-changed="handleDataChanged"
+              @refresh="() => reloadJobDataReactively(jobData!.id)"
             />
           </div>
 
@@ -330,16 +343,18 @@ import {
   Wrench,
   BookOpen,
   Paperclip
+  // PlusCircle não é mais necessário aqui diretamente se JobAddEntryDropdown o encapsula
 } from 'lucide-vue-next'
 
 import AppLayout from '@/components/AppLayout.vue'
-import JobPricingGrids from '@/components/job/JobPricingGrids.vue'
+import PricingSections from '@/components/job/pricing/PricingSections.vue'
 import JobFinancialTab from '@/components/job/JobFinancialTab.vue'
 import JobSettingsModal from '@/components/job/JobSettingsModal.vue'
 import JobWorkflowModal from '@/components/job/JobWorkflowModal.vue'
 import JobHistoryModal from '@/components/job/JobHistoryModal.vue'
 import JobAttachmentsModal from '@/components/job/JobAttachmentsModal.vue'
 import DraggableButton from '@/components/job/DraggableButton.vue'
+import JobAddEntryDropdown from '@/components/job/JobAddEntryDropdown.vue'; // Importar o novo componente
 
 import {
   jobRestService,
@@ -398,11 +413,30 @@ const loadJobData = async () => {
         ...response.data.job,
         latest_pricings: response.data.latest_pricings || {},
         events: response.data.events || [],
-        company_defaults: response.data.company_defaults || null
+        // company_defaults: response.data.company_defaults || null // Removido daqui
+      };
+      jobsStore.setDetailedJob(enrichedJob);
+      
+      // Salvar companyDefaults separadamente se vier na resposta
+      if (response.data.company_defaults) {
+        companyDefaults.value = response.data.company_defaults;
+        // Opcionalmente, salvar no store se for usado globalmente
+        // jobsStore.setCompanyDefaults(response.data.company_defaults);
+      } else {
+        // Tentar buscar do store se não vier na resposta do job específico
+        // ou carregar de um endpoint dedicado se necessário
+        // companyDefaults.value = jobsStore.companyDefaults; 
+        console.warn('Company defaults not found in job response, ensure they are loaded elsewhere if needed by NewTaskModal.');
       }
 
-      // Salvar job enriquecido no store - única fonte de verdade
-      jobsStore.setDetailedJob(enrichedJob)
+      // jobEvents e latestPricings são computed e não precisam ser atribuídos manualmente
+      // eles são automaticamente atualizados quando jobData muda
+      
+      // Não fazer isso - são computed readonly:
+      // jobEvents.value = response.data.events || [];
+      // latestPricings.value = response.data.latest_pricings || [];
+      // jobData.value = jobsStore.detailedJob;
+
     } else {
       throw new Error('Failed to load job data')
     }
@@ -456,9 +490,7 @@ const jobEvents = computed(() => {
   return jobData.value?.events || []
 })
 
-const companyDefaults = computed(() => {
-  return jobData.value?.company_defaults || null
-})
+const companyDefaults = ref<CompanyDefaults | null>(null);
 
 // Loading vem do store para ser reativo
 const isLoading = computed(() => jobsStore.isLoadingJob)
@@ -596,6 +628,27 @@ const deleteJob = async () => {
 onMounted(() => {
   loadJobData()
 })
+
+const handleTaskSaved = (taskData: any, addAnother: boolean) => {
+  console.log('Task saved in JobView:', taskData, 'Add another:', addAnother);
+  // Aqui você pode adicionar lógica para interagir com o backend/store
+  // por exemplo, chamar um método em jobRestService para criar a entrada de tempo
+  // e depois atualizar o jobData ou pricings.
+  // Exemplo:
+  // try {
+  //   const response = await jobRestService.addTimeEntry(jobId.value, taskData);
+  //   if (response.success) {
+  //     notifyEventAdded('Time entry added successfully');
+  //     // Atualizar os dados do job ou pricings se necessário
+  //     reloadJobDataReactively(); 
+  //   } else {
+  //     notifyJobError(response.message || 'Failed to add time entry');
+  //   }
+  // } catch (error) {
+  //   notifyJobError('An error occurred while adding time entry.');
+  // }
+  // A lógica de fechar/resetar o modal já é tratada dentro do NewTaskModal e JobAddEntryDropdown.
+};
 </script>
 
 <style scoped>
