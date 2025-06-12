@@ -1,8 +1,8 @@
 /**
  * Job REST Service
  *
- * Service layer para operações REST de Jobs no frontend Vue.js
- * Segue princípios de clean code e SRP
+ * Service layer for REST operations on Jobs in the Vue.js frontend
+ * Follows clean code and SRP principles
  */
 
 import api from '@/services/api'
@@ -22,7 +22,7 @@ import {
   type JobEvent
 } from '@/schemas/jobSchemas'
 
-// Legacy types mantidos para compatibilidade (serão removidos gradualmente)
+// Legacy types kept for compatibility (will be removed gradually)
 export interface JobCreateData {
   name: string
   client_id: string
@@ -45,7 +45,7 @@ export interface JobUpdateData {
   [key: string]: any
 }
 
-// Usar schemas para novos tipos
+// Use schemas for new types
 export type JobData = JobDetail
 export type TimeEntryCreateData = TimeEntryCreate
 export type MaterialEntryCreateData = MaterialEntryCreate
@@ -53,7 +53,7 @@ export type AdjustmentEntryCreateData = AdjustmentEntryCreate
 export type JobDetailResponse = JobUpdateResponse
 export type { JobEvent }
 
-// Legacy interfaces ainda em uso
+// Legacy interfaces still in use
 export interface CompanyDefaults {
   materials_markup: number
   time_markup: number
@@ -81,7 +81,7 @@ export class JobRestService {
   }
 
   /**
-   * Cria um novo Job
+   * Creates a new Job
    */
   async createJob(data: JobCreateData): Promise<ApiResponse> {
     try {
@@ -93,17 +93,17 @@ export class JobRestService {
   }
 
   /**
-   * Busca dados completos de um Job para edição
+   * Fetch full Job data for editing
    */
   async getJobForEdit(jobId: string): Promise<JobDetailResponse> {
     try {
       const response: AxiosResponse = await api.get(`/job/rest/jobs/${jobId}/`)
 
-      // Validar resposta com schema
+      // Validate response with schema
       const validatedData = JobUpdateResponseSchema.parse(response.data)
       return validatedData
     } catch (error: any) {
-      // Se erro de validação, usar estrutura legacy
+      // If validation fails, use legacy structure
       if (error.name === 'ZodError') {
         console.warn('⚠️ Response validation failed, using legacy structure:', error.errors)
         const response: AxiosResponse = await api.get(`/job/rest/jobs/${jobId}/`)
@@ -114,14 +114,14 @@ export class JobRestService {
   }
 
   /**
-   * Atualiza um Job (autosave)
+   * Updates a Job (autosave)
    */
   async updateJob(jobId: string, data: JobUpdateData): Promise<ApiResponse> {
     try {
       const response: AxiosResponse<JobData> = await api.put(`/job/rest/jobs/${jobId}/`, data)
 
-      // Não atualizar a store automaticamente - deixar que os componentes façam isso
-      // para evitar loops de atualização e manter controle sobre quando atualizar
+      // Do not update the store automatically - let components handle this
+      // to avoid update loops and maintain control over when to refresh
 
       return {
         success: true,
@@ -134,7 +134,7 @@ export class JobRestService {
   }
 
   /**
-   * Deleta um Job
+   * Deletes a Job
    */
   async deleteJob(jobId: string): Promise<ApiResponse> {
     try {
@@ -146,7 +146,7 @@ export class JobRestService {
   }
 
   /**
-   * Alterna modo complexo do Job
+   * Toggle the Job's complex mode
    */
   async toggleComplexJob(jobId: string, complexJob: boolean): Promise<ApiResponse> {
     try {
@@ -161,7 +161,7 @@ export class JobRestService {
   }
 
   /**
-   * Adiciona um evento ao Job
+   * Adds an event to the Job
    */
   async addJobEvent(jobId: string, description: string): Promise<ApiResponse> {
     try {
@@ -175,7 +175,7 @@ export class JobRestService {
   }
 
   /**
-   * Cria uma nova entrada de tempo (TimeEntry)
+   * Creates a new time entry
    */
   async createTimeEntry(jobId: string, timeEntryData: TimeEntryCreateData): Promise<JobDetailResponse> {
     try {
@@ -187,7 +187,7 @@ export class JobRestService {
   }
 
   /**
-   * Cria uma nova entrada de material (MaterialEntry)
+   * Creates a new material entry
    */
   async createMaterialEntry(jobId: string, materialEntryData: MaterialEntryCreateData): Promise<JobDetailResponse> {
     try {
@@ -199,7 +199,7 @@ export class JobRestService {
   }
 
   /**
-   * Cria uma nova entrada de ajuste (AdjustmentEntry)
+   * Creates a new adjustment entry
    */
   async createAdjustmentEntry(jobId: string, adjustmentEntryData: AdjustmentEntryCreateData): Promise<JobDetailResponse> {
     try {
@@ -211,7 +211,7 @@ export class JobRestService {
   }
 
   /**
-   * Busca configurações padrão da empresa
+   * Fetch company default settings
    */
   async getCompanyDefaults(): Promise<CompanyDefaults> {
     try {
@@ -223,7 +223,7 @@ export class JobRestService {
   }
 
   /**
-   * Busca valores de status disponíveis
+   * Fetch available status values
    */
   async getStatusValues(): Promise<Record<string, string>> {
     try {
@@ -259,15 +259,15 @@ export class JobRestService {
   }
 
   /**
-   * Tratamento padronizado de respostas da API
+   * Standardised API response handling
    */
   private handleResponse<T>(response: AxiosResponse<T>): T {
-    // Guard clause - verificar resposta HTML (redirecionamento para login)
+    // Guard clause - check for HTML response (redirect to login)
     if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
       throw new Error('Authentication required - redirected to login page')
     }
 
-    // Guard clause - verificar status HTTP
+    // Guard clause - check HTTP status
     if (response.status >= 400) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
@@ -276,15 +276,15 @@ export class JobRestService {
   }
 
   /**
-   * Tratamento padronizado de erros
+   * Standardised error handling
    */
   private handleError(error: any): never {
-    // Guard clause - erro de rede
+    // Guard clause - network error
     if (!error.response) {
       throw new Error('Network error - please check your connection')
     }
 
-    // Switch-case para diferentes tipos de erro HTTP
+    // Switch-case for different HTTP error types
     const status = error.response.status
     const errorData = error.response.data
 

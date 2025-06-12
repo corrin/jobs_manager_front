@@ -8,7 +8,7 @@ const api = axios.create({
   }
 })
 
-// Interceptor for responde debuggig
+// Interceptor for response debugging
 api.interceptors.response.use(
   response => {
     return response

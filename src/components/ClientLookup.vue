@@ -108,7 +108,7 @@ import { useClientLookup } from '@/composables/useClientLookup'
 import CreateClientModal from '@/components/CreateClientModal.vue'
 import type { Client } from '@/composables/useClientLookup'
 
-// Props seguindo princípios de clean code
+// Props
 interface Props {
   id: string
   label: string
@@ -155,7 +155,7 @@ if (props.modelValue) {
   searchQuery.value = props.modelValue
 }
 
-// Handle input changes seguindo early return
+// Handle input changes following early return
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   const value = target.value
@@ -175,7 +175,7 @@ const handleFocus = () => {
   }
 }
 
-// Handle blur with delay para permitir clicks nos suggestions
+// Handle blur with a delay to allow clicks on suggestions
 const handleBlur = () => {
   blurTimeout.value = setTimeout(() => {
     hideSuggestions()

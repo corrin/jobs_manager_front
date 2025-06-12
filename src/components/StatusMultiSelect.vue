@@ -121,7 +121,7 @@ const statusOptions: StatusOption[] = [
 const displayText = computed(() => {
   const count = selectedStatuses.value.length
   
-  // Switch-case para diferentes cenários de display
+  // Switch-case for different display scenarios
   switch (true) {
     case count === 0:
       return 'Select status...'
@@ -134,7 +134,7 @@ const displayText = computed(() => {
   }
 })
 
-// Methods seguindo SRP
+// Methods following SRP
 const getStatusLabel = (value: string): string => {
   const option = statusOptions.find(opt => opt.value === value)
   return option?.label || value
@@ -168,7 +168,7 @@ const removeStatus = (status: string) => {
 }
 
 const toggleAll = () => {
-  // Switch-case para decidir ação
+  // Switch-case to decide action
   switch (selectedStatuses.value.length === statusOptions.length) {
     case true:
       // Deselect all
@@ -187,7 +187,7 @@ const emitUpdate = () => {
   emit('update:modelValue', [...selectedStatuses.value])
 }
 
-// Handle outside clicks para fechar dropdown
+// Handle outside clicks to close the dropdown
 const handleOutsideClick = (event: Event) => {
   const target = event.target as HTMLElement
   const dropdown = target.closest('[data-status-dropdown]')

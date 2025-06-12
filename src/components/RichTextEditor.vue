@@ -126,7 +126,7 @@ const setupEventHandlers = () => {
 
 // Update content from prop changes
 const updateContent = (newContent: string | undefined) => {
-  // Guard clause se Quill não está inicializado
+  // Guard clause if Quill isn't initialised
   if (!quill) return
 
   const safeContent = newContent || ''

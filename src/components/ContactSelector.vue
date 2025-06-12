@@ -119,7 +119,7 @@ const handleOpenModal = async () => {
     initialContactId: props.initialContactId
   })
   
-  // Guard clause - verificar se client está selecionado
+  // Guard clause - check if a client is selected
   if (!props.clientId) {
     console.warn('Cannot open contact modal without client')
     return

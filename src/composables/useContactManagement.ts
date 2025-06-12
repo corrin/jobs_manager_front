@@ -52,9 +52,9 @@ export function useContactManagement() {
     return parts.join(' - ')
   })
 
-  // Open modal seguindo early return pattern
+  // Open modal using an early return pattern
   const openModal = async (clientId: string, clientName: string) => {
-    // Guard clause - verificar se client ID é válido
+    // Guard clause - check if the client ID is valid
     if (!clientId) {
       console.warn('Cannot open contact modal without client ID')
       return
@@ -77,7 +77,7 @@ export function useContactManagement() {
     resetNewContactForm()
   }
 
-  // Load contacts para client específico
+  // Load contacts for a specific client
   const loadContacts = async (clientId: string) => {
     // Guard clause
     if (!clientId) {
@@ -113,9 +113,9 @@ export function useContactManagement() {
     closeModal()
   }
 
-  // Create new contact seguindo early return
+  // Create new contact using early return
   const createNewContact = async (): Promise<boolean> => {
-    // Guard clauses - validações
+    // Guard clauses - validation
     if (!currentClientId.value) {
       console.error('Cannot create contact without client ID')
       return false
@@ -139,7 +139,7 @@ export function useContactManagement() {
       }
 
       const response = await api.post('/clients/rest/contacts/', contactData)
-        // Guard clause para response inválido
+        // Guard clause for an invalid response
       if (!response.data || !response.data.contact) {
         throw new Error('Invalid response from server')
       }
@@ -163,7 +163,7 @@ export function useContactManagement() {
     }
   }
 
-  // Reset form seguindo clean code
+  // Reset form following clean code
   const resetNewContactForm = () => {
     newContactForm.value = {
       name: '',
@@ -175,9 +175,9 @@ export function useContactManagement() {
     }
   }
 
-  // Save contact (create new ou select existing)
+  // Save contact (create new or select existing)
   const saveContact = async (): Promise<boolean> => {
-    // Switch-case para decidir ação baseada no estado
+    // Switch-case to decide action based on state
     const hasNewContactData = newContactForm.value.name.trim().length > 0
     
     switch (true) {
@@ -206,7 +206,7 @@ export function useContactManagement() {
 
   // Find primary contact
   const findPrimaryContact = (): ClientContact | null => {
-    // Early return se não há contacts
+    // Early return if there are no contacts
     if (contacts.value.length === 0) {
       return null
     }

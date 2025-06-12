@@ -62,17 +62,17 @@ const getInitials = (staff: Staff): string => {
     return firstInitial + lastInitial
   }
   
-  // Fallback para display_name quando first_name/last_name não estão disponíveis
+  // Fallback to display_name when first_name/last_name aren't available
   if (staff.display_name) {
     const words = staff.display_name.trim().split(/\s+/)
     if (words.length >= 2) {
-      // Duas ou mais palavras: primeira letra da primeira e última palavra
+      // Two or more words: first letter of the first and last words
       return words[0].charAt(0).toUpperCase() + words[words.length - 1].charAt(0).toUpperCase()
     } else if (words.length === 1 && words[0].length >= 2) {
-      // Uma palavra com pelo menos 2 caracteres: primeiras duas letras
+      // One word with at least 2 characters: first two letters
       return words[0].substring(0, 2).toUpperCase()
     } else if (words[0].length === 1) {
-      // Uma palavra com 1 caractere: repete o caractere
+      // One word with 1 character: repeat that character
       return words[0].charAt(0).toUpperCase() + words[0].charAt(0).toUpperCase()
     }
   }
