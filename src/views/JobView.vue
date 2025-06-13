@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="flex flex-col h-full">
+    <div class="flex flex-col h-full min-h-0">
       <!-- Mobile Header -->
       <div class="flex-shrink-0 bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4">
         <!-- Mobile Layout (stacked) -->
@@ -74,7 +74,7 @@
         </div>
 
         <!-- Desktop/Tablet Layout (original) -->
-        <div class="hidden md:flex items-center justify-between">
+        <div class="hidden md:flex items-end justify-between h-7">
           <div class="flex items-center space-x-4">
             <button
               @click="navigateBack"
@@ -206,7 +206,7 @@
         <!-- Tab Content -->
         <div class="flex-1 overflow-y-auto min-h-0">
           <!-- Pricing Tab -->
-          <div v-if="activeTab === 'pricing'" class="p-4 md:p-6">
+          <div v-if="activeTab === 'pricing'" class="h-full p-4 md:p-6">
             <PricingSections
               v-if="jobData"
               :job-data="jobData"
@@ -215,7 +215,7 @@
           </div>
 
           <!-- Financial Tab -->
-          <div v-if="activeTab === 'financial'" class="p-4 md:p-6">
+          <div v-if="activeTab === 'financial'" class="h-full p-4 md:p-6">
             <JobFinancialTab
               v-if="jobData"
               :job-data="jobData"
@@ -228,7 +228,7 @@
         </div>
 
         <!-- Footer com Ações Principais - Mobile First -->
-        <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-4 mt-auto">
+        <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-4">
           <!-- Mobile Layout (stacked) -->
           <div class="md:hidden space-y-3">
             <!-- Primary Actions Row -->
@@ -322,6 +322,7 @@
 
       <JobAttachmentsModal
         :job-id="jobId"
+        :job-number="jobData?.job_number"
         :is-open="showAttachmentsModal"
         @close="showAttachmentsModal = false"
         @file-uploaded="handleFileUploaded"

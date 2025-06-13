@@ -1,7 +1,7 @@
 <template>
-  <div class="pricing-sections">
-    <!-- 3 Column Layout for Pricing Sections with optimized 50vh height -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[50vh] overflow-hidden">
+  <div class="pricing-sections h-full flex flex-col">
+    <!-- 3 Column Layout for Pricing Sections using full height minus padding -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
       <!-- Estimate Section -->
       <div class="pricing-column flex flex-col">
         <PricingSection
@@ -73,9 +73,9 @@ const realityPricing = computed(() => {
 
 <style scoped>
 .pricing-sections {
-  height: 50vh;
-  max-height: 50vh;
-  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .pricing-column {
@@ -85,7 +85,7 @@ const realityPricing = computed(() => {
   height: 100%;
 }
 
-/* Garantir que as seções de pricing usem todo o espaço disponível */
+/* Ensure pricing sections use all available space */
 .pricing-column :deep(.pricing-section) {
   display: flex;
   flex-direction: column;
@@ -98,20 +98,20 @@ const realityPricing = computed(() => {
   overflow-y: auto;
 }
 
-/* Responsivo para dispositivos móveis */
+/* Responsive for mobile devices */
 @media (max-width: 1023px) {
   .pricing-sections {
     height: auto;
     max-height: none;
     overflow: visible;
   }
-  
+
   .pricing-column {
     height: auto;
     min-height: 300px;
     margin-bottom: 1rem;
   }
-  
+
   .pricing-column :deep(.pricing-section) {
     height: 300px;
   }

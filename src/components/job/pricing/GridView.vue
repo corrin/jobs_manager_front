@@ -67,7 +67,7 @@ const getTimeEntryTotal = (entry: any): number => {
   if (entry.revenue !== undefined && entry.revenue !== null && !isNaN(entry.revenue)) {
     return Number(entry.revenue)
   }
-  
+
   let hours = 0
   // Calcular horas a partir de minutos se disponível
   if (entry.total_minutes) {
@@ -77,7 +77,7 @@ const getTimeEntryTotal = (entry: any): number => {
   } else if (entry.hours) {
     hours = Number(entry.hours)
   }
-  
+
   const rate = Number(entry.charge_out_rate) || 0
   const total = hours * rate
   return isNaN(total) ? 0 : total
@@ -87,15 +87,15 @@ const getExpenseEntryTotal = (entry: any): number => {
   if (entry.revenue !== undefined && entry.revenue !== null) {
     return entry.revenue
   }
-  
+
   if (entry.type === 'material') {
     return (entry.unit_revenue || 0) * (entry.quantity || 0)
   }
-  
+
   if (entry.type === 'adjustment') {
     return entry.price_adjustment || entry.amount || 0
   }
-  
+
   return entry.amount || 0
 }
 </script>

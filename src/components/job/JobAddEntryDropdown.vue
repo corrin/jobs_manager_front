@@ -107,7 +107,7 @@ const handleMaterialSaved = (materialData: any, addAnother: boolean) => {
     />
 
     <!-- Modal para Novo Material -->
-    <NewMaterialModal 
+    <NewMaterialModal
       v-model:open="isNewMaterialModalOpen"
       :job-id="jobId"
       :company-defaults="companyDefaults"

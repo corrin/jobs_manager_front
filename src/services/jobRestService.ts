@@ -19,7 +19,10 @@ import {
   type TimeEntryCreate,
   type MaterialEntryCreate,
   type AdjustmentEntryCreate,
-  type JobEvent
+  type JobEvent,
+  type FileListResponse,
+  FileListResponseSchema,
+  type JobFile
 } from '@/schemas/jobSchemas'
 
 // Legacy types kept for compatibility (will be removed gradually)
@@ -68,6 +71,12 @@ export interface ApiResponse<T = any> {
   data?: T
   job_id?: string
   job_number?: number
+}
+
+export interface UploadFilesResponse {
+  status: string
+  uploaded: JobFile[]
+  message?: string
 }
 
 export class JobRestService {
@@ -234,6 +243,9 @@ export class JobRestService {
     }
   }
 
+  /**
+   * Workshop PDF and file handling
+   */
   async fetchWorkshopPdf(jobId: string): Promise<Blob> {
     const response = await api.get(
       `/job/rest/jobs/${jobId}/workshop-pdf/`,
@@ -243,19 +255,78 @@ export class JobRestService {
     return this.handleResponse<Blob>(response);
   }
 
-  async attachWorkshopPdf(jobId: string, pdfBlob: Blob): Promise<ApiResponse> {
+  async attachWorkshopPdf(jobNumber: number, pdfBlob: Blob): Promise<ApiResponse> {
     const file = new File(
       [pdfBlob],
-      `workshop_${jobId}.pdf`,
+      `workshop_job_${jobNumber}.pdf`,
       { type: 'application/pdf' }
     )
 
     const formData = new FormData()
-    formData.append('job_number', jobId)
+    formData.append('job_number', jobNumber.toString())
     formData.append('files', file)
 
-    const response = await api.post('job/api/job-files', formData)
+    const response = await api.post(
+      '/job/rest/jobs/files/upload/',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    )
     return this.handleResponse<ApiResponse>(response);
+  }
+
+  async listJobFiles(jobNumber: string): Promise<FileListResponse> {
+    const response = await api.get<FileListResponse>(
+      `/job/rest/jobs/files/${jobNumber}/`
+    )
+
+    return FileListResponseSchema.parse(response.data)
+  }
+
+  async deleteJobFile(fileId: string): Promise<ApiResponse> {
+    const response = await api.delete<ApiResponse>(
+      `/job/rest/jobs/files/${fileId}/`
+    )
+
+    return this.handleResponse<ApiResponse>(response)
+  }
+
+  async uploadJobFile(jobNumber: number, files: File[], onProgress?: (percent: number) => void): Promise<JobFile[]> {
+    const form = new FormData()
+    form.append('job_number', jobNumber.toString())
+    files.forEach(f => {form.append('files', f) })
+
+    const response: AxiosResponse<UploadFilesResponse> = await api.post(
+      '/job/rest/jobs/files/upload/',
+      form,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: ev => {
+          if (!onProgress || !ev.total) return
+          onProgress(Math.round((ev.loaded * 100) / ev.total))
+        }
+      }
+    )
+
+    const data = this.handleResponse<UploadFilesResponse>(response)
+    return data.uploaded
+  }
+
+  async updateJobFile(params: {
+    job_number: string
+    file_path: string
+    filename: string
+    print_on_jobsheet: boolean
+  }): Promise<ApiResponse> {
+    const response = await api.put<ApiResponse>(
+      '/job/rest/jobs/files/',
+      params
+    )
+
+    return this.handleResponse(response)
   }
 
   /**

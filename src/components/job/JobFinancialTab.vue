@@ -39,10 +39,10 @@
       <!-- Quotes Section -->
       <div class="bg-white rounded-lg border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Quotes</h3>
-        
+
         <div v-if="!jobData?.quoted" class="text-center py-8">
           <div class="text-gray-500 mb-4">No quotes for this project</div>
-          <button @click="createQuote" 
+          <button @click="createQuote"
             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
             Quote Job
           </button>
@@ -64,7 +64,7 @@
               class="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
               Go to Quote on Xero
             </button>
-            
+
             <button @click="deleteQuoteOnXero" v-if="quoteUrl"
               class="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700">
               Delete Quote on Xero
@@ -81,10 +81,10 @@
       <!-- Invoices Section -->
       <div class="bg-white rounded-lg border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoices</h3>
-        
+
         <div v-if="!jobData?.invoiced" class="text-center py-8">
           <div class="text-gray-500 mb-4">No invoices for this project</div>
-          <button @click="createInvoice" 
+          <button @click="createInvoice"
             class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
             Create Invoice
           </button>
@@ -106,7 +106,7 @@
               class="px-3 py-2 text-sm bg-orange-600 text-white rounded hover:bg-orange-700">
               Go to Invoice on Xero
             </button>
-            
+
             <button @click="deleteInvoiceOnXero" v-if="invoiceUrl"
               class="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700">
               Delete Invoice on Xero
@@ -152,8 +152,7 @@ const emit = defineEmits<{
 
 // Computed properties for financial data
 const estimateTotal = computed(() => {
-  // TODO: Calculate from latest_pricings.estimate_pricing
-  return 0
+  return props.jobData?.latest_estimate_pricing?.total_revenue || 0
 })
 
 const timeAndExpenses = computed(() => {
@@ -182,12 +181,12 @@ const invoiceTotal = computed(() => {
 
 const daysUntilDeadline = computed(() => {
   if (!props.jobData?.delivery_date) return 0
-  
+
   const deliveryDate = new Date(props.jobData.delivery_date)
   const today = new Date()
   const diffTime = deliveryDate.getTime() - today.getTime()
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
+
   return diffDays
 })
 
@@ -238,7 +237,7 @@ const acceptQuote = () => {
       ...props.jobData,
       quote_acceptance_date: new Date().toISOString()
     }
-    
+
     // Atualizar a store em vez de emitir evento
     jobsStore.setDetailedJob(updatedData)
     emit('quote-accepted')

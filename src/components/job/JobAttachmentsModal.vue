@@ -43,8 +43,9 @@
         <!-- Camera Capture Button -->
         <div>
           <button
-            @click="capturePhoto"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            @click="openCameraModal"
+            :disabled="!props.jobNumber"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
@@ -76,9 +77,9 @@
               <!-- File Icon/Thumbnail -->
               <div class="flex-shrink-0">
                 <img
-                  v-if="file.thumbnail"
-                  :src="file.thumbnail"
-                  :alt="file.name"
+                  v-if="file.thumbnail_url"
+                  :src="file.thumbnail_url"
+                  :alt="file.filename"
                   class="w-10 h-10 object-cover rounded"
                 >
                 <div
@@ -94,10 +95,10 @@
               <!-- File Info -->
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium text-gray-900 truncate">
-                  {{ file.name }}
+                  {{ file.filename }}
                 </p>
                 <p class="text-xs text-gray-500">
-                  {{ formatFileSize(file.size) }} • {{ formatDate(file.created) }}
+                  {{ formatFileSize(file.size) }} • {{ formatDate(file.uploaded_at) }}
                 </p>
               </div>
             </div>
@@ -107,8 +108,8 @@
               <!-- Print on Job Sheet Toggle -->
               <label class="flex items-center">
                 <input
-                  v-model="file.printOnJobSheet"
-                  @change="updatePrintSetting(file.id, file.printOnJobSheet)"
+                  v-model="file.print_on_jobsheet"
+                  @change="updatePrintSetting(file)"
                   type="checkbox"
                   class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                 >
@@ -161,10 +162,17 @@
       </DialogFooter>
     </DialogContent>
   </Dialog>
+
+  <!-- Camera Modal -->
+  <CameraModal
+    :is-open="isCameraModalOpen"
+    @close="closeCameraModal"
+    @photo-captured="handlePhotoCaptured"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import {
   Dialog,
   DialogContent,
@@ -172,10 +180,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import CameraModal from './CameraModal.vue'
+import type { JobFile } from '@/schemas/jobSchemas'
+import { jobRestService } from '@/services/jobRestService'
 
 // Props
 interface Props {
   jobId: string
+  jobNumber: number | undefined
   isOpen: boolean
 }
 
@@ -188,28 +200,43 @@ const emit = defineEmits<{
   'file-deleted': [fileId: string]
 }>()
 
-// Types
-interface JobFile {
-  id: string
-  name: string
-  size: number
-  type: string
-  created: string
-  thumbnail?: string
-  printOnJobSheet: boolean
-  url: string
-}
-
 // Reactive state
 const files = ref<JobFile[]>([])
 const uploadProgress = ref(0)
 const fileInput = ref<HTMLInputElement>()
+const uploading = ref(false)
+const isCameraModalOpen = ref(false)
 
-// Methods
+// Load files whenever the modal opens
+async function loadFiles() {
+  if (!props.jobNumber) {
+    console.error('Job number is required for loading files')
+    return
+  }
+
+  try {
+    const list = await jobRestService.listJobFiles(String(props.jobNumber))
+    files.value = list
+  } catch (err) {
+    console.error('Failed to load files:', err)
+  }
+}
+
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open && props.jobNumber != null) {
+      loadFiles()
+    }
+  }
+)
+
+// Modal controls
 const closeModal = () => {
   emit('close')
 }
 
+// File input/drag'n'drop
 const triggerFileInput = () => {
   fileInput.value?.click()
 }
@@ -230,59 +257,174 @@ const handleDrop = (event: DragEvent) => {
 
 const handleFiles = async (fileList: File[]) => {
   for (const file of fileList) {
-    await uploadFile(file)
+    // Guard clause - check file size
+    if (file.size === 0) {
+      console.warn(`File ${file.name} has 0 bytes and will be ignored`)
+      continue
+    }
+
+    await processAndUploadFile(file)
   }
 }
 
+const processAndUploadFile = async (file: File) => {
+  try {
+    let fileToUpload = file
+
+    // Compress image if necessary
+    if (isImageFile(file)) {
+      console.log(`Compressing image before upload: ${file.name}`)
+      fileToUpload = await compressImage(file)
+    }
+
+    await uploadFile(fileToUpload)
+  } catch (err) {
+    console.error(`Error processing file ${file.name}:`, err)
+  }
+}
+
+const isImageFile = (file: File): boolean => {
+  return file.type.startsWith('image/')
+}
+
+const compressImage = (file: File, maxWidth = 1280, maxHeight = 960, quality = 0.7): Promise<File> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+
+    reader.onload = (event) => {
+      const img = new Image()
+      img.src = event.target?.result as string
+
+      img.onload = () => {
+        let { width, height } = img
+
+        // Calcular novo tamanho mantendo proporção
+        if (width > maxWidth || height > maxHeight) {
+          const scaleWidth = maxWidth / width
+          const scaleHeight = maxHeight / height
+          const scaleFactor = Math.min(scaleWidth, scaleHeight)
+
+          width = Math.floor(width * scaleFactor)
+          height = Math.floor(height * scaleFactor)
+        }
+
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(file) // Retorna arquivo original se não conseguir comprimir
+          return
+        }
+
+        ctx.drawImage(img, 0, 0, width, height)
+        
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file) // Return original file if compression fails
+              return
+            }
+
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            })
+
+            console.log(`Image compressed: ${file.name}
+              Original: ${(file.size / 1024 / 1024).toFixed(2)}MB
+              Compressed: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`)
+
+            resolve(compressedFile)
+          },
+          'image/jpeg',
+          quality
+        )
+      }
+    }
+  })
+}
+
 const uploadFile = async (file: File) => {
+  if (!props.jobNumber) {
+    console.error('Job number is required for file upload')
+    return
+  }
+
   uploadProgress.value = 0
+  uploading.value = true
 
   try {
-    // Create FormData
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('job_id', props.jobId)
+    const uploaded = await jobRestService.uploadJobFile(
+      props.jobNumber,
+      [file],
+      (progress) => (uploadProgress.value = progress)
+    )
 
-    // Simulate upload progress (replace with actual upload logic)
-    const simulateProgress = () => {
-      return new Promise<void>((resolve) => {
-        let progress = 0
-        const interval = setInterval(() => {
-          progress += 10
-          uploadProgress.value = progress
-          if (progress >= 100) {
-            clearInterval(interval)
-            resolve()
-          }
-        }, 100)
-      })
+    // Add uploaded files to local list
+    if (uploaded.length > 0) {
+      files.value.push(...uploaded)
+      emit('file-uploaded', uploaded[0])
     }
 
-    await simulateProgress()
-
-    // Create file object (replace with actual API response)
-    const newFile: JobFile = {
-      id: Date.now().toString(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      created: new Date().toISOString(),
-      printOnJobSheet: false,
-      url: URL.createObjectURL(file),
-      thumbnail: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
-    }
-
-    files.value.push(newFile)
-    emit('file-uploaded', newFile)
+    // Reload list to synchronise
+    await loadFiles()
+  } catch (err) {
+    console.error('Error uploading file:', err)
+  } finally {
     uploadProgress.value = 0
+    uploading.value = false
+  }
+}
 
-    // TODO: Replace with actual API call
-    // const response = await jobRestService.uploadFile(props.jobId, formData)
+function downloadFile(file: JobFile) {
+  const apiBase = import.meta.env.VITE_API_BASE_URL
+  const url = `${apiBase}/rest/jobs/files/${encodeURIComponent(file.file_path)}/`
+  window.open(url, '_blank')
+}
 
-  } catch (error) {
-    console.error('Upload failed:', error)
-    uploadProgress.value = 0
-    // TODO: Show error message
+async function deleteFile(id: string) {
+  if (!confirm('Are you sure you want to delete this file?')) return
+
+  try {
+    await jobRestService.deleteJobFile(id)
+    emit('file-deleted', id)
+    await loadFiles()
+  } catch (err) {
+    console.error('Error deleting file:', err)
+  }
+}
+
+async function updatePrintSetting(file: JobFile) {
+  if (!props.jobNumber) {
+    console.error('Job number is required for updating print setting')
+    return
+  }
+
+  console.log('Updating print setting for file:', {
+    filename: file.filename,
+    current_value: file.print_on_jobsheet,
+    job_number: props.jobNumber
+  })
+
+  try {
+    const response = await jobRestService.updateJobFile({
+      job_number: String(props.jobNumber),
+      file_path: file.file_path,
+      filename: file.filename,
+      print_on_jobsheet: file.print_on_jobsheet
+    })
+
+    console.log('Print setting update response:', response)
+
+    // Reload files to ensure synchronisation
+    await loadFiles()
+  } catch (err) {
+    console.error('Error updating print setting:', err)
+    // Revert checkbox on error
+    file.print_on_jobsheet = !file.print_on_jobsheet
   }
 }
 
@@ -296,51 +438,33 @@ const capturePhoto = async () => {
   }
 }
 
-const downloadFile = (file: JobFile) => {
-  const link = document.createElement('a')
-  link.href = file.url
-  link.download = file.name
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
-
-const deleteFile = async (fileId: string) => {
-  if (!confirm('Are you sure you want to delete this file?')) {
+// Camera functionality
+const openCameraModal = () => {
+  if (!props.jobNumber) {
+    console.error('Job number is required for camera capture')
     return
   }
-
-  try {
-    // TODO: API call to delete file
-    // await jobRestService.deleteFile(fileId)
-
-    files.value = files.value.filter(f => f.id !== fileId)
-    emit('file-deleted', fileId)
-  } catch (error) {
-    console.error('Delete failed:', error)
-  }
+  isCameraModalOpen.value = true
 }
 
-const updatePrintSetting = async (fileId: string, printOnJobSheet: boolean) => {
-  try {
-    // TODO: API call to update print setting
-    // await jobRestService.updateFilePrintSetting(fileId, printOnJobSheet)
-    console.log(`Updated print setting for ${fileId}: ${printOnJobSheet}`)
-  } catch (error) {
-    console.error('Update print setting failed:', error)
-  }
+const closeCameraModal = () => {
+  isCameraModalOpen.value = false
 }
 
-const loadFiles = async () => {
+const handlePhotoCaptured = async (photo: File) => {
   try {
-    // TODO: Load existing files from API
-    // const response = await jobRestService.getJobFiles(props.jobId)
-    // files.value = response.files
+    console.log('Photo captured:', {
+      name: photo.name,
+      size: `${(photo.size / 1024 / 1024).toFixed(2)}MB`,
+      type: photo.type
+    })
 
-    // For now, using mock data
-    files.value = []
-  } catch (error) {
-    console.error('Failed to load files:', error)
+    // Process and upload the captured photo
+    await processAndUploadFile(photo)
+    
+    console.log('Photo uploaded successfully!')
+  } catch (err) {
+    console.error('Error uploading captured photo:', err)
   }
 }
 

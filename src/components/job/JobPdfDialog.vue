@@ -80,7 +80,7 @@ async function attachPdf() {
   attaching.value = true
   try {
     const blob = await jobRestService.fetchWorkshopPdf(props.jobId)
-    await jobRestService.attachWorkshopPdf(props.jobId, blob)
+    await jobRestService.attachWorkshopPdf(props.jobNumber, blob)
     attached.value = true
   } catch (err) {
     console.error('Error attaching PDF:', err)

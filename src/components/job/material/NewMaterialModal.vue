@@ -80,7 +80,7 @@ const totalChargeAmount = computed(() => {
 
 const validateForm = (): boolean => {
   validationErrors.value = {};
-  
+
   if (!props.latestEstimatePricingId) {
     validationErrors.value.general = 'No pricing ID available';
     return false;
@@ -207,9 +207,9 @@ const handleSave = async (addAnother: boolean) => {
       <div class="grid gap-6 py-4">
         <div class="grid gap-2">
           <Label for="materialDescription">Material Description</Label>
-          <Input 
-            id="materialDescription" 
-            v-model="materialDescription" 
+          <Input
+            id="materialDescription"
+            v-model="materialDescription"
             placeholder="E.g., Timber, Screws, Paint"
             :class="cn(validationErrors.description && 'border-red-500 focus:border-red-500')"
           />
@@ -220,10 +220,10 @@ const handleSave = async (addAnother: boolean) => {
 
         <div class="grid gap-2">
           <Label for="quantity">Quantity</Label>
-          <Input 
-            id="quantity" 
-            type="number" 
-            v-model.number="quantity" 
+          <Input
+            id="quantity"
+            type="number"
+            v-model.number="quantity"
             placeholder="E.g., 10"
             :class="cn(validationErrors.quantity && 'border-red-500 focus:border-red-500')"
           />
@@ -237,10 +237,10 @@ const handleSave = async (addAnother: boolean) => {
             <div class="grid grid-cols-2 gap-4 items-end">
                 <div class="grid gap-2">
                     <Label for="unitPrice">Unit Price</Label>
-                    <Input 
-                      id="unitPrice" 
-                      type="number" 
-                      v-model.number="unitPrice" 
+                    <Input
+                      id="unitPrice"
+                      type="number"
+                      v-model.number="unitPrice"
                       placeholder="0.00"
                       :class="cn(validationErrors.unit_cost && 'border-red-500 focus:border-red-500')"
                     />
@@ -260,10 +260,10 @@ const handleSave = async (addAnother: boolean) => {
             <div class="grid grid-cols-2 gap-4 items-end">
                 <div class="grid gap-2">
                     <Label for="chargePercentage">Charge % (Markup)</Label>
-                    <Input 
-                      id="chargePercentage" 
-                      type="number" 
-                      v-model.number="chargePercentage" 
+                    <Input
+                      id="chargePercentage"
+                      type="number"
+                      v-model.number="chargePercentage"
                       placeholder="E.g., 20 for 20%"
                       :class="cn(validationErrors.unit_revenue && 'border-red-500 focus:border-red-500')"
                     />
@@ -288,7 +288,7 @@ const handleSave = async (addAnother: boolean) => {
           <PlusSquare class="mr-2 h-4 w-4" /> Save & Add Another
         </Button>
         <Button @click="handleSave(false)" :disabled="isSaving">
-          <Save class="mr-2 h-4 w-4" /> 
+          <Save class="mr-2 h-4 w-4" />
           {{ isSaving ? 'Saving...' : 'Save Material' }}
         </Button>
       </DialogFooter>

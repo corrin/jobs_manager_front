@@ -25,7 +25,7 @@ import { toast } from 'vue-sonner';
 import { TimeEntryCreateSchema, type TimeEntryCreate } from '@/schemas/jobSchemas';
 import { z } from 'zod';
 
-// Interfaces 
+// Interfaces
 interface CompanyDefaults {
   time_markup: number;
   charge_out_rate: number;
@@ -92,7 +92,7 @@ const totalEstimatedAmount = computed(() => {
 
 const validateForm = (): boolean => {
   validationErrors.value = {};
-  
+
   if (!props.latestEstimatePricingId) {
     validationErrors.value.general = 'No pricing ID available';
     return false;
@@ -201,9 +201,9 @@ const handleSave = async (addAnother: boolean) => {
       <div class="grid gap-6 py-4">
         <div class="grid gap-2">
           <Label for="taskName">Task Name</Label>
-          <Input 
-            id="taskName" 
-            v-model="taskName" 
+          <Input
+            id="taskName"
+            v-model="taskName"
             placeholder="E.g., Design, Fabrication, Installation"
             :class="cn(validationErrors.description && 'border-red-500')"
           />
@@ -215,10 +215,10 @@ const handleSave = async (addAnother: boolean) => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="grid gap-2">
             <Label for="estimatedHours">Estimated Hours</Label>
-            <Input 
-              id="estimatedHours" 
-              type="number" 
-              v-model.number="estimatedHours" 
+            <Input
+              id="estimatedHours"
+              type="number"
+              v-model.number="estimatedHours"
               placeholder="E.g., 4.5"
               :class="cn(validationErrors.minutes_per_item && 'border-red-500')"
             />
@@ -267,7 +267,7 @@ const handleSave = async (addAnother: boolean) => {
           <PlusSquare class="mr-2 h-4 w-4" /> Save & Add Another
         </Button>
         <Button @click="handleSave(false)" :disabled="isSaving">
-          <Save class="mr-2 h-4 w-4" /> 
+          <Save class="mr-2 h-4 w-4" />
           {{ isSaving ? 'Saving...' : 'Save Task' }}
         </Button>
       </DialogFooter>

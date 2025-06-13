@@ -183,7 +183,7 @@ watch(() => props.latestPricings, (newPricings) => {
     // Parse actual pricing data from Django format
     try {
       const pricingData = typeof newPricings === 'string' ? JSON.parse(newPricings) : newPricings
-      
+
       // Extract totals from different sections
       const extractSectionTotals = (sectionData: any) => {
         const time = calculateSectionTotal(sectionData?.time_entries || [])

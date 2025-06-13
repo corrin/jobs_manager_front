@@ -19,8 +19,8 @@
             <option v-if="isLoadingStatuses" value="">Loading statuses...</option>
             <template v-else>
               <!-- Show current status first if it exists and is not in the status choices -->
-              <option 
-                v-if="localJobData.job_status && !statusChoices.find(s => s.key === localJobData.job_status)" 
+              <option
+                v-if="localJobData.job_status && !statusChoices.find(s => s.key === localJobData.job_status)"
                 :value="localJobData.job_status">
                 {{ currentStatusLabel }} (Current)
               </option>
@@ -160,14 +160,14 @@ const currentStatusLabel = computed(() => {
   if (!localJobData.value.job_status) {
     return ''
   }
-  
+
   const statusChoice = statusChoices.value.find(s => s.key === localJobData.value.job_status)
   return statusChoice ? statusChoice.label : localJobData.value.job_status
 })
 
 // Initialize local job data with proper status handling
 const initializeLocalJobData = (jobData: JobData) => {
-  localJobData.value = { 
+  localJobData.value = {
     ...jobData,
     // Preserve existing status or use job's current status
     job_status: localJobData.value.job_status || jobData.job_status,
@@ -184,7 +184,7 @@ watch(() => props.jobData, (newJobData) => {
     console.log('🚫 JobWorkflowModal - Received null/undefined jobData, skipping initialization')
     return
   }
-  
+
   console.log('✅ JobWorkflowModal - Received valid jobData, initializing:', newJobData.id)
   initializeLocalJobData(newJobData)
 }, { immediate: true })
@@ -197,10 +197,10 @@ onMounted(async () => {
 // Methods
 const loadStatusChoices = async () => {
   isLoadingStatuses.value = true
-  
+
   try {
     const response = await jobService.getStatusChoices()
-    
+
     if (!response.success || !response.statuses) {
       throw new Error('Invalid response from status choices API')
     }
@@ -213,7 +213,7 @@ const loadStatusChoices = async () => {
 
     // Ensure current job status is preserved after loading choices
     preserveCurrentJobStatus()
-    
+
   } catch (error) {
     console.error('Failed to load status choices:', error)
     toast.error('Falha ao carregar opções de status', {
@@ -274,26 +274,26 @@ const saveWorkflow = async () => {
     } else {
       // Se não retornou dados (apenas success: true), criar dados atualizados manualmente
       console.log('⚠️ JobWorkflowModal - API returned success but no data, using local updates')
-      
+
       // Guard clause - validar dados antes de criar objeto atualizado
       if (!props.jobData?.id) {
         throw new Error('Invalid job data - missing id')
       }
-      
+
       const updatedJobData = {
         ...props.jobData,
         ...updateData,
         id: props.jobData.id // Garantir que o ID sempre existe
       }
-      
+
       // Validar se o objeto criado é válido
       if (!updatedJobData.id) {
         throw new Error('Failed to create valid updated job data')
       }
-      
+
       handleSuccessfulUpdate(updatedJobData)
     }
-    
+
   } catch (error) {
     handleUpdateError(error)
   } finally {
@@ -358,7 +358,7 @@ const handleSuccessfulUpdate = (updatedJobData: any) => {
 
   console.log('🎯 JobWorkflowModal - Processing valid job data:', jobData.id)
   console.log('🔍 JobWorkflowModal - Updated job_status:', jobData.job_status)
-  
+
   toast.success('Workflow atualizado com sucesso!', {
     description: `Status e configurações do ${jobData.name} foram salvos`
   })
@@ -366,7 +366,7 @@ const handleSuccessfulUpdate = (updatedJobData: any) => {
   // Update store - this will trigger reactivity throughout the application
   console.log('📝 JobWorkflowModal - Calling jobsStore.setDetailedJob')
   jobsStore.setDetailedJob(jobData)
-  
+
   console.log('✅ JobWorkflowModal - Store updated successfully')
   closeModal()
 }
