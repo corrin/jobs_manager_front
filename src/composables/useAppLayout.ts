@@ -12,6 +12,11 @@ export function useAppLayout() {
       name: 'kanban',
       to: '/kanban',
       label: 'Kanban'
+    },
+    {
+      name: 'timesheet',
+      to: '/timesheet',
+      label: 'Timesheet'
     }
   ]
 

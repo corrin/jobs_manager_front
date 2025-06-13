@@ -21,24 +21,62 @@
 
     <!-- Content area with scroll -->
     <div class="pricing-content flex-1 overflow-y-auto p-4">
-      <!-- Tasks Summary -->
-      <div v-if="timeEntries.length > 0" class="mb-6">
-        <h4 class="font-medium mb-3">Tasks</h4>
-        <component
-          :is="currentViewComponent"
-          :entries="timeEntries"
-          type="time"
-        />
+      <!-- Two column layout for Reality section when we have extra space -->
+      <div v-if="showTwoColumnLayout" class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+        <!-- Tasks Column -->
+        <div class="flex flex-col">
+          <h4 class="font-medium mb-3 text-blue-600">Tasks</h4>
+          <div class="flex-1 overflow-y-auto">
+            <component
+              v-if="timeEntries.length > 0"
+              :is="currentViewComponent"
+              :entries="timeEntries"
+              type="time"
+            />
+            <div v-else class="text-center py-8 text-gray-500">
+              <p>No time entries yet</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expenses Column -->
+        <div class="flex flex-col">
+          <h4 class="font-medium mb-3 text-green-600">Expenses</h4>
+          <div class="flex-1 overflow-y-auto">
+            <component
+              v-if="expenseEntries.length > 0"
+              :is="currentViewComponent"
+              :entries="expenseEntries"
+              type="expense"
+            />
+            <div v-else class="text-center py-8 text-gray-500">
+              <p>No expenses yet</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Expenses Summary -->
-      <div v-if="expenseEntries.length > 0" class="mb-6">
-        <h4 class="font-medium mb-3">Expenses</h4>
-        <component
-          :is="currentViewComponent"
-          :entries="expenseEntries"
-          type="expense"
-        />
+      <!-- Single column layout (default) -->
+      <div v-else>
+        <!-- Tasks Summary -->
+        <div v-if="timeEntries.length > 0" class="mb-6">
+          <h4 class="font-medium mb-3">Tasks</h4>
+          <component
+            :is="currentViewComponent"
+            :entries="timeEntries"
+            type="time"
+          />
+        </div>
+
+        <!-- Expenses Summary -->
+        <div v-if="expenseEntries.length > 0" class="mb-6">
+          <h4 class="font-medium mb-3">Expenses</h4>
+          <component
+            :is="currentViewComponent"
+            :entries="expenseEntries"
+            type="expense"
+          />
+        </div>
       </div>
     </div>
 
@@ -79,10 +117,12 @@ interface Props {
   pricingData?: JobPricing | null
   visible: boolean
   isQuote?: boolean
+  showTwoColumns?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isQuote: false
+  isQuote: false,
+  showTwoColumns: false
 })
 
 const emit = defineEmits<{
@@ -90,6 +130,11 @@ const emit = defineEmits<{
 }>()
 
 const currentView = ref<ViewType>('grid')
+
+// Show two column layout only for Reality section when we have extra space
+const showTwoColumnLayout = computed(() => {
+  return props.showTwoColumns && props.title === 'Reality Pricing'
+})
 
 const currentViewComponent = computed(() => {
   switch (currentView.value) {

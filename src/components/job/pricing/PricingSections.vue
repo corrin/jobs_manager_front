@@ -31,6 +31,7 @@
           title="Reality Pricing"
           :pricing-data="realityPricing"
           :visible="true"
+          :show-two-columns="!showQuoteSection"
           @refresh="$emit('refresh')"
           class="flex-1 overflow-hidden"
         />

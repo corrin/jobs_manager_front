@@ -11,7 +11,7 @@
     :data-staff-id="staff.id"
   >
     <img
-      v-if="staff.avatar_url"
+      v-if="staff.avatar_url && staff.avatar_url !== null"
       :src="staff.avatar_url"
       :alt="staff.display_name"
       class="w-full h-full object-cover"
@@ -107,13 +107,13 @@ const backgroundColor = computed(() => {
 </script>
 
 <style scoped>
-/* Melhorias visuais para drag and drop em todos os dispositivos */
+/* Visual improvements for drag and drop on all devices */
 .staff-avatar-draggable {
   user-select: none;
   -webkit-user-select: none;
 }
 
-/* Estados de drag específicos para melhor feedback visual */
+/* Specific drag states for better visual feedback */
 :global(.staff-sortable-chosen) .staff-avatar-draggable {
   border: 2px solid #3b82f6 !important;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
@@ -128,7 +128,7 @@ const backgroundColor = computed(() => {
   position: relative !important;
 }
 
-/* Tablet específico: melhor feedback visual */
+/* Tablet specific: better visual feedback */
 @media (min-width: 768px) and (max-width: 1023px) {
   :global(.staff-sortable-chosen) .staff-avatar-draggable {
     transform: scale(1.15) !important;
@@ -142,7 +142,7 @@ const backgroundColor = computed(() => {
   }
 }
 
-/* Mobile: feedback mais sutil */
+/* Mobile: more subtle feedback */
 @media (max-width: 767px) {
   :global(.staff-sortable-chosen) .staff-avatar-draggable {
     transform: scale(1.08) !important;

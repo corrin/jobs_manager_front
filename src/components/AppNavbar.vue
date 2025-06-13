@@ -16,7 +16,7 @@
       <!-- Desktop Navigation (Large screens only) -->
       <div class="hidden lg:flex items-center space-x-6">
         <router-link to="/jobs/create" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Create Job</router-link>
-        <a href="#" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Timesheets</a>
+        <router-link to="/timesheet" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Timesheets</router-link>
 
         <!-- Purchases Dropdown -->
         <div class="relative" @click.stop>
@@ -102,8 +102,8 @@
           <div class="grid grid-cols-1 gap-3">
             <!-- Primary Actions -->
             <div class="space-y-3">
-              <a href="#" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Create Job</a>
-              <a href="#" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Timesheets</a>
+              <router-link to="/jobs/create" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Create Job</router-link>
+              <router-link to="/timesheet" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Timesheets</router-link>
               <a href="#" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Xero</a>
             </div>
             
