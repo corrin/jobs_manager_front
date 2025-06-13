@@ -39,33 +39,6 @@
                 @input="handleAdvancedSearch"
               />
             </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Client</label>
-              <input 
-                v-model="filters.client_name" 
-                type="text"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                placeholder="Enter client name" 
-                @input="handleAdvancedSearch"
-              />
-            </div>
-            
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select 
-                v-model="filters.status" 
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                @change="handleAdvancedSearch"
-              >
-                <option value="">All Statuses</option>
-                <option value="quoting">Quoting</option>
-                <option value="accepted_quote">Accepted Quote</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-                <option value="on_hold">On Hold</option>
-              </select>
-            </div>
 
             <div class="flex items-end">
               <Button @click="clearFilters" variant="outline" class="w-full">
@@ -96,17 +69,15 @@
                   <div class="flex items-center gap-2 mb-1">
                     <span class="font-medium text-sm">{{ job.jobNumber }}</span>
                     <Badge :variant="getStatusVariant(job.status)" class="text-xs">
-                      {{ job.status }}
+                      {{ job.taskName || 'Estimate' }}
                     </Badge>
                   </div>
                   <h3 class="font-medium text-gray-900 mb-1 text-sm line-clamp-1">
                     {{ job.name || job.jobName }}
                   </h3>
-                  <p class="text-xs text-gray-600 mb-2">
-                    {{ job.clientName }}
-                  </p>
-                  <div class="text-xs text-gray-500">
-                    Rate: ${{ job.chargeOutRate || 0 }}/hr
+                  <div class="text-xs text-gray-500 space-y-1">
+                    <div>Rate: ${{ job.chargeOutRate || 0 }}/hr</div>
+                    <div v-if="job.estimatedHours">Est. Hours: {{ job.estimatedHours }}</div>
                   </div>
                 </div>
               </div>
@@ -144,7 +115,7 @@
         <!-- Initial State - Show all jobs -->
         <div v-else-if="!searchQuery && !hasActiveFilters && allJobs.length === 0" class="text-center py-8 text-gray-500">
           <Search class="h-12 w-12 mx-auto mb-2 text-gray-300" />
-          <p>No jobs available. Please visit the Kanban board first to load jobs.</p>
+          <p>No active jobs available for timesheet entries.</p>
         </div>
       </div>
 
@@ -167,7 +138,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useJobsStore } from '@/stores/jobs'
+import { useTimesheetStore } from '@/stores/timesheet'
 import { useKanban } from '@/composables/useKanban'
+import { getStatusVariant } from '@/utils/statusUtils'
 import type { Job } from '@/types/timesheet'
 
 interface Props {
@@ -183,6 +156,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const jobsStore = useJobsStore()
+const timesheetStore = useTimesheetStore()
 const { loadJobs } = useKanban()
 
 // State
@@ -194,25 +168,27 @@ const currentPage = ref(1)
 const itemsPerPage = 12
 
 const filters = ref({
-  job_number: '',
-  client_name: '',
-  status: ''
+  job_number: ''
 })
 
-// Get jobs from timesheet store or jobs store
+// Get jobs from timesheet store
 const allJobs = computed(() => {
-  // Always try to load jobs from kanban store, but show all jobs initially if empty search
-  const kanbanJobs = Object.values(jobsStore.allKanbanJobs)
-  return kanbanJobs.map(job => ({
-    id: job.id,
-    jobNumber: job.job_number.toString(),
-    name: job.name,
-    jobName: job.name,
-    clientName: job.client_name,
-    status: job.status,
-    chargeOutRate: 105, // Default rate, should come from job data
-    isBillable: true,
-    isActive: job.status_key !== 'archived'
+  // Use timesheet jobs that have JobPricing IDs, not kanban jobs
+  return timesheetStore.jobs.map(job => ({
+    id: job.id, // This is the JobPricing ID from JobPricingAPISerializer
+    jobId: job.jobId, // This is the actual Job ID
+    jobNumber: job.jobNumber,
+    name: job.jobName,
+    jobName: job.jobName,
+    displayName: job.displayName,
+    clientName: '', // Not provided by JobPricingAPISerializer
+    status: 'active', // Not provided by JobPricingAPISerializer
+    chargeOutRate: job.chargeOutRate || 105,
+    estimatedHours: job.estimatedHours || 0,
+    totalHours: job.totalHours || 0,
+    isBillable: job.isBillable !== false,
+    isActive: true,
+    taskName: job.taskName
   })) as Job[]
 })
 
@@ -231,7 +207,7 @@ const filteredJobs = computed(() => {
     jobs = jobs.filter(job => 
       job.name?.toLowerCase().includes(query) ||
       job.jobNumber?.toLowerCase().includes(query) ||
-      job.clientName?.toLowerCase().includes(query)
+      job.displayName?.toLowerCase().includes(query)
     )
   }
 
@@ -240,16 +216,6 @@ const filteredJobs = computed(() => {
     jobs = jobs.filter(job => 
       job.jobNumber?.toLowerCase().includes(filters.value.job_number.toLowerCase())
     )
-  }
-
-  if (filters.value.client_name) {
-    jobs = jobs.filter(job => 
-      job.clientName?.toLowerCase().includes(filters.value.client_name.toLowerCase())
-    )
-  }
-
-  if (filters.value.status) {
-    jobs = jobs.filter(job => job.status === filters.value.status)
   }
 
   return jobs
@@ -264,7 +230,7 @@ const paginatedJobs = computed(() => {
 const totalPages = computed(() => Math.ceil(filteredJobs.value.length / itemsPerPage))
 
 const hasActiveFilters = computed(() => 
-  filters.value.job_number || filters.value.client_name || filters.value.status
+  filters.value.job_number
 )
 
 // Methods
@@ -280,9 +246,7 @@ const handleAdvancedSearch = () => {
 
 const clearFilters = () => {
   filters.value = {
-    job_number: '',
-    client_name: '',
-    status: ''
+    job_number: ''
   }
   searchQuery.value = ''
   currentPage.value = 1
@@ -300,23 +264,12 @@ const confirmSelection = () => {
   }
 }
 
-const getStatusVariant = (status: string) => {
-  switch (status?.toLowerCase()) {
-    case 'quoting': return 'secondary'
-    case 'accepted_quote': return 'default'
-    case 'in_progress': return 'default'
-    case 'completed': return 'outline'
-    case 'on_hold': return 'destructive'
-    default: return 'secondary'
-  }
-}
-
 // Reset when modal closes
 watch(() => props.isOpen, async (isOpen) => {
   if (isOpen) {
-    // Load jobs if none are available
-    if (Object.keys(jobsStore.allKanbanJobs).length === 0) {
-      await loadJobs()
+    // Load timesheet jobs (JobPricing IDs) if not available
+    if (timesheetStore.jobs.length === 0) {
+      await timesheetStore.loadJobs()
     }
   } else {
     clearFilters()

@@ -1,6 +1,6 @@
 <template>
   <div class="staff-panel">
-    <div class="flex flex-wrap gap-2 min-h-[50px] max-h-[80px] overflow-y-auto">
+    <div class="flex flex-wrap gap-2 min-h-[60px] max-h-[120px] overflow-y-auto justify-center">
       <DraggableStaffCard
         v-for="staff in staffList"
         :key="staff.id"
@@ -49,8 +49,8 @@ const handleStaffDragEnd = () => {
 
 <style scoped>
 .staff-panel {
-  min-height: 50px;
-  max-height: 80px;
+  min-height: 60px;
+  max-height: 120px;
   overflow: visible;
 }
 </style>

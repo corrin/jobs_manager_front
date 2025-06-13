@@ -59,7 +59,23 @@ export class TimesheetService {
    */
   static async createTimeEntry(data: CreateTimeEntryRequest): Promise<TimeEntry> {
     try {
-      const response = await api.post(`${this.BASE_URL}/entries/`, data)
+      // Map frontend field names to backend field names
+      const requestData = {
+        staff_id: data.staffId,
+        job_pricing_id: data.jobPricingId,
+        date: data.date,
+        description: data.description,
+        hours: data.hours,
+        items: data.items || 0,
+        minutes_per_item: data.minsPerItem || 0,
+        wage_rate: data.wageRate || 0,
+        charge_out_rate: data.chargeOutRate || 0,
+        is_billable: data.isBillable,
+        notes: data.notes || '',
+        rate_multiplier: data.rateMultiplier || 1.0
+      }
+      
+      const response = await api.post(`${this.BASE_URL}/entries/`, requestData)
       return response.data.time_entry
     } catch (error) {
       console.error('Error creating time entry:', error)

@@ -18,7 +18,7 @@
             <ChevronLeft class="h-4 w-4" />
           </Button>
 
-          <Select :model-value="currentStaff" @update:model-value="handleStaffChange">
+          <Select :model-value="currentStaff?.id" @update:model-value="handleStaffChangeById">
             <SelectTrigger class="w-48">
               <SelectValue>
                 <div v-if="currentStaff" class="flex items-center gap-2">
@@ -33,7 +33,7 @@
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem v-for="staff in staffList" :key="staff.id" :value="staff">
+              <SelectItem v-for="staff in staffList" :key="staff.id" :value="staff.id">
                 <div class="flex items-center gap-2">
                   <Avatar class="h-6 w-6">
                     <AvatarImage :src="staff.avatarUrl || ''" />
@@ -97,7 +97,7 @@
             </PopoverTrigger>
             <PopoverContent class="w-auto p-0" align="center">
               <Calendar
-                :model-value="currentDate"
+                :model-value="calendarDate"
                 @update:model-value="handleDateChange"
               />
             </PopoverContent>
@@ -176,6 +176,7 @@ import {
   LayoutGrid,
   Calendar as CalendarView
 } from 'lucide-vue-next'
+import { toDateValue, fromDateValue } from '@/utils/dateUtils'
 import type { Staff } from '@/types/timesheet'
 
 type ViewMode = 'staff-day' | 'weekly-kanban' | 'calendar-grid'
@@ -246,16 +247,53 @@ const hasNextStaff = computed(() => {
   return currentIndex < props.staffList.length - 1
 })
 
-const handleStaffChange = (staff: Staff) => {
+const handleStaffChange = (staff: Staff | null) => {
+  // Guard clause - early return for null values
+  if (!staff) {
+    return
+  }
+  
   emit('update:currentStaff', staff)
+}
+
+// Handle staff change by ID (for Select component)
+const handleStaffChangeById = (staffId: string) => {
+  // Guard clause - early return if no staffId
+  if (!staffId) {
+    return
+  }
+  
+  const staff = props.staffList.find(s => s.id === staffId)
+  if (staff) {
+    handleStaffChange(staff)
+  }
 }
 
 const handleViewModeChange = (mode: ViewMode) => {
   emit('update:viewMode', mode)
 }
 
-const handleDateChange = (date: Date) => {
-  emit('update:currentDate', date)
+// Date conversion utilities following SRP
+const calendarDate = computed(() => {
+  return toDateValue(props.currentDate)
+})
+
+const handleDateChange = (dateValue: any) => {
+  // Guard clause - early return for invalid input
+  if (!dateValue) {
+    return
+  }
+
+  // Convert DateValue back to JavaScript Date
+  const jsDate = fromDateValue(dateValue)
+  
+  // Guard clause - early return if conversion failed
+  if (!jsDate) {
+    console.warn('Failed to convert calendar date value to JavaScript Date')
+    return
+  }
+
+  emit('update:currentDate', jsDate)
 }
 
 const navigateDate = (direction: number) => {

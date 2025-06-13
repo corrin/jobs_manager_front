@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { TimesheetService } from '@/services/timesheet.service'
+import { CompanyDefaultsService } from '@/services/companyDefaults.service'
 import type { Staff, TimeEntry, Job, WeeklyOverviewData } from '@/types/timesheet'
 
 export const useTimesheetStore = defineStore('timesheet', () => {
@@ -45,12 +46,24 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   async function initialize() {
     await Promise.all([
       loadStaff(),
-      loadJobs()
+      loadJobs(),
+      loadCompanyDefaults()
     ])
 
     // Set first staff member as default if none selected
     if (staff.value.length > 0 && !selectedStaffId.value) {
       selectedStaffId.value = staff.value[0].id
+    }
+  }
+
+  /**
+   * Load company defaults
+   */
+  async function loadCompanyDefaults() {
+    try {
+      await CompanyDefaultsService.getDefaults()
+    } catch (err) {
+      console.error('Error loading company defaults:', err)
     }
   }
 
@@ -357,6 +370,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     initialize,
     loadStaff,
     loadJobs,
+    loadCompanyDefaults,
     loadTimeEntries,
     loadWeeklyOverview,
     createTimeEntry,

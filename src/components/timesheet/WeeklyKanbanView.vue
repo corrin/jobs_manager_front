@@ -54,10 +54,10 @@
         <div>
           <div class="flex items-center justify-between mb-2">
             <h3 class="font-medium text-gray-900 dark:text-white text-sm">
-              Staff Members
+              Team
             </h3>
             <p class="text-xs text-gray-500 dark:text-gray-400">
-              Drag staff to pending jobs
+              Drag to assign
             </p>
           </div>
           <StaffPanel
@@ -314,6 +314,8 @@ import TimeEntryModal from './TimeEntryModal.vue'
 import JobAttachmentZone from './JobAttachmentZone.vue'
 import StaffPanel from './StaffPanel.vue'
 import TimeEntryCreationModal from './TimeEntryCreationModal.vue'
+import { createSafeDate } from '@/utils/safetyUtils'
+import { getJobColor } from '@/utils/statusUtils'
 import type { Staff, TimeEntry, Job, WeeklyStaffData, DayData } from '@/types/timesheet'
 
 interface Props {
@@ -467,7 +469,7 @@ const getJobColor = (jobId: string) => {
 const handleEntryClick = (entry: TimeEntry) => {
   editingEntry.value = entry
   selectedStaff.value = props.staffList.find(s => s.id === entry.staffId) || null
-  selectedDate.value = new Date(entry.date)
+  selectedDate.value = createSafeDate(entry.date)
   showEntryModal.value = true
 }
 
@@ -550,7 +552,7 @@ const handleDrop = (newDate: Date, event: DragEvent) => {
 
   // Handle time entry drag (existing functionality)
   if (draggedEntry.value) {
-    const entryDate = new Date(draggedEntry.value.date)
+    const entryDate = createSafeDate(draggedEntry.value.date)
     if (entryDate.toDateString() !== newDate.toDateString()) {
       emit('entryMoved', draggedEntry.value.id, newDate)
     }

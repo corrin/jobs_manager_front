@@ -1,7 +1,7 @@
 <template>
   <div
     ref="staffCardRef"
-    class="draggable-staff-card bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 cursor-move transition-all duration-200 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 min-w-[120px] max-w-[140px]"
+    class="draggable-staff-card bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 cursor-move transition-all duration-200 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 min-w-[80px] max-w-[100px]"
     :class="{
       'border-blue-500 bg-blue-50 dark:bg-blue-900/20': isDragging,
       'opacity-50': isDragging
@@ -10,9 +10,9 @@
     @dragstart="handleDragStart"
     @dragend="handleDragEnd"
   >
-    <div class="flex items-center gap-2">
+    <div class="flex flex-col items-center gap-1">
       <!-- Avatar -->
-      <Avatar class="h-6 w-6 flex-shrink-0">
+      <Avatar class="h-8 w-8 flex-shrink-0">
         <AvatarImage :src="staff.avatarUrl || ''" />
         <AvatarFallback class="text-xs">
           {{ (staff.firstName?.[0] || '') + (staff.lastName?.[0] || '') }}
@@ -20,12 +20,9 @@
       </Avatar>
 
       <!-- Name -->
-      <div class="flex-1 min-w-0">
+      <div class="text-center">
         <div class="text-xs font-medium text-gray-900 dark:text-white truncate">
-          {{ staff.firstName }} {{ staff.lastName }}
-        </div>
-        <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
-          {{ staff.role || 'Staff' }}
+          {{ staff.firstName }}
         </div>
       </div>
     </div>
