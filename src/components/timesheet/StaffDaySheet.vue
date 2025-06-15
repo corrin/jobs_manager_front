@@ -124,7 +124,7 @@ const sortedEntries = computed(() => {
     if (a.startTime && b.startTime) {
       return a.startTime.localeCompare(b.startTime)
     }
-    return a.createdAt.localeCompare(b.createdAt)
+    return (a.createdAt || '').localeCompare(b.createdAt || '')
   })
 })
 

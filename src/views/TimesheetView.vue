@@ -178,6 +178,7 @@ const weeklyEntries = computed(() => {
         name: staffOverview.staff.name,
         firstName: staffOverview.staff.firstName || '',
         lastName: staffOverview.staff.lastName || '',
+        email: '', // Add required email field
         wageRate: 32.0, // Default value
         avatarUrl: ''
       },

@@ -47,8 +47,8 @@
           <Badge variant="outline" class="text-xs font-mono">
             {{ job.jobNumber }}
           </Badge>
-          <Badge :variant="getStatusVariant(job.status)" class="text-xs">
-            {{ job.status }}
+          <Badge :variant="getStatusVariant(job.status || 'unknown')" class="text-xs">
+            {{ job.status || 'Unknown' }}
           </Badge>
         </div>
 

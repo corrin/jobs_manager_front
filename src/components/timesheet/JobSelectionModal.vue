@@ -187,7 +187,7 @@ const allJobs = computed(() => {
     const jobId = jobPricing.jobId || jobPricing.id
     
     // Only add if this is a Reality pricing or if we don't have this job yet
-    if (!jobMap.has(jobId) || jobPricing.pricingType === 'reality') {
+    if (!jobMap.has(jobId) || (jobPricing as any).pricingType === 'reality') {
       jobMap.set(jobId, {
         id: jobPricing.id, // Keep the JobPricing ID for functionality  
         jobId: jobId, // The actual Job ID

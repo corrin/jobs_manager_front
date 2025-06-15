@@ -18,7 +18,7 @@
             <ChevronLeft class="h-4 w-4" />
           </Button>
 
-          <Select :model-value="currentStaff?.id" @update:model-value="handleStaffChangeById">
+          <Select :model-value="currentStaff?.id" @update:model-value="(value: any) => value && handleStaffChangeById(String(value))">
             <SelectTrigger class="w-48">
               <SelectValue>
                 <div v-if="currentStaff" class="flex items-center gap-2">

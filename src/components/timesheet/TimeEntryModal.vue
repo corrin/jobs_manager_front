@@ -304,6 +304,15 @@ const formatHours = (hours: number) => {
   return hours.toFixed(1)
 }
 
+const getRateMultiplier = (rateType: string): number => {
+  switch (rateType) {
+    case '1.5': return 1.5
+    case '2.0': return 2.0
+    case 'Unpaid': return 0
+    default: return 1.0
+  }
+}
+
 const getJobColor = (jobId: string) => {
   const colors = [
     'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500',
@@ -349,11 +358,11 @@ const handleSubmit = () => {
 
   const entryData = {
     jobId: formData.value.jobId,
-    jobNumber: selectedJob.value.number,
-    jobName: selectedJob.value.name,
+    jobNumber: selectedJob.value.jobNumber || selectedJob.value.number || '',
+    jobName: selectedJob.value.jobName || selectedJob.value.name || '',
     clientName: selectedJob.value.clientName,
-    staffId: props.staff.id,
-    staffName: props.staff.name,
+    staffId: props.staff?.id || '',
+    staffName: props.staff?.name || '',
     date: props.date.toISOString().split('T')[0],
     startTime: timeMethod.value === 'time-range' ? formData.value.startTime : undefined,
     endTime: timeMethod.value === 'time-range' ? formData.value.endTime : undefined,
@@ -361,14 +370,21 @@ const handleSubmit = () => {
     description: formData.value.description,
     billable: formData.value.billable,
     rateType: formData.value.rateType,
-    wageRate: props.staff.wageRate,
+    wageRate: props.staff?.wageRate || 0,
     chargeOutRate: chargeOutRate.value,
-    wageAmount: formData.value.hours * props.staff.wageRate,
+    wageAmount: formData.value.hours * (props.staff?.wageRate || 0),
     billAmount: finalAmount.value,
-    notes: formData.value.notes || undefined,
+    notes: formData.value.notes || '',
     isShopJob: selectedJob.value.isShopJob,
     createdAt: props.entry?.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    // Required fields for TimeEntry interface
+    jobPricingId: selectedJob.value.id,
+    isBillable: formData.value.billable,
+    rateMultiplier: getRateMultiplier(formData.value.rateType),
+    timesheetDate: props.date.toISOString().split('T')[0],
+    hoursSpent: formData.value.hours,
+    estimatedHours: selectedJob.value.estimatedHours || 0
   }
 
   if (props.entry) {
@@ -382,13 +398,13 @@ const handleSubmit = () => {
 watch(() => props.entry, (entry) => {
   if (entry) {
     formData.value = {
-      jobId: entry.jobId,
+      jobId: entry.jobId || '',
       hours: entry.hours,
       startTime: entry.startTime || '',
       endTime: entry.endTime || '',
       description: entry.description,
-      billable: entry.billable,
-      rateType: entry.rateType,
+      billable: entry.billable ?? true,
+      rateType: entry.rateType || 'Ord',
       notes: entry.notes || ''
     }
     timeMethod.value = entry.startTime && entry.endTime ? 'time-range' : 'duration'

@@ -98,7 +98,7 @@
                   {{ file.filename }}
                 </p>
                 <p class="text-xs text-gray-500">
-                  {{ formatFileSize(file.size) }} • {{ formatDate(file.uploaded_at) }}
+                  {{ formatFileSize(file.size || 0) }} • {{ formatDate(file.uploaded_at) }}
                 </p>
               </div>
             </div>
@@ -381,7 +381,7 @@ const uploadFile = async (file: File) => {
 
 function downloadFile(file: JobFile) {
   const apiBase = import.meta.env.VITE_API_BASE_URL
-  const url = `${apiBase}/rest/jobs/files/${encodeURIComponent(file.file_path)}/`
+  const url = `${apiBase}/rest/jobs/files/${encodeURIComponent(file.id)}/`
   window.open(url, '_blank')
 }
 
@@ -412,7 +412,7 @@ async function updatePrintSetting(file: JobFile) {
   try {
     const response = await jobRestService.updateJobFile({
       job_number: String(props.jobNumber),
-      file_path: file.file_path,
+      file_id: file.id,
       filename: file.filename,
       print_on_jobsheet: file.print_on_jobsheet
     })

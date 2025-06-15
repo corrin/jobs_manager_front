@@ -317,7 +317,8 @@ export class JobRestService {
 
   async updateJobFile(params: {
     job_number: string
-    file_path: string
+    file_path?: string
+    file_id?: string
     filename: string
     print_on_jobsheet: boolean
   }): Promise<ApiResponse> {

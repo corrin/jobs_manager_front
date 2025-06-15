@@ -129,8 +129,8 @@
                         </div>
                         <div class="text-xs text-gray-500">
                           {{ staffEntry.dayData.hours.toFixed(1) }}h
-                          <span v-if="staffEntry.dayData.overtime > 0" class="text-orange-500">
-                            (+{{ staffEntry.dayData.overtime.toFixed(1) }}h extra)
+                          <span v-if="(staffEntry.dayData.overtime || 0) > 0" class="text-orange-500">
+                            (+{{ (staffEntry.dayData.overtime || 0).toFixed(1) }}h extra)
                           </span>
                         </div>
                       </div>
@@ -156,7 +156,7 @@
                         <div class="flex items-center gap-2">
                           <div
                             class="w-2 h-2 rounded-full flex-shrink-0"
-                            :class="getJobColor(entry.jobId)"
+                            :class="getJobColor(entry.jobId || '')"
                           ></div>
                           <div class="flex-1 min-w-0">
                             <div class="text-xs font-medium text-gray-900 dark:text-white truncate">
@@ -281,7 +281,7 @@
       v-model:open="showEntryModal"
       :entry="editingEntry"
       :staff="selectedStaff"
-      :date="selectedDate"
+      :date="selectedDate || new Date()"
       :available-jobs="availableJobs"
       @save="handleSaveEntry"
       @cancel="handleCancelEntry"
@@ -292,7 +292,7 @@
       :is-open="showTimeEntryCreationModal"
       :staff="selectedStaff"
       :job="selectedJob"
-      :date="selectedDate"
+      :date="selectedDate || new Date()"
       @close="showTimeEntryCreationModal = false"
       @entry-created="handleTimeEntryCreated"
     />
@@ -338,7 +338,7 @@ const showEntryModal = ref(false)
 const showTimeEntryCreationModal = ref(false)
 const editingEntry = ref<TimeEntry | null>(null)
 const selectedStaff = ref<Staff | null>(null)
-const selectedDate = ref<Date>(new Date())
+const selectedDate = ref<Date | null>(null)
 const selectedJob = ref<Job | null>(null)
 const isDragOver = ref<string | null>(null)
 const isDragOverJobZone = ref(false)
@@ -452,15 +452,6 @@ const getStatusLabel = (status: string) => {
     case 'Empty': return 'Empty'
     default: return status
   }
-}
-
-const getJobColor = (jobId: string) => {
-  const colors = [
-    'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500',
-    'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500'
-  ]
-  const index = parseInt(jobId) % colors.length
-  return colors[index]
 }
 
 const handleEntryClick = (entry: TimeEntry) => {
@@ -677,7 +668,7 @@ const handleStaffDrop = (staff: Staff, date: Date, event: DragEvent) => {
   }
   // Handle time entry drag (existing functionality)
   else if (draggedEntry.value) {
-    const entryDate = new Date(draggedEntry.value.date)
+    const entryDate = new Date(draggedEntry.value.date || new Date())
     if (entryDate.toDateString() !== date.toDateString() || draggedEntry.value.staffId !== staff.id) {
       emit('entryMoved', draggedEntry.value.id, date, staff.id)
     }

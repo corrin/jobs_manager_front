@@ -21,6 +21,7 @@ export interface Job {
   jobNumber: string
   jobName: string
   name?: string
+  number?: string  // Legacy compatibility field
   taskName?: string
   category?: string
   displayName: string
