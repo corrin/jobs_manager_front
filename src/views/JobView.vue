@@ -3,7 +3,18 @@
     <div class="flex flex-col h-full min-h-0">
       <!-- Mobile Header -->
       <div class="flex-shrink-0 bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4">
-        <!-- Mobile Layout (stacked) -->
+        <!-- Mobil            <button
+              v-if="featureFlags.isCostingApiEnabled"
+              @click="activeTab = 'costing'"
+              :class="[
+                'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
+                activeTab === 'costing'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ]"
+            >
+              Cost Analysis
+            </button>acked) -->
         <div class="md:hidden">
           <!-- Top row: Back button -->
           <div class="flex items-center justify-between mb-3">
@@ -171,6 +182,18 @@
             >
               Financial
             </button>
+            <button
+              v-if="featureFlags.isCostingApiEnabled"
+              @click="activeTab = 'costing'"
+              :class="[
+                'flex-1 py-3 px-4 text-sm font-medium text-center border-b-2 transition-colors',
+                activeTab === 'costing'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              ]"
+            >
+              Costing
+            </button>
           </div>
         </div>
 
@@ -199,6 +222,18 @@
             >
               Financial Overview
             </button>
+            <button
+              v-if="featureFlags.isCostingApiEnabled"
+              @click="activeTab = 'costing'"
+              :class="[
+                'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
+                activeTab === 'costing'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ]"
+            >
+              Cost Analysis
+            </button>
           </nav>
         </div>
       </div>
@@ -224,6 +259,179 @@
               @quote-accepted="handleQuoteAccepted"
               @invoice-created="handleInvoiceCreated"
             />
+          </div>
+
+          <!-- Costing Tab -->
+          <div v-if="activeTab === 'costing' && featureFlags.isCostingApiEnabled" class="h-full p-4 md:p-6">
+            <div v-if="costingStore.loading" class="flex items-center justify-center h-64">
+              <div class="text-gray-500">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                Loading costing data...
+              </div>
+            </div>
+
+            <div v-else-if="costingStore.costSet" class="space-y-6">
+              <div class="bg-white rounded-lg border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                  Cost Analysis - {{ costingStore.currentKind === 'estimate' ? 'Estimate' : 'Actual' }}
+                </h2>
+
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div class="bg-blue-50 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-blue-900 mb-1">Time</h3>
+                    <p class="text-lg font-semibold text-blue-700">
+                      {{ costingStore.groupedByKind.time.length }} entries
+                    </p>
+                  </div>
+                  <div class="bg-green-50 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-green-900 mb-1">Material</h3>
+                    <p class="text-lg font-semibold text-green-700">
+                      {{ costingStore.groupedByKind.material.length }} entries
+                    </p>
+                  </div>
+                  <div class="bg-amber-50 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-amber-900 mb-1">Adjustments</h3>
+                    <p class="text-lg font-semibold text-amber-700">
+                      {{ costingStore.groupedByKind.adjust.length }} entries
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Detailed Tables -->
+                <div class="space-y-6">
+                  <!-- Time Entries -->
+                  <div v-if="costingStore.groupedByKind.time.length > 0">
+                    <h3 class="text-md font-medium text-gray-900 mb-3">Time Entries</h3>
+                    <div class="overflow-x-auto">
+                      <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                          <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Description
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Quantity
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Unit Cost
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Unit Revenue
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                          <tr v-for="item in costingStore.groupedByKind.time" :key="item.id">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {{ item.desc }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {{ item.quantity }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              ${{ item.unit_cost }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              ${{ item.unit_rev }}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Material Entries -->
+                  <div v-if="costingStore.groupedByKind.material.length > 0">
+                    <h3 class="text-md font-medium text-gray-900 mb-3">Material Entries</h3>
+                    <div class="overflow-x-auto">
+                      <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                          <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Description
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Quantity
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Unit Cost
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Unit Revenue
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                          <tr v-for="item in costingStore.groupedByKind.material" :key="item.id">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {{ item.desc }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {{ item.quantity }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              ${{ item.unit_cost }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              ${{ item.unit_rev }}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Adjust Entries -->
+                  <div v-if="costingStore.groupedByKind.adjust.length > 0">
+                    <h3 class="text-md font-medium text-gray-900 mb-3">Adjustments</h3>
+                    <div class="overflow-x-auto">
+                      <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                          <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Description
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Quantity
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Unit Cost
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Unit Revenue
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                          <tr v-for="item in costingStore.groupedByKind.adjust" :key="item.id">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {{ item.desc }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {{ item.quantity }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              ${{ item.unit_cost }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              ${{ item.unit_rev }}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="flex items-center justify-center h-64">
+              <div class="text-center text-gray-500">
+                <p class="mb-2">No costing data found</p>
+                <p class="text-sm">Data will be loaded automatically when available</p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -340,7 +548,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   ArrowLeft,
@@ -375,11 +583,15 @@ import { useJobsStore } from '@/stores/jobs'
 import { useJobReactivity } from '@/composables/useJobReactivity'
 import { useJobNotifications } from '@/composables/useJobNotifications'
 import { useJobAutoSync } from '@/composables/useJobAutoSync'
+import { useFeatureFlags } from '@/stores/feature-flags'
+import { useCostingStore } from '@/stores/costing'
 import JobPdfDialog from '@/components/job/JobPdfDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
 const jobsStore = useJobsStore()
+const featureFlags = useFeatureFlags()
+const costingStore = useCostingStore()
 
 // Reactive data seguindo princípios de composição do Vue 3
 const jobId = computed(() => route.params.id as string)
@@ -531,7 +743,7 @@ const showAttachmentsModal = ref(false)
 const showPdfDialog = ref(false)
 
 // Tab state
-const activeTab = ref<'pricing' | 'financial'>('pricing')
+const activeTab = ref<'pricing' | 'financial' | 'costing'>('pricing')
 
 // Early return pattern para navegação
 const navigateBack = () => {
@@ -636,6 +848,13 @@ const deleteJob = async () => {
 // Lifecycle hook
 onMounted(() => {
   loadJobData()
+})
+
+// Auto-load costing data when job changes and costing is enabled
+watchEffect(() => {
+  if (jobId.value && featureFlags.isCostingApiEnabled) {
+    costingStore.load(jobId.value)
+  }
 })
 
 const handleTaskSaved = (taskData: any, addAnother: boolean) => {

@@ -11,20 +11,20 @@ export const useCostingStore = defineStore('costing', () => {
   const error = ref<string | null>(null)
 
   // Actions
-  const load = async (jobId: string | number) => {
+  const load = async (jobId: string) => {
     loading.value = true
     error.value = null
 
     try {
-      console.log(`🔄 Loading costing data for job ${jobId}, kind: ${currentKind.value}`)
+      console.log(`Loading costing data for job ${jobId}, kind: ${currentKind.value}`)
 
       const data = await fetchCostSet(jobId, currentKind.value)
       costSet.value = data
 
-      console.log(`✅ Costing data loaded successfully:`, data)
+      console.log('Costing data loaded successfully')
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load costing data'
-      console.error('❌ Error loading costing data:', err)
+      console.error('Error loading costing data:', err)
       throw err
     } finally {
       loading.value = false
@@ -43,32 +43,39 @@ export const useCostingStore = defineStore('costing', () => {
   // Getters
   const groupedByKind = computed(() => {
     if (!costSet.value) {
-      return {
-        time: [],
-        material: [],
-        adjust: []
-      }
+      return createEmptyGrouping()
     }
 
-    const grouped = {
-      time: [] as CostLine[],
-      material: [] as CostLine[],
-      adjust: [] as CostLine[]
-    }
-
-    // Agrupar cost lines por kind
-    costSet.value.cost_lines.forEach(line => {
-      if (line.kind === 'time') {
-        grouped.time.push(line)
-      } else if (line.kind === 'material') {
-        grouped.material.push(line)
-      } else if (line.kind === 'adjust') {
-        grouped.adjust.push(line)
-      }
-    })
-
-    return grouped
+    return costSet.value.cost_lines.reduce(
+      (groups, costLine) => {
+        const category = getCategoryFromKind(costLine.kind)
+        groups[category].push(costLine)
+        return groups
+      },
+      createEmptyGrouping()
+    )
   })
+
+  // Helper functions following SRP
+  const createEmptyGrouping = () => ({
+    time: [] as CostLine[],
+    material: [] as CostLine[],
+    adjust: [] as CostLine[]
+  })
+
+  const getCategoryFromKind = (kind: string): 'time' | 'material' | 'adjust' => {
+    switch (kind) {
+      case 'time':
+        return 'time'
+      case 'material':
+        return 'material'
+      case 'adjust':
+        return 'adjust'
+      default:
+        console.warn(`Unknown cost line kind: ${kind}, defaulting to 'adjust'`)
+        return 'adjust'
+    }
+  }
 
   const totalCost = computed(() => costSet.value?.summary.cost || 0)
   const totalRevenue = computed(() => costSet.value?.summary.rev || 0)
