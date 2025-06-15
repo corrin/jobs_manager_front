@@ -123,17 +123,6 @@
 
       <!-- Actions -->
       <div class="flex items-center gap-2">
-        <!-- Export IMS -->
-        <Button
-          variant="outline"
-          size="sm"
-          @click="$emit('exportIms')"
-          class="text-blue-600 hover:text-blue-700"
-        >
-          <Download class="h-4 w-4 mr-2" />
-          Export IMS
-        </Button>
-
         <!-- Settings -->
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -169,7 +158,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar as CalendarIcon,
-  Download,
   Settings,
   HelpCircle,
   User,
@@ -197,7 +185,6 @@ const emit = defineEmits<{
   'update:currentDate': [date: Date]
   'update:currentStaff': [staff: Staff | null]
   'update:viewMode': [mode: ViewMode]
-  exportIms: []
   previousStaff: []
   nextStaff: []
 }>()
@@ -210,6 +197,11 @@ const viewModes = [
 
 const formatDateRange = computed(() => {
   const date = props.currentDate
+
+  // Guard clause - validate date
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Invalid Date'
+  }
 
   if (props.viewMode === 'staff-day') {
     return date.toLocaleDateString('en-NZ', {

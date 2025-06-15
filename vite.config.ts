@@ -13,7 +13,8 @@ export default defineConfig({
   server: {
     allowedHosts: [
       'localhost',
-      'roughy-loved-ostrich.ngrok-free.app'
+      'roughy-loved-ostrich.ngrok-free.app',
+      'uat-office.morrissheetmetal.co.nz'
     ]
   },
 })

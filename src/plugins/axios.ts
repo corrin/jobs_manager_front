@@ -2,7 +2,23 @@ import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 
 // Set default base URL and enable credentials for httpOnly cookies
-axios.defaults.baseURL = 'http://localhost:8001'
+// Determine API base URL based on current environment
+const getApiBaseUrl = () => {
+  // If we're on UAT domains, use the corresponding API domain
+  if (window.location.hostname === 'uat-office.morrissheetmetal.co.nz') {
+    return 'https://api.uat-office.morrissheetmetal.co.nz'
+  }
+
+  // Use environment variable if available
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
+  }
+
+  // Default to localhost for development
+  return 'http://localhost:8001'
+}
+
+axios.defaults.baseURL = getApiBaseUrl()
 axios.defaults.timeout = 10000
 axios.defaults.withCredentials = true // Important: include httpOnly cookies
 

@@ -1,82 +1,65 @@
 <template>
-  <div class="time-entry-card bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
+  <div class="time-entry-card bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2.5 hover:border-blue-300 dark:hover:border-blue-600 transition-colors">
     <div class="flex items-start justify-between">
       <!-- Informações principais -->
       <div class="flex-1">
-        <div class="flex items-center gap-3 mb-2">
+        <div class="flex items-center gap-2 mb-1.5">
           <!-- Indicador de projeto -->
           <div
-            class="w-3 h-3 rounded-full flex-shrink-0"
+            class="w-2 h-2 rounded-full flex-shrink-0"
             :class="jobColor"
           ></div>
 
           <!-- Job info -->
           <div class="flex-1">
             <div class="flex items-center gap-2">
-              <span class="font-medium text-gray-900 dark:text-white">
+              <span class="text-sm font-medium text-gray-900 dark:text-white">
                 {{ entry.jobNumber }}
               </span>
-              <span class="text-sm text-gray-500 dark:text-gray-400">
+              <span class="text-xs text-gray-500 dark:text-gray-400">
                 {{ entry.jobName }}
               </span>
             </div>
-            <div class="text-xs text-gray-500 dark:text-gray-400">
-              {{ entry.clientName }}
-            </div>
           </div>
-
-          <!-- Badge de tipo de trabalho -->
-          <Badge
-            :variant="entry.isShopJob ? 'secondary' : 'outline'"
-            class="text-xs"
-          >
-            {{ entry.isShopJob ? 'Oficina' : 'Campo' }}
-          </Badge>
 
           <!-- Badge de faturável -->
           <Badge
             :variant="entry.billable ? 'default' : 'destructive'"
             class="text-xs"
           >
-            {{ entry.billable ? 'Faturável' : 'Não Faturável' }}
+            {{ entry.billable ? 'Billable' : 'Non-billable' }}
           </Badge>
         </div>
 
-        <!-- Horários e duração -->
-        <div class="flex items-center gap-4 mb-2">
-          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <Clock class="h-4 w-4" />
+        <!-- Time, Rate and Amount in a compact row -->
+        <div class="flex items-center gap-3 mb-1.5 text-sm">
+          <div class="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+            <Clock class="h-3 w-3" />
             <span v-if="entry.startTime && entry.endTime">
               {{ formatTime(entry.startTime) }} - {{ formatTime(entry.endTime) }}
             </span>
             <span v-else>
-              {{ formatHours(entry.hours) }}h
+              {{ formatHours(entry.hours || 0) }}h
             </span>
           </div>
 
-          <div class="flex items-center gap-2 text-sm">
-            <span class="text-gray-500 dark:text-gray-400">Taxa:</span>
+          <div v-if="entry.rateType" class="flex items-center gap-1">
+            <span class="text-gray-500 dark:text-gray-400">@</span>
             <span class="font-medium text-gray-900 dark:text-white">
               {{ entry.rateType }}
             </span>
           </div>
 
-          <div class="flex items-center gap-2 text-sm">
-            <span class="text-gray-500 dark:text-gray-400">Valor:</span>
-            <span class="font-medium text-green-600 dark:text-green-400">
-              ${{ entry.billAmount.toFixed(2) }}
+          <div v-if="entry.billAmount" class="flex items-center gap-1">
+            <span class="font-semibold text-green-600 dark:text-green-400">
+              ${{ (entry.billAmount || 0).toFixed(2) }}
             </span>
           </div>
         </div>
 
         <!-- Descrição -->
-        <div v-if="entry.description" class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+        <div v-if="entry.description" class="text-sm text-gray-700 dark:text-gray-300">
           {{ entry.description }}
-        </div>
-
-        <!-- Notas -->
-        <div v-if="entry.notes" class="text-xs text-gray-500 dark:text-gray-400 italic">
-          {{ entry.notes }}
         </div>
       </div>
 
@@ -91,33 +74,19 @@
           <DropdownMenuContent align="end">
             <DropdownMenuItem @click="handleEdit">
               <Edit class="h-4 w-4 mr-2" />
-              Editar
+              Edit
             </DropdownMenuItem>
             <DropdownMenuItem @click="handleDuplicate">
               <Copy class="h-4 w-4 mr-2" />
-              Duplicar
+              Duplicate
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem @click="handleDelete" class="text-red-600">
               <Trash class="h-4 w-4 mr-2" />
-              Excluir
+              Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-    </div>
-
-    <!-- Indicador de progresso de horas (se aplicável) -->
-    <div v-if="showProgress" class="mt-3">
-      <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-        <span>Progresso do Projeto</span>
-        <span>{{ projectProgress }}%</span>
-      </div>
-      <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-        <div
-          class="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-          :style="{ width: `${Math.min(projectProgress, 100)}%` }"
-        ></div>
       </div>
     </div>
   </div>
@@ -134,12 +103,9 @@ import type { TimeEntry, Job } from '@/types/timesheet'
 interface Props {
   entry: TimeEntry
   availableJobs: Job[]
-  showProgress?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  showProgress: true
-})
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   update: [entry: TimeEntry]
@@ -163,10 +129,7 @@ const jobColor = computed(() => {
   return colors[index]
 })
 
-const projectProgress = computed(() => {
-  if (!currentJob.value || !currentJob.value.estimatedHours) return 0
-  return Math.round((currentJob.value.hoursSpent / currentJob.value.estimatedHours) * 100)
-})
+// Project progress removed as it's not used in the template
 
 const formatTime = (time: string) => {
   const [hours, minutes] = time.split(':')
@@ -185,7 +148,7 @@ const handleEdit = () => {
 }
 
 const handleDelete = () => {
-  if (confirm('Tem certeza que deseja excluir esta entrada?')) {
+  if (confirm('Are you sure you want to delete this time entry?')) {
     emit('delete', props.entry.id)
   }
 }

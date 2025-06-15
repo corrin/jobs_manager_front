@@ -68,8 +68,8 @@
                 <div class="flex-1">
                   <div class="flex items-center gap-2 mb-1">
                     <span class="font-medium text-sm">{{ job.jobNumber }}</span>
-                    <Badge :variant="getStatusVariant(job.status)" class="text-xs">
-                      {{ job.taskName || 'Estimate' }}
+                    <Badge variant="outline" class="text-xs">
+                      Job
                     </Badge>
                   </div>
                   <h3 class="font-medium text-gray-900 mb-1 text-sm line-clamp-1">
@@ -171,25 +171,42 @@ const filters = ref({
   job_number: ''
 })
 
-// Get jobs from timesheet store
+// Get jobs from timesheet store - show actual Jobs with Reality pricing only
 const allJobs = computed(() => {
-  // Use timesheet jobs that have JobPricing IDs, not kanban jobs
-  return timesheetStore.jobs.map(job => ({
-    id: job.id, // This is the JobPricing ID from JobPricingAPISerializer
-    jobId: job.jobId, // This is the actual Job ID
-    jobNumber: job.jobNumber,
-    name: job.jobName,
-    jobName: job.jobName,
-    displayName: job.displayName,
-    clientName: '', // Not provided by JobPricingAPISerializer
-    status: 'active', // Not provided by JobPricingAPISerializer
-    chargeOutRate: job.chargeOutRate || 105,
-    estimatedHours: job.estimatedHours || 0,
-    totalHours: job.totalHours || 0,
-    isBillable: job.isBillable !== false,
-    isActive: true,
-    taskName: job.taskName
-  })) as Job[]
+  // Filter jobs to exclude rejected, archived, and special status
+  // And ensure we only show Reality pricing entries (one per job)
+  const validStatusJobs = timesheetStore.jobs.filter(job => {
+    const status = job.status?.toLowerCase()
+    return status !== 'rejected' && status !== 'archived' && status !== 'special'
+  })
+
+  // Group by jobId to show only one entry per actual Job (Reality pricing)
+  const jobMap = new Map()
+  
+  validStatusJobs.forEach(jobPricing => {
+    const jobId = jobPricing.jobId || jobPricing.id
+    
+    // Only add if this is a Reality pricing or if we don't have this job yet
+    if (!jobMap.has(jobId) || jobPricing.pricingType === 'reality') {
+      jobMap.set(jobId, {
+        id: jobPricing.id, // Keep the JobPricing ID for functionality  
+        jobId: jobId, // The actual Job ID
+        jobNumber: jobPricing.jobNumber,
+        name: jobPricing.jobName, // Show job name from Reality pricing
+        jobName: jobPricing.jobName,
+        displayName: `${jobPricing.jobNumber} - ${jobPricing.jobName}`,
+        status: jobPricing.status,
+        chargeOutRate: jobPricing.chargeOutRate,
+        estimatedHours: jobPricing.estimatedHours,
+        clientName: jobPricing.clientName,
+        isShopJob: jobPricing.isShopJob || false,
+        // Ensure this is marked as undefined to show as "Job" not task name
+        taskName: undefined
+      })
+    }
+  })
+
+  return Array.from(jobMap.values())
 })
 
 // Filtering logic
