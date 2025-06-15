@@ -254,6 +254,7 @@
             <JobFinancialTab
               v-if="jobData"
               :job-data="jobData"
+              :job-id="jobId"
               :latest-pricings="latestPricings"
               @quote-created="handleQuoteCreated"
               @quote-accepted="handleQuoteAccepted"

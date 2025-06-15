@@ -34,6 +34,119 @@
       </div>
     </div>
 
+    <!-- Cost Analysis Section -->
+    <div v-if="featureFlags.isCostingApiEnabled" class="bg-white rounded-lg border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Cost Analysis</h3>
+
+      <!-- Kind Selection Radio Group -->
+      <div class="mb-6">
+        <div class="flex space-x-4">
+          <label class="flex items-center">
+            <input
+              type="radio"
+              :value="'estimate'"
+              v-model="costingStore.currentKind"
+              @change="handleKindChange"
+              class="mr-2 text-blue-600 focus:ring-blue-500"
+            />
+            <span class="text-sm font-medium text-gray-700">Estimate</span>
+          </label>
+          <label class="flex items-center">
+            <input
+              type="radio"
+              :value="'quote'"
+              v-model="costingStore.currentKind"
+              @change="handleKindChange"
+              class="mr-2 text-blue-600 focus:ring-blue-500"
+            />
+            <span class="text-sm font-medium text-gray-700">Quote</span>
+          </label>
+          <label class="flex items-center">
+            <input
+              type="radio"
+              :value="'actual'"
+              v-model="costingStore.currentKind"
+              @change="handleKindChange"
+              class="mr-2 text-blue-600 focus:ring-blue-500"
+            />
+            <span class="text-sm font-medium text-gray-700">Actual</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="costingStore.loading" class="flex items-center justify-center py-8">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+        <span class="text-gray-600">Loading cost data...</span>
+      </div>
+
+      <!-- Cost Data Table -->
+      <div v-else-if="costingStore.costSet" class="space-y-4">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kind</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rev</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <template v-for="(entries, kind) in costingStore.groupedByKind" :key="kind">
+                <tr v-for="line in entries" :key="line.id" :class="getRowClass(kind as string)">
+                  <td class="px-4 py-3 whitespace-nowrap text-sm font-medium" :class="getKindTextClass(kind as string)">
+                    {{ formatKindLabel(kind as string) }}
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {{ line.desc }}
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                    {{ line.quantity }}
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                    {{ formatCurrency(parseFloat(line.unit_cost)) }}
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                    {{ formatCurrency(parseFloat(line.unit_rev)) }}
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals Summary -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h4 class="text-sm font-medium text-gray-900 mb-3">Summary</h4>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span class="text-gray-600">Total Cost:</span>
+              <span class="ml-2 font-medium">{{ formatCurrency(totals.totalCost) }}</span>
+            </div>
+            <div>
+              <span class="text-gray-600">Total Revenue:</span>
+              <span class="ml-2 font-medium">{{ formatCurrency(totals.totalRevenue) }}</span>
+            </div>
+            <div>
+              <span class="text-gray-600">Margin:</span>
+              <span class="ml-2 font-medium">{{ formatCurrency(totals.margin) }}</span>
+            </div>
+            <div>
+              <span class="text-gray-600">Margin %:</span>
+              <span class="ml-2 font-medium">{{ totals.marginPercentage }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Data State -->
+      <div v-else class="text-center py-8">
+        <p class="text-gray-500">No cost data available for this job</p>
+      </div>
+    </div>
+
     <!-- Quotes and Invoices Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Quotes Section -->
@@ -119,29 +232,103 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, watch, watchEffect } from 'vue'
 import type { JobData } from '@/services/jobRestService'
 import { useJobsStore } from '@/stores/jobs'
+import { useCostingStore } from '@/stores/costing'
+import { useFeatureFlags } from '@/stores/feature-flags'
 
 // Props
 interface Props {
   jobData: JobData | null
   latestPricings?: any // TODO: Add proper typing for pricing data
+  jobId?: string
 }
 
 const props = defineProps<Props>()
 
-// Debug watcher for delivery_date
-watch(() => props.jobData?.delivery_date, (newDate, oldDate) => {
-  console.log('🏦 JobFinancialTab - delivery_date changed:', {
-    old: oldDate,
-    new: newDate,
-    jobData: props.jobData
-  })
-}, { immediate: true })
-
-// Store
+// Stores
 const jobsStore = useJobsStore()
+const costingStore = useCostingStore()
+const featureFlags = useFeatureFlags()
+
+// Auto-load costing data when jobId changes
+watchEffect(() => {
+  if (props.jobId && featureFlags.isCostingApiEnabled) {
+    costingStore.load(props.jobId)
+  }
+})
+
+// Computed properties for costing totals
+const totals = computed(() => {
+  if (!costingStore.costSet?.summary) {
+    return {
+      totalCost: 0,
+      totalRevenue: 0,
+      margin: 0,
+      marginPercentage: 0
+    }
+  }
+
+  const summary = costingStore.costSet.summary
+  const totalCost = summary.cost
+  const totalRevenue = summary.rev
+  const margin = totalRevenue - totalCost
+  const marginPercentage = totalRevenue > 0 ? ((margin / totalRevenue) * 100).toFixed(1) : '0'
+
+  return {
+    totalCost,
+    totalRevenue,
+    margin,
+    marginPercentage
+  }
+})
+
+// Helper functions for costing display
+const handleKindChange = () => {
+  if (props.jobId) {
+    costingStore.load(props.jobId)
+  }
+}
+
+const formatKindLabel = (kind: string): string => {
+  switch (kind) {
+    case 'time':
+      return 'Time'
+    case 'material':
+      return 'Material'
+    case 'adjust':
+      return 'Adjustment'
+    default:
+      return kind
+  }
+}
+
+const getRowClass = (kind: string): string => {
+  switch (kind) {
+    case 'time':
+      return 'bg-blue-50'
+    case 'material':
+      return 'bg-green-50'
+    case 'adjust':
+      return 'bg-amber-50'
+    default:
+      return ''
+  }
+}
+
+const getKindTextClass = (kind: string): string => {
+  switch (kind) {
+    case 'time':
+      return 'text-blue-700'
+    case 'material':
+      return 'text-green-700'
+    case 'adjust':
+      return 'text-amber-700'
+    default:
+      return 'text-gray-700'
+  }
+}
 
 // Events
 const emit = defineEmits<{
