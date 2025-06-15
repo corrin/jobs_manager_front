@@ -13,16 +13,16 @@
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Seleção de Job -->
         <div class="space-y-2">
-          <Label for="job">Project *</Label>
+          <Label for="job">Job *</Label>
           <Select v-model="formData.jobId" required>
             <SelectTrigger>
-              <SelectValue placeholder="Select a project">
+              <SelectValue placeholder="Select a job">
                 <div v-if="selectedJob" class="flex items-center gap-2">
                   <div
                     class="w-3 h-3 rounded-full"
                     :class="getJobColor(selectedJob.id)"
                   ></div>
-                  {{ selectedJob.number }} - {{ selectedJob.name }}
+                  {{ selectedJob.jobNumber }} - {{ selectedJob.jobName || selectedJob.name }}
                 </div>
               </SelectValue>
             </SelectTrigger>
@@ -38,7 +38,7 @@
                     :class="getJobColor(job.id)"
                   ></div>
                   <div class="flex flex-col">
-                    <span class="font-medium">{{ job.number }} - {{ job.name }}</span>
+                    <span class="font-medium">{{ job.jobNumber }} - {{ job.jobName || job.name }}</span>
                     <span class="text-xs text-gray-500">{{ job.clientName }}</span>
                   </div>
                 </div>
@@ -248,7 +248,8 @@ const formData = ref({
 })
 
 const activeJobs = computed(() => {
-  return props.availableJobs.filter(job => job.isActive)
+  // Return all available jobs - filtering should be done at the data source level
+  return props.availableJobs || []
 })
 
 const selectedJob = computed(() => {
@@ -284,7 +285,10 @@ const isFormValid = computed(() => {
          formData.value.description.trim()
 })
 
-const formatDate = (date: Date) => {
+const formatDate = (date: Date | null | undefined) => {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Invalid Date'
+  }
   return date.toLocaleDateString('en-NZ', {
     weekday: 'long',
     year: 'numeric',

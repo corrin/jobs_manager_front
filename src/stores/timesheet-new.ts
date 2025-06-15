@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { TimesheetService } from '@/services/timesheet.service'
-import { CompanyDefaultsService } from '@/services/companyDefaults.service'
 import type { Staff, TimeEntry, Job, WeeklyOverviewData } from '@/types/timesheet'
 
 export const useTimesheetStore = defineStore('timesheet', () => {
@@ -13,7 +12,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   const selectedDate = ref<string>(new Date().toISOString().split('T')[0])
   const selectedStaffId = ref<string>('')
   const currentView = ref<'staff-day' | 'weekly-kanban' | 'calendar-grid'>('staff-day')
-  const attachedJobs = ref<Job[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -46,24 +44,12 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   async function initialize() {
     await Promise.all([
       loadStaff(),
-      loadJobs(),
-      loadCompanyDefaults()
+      loadJobs()
     ])
 
     // Set first staff member as default if none selected
     if (staff.value.length > 0 && !selectedStaffId.value) {
       selectedStaffId.value = staff.value[0].id
-    }
-  }
-
-  /**
-   * Load company defaults
-   */
-  async function loadCompanyDefaults() {
-    try {
-      await CompanyDefaultsService.getDefaults()
-    } catch (err) {
-      console.error('Error loading company defaults:', err)
     }
   }
 
@@ -132,19 +118,10 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
     try {
       const weekStart = startDate || TimesheetService.getCurrentWeekRange().startDate
-      console.log('📊 Loading weekly overview for:', weekStart)
-      
       currentWeekData.value = await TimesheetService.getWeeklyOverview(weekStart)
-      
-      console.log('✅ Weekly overview loaded successfully:', {
-        staffCount: currentWeekData.value?.staffData?.length || 0,
-        startDate: currentWeekData.value?.startDate,
-        endDate: currentWeekData.value?.endDate
-      })
     } catch (err) {
       error.value = 'Failed to load weekly overview'
-      console.error('❌ Error loading weekly overview:', err)
-      throw err
+      console.error('Error loading weekly overview:', err)
     } finally {
       loading.value = false
     }
@@ -173,8 +150,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      console.log('📝 Creating new time entry:', entryData)
-      
       const newEntry = await TimesheetService.createTimeEntry({
         staffId: selectedStaffId.value,
         date: selectedDate.value,
@@ -190,22 +165,12 @@ export const useTimesheetStore = defineStore('timesheet', () => {
         rateMultiplier: entryData.rateMultiplier || 1.0
       })
 
-      console.log('✅ Time entry created in backend:', newEntry)
-
-      // Add to local state only if not already present
-      const existingIndex = timeEntries.value.findIndex(e => e.id === newEntry.id)
-      if (existingIndex === -1) {
-        timeEntries.value.push(newEntry)
-        console.log('📝 Added new entry to local state')
-      } else {
-        timeEntries.value[existingIndex] = newEntry
-        console.log('🔄 Updated existing entry in local state')
-      }
-
+      // Add to local state
+      timeEntries.value.push(newEntry)
       return newEntry
     } catch (err) {
       error.value = 'Failed to create time entry'
-      console.error('❌ Error creating time entry:', err)
+      console.error('Error creating time entry:', err)
       throw err
     } finally {
       loading.value = false
@@ -231,27 +196,18 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      console.log('🔄 Updating time entry:', entryId, updates)
-      
       const updatedEntry = await TimesheetService.updateTimeEntry(entryId, updates)
-
-      console.log('✅ Time entry updated in backend:', updatedEntry)
 
       // Update local state
       const index = timeEntries.value.findIndex(e => e.id === entryId)
       if (index !== -1) {
         timeEntries.value[index] = updatedEntry
-        console.log('🔄 Updated entry in local state')
-      } else {
-        // Entry not in local state, add it
-        timeEntries.value.push(updatedEntry)
-        console.log('📝 Added updated entry to local state')
       }
 
       return updatedEntry
     } catch (err) {
       error.value = 'Failed to update time entry'
-      console.error('❌ Error updating time entry:', err)
+      console.error('Error updating time entry:', err)
       throw err
     } finally {
       loading.value = false
@@ -266,24 +222,13 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      console.log('🗑️ Deleting time entry:', entryId)
-      
       await TimesheetService.deleteTimeEntry(entryId)
 
-      console.log('✅ Time entry deleted in backend')
-
       // Remove from local state
-      const initialLength = timeEntries.value.length
       timeEntries.value = timeEntries.value.filter(e => e.id !== entryId)
-      
-      if (timeEntries.value.length < initialLength) {
-        console.log('🗑️ Removed entry from local state')
-      } else {
-        console.log('⚠️ Entry not found in local state')
-      }
     } catch (err) {
       error.value = 'Failed to delete time entry'
-      console.error('❌ Error deleting time entry:', err)
+      console.error('Error deleting time entry:', err)
       throw err
     } finally {
       loading.value = false
@@ -360,34 +305,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     return TimesheetService.formatHours(hours)
   }
 
-  /**
-   * Add a job to the attached jobs list for the timesheet
-   */
-  function addAttachedJob(job: Job) {
-    // Check if job is already attached
-    const existingIndex = attachedJobs.value.findIndex(j => j.id === job.id)
-    if (existingIndex === -1) {
-      attachedJobs.value.push(job)
-      console.log('Job attached to timesheet:', job.name)
-    } else {
-      console.log('Job already attached:', job.name)
-    }
-  }
-
-  /**
-   * Remove a job from the attached jobs list
-   */
-  function removeAttachedJob(jobId: string) {
-    const index = attachedJobs.value.findIndex(j => j.id === jobId)
-    if (index !== -1) {
-      const removedJob = attachedJobs.value[index]
-      attachedJobs.value.splice(index, 1)
-      console.log('Job removed from timesheet:', removedJob.name)
-    } else {
-      console.log('Job not found in attached jobs:', jobId)
-    }
-  }
-
   return {
     // State
     staff,
@@ -397,7 +314,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     selectedDate,
     selectedStaffId,
     currentView,
-    attachedJobs,
     loading,
     error,
 
@@ -411,7 +327,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     initialize,
     loadStaff,
     loadJobs,
-    loadCompanyDefaults,
     loadTimeEntries,
     loadWeeklyOverview,
     createTimeEntry,
@@ -423,8 +338,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     setCurrentView,
     clearError,
     formatDate,
-    formatHours,
-    addAttachedJob,
-    removeAttachedJob
+    formatHours
   }
 })

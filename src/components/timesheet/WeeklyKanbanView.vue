@@ -194,7 +194,7 @@
 
                     <!-- Drop zone for staff + job assignment -->
                     <div
-                      class="staff-drop-zone min-h-[60px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center transition-colors mt-2"
+                      class="staff-drop-zone min-h-[40px] border-2 border-dashed border-transparent rounded-lg flex items-center justify-center transition-colors mt-2"
                       :class="{
                         'border-blue-500 bg-blue-50 dark:bg-blue-900/20': isDragOver === `${day.dateStr}-${staffEntry.staff.id}` && !draggedJob,
                         'border-green-500 bg-green-50 dark:bg-green-900/20': draggedJob && isDragOver === `${day.dateStr}-${staffEntry.staff.id}`
@@ -204,13 +204,8 @@
                       @dragleave="event => handleStaffDragLeave(event)"
                       @drop.prevent="event => handleStaffDrop(staffEntry.staff, day.date, event)"
                     >
-                      <span class="text-xs text-gray-500">
-                        <template v-if="draggedJob">
-                          Drop job to create time entry
-                        </template>
-                        <template v-else>
-                          Drop here to move
-                        </template>
+                      <span v-if="draggedJob" class="text-xs text-gray-500">
+                        Drop job to create time entry
                       </span>
                     </div>
                   </div>
@@ -323,6 +318,8 @@ interface Props {
   staffEntries: WeeklyStaffData[]
   staffList: Staff[]
   availableJobs: Job[]
+  // Add a key prop to force refresh when data changes
+  refreshKey?: number
 }
 
 const props = defineProps<Props>()
@@ -467,10 +464,13 @@ const getJobColor = (jobId: string) => {
 }
 
 const handleEntryClick = (entry: TimeEntry) => {
-  editingEntry.value = entry
-  selectedStaff.value = props.staffList.find(s => s.id === entry.staffId) || null
-  selectedDate.value = createSafeDate(entry.date)
-  showEntryModal.value = true
+  // Navigate to the job page when a time entry is clicked
+  const jobId = entry.jobId || entry.jobPricingId
+  if (jobId) {
+    console.log('🔄 Navigating to job:', jobId)
+    // Use router to navigate to job detail page
+    window.open(`/jobs/${jobId}`, '_blank')
+  }
 }
 
 const handleAddEntry = (staff: Staff, date: Date) => {
@@ -693,12 +693,21 @@ const getPendingJobsForDay = (dateStr: string) => {
 }
 
 const removePendingJob = (pendingJobId: string) => {
-  console.log('Removing pending job:', pendingJobId)
+  const jobToRemove = pendingJobs.value.find(pj => pj.id === pendingJobId)
+  console.log('🗑️ Removing pending job:', {
+    id: pendingJobId,
+    jobName: jobToRemove?.job?.name || jobToRemove?.job?.jobName || 'Unknown',
+    totalPendingBefore: pendingJobs.value.length
+  })
+  
   pendingJobs.value = pendingJobs.value.filter(pj => pj.id !== pendingJobId)
   
   if (activePendingJobId.value === pendingJobId) {
     activePendingJobId.value = null
+    console.log('🎯 Cleared active pending job ID')
   }
+  
+  console.log('📊 Pending jobs remaining:', pendingJobs.value.length)
 }
 
 // Pending job drop handlers
@@ -724,7 +733,11 @@ const handlePendingJobDragLeave = (event: DragEvent) => {
 
 const handlePendingJobDrop = (pendingJob: any, event: DragEvent) => {
   event.preventDefault()
-  console.log('Staff dropped on pending job:', { pendingJob, draggedStaff: draggedStaff.value })
+  console.log('🤝 Staff dropped on pending job:', { 
+    pendingJobId: pendingJob.id,
+    jobName: pendingJob.job.name || pendingJob.job.jobName,
+    draggedStaff: draggedStaff.value?.name 
+  })
   
   // Try to get drag data
   let dragData = null
@@ -740,7 +753,11 @@ const handlePendingJobDrop = (pendingJob: any, event: DragEvent) => {
   // Handle staff drop on pending job
   if (draggedStaff.value || (dragData && dragData.type === 'staff')) {
     const staffToDrop = draggedStaff.value || dragData.staff
-    console.log('Creating time entry from staff + pending job:', { staff: staffToDrop, job: pendingJob.job })
+    console.log('🔄 Creating time entry from staff + pending job:', { 
+      staff: staffToDrop.name, 
+      job: pendingJob.job.jobName || pendingJob.job.name,
+      date: pendingJob.date.toLocaleDateString()
+    })
     
     // Set data for time entry creation modal
     selectedStaff.value = staffToDrop
@@ -750,6 +767,7 @@ const handlePendingJobDrop = (pendingJob: any, event: DragEvent) => {
     
     // Remove the pending job since it's now being processed
     removePendingJob(pendingJob.id)
+    console.log('📋 Pending job removed, opening creation modal')
     
     // Clear dragged staff
     draggedStaff.value = null
@@ -763,10 +781,18 @@ const handlePendingJobDrop = (pendingJob: any, event: DragEvent) => {
 
 // Time entry creation handler
 const handleTimeEntryCreated = (entry: Omit<TimeEntry, 'id'>) => {
+  console.log('🆕 Time entry created in WeeklyKanbanView:', entry)
+  
+  // Emit to parent for data refresh
   emit('entryCreated', entry)
+  
+  // Close modal and reset state
   showTimeEntryCreationModal.value = false
   selectedStaff.value = null
   selectedJob.value = null
+  selectedDate.value = null
+  
+  console.log('✅ Time entry creation handled, modal closed')
 }
 </script>
 

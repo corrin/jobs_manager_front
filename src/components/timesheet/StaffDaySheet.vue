@@ -144,6 +144,10 @@ const billablePercentage = computed(() => {
 })
 
 const formatDate = (date: Date) => {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Invalid Date'
+  }
+  
   return date.toLocaleDateString('en-NZ', {
     weekday: 'long',
     year: 'numeric',

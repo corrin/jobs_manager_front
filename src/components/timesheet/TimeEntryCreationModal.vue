@@ -78,6 +78,7 @@
               name="isBillable"
               type="checkbox"
               class="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              :value="true"
             />
             <label class="text-xs font-medium text-gray-700">
               Billable
@@ -170,7 +171,10 @@ const { wageCost, billAmount } = useTimeEntryCalculations(
 )
 
 // Methods
-const formatDate = (date: Date) => {
+const formatDate = (date: Date | null | undefined) => {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Invalid Date'
+  }
   return date.toLocaleDateString('en-NZ', {
     weekday: 'long',
     year: 'numeric',
