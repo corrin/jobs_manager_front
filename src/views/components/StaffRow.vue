@@ -1,5 +1,70 @@
 <template>
-  <tr class="hover:bg-gray-50 transition-colors duration-150">
+  <!-- Mobile Layout -->
+  <div v-if="mobile" class="space-y-2">
+    <!-- Staff Header -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <div class="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+          <span class="text-white font-medium text-xs">
+            {{ staff.staff_initials || getInitials(staff.staff_name) }}
+          </span>
+        </div>
+        <div class="text-sm font-medium text-gray-900">
+          {{ staff.staff_name }}
+        </div>
+      </div>
+      
+      <!-- Status Icon for Mobile -->
+      <div v-if="staff.status === 'No Entry'" class="relative group">
+        <AlertTriangle class="h-4 w-4 text-red-500" />
+        <div class="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+          <div v-for="alert in staff.alerts" :key="alert" class="text-xs">
+            {{ alert }}
+          </div>
+        </div>
+      </div>
+      <div v-else>
+        <Badge :class="getStatusClass(staff.status_class)" class="text-xs px-2 py-0.5">
+          {{ staff.status }}
+        </Badge>
+      </div>
+    </div>
+    
+    <!-- Mobile Stats -->
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div>
+        <div class="text-xs text-gray-500">Hours</div>
+        <div class="text-sm font-medium">{{ formatHours(staff.actual_hours) }}h</div>
+      </div>
+      <div>
+        <div class="text-xs text-gray-500">Scheduled</div>
+        <div class="text-sm font-medium">{{ formatHours(staff.scheduled_hours) }}h</div>
+      </div>
+      <div>
+        <div class="text-xs text-gray-500">Entries</div>
+        <div class="text-sm font-medium">{{ staff.entry_count }}</div>
+      </div>
+    </div>
+    
+    <!-- Progress Bar -->
+    <div class="w-full bg-gray-200 rounded-full h-1">
+      <div
+        class="bg-blue-500 h-1 rounded-full transition-all duration-300"
+        :style="{ width: `${Math.min(staff.completion_percentage, 100)}%` }"
+      ></div>
+    </div>
+    
+    <!-- Mobile Action -->
+    <div class="flex justify-center">
+      <Button @click="handleViewDetails" variant="outline" size="sm" class="text-xs">
+        <Eye class="h-3 w-3 mr-1" />
+        View Details
+      </Button>
+    </div>
+  </div>
+
+  <!-- Desktop Table Layout -->
+  <tr v-else class="hover:bg-gray-50 transition-colors duration-150">
     <!-- Staff Member - Mais Compacto -->
     <td class="px-2 py-1.5 whitespace-nowrap">
       <div class="flex items-center space-x-2">
@@ -99,6 +164,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   CheckCircle,
   AlertCircle,
@@ -113,6 +179,7 @@ import type { StaffDailyData } from '@/services/daily-timesheet.service'
 interface Props {
   staff: StaffDailyData
   date: string
+  mobile?: boolean
 }
 
 const props = defineProps<Props>()
@@ -179,6 +246,20 @@ const getAlertClass = (alert: string): string => {
   }
 
   return 'bg-blue-100 text-blue-800'
+}
+
+const getStatusClass = (statusClass: string): string => {
+  const classes = {
+    'success': 'bg-green-100 text-green-800',
+    'warning': 'bg-yellow-100 text-yellow-800',
+    'danger': 'bg-red-100 text-red-800',
+    'secondary': 'bg-gray-100 text-gray-800'
+  }
+  return classes[statusClass as keyof typeof classes] || 'bg-gray-100 text-gray-800'
+}
+
+const handleViewDetails = (): void => {
+  emit('viewDetails', props.staff)
 }
 
 // Actions

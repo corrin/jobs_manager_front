@@ -22,7 +22,7 @@
             Timesheets
             <ChevronDown class="ml-1 h-4 w-4" />
           </button>
-          <div v-if="activeDropdown === 'timesheets'" class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+          <div v-if="activeDropdown === 'timesheets'" class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-[100]">
             <router-link to="/timesheets/entry" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Timesheet Entry</router-link>
             <router-link to="/timesheets/daily" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Daily Overview</router-link>
           </div>
@@ -33,7 +33,7 @@
             Purchases
             <ChevronDown class="ml-1 h-4 w-4" />
           </button>
-          <div v-if="activeDropdown === 'purchases'" class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+          <div v-if="activeDropdown === 'purchases'" class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]">
             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Purchase Orders</a>
             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Delivery Receipts</a>
             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Use Stock</a>
@@ -47,7 +47,7 @@
             Reports
             <ChevronDown class="ml-1 h-4 w-4" />
           </button>
-          <div v-if="activeDropdown === 'reports'" class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+          <div v-if="activeDropdown === 'reports'" class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-[60]">
             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">KPI Reports</a>
           </div>
         </div>
@@ -58,7 +58,7 @@
             Admin
             <ChevronDown class="ml-1 h-4 w-4" />
           </button>
-          <div v-if="activeDropdown === 'admin'" class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+          <div v-if="activeDropdown === 'admin'" class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]">
             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Run Month End</a>
             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Edit Staff</a>
             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Edit Company Defaults</a>
