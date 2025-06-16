@@ -69,13 +69,8 @@ export const createCostLine = async (
   kind: 'estimate' | 'quote' | 'actual',
   payload: CostLineCreatePayload
 ): Promise<CostLine> => {
-  // Only create in 'actual' cost set for timesheet functionality
-  if (kind !== 'actual') {
-    throw new Error('Timesheet cost lines can only be created in actual cost set')
-  }
-
   const response = await api.post(
-    `/job/rest/jobs/${jobId}/cost_sets/actual/cost_lines/`,
+    `/job/rest/jobs/${jobId}/cost_sets/${kind}/cost_lines/`,
     payload
   )
 
