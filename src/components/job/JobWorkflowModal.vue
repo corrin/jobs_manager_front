@@ -113,9 +113,9 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
-import type { JobData, JobUpdateData } from '@/services/jobRestService'
+import type { JobData, JobUpdateData } from '@/services/job-rest.service'
 import { JobService } from '@/services/job.service'
-import { jobRestService } from '@/services/jobRestService'
+import { jobRestService } from '@/services/job-rest.service'
 import { useJobsStore } from '@/stores/jobs'
 import { toast } from 'vue-sonner'
 import {

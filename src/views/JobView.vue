@@ -245,6 +245,7 @@
             <PricingSections
               v-if="jobData"
               :job-data="jobData"
+              :lines="featureFlags.isCostingApiEnabled ? costingStore.costSet?.cost_lines : undefined"
               @refresh="() => reloadJobDataReactively(jobData!.id)"
             />
           </div>
@@ -273,9 +274,26 @@
 
             <div v-else-if="costingStore.costSet" class="space-y-6">
               <div class="bg-white rounded-lg border border-gray-200 p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">
-                  Cost Analysis - {{ costingStore.currentKind === 'estimate' ? 'Estimate' : 'Actual' }}
-                </h2>
+                <!-- Header com seletor de tipo -->
+                <div class="flex items-center justify-between mb-4">
+                  <h2 class="text-lg font-semibold text-gray-900">
+                    Cost Analysis
+                  </h2>
+
+                  <!-- Seletor de tipo de costing -->
+                  <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700">View:</label>
+                    <select
+                      :value="costingStore.currentKind"
+                      @change="handleCostingKindChange"
+                      class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="estimate">Estimate</option>
+                      <option value="quote">Quote</option>
+                      <option value="actual">Actual</option>
+                    </select>
+                  </div>
+                </div>
 
                 <!-- Summary Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -429,8 +447,31 @@
 
             <div v-else class="flex items-center justify-center h-64">
               <div class="text-center text-gray-500">
-                <p class="mb-2">No costing data found</p>
-                <p class="text-sm">Data will be loaded automatically when available</p>
+                <div class="mb-4">
+                  <!-- Icon placeholder -->
+                  <div class="mx-auto h-12 w-12 text-gray-400">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                  </div>
+                </div>
+                <p class="mb-2 font-medium">No costing data available</p>
+                <p class="text-sm mb-4">
+                  Data for "{{ costingStore.currentKind }}" view is not available yet.
+                  <br>Try switching to "Estimate" view for new jobs.
+                </p>
+                <div class="flex items-center justify-center space-x-2">
+                  <label class="text-sm font-medium text-gray-700">Switch to:</label>
+                  <select
+                    :value="costingStore.currentKind"
+                    @change="handleCostingKindChange"
+                    class="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="estimate">Estimate</option>
+                    <option value="quote">Quote</option>
+                    <option value="actual">Actual</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -579,7 +620,7 @@ import {
   type JobDetailResponse,
   type JobEvent,
   type CompanyDefaults
-} from '@/services/jobRestService'
+} from '@/services/job-rest.service'
 import { useJobsStore } from '@/stores/jobs'
 import { useJobReactivity } from '@/composables/useJobReactivity'
 import { useJobNotifications } from '@/composables/useJobNotifications'
@@ -852,11 +893,31 @@ onMounted(() => {
 })
 
 // Auto-load costing data when job changes and costing is enabled
-watchEffect(() => {
+watchEffect(async () => {
   if (jobId.value && featureFlags.isCostingApiEnabled) {
-    costingStore.load(jobId.value)
+    try {
+      // Tentar carregar 'estimate' por padrão para novos jobs
+      await costingStore.load(jobId.value, 'estimate')
+    } catch (err) {
+      console.warn('Failed to load initial costing data:', err)
+      // Não quebrar a UI se não conseguir carregar os dados de costing
+    }
   }
 })
+
+const handleCostingKindChange = async (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  const newKind = target.value as 'estimate' | 'quote' | 'actual'
+
+  if (jobId.value) {
+    try {
+      await costingStore.setCurrentKind(newKind, jobId.value)
+    } catch (err) {
+      console.warn(`Failed to load ${newKind} data:`, err)
+      // A UI mostrará uma mensagem apropriada
+    }
+  }
+}
 
 const handleTaskSaved = (taskData: any, addAnother: boolean) => {
   console.log('Task saved in JobView:', taskData, 'Add another:', addAnother);

@@ -2,14 +2,14 @@ import { defineStore } from 'pinia'
 
 export const useFeatureFlags = defineStore('featureFlags', {
   state: () => ({
-    useCostingApi: import.meta.env.VITE_COSTING_API_ENABLED === 'true'
+    // Sempre ativado para novos jobs - sistema CostSet é o padrão agora
+    useCostingApi: true  
   }),
 
   getters: {
     isCostingApiEnabled: (state) => {
-      console.log('🔍 VITE_COSTING_API_ENABLED:', import.meta.env.VITE_COSTING_API_ENABLED)
-      console.log('🔍 useCostingApi state:', state.useCostingApi)
-      return state.useCostingApi
+      console.log('🔍 CostingAPI sempre habilitado para novos jobs')
+      return true  // Sempre retorna true
     }
   }
 })

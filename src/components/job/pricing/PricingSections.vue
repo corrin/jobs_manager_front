@@ -1,7 +1,21 @@
 <template>
   <div class="pricing-sections h-full flex flex-col">
-    <!-- 3 Column Layout for Pricing Sections using full height minus padding -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+    <!-- Costing-based Layout (when feature flag is active and lines provided) -->
+    <div v-if="shouldUseCostingDisplay" class="space-y-4 flex-1 min-h-0">
+      <div v-for="(categoryLines, categoryName) in groupedCostLines" :key="categoryName" class="pricing-column flex flex-col">
+        <PricingSection
+          :title="categoryName"
+          :lines="categoryLines"
+          :visible="true"
+          :is-costing-mode="true"
+          @refresh="$emit('refresh')"
+          class="flex-1 overflow-hidden"
+        />
+      </div>
+    </div>
+
+    <!-- Traditional 3 Column Layout for Pricing Sections (legacy mode) -->
+    <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
       <!-- Estimate Section -->
       <div class="pricing-column flex flex-col">
         <PricingSection
@@ -42,11 +56,15 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { JobDetail, JobPricing } from '@/schemas/jobSchemas'
+import type { JobDetail, JobPricing } from '@/schemas/job.schemas'
+import type { CostLine } from '@/types/costing.types'
+import { useFeatureFlags } from '@/stores/feature-flags'
+import { useCostingStore } from '@/stores/costing'
 import PricingSection from './PricingSection.vue'
 
 interface Props {
   jobData?: JobDetail | null
+  lines?: CostLine[]
 }
 
 const props = defineProps<Props>()
@@ -55,6 +73,44 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
+// Stores
+const featureFlags = useFeatureFlags()
+const costingStore = useCostingStore()
+
+// Early return pattern for feature flag check
+const shouldUseCostingDisplay = computed(() => {
+  return featureFlags.isCostingApiEnabled && props.lines && props.lines.length > 0
+})
+
+// Group costing lines by category with fallback
+const groupedCostLines = computed(() => {
+  if (!shouldUseCostingDisplay.value || !props.lines) {
+    return {}
+  }
+
+  return groupLinesByCategory(props.lines)
+})
+
+// Helper function following SRP principle
+const groupLinesByCategory = (lines: CostLine[]): Record<string, CostLine[]> => {
+  return lines.reduce((groups, line) => {
+    const category = getCategoryFromLine(line)
+
+    if (!groups[category]) {
+      groups[category] = []
+    }
+
+    groups[category].push(line)
+    return groups
+  }, {} as Record<string, CostLine[]>)
+}
+
+// Category extraction with fallback - centralized logic
+const getCategoryFromLine = (line: CostLine): string => {
+  return line.meta?.category ?? 'Main Work'
+}
+
+// Computed properties for traditional pricing (legacy mode)
 const showQuoteSection = computed(() => {
   return props.jobData?.pricing_methodology === 'fixed_price'
 })

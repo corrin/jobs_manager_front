@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { AlertCircle, Save, PlusSquare } from 'lucide-vue-next';
 import { useJobsStore } from '@/stores/jobs';
 import { toast } from 'vue-sonner';
-import { TimeEntryCreateSchema, type TimeEntryCreate } from '@/schemas/jobSchemas';
+import { TimeEntryCreateSchema, type TimeEntryCreate } from '@/schemas/job.schemas';
 import { z } from 'zod';
 
 // Interfaces

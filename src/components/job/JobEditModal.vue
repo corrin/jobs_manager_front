@@ -212,7 +212,7 @@ import ClientLookup from '@/components/ClientLookup.vue'
 import ContactSelectionModal from '@/components/ContactSelectionModal.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import { useContactManagement } from '@/composables/useContactManagement'
-import { jobRestService, type JobData } from '@/services/jobRestService'
+import { jobRestService, type JobData } from '@/services/job-rest.service'
 import type { Client, ClientContact } from '@/composables/useClientLookup'
 import {
   Dialog,
@@ -302,11 +302,11 @@ const jobNotes = computed({
 const isFormValid = computed(() => {
   // Guard clause - early return if no data
   if (!localJobData.value) return false
-  
+
   // Validate required fields
   const hasName = Boolean(localJobData.value.name?.trim())
   const hasClient = Boolean(localJobData.value.client_id)
-  
+
   return hasName && hasClient
 })
 

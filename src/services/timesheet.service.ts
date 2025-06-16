@@ -6,7 +6,7 @@ import type {
   WeeklyOverviewData,
   CreateTimeEntryRequest,
   UpdateTimeEntryRequest
-} from '@/types/timesheet'
+} from '@/types/timesheet.types'
 
 export class TimesheetService {
   private static readonly BASE_URL = '/api/timesheet'
@@ -74,7 +74,7 @@ export class TimesheetService {
         notes: data.notes || '',
         rate_multiplier: data.rateMultiplier || 1.0
       }
-      
+
       const response = await api.post(`${this.BASE_URL}/entries/`, requestData)
       return response.data.time_entry
     } catch (error) {
@@ -219,7 +219,7 @@ export class TimesheetService {
   static async createEntry(entryData: Omit<TimeEntry, 'id'>): Promise<TimeEntry> {
     const createRequest: CreateTimeEntryRequest = {
       staffId: entryData.staffId,
-      jobPricingId: entryData.jobPricingId,
+      jobPricingId: entryData.jobPricingId || '',
       date: entryData.timesheetDate,
       description: entryData.description,
       hours: entryData.hours,

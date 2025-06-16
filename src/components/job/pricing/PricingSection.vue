@@ -21,46 +21,11 @@
 
     <!-- Content area with scroll -->
     <div class="pricing-content flex-1 overflow-y-auto p-4">
-      <!-- Two column layout for Reality section when we have extra space -->
-      <div v-if="showTwoColumnLayout" class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-        <!-- Tasks Column -->
-        <div class="flex flex-col">
-          <h4 class="font-medium mb-3 text-blue-600">Tasks</h4>
-          <div class="flex-1 overflow-y-auto">
-            <component
-              v-if="timeEntries.length > 0"
-              :is="currentViewComponent"
-              :entries="timeEntries"
-              type="time"
-            />
-            <div v-else class="text-center py-8 text-gray-500">
-              <p>No time entries yet</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Expenses Column -->
-        <div class="flex flex-col">
-          <h4 class="font-medium mb-3 text-green-600">Expenses</h4>
-          <div class="flex-1 overflow-y-auto">
-            <component
-              v-if="expenseEntries.length > 0"
-              :is="currentViewComponent"
-              :entries="expenseEntries"
-              type="expense"
-            />
-            <div v-else class="text-center py-8 text-gray-500">
-              <p>No expenses yet</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Single column layout (default) -->
-      <div v-else>
-        <!-- Tasks Summary -->
-        <div v-if="timeEntries.length > 0" class="mb-6">
-          <h4 class="font-medium mb-3">Tasks</h4>
+      <!-- Costing Mode Layout -->
+      <div v-if="isCostingMode" class="space-y-6">
+        <!-- Time Entries Section -->
+        <div v-if="timeEntries.length > 0">
+          <h4 class="font-medium mb-3 text-blue-600">Time</h4>
           <component
             :is="currentViewComponent"
             :entries="timeEntries"
@@ -68,14 +33,90 @@
           />
         </div>
 
-        <!-- Expenses Summary -->
-        <div v-if="expenseEntries.length > 0" class="mb-6">
-          <h4 class="font-medium mb-3">Expenses</h4>
+        <!-- Material Entries Section -->
+        <div v-if="materialEntries.length > 0">
+          <h4 class="font-medium mb-3 text-green-600">Materials</h4>
           <component
             :is="currentViewComponent"
-            :entries="expenseEntries"
+            :entries="materialEntries"
             type="expense"
           />
+        </div>
+
+        <!-- Adjustment Entries Section -->
+        <div v-if="adjustmentEntries.length > 0">
+          <h4 class="font-medium mb-3 text-amber-600">Adjustments</h4>
+          <component
+            :is="currentViewComponent"
+            :entries="adjustmentEntries"
+            type="expense"
+          />
+        </div>
+
+        <!-- No data state for costing mode -->
+        <div v-if="timeEntries.length === 0 && materialEntries.length === 0 && adjustmentEntries.length === 0" class="text-center py-8 text-gray-500">
+          <p>No entries in this category</p>
+        </div>
+      </div>
+
+      <!-- Legacy Pricing Mode Layout -->
+      <div v-else>
+        <!-- Two column layout for Reality section when we have extra space -->
+        <div v-if="showTwoColumnLayout" class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+          <!-- Tasks Column -->
+          <div class="flex flex-col">
+            <h4 class="font-medium mb-3 text-blue-600">Tasks</h4>
+            <div class="flex-1 overflow-y-auto">
+              <component
+                v-if="timeEntries.length > 0"
+                :is="currentViewComponent"
+                :entries="timeEntries"
+                type="time"
+              />
+              <div v-else class="text-center py-8 text-gray-500">
+                <p>No time entries yet</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Expenses Column -->
+          <div class="flex flex-col">
+            <h4 class="font-medium mb-3 text-green-600">Expenses</h4>
+            <div class="flex-1 overflow-y-auto">
+              <component
+                v-if="expenseEntries.length > 0"
+                :is="currentViewComponent"
+                :entries="expenseEntries"
+                type="expense"
+              />
+              <div v-else class="text-center py-8 text-gray-500">
+                <p>No expenses yet</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Single column layout (default) -->
+        <div v-else>
+          <!-- Tasks Summary -->
+          <div v-if="timeEntries.length > 0" class="mb-6">
+            <h4 class="font-medium mb-3">Tasks</h4>
+            <component
+              :is="currentViewComponent"
+              :entries="timeEntries"
+              type="time"
+            />
+          </div>
+
+          <!-- Expenses Summary -->
+          <div v-if="expenseEntries.length > 0" class="mb-6">
+            <h4 class="font-medium mb-3">Expenses</h4>
+            <component
+              :is="currentViewComponent"
+              :entries="expenseEntries"
+              type="expense"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -104,7 +145,8 @@
 import { computed, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-vue-next'
-import type { JobPricing } from '@/schemas/jobSchemas'
+import type { JobPricing } from '@/schemas/job.schemas'
+import type { CostLine } from '@/types/costing.types'
 import ViewToggle from './ViewToggle.vue'
 import GridView from './GridView.vue'
 import TableView from './TableView.vue'
@@ -115,14 +157,17 @@ type ViewType = 'grid' | 'table' | 'list'
 interface Props {
   title: string
   pricingData?: JobPricing | null
+  lines?: CostLine[]
   visible: boolean
   isQuote?: boolean
   showTwoColumns?: boolean
+  isCostingMode?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isQuote: false,
-  showTwoColumns: false
+  showTwoColumns: false,
+  isCostingMode: false
 })
 
 const emit = defineEmits<{
@@ -145,26 +190,126 @@ const currentViewComponent = computed(() => {
   }
 })
 
+// Costing mode data processing - following SRP
+const costingEntries = computed(() => {
+  if (!props.isCostingMode || !props.lines) {
+    return {
+      time: [],
+      material: [],
+      adjustment: []
+    }
+  }
+
+  return groupCostLinesByKind(props.lines)
+})
+
+// Helper function for grouping cost lines by kind - following switch-case guideline
+const groupCostLinesByKind = (lines: CostLine[]) => {
+  const groups: {
+    time: any[]
+    material: any[]
+    adjustment: any[]
+  } = { time: [], material: [], adjustment: [] }
+
+  return lines.reduce((acc, line) => {
+    switch (line.kind) {
+      case 'time':
+        acc.time.push(transformCostLineToEntry(line, 'time'))
+        break
+      case 'material':
+        acc.material.push(transformCostLineToEntry(line, 'material'))
+        break
+      case 'adjust':
+        acc.adjustment.push(transformCostLineToEntry(line, 'adjustment'))
+        break
+      default:
+        // Handle unknown kinds gracefully
+        console.warn(`Unknown cost line kind: ${line.kind}`)
+    }
+    return acc
+  }, groups)
+}
+
+// Transform cost line to entry format for compatibility
+const transformCostLineToEntry = (line: CostLine, type: string) => {
+  const baseEntry = {
+    id: line.id,
+    description: line.desc,
+    type,
+    // Base cost/revenue data
+    total_cost: line.total_cost,
+    total_revenue: line.total_rev,
+    amount: line.total_rev,
+    revenue: line.total_rev
+  }
+
+  // Transform based on kind for compatibility with existing view components
+  switch (line.kind) {
+    case 'time':
+      return {
+        ...baseEntry,
+        // Map quantity to hours for time entries
+        hours: parseFloat(line.quantity),
+        total_minutes: parseFloat(line.quantity) * 60,
+        // Map unit_rev to charge_out_rate for time entries
+        charge_out_rate: parseFloat(line.unit_rev),
+        hourly_rate: parseFloat(line.unit_rev)
+      }
+
+    case 'material':
+      return {
+        ...baseEntry,
+        quantity: parseFloat(line.quantity),
+        unit_cost: parseFloat(line.unit_cost),
+        unit_revenue: parseFloat(line.unit_rev)
+      }
+
+    case 'adjust':
+      return {
+        ...baseEntry,
+        price_adjustment: line.total_rev,
+        adjustment_amount: line.total_rev
+      }
+
+    default:
+      return {
+        ...baseEntry,
+        quantity: parseFloat(line.quantity),
+        unit_cost: parseFloat(line.unit_cost),
+        unit_revenue: parseFloat(line.unit_rev)
+      }
+  }
+}
+
+// Legacy pricing data (when not in costing mode) - early return pattern
 const timeEntries = computed(() => {
-  return props.pricingData?.time_entries || []
+  return props.isCostingMode
+    ? costingEntries.value.time
+    : props.pricingData?.time_entries || []
 })
 
 const materialEntries = computed(() => {
+  if (props.isCostingMode) {
+    return costingEntries.value.material
+  }
   return props.pricingData?.material_entries || []
 })
 
 const adjustmentEntries = computed(() => {
+  if (props.isCostingMode) {
+    return costingEntries.value.adjustment
+  }
   return props.pricingData?.adjustment_entries || []
 })
 
 const expenseEntries = computed(() => {
   return [
-    ...materialEntries.value.map(entry => ({
+    ...materialEntries.value.map((entry: any) => ({
       ...entry,
       type: 'material' as const,
       amount: entry.revenue || (entry.unit_revenue * entry.quantity)
     })),
-    ...adjustmentEntries.value.map(entry => ({
+    ...adjustmentEntries.value.map((entry: any) => ({
       ...entry,
       type: 'adjustment' as const,
       amount: entry.revenue || entry.price_adjustment
@@ -173,44 +318,30 @@ const expenseEntries = computed(() => {
 })
 
 const timeTotal = computed(() => {
-  return timeEntries.value.reduce((total, entry) => {
+  return timeEntries.value.reduce((total: number, entry: any) => {
     let entryRevenue = 0
 
     if (entry.revenue !== undefined && entry.revenue !== null && !isNaN(entry.revenue)) {
       entryRevenue = Number(entry.revenue)
     } else if (entry.total_minutes && entry.charge_out_rate) {
-      entryRevenue = (Number(entry.total_minutes) * Number(entry.charge_out_rate)) / 60
-    } else if (entry.minutes_per_item && entry.items && entry.charge_out_rate) {
-      entryRevenue = (Number(entry.minutes_per_item) * Number(entry.items) * Number(entry.charge_out_rate)) / 60
+      entryRevenue = (entry.total_minutes / 60) * entry.charge_out_rate
+    } else if (entry.amount) {
+      entryRevenue = Number(entry.amount)
     }
 
-    return total + (isNaN(entryRevenue) ? 0 : entryRevenue)
+    return total + entryRevenue
   }, 0)
 })
 
 const materialTotal = computed(() => {
-  const materialsTotal = materialEntries.value.reduce((total, entry) => {
-    let entryRevenue = 0
-
-    if (entry.revenue !== undefined && entry.revenue !== null && !isNaN(entry.revenue)) {
-      entryRevenue = Number(entry.revenue)
-    } else if (entry.unit_revenue && entry.quantity) {
-      entryRevenue = Number(entry.unit_revenue) * Number(entry.quantity)
-    }
-
-    return total + (isNaN(entryRevenue) ? 0 : entryRevenue)
+  const materialsTotal = materialEntries.value.reduce((total: number, entry: any) => {
+    const entryRevenue = entry.revenue || (entry.unit_revenue * entry.quantity) || entry.amount || 0
+    return total + Number(entryRevenue)
   }, 0)
 
-  const adjustmentsTotal = adjustmentEntries.value.reduce((total, entry) => {
-    let entryRevenue = 0
-
-    if (entry.revenue !== undefined && entry.revenue !== null && !isNaN(entry.revenue)) {
-      entryRevenue = Number(entry.revenue)
-    } else if (entry.price_adjustment !== undefined && entry.price_adjustment !== null && !isNaN(entry.price_adjustment)) {
-      entryRevenue = Number(entry.price_adjustment)
-    }
-
-    return total + (isNaN(entryRevenue) ? 0 : entryRevenue)
+  const adjustmentsTotal = adjustmentEntries.value.reduce((total: number, entry: any) => {
+    const entryRevenue = entry.revenue || entry.price_adjustment || entry.amount || 0
+    return total + Number(entryRevenue)
   }, 0)
 
   return materialsTotal + adjustmentsTotal

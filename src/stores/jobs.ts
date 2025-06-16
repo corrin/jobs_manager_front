@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { JobDetail } from '@/schemas/jobSchemas'
+import type { JobDetail } from '@/schemas/job.schemas'
 import type { Job } from '@/types'
 
 // Tipo específico para dados do job no kanban (versão resumida)
@@ -78,7 +78,7 @@ export const useJobsStore = defineStore('jobs', () => {
       console.trace('Stack trace for undefined job call')
       return
     }
-    
+
     if (!job.id || typeof job.id !== 'string') {
       console.error('🚨 Store - setDetailedJob called with invalid job.id:', job.id, 'Full job:', job)
       console.trace('Stack trace for invalid job.id call')
@@ -243,7 +243,7 @@ export const useJobsStore = defineStore('jobs', () => {
       if (pricings.reality_pricing) {
         updates.latest_reality_pricing = pricings.reality_pricing
       }
-      
+
       detailedJobs.value[jobId] = { ...job, ...updates }
     }
   }
@@ -272,10 +272,10 @@ export const useJobsStore = defineStore('jobs', () => {
   const addTimeEntry = async (jobId: string, timeEntryData: any): Promise<void> => {
     try {
       console.log('🏪 Store - Adding time entry for job:', jobId, timeEntryData)
-      
+
       // Importar o service aqui para evitar circular dependency
-      const { jobRestService } = await import('@/services/jobRestService')
-      
+      const { jobRestService } = await import('@/services/job-rest.service')
+
       // Verificar se temos o job atual e suas pricings
       const currentJob = detailedJobs.value[jobId]
       if (!currentJob?.latest_estimate_pricing?.id) {
@@ -287,14 +287,14 @@ export const useJobsStore = defineStore('jobs', () => {
       const chargeMultiplier = timeEntryData.chargeMultiplier || 1
       const baseChargeOutRate = Number(currentJob.company_defaults?.charge_out_rate) || Number(currentJob.charge_out_rate) || 105.0
       const baseWageRate = Number(currentJob.company_defaults?.wage_rate) || 32.0
-      
+
       console.log('🔍 Store - Debug wage_rate and charge_out_rate:', {
         company_defaults: currentJob.company_defaults,
         job_charge_out_rate: currentJob.charge_out_rate,
         calculated_charge_out_rate: chargeMultiplier * baseChargeOutRate,
         base_wage_rate: baseWageRate
       })
-      
+
       const entryData = {
         job_pricing_id: currentJob.latest_estimate_pricing.id,
         description: timeEntryData.taskName || timeEntryData.description,
@@ -306,18 +306,18 @@ export const useJobsStore = defineStore('jobs', () => {
       }
 
       const response = await jobRestService.createTimeEntry(jobId, entryData)
-      
+
       if (response.success && response.data) {
         // Atualizar o job no store com os dados retornados
         setDetailedJob(response.data.job)
-        
+
         // Forçar um reload completo para garantir reatividade das pricing entries
-        const { jobRestService: reloadService } = await import('@/services/jobRestService')
+        const { jobRestService: reloadService } = await import('@/services/job-rest.service')
         const freshResponse = await reloadService.getJobForEdit(jobId)
         if (freshResponse.success && freshResponse.data) {
           setDetailedJob(freshResponse.data.job)
         }
-        
+
         console.log('✅ Store - Time entry added successfully and job reloaded')
       } else {
         throw new Error('Failed to add time entry')
@@ -331,9 +331,9 @@ export const useJobsStore = defineStore('jobs', () => {
   const addMaterialEntry = async (jobId: string, materialEntryData: any): Promise<void> => {
     try {
       console.log('🏪 Store - Adding material entry for job:', jobId, materialEntryData)
-      
-      const { jobRestService } = await import('@/services/jobRestService')
-      
+
+      const { jobRestService } = await import('@/services/job-rest.service')
+
       const currentJob = detailedJobs.value[jobId]
       if (!currentJob?.latest_estimate_pricing?.id) {
         throw new Error('Job or estimate pricing not found')
@@ -353,18 +353,18 @@ export const useJobsStore = defineStore('jobs', () => {
       }
 
       const response = await jobRestService.createMaterialEntry(jobId, entryData)
-      
+
       if (response.success && response.data) {
         // Atualizar o job no store com os dados retornados
         setDetailedJob(response.data.job)
-        
+
         // Forçar um reload completo para garantir reatividade das pricing entries
-        const { jobRestService: reloadService } = await import('@/services/jobRestService')
+        const { jobRestService: reloadService } = await import('@/services/job-rest.service')
         const freshResponse = await reloadService.getJobForEdit(jobId)
         if (freshResponse.success && freshResponse.data) {
           setDetailedJob(freshResponse.data.job)
         }
-        
+
         console.log('✅ Store - Material entry added successfully and job reloaded')
       } else {
         throw new Error('Failed to add material entry')
@@ -378,9 +378,9 @@ export const useJobsStore = defineStore('jobs', () => {
   const addAdjustmentEntry = async (jobId: string, adjustmentEntryData: any): Promise<void> => {
     try {
       console.log('🏪 Store - Adding adjustment entry for job:', jobId, adjustmentEntryData)
-      
-      const { jobRestService } = await import('@/services/jobRestService')
-      
+
+      const { jobRestService } = await import('@/services/job-rest.service')
+
       const currentJob = detailedJobs.value[jobId]
       if (!currentJob?.latest_estimate_pricing?.id) {
         throw new Error('Job or estimate pricing not found')
@@ -395,18 +395,18 @@ export const useJobsStore = defineStore('jobs', () => {
       }
 
       const response = await jobRestService.createAdjustmentEntry(jobId, entryData)
-      
+
       if (response.success && response.data) {
         // Atualizar o job no store com os dados retornados
         setDetailedJob(response.data.job)
-        
+
         // Forçar um reload completo para garantir reatividade das pricing entries
-        const { jobRestService: reloadService } = await import('@/services/jobRestService')
+        const { jobRestService: reloadService } = await import('@/services/job-rest.service')
         const freshResponse = await reloadService.getJobForEdit(jobId)
         if (freshResponse.success && freshResponse.data) {
           setDetailedJob(freshResponse.data.job)
         }
-        
+
         console.log('✅ Store - Adjustment entry added successfully and job reloaded')
       } else {
         throw new Error('Failed to add adjustment entry')

@@ -144,7 +144,7 @@ import AppLayout from '@/components/AppLayout.vue'
 import ClientLookup from '@/components/ClientLookup.vue'
 import ContactSelector from '@/components/ContactSelector.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
-import { jobRestService, type JobCreateData } from '@/services/jobRestService'
+import { jobRestService, type JobCreateData } from '@/services/job-rest.service'
 
 const router = useRouter()
 
@@ -175,7 +175,7 @@ const handleClientSelection = (client: any) => {
 
 // Computed property para validação do formulário
 const canSubmit = computed(() => {
-  return formData.value.name.trim() !== '' && 
+  return formData.value.name.trim() !== '' &&
          formData.value.client_id !== ''
 })
 
@@ -187,17 +187,17 @@ const navigateBack = () => {
 // Early return pattern para validação
 const validateForm = (): boolean => {
   errors.value = {}
-  
+
   if (!formData.value.name.trim()) {
     errors.value.name = 'Job name is required'
     return false
   }
-  
+
   if (!formData.value.client_id) {
     errors.value.client_id = 'Client selection is required'
     return false
   }
-  
+
   return true
 }
 
@@ -207,16 +207,16 @@ const handleSubmit = async () => {
   if (!validateForm()) {
     return
   }
-  
+
   isSubmitting.value = true
-  
+
   try {
     const result = await jobRestService.createJob(formData.value)
-    
+
     if (result.success && result.job_id) {
       // Redirecionar para a view de edição do job criado
-      router.push({ 
-        name: 'job-edit', 
+      router.push({
+        name: 'job-edit',
         params: { id: result.job_id }
       })
     } else {

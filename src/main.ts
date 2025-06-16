@@ -7,6 +7,7 @@ import App from './App.vue'
 import router from './router'
 
 import './plugins/axios'
+import './plugins/ag-grid'
 
 const app = createApp(App)
 

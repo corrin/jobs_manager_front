@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Save, PlusSquare, AlertCircle } from 'lucide-vue-next';
 import { useJobsStore } from '@/stores/jobs';
 import { toast } from 'vue-sonner';
-import { MaterialEntryCreateSchema, type MaterialEntryCreate } from '@/schemas/jobSchemas';
+import { MaterialEntryCreateSchema, type MaterialEntryCreate } from '@/schemas/job.schemas';
 import { cn } from '@/lib/utils';
 import { z } from 'zod';
 

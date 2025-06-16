@@ -106,7 +106,7 @@ export class JobService {
       const requestData: UpdateJobStatusRequest = UpdateJobStatusRequestSchema.parse({ status })
 
       await api.post(`/job/api/jobs/${jobId}/update-status/`, requestData)
-      
+
       // Update the store with the new status
       const { useJobsStore } = await import('@/stores/jobs')
       const jobsStore = useJobsStore()
@@ -131,7 +131,7 @@ export class JobService {
       })
 
       await api.post(`/job/api/jobs/${jobId}/reorder/`, requestData)
-      
+
       // If the status changed, update the store
       if (status) {
         const { useJobsStore } = await import('@/stores/jobs')

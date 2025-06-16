@@ -41,7 +41,7 @@ import {
 import { Button } from '@/components/ui/button';
 import WorkshopPdfViewer from './WorkshopPdfViewer.vue';
 import { ref, watch } from 'vue';
-import { jobRestService } from '@/services/jobRestService';
+import { jobRestService } from '@/services/job-rest.service';
 import { Download } from 'lucide-vue-next';
 
 const props = defineProps<{

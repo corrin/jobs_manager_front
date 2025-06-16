@@ -1,6 +1,6 @@
 import api from './api'
-import { CostSetSchema } from '@/schemas/costingSchemas'
-import type { CostSet } from '@/types/costing'
+import { CostSetSchema } from '@/schemas/costing.schemas'
+import type { CostSet } from '@/types/costing.types'
 
 /**
  * Fetch cost set data for a specific job and kind

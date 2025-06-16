@@ -2,9 +2,9 @@
   <div class="mb-2">
     <div class="flex justify-center px-2">
       <div ref="staffListRef" class="flex flex-wrap justify-center gap-2 max-w-full">
-        <div 
-          v-for="staff in staffMembers" 
-          :key="staff.id" 
+        <div
+          v-for="staff in staffMembers"
+          :key="staff.id"
           class="flex flex-col items-center cursor-pointer transition-transform hover:scale-105 active:scale-95"
           :class="{ 'scale-105 ring-2 ring-blue-400 ring-offset-1 rounded-lg': activeFilters.includes(staff.id.toString()) }"
           @click="toggleStaffFilter(staff.id)"
@@ -56,7 +56,7 @@ const loadStaffMembers = async (): Promise<void> => {
     isLoading.value = true
     error.value = null
     const data = await staffService.getAllStaff()
-    
+
     // Validate data using PersonSchema (API returns UUID strings, not numbers)
     const validatedStaff = data.map(staffData => {
       return PersonSchema.parse({
@@ -64,7 +64,7 @@ const loadStaffMembers = async (): Promise<void> => {
         display_name: staffData.display_name || `${staffData.first_name} ${staffData.last_name}`.trim()
       })
     })
-    
+
     staffMembers.value = validatedStaff
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load staff members'
@@ -76,13 +76,13 @@ const loadStaffMembers = async (): Promise<void> => {
 
 const toggleStaffFilter = (staffId: string): void => {
   const index = activeFilters.value.indexOf(staffId)
-  
+
   if (index !== -1) {
     activeFilters.value.splice(index, 1)
   } else {
     activeFilters.value.push(staffId)
   }
-  
+
   emit('staff-filter-changed', [...activeFilters.value])
 }
 
@@ -93,7 +93,7 @@ watch(() => props.activeFilters, (newFilters) => {
 
 onMounted(() => {
   loadStaffMembers()
-  
+
   // Emit staff panel ready after next tick to ensure DOM is rendered
   nextTick(() => {
     if (staffListRef.value) {

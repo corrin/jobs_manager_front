@@ -71,8 +71,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { JobEvent } from '@/services/jobRestService'
-import { jobRestService } from '@/services/jobRestService'
+import type { JobEvent } from '@/services/job-rest.service'
+import { jobRestService } from '@/services/job-rest.service'
 import {
   Dialog,
   DialogContent,

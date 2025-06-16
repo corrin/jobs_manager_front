@@ -111,16 +111,16 @@
 
         <!-- Action Buttons -->
         <DialogFooter class="gap-2">
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             @click="handleCancel"
             :disabled="isLoading"
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             :disabled="!isFormValid || isLoading"
             class="bg-blue-600 hover:bg-blue-700"
           >
@@ -138,7 +138,7 @@ import { XCircle } from 'lucide-vue-next'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { clientService } from '@/services/clientService'
-import { createClientSchema, type CreateClientData, type CreateClientResponse } from '@/schemas/clientSchemas'
+import { createClientSchema, type CreateClientData, type CreateClientResponse } from '@/schemas/client.schemas'
 import type { Client } from '@/composables/useClientLookup'
 
 // Props
@@ -175,17 +175,17 @@ const fieldErrors = ref<Record<string, string>>({})
 const isFormValid = computed(() => {
   // Guard clause - check required fields
   if (!formData.value.name.trim()) return false
-  
+
   // Check for validation errors
   if (Object.keys(fieldErrors.value).length > 0) return false
-  
+
   return true
 })
 
 // Handle dialog open/close following SRP
 const handleDialogChange = (open: boolean) => {
   emit('update:isOpen', open)
-  
+
   // Reset form when closing
   if (!open) {
     resetForm()
@@ -195,7 +195,7 @@ const handleDialogChange = (open: boolean) => {
 // Form validation with Zod patterns
 const validateForm = (): boolean => {
   fieldErrors.value = {}
-  
+
   try {
     createClientSchema.parse(formData.value)
     return true
@@ -239,7 +239,7 @@ const handleSubmit = async () => {
         address: result.client.address || '',
         xero_contact_id: result.client.xero_contact_id || ''
       }
-      
+
       emit('client-created', newClient)
       emit('update:isOpen', false)
     }

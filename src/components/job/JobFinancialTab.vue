@@ -233,7 +233,7 @@
 
 <script setup lang="ts">
 import { computed, watch, watchEffect } from 'vue'
-import type { JobData } from '@/services/jobRestService'
+import type { JobData } from '@/services/job-rest.service'
 import { useJobsStore } from '@/stores/jobs'
 import { useCostingStore } from '@/stores/costing'
 import { useFeatureFlags } from '@/stores/feature-flags'

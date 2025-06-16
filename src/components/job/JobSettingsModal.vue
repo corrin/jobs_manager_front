@@ -52,7 +52,7 @@
                 <input v-model="localJobData.client_name" type="text"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50"
                   readonly />
-                
+
                 <!-- Action Buttons - Stack on mobile/tablet, inline on desktop -->
                 <div class="flex flex-col md:flex-col xl:flex-row gap-2 xl:gap-2">
                   <button @click="startClientChange" type="button"
@@ -181,8 +181,8 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import type { JobData, JobUpdateData } from '@/services/jobRestService'
-import { jobRestService } from '@/services/jobRestService'
+import type { JobData, JobUpdateData } from '@/services/job-rest.service'
+import { jobRestService } from '@/services/job-rest.service'
 import { useJobsStore } from '@/stores/jobs'
 import RichTextEditor from '@/components/RichTextEditor.vue'
 import ClientLookup from '@/components/ClientLookup.vue'
@@ -287,9 +287,9 @@ watch(() => props.jobData, (newJobData) => {
   }
   console.log('✅ JobSettingsModal - Watcher: Received valid jobData, initializing. ID:', newJobData.id)
   // Certifique-se de que client_id seja tratado, mesmo que seja null/undefined inicialmente
-  localJobData.value = { 
-    ...newJobData, 
-    client_id: newJobData.client_id === undefined || newJobData.client_id === null ? '' : newJobData.client_id 
+  localJobData.value = {
+    ...newJobData,
+    client_id: newJobData.client_id === undefined || newJobData.client_id === null ? '' : newJobData.client_id
   }
 }, { immediate: true, deep: true })
 
@@ -300,19 +300,19 @@ watch(() => props.jobData, (newJobData) => {
 const sanitizeJobData = (data: any): JobUpdateData => {
   // Guard clause - early return se não há dados
   if (!data) return {}
-  
+
   // Converter null para undefined para campos específicos
   const sanitized: any = { ...data }
-  
+
   // Lista de campos que podem ser null mas devem ser undefined na API
   const nullableFields = ['description', 'notes', 'contact_id', 'contact_name', 'order_number']
-  
+
   nullableFields.forEach(field => {
     if (sanitized[field] === null) {
       sanitized[field] = undefined
     }
   })
-  
+
   return sanitized
 }
 
@@ -397,7 +397,7 @@ const saveSettings = async () => {
   try {
     // Sanitizar dados antes de enviar para a API
     const sanitizedData = sanitizeJobData(localJobData.value)
-    
+
     // Usar JSON.parse(JSON.stringify(...)) para log é uma boa forma de ver o valor real sem referências
     console.log(`JobSettingsModal - saveSettings - Updating job ID: ${props.jobData.id} with data:`, JSON.parse(JSON.stringify(sanitizedData)))
     const result = await jobRestService.updateJob(props.jobData.id, sanitizedData)
@@ -412,7 +412,7 @@ const saveSettings = async () => {
       } else {
         console.warn('JobSettingsModal - saveSettings - API call successful but result.data is null or undefined. Calling handleFallbackSettingsUpdate.')
         // Se handleFallbackSettingsUpdate existir e for relevante:
-        // handleFallbackSettingsUpdate(); 
+        // handleFallbackSettingsUpdate();
         // Se não, isso pode ser um erro ou um caso não esperado.
         errorMessages.value.push('Update seemed successful, but no data was returned from the server.')
         // Considere não fechar o modal ou tomar outra ação.
@@ -495,7 +495,7 @@ const handleSuccessfulSettingsUpdate = (apiData: any) => {
       // O valor padrão de '' já pode ter sido definido pelo watcher ou pela inicialização.
       console.warn('JobSettingsModal - jobDataToStore is missing client_id or it is empty, and props.jobData.client_id is also unavailable or empty for enrichment.')
     }
-    
+
     // Garantir que client_id seja uma string, mesmo que vazia, se for esperado no tipo JobData
     if (jobDataToStore.client_id === undefined || jobDataToStore.client_id === null) {
         jobDataToStore.client_id = ''

@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import type { JobData } from '@/services/jobRestService'
+import type { JobData } from '@/services/job-rest.service'
 
 interface CacheEntry {
   data: JobData

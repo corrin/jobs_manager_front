@@ -23,7 +23,7 @@ import {
   type FileListResponse,
   FileListResponseSchema,
   type JobFile
-} from '@/schemas/jobSchemas'
+} from '@/schemas/job.schemas'
 
 // Legacy types kept for compatibility (will be removed gradually)
 export interface JobCreateData {

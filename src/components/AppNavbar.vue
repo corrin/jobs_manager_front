@@ -16,8 +16,8 @@
       <!-- Desktop Navigation (Large screens only) -->
       <div class="hidden lg:flex items-center space-x-6">
         <router-link to="/jobs/create" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Create Job</router-link>
-        <router-link to="/timesheet" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Timesheets</router-link>
-
+        <!-- Timesheet Dropdown (apenas otimizado) -->
+        <router-link to="/timesheets/entry" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Timesheets</router-link>
         <!-- Purchases Dropdown -->
         <div class="relative" @click.stop>
           <button @click="toggleDropdown('purchases')" class="text-gray-700 hover:text-blue-600 transition-colors flex items-center text-sm">
@@ -31,9 +31,7 @@
             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Upload Supplier Pricing</a>
           </div>
         </div>
-
         <a href="#" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Xero</a>
-
         <!-- Reports Dropdown -->
         <div class="relative" @click.stop>
           <button @click="toggleDropdown('reports')" class="text-gray-700 hover:text-blue-600 transition-colors flex items-center text-sm">
@@ -69,7 +67,7 @@
             Logout
           </button>
         </div>
-        
+
         <!-- Desktop: Full user info -->
         <div class="hidden lg:flex items-center space-x-4">
           <span class="text-gray-700 text-sm">Welcome, {{ userInfo.displayName }}!</span>
@@ -103,19 +101,19 @@
             <!-- Primary Actions -->
             <div class="space-y-3">
               <router-link to="/jobs/create" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Create Job</router-link>
-              <router-link to="/timesheet" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Timesheets</router-link>
+              <router-link to="/timesheet/optimized" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Optimized Timesheet</router-link>
               <a href="#" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Xero</a>
             </div>
-            
+
             <!-- Separator -->
             <div class="border-t border-gray-200"></div>
-            
+
             <!-- Expandable Sections -->
             <div class="space-y-2">
               <!-- Purchases Section -->
               <div class="bg-gray-50 rounded-md">
-                <button 
-                  @click="toggleMobileSection('purchases')" 
+                <button
+                  @click="toggleMobileSection('purchases')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
                   Purchases
@@ -142,8 +140,8 @@
 
               <!-- Reports Section -->
               <div class="bg-gray-50 rounded-md">
-                <button 
-                  @click="toggleMobileSection('reports')" 
+                <button
+                  @click="toggleMobileSection('reports')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
                   Reports
@@ -167,8 +165,8 @@
 
               <!-- Admin Section -->
               <div class="bg-gray-50 rounded-md">
-                <button 
-                  @click="toggleMobileSection('admin')" 
+                <button
+                  @click="toggleMobileSection('admin')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
                   Admin

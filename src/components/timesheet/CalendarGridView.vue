@@ -181,8 +181,8 @@
 
                   <!-- Status indicators -->
                   <div class="mt-auto flex flex-wrap gap-1 items-center">
-                    <div 
-                      v-if="getIMSStatus(getDayData(staffData, day))" 
+                    <div
+                      v-if="getIMSStatus(getDayData(staffData, day))"
                       :class="[
                         'text-xs px-2 py-1 rounded-md font-semibold border',
                         {
@@ -326,10 +326,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Plus, Grid, List } from 'lucide-vue-next'
-import TimeEntryModal from './TimeEntryModal.vue'
-import IMSTableView from './IMSTableView.vue'
+// import IMSTableView from './IMSTableView.vue' // TODO: Create this component
 import { imsService, type IMSExportData } from '@/services/ims.service'
-import type { Staff, TimeEntry, Job, WeeklyStaffData } from '@/types/timesheet'
+import type { Staff, TimeEntry, Job, WeeklyStaffData } from '@/types/timesheet.types'
 
 interface Props {
   weekStart: Date
@@ -594,7 +593,7 @@ const handleCancelEntry = () => {
 
 const handleImsToggle = async (enabled: boolean) => {
   console.log('🔄 IMS toggle triggered, enabled:', enabled)
-  
+
   // Update the parent component - it will handle data loading and pass imsExportMode back via props
   emit('imsToggle', enabled)
 
@@ -684,11 +683,11 @@ const getIMSDayData = (dayData: any) => {
 // Calculate proper IMS status based on hours worked vs scheduled
 const getIMSStatus = (dayData: any) => {
   if (!dayData) return null
-  
+
   const hours = dayData.hours || 0
   const scheduledHours = 8.0 // Standard work day (could be made configurable)
   const leaveHours = dayData.leaveHours || 0
-  
+
   // If it's a leave day
   if (leaveHours > 0) {
     return {
@@ -697,7 +696,7 @@ const getIMSStatus = (dayData: any) => {
       class: 'ims-status-leave'
     }
   }
-  
+
   // If no hours worked
   if (hours === 0) {
     return {
@@ -706,7 +705,7 @@ const getIMSStatus = (dayData: any) => {
       class: 'ims-status-empty'
     }
   }
-  
+
   // If full day worked (8+ hours)
   if (hours >= scheduledHours) {
     // Check for overtime
@@ -725,7 +724,7 @@ const getIMSStatus = (dayData: any) => {
       }
     }
   }
-  
+
   // If partial day (less than 8 hours)
   const missing = scheduledHours - hours
   return {
@@ -775,7 +774,7 @@ const imsStaffList = computed(() => {
   return props.staffEntries.map(staffData => {
     // Convert weeklyHours array to days object keyed by date for IMSTableView
     const daysObject: Record<string, any> = {}
-    
+
     if (staffData.weeklyHours && Array.isArray(staffData.weeklyHours)) {
       staffData.weeklyHours.forEach(dayData => {
         if (dayData.date) {

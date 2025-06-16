@@ -10,7 +10,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import PDF from 'pdf-vue3'
-import { jobRestService } from '@/services/jobRestService';
+import { jobRestService } from '@/services/job-rest.service';
 
 const props = defineProps<{ jobId: string }>()
 const pdfData = ref<Uint8Array | null>(null)

@@ -181,8 +181,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import CameraModal from './CameraModal.vue'
-import type { JobFile } from '@/schemas/jobSchemas'
-import { jobRestService } from '@/services/jobRestService'
+import type { JobFile } from '@/schemas/job.schemas'
+import { jobRestService } from '@/services/job-rest.service'
 
 // Props
 interface Props {
@@ -320,7 +320,7 @@ const compressImage = (file: File, maxWidth = 1280, maxHeight = 960, quality = 0
         }
 
         ctx.drawImage(img, 0, 0, width, height)
-        
+
         canvas.toBlob(
           (blob) => {
             if (!blob) {
@@ -461,7 +461,7 @@ const handlePhotoCaptured = async (photo: File) => {
 
     // Process and upload the captured photo
     await processAndUploadFile(photo)
-    
+
     console.log('Photo uploaded successfully!')
   } catch (err) {
     console.error('Error uploading captured photo:', err)

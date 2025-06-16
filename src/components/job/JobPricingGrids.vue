@@ -92,7 +92,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import SimpleTotalTable from './SimpleTotalTable.vue'
-import type { JobData, CompanyDefaults } from '@/services/jobRestService'
+import type { JobData, CompanyDefaults } from '@/services/job-rest.service'
 
 // Props
 interface Props {

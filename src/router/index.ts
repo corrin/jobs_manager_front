@@ -51,12 +51,12 @@ const router = createRouter({
       redirect: '/kanban'
     },
     {
-      path: '/timesheet',
+      path: '/timesheets/entry',
       name: 'timesheet',
-      component: () => import('@/views/TimesheetView.vue'),
+      component: () => import('@/views/TimesheetEntryView.vue'),
       meta: {
         requiresAuth: true,
-        title: 'Timesheet - Jobs Manager'
+        title: 'Optimized Timesheet - Jobs Manager'
       }
     },
     {
