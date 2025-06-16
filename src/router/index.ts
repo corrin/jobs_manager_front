@@ -52,12 +52,25 @@ const router = createRouter({
     },
     {
       path: '/timesheets/entry',
-      name: 'timesheet',
+      name: 'timesheet-entry',
       component: () => import('@/views/TimesheetEntryView.vue'),
       meta: {
         requiresAuth: true,
-        title: 'Optimized Timesheet - Jobs Manager'
+        title: 'Timesheet Entry - Jobs Manager'
       }
+    },
+    {
+      path: '/timesheets/daily',
+      name: 'timesheet-daily',
+      component: () => import('@/views/DailyTimesheetView.vue'),
+      meta: {
+        requiresAuth: true,
+        title: 'Daily Timesheet Overview - Jobs Manager'
+      }
+    },
+    {
+      path: '/timesheets',
+      redirect: '/timesheets/daily'
     },
     {
       path: '/accounts/login',

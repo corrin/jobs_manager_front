@@ -26,6 +26,7 @@ export interface OptimizedTimeEntry {
   chargeOutRate: number
   rateMultiplier: number
   isNewRow?: boolean
+  isModified?: boolean // Track if existing entry has been modified
   jobId?: string
 }
 

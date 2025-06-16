@@ -228,11 +228,19 @@ const error = ref<string | null>(null)
 const showHelpModal = ref(false)
 const agGridRef = ref()
 
-// Get initial values - always use internal state as source of truth
+// Get initial values from URL query params or defaults
 const todayDate = new Date().toISOString().split('T')[0]
 console.log('🗓️ Today is:', todayDate, 'Day of week:', new Date().getDay())
-const currentDate = ref<string>(todayDate)
-const selectedStaffId = ref<string>('')
+
+// Initialize from URL params
+const initialDate = (route.query.date as string) || todayDate
+const initialStaffId = (route.query.staffId as string) || ''
+
+console.log('🔗 URL params:', { date: route.query.date, staffId: route.query.staffId })
+console.log('📊 Using initial values:', { date: initialDate, staffId: initialStaffId })
+
+const currentDate = ref<string>(initialDate)
+const selectedStaffId = ref<string>(initialStaffId)
 const isInitializing = ref(true)
 
 const staffList = ref<Staff[]>([])
@@ -454,7 +462,7 @@ async function handleSaveEntry(entry: OptimizedTimeEntry): Promise<void> {
     }
 
 
-    // Convert to CostLine format
+    // Convert to CostLine format - use currentDate instead of entry.date
     const costLinePayload = {
       kind: 'time' as const,
       desc: entry.description,
@@ -464,7 +472,7 @@ async function handleSaveEntry(entry: OptimizedTimeEntry): Promise<void> {
       meta: {
         category: 'Labour',
         staff_id: entry.staffId,
-        date: entry.date, // Fixed: use 'date' not 'entry_date'
+        date: currentDate.value, // FIXED: Use currentDate from navigation instead of entry.date
         is_billable: entry.billable,
         rate_multiplier: entry.rateMultiplier,
         job_id: targetJobId,
@@ -474,15 +482,23 @@ async function handleSaveEntry(entry: OptimizedTimeEntry): Promise<void> {
       }
     }
 
-    console.log('📅 Saving entry with date:', entry.date)
+    console.log('📅 Saving entry with date:', currentDate.value)
+    console.log('🔍 Entry ID check:', { 
+      entryId: entry.id, 
+      idType: typeof entry.id, 
+      isNumber: typeof entry.id === 'number',
+      hasId: entry.id !== null && entry.id !== undefined
+    })
     console.log('🏗️ CostLine payload:', costLinePayload)
 
     if (entry.id && typeof entry.id === 'number') {
       // Update existing CostLine
+      console.log('🔄 Updating existing entry with ID:', entry.id)
       const updatedLine = await costlineService.updateCostLine(entry.id, costLinePayload)
       console.log('✅ Entry updated successfully:', updatedLine.id)
     } else {
       // Create new CostLine - need to find job ID first
+      console.log('➕ Creating new entry')
       const job = jobsList.value.find((j: Job) => j.id === targetJobId)
       if (!job) {
         console.error('❌ Job not found for jobId:', targetJobId)
@@ -492,18 +508,16 @@ async function handleSaveEntry(entry: OptimizedTimeEntry): Promise<void> {
 
       const newLine = await costlineService.createCostLine(job.id, 'actual', costLinePayload)
       entry.id = newLine.id
-      console.log('✅ Entry created successfully:', newLine.id)
+      console.log('✅ Entry created successfully with new ID:', newLine.id)
     }
 
     // Update local state
     const entryIndex = timeEntries.value.findIndex((e: OptimizedTimeEntry) => e === entry)
     if (entryIndex >= 0) {
-      timeEntries.value[entryIndex] = { ...entry, isNewRow: false }
+      timeEntries.value[entryIndex] = { ...entry, isNewRow: false, isModified: false }
     } else {
-      timeEntries.value.push({ ...entry, isNewRow: false })
+      timeEntries.value.push({ ...entry, isNewRow: false, isModified: false })
     }
-
-    hasUnsavedChanges.value = false
 
   } catch (err) {
     console.error('❌ Error saving entry:', err)
@@ -558,6 +572,11 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
     }
   }
 
+  // Mark the specific entry as modified (not a new row)
+  if (data.id && !data.isNewRow) {
+    data.isModified = true
+  }
+
   // Mark as having changes
   hasUnsavedChanges.value = true
 }
@@ -595,9 +614,20 @@ const saveChanges = async () => {
   console.log('🔍 agGridRef.value?.api:', !!agGridRef.value?.api)
 
   syncGridState()
-  const changedEntries = timeEntries.value.filter((entry: OptimizedTimeEntry) => entry.isNewRow || hasUnsavedChanges.value)
+  
+  // Only save entries that are new or have been modified
+  const changedEntries = timeEntries.value.filter((entry: OptimizedTimeEntry) => 
+    entry.isNewRow || entry.isModified
+  )
 
   console.log('📊 Found', changedEntries.length, 'changed entries to save')
+  console.log('🔍 Changed entries details:', changedEntries.map(e => ({
+    id: e.id,
+    isNewRow: e.isNewRow,
+    isModified: e.isModified,
+    description: e.description,
+    hours: e.hours
+  })))
 
   if (changedEntries.length === 0) {
     console.log('⚠️ No entries to save')
@@ -605,11 +635,22 @@ const saveChanges = async () => {
   }
 
   for (const entry of changedEntries) {
-    console.log('🔄 Saving entry:', entry)
+    console.log('🔄 Saving entry:', {
+      id: entry.id,
+      isNewRow: entry.isNewRow,
+      isModified: entry.isModified,
+      description: entry.description
+    })
     console.log('Call-stack: ', new Error().stack)
     console.log('Timestamp:', new Date().toISOString())
     await handleSaveEntry(entry)
+    
+    // Clear the modification flag after successful save
+    entry.isModified = false
   }
+  
+  // Clear the global change flag after all saves
+  hasUnsavedChanges.value = false
 }
 
 const reloadData = () => {
@@ -701,7 +742,8 @@ const loadTimesheetData = async () => {
       wageRate: parseFloat(line.unit_cost),
       chargeOutRate: parseFloat(line.unit_rev),
       rateMultiplier: line.meta?.rate_multiplier || 1.0,
-      isNewRow: false
+      isNewRow: false,
+      isModified: false
     }))
 
     loadData(timeEntries.value, selectedStaffId.value)
@@ -841,6 +883,28 @@ watch([selectedStaffId, currentDate], async ([newStaffId, newDate], [oldStaffId,
   console.log('📊 Loading data due to staff/date change:', { newStaffId, newDate, oldStaffId, oldDate })
   await loadTimesheetData()
 
+}, { immediate: false })
+
+// Watch for URL parameter changes
+watch(() => route.query, (newQuery, oldQuery) => {
+  if (isInitializing.value) {
+    console.log('⏭️ Skipping URL watcher - still initializing')
+    return
+  }
+
+  console.log('🔗 URL query changed:', { old: oldQuery, new: newQuery })
+
+  // Update date if changed in URL
+  if (newQuery.date && newQuery.date !== currentDate.value) {
+    console.log('📅 Updating date from URL:', newQuery.date)
+    currentDate.value = newQuery.date as string
+  }
+
+  // Update staff if changed in URL
+  if (newQuery.staffId && newQuery.staffId !== selectedStaffId.value) {
+    console.log('👤 Updating staff from URL:', newQuery.staffId)
+    selectedStaffId.value = newQuery.staffId as string
+  }
 }, { immediate: false })
 
 onUnmounted(() => {

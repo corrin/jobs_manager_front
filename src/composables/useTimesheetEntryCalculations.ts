@@ -102,7 +102,8 @@ export function useTimesheetEntryCalculations(
       wageRate: defaultWageRate,
       chargeOutRate: defaultChargeOutRate,
       rateMultiplier: 1.0,
-      isNewRow: true
+      isNewRow: true,
+      isModified: false
     }
   }
 

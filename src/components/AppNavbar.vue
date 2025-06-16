@@ -16,8 +16,17 @@
       <!-- Desktop Navigation (Large screens only) -->
       <div class="hidden lg:flex items-center space-x-6">
         <router-link to="/jobs/create" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Create Job</router-link>
-        <!-- Timesheet Dropdown (apenas otimizado) -->
-        <router-link to="/timesheets/entry" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Timesheets</router-link>
+        <!-- Timesheet Dropdown -->
+        <div class="relative" @click.stop>
+          <button @click="toggleDropdown('timesheets')" class="text-gray-700 hover:text-blue-600 transition-colors flex items-center text-sm">
+            Timesheets
+            <ChevronDown class="ml-1 h-4 w-4" />
+          </button>
+          <div v-if="activeDropdown === 'timesheets'" class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+            <router-link to="/timesheets/entry" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Timesheet Entry</router-link>
+            <router-link to="/timesheets/daily" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Daily Overview</router-link>
+          </div>
+        </div>
         <!-- Purchases Dropdown -->
         <div class="relative" @click.stop>
           <button @click="toggleDropdown('purchases')" class="text-gray-700 hover:text-blue-600 transition-colors flex items-center text-sm">
@@ -101,7 +110,8 @@
             <!-- Primary Actions -->
             <div class="space-y-3">
               <router-link to="/jobs/create" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Create Job</router-link>
-              <router-link to="/timesheet/optimized" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Optimized Timesheet</router-link>
+              <router-link to="/timesheets/entry" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Timesheet Entry</router-link>
+              <router-link to="/timesheets/daily" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Daily Overview</router-link>
               <a href="#" class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all" @click="closeMobileMenu">Xero</a>
             </div>
 
