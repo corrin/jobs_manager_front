@@ -1,4 +1,4 @@
-import api from './api'
+import api from '@/plugins/axios'
 import { CostLineSchema } from '@/schemas/costing.schemas'
 import type { CostLine } from '@/types/costing.types'
 

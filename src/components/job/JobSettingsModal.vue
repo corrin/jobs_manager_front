@@ -313,6 +313,13 @@ const sanitizeJobData = (data: any): JobUpdateData => {
     }
   })
 
+  // Garante que pricing_methodology sempre seja enviado corretamente
+  if (!sanitized.pricing_methodology ||
+      (sanitized.pricing_methodology !== 'fixed_price' && sanitized.pricing_methodology !== 'time_materials')) {
+    // fallback para o valor padrão do backend se não estiver correto
+    sanitized.pricing_methodology = 'time_materials'
+  }
+
   return sanitized
 }
 

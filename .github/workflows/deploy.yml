@@ -1,0 +1,54 @@
+name: Frontend CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  deploy:
+    name: Deploy Vue.js to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      # Code Checkout
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # SSH Configuration
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # Deploy via SSH
+      - name: Deploy Vue.js App to EC2
+        env:
+          AWS_HOST: ${{ secrets.AWS_HOST }}
+          AWS_USER: ${{ secrets.AWS_USER }}
+          FRONTEND_PATH: ${{ secrets.PROJECT_PATH }}
+        run: |
+          BRANCH_NAME=${{ github.head_ref || github.ref_name }}
+          echo "Deploying branch: $BRANCH_NAME"
+          ssh -T -o StrictHostKeyChecking=no $AWS_USER@$AWS_HOST << EOF
+            cd $FRONTEND_PATH
+
+            if git branch | grep -q "$BRANCH_NAME"; then
+              git switch $BRANCH_NAME
+            else
+              git switch -c $BRANCH_NAME
+            fi
+            git pull -f origin $BRANCH_NAME
+
+            npm run build
+
+            sudo systemctl restart vue
+          EOF
+
+      - name: Notify Deployment Success
+        run: echo "✅ Vue.js Frontend deployed successfully to EC2!"

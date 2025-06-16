@@ -1,4 +1,4 @@
-import api from '@/services/api'
+import api from '@/plugins/axios'
 
 export interface Staff {
   id: number

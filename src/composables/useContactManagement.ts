@@ -1,12 +1,12 @@
 /**
  * Contact Management Composable
- * 
+ *
  * Seguindo princípios de SRP - responsabilidade única para gerenciamento de contatos.
  * Baseado no contact_management.js existente, adaptado para Vue.js.
  */
 
 import { ref, computed } from 'vue'
-import api from '@/services/api'
+import api from '@/plugins/axios'
 import type { ClientContact } from '@/composables/useClientLookup'
 
 export interface NewContactData {
@@ -26,7 +26,7 @@ export function useContactManagement() {
   const isLoading = ref(false)
   const currentClientId = ref<string>('')
   const currentClientName = ref<string>('')
-  
+
   // New contact form data
   const newContactForm = ref<NewContactData>({
     name: '',
@@ -39,16 +39,16 @@ export function useContactManagement() {
 
   // Computed properties
   const hasContacts = computed(() => contacts.value.length > 0)
-  
+
   const displayValue = computed(() => {
     if (!selectedContact.value) return ''
-    
+
     const contact = selectedContact.value
     const parts = [contact.name]
-    
+
     if (contact.phone) parts.push(contact.phone)
     if (contact.email) parts.push(contact.email)
-    
+
     return parts.join(' - ')
   })
 
@@ -63,10 +63,10 @@ export function useContactManagement() {
     currentClientId.value = clientId
     currentClientName.value = clientName
     isModalOpen.value = true
-    
+
     // Reset form
     resetNewContactForm()
-    
+
     // Load contacts
     await loadContacts(clientId)
   }
@@ -88,7 +88,7 @@ export function useContactManagement() {
     isLoading.value = true
     try {
       const response = await api.get(`/clients/rest/${clientId}/contacts/`)
-      
+
       if (response.data && response.data.results && Array.isArray(response.data.results)) {
         contacts.value = response.data.results
       } else {
@@ -127,7 +127,7 @@ export function useContactManagement() {
     }
 
     isLoading.value = true
-    
+
     try {      const contactData = {
         client_id: currentClientId.value,
         name: newContactForm.value.name.trim(),
@@ -145,16 +145,16 @@ export function useContactManagement() {
       }
 
       const newContact: ClientContact = response.data.contact
-      
+
       // Update selected contact
       selectedContact.value = newContact
-      
+
       // Reload contacts list
       await loadContacts(currentClientId.value)
-      
+
       closeModal()
       return true
-      
+
     } catch (error) {
       console.error('Error creating contact:', error)
       return false
@@ -179,15 +179,15 @@ export function useContactManagement() {
   const saveContact = async (): Promise<boolean> => {
     // Switch-case to decide action based on state
     const hasNewContactData = newContactForm.value.name.trim().length > 0
-    
+
     switch (true) {
       case hasNewContactData:
         return await createNewContact()
-      
+
       case selectedContact.value !== null:
         closeModal()
         return true
-      
+
       default:
         console.warn('Please select an existing contact or create a new one')
         return false
@@ -222,11 +222,11 @@ export function useContactManagement() {
     isLoading,
     currentClientName,
     newContactForm,
-    
+
     // Computed
     hasContacts,
     displayValue,
-    
+
     // Methods
     openModal,
     closeModal,

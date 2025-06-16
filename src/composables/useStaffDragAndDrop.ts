@@ -1,6 +1,6 @@
 import { ref, nextTick, onBeforeUnmount } from 'vue'
 import Sortable from 'sortablejs'
-import api from '@/services/api'
+import api from '@/plugins/axios'
 import { getCsrfToken } from '@/utils/csrf'
 import { useDeviceDetection } from '@/composables/useDeviceDetection'
 
@@ -13,7 +13,7 @@ type StaffDragAndDropEmits = {
 export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
   const staffSortableInstances = ref<Map<string, Sortable>>(new Map())
   const isStaffDragging = ref(false)
-  
+
   // Use device detection composable
   const { isMobile, getStaffDragConfig } = useDeviceDetection()
 
@@ -49,7 +49,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         ghostClass: 'staff-sortable-ghost',
         chosenClass: 'staff-sortable-chosen',
         dragClass: 'staff-sortable-drag',
-        
+
         // Apply device-specific configuration
         ...staffDragConfig,
 
@@ -121,7 +121,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         ghostClass: 'staff-sortable-ghost',
         chosenClass: 'staff-sortable-chosen',
         dragClass: 'staff-sortable-drag',
-        
+
         // Apply device-specific configuration
         ...staffDragConfig,
 
@@ -143,14 +143,14 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
             const targetJobId = targetJobCard.getAttribute('data-id')
             if (targetJobId) {
               console.log(`Staff ${staffId} added to job ${targetJobId}`)
-              
+
               // Check if this came from the staff pool
-              const fromStaffPool = evt.from.classList.contains('staff-list') || 
+              const fromStaffPool = evt.from.classList.contains('staff-list') ||
                                    evt.from.closest('#staff-panel')
-              
+
               try {
                 await assignStaffToJob(targetJobId, staffId)
-                
+
                 // If it came from staff pool, remove the dragged clone element
                 if (fromStaffPool) {
                   evt.item.remove()

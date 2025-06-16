@@ -4,13 +4,9 @@ import { useAuthStore } from '@/stores/auth'
 // Set default base URL and enable credentials for httpOnly cookies
 // Determine API base URL based on current environment
 const getApiBaseUrl = () => {
-  // If we're on UAT domains, use the corresponding API domain
-  if (window.location.hostname === 'uat-office.morrissheetmetal.co.nz') {
-    return 'https://api.uat-office.morrissheetmetal.co.nz'
-  }
-
   // Use environment variable if available
   if (import.meta.env.VITE_API_BASE_URL) {
+    console.log('Using API base URL from environment:', import.meta.env.VITE_API_BASE_URL)
     return import.meta.env.VITE_API_BASE_URL
   }
 

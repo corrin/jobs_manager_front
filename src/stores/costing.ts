@@ -112,9 +112,21 @@ export const useCostingStore = defineStore('costing', () => {
     }
   }
 
-  const totalCost = computed(() => costSet.value?.summary.cost || 0)
-  const totalRevenue = computed(() => costSet.value?.summary.rev || 0)
-  const totalHours = computed(() => costSet.value?.summary.hours || 0)
+  const totalCost = computed(() => {
+    if (!costSet.value || !costSet.value.summary) return 0
+    const val = costSet.value.summary.cost
+    return typeof val === 'number' && !isNaN(val) ? val : 0
+  })
+  const totalRevenue = computed(() => {
+    if (!costSet.value || !costSet.value.summary) return 0
+    const val = costSet.value.summary.rev
+    return typeof val === 'number' && !isNaN(val) ? val : 0
+  })
+  const totalHours = computed(() => {
+    if (!costSet.value || !costSet.value.summary) return 0
+    const val = costSet.value.summary.hours
+    return typeof val === 'number' && !isNaN(val) ? val : 0
+  })
 
   const isLoaded = computed(() => costSet.value !== null)
 

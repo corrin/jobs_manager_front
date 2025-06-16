@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="flex flex-col h-full min-h-0">
+    <div class="flex flex-col h-full min-h-0 pt-6">
       <!-- Mobile Header -->
       <div class="flex-shrink-0 bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4">
         <!-- Mobil            <button

@@ -25,7 +25,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue'
 import StaffAvatar from './StaffAvatar.vue'
-import { staffService } from '@/services/staffService'
+import { staffService } from '@/services/staff.service'
 import type { Staff } from '@/types'
 import type { StaffPanelState } from '@/types/staff'
 import { PersonSchema } from '@/schemas/kanban.schemas'

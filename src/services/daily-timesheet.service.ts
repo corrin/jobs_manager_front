@@ -1,10 +1,10 @@
 /**
  * Daily Timesheet Service
- * 
+ *
  * Service for handling daily timesheet API operations
  */
 
-import api from './api'
+import api from '@/plugins/axios'
 
 export interface JobBreakdown {
   job_id: string
@@ -71,7 +71,7 @@ export interface DailyTimesheetSummary {
 export const getDailyTimesheetSummary = async (date?: string): Promise<DailyTimesheetSummary> => {
   const url = '/api/timesheet/daily-overview/'
   const params = date ? { date } : {}
-  
+
   const response = await api.get(url, { params })
   return response.data
 }
@@ -84,7 +84,7 @@ export const getStaffDailyDetail = async (staffId: string, date?: string): Promi
   // Based on the URL patterns in timesheet/urls.py, this would be the correct path
   const url = `/timesheets/api/staff/${staffId}/daily/`
   const params = date ? { date } : {}
-  
+
   const response = await api.get(url, { params })
   return response.data
 }

@@ -4,7 +4,7 @@
     <div class="sticky top-0 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 backdrop-blur-md border-b border-blue-500/20">
       <div class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3">
         <!-- Mobile: Stack vertically, Desktop: Side by side -->
-        <div class="space-y-3 lg:space-y-0 py-4">
+        <div class="space-y-3 lg:space-y-0 py-0.5">
 
           <!-- Title Row - Mobile: Center, Desktop: Left -->
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -19,8 +19,8 @@
             <!-- Actions - Mobile: Hide some buttons, Desktop: Show all -->
             <div class="flex items-center justify-center sm:justify-end space-x-2 sm:space-x-3 mt-2 sm:mt-0">
               <!-- Metrics Toggle Button -->
-              <Button @click="showMetrics = !showMetrics" variant="ghost" size="sm"
-                class="text-white hover:bg-blue-500/20 text-xs sm:text-sm" :class="{ 'bg-blue-500/20': showMetrics }">
+              <Button @click="openMetricsModal" variant="ghost" size="sm"
+                class="text-white hover:bg-blue-500/20 text-xs sm:text-sm">
                 <BarChart3 class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
                 <span class="hidden sm:inline">Metrics</span>
               </Button>
@@ -63,7 +63,7 @@
     </div>
 
     <!-- Main Content - Mobile First -->
-    <div class="flex-1 p-2 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 lg:space-y-6">
+    <div class="flex-1 p-2 sm:p-4 lg:p-1 space-y-3 sm:space-y-4 lg:space-y-6">
       <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center py-8 sm:py-12">
         <div class="text-center">
@@ -87,27 +87,10 @@
         </div>
       </div> <!-- Data Content -->
       <div v-else-if="summary" class="space-y-4">
-        <!-- Summary Cards - Conditional -->
-        <div v-if="showMetrics" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <SummaryCard title="Total Hours" :value="formatHours(summary.daily_totals.total_actual_hours)"
-            :subtitle="`${formatHours(summary.daily_totals.total_scheduled_hours)} scheduled`"
-            :progress="summary.daily_totals.completion_percentage" icon="Clock" color="blue" />
 
-          <SummaryCard title="Billable Hours" :value="formatHours(summary.daily_totals.total_billable_hours)"
-            :subtitle="`${formatPercentage(summary.daily_totals.billable_percentage)} of total`"
-            :progress="summary.daily_totals.billable_percentage" icon="TrendingUp" color="green" />
-
-          <SummaryCard title="Revenue" :value="formatCurrency(summary.daily_totals.total_revenue)"
-            :subtitle="`${summary.daily_totals.total_entries} entries`" icon="DollarSign" color="emerald" />
-
-          <SummaryCard title="Staff Completion"
-            :value="`${summary.summary_stats.complete_staff}/${summary.summary_stats.total_staff}`"
-            :subtitle="`${formatPercentage(summary.summary_stats.completion_rate)} complete`"
-            :progress="summary.summary_stats.completion_rate" icon="Users" color="purple" />
-        </div>
         <!-- Staff Overview Table - Compact and Scrollable -->
         <div
-          class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-18rem)] lg:h-[calc(100vh-15rem)]">
+          class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-18rem)] lg:h-[calc(100vh-10rem)]">
 
           <div class="flex-1 overflow-y-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -140,6 +123,9 @@
     <!-- Staff Detail Modal -->
     <StaffDetailModal v-if="selectedStaff" :staff="selectedStaff" :date="selectedDate" :open="showStaffModal"
       @close="closeStaffModal" />
+
+    <!-- Metrics Modal -->
+    <MetricsModal v-if="summary" :summary="summary" :open="showMetricsModal" @close="closeMetricsModal" />
   </AppLayout>
 </template>
 
@@ -163,9 +149,9 @@ import {
 } from 'lucide-vue-next'
 
 // Components
-import SummaryCard from './components/SummaryCard.vue'
-import StaffRow from './components/StaffRow.vue'
-import StaffDetailModal from './components/StaffDetailModal.vue'
+import StaffRow from '@/components/timesheet/StaffRow.vue'
+import StaffDetailModal from '@/components/timesheet/StaffDetailModal.vue'
+import MetricsModal from '@/components/timesheet/MetricsModal.vue'
 
 // Services and Types
 import {
@@ -184,7 +170,7 @@ const summary = ref<DailyTimesheetSummary | null>(null)
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const selectedStaff = ref<StaffDailyData | null>(null)
 const showStaffModal = ref(false)
-const showMetrics = ref(false)
+const showMetricsModal = ref(false)
 
 // Computed
 const formatDisplayDate = (date: string): string => {
@@ -250,6 +236,14 @@ const openStaffModal = (staff: StaffDailyData): void => {
 const closeStaffModal = (): void => {
   selectedStaff.value = null
   showStaffModal.value = false
+}
+
+const openMetricsModal = (): void => {
+  showMetricsModal.value = true
+}
+
+const closeMetricsModal = (): void => {
+  showMetricsModal.value = false
 }
 
 // Lifecycle

@@ -1,12 +1,12 @@
 /**
  * Client Lookup Composable
- * 
+ *
  * Following SRP principles - single responsibility for searching and selecting clients.
  * Based on the existing client_lookup.js but adapted for Vue.js.
  */
 
 import { ref, computed } from 'vue'
-import api from '@/services/api'
+import api from '@/plugins/axios'
 
 export interface Client {
   id: string
@@ -56,7 +56,7 @@ export function useClientLookup() {
     isLoading.value = true
       try {
       const response = await api.get(`/clients/rest/search/?q=${encodeURIComponent(query)}`)
-      
+
       // Guard clause for invalid response
       if (!response.data || !response.data.results || !Array.isArray(response.data.results)) {
         throw new Error('Invalid response format')
@@ -79,10 +79,10 @@ export function useClientLookup() {
     selectedClient.value = client
     searchQuery.value = client.name
     showSuggestions.value = false
-    
+
     // Clear previous contacts
     contacts.value = []
-    
+
     // Load contacts for selected client
     await loadClientContacts(client.id)
   }
@@ -90,7 +90,7 @@ export function useClientLookup() {
   const loadClientContacts = async (clientId: string) => {
     try {
       const response = await api.get(`/clients/rest/${clientId}/contacts/`)
-      
+
       if (response.data && response.data.results && Array.isArray(response.data.results)) {
         contacts.value = response.data.results
       }
@@ -109,7 +109,7 @@ export function useClientLookup() {
 
     // Find primary contact
     const primaryContact = contacts.value.find(contact => contact.is_primary)
-    
+
     // Return primary or first contact
     return primaryContact || contacts.value[0]
   }
@@ -126,13 +126,13 @@ export function useClientLookup() {
   // Handle input change
   const handleInputChange = (value: string) => {
     searchQuery.value = value
-    
+
     // Clear selection if the value changed
     if (selectedClient.value && selectedClient.value.name !== value) {
       selectedClient.value = null
       contacts.value = []
     }
-    
+
     // Search if there's enough value
     if (value.length >= 3) {
       searchClients(value)
@@ -147,7 +147,7 @@ export function useClientLookup() {
     // This function will be called by the component that uses the composable
     // The component should implement the modal logic
     console.log('Request to create new client:', clientName.trim())
-    
+
     // Return the name so the component can handle it via the modal
     return clientName.trim()
   }
@@ -165,11 +165,11 @@ export function useClientLookup() {
     showSuggestions,
     selectedClient,
     contacts,
-    
+
     // Computed
     hasValidXeroId,
     displayValue,
-    
+
     // Methods
     searchClients,
     selectClient,

@@ -1,4 +1,4 @@
-import api from '@/services/api'
+import api from '@/plugins/axios'
 
 export interface Client {
   id?: number
@@ -51,7 +51,7 @@ export class ClientService {
       return response.data
     } catch (error: any) {
       console.error('Error creating client:', error)
-      
+
       // Handle API error response
       if (error.response?.data) {
         return {
@@ -59,7 +59,7 @@ export class ClientService {
           error: error.response.data.error || 'Failed to create client'
         }
       }
-      
+
       throw new Error('Failed to create client')
     }
   }
@@ -70,7 +70,7 @@ export class ClientService {
   async getAllClients(): Promise<Client[]> {
     try {
       const response = await api.get('/clients/rest/all/')
-      
+
       return Array.isArray(response.data) ? response.data : []
     } catch (error) {
       console.error('Error fetching clients:', error)
@@ -85,9 +85,9 @@ export class ClientService {
     if (!searchTerm.trim()) {
       return clientList
     }
-    
+
     const term = searchTerm.toLowerCase()
-    return clientList.filter(client => 
+    return clientList.filter(client =>
       client.name.toLowerCase().includes(term) ||
       client.email?.toLowerCase().includes(term) ||
       client.contact_person?.toLowerCase().includes(term)

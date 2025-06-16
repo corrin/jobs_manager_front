@@ -5,7 +5,7 @@
  * Follows clean code and SRP principles
  */
 
-import api from '@/services/api'
+import api from '@/plugins/axios'
 import type { AxiosResponse } from 'axios'
 import {
   JobDetailSchema,

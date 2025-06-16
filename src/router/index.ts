@@ -8,7 +8,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/kanban'
+      redirect: '/kanban',
     },
     {
       path: '/login',
@@ -16,8 +16,8 @@ const router = createRouter({
       component: LoginView,
       meta: {
         requiresGuest: true,
-        title: 'Login - Jobs Manager'
-      }
+        title: 'Login - Jobs Manager',
+      },
     },
     {
       path: '/kanban',
@@ -25,8 +25,8 @@ const router = createRouter({
       component: KanbanView,
       meta: {
         requiresAuth: true,
-        title: 'Kanban Board - Jobs Manager'
-      }
+        title: 'Kanban Board - Jobs Manager',
+      },
     },
     {
       path: '/jobs/create',
@@ -34,8 +34,8 @@ const router = createRouter({
       component: () => import('@/views/JobCreateView.vue'),
       meta: {
         requiresAuth: true,
-        title: 'Create Job - Jobs Manager'
-      }
+        title: 'Create Job - Jobs Manager',
+      },
     },
     {
       path: '/jobs/:id',
@@ -43,12 +43,12 @@ const router = createRouter({
       component: () => import('@/views/JobView.vue'),
       meta: {
         requiresAuth: true,
-        title: 'Job - Jobs Manager'
-      }
+        title: 'Job - Jobs Manager',
+      },
     },
     {
       path: '/jobs',
-      redirect: '/kanban'
+      redirect: '/kanban',
     },
     {
       path: '/timesheets/entry',
@@ -56,8 +56,8 @@ const router = createRouter({
       component: () => import('@/views/TimesheetEntryView.vue'),
       meta: {
         requiresAuth: true,
-        title: 'Timesheet Entry - Jobs Manager'
-      }
+        title: 'Timesheet Entry - Jobs Manager',
+      },
     },
     {
       path: '/timesheets/daily',
@@ -65,17 +65,26 @@ const router = createRouter({
       component: () => import('@/views/DailyTimesheetView.vue'),
       meta: {
         requiresAuth: true,
-        title: 'Daily Timesheet Overview - Jobs Manager'
-      }
+        title: 'Daily Timesheet Overview - Jobs Manager',
+      },
     },
     {
       path: '/timesheets',
-      redirect: '/timesheets/daily'
+      redirect: '/timesheets/daily',
     },
     {
       path: '/accounts/login',
-      redirect: '/login'
-    }
+      redirect: '/login',
+    },
+    {
+      path: '/timesheets/weekly',
+      name: 'WeeklyTimesheet',
+      component: () => import('@/views/WeeklyTimesheetView.vue'),
+      meta: {
+        requiresAuth: true,
+        title: 'Weekly Timesheet',
+      },
+    },
   ],
 })
 
@@ -98,7 +107,7 @@ router.beforeEach(async (to, from, next) => {
         // Redirect to login with return path
         next({
           name: 'login',
-          query: { redirect: to.fullPath }
+          query: { redirect: to.fullPath },
         })
         return
       }

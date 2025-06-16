@@ -27,7 +27,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
-import { staffService, type Staff } from '@/services/staffService'
+import { staffService, type Staff } from '@/services/staff.service'
 
 interface Props {
   id: string
