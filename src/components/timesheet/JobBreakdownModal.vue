@@ -116,7 +116,7 @@
 import { computed } from 'vue'
 import { X } from 'lucide-vue-next'
 import StatusBadge from './StatusBadge.vue'
-import type { JobBreakdown } from '@/services/weekly-timesheet.types'
+import type { JobBreakdown } from '@/types/weekly-timesheet.types'
 
 interface Props {
   isOpen: boolean
@@ -130,7 +130,7 @@ interface Emits {
   (e: 'close'): void
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const closeModal = () => {
@@ -148,14 +148,14 @@ const formatWeekRange = (start: string, end: string): string => {
 }
 
 const totalHours = computed(() => {
-  return props.jobs.reduce((sum, job) => sum + job.totalHours, 0)
+  return props.jobs.reduce((sum: number, job: JobBreakdown) => sum + job.totalHours, 0)
 })
 
 const totalBillableHours = computed(() => {
-  return props.jobs.reduce((sum, job) => sum + job.billableHours, 0)
+  return props.jobs.reduce((sum: number, job: JobBreakdown) => sum + job.billableHours, 0)
 })
 
 const totalRevenue = computed(() => {
-  return props.jobs.reduce((sum, job) => sum + job.revenue, 0)
+  return props.jobs.reduce((sum: number, job: JobBreakdown) => sum + job.revenue, 0)
 })
 </script>

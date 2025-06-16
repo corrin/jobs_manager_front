@@ -29,7 +29,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-blue-600">Total Hours</p>
-                <p class="text-2xl font-bold text-blue-900">{{ data?.totalHours || 0 }}</p>
+                <p class="text-2xl font-bold text-blue-900">{{ data?.weeklyTotals?.totalActualHours || 0 }}</p>
               </div>
               <Clock class="w-8 h-8 text-blue-500" />
             </div>
@@ -40,7 +40,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-green-600">Billable Hours</p>
-                <p class="text-2xl font-bold text-green-900">{{ data?.billableHours || 0 }}</p>
+                <p class="text-2xl font-bold text-green-900">{{ data?.weeklyTotals?.totalBillableHours || 0 }}</p>
               </div>
               <DollarSign class="w-8 h-8 text-green-500" />
             </div>
@@ -51,7 +51,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-purple-600">Total Revenue</p>
-                <p class="text-2xl font-bold text-purple-900">${{ formatCurrency(data?.totalRevenue || 0) }}</p>
+                <p class="text-2xl font-bold text-purple-900">${{ formatCurrency(data?.weeklyTotals?.totalRevenue || 0) }}</p>
               </div>
               <TrendingUp class="w-8 h-8 text-purple-500" />
             </div>
@@ -62,7 +62,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-orange-600">Completion Rate</p>
-                <p class="text-2xl font-bold text-orange-900">{{ data?.completionRate || 0 }}%</p>
+                <p class="text-2xl font-bold text-orange-900">{{ data?.summaryStats?.completionRate || 0 }}%</p>
               </div>
               <BarChart3 class="w-8 h-8 text-orange-500" />
             </div>
@@ -105,7 +105,7 @@
 
 <script setup lang="ts">
 import { X, Clock, DollarSign, TrendingUp, BarChart3 } from 'lucide-vue-next'
-import type { WeeklySummaryData } from '@/services/weekly-timesheet.types'
+import type { WeeklySummaryData } from '@/types/weekly-timesheet.types'
 
 interface Props {
   isOpen: boolean
