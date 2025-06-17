@@ -44,6 +44,9 @@ export interface Job extends BaseEntity {
   paid: boolean
   created_by_id?: string | null
   priority?: number
+  // New badge information from kanban categorization
+  badge_label?: string
+  badge_color?: string
 }
 
 // Job status types

@@ -169,6 +169,24 @@ export class JobService {
     }
   }
 
+  async getJobsByKanbanColumn(columnId: string, searchTerms?: string): Promise<JobsApiResponse> {
+    try {
+      const params = new URLSearchParams()
+      if (searchTerms) {
+        params.append('search', searchTerms)
+      }
+
+      const response = await api.get(
+        `/job/api/jobs/fetch-by-column/${columnId}/?${params.toString()}`
+      )
+
+      return this.handleApiResponse<JobsApiResponse>(response, JobsApiResponseSchema)
+    } catch (error) {
+      console.error('Error fetching jobs by kanban column:', error)
+      throw new Error('Failed to load jobs by kanban column')
+    }
+  }
+
   searchJobs(jobs: Job[], query: string): Job[] {
     if (!query.trim()) return []
 

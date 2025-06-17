@@ -2,6 +2,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { JobService } from '@/services/job.service'
 import { useJobsStore } from '@/stores/jobs'
+import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { Job, StatusChoice, AdvancedFilters } from '@/types'
 
 export function useKanban() {
@@ -61,30 +62,39 @@ export function useKanban() {
     return isAssignedToActiveStaff || isCreatedByActiveStaff
   }
 
-  // Computed
-  const getJobsByStatus = computed(() => (status: string) => {
+  // Computed using new categorization system
+  const getJobsByStatus = computed(() => (columnId: string) => {
     let jobList: Job[]
     
-    if (status === 'archived') {
+    // Handle archived column specially
+    if (columnId === 'archived') {
       jobList = archivedJobs.value
     } else {
-      jobList = jobs.value.filter(job => job.status_key === status)
+      // Use categorization service to filter jobs for this column
+      jobList = KanbanCategorizationService.getJobsForColumn(jobs.value, columnId)
     }
 
     // Apply staff filters
     return jobList.filter(job => jobMatchesStaffFilters(job))
   })
 
-  const getJobCountByStatus = computed(() => (status: string) => {
-    if (status === 'archived') {
+  const getJobCountByStatus = computed(() => (columnId: string) => {
+    if (columnId === 'archived') {
       return archivedJobs.value.length
     }
-    return getJobsByStatus.value(status).length
+    return getJobsByStatus.value(columnId).length
   })
 
-  const visibleStatusChoices = computed(() =>
-    statusChoices.value.filter(s => s.key !== 'archived')
-  )
+  // Get kanban columns instead of individual statuses
+  const visibleStatusChoices = computed(() => {
+    return KanbanCategorizationService.getAllColumns()
+      .filter(col => col.columnId !== 'archived')
+      .map(col => ({
+        key: col.columnId,
+        label: col.columnTitle,
+        tooltip: `Includes: ${col.subCategories.map(sub => sub.badgeLabel).join(', ')}`
+      }))
+  })
 
   // Methods
   const loadJobs = async (): Promise<void> => {
@@ -137,7 +147,9 @@ export function useKanban() {
   const loadStatusChoices = async (): Promise<void> => {
     try {
       const data = await jobService.getStatusChoices()
+      
       // Convert statuses object to array format expected by the frontend
+      // Note: These are now kanban columns, not individual job statuses
       statusChoices.value = Object.entries(data.statuses).map(([key, label]) => ({
         key,
         label,
@@ -151,18 +163,18 @@ export function useKanban() {
       }
     } catch (err) {
       console.error('Error loading status choices:', err)
-      // Fallback to default status choices
-      statusChoices.value = [
-        { key: 'pending', label: 'Pending', tooltip: '' },
-        { key: 'in_progress', label: 'In Progress', tooltip: '' },
-        { key: 'review', label: 'Review', tooltip: '' },
-        { key: 'completed', label: 'Completed', tooltip: '' },
-        { key: 'archived', label: 'Archived', tooltip: '' }
-      ]
       
-      // Initialize with first non-archived status
+      // Fallback to kanban columns from categorization service
+      const columns = KanbanCategorizationService.getAllColumns()
+      statusChoices.value = columns.map(col => ({
+        key: col.columnId,
+        label: col.columnTitle,
+        tooltip: `Includes: ${col.subCategories.map(sub => sub.badgeLabel).join(', ')}`
+      }))
+      
+      // Initialize with first non-archived column
       if (!selectedMobileStatus.value) {
-        selectedMobileStatus.value = 'pending'
+        selectedMobileStatus.value = columns.find(c => c.columnId !== 'archived')?.columnId || 'draft'
       }
     }
   }

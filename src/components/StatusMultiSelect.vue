@@ -109,9 +109,12 @@ const statusOptions: StatusOption[] = [
   { value: 'quoting', label: 'Quoting' },
   { value: 'accepted_quote', label: 'Accepted Quote' },
   { value: 'awaiting_materials', label: 'Awaiting Materials' },
+  { value: 'awaiting_staff', label: 'Awaiting Staff' },
+  { value: 'awaiting_site_availability', label: 'Awaiting Site Availability' },
   { value: 'in_progress', label: 'In Progress' },
   { value: 'on_hold', label: 'On Hold' },
   { value: 'special', label: 'Special' },
+  { value: 'recently_completed', label: 'Recently Completed' },
   { value: 'completed', label: 'Completed' },
   { value: 'rejected', label: 'Rejected' },
   { value: 'archived', label: 'Archived' }

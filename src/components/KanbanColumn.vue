@@ -2,9 +2,20 @@
   <div class="kanban-column" :class="{ 'archive-column': isArchive }">
     <div v-if="!isArchive" class="bg-white rounded-lg shadow-sm border border-gray-200">
       <div class="p-2 border-b border-gray-200">
-        <h3 class="font-semibold text-gray-900 text-xs">
-          {{ status.label }} ({{ jobs.length }})
-        </h3>
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-gray-900 text-xs">
+            {{ status.label }} ({{ jobs.length }})
+          </h3>
+          <div 
+            v-if="status.tooltip" 
+            class="group relative"
+            :title="status.tooltip"
+          >
+            <svg class="w-3 h-3 text-gray-400 hover:text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
+            </svg>
+          </div>
+        </div>
       </div>
 
       <div ref="jobListRef" :data-status="status.key"

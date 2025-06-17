@@ -25,7 +25,10 @@ export const JobSchema = z.object({
   paid: z.boolean(),
   created_by_id: z.string().nullable().optional(), // UUIDs are strings
   created_at: z.string().optional(),
-  priority: z.number().optional()
+  priority: z.number().optional(),
+  // New badge properties for kanban categorization
+  badge_label: z.string().optional(),
+  badge_color: z.string().optional()
 })
 
 export const StatusChoiceSchema = z.object({

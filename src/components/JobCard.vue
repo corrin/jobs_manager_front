@@ -23,6 +23,15 @@
       <span :class="['w-2 h-2 rounded-full', job.paid ? 'bg-green-500' : 'bg-red-500']"></span>
     </div>
     
+    <!-- Status Badge -->
+    <div class="mb-1 flex justify-between items-center">
+      <StatusBadge 
+        :label="statusBadgeInfo.label"
+        :color-class="statusBadgeInfo.colorClass"
+        size="sm"
+      />
+    </div>
+    
     <h4 class="job-title font-medium text-gray-900 text-xs mb-1 leading-tight line-clamp-1">{{ job.name }}</h4>
     
     <p class="job-description text-xs text-gray-600 mb-1 line-clamp-1 leading-tight">{{ job.description }}</p>
@@ -60,9 +69,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import StaffAvatar from '@/components/StaffAvatar.vue'
+import StatusBadge from '@/components/kanban/StatusBadge.vue'
 import { useJobCard } from '@/composables/useJobCard'
+import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { Job } from '@/types'
 
 interface JobCardProps {
@@ -94,6 +105,11 @@ const { handleClick } = useJobCard(
   (e, job) => emit('job-selected-for-movement', job),
   props.isMovementModeActive
 )
+
+// Computed property for status badge information
+const statusBadgeInfo = computed(() => {
+  return KanbanCategorizationService.getBadgeInfo(props.job.status || props.job.status_key || '')
+})
 
 onMounted(() => {
   if (jobStaffContainerRef.value) {

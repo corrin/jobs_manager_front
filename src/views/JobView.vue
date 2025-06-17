@@ -148,7 +148,7 @@
             <button
               @click="activeTab = 'estimate'"
               :class="[
-                'flex-1 py-3 px-4 text-sm font-medium text-center border-b-2 transition-colors',
+                'flex-1 py-3 px-2 text-sm font-medium text-center border-b-2 transition-colors',
                 activeTab === 'estimate'
                   ? 'border-blue-500 text-blue-600 bg-blue-50'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -159,13 +159,24 @@
             <button
               @click="activeTab = 'financial'"
               :class="[
-                'flex-1 py-3 px-4 text-sm font-medium text-center border-b-2 transition-colors',
+                'flex-1 py-3 px-2 text-sm font-medium text-center border-b-2 transition-colors',
                 activeTab === 'financial'
                   ? 'border-blue-500 text-blue-600 bg-blue-50'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               ]"
             >
               Financial
+            </button>
+            <button
+              @click="activeTab = 'costAnalysis'"
+              :class="[
+                'flex-1 py-3 px-2 text-sm font-medium text-center border-b-2 transition-colors',
+                activeTab === 'costAnalysis'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              ]"
+            >
+              Cost Analysis
             </button>
           </div>
         </div>
@@ -195,6 +206,17 @@
             >
               Financial Overview
             </button>
+            <button
+              @click="activeTab = 'costAnalysis'"
+              :class="[
+                'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
+                activeTab === 'costAnalysis'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ]"
+            >
+              Cost Analysis
+            </button>
           </nav>
         </div>
       </div>
@@ -220,6 +242,14 @@
               @quote-created="handleQuoteCreated"
               @quote-accepted="handleQuoteAccepted"
               @invoice-created="handleInvoiceCreated"
+            />
+          </div>
+
+          <!-- Cost Analysis Tab -->
+          <div v-if="activeTab === 'costAnalysis'" class="h-full p-4 md:p-6">
+            <JobCostAnalysisTab
+              v-if="jobData"
+              :job-id="jobData.id"
             />
           </div>
 
@@ -355,6 +385,7 @@ import {
 import AppLayout from '@/components/AppLayout.vue'
 import JobEstimateTab from '@/components/job/JobEstimateTab.vue'
 import JobFinancialTab from '@/components/job/JobFinancialTab.vue'
+import JobCostAnalysisTab from '@/components/job/JobCostAnalysisTab.vue'
 import JobSettingsModal from '@/components/job/JobSettingsModal.vue'
 import JobWorkflowModal from '@/components/job/JobWorkflowModal.vue'
 import JobHistoryModal from '@/components/job/JobHistoryModal.vue'
@@ -528,7 +559,7 @@ const showAttachmentsModal = ref(false)
 const showPdfDialog = ref(false)
 
 // Tab state
-const activeTab = ref<'estimate' | 'financial'>('estimate')
+const activeTab = ref<'estimate' | 'financial' | 'costAnalysis'>('estimate')
 
 // Early return pattern para navegação
 const navigateBack = () => {
