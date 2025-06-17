@@ -11,6 +11,7 @@
           @click="addNewItem"
           :disabled="isLoading"
           class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Add new item (Ctrl+N)"
         >
           <Plus class="w-4 h-4 mr-2" />
           Add Item
@@ -305,6 +306,7 @@ const loadExistingEstimateData = async () => {
 
 function handleCellValueChanged(event: CellValueChangedEvent) {
   const costLine = event.data as CostLine
+  console.log('🔄 Cell value changed:', event.colDef.field, 'New value:', event.newValue)
 
   // Quando quantity muda, recalcular total_cost baseado em item_cost
   if (event.colDef.field === 'quantity') {
@@ -313,6 +315,7 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
     
     if (itemCost > 0 && !costLine.meta?.labour_minutes) {
       costLine.meta.total_cost = (qty * itemCost).toFixed(2)
+      console.log('📊 Recalculated total_cost:', costLine.meta.total_cost)
     }
   }
 
@@ -320,16 +323,24 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
   if (costLine.meta) {
     costLine.meta.is_modified = true
   }
+  
   hasUnsavedChanges.value = true
 
+  // Forçar refresh das células e trigger de reatividade
   if (gridApi) {
     gridApi.refreshCells({ rowNodes: [event.node], force: true })
   }
+  
+  // Forçar atualização do summary via nextTick
+  nextTick(() => {
+    // Trigger de atualização manual dos computed values
+    console.log('📈 Summary update triggered - Labour hours:', totalLabourHours.value, 'Material cost:', materialCostBeforeMarkup.value)
+  })
 }
 
-// Keyboard handler for Shift+Enter
+// Keyboard handler for Ctrl+N (more reliable than Shift+Enter)
 function handleKeyDown(event: KeyboardEvent) {
-  if (event.shiftKey && event.key === 'Enter') {
+  if (event.ctrlKey && event.key === 'n') {
     event.preventDefault()
     addNewItem()
   }
@@ -469,7 +480,11 @@ const columnDefs: ColDef[] = [
     headerName: 'Labour',
     field: 'meta.labour_minutes',
     width: 120,
-    editable: true,
+    editable: (params) => {
+      // Só editable se não tem item_cost ou total_cost
+      const hasItemCost = parseFloat(params.data.meta?.item_cost || '0') > 0 || parseFloat(params.data.meta?.total_cost || '0') > 0
+      return !hasItemCost
+    },
     type: 'numericColumn',
     cellEditor: 'agNumberCellEditor',
     cellEditorParams: {
@@ -494,18 +509,38 @@ const columnDefs: ColDef[] = [
       }
       
       params.data.meta.labour_minutes = minutes
+      
+      // Marcar como modificado e forçar atualização do summary
+      params.data.meta.is_modified = true
+      hasUnsavedChanges.value = true
+      
+      // Forçar refresh das células relacionadas
+      nextTick(() => {
+        if (gridApi && params.node) {
+          gridApi.refreshCells({ 
+            rowNodes: [params.node], 
+            columns: ['meta.item_cost', 'meta.total_cost'],
+            force: true 
+          })
+        }
+      })
+      
       return true
     },
     cellStyle: (params) => {
       const hasItemCost = parseFloat(params.data.meta?.item_cost || '0') > 0 || parseFloat(params.data.meta?.total_cost || '0') > 0
-      return hasItemCost ? { backgroundColor: '#F3F4F6', color: '#9CA3AF' } : null
+      return hasItemCost ? { backgroundColor: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed' } : null
     }
   },
   {
     headerName: 'Item Cost',
     field: 'meta.item_cost',
     width: 120,
-    editable: true,
+    editable: (params) => {
+      // Só editable se não tem labour
+      const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
+      return !hasLabour
+    },
     type: 'numericColumn',
     cellEditor: 'agNumberCellEditor',
     cellEditorParams: {
@@ -531,18 +566,38 @@ const columnDefs: ColDef[] = [
       }
       
       params.data.meta.item_cost = itemCost.toFixed(2)
+      
+      // Marcar como modificado e forçar atualização do summary
+      params.data.meta.is_modified = true
+      hasUnsavedChanges.value = true
+      
+      // Forçar refresh das células relacionadas
+      nextTick(() => {
+        if (gridApi && params.node) {
+          gridApi.refreshCells({ 
+            rowNodes: [params.node], 
+            columns: ['meta.labour_minutes', 'meta.total_cost'],
+            force: true 
+          })
+        }
+      })
+      
       return true
     },
     cellStyle: (params) => {
       const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
-      return hasLabour ? { backgroundColor: '#F3F4F6', color: '#9CA3AF' } : null
+      return hasLabour ? { backgroundColor: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed' } : null
     }
   },
   {
     headerName: 'Total Cost',
     field: 'meta.total_cost',
     width: 120,
-    editable: true,
+    editable: (params) => {
+      // Só editable se não tem labour
+      const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
+      return !hasLabour
+    },
     type: 'numericColumn',
     cellEditor: 'agNumberCellEditor',
     cellEditorParams: {
@@ -568,11 +623,27 @@ const columnDefs: ColDef[] = [
       }
       
       params.data.meta.total_cost = totalCost.toFixed(2)
+      
+      // Marcar como modificado e forçar atualização do summary
+      params.data.meta.is_modified = true
+      hasUnsavedChanges.value = true
+      
+      // Forçar refresh das células relacionadas
+      nextTick(() => {
+        if (gridApi && params.node) {
+          gridApi.refreshCells({ 
+            rowNodes: [params.node], 
+            columns: ['meta.labour_minutes', 'meta.item_cost'],
+            force: true 
+          })
+        }
+      })
+      
       return true
     },
     cellStyle: (params) => {
       const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
-      return hasLabour ? { backgroundColor: '#F3F4F6', color: '#9CA3AF' } : null
+      return hasLabour ? { backgroundColor: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed' } : null
     }
   },
   {
@@ -671,21 +742,43 @@ function addNewItem() {
 
 // Delete cost line - global function for button onclick
 ;(window as any).deleteCostLine = (costLineId: string) => {
-  const index = costLines.value.findIndex(line => line.id.toString() === costLineId)
+  console.log('🗑️ Attempting to delete cost line with ID:', costLineId)
+  
+  // Encontrar o índice correto usando conversão de tipos apropriada
+  const index = costLines.value.findIndex(line => {
+    // Converter ambos para string para comparação consistente
+    const lineIdStr = String(line.id)
+    const targetIdStr = String(costLineId)
+    return lineIdStr === targetIdStr
+  })
+  
   if (index !== -1) {
     const lineToRemove = costLines.value[index]
+    console.log('🗑️ Found line to remove at index:', index, lineToRemove)
+    
+    // Remover da array reativa
     costLines.value.splice(index, 1)
     hasUnsavedChanges.value = true
 
-    // Don't allow empty grid, always keep at least one row
+    // Se ficou vazio, inicializar com linha padrão
     if (costLines.value.length === 0) {
+      console.log('📝 Grid is empty, adding default row')
       initializeDefaultRow()
     }
 
-    // Use applyTransaction instead of setRowData
+    // Atualizar grid usando applyTransaction
     if (gridApi) {
       gridApi.applyTransaction({ remove: [lineToRemove] })
+      
+      // Se adicionamos linha padrão, adicionar no grid também
+      if (costLines.value.length === 1 && costLines.value[0].meta?.is_new) {
+        gridApi.applyTransaction({ add: [costLines.value[0]] })
+      }
     }
+    
+    console.log('✅ Cost line deleted successfully')
+  } else {
+    console.warn('⚠️ Could not find cost line with ID:', costLineId, 'in array:', costLines.value.map(line => ({ id: line.id, desc: line.desc })))
   }
 }
 
