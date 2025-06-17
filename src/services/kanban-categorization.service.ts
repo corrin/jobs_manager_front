@@ -1,6 +1,6 @@
 /**
  * Kanban Categorization Service - Frontend
- * 
+ *
  * Mirrors the backend categorization service but for frontend use
  * Follows SRP by handling only kanban categorization logic
  */
@@ -19,76 +19,97 @@ export interface KanbanColumn {
 }
 
 export class KanbanCategorizationService {
-  
   // Define the hierarchical structure matching backend
   private static readonly COLUMN_STRUCTURE: Record<string, KanbanColumn> = {
     draft: {
       columnId: 'draft',
       columnTitle: 'Draft',
       subCategories: [
-        { statusKey: 'quoting', badgeLabel: 'Quoting', badgeColorClass: 'bg-yellow-500' }
+        { statusKey: 'quoting', badgeLabel: 'Quoting', badgeColorClass: 'bg-yellow-500' },
       ],
-      colorTheme: 'yellow'
+      colorTheme: 'yellow',
     },
     awaiting_approval: {
       columnId: 'awaiting_approval',
       columnTitle: 'Awaiting Approval',
       subCategories: [
-        { statusKey: 'accepted_quote', badgeLabel: 'Quote Accepted', badgeColorClass: 'bg-green-500' }
+        {
+          statusKey: 'accepted_quote',
+          badgeLabel: 'Quote Accepted',
+          badgeColorClass: 'bg-green-500',
+        },
       ],
-      colorTheme: 'green'
+      colorTheme: 'green',
     },
     on_hold: {
       columnId: 'on_hold',
       columnTitle: 'On Hold',
       subCategories: [
-        { statusKey: 'awaiting_materials', badgeLabel: 'Awaiting Materials', badgeColorClass: 'bg-orange-500' },
-        { statusKey: 'awaiting_staff', badgeLabel: 'Awaiting Staff', badgeColorClass: 'bg-purple-500' },
-        { statusKey: 'awaiting_site_availability', badgeLabel: 'Awaiting Site', badgeColorClass: 'bg-indigo-500' },
-        { statusKey: 'on_hold', badgeLabel: 'Other Hold', badgeColorClass: 'bg-gray-500' }
+        {
+          statusKey: 'awaiting_materials',
+          badgeLabel: 'Awaiting Materials',
+          badgeColorClass: 'bg-orange-500',
+        },
+        {
+          statusKey: 'awaiting_staff',
+          badgeLabel: 'Awaiting Staff',
+          badgeColorClass: 'bg-purple-500',
+        },
+        {
+          statusKey: 'awaiting_site_availability',
+          badgeLabel: 'Awaiting Site',
+          badgeColorClass: 'bg-indigo-500',
+        },
+        { statusKey: 'on_hold', badgeLabel: 'Other Hold', badgeColorClass: 'bg-gray-500' },
       ],
-      colorTheme: 'orange'
-    },    in_progress: {
+      colorTheme: 'orange',
+    },
+    in_progress: {
       columnId: 'in_progress',
       columnTitle: 'In Progress',
       subCategories: [
-        { statusKey: 'in_progress', badgeLabel: 'Active Work', badgeColorClass: 'bg-blue-500' }
+        { statusKey: 'in_progress', badgeLabel: 'Active Work', badgeColorClass: 'bg-blue-500' },
         // Note: 'special' is filtered out and not shown in kanban
       ],
-      colorTheme: 'blue'
+      colorTheme: 'blue',
     },
     recently_completed: {
       columnId: 'recently_completed',
       columnTitle: 'Recently Completed',
       subCategories: [
-        { statusKey: 'recently_completed', badgeLabel: 'Just Finished', badgeColorClass: 'bg-emerald-500' }
+        {
+          statusKey: 'recently_completed',
+          badgeLabel: 'Just Finished',
+          badgeColorClass: 'bg-emerald-500',
+        },
       ],
-      colorTheme: 'emerald'
+      colorTheme: 'emerald',
     },
     archived: {
       columnId: 'archived',
       columnTitle: 'Archived',
       subCategories: [
         { statusKey: 'completed', badgeLabel: 'Completed & Paid', badgeColorClass: 'bg-slate-500' },
-        { statusKey: 'rejected', badgeLabel: 'Rejected', badgeColorClass: 'bg-red-500' }
+        { statusKey: 'rejected', badgeLabel: 'Rejected', badgeColorClass: 'bg-red-500' },
       ],
-      colorTheme: 'slate'
-    }
+      colorTheme: 'slate',
+    },
   }
+
   // Status to column mapping for quick lookup
   // Note: 'special' is intentionally excluded (filtered from kanban)
   private static readonly STATUS_TO_COLUMN_MAP: Record<string, string> = {
-    'quoting': 'draft',
-    'accepted_quote': 'awaiting_approval',
-    'awaiting_materials': 'on_hold',
-    'awaiting_staff': 'on_hold',
-    'awaiting_site_availability': 'on_hold',
-    'in_progress': 'in_progress',
-    'recently_completed': 'recently_completed',
-    'completed': 'archived',  // completed goes to archived now
-    'rejected': 'archived',
-    'archived': 'archived',
-    'on_hold': 'on_hold'  // Fallback for generic on_hold
+    quoting: 'draft',
+    accepted_quote: 'awaiting_approval',
+    awaiting_materials: 'on_hold',
+    awaiting_staff: 'on_hold',
+    awaiting_site_availability: 'on_hold',
+    in_progress: 'in_progress',
+    recently_completed: 'recently_completed',
+    completed: 'archived', // completed goes to archived now
+    rejected: 'archived',
+    archived: 'archived',
+    on_hold: 'on_hold', // Fallback for generic on_hold
     // 'special' is intentionally omitted - filtered from kanban
   }
 
@@ -123,7 +144,7 @@ export class KanbanCategorizationService {
     }
 
     // Find the sub-category that matches this status
-    return column.subCategories.find(subCat => subCat.statusKey === status) || null
+    return column.subCategories.find((subCat) => subCat.statusKey === status) || null
   }
 
   /**
@@ -136,7 +157,7 @@ export class KanbanCategorizationService {
       this.COLUMN_STRUCTURE.on_hold,
       this.COLUMN_STRUCTURE.in_progress,
       this.COLUMN_STRUCTURE.recently_completed,
-      this.COLUMN_STRUCTURE.archived
+      this.COLUMN_STRUCTURE.archived,
     ]
   }
 
@@ -161,12 +182,12 @@ export class KanbanCategorizationService {
       return []
     }
 
-    return jobs.filter(job => job.status !== 'special')
+    return jobs.filter((job) => job.status !== 'special')
   }
-
   /**
    * Filter jobs that belong to a specific column
-   */  static getJobsForColumn<T extends { status?: string }>(jobs: T[], columnId: string): T[] {
+   */
+  static getJobsForColumn<T extends { status?: string }>(jobs: T[], columnId: string): T[] {
     // Guard clauses
     if (!jobs || !columnId) {
       return []
@@ -177,11 +198,11 @@ export class KanbanCategorizationService {
       return []
     }
 
-    const validStatuses = new Set(column.subCategories.map(subCat => subCat.statusKey))
-    
+    const validStatuses = new Set(column.subCategories.map((subCat) => subCat.statusKey))
+
     // Filter by column and exclude special jobs
     const filteredJobs = this.filterKanbanJobs(jobs)
-    return filteredJobs.filter(job => job.status && validStatuses.has(job.status))
+    return filteredJobs.filter((job) => job.status && validStatuses.has(job.status))
   }
 
   /**
@@ -193,7 +214,7 @@ export class KanbanCategorizationService {
     if (!status) {
       return {
         label: 'Unknown',
-        colorClass: 'bg-gray-400'
+        colorClass: 'bg-gray-400',
       }
     }
 
@@ -202,14 +223,14 @@ export class KanbanCategorizationService {
     if (subCategory) {
       return {
         label: subCategory.badgeLabel,
-        colorClass: subCategory.badgeColorClass
+        colorClass: subCategory.badgeColorClass,
       }
     }
 
     // Fallback for unknown statuses
     return {
-      label: status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-      colorClass: 'bg-gray-400'
+      label: status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+      colorClass: 'bg-gray-400',
     }
   }
 
@@ -220,7 +241,7 @@ export class KanbanCategorizationService {
     const result: Record<string, string[]> = {}
 
     for (const column of this.getAllColumns()) {
-      result[column.columnId] = column.subCategories.map(subCat => subCat.statusKey)
+      result[column.columnId] = column.subCategories.map((subCat) => subCat.statusKey)
     }
 
     return result
