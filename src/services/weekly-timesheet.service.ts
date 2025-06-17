@@ -5,6 +5,7 @@
  */
 
 import api from '@/plugins/axios'
+import { dateService, type WeekRange } from '@/services/date.service'
 
 export interface WeeklyStaffData {
   staff_id: string
@@ -128,53 +129,32 @@ export const submitPaidAbsence = async (data: PaidAbsenceRequest): Promise<{ suc
 }
 
 /**
- * Get current week range
+ * Get current week range - uses centralized date service
  */
 export const getCurrentWeekRange = (): { startDate: string; endDate: string } => {
-  const today = new Date()
-  const monday = new Date(today)
-  monday.setDate(today.getDate() - today.getDay() + 1)
-
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-
+  const weekRange = dateService.getCurrentWeekRange()
   return {
-    startDate: monday.toISOString().split('T')[0],
-    endDate: sunday.toISOString().split('T')[0]
+    startDate: weekRange.startDate,
+    endDate: weekRange.endDate
   }
 }
 
 /**
- * Calculate week range from date
+ * Calculate week range from date - uses centralized date service
  */
 export const getWeekRange = (date: Date): { startDate: string; endDate: string } => {
-  const monday = new Date(date)
-  monday.setDate(date.getDate() - date.getDay() + 1)
-
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-
+  const weekRange = dateService.getWeekRange(date)
   return {
-    startDate: monday.toISOString().split('T')[0],
-    endDate: sunday.toISOString().split('T')[0]
+    startDate: weekRange.startDate,
+    endDate: weekRange.endDate
   }
 }
 
 /**
- * Format date for display
+ * Format date for display - uses centralized date service
  */
 export const formatDateRange = (startDate: string, endDate: string): string => {
-  const start = new Date(startDate)
-  const end = new Date(endDate)
-
-  return `${start.toLocaleDateString('en-NZ', {
-    day: 'numeric',
-    month: 'short'
-  })} - ${end.toLocaleDateString('en-NZ', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  })}`
+  return dateService.formatDateRange(startDate, endDate)
 }
 
 /**

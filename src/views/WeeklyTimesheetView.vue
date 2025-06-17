@@ -223,6 +223,7 @@ import {
   type PaidAbsenceRequest
 } from '@/services/weekly-timesheet.service'
 import { StaffService, type Staff } from '@/services/staff.service'
+import { dateService, createLocalDate, formatToLocalString, getCurrentWeekStart, navigateWeek as navigateWeekDate } from '@/services/date.service'
 import { useRouter } from 'vue-router'
 
 // State
@@ -250,31 +251,26 @@ const displayDays = computed(() => {
     ? (weeklyData.value as IMSWeeklyData).ims_week || []
     : (weeklyData.value as WeeklyTimesheetData).week_days || []
 
-  // Para modo normal, garantir Monday-Friday
+  // Para modo normal, garantir Monday-Friday usando dateService
   if (!imsMode.value) {
     console.log('displayDays raw:', days)
     return days
       .map((dateStr) => {
-        const [year, month, day] = dateStr.split('-').map(Number)
-        const date = new Date(year, month - 1, day)
-        console.log('displayDays map:', { dateStr, day: date.getDay(), iso: date.toISOString() })
         return {
           date: dateStr,
-          name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-          short: date.toLocaleDateString('en-US', { day: 'numeric' }),
-          dayOfWeek: date.getDay()
+          name: dateService.getDayName(dateStr, true),
+          short: dateService.getDayNumber(dateStr),
+          dayOfWeek: createLocalDate(dateStr).getDay()
         }
       })
-      .filter(day => day.dayOfWeek >= 1 && day.dayOfWeek <= 5)
+      .filter(day => day.dayOfWeek >= 1 && day.dayOfWeek <= 5) // Monday-Friday only
   } else {
     // IMS: mostrar todos os dias retornados
     return days.map((dateStr) => {
-      const [year, month, day] = dateStr.split('-').map(Number)
-      const date = new Date(year, month - 1, day)
       return {
         date: dateStr,
-        name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        short: date.toLocaleDateString('en-US', { day: 'numeric' })
+        name: dateService.getDayName(dateStr, true),
+        short: dateService.getDayNumber(dateStr)
       }
     })
   }
@@ -294,7 +290,7 @@ const completionRate = computed(() => {
 
 const formatDisplayDateRange = (): string => {
   if (!weeklyData.value) return ''
-  return formatDateRange(weeklyData.value.start_date, weeklyData.value.end_date)
+  return dateService.formatDateRange(weeklyData.value.start_date, weeklyData.value.end_date)
 }
 
 // Methods
@@ -312,7 +308,7 @@ const loadData = async (): Promise<void> => {
     loading.value = true
     error.value = null
 
-    const weekRange = getWeekRange(selectedWeekStart.value)
+    const weekRange = dateService.getWeekRange(selectedWeekStart.value)
     console.log('Loading weekly timesheet data for:', weekRange.startDate, 'IMS Mode:', imsMode.value)
 
     weeklyData.value = await getWeeklyTimesheetOverview(weekRange.startDate, imsMode.value)
@@ -332,21 +328,17 @@ const refreshData = (): void => {
 }
 
 const navigateWeek = (direction: number): void => {
-  const newDate = new Date(selectedWeekStart.value)
-  newDate.setDate(newDate.getDate() + (direction * 7))
-  // Ajusta para segunda-feira
-  const day = newDate.getDay()
-  newDate.setDate(newDate.getDate() - ((day + 6) % 7))
-  selectedWeekStart.value = new Date(newDate)
+  const newWeekStart = navigateWeekDate(
+    formatToLocalString(selectedWeekStart.value), 
+    direction
+  )
+  selectedWeekStart.value = createLocalDate(newWeekStart)
   loadData()
 }
 
 const goToCurrentWeek = (): void => {
-  const today = new Date()
-  const day = today.getDay()
-  const monday = new Date(today)
-  monday.setDate(today.getDate() - ((day + 6) % 7))
-  selectedWeekStart.value = monday
+  const currentWeekStart = getCurrentWeekStart()
+  selectedWeekStart.value = createLocalDate(currentWeekStart)
   loadData()
 }
 
@@ -397,7 +389,7 @@ const closeWeekPicker = (): void => {
 }
 
 const handleWeekSelect = (weekStart: string, weekEnd: string): void => {
-  selectedWeekStart.value = new Date(weekStart)
+  selectedWeekStart.value = createLocalDate(weekStart)
   closeWeekPicker()
   loadData()
 }
@@ -430,12 +422,8 @@ const handlePaidAbsence = async (absenceForm: any): Promise<void> => {
 
 // Corrigir initializeWeek para garantir Monday
 const initializeWeek = (): void => {
-  const today = new Date()
-  const day = today.getDay()
-  // Se não for segunda, ajusta para a segunda-feira da semana
-  const monday = new Date(today)
-  monday.setDate(today.getDate() - ((day + 6) % 7))
-  selectedWeekStart.value = monday
+  const currentWeekStart = getCurrentWeekStart()
+  selectedWeekStart.value = createLocalDate(currentWeekStart)
 }
 
 // Lifecycle

@@ -161,28 +161,24 @@ import {
   type DailyTimesheetSummary,
   type StaffDailyData
 } from '@/services/daily-timesheet.service'
+import { dateService, today, navigateDay } from '@/services/date.service'
 
 // State
 const router = useRouter()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const summary = ref<DailyTimesheetSummary | null>(null)
-const selectedDate = ref(new Date().toISOString().split('T')[0])
+const selectedDate = ref(today()) // Use centralized date service
 const selectedStaff = ref<StaffDailyData | null>(null)
 const showStaffModal = ref(false)
 const showMetricsModal = ref(false)
 
 // Computed
 const formatDisplayDate = (date: string): string => {
-  // Parse the date string as local date to avoid timezone issues
-  const [year, month, day] = date.split('-').map(Number)
-  const localDate = new Date(year, month - 1, day) // month is 0-indexed
-
-  return localDate.toLocaleDateString('en-NZ', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  return dateService.formatDisplayDate(date, {
+    weekday: true,
+    year: true,
+    month: 'long'
   })
 }
 
@@ -217,14 +213,12 @@ const refreshData = (): void => {
 }
 
 const navigateDate = (days: number): void => {
-  const currentDate = new Date(selectedDate.value)
-  currentDate.setDate(currentDate.getDate() + days)
-  selectedDate.value = currentDate.toISOString().split('T')[0]
+  selectedDate.value = navigateDay(selectedDate.value, days)
   loadData()
 }
 
 const goToToday = (): void => {
-  selectedDate.value = new Date().toISOString().split('T')[0]
+  selectedDate.value = today()
   loadData()
 }
 
