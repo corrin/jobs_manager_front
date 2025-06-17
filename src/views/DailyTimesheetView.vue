@@ -130,8 +130,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import {
@@ -165,13 +165,21 @@ import { dateService, today, navigateDay } from '@/services/date.service'
 
 // State
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const summary = ref<DailyTimesheetSummary | null>(null)
-const selectedDate = ref(today()) // Use centralized date service
+
+// Initialize from URL params or use today as default
+const initialDate = (route.query.date as string) || today()
+const selectedDate = ref(initialDate)
+
 const selectedStaff = ref<StaffDailyData | null>(null)
 const showStaffModal = ref(false)
 const showMetricsModal = ref(false)
+
+console.log('🔗 DailyTimesheetView URL params:', { date: route.query.date })
+console.log('📊 Using initial date:', initialDate)
 
 // Computed
 const formatDisplayDate = (date: string): string => {
@@ -214,12 +222,23 @@ const refreshData = (): void => {
 
 const navigateDate = (days: number): void => {
   selectedDate.value = navigateDay(selectedDate.value, days)
+  updateRoute()
   loadData()
 }
 
 const goToToday = (): void => {
   selectedDate.value = today()
+  updateRoute()
   loadData()
+}
+
+// Route management
+const updateRoute = () => {
+  router.push({
+    query: {
+      date: selectedDate.value
+    }
+  })
 }
 
 const openStaffModal = (staff: StaffDailyData): void => {
@@ -243,5 +262,22 @@ const closeMetricsModal = (): void => {
 // Lifecycle
 onMounted(() => {
   loadData()
+})
+
+// Watch for URL parameter changes
+watch(() => route.query.date, (newDate) => {
+  if (newDate && newDate !== selectedDate.value) {
+    console.log('📅 Updating date from URL:', newDate)
+    selectedDate.value = newDate as string
+    loadData()
+  }
+}, { immediate: false })
+
+// Watch for date input changes and update URL
+watch(selectedDate, (newDate) => {
+  if (newDate && newDate !== route.query.date) {
+    console.log('📅 Updating URL from date change:', newDate)
+    updateRoute()
+  }
 })
 </script>

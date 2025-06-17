@@ -183,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, defineAsyncComponent } from 'vue'
+import { ref, onMounted, computed, defineAsyncComponent, watch } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -224,13 +224,21 @@ import {
 } from '@/services/weekly-timesheet.service'
 import { StaffService, type Staff } from '@/services/staff.service'
 import { dateService, createLocalDate, formatToLocalString, getCurrentWeekStart, navigateWeek as navigateWeekDate } from '@/services/date.service'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 // State
 const loading = ref(false)
 const error = ref<string | null>(null)
 const weeklyData = ref<WeeklyTimesheetData | IMSWeeklyData | null>(null)
-const selectedWeekStart = ref(new Date())
+
+// Initialize from URL params or use current week as default
+const router = useRouter()
+const route = useRoute()
+
+// Parse week start from URL params or default to current week
+const initialWeekStart = route.query.week ? createLocalDate(route.query.week as string) : new Date()
+const selectedWeekStart = ref(initialWeekStart)
+
 const imsMode = ref(false)
 const availableStaff = ref<Staff[]>([])
 
@@ -239,8 +247,8 @@ const showJobMetricsModal = ref(false)
 const showPaidAbsenceModal = ref(false)
 const showWeekPicker = ref(false)
 
-// Router
-const router = useRouter()
+console.log('🔗 WeeklyTimesheetView URL params:', { week: route.query.week })
+console.log('📊 Using initial week start:', formatToLocalString(selectedWeekStart.value))
 
 // Computed
 const displayDays = computed(() => {
@@ -333,13 +341,24 @@ const navigateWeek = (direction: number): void => {
     direction
   )
   selectedWeekStart.value = createLocalDate(newWeekStart)
+  updateRoute()
   loadData()
 }
 
 const goToCurrentWeek = (): void => {
   const currentWeekStart = getCurrentWeekStart()
   selectedWeekStart.value = createLocalDate(currentWeekStart)
+  updateRoute()
   loadData()
+}
+
+// Route management
+const updateRoute = () => {
+  router.push({
+    query: {
+      week: formatToLocalString(selectedWeekStart.value)
+    }
+  })
 }
 
 const toggleIMSMode = async (checked: boolean): Promise<void> => {
@@ -360,6 +379,7 @@ const goToDailyView = (payload: { date: string, staffId: string }) => {
 
 // Navegação para o cabeçalho do dia
 const goToDailyViewHeader = (date: string) => {
+  console.log('🔗 Navigating to daily view for date:', date)
   router.push({ name: 'timesheet-daily', query: { date } })
 }
 
@@ -391,6 +411,7 @@ const closeWeekPicker = (): void => {
 const handleWeekSelect = (weekStart: string, weekEnd: string): void => {
   selectedWeekStart.value = createLocalDate(weekStart)
   closeWeekPicker()
+  updateRoute()
   loadData()
 }
 
@@ -432,6 +453,15 @@ onMounted(() => {
   loadStaff()
   loadData()
 })
+
+// Watch for URL parameter changes
+watch(() => route.query.week, (newWeek) => {
+  if (newWeek && formatToLocalString(selectedWeekStart.value) !== newWeek) {
+    console.log('📅 Updating week from URL:', newWeek)
+    selectedWeekStart.value = createLocalDate(newWeek as string)
+    loadData()
+  }
+}, { immediate: false })
 </script>
 
 <style scoped>

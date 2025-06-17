@@ -1,6 +1,6 @@
 <template>
   <Dialog :open="open" @update:open="handleClose">
-    <DialogContent class="max-w-3xl max-h-[90vh] overflow-y-auto">      <DialogHeader>
+    <DialogContent class="max-w-5xl max-h-[90vh] overflow-y-auto">      <DialogHeader>
         <DialogTitle class="flex items-center space-x-2">
           <BarChart3 class="h-5 w-5 text-orange-600" />
           <span>Weekly Statistics & Metrics</span>
@@ -53,7 +53,7 @@
       </div>      <!-- Job Metrics Section -->
       <div class="mt-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Job Metrics</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div class="bg-orange-50 rounded-lg p-4 flex flex-col items-center">
           <h4 class="text-sm font-semibold text-orange-900 mb-2 flex items-center">
             <Clock class="h-4 w-4 mr-2 text-orange-600" />
@@ -86,7 +86,7 @@
       <div v-if="metrics.graphic" class="mt-8">
         <div class="bg-white rounded-lg shadow p-4">
           <div class="text-sm font-semibold text-gray-700 mb-2">Job Progress Chart</div>
-          <div v-html="metrics.graphic"></div>
+          <div class="w-full overflow-x-auto" v-html="metrics.graphic"></div>
         </div>
       </div>
 
