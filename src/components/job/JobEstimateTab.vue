@@ -42,41 +42,51 @@
         <!-- Header -->
         <h3 class="text-sm font-semibold text-gray-900 mb-3">Summary</h3>
 
-        <!-- Main Calculations - Compact -->
+        <!-- Main Calculations - Conforme especificação -->
         <div class="space-y-2 mb-3">
           <!-- Labour Hours Cost -->
           <div class="bg-blue-50 p-2 rounded border border-blue-200">
             <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-blue-800">Labour</div>
+              <div class="text-xs font-medium text-blue-800">Labour Hours Cost</div>
               <div class="text-sm font-bold text-blue-900">{{ formatCurrency(labourHoursCost) }}</div>
             </div>
-            <div class="text-xs text-blue-600">{{ totalLabourHours.toFixed(1) }}h</div>
+            <div class="text-xs text-blue-600">{{ totalLabourHours.toFixed(1) }}h × ${{ chargeOutRate }}/h</div>
           </div>
 
           <!-- Material Cost (Before Markup) -->
           <div class="bg-green-50 p-2 rounded border border-green-200">
             <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-green-800">Material</div>
+              <div class="text-xs font-medium text-green-800">Cost before MU</div>
               <div class="text-sm font-bold text-green-900">{{ formatCurrency(materialCostBeforeMarkup) }}</div>
             </div>
-            <div class="text-xs text-green-600">Before markup</div>
+            <div class="text-xs text-green-600">Total material costs</div>
           </div>
 
           <!-- Material Cost (After Markup) -->
           <div class="bg-orange-50 p-2 rounded border border-orange-200">
             <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-orange-800">+ Markup</div>
+              <div class="text-xs font-medium text-orange-800">Total cost + MU</div>
               <div class="text-sm font-bold text-orange-900">{{ formatCurrency(materialCostAfterMarkup) }}</div>
             </div>
-            <div class="text-xs text-orange-600">{{ materialMarkupPercent }}%</div>
+            <div class="text-xs text-orange-600">{{ materialMarkupPercent }}% markup</div>
           </div>
 
           <!-- Final Cost -->
           <div class="bg-purple-50 p-2 rounded border border-purple-200">
             <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-purple-800">Total</div>
+              <div class="text-xs font-medium text-purple-800">Final Cost</div>
               <div class="text-base font-bold text-purple-900">{{ formatCurrency(finalCost) }}</div>
             </div>
+            <div class="text-xs text-purple-600">Labour + Materials + MU</div>
+          </div>
+
+          <!-- Total Labour Cost (Internal) -->
+          <div class="bg-gray-50 p-2 rounded border border-gray-200">
+            <div class="flex justify-between items-center">
+              <div class="text-xs font-medium text-gray-700">Total Labour Cost</div>
+              <div class="text-sm font-medium text-gray-800">{{ formatCurrency(totalLabourCost) }}</div>
+            </div>
+            <div class="text-xs text-gray-500">{{ totalLabourHours.toFixed(1) }}h × ${{ wageRate }}/h (internal)</div>
           </div>
         </div>
 
@@ -171,33 +181,39 @@ const materialMarkupPercent = computed(() => {
 })
 const wageRate = computed(() => props.companyDefaults?.wage_rate || 60)
 
-// Summary calculations - baseado em CostLines
+// Summary calculations - conforme especificação
 const totalLabourHours = computed(() => {
   return costLines.value
-    .filter(line => line.kind === 'time')
-    .reduce((total, line) => total + parseFloat(line.quantity), 0)
+    .filter(line => line.meta?.labour_minutes)
+    .reduce((total, line) => total + (parseFloat(String(line.meta?.labour_minutes || 0)) || 0), 0) / 60
 })
 
 const labourHoursCost = computed(() => {
-  return costLines.value
-    .filter(line => line.kind === 'time')
-    .reduce((total, line) => total + line.total_rev, 0)
+  // Labour Hours Cost = (total minutos / 60) * charge_out_rate
+  return totalLabourHours.value * chargeOutRate.value
+})
+
+const totalLabourCost = computed(() => {
+  // Total Labour Cost (interno) = (total minutos / 60) * wage_rate
+  return totalLabourHours.value * wageRate.value
 })
 
 const materialCostBeforeMarkup = computed(() => {
+  // Soma do total_cost de todos os materiais
   return costLines.value
-    .filter(line => line.kind === 'material')
-    .reduce((total, line) => total + line.total_cost, 0)
+    .filter(line => line.meta?.total_cost && !line.meta?.labour_minutes)
+    .reduce((total, line) => total + parseFloat(String(line.meta?.total_cost || 0)), 0)
 })
 
 const materialCostAfterMarkup = computed(() => {
-  return costLines.value
-    .filter(line => line.kind === 'material')
-    .reduce((total, line) => total + line.total_rev, 0)
+  // Total cost + MU = materiais + markup
+  const markup = materialMarkupPercent.value / 100
+  return materialCostBeforeMarkup.value * (1 + markup)
 })
 
 const finalCost = computed(() => {
-  return costLines.value.reduce((total, line) => total + line.total_rev, 0)
+  // Final Cost = Labour Hours Cost + Total Cost + MU
+  return labourHoursCost.value + materialCostAfterMarkup.value
 })
 
 // Initialize with one default empty row
@@ -205,7 +221,7 @@ const initializeDefaultRow = () => {
   if (costLines.value.length === 0) {
     const defaultCostLine: Partial<CostLine> = {
       id: 0, // Temporary ID for new items
-      kind: 'material', // Default to material (generic item/expense)
+      kind: 'material', // Default to material
       desc: '',
       quantity: '1',
       unit_cost: '0',
@@ -213,7 +229,9 @@ const initializeDefaultRow = () => {
       meta: {
         item_number: nextItemNumber.value++,
         category: 'mainWork', // Default category
-        labour_minutes: 0, // Add labour_minutes field
+        labour_minutes: 0,
+        item_cost: 0,
+        total_cost: 0,
         is_new: true,
         is_modified: false
       },
@@ -247,18 +265,21 @@ const loadExistingEstimateData = async () => {
       return
     }
 
-    // Corrigir categorias missing e adicionar metadados de controle
+    // Processar cost lines com nova estrutura
     const processedCostLines = costSet.cost_lines.map((line, index) => ({
       ...line,
       meta: {
         ...line.meta,
         item_number: index + 1,
-        category: line.meta?.category || (line.kind === 'time' ? 'fabrication' : 'mainWork'),
+        category: line.meta?.category || (line.meta?.labour_minutes ? 'fabrication' : 'mainWork'),
+        labour_minutes: line.meta?.labour_minutes || 0,
+        item_cost: line.meta?.item_cost || 0,
+        total_cost: line.meta?.total_cost || 0,
         is_new: false,
         is_modified: false
       }
     }))
-    
+
     // Atualizar nextItemNumber baseado nos items carregados
     nextItemNumber.value = Math.max(...processedCostLines.map(line => line.meta?.item_number || 0), 0) + 1
     
@@ -282,144 +303,18 @@ const loadExistingEstimateData = async () => {
   }
 }
 
-// Função para inferir kind automaticamente baseado nos dados preenchidos
-const inferKindFromData = (costLine: CostLine): 'time' | 'material' | 'adjust' => {
-  // Se tem hours/time data nos metadados, é time
-  if (costLine.meta?.labour_minutes || costLine.meta?.hours) {
-    return 'time'
-  }
-  
-  // Se tem item_code ou é claramente um produto/material, é material
-  if (costLine.meta?.item_code || costLine.meta?.is_material) {
-    return 'material'
-  }
-  
-  // Para qualquer outro caso (expenses, adjustments, misc items), usar material
-  // Isso simplifica o modelo - não há mais distinção prática entre material e adjust
-  return 'material'
-}
-
-// Função para inferir categoria baseado no kind
-const inferCategoryFromKind = (kind: 'time' | 'material' | 'adjust'): 'fabrication' | 'mainWork' => {
-  switch (kind) {
-    case 'time':
-      return 'fabrication'
-    case 'material':
-    case 'adjust':
-    default:
-      return 'mainWork'
-  }
-}
-
-// Helper functions - agora baseadas em CostLine
-function calculateTotalCost(costLine: CostLine): number {
-  // Para CostLine, o total já é calculado automaticamente
-  return costLine.total_rev
-}
-
-function updateTotalCost(costLine: CostLine) {
-  // Recalcular baseado no tipo usando switch-case
-  switch (costLine.kind) {
-    case 'time': {
-      const hours = parseFloat(costLine.quantity) || 0
-      costLine.unit_rev = chargeOutRate.value.toString()
-      costLine.unit_cost = wageRate.value.toString() 
-      break
-    }
-    case 'material': {
-      const unitCost = parseFloat(costLine.unit_cost) || 0
-      const markup = 1 + (materialMarkupPercent.value / 100)
-      costLine.unit_rev = (unitCost * markup).toString()
-      break
-    }
-    case 'adjust': {
-      // Para adjustments, unit_rev é o valor total
-      break
-    }
-  }
-  
-  // Recalcular totais
-  const quantity = parseFloat(costLine.quantity) || 0
-  costLine.total_cost = quantity * parseFloat(costLine.unit_cost)
-  costLine.total_rev = quantity * parseFloat(costLine.unit_rev)
-  
-  // Marcar como modificado
-  if (costLine.meta) {
-    costLine.meta.is_modified = true
-  }
-  hasUnsavedChanges.value = true
-}
-
-function updateCategory(costLine: CostLine) {
-  // Lógica melhorada baseada na especificação usando switch-case:
-  switch (costLine.kind) {
-    case 'time':
-      if (costLine.meta) {
-        costLine.meta.category = 'fabrication'
-      }
-      break
-    case 'material':
-      if (costLine.meta) {
-        costLine.meta.category = 'mainWork'
-      }
-      break
-    case 'adjust':
-    default:
-      // Manter categoria atual para adjustments
-      break
-  }
-}
-
 function handleCellValueChanged(event: CellValueChangedEvent) {
   const costLine = event.data as CostLine
 
-  // Se labour_minutes mudou, recalcular unit_cost baseado em wage_rate
-  if (event.colDef.field === 'meta.labour_minutes') {
-    const minutes = parseFloat(event.newValue) || 0
+  // Quando quantity muda, recalcular total_cost baseado em item_cost
+  if (event.colDef.field === 'quantity') {
+    const qty = parseFloat(event.newValue) || 1
+    const itemCost = parseFloat(String(costLine.meta?.item_cost || 0))
     
-    if (minutes > 0) {
-      // Labour foi definido - calcular unit_cost baseado no wage_rate
-      const wageRatePerMinute = wageRate.value / 60
-      costLine.unit_cost = (minutes * wageRatePerMinute).toFixed(2)
-      costLine.kind = 'time'
-      if (costLine.meta) {
-        costLine.meta.category = 'fabrication'
-      }
-    } else {
-      // Labour removido - pode voltar a usar unit_cost manual
-      costLine.kind = 'material'
-      if (costLine.meta) {
-        costLine.meta.category = 'mainWork'
-      }
+    if (itemCost > 0 && !costLine.meta?.labour_minutes) {
+      costLine.meta.total_cost = (qty * itemCost).toFixed(2)
     }
-    
-    updateTotalCost(costLine)
   }
-  
-  // Se unit_cost mudou e não há labour, bloquear labour
-  if (event.colDef.field === 'unit_cost') {
-    const unitCost = parseFloat(event.newValue) || 0
-    
-    if (unitCost > 0 && costLine.meta) {
-      // Unit cost foi definido - remover labour e definir como material
-      costLine.meta.labour_minutes = 0
-      costLine.kind = 'material'
-      costLine.meta.category = 'mainWork'
-    }
-    
-    updateTotalCost(costLine)
-  }
-
-  // Se quantity, unit_cost ou unit_rev mudaram, recalcular
-  if (['quantity', 'unit_cost', 'unit_rev'].includes(event.colDef.field || '')) {
-    updateTotalCost(costLine)
-  }
-
-  // Inferir kind automaticamente baseado nos dados
-  costLine.kind = inferKindFromData(costLine)
-  
-  // Atualizar categoria baseada no kind inferido
-  updateCategory(costLine)
 
   // Marcar como modificado para qualquer mudança
   if (costLine.meta) {
@@ -528,12 +423,12 @@ function prepareCostLinePayload(costLine: CostLine) {
       ...costLine.meta,
       // Garantir que temos os campos necessários
       item_number: costLine.meta?.item_number || nextItemNumber.value,
-      category: costLine.meta?.category || inferCategoryFromKind(costLine.kind)
+      category: costLine.meta?.category || (costLine.meta?.labour_minutes ? 'fabrication' : 'mainWork')
     }
   }
 }
 
-// AG Grid Configuration - simplificado sem coluna Type
+// AG Grid Configuration - conforme especificação
 const columnDefs: ColDef[] = [
   {
     headerName: 'Item',
@@ -541,18 +436,6 @@ const columnDefs: ColDef[] = [
     width: 80,
     editable: false,
     cellClass: 'text-center font-medium'
-  },
-  {
-    headerName: 'Description',
-    field: 'desc',
-    flex: 1,
-    editable: true,
-    cellEditor: 'agLargeTextCellEditor',
-    cellEditorParams: {
-      maxLength: 500,
-      rows: 3,
-      cols: 50
-    }
   },
   {
     headerName: 'Quantity',
@@ -571,9 +454,21 @@ const columnDefs: ColDef[] = [
     }
   },
   {
+    headerName: 'Description',
+    field: 'desc',
+    flex: 1,
+    editable: true,
+    cellEditor: 'agLargeTextCellEditor',
+    cellEditorParams: {
+      maxLength: 500,
+      rows: 3,
+      cols: 50
+    }
+  },
+  {
     headerName: 'Labour',
     field: 'meta.labour_minutes',
-    width: 100,
+    width: 120,
     editable: true,
     type: 'numericColumn',
     cellEditor: 'agNumberCellEditor',
@@ -590,28 +485,25 @@ const columnDefs: ColDef[] = [
     valueSetter: (params) => {
       const minutes = parseFloat(params.newValue) || 0
       
-      // Se tem labour, bloquear unit_cost e total_cost
+      // Se tem labour, bloquear item_cost e total_cost
       if (minutes > 0) {
-        params.data.unit_cost = '0'
+        params.data.meta.item_cost = 0
+        params.data.meta.total_cost = 0
         params.data.meta.category = 'fabrication'
         params.data.kind = 'time'
-        
-        // Calcular automaticamente unit_cost baseado no wage_rate
-        const wageRatePerMinute = (props.companyDefaults?.wage_rate || 60) / 60
-        params.data.unit_cost = (minutes * wageRatePerMinute).toFixed(2)
       }
       
       params.data.meta.labour_minutes = minutes
       return true
     },
     cellStyle: (params) => {
-      const hasItemCost = parseFloat(params.data.unit_cost) > 0 && !params.data.meta?.labour_minutes
+      const hasItemCost = parseFloat(params.data.meta?.item_cost || '0') > 0 || parseFloat(params.data.meta?.total_cost || '0') > 0
       return hasItemCost ? { backgroundColor: '#F3F4F6', color: '#9CA3AF' } : null
     }
   },
   {
-    headerName: 'Unit Cost',
-    field: 'unit_cost',
+    headerName: 'Item Cost',
+    field: 'meta.item_cost',
     width: 120,
     editable: true,
     type: 'numericColumn',
@@ -621,20 +513,24 @@ const columnDefs: ColDef[] = [
       precision: 2
     },
     valueFormatter: (params) => {
-      const value = parseFloat(params.value)
-      return isNaN(value) ? '$0.00' : `$${value.toFixed(2)}`
+      const value = parseFloat(params.value) || 0
+      return `$${value.toFixed(2)}`
     },
     valueSetter: (params) => {
-      const unitCost = parseFloat(params.newValue) || 0
+      const itemCost = parseFloat(params.newValue) || 0
       
-      // Se tem unit_cost, bloquear labour e definir como material
-      if (unitCost > 0) {
+      // Se tem item_cost, bloquear labour e definir como material
+      if (itemCost > 0) {
         params.data.meta.labour_minutes = 0
         params.data.meta.category = 'mainWork'
         params.data.kind = 'material'
+        
+        // Recalcular total_cost automaticamente
+        const qty = parseFloat(params.data.quantity) || 1
+        params.data.meta.total_cost = (itemCost * qty).toFixed(2)
       }
       
-      params.data.unit_cost = unitCost.toFixed(2)
+      params.data.meta.item_cost = itemCost.toFixed(2)
       return true
     },
     cellStyle: (params) => {
@@ -643,8 +539,8 @@ const columnDefs: ColDef[] = [
     }
   },
   {
-    headerName: 'Unit Revenue',
-    field: 'unit_rev',
+    headerName: 'Total Cost',
+    field: 'meta.total_cost',
     width: 120,
     editable: true,
     type: 'numericColumn',
@@ -654,39 +550,29 @@ const columnDefs: ColDef[] = [
       precision: 2
     },
     valueFormatter: (params) => {
-      const value = parseFloat(params.value)
-      return isNaN(value) ? '$0.00' : `$${value.toFixed(2)}`
-    }
-  },
-  {
-    headerName: 'Total Revenue',
-    field: 'total_rev',
-    width: 120,
-    editable: false,
-    type: 'numericColumn',
-    valueFormatter: (params) => {
-      return `$${params.value.toFixed(2)}`
+      const value = parseFloat(params.value) || 0
+      return `$${value.toFixed(2)}`
+    },
+    valueSetter: (params) => {
+      const totalCost = parseFloat(params.newValue) || 0
+      
+      // Se tem total_cost, bloquear labour e definir como material
+      if (totalCost > 0) {
+        params.data.meta.labour_minutes = 0
+        params.data.meta.category = 'mainWork'
+        params.data.kind = 'material'
+        
+        // Recalcular item_cost baseado no total_cost e quantity
+        const qty = parseFloat(params.data.quantity) || 1
+        params.data.meta.item_cost = qty > 0 ? (totalCost / qty).toFixed(2) : '0.00'
+      }
+      
+      params.data.meta.total_cost = totalCost.toFixed(2)
+      return true
     },
     cellStyle: (params) => {
-      return { backgroundColor: '#F3F4F6', fontWeight: 'bold' }
-    }
-  },
-  {
-    headerName: 'Category',
-    field: 'meta.category',
-    width: 120,
-    editable: true,
-    cellEditor: 'agSelectCellEditor',
-    cellEditorParams: {
-      values: ['fabrication', 'mainWork']
-    },
-    valueFormatter: (params) => {
-      return params.value === 'fabrication' ? 'Fabrication' : 'Main Work'
-    },
-    cellStyle: (params) => {
-      return params.value === 'fabrication'
-        ? { backgroundColor: '#DBEAFE', color: '#1E40AF' }
-        : { backgroundColor: '#D1FAE5', color: '#065F46' }
+      const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
+      return hasLabour ? { backgroundColor: '#F3F4F6', color: '#9CA3AF' } : null
     }
   },
   {
@@ -750,7 +636,7 @@ const gridOptions: GridOptions = {
 function addNewItem() {
   const newCostLine: Partial<CostLine> = {
     id: 0, // Temporary ID for new items
-    kind: 'material', // Default to material (generic item/expense)
+    kind: 'material', // Default to material
     desc: '',
     quantity: '1',
     unit_cost: '0',
@@ -758,6 +644,9 @@ function addNewItem() {
     meta: {
       item_number: nextItemNumber.value++,
       category: 'mainWork', // Default category
+      labour_minutes: 0,
+      item_cost: 0,
+      total_cost: 0,
       is_new: true,
       is_modified: true
     },
@@ -800,7 +689,7 @@ function addNewItem() {
   }
 }
 
-// Computed totals for categories - baseado em CostLines
+// Computed totals for categories - baseado em nova estrutura
 const fabricationItems = computed(() => 
   costLines.value.filter(line => line.meta?.category === 'fabrication').length
 )
@@ -810,15 +699,13 @@ const mainWorkItems = computed(() =>
 )
 
 const fabricationCost = computed(() => {
-  return costLines.value
-    .filter(line => line.meta?.category === 'fabrication')
-    .reduce((total, line) => total + line.total_rev, 0)
+  // Custo das categorias de fabricação (labour)
+  return labourHoursCost.value
 })
 
 const mainWorkCost = computed(() => {
-  return costLines.value
-    .filter(line => line.meta?.category === 'mainWork')
-    .reduce((total, line) => total + line.total_rev, 0)
+  // Custo das categorias de main work (materials com markup)
+  return materialCostAfterMarkup.value
 })
 
 // Currency formatter
@@ -990,13 +877,13 @@ watch(gridHeight, () => {
   }
 
   /* Hide less important columns on mobile */
-  :deep(.ag-theme-custom .ag-header-cell[col-id="labour"]),
-  :deep(.ag-theme-custom .ag-cell[col-id="labour"]) {
+  :deep(.ag-theme-custom .ag-header-cell[col-id="meta.labour_minutes"]),
+  :deep(.ag-theme-custom .ag-cell[col-id="meta.labour_minutes"]) {
     display: none;
   }
 
-  :deep(.ag-theme-custom .ag-header-cell[col-id="itemCost"]),
-  :deep(.ag-theme-custom .ag-cell[col-id="itemCost"]) {
+  :deep(.ag-theme-custom .ag-header-cell[col-id="meta.item_cost"]),
+  :deep(.ag-theme-custom .ag-cell[col-id="meta.item_cost"]) {
     display: none;
   }
 }

@@ -10,7 +10,16 @@ export interface CostLine {
   total_cost: number
   total_rev: number
   ext_refs?: Record<string, any>
-  meta: Record<string, any>
+  meta: {
+    item_number?: number
+    category?: 'fabrication' | 'mainWork'
+    labour_minutes?: number
+    item_cost?: number | string
+    total_cost?: number | string
+    is_new?: boolean
+    is_modified?: boolean
+    [key: string]: any // Para outros campos meta
+  }
 }
 
 export interface CostSet {
