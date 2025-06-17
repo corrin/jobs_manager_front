@@ -10,7 +10,7 @@
         <button
           @click="addNewItem"
           :disabled="isLoading"
-          class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center px-3 py-2 border border-transparent text-sm         category: line.meta?.category || (line.kind === 'time' ? 'fabrication' : 'mainWork'),eading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus class="w-4 h-4 mr-2" />
           Add Item
@@ -205,14 +205,14 @@ const initializeDefaultRow = () => {
   if (costLines.value.length === 0) {
     const defaultCostLine: Partial<CostLine> = {
       id: 0, // Temporary ID for new items
-      kind: 'adjust',
+      kind: 'material', // Default to material (generic item/expense)
       desc: '',
       quantity: '1',
       unit_cost: '0',
       unit_rev: '0',
       meta: {
         item_number: nextItemNumber.value++,
-        category: 'mainWork',
+        category: 'mainWork', // Default category
         is_new: true,
         is_modified: false
       },
@@ -252,7 +252,7 @@ const loadExistingEstimateData = async () => {
       meta: {
         ...line.meta,
         item_number: index + 1,
-        category: line.meta?.category || inferCategoryFromKind(line.kind),
+        category: line.meta?.category || (line.kind === 'time' ? 'fabrication' : 'mainWork'),
         is_new: false,
         is_modified: false
       }
@@ -281,17 +281,21 @@ const loadExistingEstimateData = async () => {
   }
 }
 
-// Função para inferir categoria baseada no kind
-const inferCategoryFromKind = (kind: string): 'fabrication' | 'mainWork' => {
-  switch (kind) {
-    case 'time':
-      return 'fabrication'
-    case 'material':
-      return 'mainWork'
-    case 'adjust':
-    default:
-      return 'mainWork'
+// Função para inferir kind automaticamente baseado nos dados preenchidos
+const inferKindFromData = (costLine: CostLine): 'time' | 'material' | 'adjust' => {
+  // Se tem hours/time data nos metadados, é time
+  if (costLine.meta?.labour_minutes || costLine.meta?.hours) {
+    return 'time'
   }
+  
+  // Se tem item_code ou é claramente um produto/material, é material
+  if (costLine.meta?.item_code || costLine.meta?.is_material) {
+    return 'material'
+  }
+  
+  // Para qualquer outro caso (expenses, adjustments, misc items), usar material
+  // Isso simplifica o modelo - não há mais distinção prática entre material e adjust
+  return 'material'
 }
 
 // Helper functions - agora baseadas em CostLine
@@ -361,10 +365,11 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
     updateTotalCost(costLine)
   }
 
-  // Se kind mudou, atualizar categoria
-  if (event.colDef.field === 'kind') {
-    updateCategory(costLine)
-  }
+  // Inferir kind automaticamente baseado nos dados
+  costLine.kind = inferKindFromData(costLine)
+  
+  // Atualizar categoria baseada no kind inferido
+  updateCategory(costLine)
 
   // Marcar como modificado para qualquer mudança
   if (costLine.meta) {
@@ -478,7 +483,7 @@ function prepareCostLinePayload(costLine: CostLine) {
   }
 }
 
-// AG Grid Configuration - agora para CostLine
+// AG Grid Configuration - simplificado sem coluna Type
 const columnDefs: ColDef[] = [
   {
     headerName: 'Item',
@@ -486,24 +491,6 @@ const columnDefs: ColDef[] = [
     width: 80,
     editable: false,
     cellClass: 'text-center font-medium'
-  },
-  {
-    headerName: 'Type',
-    field: 'kind',
-    width: 100,
-    editable: true,
-    cellEditor: 'agSelectCellEditor',
-    cellEditorParams: {
-      values: ['time', 'material', 'adjust']
-    },
-    valueFormatter: (params) => {
-      switch (params.value) {
-        case 'time': return 'Time'
-        case 'material': return 'Material'
-        case 'adjust': return 'Adjustment'
-        default: return params.value
-      }
-    }
   },
   {
     headerName: 'Description',
@@ -657,14 +644,14 @@ const gridOptions: GridOptions = {
 function addNewItem() {
   const newCostLine: Partial<CostLine> = {
     id: 0, // Temporary ID for new items
-    kind: 'adjust',
+    kind: 'material', // Default to material (generic item/expense)
     desc: '',
     quantity: '1',
     unit_cost: '0',
     unit_rev: '0',
     meta: {
       item_number: nextItemNumber.value++,
-      category: 'mainWork',
+      category: 'mainWork', // Default category
       is_new: true,
       is_modified: true
     },
