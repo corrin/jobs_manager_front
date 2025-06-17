@@ -221,7 +221,7 @@ const finalCost = computed(() => {
 const initializeDefaultRow = () => {
   if (costLines.value.length === 0) {
     const defaultCostLine: Partial<CostLine> = {
-      id: 0, // Temporary ID for new items
+      id: Date.now(), // Use timestamp for unique ID
       kind: 'material', // Default to material
       desc: '',
       quantity: '1',
@@ -456,12 +456,40 @@ const columnDefs: ColDef[] = [
     type: 'numericColumn',
     cellEditor: 'agNumberCellEditor',
     cellEditorParams: {
-      min: 0,
+      min: 0.01,
       precision: 2
     },
     valueFormatter: (params) => {
-      const value = parseFloat(params.value)
-      return isNaN(value) ? '1' : value.toString()
+      const value = parseFloat(params.value) || 1
+      return value.toString()
+    },
+    valueSetter: (params) => {
+      const qty = parseFloat(params.newValue) || 1
+      params.data.quantity = qty.toString()
+      
+      // Recalcular total_cost se tem item_cost
+      const itemCost = parseFloat(String(params.data.meta?.item_cost || 0))
+      if (itemCost > 0 && !params.data.meta?.labour_minutes) {
+        params.data.meta.total_cost = (qty * itemCost).toFixed(2)
+        console.log('📊 Recalculated total_cost:', params.data.meta.total_cost)
+      }
+      
+      // Marcar como modificado
+      params.data.meta.is_modified = true
+      hasUnsavedChanges.value = true
+      
+      // Forçar refresh da célula total_cost
+      nextTick(() => {
+        if (gridApi && params.node) {
+          gridApi.refreshCells({ 
+            rowNodes: [params.node], 
+            columns: ['meta.total_cost'],
+            force: true 
+          })
+        }
+      })
+      
+      return true
     }
   },
   {
@@ -676,7 +704,7 @@ const gridOptions: GridOptions = {
   domLayout: 'normal',
   headerHeight: 40,
   rowHeight: 35,
-  getRowId: (params: any) => params.data.id, // Fix AG Grid error #5 with Vue proxy objects
+  getRowId: (params: any) => String(params.data.id), // Ensure string IDs to fix AG Grid error #25
   onCellValueChanged: handleCellValueChanged,
   onGridReady: (params: GridReadyParams) => {
     gridApi = params.api
@@ -706,7 +734,7 @@ const gridOptions: GridOptions = {
 // Add new cost line
 function addNewItem() {
   const newCostLine: Partial<CostLine> = {
-    id: 0, // Temporary ID for new items
+    id: Date.now(), // Use timestamp to ensure unique IDs
     kind: 'material', // Default to material
     desc: '',
     quantity: '1',
@@ -866,9 +894,15 @@ watch(() => props.jobId, async (newJobId) => {
 watch(costLines, () => {
   // Force reactivity update for computed values
   nextTick(() => {
-    // This ensures the summary panel updates immediately
+    // Force trigger de todos os computed values para atualização imediata
+    const _triggerUpdate = {
+      labourHours: totalLabourHours.value,
+      materialCost: materialCostBeforeMarkup.value,
+      finalCost: finalCost.value
+    }
+    console.log('🔄 Forced reactivity update:', _triggerUpdate)
   })
-}, { deep: true })
+}, { deep: true, immediate: true })
 
 // Watch grid height changes and update AG Grid
 watch(gridHeight, () => {
