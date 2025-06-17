@@ -616,15 +616,12 @@ async function handleSaveEntry(entry: OptimizedTimeEntry): Promise<void> {
       unit_cost: entry.wageRate.toString(),
       unit_rev: entry.chargeOutRate.toString(),
       meta: {
-        category: 'Labour',
+        // Only timesheet-specific metadata - NO job data (comes from CostSet relationship)
         staff_id: entry.staffId,
         date: currentDate.value, // FIXED: Use currentDate from navigation instead of entry.date
         is_billable: entry.billable,
         rate_multiplier: entry.rateMultiplier,
-        job_id: targetJobId,
-        job_number: entry.jobNumber,
-        client: entry.client,
-        job_name: entry.jobName
+        created_from_timesheet: true
       }
     }
 
@@ -871,12 +868,14 @@ const loadTimesheetData = async () => {
     console.log('📊 Number of cost lines:', response.cost_lines?.length || 0)
 
     // Convert CostLines to TimesheetEntry format
+    // Note: job_id, job_number, job_name, client_name come from the CostSet->Job relationship,
+    // NOT from metadata. This ensures data consistency and follows the CostLine architecture.
     timeEntries.value = response.cost_lines.map((line: any) => ({
       id: line.id,
-      jobId: line.meta?.job_id || '',
-      jobNumber: line.meta?.job_number || '',
-      client: line.meta?.client || '',
-      jobName: line.meta?.job_name || '',
+      jobId: line.job_id || '', // Now coming directly from TimesheetCostLineSerializer
+      jobNumber: line.job_number || '', // Now coming directly from TimesheetCostLineSerializer  
+      client: line.client_name || '', // Now coming directly from TimesheetCostLineSerializer
+      jobName: line.job_name || '', // Now coming directly from TimesheetCostLineSerializer
       hours: parseFloat(line.quantity),
       billable: line.meta?.is_billable ?? true,
       description: line.desc,
@@ -886,7 +885,7 @@ const loadTimesheetData = async () => {
       staffId: selectedStaffId.value,
       date: currentDate.value,
       wageRate: parseFloat(line.unit_cost),
-      chargeOutRate: parseFloat(line.unit_rev),
+      chargeOutRate: line.charge_out_rate || parseFloat(line.unit_rev), // Prefer the job's charge_out_rate
       rateMultiplier: line.meta?.rate_multiplier || 1.0,
       isNewRow: false,
       isModified: false

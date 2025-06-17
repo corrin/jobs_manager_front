@@ -28,8 +28,17 @@ export interface CostLineUpdatePayload {
   meta?: Record<string, any>
 }
 
+export interface TimesheetCostLine extends CostLine {
+  // Additional fields returned by TimesheetCostLineSerializer
+  job_id: string
+  job_number: string
+  job_name: string
+  client_name: string
+  charge_out_rate: number
+}
+
 export interface TimesheetEntriesResponse {
-  cost_lines: CostLine[]
+  cost_lines: TimesheetCostLine[]
   staff: {
     id: string
     name: string

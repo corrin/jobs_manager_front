@@ -215,7 +215,8 @@ const formData = ref({
 const initializeFormData = (): void => {
   if (props.costLine) {
     formData.value = {
-      job_id: props.costLine.meta?.job_id || '',
+      // Job ID: prefer from relationship (if TimesheetCostLine), fallback to meta (legacy)
+      job_id: (props.costLine as any).job_id || props.costLine.meta?.job_id || '',
       actual_hours: parseFloat(props.costLine.quantity) || 0,
       start_time: props.costLine.meta?.start_time || '',
       end_time: props.costLine.meta?.end_time || '',
@@ -303,7 +304,8 @@ const populateFormWithCostLine = (): void => {
   }
 
   formData.value = {
-    job_id: props.costLine.meta?.job_id || '',
+    // Job ID: prefer from relationship (if TimesheetCostLine), fallback to meta (legacy)
+    job_id: (props.costLine as any).job_id || props.costLine.meta?.job_id || '',
     actual_hours: parseFloat(props.costLine.quantity) || 0,
     start_time: props.costLine.meta?.start_time || '',
     end_time: props.costLine.meta?.end_time || '',
