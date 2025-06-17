@@ -30,19 +30,16 @@ axios.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle auth errors
 axios.interceptors.response.use(
-  (response) => {
-    return response
-  },
+  (response) => response,
   async (error) => {
     const authStore = useAuthStore()
+    const isAuthError = error.response?.status === 401
+    const isNotOnLoginPage = window.location.pathname !== '/login'
 
-    if (error.response?.status === 401) {
+    if (isAuthError && isNotOnLoginPage) {
       console.warn('Authentication failed - cookies may have expired')
 
-      // With httpOnly cookies, if we get 401, the session is invalid
-      // Just logout and redirect to login
       await authStore.logout()
       window.location.href = '/login'
     }
