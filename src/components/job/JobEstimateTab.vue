@@ -10,7 +10,7 @@
         <button
           @click="addNewItem"
           :disabled="isLoading"
-          class="inline-flex items-center px-3 py-2 border border-transparent text-sm         category: line.meta?.category || (line.kind === 'time' ? 'fabrication' : 'mainWork'),eading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus class="w-4 h-4 mr-2" />
           Add Item
@@ -213,6 +213,7 @@ const initializeDefaultRow = () => {
       meta: {
         item_number: nextItemNumber.value++,
         category: 'mainWork', // Default category
+        labour_minutes: 0, // Add labour_minutes field
         is_new: true,
         is_modified: false
       },
@@ -298,6 +299,18 @@ const inferKindFromData = (costLine: CostLine): 'time' | 'material' | 'adjust' =
   return 'material'
 }
 
+// Função para inferir categoria baseado no kind
+const inferCategoryFromKind = (kind: 'time' | 'material' | 'adjust'): 'fabrication' | 'mainWork' => {
+  switch (kind) {
+    case 'time':
+      return 'fabrication'
+    case 'material':
+    case 'adjust':
+    default:
+      return 'mainWork'
+  }
+}
+
 // Helper functions - agora baseadas em CostLine
 function calculateTotalCost(costLine: CostLine): number {
   // Para CostLine, o total já é calculado automaticamente
@@ -359,6 +372,43 @@ function updateCategory(costLine: CostLine) {
 
 function handleCellValueChanged(event: CellValueChangedEvent) {
   const costLine = event.data as CostLine
+
+  // Se labour_minutes mudou, recalcular unit_cost baseado em wage_rate
+  if (event.colDef.field === 'meta.labour_minutes') {
+    const minutes = parseFloat(event.newValue) || 0
+    
+    if (minutes > 0) {
+      // Labour foi definido - calcular unit_cost baseado no wage_rate
+      const wageRatePerMinute = wageRate.value / 60
+      costLine.unit_cost = (minutes * wageRatePerMinute).toFixed(2)
+      costLine.kind = 'time'
+      if (costLine.meta) {
+        costLine.meta.category = 'fabrication'
+      }
+    } else {
+      // Labour removido - pode voltar a usar unit_cost manual
+      costLine.kind = 'material'
+      if (costLine.meta) {
+        costLine.meta.category = 'mainWork'
+      }
+    }
+    
+    updateTotalCost(costLine)
+  }
+  
+  // Se unit_cost mudou e não há labour, bloquear labour
+  if (event.colDef.field === 'unit_cost') {
+    const unitCost = parseFloat(event.newValue) || 0
+    
+    if (unitCost > 0 && costLine.meta) {
+      // Unit cost foi definido - remover labour e definir como material
+      costLine.meta.labour_minutes = 0
+      costLine.kind = 'material'
+      costLine.meta.category = 'mainWork'
+    }
+    
+    updateTotalCost(costLine)
+  }
 
   // Se quantity, unit_cost ou unit_rev mudaram, recalcular
   if (['quantity', 'unit_cost', 'unit_rev'].includes(event.colDef.field || '')) {
@@ -521,6 +571,45 @@ const columnDefs: ColDef[] = [
     }
   },
   {
+    headerName: 'Labour',
+    field: 'meta.labour_minutes',
+    width: 100,
+    editable: true,
+    type: 'numericColumn',
+    cellEditor: 'agNumberCellEditor',
+    cellEditorParams: {
+      min: 0,
+      precision: 0
+    },
+    valueFormatter: (params) => {
+      const minutes = parseFloat(params.value) || 0
+      if (minutes === 0) return ''
+      const hours = (minutes / 60).toFixed(1)
+      return `${minutes}min (${hours}h)`
+    },
+    valueSetter: (params) => {
+      const minutes = parseFloat(params.newValue) || 0
+      
+      // Se tem labour, bloquear unit_cost e total_cost
+      if (minutes > 0) {
+        params.data.unit_cost = '0'
+        params.data.meta.category = 'fabrication'
+        params.data.kind = 'time'
+        
+        // Calcular automaticamente unit_cost baseado no wage_rate
+        const wageRatePerMinute = (props.companyDefaults?.wage_rate || 60) / 60
+        params.data.unit_cost = (minutes * wageRatePerMinute).toFixed(2)
+      }
+      
+      params.data.meta.labour_minutes = minutes
+      return true
+    },
+    cellStyle: (params) => {
+      const hasItemCost = parseFloat(params.data.unit_cost) > 0 && !params.data.meta?.labour_minutes
+      return hasItemCost ? { backgroundColor: '#F3F4F6', color: '#9CA3AF' } : null
+    }
+  },
+  {
     headerName: 'Unit Cost',
     field: 'unit_cost',
     width: 120,
@@ -534,6 +623,23 @@ const columnDefs: ColDef[] = [
     valueFormatter: (params) => {
       const value = parseFloat(params.value)
       return isNaN(value) ? '$0.00' : `$${value.toFixed(2)}`
+    },
+    valueSetter: (params) => {
+      const unitCost = parseFloat(params.newValue) || 0
+      
+      // Se tem unit_cost, bloquear labour e definir como material
+      if (unitCost > 0) {
+        params.data.meta.labour_minutes = 0
+        params.data.meta.category = 'mainWork'
+        params.data.kind = 'material'
+      }
+      
+      params.data.unit_cost = unitCost.toFixed(2)
+      return true
+    },
+    cellStyle: (params) => {
+      const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
+      return hasLabour ? { backgroundColor: '#F3F4F6', color: '#9CA3AF' } : null
     }
   },
   {

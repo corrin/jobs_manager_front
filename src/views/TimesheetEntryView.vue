@@ -947,7 +947,6 @@ onMounted(async () => {
     staffList.value = timesheetStore.staff
     jobsList.value = timesheetStore.jobs
 
-
     // Convert jobs to JobSelectionItem format for OptimizedJobCellEditor
     const convertedJobs = timesheetStore.jobs.map((job: Job) => ({
       id: job.id,
@@ -959,22 +958,28 @@ onMounted(async () => {
       job_display_name: job.displayName || `${job.jobNumber} - ${job.jobName || job.name || ''}`
     }))
 
-      // Set global jobs for OptimizedJobCellEditor
-      ; (window as any).timesheetJobs = convertedJobs
+    // Set global jobs for OptimizedJobCellEditor
+    ; (window as any).timesheetJobs = convertedJobs
 
-    // Validate and set staff first
+    // Validate and set staff - prioritize URL parameters
     let validStaffId = selectedStaffId.value
+    
+    // If no staff from URL or invalid staff ID, use first available staff
     if ((!validStaffId || !staffList.value.find((s: Staff) => s.id === validStaffId)) && staffList.value.length > 0) {
       validStaffId = staffList.value[0].id
-      selectedStaffId.value = validStaffId
+      console.log('📋 No valid staff from URL, using first available:', validStaffId)
+    } else if (validStaffId && staffList.value.find((s: Staff) => s.id === validStaffId)) {
+      console.log('👤 Using staff from URL parameters:', validStaffId)
     }
+
+    selectedStaffId.value = validStaffId
 
     // Set current staff globally for calculations (using the validated staff ID)
     const currentStaffData = staffList.value.find((s: Staff) => s.id === validStaffId)
-      ; (window as any).currentStaff = currentStaffData
+    ; (window as any).currentStaff = currentStaffData
 
-      // Set company defaults globally for calculations
-      ; (window as any).companyDefaults = companyDefaults.value
+    // Set company defaults globally for calculations
+    ; (window as any).companyDefaults = companyDefaults.value
 
     console.log('📋 Available staff:', staffList.value.length)
     console.log('💼 Available jobs:', jobsList.value.length)
@@ -982,7 +987,9 @@ onMounted(async () => {
     console.log('👤 Current staff for calculations:', currentStaffData?.name, 'wage rate:', currentStaffData?.wageRate)
     console.log('💰 Company defaults for calculations:', companyDefaults.value)
 
-    selectedStaffId.value = validStaffId
+    // Update URL to reflect the actual values being used
+    updateRoute()
+
     isInitializing.value = false
 
     // Initial load after everything is set up
@@ -1039,16 +1046,31 @@ watch(() => route.query, (newQuery, oldQuery) => {
 
   console.log('🔗 URL query changed:', { old: oldQuery, new: newQuery })
 
+  let hasChanges = false
+
   // Update date if changed in URL
   if (newQuery.date && newQuery.date !== currentDate.value) {
     console.log('📅 Updating date from URL:', newQuery.date)
     currentDate.value = newQuery.date as string
+    hasChanges = true
   }
 
-  // Update staff if changed in URL
+  // Update staff if changed in URL - validate staff exists
   if (newQuery.staffId && newQuery.staffId !== selectedStaffId.value) {
-    console.log('👤 Updating staff from URL:', newQuery.staffId)
-    selectedStaffId.value = newQuery.staffId as string
+    const staffExists = staffList.value.find((s: Staff) => s.id === newQuery.staffId)
+    if (staffExists) {
+      console.log('👤 Updating staff from URL:', newQuery.staffId)
+      selectedStaffId.value = newQuery.staffId as string
+      hasChanges = true
+    } else {
+      console.warn('⚠️ Staff ID from URL not found:', newQuery.staffId)
+    }
+  }
+
+  // If there were changes, reload data
+  if (hasChanges) {
+    console.log('🔄 Reloading data due to URL changes')
+    loadTimesheetData()
   }
 }, { immediate: false })
 
