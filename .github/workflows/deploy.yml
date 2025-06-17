@@ -45,8 +45,6 @@ jobs:
             fi
             git pull -f flores $BRANCH_NAME
 
-            npm run build
-
             sudo systemctl restart vue
           EOF
 
