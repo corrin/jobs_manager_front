@@ -72,7 +72,7 @@ export interface IMSWeeklyData extends WeeklyTimesheetData {
  * Get weekly timesheet overview for all staff
  */
 export const getWeeklyTimesheetOverview = async (startDate?: string, exportToIMS: boolean = false): Promise<WeeklyTimesheetData | IMSWeeklyData> => {
-  const url = '/api/timesheet/weekly/'
+  const url = '/timesheets/api/weekly/'
   const params: any = {}
 
   if (startDate) {
@@ -91,7 +91,7 @@ export const getWeeklyTimesheetOverview = async (startDate?: string, exportToIMS
  * Export weekly data to IMS format
  */
 export const exportToIMS = async (startDate: string): Promise<IMSWeeklyData> => {
-  const url = '/api/timesheet/weekly/'
+  const url = '/timesheets/api/weekly/'
   const params = {
     start_date: startDate,
     export_to_ims: 'true'
@@ -114,7 +114,7 @@ export interface PaidAbsenceRequest {
 }
 
 export const submitPaidAbsence = async (data: PaidAbsenceRequest): Promise<{ success: boolean; messages?: string[] }> => {
-  const url = '/api/timesheet/weekly/'
+  const url = '/timesheets/api/weekly/'
 
   const response = await api.post(url, {
     staff_id: data.staff_id,

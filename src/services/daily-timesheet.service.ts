@@ -1,9 +1,8 @@
 /**
  * Daily Timesheet Service
  *
- * Service for handling daily timesheet API operations
+ * Service for handling daily timesheet API operations with consolidated URLs
  */
-
 import api from '@/plugins/axios'
 
 export interface JobBreakdown {
@@ -67,12 +66,15 @@ export interface DailyTimesheetSummary {
 
 /**
  * Get daily timesheet summary for all staff
+ * 
+ * Uses the consolidated timesheet API endpoint
  */
 export const getDailyTimesheetSummary = async (date?: string): Promise<DailyTimesheetSummary> => {
-  const url = '/api/timesheet/daily-overview/'
-  const params = date ? { date } : {}
-
-  const response = await api.get(url, { params })
+  const url = date 
+    ? `/timesheets/api/daily/${date}/`
+    : '/timesheets/api/daily/'
+  
+  const response = await api.get(url)
   return response.data
 }
 
