@@ -306,7 +306,15 @@ const loadExistingEstimateData = async () => {
 
 function handleCellValueChanged(event: CellValueChangedEvent) {
   const costLine = event.data as CostLine
-  console.log('🔄 Cell value changed:', event.colDef.field, 'New value:', event.newValue)
+  console.log('🔄 Cell value changed:', event.colDef.field, 'New value:', event.newValue, 'Row ID:', costLine.id)
+  console.log('📊 Full row data before change:', {
+    id: costLine.id,
+    desc: costLine.desc,
+    quantity: costLine.quantity,
+    item_cost: costLine.meta?.item_cost,
+    total_cost: costLine.meta?.total_cost,
+    labour_minutes: costLine.meta?.labour_minutes
+  })
 
   // Quando quantity muda, recalcular total_cost baseado em item_cost
   if (event.colDef.field === 'quantity') {
@@ -759,6 +767,14 @@ const gridOptions: GridOptions = {
 
 // Add new cost line
 function addNewItem() {
+  console.log('➕ Adding new item...')
+  console.log('📊 Current costLines before add:', costLines.value.map(line => ({ 
+    id: line.id, 
+    desc: line.desc, 
+    item_cost: line.meta?.item_cost,
+    labour_minutes: line.meta?.labour_minutes 
+  })))
+  
   const newCostLine: Partial<CostLine> = {
     id: Date.now(), // Use timestamp to ensure unique IDs
     kind: 'material', // Default to material
@@ -779,12 +795,37 @@ function addNewItem() {
     total_rev: 0
   }
 
+  console.log('🆕 New cost line created:', newCostLine)
+
+  // Primeiro adicionar à array reativa
   costLines.value.push(newCostLine as CostLine)
   hasUnsavedChanges.value = true
 
-  // Use applyTransaction instead of setRowData (AG Grid v33 API)
+  console.log('📊 costLines after push:', costLines.value.map(line => ({ 
+    id: line.id, 
+    desc: line.desc, 
+    item_cost: line.meta?.item_cost,
+    labour_minutes: line.meta?.labour_minutes 
+  })))
+
+  // Depois aplicar ao grid
   if (gridApi) {
+    console.log('🔧 Applying transaction to grid...')
     gridApi.applyTransaction({ add: [newCostLine] })
+    
+    // Verificar se os dados foram preservados após a transação
+    setTimeout(() => {
+      console.log('🔍 Checking grid data after transaction...')
+      const gridData: any[] = []
+      gridApi!.forEachNode((node) => gridData.push({
+        id: node.data.id,
+        desc: node.data.desc,
+        item_cost: node.data.meta?.item_cost,
+        labour_minutes: node.data.meta?.labour_minutes
+      }))
+      console.log('📊 Grid data after transaction:', gridData)
+    }, 100)
+    
     // Focus on the new row
     nextTick(() => {
       const lastRowIndex = costLines.value.length - 1
