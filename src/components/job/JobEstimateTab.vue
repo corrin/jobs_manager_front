@@ -338,10 +338,18 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
   })
 }
 
-// Keyboard handler for Shift+N (avoid conflicts with browser shortcuts)
+// Keyboard handler for Shift+N (mais robusto e confiável)
 function handleKeyDown(event: KeyboardEvent) {
+  // Só processar se não estamos dentro de um input/textarea
+  const target = event.target as HTMLElement
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+    return
+  }
+  
   if (event.shiftKey && event.key === 'N') {
     event.preventDefault()
+    event.stopPropagation()
+    console.log('🎯 Shift+N pressed - adding new item')
     addNewItem()
   }
 }
@@ -557,7 +565,13 @@ const columnDefs: ColDef[] = [
     },
     cellStyle: (params) => {
       const hasItemCost = parseFloat(params.data.meta?.item_cost || '0') > 0 || parseFloat(params.data.meta?.total_cost || '0') > 0
-      return hasItemCost ? { backgroundColor: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed' } : null
+      return hasItemCost ? { 
+        backgroundColor: '#E5E7EB', 
+        color: '#6B7280', 
+        cursor: 'not-allowed',
+        opacity: '0.7',
+        fontStyle: 'italic'
+      } : null
     }
   },
   {
@@ -614,7 +628,13 @@ const columnDefs: ColDef[] = [
     },
     cellStyle: (params) => {
       const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
-      return hasLabour ? { backgroundColor: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed' } : null
+      return hasLabour ? { 
+        backgroundColor: '#E5E7EB', 
+        color: '#6B7280', 
+        cursor: 'not-allowed',
+        opacity: '0.7',
+        fontStyle: 'italic'
+      } : null
     }
   },
   {
@@ -671,7 +691,13 @@ const columnDefs: ColDef[] = [
     },
     cellStyle: (params) => {
       const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
-      return hasLabour ? { backgroundColor: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed' } : null
+      return hasLabour ? { 
+        backgroundColor: '#E5E7EB', 
+        color: '#6B7280', 
+        cursor: 'not-allowed',
+        opacity: '0.7',
+        fontStyle: 'italic'
+      } : null
     }
   },
   {
