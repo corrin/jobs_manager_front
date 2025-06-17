@@ -55,7 +55,7 @@ export interface IMSExportData {
 }
 
 class IMSService {
-  private baseUrl = '/api/timesheet'
+  private baseUrl = '/timesheets/api'
 
   /**
    * Export timesheet data in IMS format for a specific week

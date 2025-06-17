@@ -9,7 +9,7 @@ import type {
 } from '@/types/timesheet.types'
 
 export class TimesheetService {
-  private static readonly BASE_URL = '/api/timesheet'
+  private static readonly BASE_URL = '/timesheets/api'
 
   /**
    * Get list of staff members
