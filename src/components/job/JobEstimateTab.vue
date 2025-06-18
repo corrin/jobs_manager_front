@@ -1101,13 +1101,22 @@ function addNewItem() {
       is_new: lineToRemove.meta?.is_new
     })
     
-    // Só deletar do backend se não for linha vazia/nova
-    if (!lineToRemove.meta?.empty_line && lineToRemove.id) {
+    // Verificar se a linha está realmente vazia OU é nova (baseado no conteúdo real, não na flag)
+    const isReallyEmpty = !lineToRemove.desc?.trim() && 
+                         (!lineToRemove.meta?.labour_minutes || lineToRemove.meta.labour_minutes === 0) &&
+                         (!lineToRemove.meta?.item_cost || lineToRemove.meta.item_cost === 0)
+    
+    const shouldDeleteFromBackend = lineToRemove.id && 
+                                   typeof lineToRemove.id === 'number' && 
+                                   !lineToRemove.meta?.is_new && 
+                                   !isReallyEmpty
+
+    if (shouldDeleteFromBackend) {
       try {
         console.log('🗑️ COMPONENT: Calling deleteCostLine service for backend deletion...')
         await deleteCostLine(Number(lineToRemove.id))
         console.log('✅ COMPONENT: Backend deletion completed successfully')
-      } catch (error) {
+      } catch (error: any) {
         console.error('❌ COMPONENT: Backend deletion failed:', error)
         // Verificar se é um erro de rede
         if (error?.code === 'NETWORK_ERROR' || error?.message?.includes('Network')) {
@@ -1116,7 +1125,7 @@ function addNewItem() {
         // Mesmo assim, continuar com a remoção do frontend para UX
       }
     } else {
-      console.log('⏭️ COMPONENT: Skipping backend deletion (empty_line or no ID)')
+      console.log('⏭️ COMPONENT: Skipping backend deletion - ID:', lineToRemove.id, 'is_new:', lineToRemove.meta?.is_new, 'isEmpty:', isReallyEmpty)
     }
     
     // Remover da array reativa
