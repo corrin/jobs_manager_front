@@ -392,6 +392,9 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
     
     // Garantir linha vazia no final após qualquer mudança
     ensureEmptyRowAtEnd()
+    
+    // Forçar summary update
+    triggerSummaryUpdate()
   })
 }
 
@@ -475,6 +478,9 @@ async function saveChanges() {
     })
 
     hasUnsavedChanges.value = false
+    
+    // Forçar autocalculation do summary após salvar
+    triggerSummaryUpdate()
     
     // Log de sucesso com estatísticas
     console.log(`✅ Estimate saved successfully! Created: ${createdCount}, Updated: ${updatedCount}, Total: ${savedCount}`)
@@ -852,12 +858,33 @@ const gridOptions: GridOptions = {
   }
 }
 
+// Forçar atualização do summary
+function triggerSummaryUpdate() {
+  console.log('📊 Triggering summary update...')
+  nextTick(() => {
+    // Força re-computação de todos os valores calculados
+    const summaryData = {
+      labourHours: totalLabourHours.value,
+      labourCost: labourHoursCost.value,
+      materialCost: materialCostBeforeMarkup.value,
+      materialAfterMarkup: materialCostAfterMarkup.value,
+      finalCost: finalCost.value,
+      fabricationItems: fabricationItems.value,
+      mainWorkItems: mainWorkItems.value
+    }
+    console.log('📈 Summary updated:', summaryData)
+  })
+}
+
 // Add new cost line - simplified to just ensure empty row
 function addNewItem() {
   console.log('🎯 Shift+N pressed - ensuring empty row for new item')
   
   // Simplesmente garantir que há linha vazia - isso resolve o problema
   ensureEmptyRowAtEnd()
+  
+  // Trigger summary update
+  triggerSummaryUpdate()
   
   // Focar na última linha (que será vazia)
   if (gridApi) {
@@ -889,21 +916,16 @@ function addNewItem() {
     costLines.value.splice(index, 1)
     hasUnsavedChanges.value = true
 
-    // Se ficou vazio, inicializar com linha padrão
-    if (costLines.value.length === 0) {
-      console.log('📝 Grid is empty, adding default row')
-      initializeDefaultRow()
-    }
-
     // Atualizar grid usando applyTransaction
     if (gridApi) {
       gridApi.applyTransaction({ remove: [lineToRemove] })
-      
-      // Se adicionamos linha padrão, adicionar no grid também
-      if (costLines.value.length === 1 && costLines.value[0].meta?.is_new) {
-        gridApi.applyTransaction({ add: [costLines.value[0]] })
-      }
     }
+    
+    // SEMPRE garantir linha vazia após deleção
+    ensureEmptyRowAtEnd()
+    
+    // Forçar autocalculation do summary
+    triggerSummaryUpdate()
     
     console.log('✅ Cost line deleted successfully')
   } else {
