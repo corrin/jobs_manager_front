@@ -533,12 +533,13 @@ const columnDefs: ColDef[] = [
     },
     valueSetter: (params) => {
       const qty = parseFloat(params.newValue) || 1
-      params.data.quantity = qty.toString()
+      // Ensure we're setting a string value for quantity
+      params.data.quantity = String(qty)
       
       // Recalcular total_cost se tem item_cost
       const itemCost = parseFloat(String(params.data.meta?.item_cost || 0))
       if (itemCost > 0 && !params.data.meta?.labour_minutes) {
-        params.data.meta.total_cost = (qty * itemCost).toFixed(2)
+        params.data.meta.total_cost = Number((qty * itemCost).toFixed(2))
         console.log('📊 Recalculated total_cost:', params.data.meta.total_cost)
       }
       
@@ -613,7 +614,8 @@ const columnDefs: ColDef[] = [
         params.data.kind = 'time'
       }
       
-      params.data.meta.labour_minutes = minutes
+      // Ensure we're setting a number value for labour_minutes
+      params.data.meta.labour_minutes = Number(minutes)
       
       // Marcar como modificado e forçar atualização do summary
       params.data.meta.is_modified = true
@@ -690,13 +692,14 @@ const columnDefs: ColDef[] = [
         
         // Recalcular total_cost automaticamente
         const qty = parseFloat(params.data.quantity) || 1
-        params.data.meta.total_cost = (itemCost * qty).toFixed(2)
+        params.data.meta.total_cost = Number((itemCost * qty).toFixed(2))
         console.log('📊 Recalculated total_cost:', params.data.meta.total_cost)
       } else {
         console.log('💰 Item cost is 0, not applying mutual exclusion logic')
       }
       
-      params.data.meta.item_cost = itemCost.toFixed(2)
+      // Ensure we're setting a number value for item_cost
+      params.data.meta.item_cost = Number(itemCost.toFixed(2))
       
       // Marcar como modificado e forçar atualização do summary
       params.data.meta.is_modified = true
@@ -765,10 +768,11 @@ const columnDefs: ColDef[] = [
         
         // Recalcular item_cost baseado no total_cost e quantity
         const qty = parseFloat(params.data.quantity) || 1
-        params.data.meta.item_cost = qty > 0 ? (totalCost / qty).toFixed(2) : '0.00'
+        params.data.meta.item_cost = qty > 0 ? Number((totalCost / qty).toFixed(2)) : 0
       }
       
-      params.data.meta.total_cost = totalCost.toFixed(2)
+      // Ensure we're setting a number value for total_cost
+      params.data.meta.total_cost = Number(totalCost.toFixed(2))
       
       // Marcar como modificado e forçar atualização do summary
       params.data.meta.is_modified = true
