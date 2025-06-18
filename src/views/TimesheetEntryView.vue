@@ -777,6 +777,29 @@ const saveChanges = async () => {
     return
   }
 
+  // Validate entries before saving - ensure all required fields are present
+  const invalidEntries = changedEntries.filter(entry => {
+    const hasJob = entry.jobId || entry.jobNumber
+    const hasDescription = entry.description && entry.description.trim().length > 0
+    const hasHours = entry.hours > 0
+    
+    return !hasJob || !hasDescription || !hasHours
+  })
+
+  if (invalidEntries.length > 0) {
+    console.log('❌ Found invalid entries:', invalidEntries)
+    const missingFields = invalidEntries.map(entry => {
+      const missing = []
+      if (!entry.jobId && !entry.jobNumber) missing.push('Job')
+      if (!entry.description || !entry.description.trim()) missing.push('Description')
+      if (entry.hours <= 0) missing.push('Hours')
+      return `Entry ${entry.id || 'new'}: Missing ${missing.join(', ')}`
+    }).join('\n')
+    
+    error.value = `Cannot save entries with missing required fields:\n${missingFields}`
+    return
+  }
+
   for (const entry of changedEntries) {
     console.log('🔄 Saving entry:', {
       id: entry.id,

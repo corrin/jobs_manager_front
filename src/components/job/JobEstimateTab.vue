@@ -435,14 +435,24 @@ async function saveChanges() {
 
     // Filtrar apenas cost lines modificadas e que não são linhas vazias
     const modifiedCostLines = costLines.value.filter(line => {
-      // Filtrar linhas vazias (sem descrição ou com flag empty_line)
-      const isEmpty = !line.desc || line.desc.trim() === '' || line.meta?.empty_line === true
+      // Critério mais rigoroso para detectar linhas vazias
+      const isEmpty = (
+        (!line.desc || line.desc.trim() === '') && // Sem descrição
+        (!line.meta?.labour_minutes || line.meta.labour_minutes <= 0) && // Sem labour
+        (!line.meta?.item_cost || parseFloat(line.meta.item_cost.toString()) <= 0) && // Sem item cost
+        (!line.meta?.total_cost || parseFloat(line.meta.total_cost.toString()) <= 0) // Sem total cost
+      )
       
       // Filtrar linhas modificadas e não vazias
       const isModified = line.meta?.is_modified || line.meta?.is_new
       
       if (isEmpty) {
-        console.log('🚫 Skipping empty line:', line.id, line.desc)
+        console.log('🚫 Skipping empty line:', line.id, {
+          desc: line.desc,
+          labour_minutes: line.meta?.labour_minutes,
+          item_cost: line.meta?.item_cost,
+          total_cost: line.meta?.total_cost
+        })
         return false
       }
       
