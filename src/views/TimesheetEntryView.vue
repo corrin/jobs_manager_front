@@ -406,7 +406,6 @@ const {
   setGridApi,
   loadData,
   addNewRow,
-  ensureEmptyRowAtEnd,
   getGridData,
   handleKeyboardShortcut,
   handleCellValueChanged: gridHandleCellValueChanged
@@ -730,8 +729,6 @@ function onCellClicked(event: CellClickedEvent) {
 const addNewEntry = () => {
   console.log('➕ Adding new entry for staff:', selectedStaffId.value)
   
-  // Ensure there's always an empty row at the end
-  ensureEmptyRowAtEnd(selectedStaffId.value)
   hasUnsavedChanges.value = true
 }
 
@@ -902,9 +899,6 @@ const loadTimesheetData = async () => {
     loadData(timeEntries.value, selectedStaffId.value)
 
     console.log(`✅ Loaded ${timeEntries.value.length} timesheet entries`)
-
-    // Ensure there's always an empty row at the end
-    ensureEmptyRowAtEnd(selectedStaffId.value)
 
   } catch (err) {
     console.error('❌ Error loading timesheet data:', err)

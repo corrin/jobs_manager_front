@@ -308,16 +308,14 @@ export function useTimesheetEntryGrid(
         updateRowData(event.node.rowIndex, recalculated)
       }
 
-      // Save if not a new row
-      if (!data.isNewRow && updatedEntry.id) {
+      // Save if not a new row AND has valid data
+      if (!data.isNewRow && updatedEntry.id && !isRowEmpty(updatedEntry)) {
         await onSaveEntry(updatedEntry)
       }
 
-      // Auto-save new rows when they have enough data
+      // Auto-save new rows when they have enough data (not empty)
       if (data.isNewRow && isRowComplete(updatedEntry) && event.node.rowIndex !== null) {
         await saveNewRow(event.node.rowIndex, updatedEntry)
-        // Ensure there's always an empty row at the end
-        ensureEmptyRowAtEnd(data.staffId)
       }
 
     } catch (error) {
@@ -369,8 +367,6 @@ export function useTimesheetEntryGrid(
         break
 
       case 'Enter':
-        const isLastRow = api.getDisplayedRowCount() - 1 === node.rowIndex
-
         // Shift + Enter is for confirming edits
         if (event.shiftKey) {
           console.log('Shift+Enter pressed - confirming edit or toggling billable')
@@ -392,27 +388,8 @@ export function useTimesheetEntryGrid(
           break
         }
 
-        // Regular Enter on last row adds new row
-        if (isLastRow && !event.shiftKey) {
-          console.log('Enter pressed on last row - adding new row')
-          event.preventDefault()
-          
-          // Get current staff ID from the row data
-          const staffId = node.data.staffId || ''
-          addNewRow(staffId)
-          
-          // Focus the new row's first editable cell
-          setTimeout(() => {
-            if (api && !api.isDestroyed()) {
-              const newRowIndex = api.getDisplayedRowCount() - 1
-              api.setFocusedCell(newRowIndex, 'jobNumber')
-              api.startEditingCell({
-                rowIndex: newRowIndex,
-                colKey: 'jobNumber'
-              })
-            }
-          }, 100)
-        }
+        // Regular Enter just moves to next cell (default AG Grid behavior)
+        // No special handling needed - let AG Grid handle navigation
         break
 
       default:
@@ -459,6 +436,14 @@ export function useTimesheetEntryGrid(
       entry.jobNumber &&
       entry.hours > 0 &&
       entry.description.trim()
+    )
+  }
+
+  function isRowEmpty(entry: TimesheetEntry): boolean {
+    return (
+      !entry.jobNumber &&
+      entry.hours === 0 &&
+      (!entry.description || entry.description.trim() === '')
     )
   }
 
@@ -544,36 +529,13 @@ export function useTimesheetEntryGrid(
     gridData.value = rows
     console.log('✅ Grid data updated with', gridData.value.length, 'rows')
 
-    // Always ensure there's an empty row at the end
-    nextTick(() => {
-      ensureEmptyRowAtEnd(staffId)
-    })
-  }
-
-  function ensureEmptyRowAtEnd(staffId?: string): void {
-    console.log('🔍 Checking if empty row exists at end...')
-    
+    // Only add empty row if there are no rows at all
     if (gridData.value.length === 0) {
-      console.log('📝 No rows exist, adding first empty row')
+      console.log('📝 No entries exist, adding first empty row')
       addNewRow(staffId)
-      return
-    }
-
-    const lastRow = gridData.value[gridData.value.length - 1]
-    const isLastRowEmpty = lastRow.isNewRow && 
-      !lastRow.jobNumber && 
-      (!lastRow.description || lastRow.description.trim() === '') && 
-      lastRow.hours === 0
-
-    if (!isLastRowEmpty) {
-      console.log('📝 Adding empty row at end for better UX')
-      addNewRow(staffId)
-    } else {
-      console.log('✅ Empty row already exists at end')
     }
   }
 
-  // Modified addNewRow to use ensureEmptyRowAtEnd
   function addNewRow(staffId?: string, date?: string): void {
     console.log('➕ addNewRow called with staffId:', staffId, 'date:', date)
 
@@ -636,9 +598,10 @@ export function useTimesheetEntryGrid(
   function handleKeyboardShortcut(event: KeyboardEvent, staffId?: string): boolean {
     if (!gridApi.value) return false
 
-    // Ctrl+N - Add new row
-    if (event.ctrlKey && event.key === 'n') {
+    // Shift+N - Add new row (primary method)
+    if (event.shiftKey && event.key === 'N') {
       event.preventDefault()
+      console.log('🎯 Shift+N pressed - adding new row')
       addNewRow(staffId)
       focusFirstEditableCell()
       return true
@@ -700,7 +663,6 @@ export function useTimesheetEntryGrid(
     setGridApi,
     loadData,
     addNewRow,
-    ensureEmptyRowAtEnd,
     focusFirstEditableCell,
     getSelectedEntry,
     getGridData,
