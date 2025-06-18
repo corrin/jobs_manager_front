@@ -243,6 +243,47 @@ const initializeDefaultRow = () => {
   }
 }
 
+// Função para garantir que sempre há uma linha vazia no final
+const ensureEmptyRowAtEnd = () => {
+  // Verificar se a última linha está vazia
+  const lastLine = costLines.value[costLines.value.length - 1]
+  const isLastLineEmpty = lastLine && 
+    !lastLine.desc && 
+    !lastLine.meta?.labour_minutes && 
+    !lastLine.meta?.item_cost && 
+    !lastLine.meta?.total_cost
+
+  if (!isLastLineEmpty) {
+    console.log('📝 Adding empty row at end for better UX')
+    const emptyLine: Partial<CostLine> = {
+      id: Date.now() + Math.random(), // Ensure unique ID
+      kind: 'material',
+      desc: '',
+      quantity: '1',
+      unit_cost: '0',
+      unit_rev: '0',
+      meta: {
+        item_number: nextItemNumber.value++,
+        category: 'mainWork',
+        labour_minutes: 0,
+        item_cost: 0,
+        total_cost: 0,
+        is_new: true,
+        is_modified: false
+      },
+      total_cost: 0,
+      total_rev: 0
+    }
+    
+    costLines.value.push(emptyLine as CostLine)
+    
+    // Adicionar no grid também
+    if (gridApi) {
+      gridApi.applyTransaction({ add: [emptyLine] })
+    }
+  }
+}
+
 // Load existing estimate data from CostSet
 const loadExistingEstimateData = async () => {
   // Early return se não há jobId
@@ -294,11 +335,16 @@ const loadExistingEstimateData = async () => {
     if (processedCostLines.length === 0) {
       initializeDefaultRow()
     }
+    
+    // Sempre garantir linha vazia no final
+    ensureEmptyRowAtEnd()
 
   } catch (error) {
     console.warn('⚠️ Error loading existing estimate data:', error)
     // Fallback para row padrão em caso de erro
     initializeDefaultRow()
+    // Garantir linha vazia
+    ensureEmptyRowAtEnd()
   } finally {
     isLoading.value = false
   }
@@ -343,6 +389,9 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
   nextTick(() => {
     // Trigger de atualização manual dos computed values
     console.log('📈 Summary update triggered - Labour hours:', totalLabourHours.value, 'Material cost:', materialCostBeforeMarkup.value)
+    
+    // Garantir linha vazia no final após qualquer mudança
+    ensureEmptyRowAtEnd()
   })
 }
 
@@ -803,113 +852,21 @@ const gridOptions: GridOptions = {
   }
 }
 
-// Add new cost line with automatic empty row
+// Add new cost line - simplified to just ensure empty row
 function addNewItem() {
-  console.log('➕ Adding new item...')
-  console.log('📊 Current costLines before add:', costLines.value.map(line => ({ 
-    id: line.id, 
-    desc: line.desc, 
-    item_cost: line.meta?.item_cost,
-    labour_minutes: line.meta?.labour_minutes 
-  })))
+  console.log('🎯 Shift+N pressed - ensuring empty row for new item')
   
-  const newCostLine: Partial<CostLine> = {
-    id: Date.now(), // Use timestamp to ensure unique IDs
-    kind: 'material', // Default to material
-    desc: '',
-    quantity: '1',
-    unit_cost: '0',
-    unit_rev: '0',
-    meta: {
-      item_number: nextItemNumber.value++,
-      category: 'mainWork', // Default category
-      labour_minutes: 0,
-      item_cost: 0,
-      total_cost: 0,
-      is_new: true,
-      is_modified: true
-    },
-    total_cost: 0,
-    total_rev: 0
-  }
-
-  console.log('🆕 New cost line created:', newCostLine)
-
-  // Primeiro adicionar à array reativa
-  costLines.value.push(newCostLine as CostLine)
-  hasUnsavedChanges.value = true
-
-  console.log('📊 costLines after push:', costLines.value.map(line => ({ 
-    id: line.id, 
-    desc: line.desc, 
-    item_cost: line.meta?.item_cost,
-    labour_minutes: line.meta?.labour_minutes 
-  })))
-
-  // Depois aplicar ao grid
+  // Simplesmente garantir que há linha vazia - isso resolve o problema
+  ensureEmptyRowAtEnd()
+  
+  // Focar na última linha (que será vazia)
   if (gridApi) {
-    console.log('🔧 Applying transaction to grid...')
-    gridApi.applyTransaction({ add: [newCostLine] })
-    
-    // Verificar se os dados foram preservados após a transação
-    setTimeout(() => {
-      console.log('🔍 Checking grid data after transaction...')
-      const gridData: any[] = []
-      gridApi!.forEachNode((node) => gridData.push({
-        id: node.data.id,
-        desc: node.data.desc,
-        item_cost: node.data.meta?.item_cost,
-        labour_minutes: node.data.meta?.labour_minutes
-      }))
-      console.log('📊 Grid data after transaction:', gridData)
-    }, 100)
-    
-    // Focus on the new row
     nextTick(() => {
       const lastRowIndex = costLines.value.length - 1
       gridApi!.setFocusedCell(lastRowIndex, 'desc')
       gridApi!.startEditingCell({ rowIndex: lastRowIndex, colKey: 'desc' })
     })
   }
-  
-  // Sempre garantir que há uma linha vazia após adicionar
-  nextTick(() => {
-    // Verificar se a última linha está vazia
-    const lastLine = costLines.value[costLines.value.length - 1]
-    const isEmpty = !lastLine.desc && 
-                   (lastLine.meta?.item_cost || 0) === 0 && 
-                   (lastLine.meta?.labour_minutes || 0) === 0
-    
-    if (!isEmpty) {
-      console.log('📝 Adding empty row for better UX')
-      // Adicionar linha vazia para melhor UX
-      const emptyLine: Partial<CostLine> = {
-        id: Date.now() + 1, // Ensure unique ID
-        kind: 'material',
-        desc: '',
-        quantity: '1',
-        unit_cost: '0',
-        unit_rev: '0',
-        meta: {
-          item_number: nextItemNumber.value++,
-          category: 'mainWork',
-          labour_minutes: 0,
-          item_cost: 0,
-          total_cost: 0,
-          is_new: true,
-          is_modified: false // Não marcada como modificada inicialmente
-        },
-        total_cost: 0,
-        total_rev: 0
-      }
-      
-      costLines.value.push(emptyLine as CostLine)
-      
-      if (gridApi) {
-        gridApi.applyTransaction({ add: [emptyLine] })
-      }
-    }
-  })
 }
 
 // Delete cost line - global function for button onclick
