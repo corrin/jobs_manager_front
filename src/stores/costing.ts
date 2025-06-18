@@ -3,6 +3,41 @@ import { ref, computed } from 'vue'
 import { fetchCostSet } from '@/services/costing.service'
 import type { CostSet, CostLine } from '@/types/costing.types'
 
+// Helper functions
+function createEmptyGrouping() {
+  return {
+    time: [] as CostLine[],
+    material: [] as CostLine[],
+    adjust: [] as CostLine[]
+  }
+}
+
+function getCategoryFromKind(kind: string, metaCategory?: string): 'time' | 'material' | 'adjust' {
+  // Primeiro, tentar usar meta.category se disponível
+  if (metaCategory) {
+    const normalizedCategory = metaCategory.toLowerCase()
+    switch (normalizedCategory) {
+      case 'fabrication':
+        return 'time'
+      case 'mainwork':
+        return 'material'
+    }
+  }
+  
+  // Fallback para kind original
+  const normalizedKind = kind.toLowerCase()
+  switch (normalizedKind) {
+    case 'time':
+      return 'time'
+    case 'adjust':
+    case 'adjustment':
+      return 'adjust'
+    case 'material':
+    default:
+      return 'material'
+  }
+}
+
 export const useCostingStore = defineStore('costing', () => {
   // State
   const currentKind = ref<'estimate' | 'quote' | 'actual'>('estimate')
@@ -77,13 +112,17 @@ export const useCostingStore = defineStore('costing', () => {
 
   // Getters
   const groupedByKind = computed(() => {
-    if (!costSet.value) {
+    if (!costSet.value || !costSet.value.cost_lines) {
       return createEmptyGrouping()
     }
-
     return costSet.value.cost_lines.reduce(
       (groups, costLine) => {
-        const category = getCategoryFromKind(costLine.kind)
+        // Usar meta.category como prioridade principal, com fallback para kind
+        const kind = costLine.kind || ''
+        const metaCategory = costLine.meta?.category
+        
+        // Determinar categoria usando meta.category primeiro, depois kind
+        const category = getCategoryFromKind(kind, metaCategory)
         groups[category].push(costLine)
         return groups
       },
@@ -91,41 +130,51 @@ export const useCostingStore = defineStore('costing', () => {
     )
   })
 
-  // Helper functions following SRP
-  const createEmptyGrouping = () => ({
-    time: [] as CostLine[],
-    material: [] as CostLine[],
-    adjust: [] as CostLine[]
-  })
-
-  const getCategoryFromKind = (kind: string): 'time' | 'material' | 'adjust' => {
-    switch (kind) {
-      case 'time':
-        return 'time'
-      case 'material':
-        return 'material'
-      case 'adjust':
-        return 'adjust'
-      default:
-        console.warn(`Unknown cost line kind: ${kind}, defaulting to 'adjust'`)
-        return 'adjust'
-    }
+  // Helper para somar valores de costlines
+  function sumCostLines(fn: (cl: CostLine) => number) {
+    if (!costSet.value || !costSet.value.cost_lines) return 0
+    return costSet.value.cost_lines.reduce((acc, cl) => acc + (fn(cl) || 0), 0)
   }
 
+  // Total Cost: usa summary se válido, senão soma costlines
   const totalCost = computed(() => {
-    if (!costSet.value || !costSet.value.summary) return 0
-    const val = costSet.value.summary.cost
-    return typeof val === 'number' && !isNaN(val) ? val : 0
+    if (costSet.value && costSet.value.summary && typeof costSet.value.summary.cost === 'number' && !isNaN(costSet.value.summary.cost) && costSet.value.summary.cost > 0) {
+      return costSet.value.summary.cost
+    }
+    // Fallback: soma total_cost das costlines
+    return sumCostLines(cl => Number(cl.total_cost) || 0)
   })
+
+  // Total Revenue: usa summary se válido, senão soma costlines
   const totalRevenue = computed(() => {
-    if (!costSet.value || !costSet.value.summary) return 0
-    const val = costSet.value.summary.rev
-    return typeof val === 'number' && !isNaN(val) ? val : 0
+    if (costSet.value && costSet.value.summary && typeof costSet.value.summary.rev === 'number' && !isNaN(costSet.value.summary.rev) && costSet.value.summary.rev > 0) {
+      return costSet.value.summary.rev
+    }
+    // Fallback: soma total_rev das costlines
+    return sumCostLines(cl => Number(cl.total_rev) || 0)
   })
+
+  // Total Hours: usa summary se válido, senão soma labour_minutes das costlines de fabricação
   const totalHours = computed(() => {
-    if (!costSet.value || !costSet.value.summary) return 0
-    const val = costSet.value.summary.hours
-    return typeof val === 'number' && !isNaN(val) ? val : 0
+    if (costSet.value && costSet.value.summary && typeof costSet.value.summary.hours === 'number' && !isNaN(costSet.value.summary.hours) && costSet.value.summary.hours > 0) {
+      return costSet.value.summary.hours
+    }
+    // Fallback: soma labour_minutes/60 das costlines de fabricação (tempo)
+    return sumCostLines(cl => {
+      // Verificar se é linha de tempo usando meta.category ou kind
+      const isTimeEntry = cl.meta?.category === 'fabrication' || 
+                         String(cl.kind || '').toLowerCase() === 'time'
+      
+      if (isTimeEntry) {
+        // Usar meta.labour_minutes se existir
+        if (cl.meta && typeof cl.meta.labour_minutes === 'number') {
+          return cl.meta.labour_minutes / 60
+        }
+        // Fallback: quantity pode ser horas
+        return Number(cl.quantity) || 0
+      }
+      return 0
+    })
   })
 
   const isLoaded = computed(() => costSet.value !== null)

@@ -98,7 +98,7 @@
                 <div class="flex-1">
                   <p class="font-medium text-gray-900">{{ costLine.desc || 'No description' }}</p>
                   <div class="text-sm text-gray-600 mt-1">
-                    <span class="inline-block mr-4">{{ formatHours(parseFloat(costLine.quantity)) }}</span>
+                    <span class="inline-block mr-4">{{ formatTimeEntry(costLine) }}</span>
                     <span v-if="costLine.meta?.category" class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                       {{ costLine.meta.category }}
                     </span>
@@ -265,6 +265,26 @@ const formatCurrency = (amount: number): string => {
     currency: 'USD',
     minimumFractionDigits: 2
   }).format(amount)
+}
+
+const formatTimeEntry = (costLine: any): string => {
+  // Tentar usar meta.labour_minutes primeiro
+  if (costLine.meta && typeof costLine.meta.labour_minutes === 'number') {
+    const minutes = costLine.meta.labour_minutes
+    if (minutes === 0) return '0h'
+    
+    const hours = minutes / 60
+    if (hours < 1) return `${minutes}min`
+    
+    const wholeHours = Math.floor(hours)
+    const remainingMinutes = minutes % 60
+    
+    return remainingMinutes > 0 ? `${wholeHours}h ${remainingMinutes}min` : `${wholeHours}h`
+  }
+  
+  // Fallback para quantity como horas
+  const hours = parseFloat(costLine.quantity) || 0
+  return formatHours(hours)
 }
 
 const formatHours = (hours: number): string => {
