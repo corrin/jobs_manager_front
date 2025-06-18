@@ -1073,50 +1073,75 @@ function addNewItem() {
 
 // Delete cost line - global function for button onclick
 ;(window as any).deleteCostLine = async (costLineId: string) => {
-  console.log('🗑️ Attempting to delete cost line with ID:', costLineId)
+  console.log('🗑️ COMPONENT: Starting delete operation for cost line ID:', costLineId)
+  console.log('🗑️ COMPONENT: Current costLines array:', costLines.value.map(line => ({ 
+    id: line.id, 
+    desc: line.desc, 
+    empty_line: line.meta?.empty_line,
+    is_new: line.meta?.is_new 
+  })))
   
   // Encontrar o índice correto usando conversão de tipos apropriada
   const index = costLines.value.findIndex(line => {
     // Converter ambos para string para comparação consistente
     const lineIdStr = String(line.id)
     const targetIdStr = String(costLineId)
+    console.log('🔍 COMPONENT: Comparing line ID:', lineIdStr, 'with target:', targetIdStr)
     return lineIdStr === targetIdStr
   })
   
+  console.log('🔍 COMPONENT: Found line at index:', index)
+  
   if (index !== -1) {
     const lineToRemove = costLines.value[index]
-    console.log('🗑️ Found line to remove at index:', index, lineToRemove)
+    console.log('🗑️ COMPONENT: Line to remove:', {
+      id: lineToRemove.id,
+      desc: lineToRemove.desc,
+      empty_line: lineToRemove.meta?.empty_line,
+      is_new: lineToRemove.meta?.is_new
+    })
     
     // Só deletar do backend se não for linha vazia/nova
     if (!lineToRemove.meta?.empty_line && lineToRemove.id) {
       try {
-        console.log('🗑️ Deleting from backend:', lineToRemove.id)
+        console.log('🗑️ COMPONENT: Calling deleteCostLine service for backend deletion...')
         await deleteCostLine(Number(lineToRemove.id))
-        console.log('✅ Successfully deleted from backend')
+        console.log('✅ COMPONENT: Backend deletion completed successfully')
       } catch (error) {
-        console.error('❌ Failed to delete from backend:', error)
+        console.error('❌ COMPONENT: Backend deletion failed:', error)
+        // Verificar se é um erro de rede
+        if (error?.code === 'NETWORK_ERROR' || error?.message?.includes('Network')) {
+          console.error('🌐 COMPONENT: Network error detected - check backend connection')
+        }
         // Mesmo assim, continuar com a remoção do frontend para UX
       }
+    } else {
+      console.log('⏭️ COMPONENT: Skipping backend deletion (empty_line or no ID)')
     }
     
     // Remover da array reativa
+    console.log('🗑️ COMPONENT: Removing from reactive array...')
     costLines.value.splice(index, 1)
     hasUnsavedChanges.value = true
 
     // Atualizar grid usando applyTransaction
     if (gridApi) {
+      console.log('🗑️ COMPONENT: Updating AG Grid...')
       gridApi.applyTransaction({ remove: [lineToRemove] })
     }
     
     // SEMPRE garantir linha vazia após deleção
+    console.log('🗑️ COMPONENT: Ensuring empty row at end...')
     ensureEmptyRowAtEnd()
     
     // Forçar autocalculation do summary
+    console.log('🗑️ COMPONENT: Triggering summary update...')
     triggerSummaryUpdate()
     
-    console.log('✅ Cost line deleted successfully')
+    console.log('✅ COMPONENT: Cost line deletion operation completed')
   } else {
-    console.warn('⚠️ Could not find cost line with ID:', costLineId, 'in array:', costLines.value.map(line => ({ id: line.id, desc: line.desc })))
+    console.warn('⚠️ COMPONENT: Could not find cost line with ID:', costLineId)
+    console.warn('⚠️ COMPONENT: Available IDs:', costLines.value.map(line => line.id))
   }
 }
 

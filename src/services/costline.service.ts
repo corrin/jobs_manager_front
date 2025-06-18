@@ -106,7 +106,17 @@ export const updateCostLine = async (
  * Delete a cost line
  */
 export const deleteCostLine = async (id: number): Promise<void> => {
-  await api.delete(`/job/rest/cost_lines/${id}/delete/`)
+  console.log('🚀 SERVICE: Starting DELETE request for cost line ID:', id)
+  console.log('🌐 DELETE URL:', `/job/rest/cost_lines/${id}/delete/`)
+  
+  try {
+    const response = await api.delete(`/job/rest/cost_lines/${id}/delete/`)
+    console.log('✅ SERVICE: DELETE request completed successfully:', response.status, response.data)
+    return response.data
+  } catch (error) {
+    console.error('❌ SERVICE: DELETE request failed:', error)
+    throw error
+  }
 }
 
 // Export service object for consistent usage
