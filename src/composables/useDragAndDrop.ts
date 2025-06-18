@@ -18,8 +18,7 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
   const sortableInstances = ref<Map<string, Sortable>>(new Map())
   const isDragging = ref(false)
   
-  // Use device detection composable
-  const { isMobile, getDragConfig } = useDeviceDetection()
+  const { getDragConfig } = useDeviceDetection()
 
   const initializeSortable = (element: HTMLElement, status: string, jobs: Job[]) => {
     // Special handling for archived jobs
@@ -28,7 +27,6 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
     }
     
     // Regular kanban column initialization
-    // Guard clause: validate inputs
     if (!element || !status) {
       console.warn('Invalid element or status for sortable initialization')
       return null
@@ -43,7 +41,7 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
       return null
     }
 
-    // Get device-specific configuration for optimal touch experience
+    // Get unified drag configuration
     const dragConfig = getDragConfig()
 
     try {
@@ -51,46 +49,36 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
         group: {
           name: 'kanban-jobs',
           pull: true,
-          put: ['kanban-jobs', 'archived-jobs'] // Accept jobs from kanban columns and archived jobs
+          put: ['kanban-jobs', 'archived-jobs']
         },
         animation: 150,
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         dragClass: 'sortable-drag',
-        fallbackOnBody: true,
-        swapThreshold: 0.65,
         
-        // Apply device-specific configuration
+        // Apply unified configuration (includes all optimizations)
         ...dragConfig,
         
         onStart: (evt) => {
           isDragging.value = true
           document.body.classList.add('is-dragging')
           
-          // Configurar dados para drops externos usando uma abordagem global
           const item = evt.item
           if (item && evt.from?.dataset) {
             const jobId = item.dataset.id || ''
             const fromStatus = evt.from.dataset.status || ''
             
-            // Armazenar dados de drag globalmente para acesso externo
-            const dragData = {
-              jobId,
-              fromStatus
-            };
-            
-            (window as any).__dragData = dragData
+            const dragData = { jobId, fromStatus }
+            ;(window as any).__dragData = dragData
             
             console.log('Drag started:', dragData)
           }
         },
 
         onEnd: (evt) => {
-          // Clean up dragging state
           isDragging.value = false
           document.body.classList.remove('is-dragging')
           
-          // Limpar dados globais de drag
           delete (window as any).__dragData
           
           handleDragEnd(evt, jobs)
@@ -112,7 +100,6 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
   }
 
   const initializeArchivedSortable = (element: HTMLElement, status: string, jobs: Job[]) => {
-    // Guard clause: validate inputs
     if (!element || !status) {
       console.warn('Invalid element or status for archived sortable initialization')
       return null
@@ -127,7 +114,7 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
       return null
     }
 
-    // Get device-specific configuration for optimal touch experience
+    // Get unified drag configuration
     const dragConfig = getDragConfig()
 
     try {
@@ -141,40 +128,30 @@ export function useDragAndDrop(emit: DragAndDropEmits) {
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         dragClass: 'sortable-drag',
-        fallbackOnBody: true,
-        swapThreshold: 0.65,
         
-        // Apply device-specific configuration
+        // Apply unified configuration (includes all optimizations)
         ...dragConfig,
         
         onStart: (evt) => {
           isDragging.value = true
           document.body.classList.add('is-dragging')
           
-          // Configurar dados para drops externos usando uma abordagem global
           const item = evt.item
           if (item && evt.from?.dataset) {
             const jobId = item.dataset.id || ''
             const fromStatus = evt.from.dataset.status || ''
             
-            // Armazenar dados de drag globalmente para acesso externo
-            const dragData = {
-              jobId,
-              fromStatus
-            };
-            
-            (window as any).__dragData = dragData
+            const dragData = { jobId, fromStatus }
+            ;(window as any).__dragData = dragData
             
             console.log('Archived job drag started:', dragData)
           }
         },
 
         onEnd: (evt) => {
-          // Clean up dragging state
           isDragging.value = false
           document.body.classList.remove('is-dragging')
           
-          // Limpar dados globais de drag
           delete (window as any).__dragData
           
           handleDragEnd(evt, jobs)

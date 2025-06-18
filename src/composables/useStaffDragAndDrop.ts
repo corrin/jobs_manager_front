@@ -14,8 +14,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
   const staffSortableInstances = ref<Map<string, Sortable>>(new Map())
   const isStaffDragging = ref(false)
 
-  // Use device detection composable
-  const { isMobile, getStaffDragConfig } = useDeviceDetection()
+  const { getStaffDragConfig } = useDeviceDetection()
 
   const initializeStaffPool = (staffPanelElement: HTMLElement) => {
     if (!staffPanelElement) {
@@ -34,7 +33,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       }
     }
 
-    // Get device-specific configuration for optimal touch experience
+    // Get unified staff drag configuration
     const staffDragConfig = getStaffDragConfig()
 
     try {
@@ -50,7 +49,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         chosenClass: 'staff-sortable-chosen',
         dragClass: 'staff-sortable-drag',
 
-        // Apply device-specific configuration
+        // Apply unified configuration (includes all optimizations)
         ...staffDragConfig,
 
         onStart: () => {
@@ -107,7 +106,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       }
     }
 
-    // Get device-specific configuration
+    // Get unified staff drag configuration
     const staffDragConfig = getStaffDragConfig()
 
     try {
@@ -121,8 +120,8 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         ghostClass: 'staff-sortable-ghost',
         chosenClass: 'staff-sortable-chosen',
         dragClass: 'staff-sortable-drag',
-
-        // Apply device-specific configuration
+        
+        // Apply unified configuration (includes all optimizations)
         ...staffDragConfig,
 
         onStart: () => {

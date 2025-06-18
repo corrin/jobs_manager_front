@@ -58,48 +58,41 @@ export function useDeviceDetection() {
            (userAgent.includes('macintosh') && navigator.maxTouchPoints > 1)
   })
 
-  // Configurações otimizadas para drag and drop baseadas no dispositivo
+  // Configurações universais para drag and drop - sem restrições móveis
   const getDragConfig = () => {
-    console.log('Device detection:', {
-      windowWidth: windowWidth.value,
-      isMobile: isMobile.value,
-      isTablet: isTablet.value,
-      isDesktop: isDesktop.value,
-      isTouchDevice: isTouchDevice.value,
-      isIpad: isIpad.value,
-      userAgent: navigator.userAgent
-    })
-    
-    // Configuração padrão otimizada para todos os dispositivos (mobile, tablet, desktop)
+    // Configuração unificada que funciona perfeitamente em todos os dispositivos
     return {
       delay: 0,
       touchStartThreshold: 0,
       forceFallback: false,
       filter: '.no-drag',
       preventOnFilter: true,
-      disabled: false
+      disabled: false,
+      // Otimizações universais
+      fallbackOnBody: true,
+      swapThreshold: 0.65,
+      dragoverBubble: false,
+      removeCloneOnHide: false,
+      emptyInsertThreshold: 5
     }
   }
 
-  // Configurações específicas para staff drag and drop
+  // Configurações universais para staff drag and drop - sem restrições móveis
   const getStaffDragConfig = () => {
-    console.log('Staff drag device detection:', {
-      windowWidth: windowWidth.value,
-      isMobile: isMobile.value,
-      isTablet: isTablet.value,
-      isDesktop: isDesktop.value,
-      isTouchDevice: isTouchDevice.value,
-      isIpad: isIpad.value
-    })
-    
-    // Configuração padrão otimizada para todos os dispositivos (mobile, tablet, desktop)
+    // Configuração unificada que funciona perfeitamente em todos os dispositivos
     return {
       delay: 0,
       touchStartThreshold: 0,
       forceFallback: false,
       filter: '.no-drag',
       preventOnFilter: true,
-      disabled: false
+      disabled: false,
+      // Otimizações universais
+      fallbackOnBody: true,
+      swapThreshold: 0.65,
+      dragoverBubble: false,
+      removeCloneOnHide: false,
+      emptyInsertThreshold: 5
     }
   }
 
