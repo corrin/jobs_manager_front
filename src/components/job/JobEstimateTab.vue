@@ -165,16 +165,26 @@ const wageRate = computed(() => props.companyDefaults?.wage_rate || 60)
 
 // Summary calculations - conforme especificação
 const totalLabourHours = computed(() => {
-  // Corrigir: somar (labour_minutes * quantity) / 60 para considerar quantidade
-  const labourLines = costLines.value.filter(line => line.meta?.labour_minutes && line.meta.labour_minutes > 0)
-  const totalMinutes = labourLines.reduce((total, line) => {
-    const labourMinutes = parseFloat(String(line.meta?.labour_minutes || 0)) || 0
-    const quantity = parseFloat(String(line.quantity || 1)) || 1
-    return total + (labourMinutes * quantity)
-  }, 0)
-  const hours = totalMinutes / 60
-  console.log('⏰ Labour calculation - Lines:', labourLines.length, 'Total minutes:', totalMinutes, 'Hours:', hours)
-  return hours
+  console.log('⏰ Labour calculation - Lines:', costLines.value.filter(line => line.kind === 'time').length)
+  
+  // CORREÇÃO: Usar campos principais do banco, não meta!
+  // Para itens de tempo: total_cost / wage_rate = horas totais
+  const totalHours = costLines.value
+    .filter(line => line.kind === 'time') // Filtrar por kind, não meta
+    .reduce((total, line) => {
+      // Usar total_cost e wage_rate para calcular horas
+      const totalCost = parseFloat(String(line.total_cost)) || 0
+      const wageRateValue = wageRate.value || 32
+      
+      // Se temos custo e wage_rate, calcular horas: total_cost / wage_rate
+      const hoursForLine = wageRateValue > 0 ? totalCost / wageRateValue : 0
+      
+      console.log(`Line ${line.id}: total_cost=${totalCost} ÷ wage_rate=${wageRateValue} = ${hoursForLine}h`)
+      return total + hoursForLine
+    }, 0)
+  
+  console.log('⏰ Labour calculation - Total hours from DB fields:', totalHours)
+  return totalHours
 })
 
 const labourHoursCost = computed(() => {
