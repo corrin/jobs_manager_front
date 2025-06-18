@@ -527,15 +527,27 @@ const columnDefs: ColDef[] = [
     cellEditor: 'agNumberCellEditor',
     cellEditorParams: {
       min: 0.01,
-      precision: 2
+      precision: 3,
+      step: 0.01
     },
     valueFormatter: (params) => {
-      // Ensure we handle both string and number values
-      const value = typeof params.value === 'string' ? parseFloat(params.value) : (params.value || 1)
-      return isNaN(value) ? '1' : value.toString()
+      // Ensure we handle both string and number values properly
+      const value = params.value
+      if (value === null || value === undefined || value === '') {
+        return '1'
+      }
+      const numValue = typeof value === 'string' ? parseFloat(value) : Number(value)
+      return isNaN(numValue) ? '1' : numValue.toString()
     },
     valueSetter: (params) => {
       const qty = parseFloat(params.newValue) || 1
+      const currentQty = parseFloat(params.data.quantity) || 1
+      
+      // Se o valor não mudou, não fazer nada
+      if (qty === currentQty) {
+        return false
+      }
+      
       // Keep quantity as string since it's stored as string in the data model
       params.data.quantity = qty.toString()
       
