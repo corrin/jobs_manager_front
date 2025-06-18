@@ -97,7 +97,7 @@ export class QuoteImportService {
     formData.append('file', file)
 
     const response = await api.post(
-      `/rest/jobs/${jobId}/quote/import/preview/`,
+      `/job/rest/jobs/${jobId}/quote/import/preview/`,
       formData,
       {
         headers: {
@@ -121,7 +121,7 @@ export class QuoteImportService {
     }
 
     const response = await api.post(
-      `/rest/jobs/${jobId}/quote/import/`,
+      `/job/rest/jobs/${jobId}/quote/import/`,
       formData,
       {
         headers: {
@@ -134,7 +134,7 @@ export class QuoteImportService {
   }
 
   async getQuoteStatus(jobId: string): Promise<QuoteStatusResponse> {
-    const response = await api.get(`/rest/jobs/${jobId}/quote/status/`)
+    const response = await api.get(`/job/rest/jobs/${jobId}/quote/status/`)
     return response.data
   }
 }
