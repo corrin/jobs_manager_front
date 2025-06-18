@@ -612,6 +612,7 @@ export function useTimesheetEntryGrid(
     getGridData,
     handleKeyboardShortcut,
     handleJobSelection,
+    handleCellValueChanged,
 
     // Computed
     hasData: computed(() => gridData.value.length > 0)

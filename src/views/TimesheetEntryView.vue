@@ -406,7 +406,8 @@ const {
   setGridApi,
   loadData,
   addNewRow,
-  getGridData
+  getGridData,
+  handleCellValueChanged: gridHandleCellValueChanged
 } = useTimesheetEntryGrid(
   companyDefaults,
   handleSaveEntry,
@@ -691,36 +692,16 @@ async function handleDeleteEntry(id: number): Promise<void> {
 }
 
 function handleCellValueChanged(event: CellValueChangedEvent) {
-  const { data } = event
+  console.log('🔧 TimesheetEntryView handleCellValueChanged called:', {
+    field: event.colDef.field,
+    newValue: event.newValue,
+    oldValue: event.oldValue
+  })
 
-  // Recalculate wage and bill amounts
-  if (['hours', 'rate', 'jobId'].includes(event.colDef.field || '')) {
-    const job = jobsList.value.find((j: Job) => j.jobId === data.jobId)
-
-    // Calculate wage with proper undefined check
-    if (currentStaff.value?.wageRate !== undefined) {
-      data.wage = calculations.calculateWage(data.hours, data.rate, currentStaff.value.wageRate)
-    }
-
-    // Calculate bill with proper parameters
-    if (job && job.chargeOutRate !== undefined) {
-      data.bill = calculations.calculateBill(data.hours, job.chargeOutRate, data.billable)
-    }
-
-    // Auto-populate job fields when job id changes
-    if (event.colDef.field === 'jobId' && job) {
-      data.client = job.clientName || ''
-      data.jobName = job.jobName || job.name || ''
-      data.chargeOutRate = job.chargeOutRate || 0
-    }
-  }
-
-  // Mark the specific entry as modified (not a new row)
-  if (data.id && !data.isNewRow) {
-    data.isModified = true
-  }
-
-  // Mark as having changes
+  // Delegate to the grid composable's handler for comprehensive processing
+  gridHandleCellValueChanged(event)
+  
+  // Mark as having changes (this is view-specific state)
   hasUnsavedChanges.value = true
 }
 
