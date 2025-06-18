@@ -25,8 +25,8 @@
 
     <!-- Main Content -->
     <div v-if="currentQuote?.has_quote" class="flex-1 flex gap-6 min-h-0">
-      <!-- Left Column: Cost Lines Grid (70%) -->
-      <div class="flex-[7] bg-white rounded-lg border border-gray-200 flex flex-col">
+      <!-- Left Column: Cost Lines Grid (50%) -->
+      <div class="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col">
         <div class="flex-shrink-0 p-4 border-b border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
         </div>
@@ -38,9 +38,13 @@
         </div>
       </div>
 
-      <!-- Right Column: Summary (30%) -->
-      <div class="flex-[3] space-y-4">
-        <QuoteSummaryCard :quote-data="currentQuote.quote" />
+      <!-- Right Column: Summary (50%) -->
+      <div class="flex-1">
+        <QuoteSummaryCard 
+          :quote-data="currentQuote.quote" 
+          :is-loading="isLoading"
+          class="h-full"
+        />
       </div>
     </div>
 
@@ -66,40 +70,22 @@
     </div>
 
     <!-- Import Modal -->
-    <Teleport to="body">
-      <div v-if="showImportModal" class="fixed inset-0 z-50 overflow-y-auto">
-        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-          <!-- Background overlay -->
-          <div 
-            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-            @click="showImportModal = false"
-          ></div>
-
-          <!-- Modal panel -->
-          <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-            <div class="bg-white px-6 pt-6 pb-4">
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900">Import Quote</h3>
-                <button
-                  @click="showImportModal = false"
-                  class="text-gray-400 hover:text-gray-600"
-                >
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <QuoteImportDialog
-                :job-id="jobId"
-                @success="handleImportSuccess"
-                @cancel="handleImportCancel"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+    <Dialog :open="showImportModal" @update:open="(open) => !open && (showImportModal = false)">
+      <DialogContent class="sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Import Quote</DialogTitle>
+          <DialogDescription>
+            Import a new quote revision from an Excel spreadsheet
+          </DialogDescription>
+        </DialogHeader>
+        
+        <QuoteImportDialog
+          :job-id="jobId"
+          @success="handleImportSuccess"
+          @cancel="handleImportCancel"
+        />
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -109,6 +95,13 @@ import { useQuoteImport } from '@/composables/useQuoteImport'
 import QuoteImportDialog from '@/components/QuoteImportDialog.vue'
 import QuoteCostLinesGrid from '@/components/quote/QuoteCostLinesGrid.vue'
 import QuoteSummaryCard from '@/components/quote/QuoteSummaryCard.vue'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 interface Props {
   jobId: string
