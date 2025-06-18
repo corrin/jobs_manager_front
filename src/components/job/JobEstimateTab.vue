@@ -720,19 +720,23 @@ const columnDefs: ColDef[] = [
         params.data.meta.category = 'fabrication'
         params.data.kind = 'time'
         
-        // Atualizar campos principais do banco baseados no labour
-        const hours = minutes / 60
-        const quantity = hours.toString()
-        const unitCost = (hours * wageRate.value).toFixed(2)
-        const unitRev = (hours * chargeOutRate.value).toFixed(2)
+        // CORREÇÃO: quantity permanece inalterado (representa número de itens)
+        // labour_minutes representa tempo POR ITEM
+        const currentQuantity = parseFloat(params.data.quantity) || 1
+        const hoursPerItem = minutes / 60
+        const totalHours = hoursPerItem * currentQuantity
         
-        params.data.quantity = quantity
+        // Unit cost/rev baseado no tempo POR ITEM
+        const unitCost = (hoursPerItem * wageRate.value).toFixed(2)
+        const unitRev = (hoursPerItem * chargeOutRate.value).toFixed(2)
+        
+        // Total cost/rev considera a quantidade de itens
         params.data.unit_cost = unitCost
         params.data.unit_rev = unitRev
-        params.data.total_cost = parseFloat(unitCost) * hours
-        params.data.total_rev = parseFloat(unitRev) * hours
+        params.data.total_cost = parseFloat(unitCost) * currentQuantity
+        params.data.total_rev = parseFloat(unitRev) * currentQuantity
         
-        console.log(`💼 Updated DB fields for labour: qty=${quantity}, unit_cost=${unitCost}, unit_rev=${unitRev}`)
+        console.log(`💼 Updated DB fields for labour: qty=${currentQuantity}, labour_minutes=${minutes}, unit_cost=${unitCost}, unit_rev=${unitRev}, total_hours=${totalHours}`)
       }
       
       // Ensure we're setting a number value for labour_minutes
