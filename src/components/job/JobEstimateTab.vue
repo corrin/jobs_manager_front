@@ -543,6 +543,15 @@ const columnDefs: ColDef[] = [
     },
     valueSetter: (params) => {
       const minutes = parseFloat(params.newValue) || 0
+      const currentMinutes = parseFloat(params.data.meta?.labour_minutes || 0)
+      
+      // Se o valor não mudou, não fazer nada para evitar loops
+      if (minutes === currentMinutes) {
+        console.log('🔄 Labour valueSetter: Value unchanged, skipping')
+        return false
+      }
+      
+      console.log('🔄 Labour valueSetter: Changing from', currentMinutes, 'to', minutes, 'for row', params.data.id)
       
       // Se tem labour, bloquear item_cost e total_cost
       if (minutes > 0) {
@@ -603,9 +612,26 @@ const columnDefs: ColDef[] = [
     },
     valueSetter: (params) => {
       const itemCost = parseFloat(params.newValue) || 0
+      const currentItemCost = parseFloat(params.data.meta?.item_cost || 0)
+      
+      // Se o valor não mudou, não fazer nada para evitar loops
+      if (itemCost === currentItemCost) {
+        console.log('🔄 Item Cost valueSetter: Value unchanged, skipping')
+        return false
+      }
+      
+      console.log('💰 Item Cost valueSetter triggered:', {
+        rowId: params.node?.id,
+        oldValue: params.oldValue,
+        newValue: params.newValue,
+        currentItemCost,
+        itemCost,
+        desc: params.data.desc
+      })
       
       // Se tem item_cost, bloquear labour e definir como material
       if (itemCost > 0) {
+        console.log('🔒 Blocking labour for item cost > 0')
         params.data.meta.labour_minutes = 0
         params.data.meta.category = 'mainWork'
         params.data.kind = 'material'
@@ -613,6 +639,9 @@ const columnDefs: ColDef[] = [
         // Recalcular total_cost automaticamente
         const qty = parseFloat(params.data.quantity) || 1
         params.data.meta.total_cost = (itemCost * qty).toFixed(2)
+        console.log('📊 Recalculated total_cost:', params.data.meta.total_cost)
+      } else {
+        console.log('💰 Item cost is 0, not applying mutual exclusion logic')
       }
       
       params.data.meta.item_cost = itemCost.toFixed(2)
@@ -666,6 +695,15 @@ const columnDefs: ColDef[] = [
     },
     valueSetter: (params) => {
       const totalCost = parseFloat(params.newValue) || 0
+      const currentTotalCost = parseFloat(params.data.meta?.total_cost || 0)
+      
+      // Se o valor não mudou, não fazer nada para evitar loops
+      if (totalCost === currentTotalCost) {
+        console.log('🔄 Total Cost valueSetter: Value unchanged, skipping')
+        return false
+      }
+      
+      console.log('🔄 Total Cost valueSetter: Changing from', currentTotalCost, 'to', totalCost, 'for row', params.data.id)
       
       // Se tem total_cost, bloquear labour e definir como material
       if (totalCost > 0) {
@@ -765,7 +803,7 @@ const gridOptions: GridOptions = {
   }
 }
 
-// Add new cost line
+// Add new cost line with automatic empty row
 function addNewItem() {
   console.log('➕ Adding new item...')
   console.log('📊 Current costLines before add:', costLines.value.map(line => ({ 
@@ -833,6 +871,45 @@ function addNewItem() {
       gridApi!.startEditingCell({ rowIndex: lastRowIndex, colKey: 'desc' })
     })
   }
+  
+  // Sempre garantir que há uma linha vazia após adicionar
+  nextTick(() => {
+    // Verificar se a última linha está vazia
+    const lastLine = costLines.value[costLines.value.length - 1]
+    const isEmpty = !lastLine.desc && 
+                   (lastLine.meta?.item_cost || 0) === 0 && 
+                   (lastLine.meta?.labour_minutes || 0) === 0
+    
+    if (!isEmpty) {
+      console.log('📝 Adding empty row for better UX')
+      // Adicionar linha vazia para melhor UX
+      const emptyLine: Partial<CostLine> = {
+        id: Date.now() + 1, // Ensure unique ID
+        kind: 'material',
+        desc: '',
+        quantity: '1',
+        unit_cost: '0',
+        unit_rev: '0',
+        meta: {
+          item_number: nextItemNumber.value++,
+          category: 'mainWork',
+          labour_minutes: 0,
+          item_cost: 0,
+          total_cost: 0,
+          is_new: true,
+          is_modified: false // Não marcada como modificada inicialmente
+        },
+        total_cost: 0,
+        total_rev: 0
+      }
+      
+      costLines.value.push(emptyLine as CostLine)
+      
+      if (gridApi) {
+        gridApi.applyTransaction({ add: [emptyLine] })
+      }
+    }
+  })
 }
 
 // Delete cost line - global function for button onclick
