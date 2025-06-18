@@ -226,7 +226,8 @@ const initializeDefaultRow = () => {
         item_cost: 0,
         total_cost: 0,
         is_new: true,
-        is_modified: false
+        is_modified: false,
+        empty_line: true // Flag para identificar linha inicial vazia
       },
       total_cost: 0,
       total_rev: 0
@@ -261,7 +262,8 @@ const ensureEmptyRowAtEnd = () => {
         item_cost: 0,
         total_cost: 0,
         is_new: true,
-        is_modified: false
+        is_modified: false,
+        empty_line: true // Flag para identificar linha vazia
       },
       total_cost: 0,
       total_rev: 0
@@ -421,12 +423,23 @@ async function saveChanges() {
     isSaving.value = true
     console.log('💾 Starting save process...')
 
-    // Filtrar apenas cost lines modificadas para otimizar salvamento
-    const modifiedCostLines = costLines.value.filter(line => 
-      line.meta?.is_modified || line.meta?.is_new
-    )
+    // Filtrar apenas cost lines modificadas e que não são linhas vazias
+    const modifiedCostLines = costLines.value.filter(line => {
+      // Filtrar linhas vazias (sem descrição ou com flag empty_line)
+      const isEmpty = !line.desc || line.desc.trim() === '' || line.meta?.empty_line === true
+      
+      // Filtrar linhas modificadas e não vazias
+      const isModified = line.meta?.is_modified || line.meta?.is_new
+      
+      if (isEmpty) {
+        console.log('🚫 Skipping empty line:', line.id, line.desc)
+        return false
+      }
+      
+      return isModified
+    })
 
-    console.log(`💾 Saving ${modifiedCostLines.length} modified cost lines`)
+    console.log(`💾 Saving ${modifiedCostLines.length} modified cost lines (filtered out empty lines)`)
 
     let savedCount = 0
     let createdCount = 0
