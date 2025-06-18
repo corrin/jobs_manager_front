@@ -115,7 +115,7 @@ interface FirstDataRenderedParams {
   api: GridApi
 }
 import { customTheme } from '@/plugins/ag-grid'
-import { createCostLine, updateCostLine } from '@/services/costline.service'
+import { createCostLine, updateCostLine, deleteCostLine } from '@/services/costline.service'
 import { fetchCostSet } from '@/services/costing.service'
 import type { CostLine } from '@/types/costing.types'
 
@@ -1048,7 +1048,7 @@ function addNewItem() {
 }
 
 // Delete cost line - global function for button onclick
-;(window as any).deleteCostLine = (costLineId: string) => {
+;(window as any).deleteCostLine = async (costLineId: string) => {
   console.log('🗑️ Attempting to delete cost line with ID:', costLineId)
   
   // Encontrar o índice correto usando conversão de tipos apropriada
@@ -1062,6 +1062,18 @@ function addNewItem() {
   if (index !== -1) {
     const lineToRemove = costLines.value[index]
     console.log('🗑️ Found line to remove at index:', index, lineToRemove)
+    
+    // Só deletar do backend se não for linha vazia/nova
+    if (!lineToRemove.meta?.empty_line && lineToRemove.id) {
+      try {
+        console.log('🗑️ Deleting from backend:', lineToRemove.id)
+        await deleteCostLine(Number(lineToRemove.id))
+        console.log('✅ Successfully deleted from backend')
+      } catch (error) {
+        console.error('❌ Failed to delete from backend:', error)
+        // Mesmo assim, continuar com a remoção do frontend para UX
+      }
+    }
     
     // Remover da array reativa
     costLines.value.splice(index, 1)
