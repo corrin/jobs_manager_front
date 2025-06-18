@@ -789,6 +789,7 @@ const columnDefs: ColDef[] = [
     headerName: 'Total Cost',
     field: 'meta.total_cost',
     width: 120,
+    hide: true, // Ocultar coluna mas manter toda a lógica
     editable: (params) => {
       // Só editable se não tem labour
       const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
