@@ -138,11 +138,9 @@
           </h4>
           <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
-              <table class="min-w-full text-sm">
-                <thead class="bg-gray-50">
+              <table class="min-w-full text-sm">                <thead class="bg-gray-50">
                   <tr>
-                    <th class="px-3 py-2 text-left font-medium text-gray-900">Supplier</th>
-                    <th class="px-3 py-2 text-left font-medium text-gray-900">Ref</th>
+                    <th class="px-3 py-2 text-left font-medium text-gray-900">Kind</th>
                     <th class="px-3 py-2 text-left font-medium text-gray-900">Description</th>
                     <th class="px-3 py-2 text-right font-medium text-gray-900">Qty</th>
                     <th class="px-3 py-2 text-right font-medium text-gray-900">Unit Cost</th>
@@ -155,9 +153,8 @@
                     :key="index"
                     class="hover:bg-gray-50"
                   >
-                    <td class="px-3 py-2 text-gray-900">{{ line.supplier }}</td>
-                    <td class="px-3 py-2 text-gray-600">{{ line.ref }}</td>
-                    <td class="px-3 py-2 text-gray-900">{{ line.description }}</td>
+                    <td class="px-3 py-2 text-gray-900">{{ line.kind }}</td>
+                    <td class="px-3 py-2 text-gray-900">{{ line.desc }}</td>
                     <td class="px-3 py-2 text-right text-gray-900">{{ line.quantity }}</td>
                     <td class="px-3 py-2 text-right text-gray-900">${{ line.unit_cost.toFixed(2) }}</td>
                     <td class="px-3 py-2 text-right font-medium text-gray-900">${{ line.total_cost.toFixed(2) }}</td>

@@ -8,9 +8,8 @@ export interface ValidationIssue {
 }
 
 export interface DraftLine {
-  supplier: string
-  ref: string
-  description: string
+  kind: string
+  desc: string
   quantity: number
   unit_cost: number
   total_cost: number
