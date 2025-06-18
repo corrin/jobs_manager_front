@@ -390,9 +390,6 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
     // Trigger de atualização manual dos computed values
     console.log('📈 Summary update triggered - Labour hours:', totalLabourHours.value, 'Material cost:', materialCostBeforeMarkup.value)
     
-    // Garantir linha vazia no final após qualquer mudança
-    ensureEmptyRowAtEnd()
-    
     // Forçar summary update
     triggerSummaryUpdate()
   })
@@ -876,24 +873,48 @@ function triggerSummaryUpdate() {
   })
 }
 
-// Add new cost line - simplified to just ensure empty row
+// Add new cost line - sempre criar uma nova linha quando solicitado
 function addNewItem() {
-  console.log('🎯 Shift+N pressed - ensuring empty row for new item')
+  console.log('🎯 Shift+N pressed - creating new empty line')
   
-  // Simplesmente garantir que há linha vazia - isso resolve o problema
-  ensureEmptyRowAtEnd()
+  // Sempre criar uma nova linha vazia
+  const newEmptyLine: Partial<CostLine> = {
+    id: Date.now() + Math.random(), // Ensure unique ID
+    kind: 'material',
+    desc: '',
+    quantity: '1',
+    unit_cost: '0',
+    unit_rev: '0',
+    meta: {
+      item_number: nextItemNumber.value++,
+      category: 'mainWork',
+      labour_minutes: 0,
+      item_cost: 0,
+      total_cost: 0,
+      is_new: true,
+      is_modified: false
+    },
+    total_cost: 0,
+    total_rev: 0
+  }
   
-  // Trigger summary update
-  triggerSummaryUpdate()
+  costLines.value.push(newEmptyLine as CostLine)
+  hasUnsavedChanges.value = true
   
-  // Focar na última linha (que será vazia)
+  // Adicionar no grid
   if (gridApi) {
+    gridApi.applyTransaction({ add: [newEmptyLine] })
+    
+    // Focar na nova linha
     nextTick(() => {
       const lastRowIndex = costLines.value.length - 1
       gridApi!.setFocusedCell(lastRowIndex, 'desc')
       gridApi!.startEditingCell({ rowIndex: lastRowIndex, colKey: 'desc' })
     })
   }
+  
+  // Trigger summary update
+  triggerSummaryUpdate()
 }
 
 // Delete cost line - global function for button onclick
