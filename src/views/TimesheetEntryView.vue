@@ -406,7 +406,9 @@ const {
   setGridApi,
   loadData,
   addNewRow,
+  ensureEmptyRowAtEnd,
   getGridData,
+  handleKeyboardShortcut,
   handleCellValueChanged: gridHandleCellValueChanged
 } = useTimesheetEntryGrid(
   companyDefaults,
@@ -726,8 +728,10 @@ function onCellClicked(event: CellClickedEvent) {
 
 // Action handlers
 const addNewEntry = () => {
-  // Use the grid's addNewRow function which handles everything properly
-  addNewRow(selectedStaffId.value, currentDate.value)
+  console.log('➕ Adding new entry for staff:', selectedStaffId.value)
+  
+  // Ensure there's always an empty row at the end
+  ensureEmptyRowAtEnd(selectedStaffId.value)
   hasUnsavedChanges.value = true
 }
 
@@ -899,6 +903,9 @@ const loadTimesheetData = async () => {
 
     console.log(`✅ Loaded ${timeEntries.value.length} timesheet entries`)
 
+    // Ensure there's always an empty row at the end
+    ensureEmptyRowAtEnd(selectedStaffId.value)
+
   } catch (err) {
     console.error('❌ Error loading timesheet data:', err)
     error.value = 'Failed to load timesheet data'
@@ -920,6 +927,18 @@ const getRateTypeFromMultiplier = (multiplier: number): string => {
 
 // Keyboard shortcuts
 const handleKeydown = (event: KeyboardEvent) => {
+  // Só processar se não estamos dentro de um input/textarea
+  const target = event.target as HTMLElement
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+    return
+  }
+
+  // Handle grid-specific shortcuts first
+  if (handleKeyboardShortcut(event, selectedStaffId.value)) {
+    return // Grid handled the shortcut
+  }
+
+  // Handle global shortcuts
   if (event.ctrlKey || event.metaKey) {
     switch (event.key) {
       case 'n':
@@ -933,6 +952,14 @@ const handleKeydown = (event: KeyboardEvent) => {
         }
         break
     }
+  }
+
+  // Handle Shift+N like JobEstimateTab
+  if (event.shiftKey && event.key === 'N') {
+    event.preventDefault()
+    event.stopPropagation()
+    console.log('🎯 Shift+N pressed - adding new entry')
+    addNewEntry()
   }
 }
 

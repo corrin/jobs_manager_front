@@ -157,6 +157,17 @@
               Estimate
             </button>
             <button
+              @click="activeTab = 'quote'"
+              :class="[
+                'flex-1 py-3 px-2 text-sm font-medium text-center border-b-2 transition-colors',
+                activeTab === 'quote'
+                  ? 'border-blue-500 text-blue-600 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              ]"
+            >
+              Quote
+            </button>
+            <button
               @click="activeTab = 'financial'"
               :class="[
                 'flex-1 py-3 px-2 text-sm font-medium text-center border-b-2 transition-colors',
@@ -196,6 +207,17 @@
               Estimate
             </button>
             <button
+              @click="activeTab = 'quote'"
+              :class="[
+                'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
+                activeTab === 'quote'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ]"
+            >
+              Quote Import
+            </button>
+            <button
               @click="activeTab = 'financial'"
               :class="[
                 'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
@@ -229,6 +251,15 @@
               v-if="jobData && companyDefaults"
               :job-id="jobData.id"
               :company-defaults="companyDefaults"
+            />
+          </div>
+
+          <!-- Quote Tab -->
+          <div v-if="activeTab === 'quote'" class="h-full p-4 md:p-6">
+            <JobQuoteTab
+              v-if="jobData"
+              :job-id="jobData.id"
+              @quote-imported="handleQuoteImported"
             />
           </div>
 
@@ -384,6 +415,7 @@ import {
 
 import AppLayout from '@/components/AppLayout.vue'
 import JobEstimateTab from '@/components/job/JobEstimateTab.vue'
+import JobQuoteTab from '@/components/job/JobQuoteTab.vue'
 import JobFinancialTab from '@/components/job/JobFinancialTab.vue'
 import JobCostAnalysisTab from '@/components/job/JobCostAnalysisTab.vue'
 import JobSettingsModal from '@/components/job/JobSettingsModal.vue'
@@ -559,7 +591,7 @@ const showAttachmentsModal = ref(false)
 const showPdfDialog = ref(false)
 
 // Tab state
-const activeTab = ref<'estimate' | 'financial' | 'costAnalysis'>('estimate')
+const activeTab = ref<'estimate' | 'financial' | 'quote' | 'costAnalysis'>('estimate')
 
 // Early return pattern para navegação
 const navigateBack = () => {
@@ -633,6 +665,17 @@ const handleInvoiceCreated = async () => {
   if (jobId.value) {
     // Usar o composable para recarregar dados de forma reativa
     await reloadJobDataReactively(jobId.value)
+  }
+}
+
+// Handler para importação de quote
+const handleQuoteImported = async (result: any) => {
+  if (jobId.value) {
+    console.log('✅ Quote imported successfully:', result)
+    // Recarregar dados para refletir a nova quote
+    await reloadJobDataReactively(jobId.value)
+    // Notificar sucesso
+    // TODO: Adicionar notificação toast quando implementarmos
   }
 }
 

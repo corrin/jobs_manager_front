@@ -211,6 +211,7 @@ export function useTimesheetEntryGrid(
     },
     onRowDoubleClicked: handleRowDoubleClicked,
     onCellClicked: handleCellClicked,
+    onCellKeyDown: handleCellKeyDown,
     getRowStyle: (params: any) => {
       // Highlight new rows
       if (params.data.isNewRow) {
@@ -315,6 +316,8 @@ export function useTimesheetEntryGrid(
       // Auto-save new rows when they have enough data
       if (data.isNewRow && isRowComplete(updatedEntry) && event.node.rowIndex !== null) {
         await saveNewRow(event.node.rowIndex, updatedEntry)
+        // Ensure there's always an empty row at the end
+        ensureEmptyRowAtEnd(data.staffId)
       }
 
     } catch (error) {
@@ -343,6 +346,78 @@ export function useTimesheetEntryGrid(
     if (event.event.target?.classList.contains('delete-btn')) {
       const rowIndex = parseInt(event.event.target.dataset.rowId)
       deleteRow(rowIndex)
+    }
+  }
+
+  function handleCellKeyDown(params: any): void {
+    const { event, api, node, column } = params
+    console.log('⌨️ Cell key down:', {
+      key: event.key,
+      shiftKey: event.shiftKey,
+      column: column.colId,
+      rowIndex: node.rowIndex
+    })
+
+    switch (event.key) {
+      case 'Escape':
+        console.log('ESC pressed - stopping edit')
+        // Column is not editable, skip
+        if (!column.colDef.editable) {
+          return
+        }
+        api.stopEditing(true)
+        break
+
+      case 'Enter':
+        const isLastRow = api.getDisplayedRowCount() - 1 === node.rowIndex
+
+        // Shift + Enter is for confirming edits
+        if (event.shiftKey) {
+          console.log('Shift+Enter pressed - confirming edit or toggling billable')
+          
+          // Special handling for billable column
+          if (column.colId === 'billable') {
+            event.preventDefault()
+            node.data.billable = !node.data.billable
+            api.refreshCells({
+              rowNodes: [node],
+              force: true
+            })
+            
+            // Trigger recalculation
+            const entry = createEntryFromRowData(node.data)
+            const recalculated = calculations.recalculateEntry(entry)
+            updateRowData(node.rowIndex, recalculated)
+          }
+          break
+        }
+
+        // Regular Enter on last row adds new row
+        if (isLastRow && !event.shiftKey) {
+          console.log('Enter pressed on last row - adding new row')
+          event.preventDefault()
+          
+          // Get current staff ID from the row data
+          const staffId = node.data.staffId || ''
+          addNewRow(staffId)
+          
+          // Focus the new row's first editable cell
+          setTimeout(() => {
+            if (api && !api.isDestroyed()) {
+              const newRowIndex = api.getDisplayedRowCount() - 1
+              api.setFocusedCell(newRowIndex, 'jobNumber')
+              api.startEditingCell({
+                rowIndex: newRowIndex,
+                colKey: 'jobNumber'
+              })
+            }
+          }, 100)
+        }
+        break
+
+      default:
+        // Let other keys pass through normally
+        break
     }
   }
 
@@ -381,7 +456,7 @@ export function useTimesheetEntryGrid(
 
   function isRowComplete(entry: TimesheetEntry): boolean {
     return !!(
-      entry.jobId &&
+      entry.jobNumber &&
       entry.hours > 0 &&
       entry.description.trim()
     )
@@ -466,21 +541,39 @@ export function useTimesheetEntryGrid(
     })))
 
     const rows: TimesheetEntryGridRow[] = entries.map(entry => ({ ...entry }))
-
     gridData.value = rows
     console.log('✅ Grid data updated with', gridData.value.length, 'rows')
 
-    // Add new row if needed
+    // Always ensure there's an empty row at the end
     nextTick(() => {
-      if (!gridData.value.some((row: TimesheetEntryGridRow) => row.isNewRow)) {
-        console.log('➕ Adding new row for staff:', staffId)
-        addNewRow(staffId)
-      } else {
-        console.log('⏭️ New row already exists, skipping')
-      }
+      ensureEmptyRowAtEnd(staffId)
     })
   }
 
+  function ensureEmptyRowAtEnd(staffId?: string): void {
+    console.log('🔍 Checking if empty row exists at end...')
+    
+    if (gridData.value.length === 0) {
+      console.log('📝 No rows exist, adding first empty row')
+      addNewRow(staffId)
+      return
+    }
+
+    const lastRow = gridData.value[gridData.value.length - 1]
+    const isLastRowEmpty = lastRow.isNewRow && 
+      !lastRow.jobNumber && 
+      (!lastRow.description || lastRow.description.trim() === '') && 
+      lastRow.hours === 0
+
+    if (!isLastRowEmpty) {
+      console.log('📝 Adding empty row at end for better UX')
+      addNewRow(staffId)
+    } else {
+      console.log('✅ Empty row already exists at end')
+    }
+  }
+
+  // Modified addNewRow to use ensureEmptyRowAtEnd
   function addNewRow(staffId?: string, date?: string): void {
     console.log('➕ addNewRow called with staffId:', staffId, 'date:', date)
 
@@ -607,6 +700,7 @@ export function useTimesheetEntryGrid(
     setGridApi,
     loadData,
     addNewRow,
+    ensureEmptyRowAtEnd,
     focusFirstEditableCell,
     getSelectedEntry,
     getGridData,
