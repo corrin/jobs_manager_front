@@ -82,10 +82,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const initializeAuth = async (): Promise<void> => {
+  const initializeAuth = async (): Promise<boolean> => {
     // Simply check if user is logged in
     // httpOnly cookies will be sent automatically if they exist
-    await userIsLogged()
+    return await userIsLogged()
   }
 
   return {

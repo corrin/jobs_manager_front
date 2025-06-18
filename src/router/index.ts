@@ -97,13 +97,20 @@ router.beforeEach(async (to, from, next) => {
     document.title = to.meta.title as string
   }
 
+  // Prevent redirect loops - if we're already going to login, just proceed
+  if (to.name === 'login') {
+    next()
+    return
+  }
+
   // Check if route requires authentication
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
       // Try to initialize auth from stored tokens
-      await authStore.initializeAuth()
+      const wasAuthenticated = await authStore.initializeAuth()
 
-      if (!authStore.isAuthenticated) {
+      // If still not authenticated after initialization, redirect to login
+      if (!authStore.isAuthenticated && !wasAuthenticated) {
         // Redirect to login with return path
         next({
           name: 'login',

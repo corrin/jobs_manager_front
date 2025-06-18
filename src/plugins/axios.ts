@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
+import router from '@/router'
 
 // Set default base URL and enable credentials for httpOnly cookies
 // Determine API base URL based on current environment
@@ -30,18 +31,39 @@ axios.interceptors.request.use(
   }
 )
 
+// Response interceptor - handle auth errors
+let isRedirecting = false // Flag to prevent multiple redirects
+
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
     const authStore = useAuthStore()
     const isAuthError = error.response?.status === 401
-    const isNotOnLoginPage = window.location.pathname !== '/login'
+    const currentPath = router.currentRoute.value.path
+    const isOnLoginPage = currentPath === '/login'
 
-    if (isAuthError && isNotOnLoginPage) {
+    // Only handle auth errors if we're not already on login page and not already redirecting
+    if (isAuthError && !isOnLoginPage && !isRedirecting) {
       console.warn('Authentication failed - cookies may have expired')
-
-      await authStore.logout()
-      window.location.href = '/login'
+      
+      isRedirecting = true
+      
+      try {
+        // Clear user state using the store's logout method
+        await authStore.logout()
+        
+        // Use router navigation instead of window.location to prevent conflicts
+        await router.push({ name: 'login', query: { redirect: currentPath } })
+      } catch (redirectError) {
+        console.error('Error during auth redirect:', redirectError)
+        // Fallback to window redirect if router fails
+        window.location.href = '/login'
+      } finally {
+        // Reset flag after a short delay to allow for page transition
+        setTimeout(() => {
+          isRedirecting = false
+        }, 1000)
+      }
     }
 
     return Promise.reject(error)

@@ -498,12 +498,27 @@ async function saveChanges() {
 
 // Função para preparar payload da CostLine para API
 function prepareCostLinePayload(costLine: CostLine) {
+  // Calcular campos principais baseados nos meta
+  let calculatedUnitCost = '0.00'
+  let calculatedUnitRev = '0.00'
+  
+  if (costLine.meta?.labour_minutes && costLine.meta.labour_minutes > 0) {
+    // Para items de tempo: unit_cost = (labour_minutes/60) * wage_rate, unit_rev = (labour_minutes/60) * charge_out_rate
+    const hours = costLine.meta.labour_minutes / 60
+    calculatedUnitCost = (hours * wageRate.value).toFixed(2)
+    calculatedUnitRev = (hours * chargeOutRate.value).toFixed(2)
+  } else if (costLine.meta?.item_cost && parseFloat(String(costLine.meta.item_cost)) > 0) {
+    // Para items de material: unit_cost = item_cost, unit_rev = item_cost (assumindo markup = 0 por enquanto)
+    calculatedUnitCost = String(costLine.meta.item_cost)
+    calculatedUnitRev = String(costLine.meta.item_cost) // Pode ser ajustado com markup depois
+  }
+
   return {
     kind: costLine.kind,
     desc: costLine.desc,
     quantity: costLine.quantity,
-    unit_cost: costLine.unit_cost,
-    unit_rev: costLine.unit_rev,
+    unit_cost: calculatedUnitCost,
+    unit_rev: calculatedUnitRev,
     meta: {
       ...costLine.meta,
       // Garantir que temos os campos necessários
@@ -543,11 +558,38 @@ const columnDefs: ColDef[] = [
       // Keep quantity as string since it's stored as string in the data model
       params.data.quantity = qty.toString()
       
-      // Recalcular total_cost se tem item_cost
-      const itemCost = parseFloat(String(params.data.meta?.item_cost || 0))
-      if (itemCost > 0 && !params.data.meta?.labour_minutes) {
-        params.data.meta.total_cost = Number((qty * itemCost).toFixed(2))
-        console.log('📊 Recalculated total_cost:', params.data.meta.total_cost)
+      // Recalcular baseado no tipo de item
+      if (params.data.meta?.labour_minutes && params.data.meta.labour_minutes > 0) {
+        // Para items de tempo: recalcular baseado nas horas
+        const hours = params.data.meta.labour_minutes / 60
+        const unitCost = (hours * wageRate.value).toFixed(2)
+        const unitRev = (hours * chargeOutRate.value).toFixed(2)
+        
+        params.data.unit_cost = unitCost
+        params.data.unit_rev = unitRev
+        params.data.total_cost = parseFloat(unitCost) * qty
+        params.data.total_rev = parseFloat(unitRev) * qty
+        
+        console.log(`💼 Updated DB fields for labour quantity change: qty=${qty}, total_cost=${params.data.total_cost}`)
+      } else {
+        // Para items de material: recalcular total_cost se tem item_cost
+        const itemCost = parseFloat(String(params.data.meta?.item_cost || 0))
+        if (itemCost > 0) {
+          const totalCost = Number((qty * itemCost).toFixed(2))
+          params.data.meta.total_cost = totalCost
+          
+          // Atualizar campos principais do banco
+          const unitCost = itemCost.toFixed(2)
+          const unitRev = itemCost.toFixed(2)
+          
+          params.data.unit_cost = unitCost
+          params.data.unit_rev = unitRev
+          params.data.total_cost = totalCost
+          params.data.total_rev = totalCost
+          
+          console.log(`💼 Updated DB fields for material quantity change: qty=${qty}, total_cost=${totalCost}`)
+          console.log('📊 Recalculated total_cost:', totalCost)
+        }
       }
       
       // Marcar como modificado
@@ -619,6 +661,20 @@ const columnDefs: ColDef[] = [
         params.data.meta.total_cost = 0
         params.data.meta.category = 'fabrication'
         params.data.kind = 'time'
+        
+        // Atualizar campos principais do banco baseados no labour
+        const hours = minutes / 60
+        const quantity = hours.toString()
+        const unitCost = (hours * wageRate.value).toFixed(2)
+        const unitRev = (hours * chargeOutRate.value).toFixed(2)
+        
+        params.data.quantity = quantity
+        params.data.unit_cost = unitCost
+        params.data.unit_rev = unitRev
+        params.data.total_cost = parseFloat(unitCost) * hours
+        params.data.total_rev = parseFloat(unitRev) * hours
+        
+        console.log(`💼 Updated DB fields for labour: qty=${quantity}, unit_cost=${unitCost}, unit_rev=${unitRev}`)
       }
       
       // Ensure we're setting a number value for labour_minutes
@@ -699,8 +755,20 @@ const columnDefs: ColDef[] = [
         
         // Recalcular total_cost automaticamente
         const qty = parseFloat(params.data.quantity) || 1
-        params.data.meta.total_cost = Number((itemCost * qty).toFixed(2))
-        console.log('📊 Recalculated total_cost:', params.data.meta.total_cost)
+        const totalCost = Number((itemCost * qty).toFixed(2))
+        params.data.meta.total_cost = totalCost
+        
+        // Atualizar campos principais do banco baseados no item_cost
+        const unitCost = itemCost.toFixed(2)
+        const unitRev = itemCost.toFixed(2) // Assumindo markup = 0 por enquanto
+        
+        params.data.unit_cost = unitCost
+        params.data.unit_rev = unitRev
+        params.data.total_cost = totalCost
+        params.data.total_rev = totalCost
+        
+        console.log(`💼 Updated DB fields for material: qty=${qty}, unit_cost=${unitCost}, unit_rev=${unitRev}, total_cost=${totalCost}`)
+        console.log('📊 Recalculated total_cost:', totalCost)
       } else {
         console.log('💰 Item cost is 0, not applying mutual exclusion logic')
       }
@@ -775,7 +843,19 @@ const columnDefs: ColDef[] = [
         
         // Recalcular item_cost baseado no total_cost e quantity
         const qty = parseFloat(params.data.quantity) || 1
-        params.data.meta.item_cost = qty > 0 ? Number((totalCost / qty).toFixed(2)) : 0
+        const itemCost = qty > 0 ? Number((totalCost / qty).toFixed(2)) : 0
+        params.data.meta.item_cost = itemCost
+        
+        // Atualizar campos principais do banco baseados no total_cost
+        const unitCost = itemCost.toFixed(2)
+        const unitRev = itemCost.toFixed(2) // Assumindo markup = 0 por enquanto
+        
+        params.data.unit_cost = unitCost
+        params.data.unit_rev = unitRev
+        params.data.total_cost = totalCost
+        params.data.total_rev = totalCost
+        
+        console.log(`💼 Updated DB fields for total_cost: qty=${qty}, unit_cost=${unitCost}, unit_rev=${unitRev}, total_cost=${totalCost}`)
       }
       
       // Ensure we're setting a number value for total_cost

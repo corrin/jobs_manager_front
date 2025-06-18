@@ -20,7 +20,11 @@ console.log(useFeatureFlags().isCostingApiEnabled)
 
 onMounted(async () => {
   // Try to initialize auth from stored tokens
-  await authStore.initializeAuth()
+  try {
+    await authStore.initializeAuth()
+  } catch (error) {
+    console.warn('Failed to initialize auth on app start:', error)
+  }
 })
 
 // Test function for costing store
