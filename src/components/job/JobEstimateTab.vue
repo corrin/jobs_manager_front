@@ -307,16 +307,22 @@ const loadExistingEstimateData = async () => {
       return
     }
 
-    // Processar cost lines com nova estrutura
+    // Processar cost lines com nova estrutura e normalizar tipos
     const processedCostLines = costSet.cost_lines.map((line, index) => ({
       ...line,
+      // Garantir que quantity é sempre string
+      quantity: String(line.quantity || '1'),
+      // Garantir que unit_cost e unit_rev são strings
+      unit_cost: String(line.unit_cost || '0'),
+      unit_rev: String(line.unit_rev || '0'),
       meta: {
         ...line.meta,
         item_number: index + 1,
         category: line.meta?.category || (line.meta?.labour_minutes ? 'fabrication' : 'mainWork'),
-        labour_minutes: line.meta?.labour_minutes || 0,
-        item_cost: line.meta?.item_cost || 0,
-        total_cost: line.meta?.total_cost || 0,
+        // Garantir que valores numéricos são numbers
+        labour_minutes: Number(line.meta?.labour_minutes || 0),
+        item_cost: Number(line.meta?.item_cost || 0),
+        total_cost: Number(line.meta?.total_cost || 0),
         is_new: false,
         is_modified: false
       }
@@ -528,13 +534,14 @@ const columnDefs: ColDef[] = [
       precision: 2
     },
     valueFormatter: (params) => {
-      const value = parseFloat(params.value) || 1
-      return value.toString()
+      // Ensure we handle both string and number values
+      const value = typeof params.value === 'string' ? parseFloat(params.value) : (params.value || 1)
+      return isNaN(value) ? '1' : value.toString()
     },
     valueSetter: (params) => {
       const qty = parseFloat(params.newValue) || 1
-      // Ensure we're setting a string value for quantity
-      params.data.quantity = String(qty)
+      // Keep quantity as string since it's stored as string in the data model
+      params.data.quantity = qty.toString()
       
       // Recalcular total_cost se tem item_cost
       const itemCost = parseFloat(String(params.data.meta?.item_cost || 0))
