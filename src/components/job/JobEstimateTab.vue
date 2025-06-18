@@ -530,6 +530,16 @@ const columnDefs: ColDef[] = [
       precision: 3,
       step: 0.01
     },
+    valueParser: (params) => {
+      // Converter vírgula para ponto para compatibilidade com locale brasileiro
+      if (typeof params.newValue === 'string') {
+        const normalizedValue = params.newValue.replace(',', '.')
+        const parsed = parseFloat(normalizedValue)
+        return isNaN(parsed) ? '1.000' : parsed.toFixed(3) // Retornar como string formatada
+      }
+      const parsed = parseFloat(params.newValue) || 1
+      return parsed.toFixed(3) // Retornar como string formatada
+    },
     valueFormatter: (params) => {
       // Ensure we handle both string and number values properly
       const value = params.value
