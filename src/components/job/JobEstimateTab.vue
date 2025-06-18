@@ -43,70 +43,51 @@
         <!-- Header -->
         <h3 class="text-sm font-semibold text-gray-900 mb-3">Summary</h3>
 
-        <!-- Main Calculations - Conforme especificação -->
+        <!-- Main Calculations - Simplificado conforme nova especificação -->
         <div class="space-y-2 mb-3">
-          <!-- Labour Hours Cost -->
+          <!-- Labour Cost (primeira linha) -->
           <div class="bg-blue-50 p-2 rounded border border-blue-200">
             <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-blue-800">Labour Hours Cost</div>
-              <div class="text-sm font-bold text-blue-900">{{ formatCurrency(labourHoursCost) }}</div>
+              <div class="text-xs font-medium text-blue-800">Labour Cost</div>
+              <div class="text-sm font-bold text-blue-900">{{ formatCurrency(totalLabourCost) }}</div>
             </div>
-            <div class="text-xs text-blue-600">{{ totalLabourHours.toFixed(1) }}h × ${{ chargeOutRate }}/h</div>
+            <div class="text-xs text-blue-600">{{ totalLabourHours.toFixed(1) }}h × ${{ wageRate }}/h (internal)</div>
           </div>
 
-          <!-- Material Cost (Before Markup) -->
+          <!-- Material Cost (segunda linha) -->
           <div class="bg-green-50 p-2 rounded border border-green-200">
             <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-green-800">Cost before MU</div>
+              <div class="text-xs font-medium text-green-800">Material Cost</div>
               <div class="text-sm font-bold text-green-900">{{ formatCurrency(materialCostBeforeMarkup) }}</div>
             </div>
             <div class="text-xs text-green-600">Total material costs</div>
           </div>
 
-          <!-- Material Cost (After Markup) -->
+          <!-- Labour Revenue -->
           <div class="bg-orange-50 p-2 rounded border border-orange-200">
             <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-orange-800">Total cost + MU</div>
-              <div class="text-sm font-bold text-orange-900">{{ formatCurrency(materialCostAfterMarkup) }}</div>
+              <div class="text-xs font-medium text-orange-800">Labour Revenue</div>
+              <div class="text-sm font-bold text-orange-900">{{ formatCurrency(labourHoursCost) }}</div>
             </div>
-            <div class="text-xs text-orange-600">{{ materialMarkupPercent }}% markup</div>
+            <div class="text-xs text-orange-600">{{ totalLabourHours.toFixed(1) }}h × ${{ chargeOutRate }}/h</div>
           </div>
 
-          <!-- Final Cost -->
+          <!-- Material Revenue -->
+          <div class="bg-yellow-50 p-2 rounded border border-yellow-200">
+            <div class="flex justify-between items-center">
+              <div class="text-xs font-medium text-yellow-800">Material Revenue</div>
+              <div class="text-sm font-bold text-yellow-900">{{ formatCurrency(materialCostAfterMarkup) }}</div>
+            </div>
+            <div class="text-xs text-yellow-600">{{ materialMarkupPercent }}% markup</div>
+          </div>
+
+          <!-- Total Revenue -->
           <div class="bg-purple-50 p-2 rounded border border-purple-200">
             <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-purple-800">Final Cost</div>
+              <div class="text-xs font-medium text-purple-800">Total Revenue</div>
               <div class="text-base font-bold text-purple-900">{{ formatCurrency(finalCost) }}</div>
             </div>
-            <div class="text-xs text-purple-600">Labour + Materials + MU</div>
-          </div>
-
-          <!-- Total Labour Cost (Internal) -->
-          <div class="bg-gray-50 p-2 rounded border border-gray-200">
-            <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-gray-700">Total Labour Cost</div>
-              <div class="text-sm font-medium text-gray-800">{{ formatCurrency(totalLabourCost) }}</div>
-            </div>
-            <div class="text-xs text-gray-500">{{ totalLabourHours.toFixed(1) }}h × ${{ wageRate }}/h (internal)</div>
-          </div>
-        </div>
-
-        <!-- Categories Summary - Compact -->
-        <div class="border-t pt-2">
-          <h4 class="text-xs font-medium text-gray-900 mb-2">Categories</h4>
-          <div class="space-y-1">
-            <div class="bg-white p-2 rounded border text-xs">
-              <div class="flex justify-between">
-                <span class="font-medium">Fabrication ({{ fabricationItems }})</span>
-                <span class="font-semibold">{{ formatCurrency(fabricationCost) }}</span>
-              </div>
-            </div>
-            <div class="bg-white p-2 rounded border text-xs">
-              <div class="flex justify-between">
-                <span class="font-medium">Main Work ({{ mainWorkItems }})</span>
-                <span class="font-semibold">{{ formatCurrency(mainWorkCost) }}</span>
-              </div>
-            </div>
+            <div class="text-xs text-purple-600">Labour + Material Revenue</div>
           </div>
         </div>
       </div>
