@@ -593,24 +593,22 @@ const columnDefs: ColDef[] = [
       
       // Recalcular baseado no tipo de item
       if (params.data.meta?.labour_minutes && params.data.meta.labour_minutes > 0) {
-        // Para items de tempo: recalcular baseado nas horas e ajustar labour_minutes pela quantidade
-        const originalMinutes = params.data.meta.labour_minutes
-        const originalQty = currentQty
-        const minutesPerUnit = originalMinutes / originalQty // minutos por unidade
-        const newTotalMinutes = minutesPerUnit * qty // novos minutos totais
+        // Para items de tempo: labour_minutes permanece FIXO (tempo por unidade)
+        // Quantity apenas multiplica o resultado final
+        const minutesPerUnit = params.data.meta.labour_minutes // tempo fixo por unidade
+        const hoursPerUnit = minutesPerUnit / 60
         
-        params.data.meta.labour_minutes = newTotalMinutes
+        // Calcular custo e revenue por unidade (não mudam com quantity)
+        const unitCost = (hoursPerUnit * wageRate.value).toFixed(2)
+        const unitRev = (hoursPerUnit * chargeOutRate.value).toFixed(2)
         
-        const hours = newTotalMinutes / 60
-        const unitCost = (hours / qty * wageRate.value).toFixed(2) // custo por unidade
-        const unitRev = (hours / qty * chargeOutRate.value).toFixed(2) // revenue por unidade
-        
+        // Total = unit_cost/unit_rev * quantity
         params.data.unit_cost = unitCost
         params.data.unit_rev = unitRev
         params.data.total_cost = parseFloat(unitCost) * qty
         params.data.total_rev = parseFloat(unitRev) * qty
         
-        console.log(`💼 Updated DB fields for labour quantity change: qty=${qty}, labour_minutes=${newTotalMinutes}, total_cost=${params.data.total_cost}`)
+        console.log(`💼 Updated DB fields for labour quantity change: qty=${qty}, labour_minutes=${minutesPerUnit} (fixed per unit), total_cost=${params.data.total_cost}`)
       } else {
         // Para items de material: recalcular total_cost se tem item_cost
         const itemCost = parseFloat(String(params.data.meta?.item_cost || 0))
