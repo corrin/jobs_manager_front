@@ -165,19 +165,30 @@ const wageRate = computed(() => props.companyDefaults?.wage_rate || 60)
 
 // Summary calculations - conforme especificação
 const totalLabourHours = computed(() => {
-  return costLines.value
-    .filter(line => line.meta?.labour_minutes)
-    .reduce((total, line) => total + (parseFloat(String(line.meta?.labour_minutes || 0)) || 0), 0) / 60
+  // Corrigir: somar (labour_minutes * quantity) / 60 para considerar quantidade
+  const labourLines = costLines.value.filter(line => line.meta?.labour_minutes && line.meta.labour_minutes > 0)
+  const totalMinutes = labourLines.reduce((total, line) => {
+    const labourMinutes = parseFloat(String(line.meta?.labour_minutes || 0)) || 0
+    const quantity = parseFloat(String(line.quantity || 1)) || 1
+    return total + (labourMinutes * quantity)
+  }, 0)
+  const hours = totalMinutes / 60
+  console.log('⏰ Labour calculation - Lines:', labourLines.length, 'Total minutes:', totalMinutes, 'Hours:', hours)
+  return hours
 })
 
 const labourHoursCost = computed(() => {
   // Labour Hours Cost = (total minutos / 60) * charge_out_rate
-  return totalLabourHours.value * chargeOutRate.value
+  const cost = totalLabourHours.value * chargeOutRate.value
+  console.log('💰 Labour Hours Cost calculation - Hours:', totalLabourHours.value, 'Rate:', chargeOutRate.value, 'Cost:', cost)
+  return cost
 })
 
 const totalLabourCost = computed(() => {
   // Total Labour Cost (interno) = (total minutos / 60) * wage_rate
-  return totalLabourHours.value * wageRate.value
+  const cost = totalLabourHours.value * wageRate.value
+  console.log('💼 Total Labour Cost calculation - Hours:', totalLabourHours.value, 'Wage:', wageRate.value, 'Cost:', cost)
+  return cost
 })
 
 const materialCostBeforeMarkup = computed(() => {
@@ -480,26 +491,29 @@ async function saveChanges() {
 // Função para preparar payload da CostLine para API
 function prepareCostLinePayload(costLine: CostLine) {
   // Calcular campos principais baseados nos meta
-  let calculatedUnitCost = '0.00'
-  let calculatedUnitRev = '0.00'
+  let calculatedUnitCost = 0.00
+  let calculatedUnitRev = 0.00
   
   if (costLine.meta?.labour_minutes && costLine.meta.labour_minutes > 0) {
     // Para items de tempo: unit_cost = (labour_minutes/60) * wage_rate, unit_rev = (labour_minutes/60) * charge_out_rate
     const hours = costLine.meta.labour_minutes / 60
-    calculatedUnitCost = (hours * wageRate.value).toFixed(2)
-    calculatedUnitRev = (hours * chargeOutRate.value).toFixed(2)
+    calculatedUnitCost = Number((hours * wageRate.value).toFixed(2))
+    calculatedUnitRev = Number((hours * chargeOutRate.value).toFixed(2))
   } else if (costLine.meta?.item_cost && parseFloat(String(costLine.meta.item_cost)) > 0) {
     // Para items de material: unit_cost = item_cost, unit_rev = item_cost (assumindo markup = 0 por enquanto)
-    calculatedUnitCost = String(costLine.meta.item_cost)
-    calculatedUnitRev = String(costLine.meta.item_cost) // Pode ser ajustado com markup depois
+    calculatedUnitCost = Number(costLine.meta.item_cost)
+    calculatedUnitRev = Number(costLine.meta.item_cost) // Pode ser ajustado com markup depois
   }
 
-  return {
+  // Garantir que quantity é um número válido
+  const numericQuantity = parseFloat(String(costLine.quantity)) || 1.0
+
+  const payload = {
     kind: costLine.kind,
-    desc: costLine.desc,
-    quantity: costLine.quantity,
-    unit_cost: calculatedUnitCost,
-    unit_rev: calculatedUnitRev,
+    desc: costLine.desc || '',
+    quantity: numericQuantity.toFixed(3), // Enviar como string formatada para DecimalField
+    unit_cost: calculatedUnitCost.toFixed(2), // Enviar como string formatada para DecimalField
+    unit_rev: calculatedUnitRev.toFixed(2), // Enviar como string formatada para DecimalField
     meta: {
       ...costLine.meta,
       // Garantir que temos os campos necessários
@@ -507,6 +521,9 @@ function prepareCostLinePayload(costLine: CostLine) {
       category: costLine.meta?.category || (costLine.meta?.labour_minutes ? 'fabrication' : 'mainWork')
     }
   }
+  
+  console.log('📦 Prepared payload for cost line:', costLine.id, payload)
+  return payload
 }
 
 // AG Grid Configuration - conforme especificação
@@ -563,17 +580,24 @@ const columnDefs: ColDef[] = [
       
       // Recalcular baseado no tipo de item
       if (params.data.meta?.labour_minutes && params.data.meta.labour_minutes > 0) {
-        // Para items de tempo: recalcular baseado nas horas
-        const hours = params.data.meta.labour_minutes / 60
-        const unitCost = (hours * wageRate.value).toFixed(2)
-        const unitRev = (hours * chargeOutRate.value).toFixed(2)
+        // Para items de tempo: recalcular baseado nas horas e ajustar labour_minutes pela quantidade
+        const originalMinutes = params.data.meta.labour_minutes
+        const originalQty = currentQty
+        const minutesPerUnit = originalMinutes / originalQty // minutos por unidade
+        const newTotalMinutes = minutesPerUnit * qty // novos minutos totais
+        
+        params.data.meta.labour_minutes = newTotalMinutes
+        
+        const hours = newTotalMinutes / 60
+        const unitCost = (hours / qty * wageRate.value).toFixed(2) // custo por unidade
+        const unitRev = (hours / qty * chargeOutRate.value).toFixed(2) // revenue por unidade
         
         params.data.unit_cost = unitCost
         params.data.unit_rev = unitRev
         params.data.total_cost = parseFloat(unitCost) * qty
         params.data.total_rev = parseFloat(unitRev) * qty
         
-        console.log(`💼 Updated DB fields for labour quantity change: qty=${qty}, total_cost=${params.data.total_cost}`)
+        console.log(`💼 Updated DB fields for labour quantity change: qty=${qty}, labour_minutes=${newTotalMinutes}, total_cost=${params.data.total_cost}`)
       } else {
         // Para items de material: recalcular total_cost se tem item_cost
         const itemCost = parseFloat(String(params.data.meta?.item_cost || 0))
