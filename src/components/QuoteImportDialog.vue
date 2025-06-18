@@ -129,16 +129,32 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Draft Lines Preview -->
+        </div>        <!-- Draft Lines Preview -->
         <div v-if="previewData.preview.draft_lines?.length > 0" class="draft-lines mb-6">
-          <h4 class="text-md font-medium text-gray-800 mb-3">
-            Sample Lines ({{ previewData.preview.draft_lines.length }} total)
-          </h4>
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-md font-medium text-gray-800">
+              Import Lines ({{ previewData.preview.draft_lines.length }} total)
+            </h4>
+            <button
+              v-if="previewData.preview.draft_lines.length > 5"
+              @click="showAllLines = !showAllLines"
+              class="flex items-center gap-2 px-3 py-1 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+            >
+              <span>{{ showAllLines ? 'Show Less' : `Show All (${previewData.preview.draft_lines.length})` }}</span>
+              <svg 
+                :class="['w-4 h-4 transition-transform', { 'rotate-180': showAllLines }]"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
           <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
-              <table class="min-w-full text-sm">                <thead class="bg-gray-50">
+              <table class="min-w-full text-sm">
+                <thead class="bg-gray-50">
                   <tr>
                     <th class="px-3 py-2 text-left font-medium text-gray-900">Kind</th>
                     <th class="px-3 py-2 text-left font-medium text-gray-900">Description</th>
@@ -149,7 +165,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                   <tr
-                    v-for="(line, index) in previewData.preview.draft_lines.slice(0, 5)"
+                    v-for="(line, index) in displayedLines"
                     :key="index"
                     class="hover:bg-gray-50"
                   >
@@ -161,9 +177,6 @@
                   </tr>
                 </tbody>
               </table>
-            </div>
-            <div v-if="previewData.preview.draft_lines.length > 5" class="px-3 py-2 bg-gray-50 text-sm text-gray-600 text-center">
-              ... and {{ previewData.preview.draft_lines.length - 5 }} more lines
             </div>
           </div>
         </div>
@@ -240,7 +253,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useQuoteImport } from '@/composables/useQuoteImport'
 
 interface Props {
@@ -257,6 +270,7 @@ const emit = defineEmits<Emits>()
 
 const fileInput = ref<HTMLInputElement>()
 const selectedFile = ref<File | null>(null)
+const showAllLines = ref(false)
 
 const {
   isLoading,
@@ -272,9 +286,18 @@ const {
   clearError
 } = useQuoteImport()
 
+// Computed property to control which lines are displayed
+const displayedLines = computed(() => {
+  if (!previewData.value?.preview?.draft_lines) return []
+  
+  const lines = previewData.value.preview.draft_lines
+  return showAllLines.value ? lines : lines.slice(0, 5)
+})
+
 function handleFileSelect(event: Event) {
   const target = event.target as HTMLInputElement
   selectedFile.value = target.files?.[0] || null
+  showAllLines.value = false // Reset expand state
   reset() // Clear previous results
   clearError()
 }
