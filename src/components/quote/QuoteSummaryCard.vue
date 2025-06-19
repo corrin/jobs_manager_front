@@ -394,18 +394,23 @@ const breakdown = computed(() => {
 async function handleLinkQuote() {
   if (!props.job?.id) return
   
+  console.log('🔗 handleLinkQuote - Starting quote link process')
   isLinking.value = true
   
   // Show loading toast
+  console.log('🍞 Showing loading toast for quote link')
   toast.loading('Vinculando planilha...', {
     description: 'Criando e configurando planilha do orçamento',
     id: 'quote-link'
   })
   
   try {
+    console.log('📞 Calling quoteService.linkQuote with job ID:', props.job.id)
     const result = await quoteService.linkQuote(props.job.id)
+    console.log('✅ Quote link result:', result)
     
     // Success toast with action to open spreadsheet
+    console.log('🍞 Showing success toast for quote link')
     toast.success('Planilha vinculada com sucesso!', {
       description: 'A planilha foi criada e já pode ser acessada',
       id: 'quote-link',
@@ -417,12 +422,13 @@ async function handleLinkQuote() {
     
     // Immediately open the spreadsheet
     if (result.sheet_url) {
+      console.log('🌐 Opening spreadsheet in new tab:', result.sheet_url)
       window.open(result.sheet_url, '_blank')
     }
     
     emit('quote-refreshed', result)
   } catch (error) {
-    console.error('Failed to link quote:', error)
+    console.error('❌ Failed to link quote:', error)
     
     let errorMessage = 'Erro desconhecido ao vincular planilha'
     
@@ -434,12 +440,14 @@ async function handleLinkQuote() {
       errorMessage = (error as any).error || errorMessage
     }
     
+    console.log('🍞 Showing error toast for quote link:', errorMessage)
     toast.error('Erro ao vincular planilha', {
       description: errorMessage,
       id: 'quote-link'
     })
   } finally {
     isLinking.value = false
+    console.log('🔗 handleLinkQuote - Process completed')
   }
 }
 
@@ -453,24 +461,29 @@ function handleGoToSpreadsheet() {
 async function handleRefreshSpreadsheet() {
   if (!props.job?.id) return
   
+  console.log('🔄 handleRefreshSpreadsheet - Starting refresh process')
   isRefreshing.value = true
   
   // Show loading toast
+  console.log('🍞 Showing loading toast for quote refresh')
   toast.loading('Buscando atualizações...', {
     description: 'Verificando mudanças na planilha',
     id: 'quote-refresh'
   })
   
   try {
+    console.log('📞 Calling quoteService.previewQuote with job ID:', props.job.id)
     // Step 1: Get preview
     const preview = await quoteService.previewQuote(props.job.id)
+    console.log('✅ Quote preview result:', preview)
     previewData.value = preview
     showPreviewModal.value = true
     
     // Dismiss loading toast when preview is ready
+    console.log('🍞 Dismissing loading toast for quote refresh')
     toast.dismiss('quote-refresh')
   } catch (error) {
-    console.error('Failed to preview quote:', error)
+    console.error('❌ Failed to preview quote:', error)
     
     let errorMessage = 'Erro desconhecido ao buscar atualizações'
     
@@ -482,20 +495,26 @@ async function handleRefreshSpreadsheet() {
       errorMessage = (error as any).error || errorMessage
     }
     
+    console.log('🍞 Showing error toast for quote refresh:', errorMessage)
     toast.error('Erro ao buscar atualizações', {
       description: errorMessage,
       id: 'quote-refresh'
     })
   } finally {
     isRefreshing.value = false
+    console.log('🔄 handleRefreshSpreadsheet - Process completed')
   }
 }
 
 async function confirmRefresh() {
   if (!props.job?.id) return
   
+  console.log('✅ confirmRefresh - Starting apply process')
+  
   try {
+    console.log('📞 Calling quoteService.applyQuote with job ID:', props.job.id)
     const result = await quoteService.applyQuote(props.job.id)
+    console.log('✅ Quote apply result:', result)
     
     if (result.success) {
       // Calculate changes count from the changes object if available
@@ -506,12 +525,16 @@ async function confirmRefresh() {
                       (result.changes.deletions?.length || 0)
       }
       
+      console.log('📊 Changes count:', changesCount)
+      
       if (changesCount > 0) {
+        console.log('🍞 Showing success toast with changes count')
         toast.success('Orçamento atualizado!', {
           description: `${changesCount} alterações foram aplicadas`,
           id: 'quote-refresh'
         })
       } else {
+        console.log('🍞 Showing info toast - no changes')
         toast.info('Nenhuma alteração encontrada', {
           description: 'A planilha está sincronizada com o sistema',
           id: 'quote-refresh'
@@ -524,7 +547,7 @@ async function confirmRefresh() {
       throw new Error(result.error || 'Apply failed')
     }
   } catch (error) {
-    console.error('Failed to apply quote:', error)
+    console.error('❌ Failed to apply quote:', error)
     
     let errorMessage = 'Erro desconhecido ao aplicar alterações'
     
@@ -536,11 +559,13 @@ async function confirmRefresh() {
       errorMessage = (error as any).error || errorMessage
     }
     
+    console.log('🍞 Showing error toast for confirm refresh:', errorMessage)
     toast.error('Erro ao aplicar alterações', {
       description: errorMessage,
       id: 'quote-refresh'
     })
   }
+  console.log('✅ confirmRefresh - Process completed')
 }
 
 // Utility functions

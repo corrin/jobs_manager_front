@@ -98,6 +98,16 @@
           <div class="flex items-center space-x-4">
             <!-- Action Buttons -->
             <div class="flex space-x-2">
+              <!-- Botão de teste temporário -->
+              <DraggableButton
+                variant="ghost"
+                @click="testToast"
+                class="text-yellow-600 hover:bg-yellow-50"
+                size="sm"
+              >
+                🧪 Test Toast
+              </DraggableButton>
+
               <DraggableButton
                 variant="ghost"
                 @click="showSettingsModal = true"
@@ -464,10 +474,13 @@ const loadJobData = async () => {
   
   try {
     // Mostrar loading toast
+    console.log('🍞 Showing loading toast for job data')
     toast.loading('Carregando job...', {
       description: 'Buscando dados do trabalho',
       id: loadingToastId
     })
+    
+    console.log('📞 Loading job data for ID:', jobId.value)
     
     // Configurar contexto no store
     jobsStore.setCurrentContext('detail')
@@ -476,6 +489,7 @@ const loadJobData = async () => {
 
     // Buscar dados da API e salvar no store
     const response: JobDetailResponse = await jobRestService.getJobForEdit(jobId.value)
+    console.log('✅ Job data response:', response)
 
     if (response.success && response.data) {
       // Enriquecer o job com dados complementares antes de salvar no store
@@ -500,6 +514,7 @@ const loadJobData = async () => {
       }
 
       // Sucesso - notificar e descartar loading
+      console.log('🍞 Dismissing loading toast and logging success')
       toast.dismiss(loadingToastId)
       console.log(`✅ Job ${enrichedJob.name || `Job #${enrichedJob.job_number}`} carregado com sucesso`)
 
@@ -515,13 +530,15 @@ const loadJobData = async () => {
       throw new Error('Failed to load job data')
     }
   } catch (error) {
-    console.error('Error loading job:', error)
+    console.error('❌ Error loading job:', error)
 
     // Dismissar loading toast e mostrar erro
+    console.log('🍞 Dismissing loading toast and showing error')
     toast.dismiss(loadingToastId)
 
     // Usar o sistema de notificações para erros
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+    console.log('🍞 Showing error toast for job loading:', errorMessage)
     toast.error('Erro ao carregar job', {
       description: `Erro ao carregar job ${jobId.value}: ${errorMessage}`
     })
@@ -801,6 +818,39 @@ const deleteJob = async () => {
       id: 'delete-job'
     })
   }
+}
+
+// Função de teste para verificar se o toast está funcionando
+const testToast = () => {
+  console.log('🧪 Testing toast functionality')
+  console.log('🍞 Showing test toast')
+  toast.success('Toast funcionando!', {
+    description: 'Se você viu esta mensagem, o Sonner está funcionando corretamente'
+  })
+  
+  // Também testar outros tipos
+  setTimeout(() => {
+    console.log('🍞 Showing test error toast')
+    toast.error('Teste de erro', {
+      description: 'Este é um toast de erro de teste'
+    })
+  }, 1000)
+  
+  setTimeout(() => {
+    console.log('🍞 Showing test loading toast')
+    toast.loading('Carregando teste...', {
+      description: 'Este é um toast de loading de teste',
+      id: 'test-loading'
+    })
+    
+    setTimeout(() => {
+      console.log('🍞 Updating test loading to success')
+      toast.success('Teste concluído!', {
+        description: 'Loading foi atualizado para sucesso',
+        id: 'test-loading'
+      })
+    }, 2000)
+  }, 2000)
 }
 
 // Lifecycle hook
