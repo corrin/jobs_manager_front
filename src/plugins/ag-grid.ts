@@ -4,7 +4,7 @@ import { ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-communi
 // Register AG Grid Community modules
 ModuleRegistry.registerModules([AllCommunityModule])
 
-// Create custom theme with company colors (seguindo SRP - responsabilidade única para configuração de tema)
+// Create custom theme with company colors (following SRP - single responsibility for theme configuration)
 export const customTheme = themeQuartz.withParams({
   accentColor: '#4361EE',
   backgroundColor: '#FFFFFF',

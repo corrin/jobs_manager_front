@@ -39,7 +39,7 @@
         <!-- Empty state -->
         <div
           v-if="jobs.length === 0"
-          class="empty-state flex items-center justify-center text-gray-500 h-32"
+          class="col-span-2 empty-state flex items-center justify-center text-gray-500 h-32"
         >
           <div class="text-center">
             <div class="text-sm">No jobs in {{ status.label.toLowerCase() }}</div>
@@ -48,7 +48,7 @@
         </div>
 
         <!-- Load more button -->
-        <div v-if="showLoadMore && !isLoading" class="text-center">
+        <div v-if="showLoadMore && !isLoading" class="col-span-2 text-center">
           <button
             @click="$emit('load-more')"
             class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
@@ -58,7 +58,7 @@
         </div>
 
         <!-- Loading spinner -->
-        <div v-if="isLoading" class="text-center">
+        <div v-if="isLoading" class="col-span-2 text-center">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
         </div>
       </div>

@@ -70,7 +70,7 @@
                   :jobs="getJobsByStatus(selectedMobileStatus)"
                   :show-load-more="shouldShowLoadMore(selectedMobileStatus)" :is-loading="isLoading"
                   :is-dragging="isDragging" @job-click="viewJob" @load-more="loadMoreJobs(selectedMobileStatus)"
-                  @sortable-ready="handleSortableReady" @job-ready="handleJobReady" class="mobile-column w-full max-w-md mx-auto" />
+                  @sortable-ready="handleSortableReady" @job-ready="handleJobReady" class="kanban-column w-full max-w-md mx-auto" />
               </div>
             </div>
 
@@ -80,7 +80,7 @@
               <div class="block lg:hidden">
                 <div class="max-w-7xl mx-auto px-2">
                   <!-- First row: 4 columns -->
-                  <div class="grid grid-cols-4 gap-2 mb-3">
+                  <div class="grid grid-cols-4 gap-3 mb-4">
                     <KanbanColumn
                       v-for="status in visibleStatusChoices.slice(0, 4)"
                       :key="status.key"
@@ -93,12 +93,12 @@
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
                       @job-ready="handleJobReady"
-                      class="tablet-column"
+                      class="kanban-column"
                     />
                   </div>
 
                   <!-- Second row: 4 columns -->
-                  <div class="grid grid-cols-4 gap-2">
+                  <div class="grid grid-cols-4 gap-3">
                     <KanbanColumn
                       v-for="status in visibleStatusChoices.slice(4, 8)"
                       :key="status.key"
@@ -111,7 +111,7 @@
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
                       @job-ready="handleJobReady"
-                      class="tablet-column"
+                      class="kanban-column"
                     />
                   </div>
                 </div>
@@ -120,12 +120,12 @@
               <!-- Large Desktop: Horizontal scrollable kanban -->
               <div class="hidden lg:block">
                 <div class="max-w-full mx-auto">
-                  <div class="flex justify-center gap-1 xl:gap-2 min-w-fit px-2">
+                  <div class="flex justify-center gap-2 xl:gap-3 min-w-fit px-2">
                     <KanbanColumn v-for="status in visibleStatusChoices" :key="status.key" :status="status"
                       :jobs="getJobsByStatus(status.key)" :show-load-more="shouldShowLoadMore(status.key)"
                       :is-loading="isLoading" :is-dragging="isDragging" @job-click="viewJob"
                       @load-more="loadMoreJobs(status.key)" @sortable-ready="handleSortableReady"
-                      @job-ready="handleJobReady" class="flex-shrink-0" />
+                      @job-ready="handleJobReady" class="kanban-column" />
                   </div>
                 </div>
               </div>

@@ -264,7 +264,7 @@ body {
 }
 
 .sortable-chosen {
-  @apply shadow-lg ring-2 ring-blue-500 ring-opacity-50 transform scale-105 z-50;
+  @apply shadow-lg ring-2 ring-blue-500/50 transform scale-105 z-50;
 }
 
 .sortable-drag {

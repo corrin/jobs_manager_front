@@ -1,12 +1,12 @@
-// Interfaces para costing - tipos utilitários para utilização interna
-// Baseado na estrutura real do backend
+// Costing interfaces - utility types for internal use
+// Based on actual backend structure
 export interface CostLine {
-  id: number // ID é number, não string
+  id: number // ID is number, not string
   kind: 'time' | 'material' | 'adjust'
   desc: string
-  quantity: string // Quantity vem como string do backend
-  unit_cost: string // Unit_cost vem como string do backend
-  unit_rev: string // Unit_rev vem como string do backend
+  quantity: string // Quantity comes as string from backend
+  unit_cost: string // Unit_cost comes as string from backend
+  unit_rev: string // Unit_rev comes as string from backend
   total_cost: number
   total_rev: number
   ext_refs?: Record<string, any>
@@ -18,12 +18,12 @@ export interface CostLine {
     total_cost?: number | string
     is_new?: boolean
     is_modified?: boolean
-    [key: string]: any // Para outros campos meta
+    [key: string]: any // For other meta fields
   }
 }
 
 export interface CostSet {
-  id: number // ID é number, não string
+  id: number // ID is number, not string
   kind: 'estimate' | 'quote' | 'actual'
   rev: number
   summary: {
@@ -31,6 +31,6 @@ export interface CostSet {
     rev: number
     hours: number
   }
-  created: string // Data de criação
+  created: string // Creation date
   cost_lines: CostLine[]
 }

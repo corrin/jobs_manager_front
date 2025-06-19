@@ -55,7 +55,7 @@
 
           <div class="flex items-start">
             <input v-model="localJobData.quoted" type="checkbox" :disabled="true"
-              class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 disabled:opacity-50">
+              class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200/50 disabled:opacity-50">
             <div class="ml-2">
               <label class="text-sm text-gray-700">
                 Already Quoted?
@@ -67,7 +67,7 @@
 
           <div class="flex items-start">
             <input v-model="localJobData.invoiced" type="checkbox" :disabled="true"
-              class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 disabled:opacity-50">
+              class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200/50 disabled:opacity-50">
             <div class="ml-2">
               <label class="text-sm text-gray-700">
                 Already Invoiced?
@@ -79,7 +79,7 @@
 
           <div class="flex items-center">
             <input v-model="localJobData.paid" type="checkbox"
-              class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+              class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200/50">
             <label class="ml-2 text-sm text-gray-700">
               Job Paid
             </label>

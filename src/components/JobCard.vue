@@ -1,11 +1,11 @@
 <template>
   <div
-    class="job-card bg-white p-1.5 rounded border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-pointer relative mobile-draggable"
+    class="job-card"
     :class="{
       'cursor-grabbing': isDragging,
       'opacity-50': isDragging,
       'shadow-sm': !isDragging,
-      'ring-2 ring-blue-500 ring-opacity-50 bg-blue-50': isMovementModeActive && isJobSelectedForMovement,
+      'ring-2 ring-blue-500/50 bg-blue-50': isMovementModeActive && isJobSelectedForMovement,
       'border-blue-400 hover:border-blue-500': isMovementModeActive && !isJobSelectedForMovement,
       'cursor-pointer': isMovementModeActive
     }"
@@ -15,16 +15,16 @@
     <!-- Movement Mode Indicator -->
     <div 
       v-if="isMovementModeActive"
-      class="absolute top-1 right-1 w-3 h-3 rounded-full transition-all duration-200"
+      class="absolute top-2 right-2 w-3 h-3 rounded-full transition-all duration-200"
       :class="isJobSelectedForMovement ? 'bg-blue-500' : 'bg-blue-300 opacity-60'"
     ></div>
-    <div class="flex justify-between items-center mb-1">
-      <span class="job-number text-xs font-semibold text-blue-600">#{{ job.job_number }}</span>
+    <div class="job-card-header">
+      <span class="job-card-id">#{{ job.job_number }}</span>
       <span :class="['w-2 h-2 rounded-full', job.paid ? 'bg-green-500' : 'bg-red-500']"></span>
     </div>
     
     <!-- Status Badge -->
-    <div class="mb-1 flex justify-between items-center">
+    <div class="mb-2 flex justify-between items-center">
       <StatusBadge 
         :label="statusBadgeInfo.label"
         :color-class="statusBadgeInfo.colorClass"
@@ -32,11 +32,11 @@
       />
     </div>
     
-    <h4 class="job-title font-medium text-gray-900 text-xs mb-1 leading-tight line-clamp-1">{{ job.name }}</h4>
+    <h4 class="job-card-title">{{ job.name }}</h4>
     
-    <p class="job-description text-xs text-gray-600 mb-1 line-clamp-1 leading-tight">{{ job.description }}</p>
+    <p class="job-card-client">{{ job.description }}</p>
     
-    <div class="job-client text-xs text-gray-500 mb-1">
+    <div class="job-card-client">
       <div class="truncate font-medium">{{ job.client_name }}</div>
       <div v-if="job.contact_person" class="truncate">{{ job.contact_person }}</div>
     </div>

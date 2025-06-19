@@ -9,14 +9,13 @@
     >
       <!-- Main Floating Button -->
       <button
-        @click="handleToggleMovementMode"
-        :class="[
+        @click="handleToggleMovementMode"        :class="[
           'w-14 h-14 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110',
           'flex items-center justify-center',
-          'focus:outline-none focus:ring-4 focus:ring-opacity-50',
+          'focus:outline-none focus:ring-4',
           isMovementModeActive 
-            ? 'bg-red-500 hover:bg-red-600 focus:ring-red-300' 
-            : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300'
+            ? 'bg-red-500 hover:bg-red-600 focus:ring-red-300/50' 
+            : 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300/50'
         ]"
         :title="isMovementModeActive ? 'Exit Movement Mode' : 'Enter Movement Mode'"
       >
