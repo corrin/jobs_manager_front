@@ -521,9 +521,9 @@ const handleSuccessfulSettingsUpdate = (apiData: any) => {
 const handleSettingsUpdateError = (error: unknown) => {
   console.error('Error saving job settings:', error)
 
-  const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-  toast.error('Falha ao salvar job', {
-    description: `Erro: ${errorMessage}. Tente novamente.`
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+  toast.error('Failed to save job', {
+    description: `Error: ${errorMessage}. Please try again.`
   })
 }
 </script>

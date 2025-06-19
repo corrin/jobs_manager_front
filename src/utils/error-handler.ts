@@ -67,23 +67,23 @@ export function extractErrorMessage(error: unknown): string {
     // Mensagens específicas por status code
     switch (axiosError.response?.status) {
       case 400:
-        return 'Requisição inválida - verifique os dados enviados'
+        return 'Invalid request - please check the data sent'
       case 401:
-        return 'Não autorizado - faça login novamente'
+        return 'Unauthorised - please log in again'
       case 403:
-        return 'Acesso negado - você não tem permissão para esta operação'
+        return 'Access denied - you do not have permission for this operation'
       case 404:
-        return 'Recurso não encontrado'
+        return 'Resource not found'
       case 422:
-        return 'Dados inválidos fornecidos'
+        return 'Invalid data provided'
       case 500:
-        return 'Erro interno do servidor - tente novamente mais tarde'
+        return 'Internal server error - please try again later'
       case 502:
-        return 'Servidor indisponível temporariamente'
+        return 'Server temporarily unavailable'
       case 503:
-        return 'Serviço temporariamente indisponível'
+        return 'Service temporarily unavailable'
       default:
-        return `Erro HTTP ${axiosError.response?.status || 'desconhecido'}`
+        return `HTTP error ${axiosError.response?.status || 'unknown'}`
     }
   }
 
@@ -98,7 +98,7 @@ export function extractErrorMessage(error: unknown): string {
   }
 
   // Fallback genérico
-  return 'Erro desconhecido na operação'
+  return 'Unknown error in operation'
 }
 
 /**
@@ -109,19 +109,19 @@ export function extractQuoteErrorMessage(error: unknown): string {
 
   // Mensagens específicas para erros comuns de quote
   if (baseMessage.includes('No master quote template URL')) {
-    return 'Template de orçamento não configurado - configure o template master nas configurações da empresa'
+    return 'Quote template not configured - please configure the master template in company settings'
   }
 
   if (baseMessage.includes('Sheet not found')) {
-    return 'Planilha não encontrada - verifique se a planilha ainda existe no Google Drive'
+    return 'Spreadsheet not found - please check if the spreadsheet still exists in Google Drive'
   }
 
   if (baseMessage.includes('Permission denied')) {
-    return 'Permissão negada - verifique se o aplicativo tem acesso à planilha'
+    return 'Permission denied - please check if the application has access to the spreadsheet'
   }
 
   if (baseMessage.includes('Invalid sheet format')) {
-    return 'Formato de planilha inválido - use o template oficial para orçamentos'
+    return 'Invalid spreadsheet format - please use the official template for quotes'
   }
 
   return baseMessage

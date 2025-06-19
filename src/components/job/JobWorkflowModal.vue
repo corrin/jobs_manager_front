@@ -216,8 +216,8 @@ const loadStatusChoices = async () => {
 
   } catch (error) {
     console.error('Failed to load status choices:', error)
-    toast.error('Falha ao carregar opções de status', {
-      description: 'Não foi possível carregar as opções de status. Tente novamente.'
+    toast.error('Failed to load status options', {
+      description: 'Could not load status options. Please try again.'
     })
   } finally {
     isLoadingStatuses.value = false
@@ -243,15 +243,15 @@ const closeModal = () => {
 const saveWorkflow = async () => {
   // Guard clauses - early return for invalid states
   if (!props.jobData) {
-    toast.error('Erro', {
-      description: 'Dados do job não encontrados'
+    toast.error('Error', {
+      description: 'Job data not found'
     })
     return
   }
 
   if (!localJobData.value) {
-    toast.error('Erro', {
-      description: 'Dados locais não inicializados'
+    toast.error('Error', {
+      description: 'Local data not initialised'
     })
     return
   }

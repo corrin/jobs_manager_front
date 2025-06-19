@@ -19,7 +19,7 @@
       </div>
 
       <div ref="jobListRef" :data-status="status.key"
-        class="mobile-scroll-container p-1 space-y-1 min-h-[420px] max-h-[475px] md:min-h-[300px] md:max-h-[300px] lg:min-h-[450px] lg:max-h-[450px] overflow-y-auto transition-colors duration-200" :class="{
+        class="kanban-column-content jobs-grid min-h-[420px] max-h-[475px] md:min-h-[600px] md:max-h-[600px] lg:min-h-[650px] lg:max-h-[650px] overflow-y-auto transition-colors duration-200" :class="{
           'bg-blue-50 border-blue-200': isDragging
         }"
         style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"

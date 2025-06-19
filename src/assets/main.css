@@ -258,40 +258,119 @@ body {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Melhorias específicas para tablet */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .staff-sortable-ghost {
-    opacity: 0.4;
-    transform: rotate(1deg) scale(0.98);
+/* Universal Drag and Drop Styles - Works on all devices */
+.sortable-ghost {
+  @apply opacity-50 bg-blue-50 border-2 border-blue-300 border-dashed transform scale-105;
+}
+
+.sortable-chosen {
+  @apply shadow-lg ring-2 ring-blue-500 ring-opacity-50 transform scale-105 z-50;
+}
+
+.sortable-drag {
+  @apply shadow-xl transform rotate-2 z-50;
+}
+
+.is-dragging {
+  cursor: grabbing !important;
+}
+
+.is-dragging * {
+  cursor: grabbing !important;
+}
+
+/* Kanban Column Styles - Wider columns for two jobs side by side */
+.kanban-column {
+  @apply min-w-[400px] max-w-[400px] flex-shrink-0;
+}
+
+.kanban-column-content {
+  @apply p-4 space-y-3;
+}
+
+/* Job Cards Grid - Two columns layout */
+.jobs-grid {
+  @apply grid grid-cols-2 gap-3;
+}
+
+/* Individual Job Card Styles */
+.job-card {
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-all duration-200 cursor-grab;
+  min-height: 120px;
+}
+
+.job-card:hover {
+  @apply border-blue-300 shadow-md;
+}
+
+.job-card:active {
+  cursor: grabbing;
+}
+
+/* Job Card Content */
+.job-card-header {
+  @apply flex items-center justify-between mb-2;
+}
+
+.job-card-title {
+  @apply font-semibold text-sm text-gray-900 truncate;
+}
+
+.job-card-id {
+  @apply text-xs text-gray-500 font-mono;
+}
+
+.job-card-client {
+  @apply text-xs text-gray-600 mb-2 truncate;
+}
+
+.job-card-meta {
+  @apply flex items-center justify-between text-xs text-gray-500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .kanban-column {
+    @apply min-w-[350px] max-w-[350px];
   }
   
-  .staff-sortable-chosen {
-    transform: scale(1.08);
-    opacity: 0.95;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  .jobs-grid {
+    @apply grid-cols-1 gap-2;
   }
   
-  .staff-sortable-drag {
-    transform: rotate(2deg) scale(1.12);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(59, 130, 246, 0.6);
-    border-radius: 50%;
+  .job-card {
+    @apply p-2;
+    min-height: 100px;
   }
 }
 
-.job-assigned-staff.staff-drag-active {
-  border-color: #3b82f6 !important;
-  background-color: #eff6ff !important;
+@media (max-width: 430px) {
+  .kanban-column {
+    @apply min-w-[320px] max-w-[320px];
+  }
+  
+  .job-card {
+    @apply text-xs;
+    min-height: 90px;
+  }
 }
 
-.staff-pool-container.staff-drag-active {
-  border-color: #10b981 !important;
-  background-color: #f0fdf4 !important;
+/* Drag feedback styles */
+.kanban-column.drag-over {
+  @apply bg-blue-50 border-blue-300;
 }
 
-.staff-avatar-dragging {
-  pointer-events: none;
-  user-select: none;
+.drop-zone-active {
+  @apply bg-gradient-to-b from-blue-50 to-blue-100 border-2 border-blue-300 border-dashed;
+}
+
+/* Touch-friendly drag handles */
+.drag-handle {
+  @apply p-1 rounded hover:bg-gray-100 cursor-grab touch-manipulation;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 
 /* Sonner Toast Overrides - Force visibility */

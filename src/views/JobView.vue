@@ -215,7 +215,7 @@
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               ]"
             >
-              Quote Import
+              Quote
             </button>
             <button
               @click="activeTab = 'financial'"
@@ -465,8 +465,8 @@ const loadJobData = async () => {
   try {
     // Mostrar loading toast
     console.log('🍞 Showing loading toast for job data')
-    toast.loading('Carregando job...', {
-      description: 'Buscando dados do trabalho',
+    toast.loading('Loading job...', {
+      description: 'Fetching work details',
       id: loadingToastId
     })
 
@@ -506,7 +506,7 @@ const loadJobData = async () => {
       // Sucesso - notificar e descartar loading
       console.log('🍞 Dismissing loading toast and logging success')
       toast.dismiss(loadingToastId)
-      console.log(`✅ Job ${enrichedJob.name || `Job #${enrichedJob.job_number}`} carregado com sucesso`)
+      console.log(`✅ Job ${enrichedJob.name || `Job #${enrichedJob.job_number}`} loaded successfully`)
 
       // jobEvents e latestPricings são computed e não precisam ser atribuídos manualmente
       // eles são automaticamente atualizados quando jobData muda
@@ -529,8 +529,8 @@ const loadJobData = async () => {
     // Usar o sistema de notificações para erros
     const errorMessage = extractErrorMessage(error)
     console.log('🍞 Showing error toast for job loading:', errorMessage)
-    toast.error('Erro ao carregar job', {
-      description: `Erro ao carregar job ${jobId.value}: ${errorMessage}`,
+    toast.error('Error loading job', {
+      description: `Failed to load job ${jobId.value}: ${errorMessage}`,
       duration: 6000
     })
 
@@ -622,12 +622,12 @@ const handleDataChanged = (data: any) => {
       // Usar o composable para manter consistência
       updatePricingsReactively(jobId.value, data)
       // Notificação discreta para pricing auto-save
-      toast.info('Preços atualizados', {
-        description: 'Dados de precificação foram atualizados automaticamente'
+      toast.info('Prices updated', {
+        description: 'Pricing data has been updated automatically'
       })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao salvar alterações automaticamente'
-      toast.error('Erro ao salvar dados de precificação', {
+      const errorMessage = error instanceof Error ? error.message : 'Error saving changes automatically'
+      toast.error('Error saving pricing data', {
         description: errorMessage
       })
     }
@@ -638,8 +638,8 @@ const handleEventAdded = (event: JobEvent) => {
   // Usar o composable para manter consistência
   if (jobId.value) {
     addEventReactively(jobId.value, event)
-    toast.success('Evento adicionado', {
-      description: `Evento "${event.event_type}" foi adicionado com sucesso`
+    toast.success('Event added', {
+      description: `Event "${event.event_type}" was added successfully`
     })
   }
 }
@@ -656,8 +656,8 @@ const handleFileUploaded = (file: any) => {
       // Recarregar dados para pegar mudanças de arquivos
       loadJobData()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao processar upload'
-      toast.error('Erro ao fazer upload do arquivo', {
+      const errorMessage = error instanceof Error ? error.message : 'Error processing upload'
+      toast.error('Error uploading file', {
         description: errorMessage
       })
     }
@@ -670,14 +670,14 @@ const handleFileDeleted = (fileId: string) => {
     try {
       // TODO: Implementar remoção de arquivos no store quando tivermos o campo
       console.log('🗑️ File deleted - store will be updated:', fileId)
-      toast.success('Arquivo removido', {
-        description: 'arquivo foi removido com sucesso'
+      toast.success('File removed', {
+        description: 'File was successfully removed'
       })
       // Recarregar dados para pegar mudanças de arquivos
       loadJobData()
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao processar remoção'
-      toast.error('Erro ao remover arquivo', {
+      const errorMessage = error instanceof Error ? error.message : 'Error processing removal'
+      toast.error('Error removing file', {
         description: errorMessage
       })
     }
@@ -698,12 +698,12 @@ const handleQuoteCreated = async () => {
       await reloadJobDataReactively(jobId.value)
       // Switch to financial tab to show the new quote
       activeTab.value = 'financial'
-      toast.success('Orçamento criado!', {
-        description: 'Novo orçamento foi gerado com sucesso'
+      toast.success('Quote created!', {
+        description: 'New quote has been generated successfully'
       })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao recarregar dados do orçamento'
-      toast.error('Erro ao criar orçamento', {
+      const errorMessage = error instanceof Error ? error.message : 'Error reloading quote data'
+      toast.error('Error creating quote', {
         description: errorMessage
       })
     }
@@ -715,12 +715,12 @@ const handleQuoteAccepted = async () => {
     try {
       // Usar o composable para recarregar dados de forma reativa
       await reloadJobDataReactively(jobId.value)
-      toast.success('Orçamento aceito!', {
-        description: 'Orçamento foi aceito e status atualizado'
+      toast.success('Quote accepted!', {
+        description: 'Quote has been accepted and status updated'
       })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao atualizar status do orçamento'
-      toast.error('Erro ao aceitar orçamento', {
+      const errorMessage = error instanceof Error ? error.message : 'Error updating quote status'
+      toast.error('Error accepting quote', {
         description: errorMessage
       })
     }
@@ -732,12 +732,12 @@ const handleInvoiceCreated = async () => {
     try {
       // Usar o composable para recarregar dados de forma reativa
       await reloadJobDataReactively(jobId.value)
-      toast.success('Fatura criada!', {
-        description: 'Fatura foi gerada e está pronta para envio'
+      toast.success('Invoice created!', {
+        description: 'Invoice has been generated and is ready for sending'
       })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao recarregar dados da fatura'
-      toast.error('Erro ao criar fatura', {
+      const errorMessage = error instanceof Error ? error.message : 'Error reloading invoice data'
+      toast.error('Error creating invoice', {
         description: errorMessage
       })
     }
@@ -755,17 +755,17 @@ const handleQuoteUpdated = async (result: any) => {
 
       // Notificar sucesso com detalhes se disponíveis
       if (result.changes_applied) {
-        toast.success('Orçamento atualizado!', {
-          description: `${result.changes_applied} alterações foram aplicadas`
+        toast.success('Quote updated!', {
+          description: `${result.changes_applied} changes have been applied`
         })
       } else {
-        toast.success('Orçamento atualizado!', {
-          description: 'Dados do orçamento foram sincronizados'
+        toast.success('Quote updated!', {
+          description: 'Quote data has been synchronised'
         })
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao recarregar dados após atualização'
-      toast.error('Erro ao atualizar orçamento', {
+      const errorMessage = error instanceof Error ? error.message : 'Error reloading data after update'
+      toast.error('Error updating quote', {
         description: errorMessage
       })
     }
@@ -787,14 +787,14 @@ const deleteJob = async () => {
   const jobName = jobData.value?.name || `Job #${jobData.value?.job_number}` || 'job'
 
   try {
-    toast.loading(`Excluindo ${jobName}...`, {
+    toast.loading(`Deleting ${jobName}...`, {
       id: 'delete-job'
     })
 
     const result = await jobRestService.deleteJob(jobId.value)
     if (result.success) {
-      toast.success(`${jobName} excluído!`, {
-        description: 'Item foi removido permanentemente',
+      toast.success(`${jobName} deleted!`, {
+        description: 'Item has been permanently removed',
         id: 'delete-job'
       })
       navigateBack()
@@ -804,7 +804,7 @@ const deleteJob = async () => {
   } catch (error) {
     logError('deleteJob', error, { jobId: jobId.value, jobName })
     const errorMessage = extractErrorMessage(error)
-    toast.error(`Erro ao excluir ${jobName}`, {
+    toast.error(`Error deleting ${jobName}`, {
       description: errorMessage,
       id: 'delete-job',
       duration: 6000

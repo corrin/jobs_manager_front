@@ -1,32 +1,32 @@
 /**
  * Client Schemas - Zod validation and type inference
  * 
- * Seguindo as diretrizes do projeto para usar Zod para validação
- * e inferência de tipos no frontend.
+ * Following project guidelines to use Zod for validation
+ * and type inference in the frontend.
  */
 
 import { z } from 'zod'
 
-// Schema para criação de cliente
+// Schema for client creation
 export const createClientSchema = z.object({
   name: z.string()
-    .min(1, 'Nome é obrigatório')
-    .max(255, 'Nome deve ter no máximo 255 caracteres')
+    .min(1, 'Name is required')
+    .max(255, 'Name must be at most 255 characters')
     .trim(),
   
   email: z.string()
-    .email('Email deve ter formato válido')
-    .max(254, 'Email deve ter no máximo 254 caracteres')
+    .email('Email must have a valid format')
+    .max(254, 'Email must be at most 254 characters')
     .optional()
     .or(z.literal('')),
   
   phone: z.string()
-    .max(20, 'Telefone deve ter no máximo 20 caracteres')
+    .max(20, 'Phone must be at most 20 characters')
     .optional()
     .or(z.literal('')),
   
   address: z.string()
-    .max(500, 'Endereço deve ter no máximo 500 caracteres')
+    .max(500, 'Address must be at most 500 characters')
     .optional()
     .or(z.literal('')),
   
@@ -45,7 +45,7 @@ export const clientResponseSchema = z.object({
   xero_contact_id: z.string(),
 })
 
-// Schema para resposta de criação de cliente
+// Schema for client creation response
 export const createClientResponseSchema = z.object({
   success: z.boolean(),
   client: clientResponseSchema.optional(),
@@ -53,14 +53,14 @@ export const createClientResponseSchema = z.object({
   message: z.string().optional(),
 })
 
-// Tipos inferidos dos schemas
+// Types inferred from schemas
 export type CreateClientData = z.infer<typeof createClientSchema>
 export type ClientResponseData = z.infer<typeof clientResponseSchema>
 export type CreateClientResponse = z.infer<typeof createClientResponseSchema>
 
-// Schema para validação de form state
+// Schema for form state validation
 export const clientFormStateSchema = createClientSchema.extend({
-  // Adicionar campos específicos do formulário se necessário
+  // Add specific form fields if needed
 })
 
 export type ClientFormState = z.infer<typeof clientFormStateSchema>

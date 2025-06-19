@@ -434,7 +434,7 @@ async function handleLinkQuote() {
     const errorMessage = extractQuoteErrorMessage(error)
     
     console.log('🍞 Showing error toast for quote link:', errorMessage)
-    toast.error('Erro ao vincular planilha', {
+    toast.error('Error linking spreadsheet', {
       description: errorMessage,
       id: 'quote-link',
       duration: 6000 // Mais tempo para ler mensagens de erro mais complexas
@@ -460,8 +460,8 @@ async function handleRefreshSpreadsheet() {
   
   // Show loading toast
   console.log('🍞 Showing loading toast for quote refresh')
-  toast.loading('Buscando atualizações...', {
-    description: 'Verificando mudanças na planilha',
+  toast.loading('Checking for updates...', {
+    description: 'Verifying spreadsheet changes',
     id: 'quote-refresh'
   })
   
@@ -482,7 +482,7 @@ async function handleRefreshSpreadsheet() {
     const errorMessage = extractQuoteErrorMessage(error)
     
     console.log('🍞 Showing error toast for quote refresh:', errorMessage)
-    toast.error('Erro ao buscar atualizações', {
+    toast.error('Error checking for updates', {
       description: errorMessage,
       id: 'quote-refresh',
       duration: 6000
@@ -516,14 +516,14 @@ async function confirmRefresh() {
       
       if (changesCount > 0) {
         console.log('🍞 Showing success toast with changes count')
-        toast.success('Orçamento atualizado!', {
-          description: `${changesCount} alterações foram aplicadas`,
+        toast.success('Quote updated!', {
+          description: `${changesCount} changes have been applied`,
           id: 'quote-refresh'
         })
       } else {
         console.log('🍞 Showing info toast - no changes')
-        toast.info('Nenhuma alteração encontrada', {
-          description: 'A planilha está sincronizada com o sistema',
+        toast.info('No changes found', {
+          description: 'The spreadsheet is in sync with the system',
           id: 'quote-refresh'
         })
       }
@@ -539,7 +539,7 @@ async function confirmRefresh() {
     const errorMessage = extractQuoteErrorMessage(error)
     
     console.log('🍞 Showing error toast for confirm refresh:', errorMessage)
-    toast.error('Erro ao aplicar alterações', {
+    toast.error('Error applying changes', {
       description: errorMessage,
       id: 'quote-refresh',
       duration: 6000

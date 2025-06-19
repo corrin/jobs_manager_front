@@ -298,7 +298,7 @@ export const useJobsStore = defineStore('jobs', () => {
       const entryData = {
         job_pricing_id: currentJob.latest_estimate_pricing.id,
         description: timeEntryData.taskName || timeEntryData.description,
-        hours: hours, // Campo obrigatório para o backend
+        hours: hours, // Required field for backend
         items: 1,
         minutes_per_item: hours * 60,
         wage_rate: baseWageRate,
