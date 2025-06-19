@@ -1,7 +1,7 @@
 <template>
   <span 
     :class="badgeClasses"
-    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-md"
+    class="inline-flex items-center rounded-md font-medium"
   >
     {{ label }}
   </span>
@@ -13,7 +13,7 @@ import { computed } from 'vue'
 interface Props {
   label: string
   colorClass?: string
-  size?: 'sm' | 'md'
+  size?: 'xs' | 'sm' | 'md'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -24,7 +24,18 @@ const props = withDefaults(defineProps<Props>(), {
 // Computed property following SRP for badge styling
 const badgeClasses = computed(() => {
   const baseClasses = 'text-white'
-  const sizeClasses = props.size === 'md' ? 'px-3 py-1.5 text-sm' : 'px-2 py-1 text-xs'
+  let sizeClasses = ''
+  
+  switch (props.size) {
+    case 'xs':
+      sizeClasses = 'px-0.5 py-0 text-[10px] leading-tight'
+      break
+    case 'md':
+      sizeClasses = 'px-3 py-1.5 text-sm'
+      break
+    default: // 'sm'
+      sizeClasses = 'px-2 py-1 text-xs'
+  }
   
   return `${baseClasses} ${sizeClasses} ${props.colorClass}`
 })

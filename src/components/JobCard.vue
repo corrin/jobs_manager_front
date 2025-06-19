@@ -25,7 +25,7 @@
       <StatusBadge
         :label="statusBadgeInfo.label"
         :color-class="statusBadgeInfo.colorClass"
-        size="sm"
+        size="xs"
       />
     </div>
 
