@@ -74,12 +74,20 @@ const emit = defineEmits<Emits>()
 
 // Use jobData directly instead of separate API call for basic quote info
 const currentQuote = computed(() => {
-  if (!props.jobData?.latest_quote_pricing) {
-    console.log('📊 [JobQuoteTab] No quote pricing data in jobData')
+  console.log('🔍 [JobQuoteTab] Debug jobData structure:', {
+    hasJobData: !!props.jobData,
+    hasLatestQuote: !!props.jobData?.latest_quote,
+    hasLatestQuotePricing: !!props.jobData?.latest_quote_pricing,
+    latestQuoteId: props.jobData?.latest_quote?.id,
+    latestQuotePricingId: props.jobData?.latest_quote_pricing?.id
+  })
+  
+  if (!props.jobData?.latest_quote) {
+    console.log('📊 [JobQuoteTab] No quote data in jobData')
     return { has_quote: false, quote: null }
   }
   
-  const quoteData = props.jobData.latest_quote_pricing
+  const quoteData = props.jobData.latest_quote
   console.log('📊 [JobQuoteTab] Using quote data from jobData:', quoteData)
   
   return {
@@ -87,13 +95,9 @@ const currentQuote = computed(() => {
     quote: {
       id: quoteData.id,
       kind: 'quote' as const,
-      rev: quoteData.revision_number || 1,
-      created: quoteData.created_at,
-      summary: {
-        cost: quoteData.total_cost || 0,
-        rev: quoteData.total_revenue || 0,
-        hours: quoteData.total_hours || 0
-      },
+      rev: quoteData.rev,
+      created: quoteData.created,
+      summary: quoteData.summary,
       cost_lines: quoteData.cost_lines || []
     }
   }
