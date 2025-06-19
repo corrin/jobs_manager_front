@@ -31,6 +31,17 @@ export interface StaffWithNumberId {
   icon?: string | null
 }
 
+// Quote Sheet types
+export interface QuoteSheet {
+  id: string
+  sheet_id: string
+  sheet_url: string
+  tab: string
+  job_id: string
+  job_number: string
+  job_name: string
+}
+
 // Job types
 export interface Job extends BaseEntity {
   name: string
@@ -47,6 +58,8 @@ export interface Job extends BaseEntity {
   // New badge information from kanban categorization
   badge_label?: string
   badge_color?: string
+  // Quote sheet integration
+  quote_sheet?: QuoteSheet | null
 }
 
 // Job status types

@@ -57,7 +57,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useQuoteImport } from '@/composables/useQuoteImport'
 import QuoteCostLinesGrid from '@/components/quote/QuoteCostLinesGrid.vue'
 import QuoteSummaryCard from '@/components/quote/QuoteSummaryCard.vue'
 
@@ -73,13 +72,34 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-// Quote data management
-const {
-  isLoading,
-  currentQuote,
-  error,
-  loadQuoteStatus
-} = useQuoteImport()
+// Use jobData directly instead of separate API call for basic quote info
+const currentQuote = computed(() => {
+  if (!props.jobData?.latest_quote_pricing) {
+    console.log('📊 [JobQuoteTab] No quote pricing data in jobData')
+    return { has_quote: false, quote: null }
+  }
+  
+  const quoteData = props.jobData.latest_quote_pricing
+  console.log('📊 [JobQuoteTab] Using quote data from jobData:', quoteData)
+  
+  return {
+    has_quote: true,
+    quote: {
+      id: quoteData.id,
+      kind: 'quote' as const,
+      rev: quoteData.revision_number || 1,
+      created: quoteData.created_at,
+      summary: {
+        cost: quoteData.total_cost || 0,
+        rev: quoteData.total_revenue || 0,
+        hours: quoteData.total_hours || 0
+      },
+      cost_lines: quoteData.cost_lines || []
+    }
+  }
+})
+
+const isLoading = ref(false)
 
 // Computed properties
 const quoteCostLines = computed(() => {
@@ -90,25 +110,20 @@ const quoteCostLines = computed(() => {
 
 // Event handlers
 function handleQuoteRefreshed(result: any) {
-  console.log('Quote refreshed:', result)
-  // Reload quote status after successful refresh
-  loadQuoteStatus(props.jobId)
+  console.log('🔄 [JobQuoteTab] Quote refreshed:', result)
   emit('quoteImported', result)
 }
 
 // Load initial data
 onMounted(() => {
   console.log('🚀 [JobQuoteTab] Component mounted, jobId:', props.jobId)
-  loadQuoteStatus(props.jobId)
+  console.log('📊 [JobQuoteTab] Initial jobData:', props.jobData)
 })
 
-// Watch for job ID changes
-watch(() => props.jobId, (newJobId) => {
-  console.log('👀 [JobQuoteTab] Job ID changed to:', newJobId)
-  if (newJobId) {
-    loadQuoteStatus(newJobId)
-  }
-})
+// Watch for job data changes
+watch(() => props.jobData, (newJobData) => {
+  console.log('👀 [JobQuoteTab] Job data changed:', newJobData)
+}, { deep: true })
 
 // Watch for currentQuote changes
 watch(currentQuote, (newQuote) => {

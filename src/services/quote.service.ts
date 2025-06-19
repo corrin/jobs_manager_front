@@ -6,16 +6,7 @@
  */
 
 import api from './api'
-
-export interface QuoteSheet {
-  id: string
-  sheet_id: string
-  sheet_url: string
-  tab: string
-  job_id: string
-  job_number: string
-  job_name: string
-}
+import type { QuoteSheet } from '../schemas/job.schemas'
 
 export interface QuotePreview {
   changes: {

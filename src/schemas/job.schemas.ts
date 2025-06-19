@@ -1,4 +1,16 @@
 import { z } from 'zod'
+import { CostSetSchema } from './costing.schemas'
+
+// Schema para QuoteSheet baseado na estrutura do backend
+export const QuoteSheetSchema = z.object({
+  id: z.string(),
+  sheet_id: z.string(),
+  sheet_url: z.string(),
+  tab: z.string(),
+  job_id: z.string(),
+  job_number: z.string(),
+  job_name: z.string()
+})
 
 // Schema for JobPricing based on actual backend structure
 export const JobPricingSchema = z.object({
@@ -87,10 +99,16 @@ export const JobDetailSchema = z.object({
   invoiced: z.boolean().optional(),
   paid: z.boolean().optional(),
   charge_out_rate: z.string().optional(),
-  // Pricing data - actual backend structure
+  // Legacy JobPricing data (deprecated but kept for backward compatibility)
   latest_estimate_pricing: JobPricingSchema.optional(),
   latest_quote_pricing: JobPricingSchema.optional(),
   latest_reality_pricing: JobPricingSchema.optional(),
+  // New CostSet data (current system)
+  latest_estimate: CostSetSchema.nullable().optional(),
+  latest_quote: CostSetSchema.nullable().optional(),
+  latest_actual: CostSetSchema.nullable().optional(),
+  // Quote sheet integration
+  quote_sheet: QuoteSheetSchema.nullable().optional(),
   // Enriched structure from frontend (composables)
   latest_pricings: z.object({
     estimate: JobPricingSchema.nullable().optional(),
@@ -185,6 +203,7 @@ export const UploadFilesResponseSchema = z.object({
 }).describe('Response from file upload endpoint')
 
 // Types inferred from schemas
+export type QuoteSheet = z.infer<typeof QuoteSheetSchema>
 export type JobPricing = z.infer<typeof JobPricingSchema>
 export type CompanyDefaults = z.infer<typeof CompanyDefaultsSchema>
 export type JobDetail = z.infer<typeof JobDetailSchema>
