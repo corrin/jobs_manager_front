@@ -32,10 +32,12 @@ export interface QuotePreview {
       desc: string
     }>
   }
-  summary: {
-    total_additions: number
-    total_updates: number
-    total_deletions: number
+  diff_preview: {
+    additions_count: number
+    updates_count: number
+    deletions_count: number
+    total_changes: number
+    next_revision: number
     net_cost_change: number
     net_revenue_change: number
   }

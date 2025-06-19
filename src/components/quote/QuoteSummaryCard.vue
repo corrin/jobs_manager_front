@@ -169,15 +169,15 @@
             <h4 class="font-medium text-blue-900 mb-2">Summary of Changes</h4>
             <div class="grid grid-cols-3 gap-4 text-sm">
               <div class="text-center">
-                <div class="text-lg font-bold text-green-600">{{ previewData.summary.total_additions }}</div>
+                <div class="text-lg font-bold text-green-600">{{ previewData.diff_preview.additions_count }}</div>
                 <div class="text-gray-600">Additions</div>
               </div>
               <div class="text-center">
-                <div class="text-lg font-bold text-blue-600">{{ previewData.summary.total_updates }}</div>
+                <div class="text-lg font-bold text-blue-600">{{ previewData.diff_preview.updates_count }}</div>
                 <div class="text-gray-600">Updates</div>
               </div>
               <div class="text-center">
-                <div class="text-lg font-bold text-red-600">{{ previewData.summary.total_deletions }}</div>
+                <div class="text-lg font-bold text-red-600">{{ previewData.diff_preview.deletions_count }}</div>
                 <div class="text-gray-600">Deletions</div>
               </div>
             </div>
