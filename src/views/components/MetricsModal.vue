@@ -131,7 +131,7 @@ import {
   Users
 } from 'lucide-vue-next'
 
-import SummaryCard from './SummaryCard.vue'
+import SummaryCard from '@/components/timesheet/SummaryCard.vue'
 import { formatHours, formatCurrency, type DailyTimesheetSummary } from '@/services/daily-timesheet.service'
 
 // Props
