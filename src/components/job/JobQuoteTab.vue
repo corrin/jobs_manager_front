@@ -83,7 +83,9 @@ const {
 
 // Computed properties
 const quoteCostLines = computed(() => {
-  return currentQuote.value?.quote?.cost_lines || []
+  const lines = currentQuote.value?.quote?.cost_lines || []
+  console.log('💰 [JobQuoteTab] quoteCostLines computed:', lines)
+  return lines
 })
 
 // Event handlers
@@ -96,15 +98,22 @@ function handleQuoteRefreshed(result: any) {
 
 // Load initial data
 onMounted(() => {
+  console.log('🚀 [JobQuoteTab] Component mounted, jobId:', props.jobId)
   loadQuoteStatus(props.jobId)
 })
 
 // Watch for job ID changes
 watch(() => props.jobId, (newJobId) => {
+  console.log('👀 [JobQuoteTab] Job ID changed to:', newJobId)
   if (newJobId) {
     loadQuoteStatus(newJobId)
   }
 })
+
+// Watch for currentQuote changes
+watch(currentQuote, (newQuote) => {
+  console.log('📊 [JobQuoteTab] currentQuote updated:', newQuote)
+}, { deep: true })
 </script>
 
 <style scoped>

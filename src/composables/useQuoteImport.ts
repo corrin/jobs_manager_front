@@ -51,10 +51,12 @@ export function useQuoteImport() {
     error.value = null
 
     try {
+      console.log('🔍 [useQuoteImport] Loading quote status for jobId:', jobId)
       currentQuote.value = await quoteImportService.getQuoteStatus(jobId)
+      console.log('✅ [useQuoteImport] Quote status loaded:', currentQuote.value)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load quote status'
-      console.error('Failed to load quote status:', err)
+      console.error('❌ [useQuoteImport] Failed to load quote status:', err)
     } finally {
       isLoading.value = false
     }
