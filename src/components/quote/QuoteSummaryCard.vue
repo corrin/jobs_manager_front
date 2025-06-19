@@ -299,6 +299,7 @@ import {
 } from '@/components/ui/dialog'
 import { quoteService } from '@/services/quote.service'
 import type { QuotePreview } from '@/services/quote.service'
+import { extractQuoteErrorMessage, logError } from '@/utils/error-handler'
 
 interface QuoteData {
   id: number
@@ -428,22 +429,15 @@ async function handleLinkQuote() {
     
     emit('quote-refreshed', result)
   } catch (error) {
-    console.error('❌ Failed to link quote:', error)
+    logError('handleLinkQuote', error, { jobId: props.job?.id })
     
-    let errorMessage = 'Erro desconhecido ao vincular planilha'
-    
-    if (error instanceof Error) {
-      errorMessage = error.message
-    } else if (typeof error === 'string') {
-      errorMessage = error
-    } else if (error && typeof error === 'object' && 'error' in error) {
-      errorMessage = (error as any).error || errorMessage
-    }
+    const errorMessage = extractQuoteErrorMessage(error)
     
     console.log('🍞 Showing error toast for quote link:', errorMessage)
     toast.error('Erro ao vincular planilha', {
       description: errorMessage,
-      id: 'quote-link'
+      id: 'quote-link',
+      duration: 6000 // Mais tempo para ler mensagens de erro mais complexas
     })
   } finally {
     isLinking.value = false
@@ -483,22 +477,15 @@ async function handleRefreshSpreadsheet() {
     console.log('🍞 Dismissing loading toast for quote refresh')
     toast.dismiss('quote-refresh')
   } catch (error) {
-    console.error('❌ Failed to preview quote:', error)
+    logError('handleRefreshSpreadsheet', error, { jobId: props.job?.id })
     
-    let errorMessage = 'Erro desconhecido ao buscar atualizações'
-    
-    if (error instanceof Error) {
-      errorMessage = error.message
-    } else if (typeof error === 'string') {
-      errorMessage = error
-    } else if (error && typeof error === 'object' && 'error' in error) {
-      errorMessage = (error as any).error || errorMessage
-    }
+    const errorMessage = extractQuoteErrorMessage(error)
     
     console.log('🍞 Showing error toast for quote refresh:', errorMessage)
     toast.error('Erro ao buscar atualizações', {
       description: errorMessage,
-      id: 'quote-refresh'
+      id: 'quote-refresh',
+      duration: 6000
     })
   } finally {
     isRefreshing.value = false
@@ -547,22 +534,15 @@ async function confirmRefresh() {
       throw new Error(result.error || 'Apply failed')
     }
   } catch (error) {
-    console.error('❌ Failed to apply quote:', error)
+    logError('confirmRefresh', error, { jobId: props.job?.id })
     
-    let errorMessage = 'Erro desconhecido ao aplicar alterações'
-    
-    if (error instanceof Error) {
-      errorMessage = error.message
-    } else if (typeof error === 'string') {
-      errorMessage = error
-    } else if (error && typeof error === 'object' && 'error' in error) {
-      errorMessage = (error as any).error || errorMessage
-    }
+    const errorMessage = extractQuoteErrorMessage(error)
     
     console.log('🍞 Showing error toast for confirm refresh:', errorMessage)
     toast.error('Erro ao aplicar alterações', {
       description: errorMessage,
-      id: 'quote-refresh'
+      id: 'quote-refresh',
+      duration: 6000
     })
   }
   console.log('✅ confirmRefresh - Process completed')

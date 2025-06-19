@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="min-h-screen bg-background text-foreground">
     <router-view />
-    <Toaster class="pointer-events-auto" />
+    <Toaster />
   </div>
 </template>
 

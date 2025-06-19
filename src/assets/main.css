@@ -293,3 +293,151 @@ body {
   pointer-events: none;
   user-select: none;
 }
+
+/* Sonner Toast Overrides - Force visibility */
+[data-sonner-toaster] {
+  position: fixed !important;
+  z-index: 999999 !important;
+  pointer-events: auto !important;
+  bottom: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  max-width: 420px !important;
+}
+
+[data-sonner-toast] {
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  color: #1f2937 !important;
+  min-height: 64px !important;
+  padding: 16px 20px !important;
+  margin-bottom: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  opacity: 1 !important;
+  transform: none !important;
+  animation: sonner-slide-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+[data-sonner-toast]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15), 0 15px 15px -5px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+[data-sonner-toast]::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 4px !important;
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+  transform: scaleX(0) !important;
+  transform-origin: left !important;
+  animation: progress-bar 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards !important;
+}
+
+[data-sonner-toast][data-type="success"]::before {
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+}
+
+[data-sonner-toast][data-type="error"]::before {
+  background: linear-gradient(90deg, #ef4444, #dc2626) !important;
+}
+
+[data-sonner-toast][data-type="loading"]::before {
+  background: linear-gradient(90deg, #3b82f6, #2563eb) !important;
+  animation: loading-bar 2s linear infinite !important;
+}
+
+[data-sonner-toast][data-type="info"]::before {
+  background: linear-gradient(90deg, #6366f1, #4f46e5) !important;
+}
+
+[data-sonner-toast][data-type="success"] {
+  border-left: 4px solid #10b981 !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+}
+
+[data-sonner-toast][data-type="error"] {
+  border-left: 4px solid #ef4444 !important;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+}
+
+[data-sonner-toast][data-type="loading"] {
+  border-left: 4px solid #3b82f6 !important;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+}
+
+[data-sonner-toast][data-type="info"] {
+  border-left: 4px solid #6366f1 !important;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+}
+
+/* Animação de saída */
+[data-sonner-toast][data-dismissed="true"] {
+  animation: sonner-slide-out 0.4s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+}
+
+@keyframes sonner-slide-in {
+  0% {
+    transform: translateY(100%) scale(0.95);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-10%) scale(1.02);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes sonner-slide-out {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%) scale(0.95);
+    opacity: 0;
+  }
+}
+
+@keyframes progress-bar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes loading-bar {
+  0% {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  50% {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  51% {
+    transform: scaleX(1);
+    transform-origin: right;
+  }
+  100% {
+    transform: scaleX(0);
+    transform-origin: right;
+  }
+}
