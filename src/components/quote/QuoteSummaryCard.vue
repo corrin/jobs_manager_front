@@ -1,6 +1,13 @@
 <template>
   <div class="quote-summary-card bg-white rounded-lg border border-gray-200 p-6 h-full flex flex-col">
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quote Summary</h3>
+    <!-- Header with Quote Summary and revision/date info -->
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold text-gray-900">Quote Summary</h3>
+      <div v-if="quoteData" class="text-right text-sm text-gray-600">
+        <div class="font-medium">Rev #{{ quoteData.rev }}</div>
+        <div>{{ formatDate(quoteData.created) }}</div>
+      </div>
+    </div>
 
     <!-- Loading State -->
     <div v-if="isLoading" class="flex-1 flex items-center justify-center">
@@ -12,15 +19,38 @@
 
     <!-- Summary Content -->
     <div v-else-if="quoteData" class="flex-1 flex flex-col">
-      <!-- Revision Info Header -->
-      <div class="bg-blue-50 rounded-lg p-3 mb-4">
-        <div class="flex items-center justify-between">
-          <span class="text-sm font-medium text-blue-900">Current Revision</span>
-          <span class="text-xl font-bold text-blue-900">{{ quoteData.rev }}</span>
-        </div>
-        <div class="text-xs text-blue-700 mt-1">
-          Created {{ formatDate(quoteData.created) }}
-        </div>
+      <!-- Quote Actions -->
+      <div class="mb-4 flex gap-2">
+        <!-- If no quote sheet linked, show Link Quote button -->
+        <Button 
+          v-if="!hasLinkedSheet"
+          @click="handleLinkQuote"
+          :disabled="isLinking"
+          class="flex-1"
+        >
+          <LinkIcon class="w-4 h-4 mr-2" />
+          {{ isLinking ? 'Linking...' : 'Link Quote' }}
+        </Button>
+        
+        <!-- If quote sheet is linked, show Go to Spreadsheet and Refresh buttons -->
+        <template v-else>
+          <Button 
+            variant="outline"
+            @click="handleGoToSpreadsheet"
+            class="flex-1"
+          >
+            <ExternalLinkIcon class="w-4 h-4 mr-2" />
+            Go to Spreadsheet
+          </Button>
+          <Button 
+            @click="handleRefreshSpreadsheet"
+            :disabled="isRefreshing"
+            class="flex-1"
+          >
+            <RefreshCwIcon class="w-4 h-4 mr-2" />
+            {{ isRefreshing ? 'Refreshing...' : 'Refresh Spreadsheet' }}
+          </Button>
+        </template>
       </div>
 
       <!-- 3-Column Mini Grid -->
@@ -136,11 +166,153 @@
         <p class="text-gray-500 text-sm">No quote data available</p>
       </div>
     </div>
+
+    <!-- Preview Modal -->
+    <Dialog :open="showPreviewModal" @update:open="showPreviewModal = $event">
+      <DialogContent class="sm:max-w-4xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>Quote Refresh Preview</DialogTitle>
+          <DialogDescription>
+            Review the changes that will be applied to your quote
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div v-if="previewData" class="space-y-6">
+          <!-- Summary -->
+          <div class="bg-blue-50 rounded-lg p-4">
+            <h4 class="font-medium text-blue-900 mb-2">Summary of Changes</h4>
+            <div class="grid grid-cols-3 gap-4 text-sm">
+              <div class="text-center">
+                <div class="text-lg font-bold text-green-600">{{ previewData.summary.total_additions }}</div>
+                <div class="text-gray-600">Additions</div>
+              </div>
+              <div class="text-center">
+                <div class="text-lg font-bold text-blue-600">{{ previewData.summary.total_updates }}</div>
+                <div class="text-gray-600">Updates</div>
+              </div>
+              <div class="text-center">
+                <div class="text-lg font-bold text-red-600">{{ previewData.summary.total_deletions }}</div>
+                <div class="text-gray-600">Deletions</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Changes Details -->
+          <div class="max-h-96 overflow-y-auto space-y-4">
+            <!-- Additions -->
+            <div v-if="previewData.changes.additions.length > 0">
+              <h5 class="font-medium text-green-700 mb-2">New Items</h5>
+              <div class="space-y-2">
+                <div 
+                  v-for="(item, index) in previewData.changes.additions" 
+                  :key="index"
+                  class="border border-green-200 bg-green-50 rounded-lg p-3"
+                >
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <div class="font-medium">{{ item.desc }}</div>
+                      <div class="text-sm text-gray-600">
+                        {{ item.kind }} • Qty: {{ item.quantity }} • 
+                        Cost: ${{ formatCurrency(item.unit_cost) }} • 
+                        Revenue: ${{ formatCurrency(item.unit_rev) }}
+                      </div>
+                    </div>
+                    <span class="text-green-600 font-bold">+NEW</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Updates -->
+            <div v-if="previewData.changes.updates.length > 0">
+              <h5 class="font-medium text-blue-700 mb-2">Updated Items</h5>
+              <div class="space-y-2">
+                <div 
+                  v-for="(item, index) in previewData.changes.updates" 
+                  :key="index"
+                  class="border border-blue-200 bg-blue-50 rounded-lg p-3"
+                >
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <div class="font-medium">{{ item.desc }}</div>
+                      <div class="text-sm text-gray-600">
+                        {{ item.kind }} • Qty: {{ item.quantity }} • 
+                        Cost: ${{ formatCurrency(item.unit_cost) }} • 
+                        Revenue: ${{ formatCurrency(item.unit_rev) }}
+                      </div>
+                    </div>
+                    <span class="text-blue-600 font-bold">UPDATED</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Deletions -->
+            <div v-if="previewData.changes.deletions.length > 0">
+              <h5 class="font-medium text-red-700 mb-2">Deleted Items</h5>
+              <div class="space-y-2">
+                <div 
+                  v-for="(item, index) in previewData.changes.deletions" 
+                  :key="index"
+                  class="border border-red-200 bg-red-50 rounded-lg p-3"
+                >
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <div class="font-medium line-through">{{ item.desc }}</div>
+                      <div class="text-sm text-gray-600">{{ item.kind }}</div>
+                    </div>
+                    <span class="text-red-600 font-bold">DELETED</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Validation warnings/errors -->
+          <div v-if="previewData.validation?.warnings?.length || previewData.validation?.errors?.length" class="space-y-2">
+            <div v-if="previewData.validation.errors?.length" class="bg-red-50 border border-red-200 rounded-lg p-3">
+              <h5 class="font-medium text-red-800 mb-2">Errors</h5>
+              <ul class="text-sm text-red-700 space-y-1">
+                <li v-for="error in previewData.validation.errors" :key="error">• {{ error }}</li>
+              </ul>
+            </div>
+            <div v-if="previewData.validation.warnings?.length" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <h5 class="font-medium text-yellow-800 mb-2">Warnings</h5>
+              <ul class="text-sm text-yellow-700 space-y-1">
+                <li v-for="warning in previewData.validation.warnings" :key="warning">• {{ warning }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" @click="showPreviewModal = false">
+            Cancel
+          </Button>
+          <Button @click="confirmRefresh" :disabled="!previewData">
+            Apply Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { Button } from '@/components/ui/button'
+import { toast } from 'vue-sonner'
+import { LinkIcon, ExternalLinkIcon, RefreshCwIcon } from 'lucide-vue-next'
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter 
+} from '@/components/ui/dialog'
+import { quoteService } from '@/services/quote.service'
+import type { QuotePreview } from '@/services/quote.service'
 
 interface QuoteData {
   id: number
@@ -162,16 +334,44 @@ interface QuoteData {
   }>
 }
 
+interface Job {
+  id: string
+  quote_sheet?: {
+    sheet_url: string
+    sheet_id: string
+  }
+}
+
 interface Props {
   quoteData?: QuoteData | null
   isLoading?: boolean
+  job?: Job | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isLoading: false
 })
 
+// Events
+const emit = defineEmits<{
+  'quote-refreshed': [data: any]
+}>()
+
+// Local state
+const isLinking = ref(false)
+const isRefreshing = ref(false)
+const showPreviewModal = ref(false)
+const previewData = ref<QuotePreview | null>(null)
+
 // Computed properties
+const hasLinkedSheet = computed(() => {
+  return quoteService.hasLinkedSheet(props.job)
+})
+
+const sheetUrl = computed(() => {
+  return quoteService.getSheetUrl(props.job)
+})
+
 const profitMargin = computed(() => {
   if (!props.quoteData?.summary.rev || props.quoteData.summary.rev === 0) return 0
   return ((props.quoteData.summary.rev - props.quoteData.summary.cost) / props.quoteData.summary.rev) * 100
@@ -203,6 +403,73 @@ const breakdown = computed(() => {
 
   return { labour, material }
 })
+
+// Action handlers
+async function handleLinkQuote() {
+  if (!props.job?.id) return
+  
+  isLinking.value = true
+  try {
+    const result = await quoteService.linkQuote(props.job.id)
+    
+    toast.success("Successfully linked quote spreadsheet to job")
+    
+    // Immediately open the spreadsheet
+    if (result.sheet_url) {
+      window.open(result.sheet_url, '_blank')
+    }
+    
+    emit('quote-refreshed', result)
+  } catch (error) {
+    console.error('Failed to link quote:', error)
+    toast.error("Failed to link quote spreadsheet. Please try again.")
+  } finally {
+    isLinking.value = false
+  }
+}
+
+function handleGoToSpreadsheet() {
+  const url = sheetUrl.value
+  if (url) {
+    window.open(url, '_blank')
+  }
+}
+
+async function handleRefreshSpreadsheet() {
+  if (!props.job?.id) return
+  
+  isRefreshing.value = true
+  try {
+    // Step 1: Get preview
+    const preview = await quoteService.previewQuote(props.job.id)
+    previewData.value = preview
+    showPreviewModal.value = true
+  } catch (error) {
+    console.error('Failed to preview quote:', error)
+    toast.error("Failed to preview quote changes. Please try again.")
+  } finally {
+    isRefreshing.value = false
+  }
+}
+
+async function confirmRefresh() {
+  if (!props.job?.id) return
+  
+  try {
+    const result = await quoteService.applyQuote(props.job.id)
+    
+    if (result.success) {
+      toast.success("Quote revision imported successfully")
+      emit('quote-refreshed', result)
+      showPreviewModal.value = false
+    } else {
+      throw new Error(result.error || 'Apply failed')
+    }
+  } catch (error) {
+    console.error('Failed to apply quote:', error)
+    toast.error("Failed to apply quote changes. Please try again.")
+  }
+}
 
 // Utility functions
 function formatNumber(value: number): string {

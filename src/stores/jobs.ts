@@ -448,6 +448,66 @@ export const useJobsStore = defineStore('jobs', () => {
     setLoadingKanban,
     clearDetailedJobs,
     clearKanbanJobs,
+  // Quote sync actions
+  const linkQuote = async (jobId: string, templateUrl?: string): Promise<void> => {
+    try {
+      console.log('🏪 Store - Linking quote sheet for job:', jobId)
+      
+      const { quoteService } = await import('@/services/quote.service')
+      const result = await quoteService.linkQuote(jobId, templateUrl)
+      
+      // Update job with quote sheet info
+      updateDetailedJob(jobId, { 
+        quote_sheet: {
+          sheet_url: result.sheet_url,
+          sheet_id: result.sheet_id
+        }
+      })
+      
+      console.log('✅ Store - Quote sheet linked successfully')
+    } catch (error) {
+      console.error('❌ Store - Error linking quote sheet:', error)
+      throw error
+    }
+  }
+
+  const refreshQuote = async (jobId: string, options: { skipValidation?: boolean } = {}): Promise<void> => {
+    try {
+      console.log('🏪 Store - Refreshing quote for job:', jobId)
+      
+      const { quoteService } = await import('@/services/quote.service')
+      
+      // Get preview first if not skipping validation
+      if (!options.skipValidation) {
+        const preview = await quoteService.previewQuote(jobId)
+        // Note: Preview handling should be done in the component
+        // This is just for direct application
+      }
+      
+      // Apply the quote changes
+      const result = await quoteService.applyQuote(jobId)
+      
+      if (result.success && result.cost_set) {
+        // Update the job's quote pricing with new cost set
+        const currentJob = detailedJobs.value[jobId]
+        if (currentJob) {
+          updateDetailedJob(jobId, {
+            latest_quote_pricing: result.cost_set
+          })
+        }
+        
+        console.log('✅ Store - Quote refreshed successfully')
+      } else {
+        throw new Error(result.error || 'Quote refresh failed')
+      }
+    } catch (error) {
+      console.error('❌ Store - Error refreshing quote:', error)
+      throw error
+    }
+  }
+
+  return {
+    // ...existing exports...
     clearAll,
     updateJobStatus,
     updateJobEvents,
@@ -460,5 +520,9 @@ export const useJobsStore = defineStore('jobs', () => {
     addTimeEntry,
     addMaterialEntry,
     addAdjustmentEntry,
+    
+    // Quote sync actions
+    linkQuote,
+    refreshQuote,
   }
 })

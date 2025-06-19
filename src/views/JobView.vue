@@ -259,7 +259,8 @@
             <JobQuoteTab
               v-if="jobData"
               :job-id="jobData.id"
-              @quote-imported="handleQuoteImported"
+              :job-data="jobData"
+              @quote-imported="handleQuoteUpdated"
             />
           </div>
 
@@ -668,10 +669,10 @@ const handleInvoiceCreated = async () => {
   }
 }
 
-// Handler para importação de quote
-const handleQuoteImported = async (result: any) => {
+// Handler para atualização de quote (importação/refresh)
+const handleQuoteUpdated = async (result: any) => {
   if (jobId.value) {
-    console.log('✅ Quote imported successfully:', result)
+    console.log('✅ Quote updated successfully:', result)
     // Recarregar dados para refletir a nova quote
     await reloadJobDataReactively(jobId.value)
     // Notificar sucesso
