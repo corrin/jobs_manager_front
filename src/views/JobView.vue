@@ -434,8 +434,8 @@ import {
 } from '@/services/job-rest.service'
 import { useJobsStore } from '@/stores/jobs'
 import { useJobReactivity } from '@/composables/useJobReactivity'
-import { useJobNotifications } from '@/composables/useJobNotifications'
 import { useJobAutoSync } from '@/composables/useJobAutoSync'
+import { toast } from 'vue-sonner'
 import JobPdfDialog from '@/components/job/JobPdfDialog.vue'
 
 const route = useRoute()
@@ -451,14 +451,6 @@ const {
   updatePricingsReactively,
   reloadJobDataReactively
 } = useJobReactivity()
-const {
-  notifyJobUpdated,
-  notifyJobError,
-  notifyEventAdded,
-  notifyPricingUpdated,
-  notifyFileUploaded,
-  notifyFileDeleted
-} = useJobNotifications()
 
 // Service layer delegation para carregar dados
 const loadJobData = async () => {
@@ -468,7 +460,15 @@ const loadJobData = async () => {
     return
   }
 
+  const loadingToastId = 'job-loading'
+  
   try {
+    // Mostrar loading toast
+    toast.loading('Carregando job...', {
+      description: 'Buscando dados do trabalho',
+      id: loadingToastId
+    })
+    
     // Configurar contexto no store
     jobsStore.setCurrentContext('detail')
     jobsStore.setCurrentJobId(jobId.value)
@@ -499,6 +499,10 @@ const loadJobData = async () => {
         console.warn('Company defaults not found in job response, ensure they are loaded elsewhere if needed by NewTaskModal.');
       }
 
+      // Sucesso - notificar e descartar loading
+      toast.dismiss(loadingToastId)
+      console.log(`✅ Job ${enrichedJob.name || `Job #${enrichedJob.job_number}`} carregado com sucesso`)
+
       // jobEvents e latestPricings são computed e não precisam ser atribuídos manualmente
       // eles são automaticamente atualizados quando jobData muda
 
@@ -513,12 +517,16 @@ const loadJobData = async () => {
   } catch (error) {
     console.error('Error loading job:', error)
 
+    // Dismissar loading toast e mostrar erro
+    toast.dismiss(loadingToastId)
+
     // Usar o sistema de notificações para erros
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-    notifyJobError(jobId.value, errorMessage)
+    toast.error('Erro ao carregar job', {
+      description: `Erro ao carregar job ${jobId.value}: ${errorMessage}`
+    })
 
-    // Fallback para alert se necessário
-    alert('Failed to load job data')
+    // Fallback para navegação em caso de erro crítico
     navigateBack()
   } finally {
     jobsStore.setLoadingJob(false)
@@ -602,10 +610,19 @@ const navigateBack = () => {
 const handleDataChanged = (data: any) => {
   // Auto-save dos dados do pricing e atualização reativa no store
   if (jobId.value && data) {
-    // Usar o composable para manter consistência
-    updatePricingsReactively(jobId.value, data)
-    // Notificação discreta para pricing auto-save
-    notifyPricingUpdated()
+    try {
+      // Usar o composable para manter consistência
+      updatePricingsReactively(jobId.value, data)
+      // Notificação discreta para pricing auto-save
+      toast.info('Preços atualizados', {
+        description: 'Dados de precificação foram atualizados automaticamente'
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao salvar alterações automaticamente'
+      toast.error('Erro ao salvar dados de precificação', {
+        description: errorMessage
+      })
+    }
   }
 }
 
@@ -613,29 +630,49 @@ const handleEventAdded = (event: JobEvent) => {
   // Usar o composable para manter consistência
   if (jobId.value) {
     addEventReactively(jobId.value, event)
-    notifyEventAdded(event.event_type)
+    toast.success('Evento adicionado', {
+      description: `Evento "${event.event_type}" foi adicionado com sucesso`
+    })
   }
 }
 
 const handleFileUploaded = (file: any) => {
   // Atualizar files no store para manter reatividade
   if (jobId.value && file) {
-    // TODO: Implementar atualização de arquivos no store quando tivermos o campo
-    console.log('📎 File uploaded - store will be updated:', file)
-    notifyFileUploaded(file.name || 'arquivo')
-    // Recarregar dados para pegar mudanças de arquivos
-    loadJobData()
+    try {
+      // TODO: Implementar atualização de arquivos no store quando tivermos o campo
+      console.log('📎 File uploaded - store will be updated:', file)
+      toast.success('Arquivo enviado', {
+        description: `${file.name || 'arquivo'} foi enviado com sucesso`
+      })
+      // Recarregar dados para pegar mudanças de arquivos
+      loadJobData()
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao processar upload'
+      toast.error('Erro ao fazer upload do arquivo', {
+        description: errorMessage
+      })
+    }
   }
 }
 
 const handleFileDeleted = (fileId: string) => {
   // Remover file do store para manter reatividade
   if (jobId.value && fileId) {
-    // TODO: Implementar remoção de arquivos no store quando tivermos o campo
-    console.log('🗑️ File deleted - store will be updated:', fileId)
-    notifyFileDeleted('arquivo')
-    // Recarregar dados para pegar mudanças de arquivos
-    loadJobData()
+    try {
+      // TODO: Implementar remoção de arquivos no store quando tivermos o campo
+      console.log('🗑️ File deleted - store will be updated:', fileId)
+      toast.success('Arquivo removido', {
+        description: 'arquivo foi removido com sucesso'
+      })
+      // Recarregar dados para pegar mudanças de arquivos
+      loadJobData()
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao processar remoção'
+      toast.error('Erro ao remover arquivo', {
+        description: errorMessage
+      })
+    }
   }
 }
 
@@ -648,35 +685,82 @@ const handleFileDeleted = (fileId: string) => {
 // Handlers para aba financeira - usando composable para reatividade otimizada
 const handleQuoteCreated = async () => {
   if (jobId.value) {
-    // Usar o composable para recarregar dados de forma reativa
-    await reloadJobDataReactively(jobId.value)
-    // Switch to financial tab to show the new quote
-    activeTab.value = 'financial'
+    try {
+      // Usar o composable para recarregar dados de forma reativa
+      await reloadJobDataReactively(jobId.value)
+      // Switch to financial tab to show the new quote
+      activeTab.value = 'financial'
+      toast.success('Orçamento criado!', {
+        description: 'Novo orçamento foi gerado com sucesso'
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao recarregar dados do orçamento'
+      toast.error('Erro ao criar orçamento', {
+        description: errorMessage
+      })
+    }
   }
 }
 
 const handleQuoteAccepted = async () => {
   if (jobId.value) {
-    // Usar o composable para recarregar dados de forma reativa
-    await reloadJobDataReactively(jobId.value)
+    try {
+      // Usar o composable para recarregar dados de forma reativa
+      await reloadJobDataReactively(jobId.value)
+      toast.success('Orçamento aceito!', {
+        description: 'Orçamento foi aceito e status atualizado'
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao atualizar status do orçamento'
+      toast.error('Erro ao aceitar orçamento', {
+        description: errorMessage
+      })
+    }
   }
 }
 
 const handleInvoiceCreated = async () => {
   if (jobId.value) {
-    // Usar o composable para recarregar dados de forma reativa
-    await reloadJobDataReactively(jobId.value)
+    try {
+      // Usar o composable para recarregar dados de forma reativa
+      await reloadJobDataReactively(jobId.value)
+      toast.success('Fatura criada!', {
+        description: 'Fatura foi gerada e está pronta para envio'
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao recarregar dados da fatura'
+      toast.error('Erro ao criar fatura', {
+        description: errorMessage
+      })
+    }
   }
 }
 
 // Handler para atualização de quote (importação/refresh)
 const handleQuoteUpdated = async (result: any) => {
   if (jobId.value) {
-    console.log('✅ Quote updated successfully:', result)
-    // Recarregar dados para refletir a nova quote
-    await reloadJobDataReactively(jobId.value)
-    // Notificar sucesso
-    // TODO: Adicionar notificação toast quando implementarmos
+    try {
+      console.log('✅ Quote updated successfully:', result)
+      
+      // Recarregar dados para refletir a nova quote
+      await reloadJobDataReactively(jobId.value)
+      
+      // Notificar sucesso com detalhes se disponíveis
+      if (result.changes_applied) {
+        toast.success('Orçamento atualizado!', {
+          description: `${result.changes_applied} alterações foram aplicadas`
+        })
+      } else {
+        toast.success('Orçamento atualizado!', {
+          description: 'Dados do orçamento foram sincronizados'
+        })
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao recarregar dados após atualização'
+      toast.error('Erro ao atualizar orçamento', {
+        description: errorMessage
+      })
+    }
   }
 }
 
@@ -692,16 +776,30 @@ const confirmDeleteJob = () => {
 }
 
 const deleteJob = async () => {
+  const jobName = jobData.value?.name || `Job #${jobData.value?.job_number}` || 'job'
+  
   try {
+    toast.loading(`Excluindo ${jobName}...`, {
+      id: 'delete-job'
+    })
+    
     const result = await jobRestService.deleteJob(jobId.value)
     if (result.success) {
-      // TODO: Toast notification
-      alert('Job deleted successfully')
+      toast.success(`${jobName} excluído!`, {
+        description: 'Item foi removido permanentemente',
+        id: 'delete-job'
+      })
       navigateBack()
+    } else {
+      throw new Error(result.error || 'Failed to delete job')
     }
   } catch (error) {
     console.error('Error deleting job:', error)
-    alert(error instanceof Error ? error.message : 'Failed to delete job')
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido ao excluir job'
+    toast.error(`Erro ao excluir ${jobName}`, {
+      description: errorMessage,
+      id: 'delete-job'
+    })
   }
 }
 

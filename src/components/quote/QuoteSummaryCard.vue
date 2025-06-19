@@ -395,10 +395,25 @@ async function handleLinkQuote() {
   if (!props.job?.id) return
   
   isLinking.value = true
+  
+  // Show loading toast
+  toast.loading('Vinculando planilha...', {
+    description: 'Criando e configurando planilha do orçamento',
+    id: 'quote-link'
+  })
+  
   try {
     const result = await quoteService.linkQuote(props.job.id)
     
-    toast.success("Successfully linked quote spreadsheet to job")
+    // Success toast with action to open spreadsheet
+    toast.success('Planilha vinculada com sucesso!', {
+      description: 'A planilha foi criada e já pode ser acessada',
+      id: 'quote-link',
+      action: result.sheet_url ? {
+        label: 'Abrir Planilha',
+        onClick: () => window.open(result.sheet_url, '_blank')
+      } : undefined
+    })
     
     // Immediately open the spreadsheet
     if (result.sheet_url) {
@@ -408,7 +423,21 @@ async function handleLinkQuote() {
     emit('quote-refreshed', result)
   } catch (error) {
     console.error('Failed to link quote:', error)
-    toast.error("Failed to link quote spreadsheet. Please try again.")
+    
+    let errorMessage = 'Erro desconhecido ao vincular planilha'
+    
+    if (error instanceof Error) {
+      errorMessage = error.message
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    } else if (error && typeof error === 'object' && 'error' in error) {
+      errorMessage = (error as any).error || errorMessage
+    }
+    
+    toast.error('Erro ao vincular planilha', {
+      description: errorMessage,
+      id: 'quote-link'
+    })
   } finally {
     isLinking.value = false
   }
@@ -425,14 +454,38 @@ async function handleRefreshSpreadsheet() {
   if (!props.job?.id) return
   
   isRefreshing.value = true
+  
+  // Show loading toast
+  toast.loading('Buscando atualizações...', {
+    description: 'Verificando mudanças na planilha',
+    id: 'quote-refresh'
+  })
+  
   try {
     // Step 1: Get preview
     const preview = await quoteService.previewQuote(props.job.id)
     previewData.value = preview
     showPreviewModal.value = true
+    
+    // Dismiss loading toast when preview is ready
+    toast.dismiss('quote-refresh')
   } catch (error) {
     console.error('Failed to preview quote:', error)
-    toast.error("Failed to preview quote changes. Please try again.")
+    
+    let errorMessage = 'Erro desconhecido ao buscar atualizações'
+    
+    if (error instanceof Error) {
+      errorMessage = error.message
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    } else if (error && typeof error === 'object' && 'error' in error) {
+      errorMessage = (error as any).error || errorMessage
+    }
+    
+    toast.error('Erro ao buscar atualizações', {
+      description: errorMessage,
+      id: 'quote-refresh'
+    })
   } finally {
     isRefreshing.value = false
   }
@@ -445,7 +498,26 @@ async function confirmRefresh() {
     const result = await quoteService.applyQuote(props.job.id)
     
     if (result.success) {
-      toast.success("Quote revision imported successfully")
+      // Calculate changes count from the changes object if available
+      let changesCount = 0
+      if (result.changes) {
+        changesCount = (result.changes.additions?.length || 0) + 
+                      (result.changes.updates?.length || 0) + 
+                      (result.changes.deletions?.length || 0)
+      }
+      
+      if (changesCount > 0) {
+        toast.success('Orçamento atualizado!', {
+          description: `${changesCount} alterações foram aplicadas`,
+          id: 'quote-refresh'
+        })
+      } else {
+        toast.info('Nenhuma alteração encontrada', {
+          description: 'A planilha está sincronizada com o sistema',
+          id: 'quote-refresh'
+        })
+      }
+      
       emit('quote-refreshed', result)
       showPreviewModal.value = false
     } else {
@@ -453,7 +525,21 @@ async function confirmRefresh() {
     }
   } catch (error) {
     console.error('Failed to apply quote:', error)
-    toast.error("Failed to apply quote changes. Please try again.")
+    
+    let errorMessage = 'Erro desconhecido ao aplicar alterações'
+    
+    if (error instanceof Error) {
+      errorMessage = error.message
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    } else if (error && typeof error === 'object' && 'error' in error) {
+      errorMessage = (error as any).error || errorMessage
+    }
+    
+    toast.error('Erro ao aplicar alterações', {
+      description: errorMessage,
+      id: 'quote-refresh'
+    })
   }
 }
 
