@@ -1,17 +1,17 @@
 <template>
-  <div class="kanban-column" :class="{ 'archive-column': isArchive }">
+  <div class="w-full flex-shrink-0" :class="{ 'w-full': isArchive }">
     <div v-if="!isArchive" class="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div class="p-2 border-b border-gray-200">
+      <div class="p-3 border-b border-gray-200">
         <div class="flex items-center justify-between">
-          <h3 class="font-semibold text-gray-900 text-xs">
+          <h3 class="font-semibold text-gray-900 text-sm">
             {{ status.label }} ({{ jobs.length }})
           </h3>
-          <div 
-            v-if="status.tooltip" 
+          <div
+            v-if="status.tooltip"
             class="group relative"
             :title="status.tooltip"
           >
-            <svg class="w-3 h-3 text-gray-400 hover:text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+            <svg class="w-4 h-4 text-gray-400 hover:text-gray-600" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path>
             </svg>
           </div>
@@ -19,10 +19,11 @@
       </div>
 
       <div ref="jobListRef" :data-status="status.key"
-        class="kanban-column-content jobs-grid min-h-[420px] max-h-[475px] md:min-h-[600px] md:max-h-[600px] lg:min-h-[650px] lg:max-h-[650px] overflow-y-auto transition-colors duration-200" :class="{
+        class="p-3 grid grid-cols-2 gap-2 overflow-y-auto transition-colors duration-200"
+        style="height: calc(90vh - 12.5rem); touch-action: pan-y; -webkit-overflow-scrolling: touch;"
+        :class="{
           'bg-blue-50 border-blue-200': isDragging
         }"
-        style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"
       >
         <JobCard
           v-for="job in jobs"
@@ -65,7 +66,7 @@
     </div>
 
     <!-- Archive layout -->
-    <div v-else class="archive-column">
+    <div v-else class="w-full">
       <div
         ref="jobListRef"
         :data-status="status.key"
@@ -193,165 +194,3 @@ watch(
   { deep: true }
 )
 </script>
-
-<style scoped>
-.kanban-column {
-  min-width: 150px;
-  max-width: 160px;
-  width: 155px;
-}
-
-/* Tablet responsive adjustments */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .kanban-column {
-    min-width: 200px;
-    max-width: 280px;
-    width: 100%;
-  }
-}
-
-.kanban-column.archive-column {
-  min-width: 100%;
-  max-width: none;
-  width: 100%;
-}
-
-.job-list {
-  max-height: 400px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--border)) transparent;
-}
-
-.archive-grid {
-  max-height: none;
-  overflow-y: visible;
-}
-
-.job-item-archive {
-  min-width: 280px;
-  width: 100%;
-}
-
-.job-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.job-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.job-list::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 3px;
-}
-
-.job-list::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--border)) / 0.8;
-}
-
-.empty-state {
-  border: 2px dashed hsl(var(--border));
-  border-radius: 8px;
-  margin: 8px 0;
-}
-
-:global(.sortable-ghost) {
-  opacity: 0.4;
-  transform: rotate(5deg);
-}
-
-/* Melhorar barra de scroll no mobile */
-.scrollbar-mobile {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f5f9;
-}
-
-.scrollbar-mobile::-webkit-scrollbar {
-  width: 8px;
-}
-
-.scrollbar-mobile::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-.scrollbar-mobile::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-  border: 1px solid #f1f5f9;
-}
-
-.scrollbar-mobile::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Mobile: Tornar scroll mais visível e responsivo */
-@media (max-width: 767px) {
-  .scrollbar-mobile::-webkit-scrollbar {
-    width: 12px;
-  }
-  
-  .scrollbar-mobile::-webkit-scrollbar-thumb {
-    background: #94a3b8;
-    border: 2px solid #f1f5f9;
-  }
-  
-  /* Mobile scroll improvements */
-.mobile-scroll-container {
-  /* Enable momentum scrolling on iOS */
-  -webkit-overflow-scrolling: touch;
-  /* Allow only vertical panning for better touch experience */
-  touch-action: pan-y;
-  /* Ensure scroll area is properly defined */
-  overscroll-behavior: contain;
-  scroll-behavior: smooth;
-}
-
-/* Mobile scrollbar visibility */
-@media (max-width: 767px) {
-  .mobile-scroll-container::-webkit-scrollbar {
-    width: 8px;
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-  }
-  
-  .mobile-scroll-container::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-  
-  .mobile-scroll-container::-webkit-scrollbar-thumb:active {
-    background: rgba(0, 0, 0, 0.5);
-  }
-  
-  .mobile-scroll-container::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
-    border-radius: 4px;
-  }
-}
-
-.scrollbar-mobile::-webkit-scrollbar-thumb:active {
-    background: #64748b;
-  }
-}
-
-:global(.sortable-chosen) {
-  cursor: grabbing;
-}
-
-:global(.sortable-drag) {
-  transform: rotate(5deg);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-:global(.is-dragging) .job-list {
-  min-height: 500px;
-}
-
-:global(.is-dragging) .empty-state {
-  border-color: hsl(var(--primary)) / 0.5;
-  background: hsl(var(--primary)) / 0.05;
-}
-</style>

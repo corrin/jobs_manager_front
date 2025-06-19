@@ -76,13 +76,21 @@
 
             <!-- Desktop: kanban - grows to fill space -->
             <div class="hidden md:flex md:flex-1 md:flex-col">
-              <!-- Tablet: 4x2 grid layout for optimal viewing -->
+              <!-- Tablet: Responsive grid layout for optimal viewing -->
               <div class="block lg:hidden">
-                <div class="max-w-7xl mx-auto px-2">
-                  <!-- First row: 4 columns -->
-                  <div class="grid grid-cols-4 gap-3 mb-4">
+                <div class="w-full mx-auto px-2">
+                  <!-- Dynamic grid based on number of columns -->
+                  <div 
+                    class="grid gap-3"
+                    :class="{
+                      'grid-cols-1': visibleStatusChoices.length <= 2,
+                      'grid-cols-2': visibleStatusChoices.length <= 4 && visibleStatusChoices.length > 2,
+                      'grid-cols-3': visibleStatusChoices.length <= 6 && visibleStatusChoices.length > 4,
+                      'grid-cols-4': visibleStatusChoices.length > 6
+                    }"
+                  >
                     <KanbanColumn
-                      v-for="status in visibleStatusChoices.slice(0, 4)"
+                      v-for="status in visibleStatusChoices"
                       :key="status.key"
                       :status="status"
                       :jobs="getJobsByStatus(status.key)"
@@ -93,39 +101,24 @@
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
                       @job-ready="handleJobReady"
-                      class="kanban-column"
-                    />
-                  </div>
-
-                  <!-- Second row: 4 columns -->
-                  <div class="grid grid-cols-4 gap-3">
-                    <KanbanColumn
-                      v-for="status in visibleStatusChoices.slice(4, 8)"
-                      :key="status.key"
-                      :status="status"
-                      :jobs="getJobsByStatus(status.key)"
-                      :show-load-more="shouldShowLoadMore(status.key)"
-                      :is-loading="isLoading"
-                      :is-dragging="isDragging"
-                      @job-click="viewJob"
-                      @load-more="loadMoreJobs(status.key)"
-                      @sortable-ready="handleSortableReady"
-                      @job-ready="handleJobReady"
-                      class="kanban-column"
+                      class="kanban-column-responsive"
                     />
                   </div>
                 </div>
               </div>
 
-              <!-- Large Desktop: Horizontal scrollable kanban -->
+              <!-- Large Desktop: Responsive grid that shows all columns -->
               <div class="hidden lg:block">
-                <div class="max-w-full mx-auto">
-                  <div class="flex justify-center gap-2 xl:gap-3 min-w-fit px-2">
+                <div class="w-full mx-auto px-2">
+                  <div 
+                    class="grid gap-2 xl:gap-3"
+                    :style="`grid-template-columns: repeat(${visibleStatusChoices.length}, minmax(0, 1fr))`"
+                  >
                     <KanbanColumn v-for="status in visibleStatusChoices" :key="status.key" :status="status"
                       :jobs="getJobsByStatus(status.key)" :show-load-more="shouldShowLoadMore(status.key)"
                       :is-loading="isLoading" :is-dragging="isDragging" @job-click="viewJob"
                       @load-more="loadMoreJobs(status.key)" @sortable-ready="handleSortableReady"
-                      @job-ready="handleJobReady" class="kanban-column" />
+                      @job-ready="handleJobReady" class="w-full" />
                   </div>
                 </div>
               </div>
