@@ -5,7 +5,7 @@
  * with Google Sheets integration.
  */
 
-import { api } from './api'
+import api from './api'
 
 export interface QuoteSheet {
   id: string
