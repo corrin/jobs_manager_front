@@ -185,12 +185,12 @@
 
           <!-- Changes Details -->
           <div class="max-h-96 overflow-y-auto space-y-4">
-            <!-- Additions -->
-            <div v-if="previewData.changes.additions.length > 0">
-              <h5 class="font-medium text-green-700 mb-2">New Items</h5>
+            <!-- Show draft lines that will be added -->
+            <div v-if="previewData.draft_lines && previewData.draft_lines.length > 0">
+              <h5 class="font-medium text-green-700 mb-2">Items to be Added/Updated</h5>
               <div class="space-y-2">
                 <div 
-                  v-for="(item, index) in previewData.changes.additions" 
+                  v-for="(item, index) in previewData.draft_lines" 
                   :key="index"
                   class="border border-green-200 bg-green-50 rounded-lg p-3"
                 >
@@ -200,7 +200,7 @@
                       <div class="text-sm text-gray-600">
                         {{ item.kind }} • Qty: {{ item.quantity }} • 
                         Cost: ${{ formatCurrency(item.unit_cost) }} • 
-                        Revenue: ${{ formatCurrency(item.unit_rev) }}
+                        Total: ${{ formatCurrency(item.total_cost) }}
                       </div>
                     </div>
                     <span class="text-green-600 font-bold">+NEW</span>
@@ -209,63 +209,24 @@
               </div>
             </div>
 
-            <!-- Updates -->
-            <div v-if="previewData.changes.updates.length > 0">
-              <h5 class="font-medium text-blue-700 mb-2">Updated Items</h5>
-              <div class="space-y-2">
-                <div 
-                  v-for="(item, index) in previewData.changes.updates" 
-                  :key="index"
-                  class="border border-blue-200 bg-blue-50 rounded-lg p-3"
-                >
-                  <div class="flex justify-between items-start">
-                    <div>
-                      <div class="font-medium">{{ item.desc }}</div>
-                      <div class="text-sm text-gray-600">
-                        {{ item.kind }} • Qty: {{ item.quantity }} • 
-                        Cost: ${{ formatCurrency(item.unit_cost) }} • 
-                        Revenue: ${{ formatCurrency(item.unit_rev) }}
-                      </div>
-                    </div>
-                    <span class="text-blue-600 font-bold">UPDATED</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Deletions -->
-            <div v-if="previewData.changes.deletions.length > 0">
-              <h5 class="font-medium text-red-700 mb-2">Deleted Items</h5>
-              <div class="space-y-2">
-                <div 
-                  v-for="(item, index) in previewData.changes.deletions" 
-                  :key="index"
-                  class="border border-red-200 bg-red-50 rounded-lg p-3"
-                >
-                  <div class="flex justify-between items-start">
-                    <div>
-                      <div class="font-medium line-through">{{ item.desc }}</div>
-                      <div class="text-sm text-gray-600">{{ item.kind }}</div>
-                    </div>
-                    <span class="text-red-600 font-bold">DELETED</span>
-                  </div>
-                </div>
-              </div>
+            <!-- Show message if no items -->
+            <div v-if="!previewData.draft_lines || previewData.draft_lines.length === 0" class="text-center py-4">
+              <p class="text-gray-500">No changes to preview</p>
             </div>
           </div>
 
           <!-- Validation warnings/errors -->
-          <div v-if="previewData.validation?.warnings?.length || previewData.validation?.errors?.length" class="space-y-2">
-            <div v-if="previewData.validation.errors?.length" class="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div v-if="previewData.validation_report?.warnings?.length || previewData.validation_report?.errors?.length" class="space-y-2">
+            <div v-if="previewData.validation_report.errors?.length" class="bg-red-50 border border-red-200 rounded-lg p-3">
               <h5 class="font-medium text-red-800 mb-2">Errors</h5>
               <ul class="text-sm text-red-700 space-y-1">
-                <li v-for="error in previewData.validation.errors" :key="error">• {{ error }}</li>
+                <li v-for="error in previewData.validation_report.errors" :key="error">• {{ error }}</li>
               </ul>
             </div>
-            <div v-if="previewData.validation.warnings?.length" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <div v-if="previewData.validation_report.warnings?.length" class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <h5 class="font-medium text-yellow-800 mb-2">Warnings</h5>
               <ul class="text-sm text-yellow-700 space-y-1">
-                <li v-for="warning in previewData.validation.warnings" :key="warning">• {{ warning }}</li>
+                <li v-for="warning in previewData.validation_report.warnings" :key="warning">• {{ warning }}</li>
               </ul>
             </div>
           </div>
@@ -505,12 +466,10 @@ async function confirmRefresh() {
     console.log('✅ Quote apply result:', result)
     
     if (result.success) {
-      // Calculate changes count from the changes object if available
+      // Calculate changes count from the draft_lines if available
       let changesCount = 0
-      if (result.changes) {
-        changesCount = (result.changes.additions?.length || 0) + 
-                      (result.changes.updates?.length || 0) + 
-                      (result.changes.deletions?.length || 0)
+      if (result.draft_lines) {
+        changesCount = result.draft_lines.length
       }
       
       console.log('📊 Changes count:', changesCount)

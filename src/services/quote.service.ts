@@ -9,48 +9,42 @@ import api from './api'
 import type { QuoteSheet } from '../schemas/job.schemas'
 
 export interface QuotePreview {
-  changes: {
-    additions: Array<{
-      kind: string
-      desc: string
-      quantity: number
-      unit_cost: number
-      unit_rev: number
-    }>
-    updates: Array<{
-      id: number
-      kind: string
-      desc: string
-      quantity: number
-      unit_cost: number
-      unit_rev: number
-      changes: Record<string, any>
-    }>
-    deletions: Array<{
-      id: number
-      kind: string
-      desc: string
-    }>
-  }
+  draft_lines: Array<{
+    kind: string
+    desc: string
+    quantity: number
+    unit_cost: number
+    total_cost: number
+    category?: string
+  }>
   diff_preview: {
     additions_count: number
     updates_count: number
     deletions_count: number
     total_changes: number
     next_revision: number
-    net_cost_change: number
-    net_revenue_change: number
+    current_revision?: number
+    net_cost_change?: number
+    net_revenue_change?: number
   }
-  validation?: {
+  can_proceed: boolean
+  success: boolean
+  validation_report?: {
     warnings: string[]
     errors: string[]
-  }
+  } | null
 }
 
 export interface QuoteApplyResult {
   success: boolean
   cost_set?: any
-  changes?: QuotePreview['changes']
+  draft_lines?: Array<{
+    kind: string
+    desc: string
+    quantity: number
+    unit_cost: number
+    total_cost: number
+  }>
   error?: string
 }
 
