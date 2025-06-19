@@ -17,6 +17,11 @@ export function extractErrorMessage(error: unknown): string {
   if (error && typeof error === 'object' && 'isAxiosError' in error) {
     const axiosError = error as AxiosError
 
+    // Tratamento específico para timeouts
+    if (axiosError.code === 'ECONNABORTED' && axiosError.message?.includes('timeout')) {
+      return 'Operation is taking longer than expected - please wait a moment and check if it completed successfully'
+    }
+
     // Tentar extrair mensagem do response data
     if (axiosError.response?.data) {
       const data = axiosError.response.data as any
@@ -106,6 +111,14 @@ export function extractErrorMessage(error: unknown): string {
  */
 export function extractQuoteErrorMessage(error: unknown): string {
   const baseMessage = extractErrorMessage(error)
+
+  // Tratamento específico para timeout em operações de quote
+  if (error && typeof error === 'object' && 'isAxiosError' in error) {
+    const axiosError = error as AxiosError
+    if (axiosError.code === 'ECONNABORTED' && axiosError.message?.includes('timeout')) {
+      return 'Quote creation is taking longer than expected. The spreadsheet may have been created successfully - please refresh the page to check.'
+    }
+  }
 
   // Mensagens específicas para erros comuns de quote
   if (baseMessage.includes('No master quote template URL')) {

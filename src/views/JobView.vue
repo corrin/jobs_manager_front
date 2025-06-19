@@ -435,7 +435,7 @@ import { useJobsStore } from '@/stores/jobs'
 import { useJobReactivity } from '@/composables/useJobReactivity'
 import { useJobAutoSync } from '@/composables/useJobAutoSync'
 import { toast } from 'vue-sonner'
-import { extractErrorMessage, logError } from '@/utils/error-handler'
+import { extractErrorMessage, extractQuoteErrorMessage, logError } from '@/utils/error-handler'
 import JobPdfDialog from '@/components/job/JobPdfDialog.vue'
 
 const route = useRoute()
@@ -750,13 +750,23 @@ const handleQuoteUpdated = async (result: any) => {
     try {
       console.log('✅ Quote updated successfully:', result)
 
-      // Recarregar dados para refletir a nova quote
-      await reloadJobDataReactively(jobId.value)
+      // Check if we need to reload job data (e.g., after linking a quote sheet)
+      if (result.shouldReloadJob) {
+        console.log('🔄 Reloading job data after quote link operation')
+        await reloadJobDataReactively(jobId.value, true) // Force reload to get updated quote_sheet
+      } else {
+        // Standard quote update - use cached reload
+        await reloadJobDataReactively(jobId.value)
+      }
 
       // Notificar sucesso com detalhes se disponíveis
       if (result.changes_applied) {
         toast.success('Quote updated!', {
           description: `${result.changes_applied} changes have been applied`
+        })
+      } else if (result.sheet_url) {
+        toast.success('Quote sheet linked!', {
+          description: 'Quote spreadsheet has been created and linked'
         })
       } else {
         toast.success('Quote updated!', {

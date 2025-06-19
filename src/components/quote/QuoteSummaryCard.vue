@@ -427,7 +427,8 @@ async function handleLinkQuote() {
       window.open(result.sheet_url, '_blank')
     }
     
-    emit('quote-refreshed', result)
+    // Emit event to reload job data with the linked sheet
+    emit('quote-refreshed', { ...result, shouldReloadJob: true })
   } catch (error) {
     logError('handleLinkQuote', error, { jobId: props.job?.id })
     

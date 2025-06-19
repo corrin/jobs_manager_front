@@ -68,7 +68,10 @@ class QuoteService {
   async linkQuote(jobId: string, templateUrl?: string): Promise<QuoteSheet> {
     const payload = templateUrl ? { template_url: templateUrl } : {}
 
-    const response = await api.post(`/job/rest/jobs/${jobId}/quote/link/`, payload)
+    // Use longer timeout for quote linking as it involves Google Sheets operations
+    const response = await api.post(`/job/rest/jobs/${jobId}/quote/link/`, payload, {
+      timeout: 30000 // 30 seconds for Google Sheets operations
+    })
     return response.data
   }
 
