@@ -137,21 +137,7 @@
               </span>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="pt-2 space-y-2">
-              <button 
-                disabled
-                class="w-full px-3 py-2 bg-gray-100 text-gray-400 rounded-md text-sm cursor-not-allowed"
-              >
-                Export Quote
-              </button>
-              <button 
-                disabled
-                class="w-full px-3 py-2 bg-gray-100 text-gray-400 rounded-md text-sm cursor-not-allowed"
-              >
-                View History
-              </button>
-            </div>
+
           </div>
         </div>
       </div>
