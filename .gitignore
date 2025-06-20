@@ -33,3 +33,4 @@ coverage
 .env.uat
 .env.prod
 .env.development
+cookies.txt
