@@ -166,8 +166,8 @@
         <div v-if="previewData" class="space-y-6">
           <!-- Summary -->
           <div class="bg-blue-50 rounded-lg p-4">
-            <h4 class="font-medium text-blue-900 mb-2">Summary of Changes</h4>
-            <div class="grid grid-cols-3 gap-4 text-sm">
+            <h4 class="font-medium text-blue-900 mb-3">Summary of Changes</h4>
+            <div v-if="previewData.diff_preview.total_changes > 0" class="grid grid-cols-3 gap-4 text-sm">
               <div class="text-center">
                 <div class="text-lg font-bold text-green-600">{{ previewData.diff_preview.additions_count }}</div>
                 <div class="text-gray-600">Additions</div>
@@ -181,17 +181,25 @@
                 <div class="text-gray-600">Deletions</div>
               </div>
             </div>
+            <div v-else class="text-center">
+              <div class="text-lg font-bold text-gray-600">0</div>
+              <div class="text-gray-600">No changes detected</div>
+              <div class="text-sm text-gray-500 mt-1">The spreadsheet is in sync with the system</div>
+            </div>
           </div>
 
           <!-- Changes Details -->
           <div class="max-h-96 overflow-y-auto space-y-4">
-            <!-- Show draft lines that will be added -->
-            <div v-if="previewData.draft_lines && previewData.draft_lines.length > 0">
-              <h5 class="font-medium text-green-700 mb-2">Items to be Added/Updated</h5>
+            <!-- Show additions -->
+            <div v-if="previewData.diff_preview.additions_count > 0">
+              <h5 class="font-medium text-green-700 mb-2 flex items-center">
+                <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                Items to be Added ({{ previewData.diff_preview.additions_count }})
+              </h5>
               <div class="space-y-2">
                 <div 
-                  v-for="(item, index) in previewData.draft_lines" 
-                  :key="index"
+                  v-for="(item, index) in previewData.draft_lines.slice(0, previewData.diff_preview.additions_count)" 
+                  :key="`add-${index}`"
                   class="border border-green-200 bg-green-50 rounded-lg p-3"
                 >
                   <div class="flex justify-between items-start">
@@ -203,15 +211,58 @@
                         Total: ${{ formatCurrency(item.total_cost) }}
                       </div>
                     </div>
-                    <span class="text-green-600 font-bold">+NEW</span>
+                    <span class="text-green-600 font-bold text-xs px-2 py-1 bg-green-100 rounded">+ADD</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Show message if no items -->
-            <div v-if="!previewData.draft_lines || previewData.draft_lines.length === 0" class="text-center py-4">
-              <p class="text-gray-500">No changes to preview</p>
+            <!-- Show updates -->
+            <div v-if="previewData.diff_preview.updates_count > 0">
+              <h5 class="font-medium text-blue-700 mb-2 flex items-center">
+                <span class="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                Items to be Updated ({{ previewData.diff_preview.updates_count }})
+              </h5>
+              <div class="space-y-2">
+                <div 
+                  v-for="(item, index) in previewData.draft_lines.slice(previewData.diff_preview.additions_count, previewData.diff_preview.additions_count + previewData.diff_preview.updates_count)" 
+                  :key="`update-${index}`"
+                  class="border border-blue-200 bg-blue-50 rounded-lg p-3"
+                >
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <div class="font-medium">{{ item.desc }}</div>
+                      <div class="text-sm text-gray-600">
+                        {{ item.kind }} • Qty: {{ item.quantity }} • 
+                        Cost: ${{ formatCurrency(item.unit_cost) }} • 
+                        Total: ${{ formatCurrency(item.total_cost) }}
+                      </div>
+                    </div>
+                    <span class="text-blue-600 font-bold text-xs px-2 py-1 bg-blue-100 rounded">~UPD</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Show deletions -->
+            <div v-if="previewData.diff_preview.deletions_count > 0">
+              <h5 class="font-medium text-red-700 mb-2 flex items-center">
+                <span class="inline-block w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                Items to be Deleted ({{ previewData.diff_preview.deletions_count }})
+              </h5>
+              <div class="space-y-2">
+                <div class="border border-red-200 bg-red-50 rounded-lg p-3">
+                  <div class="text-sm text-red-700">
+                    {{ previewData.diff_preview.deletions_count }} existing items will be removed from the quote
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Show message if no changes -->
+            <div v-if="previewData.diff_preview.total_changes === 0" class="text-center py-4">
+              <div class="text-gray-500 mb-2">No changes detected</div>
+              <div class="text-sm text-gray-400">The spreadsheet is already in sync with the system</div>
             </div>
           </div>
 
@@ -236,8 +287,12 @@
           <Button variant="outline" @click="showPreviewModal = false">
             Cancel
           </Button>
-          <Button @click="confirmRefresh" :disabled="!previewData">
-            Apply Changes
+          <Button 
+            @click="confirmRefresh" 
+            :disabled="!previewData || previewData.diff_preview.total_changes === 0"
+            :class="previewData?.diff_preview.total_changes === 0 ? 'opacity-50 cursor-not-allowed' : ''"
+          >
+            {{ previewData?.diff_preview.total_changes === 0 ? 'No Changes to Apply' : `Apply ${previewData?.diff_preview.total_changes} Changes` }}
           </Button>
         </DialogFooter>
       </DialogContent>
