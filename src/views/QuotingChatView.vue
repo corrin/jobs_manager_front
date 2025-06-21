@@ -20,6 +20,17 @@
               </p>
             </div>
           </div>
+          
+          <!-- Header Actions -->
+          <div class="flex items-center space-x-2">
+            <button
+              @click="clearChatHistory"
+              class="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              title="Reset chat"
+            >
+              <RotateCcw class="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -56,15 +67,32 @@
 
         <!-- Input Area -->
         <div class="flex space-x-2">
-          <textarea
-            v-model="currentInput"
-            @keydown.enter.exact.prevent="handleSendMessage"
-            @keydown.enter.shift.exact="addNewLine"
-            placeholder="Describe what you need fabricated..."
-            class="flex-1 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            rows="3"
-            :disabled="isLoading"
-          />
+          <div class="flex-1 relative">
+            <textarea
+              v-model="currentInput"
+              @keydown.enter.exact.prevent="handleSendMessage"
+              @keydown.enter.shift.exact="addNewLine"
+              placeholder="Describe what you need fabricated..."
+              class="w-full p-3 pr-12 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="3"
+              :disabled="isLoading"
+            />
+            <input
+              ref="fileInput"
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.dwg,.dxf"
+              @change="handleFileUpload"
+              class="hidden"
+              multiple
+            />
+            <button
+              @click="triggerFileUpload"
+              class="absolute bottom-3 right-3 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+              title="Upload files"
+            >
+              <Paperclip class="w-4 h-4" />
+            </button>
+          </div>
           <button
             @click="handleSendMessage"
             :disabled="!currentInput.trim() || isLoading"
@@ -84,13 +112,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Send } from 'lucide-vue-next'
+import { ArrowLeft, Send, Paperclip, RotateCcw } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { QuoteChatService, type VueChatMessage } from '@/services/quote-chat.service'
 import { toast } from 'vue-sonner'
 
 const route = useRoute()
 const router = useRouter()
+const fileInput = ref<HTMLInputElement>()
 
 // Job context from route params
 const jobContext = computed(() => {
@@ -267,6 +296,28 @@ const clearChatHistory = async () => {
   }
 }
 
+
+const triggerFileUpload = () => {
+  fileInput.value?.click()
+}
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const files = target.files
+  
+  if (!files || files.length === 0) return
+  
+  // TODO: Implement file upload to job files
+  console.log('Files selected:', Array.from(files).map(f => f.name))
+  
+  // For now, just show toast notification
+  toast.info('File upload', {
+    description: `Selected ${files.length} file(s). File upload will be implemented next.`
+  })
+  
+  // Clear the input
+  target.value = ''
+}
 
 const navigateBack = () => {
   if (jobContext.value) {
