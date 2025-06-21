@@ -28,19 +28,6 @@
         <!-- Chat Messages -->
         <div class="flex-1 overflow-y-auto bg-gray-50 rounded-lg p-4 mb-4">
           <div class="space-y-4">
-            <!-- Welcome Message -->
-            <div class="flex justify-start">
-              <div class="bg-white rounded-lg p-4 shadow-sm max-w-md">
-                <p class="text-gray-800">
-                  Hi! I'll help you create a quote for <strong>{{ jobContext?.jobName || 'this job' }}</strong>.
-                  Please describe what you need fabricated.
-                </p>
-                <p class="text-sm text-gray-600 mt-2">
-                  Example: "3 stainless steel boxes, 700×700×400mm, welded seams"
-                </p>
-              </div>
-            </div>
-
             <!-- Chat Messages -->
             <div
               v-for="message in messages"
@@ -206,24 +193,26 @@ const loadChatHistory = async () => {
   try {
     const response = await quoteChatService.getChatHistory(jobContext.value.jobId)
     
-    if (response.success && response.data.messages.length > 0) {
-      // Convert backend messages to Vue chat format
-      const vueMessages = response.data.messages.map(msg => 
-        quoteChatService.convertToVueMessage(msg)
-      )
-      
-      // Add welcome message at the beginning
-      messages.value = [
-        {
-          _id: 'welcome-1',
-          content: `Hi! I'll help you create a quote for **${jobContext.value.jobName}**.\n\nPlease describe what you need fabricated.\n\nExample: "3 stainless steel boxes, 700×700×400mm, welded seams"`,
-          senderId: 'assistant-1',
-          username: 'Quoting Assistant',
-          timestamp: new Date().toISOString(),
-          system: false
-        },
-        ...vueMessages
-      ]
+    if (response.success) {
+      if (response.data.messages.length > 0) {
+        // Convert backend messages to Vue chat format
+        const vueMessages = response.data.messages.map(msg => 
+          quoteChatService.convertToVueMessage(msg)
+        )
+        messages.value = vueMessages
+      } else {
+        // No existing messages, show welcome message
+        messages.value = [
+          {
+            _id: 'welcome-1',
+            content: `Hi! I'll help you create a quote for ${jobContext.value.jobName}.\n\nPlease describe what you need fabricated.\n\nExample: "3 stainless steel boxes, 700×700×400mm, welded seams"`,
+            senderId: 'assistant-1',
+            username: 'Quoting Assistant',
+            timestamp: new Date().toISOString(),
+            system: false
+          }
+        ]
+      }
     }
   } catch (error) {
     console.error('Failed to load chat history:', error)
@@ -258,7 +247,7 @@ const clearChatHistory = async () => {
       messages.value = [
         {
           _id: 'welcome-1',
-          content: `Hi! I'll help you create a quote for **${jobContext.value.jobName}**.\n\nPlease describe what you need fabricated.\n\nExample: "3 stainless steel boxes, 700×700×400mm, welded seams"`,
+          content: `Hi! I'll help you create a quote for ${jobContext.value.jobName}.\n\nPlease describe what you need fabricated.\n\nExample: "3 stainless steel boxes, 700×700×400mm, welded seams"`,
           senderId: 'assistant-1',
           username: 'Quoting Assistant',
           timestamp: new Date().toISOString(),
