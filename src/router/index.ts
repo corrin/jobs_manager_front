@@ -51,6 +51,15 @@ const router = createRouter({
       redirect: '/kanban',
     },
     {
+      path: '/quoting/chat',
+      name: 'QuotingChatView',
+      component: () => import('@/views/QuotingChatView.vue'),
+      meta: {
+        requiresAuth: true,
+        title: 'Interactive Quote Chat - Jobs Manager',
+      },
+    },
+    {
       path: '/timesheets/entry',
       name: 'timesheet-entry',
       component: () => import('@/views/TimesheetEntryView.vue'),
