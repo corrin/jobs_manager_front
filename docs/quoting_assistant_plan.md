@@ -1,4 +1,8 @@
-# Quoting Tool – Minimalist Functional Plan
+# Quoting Tool – Implementation Progress & Plan
+
+## ✅ Implementation Status
+**Foundation Complete**: Chat interface, backend APIs, message persistence, file upload UI  
+**Next Phase**: Core quoting workflow and MCP integration
 
 ## Purpose
 
@@ -158,13 +162,43 @@ This allows the tool to be used not only for quote generation, but also for trai
 
 ---
 
-## Next Step
+## 🎯 Implementation Roadmap
 
-Model one real job (e.g. splashback or welded box) end-to-end using this structure.  
-Include:
-- Estimator input  
-- System clarification  
-- Full material plan by 3 methods  
-- Price comparison  
-- Quote output with trace  
-- Quote checking validation (optional)
+### Phase 1: Foundation ✅ COMPLETE
+- ✅ Chat interface with job context
+- ✅ Backend API for message persistence  
+- ✅ File upload UI integration
+- ✅ Reset/clear chat functionality
+
+### Phase 2: Core Workflow 🚧 IN PROGRESS
+**Immediate Next Steps:**
+1. **LLM Integration** (HIGH) - Replace mock responses with actual LLM calls
+2. **Input Parsing** (HIGH) - Extract dimensions, materials, quantities from freeform text
+3. **Confirmation Phase** (HIGH) - Implement structured confirmation before calculation
+
+### Phase 3: Calculation Engine 📋 PLANNED
+**Three-Method Material Usage:**
+- Area + waste percentage calculation
+- Tenths-based yield logic  
+- Proportional billing methodology
+- Cross-validation and discrepancy flagging
+
+### Phase 4: MCP Integration 📋 PLANNED
+**Pricing & Materials:**
+- Connect to supplier pricing APIs
+- Internal remnant stock queries
+- Real-time material cost lookup
+- Labor rate calculations
+
+### Phase 5: Output & Export 📋 PLANNED
+- Structured quote table generation
+- Calculation trace/audit trail
+- Export to existing quote workflow
+- Quote verification mode
+
+## 🚀 Next Sprint Priority
+**Week 1**: LLM integration with structured parsing  
+**Week 2**: Implement confirmation phase and basic material extraction  
+**Week 3**: Begin 3-method calculation engine
+
+Focus: Get the core interaction working before building calculation complexity.
