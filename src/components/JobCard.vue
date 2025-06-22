@@ -9,8 +9,8 @@
       'cursor-pointer': isMovementModeActive,
       'cursor-grab': !isDragging && !isMovementModeActive,
     }"
-    :data-id="job.id"
-    :data-job-id="job.id"
+    :data-id="job.id || ''"
+    :data-job-id="job.id || ''"
     @click="handleClick"
   >
     <!-- Movement Mode Indicator -->
@@ -39,7 +39,7 @@
     <!-- Status Badge -->
     <StatusBadge
       :label="friendlyStatusName"
-      :status="job.status_key"
+      :status="job.status_key || ''"
       size="xs"
       class="mb-2 text-[10px]"
     />
@@ -54,7 +54,7 @@
       }"
     >
       <StaffAvatar
-        v-for="staff in job.people"
+        v-for="staff in job.people || []"
         :key="staff.id"
         :staff="staff"
         size="sm"
@@ -124,7 +124,7 @@ const statusNameMap: Record<string, string> = {
 
 // Computed property for friendly status name
 const friendlyStatusName = computed(() => {
-  return statusNameMap[props.job.status_key] || props.job.status_key
+  return statusNameMap[props.job.status_key || ''] || props.job.status_key || ''
 })
 
 // Truncate job name to 12 characters

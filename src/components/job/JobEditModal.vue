@@ -419,8 +419,71 @@ const handleSave = async () => {
 
     const result = await jobRestService.updateJob(props.jobData.id, updateData)
 
-    if (result.success && result.data) {
-      emit('job-updated', result.data)
+    if (
+      result.success &&
+      result.data &&
+      typeof result.data === 'object' &&
+      'id' in result.data &&
+      'job_number' in result.data
+    ) {
+      // Cast seguro para JobData, preenchendo campos obrigatórios
+      const safeJobData: JobData = {
+        id: String((result.data as { id: unknown }).id ?? ''),
+        name: (result.data as { name?: string }).name ?? '',
+        job_number: Number((result.data as { job_number: unknown }).job_number ?? 0),
+        client_id: (result.data as { client_id?: string }).client_id ?? '',
+        client_name: (result.data as { client_name?: string }).client_name ?? '',
+        description: (result.data as { description?: string | null }).description ?? '',
+        order_number: (result.data as { order_number?: string | null }).order_number ?? '',
+        notes: (result.data as { notes?: string | null }).notes ?? '',
+        contact_id: (result.data as { contact_id?: string | null }).contact_id ?? '',
+        contact_name: (result.data as { contact_name?: string | null }).contact_name ?? '',
+        job_status: (result.data as { job_status?: string }).job_status ?? '',
+        pricing_methodology:
+          (result.data as { pricing_methodology?: 'fixed_price' | 'time_materials' })
+            .pricing_methodology ?? 'fixed_price',
+        created_at: (result.data as { created_at?: string }).created_at ?? '',
+        updated_at: (result.data as { updated_at?: string }).updated_at ?? '',
+        // Campos opcionais preenchidos se existirem
+        complex_job: (result.data as { complex_job?: boolean }).complex_job,
+        delivery_date: (result.data as { delivery_date?: string | null }).delivery_date,
+        quote_acceptance_date: (result.data as { quote_acceptance_date?: string | null })
+          .quote_acceptance_date,
+        quoted: (result.data as { quoted?: boolean }).quoted,
+        invoiced: (result.data as { invoiced?: boolean }).invoiced,
+        paid: (result.data as { paid?: boolean }).paid,
+        charge_out_rate: (result.data as { charge_out_rate?: string }).charge_out_rate,
+        latest_estimate_pricing: (
+          result.data as { latest_estimate_pricing?: import('@/schemas/job.schemas').JobPricing }
+        ).latest_estimate_pricing,
+        latest_quote_pricing: (
+          result.data as { latest_quote_pricing?: import('@/schemas/job.schemas').JobPricing }
+        ).latest_quote_pricing,
+        latest_reality_pricing: (
+          result.data as { latest_reality_pricing?: import('@/schemas/job.schemas').JobPricing }
+        ).latest_reality_pricing,
+        latest_estimate: (
+          result.data as { latest_estimate?: import('@/schemas/costing.schemas').CostSet }
+        ).latest_estimate,
+        latest_quote: (
+          result.data as { latest_quote?: import('@/schemas/costing.schemas').CostSet }
+        ).latest_quote,
+        latest_actual: (
+          result.data as { latest_actual?: import('@/schemas/costing.schemas').CostSet }
+        ).latest_actual,
+        quote_sheet: (result.data as { quote_sheet?: import('@/schemas/job.schemas').QuoteSheet })
+          .quote_sheet,
+        latest_pricings: (
+          result.data as {
+            latest_pricings?: Record<string, import('@/schemas/job.schemas').JobPricing>
+          }
+        ).latest_pricings,
+        company_defaults: (
+          result.data as { company_defaults?: import('@/schemas/job.schemas').CompanyDefaults }
+        ).company_defaults,
+        events: (result.data as { events?: import('@/schemas/job.schemas').JobEvent[] }).events,
+      }
+      emit('job-updated', safeJobData)
       emit('close')
     } else {
       throw new Error('Failed to update job')

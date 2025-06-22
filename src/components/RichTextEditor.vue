@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type Quill from 'quill'
-import type { RangeStatic } from 'quill'
+import RangeStatic from 'quill'
 
 // Props seguindo clean code principles
 interface Props {

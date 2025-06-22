@@ -31,7 +31,7 @@
         <QuoteSummaryCard
           :quote-data="currentQuote.quote"
           :is-loading="isLoading"
-          :job="jobData as any"
+          :job="jobData as Job"
           @quote-refreshed="handleQuoteRefreshed"
           class="h-full"
         />
@@ -55,7 +55,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import QuoteCostLinesGrid from '@/components/quote/QuoteCostLinesGrid.vue'
 import QuoteSummaryCard from '@/components/quote/QuoteSummaryCard.vue'
-import type { Job, QuoteOperationResult } from '@/types'
+import type { Job, QuoteOperationResult, QuoteSheet } from '@/types'
 
 interface Props {
   jobId: string
@@ -74,7 +74,14 @@ const currentQuote = computed(() => {
   const jobData = props.jobData as unknown
 
   // Type guard para garantir que jobData tem a estrutura esperada
-  type QuoteData = { id: string }
+  type QuoteData = {
+    id: string
+    kind: 'quote'
+    rev: number
+    created: string
+    summary: { cost: number; rev: number; hours: number }
+    cost_lines: import('@/schemas/costing.schemas').CostLine[]
+  }
   type JobData = { latest_quote?: QuoteData; latest_quote_pricing?: { id: string } }
   const isJobData = (data: unknown): data is JobData => typeof data === 'object' && data !== null
 
@@ -101,12 +108,17 @@ const currentQuote = computed(() => {
   return {
     has_quote: true,
     quote: {
-      id: quoteData.id,
+      id: String(quoteData.id),
       kind: 'quote' as const,
-      rev: quoteData.rev,
-      created: quoteData.created,
-      summary: quoteData.summary,
-      cost_lines: quoteData.cost_lines || [],
+      rev: Number(quoteData.rev),
+      created: String(quoteData.created),
+      summary: quoteData.summary ?? { cost: 0, rev: 0, hours: 0 },
+      cost_lines: (quoteData.cost_lines || []).map((line) => ({
+        ...line,
+        quantity: typeof line.quantity === 'string' ? Number(line.quantity) : line.quantity,
+        unit_cost: typeof line.unit_cost === 'string' ? Number(line.unit_cost) : line.unit_cost,
+        unit_rev: typeof line.unit_rev === 'string' ? Number(line.unit_rev) : line.unit_rev,
+      })),
     },
   }
 })
@@ -121,9 +133,11 @@ const quoteCostLines = computed(() => {
 })
 
 // Event handlers
-function handleQuoteRefreshed(result: QuoteOperationResult) {
-  console.log('🔄 [JobQuoteTab] Quote refreshed:', result)
-  emit('quoteImported', result)
+function handleQuoteRefreshed(
+  data: QuoteOperationResult | (QuoteSheet & { shouldReloadJob: boolean }),
+) {
+  console.log('🔄 [JobQuoteTab] Quote refreshed:', data)
+  emit('quoteImported', data as QuoteOperationResult)
 }
 
 // Load initial data

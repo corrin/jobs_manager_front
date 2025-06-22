@@ -39,6 +39,7 @@ export interface QuotePreview {
 
 export interface QuoteApplyResult {
   success: boolean
+  message: string // compatível com src/types/index.ts
   cost_set?: CostLine[]
   draft_lines?: Array<{
     kind: string

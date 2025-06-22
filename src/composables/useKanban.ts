@@ -124,10 +124,10 @@ export function useKanban(onJobsLoaded?: () => void) {
         client_name: job.client_name,
         contact_person: job.contact_person,
         people: job.people || [],
-        status: job.status_key, // Use status_key for categorization
-        status_key: job.status_key,
-        status_display: job.status, // Keep display name separate
-        job_status: job.status_key, // Mapear status_key para job_status
+        status: job.status_key || '', // Use status_key for categorization
+        status_key: job.status_key || '',
+        status_display: job.status || '', // Keep display name separate
+        job_status: job.status_key || '', // Mapear status_key para job_status
         paid: job.paid,
         created_by_id: job.created_by_id,
         created_at: job.created_at,

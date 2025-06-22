@@ -68,8 +68,8 @@ export class JobService {
       const data = this.handleApiResponse(response, AllJobsApiResponseSchema)
 
       return {
-        activeJobs: data.active_jobs,
-        archivedJobs: data.archived_jobs,
+        activeJobs: data.active_jobs.map((job) => ({ ...job, people: job.people ?? [] })),
+        archivedJobs: data.archived_jobs.map((job) => ({ ...job, people: job.people ?? [] })),
         totalArchived: data.total_archived,
       }
     } catch (error) {
@@ -87,7 +87,11 @@ export class JobService {
 
       const response = await api.get(`/job/api/jobs/fetch/${status}/?${params.toString()}`)
 
-      return this.handleApiResponse(response, JobsApiResponseSchema)
+      const apiResult = this.handleApiResponse(response, JobsApiResponseSchema)
+      return {
+        ...apiResult,
+        jobs: apiResult.jobs.map((job) => ({ ...job, people: job.people ?? [] })),
+      }
     } catch (error) {
       console.error('Error fetching jobs by status:', error)
       throw new Error('Failed to load jobs by status')
@@ -170,8 +174,11 @@ export class JobService {
       })
 
       const response = await api.get(`/job/api/jobs/advanced-search/?${params.toString()}`)
-
-      return this.handleApiResponse(response, JobsApiResponseSchema)
+      const apiResult = this.handleApiResponse(response, JobsApiResponseSchema)
+      return {
+        ...apiResult,
+        jobs: apiResult.jobs.map((job) => ({ ...job, people: job.people ?? [] })),
+      }
     } catch (error) {
       console.error('Error performing advanced search:', error)
       throw new Error('Failed to perform advanced search')
@@ -188,8 +195,11 @@ export class JobService {
       const response = await api.get(
         `/job/api/jobs/fetch-by-column/${columnId}/?${params.toString()}`,
       )
-
-      return this.handleApiResponse(response, JobsApiResponseSchema)
+      const apiResult = this.handleApiResponse(response, JobsApiResponseSchema)
+      return {
+        ...apiResult,
+        jobs: apiResult.jobs.map((job) => ({ ...job, people: job.people ?? [] })),
+      }
     } catch (error) {
       console.error('Error fetching jobs by kanban column:', error)
       throw new Error('Failed to load jobs by kanban column')

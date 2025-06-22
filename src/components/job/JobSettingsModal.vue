@@ -605,35 +605,61 @@ const updateJobInStore = (apiData: unknown) => {
     )
 
     // Path 1: apiData.job e apiData.job.id existem (ex: { job: { id: ..., ... } })
-    if (apiData.job && typeof apiData.job === 'object' && apiData.job.id) {
+    if (
+      apiData !== null &&
+      typeof apiData === 'object' &&
+      'job' in apiData &&
+      typeof (apiData as Record<string, unknown> & { job?: Record<string, unknown> }).job ===
+        'object' &&
+      (apiData as Record<string, unknown> & { job?: Record<string, unknown> }).job !== null &&
+      'id' in (apiData as Record<string, unknown> & { job?: Record<string, unknown> }).job!
+    ) {
       console.log(
         'JobSettingsModal - handleSuccessfulSettingsUpdate - Path 1: Extracted from apiData.job',
       )
-      jobDataToStore = { ...apiData.job }
+      jobDataToStore = { ...(apiData as { job: object }).job }
       // Path 2: apiData.id existe (ex: { id: ..., ... })
-    } else if (apiData.id) {
+    } else if ('id' in (apiData as Record<string, unknown>)) {
       console.log(
         'JobSettingsModal - handleSuccessfulSettingsUpdate - Path 2: Extracted from apiData (root)',
       )
-      jobDataToStore = { ...apiData }
+      jobDataToStore = { ...(apiData as object) }
       // Path 3: apiData.data e apiData.data.id existem (ex: { data: { id: ..., ... } })
-    } else if (apiData.data && typeof apiData.data === 'object' && apiData.data.id) {
+    } else if (
+      'data' in (apiData as Record<string, unknown>) &&
+      typeof (apiData as Record<string, unknown> & { data?: Record<string, unknown> }).data ===
+        'object' &&
+      (apiData as Record<string, unknown> & { data?: Record<string, unknown> }).data !== null &&
+      'id' in (apiData as Record<string, unknown> & { data?: Record<string, unknown> }).data!
+    ) {
       console.log(
         'JobSettingsModal - handleSuccessfulSettingsUpdate - Path 3: Extracted from apiData.data',
       )
-      jobDataToStore = { ...apiData.data }
+      jobDataToStore = { ...(apiData as { data: object }).data }
       // Path 4: apiData.data.job e apiData.data.job.id existem (ex: { data: { job: { id: ..., ... } } })
     } else if (
-      apiData.data &&
-      typeof apiData.data === 'object' &&
-      apiData.data.job &&
-      typeof apiData.data.job === 'object' &&
-      apiData.data.job.id
+      'data' in (apiData as Record<string, unknown>) &&
+      typeof (apiData as Record<string, unknown> & { data?: { job?: Record<string, unknown> } })
+        .data === 'object' &&
+      (apiData as Record<string, unknown> & { data?: { job?: Record<string, unknown> } }).data !==
+        null &&
+      'job' in
+        (apiData as Record<string, unknown> & { data?: { job?: Record<string, unknown> } }).data! &&
+      (() => {
+        const dataObj = (
+          apiData as Record<string, unknown> & { data?: { job?: Record<string, unknown> } }
+        ).data
+        if (!dataObj || typeof dataObj !== 'object') return false
+        const jobObj = (dataObj as { job?: Record<string, unknown> }).job
+        return (
+          jobObj !== undefined && jobObj !== null && typeof jobObj === 'object' && 'id' in jobObj
+        )
+      })()
     ) {
       console.log(
         'JobSettingsModal - handleSuccessfulSettingsUpdate - Path 4: Extracted from apiData.data.job',
       )
-      jobDataToStore = { ...apiData.data.job }
+      jobDataToStore = { ...(apiData as { data: { job: object } }).data.job }
     } else {
       console.warn(
         `JobSettingsModal - handleSuccessfulSettingsUpdate - Could not extract job data using standard object paths. apiData (stringified): ${JSON.stringify(apiData, null, 2)}`,
@@ -709,7 +735,13 @@ const updateJobInStore = (apiData: unknown) => {
       jobDataToStore.client_id = ''
     }
 
-    jobsStore.setDetailedJob(jobDataToStore)
+    // Garantir que id seja string (nunca undefined)
+    if (!jobDataToStore.id) {
+      jobDataToStore.id = ''
+    } else {
+      jobDataToStore.id = String(jobDataToStore.id)
+    }
+    jobsStore.setDetailedJob(jobDataToStore as JobData)
     console.log(
       `JobSettingsModal - Called jobsStore.setDetailedJob with job ID: ${jobDataToStore.id}`,
     )

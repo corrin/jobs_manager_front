@@ -22,7 +22,13 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   init(params: ICellEditorParams): void {
     this.value = params.value || ''
     this.params = params
-    this.jobs = (window as unknown).timesheetJobs || []
+
+    const win = window as unknown as { timesheetJobs?: unknown }
+    if (Array.isArray(win.timesheetJobs)) {
+      this.jobs = win.timesheetJobs as JobSelectionItem[]
+    } else {
+      this.jobs = []
+    }
     this.filteredJobs = [...this.jobs]
 
     this.createUI()

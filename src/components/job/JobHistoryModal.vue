@@ -120,8 +120,16 @@ const addEvent = async () => {
   try {
     const result = await jobRestService.addJobEvent(props.jobId, newEventDescription.value)
 
-    if (result.success && result.data) {
-      emit('event-added', result.data)
+    if (
+      result.success &&
+      result.data &&
+      typeof result.data === 'object' &&
+      'id' in result.data &&
+      'description' in result.data &&
+      'timestamp' in result.data &&
+      'event_type' in result.data
+    ) {
+      emit('event-added', result.data as JobEvent)
       newEventDescription.value = ''
       showAddEventForm.value = false
     }

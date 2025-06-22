@@ -379,7 +379,7 @@ import type { QuoteSheet } from '@/schemas/job.schemas'
 import { extractQuoteErrorMessage, logError } from '@/utils/error-handler'
 
 interface QuoteData {
-  id: number
+  id: string
   kind: 'quote'
   rev: number
   created: string

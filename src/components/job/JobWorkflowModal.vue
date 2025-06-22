@@ -357,38 +357,31 @@ const handleSuccessfulUpdate = (updatedJobData: unknown) => {
   const data = updatedJobData as unknown
   let jobData: JobData
 
-  // Use early return pattern for different data structures
-  if (data.data?.job?.id) {
-    // Structure: { data: { job: {...}, latest_pricings: {...}, events: [...] } }
-    console.log('🔍 JobWorkflowModal - Processing data.job structure')
-    jobData = {
-      ...data.data.job,
-      latest_pricings: data.data.latest_pricings || data.data.job.latest_pricings,
-      events: data.data.events || data.data.job.events,
-      company_defaults: data.data.company_defaults || data.data.job.company_defaults,
-    }
-  } else if (data.job?.id) {
-    // Structure: { job: {...}, latest_pricings: {...}, events: [...] }
-    console.log('🔍 JobWorkflowModal - Processing job structure')
-    jobData = {
-      ...data.job,
-      latest_pricings: data.latest_pricings || data.job.latest_pricings,
-      events: data.events || data.job.events,
-      company_defaults: data.company_defaults || data.job.company_defaults,
-    }
-  } else if (data.id) {
-    // Structure: direct job data
-    console.log('🔍 JobWorkflowModal - Processing direct job structure')
-    jobData = data
+  // Use early return pattern para diferentes estruturas de dados
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    'data' in data &&
+    typeof (data as Record<string, unknown>).data === 'object' &&
+    (data as Record<string, unknown>).data !== null &&
+    (() => {
+      const dataObj = (data as Record<string, unknown>).data
+      if (!dataObj || typeof dataObj !== 'object') return false
+      const jobObj = (dataObj as { job?: Record<string, unknown> }).job
+      return jobObj !== undefined && jobObj !== null && typeof jobObj === 'object' && 'id' in jobObj
+    })()
+  ) {
+    jobData = { ...(data as { data: { job: object } }).data.job } as JobData
+  } else if (typeof data === 'object' && data !== null && 'id' in data) {
+    jobData = { ...(data as object) } as JobData
   } else {
-    console.error('🚨 JobWorkflowModal - Invalid data structure:', data)
-    throw new Error('Invalid job data received - missing job ID')
+    throw new Error('Invalid job data structure')
   }
 
   // Guard clause - validate final job data
   if (!jobData.id || typeof jobData.id !== 'string' || jobData.id.trim() === '') {
     console.error('🚨 JobWorkflowModal - Invalid job ID received:', jobData.id)
-    throw new Error('Invalid job ID received')
+    throw new Error('Invalid job data received - missing or invalid job ID')
   }
 
   console.log('🎯 JobWorkflowModal - Processing valid job data:', jobData.id)

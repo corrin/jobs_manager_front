@@ -192,21 +192,23 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     }
 
     return {
-      id: costLine.id,
-      jobNumber: costLine.meta?.job_number || '',
-      client: costLine.meta?.client_name || '',
-      jobName: costLine.meta?.job_name || '',
+      id: typeof costLine.id === 'number' ? costLine.id : null,
+      jobNumber: typeof costLine.meta?.job_number === 'string' ? costLine.meta.job_number : '',
+      client: typeof costLine.meta?.client_name === 'string' ? costLine.meta.client_name : '',
+      jobName: typeof costLine.meta?.job_name === 'string' ? costLine.meta.job_name : '',
       hours: parseFloat(costLine.quantity) || 0,
-      billable: costLine.meta?.is_billable ?? true,
-      description: costLine.desc || '',
-      rate: costLine.meta?.rate_type || 'Ord',
-      wage: costLine.total_cost || 0,
-      bill: costLine.total_rev || 0,
-      staffId,
-      date: costLine.meta?.date || '',
-      wageRate: parseFloat(costLine.unit_cost) || 0,
-      chargeOutRate: parseFloat(costLine.unit_rev) || 0,
-      rateMultiplier: getRateMultiplier(costLine.meta?.rate_type || 'Ord'),
+      billable: typeof costLine.meta?.is_billable === 'boolean' ? costLine.meta.is_billable : false,
+      description: typeof costLine.desc === 'string' ? costLine.desc : '',
+      rate: typeof costLine.meta?.rate_type === 'string' ? costLine.meta.rate_type : 'Ord',
+      wage: typeof costLine.total_cost === 'number' ? costLine.total_cost : 0,
+      bill: typeof costLine.total_rev === 'number' ? costLine.total_rev : 0,
+      staffId: typeof staffId === 'string' ? staffId : '',
+      date: typeof costLine.meta?.date === 'string' ? costLine.meta.date : '',
+      wageRate: typeof costLine.unit_cost === 'string' ? parseFloat(costLine.unit_cost) : 0,
+      chargeOutRate: typeof costLine.unit_rev === 'string' ? parseFloat(costLine.unit_rev) : 0,
+      rateMultiplier: getRateMultiplier(
+        typeof costLine.meta?.rate_type === 'string' ? costLine.meta.rate_type : 'Ord',
+      ),
     }
   }
 

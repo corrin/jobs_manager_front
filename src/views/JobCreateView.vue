@@ -189,10 +189,12 @@ const errors = ref<Record<string, string>>({})
 const isSubmitting = ref(false)
 
 // Handler para seleção de cliente
-const handleClientSelection = (client: Client) => {
+const handleClientSelection = (client: Client | null) => {
   selectedClient.value = client
   if (client) {
     formData.value.client_name = client.name
+  } else {
+    formData.value.client_name = ''
   }
 }
 
