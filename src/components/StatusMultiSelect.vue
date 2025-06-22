@@ -1,4 +1,5 @@
-<template>  <div data-status-dropdown>
+<template>
+  <div data-status-dropdown>
     <label class="block text-sm font-medium text-gray-700 mb-1">{{ label }}</label>
     <div class="relative">
       <button
@@ -7,13 +8,11 @@
         class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-left focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
         :class="{ 'ring-2 ring-blue-500': isOpen }"
       >
-        <span v-if="selectedStatuses.length === 0" class="text-gray-500">
-          Select status...
-        </span>
+        <span v-if="selectedStatuses.length === 0" class="text-gray-500"> Select status... </span>
         <span v-else class="text-gray-900">
           {{ displayText }}
         </span>
-        <ChevronDown 
+        <ChevronDown
           class="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"
           :class="{ 'rotate-180': isOpen }"
         />
@@ -92,7 +91,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  label: 'Status'
+  label: 'Status',
 })
 
 // Events
@@ -117,13 +116,13 @@ const statusOptions: StatusOption[] = [
   { value: 'recently_completed', label: 'Recently Completed' },
   { value: 'completed', label: 'Completed' },
   { value: 'rejected', label: 'Rejected' },
-  { value: 'archived', label: 'Archived' }
+  { value: 'archived', label: 'Archived' },
 ]
 
 // Computed properties
 const displayText = computed(() => {
   const count = selectedStatuses.value.length
-  
+
   // Switch-case for different display scenarios
   switch (true) {
     case count === 0:
@@ -139,7 +138,7 @@ const displayText = computed(() => {
 
 // Methods following SRP
 const getStatusLabel = (value: string): string => {
-  const option = statusOptions.find(opt => opt.value === value)
+  const option = statusOptions.find((opt) => opt.value === value)
   return option?.label || value
 }
 
@@ -153,7 +152,7 @@ const toggleStatus = (status: string) => {
     removeStatus(status)
     return
   }
-  
+
   addStatus(status)
 }
 
@@ -179,10 +178,10 @@ const toggleAll = () => {
       break
     case false:
       // Select all
-      selectedStatuses.value = statusOptions.map(opt => opt.value)
+      selectedStatuses.value = statusOptions.map((opt) => opt.value)
       break
   }
-  
+
   emitUpdate()
 }
 
@@ -194,7 +193,7 @@ const emitUpdate = () => {
 const handleOutsideClick = (event: Event) => {
   const target = event.target as HTMLElement
   const dropdown = target.closest('[data-status-dropdown]')
-  
+
   if (!dropdown) {
     isOpen.value = false
   }
@@ -212,9 +211,12 @@ onUnmounted(() => {
 // Watch for external changes
 import { watch } from 'vue'
 
-watch(() => props.modelValue, (newValue) => {
-  selectedStatuses.value = [...newValue]
-})
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    selectedStatuses.value = [...newValue]
+  },
+)
 </script>
 
 <style scoped>

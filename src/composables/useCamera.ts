@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { ref } from 'vue'
 
 interface CameraOptions {
   facingMode?: 'user' | 'environment'
@@ -8,12 +8,7 @@ interface CameraOptions {
 }
 
 export function useCamera(options: CameraOptions = {}) {
-  const {
-    facingMode = 'environment',
-    width = 1280,
-    height = 960,
-    quality = 0.85
-  } = options
+  const { facingMode = 'environment', width = 1280, height = 960, quality = 0.85 } = options
 
   const isActive = ref(false)
   const isModalOpen = ref(false)
@@ -23,7 +18,7 @@ export function useCamera(options: CameraOptions = {}) {
   const startCamera = async (): Promise<MediaStream> => {
     try {
       error.value = null
-      
+
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Camera is not supported in this browser')
       }
@@ -32,13 +27,13 @@ export function useCamera(options: CameraOptions = {}) {
         video: {
           facingMode,
           width: { ideal: width },
-          height: { ideal: height }
-        }
+          height: { ideal: height },
+        },
       })
 
       stream.value = mediaStream
       isActive.value = true
-      
+
       return mediaStream
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error accessing camera'
@@ -50,7 +45,7 @@ export function useCamera(options: CameraOptions = {}) {
 
   const stopCamera = () => {
     if (stream.value) {
-      stream.value.getTracks().forEach(track => track.stop())
+      stream.value.getTracks().forEach((track) => track.stop())
       stream.value = null
     }
     isActive.value = false
@@ -83,20 +78,17 @@ export function useCamera(options: CameraOptions = {}) {
               return
             }
 
-            const timestamp = new Date()
-              .toISOString()
-              .replace(/[:.]/g, '-')
-              .split('.')[0]
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('.')[0]
 
             const file = new File([blob], `photo-${timestamp}.jpg`, {
               type: 'image/jpeg',
-              lastModified: Date.now()
+              lastModified: Date.now(),
             })
 
             resolve(file)
           },
           'image/jpeg',
-          quality
+          quality,
         )
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown capture error'
@@ -114,7 +106,12 @@ export function useCamera(options: CameraOptions = {}) {
     stopCamera()
   }
 
-  const compressImage = (file: File, maxWidth = 1280, maxHeight = 960, compressionQuality = 0.7): Promise<File> => {
+  const compressImage = (
+    file: File,
+    maxWidth = 1280,
+    maxHeight = 960,
+    compressionQuality = 0.7,
+  ): Promise<File> => {
     return new Promise((resolve) => {
       const reader = new FileReader()
       reader.readAsDataURL(file)
@@ -146,7 +143,7 @@ export function useCamera(options: CameraOptions = {}) {
           }
 
           ctx.drawImage(img, 0, 0, width, height)
-          
+
           canvas.toBlob(
             (blob) => {
               if (!blob) {
@@ -156,7 +153,7 @@ export function useCamera(options: CameraOptions = {}) {
 
               const compressedFile = new File([blob], file.name, {
                 type: 'image/jpeg',
-                lastModified: Date.now()
+                lastModified: Date.now(),
               })
 
               console.log(`Image compressed: ${file.name}
@@ -166,7 +163,7 @@ export function useCamera(options: CameraOptions = {}) {
               resolve(compressedFile)
             },
             'image/jpeg',
-            compressionQuality
+            compressionQuality,
           )
         }
       }
@@ -183,6 +180,6 @@ export function useCamera(options: CameraOptions = {}) {
     capturePhoto,
     openCameraModal,
     closeCameraModal,
-    compressImage
+    compressImage,
   }
 }

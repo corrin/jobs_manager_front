@@ -11,13 +11,13 @@ export function useAppLayout() {
     {
       name: 'kanban',
       to: '/kanban',
-      label: 'Kanban'
+      label: 'Kanban',
     },
     {
       name: 'timesheet',
       to: '/timesheet',
-      label: 'Timesheet'
-    }
+      label: 'Timesheet',
+    },
   ]
 
   const userInfo = computed((): UserInfo => {
@@ -25,14 +25,14 @@ export function useAppLayout() {
     if (!user) {
       return {
         displayName: 'Guest',
-        username: 'guest'
+        username: 'guest',
       }
     }
 
     const fullName = authStore.fullName
     return {
       displayName: fullName || user.username,
-      username: user.username
+      username: user.username,
     }
   })
 
@@ -50,6 +50,6 @@ export function useAppLayout() {
   return {
     navigationItems,
     userInfo,
-    handleLogout
+    handleLogout,
   }
 }

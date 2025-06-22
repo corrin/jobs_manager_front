@@ -1,6 +1,8 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+    <div
+      class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"
+    >
       <!-- Backdrop -->
       <div
         class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
@@ -8,16 +10,13 @@
       ></div>
 
       <!-- Modal -->
-      <div class="inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
+      <div
+        class="inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg"
+      >
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-gray-900">
-            🏖️ Add Paid Absence
-          </h3>
-          <button
-            @click="closeModal"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
-          >
+          <h3 class="text-xl font-bold text-gray-900">🏖️ Add Paid Absence</h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
             <X class="w-6 h-6" />
           </button>
         </div>
@@ -26,20 +25,14 @@
         <form @submit.prevent="submitAbsence" class="space-y-6">
           <!-- Staff Selection -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Staff Member *
-            </label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"> Staff Member * </label>
             <select
               v-model="form.staffId"
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Select staff member...</option>
-              <option
-                v-for="staff in availableStaff"
-                :key="staff.id"
-                :value="staff.id"
-              >
+              <option v-for="staff in availableStaff" :key="staff.id" :value="staff.id">
                 {{ staff.name }} ({{ staff.initials }})
               </option>
             </select>
@@ -47,9 +40,7 @@
 
           <!-- Absence Type -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Absence Type *
-            </label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"> Absence Type * </label>
             <select
               v-model="form.absenceType"
               required
@@ -69,9 +60,7 @@
           <!-- Date Range -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Start Date *
-              </label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"> Start Date * </label>
               <input
                 v-model="form.startDate"
                 type="date"
@@ -80,9 +69,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                End Date *
-              </label>
+              <label class="block text-sm font-medium text-gray-700 mb-2"> End Date * </label>
               <input
                 v-model="form.endDate"
                 type="date"
@@ -95,9 +82,7 @@
 
           <!-- Hours per Day -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Hours per Day *
-            </label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"> Hours per Day * </label>
             <select
               v-model="form.hoursPerDay"
               required
@@ -112,9 +97,7 @@
 
           <!-- Custom Hours Input -->
           <div v-if="form.hoursPerDay === 'custom'">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Custom Hours *
-            </label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"> Custom Hours * </label>
             <input
               v-model.number="form.customHours"
               type="number"
@@ -129,9 +112,7 @@
 
           <!-- Description -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
+            <label class="block text-sm font-medium text-gray-700 mb-2"> Description </label>
             <textarea
               v-model="form.description"
               rows="3"
@@ -214,7 +195,7 @@ interface Emits {
   (e: 'absenceAdded', absence: AbsenceForm): void
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 // Reactive state
@@ -228,16 +209,17 @@ const form = ref<AbsenceForm>({
   endDate: '',
   hoursPerDay: '',
   customHours: undefined,
-  description: ''
+  description: '',
 })
 
 // Computed properties
 const isFormValid = computed(() => {
-  const basic = form.value.staffId &&
-                form.value.absenceType &&
-                form.value.startDate &&
-                form.value.endDate &&
-                form.value.hoursPerDay
+  const basic =
+    form.value.staffId &&
+    form.value.absenceType &&
+    form.value.startDate &&
+    form.value.endDate &&
+    form.value.hoursPerDay
 
   if (form.value.hoursPerDay === 'custom') {
     return basic && form.value.customHours && form.value.customHours > 0
@@ -259,16 +241,17 @@ const absenceSummary = computed((): AbsenceSummary | null => {
   }
 
   const workingDays = getWorkingDaysBetween(startDate, endDate)
-  const hoursPerDay = form.value.hoursPerDay === 'custom'
-    ? (form.value.customHours || 0)
-    : parseInt(form.value.hoursPerDay)
+  const hoursPerDay =
+    form.value.hoursPerDay === 'custom'
+      ? form.value.customHours || 0
+      : parseInt(form.value.hoursPerDay)
 
   const totalHours = workingDays * hoursPerDay
 
   return {
     duration: formatDateRange(startDate, endDate),
     totalHours,
-    workingDays
+    workingDays,
   }
 })
 
@@ -292,7 +275,7 @@ function getWorkingDaysBetween(startDate: Date, endDate: Date): number {
 function formatDateRange(startDate: Date, endDate: Date): string {
   const options: Intl.DateTimeFormatOptions = {
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   }
 
   if (startDate.getTime() === endDate.getTime()) {
@@ -315,7 +298,7 @@ async function submitAbsence() {
   try {
     // Here you would typically call an API to create the absence
     // For now, we'll just emit the event
-    await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
 
     emit('absenceAdded', { ...form.value })
     resetForm()
@@ -336,7 +319,7 @@ function resetForm() {
     endDate: '',
     hoursPerDay: '',
     customHours: undefined,
-    description: ''
+    description: '',
   }
   error.value = ''
 }
@@ -347,15 +330,25 @@ function closeModal() {
 }
 
 // Watchers
-watch(() => form.value.startDate, (newStartDate) => {
-  if (newStartDate && form.value.endDate && new Date(newStartDate) > new Date(form.value.endDate)) {
-    form.value.endDate = newStartDate
-  }
-})
+watch(
+  () => form.value.startDate,
+  (newStartDate) => {
+    if (
+      newStartDate &&
+      form.value.endDate &&
+      new Date(newStartDate) > new Date(form.value.endDate)
+    ) {
+      form.value.endDate = newStartDate
+    }
+  },
+)
 
-watch(() => form.value.hoursPerDay, (newHours) => {
-  if (newHours !== 'custom') {
-    form.value.customHours = undefined
-  }
-})
+watch(
+  () => form.value.hoursPerDay,
+  (newHours) => {
+    if (newHours !== 'custom') {
+      form.value.customHours = undefined
+    }
+  },
+)
 </script>

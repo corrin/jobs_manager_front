@@ -4,9 +4,7 @@ export interface NavigationItem {
   label: string
 }
 
-export interface AppLayoutProps {
-  // No props needed for this component currently
-}
+export type AppLayoutProps = object
 
 export interface UserInfo {
   displayName: string

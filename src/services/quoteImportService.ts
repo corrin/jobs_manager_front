@@ -1,4 +1,5 @@
 import api from '@/services/api'
+import type { CostLine } from '@/types/costing.types'
 
 export interface ValidationIssue {
   severity: 'error' | 'warning'
@@ -56,7 +57,7 @@ export interface CostSet {
     rev: number
     hours: number
   }
-  cost_lines: any[]
+  cost_lines: CostLine[]
 }
 
 export interface ImportChanges {
@@ -96,15 +97,11 @@ export class QuoteImportService {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await api.post(
-      `/job/rest/jobs/${jobId}/quote/import/preview/`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
-    )
+    const response = await api.post(`/job/rest/jobs/${jobId}/quote/import/preview/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
 
     return response.data
   }
@@ -112,7 +109,7 @@ export class QuoteImportService {
   async importQuote(
     jobId: string,
     file: File,
-    skipValidation: boolean = false
+    skipValidation: boolean = false,
   ): Promise<QuoteImportResponse> {
     const formData = new FormData()
     formData.append('file', file)
@@ -120,15 +117,11 @@ export class QuoteImportService {
       formData.append('skip_validation', 'true')
     }
 
-    const response = await api.post(
-      `/job/rest/jobs/${jobId}/quote/import/`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
-    )
+    const response = await api.post(`/job/rest/jobs/${jobId}/quote/import/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
 
     return response.data
   }

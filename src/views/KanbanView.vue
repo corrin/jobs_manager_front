@@ -6,19 +6,29 @@
       <div class="flex-shrink-0 p-3 sm:p-4 lg:p-6 pt-2 sm:pt-3 md:pt-1 lg:pt-6">
         <!-- Search Section -->
         <div class="mb-2 md:mb-3 space-y-2">
-          <div class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4">
-            <button @click="showAdvancedSearchDialog = true"
-              class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-all duration-200 flex items-center flex-shrink-0">
+          <div
+            class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4"
+          >
+            <button
+              @click="showAdvancedSearchDialog = true"
+              class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-all duration-200 flex items-center flex-shrink-0"
+            >
               <Search class="mr-1.5 h-3.5 w-3.5" />
               Advanced Search
             </button>
 
             <div class="w-full max-w-xs sm:max-w-md">
               <div class="relative">
-                <Search class="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                <input v-model="searchQuery" type="text" placeholder="Search..."
+                <Search
+                  class="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400"
+                />
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  placeholder="Search..."
                   class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  @input="handleSearch" />
+                  @input="handleSearch"
+                />
               </div>
             </div>
           </div>
@@ -29,17 +39,24 @@
           <!-- Team Members -->
           <div v-if="!showSearchResults" class="mb-2 md:mb-3">
             <div class="flex justify-center">
-              <StaffPanel :active-filters="activeStaffFilters" @staff-filter-changed="handleStaffFilterChanged"
-                @staff-panel-ready="handleStaffPanelReady" />
+              <StaffPanel
+                :active-filters="activeStaffFilters"
+                @staff-filter-changed="handleStaffFilterChanged"
+                @staff-panel-ready="handleStaffPanelReady"
+              />
             </div>
           </div>
 
           <!-- Search Results Grid -->
           <div v-if="showSearchResults" class="mb-2 md:mb-3">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-semibold text-gray-900">Search Results ({{ filteredJobs.length }} jobs found)</h2>
-              <button @click="backToKanban"
-                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors flex items-center text-sm">
+              <h2 class="text-lg font-semibold text-gray-900">
+                Search Results ({{ filteredJobs.length }} jobs found)
+              </h2>
+              <button
+                @click="backToKanban"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors flex items-center text-sm"
+              >
                 <LayoutGrid class="mr-2 h-4 w-4" />
                 Back to Kanban
               </button>
@@ -53,9 +70,15 @@
           <div v-if="!showSearchResults" class="flex-1 flex flex-col space-y-1 md:space-y-2">
             <!-- Mobile: Dropdown to select status -->
             <div class="block md:hidden">
-              <select v-model="selectedMobileStatus"
-                class="w-full p-3 text-base border border-gray-300 rounded-lg bg-white text-gray-900 font-medium shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option v-for="status in visibleStatusChoices" :key="status.key" :value="status.key">
+              <select
+                v-model="selectedMobileStatus"
+                class="w-full p-3 text-base border border-gray-300 rounded-lg bg-white text-gray-900 font-medium shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option
+                  v-for="status in visibleStatusChoices"
+                  :key="status.key"
+                  :value="status.key"
+                >
                   {{ status.label }} ({{ getJobsByStatus(status.key).length }})
                 </option>
               </select>
@@ -65,12 +88,21 @@
             <div class="block md:hidden">
               <div class="flex justify-center px-4">
                 <KanbanColumn
-                  v-if="selectedMobileStatus && visibleStatusChoices.find(s => s.key === selectedMobileStatus)"
-                  :key="selectedMobileStatus" :status="visibleStatusChoices.find(s => s.key === selectedMobileStatus)!"
+                  v-if="
+                    selectedMobileStatus &&
+                    visibleStatusChoices.find((s) => s.key === selectedMobileStatus)
+                  "
+                  :key="selectedMobileStatus"
+                  :status="visibleStatusChoices.find((s) => s.key === selectedMobileStatus)!"
                   :jobs="getJobsByStatus(selectedMobileStatus)"
-                  :show-load-more="shouldShowLoadMore(selectedMobileStatus)" :is-loading="isLoading"
-                  :is-dragging="isDragging" @job-click="viewJob" @load-more="loadMoreJobs(selectedMobileStatus)"
-                  @sortable-ready="handleSortableReady" @job-ready="handleJobReady" class="kanban-column w-full max-w-md mx-auto" />
+                  :is-loading="isLoading"
+                  :is-dragging="isDragging"
+                  @job-click="viewJob"
+                  @load-more="loadMoreJobs(selectedMobileStatus)"
+                  @sortable-ready="handleSortableReady"
+                  @job-ready="handleJobReady"
+                  class="kanban-column w-full max-w-md mx-auto"
+                />
               </div>
             </div>
 
@@ -80,13 +112,15 @@
               <div class="block lg:hidden">
                 <div class="w-full mx-auto px-2">
                   <!-- Dynamic grid based on number of columns -->
-                  <div 
+                  <div
                     class="grid gap-3"
                     :class="{
                       'grid-cols-1': visibleStatusChoices.length <= 2,
-                      'grid-cols-2': visibleStatusChoices.length <= 4 && visibleStatusChoices.length > 2,
-                      'grid-cols-3': visibleStatusChoices.length <= 6 && visibleStatusChoices.length > 4,
-                      'grid-cols-4': visibleStatusChoices.length > 6
+                      'grid-cols-2':
+                        visibleStatusChoices.length <= 4 && visibleStatusChoices.length > 2,
+                      'grid-cols-3':
+                        visibleStatusChoices.length <= 6 && visibleStatusChoices.length > 4,
+                      'grid-cols-4': visibleStatusChoices.length > 6,
                     }"
                   >
                     <KanbanColumn
@@ -94,7 +128,6 @@
                       :key="status.key"
                       :status="status"
                       :jobs="getJobsByStatus(status.key)"
-                      :show-load-more="shouldShowLoadMore(status.key)"
                       :is-loading="isLoading"
                       :is-dragging="isDragging"
                       @job-click="viewJob"
@@ -110,15 +143,23 @@
               <!-- Large Desktop: Responsive grid that shows all columns -->
               <div class="hidden lg:block">
                 <div class="w-full mx-auto px-2">
-                  <div 
+                  <div
                     class="grid gap-2 xl:gap-3"
                     :style="`grid-template-columns: repeat(${visibleStatusChoices.length}, minmax(0, 1fr))`"
                   >
-                    <KanbanColumn v-for="status in visibleStatusChoices" :key="status.key" :status="status"
-                      :jobs="getJobsByStatus(status.key)" :show-load-more="shouldShowLoadMore(status.key)"
-                      :is-loading="isLoading" :is-dragging="isDragging" @job-click="viewJob"
-                      @load-more="loadMoreJobs(status.key)" @sortable-ready="handleSortableReady"
-                      @job-ready="handleJobReady" class="w-full" />
+                    <KanbanColumn
+                      v-for="status in visibleStatusChoices"
+                      :key="status.key"
+                      :status="status"
+                      :jobs="getJobsByStatus(status.key)"
+                      :is-loading="isLoading"
+                      :is-dragging="isDragging"
+                      @job-click="viewJob"
+                      @load-more="loadMoreJobs(status.key)"
+                      @sortable-ready="handleSortableReady"
+                      @job-ready="handleJobReady"
+                      class="w-full"
+                    />
                   </div>
                 </div>
               </div>
@@ -127,8 +168,6 @@
         </div>
       </div>
     </div>
-
-
 
     <!-- Advanced Search Dialog -->
     <AdvancedSearchDialog
@@ -143,27 +182,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted } from 'vue'
-import {
-  Search,
-  X,
-  LayoutGrid,
-  Archive,
-  ChevronDown,
-  AlertCircle,
-  RefreshCw
-} from 'lucide-vue-next'
+import { ref, onUnmounted, onMounted, nextTick } from 'vue'
+import { Search, LayoutGrid } from 'lucide-vue-next'
 import JobCard from '@/components/JobCard.vue'
 import KanbanColumn from '@/components/KanbanColumn.vue'
 import AppLayout from '@/components/AppLayout.vue'
 import StaffPanel from '@/components/StaffPanel.vue'
-import StaffDropdown from '@/components/StaffDropdown.vue'
-import ClientDropdown from '@/components/ClientDropdown.vue'
 import AdvancedSearchDialog from '@/components/AdvancedSearchDialog.vue'
 import { useKanban } from '@/composables/useKanban'
 import { useDragAndDrop } from '@/composables/useDragAndDrop'
 import { useStaffDragAndDrop } from '@/composables/useStaffDragAndDrop'
 import { useJobsStore } from '@/stores/jobs'
+import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
+import type { AdvancedFilters } from '@/types'
 
 // Initialize store
 const jobsStore = useJobsStore()
@@ -187,45 +218,42 @@ const {
   archivedJobs,
   filteredJobs,
   isLoading,
-  error,
   searchQuery,
-  showAdvancedSearch,
   showSearchResults,
-  totalArchivedJobs,
   advancedFilters,
   activeStaffFilters,
   selectedMobileStatus,
 
   // Constants
-  statusChoices,
   visibleStatusChoices,
 
   // Computed
   getJobsByStatus,
-  getJobCountByStatus,
 
   // Methods
   loadJobs,
   handleSearch,
   handleAdvancedSearch,
   clearFilters,
-  toggleAdvancedSearch,
   backToKanban,
-  shouldShowLoadMore,
   loadMoreJobs,
   viewJob,
   updateJobStatus,
   reorderJob,
-  handleStaffFilterChanged
-} = useKanban()
+  handleStaffFilterChanged,
+} = useKanban(() => {
+  // Callback called after jobs are loaded - initialize sortable for all ready columns
+  nextTick(() => {
+    initializeSortableForAllColumns()
+  })
+})
 
 // Local state for dialog
 const showAdvancedSearchDialog = ref(false)
 
 // Handle advanced search from dialog seguindo clean code principles
-const handleAdvancedSearchFromDialog = async (filters: any) => {
+const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
   try {
-    // Delegate to existing advanced search functionality
     Object.assign(advancedFilters.value, filters)
     await handleAdvancedSearch()
   } catch (error) {
@@ -233,33 +261,14 @@ const handleAdvancedSearchFromDialog = async (filters: any) => {
   }
 }
 
-// Toggle advanced search seguindo early return pattern
-const toggleAdvancedSearchDialog = () => {
-  // Switch between panel and dialog
-  switch (showAdvancedSearch.value) {
-    case true:
-      // Close panel, open dialog
-      showAdvancedSearch.value = false
-      showAdvancedSearchDialog.value = true
-      break
-    case false:
-      // Open dialog directly
-      showAdvancedSearchDialog.value = true
-      break
-  }
-}
-
-const {
-  isDragging,
-  initializeSortable,
-  destroyAllSortables
-} = useDragAndDrop((event, payload) => {
+// Drag and drop para jobs (com callback para atualizar estado)
+const { isDragging, initializeSortable, destroyAllSortables } = useDragAndDrop((event, payload) => {
   if (event === 'job-moved') {
     const { jobId, fromStatus, toStatus, beforeId, afterId } = payload
-
     if (fromStatus !== toStatus) {
-      // Status change
-      updateJobStatus(jobId, toStatus)
+      // Map column to appropriate status using categorization service
+      const actualStatus = KanbanCategorizationService.getDefaultStatusForColumn(toStatus)
+      updateJobStatus(jobId, actualStatus)
     } else {
       // Reorder within same status
       reorderJob(jobId, beforeId, afterId, toStatus)
@@ -268,51 +277,86 @@ const {
 })
 
 // Staff drag and drop composable
-const {
-  isStaffDragging,
-  initializeStaffPool,
-  initializeJobStaffContainer,
-  updateJobStaffContainers
-} = useStaffDragAndDrop(async (event: string, payload?: any) => {
-  if (event === 'staff-assigned') {
-    console.log(`Staff ${payload.staffId} assigned to job ${payload.jobId}`)
-  } else if (event === 'staff-removed') {
-    console.log(`Staff ${payload.staffId} removed from job ${payload.jobId}`)
-  } else if (event === 'jobs-reload-needed') {
-    await loadJobs()
-    // Update staff containers after jobs are reloaded
-    const allJobs = [...jobs.value, ...archivedJobs.value]
-    updateJobStaffContainers(allJobs)
-  }
-})
+interface StaffAssignmentPayload {
+  staffId: string
+  jobId: string
+}
+
+const { initializeStaffPool, initializeJobStaffContainer, updateJobStaffContainers } =
+  useStaffDragAndDrop(async (event: string, payload?: StaffAssignmentPayload) => {
+    if (event === 'staff-assigned') {
+      if (payload) {
+        console.log(`Staff ${payload.staffId} assigned to job ${payload.jobId}`)
+      }
+    } else if (event === 'staff-removed') {
+      if (payload) {
+        console.log(`Staff ${payload.staffId} removed from job ${payload.jobId}`)
+      }
+    } else if (event === 'jobs-reload-needed') {
+      await loadJobs()
+      // Update staff containers after jobs are reloaded
+      const allJobs = [...jobs.value, ...archivedJobs.value]
+      updateJobStaffContainers(allJobs)
+    }
+  })
+
+// Sortable instances tracking to prevent multiple initializations
+const sortableInitialized = ref<Set<string>>(new Set())
+const columnsReadyForSortable = ref<Map<string, HTMLElement>>(new Map())
 
 const handleSortableReady = (element: HTMLElement, status: string) => {
-  const allJobs = [...jobs.value, ...archivedJobs.value]
-  initializeSortable(element, status, allJobs)
+  // Store the column element for later initialization
+  columnsReadyForSortable.value.set(status, element)
+
+  // Only initialize if jobs are already loaded and we haven't initialized this column yet
+  if (jobs.value.length > 0 && !sortableInitialized.value.has(status)) {
+    initializeSortableForColumn(status, element)
+  }
+}
+
+const initializeSortableForColumn = (status: string, element: HTMLElement) => {
+  if (sortableInitialized.value.has(status)) {
+    return
+  }
+
+  nextTick(() => {
+    const jobCards = element.querySelectorAll('.job-card-simple')
+    console.log(`🔧 Initializing SortableJS for status ${status}:`, {
+      jobCards: jobCards.length,
+    })
+
+    initializeSortable(element, status)
+    sortableInitialized.value.add(status)
+  })
+}
+
+// Initialize sortable for all ready columns when jobs are loaded
+const initializeSortableForAllColumns = () => {
+  columnsReadyForSortable.value.forEach((element, status) => {
+    if (!sortableInitialized.value.has(status)) {
+      initializeSortableForColumn(status, element)
+    }
+  })
 }
 
 const handleStaffPanelReady = (staffPanelElement: HTMLElement) => {
-  console.log('Staff panel ready, initializing staff pool drag and drop')
+  console.log('🧑‍💼 Staff panel ready, initializing staff pool')
   initializeStaffPool(staffPanelElement)
 }
 
-const handleJobReady = (payload: { jobId: string, element: HTMLElement }) => {
-  console.log(`Job ${payload.jobId} ready, initializing staff container`)
+const handleJobReady = (payload: { jobId: string; element: HTMLElement }) => {
+  console.log(`🎴 Job ready for staff drag: ${payload.jobId}`)
   initializeJobStaffContainer(payload.element, payload.jobId)
 }
 
-const clearSearch = () => {
-  searchQuery.value = ''
-  handleSearch()
-}
-
 // Setup drag and drop functionality
-onMounted(async () => {
-})
+onMounted(async () => {})
 
 // Cleanup on unmount
 onUnmounted(() => {
   destroyAllSortables()
+  sortableInitialized.value.clear()
+  columnsReadyForSortable.value.clear()
 })
 </script>
 
@@ -331,19 +375,19 @@ onUnmounted(() => {
     max-width: 400px;
     width: 100%;
   }
-  
+
   /* Increase job card width in mobile */
   .mobile-column :deep(.job-card) {
     min-width: 280px;
     width: 100%;
     padding: 16px;
   }
-  
+
   /* Better spacing for mobile column content */
   .mobile-column :deep(.p-1) {
     padding: 12px;
   }
-  
+
   .mobile-column :deep(.space-y-1 > * + *) {
     margin-top: 8px;
   }
@@ -374,5 +418,37 @@ onUnmounted(() => {
     width: 100%;
     height: fit-content;
   }
+}
+
+/* Staff drag and drop styling and cleanup */
+[data-is-clone='true'] {
+  pointer-events: none !important;
+  z-index: 9999;
+}
+
+/* Ensure ghost elements are hidden */
+.sortable-ghost,
+.staff-sortable-ghost {
+  opacity: 0.3 !important;
+  pointer-events: none !important;
+}
+
+/* Hide any leftover clones immediately */
+.staff-list [data-is-clone='true'],
+.sortable-chosen[data-is-clone='true'] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Force hardware acceleration for smoother drag operations */
+.is-staff-dragging * {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+/* Clean up any orphaned elements */
+[style*='position: absolute'][style*='left: -9999px'] {
+  display: none !important;
 }
 </style>

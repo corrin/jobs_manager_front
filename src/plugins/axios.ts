@@ -28,7 +28,7 @@ axios.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error)
-  }
+  },
 )
 
 // Response interceptor - handle auth errors
@@ -45,13 +45,13 @@ axios.interceptors.response.use(
     // Only handle auth errors if we're not already on login page and not already redirecting
     if (isAuthError && !isOnLoginPage && !isRedirecting) {
       console.warn('Authentication failed - cookies may have expired')
-      
+
       isRedirecting = true
-      
+
       try {
         // Clear user state using the store's logout method
         await authStore.logout()
-        
+
         // Use router navigation instead of window.location to prevent conflicts
         await router.push({ name: 'login', query: { redirect: currentPath } })
       } catch (redirectError) {
@@ -67,7 +67,7 @@ axios.interceptors.response.use(
     }
 
     return Promise.reject(error)
-  }
+  },
 )
 
 export default axios

@@ -12,7 +12,11 @@
         <div class="flex">
           <div class="flex-shrink-0">
             <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clip-rule="evenodd"
+              />
             </svg>
           </div>
           <div class="ml-3">
@@ -61,8 +65,18 @@
 
           <div class="flex-shrink-0 ml-4">
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                class="w-6 h-6 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
             </div>
           </div>
@@ -72,9 +86,16 @@
 
     <div v-else class="no-quote">
       <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-        <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div
+          class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
+        >
           <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
           </svg>
         </div>
         <h3 class="text-lg font-medium text-gray-900 mb-2">No Quote Available</h3>
@@ -97,7 +118,12 @@
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
         </svg>
         Refresh
       </button>
@@ -115,15 +141,10 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  autoRefresh: false
+  autoRefresh: false,
 })
 
-const {
-  isLoading,
-  currentQuote,
-  error,
-  loadQuoteStatus
-} = useQuoteImport()
+const { isLoading, currentQuote, error, loadQuoteStatus } = useQuoteImport()
 
 function formatDate(dateString?: string): string {
   if (!dateString) return 'Unknown'
@@ -132,7 +153,7 @@ function formatDate(dateString?: string): string {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   })
 }
 
@@ -146,11 +167,14 @@ onMounted(() => {
 })
 
 // Watch for jobId changes
-watch(() => props.jobId, () => {
-  if (props.jobId) {
-    refreshStatus()
-  }
-})
+watch(
+  () => props.jobId,
+  () => {
+    if (props.jobId) {
+      refreshStatus()
+    }
+  },
+)
 </script>
 
 <style scoped>

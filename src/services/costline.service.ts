@@ -15,8 +15,8 @@ export interface CostLineCreatePayload {
   quantity: string
   unit_cost: string
   unit_rev: string
-  ext_refs?: Record<string, any>
-  meta?: Record<string, any>
+  ext_refs?: Record<string, unknown>
+  meta?: Record<string, unknown>
 }
 
 export interface CostLineUpdatePayload {
@@ -24,8 +24,8 @@ export interface CostLineUpdatePayload {
   quantity?: string
   unit_cost?: string
   unit_rev?: string
-  ext_refs?: Record<string, any>
-  meta?: Record<string, any>
+  ext_refs?: Record<string, unknown>
+  meta?: Record<string, unknown>
 }
 
 export interface TimesheetCostLine extends CostLine {
@@ -61,10 +61,10 @@ export interface TimesheetEntriesResponse {
  */
 export const getTimesheetEntries = async (
   staffId: string,
-  date: string
+  date: string,
 ): Promise<TimesheetEntriesResponse> => {
   const response = await api.get('/job/rest/timesheet/entries/', {
-    params: { staff_id: staffId, date }
+    params: { staff_id: staffId, date },
   })
 
   return response.data
@@ -76,12 +76,9 @@ export const getTimesheetEntries = async (
 export const createCostLine = async (
   jobId: string | number,
   kind: 'estimate' | 'quote' | 'actual',
-  payload: CostLineCreatePayload
+  payload: CostLineCreatePayload,
 ): Promise<CostLine> => {
-  const response = await api.post(
-    `/job/rest/jobs/${jobId}/cost_sets/${kind}/cost_lines/`,
-    payload
-  )
+  const response = await api.post(`/job/rest/jobs/${jobId}/cost_sets/${kind}/cost_lines/`, payload)
 
   // Validate the response data with Zod schema
   const validatedData = CostLineSchema.parse(response.data)
@@ -93,7 +90,7 @@ export const createCostLine = async (
  */
 export const updateCostLine = async (
   id: number,
-  payload: CostLineUpdatePayload
+  payload: CostLineUpdatePayload,
 ): Promise<CostLine> => {
   const response = await api.patch(`/job/rest/cost_lines/${id}/`, payload)
 
@@ -108,10 +105,14 @@ export const updateCostLine = async (
 export const deleteCostLine = async (id: number): Promise<void> => {
   console.log('🚀 SERVICE: Starting DELETE request for cost line ID:', id)
   console.log('🌐 DELETE URL:', `/job/rest/cost_lines/${id}/delete/`)
-  
+
   try {
     const response = await api.delete(`/job/rest/cost_lines/${id}/delete/`)
-    console.log('✅ SERVICE: DELETE request completed successfully:', response.status, response.data)
+    console.log(
+      '✅ SERVICE: DELETE request completed successfully:',
+      response.status,
+      response.data,
+    )
     return response.data
   } catch (error) {
     console.error('❌ SERVICE: DELETE request failed:', error)
@@ -123,5 +124,5 @@ export const deleteCostLine = async (id: number): Promise<void> => {
 export const costlineService = {
   createCostLine,
   updateCostLine,
-  deleteCostLine
+  deleteCostLine,
 }

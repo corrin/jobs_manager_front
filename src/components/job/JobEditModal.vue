@@ -3,9 +3,7 @@
     <DialogContent class="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Edit Job</DialogTitle>
-        <DialogDescription>
-          Edit job details, client information, and contact
-        </DialogDescription>
+        <DialogDescription> Edit job details, client information, and contact </DialogDescription>
       </DialogHeader>
 
       <div class="space-y-6">
@@ -81,7 +79,10 @@
               />
 
               <!-- Current Client Info -->
-              <div v-if="localJobData.client_name && !isClientChanged" class="mt-2 p-3 bg-blue-50 rounded border border-blue-200">
+              <div
+                v-if="localJobData.client_name && !isClientChanged"
+                class="mt-2 p-3 bg-blue-50 rounded border border-blue-200"
+              >
                 <div class="text-sm font-medium text-blue-900">
                   Current: {{ localJobData.client_name }}
                 </div>
@@ -126,7 +127,11 @@
                 </div>
 
                 <p class="text-xs text-gray-500">
-                  {{ currentClientId ? 'Select or manage contacts for this client' : 'Please select a client first' }}
+                  {{
+                    currentClientId
+                      ? 'Select or manage contacts for this client'
+                      : 'Please select a client first'
+                  }}
                 </p>
               </div>
             </div>
@@ -179,9 +184,25 @@
           :disabled="isLoading || !isFormValid"
         >
           <span v-if="isLoading" class="flex items-center">
-            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
             Saving...
           </span>
@@ -253,7 +274,7 @@ const {
   openModal: openContactModal,
   closeModal: closeContactModal,
   selectExistingContact,
-  saveContact
+  saveContact,
 } = useContactManagement()
 
 // Computed properties
@@ -271,9 +292,9 @@ const currentClientName = computed(() => {
 
 const clientDisplayName = computed({
   get: () => currentClientName.value,
-  set: (value: string) => {
+  set: () => {
     // This will be handled by ClientLookup component
-  }
+  },
 })
 
 const contactDisplayName = computed(() => {
@@ -288,14 +309,14 @@ const jobDescription = computed({
   get: () => localJobData.value.description || '',
   set: (value: string) => {
     localJobData.value.description = value || null
-  }
+  },
 })
 
 const jobNotes = computed({
   get: () => localJobData.value.notes || '',
   set: (value: string) => {
     localJobData.value.notes = value || null
-  }
+  },
 })
 
 // Form validation following SRP
@@ -311,13 +332,17 @@ const isFormValid = computed(() => {
 })
 
 // Watch for props changes
-watch(() => props.jobData, (newJobData) => {
-  if (newJobData) {
-    localJobData.value = { ...newJobData }
-    isClientChanged.value = false
-    selectedClient.value = null
-  }
-}, { immediate: true })
+watch(
+  () => props.jobData,
+  (newJobData) => {
+    if (newJobData) {
+      localJobData.value = { ...newJobData }
+      isClientChanged.value = false
+      selectedClient.value = null
+    }
+  },
+  { immediate: true },
+)
 
 // Methods following clean code principles
 const handleClientChange = (clientId: string) => {
@@ -389,7 +414,7 @@ const handleSave = async () => {
       order_number: localJobData.value.order_number || '',
       job_status: localJobData.value.job_status,
       description: localJobData.value.description || '',
-      notes: localJobData.value.notes || ''
+      notes: localJobData.value.notes || '',
     }
 
     const result = await jobRestService.updateJob(props.jobData.id, updateData)

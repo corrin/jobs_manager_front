@@ -31,10 +31,10 @@ export interface GridColumnConfig {
   filter?: boolean
   resizable?: boolean
   pinned?: 'left' | 'right'
-  cellRenderer?: string | Function
+  cellRenderer?: string | ((...args: unknown[]) => string)
   cellEditor?: string
-  cellEditorParams?: any
-  valueFormatter?: Function
+  cellEditorParams?: Record<string, unknown>
+  valueFormatter?: (params: import('ag-grid-community').ValueFormatterParams) => string
 }
 
 export interface GridActionEvent {
@@ -63,3 +63,23 @@ declare global {
     duplicateCostLine?: (id: number) => void
   }
 }
+
+export interface GridColumn {
+  // ...existing code...
+  valueFormatter?: (params: import('ag-grid-community').ValueFormatterParams) => string
+  // ...existing code...
+}
+
+export interface GridRow {
+  // ...existing code...
+  [key: string]: string | number | boolean | null | undefined
+  // ...existing code...
+}
+
+export interface GridOptions {
+  // ...existing code...
+  onRowSelected?: (event: import('ag-grid-community').RowSelectedEvent) => void
+  // ...existing code...
+}
+
+export type GridData = Array<GridRow>

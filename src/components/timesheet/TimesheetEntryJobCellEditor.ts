@@ -22,7 +22,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   init(params: ICellEditorParams): void {
     this.value = params.value || ''
     this.params = params
-    this.jobs = (window as any).timesheetJobs || []
+    this.jobs = (window as unknown).timesheetJobs || []
     this.filteredJobs = [...this.jobs]
 
     this.createUI()
@@ -98,7 +98,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       this.showDropdown()
     })
 
-    this.input.addEventListener('blur', (e) => {
+    this.input.addEventListener('blur', () => {
       // Delay hiding to allow dropdown clicks
       setTimeout(() => {
         if (!this.dropdown.contains(document.activeElement)) {
@@ -125,10 +125,11 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     } else {
       const term = searchTerm.toLowerCase()
       this.filteredJobs = this.jobs
-        .filter(job =>
-          job.job_number.toLowerCase().includes(term) ||
-          job.name.toLowerCase().includes(term) ||
-          job.client_name.toLowerCase().includes(term)
+        .filter(
+          (job) =>
+            job.job_number.toLowerCase().includes(term) ||
+            job.name.toLowerCase().includes(term) ||
+            job.client_name.toLowerCase().includes(term),
         )
         .slice(0, 15) // Limit results for performance
     }
@@ -231,10 +232,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault()
-        this.highlightedIndex = Math.min(
-          this.highlightedIndex + 1,
-          this.filteredJobs.length - 1
-        )
+        this.highlightedIndex = Math.min(this.highlightedIndex + 1, this.filteredJobs.length - 1)
         this.updateHighlight()
         break
 
@@ -284,7 +282,9 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         element.style.borderLeftColor = 'transparent'
         element.style.borderLeftWidth = '3px'
       }
-    })  }  private selectJob(job: JobSelectionItem): void {
+    })
+  }
+  private selectJob(job: JobSelectionItem): void {
     this.selectedJob = job
     this.value = job.job_number
     this.input.value = job.job_number
@@ -293,52 +293,66 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     console.log('🎯 Job selected in editor:', job)
 
     // Store the selected job globally for the grid to access
-    ;(window as any).lastSelectedJob = job
+    ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob = job
 
     // Update the grid row directly with job data
     if (this.params.node) {
       const rowData = this.params.node.data
       console.log('🔄 Updating row data with job info:', job)
-        // Update all job-related fields
+      // Update all job-related fields
       rowData.jobId = job.id
       rowData.jobNumber = job.job_number
       rowData.client = job.client_name
       rowData.jobName = job.name
       rowData.chargeOutRate = job.charge_out_rate
       rowData.billable = job.status !== 'special' && job.status !== 'shop'
-        // Calculate wage and bill manually since handleCellValueChanged might not be called
+      // Calculate wage and bill manually since handleCellValueChanged might not be called
       const hours = rowData.hours || 0
       const rate = rowData.rate || 'Ord'
 
       // Get rate multiplier
       const getRateMultiplier = (rateType: string): number => {
         switch (rateType) {
-          case '1.5': return 1.5
-          case '2.0': return 2.0
-          case 'Unpaid': return 0.0
-          default: return 1.0
+          case '1.5':
+            return 1.5
+          case '2.0':
+            return 2.0
+          case 'Unpaid':
+            return 0.0
+          default:
+            return 1.0
         }
       }
-        // Get wage rate from staff data (stored globally) or use company default
-      const currentStaff = (window as any).currentStaff
-      const companyDefaults = (window as any).companyDefaults
+      // Get wage rate from staff data (stored globally) or use company default
+      const currentStaff = (window as unknown as { currentStaff?: { wageRate?: number } })
+        .currentStaff
+      const companyDefaults = (window as unknown as { companyDefaults?: { wage_rate?: number } })
+        .companyDefaults
       const wageRate = currentStaff?.wageRate || companyDefaults?.wage_rate || 32 // Fallback to company default
       const multiplier = getRateMultiplier(rate)
-      rowData.wage = hours > 0 ? Math.round((hours * wageRate * multiplier) * 100) / 100 : 0
+      rowData.wage = hours > 0 ? Math.round(hours * wageRate * multiplier * 100) / 100 : 0
 
-      console.log('💰 Using wage rate:', wageRate, 'for', hours, 'hours with multiplier', multiplier)
+      console.log(
+        '💰 Using wage rate:',
+        wageRate,
+        'for',
+        hours,
+        'hours with multiplier',
+        multiplier,
+      )
 
       // Calculate bill
-      rowData.bill = (rowData.billable && hours > 0 && job.charge_out_rate > 0)
-        ? Math.round((hours * job.charge_out_rate) * 100) / 100
-        : 0
+      rowData.bill =
+        rowData.billable && hours > 0 && job.charge_out_rate > 0
+          ? Math.round(hours * job.charge_out_rate * 100) / 100
+          : 0
 
       console.log('💰 Calculated wage:', rowData.wage, 'and bill:', rowData.bill)
 
       // Trigger row update
       this.params.api?.refreshCells({
         rowNodes: [this.params.node],
-        force: true
+        force: true,
       })
 
       console.log('✅ Row updated with job data')
@@ -359,11 +373,13 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
 
   getGui(): HTMLElement {
     return this.container
-  }  getValue(): any {
+  }
+  getValue(): string {
     // Store the selected job in a global variable for the grid to access
     if (this.selectedJob) {
       // Store globally for handleCellValueChanged to access
-      (window as any).lastSelectedJob = this.selectedJob
+      ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob =
+        this.selectedJob
       console.log('🎯 Returning job number from editor:', this.selectedJob.job_number)
       return this.selectedJob.job_number
     }

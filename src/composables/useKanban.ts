@@ -3,9 +3,9 @@ import { useRouter } from 'vue-router'
 import { JobService } from '@/services/job.service'
 import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
-import type { Job, StatusChoice, AdvancedFilters } from '@/types'
+import type { Job, StatusChoice, AdvancedFilters, Staff } from '@/types'
 
-export function useKanban() {
+export function useKanban(onJobsLoaded?: () => void) {
   const jobService = JobService.getInstance()
   const router = useRouter()
   const jobsStore = useJobsStore()
@@ -34,12 +34,16 @@ export function useKanban() {
     status: [],
     created_after: '',
     created_before: '',
-    paid: ''
+    paid: '',
   })
 
   // Computed para acessar dados do store
-  const jobs = computed(() => jobsStore.allKanbanJobs.filter(job => job.status_key !== 'archived'))
-  const archivedJobs = computed(() => jobsStore.allKanbanJobs.filter(job => job.status_key === 'archived'))
+  const jobs = computed(() =>
+    jobsStore.allKanbanJobs.filter((job) => job.status_key !== 'archived'),
+  )
+  const archivedJobs = computed(() =>
+    jobsStore.allKanbanJobs.filter((job) => job.status_key === 'archived'),
+  )
   const filteredJobs = ref<Job[]>([])
   const totalArchivedJobs = computed(() => archivedJobs.value.length)
 
@@ -50,14 +54,15 @@ export function useKanban() {
     }
 
     // Check if job is assigned to any of the filtered staff
-    const assignedStaffIds = job.people?.map((staff: any) => staff.id.toString()) || []
+    const assignedStaffIds = job.people?.map((staff: Staff) => staff.id.toString()) || []
     const isAssignedToActiveStaff = assignedStaffIds.some((staffId: string) =>
-      activeStaffFilters.value.includes(staffId)
+      activeStaffFilters.value.includes(staffId),
     )
 
     // Check if job was created by any of the filtered staff
-    const isCreatedByActiveStaff = job.created_by_id ? 
-      activeStaffFilters.value.includes(job.created_by_id.toString()) : false
+    const isCreatedByActiveStaff = job.created_by_id
+      ? activeStaffFilters.value.includes(job.created_by_id.toString())
+      : false
 
     return isAssignedToActiveStaff || isCreatedByActiveStaff
   }
@@ -65,7 +70,7 @@ export function useKanban() {
   // Computed using new categorization system
   const getJobsByStatus = computed(() => (columnId: string) => {
     let jobList: Job[]
-    
+
     // Handle archived column specially
     if (columnId === 'archived') {
       jobList = archivedJobs.value
@@ -75,7 +80,7 @@ export function useKanban() {
     }
 
     // Apply staff filters
-    return jobList.filter(job => jobMatchesStaffFilters(job))
+    return jobList.filter((job) => jobMatchesStaffFilters(job))
   })
 
   const getJobCountByStatus = computed(() => (columnId: string) => {
@@ -88,11 +93,11 @@ export function useKanban() {
   // Get kanban columns instead of individual statuses
   const visibleStatusChoices = computed(() => {
     return KanbanCategorizationService.getAllColumns()
-      .filter(col => col.columnId !== 'archived')
-      .map(col => ({
+      .filter((col) => col.columnId !== 'archived')
+      .map((col) => ({
         key: col.columnId,
         label: col.columnTitle,
-        tooltip: `Includes: ${col.subCategories.map(sub => sub.badgeLabel).join(', ')}`
+        tooltip: `Includes: ${col.subCategories.map((sub) => sub.badgeLabel).join(', ')}`,
       }))
   })
 
@@ -103,15 +108,15 @@ export function useKanban() {
     try {
       isLoading.value = true
       error.value = null
-      
+
       // Configurar contexto no store
       jobsStore.setCurrentContext('kanban')
       jobsStore.setLoadingKanban(true)
 
       const data = await jobService.getAllJobs()
-      
+
       // Converter jobs para o formato do kanban e salvar no store
-      const kanbanJobs = [...data.activeJobs, ...data.archivedJobs].map(job => ({
+      const kanbanJobs = [...data.activeJobs, ...data.archivedJobs].map((job) => ({
         id: job.id,
         name: job.name,
         description: job.description,
@@ -126,16 +131,21 @@ export function useKanban() {
         paid: job.paid,
         created_by_id: job.created_by_id,
         created_at: job.created_at,
-        priority: job.priority
+        priority: job.priority,
       }))
-      
+
       jobsStore.setKanbanJobs(kanbanJobs)
 
       console.log('Jobs loaded and stored:', {
         activeJobs: data.activeJobs.length,
         archivedJobs: data.archivedJobs.length,
-        totalArchived: data.totalArchived
+        totalArchived: data.totalArchived,
       })
+
+      // Callback to reinitialize sortable after jobs are loaded
+      if (onJobsLoaded) {
+        onJobsLoaded()
+      }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load jobs'
       console.error('Error loading jobs:', err)
@@ -148,34 +158,35 @@ export function useKanban() {
   const loadStatusChoices = async (): Promise<void> => {
     try {
       const data = await jobService.getStatusChoices()
-      
+
       // Convert statuses object to array format expected by the frontend
       // Note: These are now kanban columns, not individual job statuses
       statusChoices.value = Object.entries(data.statuses).map(([key, label]) => ({
         key,
         label,
-        tooltip: data.tooltips[key] || ''
+        tooltip: data.tooltips[key] || '',
       }))
-      
+
       // Initialize selectedMobileStatus with first visible status
       if (!selectedMobileStatus.value && statusChoices.value.length > 0) {
-        const firstStatus = statusChoices.value.find(s => s.key !== 'archived')
+        const firstStatus = statusChoices.value.find((s) => s.key !== 'archived')
         selectedMobileStatus.value = firstStatus?.key || statusChoices.value[0].key
       }
     } catch (err) {
       console.error('Error loading status choices:', err)
-      
+
       // Fallback to kanban columns from categorization service
       const columns = KanbanCategorizationService.getAllColumns()
-      statusChoices.value = columns.map(col => ({
+      statusChoices.value = columns.map((col) => ({
         key: col.columnId,
         label: col.columnTitle,
-        tooltip: `Includes: ${col.subCategories.map(sub => sub.badgeLabel).join(', ')}`
+        tooltip: `Includes: ${col.subCategories.map((sub) => sub.badgeLabel).join(', ')}`,
       }))
-      
+
       // Initialize with first non-archived column
       if (!selectedMobileStatus.value) {
-        selectedMobileStatus.value = columns.find(c => c.columnId !== 'archived')?.columnId || 'draft'
+        selectedMobileStatus.value =
+          columns.find((c) => c.columnId !== 'archived')?.columnId || 'draft'
       }
     }
   }
@@ -218,7 +229,7 @@ export function useKanban() {
       status: [],
       created_after: '',
       created_before: '',
-      paid: ''
+      paid: '',
     }
   }
 
@@ -236,7 +247,7 @@ export function useKanban() {
     showArchived.value = !showArchived.value
   }
 
-  const shouldShowLoadMore = (status: string): boolean => {
+  const shouldShowLoadMore = (): boolean => {
     // TODO: Implement pagination logic
     return false
   }
@@ -253,16 +264,22 @@ export function useKanban() {
 
   const updateJobStatus = async (jobId: string, newStatus: string): Promise<void> => {
     try {
+      // Update server first
       await jobService.updateJobStatus(jobId, newStatus)
-      
-      // Atualizar no store global
+
+      // Then update local store
       jobsStore.updateJobStatus(jobId, newStatus)
-      
-      // Recarregar jobs para garantir sincronização
+
+      // Reload jobs to ensure UI is synchronized and counters are updated
       await loadJobs()
+
+      console.log(`✅ Job ${jobId} status updated to ${newStatus}`)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update job status'
       console.error('Error updating job status:', err)
+
+      // In case of error, reload to revert optimistic changes
+      await loadJobs()
     }
   }
 
@@ -270,19 +287,20 @@ export function useKanban() {
     jobId: string,
     beforeId?: string,
     afterId?: string,
-    status?: string
+    status?: string,
   ): Promise<void> => {
     try {
-      await jobService.reorderJob(
-        jobId,
-        beforeId,
-        afterId,
-        status
-      )
-      await loadJobs() // Reload jobs after reordering
+      // Para reordenação, fazemos apenas a requisição ao servidor
+      // pois a mudança visual já foi feita pelo SortableJS
+      await jobService.reorderJob(jobId, beforeId, afterId, status)
+
+      console.log(`✅ Job ${jobId} reordered`)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to reorder job'
       console.error('Error reordering job:', err)
+
+      // Em caso de erro, recarregar para reverter mudanças visuais
+      await loadJobs()
     }
   }
 
@@ -293,10 +311,7 @@ export function useKanban() {
 
   // Initialize on mount
   onMounted(async () => {
-    await Promise.all([
-      loadJobs(),
-      loadStatusChoices()
-    ])
+    await Promise.all([loadJobs(), loadStatusChoices()])
   })
 
   return {
@@ -337,6 +352,6 @@ export function useKanban() {
     viewJob,
     updateJobStatus,
     reorderJob,
-    handleStaffFilterChanged
+    handleStaffFilterChanged,
   }
 }

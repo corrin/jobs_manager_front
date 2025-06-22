@@ -9,7 +9,7 @@ export function useLogin() {
 
   const credentials = ref<LoginCredentials>({
     username: '',
-    password: ''
+    password: '',
   })
 
   const hasError = ref(false)
@@ -67,6 +67,6 @@ export function useLogin() {
     isFormValid,
     isLoading: computed(() => authStore.isLoading),
     error: computed(() => authStore.error),
-    handleLogin
+    handleLogin,
   }
 }

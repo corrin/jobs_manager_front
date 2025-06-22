@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'primary',
   size: 'md',
   disabled: false,
-  draggable: true
+  draggable: true,
 })
 
 const emit = defineEmits<Emits>()
@@ -58,13 +58,13 @@ const buttonClasses = computed(() => {
     secondary: 'bg-gray-600 hover:bg-gray-700 text-white border-transparent',
     destructive: 'bg-red-600 hover:bg-red-700 text-white border-transparent',
     outline: 'border-gray-300 bg-transparent hover:bg-gray-50 text-gray-700',
-    ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 border-transparent'
+    ghost: 'bg-transparent hover:bg-gray-100 text-gray-700 border-transparent',
   }
 
   const sizeClasses = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base'
+    lg: 'px-6 py-3 text-base',
   }
 
   const baseClasses = [
@@ -73,7 +73,7 @@ const buttonClasses = computed(() => {
     'transition-colors duration-200',
     'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
     'disabled:opacity-50 disabled:cursor-not-allowed',
-    'select-none'
+    'select-none',
   ]
 
   if (props.draggable) {
@@ -84,46 +84,41 @@ const buttonClasses = computed(() => {
     baseClasses.push('shadow-lg transform scale-105')
   }
 
-  return cn(
-    baseClasses,
-    variantClasses[props.variant],
-    sizeClasses[props.size],
-    props.class
-  )
+  return cn(baseClasses, variantClasses[props.variant], sizeClasses[props.size], props.class)
 })
 
 // Event handlers following clean code principles
 const handleClick = (event: MouseEvent): void => {
   // Guard clause - don't emit click if dragging
   if (isDragging.value) return
-  
+
   emit('click', event)
 }
 
 const handleMouseDown = (event: MouseEvent): void => {
   if (!props.draggable || props.disabled) return
-  
+
   startDrag(event.clientX, event.clientY)
   emit('drag-start', event)
 }
 
 const handleMouseMove = (event: MouseEvent): void => {
   if (!isDragging.value || !props.draggable) return
-  
-  updateDragPosition(event.clientX, event.clientY)
+
+  updateDragPosition()
   emit('drag-move', event)
 }
 
 const handleMouseUp = (event: MouseEvent): void => {
   if (!isDragging.value) return
-  
+
   endDrag()
   emit('drag-end', event)
 }
 
 const handleTouchStart = (event: TouchEvent): void => {
   if (!props.draggable || props.disabled) return
-  
+
   const touch = event.touches[0]
   startDrag(touch.clientX, touch.clientY)
   emit('drag-start', event)
@@ -131,15 +126,14 @@ const handleTouchStart = (event: TouchEvent): void => {
 
 const handleTouchMove = (event: TouchEvent): void => {
   if (!isDragging.value || !props.draggable) return
-  
-  const touch = event.touches[0]
-  updateDragPosition(touch.clientX, touch.clientY)
+
+  updateDragPosition()
   emit('drag-move', event)
 }
 
 const handleTouchEnd = (event: TouchEvent): void => {
   if (!isDragging.value) return
-  
+
   endDrag()
   emit('drag-end', event)
 }
@@ -150,11 +144,7 @@ const startDrag = (clientX: number, clientY: number): void => {
   startPosition.value = { x: clientX, y: clientY }
 }
 
-const updateDragPosition = (clientX: number, clientY: number): void => {
-  // Calculate drag delta if needed for custom drag behavior
-  const deltaX = clientX - startPosition.value.x
-  const deltaY = clientY - startPosition.value.y
-  
+const updateDragPosition = (): void => {
   // Apply visual feedback or custom positioning here if needed
 }
 
@@ -176,6 +166,8 @@ const endDrag = (): void => {
 
 /* Smooth transitions for drag states */
 button {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 </style>

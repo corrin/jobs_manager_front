@@ -1,13 +1,13 @@
 /**
  * Centralized Date Service
- * 
+ *
  * Handles all date operations consistently across the application
  * Ensures timezone-safe operations and consistent week calculations
  */
 
 export interface WeekRange {
-  startDate: string  // Monday in YYYY-MM-DD format
-  endDate: string    // Friday in YYYY-MM-DD format
+  startDate: string // Monday in YYYY-MM-DD format
+  endDate: string // Friday in YYYY-MM-DD format
   weekDays: string[] // Array of 5 dates: Mon-Fri
 }
 
@@ -84,10 +84,10 @@ export class DateService {
    */
   getWeekRange(date: Date | string): WeekRange {
     const inputDate = typeof date === 'string' ? this.createLocalDate(date) : date
-    
+
     const monday = this.getMondayOfWeek(inputDate)
     const friday = this.getFridayOfWeek(inputDate)
-    
+
     const weekDays: string[] = []
     for (let i = 0; i < 5; i++) {
       const day = new Date(monday)
@@ -98,7 +98,7 @@ export class DateService {
     return {
       startDate: this.formatToLocalString(monday),
       endDate: this.formatToLocalString(friday),
-      weekDays
+      weekDays,
     }
   }
 
@@ -115,7 +115,7 @@ export class DateService {
   navigateWeek(currentWeekStart: string, direction: number): string {
     const currentDate = this.createLocalDate(currentWeekStart)
     const newDate = new Date(currentDate)
-    newDate.setDate(currentDate.getDate() + (direction * 7))
+    newDate.setDate(currentDate.getDate() + direction * 7)
     return this.formatToLocalString(this.getMondayOfWeek(newDate))
   }
 
@@ -132,21 +132,19 @@ export class DateService {
   /**
    * Formats a date string for display
    */
-  formatDisplayDate(dateString: string, options: {
-    weekday?: boolean
-    year?: boolean
-    month?: 'short' | 'long'
-    locale?: string
-  } = {}): string {
-    const {
-      weekday = true,
-      year = true,
-      month = 'long',
-      locale = 'en-NZ'
-    } = options
+  formatDisplayDate(
+    dateString: string,
+    options: {
+      weekday?: boolean
+      year?: boolean
+      month?: 'short' | 'long'
+      locale?: string
+    } = {},
+  ): string {
+    const { weekday = true, year = true, month = 'long', locale = 'en-NZ' } = options
 
     const date = this.createLocalDate(dateString)
-    
+
     const formatOptions: Intl.DateTimeFormatOptions = {
       day: 'numeric',
       month,
@@ -167,13 +165,13 @@ export class DateService {
 
     const startFormatted = start.toLocaleDateString(locale, {
       day: 'numeric',
-      month: 'short'
+      month: 'short',
     })
 
     const endFormatted = end.toLocaleDateString(locale, {
       day: 'numeric',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     })
 
     return `${startFormatted} - ${endFormatted}`
@@ -184,8 +182,8 @@ export class DateService {
    */
   getDayName(dateString: string, short = false): string {
     const date = this.createLocalDate(dateString)
-    return date.toLocaleDateString('en-US', { 
-      weekday: short ? 'short' : 'long' 
+    return date.toLocaleDateString('en-US', {
+      weekday: short ? 'short' : 'long',
     })
   }
 
@@ -219,7 +217,7 @@ export class DateService {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       return false
     }
-    
+
     const date = this.createLocalDate(dateString)
     return !isNaN(date.getTime())
   }
@@ -235,13 +233,13 @@ export class DateService {
     isToday: boolean
   }> {
     const weekRange = this.getWeekRange(weekStart)
-    
-    return weekRange.weekDays.map(date => ({
+
+    return weekRange.weekDays.map((date) => ({
       date,
       name: this.getDayName(date, false),
       short: this.getDayName(date, true),
       number: this.getDayNumber(date),
-      isToday: this.isToday(date)
+      isToday: this.isToday(date),
     }))
   }
 }
@@ -254,11 +252,23 @@ export const today = () => dateService.today()
 export const getCurrentWeekStart = () => dateService.getCurrentWeekStart()
 export const getWeekRange = (date: Date | string) => dateService.getWeekRange(date)
 export const getCurrentWeekRange = () => dateService.getCurrentWeekRange()
-export const navigateWeek = (currentWeekStart: string, direction: number) => dateService.navigateWeek(currentWeekStart, direction)
-export const navigateDay = (currentDate: string, direction: number) => dateService.navigateDay(currentDate, direction)
-export const formatDisplayDate = (dateString: string, options?: any) => dateService.formatDisplayDate(dateString, options)
-export const formatDateRange = (startDate: string, endDate: string, locale?: string) => dateService.formatDateRange(startDate, endDate, locale)
-export const getDayName = (dateString: string, short?: boolean) => dateService.getDayName(dateString, short)
+export const navigateWeek = (currentWeekStart: string, direction: number) =>
+  dateService.navigateWeek(currentWeekStart, direction)
+export const navigateDay = (currentDate: string, direction: number) =>
+  dateService.navigateDay(currentDate, direction)
+export const formatDisplayDate = (
+  dateString: string,
+  options?: {
+    weekday?: boolean
+    year?: boolean
+    month?: 'short' | 'long'
+    locale?: string
+  },
+) => dateService.formatDisplayDate(dateString, options)
+export const formatDateRange = (startDate: string, endDate: string, locale?: string) =>
+  dateService.formatDateRange(startDate, endDate, locale)
+export const getDayName = (dateString: string, short?: boolean) =>
+  dateService.getDayName(dateString, short)
 export const getDayNumber = (dateString: string) => dateService.getDayNumber(dateString)
 export const isToday = (dateString: string) => dateService.isToday(dateString)
 export const isCurrentWeek = (dateString: string) => dateService.isCurrentWeek(dateString)

@@ -70,7 +70,7 @@ class IMSService {
       const response = await apiClient.get(`${this.baseUrl}/ims-export/`, {
         params: {
           start_date: formattedDate,
-        }
+        },
       })
 
       console.log('✅ IMS export successful:', response.data)

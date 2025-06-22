@@ -21,26 +21,25 @@ export function useDeviceDetection() {
     // Phones: UP TO 430x932
     return windowWidth.value <= 430 && windowHeight.value <= 932
   })
-  
+
   const isTablet = computed(() => {
     // Tablets: UP TO 1024x1366
-    const isTabletDimensions = (
-      windowWidth.value <= 1024 && 
+    const isTabletDimensions =
+      windowWidth.value <= 1024 &&
       windowHeight.value <= 1366 &&
       !(windowWidth.value <= 430 && windowHeight.value <= 932) // Not mobile
-    )
-    
-    console.log('Device detection:', { 
-      windowWidth: windowWidth.value, 
+
+    console.log('Device detection:', {
+      windowWidth: windowWidth.value,
       windowHeight: windowHeight.value,
       isTabletDimensions,
       isMobile: windowWidth.value <= 430 && windowHeight.value <= 932,
-      range: 'Tablet: até 1024x1366, Mobile: até 430x932'
+      range: 'Tablet: até 1024x1366, Mobile: até 430x932',
     })
-    
+
     return isTabletDimensions
   })
-  
+
   const isDesktop = computed(() => {
     // Desktop: everything that is not tablet or mobile
     return !isMobile.value && !isTablet.value
@@ -54,8 +53,10 @@ export function useDeviceDetection() {
   // Detect specifically iPad
   const isIpad = computed(() => {
     const userAgent = navigator.userAgent.toLowerCase()
-    return userAgent.includes('ipad') || 
-           (userAgent.includes('macintosh') && navigator.maxTouchPoints > 1)
+    return (
+      userAgent.includes('ipad') ||
+      (userAgent.includes('macintosh') && navigator.maxTouchPoints > 1)
+    )
   })
 
   // Universal drag and drop configurations - no mobile restrictions
@@ -73,7 +74,7 @@ export function useDeviceDetection() {
       swapThreshold: 0.65,
       dragoverBubble: false,
       removeCloneOnHide: false,
-      emptyInsertThreshold: 5
+      emptyInsertThreshold: 5,
     }
   }
 
@@ -92,7 +93,7 @@ export function useDeviceDetection() {
       swapThreshold: 0.65,
       dragoverBubble: false,
       removeCloneOnHide: false,
-      emptyInsertThreshold: 5
+      emptyInsertThreshold: 5,
     }
   }
 
@@ -105,6 +106,6 @@ export function useDeviceDetection() {
     isTouchDevice,
     isIpad,
     getDragConfig,
-    getStaffDragConfig
+    getStaffDragConfig,
   }
 }

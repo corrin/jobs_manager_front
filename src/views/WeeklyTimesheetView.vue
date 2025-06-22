@@ -2,52 +2,76 @@
   <AppLayout>
     <div class="flex flex-col min-h-screen">
       <!-- Modern Header with Navigation - Mobile First -->
-      <div class="sticky top-0 bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 backdrop-blur-md border-b border-purple-500/20 p-1">
+      <div
+        class="sticky top-0 bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 backdrop-blur-md border-b border-purple-500/20 p-1"
+      >
         <div class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3">
           <div class="space-y-3 lg:space-y-0 py-0.5">
             <!-- Title Row -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-              <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-center sm:text-left">
-                <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-white">Weekly Timesheet Overview</h1>
-                <div class="flex items-center justify-center sm:justify-start space-x-2 text-white/80 mt-1 sm:mt-0">
+              <div
+                class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-center sm:text-left"
+              >
+                <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-white">
+                  Weekly Timesheet Overview
+                </h1>
+                <div
+                  class="flex items-center justify-center sm:justify-start space-x-2 text-white/80 mt-1 sm:mt-0"
+                >
                   <Calendar class="h-4 w-4 sm:h-5 sm:w-5" />
                   <span class="text-xs sm:text-sm">{{ formatDisplayDateRange() }}</span>
                 </div>
               </div>
 
               <!-- Actions -->
-              <div class="flex items-center justify-center sm:justify-end space-x-2 sm:space-x-3 mt-2 sm:mt-0">
+              <div
+                class="flex items-center justify-center sm:justify-end space-x-2 sm:space-x-3 mt-2 sm:mt-0"
+              >
                 <!-- IMS Toggle -->
                 <div class="flex items-center space-x-2">
-                  <Switch v-model:checked="imsMode" @update:checked="toggleIMSMode"
-                    class="group inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition data-[checked]:bg-blue-600">
-                    <span class="size-4 translate-x-1 rounded-full bg-white transition group-data-[checked]:translate-x-6"></span>
+                  <Switch
+                    v-model:checked="imsMode"
+                    @update:checked="toggleIMSMode"
+                    class="group inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition data-[checked]:bg-blue-600"
+                  >
+                    <span
+                      class="size-4 translate-x-1 rounded-full bg-white transition group-data-[checked]:translate-x-6"
+                    ></span>
                   </Switch>
                   <Label class="text-white text-xs sm:text-sm font-medium">IMS Export</Label>
                 </div>
 
                 <!-- Job Metrics Button -->
-                <Button @click="openJobMetricsModal" variant="ghost" size="sm"
-                  class="text-white hover:bg-purple-500/20 text-xs sm:text-sm">
+                <Button
+                  @click="openJobMetricsModal"
+                  variant="ghost"
+                  size="sm"
+                  class="text-white hover:bg-purple-500/20 text-xs sm:text-sm"
+                >
                   <BarChart3 class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
                   <span class="hidden sm:inline">Job Metrics</span>
                 </Button>
 
-                <!-- Paid Absence Button - Temporarily disabled -->
-                <!-- <Button @click="openPaidAbsenceModal" variant="ghost" size="sm"
-                  class="text-white hover:bg-purple-500/20 text-xs sm:text-sm">
-                  <Plus class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
-                  <span class="hidden sm:inline">Absence</span>
-                </Button> -->
-
-                <Button @click="refreshData" variant="ghost" size="sm" class="text-white hover:bg-purple-500/20 text-xs sm:text-sm"
-                  :disabled="loading">
-                  <RefreshCw class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" :class="{ 'animate-spin': loading }" />
+                <Button
+                  @click="refreshData"
+                  variant="ghost"
+                  size="sm"
+                  class="text-white hover:bg-purple-500/20 text-xs sm:text-sm"
+                  :disabled="loading"
+                >
+                  <RefreshCw
+                    class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2"
+                    :class="{ 'animate-spin': loading }"
+                  />
                   <span class="hidden sm:inline">Refresh</span>
                 </Button>
 
-                <Button @click="goToCurrentWeek" variant="default" size="sm"
-                  class="bg-purple-600 hover:bg-purple-700 text-white border-purple-500 font-medium text-xs sm:text-sm">
+                <Button
+                  @click="goToCurrentWeek"
+                  variant="default"
+                  size="sm"
+                  class="bg-purple-600 hover:bg-purple-700 text-white border-purple-500 font-medium text-xs sm:text-sm"
+                >
                   <Home class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
                   <span class="hidden sm:inline">This Week</span>
                 </Button>
@@ -56,20 +80,32 @@
 
             <!-- Week Navigation -->
             <div class="flex items-center justify-center space-x-2 sm:space-x-4">
-              <Button @click="navigateWeek(-1)" variant="ghost" size="sm"
-                class="text-white hover:bg-purple-500/20 px-2 sm:px-4">
+              <Button
+                @click="navigateWeek(-1)"
+                variant="ghost"
+                size="sm"
+                class="text-white hover:bg-purple-500/20 px-2 sm:px-4"
+              >
                 <ChevronLeft class="h-4 w-4 sm:h-5 sm:w-5" />
                 <span class="hidden sm:inline ml-1">Previous</span>
               </Button>
 
-              <Button @click="openWeekPicker" variant="ghost" size="sm"
-                class="text-white hover:bg-purple-500/20 px-3 sm:px-4">
+              <Button
+                @click="openWeekPicker"
+                variant="ghost"
+                size="sm"
+                class="text-white hover:bg-purple-500/20 px-3 sm:px-4"
+              >
                 <CalendarDays class="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 <span class="text-xs sm:text-sm">Change Week</span>
               </Button>
 
-              <Button @click="navigateWeek(1)" variant="ghost" size="sm"
-                class="text-white hover:bg-purple-500/20 px-2 sm:px-4">
+              <Button
+                @click="navigateWeek(1)"
+                variant="ghost"
+                size="sm"
+                class="text-white hover:bg-purple-500/20 px-2 sm:px-4"
+              >
                 <span class="hidden sm:inline mr-1">Next</span>
                 <ChevronRight class="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
@@ -83,7 +119,9 @@
         <!-- Loading State -->
         <div v-if="loading" class="flex items-center justify-center py-8 sm:py-12">
           <div class="text-center">
-            <div class="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <div
+              class="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-purple-600 mx-auto mb-4"
+            ></div>
             <p class="text-gray-600 text-sm sm:text-base">Loading weekly timesheet data...</p>
           </div>
         </div>
@@ -106,20 +144,27 @@
         <!-- Data Content -->
         <div v-else-if="weeklyData" class="space-y-4">
           <!-- Staff Overview Table - Compact and Scrollable -->
-          <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-18rem)] lg:h-[calc(100vh-10rem)]">
+          <div
+            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-18rem)] lg:h-[calc(100vh-10rem)]"
+          >
             <div class="flex-1 overflow-y-auto">
               <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50 sticky top-0">
                   <tr>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Staff Member
                     </th>
-                    <th v-for="day in displayDays" :key="day.date"
-                      class="px-1 py-1 text-center text-xs font-medium text-blue-700 uppercase tracking-wider">
+                    <th
+                      v-for="day in displayDays"
+                      :key="day.date"
+                      class="px-1 py-1 text-center text-xs font-medium text-blue-700 uppercase tracking-wider"
+                    >
                       <button
                         @click="goToDailyViewHeader(day.date)"
                         class="transition text-blue-700 hover:text-white hover:bg-blue-600 px-1 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs"
-                        style="min-width: 36px;"
+                        style="min-width: 36px"
                       >
                         <div class="flex flex-col items-center">
                           <span>{{ day.name }}</span>
@@ -127,10 +172,14 @@
                         </div>
                       </button>
                     </th>
-                    <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Total
                     </th>
-                    <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Billable %
                     </th>
                   </tr>
@@ -163,14 +212,6 @@
         @close="closeJobMetricsModal"
       />
 
-      <!-- Paid Absence Modal -->
-      <!-- <PaidAbsenceModal
-        :is-open="showPaidAbsenceModal"
-        :available-staff="availableStaff"
-        @close="closePaidAbsenceModal"
-        @absence-added="handlePaidAbsence"
-      /> -->
-
       <!-- Week Picker Modal -->
       <WeekPickerModal
         :is-open="showWeekPicker"
@@ -183,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, defineAsyncComponent, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -197,33 +238,26 @@ import {
   Home,
   AlertCircle,
   BarChart3,
-  Plus,
-  Briefcase
 } from 'lucide-vue-next'
 
 // Components
-import SummaryCard from '@/components/timesheet/SummaryCard.vue'
 import StaffWeekRow from '@/components/timesheet/StaffWeekRow.vue'
 import JobMetricsModal from '@/components/timesheet/JobMetricsModal.vue'
-import PaidAbsenceModal from '@/components/timesheet/PaidAbsenceModal.vue'
 import WeekPickerModal from '@/components/timesheet/WeekPickerModal.vue'
 
 // Services and Types
 import {
   getWeeklyTimesheetOverview,
-  exportToIMS,
-  submitPaidAbsence,
-  getCurrentWeekRange,
-  getWeekRange,
-  formatDateRange,
-  formatHours,
-  formatPercentage,
   type WeeklyTimesheetData,
   type IMSWeeklyData,
-  type PaidAbsenceRequest
 } from '@/services/weekly-timesheet.service'
-import { StaffService, type Staff } from '@/services/staff.service'
-import { dateService, createLocalDate, formatToLocalString, getCurrentWeekStart, navigateWeek as navigateWeekDate } from '@/services/date.service'
+import {
+  dateService,
+  createLocalDate,
+  formatToLocalString,
+  getCurrentWeekStart,
+  navigateWeek as navigateWeekDate,
+} from '@/services/date.service'
 import { useRouter, useRoute } from 'vue-router'
 
 // State
@@ -240,11 +274,9 @@ const initialWeekStart = route.query.week ? createLocalDate(route.query.week as 
 const selectedWeekStart = ref(initialWeekStart)
 
 const imsMode = ref(false)
-const availableStaff = ref<Staff[]>([])
 
 // Modal states
 const showJobMetricsModal = ref(false)
-const showPaidAbsenceModal = ref(false)
 const showWeekPicker = ref(false)
 
 console.log('🔗 WeeklyTimesheetView URL params:', { week: route.query.week })
@@ -268,17 +300,17 @@ const displayDays = computed(() => {
           date: dateStr,
           name: dateService.getDayName(dateStr, true),
           short: dateService.getDayNumber(dateStr),
-          dayOfWeek: createLocalDate(dateStr).getDay()
+          dayOfWeek: createLocalDate(dateStr).getDay(),
         }
       })
-      .filter(day => day.dayOfWeek >= 1 && day.dayOfWeek <= 5) // Monday-Friday only
+      .filter((day) => day.dayOfWeek >= 1 && day.dayOfWeek <= 5) // Monday-Friday only
   } else {
     // IMS: mostrar todos os dias retornados
     return days.map((dateStr) => {
       return {
         date: dateStr,
         name: dateService.getDayName(dateStr, true),
-        short: dateService.getDayNumber(dateStr)
+        short: dateService.getDayNumber(dateStr),
       }
     })
   }
@@ -286,14 +318,9 @@ const displayDays = computed(() => {
 
 const completedStaff = computed(() => {
   if (!weeklyData.value) return 0
-  return weeklyData.value.staff_data.filter(staff =>
-    staff.total_hours >= 35 // Assuming 35+ hours is "complete"
+  return weeklyData.value.staff_data.filter(
+    (staff) => staff.total_hours >= 35, // Assuming 35+ hours is "complete"
   ).length
-})
-
-const completionRate = computed(() => {
-  if (!weeklyData.value || weeklyData.value.staff_data.length === 0) return 0
-  return (completedStaff.value / weeklyData.value.staff_data.length) * 100
 })
 
 const formatDisplayDateRange = (): string => {
@@ -302,27 +329,22 @@ const formatDisplayDateRange = (): string => {
 }
 
 // Methods
-const loadStaff = async (): Promise<void> => {
-  try {
-    const staffService = StaffService.getInstance()
-    availableStaff.value = await staffService.getAllStaff()
-  } catch (err) {
-    console.error('Error loading staff:', err)
-  }
-}
-
 const loadData = async (): Promise<void> => {
   try {
     loading.value = true
     error.value = null
 
     const weekRange = dateService.getWeekRange(selectedWeekStart.value)
-    console.log('Loading weekly timesheet data for:', weekRange.startDate, 'IMS Mode:', imsMode.value)
+    console.log(
+      'Loading weekly timesheet data for:',
+      weekRange.startDate,
+      'IMS Mode:',
+      imsMode.value,
+    )
 
     weeklyData.value = await getWeeklyTimesheetOverview(weekRange.startDate, imsMode.value)
 
     console.log('Loaded weekly data:', weeklyData.value)
-
   } catch (err) {
     console.error('Error loading weekly timesheet data:', err)
     error.value = 'Failed to load weekly timesheet data. Please try again.'
@@ -336,10 +358,7 @@ const refreshData = (): void => {
 }
 
 const navigateWeek = (direction: number): void => {
-  const newWeekStart = navigateWeekDate(
-    formatToLocalString(selectedWeekStart.value), 
-    direction
-  )
+  const newWeekStart = navigateWeekDate(formatToLocalString(selectedWeekStart.value), direction)
   selectedWeekStart.value = createLocalDate(newWeekStart)
   updateRoute()
   loadData()
@@ -356,25 +375,14 @@ const goToCurrentWeek = (): void => {
 const updateRoute = () => {
   router.push({
     query: {
-      week: formatToLocalString(selectedWeekStart.value)
-    }
+      week: formatToLocalString(selectedWeekStart.value),
+    },
   })
 }
 
 const toggleIMSMode = async (checked: boolean): Promise<void> => {
   imsMode.value = checked
   await loadData()
-}
-
-// Função para navegação para a tela diária
-const goToDailyView = (payload: { date: string, staffId: string }) => {
-  // Supondo que o nome da rota seja 'daily-timesheet' e espera params: date
-  // e possivelmente staffId como query
-  router.push({
-    name: 'daily-timesheet',
-    params: { date: payload.date },
-    query: { staff: payload.staffId }
-  })
 }
 
 // Navegação para o cabeçalho do dia
@@ -392,14 +400,7 @@ const closeJobMetricsModal = (): void => {
   showJobMetricsModal.value = false
 }
 
-const openPaidAbsenceModal = (): void => {
-  showPaidAbsenceModal.value = true
-}
-
-const closePaidAbsenceModal = (): void => {
-  showPaidAbsenceModal.value = false
-}
-
+// Week Picker Modal
 const openWeekPicker = (): void => {
   showWeekPicker.value = true
 }
@@ -408,60 +409,17 @@ const closeWeekPicker = (): void => {
   showWeekPicker.value = false
 }
 
-const handleWeekSelect = (weekStart: string, weekEnd: string): void => {
-  selectedWeekStart.value = createLocalDate(weekStart)
-  closeWeekPicker()
+const handleWeekSelect = (date: string): void => {
+  selectedWeekStart.value = createLocalDate(date)
   updateRoute()
   loadData()
+  closeWeekPicker()
 }
 
-const handlePaidAbsence = async (absenceForm: any): Promise<void> => {
-  try {
-    // Convert AbsenceForm to PaidAbsenceRequest
-    const request: PaidAbsenceRequest = {
-      staff_id: absenceForm.staffId,
-      start_date: absenceForm.startDate,
-      end_date: absenceForm.endDate,
-      leave_type: absenceForm.absenceType as 'annual' | 'sick' | 'other',
-      hours_per_day: absenceForm.hoursPerDay === 'custom'
-        ? absenceForm.customHours
-        : Number(absenceForm.hoursPerDay),
-      notes: absenceForm.description
-    }
-
-    const result = await submitPaidAbsence(request)
-    if (result.success) {
-      closePaidAbsenceModal()
-      await loadData() // Refresh data
-    } else {
-      console.error('Failed to submit paid absence:', result.messages)
-    }
-  } catch (err) {
-    console.error('Error submitting paid absence:', err)
-  }
-}
-
-// Corrigir initializeWeek para garantir Monday
-const initializeWeek = (): void => {
-  const currentWeekStart = getCurrentWeekStart()
-  selectedWeekStart.value = createLocalDate(currentWeekStart)
-}
-
-// Lifecycle
+// Lifecycle Hooks
 onMounted(() => {
-  initializeWeek()
-  loadStaff()
   loadData()
 })
-
-// Watch for URL parameter changes
-watch(() => route.query.week, (newWeek) => {
-  if (newWeek && formatToLocalString(selectedWeekStart.value) !== newWeek) {
-    console.log('📅 Updating week from URL:', newWeek)
-    selectedWeekStart.value = createLocalDate(newWeek as string)
-    loadData()
-  }
-}, { immediate: false })
 </script>
 
 <style scoped>
@@ -478,12 +436,13 @@ tbody tr:hover {
 
 /* Loading animation enhancement */
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7);
   }
   50% {
-    opacity: .5;
+    opacity: 0.5;
     box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
   }
 }

@@ -62,7 +62,10 @@ const handleBlur = () => {
 // Watch for prop changes
 import { watch } from 'vue'
 
-watch(() => props.value, (newValue) => {
-  inputValue.value = newValue.toString()
-})
+watch(
+  () => props.value,
+  (newValue) => {
+    inputValue.value = newValue.toString()
+  },
+)
 </script>

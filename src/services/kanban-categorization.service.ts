@@ -26,6 +26,7 @@ export class KanbanCategorizationService {
       columnTitle: 'Draft',
       subCategories: [
         { statusKey: 'quoting', badgeLabel: 'Quoting', badgeColorClass: 'bg-yellow-500' },
+        { statusKey: 'draft', badgeLabel: 'Draft', badgeColorClass: 'bg-gray-500' },
       ],
       colorTheme: 'yellow',
     },
@@ -37,6 +38,11 @@ export class KanbanCategorizationService {
           statusKey: 'accepted_quote',
           badgeLabel: 'Quote Accepted',
           badgeColorClass: 'bg-green-500',
+        },
+        {
+          statusKey: 'awaiting_approval',
+          badgeLabel: 'Awaiting Approval',
+          badgeColorClass: 'bg-blue-500',
         },
       ],
       colorTheme: 'green',
@@ -99,8 +105,10 @@ export class KanbanCategorizationService {
   // Status to column mapping for quick lookup
   // Note: 'special' is intentionally excluded (filtered from kanban)
   private static readonly STATUS_TO_COLUMN_MAP: Record<string, string> = {
+    draft: 'draft',
     quoting: 'draft',
     accepted_quote: 'awaiting_approval',
+    awaiting_approval: 'awaiting_approval', // Direct mapping for API compatibility
     awaiting_materials: 'on_hold',
     awaiting_staff: 'on_hold',
     awaiting_site_availability: 'on_hold',
@@ -176,18 +184,18 @@ export class KanbanCategorizationService {
   /**
    * Filter jobs for kanban display - excludes 'special' status
    */
-  static filterKanbanJobs<T extends { status?: string }>(jobs: T[]): T[] {
+  static filterKanbanJobs<T extends { status_key?: string }>(jobs: T[]): T[] {
     // Guard clause for empty/invalid jobs
     if (!jobs) {
       return []
     }
 
-    return jobs.filter((job) => job.status !== 'special')
+    return jobs.filter((job) => job.status_key !== 'special')
   }
   /**
    * Filter jobs that belong to a specific column
    */
-  static getJobsForColumn<T extends { status?: string }>(jobs: T[], columnId: string): T[] {
+  static getJobsForColumn<T extends { status_key?: string }>(jobs: T[], columnId: string): T[] {
     // Guard clauses
     if (!jobs || !columnId) {
       return []
@@ -202,7 +210,7 @@ export class KanbanCategorizationService {
 
     // Filter by column and exclude special jobs
     const filteredJobs = this.filterKanbanJobs(jobs)
-    return filteredJobs.filter((job) => job.status && validStatuses.has(job.status))
+    return filteredJobs.filter((job) => job.status_key && validStatuses.has(job.status_key))
   }
 
   /**
@@ -245,5 +253,28 @@ export class KanbanCategorizationService {
     }
 
     return result
+  }
+
+  /**
+   * Get the default status for a column when a job is dragged to it
+   * Uses switch-case pattern for discrete column values
+   */
+  static getDefaultStatusForColumn(columnId: string): string {
+    switch (columnId) {
+      case 'draft':
+        return 'quoting'
+      case 'awaiting_approval':
+        return 'awaiting_approval'
+      case 'on_hold':
+        return 'on_hold'
+      case 'in_progress':
+        return 'in_progress'
+      case 'recently_completed':
+        return 'recently_completed'
+      case 'archived':
+        return 'archived'
+      default:
+        return columnId // Fallback to column ID
+    }
   }
 }

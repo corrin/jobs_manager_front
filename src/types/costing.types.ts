@@ -9,7 +9,7 @@ export interface CostLine {
   unit_rev: string // Unit_rev comes as string from backend
   total_cost: number
   total_rev: number
-  ext_refs?: Record<string, any>
+  ext_refs?: Record<string, unknown>
   meta: {
     item_number?: number
     category?: 'fabrication' | 'mainWork'
@@ -18,7 +18,7 @@ export interface CostLine {
     total_cost?: number | string
     is_new?: boolean
     is_modified?: boolean
-    [key: string]: any // For other meta fields
+    [key: string]: unknown // For other meta fields
   }
 }
 

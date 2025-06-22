@@ -4,7 +4,7 @@
  */
 
 import type { DateValue } from '@internationalized/date'
-import { CalendarDate, fromDate, toCalendarDate } from '@internationalized/date'
+import { CalendarDate } from '@internationalized/date'
 
 /**
  * Converts JavaScript Date to DateValue for calendar components
@@ -54,16 +54,4 @@ export function fromDateValue(dateValue: DateValue | null | undefined): Date | n
     console.warn('Failed to convert DateValue to Date:', error)
     return null
   }
-}
-
-/**
- * Validates if a value is a valid DateValue
- * Single responsibility for type checking
- */
-export function isDateValue(value: any): value is DateValue {
-  return value && 
-         typeof value === 'object' && 
-         'year' in value && 
-         'month' in value && 
-         'day' in value
 }

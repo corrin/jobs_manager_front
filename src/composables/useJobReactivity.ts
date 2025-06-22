@@ -1,4 +1,4 @@
-import { useJobsStore } from '@/stores/jobs'
+import { useJobsStore, type JobPricings } from '@/stores/jobs'
 import { jobRestService, type JobEvent, type JobData } from '@/services/job-rest.service'
 import { useJobCache } from './useJobCache'
 
@@ -41,7 +41,7 @@ export function useJobReactivity() {
   /**
    * Atualiza pricings do job de forma reativa
    */
-  const updatePricingsReactively = (jobId: string, pricings: any) => {
+  const updatePricingsReactively = (jobId: string, pricings: JobPricings) => {
     jobsStore.updateJobPricings(jobId, pricings)
     console.log(`💰 Pricings updated reactively for job ${jobId}`)
   }
@@ -71,7 +71,7 @@ export function useJobReactivity() {
           ...response.data.job,
           latest_pricings: response.data.latest_pricings || {},
           events: response.data.events || [],
-          company_defaults: response.data.company_defaults || null
+          company_defaults: response.data.company_defaults || null,
         }
       }
 
@@ -89,7 +89,9 @@ export function useJobReactivity() {
       jobsStore.setDetailedJob(enrichedJob)
       setCachedJob(jobId, enrichedJob)
 
-      console.log(`♻️ Job ${jobId} data reloaded reactively ${forceReload ? '(forced)' : '(with cache)'}`)
+      console.log(
+        `♻️ Job ${jobId} data reloaded reactively ${forceReload ? '(forced)' : '(with cache)'}`,
+      )
     } catch (error) {
       console.error(`Error reloading job ${jobId}:`, error)
       throw error

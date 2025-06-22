@@ -6,7 +6,16 @@
  */
 
 import { ref, computed, nextTick, type Ref } from 'vue'
-import type { GridApi, ColDef, CellValueChangedEvent, RowDoubleClickedEvent } from 'ag-grid-community'
+import type {
+  GridApi,
+  ColDef,
+  CellValueChangedEvent,
+  RowDoubleClickedEvent,
+  ICellRendererParams as AgICellRendererParams,
+  ValueFormatterParams,
+  CellClickedEvent,
+  CellKeyDownEvent,
+} from 'ag-grid-community'
 import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
@@ -14,16 +23,15 @@ import type {
   TimesheetEntry,
   TimesheetEntryGridRow,
   TimesheetEntryJobSelectionItem,
-  TimesheetEntryStaffMember
+  TimesheetEntryStaffMember,
 } from '@/types/timesheet.types'
 import type { CompanyDefaults } from '@/types/timesheet.types'
 
 export function useTimesheetEntryGrid(
   companyDefaults: Ref<CompanyDefaults | null>,
   onSaveEntry: (entry: TimesheetEntry) => Promise<void>,
-  onDeleteEntry: (id: number) => Promise<void>
+  onDeleteEntry: (id: number) => Promise<void>,
 ) {
-
   // State
   const gridApi = ref<GridApi | null>(null)
   const gridData = ref<TimesheetEntryGridRow[]>([])
@@ -34,7 +42,7 @@ export function useTimesheetEntryGrid(
   const calculations = useTimesheetEntryCalculations(companyDefaults)
 
   // Column definitions following clean structure
-  const columnDefs = ref<ColDef[]>([
+  const columnDefs = ref<ColDef<TimesheetEntryGridRow, unknown>[]>([
     {
       headerName: 'Job',
       field: 'jobNumber',
@@ -43,8 +51,8 @@ export function useTimesheetEntryGrid(
       cellEditor: TimesheetEntryJobCellEditor,
       cellEditorPopup: true,
       pinned: 'left',
-      cellRenderer: (params: any) => {
-        const { jobNumber, client } = params.data
+      cellRenderer: (params: AgICellRendererParams) => {
+        const { jobNumber, client } = params.data as TimesheetEntryGridRow
         if (!jobNumber) return '<em style="color: #9CA3AF;">Select job...</em>'
 
         return `
@@ -53,14 +61,14 @@ export function useTimesheetEntryGrid(
             <span style="font-size: 11px; color: #6B7280;">${client}</span>
           </div>
         `
-      }
+      },
     },
     {
       headerName: 'Client',
       field: 'client',
       width: 140,
       editable: false,
-      cellStyle: { color: '#6B7280', fontSize: '13px' }
+      cellStyle: { color: '#6B7280', fontSize: '13px' },
     },
     {
       headerName: 'Job Name',
@@ -68,7 +76,7 @@ export function useTimesheetEntryGrid(
       flex: 1,
       minWidth: 180,
       editable: false,
-      cellStyle: { color: '#374151', fontWeight: '500' }
+      cellStyle: { color: '#374151', fontWeight: '500' },
     },
     {
       headerName: 'Hours',
@@ -80,9 +88,9 @@ export function useTimesheetEntryGrid(
         min: 0,
         max: 24,
         step: 0.25,
-        precision: 2
+        precision: 2,
       },
-      cellRenderer: (params: any) => {
+      cellRenderer: (params: AgICellRendererParams) => {
         const hours = params.value || 0
         const isOvertime = hours > 8
         const color = isOvertime ? '#DC2626' : '#374151'
@@ -90,7 +98,7 @@ export function useTimesheetEntryGrid(
 
         return `<span style="color: ${color}; font-weight: ${weight};">${hours.toFixed(2)}h</span>`
       },
-      cellClass: 'text-right'
+      cellClass: 'text-right',
     },
     {
       headerName: 'Billable',
@@ -99,7 +107,7 @@ export function useTimesheetEntryGrid(
       editable: true,
       cellEditor: 'agCheckboxCellEditor',
       cellRenderer: 'agCheckboxCellRenderer',
-      cellClass: 'text-center'
+      cellClass: 'text-center',
     },
     {
       headerName: 'Description',
@@ -109,8 +117,8 @@ export function useTimesheetEntryGrid(
       editable: true,
       cellEditor: 'agTextCellEditor',
       cellEditorParams: {
-        maxLength: 500
-      }
+        maxLength: 500,
+      },
     },
     {
       headerName: 'Rate',
@@ -119,72 +127,47 @@ export function useTimesheetEntryGrid(
       editable: true,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: {
-        values: ['Ord', '1.5', '2.0', 'Unpaid']
+        values: ['Ord', '1.5', '2.0', 'Unpaid'],
       },
-      cellRenderer: (params: any) => {
+      cellRenderer: (params: AgICellRendererParams) => {
         const rate = params.value || 'Ord'
         const colors = {
-          'Ord': '#374151',
+          Ord: '#374151',
           '1.5': '#D97706',
           '2.0': '#DC2626',
-          'Unpaid': '#6B7280'
+          Unpaid: '#6B7280',
         }
         const displayText = rate === 'Ord' ? 'Ord' : rate === 'Unpaid' ? 'Unpaid' : `${rate}x`
         return `<span style="color: ${colors[rate as keyof typeof colors]}; font-weight: 500;">${displayText}</span>`
-      }
+      },
     },
     {
       headerName: 'Wage',
       field: 'wage',
       width: 100,
       editable: false,
-      valueFormatter: (params: any) => `$${(params.value || 0).toFixed(2)}`,
+      valueFormatter: (params: ValueFormatterParams) => `$${(params.value || 0).toFixed(2)}`,
       cellClass: 'text-right',
-      cellStyle: { color: '#059669', fontWeight: '600' }
+      cellStyle: { color: '#059669', fontWeight: '600' },
     },
     {
       headerName: 'Bill',
       field: 'bill',
       width: 100,
       editable: false,
-      valueFormatter: (params: any) => `$${(params.value || 0).toFixed(2)}`,
+      valueFormatter: (params: ValueFormatterParams) => `$${(params.value || 0).toFixed(2)}`,
       cellClass: 'text-right',
-      cellStyle: { color: '#2563EB', fontWeight: '600' }
+      cellStyle: { color: '#2563EB', fontWeight: '600' },
     },
     {
-      headerName: '',
-      field: 'actions',
-      width: 60,
-      editable: false,
-      sortable: false,
-      filter: false,
+      headerName: 'Actions',
+      field: undefined,
+      cellRenderer: 'actionsRenderer',
+      width: 120,
       pinned: 'right',
-      cellRenderer: (params: any) => {
-        if (params.data.isNewRow) return ''
-
-        return `
-          <button
-            class="delete-btn"
-            data-row-id="${params.node.rowIndex}"
-            style="
-              background: #FEE2E2;
-              color: #DC2626;
-              border: none;
-              border-radius: 4px;
-              padding: 4px 6px;
-              cursor: pointer;
-              font-size: 12px;
-              transition: all 0.15s ease;
-            "
-            onmouseover="this.style.backgroundColor='#FECACA'"
-            onmouseout="this.style.backgroundColor='#FEE2E2'"
-            title="Delete entry"
-          >
-            🗑️
-          </button>
-        `
-      }
-    }
+      suppressMovable: true,
+      suppressSizeToFit: true,
+    },
   ])
 
   // Grid options
@@ -195,7 +178,7 @@ export function useTimesheetEntryGrid(
     defaultColDef: {
       sortable: true,
       filter: false,
-      resizable: true
+      resizable: true,
     },
     rowHeight: 48,
     headerHeight: 44,
@@ -205,27 +188,32 @@ export function useTimesheetEntryGrid(
         field: event.colDef.field,
         newValue: event.newValue,
         oldValue: event.oldValue,
-        data: event.data
+        data: event.data,
       })
       handleCellValueChanged(event)
     },
     onRowDoubleClicked: handleRowDoubleClicked,
     onCellClicked: handleCellClicked,
     onCellKeyDown: handleCellKeyDown,
-    getRowStyle: (params: any) => {
+    getRowStyle: (params: { data?: TimesheetEntryGridRow }) => {
+      if (!params.data) return undefined
+
       // Highlight new rows
       if (params.data.isNewRow) {
         return { backgroundColor: '#F0F9FF', border: '1px dashed #3B82F6' }
       }
       return undefined
-    }
+    },
   }))
 
   // Helper functions
-  function handleJobSelection(rowData: any, job: TimesheetEntryJobSelectionItem): void {
+  function handleJobSelection(
+    rowData: TimesheetEntryGridRow & { rowIndex: number },
+    job: TimesheetEntryJobSelectionItem,
+  ): void {
     console.log('🏆 Handling job selection:', {
       job: job,
-      rowData: rowData
+      rowData: rowData,
     })
 
     const entry = createEntryFromRowData(rowData)
@@ -248,7 +236,7 @@ export function useTimesheetEntryGrid(
       field: colDef.field,
       newValue,
       oldValue,
-      data: data
+      data: data,
     })
 
     // Guard clause - early return if no changes
@@ -265,36 +253,44 @@ export function useTimesheetEntryGrid(
         newValue: newValue,
         oldValue: oldValue,
         selectedJob: data.selectedJob,
-        data: data
+        data: data,
       })
 
       // Handle job selection specially
       if (colDef.field === 'jobNumber') {
-        const lastSelectedJob = (window as any).lastSelectedJob
-        console.log('🎯 Job field changed, checking for selected job:', lastSelectedJob)
+        const lastSelectedJobRaw =
+          typeof window !== 'undefined' &&
+          typeof (window as unknown as { lastSelectedJob?: unknown }).lastSelectedJob !==
+            'undefined'
+            ? (window as unknown as { lastSelectedJob?: unknown }).lastSelectedJob
+            : null
+        console.log('🎯 Job field changed, checking for selected job:', lastSelectedJobRaw)
 
-        if (lastSelectedJob) {
-          console.log('📋 Processing job selection:', lastSelectedJob)
+        // Type guard para garantir o shape
+        function isJobSelectionItem(obj: unknown): obj is TimesheetEntryJobSelectionItem {
+          return (
+            !!obj &&
+            typeof obj === 'object' &&
+            'id' in obj &&
+            'job_number' in obj &&
+            'name' in obj &&
+            'client_name' in obj &&
+            'charge_out_rate' in obj &&
+            'status' in obj
+          )
+        }
 
-          // Convert to proper JobSelectionItem format
-          const jobSelectionItem = {
-            id: lastSelectedJob.id,
-            job_number: lastSelectedJob.job_number,
-            name: lastSelectedJob.name,
-            client_name: lastSelectedJob.client_name,
-            charge_out_rate: lastSelectedJob.charge_out_rate,
-            status: lastSelectedJob.status,
-            job_display_name: lastSelectedJob.job_display_name || `${lastSelectedJob.job_number} - ${lastSelectedJob.name}`
-          }
-
+        if (isJobSelectionItem(lastSelectedJobRaw)) {
+          const jobSelectionItem = lastSelectedJobRaw
           // Use the helper function
           const entry = createEntryFromRowData(data)
           const populated = calculations.populateJobFields(entry, jobSelectionItem)
           const recalculated = calculations.recalculateEntry(populated)
-          updateRowData(data.rowIndex || 0, recalculated)
-          
+          if (typeof updateRowData === 'function') {
+            updateRowData(data.rowIndex || 0, recalculated)
+          }
           // Clear the global variable
-          ;(window as any).lastSelectedJob = null
+          ;(window as unknown as { lastSelectedJob?: unknown }).lastSelectedJob = null
           return
         }
       }
@@ -303,7 +299,12 @@ export function useTimesheetEntryGrid(
       const updatedEntry = createEntryFromRowData(data)
 
       // Recalculate amounts when relevant fields change
-      if (['hours', 'rate', 'billable', 'jobNumber', 'jobId', 'chargeOutRate'].includes(colDef.field || '') && event.node.rowIndex !== null) {
+      if (
+        ['hours', 'rate', 'billable', 'jobNumber', 'jobId', 'chargeOutRate'].includes(
+          colDef.field || '',
+        ) &&
+        event.node.rowIndex !== null
+      ) {
         const recalculated = calculations.recalculateEntry(updatedEntry)
         updateRowData(event.node.rowIndex, recalculated)
       }
@@ -317,7 +318,6 @@ export function useTimesheetEntryGrid(
       if (data.isNewRow && isRowComplete(updatedEntry) && event.node.rowIndex !== null) {
         await saveNewRow(event.node.rowIndex, updatedEntry)
       }
-
     } catch (error) {
       console.error('Error handling cell value change:', error)
       // Revert the change
@@ -335,55 +335,59 @@ export function useTimesheetEntryGrid(
     const colId = 'description' // Default to description field
     event.api.startEditingCell({
       rowIndex: event.rowIndex,
-      colKey: colId
+      colKey: colId,
     })
   }
 
-  function handleCellClicked(event: any): void {
-    // Handle delete button clicks
-    if (event.event.target?.classList.contains('delete-btn')) {
-      const rowIndex = parseInt(event.event.target.dataset.rowId)
+  function handleCellClicked(event: CellClickedEvent): void {
+    if (
+      event.event?.target &&
+      event.event.target instanceof HTMLElement &&
+      event.event.target.classList.contains('delete-btn')
+    ) {
+      const rowIndex = parseInt(event.event.target.dataset.rowId || '0')
       deleteRow(rowIndex)
     }
   }
 
-  function handleCellKeyDown(params: any): void {
+  function handleCellKeyDown(params: CellKeyDownEvent): void {
     const { event, api, node, column } = params
+
+    if (!event || !(event instanceof KeyboardEvent) || !node.rowIndex !== null) {
+      return
+    }
+
     console.log('⌨️ Cell key down:', {
       key: event.key,
       shiftKey: event.shiftKey,
-      column: column.colId,
-      rowIndex: node.rowIndex
+      column: column.getColId(),
+      rowIndex: node.rowIndex,
     })
 
     switch (event.key) {
       case 'Escape':
         console.log('ESC pressed - stopping edit')
-        // Column is not editable, skip
-        if (!column.colDef.editable) {
+        if (!column.getColDef().editable) {
           return
         }
         api.stopEditing(true)
         break
 
       case 'Enter':
-        // Shift + Enter is for confirming edits
         if (event.shiftKey) {
           console.log('Shift+Enter pressed - confirming edit or toggling billable')
-          
-          // Special handling for billable column
-          if (column.colId === 'billable') {
+
+          if (column.getColId() === 'billable') {
             event.preventDefault()
             node.data.billable = !node.data.billable
             api.refreshCells({
               rowNodes: [node],
-              force: true
+              force: true,
             })
-            
-            // Trigger recalculation
+
             const entry = createEntryFromRowData(node.data)
             const recalculated = calculations.recalculateEntry(entry)
-            updateRowData(node.rowIndex, recalculated)
+            updateRowData(node.rowIndex!, recalculated)
           }
           break
         }
@@ -399,25 +403,29 @@ export function useTimesheetEntryGrid(
   }
 
   // Helper functions
-  function createEntryFromRowData(rowData: any): TimesheetEntry {
+  function createEntryFromRowData(rowData: TimesheetEntryGridRow): TimesheetEntry {
     return {
       id: rowData.id,
       jobId: rowData.jobId || '',
       jobNumber: rowData.jobNumber || '',
       client: rowData.client || '',
       jobName: rowData.jobName || '',
-      hours: parseFloat(rowData.hours) || 0,
+      hours: typeof rowData.hours === 'string' ? parseFloat(rowData.hours) : rowData.hours || 0,
       billable: rowData.billable ?? true,
       description: rowData.description || '',
       rate: rowData.rate || 'Ord',
-      wage: parseFloat(rowData.wage) || 0,
-      bill: parseFloat(rowData.bill) || 0,
+      wage: typeof rowData.wage === 'string' ? parseFloat(rowData.wage) : rowData.wage || 0,
+      bill: typeof rowData.bill === 'string' ? parseFloat(rowData.bill) : rowData.bill || 0,
       staffId: rowData.staffId || '',
       date: rowData.date || '',
-      wageRate: parseFloat(rowData.wageRate) || 0,
-      chargeOutRate: parseFloat(rowData.chargeOutRate) || 0,
+      wageRate:
+        typeof rowData.wageRate === 'string' ? parseFloat(rowData.wageRate) : rowData.wageRate || 0,
+      chargeOutRate:
+        typeof rowData.chargeOutRate === 'string'
+          ? parseFloat(rowData.chargeOutRate)
+          : rowData.chargeOutRate || 0,
       rateMultiplier: calculations.getRateMultiplier(rowData.rate || 'Ord'),
-      isNewRow: rowData.isNewRow
+      isNewRow: rowData.isNewRow,
     }
   }
 
@@ -432,11 +440,7 @@ export function useTimesheetEntryGrid(
   }
 
   function isRowComplete(entry: TimesheetEntry): boolean {
-    return !!(
-      entry.jobNumber &&
-      entry.hours > 0 &&
-      entry.description.trim()
-    )
+    return !!(entry.jobNumber && entry.hours > 0 && entry.description.trim())
   }
 
   function isRowEmpty(entry: TimesheetEntry): boolean {
@@ -458,7 +462,6 @@ export function useTimesheetEntryGrid(
 
       // Add a new empty row
       addNewRow()
-
     } catch (error) {
       console.error('Error saving new row:', error)
       throw error
@@ -483,10 +486,9 @@ export function useTimesheetEntryGrid(
       if (rowNode.data.id) {
         await onDeleteEntry(rowNode.data.id)
       }
-        // Remove from grid
+      // Remove from grid
       gridData.value.splice(rowIndex, 1)
       gridApi.value.applyTransaction({ remove: [rowNode.data] })
-
     } catch (error) {
       console.error('Error deleting row:', error)
     } finally {
@@ -517,15 +519,18 @@ export function useTimesheetEntryGrid(
 
   function loadData(entries: TimesheetEntry[], staffId?: string): void {
     console.log('📋 loadData called with:', entries.length, 'entries for staff:', staffId)
-    console.log('📄 Entries details:', entries.map(e => ({
-      id: e.id,
-      jobId: e.jobId,
-      jobNumber: e.jobNumber,
-      hours: e.hours,
-      description: e.description
-    })))
+    console.log(
+      '📄 Entries details:',
+      entries.map((e) => ({
+        id: e.id,
+        jobId: e.jobId,
+        jobNumber: e.jobNumber,
+        hours: e.hours,
+        description: e.description,
+      })),
+    )
 
-    const rows: TimesheetEntryGridRow[] = entries.map(entry => ({ ...entry }))
+    const rows: TimesheetEntryGridRow[] = entries.map((entry) => ({ ...entry }))
     gridData.value = rows
     console.log('✅ Grid data updated with', gridData.value.length, 'rows')
 
@@ -582,7 +587,7 @@ export function useTimesheetEntryGrid(
       gridApi.value.setFocusedCell(newRowIndex, 'jobNumber')
       gridApi.value.startEditingCell({
         rowIndex: newRowIndex,
-        colKey: 'jobNumber'
+        colKey: 'jobNumber',
       })
     }
   }
@@ -626,16 +631,16 @@ export function useTimesheetEntryGrid(
   /**
    * Get current grid data from AG Grid rows
    */
-  function getGridData(): any[] {
+  function getGridData(): TimesheetEntryGridRow[] {
     if (!gridApi.value) {
       console.log('⚠️ Grid API not available for data extraction')
       return []
     }
 
     console.log('📊 Extracting data from AG Grid...')
-    const data: any[] = []
+    const data: TimesheetEntryGridRow[] = []
 
-    gridApi.value.forEachNode((node) => {
+    gridApi.value.forEachNode((node: { data?: TimesheetEntryGridRow }) => {
       if (node.data && !node.data.isEmptyRow) {
         data.push(node.data)
         console.log('✅ Extracted node data:', {
@@ -643,7 +648,7 @@ export function useTimesheetEntryGrid(
           jobNumber: node.data.jobNumber,
           client: node.data.client,
           jobName: node.data.jobName,
-          hours: node.data.hours
+          hours: node.data.hours,
         })
       }
     })
@@ -671,6 +676,6 @@ export function useTimesheetEntryGrid(
     handleCellValueChanged,
 
     // Computed
-    hasData: computed(() => gridData.value.length > 0)
+    hasData: computed(() => gridData.value.length > 0),
   }
 }

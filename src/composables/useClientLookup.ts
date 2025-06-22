@@ -37,7 +37,9 @@ export function useClientLookup() {
 
   // Computed properties for derived logic
   const hasValidXeroId = computed(() => {
-    return selectedClient.value?.xero_contact_id != null && selectedClient.value.xero_contact_id !== ''
+    return (
+      selectedClient.value?.xero_contact_id != null && selectedClient.value.xero_contact_id !== ''
+    )
   })
 
   const displayValue = computed(() => {
@@ -54,7 +56,7 @@ export function useClientLookup() {
     }
 
     isLoading.value = true
-      try {
+    try {
       const response = await api.get(`/clients/rest/search/?q=${encodeURIComponent(query)}`)
 
       // Guard clause for invalid response
@@ -64,7 +66,6 @@ export function useClientLookup() {
 
       suggestions.value = response.data.results
       showSuggestions.value = true
-
     } catch (error) {
       console.error('Error searching clients:', error)
       suggestions.value = []
@@ -108,7 +109,7 @@ export function useClientLookup() {
     }
 
     // Find primary contact
-    const primaryContact = contacts.value.find(contact => contact.is_primary)
+    const primaryContact = contacts.value.find((contact) => contact.is_primary)
 
     // Return primary or first contact
     return primaryContact || contacts.value[0]
@@ -178,6 +179,6 @@ export function useClientLookup() {
     clearSelection,
     handleInputChange,
     createNewClient,
-    hideSuggestions
+    hideSuggestions,
   }
 }

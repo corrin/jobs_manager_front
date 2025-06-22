@@ -1,6 +1,6 @@
 /**
  * Client Schemas - Zod validation and type inference
- * 
+ *
  * Following project guidelines to use Zod for validation
  * and type inference in the frontend.
  */
@@ -9,29 +9,28 @@ import { z } from 'zod'
 
 // Schema for client creation
 export const createClientSchema = z.object({
-  name: z.string()
+  name: z
+    .string()
     .min(1, 'Name is required')
     .max(255, 'Name must be at most 255 characters')
     .trim(),
-  
-  email: z.string()
+
+  email: z
+    .string()
     .email('Email must have a valid format')
     .max(254, 'Email must be at most 254 characters')
     .optional()
     .or(z.literal('')),
-  
-  phone: z.string()
-    .max(20, 'Phone must be at most 20 characters')
-    .optional()
-    .or(z.literal('')),
-  
-  address: z.string()
+
+  phone: z.string().max(20, 'Phone must be at most 20 characters').optional().or(z.literal('')),
+
+  address: z
+    .string()
     .max(500, 'Address must be at most 500 characters')
     .optional()
     .or(z.literal('')),
-  
-  is_account_customer: z.boolean()
-    .default(false)
+
+  is_account_customer: z.boolean().default(false),
 })
 
 // Schema para dados do cliente retornado pela API

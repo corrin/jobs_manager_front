@@ -1,13 +1,12 @@
 <template>
-  <Dialog :open="props.open" @update:open="val => emit('update:open', val)">
+  <Dialog :open="props.open" @update:open="(val) => emit('update:open', val)">
     <DialogContent class="max-w-4xl w-full h-[80vh] p-5 m-5 flex flex-col">
       <DialogHeader>
         <DialogTitle>Job Sheet - Job {{ jobNumber }}</DialogTitle>
         <DialogDescription class="sr-only">
           Job Sheet PDF Viewer with options for download, impression and attachment
         </DialogDescription>
-        <DialogClose asChild>
-        </DialogClose>
+        <DialogClose asChild> </DialogClose>
       </DialogHeader>
       <div class="flex-1 overflow-auto">
         <WorkshopPdfViewer :job-id="jobId" />
@@ -18,9 +17,7 @@
             <Download color="#fff" />
           </a>
         </Button>
-        <Button v-if="blobUrl" @click="printPdf">
-          Print
-        </Button>
+        <Button v-if="blobUrl" @click="printPdf"> Print </Button>
         <Button v-if="blobUrl" @click="attachPdf" :disabled="attaching || attached">
           {{ attached ? 'Attached ✅' : attaching ? 'Attaching...' : 'Attach to Job' }}
         </Button>
@@ -36,17 +33,17 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
-  DialogDescription
+  DialogDescription,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button';
-import WorkshopPdfViewer from './WorkshopPdfViewer.vue';
-import { ref, watch } from 'vue';
-import { jobRestService } from '@/services/job-rest.service';
-import { Download } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button'
+import WorkshopPdfViewer from './WorkshopPdfViewer.vue'
+import { ref, watch } from 'vue'
+import { jobRestService } from '@/services/job-rest.service'
+import { Download } from 'lucide-vue-next'
 
 const props = defineProps<{
-  jobId: string,
-  jobNumber: number | undefined,
+  jobId: string
+  jobNumber: number | undefined
   open: boolean
 }>()
 
@@ -59,17 +56,20 @@ const blobUrl = ref<string>('')
 const attaching = ref(false)
 const attached = ref(false)
 
-watch(() => props.open, async open => {
-  if (open) {
-    try {
-      const blob = await jobRestService.fetchWorkshopPdf(props.jobId)
-      blobUrl.value = URL.createObjectURL(blob)
-    } catch (err) {
-      console.error('Error generating blobUrl from PDF:', err)
-      throw err
+watch(
+  () => props.open,
+  async (open) => {
+    if (open) {
+      try {
+        const blob = await jobRestService.fetchWorkshopPdf(props.jobId)
+        blobUrl.value = URL.createObjectURL(blob)
+      } catch (err) {
+        console.error('Error generating blobUrl from PDF:', err)
+        throw err
+      }
     }
-  }
-})
+  },
+)
 
 function printPdf() {
   const win = window.open(blobUrl.value, '_blank')

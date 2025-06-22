@@ -30,23 +30,6 @@ export interface OptimizedTimeEntry {
   jobId?: string
 }
 
-export interface TimesheetGridRow {
-  id: number | null
-  jobNumber: string
-  client: string
-  jobName: string
-  hours: number
-  billable: boolean
-  description: string
-  rate: string
-  wage: number
-  bill: number
-
-  // For AG Grid internal use
-  isNewRow?: boolean
-  originalCostLine?: CostLine
-}
-
 export interface JobSelectionItem {
   id: string
   job_number: string
@@ -79,14 +62,14 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   { key: 'F2', description: 'Enter edit mode', action: 'edit' },
   { key: 'Ctrl+S', description: 'Save all changes', action: 'save-all' },
   { key: 'Ctrl+N', description: 'Add new row', action: 'add-row' },
-  { key: 'Delete', description: 'Delete selected row', action: 'delete' }
+  { key: 'Delete', description: 'Delete selected row', action: 'delete' },
 ]
 
 export const RATE_TYPES = [
   { value: 'Ord', label: 'Ordinary (1.0x)', multiplier: 1.0 },
   { value: '1.5', label: 'Time & Half (1.5x)', multiplier: 1.5 },
   { value: '2.0', label: 'Double Time (2.0x)', multiplier: 2.0 },
-  { value: 'Unpaid', label: 'Unpaid (0x)', multiplier: 0.0 }
+  { value: 'Unpaid', label: 'Unpaid (0x)', multiplier: 0.0 },
 ]
 
 export interface Job {
@@ -202,6 +185,12 @@ export interface TimesheetEntryGridRow {
   bill: number
   isNewRow?: boolean
   originalCostLine?: CostLine
+  jobId?: string
+  isEmptyRow?: boolean
+  staffId?: string
+  date?: string
+  wageRate?: number
+  chargeOutRate?: number
 }
 
 // Company configuration

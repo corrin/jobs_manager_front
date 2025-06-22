@@ -36,7 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await api.get<User>('/accounts/me/')
       user.value = response.data
       return true
-    } catch (error) {
+    } catch {
       user.value = null
       return false
     }
@@ -56,11 +56,14 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = userResponse.data
 
       return true
-    } catch (err: any) {
+    } catch (err: unknown) {
       user.value = null
-      const errorMessage = err.response?.data?.detail ||
-              err.response?.data?.message ||
-              'Login error. Check if the server is running.'
+      let errorMessage = 'Login error. Check if the server is running.'
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const response = (err as { response?: { data?: { detail?: string; message?: string } } })
+          .response
+        errorMessage = response?.data?.detail || response?.data?.message || errorMessage
+      }
       setError(errorMessage)
       console.error('Login error:', err)
       return false
@@ -102,6 +105,6 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     userIsLogged,
-    initializeAuth
+    initializeAuth,
   }
 })

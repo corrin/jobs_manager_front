@@ -6,7 +6,11 @@
           v-for="staff in staffMembers"
           :key="staff.id"
           class="flex flex-col items-center cursor-pointer transition-transform hover:scale-105 active:scale-95"
-          :class="{ 'scale-105 ring-2 ring-blue-400 ring-offset-1 rounded-lg': activeFilters.includes(staff.id.toString()) }"
+          :class="{
+            'scale-105 ring-2 ring-blue-400 ring-offset-1 rounded-lg': activeFilters.includes(
+              staff.id.toString(),
+            ),
+          }"
           @click="toggleStaffFilter(staff.id)"
           :data-staff-id="staff.id"
         >
@@ -15,7 +19,9 @@
             :is-active="activeFilters.includes(staff.id.toString())"
             class="mb-1"
           />
-          <span class="text-xs text-gray-600 text-center max-w-[60px] truncate">{{ staff.display_name.split(' ')[0] }}</span>
+          <span class="text-xs text-gray-600 text-center max-w-[60px] truncate">{{
+            staff.display_name.split(' ')[0]
+          }}</span>
         </div>
       </div>
     </div>
@@ -27,7 +33,6 @@ import { ref, onMounted, watch, nextTick } from 'vue'
 import StaffAvatar from './StaffAvatar.vue'
 import { staffService } from '@/services/staff.service'
 import type { Staff } from '@/types'
-import type { StaffPanelState } from '@/types/staff'
 import { PersonSchema } from '@/schemas/kanban.schemas'
 
 interface Props {
@@ -40,7 +45,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  activeFilters: () => []
+  activeFilters: () => [],
 })
 
 const emit = defineEmits<Emits>()
@@ -58,10 +63,11 @@ const loadStaffMembers = async (): Promise<void> => {
     const data = await staffService.getAllStaff()
 
     // Validate data using PersonSchema (API returns UUID strings, not numbers)
-    const validatedStaff = data.map(staffData => {
+    const validatedStaff = data.map((staffData) => {
       return PersonSchema.parse({
         ...staffData,
-        display_name: staffData.display_name || `${staffData.first_name} ${staffData.last_name}`.trim()
+        display_name:
+          staffData.display_name || `${staffData.first_name} ${staffData.last_name}`.trim(),
       })
     })
 
@@ -87,9 +93,13 @@ const toggleStaffFilter = (staffId: string): void => {
 }
 
 // Watch for prop changes
-watch(() => props.activeFilters, (newFilters) => {
-  activeFilters.value = [...newFilters]
-}, { deep: true })
+watch(
+  () => props.activeFilters,
+  (newFilters) => {
+    activeFilters.value = [...newFilters]
+  },
+  { deep: true },
+)
 
 onMounted(() => {
   loadStaffMembers()
@@ -102,5 +112,3 @@ onMounted(() => {
   })
 })
 </script>
-
-

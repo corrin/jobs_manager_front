@@ -24,7 +24,7 @@ export function useJobCache() {
   const isCacheValid = (entry: CacheEntry, ttl: number = DEFAULT_TTL): boolean => {
     const now = new Date().getTime()
     const entryTime = entry.timestamp.getTime()
-    const isWithinTTL = (now - entryTime) < ttl
+    const isWithinTTL = now - entryTime < ttl
     const isCurrentVersion = entry.version === currentVersion.value
 
     return isWithinTTL && isCurrentVersion
@@ -58,7 +58,7 @@ export function useJobCache() {
     const entry: CacheEntry = {
       data: { ...jobData }, // Deep copy
       timestamp: new Date(),
-      version: currentVersion.value
+      version: currentVersion.value,
     }
 
     cache.value.set(jobId, entry)
@@ -118,7 +118,7 @@ export function useJobCache() {
     let validEntries = 0
     let expiredEntries = 0
 
-    cache.value.forEach(entry => {
+    cache.value.forEach((entry) => {
       if (isCacheValid(entry)) {
         validEntries++
       } else {
@@ -129,7 +129,7 @@ export function useJobCache() {
     return {
       total: cache.value.size,
       valid: validEntries,
-      expired: expiredEntries
+      expired: expiredEntries,
     }
   })
 
@@ -140,7 +140,7 @@ export function useJobCache() {
   const withCache = async <T extends JobData>(
     jobId: string,
     loadFunction: () => Promise<T>,
-    ttl?: number
+    ttl?: number,
   ): Promise<T> => {
     // Tentar obter do cache primeiro
     const cached = getCachedJob(jobId, ttl)
@@ -172,6 +172,6 @@ export function useJobCache() {
     // Computed properties
     cacheSize,
     cacheStats,
-    currentVersion: computed(() => currentVersion.value)
+    currentVersion: computed(() => currentVersion.value),
   }
 }

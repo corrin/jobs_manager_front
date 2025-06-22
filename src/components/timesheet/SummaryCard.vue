@@ -1,5 +1,7 @@
 <template>
-  <div class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200">
+  <div
+    class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200"
+  >
     <!-- Header with Icon and Title -->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center space-x-3">
@@ -33,14 +35,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  Clock,
-  TrendingUp,
-  DollarSign,
-  Users,
-  AlertCircle,
-  CheckCircle
-} from 'lucide-vue-next'
+import { Clock, TrendingUp, DollarSign, Users, AlertCircle, CheckCircle } from 'lucide-vue-next'
 
 interface Props {
   title: string
@@ -53,7 +48,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   subtitle: '',
-  progress: undefined
+  progress: undefined,
 })
 
 // Icon mapping
@@ -63,7 +58,7 @@ const iconMap = {
   DollarSign,
   Users,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
 }
 
 const iconComponent = computed(() => {
@@ -78,7 +73,7 @@ const getIconClass = (color: string): string => {
     emerald: 'bg-emerald-100 text-emerald-600',
     purple: 'bg-purple-100 text-purple-600',
     amber: 'bg-amber-100 text-amber-600',
-    red: 'bg-red-100 text-red-600'
+    red: 'bg-red-100 text-red-600',
   }
   return classes[color as keyof typeof classes] || classes.blue
 }
@@ -90,7 +85,7 @@ const getValueClass = (color: string): string => {
     emerald: 'text-emerald-600',
     purple: 'text-purple-600',
     amber: 'text-amber-600',
-    red: 'text-red-600'
+    red: 'text-red-600',
   }
   return classes[color as keyof typeof classes] || classes.blue
 }
@@ -102,7 +97,7 @@ const getProgressClass = (color: string): string => {
     emerald: 'bg-emerald-500',
     purple: 'bg-purple-500',
     amber: 'bg-amber-500',
-    red: 'bg-red-500'
+    red: 'bg-red-500',
   }
   return classes[color as keyof typeof classes] || classes.blue
 }

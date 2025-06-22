@@ -60,13 +60,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import {
-  Settings,
-  Wrench,
-  BookOpen,
-  Paperclip,
-  Camera
-} from 'lucide-vue-next'
+import { Settings, Wrench, BookOpen, Paperclip, Camera } from 'lucide-vue-next'
 import FloatingActionButton from './FloatingActionButton.vue'
 
 // Props
@@ -102,7 +96,7 @@ const floatingStyle = computed((): Record<string, string> => {
     right: 'auto',
     left: `${position.value.x}px`,
     top: `${position.value.y}px`,
-    transform: 'none'
+    transform: 'none',
   }
 })
 
@@ -115,7 +109,7 @@ const startDrag = (event: MouseEvent | TouchEvent) => {
 
   dragStart.value = {
     x: clientX - position.value.x,
-    y: clientY - position.value.y
+    y: clientY - position.value.y,
   }
 
   document.addEventListener('mousemove', handleDrag)
@@ -133,15 +127,18 @@ const handleDrag = (event: MouseEvent | TouchEvent) => {
   const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY
 
   // Boundary checking - manter dentro da viewport
-  const newX = Math.max(0, Math.min(
-    window.innerWidth - (actionBar.value?.offsetWidth || 0),
-    clientX - dragStart.value.x
-  ))
+  const newX = Math.max(
+    0,
+    Math.min(window.innerWidth - (actionBar.value?.offsetWidth || 0), clientX - dragStart.value.x),
+  )
 
-  const newY = Math.max(0, Math.min(
-    window.innerHeight - (actionBar.value?.offsetHeight || 0),
-    clientY - dragStart.value.y
-  ))
+  const newY = Math.max(
+    0,
+    Math.min(
+      window.innerHeight - (actionBar.value?.offsetHeight || 0),
+      clientY - dragStart.value.y,
+    ),
+  )
 
   position.value = { x: newX, y: newY }
 }
@@ -165,7 +162,7 @@ onMounted(() => {
   const initialRight = 24 // 6 * 4px (right-6 in Tailwind)
   position.value = {
     x: window.innerWidth - (actionBar.value?.offsetWidth || 60) - initialRight,
-    y: (window.innerHeight - (actionBar.value?.offsetHeight || 200)) / 2
+    y: (window.innerHeight - (actionBar.value?.offsetHeight || 200)) / 2,
   }
 })
 </script>

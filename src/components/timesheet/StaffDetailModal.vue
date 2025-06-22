@@ -3,7 +3,9 @@
     <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle class="flex items-center space-x-3">
-          <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+          <div
+            class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center"
+          >
             <span class="text-white font-bold">
               {{ staff.staff_initials || getInitials(staff.staff_name) }}
             </span>
@@ -43,9 +45,7 @@
               {{ formatCurrency(staff.total_revenue) }}
             </div>
             <div class="text-sm text-emerald-800">Revenue</div>
-            <div class="text-xs text-gray-600">
-              Cost: {{ formatCurrency(staff.total_cost) }}
-            </div>
+            <div class="text-xs text-gray-600">Cost: {{ formatCurrency(staff.total_cost) }}</div>
           </div>
 
           <div class="bg-purple-50 p-4 rounded-lg">
@@ -60,17 +60,16 @@
         </div>
 
         <!-- Status and Alerts -->
-        <div v-if="staff.alerts.length > 0" class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div
+          v-if="staff.alerts.length > 0"
+          class="bg-amber-50 border border-amber-200 rounded-lg p-4"
+        >
           <h3 class="text-sm font-medium text-amber-800 mb-2 flex items-center">
             <AlertTriangle class="h-4 w-4 mr-2" />
             Alerts
           </h3>
           <div class="space-y-1">
-            <div
-              v-for="alert in staff.alerts"
-              :key="alert"
-              class="text-sm text-amber-700"
-            >
+            <div v-for="alert in staff.alerts" :key="alert" class="text-sm text-amber-700">
               • {{ alert }}
             </div>
           </div>
@@ -84,29 +83,35 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Job
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Client
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Hours
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Revenue
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Status
                   </th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr
-                  v-for="job in staff.job_breakdown"
-                  :key="job.job_id"
-                  class="hover:bg-gray-50"
-                >
+                <tr v-for="job in staff.job_breakdown" :key="job.job_id" class="hover:bg-gray-50">
                   <td class="px-4 py-3 whitespace-nowrap">
                     <div class="text-sm font-medium text-gray-900">
                       {{ job.job_number }}
@@ -127,13 +132,15 @@
                     <div class="text-sm text-gray-900">
                       {{ formatCurrency(job.revenue) }}
                     </div>
-                    <div class="text-xs text-gray-500">
-                      Cost: {{ formatCurrency(job.cost) }}
-                    </div>
+                    <div class="text-xs text-gray-500">Cost: {{ formatCurrency(job.cost) }}</div>
                   </td>
                   <td class="px-4 py-3 whitespace-nowrap">
                     <span
-                      :class="job.is_billable ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                      :class="
+                        job.is_billable
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      "
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                     >
                       {{ job.is_billable ? 'Billable' : 'Non-billable' }}
@@ -147,9 +154,7 @@
 
         <!-- Actions -->
         <div class="flex justify-end space-x-3 pt-4 border-t">
-          <Button @click="$emit('close')" variant="outline">
-            Close
-          </Button>
+          <Button @click="$emit('close')" variant="outline"> Close </Button>
           <Button @click="openTimesheet" class="bg-blue-600 hover:bg-blue-700">
             <Edit class="h-4 w-4 mr-2" />
             Edit Timesheet
@@ -185,7 +190,7 @@ const router = useRouter()
 const getInitials = (name: string): string => {
   return name
     .split(' ')
-    .map(n => n[0])
+    .map((n) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2)
@@ -196,7 +201,7 @@ const formatDisplayDate = (date: string): string => {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -210,8 +215,8 @@ const openTimesheet = (): void => {
     name: 'timesheet-entry',
     query: {
       date: props.date,
-      staffId: props.staff.staff_id
-    }
+      staffId: props.staff.staff_id,
+    },
   })
 }
 </script>

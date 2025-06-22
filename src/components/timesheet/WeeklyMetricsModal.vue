@@ -1,6 +1,8 @@
 <template>
   <div v-if="isOpen" class="fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+    <div
+      class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"
+    >
       <!-- Backdrop -->
       <div
         class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
@@ -8,16 +10,13 @@
       ></div>
 
       <!-- Modal -->
-      <div class="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
+      <div
+        class="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg"
+      >
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-xl font-bold text-gray-900">
-            📊 Weekly Metrics & Overview
-          </h3>
-          <button
-            @click="closeModal"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
-          >
+          <h3 class="text-xl font-bold text-gray-900">📊 Weekly Metrics & Overview</h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
             <X class="w-6 h-6" />
           </button>
         </div>
@@ -29,7 +28,9 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-blue-600">Total Hours</p>
-                <p class="text-2xl font-bold text-blue-900">{{ data?.weeklyTotals?.totalActualHours || 0 }}</p>
+                <p class="text-2xl font-bold text-blue-900">
+                  {{ data?.weeklyTotals?.totalActualHours || 0 }}
+                </p>
               </div>
               <Clock class="w-8 h-8 text-blue-500" />
             </div>
@@ -40,7 +41,9 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-green-600">Billable Hours</p>
-                <p class="text-2xl font-bold text-green-900">{{ data?.weeklyTotals?.totalBillableHours || 0 }}</p>
+                <p class="text-2xl font-bold text-green-900">
+                  {{ data?.weeklyTotals?.totalBillableHours || 0 }}
+                </p>
               </div>
               <DollarSign class="w-8 h-8 text-green-500" />
             </div>
@@ -51,7 +54,9 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-purple-600">Total Revenue</p>
-                <p class="text-2xl font-bold text-purple-900">${{ formatCurrency(data?.weeklyTotals?.totalRevenue || 0) }}</p>
+                <p class="text-2xl font-bold text-purple-900">
+                  ${{ formatCurrency(data?.weeklyTotals?.totalRevenue || 0) }}
+                </p>
               </div>
               <TrendingUp class="w-8 h-8 text-purple-500" />
             </div>
@@ -62,7 +67,9 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-sm font-medium text-orange-600">Completion Rate</p>
-                <p class="text-2xl font-bold text-orange-900">{{ data?.summaryStats?.completionRate || 0 }}%</p>
+                <p class="text-2xl font-bold text-orange-900">
+                  {{ data?.summaryStats?.completionRate || 0 }}%
+                </p>
               </div>
               <BarChart3 class="w-8 h-8 text-orange-500" />
             </div>
@@ -73,8 +80,11 @@
         <div class="bg-gray-50 p-4 rounded-lg">
           <h4 class="text-lg font-semibold text-gray-900 mb-4">📋 Jobs Breakdown</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div v-for="job in data?.jobBreakdown || []" :key="job.jobId"
-                 class="bg-white p-3 rounded border">
+            <div
+              v-for="job in data?.jobBreakdown || []"
+              :key="job.jobId"
+              class="bg-white p-3 rounded border"
+            >
               <div class="flex justify-between items-start">
                 <div>
                   <p class="font-medium text-gray-900">{{ job.jobName }}</p>

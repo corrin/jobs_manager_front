@@ -1,5 +1,8 @@
 <template>
-  <div v-if="visible" class="pricing-section flex flex-col h-full border rounded-lg bg-white dark:bg-gray-800">
+  <div
+    v-if="visible"
+    class="pricing-section flex flex-col h-full border rounded-lg bg-white dark:bg-gray-800"
+  >
     <!-- Header with fixed height -->
     <div class="flex items-center justify-between p-4 border-b flex-shrink-0">
       <h3 class="text-lg font-semibold">{{ title }}</h3>
@@ -7,12 +10,7 @@
         <!-- View Toggle -->
         <ViewToggle v-model="currentView" />
         <!-- Quote Button (only for Quote section) -->
-        <Button
-          v-if="isQuote"
-          variant="outline"
-          size="sm"
-          @click="openQuoteSpreadsheet"
-        >
+        <Button v-if="isQuote" variant="outline" size="sm" @click="openQuoteSpreadsheet">
           <ExternalLink class="mr-2 h-4 w-4" />
           Open Sheet
         </Button>
@@ -26,35 +24,30 @@
         <!-- Time Entries Section -->
         <div v-if="timeEntries.length > 0">
           <h4 class="font-medium mb-3 text-blue-600">Time</h4>
-          <component
-            :is="currentViewComponent"
-            :entries="timeEntries"
-            type="time"
-          />
+          <component :is="currentViewComponent" :entries="timeEntries" type="time" />
         </div>
 
         <!-- Material Entries Section -->
         <div v-if="materialEntries.length > 0">
           <h4 class="font-medium mb-3 text-green-600">Materials</h4>
-          <component
-            :is="currentViewComponent"
-            :entries="materialEntries"
-            type="expense"
-          />
+          <component :is="currentViewComponent" :entries="materialEntries" type="expense" />
         </div>
 
         <!-- Adjustment Entries Section -->
         <div v-if="adjustmentEntries.length > 0">
           <h4 class="font-medium mb-3 text-amber-600">Adjustments</h4>
-          <component
-            :is="currentViewComponent"
-            :entries="adjustmentEntries"
-            type="expense"
-          />
+          <component :is="currentViewComponent" :entries="adjustmentEntries" type="expense" />
         </div>
 
         <!-- No data state for costing mode -->
-        <div v-if="timeEntries.length === 0 && materialEntries.length === 0 && adjustmentEntries.length === 0" class="text-center py-8 text-gray-500">
+        <div
+          v-if="
+            timeEntries.length === 0 &&
+            materialEntries.length === 0 &&
+            adjustmentEntries.length === 0
+          "
+          class="text-center py-8 text-gray-500"
+        >
           <p>No entries in this category</p>
         </div>
       </div>
@@ -101,21 +94,13 @@
           <!-- Tasks Summary -->
           <div v-if="timeEntries.length > 0" class="mb-6">
             <h4 class="font-medium mb-3">Tasks</h4>
-            <component
-              :is="currentViewComponent"
-              :entries="timeEntries"
-              type="time"
-            />
+            <component :is="currentViewComponent" :entries="timeEntries" type="time" />
           </div>
 
           <!-- Expenses Summary -->
           <div v-if="expenseEntries.length > 0" class="mb-6">
             <h4 class="font-medium mb-3">Expenses</h4>
-            <component
-              :is="currentViewComponent"
-              :entries="expenseEntries"
-              type="expense"
-            />
+            <component :is="currentViewComponent" :entries="expenseEntries" type="expense" />
           </div>
         </div>
       </div>
@@ -167,12 +152,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isQuote: false,
   showTwoColumns: false,
-  isCostingMode: false
+  isCostingMode: false,
 })
-
-const emit = defineEmits<{
-  refresh: []
-}>()
 
 const currentView = ref<ViewType>('grid')
 
@@ -183,10 +164,14 @@ const showTwoColumnLayout = computed(() => {
 
 const currentViewComponent = computed(() => {
   switch (currentView.value) {
-    case 'grid': return GridView
-    case 'table': return TableView
-    case 'list': return ListView
-    default: return GridView
+    case 'grid':
+      return GridView
+    case 'table':
+      return TableView
+    case 'list':
+      return ListView
+    default:
+      return GridView
   }
 })
 
@@ -196,7 +181,7 @@ const costingEntries = computed(() => {
     return {
       time: [],
       material: [],
-      adjustment: []
+      adjustment: [],
     }
   }
 
@@ -206,9 +191,9 @@ const costingEntries = computed(() => {
 // Helper function for grouping cost lines by kind - following switch-case guideline
 const groupCostLinesByKind = (lines: CostLine[]) => {
   const groups: {
-    time: any[]
-    material: any[]
-    adjustment: any[]
+    time: CostLine[]
+    material: CostLine[]
+    adjustment: CostLine[]
   } = { time: [], material: [], adjustment: [] }
 
   return lines.reduce((acc, line) => {
@@ -240,7 +225,7 @@ const transformCostLineToEntry = (line: CostLine, type: string) => {
     total_cost: line.total_cost,
     total_revenue: line.total_rev,
     amount: line.total_rev,
-    revenue: line.total_rev
+    revenue: line.total_rev,
   }
 
   // Transform based on kind for compatibility with existing view components
@@ -253,7 +238,7 @@ const transformCostLineToEntry = (line: CostLine, type: string) => {
         total_minutes: parseFloat(line.quantity) * 60,
         // Map unit_rev to charge_out_rate for time entries
         charge_out_rate: parseFloat(line.unit_rev),
-        hourly_rate: parseFloat(line.unit_rev)
+        hourly_rate: parseFloat(line.unit_rev),
       }
 
     case 'material':
@@ -261,14 +246,14 @@ const transformCostLineToEntry = (line: CostLine, type: string) => {
         ...baseEntry,
         quantity: parseFloat(line.quantity),
         unit_cost: parseFloat(line.unit_cost),
-        unit_revenue: parseFloat(line.unit_rev)
+        unit_revenue: parseFloat(line.unit_rev),
       }
 
     case 'adjust':
       return {
         ...baseEntry,
         price_adjustment: line.total_rev,
-        adjustment_amount: line.total_rev
+        adjustment_amount: line.total_rev,
       }
 
     default:
@@ -276,16 +261,14 @@ const transformCostLineToEntry = (line: CostLine, type: string) => {
         ...baseEntry,
         quantity: parseFloat(line.quantity),
         unit_cost: parseFloat(line.unit_cost),
-        unit_revenue: parseFloat(line.unit_rev)
+        unit_revenue: parseFloat(line.unit_rev),
       }
   }
 }
 
 // Legacy pricing data (when not in costing mode) - early return pattern
 const timeEntries = computed(() => {
-  return props.isCostingMode
-    ? costingEntries.value.time
-    : props.pricingData?.time_entries || []
+  return props.isCostingMode ? costingEntries.value.time : props.pricingData?.time_entries || []
 })
 
 const materialEntries = computed(() => {
@@ -304,21 +287,21 @@ const adjustmentEntries = computed(() => {
 
 const expenseEntries = computed(() => {
   return [
-    ...materialEntries.value.map((entry: any) => ({
+    ...materialEntries.value.map((entry: unknown) => ({
       ...entry,
       type: 'material' as const,
-      amount: entry.revenue || (entry.unit_revenue * entry.quantity)
+      amount: entry.revenue || entry.unit_revenue * entry.quantity,
     })),
-    ...adjustmentEntries.value.map((entry: any) => ({
+    ...adjustmentEntries.value.map((entry: unknown) => ({
       ...entry,
       type: 'adjustment' as const,
-      amount: entry.revenue || entry.price_adjustment
-    }))
+      amount: entry.revenue || entry.price_adjustment,
+    })),
   ]
 })
 
 const timeTotal = computed(() => {
-  return timeEntries.value.reduce((total: number, entry: any) => {
+  return timeEntries.value.reduce((total: number, entry: unknown) => {
     let entryRevenue = 0
 
     if (entry.revenue !== undefined && entry.revenue !== null && !isNaN(entry.revenue)) {
@@ -334,12 +317,12 @@ const timeTotal = computed(() => {
 })
 
 const materialTotal = computed(() => {
-  const materialsTotal = materialEntries.value.reduce((total: number, entry: any) => {
-    const entryRevenue = entry.revenue || (entry.unit_revenue * entry.quantity) || entry.amount || 0
+  const materialsTotal = materialEntries.value.reduce((total: number, entry: unknown) => {
+    const entryRevenue = entry.revenue || entry.unit_revenue * entry.quantity || entry.amount || 0
     return total + Number(entryRevenue)
   }, 0)
 
-  const adjustmentsTotal = adjustmentEntries.value.reduce((total: number, entry: any) => {
+  const adjustmentsTotal = adjustmentEntries.value.reduce((total: number, entry: unknown) => {
     const entryRevenue = entry.revenue || entry.price_adjustment || entry.amount || 0
     return total + Number(entryRevenue)
   }, 0)

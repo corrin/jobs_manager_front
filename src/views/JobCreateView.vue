@@ -121,9 +121,25 @@
                 class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <span v-if="isSubmitting" class="flex items-center">
-                  <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Creating...
                 </span>
@@ -156,17 +172,24 @@ const formData = ref<JobCreateData>({
   description: '',
   order_number: '',
   notes: '',
-  contact_person: ''
+  contact_person: '',
 })
 
+// Client interface
+interface Client {
+  id: string
+  name: string
+  // Adicione outros campos relevantes conforme necessário
+}
+
 // Selected client state
-const selectedClient = ref<any>(null)
+declare const selectedClient: import('vue').Ref<Client | null>
 
 const errors = ref<Record<string, string>>({})
 const isSubmitting = ref(false)
 
 // Handler para seleção de cliente
-const handleClientSelection = (client: any) => {
+const handleClientSelection = (client: Client) => {
   selectedClient.value = client
   if (client) {
     formData.value.client_name = client.name
@@ -175,8 +198,7 @@ const handleClientSelection = (client: any) => {
 
 // Computed property para validação do formulário
 const canSubmit = computed(() => {
-  return formData.value.name.trim() !== '' &&
-         formData.value.client_id !== ''
+  return formData.value.name.trim() !== '' && formData.value.client_id !== ''
 })
 
 // Guard clause - navegação de volta
@@ -217,7 +239,7 @@ const handleSubmit = async () => {
       // Redirecionar para a view de edição do job criado
       router.push({
         name: 'job-edit',
-        params: { id: result.job_id }
+        params: { id: result.job_id },
       })
     } else {
       throw new Error(result.error || 'Failed to create job')
@@ -233,7 +255,7 @@ const handleSubmit = async () => {
 
 onMounted(() => {
   // Reset form ao montar componente
-  Object.keys(formData.value).forEach(key => {
+  Object.keys(formData.value).forEach((key) => {
     formData.value[key as keyof JobCreateData] = ''
   })
 })

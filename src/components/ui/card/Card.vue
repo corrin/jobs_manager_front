@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
@@ -9,7 +10,7 @@ const props = defineProps<{
 
 <template>
   <div
-    data-slot="card"
+    class="app-card"
     :class="
       cn(
         'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',

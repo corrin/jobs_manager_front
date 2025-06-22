@@ -4,34 +4,39 @@
       <DialogHeader>
         <div class="flex items-center justify-between">
           <DialogTitle>Job History</DialogTitle>
-          <button @click="showAddEventForm = !showAddEventForm"
-            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+          <button
+            @click="showAddEventForm = !showAddEventForm"
+            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+          >
             Add Event
           </button>
         </div>
-        <DialogDescription>
-          View and manage the history of events for this job.
-        </DialogDescription>
+        <DialogDescription> View and manage the history of events for this job. </DialogDescription>
       </DialogHeader>
 
       <div class="space-y-4">
         <!-- Add Event Form -->
         <div v-if="showAddEventForm" class="p-4 bg-gray-50 rounded">
           <div class="mb-3">
-            <label class="block text-sm font-medium text-gray-800 mb-2">
-              Event Description
-            </label>
-            <textarea v-model="newEventDescription" rows="3"
+            <label class="block text-sm font-medium text-gray-800 mb-2"> Event Description </label>
+            <textarea
+              v-model="newEventDescription"
+              rows="3"
               class="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Describe what happened..."></textarea>
+              placeholder="Describe what happened..."
+            ></textarea>
           </div>
           <div class="flex space-x-2">
-            <button @click="addEvent"
-              class="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+            <button
+              @click="addEvent"
+              class="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+            >
               Add Event
             </button>
-            <button @click="cancelAddEvent"
-              class="px-4 py-2 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400">
+            <button
+              @click="cancelAddEvent"
+              class="px-4 py-2 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
+            >
               Cancel
             </button>
           </div>
@@ -60,8 +65,11 @@
       </div>
 
       <DialogFooter>
-        <button @click="closeModal" type="button"
-          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <button
+          @click="closeModal"
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
           Close
         </button>
       </DialogFooter>
@@ -161,7 +169,7 @@ const getEventTypeLabel = (eventType: string) => {
     case 'status_change':
       return 'Status Change'
     default:
-      return eventType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      return eventType.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
   }
 }
 

@@ -11,7 +11,7 @@ export function createSafeDate(dateValue: string | undefined): Date {
   if (!dateValue) {
     return new Date()
   }
-  
+
   try {
     const date = new Date(dateValue)
     // Guard clause - early return for invalid dates
@@ -34,7 +34,7 @@ export function getSafeNumber(value: number | undefined, defaultValue: number = 
   if (value === undefined || value === null || isNaN(value)) {
     return defaultValue
   }
-  
+
   return value
 }
 
@@ -46,6 +46,6 @@ export function getSafeString(value: string | undefined, defaultValue: string = 
   if (!value) {
     return defaultValue
   }
-  
+
   return value
 }

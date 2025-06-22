@@ -3,7 +3,7 @@ import {
   quoteImportService,
   type QuoteImportPreviewResponse,
   type QuoteImportResponse,
-  type QuoteStatusResponse
+  type QuoteStatusResponse,
 } from '@/services/quote-import.service'
 
 export function useQuoteImport() {
@@ -25,12 +25,12 @@ export function useQuoteImport() {
 
   const hasErrors = computed(() => {
     const issues = previewData.value?.preview?.validation_report?.issues
-    return issues && issues.some(issue => issue.severity === 'error')
+    return issues && issues.some((issue) => issue.severity === 'error')
   })
 
   const hasWarnings = computed(() => {
     const issues = previewData.value?.preview?.validation_report?.issues
-    return issues && issues.some(issue => issue.severity === 'warning')
+    return issues && issues.some((issue) => issue.severity === 'warning')
   })
 
   const totalChanges = computed(() => {
@@ -54,7 +54,7 @@ export function useQuoteImport() {
       console.log('🔍 [useQuoteImport] Loading quote status for jobId:', jobId)
       currentQuote.value = await quoteImportService.getQuoteStatus(jobId)
       console.log('✅ [useQuoteImport] Quote status loaded:', currentQuote.value)
-    } catch (err) {
+    } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Failed to load quote status'
       console.error('❌ [useQuoteImport] Failed to load quote status:', err)
     } finally {
@@ -74,7 +74,7 @@ export function useQuoteImport() {
       if (previewData.value.preview.error) {
         error.value = previewData.value.preview.error
       }
-    } catch (err) {
+    } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Preview failed'
       previewData.value = null
       console.error('Preview import failed:', err)
@@ -100,7 +100,7 @@ export function useQuoteImport() {
       if (importResult.value.success) {
         await loadQuoteStatus(jobId)
       }
-    } catch (err) {
+    } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Import failed'
       importResult.value = null
       console.error('Execute import failed:', err)
@@ -142,6 +142,6 @@ export function useQuoteImport() {
     previewImport,
     executeImport,
     reset,
-    clearError
+    clearError,
   }
 }

@@ -111,12 +111,7 @@
 
         <!-- Action Buttons -->
         <DialogFooter class="gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            @click="handleCancel"
-            :disabled="isLoading"
-          >
+          <Button type="button" variant="outline" @click="handleCancel" :disabled="isLoading">
             Cancel
           </Button>
           <Button
@@ -135,10 +130,22 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { XCircle } from 'lucide-vue-next'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ZodError } from 'zod'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { clientService } from '@/services/clientService'
-import { createClientSchema, type CreateClientData, type CreateClientResponse } from '@/schemas/client.schemas'
+import {
+  createClientSchema,
+  type CreateClientData,
+  type CreateClientResponse,
+} from '@/schemas/client.schemas'
 import type { Client } from '@/composables/useClientLookup'
 
 // Props
@@ -148,7 +155,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  initialName: ''
+  initialName: '',
 })
 
 // Events
@@ -163,7 +170,7 @@ const formData = ref<CreateClientData>({
   email: '',
   phone: '',
   address: '',
-  is_account_customer: false
+  is_account_customer: false,
 })
 
 // State management
@@ -199,12 +206,14 @@ const validateForm = (): boolean => {
   try {
     createClientSchema.parse(formData.value)
     return true
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Extract Zod validation errors
-    if (error.errors) {
-      error.errors.forEach((err: any) => {
+    if (error instanceof ZodError) {
+      error.errors.forEach((err) => {
         const field = err.path[0]
-        fieldErrors.value[field] = err.message
+        if (field) {
+          fieldErrors.value[String(field)] = err.message
+        }
       })
     }
     return false
@@ -237,13 +246,12 @@ const handleSubmit = async () => {
         email: result.client.email || '',
         phone: result.client.phone || '',
         address: result.client.address || '',
-        xero_contact_id: result.client.xero_contact_id || ''
+        xero_contact_id: result.client.xero_contact_id || '',
       }
 
       emit('client-created', newClient)
       emit('update:isOpen', false)
     }
-
   } catch (error) {
     console.error('Error creating client:', error)
     errorMessage.value = error instanceof Error ? error.message : 'An unexpected error occurred'
@@ -264,23 +272,29 @@ const resetForm = () => {
     email: '',
     phone: '',
     address: '',
-    is_account_customer: false
+    is_account_customer: false,
   }
   errorMessage.value = ''
   fieldErrors.value = {}
 }
 
 // Watch for initialName changes
-watch(() => props.initialName, (newName) => {
-  if (newName && props.isOpen) {
-    formData.value.name = newName
-  }
-})
+watch(
+  () => props.initialName,
+  (newName) => {
+    if (newName && props.isOpen) {
+      formData.value.name = newName
+    }
+  },
+)
 
 // Watch for isOpen changes to set initial name
-watch(() => props.isOpen, (isOpen) => {
-  if (isOpen && props.initialName) {
-    formData.value.name = props.initialName
-  }
-})
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen && props.initialName) {
+      formData.value.name = props.initialName
+    }
+  },
+)
 </script>

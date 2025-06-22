@@ -8,12 +8,7 @@
 import api from '@/plugins/axios'
 import type { AxiosResponse } from 'axios'
 import {
-  JobDetailSchema,
   JobUpdateResponseSchema,
-  TimeEntryCreateSchema,
-  MaterialEntryCreateSchema,
-  AdjustmentEntryCreateSchema,
-  JobEventSchema,
   type JobDetail,
   type JobUpdateResponse,
   type TimeEntryCreate,
@@ -22,7 +17,7 @@ import {
   type JobEvent,
   type FileListResponse,
   FileListResponseSchema,
-  type JobFile
+  type JobFile,
 } from '@/schemas/job.schemas'
 
 // Legacy types kept for compatibility (will be removed gradually)
@@ -45,7 +40,7 @@ export interface JobUpdateData {
   notes?: string
   contact_id?: string
   job_status?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // Use schemas for new types
@@ -64,7 +59,7 @@ export interface CompanyDefaults {
   wage_rate: number
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   message?: string
   error?: string
@@ -111,10 +106,10 @@ export class JobRestService {
       // Validate response with schema
       const validatedData = JobUpdateResponseSchema.parse(response.data)
       return validatedData
-    } catch (error: any) {
-      // If validation fails, use legacy structure
-      if (error.name === 'ZodError') {
-        console.warn('⚠️ Response validation failed, using legacy structure:', error.errors)
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        const zodError = error as unknown as { errors: unknown[] }
+        console.warn('⚠️ Response validation failed, using legacy structure:', zodError.errors)
         const response: AxiosResponse = await api.get(`/job/rest/jobs/${jobId}/`)
         return this.handleResponse(response)
       }
@@ -135,7 +130,7 @@ export class JobRestService {
       return {
         success: true,
         data: response.data,
-        message: 'Job updated successfully'
+        message: 'Job updated successfully',
       }
     } catch (error) {
       return this.handleError(error)
@@ -159,10 +154,13 @@ export class JobRestService {
    */
   async toggleComplexJob(jobId: string, complexJob: boolean): Promise<ApiResponse> {
     try {
-      const response: AxiosResponse<ApiResponse> = await api.post('/job/rest/jobs/toggle-complex/', {
-        job_id: jobId,
-        complex_job: complexJob
-      })
+      const response: AxiosResponse<ApiResponse> = await api.post(
+        '/job/rest/jobs/toggle-complex/',
+        {
+          job_id: jobId,
+          complex_job: complexJob,
+        },
+      )
       return this.handleResponse(response)
     } catch (error) {
       return this.handleError(error)
@@ -174,9 +172,12 @@ export class JobRestService {
    */
   async addJobEvent(jobId: string, description: string): Promise<ApiResponse> {
     try {
-      const response: AxiosResponse<ApiResponse> = await api.post(`/job/rest/jobs/${jobId}/events/`, {
-        description
-      })
+      const response: AxiosResponse<ApiResponse> = await api.post(
+        `/job/rest/jobs/${jobId}/events/`,
+        {
+          description,
+        },
+      )
       return this.handleResponse(response)
     } catch (error) {
       return this.handleError(error)
@@ -186,9 +187,15 @@ export class JobRestService {
   /**
    * Creates a new time entry
    */
-  async createTimeEntry(jobId: string, timeEntryData: TimeEntryCreateData): Promise<JobDetailResponse> {
+  async createTimeEntry(
+    jobId: string,
+    timeEntryData: TimeEntryCreateData,
+  ): Promise<JobDetailResponse> {
     try {
-      const response: AxiosResponse<JobDetailResponse> = await api.post(`/job/rest/jobs/${jobId}/time-entries/`, timeEntryData)
+      const response: AxiosResponse<JobDetailResponse> = await api.post(
+        `/job/rest/jobs/${jobId}/time-entries/`,
+        timeEntryData,
+      )
       return this.handleResponse(response)
     } catch (error) {
       return this.handleError(error)
@@ -198,9 +205,15 @@ export class JobRestService {
   /**
    * Creates a new material entry
    */
-  async createMaterialEntry(jobId: string, materialEntryData: MaterialEntryCreateData): Promise<JobDetailResponse> {
+  async createMaterialEntry(
+    jobId: string,
+    materialEntryData: MaterialEntryCreateData,
+  ): Promise<JobDetailResponse> {
     try {
-      const response: AxiosResponse<JobDetailResponse> = await api.post(`/job/rest/jobs/${jobId}/material-entries/`, materialEntryData)
+      const response: AxiosResponse<JobDetailResponse> = await api.post(
+        `/job/rest/jobs/${jobId}/material-entries/`,
+        materialEntryData,
+      )
       return this.handleResponse(response)
     } catch (error) {
       return this.handleError(error)
@@ -210,9 +223,15 @@ export class JobRestService {
   /**
    * Creates a new adjustment entry
    */
-  async createAdjustmentEntry(jobId: string, adjustmentEntryData: AdjustmentEntryCreateData): Promise<JobDetailResponse> {
+  async createAdjustmentEntry(
+    jobId: string,
+    adjustmentEntryData: AdjustmentEntryCreateData,
+  ): Promise<JobDetailResponse> {
     try {
-      const response: AxiosResponse<JobDetailResponse> = await api.post(`/job/rest/jobs/${jobId}/adjustment-entries/`, adjustmentEntryData)
+      const response: AxiosResponse<JobDetailResponse> = await api.post(
+        `/job/rest/jobs/${jobId}/adjustment-entries/`,
+        adjustmentEntryData,
+      )
       return this.handleResponse(response)
     } catch (error) {
       return this.handleError(error)
@@ -236,7 +255,9 @@ export class JobRestService {
    */
   async getStatusValues(): Promise<Record<string, string>> {
     try {
-      const response: AxiosResponse<Record<string, string>> = await api.get('/job/api/fetch_status_values/')
+      const response: AxiosResponse<Record<string, string>> = await api.get(
+        '/job/api/fetch_status_values/',
+      )
       return response.data
     } catch (error) {
       throw this.handleError(error)
@@ -247,68 +268,61 @@ export class JobRestService {
    * Workshop PDF and file handling
    */
   async fetchWorkshopPdf(jobId: string): Promise<Blob> {
-    const response = await api.get(
-      `/job/rest/jobs/${jobId}/workshop-pdf/`,
-      { responseType: 'blob' }
-    )
+    const response = await api.get(`/job/rest/jobs/${jobId}/workshop-pdf/`, {
+      responseType: 'blob',
+    })
 
-    return this.handleResponse<Blob>(response);
+    return this.handleResponse<Blob>(response)
   }
 
   async attachWorkshopPdf(jobNumber: number, pdfBlob: Blob): Promise<ApiResponse> {
-    const file = new File(
-      [pdfBlob],
-      `workshop_job_${jobNumber}.pdf`,
-      { type: 'application/pdf' }
-    )
+    const file = new File([pdfBlob], `workshop_job_${jobNumber}.pdf`, { type: 'application/pdf' })
 
     const formData = new FormData()
     formData.append('job_number', jobNumber.toString())
     formData.append('files', file)
 
-    const response = await api.post(
-      '/job/rest/jobs/files/upload/',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
-    )
-    return this.handleResponse<ApiResponse>(response);
+    const response = await api.post('/job/rest/jobs/files/upload/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return this.handleResponse<ApiResponse>(response)
   }
 
   async listJobFiles(jobNumber: string): Promise<FileListResponse> {
-    const response = await api.get<FileListResponse>(
-      `/job/rest/jobs/files/${jobNumber}/`
-    )
+    const response = await api.get<FileListResponse>(`/job/rest/jobs/files/${jobNumber}/`)
 
     return FileListResponseSchema.parse(response.data)
   }
 
   async deleteJobFile(fileId: string): Promise<ApiResponse> {
-    const response = await api.delete<ApiResponse>(
-      `/job/rest/jobs/files/${fileId}/`
-    )
+    const response = await api.delete<ApiResponse>(`/job/rest/jobs/files/${fileId}/`)
 
     return this.handleResponse<ApiResponse>(response)
   }
 
-  async uploadJobFile(jobNumber: number, files: File[], onProgress?: (percent: number) => void): Promise<JobFile[]> {
+  async uploadJobFile(
+    jobNumber: number,
+    files: File[],
+    onProgress?: (percent: number) => void,
+  ): Promise<JobFile[]> {
     const form = new FormData()
     form.append('job_number', jobNumber.toString())
-    files.forEach(f => {form.append('files', f) })
+    files.forEach((f) => {
+      form.append('files', f)
+    })
 
     const response: AxiosResponse<UploadFilesResponse> = await api.post(
       '/job/rest/jobs/files/upload/',
       form,
       {
         headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: ev => {
+        onUploadProgress: (ev) => {
           if (!onProgress || !ev.total) return
           onProgress(Math.round((ev.loaded * 100) / ev.total))
-        }
-      }
+        },
+      },
     )
 
     const data = this.handleResponse<UploadFilesResponse>(response)
@@ -322,10 +336,7 @@ export class JobRestService {
     filename: string
     print_on_jobsheet: boolean
   }): Promise<ApiResponse> {
-    const response = await api.put<ApiResponse>(
-      '/job/rest/jobs/files/',
-      params
-    )
+    const response = await api.put<ApiResponse>('/job/rest/jobs/files/', params)
 
     return this.handleResponse(response)
   }
@@ -350,30 +361,43 @@ export class JobRestService {
   /**
    * Standardised error handling
    */
-  private handleError(error: any): never {
-    // Guard clause - network error
-    if (!error.response) {
-      throw new Error('Network error - please check your connection')
+  private handleError(error: unknown): never {
+    // Guard clause - check for network error
+    if (error instanceof Error && 'response' in error) {
+      const axiosError = error as {
+        response?: { status: number; data: { error: string }; statusText: string }
+      }
+      if (!axiosError.response) {
+        throw new Error('Network error - please check your connection')
+      }
+
+      // Switch-case for different HTTP error types
+      const { status, data, statusText } = axiosError.response
+      const errorMessage = data?.error
+
+      switch (status) {
+        case 400:
+          throw new Error(errorMessage || 'Invalid request data')
+        case 401:
+          throw new Error('Authentication required')
+        case 403:
+          throw new Error(errorMessage || 'Permission denied')
+        case 404:
+          throw new Error('Resource not found')
+        case 500:
+          throw new Error('Internal server error')
+        default:
+          throw new Error(errorMessage || `HTTP ${status}: ${statusText}`)
+      }
     }
 
-    // Switch-case for different HTTP error types
-    const status = error.response.status
-    const errorData = error.response.data
-
-    switch (status) {
-      case 400:
-        throw new Error(errorData.error || 'Invalid request data')
-      case 401:
-        throw new Error('Authentication required')
-      case 403:
-        throw new Error(errorData.error || 'Permission denied')
-      case 404:
-        throw new Error('Resource not found')
-      case 500:
-        throw new Error('Internal server error')
-      default:
-        throw new Error(errorData.error || `HTTP ${status}: ${error.response.statusText}`)
+    // Fallback for non-Axios errors
+    if (error instanceof Error) {
+      throw new Error(error.message)
     }
+
+    // Final fallback
+    throw new Error('An unknown error occurred')
   }
 }
 

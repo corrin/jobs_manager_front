@@ -9,9 +9,9 @@
         @change="handleChange"
       >
         <option value="">{{ placeholder }}</option>
-        <option 
-          v-for="client in clientOptions" 
-          :key="client.id || client.name" 
+        <option
+          v-for="client in clientOptions"
+          :key="client.id || client.name"
           :value="client.name"
         >
           {{ client.name }}
@@ -41,7 +41,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: 'Any Client'
+  placeholder: 'Any Client',
 })
 
 const emit = defineEmits<Emits>()
@@ -70,13 +70,14 @@ const handleChange = (): void => {
 }
 
 // Watch for external changes to modelValue
-watch(() => props.modelValue, (newValue) => {
-  selectedValue.value = newValue || ''
-})
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    selectedValue.value = newValue || ''
+  },
+)
 
 onMounted(() => {
   loadClientOptions()
 })
 </script>
-
-

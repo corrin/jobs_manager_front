@@ -34,7 +34,7 @@ export function useContactManagement() {
     email: '',
     phone: '',
     notes: '',
-    is_primary: false
+    is_primary: false,
   })
 
   // Computed properties
@@ -128,18 +128,19 @@ export function useContactManagement() {
 
     isLoading.value = true
 
-    try {      const contactData = {
+    try {
+      const contactData = {
         client_id: currentClientId.value,
         name: newContactForm.value.name.trim(),
         position: newContactForm.value.position?.trim() || '',
         email: newContactForm.value.email?.trim() || '',
         phone: newContactForm.value.phone?.trim() || '',
         notes: newContactForm.value.notes?.trim() || '',
-        is_primary: newContactForm.value.is_primary
+        is_primary: newContactForm.value.is_primary,
       }
 
       const response = await api.post('/clients/rest/contacts/', contactData)
-        // Guard clause for an invalid response
+      // Guard clause for an invalid response
       if (!response.data || !response.data.contact) {
         throw new Error('Invalid response from server')
       }
@@ -154,7 +155,6 @@ export function useContactManagement() {
 
       closeModal()
       return true
-
     } catch (error) {
       console.error('Error creating contact:', error)
       return false
@@ -171,7 +171,7 @@ export function useContactManagement() {
       email: '',
       phone: '',
       notes: '',
-      is_primary: false
+      is_primary: false,
     }
   }
 
@@ -211,7 +211,7 @@ export function useContactManagement() {
       return null
     }
 
-    return contacts.value.find(contact => contact.is_primary) || null
+    return contacts.value.find((contact) => contact.is_primary) || null
   }
 
   return {
@@ -238,6 +238,6 @@ export function useContactManagement() {
     clearSelection,
     updateContactsList,
     findPrimaryContact,
-    resetNewContactForm
+    resetNewContactForm,
   }
 }

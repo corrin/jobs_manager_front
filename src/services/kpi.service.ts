@@ -52,7 +52,7 @@ class KPIService {
     try {
       const searchParams = new URLSearchParams({
         start_date: params.start_date,
-        ...(params.mode && { mode: params.mode })
+        ...(params.mode && { mode: params.mode }),
       })
 
       const response = await apiClient.get(`${this.baseUrl}/kpi-calendar/?${searchParams}`)
@@ -86,7 +86,8 @@ class KPIService {
    */
   getWeekDays(startDate: Date): Date[] {
     const days = []
-    for (let i = 0; i < 5; i++) { // Monday to Friday
+    for (let i = 0; i < 5; i++) {
+      // Monday to Friday
       const day = new Date(startDate)
       day.setDate(startDate.getDate() + i)
       days.push(day)

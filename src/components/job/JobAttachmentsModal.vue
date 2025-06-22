@@ -16,8 +16,18 @@
             @click="triggerFileInput"
           >
             <div class="flex flex-col items-center">
-              <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <svg
+                class="mx-auto h-12 w-12 text-gray-400"
+                stroke="currentColor"
+                fill="none"
+                viewBox="0 0 48 48"
+              >
+                <path
+                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
               <div class="mt-4">
                 <p class="text-sm text-gray-600">
@@ -37,7 +47,7 @@
             @change="handleFileChange"
             accept="image/*,.pdf,.doc,.docx,.txt"
             class="hidden"
-          >
+          />
         </div>
 
         <!-- Camera Capture Button -->
@@ -48,8 +58,18 @@
             class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+              ></path>
             </svg>
             Capture Photo
           </button>
@@ -81,13 +101,20 @@
                   :src="file.thumbnail_url"
                   :alt="file.filename"
                   class="w-10 h-10 object-cover rounded"
-                >
-                <div
-                  v-else
-                  class="w-10 h-10 bg-gray-300 rounded flex items-center justify-center"
-                >
-                  <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                />
+                <div v-else class="w-10 h-10 bg-gray-300 rounded flex items-center justify-center">
+                  <svg
+                    class="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    ></path>
                   </svg>
                 </div>
               </div>
@@ -112,7 +139,7 @@
                   @change="updatePrintSetting(file)"
                   type="checkbox"
                   class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200/50"
-                >
+                />
                 <span class="ml-2 text-xs text-gray-600">Print</span>
               </label>
 
@@ -123,7 +150,12 @@
                 title="Download"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  ></path>
                 </svg>
               </button>
 
@@ -134,7 +166,12 @@
                 title="Delete"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  ></path>
                 </svg>
               </button>
             </div>
@@ -142,8 +179,18 @@
 
           <!-- No Files Message -->
           <div v-if="files.length === 0" class="text-center py-8">
-            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-              <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <svg
+              class="mx-auto h-12 w-12 text-gray-400"
+              stroke="currentColor"
+              fill="none"
+              viewBox="0 0 48 48"
+            >
+              <path
+                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
             <h3 class="mt-2 text-sm font-medium text-gray-900">No attachments</h3>
             <p class="mt-1 text-sm text-gray-500">Get started by uploading a file.</p>
@@ -228,7 +275,7 @@ watch(
     if (open && props.jobNumber != null) {
       loadFiles()
     }
-  }
+  },
 )
 
 // Modal controls
@@ -287,7 +334,12 @@ const isImageFile = (file: File): boolean => {
   return file.type.startsWith('image/')
 }
 
-const compressImage = (file: File, maxWidth = 1280, maxHeight = 960, quality = 0.7): Promise<File> => {
+const compressImage = (
+  file: File,
+  maxWidth = 1280,
+  maxHeight = 960,
+  quality = 0.7,
+): Promise<File> => {
   return new Promise((resolve) => {
     const reader = new FileReader()
     reader.readAsDataURL(file)
@@ -330,7 +382,7 @@ const compressImage = (file: File, maxWidth = 1280, maxHeight = 960, quality = 0
 
             const compressedFile = new File([blob], file.name, {
               type: 'image/jpeg',
-              lastModified: Date.now()
+              lastModified: Date.now(),
             })
 
             console.log(`Image compressed: ${file.name}
@@ -340,7 +392,7 @@ const compressImage = (file: File, maxWidth = 1280, maxHeight = 960, quality = 0
             resolve(compressedFile)
           },
           'image/jpeg',
-          quality
+          quality,
         )
       }
     }
@@ -360,7 +412,7 @@ const uploadFile = async (file: File) => {
     const uploaded = await jobRestService.uploadJobFile(
       props.jobNumber,
       [file],
-      (progress) => (uploadProgress.value = progress)
+      (progress) => (uploadProgress.value = progress),
     )
 
     // Add uploaded files to local list
@@ -406,7 +458,7 @@ async function updatePrintSetting(file: JobFile) {
   console.log('Updating print setting for file:', {
     filename: file.filename,
     current_value: file.print_on_jobsheet,
-    job_number: props.jobNumber
+    job_number: props.jobNumber,
   })
 
   try {
@@ -414,7 +466,7 @@ async function updatePrintSetting(file: JobFile) {
       job_number: String(props.jobNumber),
       file_id: file.id,
       filename: file.filename,
-      print_on_jobsheet: file.print_on_jobsheet
+      print_on_jobsheet: file.print_on_jobsheet,
     })
 
     console.log('Print setting update response:', response)
@@ -425,16 +477,6 @@ async function updatePrintSetting(file: JobFile) {
     console.error('Error updating print setting:', err)
     // Revert checkbox on error
     file.print_on_jobsheet = !file.print_on_jobsheet
-  }
-}
-
-const capturePhoto = async () => {
-  try {
-    // TODO: Implement camera capture
-    // This would open a camera modal similar to the Django version
-    console.log('Camera capture not implemented yet')
-  } catch (error) {
-    console.error('Camera capture failed:', error)
   }
 }
 
@@ -456,7 +498,7 @@ const handlePhotoCaptured = async (photo: File) => {
     console.log('Photo captured:', {
       name: photo.name,
       size: `${(photo.size / 1024 / 1024).toFixed(2)}MB`,
-      type: photo.type
+      type: photo.type,
     })
 
     // Process and upload the captured photo

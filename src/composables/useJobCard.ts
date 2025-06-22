@@ -7,33 +7,33 @@ interface StatusConfig {
 }
 
 export function useJobCard(
-  job: Job, 
+  job: Job,
   emit: (e: 'click', job: Job) => void,
   emitMovement?: (e: 'job-selected-for-movement', job: Job) => void,
-  isMovementModeActive?: boolean
+  isMovementModeActive?: boolean,
 ) {
   const statusConfig = computed((): StatusConfig => {
     const configs: Record<string, StatusConfig> = {
       pending: {
         variant: 'secondary',
-        borderClass: 'border-l-yellow-400'
+        borderClass: 'border-l-yellow-400',
       },
       in_progress: {
         variant: 'default',
-        borderClass: 'border-l-blue-400'
+        borderClass: 'border-l-blue-400',
       },
       review: {
         variant: 'outline',
-        borderClass: 'border-l-purple-400'
+        borderClass: 'border-l-purple-400',
       },
       completed: {
         variant: 'default',
-        borderClass: 'border-l-green-400'
+        borderClass: 'border-l-green-400',
       },
       archived: {
         variant: 'secondary',
-        borderClass: 'border-l-gray-400'
-      }
+        borderClass: 'border-l-gray-400',
+      },
     }
 
     return configs[job.status || 'pending'] || configs.pending
@@ -46,7 +46,7 @@ export function useJobCard(
       return new Date(job.created_at).toLocaleDateString('en-NZ', {
         day: '2-digit',
         month: '2-digit',
-        year: 'numeric'
+        year: 'numeric',
       })
     } catch {
       return job.created_at
@@ -59,7 +59,7 @@ export function useJobCard(
       in_progress: 'In Progress',
       review: 'Review',
       completed: 'Completed',
-      archived: 'Archived'
+      archived: 'Archived',
     }
 
     return statusLabels[status] || status
@@ -77,6 +77,6 @@ export function useJobCard(
     statusConfig,
     formattedDate,
     formatStatus,
-    handleClick
+    handleClick,
   }
 }

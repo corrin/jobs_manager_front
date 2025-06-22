@@ -6,9 +6,7 @@
           <BarChart3 class="h-5 w-5 text-orange-600" />
           <span>Job Metrics Overview</span>
         </DialogTitle>
-        <DialogDescription>
-          Detailed job/project metrics for the selected week
-        </DialogDescription>
+        <DialogDescription> Detailed job/project metrics for the selected week </DialogDescription>
       </DialogHeader>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -25,7 +23,9 @@
             <Clock class="h-4 w-4 mr-2 text-blue-600" />
             Total Estimated Hours
           </h3>
-          <div class="text-2xl font-bold text-blue-700 mb-1">{{ metrics.total_estimated_hours ?? '--' }}</div>
+          <div class="text-2xl font-bold text-blue-700 mb-1">
+            {{ metrics.total_estimated_hours ?? '--' }}
+          </div>
           <div class="text-xs text-gray-500">All jobs</div>
         </div>
         <div class="bg-green-50 rounded-lg p-4 flex flex-col items-center">
@@ -33,7 +33,9 @@
             <TrendingUp class="h-4 w-4 mr-2 text-green-600" />
             Total Actual Hours
           </h3>
-          <div class="text-2xl font-bold text-green-700 mb-1">{{ metrics.total_actual_hours ?? '--' }}</div>
+          <div class="text-2xl font-bold text-green-700 mb-1">
+            {{ metrics.total_actual_hours ?? '--' }}
+          </div>
           <div class="text-xs text-gray-500">All jobs</div>
         </div>
         <div class="bg-emerald-50 rounded-lg p-4 flex flex-col items-center">
@@ -41,7 +43,9 @@
             <DollarSign class="h-4 w-4 mr-2 text-emerald-600" />
             Total Revenue
           </h3>
-          <div class="text-2xl font-bold text-emerald-700 mb-1">${{ metrics.total_revenue ?? '--' }}</div>
+          <div class="text-2xl font-bold text-emerald-700 mb-1">
+            ${{ metrics.total_revenue ?? '--' }}
+          </div>
           <div class="text-xs text-gray-500">All jobs</div>
         </div>
       </div>
@@ -55,26 +59,29 @@
       </div>
 
       <div class="flex justify-end mt-6 pt-4 border-t">
-        <Button @click="handleClose" variant="outline">
-          Close
-        </Button>
+        <Button @click="handleClose" variant="outline"> Close </Button>
       </div>
     </DialogContent>
   </Dialog>
 </template>
 
 <script setup lang="ts">
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Briefcase, Clock, TrendingUp, DollarSign } from 'lucide-vue-next'
 import type { JobMetrics } from '@/services/weekly-timesheet.service'
 
-interface Props {
+defineProps<{
   open: boolean
   metrics: JobMetrics
-}
+}>()
 
-const props = defineProps<Props>()
 const emit = defineEmits<{ close: [] }>()
 
 const handleClose = () => {

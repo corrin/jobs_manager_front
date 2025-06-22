@@ -9,11 +9,7 @@
         @change="handleChange"
       >
         <option value="">{{ placeholder }}</option>
-        <option
-          v-for="staff in staffOptions"
-          :key="staff.id"
-          :value="staff.id"
-        >
+        <option v-for="staff in staffOptions" :key="staff.id" :value="staff.id">
           {{ staff.display_name }}
         </option>
       </select>
@@ -41,7 +37,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  placeholder: 'Any Staff Member'
+  placeholder: 'Any Staff Member',
 })
 
 const emit = defineEmits<Emits>()
@@ -70,13 +66,14 @@ const handleChange = (): void => {
 }
 
 // Watch for external changes to modelValue
-watch(() => props.modelValue, (newValue) => {
-  selectedValue.value = newValue || ''
-})
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    selectedValue.value = newValue || ''
+  },
+)
 
 onMounted(() => {
   loadStaffOptions()
 })
 </script>
-
-

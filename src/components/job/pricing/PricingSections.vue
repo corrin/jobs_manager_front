@@ -2,7 +2,11 @@
   <div class="pricing-sections h-full flex flex-col">
     <!-- Costing-based Layout (when feature flag is active and lines provided) -->
     <div v-if="shouldUseCostingDisplay" class="space-y-4 flex-1 min-h-0">
-      <div v-for="(categoryLines, categoryName) in groupedCostLines" :key="categoryName" class="pricing-column flex flex-col">
+      <div
+        v-for="(categoryLines, categoryName) in groupedCostLines"
+        :key="categoryName"
+        class="pricing-column flex flex-col"
+      >
         <PricingSection
           :title="categoryName"
           :lines="categoryLines"
@@ -56,10 +60,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { JobDetail, JobPricing } from '@/schemas/job.schemas'
+import type { JobDetail } from '@/schemas/job.schemas'
 import type { CostLine } from '@/types/costing.types'
 import { useFeatureFlags } from '@/stores/feature-flags'
-import { useCostingStore } from '@/stores/costing'
 import PricingSection from './PricingSection.vue'
 
 interface Props {
@@ -69,13 +72,8 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const emit = defineEmits<{
-  refresh: []
-}>()
-
 // Stores
 const featureFlags = useFeatureFlags()
-const costingStore = useCostingStore()
 
 // Early return pattern for feature flag check
 const shouldUseCostingDisplay = computed(() => {
@@ -93,16 +91,19 @@ const groupedCostLines = computed(() => {
 
 // Helper function following SRP principle
 const groupLinesByCategory = (lines: CostLine[]): Record<string, CostLine[]> => {
-  return lines.reduce((groups, line) => {
-    const category = getCategoryFromLine(line)
+  return lines.reduce(
+    (groups, line) => {
+      const category = getCategoryFromLine(line)
 
-    if (!groups[category]) {
-      groups[category] = []
-    }
+      if (!groups[category]) {
+        groups[category] = []
+      }
 
-    groups[category].push(line)
-    return groups
-  }, {} as Record<string, CostLine[]>)
+      groups[category].push(line)
+      return groups
+    },
+    {} as Record<string, CostLine[]>,
+  )
 }
 
 // Category extraction with fallback - centralized logic

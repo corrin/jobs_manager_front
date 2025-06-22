@@ -5,7 +5,7 @@
  */
 
 import api from '@/plugins/axios'
-import { dateService, type WeekRange } from '@/services/date.service'
+import { dateService } from '@/services/date.service'
 
 export interface WeeklyStaffData {
   staff_id: string
@@ -68,12 +68,20 @@ export interface IMSWeeklyData extends WeeklyTimesheetData {
   ims_week: string[] // Tuesday-Friday + next Monday
 }
 
+interface WeeklyTimesheetParams {
+  start_date?: string
+  export_to_ims?: 'true'
+}
+
 /**
  * Get weekly timesheet overview for all staff
  */
-export const getWeeklyTimesheetOverview = async (startDate?: string, exportToIMS: boolean = false): Promise<WeeklyTimesheetData | IMSWeeklyData> => {
+export const getWeeklyTimesheetOverview = async (
+  startDate?: string,
+  exportToIMS: boolean = false,
+): Promise<WeeklyTimesheetData | IMSWeeklyData> => {
   const url = '/timesheets/api/weekly/'
-  const params: any = {}
+  const params: WeeklyTimesheetParams = {}
 
   if (startDate) {
     params.start_date = startDate
@@ -83,7 +91,7 @@ export const getWeeklyTimesheetOverview = async (startDate?: string, exportToIMS
     params.export_to_ims = 'true'
   }
 
-  const response = await api.get(url, { params })
+  const response = await api.get<WeeklyTimesheetData | IMSWeeklyData>(url, { params })
   return response.data
 }
 
@@ -94,10 +102,10 @@ export const exportToIMS = async (startDate: string): Promise<IMSWeeklyData> => 
   const url = '/timesheets/api/weekly/'
   const params = {
     start_date: startDate,
-    export_to_ims: 'true'
+    export_to_ims: 'true' as const,
   }
 
-  const response = await api.get(url, { params })
+  const response = await api.get<IMSWeeklyData>(url, { params })
   return response.data
 }
 
@@ -113,16 +121,18 @@ export interface PaidAbsenceRequest {
   notes?: string
 }
 
-export const submitPaidAbsence = async (data: PaidAbsenceRequest): Promise<{ success: boolean; messages?: string[] }> => {
+export const submitPaidAbsence = async (
+  data: PaidAbsenceRequest,
+): Promise<{ success: boolean; messages?: string[] }> => {
   const url = '/timesheets/api/weekly/'
 
-  const response = await api.post(url, {
+  const response = await api.post<{ success: boolean; messages?: string[] }>(url, {
     staff_id: data.staff_id,
     start_date: data.start_date,
     end_date: data.end_date,
     leave_type: data.leave_type,
     hours_per_day: data.hours_per_day || 8,
-    description: data.notes || ''
+    description: data.notes || '',
   })
 
   return response.data
@@ -135,7 +145,7 @@ export const getCurrentWeekRange = (): { startDate: string; endDate: string } =>
   const weekRange = dateService.getCurrentWeekRange()
   return {
     startDate: weekRange.startDate,
-    endDate: weekRange.endDate
+    endDate: weekRange.endDate,
   }
 }
 
@@ -146,7 +156,7 @@ export const getWeekRange = (date: Date): { startDate: string; endDate: string }
   const weekRange = dateService.getWeekRange(date)
   return {
     startDate: weekRange.startDate,
-    endDate: weekRange.endDate
+    endDate: weekRange.endDate,
   }
 }
 
@@ -179,5 +189,5 @@ export default {
   getWeekRange,
   formatDateRange,
   formatHours,
-  formatPercentage
+  formatPercentage,
 }

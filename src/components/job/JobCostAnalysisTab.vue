@@ -4,13 +4,15 @@
     <div class="flex items-center justify-between bg-white p-4 rounded-lg border border-gray-200">
       <div>
         <h2 class="text-lg font-semibold text-gray-900">Cost Analysis</h2>
-        <p class="text-sm text-gray-500">Analyze cost lines by category across different cost sets</p>
+        <p class="text-sm text-gray-500">
+          Analyze cost lines by category across different cost sets
+        </p>
       </div>
-      
+
       <!-- CostSet Selector -->
       <div class="flex items-center space-x-3">
         <label class="text-sm font-medium text-gray-700">Cost Set:</label>
-        <select 
+        <select
           v-model="selectedCostSetKind"
           @change="handleCostSetChange"
           class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -25,7 +27,9 @@
     <!-- Loading State -->
     <div v-if="costingStore.loading" class="flex items-center justify-center py-12">
       <div class="text-center">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+        <div
+          class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"
+        ></div>
         <p class="text-gray-500">Loading cost data...</p>
       </div>
     </div>
@@ -50,7 +54,9 @@
             <DollarSign class="h-8 w-8 text-blue-600 mr-3" />
             <div>
               <p class="text-sm font-medium text-blue-800">Total Cost</p>
-              <p class="text-2xl font-bold text-blue-900">{{ formatCurrency(costingStore.totalCost) }}</p>
+              <p class="text-2xl font-bold text-blue-900">
+                {{ formatCurrency(costingStore.totalCost) }}
+              </p>
             </div>
           </div>
         </div>
@@ -60,7 +66,9 @@
             <TrendingUp class="h-8 w-8 text-green-600 mr-3" />
             <div>
               <p class="text-sm font-medium text-green-800">Total Revenue</p>
-              <p class="text-2xl font-bold text-green-900">{{ formatCurrency(costingStore.totalRevenue) }}</p>
+              <p class="text-2xl font-bold text-green-900">
+                {{ formatCurrency(costingStore.totalRevenue) }}
+              </p>
             </div>
           </div>
         </div>
@@ -70,7 +78,9 @@
             <Clock class="h-8 w-8 text-orange-600 mr-3" />
             <div>
               <p class="text-sm font-medium text-orange-800">Total Hours</p>
-              <p class="text-2xl font-bold text-orange-900">{{ formatHours(costingStore.totalHours) }}</p>
+              <p class="text-2xl font-bold text-orange-900">
+                {{ formatHours(costingStore.totalHours) }}
+              </p>
             </div>
           </div>
         </div>
@@ -81,7 +91,7 @@
         <div class="px-6 py-4 border-b border-gray-200">
           <h3 class="text-lg font-medium text-gray-900">Cost Lines by Category</h3>
         </div>
-        
+
         <div class="p-6">
           <!-- Time Entries -->
           <div v-if="groupedData.time.length > 0" class="mb-8">
@@ -90,8 +100,8 @@
               Time Entries ({{ groupedData.time.length }})
             </h4>
             <div class="space-y-3">
-              <div 
-                v-for="costLine in groupedData.time" 
+              <div
+                v-for="costLine in groupedData.time"
                 :key="costLine.id"
                 class="flex justify-between items-start p-4 bg-blue-50 rounded-lg border border-blue-200"
               >
@@ -99,14 +109,21 @@
                   <p class="font-medium text-gray-900">{{ costLine.desc || 'No description' }}</p>
                   <div class="text-sm text-gray-600 mt-1">
                     <span class="inline-block mr-4">{{ formatTimeEntry(costLine) }}</span>
-                    <span v-if="costLine.meta?.category" class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                    <span
+                      v-if="costLine.meta?.category"
+                      class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                    >
                       {{ costLine.meta.category }}
                     </span>
                   </div>
                 </div>
                 <div class="text-right">
-                  <p class="font-semibold text-gray-900">{{ formatCurrency(costLine.total_rev) }}</p>
-                  <p class="text-sm text-gray-500">Cost: {{ formatCurrency(costLine.total_cost) }}</p>
+                  <p class="font-semibold text-gray-900">
+                    {{ formatCurrency(costLine.total_rev) }}
+                  </p>
+                  <p class="text-sm text-gray-500">
+                    Cost: {{ formatCurrency(costLine.total_cost) }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -119,8 +136,8 @@
               Material Entries ({{ groupedData.material.length }})
             </h4>
             <div class="space-y-3">
-              <div 
-                v-for="costLine in groupedData.material" 
+              <div
+                v-for="costLine in groupedData.material"
                 :key="costLine.id"
                 class="flex justify-between items-start p-4 bg-green-50 rounded-lg border border-green-200"
               >
@@ -128,15 +145,24 @@
                   <p class="font-medium text-gray-900">{{ costLine.desc || 'No description' }}</p>
                   <div class="text-sm text-gray-600 mt-1">
                     <span class="inline-block mr-4">Qty: {{ costLine.quantity }}</span>
-                    <span class="inline-block mr-4">Unit: {{ formatCurrency(parseFloat(costLine.unit_cost)) }}</span>
-                    <span v-if="costLine.meta?.category" class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                    <span class="inline-block mr-4"
+                      >Unit: {{ formatCurrency(parseFloat(costLine.unit_cost)) }}</span
+                    >
+                    <span
+                      v-if="costLine.meta?.category"
+                      class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs"
+                    >
                       {{ costLine.meta.category }}
                     </span>
                   </div>
                 </div>
                 <div class="text-right">
-                  <p class="font-semibold text-gray-900">{{ formatCurrency(costLine.total_rev) }}</p>
-                  <p class="text-sm text-gray-500">Cost: {{ formatCurrency(costLine.total_cost) }}</p>
+                  <p class="font-semibold text-gray-900">
+                    {{ formatCurrency(costLine.total_rev) }}
+                  </p>
+                  <p class="text-sm text-gray-500">
+                    Cost: {{ formatCurrency(costLine.total_cost) }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -149,22 +175,29 @@
               Adjustments ({{ groupedData.adjust.length }})
             </h4>
             <div class="space-y-3">
-              <div 
-                v-for="costLine in groupedData.adjust" 
+              <div
+                v-for="costLine in groupedData.adjust"
                 :key="costLine.id"
                 class="flex justify-between items-start p-4 bg-purple-50 rounded-lg border border-purple-200"
               >
                 <div class="flex-1">
                   <p class="font-medium text-gray-900">{{ costLine.desc || 'No description' }}</p>
                   <div class="text-sm text-gray-600 mt-1">
-                    <span v-if="costLine.meta?.category" class="inline-block px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                    <span
+                      v-if="costLine.meta?.category"
+                      class="inline-block px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs"
+                    >
                       {{ costLine.meta.category }}
                     </span>
                   </div>
                 </div>
                 <div class="text-right">
-                  <p class="font-semibold text-gray-900">{{ formatCurrency(costLine.total_rev) }}</p>
-                  <p class="text-sm text-gray-500">Cost: {{ formatCurrency(costLine.total_cost) }}</p>
+                  <p class="font-semibold text-gray-900">
+                    {{ formatCurrency(costLine.total_rev) }}
+                  </p>
+                  <p class="text-sm text-gray-500">
+                    Cost: {{ formatCurrency(costLine.total_cost) }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -191,15 +224,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { 
-  DollarSign, 
-  TrendingUp, 
-  Clock, 
-  Package, 
-  Settings, 
-  AlertCircle 
-} from 'lucide-vue-next'
+import { DollarSign, TrendingUp, Clock, Package, Settings, AlertCircle } from 'lucide-vue-next'
 import { useCostingStore } from '@/stores/costing'
+import type { CostLine } from '@/schemas/costing.schemas'
 
 interface Props {
   jobId: string
@@ -263,25 +290,25 @@ const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: 2
+    minimumFractionDigits: 2,
   }).format(amount)
 }
 
-const formatTimeEntry = (costLine: any): string => {
+const formatTimeEntry = (costLine: CostLine): string => {
   // Tentar usar meta.labour_minutes primeiro
   if (costLine.meta && typeof costLine.meta.labour_minutes === 'number') {
     const minutes = costLine.meta.labour_minutes
     if (minutes === 0) return '0h'
-    
+
     const hours = minutes / 60
     if (hours < 1) return `${minutes}min`
-    
+
     const wholeHours = Math.floor(hours)
     const remainingMinutes = minutes % 60
-    
+
     return remainingMinutes > 0 ? `${wholeHours}h ${remainingMinutes}min` : `${wholeHours}h`
   }
-  
+
   // Fallback para quantity como horas
   const hours = parseFloat(costLine.quantity) || 0
   return formatHours(hours)
@@ -291,10 +318,10 @@ const formatHours = (hours: number): string => {
   // Early return para casos especiais
   if (hours === 0) return '0h'
   if (hours < 1) return `${Math.round(hours * 60)}m`
-  
+
   const wholeHours = Math.floor(hours)
   const minutes = Math.round((hours - wholeHours) * 60)
-  
+
   return minutes > 0 ? `${wholeHours}h ${minutes}m` : `${wholeHours}h`
 }
 
@@ -302,7 +329,7 @@ const formatHours = (hours: number): string => {
 onMounted(() => {
   // Carregar seleção salva
   loadStoredSelection()
-  
+
   // Carregar dados iniciais
   if (props.jobId) {
     costingStore.load(props.jobId, selectedCostSetKind.value)
@@ -310,11 +337,15 @@ onMounted(() => {
 })
 
 // Watch para mudanças no jobId
-watch(() => props.jobId, (newJobId) => {
-  if (newJobId) {
-    costingStore.load(newJobId, selectedCostSetKind.value)
-  }
-}, { immediate: true })
+watch(
+  () => props.jobId,
+  (newJobId) => {
+    if (newJobId) {
+      costingStore.load(newJobId, selectedCostSetKind.value)
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <style scoped>

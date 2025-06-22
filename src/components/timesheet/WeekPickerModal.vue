@@ -3,13 +3,8 @@
     <DialogContent class="max-w-md max-h-[90vh] overflow-y-auto">
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-bold text-gray-900">
-          📅 Select Week
-        </h3>
-        <button
-          @click="closeModal"
-          class="text-gray-400 hover:text-gray-600 transition-colors"
-        >
+        <h3 class="text-lg font-bold text-gray-900">📅 Select Week</h3>
+        <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
           <X class="w-5 h-5" />
         </button>
       </div>
@@ -20,9 +15,7 @@
         <p class="font-semibold text-blue-900">
           {{ formatWeekRange(selectedWeekStart, selectedWeekEnd) }}
         </p>
-        <p class="text-xs text-blue-600">
-          Week {{ weekNumber }} of {{ year }}
-        </p>
+        <p class="text-xs text-blue-600">Week {{ weekNumber }} of {{ year }}</p>
       </div>
 
       <!-- Week Navigation -->
@@ -158,7 +151,7 @@ const selectedWeekEnd = ref<string>(getWeekEnd(selectedWeekStart.value))
 const currentMonthYear = computed(() => {
   return currentDate.value.toLocaleDateString('en-US', {
     month: 'long',
-    year: 'numeric'
+    year: 'numeric',
   })
 })
 
@@ -184,7 +177,6 @@ const calendarDays = computed((): CalendarDay[] => {
   const days: CalendarDay[] = []
   const today = new Date()
   const selectedWeekStartDate = new Date(selectedWeekStart.value)
-  const selectedWeekEndDate = new Date(selectedWeekEnd.value)
 
   for (let i = 0; i < 42; i++) {
     const date = new Date(firstMonday)
@@ -199,7 +191,7 @@ const calendarDays = computed((): CalendarDay[] => {
       isCurrentMonth: date.getMonth() === month,
       isToday: isSameDay(date, today),
       isSelected: isSameDay(date, selectedWeekStartDate),
-      isInSelectedWeek
+      isInSelectedWeek,
     })
   }
 
@@ -317,10 +309,13 @@ function closeModal() {
 }
 
 // Watch for prop changes
-watch(() => props.initialWeekStart, (newWeekStart) => {
-  if (newWeekStart) {
-    selectedWeekStart.value = newWeekStart
-    selectedWeekEnd.value = getWeekEnd(newWeekStart)
-  }
-})
+watch(
+  () => props.initialWeekStart,
+  (newWeekStart) => {
+    if (newWeekStart) {
+      selectedWeekStart.value = newWeekStart
+      selectedWeekEnd.value = getWeekEnd(newWeekStart)
+    }
+  },
+)
 </script>

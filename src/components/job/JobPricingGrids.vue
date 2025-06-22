@@ -90,14 +90,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import SimpleTotalTable from './SimpleTotalTable.vue'
 import type { JobData, CompanyDefaults } from '@/services/job-rest.service'
+
+// Tipos para seções de pricing
+interface PricingSection {
+  time: number
+  materials: number
+  adjustments: number
+  total: number
+}
 
 // Props
 interface Props {
   jobData: JobData
-  latestPricings: any
+  latestPricings: Record<string, unknown>
   companyDefaults: CompanyDefaults | null
 }
 
@@ -105,7 +113,7 @@ const props = defineProps<Props>()
 
 // Events
 const emit = defineEmits<{
-  'data-changed': [data: any]
+  'data-changed': [data: Record<string, unknown>]
 }>()
 
 // Reactive data structure seguindo princípios de clean code
@@ -113,35 +121,39 @@ const estimates = ref({
   time: 0,
   materials: 0,
   adjustments: 0,
-  total: 0
+  total: 0,
 })
 
 const quotes = ref({
   time: 0,
   materials: 0,
   adjustments: 0,
-  total: 0
+  total: 0,
 })
 
 const reality = ref({
   time: 0,
   materials: 0,
   adjustments: 0,
-  total: 0
+  total: 0,
 })
 
 // Computed totals usando early return pattern
-const calculateTotal = (section: any) => {
+const calculateTotal = (section: PricingSection) => {
   if (!section) return 0
   return (section.time || 0) + (section.materials || 0) + (section.adjustments || 0)
 }
 
 // Watch para recalcular totais automaticamente
-watch([estimates, quotes, reality], () => {
-  estimates.value.total = calculateTotal(estimates.value)
-  quotes.value.total = calculateTotal(quotes.value)
-  reality.value.total = calculateTotal(reality.value)
-}, { deep: true })
+watch(
+  [estimates, quotes, reality],
+  () => {
+    estimates.value.total = calculateTotal(estimates.value)
+    quotes.value.total = calculateTotal(quotes.value)
+    reality.value.total = calculateTotal(reality.value)
+  },
+  { deep: true },
+)
 
 // Update handlers seguindo SRP
 const updateEstimate = (field: string, value: number) => {
@@ -164,7 +176,7 @@ const emitDataChanged = () => {
   emit('data-changed', {
     estimates: estimates.value,
     quotes: quotes.value,
-    reality: reality.value
+    reality: reality.value,
   })
 }
 
@@ -178,61 +190,70 @@ const formatCurrency = (amount: number | undefined | null): string => {
 }
 
 // Initialize data from props
-watch(() => props.latestPricings, (newPricings) => {
-  if (newPricings) {
-    // Parse actual pricing data from Django format
-    try {
-      const pricingData = typeof newPricings === 'string' ? JSON.parse(newPricings) : newPricings
+watch(
+  () => props.latestPricings,
+  (newPricings) => {
+    if (newPricings) {
+      // Parse actual pricing data from Django format
+      try {
+        const pricingData = typeof newPricings === 'string' ? JSON.parse(newPricings) : newPricings
 
-      // Extract totals from different sections
-      const extractSectionTotals = (sectionData: any) => {
-        const time = calculateSectionTotal(sectionData?.time_entries || [])
-        const materials = calculateSectionTotal(sectionData?.material_entries || [])
-        const adjustments = calculateSectionTotal(sectionData?.adjustment_entries || [])
-        return { time, materials, adjustments, total: time + materials + adjustments }
-      }
+        // Extract totals from different sections
+        const extractSectionTotals = (sectionData: Record<string, unknown>): PricingSection => {
+          const time = calculateSectionTotal((sectionData?.time_entries as unknown[]) || [])
+          const materials = calculateSectionTotal(
+            (sectionData?.material_entries as unknown[]) || [],
+          )
+          const adjustments = calculateSectionTotal(
+            (sectionData?.adjustment_entries as unknown[]) || [],
+          )
+          return { time, materials, adjustments, total: time + materials + adjustments }
+        }
 
-      // Update reactive data with real pricing information
-      if (pricingData?.estimate) {
-        estimates.value = extractSectionTotals(pricingData.estimate)
+        // Update reactive data with real pricing information
+        if (pricingData?.estimate) {
+          estimates.value = extractSectionTotals(pricingData.estimate)
+        }
+        if (pricingData?.quote) {
+          quotes.value = extractSectionTotals(pricingData.quote)
+        }
+        if (pricingData?.reality) {
+          reality.value = extractSectionTotals(pricingData.reality)
+        }
+      } catch (error) {
+        console.error('Error parsing pricing data:', error)
+        // Fallback to placeholder data
+        estimates.value = { time: 100, materials: 200, adjustments: 50, total: 350 }
+        quotes.value = { time: 120, materials: 220, adjustments: 60, total: 400 }
+        reality.value = { time: 110, materials: 210, adjustments: 55, total: 375 }
       }
-      if (pricingData?.quote) {
-        quotes.value = extractSectionTotals(pricingData.quote)
-      }
-      if (pricingData?.reality) {
-        reality.value = extractSectionTotals(pricingData.reality)
-      }
-    } catch (error) {
-      console.error('Error parsing pricing data:', error)
-      // Fallback to placeholder data
-      estimates.value = { time: 100, materials: 200, adjustments: 50, total: 350 }
-      quotes.value = { time: 120, materials: 220, adjustments: 60, total: 400 }
-      reality.value = { time: 110, materials: 210, adjustments: 55, total: 375 }
     }
-  }
-}, { immediate: true })
+  },
+  { immediate: true },
+)
 
 // Helper function to calculate totals from entry arrays
-const calculateSectionTotal = (entries: any[]) => {
-  return entries.reduce((total, entry) => {
+const calculateSectionTotal = (entries: unknown[]): number => {
+  return entries.reduce((total: number, entry) => {
+    const typedEntry = entry as Record<string, unknown>
     // For time entries: calculate from hours * rate or total_minutes * rate
-    if (entry.total_minutes !== undefined) {
-      return total + (parseFloat(entry.revenue) || 0)
+    if (typedEntry.total_minutes !== undefined) {
+      return total + (parseFloat(String(typedEntry.revenue)) || 0)
     }
     // For material entries: quantity * unit_revenue
-    if (entry.quantity !== undefined && entry.unit_revenue !== undefined) {
-      return total + (entry.quantity * entry.unit_revenue)
+    if (typedEntry.quantity !== undefined && typedEntry.unit_revenue !== undefined) {
+      return total + Number(typedEntry.quantity) * Number(typedEntry.unit_revenue)
     }
     // For adjustment entries: direct price_adjustment
-    if (entry.price_adjustment !== undefined) {
-      return total + parseFloat(entry.price_adjustment || 0)
+    if (typedEntry.price_adjustment !== undefined) {
+      return total + parseFloat(String(typedEntry.price_adjustment) || '0')
     }
     // For simple entries: direct cost/retail values
-    if (entry.retail_price !== undefined) {
-      return total + parseFloat(entry.retail_price || 0)
+    if (typedEntry.retail_price !== undefined) {
+      return total + parseFloat(String(typedEntry.retail_price) || '0')
     }
-    if (entry.value_of_time !== undefined) {
-      return total + parseFloat(entry.value_of_time || 0)
+    if (typedEntry.value_of_time !== undefined) {
+      return total + parseFloat(String(typedEntry.value_of_time) || '0')
     }
     return total
   }, 0)

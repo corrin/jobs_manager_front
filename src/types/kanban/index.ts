@@ -1,7 +1,7 @@
 // Types specific to Kanban view functionality
 // Internal TypeScript types, not for validation
 
-import type { Staff, JobStatus } from '../index'
+import type { Staff } from '../index'
 
 // Job specific to Kanban view
 export interface KanbanJob {

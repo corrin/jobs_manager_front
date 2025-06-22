@@ -9,7 +9,7 @@ export const PersonSchema = z.object({
   email: z.string().optional(),
   initials: z.string().optional(),
   avatar_url: z.string().nullable().optional(),
-  icon: z.string().nullable().optional() // Keeping for backward compatibility
+  icon: z.string().nullable().optional(), // Keeping for backward compatibility
 })
 
 export const JobSchema = z.object({
@@ -28,13 +28,13 @@ export const JobSchema = z.object({
   priority: z.number().optional(),
   // New badge properties for kanban categorization
   badge_label: z.string().optional(),
-  badge_color: z.string().optional()
+  badge_color: z.string().optional(),
 })
 
 export const StatusChoiceSchema = z.object({
   key: z.string(),
   label: z.string(),
-  tooltip: z.string().optional()
+  tooltip: z.string().optional(),
 })
 
 export const AdvancedFiltersSchema = z.object({
@@ -47,7 +47,7 @@ export const AdvancedFiltersSchema = z.object({
   status: z.array(z.string()).default([]),
   created_after: z.string().default(''),
   created_before: z.string().default(''),
-  paid: z.string().default('')
+  paid: z.string().default(''),
 })
 
 // API Response schemas
@@ -55,35 +55,35 @@ export const JobsApiResponseSchema = z.object({
   success: z.boolean(),
   jobs: z.array(JobSchema),
   total: z.number(),
-  filtered_count: z.number().optional()
+  filtered_count: z.number().optional(),
 })
 
 export const AllJobsApiResponseSchema = z.object({
   success: z.boolean(),
   active_jobs: z.array(JobSchema),
   archived_jobs: z.array(JobSchema),
-  total_archived: z.number()
+  total_archived: z.number(),
 })
 
 export const StatusApiResponseSchema = z.object({
   success: z.boolean(),
   statuses: z.record(z.string()),
-  tooltips: z.record(z.string())
+  tooltips: z.record(z.string()),
 })
 
 export const UpdateJobStatusRequestSchema = z.object({
-  status: z.string()
+  status: z.string(),
 })
 
 export const ReorderJobRequestSchema = z.object({
   before_id: z.string().nullable().optional(),
   after_id: z.string().nullable().optional(),
-  status: z.string().optional()
+  status: z.string().optional(),
 })
 
 export const ApiErrorResponseSchema = z.object({
   success: z.literal(false),
-  error: z.string()
+  error: z.string(),
 })
 
 // Type inference

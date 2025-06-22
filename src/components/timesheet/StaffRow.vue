@@ -4,7 +4,9 @@
     <!-- Staff Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-2">
-        <div class="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+        <div
+          class="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center"
+        >
           <span class="text-white font-medium text-xs">
             {{ staff.staff_initials || getInitials(staff.staff_name) }}
           </span>
@@ -13,11 +15,13 @@
           {{ staff.staff_name }}
         </div>
       </div>
-      
+
       <!-- Status Icon for Mobile -->
       <div v-if="staff.status === 'No Entry'" class="relative group">
         <AlertTriangle class="h-4 w-4 text-red-500" />
-        <div class="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+        <div
+          class="absolute bottom-full right-0 mb-2 w-48 p-2 bg-gray-800 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none"
+        >
           <div v-for="alert in staff.alerts" :key="alert" class="text-xs">
             {{ alert }}
           </div>
@@ -29,7 +33,7 @@
         </Badge>
       </div>
     </div>
-    
+
     <!-- Mobile Stats -->
     <div class="grid grid-cols-3 gap-2 text-center">
       <div>
@@ -45,7 +49,7 @@
         <div class="text-sm font-medium">{{ staff.entry_count }}</div>
       </div>
     </div>
-    
+
     <!-- Progress Bar -->
     <div class="w-full bg-gray-200 rounded-full h-1">
       <div
@@ -53,7 +57,7 @@
         :style="{ width: `${Math.min(staff.completion_percentage, 100)}%` }"
       ></div>
     </div>
-    
+
     <!-- Mobile Action -->
     <div class="flex justify-center">
       <Button @click="handleViewDetails" variant="outline" size="sm" class="text-xs">
@@ -69,7 +73,9 @@
     <td class="px-2 py-1.5 whitespace-nowrap">
       <div class="flex items-center space-x-2">
         <div class="flex-shrink-0">
-          <div class="h-5 w-5 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+          <div
+            class="h-5 w-5 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center"
+          >
             <span class="text-white font-medium text-xs">
               {{ staff.staff_initials || getInitials(staff.staff_name) }}
             </span>
@@ -114,20 +120,31 @@
             <AlertTriangle class="h-4 w-4 text-red-500" />
           </div>
           <!-- Tooltip -->
-          <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-10">
+          <div
+            class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-10"
+          >
             {{ staff.alerts.join(', ') || 'No timesheet entries' }}
           </div>
         </div>
-        
+
         <!-- Para outros status: badge normal -->
-        <span v-else :class="getStatusBadgeClass(staff.status)" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium">
+        <span
+          v-else
+          :class="getStatusBadgeClass(staff.status)"
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+        >
           <component :is="getStatusIcon(staff.status)" class="h-3 w-3 mr-1" />
           {{ staff.status }}
         </span>
-        
+
         <!-- Alerts compactos para outros status -->
-        <div v-if="staff.alerts.length > 0 && staff.status !== 'No Entry'" class="flex items-center">
-          <span class="inline-flex items-center px-1 py-0.5 rounded text-xs bg-amber-100 text-amber-800">
+        <div
+          v-if="staff.alerts.length > 0 && staff.status !== 'No Entry'"
+          class="flex items-center"
+        >
+          <span
+            class="inline-flex items-center px-1 py-0.5 rounded text-xs bg-amber-100 text-amber-800"
+          >
             <AlertTriangle class="h-2.5 w-2.5 mr-0.5" />
             {{ staff.alerts.length }}
           </span>
@@ -161,19 +178,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  CheckCircle,
-  AlertCircle,
-  AlertTriangle,
-  Clock,
-  Edit,
-  Eye
-} from 'lucide-vue-next'
-import { formatHours, formatCurrency } from '@/services/daily-timesheet.service'
+import { CheckCircle, AlertCircle, AlertTriangle, Clock, Edit, Eye } from 'lucide-vue-next'
+import { formatHours } from '@/services/daily-timesheet.service'
 import type { StaffDailyData } from '@/services/daily-timesheet.service'
 
 interface Props {
@@ -193,14 +202,10 @@ const router = useRouter()
 const getInitials = (name: string): string => {
   return name
     .split(' ')
-    .map(n => n[0])
+    .map((n) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2)
-}
-
-const formatPercentage = (value: number): string => {
-  return `${value.toFixed(1)}%`
 }
 
 const getStatusBadgeClass = (status: string): string => {
@@ -235,25 +240,12 @@ const getStatusIcon = (status: string) => {
   return Clock
 }
 
-const getAlertClass = (alert: string): string => {
-  const alertLower = alert.toLowerCase()
-
-  if (alertLower.includes('missing') || alertLower.includes('no timesheet')) {
-    return 'bg-red-100 text-red-800'
-  }
-  if (alertLower.includes('low') || alertLower.includes('overtime')) {
-    return 'bg-amber-100 text-amber-800'
-  }
-
-  return 'bg-blue-100 text-blue-800'
-}
-
 const getStatusClass = (statusClass: string): string => {
   const classes = {
-    'success': 'bg-green-100 text-green-800',
-    'warning': 'bg-yellow-100 text-yellow-800',
-    'danger': 'bg-red-100 text-red-800',
-    'secondary': 'bg-gray-100 text-gray-800'
+    success: 'bg-green-100 text-green-800',
+    warning: 'bg-yellow-100 text-yellow-800',
+    danger: 'bg-red-100 text-red-800',
+    secondary: 'bg-gray-100 text-gray-800',
   }
   return classes[statusClass as keyof typeof classes] || 'bg-gray-100 text-gray-800'
 }
@@ -268,8 +260,8 @@ const openTimesheet = (): void => {
     name: 'timesheet-entry',
     query: {
       date: props.date,
-      staffId: props.staff.staff_id
-    }
+      staffId: props.staff.staff_id,
+    },
   })
 }
 

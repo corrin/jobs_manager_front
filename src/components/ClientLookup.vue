@@ -4,7 +4,7 @@
       {{ label }}
       <span v-if="required" class="text-red-500">*</span>
     </label>
-    
+
     <div class="flex space-x-2">
       <!-- Client Search Input -->
       <div class="flex-1 relative">
@@ -20,12 +20,12 @@
           @blur="handleBlur"
           autocomplete="off"
         />
-        
+
         <!-- Loading indicator -->
         <div v-if="isLoading" class="absolute right-3 top-1/2 transform -translate-y-1/2">
           <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
-        
+
         <!-- Suggestions dropdown -->
         <div
           v-if="showSuggestions && (suggestions.length > 0 || searchQuery.length >= 3)"
@@ -41,7 +41,7 @@
             <div class="font-medium text-gray-900">{{ client.name }}</div>
             <div v-if="client.email" class="text-sm text-gray-500">{{ client.email }}</div>
           </div>
-          
+
           <!-- Add new client option -->
           <div
             v-if="searchQuery.length >= 3"
@@ -53,7 +53,7 @@
               Add new client "{{ searchQuery }}"
             </div>
           </div>
-          
+
           <!-- No results -->
           <div
             v-if="suggestions.length === 0 && searchQuery.length >= 3 && !isLoading"
@@ -63,32 +63,31 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Xero ID Status Indicator -->
       <div class="flex items-end">
         <div
           v-if="selectedClient"
           :class="[
             'px-3 py-2 rounded-md text-xs font-medium flex items-center space-x-1',
-            hasValidXeroId 
-              ? 'bg-green-100 text-green-800 border border-green-200' 
-              : 'bg-red-100 text-red-800 border border-red-200'
+            hasValidXeroId
+              ? 'bg-green-100 text-green-800 border border-green-200'
+              : 'bg-red-100 text-red-800 border border-red-200',
           ]"
           :title="hasValidXeroId ? 'Client has Xero ID' : 'Client missing Xero ID'"
         >
-          <component 
-            :is="hasValidXeroId ? CheckCircle : XCircle" 
-            class="w-3 h-3"
-          />
+          <component :is="hasValidXeroId ? CheckCircle : XCircle" class="w-3 h-3" />
           <span>Xero</span>
         </div>
       </div>
     </div>
-    
+
     <!-- Selected client info -->
     <div v-if="selectedClient" class="mt-2 p-2 bg-blue-50 rounded border">
       <div class="text-sm font-medium text-blue-900">{{ selectedClient.name }}</div>
-      <div v-if="selectedClient.email" class="text-xs text-blue-700">{{ selectedClient.email }}</div>
+      <div v-if="selectedClient.email" class="text-xs text-blue-700">
+        {{ selectedClient.email }}
+      </div>
     </div>
 
     <!-- Create Client Modal -->
@@ -120,7 +119,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Search for a client...',
   required: false,
-  modelValue: ''
+  modelValue: '',
 })
 
 // Events
@@ -140,8 +139,7 @@ const {
   hasValidXeroId,
   handleInputChange,
   selectClient: selectClientFromComposable,
-  createNewClient,
-  hideSuggestions
+  hideSuggestions,
 } = useClientLookup()
 
 // Modal state
@@ -159,7 +157,7 @@ if (props.modelValue) {
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   const value = target.value
-  
+
   handleInputChange(value)
   emit('update:modelValue', value)
 }
@@ -169,7 +167,7 @@ const handleFocus = () => {
   if (blurTimeout.value) {
     clearTimeout(blurTimeout.value)
   }
-  
+
   if (searchQuery.value.length >= 3) {
     showSuggestions.value = true
   }
@@ -185,7 +183,7 @@ const handleBlur = () => {
 // Select client wrapper
 const selectClient = (client: Client) => {
   selectClientFromComposable(client)
-  
+
   // Emit events
   emit('update:modelValue', client.name)
   emit('update:selectedClient', client)
@@ -205,11 +203,14 @@ const handleClientCreated = (client: Client) => {
 }
 
 // Watch for external modelValue changes
-watch(() => props.modelValue, (newValue) => {
-  if (newValue !== searchQuery.value) {
-    searchQuery.value = newValue
-  }
-})
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    if (newValue !== searchQuery.value) {
+      searchQuery.value = newValue
+    }
+  },
+)
 
 // Watch for selected client changes to emit events
 watch(selectedClient, (newClient) => {

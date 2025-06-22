@@ -3,9 +3,7 @@
     <DialogContent class="sm:max-w-4xl">
       <DialogHeader>
         <DialogTitle>Advanced Search</DialogTitle>
-        <DialogDescription>
-          Search jobs using detailed filters
-        </DialogDescription>
+        <DialogDescription> Search jobs using detailed filters </DialogDescription>
       </DialogHeader>
 
       <div class="space-y-4">
@@ -13,39 +11,35 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
-            <input 
-              v-model="localFilters.job_number" 
+            <input
+              v-model="localFilters.job_number"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              placeholder="Enter job number" 
+              placeholder="Enter job number"
             />
           </div>
-          
+
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Job Name</label>
-            <input 
-              v-model="localFilters.name" 
+            <input
+              v-model="localFilters.name"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              placeholder="Enter job name" 
+              placeholder="Enter job name"
             />
           </div>
-          
+
           <div>
-            <ClientDropdown 
-              id="client" 
-              label="Client" 
-              v-model="localFilters.client_name" 
-            />
+            <ClientDropdown id="client" label="Client" v-model="localFilters.client_name" />
           </div>
-          
+
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
-            <input 
-              v-model="localFilters.contact_person" 
+            <input
+              v-model="localFilters.contact_person"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              placeholder="Contact person" 
+              placeholder="Contact person"
             />
           </div>
         </div>
@@ -54,31 +48,24 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <input 
-              v-model="localFilters.description" 
+            <input
+              v-model="localFilters.description"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              placeholder="Job description" 
+              placeholder="Job description"
             />
           </div>
-            <div>
-            <StatusMultiSelect 
-              v-model="localFilters.status" 
-              label="Status" 
-            />
-          </div>
-          
           <div>
-            <StaffDropdown 
-              id="createdBy" 
-              label="Created By" 
-              v-model="localFilters.created_by" 
-            />
+            <StatusMultiSelect v-model="localFilters.status" label="Status" />
           </div>
-          
+
+          <div>
+            <StaffDropdown id="createdBy" label="Created By" v-model="localFilters.created_by" />
+          </div>
+
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
-            <select 
+            <select
               v-model="localFilters.paid"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             >
@@ -93,34 +80,34 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Created After</label>
-            <input 
-              v-model="localFilters.created_after" 
+            <input
+              v-model="localFilters.created_after"
               type="date"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" 
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             />
           </div>
-          
+
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Created Before</label>
-            <input 
-              v-model="localFilters.created_before" 
+            <input
+              v-model="localFilters.created_before"
               type="date"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" 
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             />
           </div>
         </div>
       </div>
 
       <DialogFooter>
-        <button 
+        <button
           type="button"
           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           @click="clearFilters"
         >
           Clear All
         </button>
-        
-        <button 
+
+        <button
           type="button"
           class="ml-3 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="handleSearch"
@@ -169,7 +156,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isLoading: false
+  isLoading: false,
 })
 
 // Events
@@ -183,9 +170,13 @@ const emit = defineEmits<{
 const localFilters = ref<AdvancedFilters>({ ...props.filters })
 
 // Watch filters prop to update local state
-watch(() => props.filters, (newFilters) => {
-  localFilters.value = { ...newFilters }
-}, { deep: true })
+watch(
+  () => props.filters,
+  (newFilters) => {
+    localFilters.value = { ...newFilters }
+  },
+  { deep: true },
+)
 
 // Methods seguindo clean code principles
 const handleSearch = () => {
@@ -204,9 +195,9 @@ const clearFilters = () => {
     status: [],
     created_after: '',
     created_before: '',
-    paid: ''
+    paid: '',
   }
-  
+
   emit('clear-filters')
 }
 </script>

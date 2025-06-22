@@ -6,9 +6,7 @@
           <BarChart3 class="h-5 w-5 text-blue-600" />
           <span>Daily Metrics Overview</span>
         </DialogTitle>
-        <DialogDescription>
-          Detailed performance metrics for the selected date
-        </DialogDescription>
+        <DialogDescription> Detailed performance metrics for the selected date </DialogDescription>
       </DialogHeader>
 
       <!-- Summary Cards Grid -->
@@ -32,14 +30,6 @@
         />
 
         <SummaryCard
-          title="Revenue"
-          :value="formatCurrency(summary.daily_totals.total_revenue)"
-          :subtitle="`${summary.daily_totals.total_entries} entries`"
-          icon="DollarSign"
-          color="emerald"
-        />
-
-        <SummaryCard
           title="Staff Completion"
           :value="`${summary.summary_stats.complete_staff}/${summary.summary_stats.total_staff}`"
           :subtitle="`${formatPercentage(summary.summary_stats.completion_rate)} complete`"
@@ -60,19 +50,30 @@
           <div class="space-y-2">
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Scheduled Hours:</span>
-              <span class="font-medium">{{ formatHours(summary.daily_totals.total_scheduled_hours) }}</span>
+              <span class="font-medium">{{
+                formatHours(summary.daily_totals.total_scheduled_hours)
+              }}</span>
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Actual Hours:</span>
-              <span class="font-medium">{{ formatHours(summary.daily_totals.total_actual_hours) }}</span>
+              <span class="font-medium">{{
+                formatHours(summary.daily_totals.total_actual_hours)
+              }}</span>
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Billable Hours:</span>
-              <span class="font-medium">{{ formatHours(summary.daily_totals.total_billable_hours) }}</span>
+              <span class="font-medium">{{
+                formatHours(summary.daily_totals.total_billable_hours)
+              }}</span>
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Non-billable Hours:</span>
-              <span class="font-medium">{{ formatHours(summary.daily_totals.total_actual_hours - summary.daily_totals.total_billable_hours) }}</span>
+              <span class="font-medium">{{
+                formatHours(
+                  summary.daily_totals.total_actual_hours -
+                    summary.daily_totals.total_billable_hours,
+                )
+              }}</span>
             </div>
           </div>
         </div>
@@ -94,11 +95,15 @@
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Incomplete Timesheets:</span>
-              <span class="font-medium">{{ summary.summary_stats.total_staff - summary.summary_stats.complete_staff }}</span>
+              <span class="font-medium">{{
+                summary.summary_stats.total_staff - summary.summary_stats.complete_staff
+              }}</span>
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-gray-600">Completion Rate:</span>
-              <span class="font-medium">{{ formatPercentage(summary.summary_stats.completion_rate) }}</span>
+              <span class="font-medium">{{
+                formatPercentage(summary.summary_stats.completion_rate)
+              }}</span>
             </div>
           </div>
         </div>
@@ -106,9 +111,7 @@
 
       <!-- Footer Actions -->
       <div class="flex justify-end mt-6 pt-4 border-t">
-        <Button @click="handleClose" variant="outline">
-          Close
-        </Button>
+        <Button @click="handleClose" variant="outline"> Close </Button>
       </div>
     </DialogContent>
   </Dialog>
@@ -120,27 +123,20 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import {
-  BarChart3,
-  Clock,
-  TrendingUp,
-  DollarSign,
-  Users
-} from 'lucide-vue-next'
+import { BarChart3, Clock, Users } from 'lucide-vue-next'
 
 import SummaryCard from '@/components/timesheet/SummaryCard.vue'
-import { formatHours, formatCurrency, type DailyTimesheetSummary } from '@/services/daily-timesheet.service'
+import { type DailyTimesheetSummary } from '@/services/daily-timesheet.service'
 
-// Props
-interface Props {
+defineProps<{
   open: boolean
   summary: DailyTimesheetSummary
-}
-
-const props = defineProps<Props>()
+  formatPercentage: (value: number) => string
+  formatHours: (value: number) => string
+}>()
 
 // Emits
 const emit = defineEmits<{
@@ -150,9 +146,5 @@ const emit = defineEmits<{
 // Methods
 const handleClose = () => {
   emit('close')
-}
-
-const formatPercentage = (value: number): string => {
-  return `${value.toFixed(1)}%`
 }
 </script>

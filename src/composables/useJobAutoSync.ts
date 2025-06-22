@@ -11,13 +11,9 @@ export function useJobAutoSync(
     interval?: number // em ms, default 30 segundos
     enabled?: boolean
     onError?: (error: Error) => void
-  } = {}
+  } = {},
 ) {
-  const {
-    interval = 30000,
-    enabled = true,
-    onError
-  } = options
+  const { interval = 30000, enabled = true, onError } = options
 
   const isAutoSyncEnabled = ref(enabled)
   const lastSyncTime = ref<Date | null>(null)
@@ -116,6 +112,6 @@ export function useJobAutoSync(
     disableAutoSync,
     toggleAutoSync,
     manualSync,
-    performSync
+    performSync,
   }
 }

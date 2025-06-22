@@ -66,14 +66,12 @@ export interface DailyTimesheetSummary {
 
 /**
  * Get daily timesheet summary for all staff
- * 
+ *
  * Uses the consolidated timesheet API endpoint
  */
 export const getDailyTimesheetSummary = async (date?: string): Promise<DailyTimesheetSummary> => {
-  const url = date 
-    ? `/timesheets/api/daily/${date}/`
-    : '/timesheets/api/daily/'
-  
+  const url = date ? `/timesheets/api/daily/${date}/` : '/timesheets/api/daily/'
+
   const response = await api.get(url)
   return response.data
 }
@@ -82,7 +80,10 @@ export const getDailyTimesheetSummary = async (date?: string): Promise<DailyTime
  * Get detailed timesheet data for a specific staff member
  * Note: This endpoint might not be available yet in the backend
  */
-export const getStaffDailyDetail = async (staffId: string, date?: string): Promise<StaffDailyData> => {
+export const getStaffDailyDetail = async (
+  staffId: string,
+  date?: string,
+): Promise<StaffDailyData> => {
   // Based on the URL patterns in timesheet/urls.py, this would be the correct path
   const url = `/timesheets/api/staff/${staffId}/daily/`
   const params = date ? { date } : {}
@@ -110,10 +111,10 @@ export const formatCurrency = (amount: number): string => {
  */
 export const getStatusVariant = (statusClass: string): string => {
   const variants: Record<string, string> = {
-    'success': 'success',
-    'warning': 'warning',
-    'danger': 'destructive',
-    'secondary': 'secondary'
+    success: 'success',
+    warning: 'warning',
+    danger: 'destructive',
+    secondary: 'secondary',
   }
   return variants[statusClass] || 'secondary'
 }
@@ -123,5 +124,5 @@ export default {
   getStaffDailyDetail,
   formatHours,
   formatCurrency,
-  getStatusVariant
+  getStatusVariant,
 }

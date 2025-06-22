@@ -27,59 +27,65 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   const error = ref<string | null>(null)
 
   // Computed - refactored getters based on CostLine[]
-  const currentStaff = computed(() =>
-    staff.value.find(s => s.id === selectedStaffId.value) || null
+  const currentStaff = computed(
+    () => staff.value.find((s) => s.id === selectedStaffId.value) || null,
   )
 
   // New getters for CostLine management
   const byDate = computed(() => {
     if (!lines.value.length) return {}
 
-    return lines.value.reduce((groups, line) => {
-      // Extract date from metadata or use current selected date
-      const dateKey = line.meta?.date || selectedDate.value
+    return lines.value.reduce(
+      (groups, line) => {
+        // Extract date from metadata or use current selected date
+        const dateKey = line.meta?.date || selectedDate.value
 
-      if (!groups[dateKey]) {
-        groups[dateKey] = []
-      }
+        if (!groups[dateKey]) {
+          groups[dateKey] = []
+        }
 
-      groups[dateKey].push(line)
-      return groups
-    }, {} as Record<string, CostLine[]>)
+        groups[dateKey].push(line)
+        return groups
+      },
+      {} as Record<string, CostLine[]>,
+    )
   })
 
   const dailyTotals = computed(() => {
     if (!lines.value.length) return {}
 
-    return Object.entries(byDate.value).reduce((totals, [date, dayLines]) => {
-      totals[date] = {
-        hours: dayLines.reduce((sum, line) => {
-          // For time entries, quantity represents hours
-          return line.kind === 'time' ? sum + parseFloat(line.quantity) : sum
-        }, 0),
-        cost: dayLines.reduce((sum, line) => sum + line.total_cost, 0),
-        revenue: dayLines.reduce((sum, line) => sum + line.total_rev, 0)
-      }
-      return totals
-    }, {} as Record<string, { hours: number; cost: number; revenue: number }>)
+    return Object.entries(byDate.value).reduce(
+      (totals, [date, dayLines]) => {
+        totals[date] = {
+          hours: dayLines.reduce((sum, line) => {
+            // For time entries, quantity represents hours
+            return line.kind === 'time' ? sum + parseFloat(line.quantity) : sum
+          }, 0),
+          cost: dayLines.reduce((sum, line) => sum + line.total_cost, 0),
+          revenue: dayLines.reduce((sum, line) => sum + line.total_rev, 0),
+        }
+        return totals
+      },
+      {} as Record<string, { hours: number; cost: number; revenue: number }>,
+    )
   })
 
   // Legacy computed properties preserved for backward compatibility
   const entriesForSelectedDate = computed(() =>
-    timeEntries.value.filter((entry: TimeEntry) =>
-      entry.timesheetDate === selectedDate.value &&
-      entry.staffId === selectedStaffId.value
-    )
+    timeEntries.value.filter(
+      (entry: TimeEntry) =>
+        entry.timesheetDate === selectedDate.value && entry.staffId === selectedStaffId.value,
+    ),
   )
 
   const totalHoursForDate = computed(() =>
-    entriesForSelectedDate.value.reduce((sum: number, entry: TimeEntry) => sum + entry.hours, 0)
+    entriesForSelectedDate.value.reduce((sum: number, entry: TimeEntry) => sum + entry.hours, 0),
   )
 
   const billableHoursForDate = computed(() =>
     entriesForSelectedDate.value
       .filter((entry: TimeEntry) => entry.isBillable)
-      .reduce((sum: number, entry: TimeEntry) => sum + entry.hours, 0)
+      .reduce((sum: number, entry: TimeEntry) => sum + entry.hours, 0),
   )
 
   // Actions - new CostLine management actions
@@ -158,7 +164,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       const updatedLine = await costlineService.updateCostLine(id, payload)
 
       // Reactive update - find and replace the line
-      const lineIndex = lines.value.findIndex(line => line.id === id)
+      const lineIndex = lines.value.findIndex((line) => line.id === id)
 
       if (lineIndex === -1) {
         throw new Error(`Cost line with ID ${id} not found in current state`)
@@ -190,7 +196,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       await costlineService.deleteCostLine(id)
 
       // Reactive update - filter out the deleted line
-      lines.value = lines.value.filter(line => line.id !== id)
+      lines.value = lines.value.filter((line) => line.id !== id)
 
       console.log('Cost line deleted successfully:', id)
     } catch (err) {
@@ -208,11 +214,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
    * Initialize the store with basic data
    */
   async function initialize() {
-    await Promise.all([
-      loadStaff(),
-      loadJobs(),
-      loadCompanyDefaults()
-    ])
+    await Promise.all([loadStaff(), loadJobs(), loadCompanyDefaults()])
 
     // Set first staff member as default if none selected
     if (staff.value.length > 0 && !selectedStaffId.value) {
@@ -277,7 +279,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       timeEntries.value = await TimesheetService.getTimeEntries(
         selectedStaffId.value,
-        selectedDate.value
+        selectedDate.value,
       )
     } catch (err) {
       error.value = 'Failed to load time entries'
@@ -303,7 +305,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       console.log('✅ Weekly overview loaded successfully:', {
         staffCount: currentWeekData.value?.staffData?.length || 0,
         startDate: currentWeekData.value?.startDate,
-        endDate: currentWeekData.value?.endDate
+        endDate: currentWeekData.value?.endDate,
       })
     } catch (err) {
       error.value = 'Failed to load weekly overview'
@@ -351,7 +353,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
         minsPerItem: entryData.minsPerItem || 0,
         wageRate: entryData.wageRate || 0,
         chargeOutRate: entryData.chargeOutRate || 0,
-        rateMultiplier: entryData.rateMultiplier || 1.0
+        rateMultiplier: entryData.rateMultiplier || 1.0,
       })
 
       console.log('✅ Time entry created in backend:', newEntry)
@@ -379,18 +381,21 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   /**
    * Update an existing time entry
    */
-  async function updateTimeEntry(entryId: string, updates: {
-    description?: string
-    hours?: number
-    isBillable?: boolean
-    notes?: string
-    items?: number
-    minsPerItem?: number
-    wageRate?: number
-    chargeOutRate?: number
-    rateMultiplier?: number
-    jobPricingId?: string
-  }) {
+  async function updateTimeEntry(
+    entryId: string,
+    updates: {
+      description?: string
+      hours?: number
+      isBillable?: boolean
+      notes?: string
+      items?: number
+      minsPerItem?: number
+      wageRate?: number
+      chargeOutRate?: number
+      rateMultiplier?: number
+      jobPricingId?: string
+    },
+  ) {
     loading.value = true
     error.value = null
 
@@ -457,11 +462,14 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   /**
    * Auto-save time entry changes
    */
-  async function autosaveTimeEntry(entryId: string, updates: {
-    description?: string
-    hours?: number
-    notes?: string
-  }) {
+  async function autosaveTimeEntry(
+    entryId: string,
+    updates: {
+      description?: string
+      hours?: number
+      notes?: string
+    },
+  ) {
     try {
       await TimesheetService.autosaveTimeEntry(entryId, updates)
     } catch (err) {
@@ -529,7 +537,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
    */
   function addAttachedJob(job: Job) {
     // Check if job is already attached
-    const existingIndex = attachedJobs.value.findIndex(j => j.id === job.id)
+    const existingIndex = attachedJobs.value.findIndex((j) => j.id === job.id)
     if (existingIndex === -1) {
       attachedJobs.value.push(job)
       console.log('Job attached to timesheet:', job.name)
@@ -542,7 +550,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
    * Remove a job from the attached jobs list
    */
   function removeAttachedJob(jobId: string) {
-    const index = attachedJobs.value.findIndex(j => j.id === jobId)
+    const index = attachedJobs.value.findIndex((j) => j.id === jobId)
     if (index !== -1) {
       const removedJob = attachedJobs.value[index]
       attachedJobs.value.splice(index, 1)
@@ -604,6 +612,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     formatDate,
     formatHours,
     addAttachedJob,
-    removeAttachedJob
+    removeAttachedJob,
   }
 })

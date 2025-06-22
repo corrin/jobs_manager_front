@@ -1,11 +1,17 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
 /* Font configuration */
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   font-feature-settings: 'cv11', 'ss01';
   font-variation-settings: 'opsz' 32;
   overflow-y: hidden;
@@ -14,7 +20,6 @@ body {
 /* Custom styles can be added here if needed */
 
 @theme inline {
-
   --color-background: var(--background);
 
   --color-foreground: var(--foreground);
@@ -89,7 +94,6 @@ body {
 }
 
 :root {
-
   --background: oklch(1 0 0);
 
   --foreground: oklch(0.129 0.042 264.695);
@@ -158,7 +162,6 @@ body {
 }
 
 .dark {
-
   --background: oklch(0.129 0.042 264.695);
 
   --foreground: oklch(0.984 0.003 247.858);
@@ -255,7 +258,9 @@ body {
   cursor: grabbing !important;
   z-index: 1001;
   position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 /* Universal Drag and Drop Styles - Works on all devices */
@@ -271,12 +276,24 @@ body {
   @apply shadow-xl transform rotate-2 z-50;
 }
 
+.sortable-fallback {
+  @apply shadow-xl transform rotate-2 z-50 bg-white border-2 border-blue-400;
+}
+
 .is-dragging {
   cursor: grabbing !important;
 }
 
 .is-dragging * {
   cursor: grabbing !important;
+}
+
+/* Disable pointer events during drag to avoid conflicts */
+.sortable-chosen *,
+.sortable-drag *,
+.sortable-ghost *,
+.sortable-fallback * {
+  pointer-events: none !important;
 }
 
 /* Kanban Column Styles - Wider columns for two jobs side by side */
@@ -295,8 +312,8 @@ body {
 
 /* Individual Job Card Styles */
 .job-card {
-  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-all duration-200 cursor-grab;
-  min-height: 120px;
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-all duration-200 cursor-grab flex flex-col;
+  min-height: 144px; /* Increased from 120px to 144px (h-36) */
 }
 
 .job-card:hover {
@@ -333,11 +350,11 @@ body {
   .kanban-column {
     @apply min-w-[350px] max-w-[350px];
   }
-  
+
   .jobs-grid {
     @apply grid-cols-1 gap-2;
   }
-  
+
   .job-card {
     @apply p-2;
     min-height: 100px;
@@ -348,7 +365,7 @@ body {
   .kanban-column {
     @apply min-w-[320px] max-w-[320px];
   }
-  
+
   .job-card {
     @apply text-xs;
     min-height: 90px;
@@ -389,7 +406,9 @@ body {
   background: white !important;
   border: 1px solid #e5e7eb !important;
   border-radius: 12px !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
   color: #1f2937 !important;
   min-height: 64px !important;
   padding: 16px 20px !important;
@@ -408,7 +427,9 @@ body {
 
 [data-sonner-toast]:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15), 0 15px 15px -5px rgba(0, 0, 0, 0.08) !important;
+  box-shadow:
+    0 25px 30px -5px rgba(0, 0, 0, 0.15),
+    0 15px 15px -5px rgba(0, 0, 0, 0.08) !important;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -425,45 +446,61 @@ body {
   animation: progress-bar 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards !important;
 }
 
-[data-sonner-toast][data-type="success"]::before {
+[data-sonner-toast][data-type='success']::before {
   background: linear-gradient(90deg, #10b981, #059669) !important;
 }
 
-[data-sonner-toast][data-type="error"]::before {
+[data-sonner-toast][data-type='error']::before {
   background: linear-gradient(90deg, #ef4444, #dc2626) !important;
 }
 
-[data-sonner-toast][data-type="loading"]::before {
+[data-sonner-toast][data-type='loading']::before {
   background: linear-gradient(90deg, #3b82f6, #2563eb) !important;
   animation: loading-bar 2s linear infinite !important;
 }
 
-[data-sonner-toast][data-type="info"]::before {
+[data-sonner-toast][data-type='info']::before {
   background: linear-gradient(90deg, #6366f1, #4f46e5) !important;
 }
 
-[data-sonner-toast][data-type="success"] {
+[data-sonner-toast][data-type='success'] {
   border-left: 4px solid #10b981 !important;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.05) 0%,
+    rgba(255, 255, 255, 0.95) 100%
+  ) !important;
 }
 
-[data-sonner-toast][data-type="error"] {
+[data-sonner-toast][data-type='error'] {
   border-left: 4px solid #ef4444 !important;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.05) 0%,
+    rgba(255, 255, 255, 0.95) 100%
+  ) !important;
 }
 
-[data-sonner-toast][data-type="loading"] {
+[data-sonner-toast][data-type='loading'] {
   border-left: 4px solid #3b82f6 !important;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.05) 0%,
+    rgba(255, 255, 255, 0.95) 100%
+  ) !important;
 }
 
-[data-sonner-toast][data-type="info"] {
+[data-sonner-toast][data-type='info'] {
   border-left: 4px solid #6366f1 !important;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(255, 255, 255, 0.95) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.05) 0%,
+    rgba(255, 255, 255, 0.95) 100%
+  ) !important;
 }
 
 /* Animação de saída */
-[data-sonner-toast][data-dismissed="true"] {
+[data-sonner-toast][data-dismissed='true'] {
   animation: sonner-slide-out 0.4s cubic-bezier(0.4, 0, 1, 1) forwards !important;
 }
 

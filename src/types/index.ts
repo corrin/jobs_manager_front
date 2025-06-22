@@ -49,9 +49,10 @@ export interface Job extends BaseEntity {
   job_number: number
   client_name: string
   contact_person?: string | null
-  people: Staff[]
-  status: string
-  status_key: string
+  // Os campos abaixo são opcionais para compatibilidade com objetos parciais
+  people?: Staff[]
+  status?: string
+  status_key?: string
   paid: boolean
   created_by_id?: string | null
   priority?: number
@@ -86,15 +87,42 @@ export interface AdvancedFilters {
   paid: string
 }
 
+// Quote types
+export interface QuoteApplyResult {
+  success: boolean
+  message: string
+  job_data?: Record<string, unknown>
+}
+
+export interface QuoteRefreshResult {
+  shouldReloadJob?: boolean
+}
+
+// Union type para resultados de operações de quote
+export type QuoteOperationResult = (QuoteSheet & QuoteRefreshResult) | QuoteApplyResult
+
 // API response wrapper types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
 }
 
-export interface PaginatedResponse<T = any> extends ApiResponse<T> {
+export interface PaginatedResponse<T = unknown> extends ApiResponse<T> {
   total?: number
   page?: number
   per_page?: number
+}
+
+// Exemplo de tipos adicionais com campos 'data' e 'payload' tipados como Record<string, unknown>
+export interface SomeType {
+  // ...existing code...
+  data: Record<string, unknown>
+  // ...existing code...
+}
+
+export interface AnotherType {
+  // ...existing code...
+  payload: Record<string, unknown>
+  // ...existing code...
 }

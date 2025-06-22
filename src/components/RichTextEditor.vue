@@ -4,15 +4,13 @@
       {{ label }}
       <span v-if="required" class="text-red-500">*</span>
     </label>
-    
-    <div class="border border-gray-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
-      <div
-        :id="id"
-        ref="editorContainer"
-        class="min-h-[120px]"
-      ></div>
+
+    <div
+      class="border border-gray-300 rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent"
+    >
+      <div :id="id" ref="editorContainer" class="min-h-[120px]"></div>
     </div>
-    
+
     <p v-if="helpText" class="mt-1 text-sm text-gray-500">{{ helpText }}</p>
   </div>
 </template>
@@ -20,6 +18,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type Quill from 'quill'
+import type { RangeStatic } from 'quill'
 
 // Props seguindo clean code principles
 interface Props {
@@ -39,14 +38,14 @@ const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Enter text...',
   required: false,
   readonly: false,
-  height: '120px'
+  height: '120px',
 })
 
 // Events
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  'focus': []
-  'blur': []
+  focus: []
+  blur: []
 }>()
 
 // Local state
@@ -69,9 +68,9 @@ const initializeEditor = async () => {
     // Quill configuration seguindo princípios de clean code
     const toolbarOptions = [
       ['bold', 'italic', 'underline'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ list: 'ordered' }, { list: 'bullet' }],
       ['link'],
-      ['clean']
+      ['clean'],
     ]
 
     const options = {
@@ -79,8 +78,8 @@ const initializeEditor = async () => {
       placeholder: props.placeholder,
       readOnly: props.readonly,
       modules: {
-        toolbar: toolbarOptions
-      }
+        toolbar: toolbarOptions,
+      },
     }
 
     // Initialize Quill instance
@@ -93,7 +92,6 @@ const initializeEditor = async () => {
 
     // Set up event handlers seguindo SRP
     setupEventHandlers()
-
   } catch (error) {
     console.error('Failed to initialize Quill editor:', error)
   }
@@ -115,7 +113,7 @@ const setupEventHandlers = () => {
   })
 
   // Handle focus events
-  quill.on('selection-change', (range: any) => {
+  quill.on('selection-change', (range: RangeStatic | null) => {
     if (range) {
       emit('focus')
     } else {
@@ -131,16 +129,16 @@ const updateContent = (newContent: string | undefined) => {
 
   const safeContent = newContent || ''
   const currentContent = quill.root.innerHTML
-  
+
   // Guard clause se conteúdo é o mesmo
   if (currentContent === safeContent) return
 
   isUpdatingFromProp = true
-    // Preserve cursor position se possível
+  // Preserve cursor position se possível
   const selection = quill.getSelection()
-  
+
   quill.root.innerHTML = safeContent
-    // Restore selection se existia
+  // Restore selection se existia
   if (selection) {
     nextTick(() => {
       // Guard clause adicional para verificar se quill ainda existe
@@ -148,7 +146,7 @@ const updateContent = (newContent: string | undefined) => {
       quill.setSelection(selection)
     })
   }
-  
+
   isUpdatingFromProp = false
 }
 
@@ -191,20 +189,26 @@ onUnmounted(() => {
 })
 
 // Watch for prop changes
-watch(() => props.modelValue, (newValue) => {
-  updateContent(newValue)
-})
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    updateContent(newValue)
+  },
+)
 
-watch(() => props.readonly, (newReadonly) => {
-  setReadonly(newReadonly)
-})
+watch(
+  () => props.readonly,
+  (newReadonly) => {
+    setReadonly(newReadonly)
+  },
+)
 
 // Expose methods para parent component
 defineExpose({
   focus,
   getTextContent,
   clear,
-  quill: () => quill
+  quill: () => quill,
 })
 </script>
 

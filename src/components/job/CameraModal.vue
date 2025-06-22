@@ -14,25 +14,37 @@
             playsinline
             :style="{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }"
           />
-          
-          <div 
-            v-if="error" 
+
+          <div
+            v-if="error"
             class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 text-white text-center p-4"
           >
             <div>
-              <svg class="w-12 h-12 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              <svg
+                class="w-12 h-12 mx-auto mb-4 text-red-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
               </svg>
               <p class="text-sm">{{ error }}</p>
             </div>
           </div>
 
-          <div 
-            v-if="isInitializing" 
+          <div
+            v-if="isInitializing"
             class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75"
           >
             <div class="text-white text-center">
-              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+              <div
+                class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"
+              ></div>
               <p class="text-sm">Starting camera...</p>
             </div>
           </div>
@@ -46,7 +58,12 @@
             class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
           >
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+              ></path>
             </svg>
             Switch Camera
           </button>
@@ -68,8 +85,18 @@
           class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2-2V9z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2-2V9z"
+            ></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+            ></path>
           </svg>
           Capture Photo
         </button>
@@ -100,28 +127,24 @@ const emit = defineEmits<{
   'photo-captured': [file: File]
 }>()
 
-const { 
-  isActive,
-  error,
-  startCamera,
-  stopCamera,
-  capturePhoto,
-  compressImage
-} = useCamera()
+const { isActive, error, startCamera, stopCamera, capturePhoto, compressImage } = useCamera()
 
 const videoElement = ref<HTMLVideoElement>()
 const isInitializing = ref(false)
 const facingMode = ref<'user' | 'environment'>('environment')
 const hasMultipleCameras = ref(false)
 
-watch(() => props.isOpen, async (open) => {
-  if (!open) {
-    stopCamera()
-    return
-  }
+watch(
+  () => props.isOpen,
+  async (open) => {
+    if (!open) {
+      stopCamera()
+      return
+    }
 
-  await initializeCamera()
-})
+    await initializeCamera()
+  },
+)
 
 const initializeCamera = async () => {
   if (!videoElement.value) {
@@ -137,7 +160,7 @@ const initializeCamera = async () => {
 
   try {
     const devices = await navigator.mediaDevices.enumerateDevices()
-    const videoDevices = devices.filter(device => device.kind === 'videoinput')
+    const videoDevices = devices.filter((device) => device.kind === 'videoinput')
     hasMultipleCameras.value = videoDevices.length > 1
 
     const stream = await startCamera()
@@ -165,7 +188,7 @@ const handleCapture = async () => {
   try {
     const photo = await capturePhoto(videoElement.value)
     const compressedPhoto = await compressImage(photo)
-    
+
     emit('photo-captured', compressedPhoto)
     handleCancel()
   } catch (err) {

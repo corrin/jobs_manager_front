@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 
-export interface ValidationRule<T = any> {
+export interface ValidationRule<T = unknown> {
   test: (value: T) => boolean
   message: string
 }
@@ -9,12 +9,12 @@ export interface ValidationErrors {
   [key: string]: string
 }
 
-export const useFormValidation = <T extends Record<string, any>>(formData: T) => {
+export const useFormValidation = <T extends Record<string, unknown>>(formData: T) => {
   const errors = ref<ValidationErrors>({})
   const rules = ref<Record<keyof T, ValidationRule[]>>({} as Record<keyof T, ValidationRule[]>)
 
   const isValid = computed(() => {
-    return Object.values(errors.value).every(error => !error)
+    return Object.values(errors.value).every((error) => !error)
   })
 
   const setRules = (fieldRules: Record<keyof T, ValidationRule[]>) => {
@@ -63,38 +63,38 @@ export const useFormValidation = <T extends Record<string, any>>(formData: T) =>
     validateField,
     validateAll,
     clearErrors,
-    clearError
+    clearError,
   }
 }
 
 // Common validation rules
 export const validationRules = {
   required: (message = 'This field is required'): ValidationRule => ({
-    test: (value: any) => {
+    test: (value: unknown) => {
       if (typeof value === 'string') return value.trim().length > 0
       if (typeof value === 'number') return value > 0
       return value != null && value !== ''
     },
-    message
+    message,
   }),
 
   minValue: (min: number, message?: string): ValidationRule<number> => ({
     test: (value: number) => value >= min,
-    message: message || `Value must be at least ${min}`
+    message: message || `Value must be at least ${min}`,
   }),
 
   maxValue: (max: number, message?: string): ValidationRule<number> => ({
     test: (value: number) => value <= max,
-    message: message || `Value must be at most ${max}`
+    message: message || `Value must be at most ${max}`,
   }),
 
   minLength: (min: number, message?: string): ValidationRule<string> => ({
     test: (value: string) => value.trim().length >= min,
-    message: message || `Must be at least ${min} characters`
+    message: message || `Must be at least ${min} characters`,
   }),
 
   maxLength: (max: number, message?: string): ValidationRule<string> => ({
     test: (value: string) => value.trim().length <= max,
-    message: message || `Must be at most ${max} characters`
-  })
+    message: message || `Must be at most ${max} characters`,
+  }),
 }

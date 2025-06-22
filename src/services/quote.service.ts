@@ -7,6 +7,8 @@
 
 import api from './api'
 import type { QuoteSheet } from '../schemas/job.schemas'
+import type { CostLine } from '@/types/costing.types'
+import type { Job } from '@/types/index'
 
 export interface QuotePreview {
   draft_lines: Array<{
@@ -37,7 +39,7 @@ export interface QuotePreview {
 
 export interface QuoteApplyResult {
   success: boolean
-  cost_set?: any
+  cost_set?: CostLine[]
   draft_lines?: Array<{
     kind: string
     desc: string
@@ -57,7 +59,7 @@ class QuoteService {
 
     // Use longer timeout for quote linking as it involves Google Sheets operations
     const response = await api.post(`/job/rest/jobs/${jobId}/quote/link/`, payload, {
-      timeout: 30000 // 30 seconds for Google Sheets operations
+      timeout: 30000, // 30 seconds for Google Sheets operations
     })
     return response.data
   }
@@ -81,14 +83,14 @@ class QuoteService {
   /**
    * Check if job has a linked quote sheet
    */
-  hasLinkedSheet(job: any): boolean {
-    return !!(job?.quote_sheet?.sheet_url)
+  hasLinkedSheet(job: Job): boolean {
+    return !!job?.quote_sheet?.sheet_url
   }
 
   /**
    * Get the Google Sheets URL for a job
    */
-  getSheetUrl(job: any): string | null {
+  getSheetUrl(job: Job): string | null {
     return job?.quote_sheet?.sheet_url || null
   }
 }

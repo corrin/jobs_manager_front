@@ -8,7 +8,7 @@ function createEmptyGrouping() {
   return {
     time: [] as CostLine[],
     material: [] as CostLine[],
-    adjust: [] as CostLine[]
+    adjust: [] as CostLine[],
   }
 }
 
@@ -23,7 +23,7 @@ function getCategoryFromKind(kind: string, metaCategory?: string): 'time' | 'mat
         return 'material'
     }
   }
-  
+
   // Fallback para kind original
   const normalizedKind = kind.toLowerCase()
   switch (normalizedKind) {
@@ -98,7 +98,7 @@ export const useCostingStore = defineStore('costing', () => {
     if (jobId && previousKind !== kind) {
       try {
         await load(jobId, kind)
-      } catch (err) {
+      } catch {
         console.warn(`Failed to load ${kind} data, keeping current data`)
         // O load já tenta fallback para estimate se necessário
       }
@@ -115,19 +115,16 @@ export const useCostingStore = defineStore('costing', () => {
     if (!costSet.value || !costSet.value.cost_lines) {
       return createEmptyGrouping()
     }
-    return costSet.value.cost_lines.reduce(
-      (groups, costLine) => {
-        // Usar meta.category como prioridade principal, com fallback para kind
-        const kind = costLine.kind || ''
-        const metaCategory = costLine.meta?.category
-        
-        // Determinar categoria usando meta.category primeiro, depois kind
-        const category = getCategoryFromKind(kind, metaCategory)
-        groups[category].push(costLine)
-        return groups
-      },
-      createEmptyGrouping()
-    )
+    return costSet.value.cost_lines.reduce((groups, costLine) => {
+      // Usar meta.category como prioridade principal, com fallback para kind
+      const kind = costLine.kind || ''
+      const metaCategory = costLine.meta?.category
+
+      // Determinar categoria usando meta.category primeiro, depois kind
+      const category = getCategoryFromKind(kind, metaCategory)
+      groups[category].push(costLine)
+      return groups
+    }, createEmptyGrouping())
   })
 
   // Helper para somar valores de costlines
@@ -138,33 +135,51 @@ export const useCostingStore = defineStore('costing', () => {
 
   // Total Cost: usa summary se válido, senão soma costlines
   const totalCost = computed(() => {
-    if (costSet.value && costSet.value.summary && typeof costSet.value.summary.cost === 'number' && !isNaN(costSet.value.summary.cost) && costSet.value.summary.cost > 0) {
+    if (
+      costSet.value &&
+      costSet.value.summary &&
+      typeof costSet.value.summary.cost === 'number' &&
+      !isNaN(costSet.value.summary.cost) &&
+      costSet.value.summary.cost > 0
+    ) {
       return costSet.value.summary.cost
     }
     // Fallback: soma total_cost das costlines
-    return sumCostLines(cl => Number(cl.total_cost) || 0)
+    return sumCostLines((cl) => Number(cl.total_cost) || 0)
   })
 
   // Total Revenue: usa summary se válido, senão soma costlines
   const totalRevenue = computed(() => {
-    if (costSet.value && costSet.value.summary && typeof costSet.value.summary.rev === 'number' && !isNaN(costSet.value.summary.rev) && costSet.value.summary.rev > 0) {
+    if (
+      costSet.value &&
+      costSet.value.summary &&
+      typeof costSet.value.summary.rev === 'number' &&
+      !isNaN(costSet.value.summary.rev) &&
+      costSet.value.summary.rev > 0
+    ) {
       return costSet.value.summary.rev
     }
     // Fallback: soma total_rev das costlines
-    return sumCostLines(cl => Number(cl.total_rev) || 0)
+    return sumCostLines((cl) => Number(cl.total_rev) || 0)
   })
 
   // Total Hours: usa summary se válido, senão soma labour_minutes das costlines de fabricação
   const totalHours = computed(() => {
-    if (costSet.value && costSet.value.summary && typeof costSet.value.summary.hours === 'number' && !isNaN(costSet.value.summary.hours) && costSet.value.summary.hours > 0) {
+    if (
+      costSet.value &&
+      costSet.value.summary &&
+      typeof costSet.value.summary.hours === 'number' &&
+      !isNaN(costSet.value.summary.hours) &&
+      costSet.value.summary.hours > 0
+    ) {
       return costSet.value.summary.hours
     }
     // Fallback: soma labour_minutes/60 das costlines de fabricação (tempo)
-    return sumCostLines(cl => {
+    return sumCostLines((cl) => {
       // Verificar se é linha de tempo usando meta.category ou kind
-      const isTimeEntry = cl.meta?.category === 'fabrication' || 
-                         String(cl.kind || '').toLowerCase() === 'time'
-      
+      const isTimeEntry =
+        cl.meta?.category === 'fabrication' || String(cl.kind || '').toLowerCase() === 'time'
+
       if (isTimeEntry) {
         // Usar meta.labour_minutes se existir
         if (cl.meta && typeof cl.meta.labour_minutes === 'number') {
@@ -196,6 +211,6 @@ export const useCostingStore = defineStore('costing', () => {
     totalCost,
     totalRevenue,
     totalHours,
-    isLoaded
+    isLoaded,
   }
 })

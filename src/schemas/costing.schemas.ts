@@ -11,7 +11,7 @@ export const CostLineSchema = z.object({
   total_cost: z.number(),
   total_rev: z.number(),
   ext_refs: z.record(z.any()).optional(),
-  meta: z.record(z.any())
+  meta: z.record(z.any()),
 })
 
 // Schema para CostSet baseado na estrutura real do backend
@@ -22,10 +22,10 @@ export const CostSetSchema = z.object({
   summary: z.object({
     cost: z.number(),
     rev: z.number(),
-    hours: z.number()
+    hours: z.number(),
   }),
   created: z.string(), // Data de criação
-  cost_lines: z.array(CostLineSchema)
+  cost_lines: z.array(CostLineSchema),
 })
 
 // Tipos derivados dos schemas para uso interno

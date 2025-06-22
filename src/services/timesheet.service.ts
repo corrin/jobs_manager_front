@@ -5,7 +5,7 @@ import type {
   Job,
   WeeklyOverviewData,
   CreateTimeEntryRequest,
-  UpdateTimeEntryRequest
+  UpdateTimeEntryRequest,
 } from '@/types/timesheet.types'
 
 export class TimesheetService {
@@ -30,7 +30,7 @@ export class TimesheetService {
   static async getTimeEntries(staffId: string, date: string): Promise<TimeEntry[]> {
     try {
       const response = await api.get(`${this.BASE_URL}/entries/`, {
-        params: { staff_id: staffId, date }
+        params: { staff_id: staffId, date },
       })
       return response.data.time_entries
     } catch (error) {
@@ -42,10 +42,14 @@ export class TimesheetService {
   /**
    * Get time entries for a date range
    */
-  static async getTimeEntriesRange(staffId: string, startDate: string, endDate: string): Promise<TimeEntry[]> {
+  static async getTimeEntriesRange(
+    staffId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<TimeEntry[]> {
     try {
       const response = await api.get(`${this.BASE_URL}/entries/`, {
-        params: { staff_id: staffId, start_date: startDate, end_date: endDate }
+        params: { staff_id: staffId, start_date: startDate, end_date: endDate },
       })
       return response.data.time_entries
     } catch (error) {
@@ -72,7 +76,7 @@ export class TimesheetService {
         charge_out_rate: data.chargeOutRate || 0,
         is_billable: data.isBillable,
         notes: data.notes || '',
-        rate_multiplier: data.rateMultiplier || 1.0
+        rate_multiplier: data.rateMultiplier || 1.0,
       }
 
       const response = await api.post(`${this.BASE_URL}/entries/`, requestData)
@@ -127,7 +131,7 @@ export class TimesheetService {
   static async getWeeklyOverview(startDate: string): Promise<WeeklyOverviewData> {
     try {
       const response = await api.get(`${this.BASE_URL}/weekly-overview/`, {
-        params: { start_date: startDate }
+        params: { start_date: startDate },
       })
       return response.data
     } catch (error) {
@@ -139,11 +143,14 @@ export class TimesheetService {
   /**
    * Auto-save time entry changes
    */
-  static async autosaveTimeEntry(entryId: string, data: Partial<UpdateTimeEntryRequest>): Promise<void> {
+  static async autosaveTimeEntry(
+    entryId: string,
+    data: Partial<UpdateTimeEntryRequest>,
+  ): Promise<void> {
     try {
       await api.post(`${this.BASE_URL}/autosave/`, {
         entry_id: entryId,
-        ...data
+        ...data,
       })
     } catch (error) {
       console.error('Error auto-saving time entry:', error)
@@ -164,7 +171,7 @@ export class TimesheetService {
 
     return {
       startDate: monday.toISOString().split('T')[0],
-      endDate: sunday.toISOString().split('T')[0]
+      endDate: sunday.toISOString().split('T')[0],
     }
   }
 
@@ -176,7 +183,7 @@ export class TimesheetService {
       weekday: 'short',
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     })
   }
 
@@ -202,7 +209,7 @@ export class TimesheetService {
 
     try {
       const response = await api.get(`${this.BASE_URL}/entries/`, {
-        params: { start_date: start, end_date: end }
+        params: { start_date: start, end_date: end },
       })
       return response.data.time_entries
     } catch (error) {
@@ -229,7 +236,7 @@ export class TimesheetService {
       chargeOutRate: entryData.chargeOutRate,
       isBillable: entryData.isBillable,
       notes: entryData.notes,
-      rateMultiplier: entryData.rateMultiplier
+      rateMultiplier: entryData.rateMultiplier,
     }
 
     return this.createTimeEntry(createRequest)
@@ -246,7 +253,7 @@ export class TimesheetService {
       isBillable: entry.isBillable,
       notes: entry.notes,
       rateMultiplier: entry.rateMultiplier,
-      jobPricingId: entry.jobPricingId
+      jobPricingId: entry.jobPricingId,
     }
 
     return this.updateTimeEntry(entry.id, updateRequest)
@@ -270,7 +277,7 @@ export class TimesheetService {
       chargeOutRate: entryData.chargeOutRate,
       isBillable: entryData.isBillable,
       notes: entryData.notes,
-      rateMultiplier: entryData.rateMultiplier
+      rateMultiplier: entryData.rateMultiplier,
     }
 
     return this.autosaveTimeEntry(entryData.id, updateData)

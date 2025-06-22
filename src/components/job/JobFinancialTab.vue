@@ -42,8 +42,10 @@
 
         <div v-if="!jobData?.quoted" class="text-center py-8">
           <div class="text-gray-500 mb-4">No quotes for this project</div>
-          <button @click="createQuote"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button
+            @click="createQuote"
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
             Quote Job
           </button>
         </div>
@@ -60,18 +62,27 @@
 
           <!-- Quote Actions -->
           <div class="flex space-x-2">
-            <button @click="goToQuoteOnXero" v-if="quoteUrl"
-              class="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+            <button
+              @click="goToQuoteOnXero"
+              v-if="quoteUrl"
+              class="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
               Go to Quote on Xero
             </button>
 
-            <button @click="deleteQuoteOnXero" v-if="quoteUrl"
-              class="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700">
+            <button
+              @click="deleteQuoteOnXero"
+              v-if="quoteUrl"
+              class="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+            >
               Delete Quote on Xero
             </button>
 
-            <button @click="acceptQuote" v-if="!jobData?.quote_acceptance_date"
-              class="px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700">
+            <button
+              @click="acceptQuote"
+              v-if="!jobData?.quote_acceptance_date"
+              class="px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+            >
               Accept Quote
             </button>
           </div>
@@ -84,8 +95,10 @@
 
         <div v-if="!jobData?.invoiced" class="text-center py-8">
           <div class="text-gray-500 mb-4">No invoices for this project</div>
-          <button @click="createInvoice"
-            class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
+          <button
+            @click="createInvoice"
+            class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
             Create Invoice
           </button>
         </div>
@@ -94,21 +107,27 @@
           <!-- Invoice Information -->
           <div class="border-l-4 border-orange-400 pl-4">
             <div class="text-sm text-gray-600">Invoice Total</div>
-            <div class="text-xl font-semibold text-gray-900">{{ formatCurrency(invoiceTotal) }}</div>
-            <div class="text-sm text-gray-500">
-              Status: {{ jobData?.paid ? 'Paid' : 'Unpaid' }}
+            <div class="text-xl font-semibold text-gray-900">
+              {{ formatCurrency(invoiceTotal) }}
             </div>
+            <div class="text-sm text-gray-500">Status: {{ jobData?.paid ? 'Paid' : 'Unpaid' }}</div>
           </div>
 
           <!-- Invoice Actions -->
           <div class="flex space-x-2">
-            <button @click="goToInvoiceOnXero" v-if="invoiceUrl"
-              class="px-3 py-2 text-sm bg-orange-600 text-white rounded hover:bg-orange-700">
+            <button
+              @click="goToInvoiceOnXero"
+              v-if="invoiceUrl"
+              class="px-3 py-2 text-sm bg-orange-600 text-white rounded hover:bg-orange-700"
+            >
               Go to Invoice on Xero
             </button>
 
-            <button @click="deleteInvoiceOnXero" v-if="invoiceUrl"
-              class="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700">
+            <button
+              @click="deleteInvoiceOnXero"
+              v-if="invoiceUrl"
+              class="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+            >
               Delete Invoice on Xero
             </button>
           </div>
@@ -126,7 +145,7 @@ import { useJobsStore } from '@/stores/jobs'
 // Props
 interface Props {
   jobData: JobData | null
-  latestPricings?: any // TODO: Add proper typing for pricing data
+  latestPricings?: Record<string, unknown> // TODO: Add proper typing for pricing data
   jobId?: string
 }
 
@@ -199,12 +218,12 @@ const formatCurrency = (amount: number | undefined | null): string => {
   if (isNaN(numericAmount) || amount === null || amount === undefined) {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
-      currency: 'AUD'
+      currency: 'AUD',
     }).format(0)
   }
   return new Intl.NumberFormat('en-AU', {
     style: 'currency',
-    currency: 'AUD'
+    currency: 'AUD',
   }).format(numericAmount)
 }
 
@@ -212,7 +231,7 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-AU', {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   })
 }
 
@@ -227,7 +246,7 @@ const acceptQuote = () => {
   if (props.jobData) {
     const updatedData = {
       ...props.jobData,
-      quote_acceptance_date: new Date().toISOString()
+      quote_acceptance_date: new Date().toISOString(),
     }
 
     // Atualizar a store em vez de emitir evento

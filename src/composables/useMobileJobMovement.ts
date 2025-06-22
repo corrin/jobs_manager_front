@@ -1,15 +1,15 @@
 import { ref, computed } from 'vue'
 import { useDeviceDetection } from '@/composables/useDeviceDetection'
-import type { Job, JobStatus } from '@/types'
+import type { Job } from '@/types'
 
 export function useMobileJobMovement() {
   const { isMobile, isTablet } = useDeviceDetection()
-  
+
   // State to control movement mode
   const isMovementModeActive = ref(false)
   const selectedJobForMovement = ref<Job | null>(null)
   const showColumnSelector = ref(false)
-    // Computed to determine if movement controls should be shown
+  // Computed to determine if movement controls should be shown
   const shouldShowMovementControls = computed(() => {
     // Show on mobile and tablet (anything below lg breakpoint - 1024px)
     const shouldShow = window.innerWidth < 1024
@@ -18,11 +18,11 @@ export function useMobileJobMovement() {
       isTablet: isTablet.value,
       windowWidth: window.innerWidth,
       shouldShow,
-      threshold: '< 1024px (lg breakpoint)'
+      threshold: '< 1024px (lg breakpoint)',
     })
     return shouldShow
   })
-  
+
   // Computed to determine if a job is selected for movement
   const isJobSelectedForMovement = computed(() => {
     return (jobId: string) => selectedJobForMovement.value?.id.toString() === jobId
@@ -42,15 +42,16 @@ export function useMobileJobMovement() {
   // Select job for movement
   const selectJobForMovement = (job: Job) => {
     if (!isMovementModeActive.value) return
-    
+
     selectedJobForMovement.value = job
     showColumnSelector.value = true
   }
 
   // Move job to new column
   const moveJobToColumn = async (
-    targetStatus: string, 
-    onMoveJob: (jobId: string, targetStatus: string) => Promise<void>  ) => {
+    targetStatus: string,
+    onMoveJob: (jobId: string, targetStatus: string) => Promise<void>,
+  ) => {
     if (!selectedJobForMovement.value) return
 
     try {
@@ -73,15 +74,15 @@ export function useMobileJobMovement() {
     selectedJobForMovement,
     showColumnSelector,
     shouldShowMovementControls,
-    
+
     // Computeds
     isJobSelectedForMovement,
-    
+
     // Methods
     startMovementMode,
     exitMovementMode,
     selectJobForMovement,
     moveJobToColumn,
-    cancelJobSelection
+    cancelJobSelection,
   }
 }

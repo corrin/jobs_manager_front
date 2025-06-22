@@ -40,19 +40,3 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
-
-      - name: Install Poetry and dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry tox tox-gh-actions
-          poetry config virtualenvs.create true
-          poetry install --no-interaction --no-ansi
-
-      - name: Run lint (Black, isort, Flake8)
-        run: tox -e lint
-
-      - name: Run type checking (Mypy)
-        run: tox -e mypy
-
-      - name: Run tests
-        run: tox -e py

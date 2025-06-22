@@ -9,7 +9,9 @@
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
         <form @submit.prevent="handleLogin" class="space-y-6">
           <div>
-            <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <label for="username" class="block text-sm font-medium text-gray-700 mb-1"
+              >Username</label
+            >
             <input
               id="username"
               v-model="credentials.username"
@@ -23,7 +25,9 @@
           </div>
 
           <div>
-            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-1"
+              >Password</label
+            >
             <input
               id="password"
               v-model="credentials.password"
@@ -36,7 +40,10 @@
             />
           </div>
 
-          <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+          <div
+            v-if="error"
+            class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm"
+          >
             {{ error }}
           </div>
 
@@ -57,12 +64,5 @@
 <script setup lang="ts">
 import { useLogin } from '@/composables/useLogin'
 
-const {
-  credentials,
-  hasError,
-  isFormValid,
-  isLoading,
-  error,
-  handleLogin
-} = useLogin()
+const { credentials, hasError, isFormValid, isLoading, error, handleLogin } = useLogin()
 </script>

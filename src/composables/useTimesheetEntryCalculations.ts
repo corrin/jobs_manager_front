@@ -5,23 +5,29 @@
  * Centralizes business logic for cost calculations
  */
 
-import { computed, type Ref } from 'vue'
-import type { TimesheetEntry, TimesheetEntryJobSelectionItem, TimesheetEntryStaffMember } from '@/types/timesheet.types'
+import { type Ref } from 'vue'
+import type { CostLine } from '@/types/costing.types'
+import type {
+  TimesheetEntry,
+  TimesheetEntryJobSelectionItem,
+  TimesheetEntryStaffMember,
+} from '@/types/timesheet.types'
 import type { CompanyDefaults } from '@/types/timesheet.types'
 
-export function useTimesheetEntryCalculations(
-  companyDefaults: Ref<CompanyDefaults | null>
-) {
-
+export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaults | null>) {
   /**
    * Get rate multiplier from rate type
    */
   const getRateMultiplier = (rateType: string): number => {
     switch (rateType) {
-      case '1.5': return 1.5
-      case '2.0': return 2.0
-      case 'Unpaid': return 0.0
-      default: return 1.0 // 'Ord'
+      case '1.5':
+        return 1.5
+      case '2.0':
+        return 2.0
+      case 'Unpaid':
+        return 0.0
+      default:
+        return 1.0 // 'Ord'
     }
   }
 
@@ -33,7 +39,7 @@ export function useTimesheetEntryCalculations(
     if (hours <= 0 || wageRate <= 0) return 0
 
     const multiplier = getRateMultiplier(rateType)
-    return Math.round((hours * wageRate * multiplier) * 100) / 100
+    return Math.round(hours * wageRate * multiplier * 100) / 100
   }
 
   /**
@@ -43,15 +49,18 @@ export function useTimesheetEntryCalculations(
     // Guard clause - early return for non-billable or invalid inputs
     if (!billable || hours <= 0 || chargeOutRate <= 0) return 0
 
-    return Math.round((hours * chargeOutRate) * 100) / 100
+    return Math.round(hours * chargeOutRate * 100) / 100
   }
   /**
    * Auto-populate job fields when job is selected
    */
-  const populateJobFields = (entry: TimesheetEntry, job: TimesheetEntryJobSelectionItem): TimesheetEntry => {
+  const populateJobFields = (
+    entry: TimesheetEntry,
+    job: TimesheetEntryJobSelectionItem,
+  ): TimesheetEntry => {
     console.log('🔧 Populating job fields:', {
       entry: entry,
-      job: job
+      job: job,
     })
 
     // Auto-set billable based on job status using switch-case
@@ -72,7 +81,7 @@ export function useTimesheetEntryCalculations(
       client: job.client_name,
       jobName: job.name,
       chargeOutRate: job.charge_out_rate,
-      billable
+      billable,
     }
 
     console.log('✨ Populated job fields result:', result)
@@ -103,7 +112,7 @@ export function useTimesheetEntryCalculations(
       chargeOutRate: defaultChargeOutRate,
       rateMultiplier: 1.0,
       isNewRow: true,
-      isModified: false
+      isModified: false,
     }
   }
 
@@ -147,7 +156,7 @@ export function useTimesheetEntryCalculations(
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     }
   }
 
@@ -168,15 +177,15 @@ export function useTimesheetEntryCalculations(
         is_billable: entry.billable,
         job_id: jobId,
         client_name: entry.client,
-        job_name: entry.jobName
-      }
+        job_name: entry.jobName,
+      },
     }
   }
 
   /**
    * Convert CostLine to OptimizedTimeEntry format
    */
-  const fromCostLine = (costLine: any, staffId: string): TimesheetEntry => {
+  const fromCostLine = (costLine: CostLine, staffId: string): TimesheetEntry => {
     // Guard clause - early return for invalid cost line
     if (!costLine || costLine.kind !== 'time') {
       throw new Error('Invalid cost line for time entry conversion')
@@ -197,7 +206,7 @@ export function useTimesheetEntryCalculations(
       date: costLine.meta?.date || '',
       wageRate: parseFloat(costLine.unit_cost) || 0,
       chargeOutRate: parseFloat(costLine.unit_rev) || 0,
-      rateMultiplier: getRateMultiplier(costLine.meta?.rate_type || 'Ord')
+      rateMultiplier: getRateMultiplier(costLine.meta?.rate_type || 'Ord'),
     }
   }
 
@@ -217,6 +226,6 @@ export function useTimesheetEntryCalculations(
     validateEntry,
 
     // Utilities
-    getRateMultiplier
+    getRateMultiplier,
   }
 }

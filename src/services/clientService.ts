@@ -49,14 +49,16 @@ export class ClientService {
     try {
       const response = await api.post('/clients/rest/create/', data)
       return response.data
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating client:', error)
 
-      // Handle API error response
-      if (error.response?.data) {
-        return {
-          success: false,
-          error: error.response.data.error || 'Failed to create client'
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as { response?: { data?: { error?: string } } }
+        if (apiError.response?.data) {
+          return {
+            success: false,
+            error: apiError.response.data.error || 'Failed to create client',
+          }
         }
       }
 
@@ -87,10 +89,11 @@ export class ClientService {
     }
 
     const term = searchTerm.toLowerCase()
-    return clientList.filter(client =>
-      client.name.toLowerCase().includes(term) ||
-      client.email?.toLowerCase().includes(term) ||
-      client.contact_person?.toLowerCase().includes(term)
+    return clientList.filter(
+      (client) =>
+        client.name.toLowerCase().includes(term) ||
+        client.email?.toLowerCase().includes(term) ||
+        client.contact_person?.toLowerCase().includes(term),
     )
   }
 }

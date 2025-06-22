@@ -36,8 +36,8 @@ export class StaffService {
     try {
       const response = await api.get(`${this.baseUrl}/all/`, {
         params: {
-          actual_users: 'true'
-        }
+          actual_users: 'true',
+        },
       })
 
       return Array.isArray(response.data) ? response.data : []
@@ -50,11 +50,14 @@ export class StaffService {
   /**
    * Assign staff to a job
    */
-  async assignStaffToJob(jobId: number, staffId: number): Promise<{ success: boolean; message?: string }> {
+  async assignStaffToJob(
+    jobId: number,
+    staffId: number,
+  ): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await api.post(`/api/job/${jobId}/assignment/`, {
+      const response = await api.post(`/job/api/job/${jobId}/assignment`, {
         job_id: jobId,
-        staff_id: staffId
+        staff_id: staffId,
       })
 
       return { success: response.data.success, message: response.data.message }
@@ -67,13 +70,16 @@ export class StaffService {
   /**
    * Remove staff from a job
    */
-  async removeStaffFromJob(jobId: number, staffId: number): Promise<{ success: boolean; message?: string }> {
+  async removeStaffFromJob(
+    jobId: number,
+    staffId: number,
+  ): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await api.delete(`/api/job/${jobId}/assignment/`, {
+      const response = await api.delete(`/job/api/job/${jobId}/assignment`, {
         data: {
           job_id: jobId,
-          staff_id: staffId
-        }
+          staff_id: staffId,
+        },
       })
 
       return { success: response.data.success, message: response.data.message }
@@ -106,11 +112,12 @@ export class StaffService {
     }
 
     const term = searchTerm.toLowerCase()
-    return staffList.filter(staff =>
-      staff.display_name.toLowerCase().includes(term) ||
-      staff.first_name.toLowerCase().includes(term) ||
-      staff.last_name.toLowerCase().includes(term) ||
-      staff.email.toLowerCase().includes(term)
+    return staffList.filter(
+      (staff) =>
+        staff.display_name.toLowerCase().includes(term) ||
+        staff.first_name.toLowerCase().includes(term) ||
+        staff.last_name.toLowerCase().includes(term) ||
+        staff.email.toLowerCase().includes(term),
     )
   }
 
@@ -132,8 +139,16 @@ export class StaffService {
    */
   getAvatarColor(staffId: number): string {
     const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
-      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9'
+      '#FF6B6B',
+      '#4ECDC4',
+      '#45B7D1',
+      '#96CEB4',
+      '#FFEAA7',
+      '#DDA0DD',
+      '#98D8C8',
+      '#F7DC6F',
+      '#BB8FCE',
+      '#85C1E9',
     ]
     return colors[staffId % colors.length]
   }
