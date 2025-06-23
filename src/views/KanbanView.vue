@@ -346,7 +346,6 @@ const handleStaffPanelReady = (staffPanelElement: HTMLElement) => {
 }
 
 const handleJobReady = (payload: { jobId: string; element: HTMLElement }) => {
-  console.log(`🎴 Job ready for staff drag: ${payload.jobId}`)
   initializeJobStaffContainer(payload.element, payload.jobId)
 }
 

@@ -194,7 +194,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
   }
 
   const initializeJobStaffContainer = (jobStaffElement: HTMLElement, jobId: string) => {
-    console.log(`🎴 Initializing job staff container for job ${jobId}:`, jobStaffElement)
     if (!jobStaffElement || !jobId) {
       console.warn('Job staff element or jobId not provided')
       return null

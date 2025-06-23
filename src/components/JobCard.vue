@@ -116,7 +116,6 @@ const truncatedJobName = computed(() => {
   return props.job.name.length > 12 ? props.job.name.substring(0, 12) + '...' : props.job.name
 })
 
-// Emit job ready quando o componente monta
 onMounted(() => {
   const cardElement = document.querySelector(`[data-id="${props.job.id}"]`) as HTMLElement
   if (cardElement && jobStaffContainerRef.value) {
