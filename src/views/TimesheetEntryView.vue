@@ -445,7 +445,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
-import type { GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community'
+import type { GridReadyEvent, CellValueChangedEvent, CellClickedEvent } from 'ag-grid-community'
 import { v4 as uuidv4 } from 'uuid'
 
 // UI Components
@@ -857,6 +857,12 @@ function onCellValueChanged(event: CellValueChangedEvent) {
 
 function onFirstDataRendered() {
   setTimeout(() => agGridRef.value?.api?.sizeColumnsToFit(), 100)
+}
+
+function onCellClicked(event: CellClickedEvent) {
+  if (event.colDef.field === 'delete' && event.data && event.data.id) {
+    handleDeleteEntry(event.data.id)
+  }
 }
 
 // Action handlers
