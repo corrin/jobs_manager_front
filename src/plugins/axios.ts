@@ -16,7 +16,7 @@ const getApiBaseUrl = () => {
 }
 
 axios.defaults.baseURL = getApiBaseUrl()
-axios.defaults.timeout = 10000
+axios.defaults.timeout = 20000 // 20 seconds for all requests
 axios.defaults.withCredentials = true // Important: include httpOnly cookies
 
 // Request interceptor - no need to manually add auth headers with httpOnly cookies
