@@ -94,7 +94,7 @@
                   "
                   :key="selectedMobileStatus"
                   :status="visibleStatusChoices.find((s) => s.key === selectedMobileStatus)!"
-                  :jobs="getJobsByStatus(selectedMobileStatus)"
+                  :jobs="getSortedJobsByStatus(selectedMobileStatus)"
                   :is-loading="isLoading"
                   :is-dragging="isDragging"
                   @job-click="viewJob"
@@ -127,7 +127,7 @@
                       v-for="status in visibleStatusChoices"
                       :key="status.key"
                       :status="status"
-                      :jobs="getJobsByStatus(status.key)"
+                      :jobs="getSortedJobsByStatus(status.key)"
                       :is-loading="isLoading"
                       :is-dragging="isDragging"
                       @job-click="viewJob"
@@ -140,7 +140,7 @@
                 </div>
               </div>
 
-              <!-- Large Desktop: Responsive grid that shows all columns -->
+              <!-- Large Desktop: Responsive grid que mostra todas as colunas -->
               <div class="hidden lg:block">
                 <div class="w-full mx-auto px-2">
                   <div
@@ -151,7 +151,7 @@
                       v-for="status in visibleStatusChoices"
                       :key="status.key"
                       :status="status"
-                      :jobs="getJobsByStatus(status.key)"
+                      :jobs="getSortedJobsByStatus(status.key)"
                       :is-loading="isLoading"
                       :is-dragging="isDragging"
                       @job-click="viewJob"
@@ -229,6 +229,7 @@ const {
 
   // Computed
   getJobsByStatus,
+  jobsSortedByPriority, // ADICIONADO
 
   // Methods
   loadJobs,
@@ -347,6 +348,11 @@ const handleStaffPanelReady = (staffPanelElement: HTMLElement) => {
 const handleJobReady = (payload: { jobId: string; element: HTMLElement }) => {
   console.log(`🎴 Job ready for staff drag: ${payload.jobId}`)
   initializeJobStaffContainer(payload.element, payload.jobId)
+}
+
+// Função utilitária para filtrar jobs ordenados por prioridade por status
+function getSortedJobsByStatus(statusKey: string) {
+  return jobsSortedByPriority.value.filter((job) => job.status === statusKey)
 }
 
 // Setup drag and drop functionality

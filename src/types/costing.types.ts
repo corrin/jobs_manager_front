@@ -1,4 +1,4 @@
-// Costing interfaces - utility types for internal use
+// Costing interfaces – utility types for internal use
 // Based on actual backend structure
 export interface CostLine {
   id: number // ID is number, not string
