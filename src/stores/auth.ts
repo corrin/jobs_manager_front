@@ -4,12 +4,10 @@ import api from '@/plugins/axios'
 import type { User, LoginCredentials } from '@/types/auth.types'
 
 export const useAuthStore = defineStore('auth', () => {
-  // State
   const user = ref<User | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  // Getters
   const isAuthenticated = computed(() => !!user.value)
 
   const fullName = computed(() => {
@@ -17,7 +15,6 @@ export const useAuthStore = defineStore('auth', () => {
     return `${user.value.first_name} ${user.value.last_name}`.trim()
   })
 
-  // Helper methods
   const clearError = (): void => {
     error.value = null
   }
@@ -30,7 +27,6 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = errorMessage
   }
 
-  // Check if user is logged in by attempting to get current user
   const userIsLogged = async (): Promise<boolean> => {
     try {
       const response = await api.get<User>('/accounts/me/')
@@ -42,16 +38,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Public actions
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     setLoading(true)
     clearError()
 
     try {
-      // Authenticate with backend - this sets httpOnly cookies
       await api.post('/accounts/api/token/', credentials)
 
-      // Get user data to populate store
       const userResponse = await api.get<User>('/accounts/me/')
       user.value = userResponse.data
 
@@ -74,34 +67,27 @@ export const useAuthStore = defineStore('auth', () => {
 
   const logout = async (): Promise<void> => {
     try {
-      // Call backend logout to clear httpOnly cookies
       await api.post('/accounts/logout/')
     } catch (err) {
       console.warn('Backend logout failed:', err)
     } finally {
-      // Clear user state
       user.value = null
       clearError()
     }
   }
 
   const initializeAuth = async (): Promise<boolean> => {
-    // Simply check if user is logged in
-    // httpOnly cookies will be sent automatically if they exist
     return await userIsLogged()
   }
 
   return {
-    // State
     user,
     isLoading,
     error,
 
-    // Getters
     isAuthenticated,
     fullName,
 
-    // Actions
     login,
     logout,
     userIsLogged,

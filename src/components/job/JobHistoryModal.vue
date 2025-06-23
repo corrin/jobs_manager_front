@@ -15,7 +15,6 @@
       </DialogHeader>
 
       <div class="space-y-4">
-        <!-- Add Event Form -->
         <div v-if="showAddEventForm" class="p-4 bg-gray-50 rounded">
           <div class="mb-3">
             <label class="block text-sm font-medium text-gray-800 mb-2"> Event Description </label>
@@ -42,7 +41,6 @@
           </div>
         </div>
 
-        <!-- Events List -->
         <div class="max-h-96 overflow-y-auto space-y-3">
           <div v-for="event in events" :key="event.id" class="p-3 border border-gray-200 rounded">
             <div class="flex items-start justify-between">
@@ -90,7 +88,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
-// Props
 interface Props {
   jobId: string
   events: JobEvent[]
@@ -99,17 +96,14 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Events
 const emit = defineEmits<{
   close: []
   'event-added': [event: JobEvent]
 }>()
 
-// Local state
 const showAddEventForm = ref(false)
 const newEventDescription = ref('')
 
-// Methods
 const closeModal = () => {
   emit('close')
 }

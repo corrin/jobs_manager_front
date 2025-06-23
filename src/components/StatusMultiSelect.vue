@@ -18,12 +18,10 @@
         />
       </button>
 
-      <!-- Dropdown -->
       <div
         v-if="isOpen"
         class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
       >
-        <!-- Select All / Deselect All -->
         <div class="px-3 py-2 border-b border-gray-100">
           <button
             type="button"
@@ -34,7 +32,6 @@
           </button>
         </div>
 
-        <!-- Status Options -->
         <div
           v-for="status in statusOptions"
           :key="status.value"
@@ -54,7 +51,6 @@
       </div>
     </div>
 
-    <!-- Selected Status Tags -->
     <div v-if="selectedStatuses.length > 0" class="mt-2 flex flex-wrap gap-1">
       <span
         v-for="status in selectedStatuses"
@@ -78,13 +74,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ChevronDown, X } from 'lucide-vue-next'
 
-// Types
 interface StatusOption {
   value: string
   label: string
 }
 
-// Props
 interface Props {
   modelValue: string[]
   label?: string
@@ -94,16 +88,13 @@ const props = withDefaults(defineProps<Props>(), {
   label: 'Status',
 })
 
-// Events
 const emit = defineEmits<{
   'update:modelValue': [value: string[]]
 }>()
 
-// State management seguindo clean code principles
 const isOpen = ref(false)
 const selectedStatuses = ref<string[]>([...props.modelValue])
 
-// Status options - centralized configuration
 const statusOptions: StatusOption[] = [
   { value: 'quoting', label: 'Quoting' },
   { value: 'accepted_quote', label: 'Accepted Quote' },
@@ -119,11 +110,9 @@ const statusOptions: StatusOption[] = [
   { value: 'archived', label: 'Archived' },
 ]
 
-// Computed properties
 const displayText = computed(() => {
   const count = selectedStatuses.value.length
 
-  // Switch-case for different display scenarios
   switch (true) {
     case count === 0:
       return 'Select status...'
@@ -136,7 +125,6 @@ const displayText = computed(() => {
   }
 })
 
-// Methods following SRP
 const getStatusLabel = (value: string): string => {
   const option = statusOptions.find((opt) => opt.value === value)
   return option?.label || value
@@ -147,7 +135,6 @@ const toggleDropdown = () => {
 }
 
 const toggleStatus = (status: string) => {
-  // Early return pattern
   if (selectedStatuses.value.includes(status)) {
     removeStatus(status)
     return
@@ -170,14 +157,11 @@ const removeStatus = (status: string) => {
 }
 
 const toggleAll = () => {
-  // Switch-case to decide action
   switch (selectedStatuses.value.length === statusOptions.length) {
     case true:
-      // Deselect all
       selectedStatuses.value = []
       break
     case false:
-      // Select all
       selectedStatuses.value = statusOptions.map((opt) => opt.value)
       break
   }
@@ -189,7 +173,6 @@ const emitUpdate = () => {
   emit('update:modelValue', [...selectedStatuses.value])
 }
 
-// Handle outside clicks to close the dropdown
 const handleOutsideClick = (event: Event) => {
   const target = event.target as HTMLElement
   const dropdown = target.closest('[data-status-dropdown]')
@@ -199,7 +182,6 @@ const handleOutsideClick = (event: Event) => {
   }
 }
 
-// Lifecycle hooks
 onMounted(() => {
   document.addEventListener('click', handleOutsideClick)
 })
@@ -208,7 +190,6 @@ onUnmounted(() => {
   document.removeEventListener('click', handleOutsideClick)
 })
 
-// Watch for external changes
 import { watch } from 'vue'
 
 watch(
@@ -220,7 +201,6 @@ watch(
 </script>
 
 <style scoped>
-/* Transition for dropdown animation */
 .dropdown-enter-active,
 .dropdown-leave-active {
   transition: all 0.2s ease;

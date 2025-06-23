@@ -9,7 +9,6 @@
         <DialogDescription> Detailed performance metrics for the selected date </DialogDescription>
       </DialogHeader>
 
-      <!-- Summary Cards Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <SummaryCard
           title="Total Hours"
@@ -39,9 +38,7 @@
         />
       </div>
 
-      <!-- Additional Details Section -->
       <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Time Breakdown -->
         <div class="bg-gray-50 rounded-lg p-4">
           <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
             <Clock class="h-4 w-4 mr-2 text-blue-600" />
@@ -78,7 +75,6 @@
           </div>
         </div>
 
-        <!-- Staff Statistics -->
         <div class="bg-gray-50 rounded-lg p-4">
           <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center">
             <Users class="h-4 w-4 mr-2 text-purple-600" />
@@ -109,7 +105,6 @@
         </div>
       </div>
 
-      <!-- Footer Actions -->
       <div class="flex justify-end mt-6 pt-4 border-t">
         <Button @click="handleClose" variant="outline"> Close </Button>
       </div>
@@ -138,12 +133,10 @@ defineProps<{
   formatHours: (value: number) => string
 }>()
 
-// Emits
 const emit = defineEmits<{
   close: []
 }>()
 
-// Methods
 const handleClose = () => {
   emit('close')
 }

@@ -67,7 +67,6 @@ export const useFormValidation = <T extends Record<string, unknown>>(formData: T
   }
 }
 
-// Common validation rules
 export const validationRules = {
   required: (message = 'This field is required'): ValidationRule => ({
     test: (value: unknown) => {

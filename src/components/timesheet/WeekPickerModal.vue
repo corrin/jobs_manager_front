@@ -1,7 +1,6 @@
 <template>
   <Dialog :open="isOpen" @update:open="closeModal">
     <DialogContent class="max-w-md max-h-[90vh] overflow-y-auto">
-      <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-lg font-bold text-gray-900">📅 Select Week</h3>
         <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -9,7 +8,6 @@
         </button>
       </div>
 
-      <!-- Current Selection Display -->
       <div class="bg-blue-50 p-4 rounded-lg mb-6">
         <p class="text-sm text-blue-600 mb-1">Selected Week</p>
         <p class="font-semibold text-blue-900">
@@ -18,9 +16,7 @@
         <p class="text-xs text-blue-600">Week {{ weekNumber }} of {{ year }}</p>
       </div>
 
-      <!-- Week Navigation -->
       <div class="space-y-4">
-        <!-- Month/Year Controls -->
         <div class="flex items-center justify-between mb-4">
           <button
             @click="previousMonth"
@@ -41,7 +37,6 @@
           </button>
         </div>
 
-        <!-- Calendar Grid -->
         <div class="grid grid-cols-7 gap-1 text-xs text-center text-gray-500 mb-2">
           <div>Mon</div>
           <div>Tue</div>
@@ -65,7 +60,6 @@
         </div>
       </div>
 
-      <!-- Quick Week Selection -->
       <div class="mt-6 space-y-2">
         <p class="text-sm font-medium text-gray-700">Quick Select:</p>
         <div class="grid grid-cols-2 gap-2">
@@ -96,7 +90,6 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
       <div class="flex justify-end space-x-3 mt-6">
         <button
           @click="closeModal"
@@ -142,12 +135,10 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-// Reactive state
 const currentDate = ref(new Date())
 const selectedWeekStart = ref<string>(props.initialWeekStart || getCurrentWeekStart())
 const selectedWeekEnd = ref<string>(getWeekEnd(selectedWeekStart.value))
 
-// Computed properties
 const currentMonthYear = computed(() => {
   return currentDate.value.toLocaleDateString('en-US', {
     month: 'long',
@@ -168,12 +159,10 @@ const calendarDays = computed((): CalendarDay[] => {
   const year = currentDate.value.getFullYear()
   const month = currentDate.value.getMonth()
 
-  // Get first day of month and adjust to Monday
   const firstDay = new Date(year, month, 1)
   const firstMonday = new Date(firstDay)
   firstMonday.setDate(firstDay.getDate() - ((firstDay.getDay() + 6) % 7))
 
-  // Generate 42 days (6 weeks)
   const days: CalendarDay[] = []
   const today = new Date()
   const selectedWeekStartDate = new Date(selectedWeekStart.value)
@@ -198,7 +187,6 @@ const calendarDays = computed((): CalendarDay[] => {
   return days
 })
 
-// Methods
 function getCurrentWeekStart(): string {
   const today = new Date()
   return getWeekStartDate(today)
@@ -207,7 +195,7 @@ function getCurrentWeekStart(): string {
 function getWeekStartDate(date: Date): string {
   const monday = new Date(date)
   const dayOfWeek = date.getDay()
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek // Adjust for Sunday = 0
+  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
   monday.setDate(date.getDate() + diff)
   return monday.toISOString().split('T')[0]
 }
@@ -308,7 +296,6 @@ function closeModal() {
   emit('close')
 }
 
-// Watch for prop changes
 watch(
   () => props.initialWeekStart,
   (newWeekStart) => {

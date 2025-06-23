@@ -29,9 +29,6 @@ export class StaffService {
     return StaffService.instance
   }
 
-  /**
-   * Get all staff members
-   */
   async getAllStaff(): Promise<Staff[]> {
     try {
       const response = await api.get(`${this.baseUrl}/all/`, {
@@ -47,9 +44,6 @@ export class StaffService {
     }
   }
 
-  /**
-   * Assign staff to a job
-   */
   async assignStaffToJob(
     jobId: number,
     staffId: number,
@@ -67,9 +61,6 @@ export class StaffService {
     }
   }
 
-  /**
-   * Remove staff from a job
-   */
   async removeStaffFromJob(
     jobId: number,
     staffId: number,
@@ -89,9 +80,6 @@ export class StaffService {
     }
   }
 
-  /**
-   * Get staff assignments for a specific job
-   */
   async getJobStaffAssignments(jobId: number): Promise<StaffAssignment[]> {
     try {
       const response = await api.get(`/api/job/${jobId}/assignments/`)
@@ -103,9 +91,6 @@ export class StaffService {
     }
   }
 
-  /**
-   * Search staff by name
-   */
   searchStaff(staffList: Staff[], searchTerm: string): Staff[] {
     if (!searchTerm.trim()) {
       return staffList
@@ -121,9 +106,6 @@ export class StaffService {
     )
   }
 
-  /**
-   * Generate avatar initials for a staff member
-   */
   generateInitials(staff: Staff): string {
     if (staff.initials) {
       return staff.initials
@@ -134,9 +116,6 @@ export class StaffService {
     return firstInitial + lastInitial || '??'
   }
 
-  /**
-   * Get consistent avatar background color for a staff member
-   */
   getAvatarColor(staffId: number): string {
     const colors = [
       '#FF6B6B',

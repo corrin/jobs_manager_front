@@ -1,32 +1,18 @@
-/**
- * Error Handler Utilities
- *
- * Centralises error handling to extract useful messages
- * from API responses and improve user experience.
- */
-
 import { AxiosError } from 'axios'
 
-/**
- * Extracts a readable error message from an API error
- */
 export function extractErrorMessage(error: unknown): string {
   console.error('🔍 Extracting error message from:', error)
 
-  // If it's an AxiosError (HTTP error)
   if (error && typeof error === 'object' && 'isAxiosError' in error) {
     const axiosError = error as AxiosError
 
-    // Specific handling for timeouts
     if (axiosError.code === 'ECONNABORTED' && axiosError.message?.includes('timeout')) {
       return 'Operation is taking longer than expected - please wait a moment and check if it completed successfully'
     }
 
-    // Try to extract message from response data
     if (axiosError.response?.data) {
       const data = axiosError.response.data as Record<string, unknown>
 
-      // Common error message patterns
       if (typeof data === 'string') {
         return data
       }
@@ -53,7 +39,6 @@ export function extractErrorMessage(error: unknown): string {
         }
       }
 
-      // If data is an object, try to extract the first message
       if (typeof data === 'object' && data !== null) {
         const values = Object.values(data)
         for (const value of values) {
@@ -64,12 +49,10 @@ export function extractErrorMessage(error: unknown): string {
       }
     }
 
-    // Fallback to status text
     if (axiosError.response?.statusText) {
       return `${axiosError.response.status}: ${axiosError.response.statusText}`
     }
 
-    // Specific messages by status code
     switch (axiosError.response?.status) {
       case 400:
         return 'Invalid request - please check the data sent'
@@ -92,27 +75,20 @@ export function extractErrorMessage(error: unknown): string {
     }
   }
 
-  // If it's a normal Error
   if (error instanceof Error) {
     return error.message
   }
 
-  // If it's a string
   if (typeof error === 'string') {
     return error
   }
 
-  // Generic fallback
   return 'Unknown error in operation'
 }
 
-/**
- * Extracts specific error messages for quote operations
- */
 export function extractQuoteErrorMessage(error: unknown): string {
   const baseMessage = extractErrorMessage(error)
 
-  // Specific handling for timeout in quote operations
   if (error && typeof error === 'object' && 'isAxiosError' in error) {
     const axiosError = error as AxiosError
     if (axiosError.code === 'ECONNABORTED' && axiosError.message?.includes('timeout')) {
@@ -120,7 +96,6 @@ export function extractQuoteErrorMessage(error: unknown): string {
     }
   }
 
-  // Specific messages for common quote errors
   if (baseMessage.includes('No master quote template URL')) {
     return 'Quote template not configured - please configure the master template in company settings'
   }
@@ -140,9 +115,6 @@ export function extractQuoteErrorMessage(error: unknown): string {
   return baseMessage
 }
 
-/**
- * Structured error log for debugging
- */
 export function logError(
   context: string,
   error: unknown,

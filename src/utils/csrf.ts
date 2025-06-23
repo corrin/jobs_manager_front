@@ -1,7 +1,3 @@
-/**
- * Utility function to get CSRF token from cookies
- * Based on Django's getCookie implementation
- */
 export function getCookie(name: string): string | null {
   let cookieValue = null
   if (document.cookie && document.cookie !== '') {
@@ -17,9 +13,6 @@ export function getCookie(name: string): string | null {
   return cookieValue
 }
 
-/**
- * Get CSRF token for Django requests
- */
 export function getCsrfToken(): string | null {
   return getCookie('csrftoken')
 }

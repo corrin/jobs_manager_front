@@ -1,17 +1,12 @@
 import type { JobPricing, JobEvent } from '@/schemas/job.schemas'
 import type { CostSet } from '@/types/costing.types'
 
-// Central shared types used across multiple views
-// These are internal TypeScript types, not for validation
-
-// Common entity types
 export interface BaseEntity {
   id: string
   created_at?: string
   updated_at?: string
 }
 
-// Staff types
 export interface Staff extends BaseEntity {
   first_name?: string
   last_name?: string
@@ -22,7 +17,6 @@ export interface Staff extends BaseEntity {
   icon?: string | null
 }
 
-// Alternative Staff type for legacy endpoints that return number IDs
 export interface StaffWithNumberId {
   id: number
   first_name: string
@@ -34,7 +28,6 @@ export interface StaffWithNumberId {
   icon?: string | null
 }
 
-// Quote Sheet types
 export interface QuoteSheet {
   id: string
   sheet_id: string
@@ -45,41 +38,38 @@ export interface QuoteSheet {
   job_name: string
 }
 
-// Job types
 export interface Job extends BaseEntity {
   name: string
   description?: string | null
   job_number: number
   client_name: string
   contact_person?: string | null
-  // Os campos abaixo são opcionais para compatibilidade com objetos parciais
+
   people?: Staff[]
   status?: string
   status_key?: string
   paid: boolean
   created_by_id?: string | null
   priority?: number
-  // New badge information from kanban categorization
+
   badge_label?: string
   badge_color?: string
-  // Quote sheet integration
+
   quote_sheet?: QuoteSheet | null
 }
 
-// Tipo unificado para Job detalhado, compatível com o backend e frontend
 export interface JobData extends Job {
-  // Campos extras obrigatórios para compatibilidade com o store e backend
   client_id: string
   job_status: string
   pricing_methodology: 'fixed_price' | 'time_materials'
   created_at: string
   updated_at: string
-  // Campos extras opcionais
+
   delivery_date?: string | null
   quote_acceptance_date?: string | null
   quoted?: boolean
   invoiced?: boolean
-  paid: boolean // já obrigatório
+  paid: boolean
   charge_out_rate?: string
   order_number?: string | null
   notes?: string | null
@@ -106,17 +96,14 @@ export interface JobData extends Job {
   events?: JobEvent[]
 }
 
-// Job status types
 export interface JobStatus {
   key: string
   label: string
   tooltip?: string
 }
 
-// Alias for backward compatibility
 export type StatusChoice = JobStatus
 
-// Advanced filter types
 export interface AdvancedFilters {
   job_number: string
   name: string
@@ -130,7 +117,6 @@ export interface AdvancedFilters {
   paid: string
 }
 
-// Quote types
 export interface QuoteApplyResult {
   success: boolean
   message: string
@@ -141,10 +127,8 @@ export interface QuoteRefreshResult {
   shouldReloadJob?: boolean
 }
 
-// Union type para resultados de operações de quote
 export type QuoteOperationResult = (QuoteSheet & QuoteRefreshResult) | QuoteApplyResult
 
-// API response wrapper types
 export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
@@ -157,15 +141,10 @@ export interface PaginatedResponse<T = unknown> extends ApiResponse<T> {
   per_page?: number
 }
 
-// Exemplo de tipos adicionais com campos 'data' e 'payload' tipados como Record<string, unknown>
 export interface SomeType {
-  // ...existing code...
   data: Record<string, unknown>
-  // ...existing code...
 }
 
 export interface AnotherType {
-  // ...existing code...
   payload: Record<string, unknown>
-  // ...existing code...
 }

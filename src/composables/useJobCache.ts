@@ -7,20 +7,12 @@ interface CacheEntry {
   version: number
 }
 
-/**
- * Composable para cache inteligente de jobs
- * Evita carregamentos desnecessários e melhora a performance
- */
 export function useJobCache() {
   const cache = ref<Map<string, CacheEntry>>(new Map())
   const currentVersion = ref(1)
 
-  // TTL padrão de 5 minutos
   const DEFAULT_TTL = 5 * 60 * 1000
 
-  /**
-   * Verifica se uma entrada do cache ainda é válida
-   */
   const isCacheValid = (entry: CacheEntry, ttl: number = DEFAULT_TTL): boolean => {
     const now = new Date().getTime()
     const entryTime = entry.timestamp.getTime()
@@ -30,9 +22,6 @@ export function useJobCache() {
     return isWithinTTL && isCurrentVersion
   }
 
-  /**
-   * Obtém dados do cache se válidos
-   */
   const getCachedJob = (jobId: string, ttl?: number): JobData | null => {
     const entry = cache.value.get(jobId)
 
@@ -51,12 +40,9 @@ export function useJobCache() {
     return entry.data
   }
 
-  /**
-   * Armazena dados no cache
-   */
   const setCachedJob = (jobId: string, jobData: JobData): void => {
     const entry: CacheEntry = {
-      data: { ...jobData }, // Deep copy
+      data: { ...jobData },
       timestamp: new Date(),
       version: currentVersion.value,
     }
@@ -65,34 +51,22 @@ export function useJobCache() {
     console.log(`📦 Job ${jobId} cached`)
   }
 
-  /**
-   * Remove um job específico do cache
-   */
   const removeCachedJob = (jobId: string): void => {
     if (cache.value.delete(jobId)) {
       console.log(`📦 Job ${jobId} removed from cache`)
     }
   }
 
-  /**
-   * Invalida todo o cache (incrementa versão)
-   */
   const invalidateAll = (): void => {
     currentVersion.value++
     console.log(`📦 Cache invalidated - new version: ${currentVersion.value}`)
   }
 
-  /**
-   * Limpa fisicamente o cache
-   */
   const clearCache = (): void => {
     cache.value.clear()
     console.log('📦 Cache cleared')
   }
 
-  /**
-   * Atualiza dados no cache se existir
-   */
   const updateCachedJob = (jobId: string, updates: Partial<JobData>): void => {
     const entry = cache.value.get(jobId)
 
@@ -103,15 +77,11 @@ export function useJobCache() {
     }
   }
 
-  /**
-   * Verifica se um job está em cache e válido
-   */
   const isCached = (jobId: string, ttl?: number): boolean => {
     const entry = cache.value.get(jobId)
     return entry ? isCacheValid(entry, ttl) : false
   }
 
-  // Computed properties para estatísticas do cache
   const cacheSize = computed(() => cache.value.size)
 
   const cacheStats = computed(() => {
@@ -133,33 +103,25 @@ export function useJobCache() {
     }
   })
 
-  /**
-   * Função helper para usar com APIs
-   * Retorna dados do cache se válidos, senão executa a função de carregamento
-   */
   const withCache = async <T extends JobData>(
     jobId: string,
     loadFunction: () => Promise<T>,
     ttl?: number,
   ): Promise<T> => {
-    // Tentar obter do cache primeiro
     const cached = getCachedJob(jobId, ttl)
     if (cached) {
       return cached as T
     }
 
-    // Se não estiver em cache ou expirado, carregar dos dados
     console.log(`📦 Loading job ${jobId} from API...`)
     const freshData = await loadFunction()
 
-    // Armazenar no cache
     setCachedJob(jobId, freshData)
 
     return freshData
   }
 
   return {
-    // Methods
     getCachedJob,
     setCachedJob,
     removeCachedJob,
@@ -169,7 +131,6 @@ export function useJobCache() {
     clearCache,
     withCache,
 
-    // Computed properties
     cacheSize,
     cacheStats,
     currentVersion: computed(() => currentVersion.value),

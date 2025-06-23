@@ -58,9 +58,6 @@ export class QuoteChatService {
     return this.instance
   }
 
-  /**
-   * Load all chat messages for a specific job
-   */
   async getChatHistory(jobId: string): Promise<ChatHistoryResponse> {
     try {
       const response = await api.get<ChatHistoryResponse>(`/job/api/jobs/${jobId}/quote-chat/`)
@@ -71,9 +68,6 @@ export class QuoteChatService {
     }
   }
 
-  /**
-   * Save a new chat message (user or assistant)
-   */
   async saveMessage(jobId: string, message: SaveMessageRequest): Promise<SaveMessageResponse> {
     try {
       const response = await api.post<SaveMessageResponse>(
@@ -87,9 +81,6 @@ export class QuoteChatService {
     }
   }
 
-  /**
-   * Update an existing message (useful for streaming responses)
-   */
   async updateMessage(
     jobId: string,
     messageId: string,
@@ -107,9 +98,6 @@ export class QuoteChatService {
     }
   }
 
-  /**
-   * Clear all chat messages for a job
-   */
   async clearChatHistory(jobId: string): Promise<ClearChatResponse> {
     try {
       const response = await api.delete<ClearChatResponse>(`/job/api/jobs/${jobId}/quote-chat/`)
@@ -120,9 +108,6 @@ export class QuoteChatService {
     }
   }
 
-  /**
-   * Convert backend ChatMessage to vue-advanced-chat format
-   */
   convertToVueMessage(message: ChatMessage): VueChatMessage {
     return {
       _id: message.message_id,
@@ -135,9 +120,6 @@ export class QuoteChatService {
     }
   }
 
-  /**
-   * Convert vue-advanced-chat message to backend format
-   */
   convertFromVueMessage(
     vueMessage: VueChatMessage,
     role: 'user' | 'assistant',

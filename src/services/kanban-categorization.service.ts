@@ -1,10 +1,3 @@
-/**
- * Kanban Categorization Service - Frontend
- *
- * Mirrors the backend categorization service but for frontend use
- * Follows SRP by handling only kanban categorization logic
- */
-
 export interface KanbanSubCategory {
   statusKey: string
   badgeLabel: string
@@ -19,7 +12,6 @@ export interface KanbanColumn {
 }
 
 export class KanbanCategorizationService {
-  // Define the hierarchical structure matching backend
   private static readonly COLUMN_STRUCTURE: Record<string, KanbanColumn> = {
     draft: {
       columnId: 'draft',
@@ -69,7 +61,6 @@ export class KanbanCategorizationService {
       columnTitle: 'In Progress',
       subCategories: [
         { statusKey: 'in_progress', badgeLabel: 'Active Work', badgeColorClass: 'bg-blue-500' },
-        // Note: 'special' is filtered out and not shown in kanban
       ],
       colorTheme: 'blue',
     },
@@ -96,8 +87,6 @@ export class KanbanCategorizationService {
     },
   }
 
-  // Status to column mapping for quick lookup
-  // Note: 'special' is intentionally excluded (filtered from kanban)
   private static readonly STATUS_TO_COLUMN_MAP: Record<string, string> = {
     quoting: 'draft',
     accepted_quote: 'awaiting_approval',
@@ -112,12 +101,7 @@ export class KanbanCategorizationService {
     on_hold: 'on_hold',
   }
 
-  /**
-   * Get the kanban column for a given job status
-   * Uses guard clause for invalid status
-   */
   static getColumnForStatus(status: string): string {
-    // Guard clause - early return for invalid status
     if (!status) {
       return 'draft'
     }
@@ -125,12 +109,7 @@ export class KanbanCategorizationService {
     return this.STATUS_TO_COLUMN_MAP[status] || 'draft'
   }
 
-  /**
-   * Get the sub-category information for a status
-   * Uses early return pattern
-   */
   static getSubCategoryForStatus(status: string): KanbanSubCategory | null {
-    // Guard clause for empty status
     if (!status) {
       return null
     }
@@ -142,13 +121,9 @@ export class KanbanCategorizationService {
       return null
     }
 
-    // Find the sub-category that matches this status
     return column.subCategories.find((subCat) => subCat.statusKey === status) || null
   }
 
-  /**
-   * Get all kanban columns in display order
-   */
   static getAllColumns(): KanbanColumn[] {
     return [
       this.COLUMN_STRUCTURE.draft,
@@ -160,34 +135,23 @@ export class KanbanCategorizationService {
     ]
   }
 
-  /**
-   * Get a specific column by its ID
-   * Uses guard clause for invalid ID
-   */
   static getColumnById(columnId: string): KanbanColumn | null {
-    // Guard clause for invalid columnId
     if (!columnId) {
       return null
     }
 
     return this.COLUMN_STRUCTURE[columnId] || null
   }
-  /**
-   * Filter jobs for kanban display - excludes 'special' status
-   */
+
   static filterKanbanJobs<T extends { status_key?: string }>(jobs: T[]): T[] {
-    // Guard clause for empty/invalid jobs
     if (!jobs) {
       return []
     }
 
     return jobs.filter((job) => job.status_key !== 'special')
   }
-  /**
-   * Filter jobs that belong to a specific column
-   */
+
   static getJobsForColumn<T extends { status_key?: string }>(jobs: T[], columnId: string): T[] {
-    // Guard clauses
     if (!jobs || !columnId) {
       return []
     }
@@ -199,17 +163,11 @@ export class KanbanCategorizationService {
 
     const validStatuses = new Set(column.subCategories.map((subCat) => subCat.statusKey))
 
-    // Filter by column and exclude special jobs
     const filteredJobs = this.filterKanbanJobs(jobs)
     return filteredJobs.filter((job) => job.status_key && validStatuses.has(job.status_key))
   }
 
-  /**
-   * Get badge display information for a status
-   * Uses switch-case pattern for discrete values
-   */
   static getBadgeInfo(status: string): { label: string; colorClass: string } {
-    // Guard clause for empty status
     if (!status) {
       return {
         label: 'Unknown',
@@ -226,16 +184,12 @@ export class KanbanCategorizationService {
       }
     }
 
-    // Fallback for unknown statuses
     return {
       label: status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
       colorClass: 'bg-gray-400',
     }
   }
 
-  /**
-   * Get all available statuses grouped by column
-   */
   static getStatusesByColumn(): Record<string, string[]> {
     const result: Record<string, string[]> = {}
 
@@ -246,16 +200,6 @@ export class KanbanCategorizationService {
     return result
   }
 
-  /**
-   * Retorna o status correto para o job ao ser movido para uma coluna do kanban.
-   * draft             → quoting
-   * awaiting_approval → accepted_quote
-   * on_hold           → on_hold
-   * in_progress       → in_progress
-   * recently_completed→ recently_completed
-   * archived          → archived
-   * (fallback: retorna o próprio columnId)
-   */
   static getDefaultStatusForColumn(columnId: string): string {
     switch (columnId) {
       case 'draft':
@@ -271,7 +215,7 @@ export class KanbanCategorizationService {
       case 'archived':
         return 'archived'
       default:
-        return columnId // Fallback para casos customizados
+        return columnId
     }
   }
 }

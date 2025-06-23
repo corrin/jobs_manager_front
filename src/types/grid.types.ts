@@ -1,7 +1,3 @@
-/**
- * TypeScript type definitions for timesheet grid components
- */
-
 import type { CostLine } from './costing.types'
 
 export interface GridRowData {
@@ -55,7 +51,6 @@ export interface GridTheme {
   darkMode?: boolean
 }
 
-// Extended window interface for global AG Grid actions
 declare global {
   interface Window {
     editCostLine: (id: number) => void
@@ -65,21 +60,15 @@ declare global {
 }
 
 export interface GridColumn {
-  // ...existing code...
   valueFormatter?: (params: import('ag-grid-community').ValueFormatterParams) => string
-  // ...existing code...
 }
 
 export interface GridRow {
-  // ...existing code...
   [key: string]: string | number | boolean | null | undefined
-  // ...existing code...
 }
 
 export interface GridOptions {
-  // ...existing code...
   onRowSelected?: (event: import('ag-grid-community').RowSelectedEvent) => void
-  // ...existing code...
 }
 
 export type GridData = Array<GridRow>

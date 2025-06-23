@@ -3,7 +3,6 @@
     class="bg-white border-b border-gray-200 px-3 sm:px-6 py-1 md:py-0.5 lg:py-3 xl:py-4 fixed top-0 left-0 right-0 z-50 transition-all duration-200"
   >
     <div class="flex items-center justify-between h-10 md:h-8 lg:h-auto">
-      <!-- Mobile & Tablet Menu Button & Logo -->
       <div class="flex items-center">
         <button
           @click="toggleMobileMenu"
@@ -19,14 +18,13 @@
         >
       </div>
 
-      <!-- Desktop Navigation (Large screens only) -->
       <div class="hidden lg:flex items-center space-x-6">
         <router-link
           to="/jobs/create"
           class="text-gray-700 hover:text-blue-600 transition-colors text-sm"
           >Create Job</router-link
         >
-        <!-- Timesheet Dropdown -->
+
         <div class="relative group">
           <button
             class="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-200 z-60"
@@ -64,7 +62,7 @@
             </div>
           </div>
         </div>
-        <!-- Purchases Dropdown -->
+
         <div class="relative" @click.stop>
           <button
             @click="toggleDropdown('purchases')"
@@ -90,7 +88,7 @@
           </div>
         </div>
         <a href="#" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Xero</a>
-        <!-- Reports Dropdown -->
+
         <div class="relative" @click.stop>
           <button
             @click="toggleDropdown('reports')"
@@ -109,7 +107,6 @@
           </div>
         </div>
 
-        <!-- Admin Dropdown -->
         <div class="relative" @click.stop>
           <button
             @click="toggleDropdown('admin')"
@@ -138,9 +135,7 @@
         </div>
       </div>
 
-      <!-- User Info - Compact for tablets/mobile -->
       <div class="flex items-center">
-        <!-- Tablet: Compact user info -->
         <div class="hidden md:flex lg:hidden items-center space-x-2">
           <span class="text-gray-700 text-xs">{{ userInfo.displayName?.split(' ')[0] }}</span>
           <button
@@ -151,7 +146,6 @@
           </button>
         </div>
 
-        <!-- Desktop: Full user info -->
         <div class="hidden lg:flex items-center space-x-4">
           <span class="text-gray-700 text-sm">Welcome, {{ userInfo.displayName }}!</span>
           <button
@@ -162,7 +156,6 @@
           </button>
         </div>
 
-        <!-- Mobile: Super compact -->
         <div class="flex md:hidden items-center">
           <span class="text-gray-700 text-xs mr-2">{{ userInfo.displayName?.split(' ')[0] }}</span>
           <button
@@ -175,7 +168,6 @@
       </div>
     </div>
 
-    <!-- Mobile/Tablet Menu Overlay -->
     <Transition
       enter-active-class="transition-all duration-300 ease-out"
       enter-from-class="opacity-0 transform -translate-y-2"
@@ -190,7 +182,6 @@
       >
         <div class="px-4 py-4 max-h-[70vh] overflow-y-auto">
           <div class="grid grid-cols-1 gap-3">
-            <!-- Primary Actions -->
             <div class="space-y-3">
               <router-link
                 to="/jobs/create"
@@ -218,12 +209,9 @@
               >
             </div>
 
-            <!-- Separator -->
             <div class="border-t border-gray-200"></div>
 
-            <!-- Expandable Sections -->
             <div class="space-y-2">
-              <!-- Purchases Section -->
               <div class="bg-gray-50 rounded-md">
                 <button
                   @click="toggleMobileSection('purchases')"
@@ -276,7 +264,6 @@
                 </Transition>
               </div>
 
-              <!-- Reports Section -->
               <div class="bg-gray-50 rounded-md">
                 <button
                   @click="toggleMobileSection('reports')"
@@ -311,7 +298,6 @@
                 </Transition>
               </div>
 
-              <!-- Admin Section -->
               <div class="bg-gray-50 rounded-md">
                 <button
                   @click="toggleMobileSection('admin')"
@@ -376,7 +362,6 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { ChevronDown, Menu, X, Calendar, PlusCircle, BarChart3 } from 'lucide-vue-next'
 import { useAppLayout } from '@/composables/useAppLayout'
 
-// State
 const activeDropdown = ref<string | null>(null)
 const showMobileMenu = ref(false)
 const mobileSections = ref({
@@ -385,10 +370,8 @@ const mobileSections = ref({
   admin: false,
 })
 
-// Get user info and logout function from app layout
 const { userInfo, handleLogout } = useAppLayout()
 
-// Methods
 const toggleDropdown = (dropdown: string) => {
   activeDropdown.value = activeDropdown.value === dropdown ? null : dropdown
 }
@@ -396,7 +379,6 @@ const toggleDropdown = (dropdown: string) => {
 const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value
   if (!showMobileMenu.value) {
-    // Reset mobile sections when closing menu
     mobileSections.value = {
       purchases: false,
       reports: false,
@@ -422,7 +404,6 @@ const closeDropdowns = () => {
   activeDropdown.value = null
 }
 
-// Event listeners
 onMounted(() => {
   document.addEventListener('click', closeDropdowns)
 })

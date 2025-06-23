@@ -7,7 +7,6 @@
       </DialogHeader>
 
       <div class="space-y-4">
-        <!-- First Row -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
@@ -44,7 +43,6 @@
           </div>
         </div>
 
-        <!-- Second Row -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -76,7 +74,6 @@
           </div>
         </div>
 
-        <!-- Date Range -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Created After</label>
@@ -134,7 +131,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
-// Types
 interface AdvancedFilters {
   job_number: string
   name: string
@@ -148,7 +144,6 @@ interface AdvancedFilters {
   paid: string
 }
 
-// Props
 interface Props {
   isOpen: boolean
   filters: AdvancedFilters
@@ -159,17 +154,14 @@ const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
 })
 
-// Events
 const emit = defineEmits<{
   close: []
   search: [filters: AdvancedFilters]
   'clear-filters': []
 }>()
 
-// Local state para evitar mutations diretas das props
 const localFilters = ref<AdvancedFilters>({ ...props.filters })
 
-// Watch filters prop to update local state
 watch(
   () => props.filters,
   (newFilters) => {
@@ -178,7 +170,6 @@ watch(
   { deep: true },
 )
 
-// Methods seguindo clean code principles
 const handleSearch = () => {
   emit('search', { ...localFilters.value })
   emit('close')

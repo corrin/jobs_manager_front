@@ -42,7 +42,7 @@ export function useAppLayout() {
       await router.push('/login')
     } catch (error) {
       console.error('Logout failed:', error)
-      // Still try to redirect even if logout fails
+
       await router.push('/login')
     }
   }

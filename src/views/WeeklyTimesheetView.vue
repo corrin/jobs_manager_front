@@ -1,13 +1,11 @@
 <template>
   <AppLayout>
     <div class="flex flex-col min-h-screen">
-      <!-- Modern Header with Navigation - Mobile First -->
       <div
         class="sticky top-0 bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 backdrop-blur-md border-b border-purple-500/20 p-1"
       >
         <div class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3">
           <div class="space-y-3 lg:space-y-0 py-0.5">
-            <!-- Title Row -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div
                 class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-center sm:text-left"
@@ -23,11 +21,9 @@
                 </div>
               </div>
 
-              <!-- Actions -->
               <div
                 class="flex items-center justify-center sm:justify-end space-x-2 sm:space-x-3 mt-2 sm:mt-0"
               >
-                <!-- IMS Toggle -->
                 <div class="flex items-center space-x-2">
                   <Switch
                     v-model:checked="imsMode"
@@ -41,7 +37,6 @@
                   <Label class="text-white text-xs sm:text-sm font-medium">IMS Export</Label>
                 </div>
 
-                <!-- Job Metrics Button -->
                 <Button
                   @click="openJobMetricsModal"
                   variant="ghost"
@@ -78,7 +73,6 @@
               </div>
             </div>
 
-            <!-- Week Navigation -->
             <div class="flex items-center justify-center space-x-2 sm:space-x-4">
               <Button
                 @click="navigateWeek(-1)"
@@ -114,9 +108,7 @@
         </div>
       </div>
 
-      <!-- Main Content -->
       <div class="flex-1 p-2 sm:p-4 lg:p-1 space-y-3 sm:space-y-4 lg:space-y-6">
-        <!-- Loading State -->
         <div v-if="loading" class="flex items-center justify-center py-8 sm:py-12">
           <div class="text-center">
             <div
@@ -126,7 +118,6 @@
           </div>
         </div>
 
-        <!-- Error State -->
         <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 sm:p-6">
           <div class="flex items-start space-x-3">
             <AlertCircle class="h-5 w-5 sm:h-6 sm:w-6 text-red-600 flex-shrink-0 mt-0.5" />
@@ -141,9 +132,7 @@
           </div>
         </div>
 
-        <!-- Data Content -->
         <div v-else-if="weeklyData" class="space-y-4">
-          <!-- Staff Overview Table - Compact and Scrollable -->
           <div
             class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-18rem)] lg:h-[calc(100vh-10rem)]"
           >
@@ -200,7 +189,6 @@
         </div>
       </div>
 
-      <!-- Job Metrics Modal -->
       <JobMetricsModal
         v-if="weeklyData?.job_metrics"
         :metrics="weeklyData.job_metrics"
@@ -212,7 +200,6 @@
         @close="closeJobMetricsModal"
       />
 
-      <!-- Week Picker Modal -->
       <WeekPickerModal
         :is-open="showWeekPicker"
         :initial-week-start="selectedWeekStart.toISOString().split('T')[0]"
@@ -240,12 +227,10 @@ import {
   BarChart3,
 } from 'lucide-vue-next'
 
-// Components
 import StaffWeekRow from '@/components/timesheet/StaffWeekRow.vue'
 import JobMetricsModal from '@/components/timesheet/JobMetricsModal.vue'
 import WeekPickerModal from '@/components/timesheet/WeekPickerModal.vue'
 
-// Services and Types
 import {
   getWeeklyTimesheetOverview,
   type WeeklyTimesheetData,
@@ -260,38 +245,31 @@ import {
 } from '@/services/date.service'
 import { useRouter, useRoute } from 'vue-router'
 
-// State
 const loading = ref(false)
 const error = ref<string | null>(null)
 const weeklyData = ref<WeeklyTimesheetData | IMSWeeklyData | null>(null)
 
-// Initialize from URL params or use current week as default
 const router = useRouter()
 const route = useRoute()
 
-// Parse week start from URL params or default to current week
 const initialWeekStart = route.query.week ? createLocalDate(route.query.week as string) : new Date()
 const selectedWeekStart = ref(initialWeekStart)
 
 const imsMode = ref(false)
 
-// Modal states
 const showJobMetricsModal = ref(false)
 const showWeekPicker = ref(false)
 
 console.log('🔗 WeeklyTimesheetView URL params:', { week: route.query.week })
 console.log('📊 Using initial week start:', formatToLocalString(selectedWeekStart.value))
 
-// Computed
 const displayDays = computed(() => {
   if (!weeklyData.value) return []
 
-  // IMS mode usa ims_week, normal usa week_days
   const days = imsMode.value
     ? (weeklyData.value as IMSWeeklyData).ims_week || []
     : (weeklyData.value as WeeklyTimesheetData).week_days || []
 
-  // Para modo normal, garantir Monday-Friday usando dateService
   if (!imsMode.value) {
     console.log('displayDays raw:', days)
     return days
@@ -303,9 +281,8 @@ const displayDays = computed(() => {
           dayOfWeek: createLocalDate(dateStr).getDay(),
         }
       })
-      .filter((day) => day.dayOfWeek >= 1 && day.dayOfWeek <= 5) // Monday-Friday only
+      .filter((day) => day.dayOfWeek >= 1 && day.dayOfWeek <= 5)
   } else {
-    // IMS: mostrar todos os dias retornados
     return days.map((dateStr) => {
       return {
         date: dateStr,
@@ -318,9 +295,7 @@ const displayDays = computed(() => {
 
 const completedStaff = computed(() => {
   if (!weeklyData.value) return 0
-  return weeklyData.value.staff_data.filter(
-    (staff) => staff.total_hours >= 35, // Assuming 35+ hours is "complete"
-  ).length
+  return weeklyData.value.staff_data.filter((staff) => staff.total_hours >= 35).length
 })
 
 const formatDisplayDateRange = (): string => {
@@ -328,7 +303,6 @@ const formatDisplayDateRange = (): string => {
   return dateService.formatDateRange(weeklyData.value.start_date, weeklyData.value.end_date)
 }
 
-// Methods
 const loadData = async (): Promise<void> => {
   try {
     loading.value = true
@@ -371,7 +345,6 @@ const goToCurrentWeek = (): void => {
   loadData()
 }
 
-// Route management
 const updateRoute = () => {
   router.push({
     query: {
@@ -385,13 +358,11 @@ const toggleIMSMode = async (checked: boolean): Promise<void> => {
   await loadData()
 }
 
-// Navegação para o cabeçalho do dia
 const goToDailyViewHeader = (date: string) => {
   console.log('🔗 Navigating to daily view for date:', date)
   router.push({ name: 'timesheet-daily', query: { date } })
 }
 
-// Modal handlers
 const openJobMetricsModal = (): void => {
   showJobMetricsModal.value = true
 }
@@ -400,7 +371,6 @@ const closeJobMetricsModal = (): void => {
   showJobMetricsModal.value = false
 }
 
-// Week Picker Modal
 const openWeekPicker = (): void => {
   showWeekPicker.value = true
 }
@@ -416,25 +386,21 @@ const handleWeekSelect = (date: string): void => {
   closeWeekPicker()
 }
 
-// Lifecycle Hooks
 onMounted(() => {
   loadData()
 })
 </script>
 
 <style scoped>
-/* Custom animations and transitions */
 .group:hover .transform {
   transform: scale(1.05);
 }
 
-/* Table enhancements */
 tbody tr:hover {
   background-color: rgba(249, 250, 251, 0.5);
   transition: background-color 0.15s ease-in-out;
 }
 
-/* Loading animation enhancement */
 @keyframes pulse-glow {
   0%,
   100% {

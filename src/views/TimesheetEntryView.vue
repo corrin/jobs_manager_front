@@ -1,10 +1,8 @@
 <template>
   <AppLayout>
-    <!-- Wrapper para fundo escuro em toda a view -->
     <div
       class="bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 min-h-screen flex flex-col"
     >
-      <!-- Mobile-First Responsive Header -->
       <div
         v-if="loading"
         class="sticky top-0 z-20 py-5 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 backdrop-blur-md border-b border-blue-500/20 flex items-center justify-center min-h-[120px]"
@@ -15,9 +13,7 @@
         </div>
       </div>
       <div v-else class="flex-1 flex flex-col">
-        <!-- Mobile Layout (Stack Vertically) -->
         <div class="block lg:hidden pt-4">
-          <!-- Top Row - Staff Navigation -->
           <div
             class="flex items-center justify-between p-3 border-b border-blue-500/10 bg-slate-900/80"
           >
@@ -74,14 +70,12 @@
               </div>
             </div>
 
-            <!-- Mobile Total Hours -->
             <div class="text-xs text-blue-200">
               <span class="font-semibold">{{ todayStats.totalHours.toFixed(1) }}h</span>
             </div>
           </div>
-          <!-- Bottom Row - Date Navigation and Actions -->
+
           <div class="flex items-center justify-between p-3 bg-slate-900/80">
-            <!-- Date Navigation -->
             <div class="flex items-center space-x-1">
               <Button
                 variant="ghost"
@@ -116,7 +110,7 @@
                 Today
               </Button>
             </div>
-            <!-- Mobile Action Buttons -->
+
             <div class="flex items-center space-x-1">
               <Button
                 @click="addNewEntry"
@@ -158,11 +152,10 @@
             </div>
           </div>
         </div>
-        <!-- Desktop Layout (Single Row) -->
+
         <div
           class="hidden lg:flex items-center h-16 px-6 pt-4 bg-slate-900/80 border-b border-blue-500/10"
         >
-          <!-- Staff Navigation -->
           <div class="flex items-center space-x-4">
             <Avatar class="h-10 w-10 ring-2 ring-blue-500/30">
               <AvatarFallback
@@ -213,7 +206,7 @@
               </Button>
             </div>
           </div>
-          <!-- Date Navigation -->
+
           <div class="flex items-center space-x-2 mx-6">
             <Button
               variant="ghost"
@@ -248,7 +241,7 @@
               Today
             </Button>
           </div>
-          <!-- Desktop Action Buttons -->
+
           <div class="flex items-center space-x-2 ml-auto">
             <div class="text-xs text-blue-200 mr-4">
               <span class="font-semibold">{{ todayStats.totalHours.toFixed(1) }}h</span> Total
@@ -295,12 +288,11 @@
             </Button>
           </div>
         </div>
-        <!-- Main Content -->
+
         <div
           class="flex-1 flex flex-col overflow-hidden"
           :class="'h-[calc(100vh-6rem)] lg:h-[calc(100vh-4rem)]'"
         >
-          <!-- Loading State -->
           <div
             v-if="loading"
             class="flex-1 flex items-center justify-center bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900"
@@ -312,7 +304,7 @@
               <p class="text-blue-100 text-sm lg:text-base">Loading timesheet...</p>
             </div>
           </div>
-          <!-- Error State -->
+
           <div v-else-if="error" class="flex-1 flex items-center justify-center">
             <div class="text-center px-4">
               <AlertTriangle class="h-8 w-8 lg:h-12 lg:w-12 text-red-500 mx-auto mb-4" />
@@ -326,7 +318,7 @@
               </Button>
             </div>
           </div>
-          <!-- AG Grid Container - Responsive Height -->
+
           <div
             v-else
             class="flex-1 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 shadow-sm border border-blue-900/20 rounded-lg m-2 lg:m-4 overflow-hidden"
@@ -345,7 +337,7 @@
               />
             </div>
           </div>
-          <!-- Mobile Summary Footer -->
+
           <div class="bg-slate-900/80 border-t border-blue-900/30 p-2 lg:hidden">
             <div class="flex items-center justify-between text-xs">
               <div class="flex items-center space-x-3">
@@ -377,7 +369,7 @@
               </div>
             </div>
           </div>
-          <!-- Desktop Summary Footer -->
+
           <div
             class="hidden lg:flex h-16 bg-slate-900/80 border-t border-blue-900/30 items-center justify-between px-6"
           >
@@ -409,7 +401,7 @@
             </div>
           </div>
         </div>
-        <!-- Help Modal -->
+
         <Dialog v-model:open="showHelpModal">
           <DialogContent class="sm:max-w-md">
             <DialogHeader>
@@ -447,7 +439,6 @@ import { AgGridVue } from 'ag-grid-vue3'
 import type { GridReadyEvent, CellValueChangedEvent, CellClickedEvent } from 'ag-grid-community'
 import { v4 as uuidv4 } from 'uuid'
 
-// UI Components
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -460,7 +451,6 @@ import {
 } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
-// Icons
 import {
   ChevronLeft,
   ChevronRight,
@@ -484,22 +474,18 @@ import { CompanyDefaultsService } from '@/services/company-defaults.service'
 import * as costlineService from '@/services/costline.service'
 import type { CostLine } from '@/types/costing.types'
 
-// Store and Router
 const router = useRouter()
 const route = useRoute()
 const timesheetStore = useTimesheetStore()
 
-// Reactive State
 const loading = ref(false)
 const error = ref<string | null>(null)
 const showHelpModal = ref(false)
 const agGridRef = ref()
 
-// Get initial values from URL query params or defaults
 const todayDate = new Date().toISOString().split('T')[0]
 console.log('🗓️ Today is:', todayDate, 'Day of week:', new Date().getDay())
 
-// Initialize from URL params
 const initialDate = (route.query.date as string) || todayDate
 const initialStaffId = (route.query.staffId as string) || ''
 
@@ -515,14 +501,12 @@ const jobsList = ref<Job[]>([])
 const timeEntries = ref<TimesheetEntryWithMeta[]>([])
 const companyDefaults = ref<CompanyDefaults | null>(null)
 
-// Computed Properties
 const currentStaff = computed(
   () => staffList.value.find((s) => s.id === selectedStaffId.value) || null,
 )
 
 const hasUnsavedChanges = ref(false)
 
-// Summary calculations
 const todayStats = computed(() => {
   const totalHours = timeEntries.value.reduce(
     (sum: number, entry: OptimizedTimeEntry) => sum + entry.hours,
@@ -541,7 +525,6 @@ const todayStats = computed(() => {
   }
 })
 
-// Initialize composables - fix the computed call to use correct parameters
 const {
   gridData,
   columnDefs,
@@ -553,7 +536,6 @@ const {
   handleCellValueChanged: gridHandleCellValueChanged,
 } = useTimesheetEntryGrid(companyDefaults, handleSaveEntry, handleDeleteEntry)
 
-// Navigation helpers
 const canNavigateStaff = (direction: number): boolean => {
   if (!staffList.value.length) return false
   const currentIndex = staffList.value.findIndex((s) => s.id === selectedStaffId.value)
@@ -577,20 +559,17 @@ const navigateStaff = (direction: number) => {
 }
 
 const navigateDate = (direction: number) => {
-  // Parse date as local timezone to avoid UTC conversion issues
   const parts = currentDate.value.split('-')
   const year = parseInt(parts[0])
-  const month = parseInt(parts[1]) - 1 // Month is 0-indexed
+  const month = parseInt(parts[1]) - 1
   const day = parseInt(parts[2])
 
   const date = new Date(year, month, day)
 
-  // Navigate to next/previous workday (skip weekends)
   do {
     date.setDate(date.getDate() + direction)
-  } while (date.getDay() === 0 || date.getDay() === 6) // 0 = Sunday, 6 = Saturday
+  } while (date.getDay() === 0 || date.getDay() === 6)
 
-  // Format back to YYYY-MM-DD using local timezone
   const newYear = date.getFullYear()
   const newMonth = (date.getMonth() + 1).toString().padStart(2, '0')
   const newDay = date.getDate().toString().padStart(2, '0')
@@ -603,16 +582,12 @@ const navigateDate = (direction: number) => {
 const goToToday = () => {
   const today = new Date()
 
-  // If today is weekend, go to next Monday
   if (today.getDay() === 0) {
-    // Sunday
     today.setDate(today.getDate() + 1)
   } else if (today.getDay() === 6) {
-    // Saturday
     today.setDate(today.getDate() + 2)
   }
 
-  // Format using local timezone to avoid UTC conversion
   const year = today.getFullYear()
   const month = (today.getMonth() + 1).toString().padStart(2, '0')
   const day = today.getDate().toString().padStart(2, '0')
@@ -622,7 +597,6 @@ const goToToday = () => {
   updateRoute()
 }
 
-// Route management
 const updateRoute = () => {
   router.push({
     query: {
@@ -632,7 +606,6 @@ const updateRoute = () => {
   })
 }
 
-// Staff helpers
 const getStaffInitials = (staff: Staff | null): string => {
   if (!staff) return 'U'
   const first = staff.firstName?.[0] || ''
@@ -640,12 +613,10 @@ const getStaffInitials = (staff: Staff | null): string => {
   return (first + last).toUpperCase() || 'U'
 }
 
-// Date formatting
 const formatDisplayDate = (date: string): string => {
-  // Parse date as local timezone to avoid UTC conversion issues
   const parts = date.split('-')
   const year = parseInt(parts[0])
-  const month = parseInt(parts[1]) - 1 // Month is 0-indexed
+  const month = parseInt(parts[1]) - 1
   const day = parseInt(parts[2])
 
   const d = new Date(year, month, day)
@@ -661,15 +632,13 @@ const formatDisplayDate = (date: string): string => {
 }
 
 const formatShortDate = (date: string): string => {
-  // Parse date as local timezone to avoid UTC conversion issues
   const parts = date.split('-')
   const year = parseInt(parts[0])
-  const month = parseInt(parts[1]) - 1 // Month is 0-indexed
+  const month = parseInt(parts[1]) - 1
   const day = parseInt(parts[2])
 
   const d = new Date(year, month, day)
 
-  // Format as "Jan 15" for mobile
   const formatted = d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -681,7 +650,6 @@ const formatShortDate = (date: string): string => {
 function syncGridState() {
   console.log('🔄 Starting syncGridState...')
 
-  // Use getGridData from the composable
   const gridData = getGridData()
 
   console.log('📋 Got grid data from composable:', gridData.length, 'entries')
@@ -698,7 +666,6 @@ function syncGridState() {
     })),
   )
 
-  // Update timeEntries with grid data (filter out empty rows and keep entries with jobId or jobNumber)
   timeEntries.value = gridData.filter((d) => {
     const hasJob = d && !d.isEmptyRow && (d.jobId || d.jobNumber)
     console.log('🔍 Filtering entry:', {
@@ -724,15 +691,12 @@ function syncGridState() {
   )
 }
 
-// Local type for timesheet entries with additional metadata
 interface TimesheetEntryWithMeta extends OptimizedTimeEntry {
   _isSaving?: boolean
   tempId?: string
 }
 
-// Entry management handlers - using modern CostLine API
 async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
-  // Early return: não salva entradas dummy
   const hasJob = entry.jobId || entry.jobNumber
   const hasDescription = entry.description && entry.description.trim().length > 0
   const hasHours = entry.hours > 0
@@ -740,14 +704,12 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
     return
   }
 
-  // Early return: previne save duplicado
   if (entry._isSaving) return
 
   try {
     loading.value = true
     entry._isSaving = true
 
-    // Gera tempId para novas entradas
     if (!entry.id && !entry.tempId) {
       entry.tempId = uuidv4()
     }
@@ -793,7 +755,6 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
       delete entry.tempId
     }
 
-    // Atualiza local state: substitui por id ou tempId
     const entryIndex = timeEntries.value.findIndex((e: TimesheetEntryWithMeta) => {
       if (entry.id && e.id === entry.id) return true
       if (entry.tempId && e.tempId === entry.tempId) return true
@@ -819,7 +780,6 @@ async function handleDeleteEntry(id: number): Promise<void> {
 
     await costlineService.deleteCostLine(id)
 
-    // Remove from local state
     timeEntries.value = timeEntries.value.filter((e: OptimizedTimeEntry) => e.id !== id)
 
     hasUnsavedChanges.value = false
@@ -839,14 +799,11 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
     oldValue: event.oldValue,
   })
 
-  // Delegate to the grid composable's handler for comprehensive processing
   gridHandleCellValueChanged(event)
 
-  // Mark as having changes (this is view-specific state)
   hasUnsavedChanges.value = true
 }
 
-// AG Grid event handlers
 function onGridReady(params: GridReadyEvent) {
   setGridApi(params.api)
 }
@@ -865,7 +822,6 @@ function onCellClicked(event: CellClickedEvent) {
   }
 }
 
-// Action handlers
 const addNewEntry = () => {
   console.log('➕ Adding new entry for staff:', selectedStaffId.value)
 
@@ -873,14 +829,12 @@ const addNewEntry = () => {
 }
 
 const saveChanges = async () => {
-  // Get changed entries and save them
   console.log('💾 Starting saveChanges...')
   console.log('🔍 agGridRef.value:', !!agGridRef.value)
   console.log('🔍 agGridRef.value?.api:', !!agGridRef.value?.api)
 
   syncGridState()
 
-  // Only save entries that are new or have been modified
   const changedEntries = timeEntries.value.filter(
     (entry: OptimizedTimeEntry) => entry.isNewRow || entry.isModified,
   )
@@ -902,7 +856,6 @@ const saveChanges = async () => {
     return
   }
 
-  // Validate entries before saving - ensure all required fields are present
   const invalidEntries = changedEntries.filter((entry) => {
     const hasJob = entry.jobId || entry.jobNumber
     const hasDescription = entry.description && entry.description.trim().length > 0
@@ -938,11 +891,9 @@ const saveChanges = async () => {
     console.log('Timestamp:', new Date().toISOString())
     await handleSaveEntry(entry)
 
-    // Clear the modification flag after successful save
     entry.isModified = false
   }
 
-  // Clear the global change flag after all saves
   hasUnsavedChanges.value = false
 }
 
@@ -955,15 +906,12 @@ const refreshData = () => {
   reloadData()
 }
 
-// Staff change handler - fix type to accept string | null
 const handleStaffChange = async (staffId: string | null) => {
-  // Early return guard
   if (!staffId) {
     console.log('⏭️ Skipping staff change - no staffId provided')
     return
   }
 
-  // Avoid setting the same staff again
   if (staffId === selectedStaffId.value) {
     console.log('⏭️ Skipping staff change - same staff selected')
     return
@@ -974,13 +922,10 @@ const handleStaffChange = async (staffId: string | null) => {
   selectedStaffId.value = staffId
   updateRoute()
 
-  // Manual load - no watcher
   await loadTimesheetData()
 }
 
-// Main data loading function using modern CostLine system
 const loadTimesheetData = async () => {
-  // Debugging
   console.log('function loadTimesheetData called with:', {
     staffId: selectedStaffId.value,
     date: currentDate.value,
@@ -990,7 +935,6 @@ const loadTimesheetData = async () => {
   console.log('Call-stack: ', new Error().stack)
   console.log('Timestamp:', new Date().toISOString())
 
-  // Early return guard clauses
   if (!selectedStaffId.value) {
     console.log('⏭️ Skipping data load - no staff selected')
     return
@@ -1010,7 +954,6 @@ const loadTimesheetData = async () => {
       date: currentDate.value,
     })
 
-    // Load timesheet entries using CostLine system
     const response = await costlineService.getTimesheetEntries(
       selectedStaffId.value,
       currentDate.value,
@@ -1020,10 +963,6 @@ const loadTimesheetData = async () => {
     console.log('📄 Cost lines from API:', response.cost_lines)
     console.log('📊 Number of cost lines:', response.cost_lines?.length || 0)
 
-    // Convert CostLines to TimesheetEntry format
-    // Note: job_id, job_number, job_name, client_name come from the CostSet->Job relationship,
-    // NOT from metadata. This ensures data consistency and follows the CostLine architecture.
-    // Tipo intermediário para cost_lines do backend
     interface BackendCostLine extends CostLine {
       job_id?: string
       job_number?: string
@@ -1068,7 +1007,6 @@ const loadTimesheetData = async () => {
   }
 }
 
-// Helper function to convert rate multiplier back to rate type
 const getRateTypeFromMultiplier = (multiplier: number): string => {
   switch (multiplier) {
     case 1.0:
@@ -1084,20 +1022,16 @@ const getRateTypeFromMultiplier = (multiplier: number): string => {
   }
 }
 
-// Keyboard shortcuts
 const handleKeydown = (event: KeyboardEvent) => {
-  // Só processar se não estamos dentro de um input/textarea
   const target = event.target as HTMLElement
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
     return
   }
 
-  // Handle grid-specific shortcuts first
   if (handleKeyboardShortcut(event, selectedStaffId.value)) {
-    return // Grid handled the shortcut
+    return
   }
 
-  // Handle global shortcuts
   if (event.ctrlKey || event.metaKey) {
     switch (event.key) {
       case 'n':
@@ -1113,7 +1047,6 @@ const handleKeydown = (event: KeyboardEvent) => {
     }
   }
 
-  // Handle Shift+N like JobEstimateTab
   if (event.shiftKey && event.key === 'N') {
     event.preventDefault()
     event.stopPropagation()
@@ -1122,14 +1055,12 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 }
 
-// Lifecycle
 onMounted(async () => {
   try {
-    loading.value = true // Ativar loading imediatamente
+    loading.value = true
 
     console.log('🚀 Initializing optimized timesheet...')
 
-    // Load initial data
     await timesheetStore.initialize()
     await timesheetStore.loadStaff()
     await timesheetStore.loadJobs()
@@ -1139,7 +1070,6 @@ onMounted(async () => {
     staffList.value = timesheetStore.staff
     jobsList.value = timesheetStore.jobs
 
-    // Convert jobs to JobSelectionItem format for OptimizedJobCellEditor
     const convertedJobs = timesheetStore.jobs.map((job: Job) => ({
       id: job.id,
       job_number: job.jobNumber,
@@ -1150,13 +1080,10 @@ onMounted(async () => {
       job_display_name: job.displayName || `${job.jobNumber} - ${job.jobName || job.name || ''}`,
     }))
 
-    // Set global jobs for OptimizedJobCellEditor
     window.timesheetJobs = convertedJobs
 
-    // Validate and set staff - prioritize URL parameters
     let validStaffId = selectedStaffId.value
 
-    // If no staff from URL or invalid staff ID, use first available staff
     if (
       (!validStaffId || !staffList.value.find((s: Staff) => s.id === validStaffId)) &&
       staffList.value.length > 0
@@ -1169,11 +1096,9 @@ onMounted(async () => {
 
     selectedStaffId.value = validStaffId
 
-    // Set current staff globally for calculations (using the validated staff ID)
     const currentStaffData = staffList.value.find((s: Staff) => s.id === validStaffId)
     window.currentStaff = currentStaffData
 
-    // Set company defaults globally for calculations
     window.companyDefaults = companyDefaults.value
 
     console.log('📋 Available staff:', staffList.value.length)
@@ -1187,16 +1112,13 @@ onMounted(async () => {
     )
     console.log('💰 Company defaults for calculations:', companyDefaults.value)
 
-    // Update URL to reflect the actual values being used
     updateRoute()
 
     isInitializing.value = false
 
-    // Initial load after everything is set up
     console.log('📊 Starting initial data load...')
     await loadTimesheetData()
 
-    // Add keyboard shortcuts
     window.addEventListener('keydown', handleKeydown)
 
     console.log('✅ Optimized timesheet initialized successfully')
@@ -1206,11 +1128,9 @@ onMounted(async () => {
   }
 })
 
-// Watchers - only watch for manual changes after initialization
 watch(
   [selectedStaffId, currentDate],
   async ([newStaffId, newDate], [oldStaffId, oldDate]) => {
-    // Early return guards
     if (!newStaffId || !newDate) {
       console.log('⏭️ Skipping watcher - missing staffId or date')
       return
@@ -1226,8 +1146,6 @@ watch(
       return
     }
 
-    // Only load if this is a real change (not initial setup)
-    // Check that we have previous values (indicating this isn't the first run)
     if (!oldStaffId || !oldDate) {
       console.log('⏭️ Skipping watcher - initial setup detected')
       return
@@ -1244,7 +1162,6 @@ watch(
   { immediate: false },
 )
 
-// Watch for URL parameter changes
 watch(
   () => route.query,
   (newQuery, oldQuery) => {
@@ -1257,14 +1174,12 @@ watch(
 
     let hasChanges = false
 
-    // Update date if changed in URL
     if (newQuery.date && newQuery.date !== currentDate.value) {
       console.log('📅 Updating date from URL:', newQuery.date)
       currentDate.value = newQuery.date as string
       hasChanges = true
     }
 
-    // Update staff if changed in URL - validate staff exists
     if (newQuery.staffId && newQuery.staffId !== selectedStaffId.value) {
       const staffExists = staffList.value.find((s: Staff) => s.id === newQuery.staffId)
       if (staffExists) {
@@ -1276,7 +1191,6 @@ watch(
       }
     }
 
-    // If there were changes, reload data
     if (hasChanges) {
       console.log('🔄 Reloading data due to URL changes')
       loadTimesheetData()
@@ -1289,7 +1203,6 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
 
-// Declaração global para variáveis de janela
 declare global {
   interface Window {
     timesheetJobs?: unknown
@@ -1312,7 +1225,6 @@ declare global {
   --ag-font-size: 13px;
 }
 
-/* Mobile-specific grid styles */
 @media (max-width: 1024px) {
   :deep(.ag-theme-custom) {
     --ag-header-height: 36px;
@@ -1328,7 +1240,6 @@ declare global {
     padding: 0 4px;
   }
 
-  /* Hide less important columns on mobile */
   :deep(.ag-theme-custom .ag-header-cell[col-id='client_name']),
   :deep(.ag-theme-custom .ag-cell[col-id='client_name']) {
     display: none;
@@ -1340,7 +1251,6 @@ declare global {
   }
 }
 
-/* Even smaller screens - hide more columns */
 @media (max-width: 640px) {
   :deep(.ag-theme-custom) {
     --ag-header-height: 32px;
@@ -1374,7 +1284,6 @@ declare global {
   border: 1px solid rgb(59, 130, 246);
 }
 
-/* Responsive grid scrolling */
 :deep(.ag-theme-custom .ag-body-horizontal-scroll) {
   height: 14px !important;
 }

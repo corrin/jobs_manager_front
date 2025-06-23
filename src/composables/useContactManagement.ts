@@ -1,10 +1,3 @@
-/**
- * Contact Management Composable
- *
- * Seguindo princípios de SRP - responsabilidade única para gerenciamento de contatos.
- * Baseado no contact_management.js existente, adaptado para Vue.js.
- */
-
 import { ref, computed } from 'vue'
 import api from '@/plugins/axios'
 import type { ClientContact } from '@/composables/useClientLookup'
@@ -19,7 +12,6 @@ export interface NewContactData {
 }
 
 export function useContactManagement() {
-  // State management seguindo clean code principles
   const isModalOpen = ref(false)
   const contacts = ref<ClientContact[]>([])
   const selectedContact = ref<ClientContact | null>(null)
@@ -27,7 +19,6 @@ export function useContactManagement() {
   const currentClientId = ref<string>('')
   const currentClientName = ref<string>('')
 
-  // New contact form data
   const newContactForm = ref<NewContactData>({
     name: '',
     position: '',
@@ -37,7 +28,6 @@ export function useContactManagement() {
     is_primary: false,
   })
 
-  // Computed properties
   const hasContacts = computed(() => contacts.value.length > 0)
 
   const displayValue = computed(() => {
@@ -52,9 +42,7 @@ export function useContactManagement() {
     return parts.join(' - ')
   })
 
-  // Open modal using an early return pattern
   const openModal = async (clientId: string, clientName: string) => {
-    // Guard clause - check if the client ID is valid
     if (!clientId) {
       console.warn('Cannot open contact modal without client ID')
       return
@@ -64,22 +52,17 @@ export function useContactManagement() {
     currentClientName.value = clientName
     isModalOpen.value = true
 
-    // Reset form
     resetNewContactForm()
 
-    // Load contacts
     await loadContacts(clientId)
   }
 
-  // Close modal
   const closeModal = () => {
     isModalOpen.value = false
     resetNewContactForm()
   }
 
-  // Load contacts for a specific client
   const loadContacts = async (clientId: string) => {
-    // Guard clause
     if (!clientId) {
       contacts.value = []
       return
@@ -102,20 +85,16 @@ export function useContactManagement() {
     }
   }
 
-  // Load contacts without opening modal
   const loadContactsOnly = async (clientId: string) => {
     await loadContacts(clientId)
   }
 
-  // Select existing contact
   const selectExistingContact = (contact: ClientContact) => {
     selectedContact.value = contact
     closeModal()
   }
 
-  // Create new contact using early return
   const createNewContact = async (): Promise<boolean> => {
-    // Guard clauses - validation
     if (!currentClientId.value) {
       console.error('Cannot create contact without client ID')
       return false
@@ -140,17 +119,15 @@ export function useContactManagement() {
       }
 
       const response = await api.post('/clients/rest/contacts/', contactData)
-      // Guard clause for an invalid response
+
       if (!response.data || !response.data.contact) {
         throw new Error('Invalid response from server')
       }
 
       const newContact: ClientContact = response.data.contact
 
-      // Update selected contact
       selectedContact.value = newContact
 
-      // Reload contacts list
       await loadContacts(currentClientId.value)
 
       closeModal()
@@ -163,7 +140,6 @@ export function useContactManagement() {
     }
   }
 
-  // Reset form following clean code
   const resetNewContactForm = () => {
     newContactForm.value = {
       name: '',
@@ -175,9 +151,7 @@ export function useContactManagement() {
     }
   }
 
-  // Save contact (create new or select existing)
   const saveContact = async (): Promise<boolean> => {
-    // Switch-case to decide action based on state
     const hasNewContactData = newContactForm.value.name.trim().length > 0
 
     switch (true) {
@@ -194,19 +168,15 @@ export function useContactManagement() {
     }
   }
 
-  // Clear selection
   const clearSelection = () => {
     selectedContact.value = null
   }
 
-  // Update contacts list (for external use)
   const updateContactsList = (newContacts: ClientContact[]) => {
     contacts.value = newContacts
   }
 
-  // Find primary contact
   const findPrimaryContact = (): ClientContact | null => {
-    // Early return if there are no contacts
     if (contacts.value.length === 0) {
       return null
     }
@@ -215,7 +185,6 @@ export function useContactManagement() {
   }
 
   return {
-    // State
     isModalOpen,
     contacts,
     selectedContact,
@@ -223,11 +192,9 @@ export function useContactManagement() {
     currentClientName,
     newContactForm,
 
-    // Computed
     hasContacts,
     displayValue,
 
-    // Methods
     openModal,
     closeModal,
     loadContacts,

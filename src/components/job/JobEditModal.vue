@@ -7,9 +7,7 @@
       </DialogHeader>
 
       <div class="space-y-6">
-        <!-- Job Basic Information -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Job Name -->
           <div class="md:col-span-2">
             <label for="jobName" class="block text-sm font-medium text-gray-700 mb-1">
               Job Name <span class="text-red-500">*</span>
@@ -24,7 +22,6 @@
             />
           </div>
 
-          <!-- Order Number -->
           <div>
             <label for="orderNumber" class="block text-sm font-medium text-gray-700 mb-1">
               Order Number
@@ -38,7 +35,6 @@
             />
           </div>
 
-          <!-- Status -->
           <div>
             <label for="status" class="block text-sm font-medium text-gray-700 mb-1">
               Status
@@ -61,12 +57,10 @@
           </div>
         </div>
 
-        <!-- Client Section -->
         <div class="border-t pt-6">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Client Information</h3>
 
           <div class="space-y-4">
-            <!-- Client Selection -->
             <div>
               <ClientLookup
                 id="client"
@@ -78,7 +72,6 @@
                 @update:selected-client="handleClientSelected"
               />
 
-              <!-- Current Client Info -->
               <div
                 v-if="localJobData.client_name && !isClientChanged"
                 class="mt-2 p-3 bg-blue-50 rounded border border-blue-200"
@@ -92,12 +85,10 @@
               </div>
             </div>
 
-            <!-- Contact Selection -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Contact</label>
 
               <div class="space-y-2">
-                <!-- Current Contact Display -->
                 <div class="flex space-x-2">
                   <input
                     v-model="contactDisplayName"
@@ -138,12 +129,10 @@
           </div>
         </div>
 
-        <!-- Job Description -->
         <div class="border-t pt-6">
           <h3 class="text-lg font-medium text-gray-900 mb-4">Job Details</h3>
 
           <div class="space-y-4">
-            <!-- Description -->
             <div>
               <RichTextEditor
                 id="description"
@@ -154,7 +143,6 @@
               />
             </div>
 
-            <!-- Job Notes -->
             <div>
               <RichTextEditor
                 id="notes"
@@ -212,7 +200,6 @@
     </DialogContent>
   </Dialog>
 
-  <!-- Contact Selection Modal -->
   <ContactSelectionModal
     :is-open="showContactModal"
     :client-id="currentClientId"
@@ -244,7 +231,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
-// Props
 interface Props {
   jobData: JobData | null
   isOpen: boolean
@@ -252,19 +238,16 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Events
 const emit = defineEmits<{
   close: []
   'job-updated': [job: JobData]
 }>()
 
-// Local state
 const localJobData = ref<Partial<JobData>>({})
 const isLoading = ref(false)
 const isClientChanged = ref(false)
 const selectedClient = ref<Client | null>(null)
 
-// Contact management
 const {
   isModalOpen: showContactModal,
   contacts,
@@ -277,7 +260,6 @@ const {
   saveContact,
 } = useContactManagement()
 
-// Computed properties
 const currentClientId = computed(() => {
   return isClientChanged.value && selectedClient.value
     ? selectedClient.value.id
@@ -292,9 +274,7 @@ const currentClientName = computed(() => {
 
 const clientDisplayName = computed({
   get: () => currentClientName.value,
-  set: () => {
-    // This will be handled by ClientLookup component
-  },
+  set: () => {},
 })
 
 const contactDisplayName = computed(() => {
@@ -304,7 +284,6 @@ const contactDisplayName = computed(() => {
   return ''
 })
 
-// Computeds para campos nullable para compatibilidade com RichTextEditor
 const jobDescription = computed({
   get: () => localJobData.value.description || '',
   set: (value: string) => {
@@ -319,19 +298,15 @@ const jobNotes = computed({
   },
 })
 
-// Form validation following SRP
 const isFormValid = computed(() => {
-  // Guard clause - early return if no data
   if (!localJobData.value) return false
 
-  // Validate required fields
   const hasName = Boolean(localJobData.value.name?.trim())
   const hasClient = Boolean(localJobData.value.client_id)
 
   return hasName && hasClient
 })
 
-// Watch for props changes
 watch(
   () => props.jobData,
   (newJobData) => {
@@ -344,13 +319,11 @@ watch(
   { immediate: true },
 )
 
-// Methods following clean code principles
 const handleClientChange = (clientId: string) => {
   if (clientId !== localJobData.value.client_id) {
     isClientChanged.value = true
     localJobData.value.client_id = clientId
 
-    // Clear contact when client changes
     clearContact()
   }
 }
@@ -364,7 +337,6 @@ const handleClientSelected = (client: Client | null) => {
 }
 
 const handleOpenContactModal = async () => {
-  // Guard clause - check if client is selected
   if (!currentClientId.value) {
     console.warn('Cannot open contact modal without client')
     return
@@ -398,7 +370,6 @@ const clearContact = () => {
 }
 
 const handleSave = async () => {
-  // Guard clause - validation
   if (!isFormValid.value || !props.jobData) {
     return
   }
@@ -406,7 +377,6 @@ const handleSave = async () => {
   isLoading.value = true
 
   try {
-    // Prepare update data
     const updateData = {
       name: localJobData.value.name?.trim(),
       client_id: currentClientId.value,
@@ -426,7 +396,6 @@ const handleSave = async () => {
       'id' in result.data &&
       'job_number' in result.data
     ) {
-      // Cast seguro para JobData, preenchendo campos obrigatórios
       const safeJobData: JobData = {
         id: String((result.data as { id: unknown }).id ?? ''),
         name: (result.data as { name?: string }).name ?? '',
@@ -444,7 +413,7 @@ const handleSave = async () => {
             .pricing_methodology ?? 'fixed_price',
         created_at: (result.data as { created_at?: string }).created_at ?? '',
         updated_at: (result.data as { updated_at?: string }).updated_at ?? '',
-        // Campos opcionais preenchidos se existirem
+
         complex_job: (result.data as { complex_job?: boolean }).complex_job,
         delivery_date: (result.data as { delivery_date?: string | null }).delivery_date,
         quote_acceptance_date: (result.data as { quote_acceptance_date?: string | null })

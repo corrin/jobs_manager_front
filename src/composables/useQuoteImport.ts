@@ -13,7 +13,6 @@ export function useQuoteImport() {
   const currentQuote = ref<QuoteStatusResponse | null>(null)
   const error = ref<string | null>(null)
 
-  // Computed properties
   const canProceed = computed(() => {
     return previewData.value?.preview?.can_proceed === true
   })
@@ -45,7 +44,6 @@ export function useQuoteImport() {
     return importResult.value?.success === true
   })
 
-  // Actions
   async function loadQuoteStatus(jobId: string) {
     isLoading.value = true
     error.value = null
@@ -70,7 +68,6 @@ export function useQuoteImport() {
     try {
       previewData.value = await quoteImportService.previewQuoteImport(jobId, file)
 
-      // Check if preview has errors
       if (previewData.value.preview.error) {
         error.value = previewData.value.preview.error
       }
@@ -91,12 +88,10 @@ export function useQuoteImport() {
     try {
       importResult.value = await quoteImportService.importQuote(jobId, file, skipValidation)
 
-      // Check if import failed
       if (!importResult.value.success && importResult.value.error) {
         error.value = importResult.value.error
       }
 
-      // Reload quote status if import was successful
       if (importResult.value.success) {
         await loadQuoteStatus(jobId)
       }
@@ -121,14 +116,12 @@ export function useQuoteImport() {
   }
 
   return {
-    // State
     isLoading,
     previewData,
     importResult,
     currentQuote,
     error,
 
-    // Computed
     canProceed,
     hasValidationIssues,
     hasErrors,
@@ -137,7 +130,6 @@ export function useQuoteImport() {
     nextRevision,
     importWasSuccessful,
 
-    // Actions
     loadQuoteStatus,
     previewImport,
     executeImport,

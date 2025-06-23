@@ -32,7 +32,6 @@
         }"
         style="height: calc(90vh - 12.5rem); overflow-y: auto"
       >
-        <!-- Jobs -->
         <JobCard
           v-for="job in jobs"
           :key="job.id"
@@ -45,7 +44,6 @@
           @job-selected-for-movement="$emit('job-selected-for-movement', $event)"
         />
 
-        <!-- Empty state -->
         <div v-if="jobs.length === 0" class="flex items-center justify-center text-gray-500 h-32">
           <div class="text-center">
             <div class="text-sm">No jobs in {{ status.label.toLowerCase() }}</div>
@@ -53,7 +51,6 @@
           </div>
         </div>
 
-        <!-- Load more button -->
         <div
           v-if="showLoadMore && !isLoading"
           :class="jobs.length > 0 ? 'col-span-2' : ''"
@@ -67,14 +64,12 @@
           </button>
         </div>
 
-        <!-- Loading spinner -->
         <div v-if="isLoading" :class="jobs.length > 0 ? 'col-span-2' : ''" class="mt-4 text-center">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
         </div>
       </div>
     </div>
 
-    <!-- Archive layout -->
     <div v-else class="w-full">
       <div
         ref="jobListRef"
@@ -101,12 +96,10 @@
           </div>
         </div>
 
-        <!-- Empty state for archive -->
         <div v-if="jobs.length === 0" class="col-span-full text-center py-8">
           <div class="text-xs text-gray-500">No archived jobs</div>
         </div>
 
-        <!-- Load more button for archive -->
         <div v-if="showLoadMore && !isLoading" class="col-span-full text-center">
           <button
             @click="$emit('load-more')"
@@ -116,7 +109,6 @@
           </button>
         </div>
 
-        <!-- Loading spinner for archive -->
         <div v-if="isLoading" class="col-span-full text-center">
           <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mx-auto"></div>
         </div>
@@ -162,10 +154,9 @@ const emit = defineEmits<KanbanColumnEmits>()
 
 const jobListRef = ref<HTMLElement>()
 
-// Handler for archived job drop events
 const handleArchivedJobDrop = (event: CustomEvent) => {
   console.log('KanbanColumn received archived job drop:', event.detail)
-  // Re-emit to parent KanbanView
+
   const dropEvent = new CustomEvent('archived-job-drop', {
     detail: event.detail,
     bubbles: true,
@@ -180,13 +171,11 @@ onMounted(async () => {
     console.log(`🔧 Column ${props.status.key} ready, emitting sortable-ready`)
     emit('sortable-ready', jobListRef.value, props.status.key)
 
-    // Add event listener for archived job drops on this column
     jobListRef.value.addEventListener('archived-job-drop', handleArchivedJobDrop as EventListener)
   }
 })
 
 onUnmounted(() => {
-  // Remove event listener
   if (jobListRef.value) {
     jobListRef.value.removeEventListener(
       'archived-job-drop',

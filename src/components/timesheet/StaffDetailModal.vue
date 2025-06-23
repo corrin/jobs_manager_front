@@ -18,7 +18,6 @@
       </DialogHeader>
 
       <div class="space-y-6">
-        <!-- Summary Statistics -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="bg-blue-50 p-4 rounded-lg">
             <div class="text-2xl font-bold text-blue-600">
@@ -59,7 +58,6 @@
           </div>
         </div>
 
-        <!-- Status and Alerts -->
         <div
           v-if="staff.alerts.length > 0"
           class="bg-amber-50 border border-amber-200 rounded-lg p-4"
@@ -75,7 +73,6 @@
           </div>
         </div>
 
-        <!-- Job Breakdown -->
         <div v-if="staff.job_breakdown.length > 0">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Job Breakdown</h3>
 
@@ -152,7 +149,6 @@
           </div>
         </div>
 
-        <!-- Actions -->
         <div class="flex justify-end space-x-3 pt-4 border-t">
           <Button @click="$emit('close')" variant="outline"> Close </Button>
           <Button @click="openTimesheet" class="bg-blue-600 hover:bg-blue-700">
@@ -186,7 +182,6 @@ defineEmits<{
 
 const router = useRouter()
 
-// Helper functions
 const getInitials = (name: string): string => {
   return name
     .split(' ')
@@ -209,7 +204,6 @@ const formatPercentage = (value: number): string => {
   return `${value.toFixed(1)}%`
 }
 
-// Actions
 const openTimesheet = (): void => {
   router.push({
     name: 'timesheet-entry',

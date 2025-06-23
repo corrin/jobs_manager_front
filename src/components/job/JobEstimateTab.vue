@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-4">
-    <!-- Header -->
     <div class="flex items-center justify-between">
       <h2 class="text-lg font-semibold text-gray-900">
         Job Estimate
@@ -27,9 +26,7 @@
       </div>
     </div>
 
-    <!-- Main Content Layout: Grid + Summary Side by Side -->
     <div class="flex gap-4 h-full">
-      <!-- AG Grid Container (60%) -->
       <div class="flex-[3] bg-white rounded-lg border border-gray-200 flex flex-col min-h-0">
         <div
           ref="gridContainer"
@@ -38,16 +35,12 @@
         ></div>
       </div>
 
-      <!-- Summary Panel (40%) -->
       <div
         class="flex-[2] bg-gray-50 rounded-lg p-3 border border-gray-200 overflow-y-auto max-h-96"
       >
-        <!-- Header -->
         <h3 class="text-sm font-semibold text-gray-900 mb-3">Summary</h3>
 
-        <!-- Main Calculations - Simplificado conforme nova especificação -->
         <div class="space-y-2 mb-3">
-          <!-- Labour Cost (primeira linha) -->
           <div class="bg-blue-50 p-2 rounded border border-blue-200">
             <div class="flex justify-between items-center">
               <div class="text-xs font-medium text-blue-800">Labour Cost</div>
@@ -60,7 +53,6 @@
             </div>
           </div>
 
-          <!-- Material Cost (segunda linha) -->
           <div class="bg-green-50 p-2 rounded border border-green-200">
             <div class="flex justify-between items-center">
               <div class="text-xs font-medium text-green-800">Material Cost</div>
@@ -71,7 +63,6 @@
             <div class="text-xs text-green-600">Total material costs</div>
           </div>
 
-          <!-- Labour Revenue -->
           <div class="bg-orange-50 p-2 rounded border border-orange-200">
             <div class="flex justify-between items-center">
               <div class="text-xs font-medium text-orange-800">Labour Revenue</div>
@@ -84,7 +75,6 @@
             </div>
           </div>
 
-          <!-- Material Revenue -->
           <div class="bg-yellow-50 p-2 rounded border border-yellow-200">
             <div class="flex justify-between items-center">
               <div class="text-xs font-medium text-yellow-800">Material Revenue</div>
@@ -95,7 +85,6 @@
             <div class="text-xs text-yellow-600">{{ materialMarkupPercent }}% markup</div>
           </div>
 
-          <!-- Total Revenue -->
           <div class="bg-purple-50 p-2 rounded border border-purple-200">
             <div class="flex justify-between items-center">
               <div class="text-xs font-medium text-purple-800">Total Revenue</div>
@@ -121,7 +110,6 @@ import type {
   ICellRendererParams,
 } from 'ag-grid-community'
 
-// Interfaces para eventos do AG Grid
 interface GridReadyParams {
   api: GridApi
 }
@@ -145,56 +133,46 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Refs
 const gridContainer = ref<HTMLElement>()
 let gridApi: GridApi | null = null
 
-// State - agora trabalhando diretamente com CostLine
 const costLines = ref<CostLine[]>([])
 const nextItemNumber = ref(1)
 const hasUnsavedChanges = ref(false)
 const isSaving = ref(false)
 const isLoading = ref(false)
 
-// Grid height calculation - baseado em CostLines
 const gridHeight = computed(() => {
-  const headerHeight = 40 // AG Grid header height
-  const rowHeight = 35 // AG Grid row height to match TimesheetEntryView
-  const minRows = 1 // Always show at least 1 row
-  const maxRows = Math.floor((window.innerHeight * 0.6) / rowHeight) // Max rows based on viewport
+  const headerHeight = 40
+  const rowHeight = 35
+  const minRows = 1
+  const maxRows = Math.floor((window.innerHeight * 0.6) / rowHeight)
 
   const actualRows = Math.max(costLines.value.length, minRows)
   const visibleRows = Math.min(actualRows, maxRows)
 
-  return headerHeight + visibleRows * rowHeight + 4 // +4 for borders
+  return headerHeight + visibleRows * rowHeight + 4
 })
 
-// Company defaults with fallbacks
 const chargeOutRate = computed(() => props.companyDefaults?.charge_out_rate || 150)
 const materialMarkupPercent = computed(() => {
-  // Company defaults stores markup as decimal (0.2 = 20%), so multiply by 100
   const markup = props.companyDefaults?.materials_markup || 0.2
   return markup * 100
 })
 const wageRate = computed(() => props.companyDefaults?.wage_rate || 60)
 
-// Summary calculations - conforme especificação
 const totalLabourHours = computed(() => {
   console.log(
     '⏰ Labour calculation - Lines:',
     costLines.value.filter((line) => line.kind === 'time').length,
   )
 
-  // CORREÇÃO: Usar campos principais do banco, não meta!
-  // Para itens de tempo: total_cost / wage_rate = horas totais
   const totalHours = costLines.value
-    .filter((line) => line.kind === 'time') // Filtrar por kind, não meta
+    .filter((line) => line.kind === 'time')
     .reduce((total, line) => {
-      // Usar total_cost e wage_rate para calcular horas
       const totalCost = parseFloat(String(line.total_cost)) || 0
       const wageRateValue = wageRate.value || 32
 
-      // Se temos custo e wage_rate, calcular horas: total_cost / wage_rate
       const hoursForLine = wageRateValue > 0 ? totalCost / wageRateValue : 0
 
       console.log(
@@ -208,7 +186,6 @@ const totalLabourHours = computed(() => {
 })
 
 const labourHoursCost = computed(() => {
-  // Labour Hours Cost = (total minutos / 60) * charge_out_rate
   const cost = totalLabourHours.value * chargeOutRate.value
   console.log(
     '💰 Labour Hours Cost calculation - Hours:',
@@ -222,7 +199,6 @@ const labourHoursCost = computed(() => {
 })
 
 const totalLabourCost = computed(() => {
-  // Total Labour Cost (interno) = (total minutos / 60) * wage_rate
   const cost = totalLabourHours.value * wageRate.value
   console.log(
     '💼 Total Labour Cost calculation - Hours:',
@@ -236,65 +212,24 @@ const totalLabourCost = computed(() => {
 })
 
 const materialCostBeforeMarkup = computed(() => {
-  // Soma do total_cost de todos os materiais
   return costLines.value
     .filter((line) => line.meta?.total_cost && !line.meta?.labour_minutes)
     .reduce((total, line) => total + parseFloat(String(line.meta?.total_cost || 0)), 0)
 })
 
 const materialCostAfterMarkup = computed(() => {
-  // Total cost + MU = materiais + markup
   const markup = materialMarkupPercent.value / 100
   return materialCostBeforeMarkup.value * (1 + markup)
 })
 
 const finalCost = computed(() => {
-  // Final Cost = Labour Hours Cost + Total Cost + MU
   return labourHoursCost.value + materialCostAfterMarkup.value
 })
 
-// Initialize with one default empty row
 const initializeDefaultRow = () => {
   if (costLines.value.length === 0) {
     const defaultCostLine: Partial<CostLine> = {
-      id: Date.now(), // Use timestamp for unique ID
-      kind: 'material', // Default to material
-      desc: '',
-      quantity: '1',
-      unit_cost: '0',
-      unit_rev: '0',
-      meta: {
-        item_number: nextItemNumber.value++,
-        category: 'mainWork', // Default category
-        labour_minutes: 0,
-        item_cost: 0,
-        total_cost: 0,
-        is_new: true,
-        is_modified: false,
-        empty_line: true, // Flag para identificar linha inicial vazia
-      },
-      total_cost: 0,
-      total_rev: 0,
-    }
-    costLines.value.push(defaultCostLine as CostLine)
-  }
-}
-
-// Função para garantir que sempre há uma linha vazia no final
-const ensureEmptyRowAtEnd = () => {
-  // Verificar se a última linha está vazia
-  const lastLine = costLines.value[costLines.value.length - 1]
-  const isLastLineEmpty =
-    lastLine &&
-    !lastLine.desc &&
-    !lastLine.meta?.labour_minutes &&
-    !lastLine.meta?.item_cost &&
-    !lastLine.meta?.total_cost
-
-  if (!isLastLineEmpty) {
-    console.log('📝 Adding empty row at end for better UX')
-    const emptyLine: Partial<CostLine> = {
-      id: Date.now() + Math.random(), // Ensure unique ID
+      id: Date.now(),
       kind: 'material',
       desc: '',
       quantity: '1',
@@ -308,7 +243,42 @@ const ensureEmptyRowAtEnd = () => {
         total_cost: 0,
         is_new: true,
         is_modified: false,
-        empty_line: true, // Flag para identificar linha vazia
+        empty_line: true,
+      },
+      total_cost: 0,
+      total_rev: 0,
+    }
+    costLines.value.push(defaultCostLine as CostLine)
+  }
+}
+
+const ensureEmptyRowAtEnd = () => {
+  const lastLine = costLines.value[costLines.value.length - 1]
+  const isLastLineEmpty =
+    lastLine &&
+    !lastLine.desc &&
+    !lastLine.meta?.labour_minutes &&
+    !lastLine.meta?.item_cost &&
+    !lastLine.meta?.total_cost
+
+  if (!isLastLineEmpty) {
+    console.log('📝 Adding empty row at end for better UX')
+    const emptyLine: Partial<CostLine> = {
+      id: Date.now() + Math.random(),
+      kind: 'material',
+      desc: '',
+      quantity: '1',
+      unit_cost: '0',
+      unit_rev: '0',
+      meta: {
+        item_number: nextItemNumber.value++,
+        category: 'mainWork',
+        labour_minutes: 0,
+        item_cost: 0,
+        total_cost: 0,
+        is_new: true,
+        is_modified: false,
+        empty_line: true,
       },
       total_cost: 0,
       total_rev: 0,
@@ -316,16 +286,13 @@ const ensureEmptyRowAtEnd = () => {
 
     costLines.value.push(emptyLine as CostLine)
 
-    // Adicionar no grid também
     if (gridApi) {
       gridApi.applyTransaction({ add: [emptyLine] })
     }
   }
 }
 
-// Load existing estimate data from CostSet
 const loadExistingEstimateData = async () => {
-  // Early return se não há jobId
   if (!props.jobId) {
     console.warn('No jobId provided for loading estimate data')
     initializeDefaultRow()
@@ -336,29 +303,26 @@ const loadExistingEstimateData = async () => {
     isLoading.value = true
     console.log(`🔄 Loading existing estimate data for job ${props.jobId}`)
 
-    // Buscar CostSet do tipo 'estimate'
     const costSet = await fetchCostSet(props.jobId, 'estimate')
 
-    // Early return se não há cost_lines
     if (!costSet.cost_lines || costSet.cost_lines.length === 0) {
       console.log('📝 No existing estimate data found, initializing with default row')
       initializeDefaultRow()
       return
     }
 
-    // Processar cost lines com nova estrutura e normalizar tipos
     const processedCostLines = costSet.cost_lines.map((line, index) => ({
       ...line,
-      // Garantir que quantity é sempre string
+
       quantity: String(line.quantity || '1'),
-      // Garantir que unit_cost e unit_rev são strings
+
       unit_cost: String(line.unit_cost || '0'),
       unit_rev: String(line.unit_rev || '0'),
       meta: {
         ...line.meta,
         item_number: index + 1,
         category: line.meta?.category || (line.meta?.labour_minutes ? 'fabrication' : 'mainWork'),
-        // Garantir que valores numéricos são numbers
+
         labour_minutes: Number(line.meta?.labour_minutes || 0),
         item_cost: Number(line.meta?.item_cost || 0),
         total_cost: Number(line.meta?.total_cost || 0),
@@ -367,28 +331,24 @@ const loadExistingEstimateData = async () => {
       },
     }))
 
-    // Atualizar nextItemNumber baseado nos items carregados
     nextItemNumber.value =
       Math.max(...processedCostLines.map((line) => line.meta?.item_number || 0), 0) + 1
 
-    // Atualizar estado
     costLines.value = processedCostLines
     hasUnsavedChanges.value = false
 
     console.log(`✅ Loaded ${processedCostLines.length} cost lines successfully`)
 
-    // Se nenhum item foi carregado, inicializar com row padrão
     if (processedCostLines.length === 0) {
       initializeDefaultRow()
     }
 
-    // Sempre garantir linha vazia no final
     ensureEmptyRowAtEnd()
   } catch (error) {
     console.warn('⚠️ Error loading existing estimate data:', error)
-    // Fallback para row padrão em caso de erro
+
     initializeDefaultRow()
-    // Garantir linha vazia
+
     ensureEmptyRowAtEnd()
   } finally {
     isLoading.value = false
@@ -414,7 +374,6 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
     labour_minutes: costLine.meta?.labour_minutes,
   })
 
-  // Quando quantity muda, recalcular total_cost baseado em item_cost
   if (event.colDef.field === 'quantity') {
     const qty = parseFloat(event.newValue) || 1
     const itemCost = parseFloat(String(costLine.meta?.item_cost || 0))
@@ -425,21 +384,17 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
     }
   }
 
-  // Marcar como modificado para qualquer mudança
   if (costLine.meta) {
     costLine.meta.is_modified = true
   }
 
   hasUnsavedChanges.value = true
 
-  // Forçar refresh das células e trigger de reatividade
   if (gridApi) {
     gridApi.refreshCells({ rowNodes: [event.node], force: true })
   }
 
-  // Forçar atualização do summary via nextTick
   nextTick(() => {
-    // Trigger de atualização manual dos computed values
     console.log(
       '📈 Summary update triggered - Labour hours:',
       totalLabourHours.value,
@@ -447,14 +402,11 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
       materialCostBeforeMarkup.value,
     )
 
-    // Forçar summary update
     triggerSummaryUpdate()
   })
 }
 
-// Keyboard handler for Shift+N (mais robusto e confiável)
 function handleKeyDown(event: KeyboardEvent) {
-  // Só processar se não estamos dentro de um input/textarea
   const target = event.target as HTMLElement
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
     return
@@ -468,9 +420,7 @@ function handleKeyDown(event: KeyboardEvent) {
   }
 }
 
-// Save changes function - melhorada para trabalhar com CostLines
 async function saveChanges() {
-  // Guard clause - early return se não há mudanças
   if (!hasUnsavedChanges.value) {
     console.log('📝 No changes to save')
     return
@@ -480,16 +430,13 @@ async function saveChanges() {
     isSaving.value = true
     console.log('💾 Starting save process...')
 
-    // Filtrar apenas cost lines modificadas e que não são linhas vazias
     const modifiedCostLines = costLines.value.filter((line) => {
-      // Critério mais rigoroso para detectar linhas vazias
       const isEmpty =
-        (!line.desc || line.desc.trim() === '') && // Sem descrição
-        (!line.meta?.labour_minutes || line.meta.labour_minutes <= 0) && // Sem labour
-        (!line.meta?.item_cost || parseFloat(line.meta.item_cost.toString()) <= 0) && // Sem item cost
-        (!line.meta?.total_cost || parseFloat(line.meta.total_cost.toString()) <= 0) // Sem total cost
+        (!line.desc || line.desc.trim() === '') &&
+        (!line.meta?.labour_minutes || line.meta.labour_minutes <= 0) &&
+        (!line.meta?.item_cost || parseFloat(line.meta.item_cost.toString()) <= 0) &&
+        (!line.meta?.total_cost || parseFloat(line.meta.total_cost.toString()) <= 0)
 
-      // Filtrar linhas modificadas e não vazias
       const isModified = line.meta?.is_modified || line.meta?.is_new
 
       if (isEmpty) {
@@ -513,15 +460,13 @@ async function saveChanges() {
     let createdCount = 0
     let updatedCount = 0
 
-    // Processar cada cost line modificada
     for (const costLine of modifiedCostLines) {
       const costLinePayload = prepareCostLinePayload(costLine)
 
       if (costLine.meta?.is_new) {
-        // Criar nova cost line
         try {
           const newCostLine = await createCostLine(props.jobId, 'estimate', costLinePayload)
-          costLine.id = newCostLine.id // Update with real ID
+          costLine.id = newCostLine.id
           if (costLine.meta) {
             costLine.meta.is_new = false
           }
@@ -532,7 +477,6 @@ async function saveChanges() {
           throw createError
         }
       } else {
-        // Atualizar cost line existente
         try {
           await updateCostLine(costLine.id, costLinePayload)
           updatedCount++
@@ -546,7 +490,6 @@ async function saveChanges() {
       savedCount++
     }
 
-    // Marcar todas as cost lines como salvas apenas após sucesso total
     costLines.value.forEach((line) => {
       if (line.meta) {
         line.meta.is_modified = false
@@ -555,10 +498,8 @@ async function saveChanges() {
 
     hasUnsavedChanges.value = false
 
-    // Forçar autocalculation do summary após salvar
     triggerSummaryUpdate()
 
-    // Log de sucesso com estatísticas
     console.log(
       `✅ Estimate saved successfully! Created: ${createdCount}, Updated: ${updatedCount}, Total: ${savedCount}`,
     )
@@ -570,35 +511,30 @@ async function saveChanges() {
   }
 }
 
-// Função para preparar payload da CostLine para API
 function prepareCostLinePayload(costLine: CostLine) {
-  // Calcular campos principais baseados nos meta
   let calculatedUnitCost = 0.0
   let calculatedUnitRev = 0.0
 
   if (costLine.meta?.labour_minutes && costLine.meta.labour_minutes > 0) {
-    // Para items de tempo: unit_cost = (labour_minutes/60) * wage_rate, unit_rev = (labour_minutes/60) * charge_out_rate
     const hours = costLine.meta.labour_minutes / 60
     calculatedUnitCost = Number((hours * wageRate.value).toFixed(2))
     calculatedUnitRev = Number((hours * chargeOutRate.value).toFixed(2))
   } else if (costLine.meta?.item_cost && parseFloat(String(costLine.meta.item_cost)) > 0) {
-    // Para items de material: unit_cost = item_cost, unit_rev = item_cost (assumindo markup = 0 por enquanto)
     calculatedUnitCost = Number(costLine.meta.item_cost)
-    calculatedUnitRev = Number(costLine.meta.item_cost) // Pode ser ajustado com markup depois
+    calculatedUnitRev = Number(costLine.meta.item_cost)
   }
 
-  // Garantir que quantity é um número válido
   const numericQuantity = parseFloat(String(costLine.quantity)) || 1.0
 
   const payload = {
     kind: costLine.kind,
     desc: costLine.desc || '',
-    quantity: numericQuantity.toFixed(3), // Enviar como string formatada para DecimalField
-    unit_cost: calculatedUnitCost.toFixed(2), // Enviar como string formatada para DecimalField
-    unit_rev: calculatedUnitRev.toFixed(2), // Enviar como string formatada para DecimalField
+    quantity: numericQuantity.toFixed(3),
+    unit_cost: calculatedUnitCost.toFixed(2),
+    unit_rev: calculatedUnitRev.toFixed(2),
     meta: {
       ...costLine.meta,
-      // Garantir que temos os campos necessários
+
       item_number: costLine.meta?.item_number || nextItemNumber.value,
       category:
         costLine.meta?.category || (costLine.meta?.labour_minutes ? 'fabrication' : 'mainWork'),
@@ -609,7 +545,6 @@ function prepareCostLinePayload(costLine: CostLine) {
   return payload
 }
 
-// AG Grid Configuration - conforme especificação
 const columnDefs: ColDef[] = [
   {
     headerName: 'Item',
@@ -631,17 +566,15 @@ const columnDefs: ColDef[] = [
       step: 0.01,
     },
     valueParser: (params) => {
-      // Converter vírgula para ponto para compatibilidade com locale brasileiro
       if (typeof params.newValue === 'string') {
         const normalizedValue = params.newValue.replace(',', '.')
         const parsed = parseFloat(normalizedValue)
-        return isNaN(parsed) ? '1.000' : parsed.toFixed(3) // Retornar como string formatada
+        return isNaN(parsed) ? '1.000' : parsed.toFixed(3)
       }
       const parsed = parseFloat(params.newValue) || 1
-      return parsed.toFixed(3) // Retornar como string formatada
+      return parsed.toFixed(3)
     },
     valueFormatter: (params) => {
-      // Ensure we handle both string and number values properly
       const value = params.value
       if (value === null || value === undefined || value === '') {
         return '1'
@@ -653,26 +586,19 @@ const columnDefs: ColDef[] = [
       const qty = parseFloat(params.newValue) || 1
       const currentQty = parseFloat(params.data.quantity) || 1
 
-      // Se o valor não mudou, não fazer nada
       if (qty === currentQty) {
         return false
       }
 
-      // Keep quantity as string since it's stored as string in the data model
       params.data.quantity = qty.toString()
 
-      // Recalcular baseado no tipo de item
       if (params.data.meta?.labour_minutes && params.data.meta.labour_minutes > 0) {
-        // Para items de tempo: labour_minutes permanece FIXO (tempo por unidade)
-        // Quantity apenas multiplica o resultado final
-        const minutesPerUnit = params.data.meta.labour_minutes // tempo fixo por unidade
+        const minutesPerUnit = params.data.meta.labour_minutes
         const hoursPerUnit = minutesPerUnit / 60
 
-        // Calcular custo e revenue por unidade (não mudam com quantity)
         const unitCost = (hoursPerUnit * wageRate.value).toFixed(2)
         const unitRev = (hoursPerUnit * chargeOutRate.value).toFixed(2)
 
-        // Total = unit_cost/unit_rev * quantity
         params.data.unit_cost = unitCost
         params.data.unit_rev = unitRev
         params.data.total_cost = parseFloat(unitCost) * qty
@@ -682,13 +608,11 @@ const columnDefs: ColDef[] = [
           `💼 Updated DB fields for labour quantity change: qty=${qty}, labour_minutes=${minutesPerUnit} (fixed per unit), total_cost=${params.data.total_cost}`,
         )
       } else {
-        // Para items de material: recalcular total_cost se tem item_cost
         const itemCost = parseFloat(String(params.data.meta?.item_cost || 0))
         if (itemCost > 0) {
           const totalCost = Number((qty * itemCost).toFixed(2))
           params.data.meta.total_cost = totalCost
 
-          // Atualizar campos principais do banco
           const unitCost = itemCost.toFixed(2)
           const unitRev = itemCost.toFixed(2)
 
@@ -704,11 +628,9 @@ const columnDefs: ColDef[] = [
         }
       }
 
-      // Marcar como modificado
       params.data.meta.is_modified = true
       hasUnsavedChanges.value = true
 
-      // Forçar refresh da célula total_cost
       nextTick(() => {
         if (gridApi && params.node) {
           gridApi.refreshCells({
@@ -739,7 +661,6 @@ const columnDefs: ColDef[] = [
     field: 'meta.labour_minutes',
     width: 120,
     editable: (params) => {
-      // Só editable se não tem item_cost ou total_cost
       const hasItemCost =
         parseFloat(params.data.meta?.item_cost || '0') > 0 ||
         parseFloat(params.data.meta?.total_cost || '0') > 0
@@ -761,7 +682,6 @@ const columnDefs: ColDef[] = [
       const minutes = parseFloat(params.newValue) || 0
       const currentMinutes = parseFloat(params.data.meta?.labour_minutes || 0)
 
-      // Se o valor não mudou, não fazer nada para evitar loops
       if (minutes === currentMinutes) {
         console.log('🔄 Labour valueSetter: Value unchanged, skipping')
         return false
@@ -776,24 +696,19 @@ const columnDefs: ColDef[] = [
         params.data.id,
       )
 
-      // Se tem labour, bloquear item_cost e total_cost
       if (minutes > 0) {
         params.data.meta.item_cost = 0
         params.data.meta.total_cost = 0
         params.data.meta.category = 'fabrication'
         params.data.kind = 'time'
 
-        // CORREÇÃO: quantity permanece inalterado (representa número de itens)
-        // labour_minutes representa tempo POR ITEM
         const currentQuantity = parseFloat(params.data.quantity) || 1
         const hoursPerItem = minutes / 60
         const totalHours = hoursPerItem * currentQuantity
 
-        // Unit cost/rev baseado no tempo POR ITEM
         const unitCost = (hoursPerItem * wageRate.value).toFixed(2)
         const unitRev = (hoursPerItem * chargeOutRate.value).toFixed(2)
 
-        // Total cost/rev considera a quantidade de itens
         params.data.unit_cost = unitCost
         params.data.unit_rev = unitRev
         params.data.total_cost = parseFloat(unitCost) * currentQuantity
@@ -804,14 +719,11 @@ const columnDefs: ColDef[] = [
         )
       }
 
-      // Ensure we're setting a number value for labour_minutes
       params.data.meta.labour_minutes = Number(minutes)
 
-      // Marcar como modificado e forçar atualização do summary
       params.data.meta.is_modified = true
       hasUnsavedChanges.value = true
 
-      // Forçar refresh das células relacionadas
       nextTick(() => {
         if (gridApi && params.node) {
           gridApi.refreshCells({
@@ -844,7 +756,6 @@ const columnDefs: ColDef[] = [
     field: 'meta.item_cost',
     width: 120,
     editable: (params) => {
-      // Só editable se não tem labour
       const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
       return !hasLabour
     },
@@ -862,7 +773,6 @@ const columnDefs: ColDef[] = [
       const itemCost = parseFloat(params.newValue) || 0
       const currentItemCost = parseFloat(params.data.meta?.item_cost || 0)
 
-      // Se o valor não mudou, não fazer nada para evitar loops
       if (itemCost === currentItemCost) {
         console.log('🔄 Item Cost valueSetter: Value unchanged, skipping')
         return false
@@ -877,21 +787,18 @@ const columnDefs: ColDef[] = [
         desc: params.data.desc,
       })
 
-      // Se tem item_cost, bloquear labour e definir como material
       if (itemCost > 0) {
         console.log('🔒 Blocking labour for item cost > 0')
         params.data.meta.labour_minutes = 0
         params.data.meta.category = 'mainWork'
         params.data.kind = 'material'
 
-        // Recalcular total_cost automaticamente
         const qty = parseFloat(params.data.quantity) || 1
         const totalCost = Number((itemCost * qty).toFixed(2))
         params.data.meta.total_cost = totalCost
 
-        // Atualizar campos principais do banco baseados no item_cost
         const unitCost = itemCost.toFixed(2)
-        const unitRev = itemCost.toFixed(2) // Assumindo markup = 0 por enquanto
+        const unitRev = itemCost.toFixed(2)
 
         params.data.unit_cost = unitCost
         params.data.unit_rev = unitRev
@@ -906,14 +813,11 @@ const columnDefs: ColDef[] = [
         console.log('💰 Item cost is 0, not applying mutual exclusion logic')
       }
 
-      // Ensure we're setting a number value for item_cost
       params.data.meta.item_cost = Number(itemCost.toFixed(2))
 
-      // Marcar como modificado e forçar atualização do summary
       params.data.meta.is_modified = true
       hasUnsavedChanges.value = true
 
-      // Forçar refresh das células relacionadas
       nextTick(() => {
         if (gridApi && params.node) {
           gridApi.refreshCells({
@@ -943,9 +847,8 @@ const columnDefs: ColDef[] = [
     headerName: 'Total Cost',
     field: 'meta.total_cost',
     width: 120,
-    hide: true, // Ocultar coluna mas manter toda a lógica
+    hide: true,
     editable: (params) => {
-      // Só editable se não tem labour
       const hasLabour = (params.data.meta?.labour_minutes || 0) > 0
       return !hasLabour
     },
@@ -963,7 +866,6 @@ const columnDefs: ColDef[] = [
       const totalCost = parseFloat(params.newValue) || 0
       const currentTotalCost = parseFloat(params.data.meta?.total_cost || 0)
 
-      // Se o valor não mudou, não fazer nada para evitar loops
       if (totalCost === currentTotalCost) {
         console.log('🔄 Total Cost valueSetter: Value unchanged, skipping')
         return false
@@ -978,20 +880,17 @@ const columnDefs: ColDef[] = [
         params.data.id,
       )
 
-      // Se tem total_cost, bloquear labour e definir como material
       if (totalCost > 0) {
         params.data.meta.labour_minutes = 0
         params.data.meta.category = 'mainWork'
         params.data.kind = 'material'
 
-        // Recalcular item_cost baseado no total_cost e quantity
         const qty = parseFloat(params.data.quantity) || 1
         const itemCost = qty > 0 ? Number((totalCost / qty).toFixed(2)) : 0
         params.data.meta.item_cost = itemCost
 
-        // Atualizar campos principais do banco baseados no total_cost
         const unitCost = itemCost.toFixed(2)
-        const unitRev = itemCost.toFixed(2) // Assumindo markup = 0 por enquanto
+        const unitRev = itemCost.toFixed(2)
 
         params.data.unit_cost = unitCost
         params.data.unit_rev = unitRev
@@ -1003,14 +902,11 @@ const columnDefs: ColDef[] = [
         )
       }
 
-      // Ensure we're setting a number value for total_cost
       params.data.meta.total_cost = Number(totalCost.toFixed(2))
 
-      // Marcar como modificado e forçar atualização do summary
       params.data.meta.is_modified = true
       hasUnsavedChanges.value = true
 
-      // Forçar refresh das células relacionadas
       nextTick(() => {
         if (gridApi && params.node) {
           gridApi.refreshCells({
@@ -1052,39 +948,36 @@ const gridOptions: GridOptions = {
   defaultColDef: {
     editable: true,
     sortable: true,
-    filter: false, // Disable filters to avoid extra UI elements
+    filter: false,
     resizable: true,
   },
   animateRows: true,
   rowSelection: {
     mode: 'singleRow',
-    checkboxes: false, // Disable checkboxes to prevent black squares
-    enableClickSelection: false, // Disable row selection clicking - replaces suppressRowClickSelection
+    checkboxes: false,
+    enableClickSelection: false,
   },
   suppressMenuHide: false,
   suppressColumnMoveAnimation: false,
   domLayout: 'normal',
   headerHeight: 40,
   rowHeight: 35,
-  getRowId: (params: { data: { id: string | number } }) => String(params.data.id), // Ensure string IDs to fix AG Grid error #25
+  getRowId: (params: { data: { id: string | number } }) => String(params.data.id),
   onCellValueChanged: handleCellValueChanged,
   onGridReady: (params: GridReadyParams) => {
     gridApi = params.api
 
-    // Carregar dados no grid quando estiver pronto
     if (costLines.value.length > 0 && gridApi) {
       gridApi.applyTransaction({ add: costLines.value })
     }
 
-    // Auto-size columns with proper delay and visibility check
     setTimeout(() => {
       if (gridApi && gridContainer.value && gridContainer.value.offsetWidth > 0) {
         gridApi.sizeColumnsToFit()
       }
-    }, 200) // Increased delay to ensure grid is visible
+    }, 200)
   },
   onFirstDataRendered: (params: FirstDataRenderedParams) => {
-    // Auto-size columns when data is first rendered with visibility check
     setTimeout(() => {
       if (params.api && gridContainer.value && gridContainer.value.offsetWidth > 0) {
         params.api.sizeColumnsToFit()
@@ -1093,11 +986,9 @@ const gridOptions: GridOptions = {
   },
 }
 
-// Forçar atualização do summary
 function triggerSummaryUpdate() {
   console.log('📊 Triggering summary update...')
   nextTick(() => {
-    // Força re-computação de todos os valores calculados
     const summaryData = {
       labourHours: totalLabourHours.value,
       labourCost: labourHoursCost.value,
@@ -1111,13 +1002,11 @@ function triggerSummaryUpdate() {
   })
 }
 
-// Add new cost line - sempre criar uma nova linha quando solicitado
 function addNewItem() {
   console.log('🎯 Shift+N pressed - creating new empty line')
 
-  // Sempre criar uma nova linha vazia
   const newEmptyLine: Partial<CostLine> = {
-    id: Date.now() + Math.random(), // Ensure unique ID
+    id: Date.now() + Math.random(),
     kind: 'material',
     desc: '',
     quantity: '1',
@@ -1139,11 +1028,9 @@ function addNewItem() {
   costLines.value.push(newEmptyLine as CostLine)
   hasUnsavedChanges.value = true
 
-  // Adicionar no grid
   if (gridApi) {
     gridApi.applyTransaction({ add: [newEmptyLine] })
 
-    // Focar na nova linha
     nextTick(() => {
       const lastRowIndex = costLines.value.length - 1
       gridApi!.setFocusedCell(lastRowIndex, 'desc')
@@ -1151,11 +1038,9 @@ function addNewItem() {
     })
   }
 
-  // Trigger summary update
   triggerSummaryUpdate()
 }
 
-// Delete cost line - global function for button onclick
 ;(window as unknown as { deleteCostLine: (costLineId: string) => Promise<void> }).deleteCostLine =
   async (costLineId: string) => {
     console.log('🗑️ COMPONENT: Starting delete operation for cost line ID:', costLineId)
@@ -1169,9 +1054,7 @@ function addNewItem() {
       })),
     )
 
-    // Encontrar o índice correto usando conversão de tipos apropriada
     const index = costLines.value.findIndex((line) => {
-      // Converter ambos para string para comparação consistente
       const lineIdStr = String(line.id)
       const targetIdStr = String(costLineId)
       console.log('🔍 COMPONENT: Comparing line ID:', lineIdStr, 'with target:', targetIdStr)
@@ -1189,7 +1072,6 @@ function addNewItem() {
         is_new: lineToRemove.meta?.is_new,
       })
 
-      // Verificar se a linha está realmente vazia OU é nova (baseado no conteúdo real, não na flag)
       const isReallyEmpty =
         !lineToRemove.desc?.trim() &&
         (!lineToRemove.meta?.labour_minutes || lineToRemove.meta.labour_minutes === 0) &&
@@ -1208,7 +1090,7 @@ function addNewItem() {
           console.log('✅ COMPONENT: Backend deletion completed successfully')
         } catch (error: unknown) {
           console.error('❌ COMPONENT: Backend deletion failed:', error)
-          // Verificar se é um erro de rede
+
           if (
             (error &&
               typeof error === 'object' &&
@@ -1222,7 +1104,6 @@ function addNewItem() {
           ) {
             console.error('🌐 COMPONENT: Network error detected - check backend connection')
           }
-          // Mesmo assim, continuar com a remoção do frontend para UX
         }
       } else {
         console.log(
@@ -1235,22 +1116,18 @@ function addNewItem() {
         )
       }
 
-      // Remover da array reativa
       console.log('🗑️ COMPONENT: Removing from reactive array...')
       costLines.value.splice(index, 1)
       hasUnsavedChanges.value = true
 
-      // Atualizar grid usando applyTransaction
       if (gridApi) {
         console.log('🗑️ COMPONENT: Updating AG Grid...')
         gridApi.applyTransaction({ remove: [lineToRemove] })
       }
 
-      // SEMPRE garantir linha vazia após deleção
       console.log('🗑️ COMPONENT: Ensuring empty row at end...')
       ensureEmptyRowAtEnd()
 
-      // Forçar autocalculation do summary
       console.log('🗑️ COMPONENT: Triggering summary update...')
       triggerSummaryUpdate()
 
@@ -1264,7 +1141,6 @@ function addNewItem() {
     }
   }
 
-// Computed totals for categories - baseado em nova estrutura
 const fabricationItems = computed(
   () => costLines.value.filter((line) => line.meta?.category === 'fabrication').length,
 )
@@ -1273,7 +1149,6 @@ const mainWorkItems = computed(
   () => costLines.value.filter((line) => line.meta?.category === 'mainWork').length,
 )
 
-// Currency formatter
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -1281,19 +1156,15 @@ function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
-// Initialize AG Grid
 onMounted(async () => {
-  // Carregar dados existentes primeiro
   await loadExistingEstimateData()
 
   if (gridContainer.value) {
     createGrid(gridContainer.value, gridOptions)
   }
 
-  // Add keyboard event listener
   window.addEventListener('keydown', handleKeyDown)
 
-  // Add window resize listener
   const handleResize = () => {
     if (gridApi) {
       setTimeout(() => {
@@ -1310,7 +1181,6 @@ onUnmounted(() => {
   window.removeEventListener('resize', () => {})
 })
 
-// Watch para mudanças no jobId e recarregar dados
 watch(
   () => props.jobId,
   async (newJobId) => {
@@ -1318,13 +1188,10 @@ watch(
       console.log(`🔄 JobId changed to ${newJobId}, reloading estimate data`)
       await loadExistingEstimateData()
 
-      // Atualizar grid se já estiver inicializado
       if (gridApi && costLines.value.length > 0) {
-        // Obter dados atuais para remover
         const currentRows: CostLine[] = []
         gridApi.forEachNode((node) => currentRows.push(node.data))
 
-        // Remover dados atuais e adicionar novos
         if (currentRows.length > 0) {
           gridApi.applyTransaction({ remove: currentRows })
         }
@@ -1335,16 +1202,10 @@ watch(
   { immediate: false },
 )
 
-// Watch for data changes to update grid - Remove deep watch that causes setRowData issues
-// Instead, let applyTransaction handle updates
-
-// Watch for changes in costLines to force reactivity updates
 watch(
   costLines,
   () => {
-    // Force reactivity update for computed values
     nextTick(() => {
-      // Force trigger de todos os computed values para atualização imediata
       const _triggerUpdate = {
         labourHours: totalLabourHours.value,
         materialCost: materialCostBeforeMarkup.value,
@@ -1356,7 +1217,6 @@ watch(
   { deep: true, immediate: true },
 )
 
-// Watch grid height changes and update AG Grid
 watch(gridHeight, () => {
   if (gridApi && gridContainer.value) {
     nextTick(() => {
@@ -1370,7 +1230,6 @@ watch(gridHeight, () => {
 </script>
 
 <style scoped>
-/* AG Grid custom styling - using new v33 Theme API with custom overrides */
 :deep(.ag-theme-custom) {
   font-size: 13px;
   font-family:
@@ -1380,7 +1239,6 @@ watch(gridHeight, () => {
     sans-serif;
 }
 
-/* Override header styling to match TimesheetEntryView.vue */
 :deep(.ag-theme-custom .ag-header-cell) {
   font-weight: 700;
   background: #181f2a !important;
@@ -1389,7 +1247,6 @@ watch(gridHeight, () => {
   padding: 0 8px;
 }
 
-/* Row and cell styling */
 :deep(.ag-theme-custom .ag-cell) {
   border-right: 1px solid rgb(226, 232, 240);
   display: flex;
@@ -1410,7 +1267,6 @@ watch(gridHeight, () => {
   border: 1px solid rgb(59, 130, 246);
 }
 
-/* Responsive grid scrolling */
 :deep(.ag-theme-custom .ag-body-horizontal-scroll) {
   height: 14px !important;
 }
@@ -1419,12 +1275,10 @@ watch(gridHeight, () => {
   width: 14px !important;
 }
 
-/* Center text alignment for specific columns */
 :deep(.text-center) {
   justify-content: center;
 }
 
-/* CRITICAL: Hide all potential black square elements */
 :deep(.ag-theme-custom .ag-selection-checkbox),
 :deep(.ag-theme-custom .ag-checkbox),
 :deep(.ag-theme-custom .ag-checkbox-input-wrapper),
@@ -1441,14 +1295,12 @@ watch(gridHeight, () => {
   visibility: hidden !important;
 }
 
-/* Ensure proper spacing without icons */
 :deep(.ag-theme-custom .ag-header-cell-label) {
   justify-content: flex-start;
   padding-left: 0;
   width: 100%;
 }
 
-/* Mobile responsiveness */
 @media (max-width: 1024px) {
   :deep(.ag-theme-custom) {
     font-size: 12px;
@@ -1459,7 +1311,6 @@ watch(gridHeight, () => {
     padding: 0 4px;
   }
 
-  /* Hide less important columns on mobile */
   :deep(.ag-theme-custom .ag-header-cell[col-id='meta.labour_minutes']),
   :deep(.ag-theme-custom .ag-cell[col-id='meta.labour_minutes']) {
     display: none;
@@ -1471,7 +1322,6 @@ watch(gridHeight, () => {
   }
 }
 
-/* Even smaller screens - hide more columns */
 @media (max-width: 640px) {
   :deep(.ag-theme-custom) {
     font-size: 11px;

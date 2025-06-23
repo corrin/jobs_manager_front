@@ -8,7 +8,6 @@
         </DialogDescription>
       </DialogHeader>
 
-      <!-- Error Display -->
       <div v-if="errorMessage" class="p-3 mb-4 bg-red-50 border border-red-200 rounded-md">
         <div class="flex">
           <div class="flex-shrink-0">
@@ -21,9 +20,7 @@
         </div>
       </div>
 
-      <!-- Form -->
       <form @submit.prevent="handleSubmit" class="space-y-4">
-        <!-- Client Name -->
         <div>
           <label for="clientName" class="block text-sm font-medium text-gray-700 mb-1">
             Client Name <span class="text-red-500">*</span>
@@ -42,7 +39,6 @@
           </p>
         </div>
 
-        <!-- Email -->
         <div>
           <label for="clientEmail" class="block text-sm font-medium text-gray-700 mb-1">
             Email
@@ -60,7 +56,6 @@
           </p>
         </div>
 
-        <!-- Phone -->
         <div>
           <label for="clientPhone" class="block text-sm font-medium text-gray-700 mb-1">
             Phone
@@ -78,7 +73,6 @@
           </p>
         </div>
 
-        <!-- Address -->
         <div>
           <label for="clientAddress" class="block text-sm font-medium text-gray-700 mb-1">
             Address
@@ -96,7 +90,6 @@
           </p>
         </div>
 
-        <!-- Account Customer Checkbox -->
         <div class="flex items-center">
           <input
             id="isAccountCustomer"
@@ -109,7 +102,6 @@
           </label>
         </div>
 
-        <!-- Action Buttons -->
         <DialogFooter class="gap-2">
           <Button type="button" variant="outline" @click="handleCancel" :disabled="isLoading">
             Cancel
@@ -148,7 +140,6 @@ import {
 } from '@/schemas/client.schemas'
 import type { Client } from '@/composables/useClientLookup'
 
-// Props
 interface Props {
   isOpen: boolean
   initialName?: string
@@ -158,13 +149,11 @@ const props = withDefaults(defineProps<Props>(), {
   initialName: '',
 })
 
-// Events
 const emit = defineEmits<{
   'update:isOpen': [value: boolean]
   'client-created': [client: Client]
 }>()
 
-// Form state based on Zod schema
 const formData = ref<CreateClientData>({
   name: '',
   email: '',
@@ -173,33 +162,26 @@ const formData = ref<CreateClientData>({
   is_account_customer: false,
 })
 
-// State management
 const isLoading = ref(false)
 const errorMessage = ref('')
 const fieldErrors = ref<Record<string, string>>({})
 
-// Computed properties using early return pattern
 const isFormValid = computed(() => {
-  // Guard clause - check required fields
   if (!formData.value.name.trim()) return false
 
-  // Check for validation errors
   if (Object.keys(fieldErrors.value).length > 0) return false
 
   return true
 })
 
-// Handle dialog open/close following SRP
 const handleDialogChange = (open: boolean) => {
   emit('update:isOpen', open)
 
-  // Reset form when closing
   if (!open) {
     resetForm()
   }
 }
 
-// Form validation with Zod patterns
 const validateForm = (): boolean => {
   fieldErrors.value = {}
 
@@ -207,7 +189,6 @@ const validateForm = (): boolean => {
     createClientSchema.parse(formData.value)
     return true
   } catch (error: unknown) {
-    // Extract Zod validation errors
     if (error instanceof ZodError) {
       error.errors.forEach((err) => {
         const field = err.path[0]
@@ -220,9 +201,7 @@ const validateForm = (): boolean => {
   }
 }
 
-// Submit handler using early return and delegating to the service layer
 const handleSubmit = async () => {
-  // Guard clause - validate form
   if (!validateForm()) {
     return
   }
@@ -233,12 +212,10 @@ const handleSubmit = async () => {
   try {
     const result: CreateClientResponse = await clientService.createClient(formData.value)
 
-    // Guard clause for API error
     if (!result.success) {
       throw new Error(result.error || 'Failed to create client')
     }
 
-    // Success - emit event and close modal
     if (result.client) {
       const newClient: Client = {
         id: result.client.id,
@@ -260,12 +237,10 @@ const handleSubmit = async () => {
   }
 }
 
-// Cancel handler following SRP
 const handleCancel = () => {
   emit('update:isOpen', false)
 }
 
-// Reset form using clean data patterns
 const resetForm = () => {
   formData.value = {
     name: '',
@@ -278,7 +253,6 @@ const resetForm = () => {
   fieldErrors.value = {}
 }
 
-// Watch for initialName changes
 watch(
   () => props.initialName,
   (newName) => {
@@ -288,7 +262,6 @@ watch(
   },
 )
 
-// Watch for isOpen changes to set initial name
 watch(
   () => props.isOpen,
   (isOpen) => {

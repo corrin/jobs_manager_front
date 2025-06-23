@@ -1,22 +1,8 @@
 <template>
   <AppLayout>
     <div class="flex flex-col h-full min-h-0 pt-6">
-      <!-- Mobile Header -->
       <div class="flex-shrink-0 bg-white border-b border-gray-200 px-4 py-3 md:px-6 md:py-4">
-        <!-- Mobil            <button
-              v-if="featureFlags.isCostingApiEnabled"
-              @click="activeTab = 'costing'"
-              :class="[
-                'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
-                activeTab === 'costing'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              ]"
-            >
-              Cost Analysis
-            </button>acked) -->
         <div class="md:hidden">
-          <!-- Top row: Back button -->
           <div class="flex items-center justify-between mb-3">
             <button
               @click="navigateBack"
@@ -26,7 +12,6 @@
             </button>
           </div>
 
-          <!-- Job title and info -->
           <div class="mb-3">
             <h1 class="text-lg font-bold text-gray-900 leading-tight">
               {{ jobData?.name || 'Loading...' }}
@@ -36,7 +21,6 @@
             </p>
           </div>
 
-          <!-- Action buttons - horizontal scroll on mobile -->
           <div class="flex space-x-2 overflow-x-auto pb-2">
             <DraggableButton
               variant="ghost"
@@ -76,7 +60,6 @@
           </div>
         </div>
 
-        <!-- Desktop/Tablet Layout (original) -->
         <div class="hidden md:flex items-end justify-between h-7">
           <div class="flex items-center space-x-4">
             <button
@@ -96,7 +79,6 @@
           </div>
 
           <div class="flex items-center space-x-4">
-            <!-- Action Buttons -->
             <div class="flex space-x-2">
               <DraggableButton
                 variant="ghost"
@@ -138,11 +120,8 @@
         </div>
       </div>
 
-      <!-- Conteúdo Principal -->
       <div class="flex-1 flex flex-col min-h-0">
-        <!-- Tabs Navigation - Mobile First -->
         <div class="flex-shrink-0 bg-white border-b border-gray-200">
-          <!-- Mobile Tabs -->
           <div class="md:hidden">
             <div class="flex border-b border-gray-200">
               <button
@@ -192,7 +171,6 @@
             </div>
           </div>
 
-          <!-- Desktop/Tablet Tabs -->
           <div class="hidden md:block px-6">
             <nav class="-mb-px flex space-x-8">
               <button
@@ -243,9 +221,7 @@
           </div>
         </div>
 
-        <!-- Tab Content -->
         <div class="flex-1 overflow-y-auto min-h-0">
-          <!-- Estimate Tab -->
           <div v-if="activeTab === 'estimate'" class="h-full p-4 md:p-6">
             <JobEstimateTab
               v-if="jobData && companyDefaults"
@@ -254,7 +230,6 @@
             />
           </div>
 
-          <!-- Quote Tab -->
           <div v-if="activeTab === 'quote'" class="h-full p-4 md:p-6">
             <JobQuoteTab
               v-if="jobDataWithPaid"
@@ -264,7 +239,6 @@
             />
           </div>
 
-          <!-- Financial Tab -->
           <div v-if="activeTab === 'financial'" class="h-full p-4 md:p-6">
             <JobFinancialTab
               v-if="jobDataWithPaid"
@@ -277,17 +251,13 @@
             />
           </div>
 
-          <!-- Cost Analysis Tab -->
           <div v-if="activeTab === 'costAnalysis'" class="h-full p-4 md:p-6">
             <JobCostAnalysisTab v-if="jobData" :job-id="jobData.id" />
           </div>
         </div>
 
-        <!-- Footer com Ações Principais - Mobile First -->
         <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-4">
-          <!-- Mobile Layout (stacked) -->
           <div class="md:hidden space-y-3">
-            <!-- Primary Actions Row -->
             <div class="flex space-x-3">
               <DraggableButton
                 variant="primary"
@@ -310,7 +280,6 @@
               </DraggableButton>
             </div>
 
-            <!-- Close Button -->
             <DraggableButton
               variant="secondary"
               @click="navigateBack"
@@ -322,7 +291,6 @@
             </DraggableButton>
           </div>
 
-          <!-- Desktop/Tablet Layout (horizontal) -->
           <div class="hidden md:flex items-center justify-between">
             <div class="flex space-x-3">
               <DraggableButton
@@ -356,7 +324,6 @@
         </div>
       </div>
 
-      <!-- Modais -->
       <JobSettingsModal
         :job-data="jobDataWithPaid ?? null"
         :is-open="showSettingsModal"
@@ -438,12 +405,10 @@ const route = useRoute()
 const router = useRouter()
 const jobsStore = useJobsStore()
 
-// Reactive data seguindo princípios de composição do Vue 3
 const jobId = computed(() => route.params.id as string)
 
 const { addEventReactively, reloadJobDataReactively } = useJobReactivity()
 
-// Service layer delegation para carregar dados
 const loadJobData = async () => {
   if (!jobId.value) {
     console.error('No job ID provided')
@@ -454,7 +419,6 @@ const loadJobData = async () => {
   const loadingToastId = 'job-loading'
 
   try {
-    // Mostrar loading toast
     console.log('🍞 Showing loading toast for job data')
     toast.loading('Loading job...', {
       description: 'Fetching work details',
@@ -463,40 +427,29 @@ const loadJobData = async () => {
 
     console.log('📞 Loading job data for ID:', jobId.value)
 
-    // Configurar contexto no store
     jobsStore.setCurrentContext('detail')
     jobsStore.setCurrentJobId(jobId.value)
     jobsStore.setLoadingJob(true)
 
-    // Buscar dados da API e salvar no store
     const response: JobDetailResponse = await jobRestService.getJobForEdit(jobId.value)
     console.log('✅ Job data response:', response)
 
     if (response.success && response.data) {
-      // Enriquecer o job com dados complementares antes de salvar no store
       const enrichedJob = {
         ...response.data.job,
         latest_pricings: response.data.latest_pricings || {},
         events: response.data.events || [],
-        // company_defaults: response.data.company_defaults || null // Removido daqui
       }
       jobsStore.setDetailedJob(enrichedJob)
 
-      // Salvar companyDefaults separadamente se vier na resposta
       if (response.data.company_defaults) {
         companyDefaults.value = response.data.company_defaults
-        // Opcionalmente, salvar no store se for usado globalmente
-        // jobsStore.setCompanyDefaults(response.data.company_defaults);
       } else {
-        // Tentar buscar do store se não vier na resposta do job específico
-        // ou carregar de um endpoint dedicado se necessário
-        // companyDefaults.value = jobsStore.companyDefaults;
         console.warn(
           'Company defaults not found in job response, ensure they are loaded elsewhere if needed by NewTaskModal.',
         )
       }
 
-      // Sucesso - notificar e descartar loading
       console.log('🍞 Dismissing loading toast and logging success')
       toast.dismiss(loadingToastId)
       console.log(
@@ -508,11 +461,9 @@ const loadJobData = async () => {
   } catch (error) {
     logError('loadJobData', error, { jobId: jobId.value })
 
-    // Dismissar loading toast e mostrar erro
     console.log('🍞 Dismissing loading toast and showing error')
     toast.dismiss(loadingToastId)
 
-    // Usar o sistema de notificações para erros
     const errorMessage = extractErrorMessage(error)
     console.log('🍞 Showing error toast for job loading:', errorMessage)
     toast.error('Error loading job', {
@@ -520,24 +471,20 @@ const loadJobData = async () => {
       duration: 6000,
     })
 
-    // Fallback para navegação em caso de erro crítico
     navigateBack()
   } finally {
     jobsStore.setLoadingJob(false)
   }
 }
 
-// Auto-sync para manter dados sempre atualizados (opcional - pode ser desabilitado)
 useJobAutoSync(jobId.value || '', loadJobData, {
-  interval: 60000, // 1 minuto
-  enabled: false, // Desabilitado por padrão - pode ser ativado se necessário
+  interval: 60000,
+  enabled: false,
   onError: (error) => {
     console.warn('Auto-sync error:', error.message)
-    // Não mostrar notificação para erros de auto-sync para não incomodar o usuário
   },
 })
 
-// jobData é um computed que sempre vem do store - única fonte de verdade
 const jobData = computed(() => {
   const result = jobId.value ? jobsStore.getJobById(jobId.value) : null
   console.log('🔍 JobView computed - jobId:', jobId.value)
@@ -545,7 +492,6 @@ const jobData = computed(() => {
   return result
 })
 
-// Computed para garantir que jobData tenha 'paid' como boolean
 const jobDataWithPaid = computed(() => {
   if (!jobData.value) return undefined
   return {
@@ -554,7 +500,6 @@ const jobDataWithPaid = computed(() => {
   }
 })
 
-// Dados complementares - também reativos baseados no job atual
 const latestPricings = computed(() => {
   return jobData.value?.latest_pricings || {}
 })
@@ -565,7 +510,6 @@ const jobEvents = computed(() => {
 
 const companyDefaults = ref<CompanyDefaults | null>(null)
 
-// Watchers reativos para otimização
 watch(
   jobData,
   (newJobData) => {
@@ -596,23 +540,19 @@ watch(
   { deep: true },
 )
 
-// Modal states
 const showSettingsModal = ref(false)
 const showWorkflowModal = ref(false)
 const showHistoryModal = ref(false)
 const showAttachmentsModal = ref(false)
 const showPdfDialog = ref(false)
 
-// Tab state
 const activeTab = ref<'estimate' | 'financial' | 'quote' | 'costAnalysis'>('estimate')
 
-// Early return pattern para navegação
 const navigateBack = () => {
   router.push({ name: 'kanban' })
 }
 
 const handleEventAdded = (event: JobEvent) => {
-  // Usar o composable para manter consistência
   if (jobId.value) {
     addEventReactively(jobId.value, event)
     toast.success('Event added', {
@@ -621,7 +561,6 @@ const handleEventAdded = (event: JobEvent) => {
   }
 }
 
-// Handler para upload de arquivo (tipo customizado)
 interface JobFile {
   size: number | null
   status: 'active' | 'deleted'
@@ -635,15 +574,13 @@ interface JobFile {
 }
 
 const handleFileUploaded = (file: JobFile) => {
-  // Atualizar files no store para manter reatividade
   if (jobId.value && file) {
     try {
-      // TODO: Implementar atualização de arquivos no store quando tivermos o campo
-      console.log('\ud83d\udcce File uploaded - store will be updated:', file)
-      toast.success('Arquivo enviado', {
-        description: `${file.filename || 'arquivo'} foi enviado com sucesso`,
+      console.log('File uploaded - store will be updated:', file)
+      toast.success('File uploaded', {
+        description: `${file.filename || 'file'} was sent successfully`,
       })
-      // Recarregar dados para pegar mudanças de arquivos
+
       loadJobData()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error processing upload'
@@ -655,15 +592,13 @@ const handleFileUploaded = (file: JobFile) => {
 }
 
 const handleFileDeleted = (fileId: string) => {
-  // Remover file do store para manter reatividade
   if (jobId.value && fileId) {
     try {
-      // TODO: Implementar remoção de arquivos no store quando tivermos o campo
       console.log('🗑️ File deleted - store will be updated:', fileId)
       toast.success('File removed', {
         description: 'File was successfully removed',
       })
-      // Recarregar dados para pegar mudanças de arquivos
+
       loadJobData()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error processing removal'
@@ -674,19 +609,11 @@ const handleFileDeleted = (fileId: string) => {
   }
 }
 
-// Handler unificado para updates - não mais necessário devido à reatividade automática do store
-// Os modais atualizam diretamente o store, JobView é automaticamente reativo
-// const handleJobUpdated = (updatedJob: JobData) => {
-//   console.log('✅ Job updated - automatic reactivity via store')
-// }
-
-// Handlers para aba financeira - usando composable para reatividade otimizada
 const handleQuoteCreated = async () => {
   if (jobId.value) {
     try {
-      // Usar o composable para recarregar dados de forma reativa
       await reloadJobDataReactively(jobId.value)
-      // Switch to financial tab to show the new quote
+
       activeTab.value = 'financial'
       toast.success('Quote created!', {
         description: 'New quote has been generated successfully',
@@ -703,7 +630,6 @@ const handleQuoteCreated = async () => {
 const handleQuoteAccepted = async () => {
   if (jobId.value) {
     try {
-      // Usar o composable para recarregar dados de forma reativa
       await reloadJobDataReactively(jobId.value)
       toast.success('Quote accepted!', {
         description: 'Quote has been accepted and status updated',
@@ -720,7 +646,6 @@ const handleQuoteAccepted = async () => {
 const handleInvoiceCreated = async () => {
   if (jobId.value) {
     try {
-      // Usar o composable para recarregar dados de forma reativa
       await reloadJobDataReactively(jobId.value)
       toast.success('Invoice created!', {
         description: 'Invoice has been generated and is ready for sending',
@@ -734,14 +659,13 @@ const handleInvoiceCreated = async () => {
   }
 }
 
-// Handler para atualização de quote (importação/refresh)
 const handleQuoteUpdated = async (result: QuoteOperationResult) => {
   if (jobId.value) {
     try {
-      console.log('\u2705 Quote updated successfully:', result)
-      // Type guards para acessar propriedades específicas
+      console.log('Quote updated successfully:', result)
+
       if ('shouldReloadJob' in result && result.shouldReloadJob) {
-        console.log('\ud83d\udd04 Reloading job data after quote link operation')
+        console.log('Reloading job data after quote link operation')
         await reloadJobDataReactively(jobId.value, true)
       } else if ('changes_applied' in result && result.changes_applied) {
         toast.success('Quote changes applied!', {
@@ -761,7 +685,6 @@ const handleQuoteUpdated = async (result: QuoteOperationResult) => {
   }
 }
 
-// Ações dos botões do rodapé
 const printJobSheet = async () => {
   showPdfDialog.value = true
 }
@@ -801,14 +724,12 @@ const deleteJob = async () => {
   }
 }
 
-// Lifecycle hook
 onMounted(() => {
   loadJobData()
 })
 </script>
 
 <style scoped>
-/* Garantir altura máxima de 100vh */
 .h-screen {
   height: 100vh;
 }
@@ -817,7 +738,6 @@ onMounted(() => {
   max-height: 100vh;
 }
 
-/* Scroll customizado para Webkit */
 ::-webkit-scrollbar {
   width: 6px;
 }

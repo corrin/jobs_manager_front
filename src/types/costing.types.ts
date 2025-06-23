@@ -1,12 +1,10 @@
-// Costing interfaces – utility types for internal use
-// Based on actual backend structure
 export interface CostLine {
-  id: number // ID is number, not string
+  id: number
   kind: 'time' | 'material' | 'adjust'
   desc: string
-  quantity: string // Quantity comes as string from backend
-  unit_cost: string // Unit_cost comes as string from backend
-  unit_rev: string // Unit_rev comes as string from backend
+  quantity: string
+  unit_cost: string
+  unit_rev: string
   total_cost: number
   total_rev: number
   ext_refs?: Record<string, unknown>
@@ -18,12 +16,12 @@ export interface CostLine {
     total_cost?: number | string
     is_new?: boolean
     is_modified?: boolean
-    [key: string]: unknown // For other meta fields
+    [key: string]: unknown
   }
 }
 
 export interface CostSet {
-  id: number // ID is number, not string
+  id: number
   kind: 'estimate' | 'quote' | 'actual'
   rev: number
   summary: {
@@ -31,6 +29,6 @@ export interface CostSet {
     rev: number
     hours: number
   }
-  created: string // Creation date
+  created: string
   cost_lines: CostLine[]
 }

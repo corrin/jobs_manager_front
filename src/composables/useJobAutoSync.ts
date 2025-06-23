@@ -1,14 +1,10 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
-/**
- * Composable para auto-sync de dados do job
- * Mantém os dados sincronizados automaticamente em intervalos regulares
- */
 export function useJobAutoSync(
   jobId: string,
   reloadFunction: () => Promise<void>,
   options: {
-    interval?: number // em ms, default 30 segundos
+    interval?: number
     enabled?: boolean
     onError?: (error: Error) => void
   } = {},
@@ -83,7 +79,6 @@ export function useJobAutoSync(
     await performSync()
   }
 
-  // Lifecycle hooks
   onMounted(() => {
     if (isAutoSyncEnabled.value) {
       startAutoSync()
@@ -94,7 +89,6 @@ export function useJobAutoSync(
     stopAutoSync()
   })
 
-  // Watch for enabled state changes
   const toggleAutoSync = (enabled: boolean) => {
     if (enabled) {
       enableAutoSync()

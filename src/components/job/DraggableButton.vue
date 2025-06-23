@@ -46,12 +46,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-// State
 const buttonRef = ref<HTMLElement>()
 const isDragging = ref(false)
 const startPosition = ref({ x: 0, y: 0 })
 
-// Computed styles following clean code principles
 const buttonClasses = computed(() => {
   const variantClasses = {
     primary: 'bg-blue-600 hover:bg-blue-700 text-white border-transparent',
@@ -87,9 +85,7 @@ const buttonClasses = computed(() => {
   return cn(baseClasses, variantClasses[props.variant], sizeClasses[props.size], props.class)
 })
 
-// Event handlers following clean code principles
 const handleClick = (event: MouseEvent): void => {
-  // Guard clause - don't emit click if dragging
   if (isDragging.value) return
 
   emit('click', event)
@@ -138,15 +134,12 @@ const handleTouchEnd = (event: TouchEvent): void => {
   emit('drag-end', event)
 }
 
-// Helper functions following SRP
 const startDrag = (clientX: number, clientY: number): void => {
   isDragging.value = true
   startPosition.value = { x: clientX, y: clientY }
 }
 
-const updateDragPosition = (): void => {
-  // Apply visual feedback or custom positioning here if needed
-}
+const updateDragPosition = (): void => {}
 
 const endDrag = (): void => {
   isDragging.value = false
@@ -155,7 +148,6 @@ const endDrag = (): void => {
 </script>
 
 <style scoped>
-/* Additional drag-specific styles if needed */
 .cursor-grab {
   cursor: grab;
 }
@@ -164,7 +156,6 @@ const endDrag = (): void => {
   cursor: grabbing;
 }
 
-/* Smooth transitions for drag states */
 button {
   transition:
     transform 0.2s ease,

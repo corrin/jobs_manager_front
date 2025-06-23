@@ -17,7 +17,6 @@ const authStore = useAuthStore()
 console.log(useFeatureFlags().isCostingApiEnabled)
 
 onMounted(async () => {
-  // Try to initialize auth from stored tokens
   try {
     await authStore.initializeAuth()
   } catch (error) {

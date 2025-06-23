@@ -3,7 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Font configuration */
 body {
   font-family:
     'Inter',
@@ -16,8 +15,6 @@ body {
   font-variation-settings: 'opsz' 32;
   overflow-y: hidden;
 }
-
-/* Custom styles can be added here if needed */
 
 @theme inline {
   --color-background: var(--background);
@@ -237,7 +234,6 @@ body {
   }
 }
 
-/* Staff Drag and Drop Styles */
 .staff-sortable-ghost {
   opacity: 0.3;
   transform: rotate(2deg) scale(0.95);
@@ -263,7 +259,6 @@ body {
     box-shadow 0.2s ease;
 }
 
-/* Universal Drag and Drop Styles - Works on all devices */
 .sortable-ghost {
   @apply opacity-50 bg-blue-50 border-2 border-blue-300 border-dashed transform scale-105;
 }
@@ -288,7 +283,6 @@ body {
   cursor: grabbing !important;
 }
 
-/* Disable pointer events during drag to avoid conflicts */
 .sortable-chosen *,
 .sortable-drag *,
 .sortable-ghost *,
@@ -296,7 +290,6 @@ body {
   pointer-events: none !important;
 }
 
-/* Kanban Column Styles - Wider columns for two jobs side by side */
 .kanban-column {
   @apply min-w-[400px] max-w-[400px] flex-shrink-0;
 }
@@ -305,16 +298,14 @@ body {
   @apply p-4 space-y-3;
 }
 
-/* Job Cards Grid - Two columns layout */
 .jobs-grid {
   @apply grid grid-cols-2 gap-3 items-start;
   grid-auto-rows: min-content;
 }
 
-/* Individual Job Card Styles */
 .job-card {
   @apply bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-all duration-200 cursor-grab flex flex-col;
-  min-height: 144px; /* Increased from 120px to 144px (h-36) */
+  min-height: 144px;
 }
 
 .job-card:hover {
@@ -325,7 +316,6 @@ body {
   cursor: grabbing;
 }
 
-/* Job Card Content */
 .job-card-header {
   @apply flex items-center justify-between mb-2;
 }
@@ -346,7 +336,6 @@ body {
   @apply flex items-center justify-between text-xs text-gray-500;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .kanban-column {
     @apply min-w-[350px] max-w-[350px];
@@ -373,7 +362,6 @@ body {
   }
 }
 
-/* Drag feedback styles */
 .kanban-column.drag-over {
   @apply bg-blue-50 border-blue-300;
 }
@@ -382,7 +370,6 @@ body {
   @apply bg-gradient-to-b from-blue-50 to-blue-100 border-2 border-blue-300 border-dashed;
 }
 
-/* Touch-friendly drag handles */
 .drag-handle {
   @apply p-1 rounded hover:bg-gray-100 cursor-grab touch-manipulation;
 }
@@ -391,7 +378,6 @@ body {
   cursor: grabbing;
 }
 
-/* Sonner Toast Overrides - Force visibility */
 [data-sonner-toaster] {
   position: fixed !important;
   z-index: 999999 !important;
@@ -500,7 +486,6 @@ body {
   ) !important;
 }
 
-/* Animação de saída */
 [data-sonner-toast][data-dismissed='true'] {
   animation: sonner-slide-out 0.4s cubic-bezier(0.4, 0, 1, 1) forwards !important;
 }

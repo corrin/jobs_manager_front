@@ -1,93 +1,86 @@
 import { toast } from 'vue-sonner'
 
-/**
- * Composable para notificações relacionadas a jobs
- * Centraliza todas as notificações para manter consistência
- * Usando vue-sonner que já está configurado no projeto
- */
 export function useJobNotifications() {
   const notifyJobUpdated = (jobName: string) => {
-    toast.success('Job atualizado', {
-      description: `${jobName} foi atualizado com sucesso`,
+    toast.success('Job updated successfully', {
+      description: `${jobName} was successfully updated`,
     })
   }
 
   const notifyJobLoaded = (jobName: string) => {
-    console.log(`✅ Job ${jobName} carregado com sucesso`)
-    // Não mostrar toast para carregamento para não poluir a interface
+    console.log(`✅ Job ${jobName} loaded successfully`)
   }
 
   const notifyJobError = (jobId: string, error: string) => {
-    toast.error('Erro no job', {
-      description: `Erro ao carregar job ${jobId}: ${error}`,
+    toast.error('Error updating job', {
+      description: `Error loading job ${jobId}: ${error}`,
     })
   }
 
   const notifyFileUploaded = (fileName: string) => {
-    toast.success('Arquivo enviado', {
-      description: `${fileName} foi enviado com sucesso`,
+    toast.success('File uploaded', {
+      description: `${fileName} was successfully uploaded`,
     })
   }
 
   const notifyFileDeleted = (fileName: string) => {
-    toast.success('Arquivo removido', {
-      description: `${fileName} foi removido com sucesso`,
+    toast.success('File deleted', {
+      description: `${fileName} was successfully deleted`,
     })
   }
 
   const notifyQuoteCreated = () => {
-    toast.success('Orçamento criado', {
-      description: 'Orçamento foi criado e enviado com sucesso',
+    toast.success('Quote created', {
+      description: 'Quote was created and sent successfully',
     })
   }
 
   const notifyQuoteAccepted = () => {
-    toast.success('Orçamento aceito', {
-      description: 'Orçamento foi aceito pelo cliente',
+    toast.success('Quote accepted', {
+      description: 'Quote was accepted by the client',
     })
   }
 
   const notifyInvoiceCreated = () => {
-    toast.success('Fatura criada', {
-      description: 'Fatura foi criada e enviada com sucesso',
+    toast.success('Invoice created', {
+      description: 'Invoice was created and sent successfully',
     })
   }
 
   const notifyDataChanged = (dataType: string) => {
-    toast.info('Dados alterados', {
-      description: `${dataType} foi alterado - salvando automaticamente`,
+    toast.info('Data changed', {
+      description: `${dataType} was changed - saving automatically`,
     })
   }
 
   const notifyEventAdded = (eventType: string) => {
-    toast.success('Evento adicionado', {
-      description: `Evento "${eventType}" foi adicionado com sucesso`,
+    toast.success('Event added', {
+      description: `Event "${eventType}" was successfully added`,
     })
   }
 
   const notifyPricingUpdated = () => {
-    toast.info('Preços atualizados', {
-      description: 'Dados de precificação foram atualizados automaticamente',
+    toast.info('Prices updated', {
+      description: 'Pricing data was updated automatically',
     })
   }
 
-  // Quote Link & Refresh notifications
   const notifyQuoteLinkStart = () => {
-    toast.loading('Vinculando planilha...', {
-      description: 'Criando e configurando planilha do orçamento',
+    toast.loading('Linking spreadsheet...', {
+      description: 'Creating and configuring quote spreadsheet',
       id: 'quote-link',
     })
   }
 
   const notifyQuoteLinkSuccess = (sheetUrl?: string) => {
-    toast.success('Planilha vinculada com sucesso!', {
+    toast.success('Spreadsheet linked successfully!', {
       description: sheetUrl
-        ? 'A planilha foi criada e já pode ser acessada'
-        : 'Planilha do orçamento foi vinculada',
+        ? 'The spreadsheet has been created and can now be accessed'
+        : 'Quote spreadsheet has been linked',
       id: 'quote-link',
       action: sheetUrl
         ? {
-            label: 'Abrir Planilha',
+            label: 'Open Spreadsheet',
             onClick: () => window.open(sheetUrl, '_blank'),
           }
         : undefined,
@@ -95,96 +88,92 @@ export function useJobNotifications() {
   }
 
   const notifyQuoteLinkError = (error: string) => {
-    toast.error('Erro ao vincular planilha', {
+    toast.error('Error linking spreadsheet', {
       description: error,
       id: 'quote-link',
     })
   }
 
   const notifyQuoteRefreshStart = () => {
-    toast.loading('Buscando atualizações...', {
-      description: 'Verificando mudanças na planilha',
+    toast.loading('Fetching updates...', {
+      description: 'Checking for changes in the spreadsheet',
       id: 'quote-refresh',
     })
   }
 
   const notifyQuoteRefreshSuccess = (changesCount: number = 0) => {
     if (changesCount > 0) {
-      toast.success('Orçamento atualizado!', {
-        description: `${changesCount} alterações foram aplicadas`,
+      toast.success('Quote updated!', {
+        description: `${changesCount} changes were applied`,
         id: 'quote-refresh',
       })
     } else {
-      toast.info('Nenhuma alteração encontrada', {
-        description: 'A planilha está sincronizada com o sistema',
+      toast.info('No changes found', {
+        description: 'The spreadsheet is synchronized with the system',
         id: 'quote-refresh',
       })
     }
   }
 
   const notifyQuoteRefreshError = (error: string) => {
-    toast.error('Erro ao atualizar orçamento', {
+    toast.error('Error updating quote', {
       description: error,
       id: 'quote-refresh',
     })
   }
 
-  // Save notifications
-  const notifySaveStart = (dataType: string = 'dados') => {
-    toast.loading(`Salvando ${dataType}...`, {
+  const notifySaveStart = (dataType: string = 'data') => {
+    toast.loading(`Saving ${dataType}...`, {
       id: 'save-data',
     })
   }
 
-  const notifySaveSuccess = (dataType: string = 'dados') => {
-    toast.success(`${dataType} salvos!`, {
-      description: 'Todas as alterações foram salvas',
+  const notifySaveSuccess = (dataType: string = 'data') => {
+    toast.success(`${dataType} saved!`, {
+      description: 'All changes have been saved',
       id: 'save-data',
     })
   }
 
-  const notifySaveError = (error: string, dataType: string = 'dados') => {
-    toast.error(`Erro ao salvar ${dataType}`, {
+  const notifySaveError = (error: string, dataType: string = 'data') => {
+    toast.error(`Error saving ${dataType}`, {
       description: error,
       id: 'save-data',
     })
   }
 
-  // Delete notifications
   const notifyDeleteStart = (itemType: string) => {
-    toast.loading(`Excluindo ${itemType}...`, {
+    toast.loading(`Deleting ${itemType}...`, {
       id: 'delete-item',
     })
   }
 
   const notifyDeleteSuccess = (itemType: string) => {
-    toast.success(`${itemType} excluído!`, {
-      description: 'Item foi removido permanentemente',
+    toast.success(`${itemType} deleted!`, {
+      description: 'Item was permanently removed',
       id: 'delete-item',
     })
   }
 
   const notifyDeleteError = (error: string, itemType: string) => {
-    toast.error(`Erro ao excluir ${itemType}`, {
+    toast.error(`Error deleting ${itemType}`, {
       description: error,
       id: 'delete-item',
     })
   }
 
-  // General API notifications
   const notifyApiError = (operation: string, error: string) => {
-    toast.error(`Erro na operação: ${operation}`, {
+    toast.error(`Error in operation: ${operation}`, {
       description: error,
     })
   }
 
   const notifyApiSuccess = (operation: string, description?: string) => {
-    toast.success(`${operation} concluída!`, {
-      description: description || 'Operação realizada com sucesso',
+    toast.success(`${operation} completed!`, {
+      description: description || 'Operation completed successfully',
     })
   }
 
-  // Loading notifications with dismiss capability
   const showLoadingToast = (message: string, description?: string, id?: string) => {
     return toast.loading(message, {
       description,
@@ -197,7 +186,6 @@ export function useJobNotifications() {
   }
 
   return {
-    // Existing notifications
     notifyJobUpdated,
     notifyJobLoaded,
     notifyJobError,
@@ -210,7 +198,6 @@ export function useJobNotifications() {
     notifyEventAdded,
     notifyPricingUpdated,
 
-    // New Quote Link & Refresh notifications
     notifyQuoteLinkStart,
     notifyQuoteLinkSuccess,
     notifyQuoteLinkError,
@@ -218,21 +205,17 @@ export function useJobNotifications() {
     notifyQuoteRefreshSuccess,
     notifyQuoteRefreshError,
 
-    // Save notifications
     notifySaveStart,
     notifySaveSuccess,
     notifySaveError,
 
-    // Delete notifications
     notifyDeleteStart,
     notifyDeleteSuccess,
     notifyDeleteError,
 
-    // General API notifications
     notifyApiError,
     notifyApiSuccess,
 
-    // Utility functions
     showLoadingToast,
     dismissToast,
   }

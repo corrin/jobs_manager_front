@@ -6,7 +6,6 @@
       </DialogHeader>
 
       <div class="space-y-6">
-        <!-- Upload Area -->
         <div>
           <div
             @drop="handleDrop"
@@ -50,7 +49,6 @@
           />
         </div>
 
-        <!-- Camera Capture Button -->
         <div>
           <button
             @click="openCameraModal"
@@ -75,7 +73,6 @@
           </button>
         </div>
 
-        <!-- Upload Progress -->
         <div v-if="uploadProgress > 0 && uploadProgress < 100">
           <div class="bg-gray-200 rounded-full h-2">
             <div
@@ -86,7 +83,6 @@
           <p class="text-sm text-gray-600 mt-1">Uploading... {{ uploadProgress }}%</p>
         </div>
 
-        <!-- Files List -->
         <div class="space-y-3 max-h-96 overflow-y-auto">
           <div
             v-for="file in files"
@@ -94,7 +90,6 @@
             class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
           >
             <div class="flex items-center space-x-3">
-              <!-- File Icon/Thumbnail -->
               <div class="flex-shrink-0">
                 <img
                   v-if="file.thumbnail_url"
@@ -119,7 +114,6 @@
                 </div>
               </div>
 
-              <!-- File Info -->
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium text-gray-900 truncate">
                   {{ file.filename }}
@@ -130,9 +124,7 @@
               </div>
             </div>
 
-            <!-- File Actions -->
             <div class="flex items-center space-x-2">
-              <!-- Print on Job Sheet Toggle -->
               <label class="flex items-center">
                 <input
                   v-model="file.print_on_jobsheet"
@@ -143,7 +135,6 @@
                 <span class="ml-2 text-xs text-gray-600">Print</span>
               </label>
 
-              <!-- Download Button -->
               <button
                 @click="downloadFile(file)"
                 class="text-indigo-600 hover:text-indigo-900 text-sm"
@@ -159,7 +150,6 @@
                 </svg>
               </button>
 
-              <!-- Delete Button -->
               <button
                 @click="deleteFile(file.id)"
                 class="text-red-600 hover:text-red-900 text-sm"
@@ -177,7 +167,6 @@
             </div>
           </div>
 
-          <!-- No Files Message -->
           <div v-if="files.length === 0" class="text-center py-8">
             <svg
               class="mx-auto h-12 w-12 text-gray-400"
@@ -210,7 +199,6 @@
     </DialogContent>
   </Dialog>
 
-  <!-- Camera Modal -->
   <CameraModal
     :is-open="isCameraModalOpen"
     @close="closeCameraModal"
@@ -231,7 +219,6 @@ import CameraModal from './CameraModal.vue'
 import type { JobFile } from '@/schemas/job.schemas'
 import { jobRestService } from '@/services/job-rest.service'
 
-// Props
 interface Props {
   jobId: string
   jobNumber: number | undefined
@@ -240,21 +227,18 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Events
 const emit = defineEmits<{
   close: []
   'file-uploaded': [file: JobFile]
   'file-deleted': [fileId: string]
 }>()
 
-// Reactive state
 const files = ref<JobFile[]>([])
 const uploadProgress = ref(0)
 const fileInput = ref<HTMLInputElement>()
 const uploading = ref(false)
 const isCameraModalOpen = ref(false)
 
-// Load files whenever the modal opens
 async function loadFiles() {
   if (!props.jobNumber) {
     console.error('Job number is required for loading files')
@@ -278,12 +262,10 @@ watch(
   },
 )
 
-// Modal controls
 const closeModal = () => {
   emit('close')
 }
 
-// File input/drag'n'drop
 const triggerFileInput = () => {
   fileInput.value?.click()
 }
@@ -304,7 +286,6 @@ const handleDrop = (event: DragEvent) => {
 
 const handleFiles = async (fileList: File[]) => {
   for (const file of fileList) {
-    // Guard clause - check file size
     if (file.size === 0) {
       console.warn(`File ${file.name} has 0 bytes and will be ignored`)
       continue
@@ -318,7 +299,6 @@ const processAndUploadFile = async (file: File) => {
   try {
     let fileToUpload = file
 
-    // Compress image if necessary
     if (isImageFile(file)) {
       console.log(`Compressing image before upload: ${file.name}`)
       fileToUpload = await compressImage(file)
@@ -351,7 +331,6 @@ const compressImage = (
       img.onload = () => {
         let { width, height } = img
 
-        // Calcular novo tamanho mantendo proporção
         if (width > maxWidth || height > maxHeight) {
           const scaleWidth = maxWidth / width
           const scaleHeight = maxHeight / height
@@ -367,7 +346,7 @@ const compressImage = (
 
         const ctx = canvas.getContext('2d')
         if (!ctx) {
-          resolve(file) // Retorna arquivo original se não conseguir comprimir
+          resolve(file)
           return
         }
 
@@ -376,7 +355,7 @@ const compressImage = (
         canvas.toBlob(
           (blob) => {
             if (!blob) {
-              resolve(file) // Return original file if compression fails
+              resolve(file)
               return
             }
 
@@ -415,13 +394,11 @@ const uploadFile = async (file: File) => {
       (progress) => (uploadProgress.value = progress),
     )
 
-    // Add uploaded files to local list
     if (uploaded.length > 0) {
       files.value.push(...uploaded)
       emit('file-uploaded', uploaded[0])
     }
 
-    // Reload list to synchronise
     await loadFiles()
   } catch (err) {
     console.error('Error uploading file:', err)
@@ -471,16 +448,14 @@ async function updatePrintSetting(file: JobFile) {
 
     console.log('Print setting update response:', response)
 
-    // Reload files to ensure synchronisation
     await loadFiles()
   } catch (err) {
     console.error('Error updating print setting:', err)
-    // Revert checkbox on error
+
     file.print_on_jobsheet = !file.print_on_jobsheet
   }
 }
 
-// Camera functionality
 const openCameraModal = () => {
   if (!props.jobNumber) {
     console.error('Job number is required for camera capture')
@@ -501,7 +476,6 @@ const handlePhotoCaptured = async (photo: File) => {
       type: photo.type,
     })
 
-    // Process and upload the captured photo
     await processAndUploadFile(photo)
 
     console.log('Photo uploaded successfully!')
@@ -510,7 +484,6 @@ const handlePhotoCaptured = async (photo: File) => {
   }
 }
 
-// Utility functions
 const formatFileSize = (bytes: number) => {
   if (bytes === 0) return '0 Bytes'
   const k = 1024
@@ -523,7 +496,6 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
 }
 
-// Load files when modal opens
 onMounted(() => {
   if (props.isOpen) {
     loadFiles()

@@ -18,39 +18,34 @@ export function useDeviceDetection() {
   })
 
   const isMobile = computed(() => {
-    // Phones: UP TO 430x932
     return windowWidth.value <= 430 && windowHeight.value <= 932
   })
 
   const isTablet = computed(() => {
-    // Tablets: UP TO 1024x1366
     const isTabletDimensions =
       windowWidth.value <= 1024 &&
       windowHeight.value <= 1366 &&
-      !(windowWidth.value <= 430 && windowHeight.value <= 932) // Not mobile
+      !(windowWidth.value <= 430 && windowHeight.value <= 932)
 
     console.log('Device detection:', {
       windowWidth: windowWidth.value,
       windowHeight: windowHeight.value,
       isTabletDimensions,
       isMobile: windowWidth.value <= 430 && windowHeight.value <= 932,
-      range: 'Tablet: até 1024x1366, Mobile: até 430x932',
+      range: 'Tablet: up to 1024x1366, Mobile: up to 430x932',
     })
 
     return isTabletDimensions
   })
 
   const isDesktop = computed(() => {
-    // Desktop: everything that is not tablet or mobile
     return !isMobile.value && !isTablet.value
   })
 
-  // Detect if it's a touch device
   const isTouchDevice = computed(() => {
     return 'ontouchstart' in window || navigator.maxTouchPoints > 0
   })
 
-  // Detect specifically iPad
   const isIpad = computed(() => {
     const userAgent = navigator.userAgent.toLowerCase()
     return (
@@ -59,9 +54,7 @@ export function useDeviceDetection() {
     )
   })
 
-  // Universal drag and drop configurations - no mobile restrictions
   const getDragConfig = () => {
-    // Unified configuration that works perfectly on all devices
     return {
       delay: 0,
       touchStartThreshold: 0,
@@ -69,7 +62,7 @@ export function useDeviceDetection() {
       filter: '.no-drag',
       preventOnFilter: true,
       disabled: false,
-      // Universal optimisations
+
       fallbackOnBody: true,
       swapThreshold: 0.65,
       dragoverBubble: false,
@@ -78,9 +71,7 @@ export function useDeviceDetection() {
     }
   }
 
-  // Universal staff drag and drop configurations - no mobile restrictions
   const getStaffDragConfig = () => {
-    // Unified configuration that works perfectly on all devices
     return {
       delay: 0,
       touchStartThreshold: 0,
@@ -88,7 +79,7 @@ export function useDeviceDetection() {
       filter: '.no-drag',
       preventOnFilter: true,
       disabled: false,
-      // Universal optimisations
+
       fallbackOnBody: true,
       swapThreshold: 0.65,
       dragoverBubble: false,

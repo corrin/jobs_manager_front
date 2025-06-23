@@ -1,10 +1,3 @@
-/**
- * Job REST Service
- *
- * Service layer for REST operations on Jobs in the Vue.js frontend
- * Follows clean code and SRP principles
- */
-
 import api from '@/plugins/axios'
 import type { AxiosResponse } from 'axios'
 import {
@@ -20,7 +13,6 @@ import {
   type JobFile,
 } from '@/schemas/job.schemas'
 
-// Legacy types kept for compatibility (will be removed gradually)
 export interface JobCreateData {
   name: string
   client_id: string
@@ -43,7 +35,6 @@ export interface JobUpdateData {
   [key: string]: unknown
 }
 
-// Use schemas for new types
 export type JobData = JobDetail
 export type TimeEntryCreateData = TimeEntryCreate
 export type MaterialEntryCreateData = MaterialEntryCreate
@@ -51,7 +42,6 @@ export type AdjustmentEntryCreateData = AdjustmentEntryCreate
 export type JobDetailResponse = JobUpdateResponse
 export type { JobEvent }
 
-// Legacy interfaces still in use
 export interface CompanyDefaults {
   materials_markup: number
   time_markup: number
@@ -84,9 +74,6 @@ export class JobRestService {
     return JobRestService.instance
   }
 
-  /**
-   * Creates a new Job
-   */
   async createJob(data: JobCreateData): Promise<ApiResponse> {
     try {
       const response: AxiosResponse<ApiResponse> = await api.post('/job/rest/jobs/', data)
@@ -96,14 +83,10 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Fetch full Job data for editing
-   */
   async getJobForEdit(jobId: string): Promise<JobDetailResponse> {
     try {
       const response: AxiosResponse = await api.get(`/job/rest/jobs/${jobId}/`)
 
-      // Validate response with schema
       const validatedData = JobUpdateResponseSchema.parse(response.data)
       return validatedData
     } catch (error: unknown) {
@@ -117,15 +100,9 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Updates a Job (autosave)
-   */
   async updateJob(jobId: string, data: JobUpdateData): Promise<ApiResponse> {
     try {
       const response: AxiosResponse<JobData> = await api.put(`/job/rest/jobs/${jobId}/`, data)
-
-      // Do not update the store automatically - let components handle this
-      // to avoid update loops and maintain control over when to refresh
 
       return {
         success: true,
@@ -137,9 +114,6 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Deletes a Job
-   */
   async deleteJob(jobId: string): Promise<ApiResponse> {
     try {
       const response: AxiosResponse<ApiResponse> = await api.delete(`/job/rest/jobs/${jobId}/`)
@@ -149,9 +123,6 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Toggle the Job's complex mode
-   */
   async toggleComplexJob(jobId: string, complexJob: boolean): Promise<ApiResponse> {
     try {
       const response: AxiosResponse<ApiResponse> = await api.post(
@@ -167,9 +138,6 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Adds an event to the Job
-   */
   async addJobEvent(jobId: string, description: string): Promise<ApiResponse> {
     try {
       const response: AxiosResponse<ApiResponse> = await api.post(
@@ -184,9 +152,6 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Creates a new time entry
-   */
   async createTimeEntry(
     jobId: string,
     timeEntryData: TimeEntryCreateData,
@@ -202,9 +167,6 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Creates a new material entry
-   */
   async createMaterialEntry(
     jobId: string,
     materialEntryData: MaterialEntryCreateData,
@@ -220,9 +182,6 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Creates a new adjustment entry
-   */
   async createAdjustmentEntry(
     jobId: string,
     adjustmentEntryData: AdjustmentEntryCreateData,
@@ -238,9 +197,6 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Fetch company default settings
-   */
   async getCompanyDefaults(): Promise<CompanyDefaults> {
     try {
       const response: AxiosResponse<CompanyDefaults> = await api.get('/job/api/company_defaults/')
@@ -250,9 +206,6 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Fetch available status values
-   */
   async getStatusValues(): Promise<Record<string, string>> {
     try {
       const response: AxiosResponse<Record<string, string>> = await api.get(
@@ -264,9 +217,6 @@ export class JobRestService {
     }
   }
 
-  /**
-   * Workshop PDF and file handling
-   */
   async fetchWorkshopPdf(jobId: string): Promise<Blob> {
     const response = await api.get(`/job/rest/jobs/${jobId}/workshop-pdf/`, {
       responseType: 'blob',
@@ -341,16 +291,11 @@ export class JobRestService {
     return this.handleResponse(response)
   }
 
-  /**
-   * Standardised API response handling
-   */
   private handleResponse<T>(response: AxiosResponse<T>): T {
-    // Guard clause - check for HTML response (redirect to login)
     if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
       throw new Error('Authentication required - redirected to login page')
     }
 
-    // Guard clause - check HTTP status
     if (response.status >= 400) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
@@ -358,11 +303,7 @@ export class JobRestService {
     return response.data
   }
 
-  /**
-   * Standardised error handling
-   */
   private handleError(error: unknown): never {
-    // Guard clause - check for network error
     if (error instanceof Error && 'response' in error) {
       const axiosError = error as {
         response?: { status: number; data: { error: string }; statusText: string }
@@ -371,7 +312,6 @@ export class JobRestService {
         throw new Error('Network error - please check your connection')
       }
 
-      // Switch-case for different HTTP error types
       const { status, data, statusText } = axiosError.response
       const errorMessage = data?.error
 
@@ -391,15 +331,12 @@ export class JobRestService {
       }
     }
 
-    // Fallback for non-Axios errors
     if (error instanceof Error) {
       throw new Error(error.message)
     }
 
-    // Final fallback
     throw new Error('An unknown error occurred')
   }
 }
 
-// Export singleton instance
 export const jobRestService = JobRestService.getInstance()

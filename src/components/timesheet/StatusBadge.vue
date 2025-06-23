@@ -1,6 +1,5 @@
 <template>
   <div class="flex items-center justify-center">
-    <!-- Leave Status -->
     <div
       v-if="status === 'Leave'"
       class="flex items-center space-x-1 px-2 py-1 rounded-full bg-blue-100 border border-blue-200"
@@ -11,7 +10,6 @@
       </span>
     </div>
 
-    <!-- Complete Status -->
     <div
       v-else-if="status === '✓' || status === 'Complete'"
       class="flex items-center justify-center w-6 h-6 rounded-full bg-green-100 border border-green-200"
@@ -19,7 +17,6 @@
       <Check class="h-3 w-3 text-green-600" />
     </div>
 
-    <!-- Warning/Missing Status -->
     <div
       v-else-if="status.includes('⚠') || status === 'Missing'"
       class="flex items-center justify-center w-6 h-6 rounded-full bg-yellow-100 border border-yellow-200"
@@ -27,7 +24,6 @@
       <AlertTriangle class="h-3 w-3 text-yellow-600" />
     </div>
 
-    <!-- Overtime Status -->
     <div
       v-else-if="status.includes('Overtime')"
       class="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 border border-orange-200"
@@ -35,7 +31,6 @@
       <Clock class="h-3 w-3 text-orange-600" />
     </div>
 
-    <!-- Default/Unknown Status -->
     <div
       v-else
       class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 border border-gray-200"
@@ -73,7 +68,6 @@ const getLeaveTypeDisplay = (leaveType?: string): string => {
 }
 
 const getStatusDisplay = (status: string): string => {
-  // Corrige bug do "Of" (Friday) mostrando como status
   if (status === 'Of') return '-'
   if (!status || status === '-') return '-'
   return status

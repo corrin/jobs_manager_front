@@ -1,10 +1,3 @@
-/**
- * Quote Service
- *
- * Handles quote spreadsheet operations including linking, refreshing, and syncing
- * with Google Sheets integration.
- */
-
 import api from './api'
 import type { QuoteSheet } from '../schemas/job.schemas'
 import type { CostLine } from '@/types/costing.types'
@@ -39,7 +32,7 @@ export interface QuotePreview {
 
 export interface QuoteApplyResult {
   success: boolean
-  message: string // compatível com src/types/index.ts
+  message: string
   cost_set?: CostLine[]
   draft_lines?: Array<{
     kind: string
@@ -52,45 +45,29 @@ export interface QuoteApplyResult {
 }
 
 class QuoteService {
-  /**
-   * Link a job to a Google Sheets quote template
-   */
   async linkQuote(jobId: string, templateUrl?: string): Promise<QuoteSheet> {
     const payload = templateUrl ? { template_url: templateUrl } : {}
 
-    // Use longer timeout for quote linking as it involves Google Sheets operations
     const response = await api.post(`/job/rest/jobs/${jobId}/quote/link/`, payload, {
-      timeout: 30000, // 30 seconds for Google Sheets operations
+      timeout: 30000,
     })
     return response.data
   }
 
-  /**
-   * Preview quote changes from linked Google Sheet
-   */
   async previewQuote(jobId: string): Promise<QuotePreview> {
     const response = await api.post(`/job/rest/jobs/${jobId}/quote/preview/`)
     return response.data
   }
 
-  /**
-   * Apply quote changes from linked Google Sheet
-   */
   async applyQuote(jobId: string): Promise<QuoteApplyResult> {
     const response = await api.post(`/job/rest/jobs/${jobId}/quote/apply/`)
     return response.data
   }
 
-  /**
-   * Check if job has a linked quote sheet
-   */
   hasLinkedSheet(job: Job): boolean {
     return !!job?.quote_sheet?.sheet_url
   }
 
-  /**
-   * Get the Google Sheets URL for a job
-   */
   getSheetUrl(job: Job): string | null {
     return job?.quote_sheet?.sheet_url || null
   }

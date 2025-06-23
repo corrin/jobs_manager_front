@@ -1,20 +1,15 @@
 <template>
   <AppLayout>
     <div class="flex flex-col h-screen max-h-screen overflow-hidden">
-      <!-- Header -->
       <div class="flex-shrink-0 p-4 border-b border-gray-200">
         <h1 class="text-xl font-bold text-gray-900">Create New Job</h1>
       </div>
 
-      <!-- Form Content -->
       <div class="flex-1 overflow-y-auto p-6">
         <div class="max-w-2xl mx-auto">
           <form @submit.prevent="handleSubmit" class="space-y-6">
-            <!-- Two Column Layout -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <!-- Left Column: Job Name, Client, Contact -->
               <div class="space-y-6">
-                <!-- Nome do Job -->
                 <div>
                   <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
                     Job Name *
@@ -33,7 +28,6 @@
                   </p>
                 </div>
 
-                <!-- Cliente -->
                 <div>
                   <ClientLookup
                     id="client"
@@ -49,7 +43,6 @@
                   </p>
                 </div>
 
-                <!-- Contato (opcional) -->
                 <div>
                   <ContactSelector
                     id="contact"
@@ -63,9 +56,7 @@
                 </div>
               </div>
 
-              <!-- Right Column: Description, Order Number, Job Notes -->
               <div class="space-y-6">
-                <!-- Descrição -->
                 <div>
                   <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
                     Description (for invoice)
@@ -79,7 +70,6 @@
                   />
                 </div>
 
-                <!-- Número do Pedido -->
                 <div>
                   <label for="order_number" class="block text-sm font-medium text-gray-700 mb-2">
                     Order Number
@@ -93,7 +83,6 @@
                   />
                 </div>
 
-                <!-- Notas -->
                 <div>
                   <RichTextEditor
                     v-model="formData.notes"
@@ -105,7 +94,6 @@
               </div>
             </div>
 
-            <!-- Actions -->
             <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
               <button
                 type="button"
@@ -164,7 +152,6 @@ import { jobRestService, type JobCreateData } from '@/services/job-rest.service'
 
 const router = useRouter()
 
-// Form data seguindo princípios de reatividade do Vue 3
 const formData = ref<JobCreateData>({
   name: '',
   client_id: '',
@@ -175,20 +162,16 @@ const formData = ref<JobCreateData>({
   contact_person: '',
 })
 
-// Client interface
 interface Client {
   id: string
   name: string
-  // Adicione outros campos relevantes conforme necessário
 }
 
-// Selected client state
 declare const selectedClient: import('vue').Ref<Client | null>
 
 const errors = ref<Record<string, string>>({})
 const isSubmitting = ref(false)
 
-// Handler para seleção de cliente
 const handleClientSelection = (client: Client | null) => {
   selectedClient.value = client
   if (client) {
@@ -198,17 +181,14 @@ const handleClientSelection = (client: Client | null) => {
   }
 }
 
-// Computed property para validação do formulário
 const canSubmit = computed(() => {
   return formData.value.name.trim() !== '' && formData.value.client_id !== ''
 })
 
-// Guard clause - navegação de volta
 const navigateBack = () => {
   router.push({ name: 'kanban' })
 }
 
-// Early return pattern para validação
 const validateForm = (): boolean => {
   errors.value = {}
 
@@ -225,9 +205,7 @@ const validateForm = (): boolean => {
   return true
 }
 
-// Submit handler com delegação para service layer
 const handleSubmit = async () => {
-  // Early return - validação
   if (!validateForm()) {
     return
   }
@@ -238,7 +216,6 @@ const handleSubmit = async () => {
     const result = await jobRestService.createJob(formData.value)
 
     if (result.success && result.job_id) {
-      // Redirecionar para a view de edição do job criado
       router.push({
         name: 'job-edit',
         params: { id: result.job_id },
@@ -248,7 +225,7 @@ const handleSubmit = async () => {
     }
   } catch (error) {
     console.error('Error creating job:', error)
-    // TODO: Implementar toast notification
+
     alert(error instanceof Error ? error.message : 'Failed to create job')
   } finally {
     isSubmitting.value = false
@@ -256,7 +233,6 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => {
-  // Reset form ao montar componente
   Object.keys(formData.value).forEach((key) => {
     formData.value[key as keyof JobCreateData] = ''
   })

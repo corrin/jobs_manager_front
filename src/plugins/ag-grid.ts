@@ -1,11 +1,8 @@
-// AG Grid Configuration
 import { ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community'
 import type { ValueFormatterParams } from 'ag-grid-community'
 
-// Register AG Grid Community modules
 ModuleRegistry.registerModules([AllCommunityModule])
 
-// Create custom theme with company colors (following SRP - single responsibility for theme configuration)
 export const customTheme = themeQuartz.withParams({
   accentColor: '#4361EE',
   backgroundColor: '#FFFFFF',
@@ -16,21 +13,16 @@ export const customTheme = themeQuartz.withParams({
   spacing: 4,
 })
 
-// Global AG Grid Configuration
 export const defaultGridOptions = {
-  // New Theming API (v33+)
   theme: customTheme,
 
-  // Row Selection - updated API (v32.2+)
   rowSelection: {
     mode: 'singleRow',
     enableClickSelection: true,
   },
 
-  // Animation
   animateRows: true,
 
-  // Column Sizing
   columnTypes: {
     dateColumn: {
       filter: 'agDateColumnFilter',
@@ -82,7 +74,6 @@ export const defaultGridOptions = {
     },
   },
 
-  // Default Column Definition
   defaultColDef: {
     flex: 1,
     minWidth: 100,
@@ -92,23 +83,18 @@ export const defaultGridOptions = {
     editable: false,
   },
 
-  // Pagination
   pagination: false,
 
-  // Row Height
   rowHeight: 50,
   headerHeight: 45,
 
-  // Styling
   rowClass: 'timesheet-row',
 
-  // Loading
   loadingOverlayComponent: null,
   noRowsOverlayComponent: null,
 }
 
-// Custom CSS Classes for Timesheet (updated for v33 Theming API)
 export const timesheetGridClasses = {
-  wrapper: 'timesheet-grid', // Removed ag-theme-quartz class
+  wrapper: 'timesheet-grid',
   container: 'h-full w-full',
 }

@@ -11,9 +11,7 @@ export interface CompanyDefaults {
 let cachedDefaults: CompanyDefaults | null = null
 
 export const CompanyDefaultsService = {
-  /**
-   * Get company defaults with caching
-   */ async getDefaults(): Promise<CompanyDefaults> {
+  async getDefaults(): Promise<CompanyDefaults> {
     if (cachedDefaults) {
       return cachedDefaults
     }
@@ -24,7 +22,6 @@ export const CompanyDefaultsService = {
 
       console.log('✅ Company defaults loaded successfully:', cachedDefaults)
 
-      // Make available globally for legacy components
       window.companyDefaults = cachedDefaults
 
       return cachedDefaults
@@ -40,7 +37,6 @@ export const CompanyDefaultsService = {
         url: errorObj.config?.url,
       })
 
-      // Return fallback values
       const fallback: CompanyDefaults = {
         materials_markup: 0.2,
         time_markup: 0.3,
@@ -55,17 +51,11 @@ export const CompanyDefaultsService = {
     }
   },
 
-  /**
-   * Clear cache (useful for testing or when defaults change)
-   */
   clearCache(): void {
     cachedDefaults = null
     window.companyDefaults = null
   },
 
-  /**
-   * Get cached defaults synchronously (returns null if not loaded)
-   */
   getCached(): CompanyDefaults | null {
     return cachedDefaults
   },

@@ -51,7 +51,6 @@ const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
 
-// Footer state
 const blobUrl = ref<string>('')
 const attaching = ref(false)
 const attached = ref(false)

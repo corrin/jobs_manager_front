@@ -20,7 +20,6 @@ import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type Quill from 'quill'
 import RangeStatic from 'quill'
 
-// Props seguindo clean code principles
 interface Props {
   id?: string
   label?: string
@@ -41,31 +40,25 @@ const props = withDefaults(defineProps<Props>(), {
   height: '120px',
 })
 
-// Events
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   focus: []
   blur: []
 }>()
 
-// Local state
 const editorContainer = ref<HTMLElement>()
 let quill: Quill | null = null
 let isUpdatingFromProp = false
 
-// Initialize Quill editor seguindo early return
 const initializeEditor = async () => {
-  // Guard clause - verificar se container existe
   if (!editorContainer.value) {
     console.error('Editor container not found')
     return
   }
   try {
-    // Dynamically import Quill para otimizar bundle
     const { default: Quill } = await import('quill')
     await import('quill/dist/quill.snow.css')
 
-    // Quill configuration seguindo princípios de clean code
     const toolbarOptions = [
       ['bold', 'italic', 'underline'],
       [{ list: 'ordered' }, { list: 'bullet' }],
@@ -82,37 +75,30 @@ const initializeEditor = async () => {
       },
     }
 
-    // Initialize Quill instance
     quill = new Quill(editorContainer.value, options)
 
-    // Set initial content
     if (props.modelValue) {
       quill.root.innerHTML = props.modelValue
     }
 
-    // Set up event handlers seguindo SRP
     setupEventHandlers()
   } catch (error) {
     console.error('Failed to initialize Quill editor:', error)
   }
 }
 
-// Setup event handlers seguindo clean code
 const setupEventHandlers = () => {
   if (!quill) return
 
-  // Handle text changes
   quill.on('text-change', () => {
-    // Guard clause para evitar loops infinitos
     if (isUpdatingFromProp) return
-    // Guard clause para verificar se quill existe
+
     if (!quill) return
 
     const content = quill.root.innerHTML
     emit('update:modelValue', content)
   })
 
-  // Handle focus events
   quill.on('selection-change', (range: RangeStatic | null) => {
     if (range) {
       emit('focus')
@@ -122,26 +108,22 @@ const setupEventHandlers = () => {
   })
 }
 
-// Update content from prop changes
 const updateContent = (newContent: string | undefined) => {
-  // Guard clause if Quill isn't initialised
   if (!quill) return
 
   const safeContent = newContent || ''
   const currentContent = quill.root.innerHTML
 
-  // Guard clause se conteúdo é o mesmo
   if (currentContent === safeContent) return
 
   isUpdatingFromProp = true
-  // Preserve cursor position se possível
+
   const selection = quill.getSelection()
 
   quill.root.innerHTML = safeContent
-  // Restore selection se existia
+
   if (selection) {
     nextTick(() => {
-      // Guard clause adicional para verificar se quill ainda existe
       if (!quill) return
       quill.setSelection(selection)
     })
@@ -150,33 +132,28 @@ const updateContent = (newContent: string | undefined) => {
   isUpdatingFromProp = false
 }
 
-// Set readonly mode
 const setReadonly = (readonly: boolean) => {
   if (quill) {
     quill.enable(!readonly)
   }
 }
 
-// Focus editor
 const focus = () => {
   if (quill) {
     quill.focus()
   }
 }
 
-// Get text content (without HTML)
 const getTextContent = (): string => {
   return quill ? quill.getText() : ''
 }
 
-// Clear content
 const clear = () => {
   if (quill) {
     quill.setText('')
   }
 }
 
-// Lifecycle hooks
 onMounted(async () => {
   await nextTick()
   await initializeEditor()
@@ -188,7 +165,6 @@ onUnmounted(() => {
   }
 })
 
-// Watch for prop changes
 watch(
   () => props.modelValue,
   (newValue) => {
@@ -203,7 +179,6 @@ watch(
   },
 )
 
-// Expose methods para parent component
 defineExpose({
   focus,
   getTextContent,
@@ -213,7 +188,6 @@ defineExpose({
 </script>
 
 <style>
-/* Quill editor customizations */
 .ql-toolbar {
   border-top: none !important;
   border-left: none !important;
@@ -236,7 +210,6 @@ defineExpose({
   color: #9ca3af;
 }
 
-/* Focus styles */
 .ql-toolbar.ql-snow + .ql-container.ql-snow {
   border: none;
 }

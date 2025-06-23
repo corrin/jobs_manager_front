@@ -97,30 +97,23 @@ const router = createRouter({
   ],
 })
 
-// Navigation guards
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // Set page title
   if (to.meta.title) {
     document.title = to.meta.title as string
   }
 
-  // Prevent redirect loops - if we're already going to login, just proceed
   if (to.name === 'login') {
     next()
     return
   }
 
-  // Check if route requires authentication
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
-      // Try to initialize auth from stored tokens
       const wasAuthenticated = await authStore.initializeAuth()
 
-      // If still not authenticated after initialization, redirect to login
       if (!authStore.isAuthenticated && !wasAuthenticated) {
-        // Redirect to login with return path
         next({
           name: 'login',
           query: { redirect: to.fullPath },
@@ -130,7 +123,6 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // Check if route requires guest (not logged in)
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     next({ name: 'kanban' })
     return

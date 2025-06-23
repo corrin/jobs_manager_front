@@ -18,7 +18,6 @@ import type {
 import type { Job, AdvancedFilters } from '@/types'
 import { validate as validateUuid } from 'uuid'
 
-// Base interface for API responses to ensure type safety
 interface BaseApiResponse {
   success: boolean
   error?: string
@@ -37,12 +36,10 @@ export class JobService {
     response: AxiosResponse,
     schema: z.ZodType<T>,
   ): T {
-    // Check if response is HTML (redirect to login page)
     if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
       throw new Error('Authentication required - redirected to login page')
     }
 
-    // Check if response status indicates success
     if (response.status >= 400) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
@@ -117,7 +114,6 @@ export class JobService {
       const response = await api.post(`/job/api/jobs/${jobId}/update-status/`, requestData)
       console.log(`✅ Job status update successful`, response.data)
 
-      // Update the store with the new status
       const { useJobsStore } = await import('@/stores/jobs')
       const jobsStore = useJobsStore()
       jobsStore.updateJobStatus(jobId, status)
@@ -157,7 +153,6 @@ export class JobService {
 
       await api.post(`/job/api/jobs/${jobId}/reorder/`, requestData)
 
-      // If the status changed, update the store
       if (status) {
         const { useJobsStore } = await import('@/stores/jobs')
         const jobsStore = useJobsStore()
@@ -174,7 +169,6 @@ export class JobService {
       const validatedFilters = AdvancedFiltersSchema.parse(filters)
       const params = new URLSearchParams()
 
-      // Add non-empty filters to params
       Object.entries(validatedFilters).forEach(([key, value]) => {
         if (Array.isArray(value)) {
           value.forEach((v) => v && params.append(key, v))

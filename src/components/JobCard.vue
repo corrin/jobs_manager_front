@@ -13,30 +13,24 @@
     :data-job-id="job.id || ''"
     @click="handleClick"
   >
-    <!-- Movement Mode Indicator -->
     <div
       v-if="isMovementModeActive"
       class="absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-200"
       :class="isJobSelectedForMovement ? 'bg-blue-500' : 'bg-blue-300 opacity-60'"
     ></div>
 
-    <!-- Header: Job Number -->
     <div class="flex justify-between items-center mb-1">
       <span class="text-xs font-semibold text-blue-600">#{{ job.job_number }}</span>
     </div>
 
-    <!-- Job Title -->
     <h4 class="font-medium text-gray-900 text-xs mb-1 leading-tight">
       {{ truncatedJobName }}
     </h4>
 
-    <!-- Job Description -->
     <p class="text-xs text-gray-600 mb-1 line-clamp-1 leading-tight">{{ job.description }}</p>
 
-    <!-- Client Name -->
     <div class="text-xs text-gray-500 mb-2 truncate font-medium">{{ job.client_name }}</div>
 
-    <!-- Status Badge -->
     <StatusBadge
       :label="friendlyStatusName"
       :status="job.status_key || ''"
@@ -44,7 +38,6 @@
       class="mb-2 text-[10px]"
     />
 
-    <!-- Staff Assignments -->
     <div
       ref="jobStaffContainerRef"
       class="flex gap-1 mt-auto h-4 p-1 rounded border border-dashed border-gray-300 transition-colors items-center"
@@ -103,15 +96,12 @@ const emit = defineEmits<JobCardEmits>()
 
 const jobStaffContainerRef = ref<HTMLElement>()
 
-// Use job card composable
 const { handleClick } = useJobCard(props.job, emit)
 
-// Computed property for friendly status name
 const friendlyStatusName = computed(() => {
   return statusNameMap[props.job.status_key || ''] || props.job.status_key || ''
 })
 
-// Truncate job name to 12 characters
 const truncatedJobName = computed(() => {
   return props.job.name.length > 12 ? props.job.name.substring(0, 12) + '...' : props.job.name
 })
@@ -129,7 +119,6 @@ onMounted(() => {
 
 <style scoped>
 .job-card {
-  /* Compact, visually consistent card layout */
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -215,8 +204,6 @@ onMounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
-/* Remove legacy .job-card-simple styles */
 
 :global(.job-card.sortable-chosen) {
   opacity: 0.8 !important;

@@ -1,7 +1,6 @@
 import { z } from 'zod'
 import { CostSetSchema } from './costing.schemas'
 
-// Schema para QuoteSheet baseado na estrutura do backend
 export const QuoteSheetSchema = z.object({
   id: z.string(),
   sheet_id: z.string(),
@@ -12,7 +11,6 @@ export const QuoteSheetSchema = z.object({
   job_name: z.string(),
 })
 
-// Schema for JobPricing based on actual backend structure
 export const JobPricingSchema = z.object({
   id: z.string(),
   pricing_stage: z.enum(['estimate', 'quote', 'reality']),
@@ -25,9 +23,9 @@ export const JobPricingSchema = z.object({
         id: z.string(),
         description: z.string(),
         items: z.number(),
-        minutes_per_item: z.string().transform((val) => parseFloat(val)), // Convert string to number
-        wage_rate: z.string().transform((val) => parseFloat(val)), // Convert string to number
-        charge_out_rate: z.string().transform((val) => parseFloat(val)), // Convert string to number
+        minutes_per_item: z.string().transform((val) => parseFloat(val)),
+        wage_rate: z.string().transform((val) => parseFloat(val)),
+        charge_out_rate: z.string().transform((val) => parseFloat(val)),
         total_minutes: z.number(),
         revenue: z.number(),
         cost: z.number(),
@@ -43,9 +41,9 @@ export const JobPricingSchema = z.object({
         id: z.string(),
         item_code: z.string().optional(),
         description: z.string(),
-        quantity: z.string().transform((val) => parseFloat(val)), // Convert string to number
-        unit_cost: z.string().transform((val) => parseFloat(val)), // Convert string to number
-        unit_revenue: z.string().transform((val) => parseFloat(val)), // Convert string to number
+        quantity: z.string().transform((val) => parseFloat(val)),
+        unit_cost: z.string().transform((val) => parseFloat(val)),
+        unit_revenue: z.string().transform((val) => parseFloat(val)),
         revenue: z.number(),
         cost: z.number(),
         comments: z.string().optional(),
@@ -59,8 +57,8 @@ export const JobPricingSchema = z.object({
       z.object({
         id: z.string(),
         description: z.string(),
-        cost_adjustment: z.string().transform((val) => parseFloat(val)), // Convert string to number
-        price_adjustment: z.string().transform((val) => parseFloat(val)), // Convert string to number
+        cost_adjustment: z.string().transform((val) => parseFloat(val)),
+        price_adjustment: z.string().transform((val) => parseFloat(val)),
         revenue: z.number(),
         cost: z.number(),
         comments: z.string().optional(),
@@ -88,7 +86,6 @@ export const JobEventSchema = z.object({
   staff: z.string().nullable(),
 })
 
-// Complete Job schema (used in JobView) - correcting actual structure
 export const JobDetailSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -101,7 +98,7 @@ export const JobDetailSchema = z.object({
   contact_id: z.string().nullable().optional(),
   contact_name: z.string().nullable().optional(),
   job_status: z.string(),
-  complex_job: z.boolean().optional(), // Optional field from backend
+  complex_job: z.boolean().optional(),
   pricing_methodology: z.enum(['fixed_price', 'time_materials']),
   created_at: z.string(),
   updated_at: z.string(),
@@ -111,17 +108,17 @@ export const JobDetailSchema = z.object({
   invoiced: z.boolean().optional(),
   paid: z.boolean().optional(),
   charge_out_rate: z.string().optional(),
-  // Legacy JobPricing data (deprecated but kept for backward compatibility)
+
   latest_estimate_pricing: JobPricingSchema.optional(),
   latest_quote_pricing: JobPricingSchema.optional(),
   latest_reality_pricing: JobPricingSchema.optional(),
-  // New CostSet data (current system)
+
   latest_estimate: CostSetSchema.nullable().optional(),
   latest_quote: CostSetSchema.nullable().optional(),
   latest_actual: CostSetSchema.nullable().optional(),
-  // Quote sheet integration
+
   quote_sheet: QuoteSheetSchema.nullable().optional(),
-  // Enriched structure from frontend (composables)
+
   latest_pricings: z
     .object({
       estimate: JobPricingSchema.nullable().optional(),
@@ -129,7 +126,7 @@ export const JobDetailSchema = z.object({
       reality: JobPricingSchema.nullable().optional(),
     })
     .optional(),
-  // Company defaults added in frontend
+
   company_defaults: z
     .object({
       materials_markup: z.number(),
@@ -142,13 +139,11 @@ export const JobDetailSchema = z.object({
   events: z.array(JobEventSchema).optional(),
 })
 
-// Simple API response schema (success notification only)
 export const ApiSuccessResponseSchema = z.object({
   success: z.literal(true),
   message: z.string().optional(),
 })
 
-// Response schema with updated job - based on JobRestService.get_job_for_edit
 export const JobUpdateResponseSchema = z.object({
   success: z.literal(true),
   data: z.object({
@@ -173,12 +168,11 @@ export const JobUpdateResponseSchema = z.object({
   message: z.string().optional(),
 })
 
-// Entry creation schemas - based on actual backend structure
 export const TimeEntryCreateSchema = z.object({
   job_pricing_id: z.string(),
   description: z.string(),
   items: z.number().positive().default(1),
-  minutes_per_item: z.number().positive(), // Minutes per item
+  minutes_per_item: z.number().positive(),
   wage_rate: z.number().nonnegative().optional(),
   charge_out_rate: z.number().nonnegative().optional(),
   staff_id: z.string().optional(),
@@ -227,7 +221,6 @@ export const UploadFilesResponseSchema = z
   })
   .describe('Response from file upload endpoint')
 
-// Types inferred from schemas
 export type QuoteSheet = z.infer<typeof QuoteSheetSchema>
 export type JobPricing = z.infer<typeof JobPricingSchema>
 export type CompanyDefaults = z.infer<typeof CompanyDefaultsSchema>

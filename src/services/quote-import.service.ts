@@ -131,5 +131,4 @@ export class QuoteImportService {
   }
 }
 
-// Export singleton instance
 export const quoteImportService = new QuoteImportService()

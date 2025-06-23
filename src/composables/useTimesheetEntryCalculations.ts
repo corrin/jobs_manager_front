@@ -1,10 +1,3 @@
-/**
- * Optimized Timesheet Calculations Composable
- *
- * Handles all calculations for the timesheet system following SRP
- * Centralizes business logic for cost calculations
- */
-
 import { type Ref } from 'vue'
 import type { CostLine } from '@/types/costing.types'
 import type {
@@ -15,9 +8,6 @@ import type {
 import type { CompanyDefaults } from '@/types/timesheet.types'
 
 export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaults | null>) {
-  /**
-   * Get rate multiplier from rate type
-   */
   const getRateMultiplier = (rateType: string): number => {
     switch (rateType) {
       case '1.5':
@@ -27,33 +17,23 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       case 'Unpaid':
         return 0.0
       default:
-        return 1.0 // 'Ord'
+        return 1.0
     }
   }
 
-  /**
-   * Calculate wage amount (staff cost)
-   */
   const calculateWage = (hours: number, rateType: string, wageRate: number): number => {
-    // Guard clause - early return for invalid inputs
     if (hours <= 0 || wageRate <= 0) return 0
 
     const multiplier = getRateMultiplier(rateType)
     return Math.round(hours * wageRate * multiplier * 100) / 100
   }
 
-  /**
-   * Calculate bill amount (client charge)
-   */
   const calculateBill = (hours: number, chargeOutRate: number, billable: boolean): number => {
-    // Guard clause - early return for non-billable or invalid inputs
     if (!billable || hours <= 0 || chargeOutRate <= 0) return 0
 
     return Math.round(hours * chargeOutRate * 100) / 100
   }
-  /**
-   * Auto-populate job fields when job is selected
-   */
+
   const populateJobFields = (
     entry: TimesheetEntry,
     job: TimesheetEntryJobSelectionItem,
@@ -63,7 +43,6 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       job: job,
     })
 
-    // Auto-set billable based on job status using switch-case
     const billable = (() => {
       switch (job.status) {
         case 'special':
@@ -88,9 +67,6 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     return result
   }
 
-  /**
-   * Create new empty row with smart defaults
-   */
   const createNewRow = (staffMember: TimesheetEntryStaffMember, date: string): TimesheetEntry => {
     const defaultWageRate = staffMember.wageRate || companyDefaults.value?.wage_rate || 32.0
     const defaultChargeOutRate = companyDefaults.value?.charge_out_rate || 105.0
@@ -116,28 +92,19 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     }
   }
 
-  /**
-   * Recalculate all amounts for an entry
-   */
   const recalculateEntry = (entry: TimesheetEntry): TimesheetEntry => {
     const updatedEntry = { ...entry }
 
-    // Calculate wage
     updatedEntry.wage = calculateWage(entry.hours, entry.rate, entry.wageRate)
 
-    // Calculate bill
     updatedEntry.bill = calculateBill(entry.hours, entry.chargeOutRate, entry.billable)
 
     return updatedEntry
   }
 
-  /**
-   * Validate entry data before saving
-   */
   const validateEntry = (entry: TimesheetEntry): { isValid: boolean; errors: string[] } => {
     const errors: string[] = []
 
-    // Early return guard clauses for validation
     if (!entry.jobNumber.trim()) {
       errors.push('Job is required')
     }
@@ -160,9 +127,6 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     }
   }
 
-  /**
-   * Convert OptimizedTimeEntry to CostLine payload format
-   */
   const toCostLinePayload = (entry: TimesheetEntry, jobId: string) => {
     return {
       kind: 'time' as const,
@@ -182,11 +146,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     }
   }
 
-  /**
-   * Convert CostLine to OptimizedTimeEntry format
-   */
   const fromCostLine = (costLine: CostLine, staffId: string): TimesheetEntry => {
-    // Guard clause - early return for invalid cost line
     if (!costLine || costLine.kind !== 'time') {
       throw new Error('Invalid cost line for time entry conversion')
     }
@@ -213,21 +173,17 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
   }
 
   return {
-    // Calculation functions
     calculateWage,
     calculateBill,
     recalculateEntry,
 
-    // Data transformation
     populateJobFields,
     createNewRow,
     toCostLinePayload,
     fromCostLine,
 
-    // Validation
     validateEntry,
 
-    // Utilities
     getRateMultiplier,
   }
 }

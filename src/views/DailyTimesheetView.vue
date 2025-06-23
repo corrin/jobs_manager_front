@@ -1,13 +1,10 @@
 <template>
   <AppLayout>
-    <!-- Modern Header with Navigation - Mobile First -->
     <div
       class="sticky top-0 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 backdrop-blur-md border-b border-blue-500/20"
     >
       <div class="px-3 sm:px-4 lg:px-6 py-2 sm:py-3">
-        <!-- Mobile: Stack vertically, Desktop: Side by side -->
         <div class="space-y-3 lg:space-y-0 py-0.5">
-          <!-- Title Row - Mobile: Center, Desktop: Left -->
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div
               class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-center sm:text-left"
@@ -21,11 +18,9 @@
               </div>
             </div>
 
-            <!-- Actions - Mobile: Hide some buttons, Desktop: Show all -->
             <div
               class="flex items-center justify-center sm:justify-end space-x-2 sm:space-x-3 mt-2 sm:mt-0"
             >
-              <!-- Metrics Toggle Button -->
               <Button
                 @click="openMetricsModal"
                 variant="ghost"
@@ -62,7 +57,6 @@
             </div>
           </div>
 
-          <!-- Date Navigation - Mobile: Larger buttons, Desktop: Normal -->
           <div class="flex items-center justify-center space-x-2 sm:space-x-4">
             <Button
               @click="navigateDate(-1)"
@@ -97,9 +91,7 @@
       </div>
     </div>
 
-    <!-- Main Content - Mobile First -->
     <div class="flex-1 p-2 sm:p-4 lg:p-1 space-y-3 sm:space-y-4 lg:space-y-6">
-      <!-- Loading State -->
       <div v-if="loading" class="flex items-center justify-center py-8 sm:py-12">
         <div class="text-center">
           <div
@@ -109,7 +101,6 @@
         </div>
       </div>
 
-      <!-- Error State -->
       <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 sm:p-6">
         <div class="flex items-start space-x-3">
           <AlertCircle class="h-5 w-5 sm:h-6 sm:w-6 text-red-600 flex-shrink-0 mt-0.5" />
@@ -123,9 +114,8 @@
           </div>
         </div>
       </div>
-      <!-- Data Content -->
+
       <div v-else-if="summary" class="space-y-4">
-        <!-- Staff Overview Table - Compact and Scrollable -->
         <div
           class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-18rem)] lg:h-[calc(100vh-10rem)]"
         >
@@ -170,7 +160,6 @@
       </div>
     </div>
 
-    <!-- Staff Detail Modal -->
     <StaffDetailModal
       v-if="selectedStaff"
       :staff="selectedStaff"
@@ -179,7 +168,6 @@
       @close="closeStaffModal"
     />
 
-    <!-- Metrics Modal -->
     <MetricsModal
       v-if="summary"
       :summary="summary"
@@ -204,12 +192,10 @@ import {
   BarChart3,
 } from 'lucide-vue-next'
 
-// Components
 import StaffRow from '@/components/timesheet/StaffRow.vue'
 import StaffDetailModal from '@/components/timesheet/StaffDetailModal.vue'
 import MetricsModal from '@/components/timesheet/MetricsModal.vue'
 
-// Services and Types
 import {
   getDailyTimesheetSummary,
   type DailyTimesheetSummary,
@@ -217,14 +203,12 @@ import {
 } from '@/services/daily-timesheet.service'
 import { dateService, today, navigateDay } from '@/services/date.service'
 
-// State
 const router = useRouter()
 const route = useRoute()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const summary = ref<DailyTimesheetSummary | null>(null)
 
-// Initialize from URL params or use today as default
 const initialDate = (route.query.date as string) || today()
 const selectedDate = ref(initialDate)
 
@@ -235,7 +219,6 @@ const showMetricsModal = ref(false)
 console.log('🔗 DailyTimesheetView URL params:', { date: route.query.date })
 console.log('📊 Using initial date:', initialDate)
 
-// Computed
 const formatDisplayDate = (date: string): string => {
   return dateService.formatDisplayDate(date, {
     weekday: true,
@@ -244,7 +227,6 @@ const formatDisplayDate = (date: string): string => {
   })
 }
 
-// Methods
 const loadData = async (): Promise<void> => {
   if (!selectedDate.value) return
 
@@ -281,7 +263,6 @@ const goToToday = (): void => {
   loadData()
 }
 
-// Route management
 const updateRoute = () => {
   router.push({
     query: {
@@ -308,12 +289,10 @@ const closeMetricsModal = (): void => {
   showMetricsModal.value = false
 }
 
-// Lifecycle
 onMounted(() => {
   loadData()
 })
 
-// Watch for URL parameter changes
 watch(
   () => route.query.date,
   (newDate) => {
@@ -326,7 +305,6 @@ watch(
   { immediate: false },
 )
 
-// Watch for date input changes and update URL
 watch(selectedDate, (newDate) => {
   if (newDate && newDate !== route.query.date) {
     console.log('📅 Updating URL from date change:', newDate)

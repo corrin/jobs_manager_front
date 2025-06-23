@@ -65,7 +65,6 @@ const handleChange = (): void => {
   emit('update:modelValue', selectedValue.value)
 }
 
-// Watch for external changes to modelValue
 watch(
   () => props.modelValue,
   (newValue) => {

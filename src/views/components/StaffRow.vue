@@ -1,7 +1,5 @@
 <template>
-  <!-- Mobile Layout -->
   <div v-if="mobile" class="space-y-2">
-    <!-- Staff Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-2">
         <div
@@ -16,7 +14,6 @@
         </div>
       </div>
 
-      <!-- Status Icon for Mobile -->
       <div v-if="staff.status === 'No Entry'" class="relative group">
         <AlertTriangle class="h-4 w-4 text-red-500" />
         <div
@@ -34,7 +31,6 @@
       </div>
     </div>
 
-    <!-- Mobile Stats -->
     <div class="grid grid-cols-3 gap-2 text-center">
       <div>
         <div class="text-xs text-gray-500">Hours</div>
@@ -50,7 +46,6 @@
       </div>
     </div>
 
-    <!-- Progress Bar -->
     <div class="w-full bg-gray-200 rounded-full h-1">
       <div
         class="bg-blue-500 h-1 rounded-full transition-all duration-300"
@@ -58,7 +53,6 @@
       ></div>
     </div>
 
-    <!-- Mobile Action -->
     <div class="flex justify-center">
       <Button @click="handleViewDetails" variant="outline" size="sm" class="text-xs">
         <Eye class="h-3 w-3 mr-1" />
@@ -67,9 +61,7 @@
     </div>
   </div>
 
-  <!-- Desktop Table Layout -->
   <tr v-else class="hover:bg-gray-50 transition-colors duration-150">
-    <!-- Staff Member - Mais Compacto -->
     <td class="px-2 py-1.5 whitespace-nowrap">
       <div class="flex items-center space-x-2">
         <div class="flex-shrink-0">
@@ -92,7 +84,6 @@
       </div>
     </td>
 
-    <!-- Hours - Mais Compacto -->
     <td class="px-2 py-1.5 whitespace-nowrap text-center">
       <div class="text-sm">
         <div class="font-medium text-gray-900 leading-tight">
@@ -101,7 +92,7 @@
         <div class="text-xs text-gray-500 leading-tight">
           / {{ formatHours(staff.scheduled_hours) }}h
         </div>
-        <!-- Barra de progresso mais compacta -->
+
         <div class="w-8 bg-gray-200 rounded-full h-0.5 mx-auto mt-0.5">
           <div
             class="bg-blue-500 h-0.5 rounded-full transition-all duration-300"
@@ -111,15 +102,13 @@
       </div>
     </td>
 
-    <!-- Status - Mais Compacto -->
     <td class="px-2 py-1.5 whitespace-nowrap">
       <div class="flex flex-col items-center space-y-0.5">
-        <!-- Para No Entry: apenas ícone triangular vermelho com tooltip -->
         <div v-if="staff.status === 'No Entry'" class="relative group">
           <div class="flex items-center justify-center cursor-pointer">
             <AlertTriangle class="h-4 w-4 text-red-500" />
           </div>
-          <!-- Tooltip -->
+
           <div
             class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-10"
           >
@@ -127,7 +116,6 @@
           </div>
         </div>
 
-        <!-- Para outros status: badge normal -->
         <span
           v-else
           :class="getStatusBadgeClass(staff.status)"
@@ -137,7 +125,6 @@
           {{ staff.status }}
         </span>
 
-        <!-- Alerts compactos para outros status -->
         <div
           v-if="staff.alerts.length > 0 && staff.status !== 'No Entry'"
           class="flex items-center"
@@ -152,7 +139,6 @@
       </div>
     </td>
 
-    <!-- Actions - Mais Compacto -->
     <td class="px-2 py-1.5 whitespace-nowrap text-center">
       <div class="flex justify-center space-x-1">
         <Button
@@ -198,7 +184,6 @@ const emit = defineEmits<{
 
 const router = useRouter()
 
-// Helper functions
 const getInitials = (name: string): string => {
   if (!name) return ''
   return name
@@ -239,7 +224,6 @@ const handleViewDetails = (): void => {
   emit('viewDetails', props.staff)
 }
 
-// Actions
 const openTimesheet = (): void => {
   router.push({
     name: 'timesheet-entry',

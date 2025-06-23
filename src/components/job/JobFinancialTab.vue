@@ -1,32 +1,26 @@
 <template>
   <div class="space-y-6">
-    <!-- Financial Overview Cards -->
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-      <!-- Estimate -->
       <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
         <div class="text-sm font-medium text-blue-800">Estimate</div>
         <div class="text-2xl font-bold text-blue-900">{{ formatCurrency(estimateTotal) }}</div>
       </div>
 
-      <!-- Time & Expenses -->
       <div class="bg-green-50 rounded-lg p-4 border border-green-200">
         <div class="text-sm font-medium text-green-800">Time & Expenses</div>
         <div class="text-2xl font-bold text-green-900">{{ formatCurrency(timeAndExpenses) }}</div>
       </div>
 
-      <!-- Invoiced -->
       <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
         <div class="text-sm font-medium text-orange-800">Invoiced</div>
         <div class="text-2xl font-bold text-orange-900">{{ formatCurrency(invoicedAmount) }}</div>
       </div>
 
-      <!-- To Be Invoiced -->
       <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
         <div class="text-sm font-medium text-purple-800">To Be Invoiced</div>
         <div class="text-2xl font-bold text-purple-900">{{ formatCurrency(toBeInvoiced) }}</div>
       </div>
 
-      <!-- Deadline -->
       <div class="bg-red-50 rounded-lg p-4 border border-red-200" v-if="jobData?.delivery_date">
         <div class="text-sm font-medium text-red-800">Deadline</div>
         <div class="text-lg font-bold text-red-900">{{ formatDate(jobData.delivery_date) }}</div>
@@ -34,9 +28,7 @@
       </div>
     </div>
 
-    <!-- Quotes and Invoices Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Quotes Section -->
       <div class="bg-white rounded-lg border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Quotes</h3>
 
@@ -51,7 +43,6 @@
         </div>
 
         <div v-else class="space-y-4">
-          <!-- Quote Information -->
           <div class="border-l-4 border-blue-400 pl-4">
             <div class="text-sm text-gray-600">Quote Total</div>
             <div class="text-xl font-semibold text-gray-900">{{ formatCurrency(quoteTotal) }}</div>
@@ -60,7 +51,6 @@
             </div>
           </div>
 
-          <!-- Quote Actions -->
           <div class="flex space-x-2">
             <button
               @click="goToQuoteOnXero"
@@ -89,7 +79,6 @@
         </div>
       </div>
 
-      <!-- Invoices Section -->
       <div class="bg-white rounded-lg border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoices</h3>
 
@@ -104,7 +93,6 @@
         </div>
 
         <div v-else class="space-y-4">
-          <!-- Invoice Information -->
           <div class="border-l-4 border-orange-400 pl-4">
             <div class="text-sm text-gray-600">Invoice Total</div>
             <div class="text-xl font-semibold text-gray-900">
@@ -113,7 +101,6 @@
             <div class="text-sm text-gray-500">Status: {{ jobData?.paid ? 'Paid' : 'Unpaid' }}</div>
           </div>
 
-          <!-- Invoice Actions -->
           <div class="flex space-x-2">
             <button
               @click="goToInvoiceOnXero"
@@ -142,37 +129,31 @@ import { computed } from 'vue'
 import type { JobData } from '@/services/job-rest.service'
 import { useJobsStore } from '@/stores/jobs'
 
-// Props
 interface Props {
   jobData: JobData | null
-  latestPricings?: Record<string, unknown> // TODO: Add proper typing for pricing data
+  latestPricings?: Record<string, unknown>
   jobId?: string
 }
 
 const props = defineProps<Props>()
 
-// Stores
 const jobsStore = useJobsStore()
 
-// Events
 const emit = defineEmits<{
   'quote-created': []
   'quote-accepted': []
   'invoice-created': []
 }>()
 
-// Computed properties for financial data
 const estimateTotal = computed(() => {
   return props.jobData?.latest_estimate_pricing?.total_revenue || 0
 })
 
 const timeAndExpenses = computed(() => {
-  // TODO: Calculate sum of time entries and material entries from reality pricing
   return 0
 })
 
 const invoicedAmount = computed(() => {
-  // TODO: Get actual invoiced amount from Xero integration
   return 0
 })
 
@@ -181,12 +162,10 @@ const toBeInvoiced = computed(() => {
 })
 
 const quoteTotal = computed(() => {
-  // TODO: Calculate from latest_pricings.quote_pricing
   return 0
 })
 
 const invoiceTotal = computed(() => {
-  // TODO: Get actual invoice total from Xero integration
   return 0
 })
 
@@ -201,18 +180,14 @@ const daysUntilDeadline = computed(() => {
   return diffDays
 })
 
-// Placeholder URLs - these would come from the job data
 const quoteUrl = computed(() => {
-  // TODO: Get from job data or API
   return props.jobData?.quoted ? '#' : null
 })
 
 const invoiceUrl = computed(() => {
-  // TODO: Get from job data or API
   return props.jobData?.invoiced ? '#' : null
 })
 
-// Helper functions
 const formatCurrency = (amount: number | undefined | null): string => {
   const numericAmount = Number(amount)
   if (isNaN(numericAmount) || amount === null || amount === undefined) {
@@ -235,9 +210,7 @@ const formatDate = (dateString: string) => {
   })
 }
 
-// Action methods
 const createQuote = () => {
-  // TODO: Integrate with Xero API to create quote
   console.log('Creating quote...')
   emit('quote-created')
 }
@@ -249,14 +222,12 @@ const acceptQuote = () => {
       quote_acceptance_date: new Date().toISOString(),
     }
 
-    // Atualizar a store em vez de emitir evento
     jobsStore.setDetailedJob(updatedData)
     emit('quote-accepted')
   }
 }
 
 const createInvoice = () => {
-  // TODO: Integrate with Xero API to create invoice
   console.log('Creating invoice...')
   emit('invoice-created')
 }
@@ -268,7 +239,6 @@ const goToQuoteOnXero = () => {
 }
 
 const deleteQuoteOnXero = () => {
-  // TODO: Integrate with Xero API to delete quote
   console.log('Deleting quote...')
 }
 
@@ -279,7 +249,6 @@ const goToInvoiceOnXero = () => {
 }
 
 const deleteInvoiceOnXero = () => {
-  // TODO: Integrate with Xero API to delete invoice
   console.log('Deleting invoice...')
 }
 </script>

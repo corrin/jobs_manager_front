@@ -1,13 +1,5 @@
-/**
- * Client Schemas - Zod validation and type inference
- *
- * Following project guidelines to use Zod for validation
- * and type inference in the frontend.
- */
-
 import { z } from 'zod'
 
-// Schema for client creation
 export const createClientSchema = z.object({
   name: z
     .string()
@@ -33,7 +25,6 @@ export const createClientSchema = z.object({
   is_account_customer: z.boolean().default(false),
 })
 
-// Schema para dados do cliente retornado pela API
 export const clientResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -44,7 +35,6 @@ export const clientResponseSchema = z.object({
   xero_contact_id: z.string(),
 })
 
-// Schema for client creation response
 export const createClientResponseSchema = z.object({
   success: z.boolean(),
   client: clientResponseSchema.optional(),
@@ -52,14 +42,10 @@ export const createClientResponseSchema = z.object({
   message: z.string().optional(),
 })
 
-// Types inferred from schemas
 export type CreateClientData = z.infer<typeof createClientSchema>
 export type ClientResponseData = z.infer<typeof clientResponseSchema>
 export type CreateClientResponse = z.infer<typeof createClientResponseSchema>
 
-// Schema for form state validation
-export const clientFormStateSchema = createClientSchema.extend({
-  // Add specific form fields if needed
-})
+export const clientFormStateSchema = createClientSchema.extend({})
 
 export type ClientFormState = z.infer<typeof clientFormStateSchema>

@@ -23,7 +23,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-// Props
 interface Props {
   title: string
   value: number
@@ -31,35 +30,28 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Events
 const emit = defineEmits<{
   update: [value: number]
 }>()
 
-// Local state para input handling
 const inputValue = ref(props.value.toString())
 
-// Input handlers seguindo clean code principles
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   inputValue.value = target.value
 }
 
 const handleBlur = () => {
-  // Early return - validação de entrada
   const numericValue = parseFloat(inputValue.value)
 
   if (isNaN(numericValue) || numericValue < 0) {
-    // Reset to original value se inválido
     inputValue.value = props.value.toString()
     return
   }
 
-  // Emit valor atualizado
   emit('update', numericValue)
 }
 
-// Watch for prop changes
 import { watch } from 'vue'
 
 watch(

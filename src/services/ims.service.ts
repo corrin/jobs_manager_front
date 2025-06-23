@@ -1,4 +1,3 @@
-// IMS Service - handles IMS export functionality
 import apiClient from './api'
 
 export interface IMSStaffData {
@@ -57,16 +56,12 @@ export interface IMSExportData {
 class IMSService {
   private baseUrl = '/timesheets/api'
 
-  /**
-   * Export timesheet data in IMS format for a specific week
-   */
   async exportToIMS(startDate: Date): Promise<IMSExportData> {
     try {
       const formattedDate = this.formatDateForAPI(startDate)
 
       console.log('📊 Exporting to IMS for date:', formattedDate)
 
-      // Use the dedicated IMS export endpoint
       const response = await apiClient.get(`${this.baseUrl}/ims-export/`, {
         params: {
           start_date: formattedDate,
@@ -81,24 +76,16 @@ class IMSService {
     }
   }
 
-  /**
-   * Format date to YYYY-MM-DD format for API
-   */
   private formatDateForAPI(date: Date): string {
     return date.toISOString().split('T')[0]
   }
 
-  /**
-   * Get IMS week start date (Tuesday) for a given date
-   */
   getIMSWeekStart(date: Date): Date {
     const tuesday = new Date(date)
 
-    // If it's Monday (0), Tuesday was 6 days ago
     if (date.getDay() === 1) {
       tuesday.setDate(date.getDate() - 6)
     } else {
-      // Otherwise, subtract (weekday - 1) days to get to Tuesday
       const daysToTuesday = (date.getDay() - 2 + 7) % 7
       tuesday.setDate(date.getDate() - daysToTuesday)
     }
@@ -106,32 +93,23 @@ class IMSService {
     return tuesday
   }
 
-  /**
-   * Generate IMS week days (Tuesday to Friday + next Monday)
-   */
   getIMSWeekDays(startDate: Date): Date[] {
     const tuesday = this.getIMSWeekStart(startDate)
 
     return [
-      new Date(tuesday), // Tuesday
-      new Date(tuesday.getTime() + 24 * 60 * 60 * 1000), // Wednesday
-      new Date(tuesday.getTime() + 2 * 24 * 60 * 60 * 1000), // Thursday
-      new Date(tuesday.getTime() + 3 * 24 * 60 * 60 * 1000), // Friday
-      new Date(tuesday.getTime() + 6 * 24 * 60 * 60 * 1000), // Next Monday
+      new Date(tuesday),
+      new Date(tuesday.getTime() + 24 * 60 * 60 * 1000),
+      new Date(tuesday.getTime() + 2 * 24 * 60 * 60 * 1000),
+      new Date(tuesday.getTime() + 3 * 24 * 60 * 60 * 1000),
+      new Date(tuesday.getTime() + 6 * 24 * 60 * 60 * 1000),
     ]
   }
 
-  /**
-   * Check if IMS mode is enabled in URL params
-   */
   isIMSModeFromURL(): boolean {
     const params = new URLSearchParams(window.location.search)
     return params.get('export_to_ims') === '1'
   }
 
-  /**
-   * Update URL to enable/disable IMS mode
-   */
   updateURLForIMSMode(enabled: boolean): void {
     const url = new URL(window.location.href)
 

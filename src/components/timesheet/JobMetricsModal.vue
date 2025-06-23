@@ -11,7 +11,6 @@
         </DialogDescription>
       </DialogHeader>
 
-      <!-- Weekly Summary Statistics -->
       <div class="mt-4">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Weekly Summary</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -54,7 +53,7 @@
           </div>
         </div>
       </div>
-      <!-- Job Metrics Section -->
+
       <div class="mt-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Job Metrics</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -93,7 +92,6 @@
         </div>
       </div>
 
-      <!-- Chart/Graphic -->
       <div v-if="metrics.graphic" class="mt-8">
         <div class="bg-white rounded-lg shadow p-4">
           <div class="text-sm font-semibold text-gray-700 mb-2">Job Progress Chart</div>
@@ -134,7 +132,6 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{ close: [] }>()
 
-// Computed properties for formatted values
 const totalHours = computed(() => formatHours(props.totalHours || 0))
 const billablePercentage = computed(() => formatPercentage(props.billablePercentage || 0))
 const staffCount = computed(() => props.staffCount || 0)

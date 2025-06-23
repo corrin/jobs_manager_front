@@ -15,7 +15,6 @@ class AuthService {
     await api.post('/accounts/logout/')
   }
 
-  // Check if user is authenticated by attempting to get current user
   async userIsLogged(): Promise<boolean> {
     try {
       await this.getCurrentUser()

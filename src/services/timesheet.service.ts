@@ -11,9 +11,6 @@ import type {
 export class TimesheetService {
   private static readonly BASE_URL = '/timesheets/api'
 
-  /**
-   * Get list of staff members
-   */
   static async getStaff(): Promise<Staff[]> {
     try {
       const response = await api.get(`${this.BASE_URL}/staff/`)
@@ -24,9 +21,6 @@ export class TimesheetService {
     }
   }
 
-  /**
-   * Get time entries for a specific staff member and date
-   */
   static async getTimeEntries(staffId: string, date: string): Promise<TimeEntry[]> {
     try {
       const response = await api.get(`${this.BASE_URL}/entries/`, {
@@ -39,9 +33,6 @@ export class TimesheetService {
     }
   }
 
-  /**
-   * Get time entries for a date range
-   */
   static async getTimeEntriesRange(
     staffId: string,
     startDate: string,
@@ -58,12 +49,8 @@ export class TimesheetService {
     }
   }
 
-  /**
-   * Create a new time entry
-   */
   static async createTimeEntry(data: CreateTimeEntryRequest): Promise<TimeEntry> {
     try {
-      // Map frontend field names to backend field names
       const requestData = {
         staff_id: data.staffId,
         job_pricing_id: data.jobPricingId,
@@ -87,9 +74,6 @@ export class TimesheetService {
     }
   }
 
-  /**
-   * Update an existing time entry
-   */
   static async updateTimeEntry(entryId: string, data: UpdateTimeEntryRequest): Promise<TimeEntry> {
     try {
       const response = await api.put(`${this.BASE_URL}/entries/${entryId}/`, data)
@@ -100,9 +84,6 @@ export class TimesheetService {
     }
   }
 
-  /**
-   * Delete a time entry
-   */
   static async deleteTimeEntry(entryId: string): Promise<void> {
     try {
       await api.delete(`${this.BASE_URL}/entries/${entryId}/`)
@@ -112,9 +93,6 @@ export class TimesheetService {
     }
   }
 
-  /**
-   * Get available jobs for timesheet entries
-   */
   static async getJobs(): Promise<Job[]> {
     try {
       const response = await api.get(`${this.BASE_URL}/jobs/`)
@@ -125,9 +103,6 @@ export class TimesheetService {
     }
   }
 
-  /**
-   * Get weekly overview data for all staff
-   */
   static async getWeeklyOverview(startDate: string): Promise<WeeklyOverviewData> {
     try {
       const response = await api.get(`${this.BASE_URL}/weekly-overview/`, {
@@ -140,9 +115,6 @@ export class TimesheetService {
     }
   }
 
-  /**
-   * Auto-save time entry changes
-   */
   static async autosaveTimeEntry(
     entryId: string,
     data: Partial<UpdateTimeEntryRequest>,
@@ -154,13 +126,9 @@ export class TimesheetService {
       })
     } catch (error) {
       console.error('Error auto-saving time entry:', error)
-      // Don't throw for autosave - just log the error
     }
   }
 
-  /**
-   * Get current week date range
-   */
   static getCurrentWeekRange(): { startDate: string; endDate: string } {
     const today = new Date()
     const monday = new Date(today)
@@ -175,9 +143,6 @@ export class TimesheetService {
     }
   }
 
-  /**
-   * Format date for display
-   */
   static formatDate(date: string): string {
     return new Date(date).toLocaleDateString('en-NZ', {
       weekday: 'short',
@@ -187,14 +152,10 @@ export class TimesheetService {
     })
   }
 
-  /**
-   * Format hours for display
-   */
   static formatHours(hours: number): string {
     return hours.toFixed(2)
   }
 
-  // Legacy methods for compatibility with existing store code  // Legacy methods for compatibility with existing store code
   static async getStaffList(): Promise<Staff[]> {
     return this.getStaff()
   }
@@ -284,13 +245,11 @@ export class TimesheetService {
   }
 
   static async exportToIMS(weekStart: Date): Promise<string> {
-    // TODO: Implement IMS export functionality
     console.log('IMS export not yet implemented for:', weekStart)
     return 'IMS export functionality coming soon'
   }
 
   static async bulkUpdateEntries(entries: TimeEntry[]): Promise<TimeEntry[]> {
-    // TODO: Implement bulk update - for now, update one by one
     const updatedEntries: TimeEntry[] = []
 
     for (const entry of entries) {
@@ -299,7 +258,6 @@ export class TimesheetService {
         updatedEntries.push(updated)
       } catch (error) {
         console.error('Error updating entry:', entry.id, error)
-        // Continue with other entries
       }
     }
 

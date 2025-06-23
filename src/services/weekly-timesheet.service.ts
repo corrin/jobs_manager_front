@@ -1,9 +1,3 @@
-/**
- * Weekly Timesheet Service
- *
- * Service for handling weekly timesheet API operations including IMS export
- */
-
 import api from '@/plugins/axios'
 import { dateService } from '@/services/date.service'
 
@@ -15,7 +9,7 @@ export interface WeeklyStaffData {
   total_overtime: number
   billable_percentage: number
   total_billable_hours: number
-  // IMS specific fields
+
   total_standard_hours?: number
   total_time_and_half_hours?: number
   total_double_time_hours?: number
@@ -30,7 +24,7 @@ export interface WeeklyDayData {
   hours: number
   status: string
   leave_type?: string
-  // IMS specific fields
+
   standard_hours?: number
   time_and_half_hours?: number
   double_time_hours?: number
@@ -46,7 +40,7 @@ export interface WeeklySummary {
 
 export interface JobMetrics {
   job_count: number
-  graphic?: string // HTML chart
+  graphic?: string
   total_estimated_hours?: number
   total_actual_hours?: number
   total_revenue?: number
@@ -65,7 +59,7 @@ export interface WeeklyTimesheetData {
 }
 
 export interface IMSWeeklyData extends WeeklyTimesheetData {
-  ims_week: string[] // Tuesday-Friday + next Monday
+  ims_week: string[]
 }
 
 interface WeeklyTimesheetParams {
@@ -73,9 +67,6 @@ interface WeeklyTimesheetParams {
   export_to_ims?: 'true'
 }
 
-/**
- * Get weekly timesheet overview for all staff
- */
 export const getWeeklyTimesheetOverview = async (
   startDate?: string,
   exportToIMS: boolean = false,
@@ -95,9 +86,6 @@ export const getWeeklyTimesheetOverview = async (
   return response.data
 }
 
-/**
- * Export weekly data to IMS format
- */
 export const exportToIMS = async (startDate: string): Promise<IMSWeeklyData> => {
   const url = '/timesheets/api/weekly/'
   const params = {
@@ -109,9 +97,6 @@ export const exportToIMS = async (startDate: string): Promise<IMSWeeklyData> => 
   return response.data
 }
 
-/**
- * Submit paid absence request
- */
 export interface PaidAbsenceRequest {
   staff_id: string
   start_date: string
@@ -138,9 +123,6 @@ export const submitPaidAbsence = async (
   return response.data
 }
 
-/**
- * Get current week range - uses centralized date service
- */
 export const getCurrentWeekRange = (): { startDate: string; endDate: string } => {
   const weekRange = dateService.getCurrentWeekRange()
   return {
@@ -149,9 +131,6 @@ export const getCurrentWeekRange = (): { startDate: string; endDate: string } =>
   }
 }
 
-/**
- * Calculate week range from date - uses centralized date service
- */
 export const getWeekRange = (date: Date): { startDate: string; endDate: string } => {
   const weekRange = dateService.getWeekRange(date)
   return {
@@ -160,23 +139,14 @@ export const getWeekRange = (date: Date): { startDate: string; endDate: string }
   }
 }
 
-/**
- * Format date for display - uses centralized date service
- */
 export const formatDateRange = (startDate: string, endDate: string): string => {
   return dateService.formatDateRange(startDate, endDate)
 }
 
-/**
- * Format hours for display
- */
 export const formatHours = (hours: number): string => {
   return hours.toFixed(1)
 }
 
-/**
- * Format percentage for display
- */
 export const formatPercentage = (percentage: number): string => {
   return `${percentage.toFixed(1)}%`
 }

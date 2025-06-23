@@ -9,13 +9,11 @@ import type { Staff, TimeEntry, Job, WeeklyOverviewData } from '@/types/timeshee
 import type { CostLineCreatePayload, CostLineUpdatePayload } from '@/services/costline.service'
 
 export const useTimesheetStore = defineStore('timesheet', () => {
-  // State - refactored to manage CostLine[] instead of legacy JobPricing
   const lines = ref<CostLine[]>([])
   const loading = ref(false)
   const jobId = ref<string | null>(null)
   const kind = ref<'estimate' | 'quote' | 'actual'>('actual')
 
-  // Legacy state preserved for backward compatibility
   const staff = ref<Staff[]>([])
   const jobs = ref<Job[]>([])
   const timeEntries = ref<TimeEntry[]>([])
@@ -26,12 +24,10 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   const attachedJobs = ref<Job[]>([])
   const error = ref<string | null>(null)
 
-  // Computed - refactored getters based on CostLine[]
   const currentStaff = computed(
     () => staff.value.find((s) => s.id === selectedStaffId.value) || null,
   )
 
-  // New getters for CostLine management
   const byDate = computed(() => {
     if (!lines.value.length) return {} as Record<string, CostLine[]>
 
@@ -53,7 +49,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       (totals, [date, dayLines]) => {
         totals[date] = {
           hours: dayLines.reduce((sum, line) => {
-            // For time entries, quantity represents hours
             return line.kind === 'time' ? sum + parseFloat(line.quantity) : sum
           }, 0),
           cost: dayLines.reduce((sum, line) => sum + line.total_cost, 0),
@@ -65,7 +60,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     )
   })
 
-  // Legacy computed properties preserved for backward compatibility
   const entriesForSelectedDate = computed(() =>
     timeEntries.value.filter(
       (entry: TimeEntry) =>
@@ -83,12 +77,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       .reduce((sum: number, entry: TimeEntry) => sum + entry.hours, 0),
   )
 
-  // Actions - new CostLine management actions
-  /**
-   * Load cost lines for a specific job and kind
-   */
   async function load(targetJobId: string, targetKind: 'estimate' | 'quote' | 'actual' = 'actual') {
-    // Guard clause - early return if no job ID
     if (!targetJobId) {
       console.warn('Load called without jobId')
       return
@@ -102,7 +91,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
       const costSet = await fetchCostSet(targetJobId, targetKind)
 
-      // Update state following reactive patterns
       lines.value = costSet.cost_lines
       jobId.value = targetJobId
       kind.value = targetKind
@@ -118,11 +106,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Add a new cost line
-   */
   async function addLine(payload: CostLineCreatePayload) {
-    // Guard clause - ensure we have a job loaded
     if (!jobId.value) {
       throw new Error('No job loaded. Call load() first.')
     }
@@ -133,7 +117,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       const newLine = await costlineService.createCostLine(jobId.value, kind.value, payload)
 
-      // Reactive update - add to existing lines
       lines.value.push(newLine)
 
       console.log('Cost line added successfully:', newLine.id)
@@ -148,9 +131,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Update an existing cost line
-   */
   async function updateLine(id: number, payload: CostLineUpdatePayload) {
     loading.value = true
     error.value = null
@@ -158,14 +138,12 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       const updatedLine = await costlineService.updateCostLine(id, payload)
 
-      // Reactive update - find and replace the line
       const lineIndex = lines.value.findIndex((line) => line.id === id)
 
       if (lineIndex === -1) {
         throw new Error(`Cost line with ID ${id} not found in current state`)
       }
 
-      // Update using Object.assign for reactivity
       Object.assign(lines.value[lineIndex], updatedLine)
 
       console.log('Cost line updated successfully:', id)
@@ -180,9 +158,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Delete a cost line
-   */
   async function deleteLine(id: number) {
     loading.value = true
     error.value = null
@@ -190,7 +165,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       await costlineService.deleteCostLine(id)
 
-      // Reactive update - filter out the deleted line
       lines.value = lines.value.filter((line) => line.id !== id)
 
       console.log('Cost line deleted successfully:', id)
@@ -204,22 +178,14 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  // Legacy actions preserved for backward compatibility
-  /**
-   * Initialize the store with basic data
-   */
   async function initialize() {
     await Promise.all([loadStaff(), loadJobs(), loadCompanyDefaults()])
 
-    // Set first staff member as default if none selected
     if (staff.value.length > 0 && !selectedStaffId.value) {
       selectedStaffId.value = staff.value[0].id
     }
   }
 
-  /**
-   * Load company defaults
-   */
   async function loadCompanyDefaults() {
     try {
       await CompanyDefaultsService.getDefaults()
@@ -228,9 +194,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Load staff list from API
-   */
   async function loadStaff() {
     loading.value = true
     error.value = null
@@ -245,9 +208,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Load available jobs from API
-   */
   async function loadJobs() {
     loading.value = true
     error.value = null
@@ -262,9 +222,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Load time entries for current staff and date
-   */
   async function loadTimeEntries() {
     if (!selectedStaffId.value) return
 
@@ -284,9 +241,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Load weekly overview data
-   */
   async function loadWeeklyOverview(startDate?: string) {
     loading.value = true
     error.value = null
@@ -311,9 +265,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Create a new time entry
-   */
   async function createTimeEntry(entryData: {
     description: string
     jobPricingId: string
@@ -353,7 +304,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
       console.log('✅ Time entry created in backend:', newEntry)
 
-      // Add to local state only if not already present
       const existingIndex = timeEntries.value.findIndex((e: TimeEntry) => e.id === newEntry.id)
       if (existingIndex === -1) {
         timeEntries.value.push(newEntry)
@@ -373,9 +323,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Update an existing time entry
-   */
   async function updateTimeEntry(
     entryId: string,
     updates: {
@@ -401,13 +348,11 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
       console.log('✅ Time entry updated in backend:', updatedEntry)
 
-      // Update local state
       const index = timeEntries.value.findIndex((e: TimeEntry) => e.id === entryId)
       if (index !== -1) {
         timeEntries.value[index] = updatedEntry
         console.log('🔄 Updated entry in local state')
       } else {
-        // Entry not in local state, add it
         timeEntries.value.push(updatedEntry)
         console.log('📝 Added updated entry to local state')
       }
@@ -422,9 +367,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Delete a time entry
-   */
   async function deleteTimeEntry(entryId: string) {
     loading.value = true
     error.value = null
@@ -436,7 +378,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
       console.log('✅ Time entry deleted in backend')
 
-      // Remove from local state
       const initialLength = timeEntries.value.length
       timeEntries.value = timeEntries.value.filter((e: TimeEntry) => e.id !== entryId)
 
@@ -454,9 +395,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Auto-save time entry changes
-   */
   async function autosaveTimeEntry(
     entryId: string,
     updates: {
@@ -469,36 +407,25 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       await TimesheetService.autosaveTimeEntry(entryId, updates)
     } catch (err) {
       console.error('Autosave failed:', err)
-      // Don't show error to user for autosave failures
     }
   }
 
-  /**
-   * Set selected staff member
-   */
   function setSelectedStaff(staffId: string) {
     selectedStaffId.value = staffId
-    // Clear current entries and reload for new staff
+
     timeEntries.value = []
     loadTimeEntries()
   }
 
-  /**
-   * Set selected date
-   */
   function setSelectedDate(date: string) {
     selectedDate.value = date
-    // Reload entries for new date
+
     loadTimeEntries()
   }
 
-  /**
-   * Set current view mode
-   */
   function setCurrentView(view: 'staff-day' | 'weekly-kanban' | 'calendar-grid') {
     currentView.value = view
 
-    // Load appropriate data for the view
     if (view === 'weekly-kanban' || view === 'calendar-grid') {
       loadWeeklyOverview()
     } else {
@@ -506,32 +433,19 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Clear error state
-   */
   function clearError() {
     error.value = null
   }
 
-  /**
-   * Get formatted date for display
-   */
   function formatDate(date: string): string {
     return TimesheetService.formatDate(date)
   }
 
-  /**
-   * Get formatted hours for display
-   */
   function formatHours(hours: number): string {
     return TimesheetService.formatHours(hours)
   }
 
-  /**
-   * Add a job to the attached jobs list for the timesheet
-   */
   function addAttachedJob(job: Job) {
-    // Check if job is already attached
     const existingIndex = attachedJobs.value.findIndex((j) => j.id === job.id)
     if (existingIndex === -1) {
       attachedJobs.value.push(job)
@@ -541,9 +455,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  /**
-   * Remove a job from the attached jobs list
-   */
   function removeAttachedJob(jobId: string) {
     const index = attachedJobs.value.findIndex((j) => j.id === jobId)
     if (index !== -1) {
@@ -556,12 +467,10 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   }
 
   return {
-    // State - CostLine management
     lines,
     jobId,
     kind,
 
-    // State - Legacy timesheet management
     staff,
     jobs,
     timeEntries,
@@ -573,23 +482,19 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     loading,
     error,
 
-    // Computed - CostLine getters
     byDate,
     dailyTotals,
 
-    // Computed - Legacy timesheet getters
     currentStaff,
     entriesForSelectedDate,
     totalHoursForDate,
     billableHoursForDate,
 
-    // Actions - CostLine management
     load,
     addLine,
     updateLine,
     deleteLine,
 
-    // Actions - Legacy timesheet management
     initialize,
     loadStaff,
     loadJobs,

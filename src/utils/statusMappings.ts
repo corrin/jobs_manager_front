@@ -1,6 +1,3 @@
-// Centralised status mappings for job status keys, names and colours
-// Keep this in sync with backend Job.JOB_STATUS_CHOICES
-
 export const statusNameMap: Record<string, string> = {
   quoting: 'Quoting',
   accepted_quote: 'Accepted Quote',

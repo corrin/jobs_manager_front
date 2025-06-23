@@ -1,6 +1,5 @@
 <template>
   <tr class="group hover:bg-blue-50/30 transition-all duration-200">
-    <!-- Staff Name -->
     <td class="px-3 py-2">
       <div class="flex items-center space-x-3">
         <div class="flex-shrink-0 h-8 w-8">
@@ -26,24 +25,22 @@
       </div>
     </td>
 
-    <!-- Daily Hours -->
     <td
       v-for="(day, index) in staff.weekly_hours"
       :key="index"
       class="px-1 py-1 text-center text-xs"
     >
       <div class="flex flex-col items-center space-y-1 min-h-[24px]">
-        <!-- Hours Display -->
         <div class="flex items-center justify-center min-h-[18px]">
           <span v-if="day.hours > 0" :class="getHoursClass(day) + ' text-xs px-1 py-0.5'">
             {{ formatHours(day.hours) }}
           </span>
           <span v-else class="text-gray-400 text-xs">-</span>
         </div>
-        <!-- Status Indicator -->
+
         <div class="flex items-center space-x-1">
           <StatusBadge :status="day.status" :leave-type="day.leave_type" />
-          <!-- IMS specific indicators -->
+
           <div v-if="imsMode && (day.overtime || day.leave_hours)" class="flex space-x-1">
             <div
               v-if="day.overtime && day.overtime > 0"
@@ -57,7 +54,7 @@
             ></div>
           </div>
         </div>
-        <!-- IMS Detail Popup on Hover -->
+
         <div v-if="imsMode" class="relative group/cell">
           <div
             class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover/cell:opacity-100 transition-opacity duration-200 z-10 pointer-events-none whitespace-nowrap"
@@ -73,7 +70,7 @@
               <div v-if="day.leave_hours">Leave: {{ formatHours(day.leave_hours) }}h</div>
               <div v-if="day.unpaid_hours">Unpaid: {{ formatHours(day.unpaid_hours) }}h</div>
             </div>
-            <!-- Arrow -->
+
             <div
               class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900"
             ></div>
@@ -82,7 +79,6 @@
       </div>
     </td>
 
-    <!-- Total Hours -->
     <td class="px-3 py-2 text-center">
       <div class="flex flex-col items-center space-y-1">
         <span class="text-sm font-bold text-gray-900">
@@ -97,7 +93,6 @@
       </div>
     </td>
 
-    <!-- Billable Percentage -->
     <td class="px-3 py-2 text-center">
       <BillablePercentageBadge :percentage="staff.billable_percentage" />
     </td>
@@ -118,7 +113,6 @@ interface Props {
 
 defineProps<Props>()
 
-// Methods
 const getInitials = (name: string): string => {
   return name
     .split(' ')

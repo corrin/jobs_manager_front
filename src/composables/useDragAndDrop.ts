@@ -11,14 +11,11 @@ export interface DragEventPayload {
 
 export type DragEventHandler = (event: string, payload: DragEventPayload) => void
 
-// Permite passar um callback para eventos de drag
 export function useDragAndDrop(onDragEvent?: DragEventHandler) {
   const isDragging = ref(false)
   const sortableInstances = ref<Map<string, Sortable>>(new Map())
 
-  // Inicializa o Sortable para uma coluna específica
   const initializeSortable = (element: HTMLElement, status: string) => {
-    // Destroi instância anterior, se houver
     const existing = sortableInstances.value.get(status)
     if (existing) {
       existing.destroy()
@@ -39,13 +36,12 @@ export function useDragAndDrop(onDragEvent?: DragEventHandler) {
       },
     })
 
-    // Instancia SortableJS
     const sortable = Sortable.create(element, {
-      group: 'kanban-jobs', // string simples já permite cross-column
+      group: 'kanban-jobs',
       animation: 150,
       draggable: '.job-card',
       sort: true,
-      emptyInsertThreshold: 100, // Aumenta a área de drop em containers vazios
+      emptyInsertThreshold: 100,
       forceFallback: false,
       fallbackOnBody: true,
       swapThreshold: 0.65,
@@ -57,7 +53,7 @@ export function useDragAndDrop(onDragEvent?: DragEventHandler) {
       onMove: (evt) => {
         const toColumn = (evt.to.closest('[data-status]') as HTMLElement)?.dataset.status
         console.log(`🎯 Drag moving to: ${toColumn}`)
-        return true // Allow all moves
+        return true
       },
       onAdd: (evt) => {
         const toStatus = evt.to.dataset.status

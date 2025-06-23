@@ -1,8 +1,6 @@
 <template>
   <div class="space-y-6">
-    <!-- Pricing Tables Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Estimate -->
       <div class="bg-white rounded-lg border border-gray-200 p-4">
         <h3 class="text-lg font-semibold text-gray-900 mb-3">Estimate</h3>
         <div class="space-y-3">
@@ -30,7 +28,6 @@
         </div>
       </div>
 
-      <!-- Quote -->
       <div class="bg-white rounded-lg border border-gray-200 p-4">
         <h3 class="text-lg font-semibold text-gray-900 mb-3">Quote</h3>
         <div class="space-y-3">
@@ -58,7 +55,6 @@
         </div>
       </div>
 
-      <!-- Reality -->
       <div class="bg-white rounded-lg border border-gray-200 p-4">
         <h3 class="text-lg font-semibold text-gray-900 mb-3">Reality</h3>
         <div class="space-y-3">
@@ -94,7 +90,6 @@ import { ref, watch } from 'vue'
 import SimpleTotalTable from './SimpleTotalTable.vue'
 import type { JobData, CompanyDefaults } from '@/services/job-rest.service'
 
-// Tipos para seções de pricing
 interface PricingSection {
   time: number
   materials: number
@@ -102,7 +97,6 @@ interface PricingSection {
   total: number
 }
 
-// Props
 interface Props {
   jobData: JobData
   latestPricings: Record<string, unknown>
@@ -111,12 +105,10 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Events
 const emit = defineEmits<{
   'data-changed': [data: Record<string, unknown>]
 }>()
 
-// Reactive data structure seguindo princípios de clean code
 const estimates = ref({
   time: 0,
   materials: 0,
@@ -138,13 +130,11 @@ const reality = ref({
   total: 0,
 })
 
-// Computed totals usando early return pattern
 const calculateTotal = (section: PricingSection) => {
   if (!section) return 0
   return (section.time || 0) + (section.materials || 0) + (section.adjustments || 0)
 }
 
-// Watch para recalcular totais automaticamente
 watch(
   [estimates, quotes, reality],
   () => {
@@ -155,7 +145,6 @@ watch(
   { deep: true },
 )
 
-// Update handlers seguindo SRP
 const updateEstimate = (field: string, value: number) => {
   estimates.value[field as keyof typeof estimates.value] = value
   emitDataChanged()
@@ -171,7 +160,6 @@ const updateReality = (field: string, value: number) => {
   emitDataChanged()
 }
 
-// Emit data changes for autosave
 const emitDataChanged = () => {
   emit('data-changed', {
     estimates: estimates.value,
@@ -180,7 +168,6 @@ const emitDataChanged = () => {
   })
 }
 
-// Utility functions
 const formatCurrency = (amount: number | undefined | null): string => {
   const numericAmount = Number(amount)
   if (isNaN(numericAmount) || amount === null || amount === undefined) {
@@ -189,16 +176,13 @@ const formatCurrency = (amount: number | undefined | null): string => {
   return numericAmount.toFixed(2)
 }
 
-// Initialize data from props
 watch(
   () => props.latestPricings,
   (newPricings) => {
     if (newPricings) {
-      // Parse actual pricing data from Django format
       try {
         const pricingData = typeof newPricings === 'string' ? JSON.parse(newPricings) : newPricings
 
-        // Extract totals from different sections
         const extractSectionTotals = (sectionData: Record<string, unknown>): PricingSection => {
           const time = calculateSectionTotal((sectionData?.time_entries as unknown[]) || [])
           const materials = calculateSectionTotal(
@@ -210,7 +194,6 @@ watch(
           return { time, materials, adjustments, total: time + materials + adjustments }
         }
 
-        // Update reactive data with real pricing information
         if (pricingData?.estimate) {
           estimates.value = extractSectionTotals(pricingData.estimate)
         }
@@ -222,7 +205,7 @@ watch(
         }
       } catch (error) {
         console.error('Error parsing pricing data:', error)
-        // Fallback to placeholder data
+
         estimates.value = { time: 100, materials: 200, adjustments: 50, total: 350 }
         quotes.value = { time: 120, materials: 220, adjustments: 60, total: 400 }
         reality.value = { time: 110, materials: 210, adjustments: 55, total: 375 }
@@ -232,23 +215,22 @@ watch(
   { immediate: true },
 )
 
-// Helper function to calculate totals from entry arrays
 const calculateSectionTotal = (entries: unknown[]): number => {
   return entries.reduce((total: number, entry) => {
     const typedEntry = entry as Record<string, unknown>
-    // For time entries: calculate from hours * rate or total_minutes * rate
+
     if (typedEntry.total_minutes !== undefined) {
       return total + (parseFloat(String(typedEntry.revenue)) || 0)
     }
-    // For material entries: quantity * unit_revenue
+
     if (typedEntry.quantity !== undefined && typedEntry.unit_revenue !== undefined) {
       return total + Number(typedEntry.quantity) * Number(typedEntry.unit_revenue)
     }
-    // For adjustment entries: direct price_adjustment
+
     if (typedEntry.price_adjustment !== undefined) {
       return total + parseFloat(String(typedEntry.price_adjustment) || '0')
     }
-    // For simple entries: direct cost/retail values
+
     if (typedEntry.retail_price !== undefined) {
       return total + parseFloat(String(typedEntry.retail_price) || '0')
     }

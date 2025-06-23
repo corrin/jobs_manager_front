@@ -105,7 +105,6 @@
       </div>
     </div>
 
-    <!-- Refresh Button -->
     <div class="mt-4 flex justify-end">
       <button
         @click="refreshStatus"
@@ -161,12 +160,10 @@ async function refreshStatus() {
   await loadQuoteStatus(props.jobId)
 }
 
-// Load status on mount
 onMounted(() => {
   refreshStatus()
 })
 
-// Watch for jobId changes
 watch(
   () => props.jobId,
   () => {
@@ -177,6 +174,4 @@ watch(
 )
 </script>
 
-<style scoped>
-/* Additional styles if needed */
-</style>
+<style scoped></style>

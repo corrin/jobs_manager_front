@@ -1,6 +1,5 @@
 <template>
   <div class="quote-import-dialog">
-    <!-- File Upload Section -->
     <div class="upload-section">
       <div class="mb-4">
         <label for="file-input" class="block text-sm font-medium text-gray-700 mb-2">
@@ -51,7 +50,6 @@
       </div>
     </div>
 
-    <!-- Error Display -->
     <div v-if="error" class="error-section mb-4">
       <div class="bg-red-50 border border-red-200 rounded-md p-4">
         <div class="flex">
@@ -72,12 +70,10 @@
       </div>
     </div>
 
-    <!-- Preview Results -->
     <div v-if="previewData" class="preview-section">
       <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-4">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Import Preview</h3>
 
-        <!-- Validation Issues -->
         <div v-if="hasValidationIssues" class="validation-issues mb-6">
           <h4 class="text-md font-medium text-gray-800 mb-3">Validation Issues</h4>
           <div class="space-y-2">
@@ -125,7 +121,6 @@
           </div>
         </div>
 
-        <!-- Changes Summary -->
         <div v-if="previewData.preview.diff_preview" class="changes-summary mb-6">
           <h4 class="text-md font-medium text-gray-800 mb-3">Changes Summary</h4>
           <div class="bg-white rounded-lg border border-gray-200 p-4">
@@ -163,7 +158,7 @@
             </div>
           </div>
         </div>
-        <!-- Draft Lines Preview -->
+
         <div v-if="previewData.preview.draft_lines?.length > 0" class="draft-lines mb-6">
           <div class="flex items-center justify-between mb-3">
             <h4 class="text-md font-medium text-gray-800">
@@ -222,7 +217,6 @@
           </div>
         </div>
 
-        <!-- Import Actions -->
         <div class="import-actions flex gap-3">
           <button
             @click="handleImport"
@@ -259,7 +253,6 @@
       </div>
     </div>
 
-    <!-- Import Result -->
     <div v-if="importResult" class="result-section">
       <div
         v-if="importResult.success"
@@ -362,7 +355,6 @@ const {
   clearError,
 } = useQuoteImport()
 
-// Computed property to control which lines are displayed
 const displayedLines = computed(() => {
   if (!previewData.value?.preview?.draft_lines) return []
 
@@ -373,8 +365,8 @@ const displayedLines = computed(() => {
 function handleFileSelect(event: Event) {
   const target = event.target as HTMLInputElement
   selectedFile.value = target.files?.[0] || null
-  showAllLines.value = false // Reset expand state
-  reset() // Clear previous results
+  showAllLines.value = false
+  reset()
   clearError()
 }
 
@@ -402,6 +394,4 @@ async function handleForceImport() {
 }
 </script>
 
-<style scoped>
-/* Custom styles if needed - the component uses Tailwind classes */
-</style>
+<style scoped></style>

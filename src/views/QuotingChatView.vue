@@ -1,7 +1,6 @@
 <template>
   <AppLayout>
     <div class="flex flex-col h-full">
-      <!-- Header -->
       <div class="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-4">
@@ -20,7 +19,6 @@
             </div>
           </div>
 
-          <!-- Header Actions -->
           <div class="flex items-center space-x-2">
             <button
               @click="clearChatHistory"
@@ -33,12 +31,9 @@
         </div>
       </div>
 
-      <!-- Chat Interface -->
       <div class="flex-1 flex flex-col min-h-0 p-6">
-        <!-- Chat Messages -->
         <div class="flex-1 overflow-y-auto bg-gray-50 rounded-lg p-4 mb-4">
           <div class="space-y-4">
-            <!-- Chat Messages -->
             <div
               v-for="message in messages"
               :key="message._id"
@@ -64,7 +59,6 @@
           </div>
         </div>
 
-        <!-- Input Area -->
         <div class="flex space-x-2">
           <div class="flex-1 relative">
             <textarea
@@ -118,7 +112,6 @@ const route = useRoute()
 const router = useRouter()
 const fileInput = ref<HTMLInputElement>()
 
-// Job context from route params
 const jobContext = computed(() => {
   const { jobId, jobName, jobNumber, clientName } = route.query
   if (!jobId) return null
@@ -131,7 +124,6 @@ const jobContext = computed(() => {
   }
 })
 
-// Chat state
 const currentUserId = 'user-1'
 const currentInput = ref('')
 const isLoading = ref(false)
@@ -146,7 +138,6 @@ const handleSendMessage = async () => {
   isLoading.value = true
 
   try {
-    // Add user message
     const userMessage: VueChatMessage = {
       _id: `user-${Date.now()}`,
       content: messageContent,
@@ -157,10 +148,8 @@ const handleSendMessage = async () => {
     }
     messages.value.push(userMessage)
 
-    // Save user message to database
     await saveMessage(userMessage, 'user')
 
-    // Start assistant response with typing indicator
     const assistantMessage: VueChatMessage = {
       _id: `assistant-${Date.now()}`,
       content: 'Processing your request...',
@@ -171,16 +160,11 @@ const handleSendMessage = async () => {
     }
     messages.value.push(assistantMessage)
 
-    // Simulate LLM processing
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    // Update assistant message with response
     assistantMessage.content = `I understand you need: "${messageContent}". Let me analyze this and calculate pricing...\n\n**Next steps:**\n1. Parse material specifications\n2. Calculate quantities using 3 methods\n3. Get supplier pricing via MCP\n4. Generate quote table`
 
-    // Save assistant message to database
     await saveMessage(assistantMessage, 'assistant')
-
-    // TODO: Replace with actual LLM integration
   } catch (error) {
     console.error('Chat processing failed:', error)
     const lastMessage = messages.value[messages.value.length - 1]
@@ -221,13 +205,11 @@ const loadChatHistory = async () => {
 
     if (response.success) {
       if (response.data.messages.length > 0) {
-        // Convert backend messages to Vue chat format
         const vueMessages = response.data.messages.map((msg) =>
           quoteChatService.convertToVueMessage(msg),
         )
         messages.value = vueMessages
       } else {
-        // No existing messages, show welcome message
         messages.value = [
           {
             _id: 'welcome-1',
@@ -269,7 +251,6 @@ const clearChatHistory = async () => {
     try {
       await quoteChatService.clearChatHistory(jobContext.value.jobId)
 
-      // Reset to welcome message only
       messages.value = [
         {
           _id: 'welcome-1',
@@ -303,18 +284,15 @@ const handleFileUpload = async (event: Event) => {
 
   if (!files || files.length === 0) return
 
-  // TODO: Implement file upload to job files
   console.log(
     'Files selected:',
     Array.from(files).map((f) => f.name),
   )
 
-  // For now, just show toast notification
   toast.info('File upload', {
     description: `Selected ${files.length} file(s). File upload will be implemented next.`,
   })
 
-  // Clear the input
   target.value = ''
 }
 
@@ -337,7 +315,7 @@ onMounted(async () => {
   }
 
   console.log('Loading chat history...')
-  // Load existing chat history from database
+
   await loadChatHistory()
   console.log('Chat history loaded')
 })

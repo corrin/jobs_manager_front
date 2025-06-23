@@ -6,7 +6,6 @@
     </label>
 
     <div class="flex space-x-2">
-      <!-- Client Search Input -->
       <div class="flex-1 relative">
         <input
           :id="id"
@@ -21,17 +20,14 @@
           autocomplete="off"
         />
 
-        <!-- Loading indicator -->
         <div v-if="isLoading" class="absolute right-3 top-1/2 transform -translate-y-1/2">
           <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
 
-        <!-- Suggestions dropdown -->
         <div
           v-if="showSuggestions && (suggestions.length > 0 || searchQuery.length >= 3)"
           class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
         >
-          <!-- Existing clients -->
           <div
             v-for="client in suggestions"
             :key="client.id"
@@ -42,7 +38,6 @@
             <div v-if="client.email" class="text-sm text-gray-500">{{ client.email }}</div>
           </div>
 
-          <!-- Add new client option -->
           <div
             v-if="searchQuery.length >= 3"
             class="px-4 py-2 hover:bg-green-50 cursor-pointer border-t border-gray-200 text-green-700 font-medium"
@@ -54,7 +49,6 @@
             </div>
           </div>
 
-          <!-- No results -->
           <div
             v-if="suggestions.length === 0 && searchQuery.length >= 3 && !isLoading"
             class="px-4 py-2 text-gray-500 text-center"
@@ -64,7 +58,6 @@
         </div>
       </div>
 
-      <!-- Xero ID Status Indicator -->
       <div class="flex items-end">
         <div
           v-if="selectedClient"
@@ -82,7 +75,6 @@
       </div>
     </div>
 
-    <!-- Selected client info -->
     <div v-if="selectedClient" class="mt-2 p-2 bg-blue-50 rounded border">
       <div class="text-sm font-medium text-blue-900">{{ selectedClient.name }}</div>
       <div v-if="selectedClient.email" class="text-xs text-blue-700">
@@ -90,7 +82,6 @@
       </div>
     </div>
 
-    <!-- Create Client Modal -->
     <CreateClientModal
       :is-open="showCreateModal"
       :initial-name="searchQuery"
@@ -107,7 +98,6 @@ import { useClientLookup } from '@/composables/useClientLookup'
 import CreateClientModal from '@/components/CreateClientModal.vue'
 import type { Client } from '@/composables/useClientLookup'
 
-// Props
 interface Props {
   id: string
   label: string
@@ -122,14 +112,12 @@ const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
 })
 
-// Events
 const emit = defineEmits<{
   'update:modelValue': [value: string]
   'update:selectedClient': [client: Client | null]
   'update:selectedId': [id: string]
 }>()
 
-// Use client lookup composable
 const {
   searchQuery,
   suggestions,
@@ -142,18 +130,14 @@ const {
   hideSuggestions,
 } = useClientLookup()
 
-// Modal state
 const showCreateModal = ref(false)
 
-// Local state for blur delay
 const blurTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
-// Initialize with modelValue
 if (props.modelValue) {
   searchQuery.value = props.modelValue
 }
 
-// Handle input changes following early return
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
   const value = target.value
@@ -162,7 +146,6 @@ const handleInput = (event: Event) => {
   emit('update:modelValue', value)
 }
 
-// Handle focus
 const handleFocus = () => {
   if (blurTimeout.value) {
     clearTimeout(blurTimeout.value)
@@ -173,36 +156,29 @@ const handleFocus = () => {
   }
 }
 
-// Handle blur with a delay to allow clicks on suggestions
 const handleBlur = () => {
   blurTimeout.value = setTimeout(() => {
     hideSuggestions()
   }, 200)
 }
 
-// Select client wrapper
 const selectClient = (client: Client) => {
   selectClientFromComposable(client)
 
-  // Emit events
   emit('update:modelValue', client.name)
   emit('update:selectedClient', client)
   emit('update:selectedId', client.id)
 }
 
-// Handle create new client
 const handleCreateNew = () => {
   showCreateModal.value = true
   hideSuggestions()
 }
 
-// Handle client created from modal
 const handleClientCreated = (client: Client) => {
-  // Select the newly created client
   selectClient(client)
 }
 
-// Watch for external modelValue changes
 watch(
   () => props.modelValue,
   (newValue) => {
@@ -212,7 +188,6 @@ watch(
   },
 )
 
-// Watch for selected client changes to emit events
 watch(selectedClient, (newClient) => {
   if (newClient) {
     emit('update:selectedClient', newClient)

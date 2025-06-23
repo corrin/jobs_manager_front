@@ -1,10 +1,7 @@
 <template>
   <AppLayout>
-    <!-- Main content with flex layout for full height utilisation -->
     <div class="flex flex-col min-h-screen mt-5 md:mt-15 lg:mt-0">
-      <!-- Header section – flexible size -->
       <div class="flex-shrink-0 p-3 sm:p-4 lg:p-6 pt-2 sm:pt-3 md:pt-1 lg:pt-6">
-        <!-- Search section -->
         <div class="mb-2 md:mb-3 space-y-2">
           <div
             class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 w-full"
@@ -34,9 +31,7 @@
           </div>
         </div>
 
-        <!-- Main Kanban content area – uses remaining space -->
         <div class="flex-1 flex flex-col px-2 sm:px-4 lg:px-6 py-1 md:py-2">
-          <!-- Team members -->
           <div v-if="!showSearchResults" class="mb-2 md:mb-3 flex justify-center">
             <div class="flex justify-center w-full">
               <StaffPanel
@@ -47,7 +42,6 @@
             </div>
           </div>
 
-          <!-- Search results grid -->
           <div v-if="showSearchResults" class="mb-2 md:mb-3">
             <div class="flex items-centre justify-between mb-4">
               <h2 class="text-lg font-semibold text-grey-900">
@@ -66,9 +60,7 @@
             </div>
           </div>
 
-          <!-- Kanban board – grows to fill available space -->
           <div v-if="!showSearchResults" class="flex-1 flex flex-col space-y-1 md:space-y-2">
-            <!-- Mobile: Dropdown to select status -->
             <div class="block md:hidden">
               <select
                 v-model="selectedMobileStatus"
@@ -84,7 +76,6 @@
               </select>
             </div>
 
-            <!-- Mobile: Single column view -->
             <div class="block md:hidden">
               <div class="flex justify-centre px-4">
                 <KanbanColumn
@@ -106,12 +97,9 @@
               </div>
             </div>
 
-            <!-- Desktop: kanban – grows to fill space -->
             <div class="hidden md:flex md:flex-1 md:flex-col">
-              <!-- Tablet: Responsive grid layout for optimal viewing -->
               <div class="block lg:hidden">
                 <div class="w-full mx-auto px-2">
-                  <!-- Dynamic grid based on number of columns -->
                   <div
                     class="grid gap-3"
                     :class="{
@@ -140,7 +128,6 @@
                 </div>
               </div>
 
-              <!-- Large Desktop: Responsive grid that shows all columns -->
               <div class="hidden lg:block">
                 <div class="w-full mx-auto px-2">
                   <div
@@ -169,7 +156,6 @@
       </div>
     </div>
 
-    <!-- Advanced Search Dialog -->
     <AdvancedSearchDialog
       :is-open="showAdvancedSearchDialog"
       :filters="advancedFilters"
@@ -196,24 +182,19 @@ import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { AdvancedFilters } from '@/types'
 
-// Initialise store
 const jobsStore = useJobsStore()
 
-// Set kanban context when component mounts
 onMounted(() => {
   jobsStore.setCurrentContext('kanban')
 })
 
-// Clear context when component unmounts
 onUnmounted(() => {
   if (jobsStore.currentContext === 'kanban') {
     jobsStore.setCurrentContext(null)
   }
 })
 
-// Staff filters state
 const {
-  // State
   jobs,
   archivedJobs,
   filteredJobs,
@@ -224,14 +205,11 @@ const {
   activeStaffFilters,
   selectedMobileStatus,
 
-  // Constants
   visibleStatusChoices,
 
-  // Computed
   getJobsByStatus,
-  jobsSortedByPriority, // ADDED
+  jobsSortedByPriority,
 
-  // Methods
   loadJobs,
   handleSearch,
   handleAdvancedSearch,
@@ -243,16 +221,13 @@ const {
   reorderJob,
   handleStaffFilterChanged,
 } = useKanban(() => {
-  // Callback called after jobs are loaded – initialise sortable for all ready columns
   nextTick(() => {
     initialiseSortableForAllColumns()
   })
 })
 
-// Local state for dialog
 const showAdvancedSearchDialog = ref(false)
 
-// Handle advanced search from dialog following clean code principles
 const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
   try {
     Object.assign(advancedFilters.value, filters)
@@ -262,22 +237,18 @@ const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
   }
 }
 
-// Drag and drop for jobs (with callback to update state)
 const { isDragging, initializeSortable, destroyAllSortables } = useDragAndDrop((event, payload) => {
   if (event === 'job-moved') {
     const { jobId, fromStatus, toStatus, beforeId, afterId } = payload
     if (fromStatus !== toStatus) {
-      // Map column to appropriate status using categorisation service
       const actualStatus = KanbanCategorizationService.getDefaultStatusForColumn(toStatus)
       updateJobStatus(jobId, actualStatus)
     } else {
-      // Reorder within same status
       reorderJob(jobId, beforeId, afterId, toStatus)
     }
   }
 })
 
-// Staff drag and drop composable
 interface StaffAssignmentPayload {
   staffId: string
   jobId: string
@@ -295,21 +266,18 @@ const { initializeStaffPool, initializeJobStaffContainer, updateJobStaffContaine
       }
     } else if (event === 'jobs-reload-needed') {
       await loadJobs()
-      // Update staff containers after jobs are reloaded
+
       const allJobs = [...jobs.value, ...archivedJobs.value]
       updateJobStaffContainers(allJobs)
     }
   })
 
-// Sortable instances tracking to prevent multiple initialisations
 const sortableInitialized = ref<Set<string>>(new Set())
 const columnsReadyForSortable = ref<Map<string, HTMLElement>>(new Map())
 
 const handleSortableReady = (element: HTMLElement, status: string) => {
-  // Store the column element for later initialisation
   columnsReadyForSortable.value.set(status, element)
 
-  // Only initialise if jobs are already loaded and we haven't initialised this column yet
   if (jobs.value.length > 0 && !sortableInitialized.value.has(status)) {
     initializeSortableForColumn(status, element)
   }
@@ -331,7 +299,6 @@ const initializeSortableForColumn = (status: string, element: HTMLElement) => {
   })
 }
 
-// Initialise sortable for all ready columns when jobs are loaded
 const initialiseSortableForAllColumns = () => {
   columnsReadyForSortable.value.forEach((element, status) => {
     if (!sortableInitialized.value.has(status)) {
@@ -349,16 +316,12 @@ const handleJobReady = (payload: { jobId: string; element: HTMLElement }) => {
   initializeJobStaffContainer(payload.element, payload.jobId)
 }
 
-// Utility function to filter jobs ordered by priority by status (NZ English comment)
 function getSortedJobsByStatus(statusKey: string) {
-  // Use kanban categorisation logic, but keep priority order
   return KanbanCategorizationService.getJobsForColumn(jobsSortedByPriority.value, statusKey)
 }
 
-// Setup drag and drop functionality
 onMounted(async () => {})
 
-// Cleanup on unmount
 onUnmounted(() => {
   destroyAllSortables()
   sortableInitialized.value.clear()
@@ -367,14 +330,12 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Mobile column styling for better job card display */
 .mobile-column {
   min-width: 320px;
   max-width: 400px;
   width: 100%;
 }
 
-/* Mobile-specific improvements for job cards and columns */
 @media (max-width: 767px) {
   .mobile-column :deep(.kanban-column) {
     min-width: 320px;
@@ -382,14 +343,12 @@ onUnmounted(() => {
     width: 100%;
   }
 
-  /* Increase job card width in mobile */
   .mobile-column :deep(.job-card) {
     min-width: 280px;
     width: 100%;
     padding: 16px;
   }
 
-  /* Better spacing for mobile column content */
   .mobile-column :deep(.p-1) {
     padding: 12px;
   }
@@ -399,24 +358,20 @@ onUnmounted(() => {
   }
 }
 
-/* Tablet column styling for optimal job card display */
 .tablet-column {
   min-width: 200px;
   max-width: 280px;
   width: 100%;
 }
 
-/* Ensure proper responsiveness for 4x2 tablet layout */
 @media (min-width: 768px) and (max-width: 1023px) {
   .tablet-column {
-    /* Each column gets 1/4 of container width minus gaps */
     width: calc((100% - 0.75rem) / 4);
     min-width: 160px;
     max-width: 200px;
   }
 }
 
-/* Override default column sizing for tablet layout – maintain normal heights */
 @media (min-width: 768px) and (max-width: 1023px) {
   .tablet-column :deep(.kanban-column) {
     min-width: 160px;
@@ -426,20 +381,17 @@ onUnmounted(() => {
   }
 }
 
-/* Staff drag and drop styling and cleanup */
 [data-is-clone='true'] {
   pointer-events: none !important;
   z-index: 9999;
 }
 
-/* Ensure ghost elements are hidden */
 .sortable-ghost,
 .staff-sortable-ghost {
   opacity: 0.3 !important;
   pointer-events: none !important;
 }
 
-/* Hide any leftover clones immediately */
 .staff-list [data-is-clone='true'],
 .sortable-chosen[data-is-clone='true'] {
   display: none !important;
@@ -447,13 +399,11 @@ onUnmounted(() => {
   opacity: 0 !important;
 }
 
-/* Force hardware acceleration for smoother drag operations */
 .is-staff-dragging * {
   will-change: transform;
   transform: translate3d(0, 0, 0);
 }
 
-/* Clean up any orphaned elements */
 [style*='position: absolute'][style*='left: -9999px'] {
   display: none !important;
 }

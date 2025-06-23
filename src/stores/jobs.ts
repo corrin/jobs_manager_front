@@ -3,7 +3,6 @@ import { ref, computed } from 'vue'
 import type { JobDetail, JobEvent, JobPricing } from '@/schemas/job.schemas'
 import type { CompanyDefaults } from '@/types/timesheet.types'
 
-// Additional interface definitions for store operations
 export interface JobPricings {
   estimate_pricing?: JobPricing
   quote_pricing?: JobPricing
@@ -25,7 +24,6 @@ export interface AdjustmentEntryData {
   [key: string]: unknown
 }
 
-// Tipo específico para dados do job no kanban (versão resumida)
 export interface JobKanbanData {
   id: string
   name: string
@@ -44,25 +42,19 @@ export interface JobKanbanData {
 }
 
 export interface JobsStoreState {
-  // Jobs completos para visualização detalhada
   detailedJobs: Record<string, JobDetail>
 
-  // Jobs resumidos para kanban
   kanbanJobs: Record<string, JobKanbanData>
 
-  // Job atualmente sendo visualizado
   currentJobId: string | null
 
-  // Estados de loading
   isLoadingJob: boolean
   isLoadingKanban: boolean
 
-  // Contexto atual da aplicação
   currentContext: 'kanban' | 'detail' | null
 }
 
 export const useJobsStore = defineStore('jobs', () => {
-  // State - usar objetos reativos ao invés de Maps para melhor reatividade
   const detailedJobs = ref<Record<string, JobDetail>>({})
   const kanbanJobs = ref<Record<string, JobKanbanData>>({})
   const currentJobId = ref<string | null>(null)
@@ -70,7 +62,6 @@ export const useJobsStore = defineStore('jobs', () => {
   const isLoadingKanban = ref(false)
   const currentContext = ref<'kanban' | 'detail' | null>(null)
 
-  // Getters
   const currentJob = computed(() => {
     if (!currentJobId.value) return null
     return detailedJobs.value[currentJobId.value] || null
@@ -92,9 +83,7 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   })
 
-  // Actions para gerenciar jobs detalhados
   const setDetailedJob = (job: JobDetail): void => {
-    // Guard clause - validar se job e job.id existem e são válidos
     if (!job) {
       console.error('🚨 Store - setDetailedJob called with null/undefined job')
       console.trace('Stack trace for undefined job call')
@@ -112,7 +101,6 @@ export const useJobsStore = defineStore('jobs', () => {
       return
     }
 
-    // Evitar loops infinitos - verificar se o job já existe e é idêntico
     const existingJob = detailedJobs.value[job.id]
     if (existingJob && JSON.stringify(existingJob) === JSON.stringify(job)) {
       console.log('🔄 Store - Job data identical, skipping update to prevent loop:', job.id)
@@ -125,7 +113,6 @@ export const useJobsStore = defineStore('jobs', () => {
       detailedJobs.value[job.id]?.job_status || 'NOT_FOUND',
     )
 
-    // Criar novo objeto para forçar reatividade
     const newJob = { ...job }
     detailedJobs.value = {
       ...detailedJobs.value,
@@ -134,7 +121,6 @@ export const useJobsStore = defineStore('jobs', () => {
 
     console.log('🏪 Store - After update, job in store:', detailedJobs.value[job.id]?.job_status)
 
-    // Atualizar também no kanban se o job existir lá
     if (kanbanJobs.value[job.id]) {
       console.log('🏪 Store - Also updating kanban job')
       updateKanbanJobFromDetailed(newJob)
@@ -144,14 +130,12 @@ export const useJobsStore = defineStore('jobs', () => {
   const updateDetailedJob = (jobId: string, updates: Partial<JobDetail>): void => {
     const existingJob = detailedJobs.value[jobId]
     if (existingJob) {
-      // Criar novo objeto para forçar reatividade
       const updatedJob = { ...existingJob, ...updates }
       detailedJobs.value = {
         ...detailedJobs.value,
         [jobId]: updatedJob,
       }
 
-      // Atualizar também no kanban se o job existir lá
       if (kanbanJobs.value[jobId]) {
         updateKanbanJobFromDetailed(updatedJob)
       }
@@ -162,9 +146,7 @@ export const useJobsStore = defineStore('jobs', () => {
     delete detailedJobs.value[jobId]
   }
 
-  // Actions para gerenciar jobs do kanban
   const setKanbanJobs = (jobs: JobKanbanData[]): void => {
-    // Limpar primeiro e depois popular
     kanbanJobs.value = {}
     jobs.forEach((job) => {
       kanbanJobs.value[job.id] = job
@@ -186,7 +168,6 @@ export const useJobsStore = defineStore('jobs', () => {
     delete kanbanJobs.value[jobId]
   }
 
-  // Helper para sincronizar dados do job detalhado para o kanban
   const updateKanbanJobFromDetailed = (detailedJob: JobDetail): void => {
     const kanbanJob = kanbanJobs.value[detailedJob.id]
     if (kanbanJob) {
@@ -201,7 +182,6 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
-  // Actions para navegação
   const setCurrentJobId = (jobId: string | null): void => {
     currentJobId.value = jobId
   }
@@ -218,7 +198,6 @@ export const useJobsStore = defineStore('jobs', () => {
     isLoadingKanban.value = loading
   }
 
-  // Actions para limpeza
   const clearDetailedJobs = (): void => {
     detailedJobs.value = {}
     currentJobId.value = null
@@ -234,16 +213,12 @@ export const useJobsStore = defineStore('jobs', () => {
     currentContext.value = null
   }
 
-  // Action para atualizar status específico (usado pelos modals)
   const updateJobStatus = (jobId: string, newStatus: string): void => {
-    // Atualizar no job detalhado
     updateDetailedJob(jobId, { job_status: newStatus })
 
-    // Atualizar no kanban
     updateKanbanJob(jobId, { job_status: newStatus })
   }
 
-  // Actions específicas para atualizar dados do job de forma reativa
   const updateJobEvents = (jobId: string, events: JobEvent[]): void => {
     const job = detailedJobs.value[jobId]
     if (job) {
@@ -262,7 +237,6 @@ export const useJobsStore = defineStore('jobs', () => {
   const updateJobPricings = (jobId: string, pricings: JobPricings): void => {
     const job = detailedJobs.value[jobId]
     if (job) {
-      // Atualizar as estruturas de pricing individuais
       const updates: Partial<JobDetail> = {}
       if (pricings.estimate_pricing) {
         updates.latest_estimate_pricing = pricings.estimate_pricing
@@ -285,20 +259,17 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
-  // Action para atualizar dados específicos sem recarregar tudo
   const updateJobPartialData = (jobId: string, partialData: Partial<JobDetail>): void => {
     const job = detailedJobs.value[jobId]
     if (job) {
       detailedJobs.value[jobId] = { ...job, ...partialData }
 
-      // Sincronizar dados essenciais com kanban se existir
       if (kanbanJobs.value[jobId]) {
         updateKanbanJobFromDetailed(detailedJobs.value[jobId])
       }
     }
   }
 
-  // Actions assíncronas para adicionar entradas
   const addTimeEntry = async (
     jobId: string,
     timeEntryData: Record<string, unknown>,
@@ -306,16 +277,13 @@ export const useJobsStore = defineStore('jobs', () => {
     try {
       console.log('🏪 Store - Adding time entry for job:', jobId, timeEntryData)
 
-      // Importar o service aqui para evitar circular dependency
       const { jobRestService } = await import('@/services/job-rest.service')
 
-      // Verificar se temos o job atual e suas pricings
       const currentJob = detailedJobs.value[jobId]
       if (!currentJob?.latest_estimate_pricing?.id) {
         throw new Error('Job or estimate pricing not found')
       }
 
-      // Preparar dados para o backend
       const hours = Number(timeEntryData.estimatedHours || timeEntryData.hours || 0)
       const chargeMultiplier = Number(timeEntryData.chargeMultiplier || 1)
       const baseChargeOutRate =
@@ -334,7 +302,7 @@ export const useJobsStore = defineStore('jobs', () => {
       const entryData = {
         job_pricing_id: currentJob.latest_estimate_pricing.id,
         description: String(timeEntryData.taskName || timeEntryData.description || ''),
-        hours: hours, // Required field for backend
+        hours: hours,
         items: 1,
         minutes_per_item: hours * 60,
         wage_rate: baseWageRate,
@@ -344,10 +312,8 @@ export const useJobsStore = defineStore('jobs', () => {
       const response = await jobRestService.createTimeEntry(jobId, entryData)
 
       if (response.success && response.data) {
-        // Atualizar o job no store com os dados retornados
         setDetailedJob(response.data.job)
 
-        // Forçar um reload completo para garantir reatividade das pricing entries
         const { jobRestService: reloadService } = await import('@/services/job-rest.service')
         const freshResponse = await reloadService.getJobForEdit(jobId)
         if (freshResponse.success && freshResponse.data) {
@@ -378,7 +344,6 @@ export const useJobsStore = defineStore('jobs', () => {
         throw new Error('Job or estimate pricing not found')
       }
 
-      // Calcular unit_revenue baseado no markup
       const unitCost = Number(materialEntryData.unitPrice || materialEntryData.unit_cost || 0)
       const markupPercent = Number(materialEntryData.chargePercentage || 0)
       const unitRevenue = unitCost * (1 + markupPercent / 100)
@@ -394,10 +359,8 @@ export const useJobsStore = defineStore('jobs', () => {
       const response = await jobRestService.createMaterialEntry(jobId, entryData)
 
       if (response.success && response.data) {
-        // Atualizar o job no store com os dados retornados
         setDetailedJob(response.data.job)
 
-        // Forçar um reload completo para garantir reatividade das pricing entries
         const { jobRestService: reloadService } = await import('@/services/job-rest.service')
         const freshResponse = await reloadService.getJobForEdit(jobId)
         if (freshResponse.success && freshResponse.data) {
@@ -439,10 +402,8 @@ export const useJobsStore = defineStore('jobs', () => {
       const response = await jobRestService.createAdjustmentEntry(jobId, entryData)
 
       if (response.success && response.data) {
-        // Atualizar o job no store com os dados retornados
         setDetailedJob(response.data.job)
 
-        // Forçar um reload completo para garantir reatividade das pricing entries
         const { jobRestService: reloadService } = await import('@/services/job-rest.service')
         const freshResponse = await reloadService.getJobForEdit(jobId)
         if (freshResponse.success && freshResponse.data) {
@@ -459,7 +420,6 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
-  // Quote sync actions
   const linkQuote = async (jobId: string, templateUrl?: string): Promise<void> => {
     try {
       console.log('🏪 Store - Linking quote sheet for job:', jobId)
@@ -467,7 +427,6 @@ export const useJobsStore = defineStore('jobs', () => {
       const { quoteService } = await import('@/services/quote.service')
       const result = await quoteService.linkQuote(jobId, templateUrl)
 
-      // Update job with quote sheet info - Note: this would need proper typing
       console.log('✅ Store - Quote sheet linked successfully:', result)
     } catch (error) {
       console.error('❌ Store - Error linking quote sheet:', error)
@@ -484,18 +443,13 @@ export const useJobsStore = defineStore('jobs', () => {
 
       const { quoteService } = await import('@/services/quote.service')
 
-      // Get preview first if not skipping validation
       if (!options.skipValidation) {
         await quoteService.previewQuote(jobId)
-        // Note: Preview handling should be done in the component
-        // This is just for direct application
       }
 
-      // Apply the quote changes
       const result = await quoteService.applyQuote(jobId)
 
       if (result.success && result.cost_set) {
-        // Force reload the job to get updated data
         const { jobRestService } = await import('@/services/job-rest.service')
         const freshResponse = await jobRestService.getJobForEdit(jobId)
         if (freshResponse.success && freshResponse.data) {
@@ -513,7 +467,6 @@ export const useJobsStore = defineStore('jobs', () => {
   }
 
   return {
-    // State
     detailedJobs,
     kanbanJobs,
     currentJobId,
@@ -521,13 +474,11 @@ export const useJobsStore = defineStore('jobs', () => {
     isLoadingKanban,
     currentContext,
 
-    // Getters
     currentJob,
     allKanbanJobs,
     getJobById,
     getKanbanJobById,
 
-    // Actions
     setDetailedJob,
     updateDetailedJob,
     removeDetailedJob,
@@ -542,7 +493,6 @@ export const useJobsStore = defineStore('jobs', () => {
     clearDetailedJobs,
     clearKanbanJobs,
 
-    // Additional actions
     clearAll,
     updateJobStatus,
     updateJobEvents,
@@ -551,12 +501,10 @@ export const useJobsStore = defineStore('jobs', () => {
     updateJobCompanyDefaults,
     updateJobPartialData,
 
-    // Actions assíncronas
     addTimeEntry,
     addMaterialEntry,
     addAdjustmentEntry,
 
-    // Quote sync actions
     linkQuote,
     refreshQuote,
   }

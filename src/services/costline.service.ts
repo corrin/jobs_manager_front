@@ -2,13 +2,6 @@ import api from '@/plugins/axios'
 import { CostLineSchema } from '@/schemas/costing.schemas'
 import type { CostLine } from '@/types/costing.types'
 
-/**
- * CostLine Service
- *
- * Service layer for CostLine CRUD operations following SRP principles
- * Handles API communication and data validation for timesheet CostLine management
- */
-
 export interface CostLineCreatePayload {
   kind: 'time' | 'material' | 'adjust'
   desc: string
@@ -29,7 +22,6 @@ export interface CostLineUpdatePayload {
 }
 
 export interface TimesheetCostLine extends CostLine {
-  // Additional fields returned by TimesheetCostLineSerializer
   job_id: string
   job_number: string
   job_name: string
@@ -56,9 +48,6 @@ export interface TimesheetEntriesResponse {
   }
 }
 
-/**
- * Get timesheet entries for a specific staff member and date
- */
 export const getTimesheetEntries = async (
   staffId: string,
   date: string,
@@ -70,9 +59,6 @@ export const getTimesheetEntries = async (
   return response.data
 }
 
-/**
- * Create a new cost line
- */
 export const createCostLine = async (
   jobId: string | number,
   kind: 'estimate' | 'quote' | 'actual',
@@ -80,28 +66,20 @@ export const createCostLine = async (
 ): Promise<CostLine> => {
   const response = await api.post(`/job/rest/jobs/${jobId}/cost_sets/${kind}/cost_lines/`, payload)
 
-  // Validate the response data with Zod schema
   const validatedData = CostLineSchema.parse(response.data)
   return validatedData
 }
 
-/**
- * Update an existing cost line
- */
 export const updateCostLine = async (
   id: number,
   payload: CostLineUpdatePayload,
 ): Promise<CostLine> => {
   const response = await api.patch(`/job/rest/cost_lines/${id}/`, payload)
 
-  // Validate the response data with Zod schema
   const validatedData = CostLineSchema.parse(response.data)
   return validatedData
 }
 
-/**
- * Delete a cost line
- */
 export const deleteCostLine = async (id: number): Promise<void> => {
   console.log('🚀 SERVICE: Starting DELETE request for cost line ID:', id)
   console.log('🌐 DELETE URL:', `/job/rest/cost_lines/${id}/delete/`)
@@ -120,7 +98,6 @@ export const deleteCostLine = async (id: number): Promise<void> => {
   }
 }
 
-// Export service object for consistent usage
 export const costlineService = {
   createCostLine,
   updateCostLine,

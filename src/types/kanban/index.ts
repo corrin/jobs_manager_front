@@ -1,9 +1,5 @@
-// Types specific to Kanban view functionality
-// Internal TypeScript types, not for validation
-
 import type { Staff } from '../index'
 
-// Job specific to Kanban view
 export interface KanbanJob {
   id: string
   name: string
@@ -20,7 +16,6 @@ export interface KanbanJob {
   priority?: number
 }
 
-// Kanban column configuration
 export interface KanbanColumn {
   status_key: string
   label: string
@@ -28,7 +23,6 @@ export interface KanbanColumn {
   jobs: KanbanJob[]
 }
 
-// Drag and drop event types
 export interface DragEndEvent {
   oldIndex: number
   newIndex: number
@@ -37,14 +31,12 @@ export interface DragEndEvent {
   item: HTMLElement
 }
 
-// Filter state for Kanban
 export interface KanbanFilters {
   staffIds: string[]
   searchTerm: string
   showArchived: boolean
 }
 
-// Advanced filters specific to Kanban
 export interface KanbanAdvancedFilters {
   job_number: string
   name: string

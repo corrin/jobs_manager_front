@@ -38,16 +38,13 @@ export interface KPICalendarData {
 }
 
 export interface KPICalendarParams {
-  start_date: string // YYYY-MM-DD format
+  start_date: string
   mode?: 'timesheet' | 'ims'
 }
 
 class KPIService {
   private baseUrl = '/timesheet/api'
 
-  /**
-   * Get KPI calendar data for a specific week
-   */
   async getKPICalendarData(params: KPICalendarParams): Promise<KPICalendarData> {
     try {
       const searchParams = new URLSearchParams({
@@ -63,31 +60,21 @@ class KPIService {
     }
   }
 
-  /**
-   * Format date to YYYY-MM-DD format for API
-   */
   formatDateForAPI(date: Date): string {
     return date.toISOString().split('T')[0]
   }
 
-  /**
-   * Get week start date (Monday) for a given date
-   */
   getWeekStart(date: Date): Date {
     const weekStart = new Date(date)
     const day = weekStart.getDay()
-    const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1) // adjust when day is Sunday
+    const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1)
     weekStart.setDate(diff)
     return weekStart
   }
 
-  /**
-   * Generate week days from start date
-   */
   getWeekDays(startDate: Date): Date[] {
     const days = []
     for (let i = 0; i < 5; i++) {
-      // Monday to Friday
       const day = new Date(startDate)
       day.setDate(startDate.getDate() + i)
       days.push(day)
@@ -95,26 +82,20 @@ class KPIService {
     return days
   }
 
-  /**
-   * Generate IMS week days (Tuesday to Friday + next Monday)
-   */
   getIMSWeekDays(startDate: Date): Date[] {
     const days = []
 
-    // Start from Tuesday of the current week
     const tuesday = new Date(startDate)
     const dayOfWeek = tuesday.getDay()
     const daysToTuesday = dayOfWeek === 0 ? 2 : (2 - dayOfWeek + 7) % 7
     tuesday.setDate(tuesday.getDate() + daysToTuesday)
 
-    // Tuesday to Friday
     for (let i = 0; i < 4; i++) {
       const day = new Date(tuesday)
       day.setDate(tuesday.getDate() + i)
       days.push(day)
     }
 
-    // Next Monday
     const nextMonday = new Date(tuesday)
     nextMonday.setDate(tuesday.getDate() + 5)
     days.push(nextMonday)

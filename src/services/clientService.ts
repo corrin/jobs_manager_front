@@ -42,9 +42,6 @@ export class ClientService {
     return ClientService.instance
   }
 
-  /**
-   * Create a new client
-   */
   async createClient(data: CreateClientData): Promise<CreateClientResponse> {
     try {
       const response = await api.post('/clients/rest/create/', data)
@@ -66,9 +63,6 @@ export class ClientService {
     }
   }
 
-  /**
-   * Get all clients - using the correct REST endpoint
-   */
   async getAllClients(): Promise<Client[]> {
     try {
       const response = await api.get('/clients/rest/all/')
@@ -80,9 +74,6 @@ export class ClientService {
     }
   }
 
-  /**
-   * Search clients by name
-   */
   searchClients(clientList: Client[], searchTerm: string): Client[] {
     if (!searchTerm.trim()) {
       return clientList

@@ -14,48 +14,35 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
   const staffSortableInstances = ref<Map<string, Sortable>>(new Map())
   const isStaffDragging = ref(false)
 
-  // Helper function to robustly remove cloned elements
   const removeClonedElement = (element: HTMLElement, shouldRemove: boolean = true) => {
     if (!shouldRemove || !element) return undefined
 
     try {
       console.log('🗑️ Removing cloned element:', element)
 
-      // Strategy 1: Force layout recalculation before removal
-      element.style.transform = 'translate3d(0,0,0)' // Force GPU layer
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      element.offsetHeight // Force reflow
+      element.style.transform = 'translate3d(0,0,0)'
 
-      // Strategy 2: Hide immediately to prevent visual glitch
       element.style.display = 'none'
       element.style.visibility = 'hidden'
       element.style.opacity = '0'
       element.style.pointerEvents = 'none'
 
-      // Strategy 3: Direct removal
       if (element.parentNode) {
         element.parentNode.removeChild(element)
         console.log('✅ Element removed via parentNode')
 
-        // Force layout recalculation after removal
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-        document.body.offsetHeight
         return
       }
 
-      // Strategy 4: Remove after next frame
       requestAnimationFrame(() => {
         if (element && element.parentNode) {
           element.parentNode.removeChild(element)
           console.log('✅ Element removed via requestAnimationFrame')
-          // Force layout recalculation
-          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-          document.body.offsetHeight
         }
       })
     } catch (error) {
       console.warn('❌ Error removing cloned element:', error)
-      // Last resort: completely hide the element
+
       try {
         element.style.cssText =
           'display: none !important; visibility: hidden !important; opacity: 0 !important; position: absolute !important; left: -9999px !important;'
@@ -65,7 +52,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
     }
   }
 
-  // Configuração simples para staff drag and drop
   const getStaffDragConfig = () => ({
     delay: 0,
     touchStartThreshold: 0,
@@ -76,9 +62,9 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
     fallbackOnBody: true,
     swapThreshold: 0.65,
     dragoverBubble: false,
-    removeCloneOnHide: true, // Ensure clones are removed when hidden
+    removeCloneOnHide: true,
     emptyInsertThreshold: 5,
-    revertOnSpill: false, // Don't revert when dropped outside
+    revertOnSpill: false,
   })
 
   const initializeStaffPool = (staffPanelElement: HTMLElement) => {
@@ -88,7 +74,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       return null
     }
 
-    // Clean up existing instance
     const existingInstance = staffSortableInstances.value.get('staffPool')
     if (existingInstance) {
       try {
@@ -99,7 +84,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       }
     }
 
-    // Get unified staff drag configuration
     const staffDragConfig = getStaffDragConfig()
 
     try {
@@ -107,7 +91,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         group: {
           name: 'staffPool',
           pull: 'clone',
-          put: ['staffOnJob'], // Allow staff to be returned from jobs
+          put: ['staffOnJob'],
         },
         sort: false,
         animation: 150,
@@ -115,14 +99,12 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         chosenClass: 'staff-sortable-chosen',
         dragClass: 'staff-sortable-drag',
 
-        // Prevent clone from being added back to pool
         onClone: (evt) => {
           console.log('📋 Staff clone created:', evt.clone)
-          // Mark clone for identification
+
           evt.clone.setAttribute('data-is-clone', 'true')
         },
 
-        // Apply unified configuration (includes all optimizations)
         ...staffDragConfig,
 
         onStart: () => {
@@ -136,16 +118,13 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
           isStaffDragging.value = false
           document.body.classList.remove('is-staff-dragging')
 
-          // Force cleanup of any clones or ghost elements
           const cleanupElements = () => {
-            // Remove any clones that might be left behind
             const clones = document.querySelectorAll('[data-is-clone="true"]')
             clones.forEach((clone) => {
               console.log('🗑️ Cleaning up leftover clone:', clone)
               removeClonedElement(clone as HTMLElement, true)
             })
 
-            // Remove any SortableJS ghost elements
             const ghosts = document.querySelectorAll('.sortable-ghost, .staff-sortable-ghost')
             ghosts.forEach((ghost) => {
               console.log('👻 Removing ghost element:', ghost)
@@ -153,13 +132,8 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
                 ghost.parentNode.removeChild(ghost)
               }
             })
-
-            // Force layout recalculation
-            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-            document.body.offsetHeight
           }
 
-          // Cleanup immediately and after animation
           cleanupElements()
           requestAnimationFrame(cleanupElements)
           setTimeout(cleanupElements, 200)
@@ -167,7 +141,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
 
         onAdd: (evt) => {
           console.log('🔄 Staff returned to pool:', evt)
-          // Staff returned to pool from job
+
           const staffId = evt.item.dataset.staffId
           const fromJobCard = evt.from.closest('[data-id]')
 
@@ -179,7 +153,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
             }
           }
 
-          // Remove the element that was returned to pool
           console.log('🗑️ Removing staff element returned to pool')
           removeClonedElement(evt.item, true)
         },
@@ -201,7 +174,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
 
     const instanceKey = `job-${jobId}`
 
-    // Clean up existing instance
     const existingInstance = staffSortableInstances.value.get(instanceKey)
     if (existingInstance) {
       try {
@@ -212,7 +184,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       }
     }
 
-    // Get unified staff drag configuration
     const staffDragConfig = getStaffDragConfig()
 
     try {
@@ -227,7 +198,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         chosenClass: 'staff-sortable-chosen',
         dragClass: 'staff-sortable-drag',
 
-        // Apply unified configuration (includes all optimizations)
         ...staffDragConfig,
 
         onStart: () => {
@@ -258,7 +228,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
             if (targetJobId) {
               console.log(`🧑‍💼 Staff ${staffId} added to job ${targetJobId}`)
 
-              // Check if this came from the staff pool (clone operation)
               const fromStaffPool = Boolean(
                 evt.from.classList.contains('staff-list') ||
                   evt.from.closest('#staff-panel') ||
@@ -269,20 +238,19 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
                 await assignStaffToJob(targetJobId, staffId)
                 console.log('✅ Staff assignment successful')
 
-                // Always remove clones from staff pool operations
                 if (fromStaffPool || isClone) {
                   console.log('🗑️ Removing clone after successful assignment')
                   removeClonedElement(evt.item, true)
                 }
               } catch (error) {
                 console.error('❌ Failed to assign staff, reverting drag operation:', error)
-                // Always remove on error
+
                 removeClonedElement(evt.item, true)
               }
             }
           } else {
             console.log('⚠️ Invalid drop target, removing element')
-            // If no valid drop target, always remove the clone
+
             removeClonedElement(evt.item, true)
           }
         },
@@ -377,7 +345,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       })
       staffSortableInstances.value.clear()
 
-      // Clean up drag state
       isStaffDragging.value = false
       document.body.classList.remove('is-staff-dragging')
     } catch (error) {
@@ -388,7 +355,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
   const updateJobStaffContainers = async (jobs: Job[]) => {
     await nextTick()
 
-    // Remove instances for jobs that no longer exist
     const currentJobIds = new Set(jobs.map((job) => `job-${job.id}`))
     const instancesToRemove: string[] = []
 
@@ -401,7 +367,6 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
     instancesToRemove.forEach((key) => destroyStaffSortable(key))
   }
 
-  // Auto cleanup on component unmount
   onBeforeUnmount(() => {
     destroyAllStaffSortables()
   })

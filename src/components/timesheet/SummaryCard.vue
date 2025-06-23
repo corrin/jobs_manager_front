@@ -2,7 +2,6 @@
   <div
     class="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-200"
   >
-    <!-- Header with Icon and Title -->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center space-x-3">
         <div :class="getIconClass(color)" class="p-2 rounded-lg">
@@ -15,14 +14,12 @@
       </div>
     </div>
 
-    <!-- Value Display -->
     <div class="mb-4">
       <div class="text-3xl font-bold" :class="getValueClass(color)">
         {{ value }}
       </div>
     </div>
 
-    <!-- Progress Bar (if progress is provided) -->
     <div v-if="progress !== undefined" class="w-full bg-gray-200 rounded-full h-2">
       <div
         :class="getProgressClass(color)"
@@ -51,7 +48,6 @@ const props = withDefaults(defineProps<Props>(), {
   progress: undefined,
 })
 
-// Icon mapping
 const iconMap = {
   Clock,
   TrendingUp,
@@ -65,7 +61,6 @@ const iconComponent = computed(() => {
   return iconMap[props.icon as keyof typeof iconMap] || Clock
 })
 
-// Style functions
 const getIconClass = (color: string): string => {
   const classes = {
     blue: 'bg-blue-100 text-blue-600',

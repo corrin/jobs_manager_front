@@ -1,7 +1,6 @@
 import { ref, nextTick } from 'vue'
 import Sortable from 'sortablejs'
 
-// Types
 interface DragEventData {
   jobId: string
   fromStatus: string
@@ -31,7 +30,6 @@ interface SortableOptions {
   onMove: (evt: Sortable.MoveEvent) => boolean
 }
 
-// Constants
 const SORTABLE_CONFIG = {
   GROUP: 'jobs',
   ANIMATION_DURATION: 150,
@@ -50,7 +48,6 @@ export function useSimpleDragAndDrop() {
   const isDragging = ref(false)
   const sortableInstances = new Map<string, Sortable>()
 
-  // Logging utilities - Single Responsibility Principle
   const logColumnInitialization = (element: HTMLElement, status: string): void => {
     console.log(`📍 Initializing simple drag for ${status}`)
     console.log(`📍 Element:`, element)
@@ -72,7 +69,6 @@ export function useSimpleDragAndDrop() {
     console.log(`🃏 Found ${jobCardElements.length} job-card elements in ${status}`)
     console.log(`🎯 Found ${draggableJobCards.length} draggable job-card elements in ${status}`)
 
-    // Early return if no job cards found
     if (jobCardElements.length === 0) return
 
     const jobCardData: JobCardElement[] = Array.from(jobCardElements).map((el) =>
@@ -81,7 +77,6 @@ export function useSimpleDragAndDrop() {
 
     console.log('🎴 Job card elements:', jobCardData)
 
-    // Also log the specific draggable job cards
     if (draggableJobCards.length > 0) {
       console.log(
         '🎯 Draggable job cards:',
@@ -93,7 +88,6 @@ export function useSimpleDragAndDrop() {
     }
   }
 
-  // Drag event handlers - Single Responsibility
   const handleDragStart = (evt: Sortable.SortableEvent): void => {
     console.log('🎯 Simple drag started', {
       item: evt.item,
@@ -124,13 +118,11 @@ export function useSimpleDragAndDrop() {
   }
 
   const shouldProcessJobMove = (dragData: DragEventData): boolean => {
-    // Early return if missing required data
     if (!isValidDragEventData(dragData)) {
       console.warn('⚠️ Missing data for job move:', dragData)
       return false
     }
 
-    // Early return if same status (no actual move)
     if (dragData.fromStatus === dragData.toStatus) {
       console.log('📍 Job moved within same column, no status change needed')
       return false
@@ -165,13 +157,11 @@ export function useSimpleDragAndDrop() {
 
     const dragData = extractDragEventData(evt)
 
-    // Early return if move should not be processed
     if (!shouldProcessJobMove(dragData)) return
 
     processJobMove(dragData, onJobMoved)
   }
 
-  // Sortable configuration - Single Responsibility
   const createSortableConfiguration = (
     onJobMoved: (from: string, to: string, jobId: string) => void,
   ): SortableOptions => ({
@@ -191,11 +181,9 @@ export function useSimpleDragAndDrop() {
     onMove: handleDragMove,
   })
 
-  // Instance management - Single Responsibility
   const destroyExistingSortableInstance = (status: string): void => {
     const existingInstance = sortableInstances.get(status)
 
-    // Early return if no existing instance
     if (!existingInstance) return
 
     existingInstance.destroy()
@@ -212,7 +200,6 @@ export function useSimpleDragAndDrop() {
     console.log(`🎯 Element HTML:`, element.outerHTML.substring(0, 300))
     console.log(`🔍 Selector being used:`, SORTABLE_CONFIG.DRAGGABLE_SELECTOR)
 
-    // Test selector before creating Sortable
     const testElements = element.querySelectorAll(SORTABLE_CONFIG.DRAGGABLE_SELECTOR)
     console.log(`🧪 Test selector found ${testElements.length} elements before Sortable creation`)
 
@@ -225,7 +212,6 @@ export function useSimpleDragAndDrop() {
       element: sortableInstance.el,
     })
 
-    // Test if sortable is working by checking if it's disabled
     console.log(`🔍 Sortable disabled state:`, sortableInstance.option('disabled'))
     console.log(`🔍 Sortable group:`, sortableInstance.option('group'))
     console.log(`🔍 Sortable draggable:`, sortableInstance.option('draggable'))
@@ -233,13 +219,11 @@ export function useSimpleDragAndDrop() {
     return sortableInstance
   }
 
-  // Column initialization - Main responsibility
   const initializeColumn = (
     element: HTMLElement,
     status: string,
     onJobMoved: (from: string, to: string, jobId: string) => void,
   ): Sortable | undefined => {
-    // Guard clause - early return for invalid element
     if (!element) {
       console.warn(`⚠️ No element provided for ${status}`)
       return undefined
@@ -251,7 +235,7 @@ export function useSimpleDragAndDrop() {
 
     const sortableConfig = createSortableConfiguration(onJobMoved)
     const sortableInstance = createAndStoreSortableInstance(element, status, sortableConfig)
-    // Additional verification - check if draggable elements are correctly identified
+
     setTimeout(() => {
       const draggableItems = element.querySelectorAll(SORTABLE_CONFIG.DRAGGABLE_SELECTOR)
       console.log(
@@ -264,7 +248,6 @@ export function useSimpleDragAndDrop() {
           classes: item.className,
         })
 
-        // Add manual event listeners to test if events are firing
         const htmlItem = item as HTMLElement
         htmlItem.addEventListener('mousedown', (e) => {
           console.log(`🖱️ Manual mousedown on item ${index}:`, e)
@@ -278,7 +261,6 @@ export function useSimpleDragAndDrop() {
     return sortableInstance
   }
 
-  // Batch operations - Single Responsibility
   const findColumnElement = (status: string): HTMLElement | null => {
     return document.querySelector(`[data-status="${status}"]`) as HTMLElement
   }
@@ -303,16 +285,13 @@ export function useSimpleDragAndDrop() {
   ): Promise<void> => {
     console.log('🔄 Reinitializing all columns...')
 
-    // Wait for DOM to be fully updated
     await nextTick()
 
-    // Additional small delay to ensure all job cards are rendered
     await new Promise((resolve) => setTimeout(resolve, 150))
 
     statuses.forEach((status) => initializeColumnByStatus(status, onJobMoved))
   }
 
-  // Cleanup - Single Responsibility
   const destroyAllSortableInstances = (): void => {
     console.log('🧹 Destroying all sortable instances...')
 
@@ -324,7 +303,6 @@ export function useSimpleDragAndDrop() {
     sortableInstances.clear()
   }
 
-  // Public API
   return {
     isDragging,
     initializeColumn,

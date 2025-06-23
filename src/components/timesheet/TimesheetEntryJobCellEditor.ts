@@ -1,10 +1,3 @@
-/**
- * Optimized Job Cell Editor for AG Grid
- *
- * Enhanced version of the job cell editor with better UX
- * Based on the original job_cell_editor.js but with Vue 3 integration
- */
-
 import type { ICellEditor, ICellEditorParams } from 'ag-grid-community'
 import type { JobSelectionItem } from '@/types/timesheet.types'
 
@@ -35,7 +28,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     this.setupEventListeners()
     this.updateFilteredJobs('')
 
-    // Auto-focus and select all text
     setTimeout(() => {
       this.input.focus()
       this.input.select()
@@ -43,7 +35,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   }
 
   private createUI(): void {
-    // Main container
     this.container = document.createElement('div')
     this.container.className = 'job-cell-editor-container'
     this.container.style.cssText = `
@@ -52,7 +43,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       height: 100%;
     `
 
-    // Input field
     this.input = document.createElement('input')
     this.input.type = 'text'
     this.input.value = this.value
@@ -69,7 +59,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       box-shadow: 0 2px 8px rgba(67, 97, 238, 0.2);
     `
 
-    // Dropdown
     this.dropdown = document.createElement('div')
     this.dropdown.className = 'job-dropdown'
     this.dropdown.style.cssText = `
@@ -93,7 +82,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   }
 
   private setupEventListeners(): void {
-    // Input events
     this.input.addEventListener('input', () => {
       const searchTerm = this.input.value.trim()
       this.updateFilteredJobs(searchTerm)
@@ -105,7 +93,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     })
 
     this.input.addEventListener('blur', () => {
-      // Delay hiding to allow dropdown clicks
       setTimeout(() => {
         if (!this.dropdown.contains(document.activeElement)) {
           this.hideDropdown()
@@ -113,12 +100,10 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       }, 200)
     })
 
-    // Keyboard navigation
     this.input.addEventListener('keydown', (e) => {
       this.handleKeyDown(e)
     })
 
-    // Prevent dropdown from losing focus when clicked
     this.dropdown.addEventListener('mousedown', (e) => {
       e.preventDefault()
       e.stopPropagation()
@@ -127,7 +112,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
 
   private updateFilteredJobs(searchTerm: string): void {
     if (!searchTerm) {
-      this.filteredJobs = this.jobs.slice(0, 20) // Show first 20 jobs
+      this.filteredJobs = this.jobs.slice(0, 20)
     } else {
       const term = searchTerm.toLowerCase()
       this.filteredJobs = this.jobs
@@ -137,7 +122,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
             job.name.toLowerCase().includes(term) ||
             job.client_name.toLowerCase().includes(term),
         )
-        .slice(0, 15) // Limit results for performance
+        .slice(0, 15)
     }
 
     this.highlightedIndex = -1
@@ -166,7 +151,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       item.className = 'job-dropdown-item'
       item.dataset.index = index.toString()
 
-      // Create job display with highlighting
       const searchTerm = this.input.value.toLowerCase()
       const jobNumber = this.highlightText(job.job_number, searchTerm)
       const jobName = this.highlightText(job.name, searchTerm)
@@ -195,7 +179,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         transition: background-color 0.15s ease;
       `
 
-      // Event handlers
       item.addEventListener('mouseenter', () => {
         this.highlightedIndex = index
         this.updateHighlight()
@@ -232,7 +215,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   }
 
   private handleKeyDown(event: KeyboardEvent): void {
-    // Guard clause - early return if no items
     if (this.filteredJobs.length === 0) return
 
     switch (event.key) {
@@ -253,7 +235,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         if (this.highlightedIndex >= 0) {
           this.selectJob(this.filteredJobs[this.highlightedIndex])
         } else if (this.filteredJobs.length === 1) {
-          // Auto-select if only one match
           this.selectJob(this.filteredJobs[0])
         }
         break
@@ -264,7 +245,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         break
 
       case 'Tab':
-        // Allow default tab behavior but select job if highlighted
         if (this.highlightedIndex >= 0) {
           event.preventDefault()
           this.selectJob(this.filteredJobs[this.highlightedIndex])
@@ -295,28 +275,23 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     this.value = job.job_number
     this.input.value = job.job_number
 
-    // Store the selected job for getValue() to return
     console.log('🎯 Job selected in editor:', job)
-
-    // Store the selected job globally for the grid to access
     ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob = job
 
-    // Update the grid row directly with job data
     if (this.params.node) {
       const rowData = this.params.node.data
       console.log('🔄 Updating row data with job info:', job)
-      // Update all job-related fields
+
       rowData.jobId = job.id
       rowData.jobNumber = job.job_number
       rowData.client = job.client_name
       rowData.jobName = job.name
       rowData.chargeOutRate = job.charge_out_rate
       rowData.billable = job.status !== 'special' && job.status !== 'shop'
-      // Calculate wage and bill manually since handleCellValueChanged might not be called
+
       const hours = rowData.hours || 0
       const rate = rowData.rate || 'Ord'
 
-      // Get rate multiplier
       const getRateMultiplier = (rateType: string): number => {
         switch (rateType) {
           case '1.5':
@@ -329,12 +304,12 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
             return 1.0
         }
       }
-      // Get wage rate from staff data (stored globally) or use company default
+
       const currentStaff = (window as unknown as { currentStaff?: { wageRate?: number } })
         .currentStaff
       const companyDefaults = (window as unknown as { companyDefaults?: { wage_rate?: number } })
         .companyDefaults
-      const wageRate = currentStaff?.wageRate || companyDefaults?.wage_rate || 32 // Fallback to company default
+      const wageRate = currentStaff?.wageRate || companyDefaults?.wage_rate || 32
       const multiplier = getRateMultiplier(rate)
       rowData.wage = hours > 0 ? Math.round(hours * wageRate * multiplier * 100) / 100 : 0
 
@@ -347,7 +322,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         multiplier,
       )
 
-      // Calculate bill
       rowData.bill =
         rowData.billable && hours > 0 && job.charge_out_rate > 0
           ? Math.round(hours * job.charge_out_rate * 100) / 100
@@ -355,7 +329,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
 
       console.log('💰 Calculated wage:', rowData.wage, 'and bill:', rowData.bill)
 
-      // Trigger row update
       this.params.api?.refreshCells({
         rowNodes: [this.params.node],
         force: true,
@@ -381,9 +354,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     return this.container
   }
   getValue(): string {
-    // Store the selected job in a global variable for the grid to access
     if (this.selectedJob) {
-      // Store globally for handleCellValueChanged to access
       ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob =
         this.selectedJob
       console.log('🎯 Returning job number from editor:', this.selectedJob.job_number)
@@ -393,7 +364,6 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   }
 
   destroy(): void {
-    // Clean up event listeners and DOM
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container)
     }

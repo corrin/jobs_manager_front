@@ -1,10 +1,3 @@
-/**
- * Optimized Timesheet Grid Composable
- *
- * Manages AG Grid state and interactions for the timesheet
- * Follows SRP by handling only grid-related logic
- */
-
 import { ref, computed, nextTick, type Ref } from 'vue'
 import type {
   GridApi,
@@ -27,8 +20,6 @@ import type {
 } from '@/types/timesheet.types'
 import type { CompanyDefaults } from '@/types/timesheet.types'
 
-// Adicione isSaving ao tipo TimesheetEntryGridRow para evitar erros de tipo
-// (Ajuste local, pois o tipo pode estar em outro arquivo, mas para garantir a tipagem)
 type TimesheetEntryGridRowWithSaving = TimesheetEntryGridRow & { isSaving?: boolean }
 
 export function useTimesheetEntryGrid(

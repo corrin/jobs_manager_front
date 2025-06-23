@@ -9,15 +9,12 @@
       </DialogHeader>
 
       <div class="space-y-6">
-        <!-- Loading State -->
         <div v-if="isLoading" class="text-center py-8">
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
           <p class="mt-2 text-sm text-gray-500">Loading contacts...</p>
         </div>
 
-        <!-- Content when not loading -->
         <div v-else>
-          <!-- Existing Contacts List -->
           <div v-if="contacts.length > 0" class="mb-6">
             <h4 class="text-sm font-medium text-gray-900 mb-3">Existing Contacts</h4>
             <div class="space-y-2 max-h-40 overflow-y-auto">
@@ -58,13 +55,11 @@
             </div>
           </div>
 
-          <!-- No contacts message -->
           <div v-else class="text-center py-4 text-gray-500">
             <Users class="w-12 h-12 mx-auto mb-2 text-gray-300" />
             <p>No contacts found for this client</p>
           </div>
 
-          <!-- Create New Contact Form -->
           <div class="border-t pt-4">
             <h4 class="text-sm font-medium text-gray-900 mb-3">Create New Contact</h4>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -170,7 +165,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
-// Props
 interface Props {
   isOpen: boolean
   clientId: string
@@ -183,14 +177,12 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Events
 const emit = defineEmits<{
   close: []
   'select-contact': [contact: ClientContact]
   'save-contact': [newContact: NewContactData]
 }>()
 
-// Local state for the form to avoid mutating props directly
 const localNewContactForm = ref<NewContactData>({ ...props.newContactForm })
 
 watch(
@@ -201,7 +193,6 @@ watch(
   { deep: true },
 )
 
-// Methods following clean code principles
 const selectContact = (contact: ClientContact) => {
   emit('select-contact', contact)
 }

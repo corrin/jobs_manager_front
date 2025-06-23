@@ -1,14 +1,7 @@
-/**
- * Centralized Date Service
- *
- * Handles all date operations consistently across the application
- * Ensures timezone-safe operations and consistent week calculations
- */
-
 export interface WeekRange {
-  startDate: string // Monday in YYYY-MM-DD format
-  endDate: string // Friday in YYYY-MM-DD format
-  weekDays: string[] // Array of 5 dates: Mon-Fri
+  startDate: string
+  endDate: string
+  weekDays: string[]
 }
 
 export interface DateRange {
@@ -25,17 +18,12 @@ export class DateService {
     }
     return DateService.instance
   }
-  /**
-   * Creates a local date from YYYY-MM-DD string without timezone conversion
-   */
+
   createLocalDate(dateString: string): Date {
     const [year, month, day] = dateString.split('-').map(Number)
-    return new Date(year, month - 1, day) // month is 0-indexed
+    return new Date(year, month - 1, day)
   }
 
-  /**
-   * Formats a date to YYYY-MM-DD string in local timezone
-   */
   formatToLocalString(date: Date): string {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -43,45 +31,31 @@ export class DateService {
     return `${year}-${month}-${day}`
   }
 
-  /**
-   * Gets today's date as YYYY-MM-DD string in local timezone
-   */
   today(): string {
     return this.formatToLocalString(new Date())
   }
 
-  /**
-   * Gets the Monday of the current week
-   */
   getCurrentWeekStart(): string {
     const today = new Date()
     const monday = this.getMondayOfWeek(today)
     return this.formatToLocalString(monday)
   }
-  /**
-   * Gets the Monday of the week containing the given date
-   */
+
   getMondayOfWeek(date: Date): Date {
     const day = date.getDay()
-    const diff = day === 0 ? -6 : 1 - day // Sunday = 0, Monday = 1
+    const diff = day === 0 ? -6 : 1 - day
     const monday = new Date(date)
     monday.setDate(date.getDate() + diff)
     return monday
   }
 
-  /**
-   * Gets the Friday of the week containing the given date
-   */
   getFridayOfWeek(date: Date): Date {
     const monday = this.getMondayOfWeek(date)
     const friday = new Date(monday)
-    friday.setDate(monday.getDate() + 4) // Monday + 4 = Friday
+    friday.setDate(monday.getDate() + 4)
     return friday
   }
 
-  /**
-   * Gets week range (Mon-Fri) for a given date
-   */
   getWeekRange(date: Date | string): WeekRange {
     const inputDate = typeof date === 'string' ? this.createLocalDate(date) : date
 
@@ -102,16 +76,10 @@ export class DateService {
     }
   }
 
-  /**
-   * Gets the current week range (Mon-Fri)
-   */
   getCurrentWeekRange(): WeekRange {
     return this.getWeekRange(new Date())
   }
 
-  /**
-   * Navigates to a different week
-   */
   navigateWeek(currentWeekStart: string, direction: number): string {
     const currentDate = this.createLocalDate(currentWeekStart)
     const newDate = new Date(currentDate)
@@ -119,9 +87,6 @@ export class DateService {
     return this.formatToLocalString(this.getMondayOfWeek(newDate))
   }
 
-  /**
-   * Navigates to a different day
-   */
   navigateDay(currentDate: string, direction: number): string {
     const date = this.createLocalDate(currentDate)
     const newDate = new Date(date)
@@ -129,9 +94,6 @@ export class DateService {
     return this.formatToLocalString(newDate)
   }
 
-  /**
-   * Formats a date string for display
-   */
   formatDisplayDate(
     dateString: string,
     options: {
@@ -156,9 +118,6 @@ export class DateService {
     return date.toLocaleDateString(locale, formatOptions)
   }
 
-  /**
-   * Formats a date range for display
-   */
   formatDateRange(startDate: string, endDate: string, locale = 'en-NZ'): string {
     const start = this.createLocalDate(startDate)
     const end = this.createLocalDate(endDate)
@@ -177,9 +136,6 @@ export class DateService {
     return `${startFormatted} - ${endFormatted}`
   }
 
-  /**
-   * Gets the day name for a date
-   */
   getDayName(dateString: string, short = false): string {
     const date = this.createLocalDate(dateString)
     return date.toLocaleDateString('en-US', {
@@ -187,32 +143,20 @@ export class DateService {
     })
   }
 
-  /**
-   * Gets the day number for a date
-   */
   getDayNumber(dateString: string): string {
     const date = this.createLocalDate(dateString)
     return date.toLocaleDateString('en-US', { day: 'numeric' })
   }
 
-  /**
-   * Checks if a date is today
-   */
   isToday(dateString: string): boolean {
     return dateString === this.today()
   }
 
-  /**
-   * Checks if a date is in the current week
-   */
   isCurrentWeek(dateString: string): boolean {
     const currentWeek = this.getCurrentWeekRange()
     return dateString >= currentWeek.startDate && dateString <= currentWeek.endDate
   }
 
-  /**
-   * Validates if a string is a valid date in YYYY-MM-DD format
-   */
   isValidDateString(dateString: string): boolean {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       return false
@@ -222,9 +166,6 @@ export class DateService {
     return !isNaN(date.getTime())
   }
 
-  /**
-   * Gets dates for a week in a format suitable for display
-   */
   getWeekDisplayDays(weekStart: string): Array<{
     date: string
     name: string
@@ -244,10 +185,8 @@ export class DateService {
   }
 }
 
-// Export singleton instance
 export const dateService = DateService.getInstance()
 
-// Export helper functions for backward compatibility
 export const today = () => dateService.today()
 export const getCurrentWeekStart = () => dateService.getCurrentWeekStart()
 export const getWeekRange = (date: Date | string) => dateService.getWeekRange(date)

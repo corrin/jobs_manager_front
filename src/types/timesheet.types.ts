@@ -1,32 +1,24 @@
-/**
- * Optimized Timesheet Types
- *
- * Types for the new optimized timesheet system using CostLines
- * Following SRP and clean code principles
- */
-
 import type { CostLine } from './costing.types'
 
 export interface OptimizedTimeEntry {
-  id: number | null // null for new entries
+  id: number | null
   jobNumber: string
   client: string
   jobName: string
   hours: number
   billable: boolean
   description: string
-  rate: string // 'Ord', '1.5', '2.0', 'Unpaid'
-  wage: number // calculated automatically
-  bill: number // calculated automatically
+  rate: string
+  wage: number
+  bill: number
 
-  // Internal fields
   staffId: string
   date: string
   wageRate: number
   chargeOutRate: number
   rateMultiplier: number
   isNewRow?: boolean
-  isModified?: boolean // Track if existing entry has been modified
+  isModified?: boolean
   jobId?: string
 }
 
@@ -75,7 +67,7 @@ export const RATE_TYPES = [
 export interface Job {
   id: string
   jobNumber: string
-  number?: string // Add number property (alias for jobNumber)
+  number?: string
   jobName?: string
   name?: string
   clientName?: string
@@ -92,10 +84,9 @@ export interface Staff {
   wageRate?: number
   fullName?: string
   name?: string
-  avatarUrl?: string // Add avatar URL property
+  avatarUrl?: string
 }
 
-// Add missing interfaces for timesheet store compatibility
 export interface TimeEntry {
   id: string
   description: string
@@ -141,7 +132,7 @@ export interface WeeklyStaffData {
   staff: Staff
   weeklyHours: DayData[]
   totalHours: number
-  billablePercentage?: number // Add billable percentage property
+  billablePercentage?: number
 }
 
 export interface DayData {
@@ -150,8 +141,8 @@ export interface DayData {
   entries: TimeEntry[]
   leaveHours?: number
   status?: string
-  overtime?: number // Add overtime property
-  leaveType?: string // Add leave type property
+  overtime?: number
+  leaveType?: string
 }
 
 export interface TimesheetEntryJobSelectionItem {
@@ -193,7 +184,6 @@ export interface TimesheetEntryGridRow {
   chargeOutRate?: number
 }
 
-// Company configuration
 export interface CompanyDefaults {
   materials_markup: number
   time_markup: number
@@ -201,7 +191,6 @@ export interface CompanyDefaults {
   wage_rate: number
 }
 
-// Request/Response types
 export interface CreateTimeEntryRequest {
   staffId: string
   jobPricingId: string
@@ -230,5 +219,4 @@ export interface UpdateTimeEntryRequest {
   jobPricingId?: string
 }
 
-// Alias for backwards compatibility
 export type TimesheetEntry = OptimizedTimeEntry

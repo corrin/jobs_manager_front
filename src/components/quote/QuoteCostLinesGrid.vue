@@ -1,6 +1,5 @@
 <template>
   <div class="quote-cost-lines-grid h-full flex flex-col">
-    <!-- Loading State -->
     <div v-if="isLoading" class="flex-1 flex items-center justify-center">
       <div class="flex items-center space-x-2 text-gray-500">
         <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
@@ -22,7 +21,6 @@
       </div>
     </div>
 
-    <!-- Empty State -->
     <div
       v-else-if="!costLines || costLines.length === 0"
       class="flex-1 flex items-center justify-center"
@@ -45,7 +43,6 @@
       </div>
     </div>
 
-    <!-- Data Grid -->
     <div v-else class="flex-1 overflow-hidden">
       <div class="h-full overflow-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -169,6 +166,4 @@ function formatCurrency(value: number): string {
 }
 </script>
 
-<style scoped>
-/* Quote cost lines grid styles */
-</style>
+<style scoped></style>

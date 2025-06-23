@@ -50,7 +50,6 @@
         </div>
       </div>
 
-      <!-- Chart/Graphic -->
       <div v-if="metrics.graphic" class="mt-8">
         <div class="bg-white rounded-lg shadow p-4">
           <div class="text-sm font-semibold text-gray-700 mb-2">Job Progress Chart</div>

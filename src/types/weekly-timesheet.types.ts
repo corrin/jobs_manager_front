@@ -25,7 +25,6 @@ export interface WeeklyStaffData {
   staffInitials: string
   avatarUrl?: string
 
-  // Weekly totals
   scheduledHours: number
   actualHours: number
   billableHours: number
@@ -33,22 +32,18 @@ export interface WeeklyStaffData {
   totalRevenue: number
   totalCost: number
 
-  // Daily breakdown (Mon-Sun)
   dailyHours: number[]
   dailyStatus: string[]
 
-  // Status and metrics
   status: 'Complete' | 'Partial' | 'Missing' | 'Overtime' | 'No Entry'
   statusClass: 'success' | 'warning' | 'danger' | 'info'
   completionPercentage: number
   billablePercentage: number
   efficiencyRating: number
 
-  // Job breakdown
   jobBreakdown: JobBreakdown[]
   entryCount: number
 
-  // Alerts and issues
   alerts: string[]
   hasIssues: boolean
 }
@@ -62,12 +57,10 @@ export interface WeeklyTotals {
   totalCost: number
   totalEntries: number
 
-  // Percentages
   completionPercentage: number
   billablePercentage: number
   utilizationRate: number
 
-  // Missing data
   missingHours: number
   overtimeHours: number
 }
@@ -79,12 +72,10 @@ export interface WeeklySummaryStats {
   missingStaff: number
   overtimeStaff: number
 
-  // Rates
   completionRate: number
   participationRate: number
   averageHoursPerStaff: number
 
-  // Job statistics
   activeJobs: number
   totalJobsWorked: number
   averageJobsPerStaff: number
@@ -110,20 +101,16 @@ export interface WeeklySummaryData {
   weekNumber: number
   year: number
 
-  // Main data arrays
   staffData: WeeklyStaffData[]
   weeklyTotals: WeeklyTotals
   summaryStats: WeeklySummaryStats
 
-  // Additional breakdowns
   jobBreakdown: WeeklyProjectBreakdown[]
   topPerformers: WeeklyStaffData[]
 
-  // Flags and settings
   isCurrentWeek: boolean
   hasData: boolean
 
-  // IMS Export specific data
   imsExportData?: {
     enabled: boolean
     exportUrl?: string
@@ -133,7 +120,6 @@ export interface WeeklySummaryData {
   }
 }
 
-// API Response types
 export interface WeeklyTimesheetApiResponse {
   success: boolean
   data: WeeklySummaryData
@@ -160,7 +146,6 @@ export interface WeekNavigationData {
   isFutureWeek: boolean
 }
 
-// IMS Export types
 export interface IMSExportConfig {
   enabled: boolean
   includeNonBillable: boolean
@@ -182,7 +167,6 @@ export interface IMSExportResult {
   errors?: string[]
 }
 
-// Filter and search types
 export interface WeeklyFilters {
   staffIds: string[]
   jobIds: string[]
@@ -196,7 +180,6 @@ export interface WeeklyFilters {
   showOnlyBillable: boolean
 }
 
-// Modal state types
 export interface ModalState {
   metrics: boolean
   staffDetail: boolean
@@ -204,7 +187,6 @@ export interface ModalState {
   imsExport: boolean
 }
 
-// Chart data types for metrics
 export interface ChartDataPoint {
   label: string
   value: number

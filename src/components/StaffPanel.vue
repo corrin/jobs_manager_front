@@ -62,7 +62,6 @@ const loadStaffMembers = async (): Promise<void> => {
     error.value = null
     const data = await staffService.getAllStaff()
 
-    // Validate data using PersonSchema (API returns UUID strings, not numbers)
     const validatedStaff = data.map((staffData) => {
       return PersonSchema.parse({
         ...staffData,
@@ -92,7 +91,6 @@ const toggleStaffFilter = (staffId: string): void => {
   emit('staff-filter-changed', [...activeFilters.value])
 }
 
-// Watch for prop changes
 watch(
   () => props.activeFilters,
   (newFilters) => {
@@ -104,7 +102,6 @@ watch(
 onMounted(() => {
   loadStaffMembers()
 
-  // Emit staff panel ready after next tick to ensure DOM is rendered
   nextTick(() => {
     if (staffListRef.value) {
       emit('staff-panel-ready', staffListRef.value)

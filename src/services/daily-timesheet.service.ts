@@ -1,8 +1,3 @@
-/**
- * Daily Timesheet Service
- *
- * Service for handling daily timesheet API operations with consolidated URLs
- */
 import api from '@/plugins/axios'
 
 export interface JobBreakdown {
@@ -64,11 +59,6 @@ export interface DailyTimesheetSummary {
   summary_stats: SummaryStats
 }
 
-/**
- * Get daily timesheet summary for all staff
- *
- * Uses the consolidated timesheet API endpoint
- */
 export const getDailyTimesheetSummary = async (date?: string): Promise<DailyTimesheetSummary> => {
   const url = date ? `/timesheets/api/daily/${date}/` : '/timesheets/api/daily/'
 
@@ -76,15 +66,10 @@ export const getDailyTimesheetSummary = async (date?: string): Promise<DailyTime
   return response.data
 }
 
-/**
- * Get detailed timesheet data for a specific staff member
- * Note: This endpoint might not be available yet in the backend
- */
 export const getStaffDailyDetail = async (
   staffId: string,
   date?: string,
 ): Promise<StaffDailyData> => {
-  // Based on the URL patterns in timesheet/urls.py, this would be the correct path
   const url = `/timesheets/api/staff/${staffId}/daily/`
   const params = date ? { date } : {}
 
@@ -92,23 +77,14 @@ export const getStaffDailyDetail = async (
   return response.data
 }
 
-/**
- * Format hours for display
- */
 export const formatHours = (hours: number): string => {
   return hours.toFixed(1)
 }
 
-/**
- * Format currency for display
- */
 export const formatCurrency = (amount: number): string => {
   return `$${amount.toFixed(2)}`
 }
 
-/**
- * Get status badge variant for UI components
- */
 export const getStatusVariant = (statusClass: string): string => {
   const variants: Record<string, string> = {
     success: 'success',

@@ -3,17 +3,14 @@
     <div
       class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"
     >
-      <!-- Backdrop -->
       <div
         class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
         @click="closeModal"
       ></div>
 
-      <!-- Modal -->
       <div
         class="inline-block w-full max-w-4xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg"
       >
-        <!-- Header -->
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-xl font-bold text-gray-900">📊 Weekly Metrics & Overview</h3>
           <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -21,9 +18,7 @@
           </button>
         </div>
 
-        <!-- Metrics Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <!-- Total Hours -->
           <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
             <div class="flex items-center justify-between">
               <div>
@@ -36,7 +31,6 @@
             </div>
           </div>
 
-          <!-- Billable Hours -->
           <div class="bg-green-50 p-4 rounded-lg border border-green-200">
             <div class="flex items-center justify-between">
               <div>
@@ -49,7 +43,6 @@
             </div>
           </div>
 
-          <!-- Total Revenue -->
           <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
             <div class="flex items-center justify-between">
               <div>
@@ -62,7 +55,6 @@
             </div>
           </div>
 
-          <!-- Completion Rate -->
           <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
             <div class="flex items-center justify-between">
               <div>
@@ -76,7 +68,6 @@
           </div>
         </div>
 
-        <!-- Jobs Breakdown -->
         <div class="bg-gray-50 p-4 rounded-lg">
           <h4 class="text-lg font-semibold text-gray-900 mb-4">📋 Jobs Breakdown</h4>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -99,7 +90,6 @@
           </div>
         </div>
 
-        <!-- Close Button -->
         <div class="flex justify-end mt-6">
           <button
             @click="closeModal"

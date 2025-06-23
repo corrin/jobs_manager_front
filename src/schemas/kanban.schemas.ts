@@ -1,32 +1,31 @@
 import { z } from 'zod'
 
-// Base schemas
 export const PersonSchema = z.object({
-  id: z.string(), // UUIDs are strings, not numbers
+  id: z.string(),
   first_name: z.string().optional(),
   last_name: z.string().optional(),
   display_name: z.string(),
   email: z.string().optional(),
   initials: z.string().optional(),
   avatar_url: z.string().nullable().optional(),
-  icon: z.string().nullable().optional(), // Keeping for backward compatibility
+  icon: z.string().nullable().optional(),
 })
 
 export const JobSchema = z.object({
-  id: z.string(), // UUIDs are strings
+  id: z.string(),
   name: z.string(),
-  description: z.string().nullable().optional(), // Can be null
-  job_number: z.number(), // Backend returns numbers for job_number
+  description: z.string().nullable().optional(),
+  job_number: z.number(),
   client_name: z.string(),
-  contact_person: z.string().nullable().optional(), // Can be null
+  contact_person: z.string().nullable().optional(),
   people: z.array(PersonSchema).default([]),
   status: z.string(),
-  status_key: z.string(), // Added status_key field
+  status_key: z.string(),
   paid: z.boolean(),
-  created_by_id: z.string().nullable().optional(), // UUIDs are strings
+  created_by_id: z.string().nullable().optional(),
   created_at: z.string().optional(),
   priority: z.number().optional(),
-  // New badge properties for kanban categorization
+
   badge_label: z.string().optional(),
   badge_color: z.string().optional(),
 })
@@ -50,7 +49,6 @@ export const AdvancedFiltersSchema = z.object({
   paid: z.string().default(''),
 })
 
-// API Response schemas
 export const JobsApiResponseSchema = z.object({
   success: z.boolean(),
   jobs: z.array(JobSchema),
@@ -86,7 +84,6 @@ export const ApiErrorResponseSchema = z.object({
   error: z.string(),
 })
 
-// Type inference
 export type Person = z.infer<typeof PersonSchema>
 export type Job = z.infer<typeof JobSchema>
 export type StatusChoice = z.infer<typeof StatusChoiceSchema>
