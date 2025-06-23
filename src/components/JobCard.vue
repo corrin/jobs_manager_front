@@ -26,7 +26,7 @@
     </div>
 
     <!-- Job Title -->
-    <h4 class="font-medium text-gray-900 text-xs mb-1 leading-tight truncate">
+    <h4 class="font-medium text-gray-900 text-xs mb-1 leading-tight">
       {{ truncatedJobName }}
     </h4>
 
@@ -116,38 +116,14 @@ const truncatedJobName = computed(() => {
   return props.job.name.length > 12 ? props.job.name.substring(0, 12) + '...' : props.job.name
 })
 
-// Emit job ready when component mounts
+// Emit job ready quando o componente monta
 onMounted(() => {
   const cardElement = document.querySelector(`[data-id="${props.job.id}"]`) as HTMLElement
-  if (cardElement) {
-    console.log(`🎴 JobCard mounted:`, {
-      jobId: props.job.id,
-      element: cardElement,
-      classList: cardElement.classList.toString(),
-      dataId: cardElement.dataset.id,
-      draggableAttr: cardElement.getAttribute('draggable'),
-      draggableProperty: cardElement.draggable,
-      computedStyle: {
-        cursor: getComputedStyle(cardElement).cursor,
-        userSelect: getComputedStyle(cardElement).userSelect,
-        pointerEvents: getComputedStyle(cardElement).pointerEvents,
-        touchAction: getComputedStyle(cardElement).touchAction,
-      },
+  if (cardElement && jobStaffContainerRef.value) {
+    emit('job-ready', {
+      jobId: props.job.id.toString(),
+      element: jobStaffContainerRef.value,
     })
-
-    // SortableJS will handle dragging - no need to set draggable attribute
-
-    // Emit job-ready with the staff container element for staff drag & drop
-    if (jobStaffContainerRef.value) {
-      emit('job-ready', {
-        jobId: props.job.id.toString(),
-        element: jobStaffContainerRef.value,
-      })
-    } else {
-      console.warn(`⚠️ Staff container not found for job ${props.job.id}`)
-    }
-  } else {
-    console.error(`❌ JobCard element not found for job ${props.job.id}`)
   }
 })
 </script>

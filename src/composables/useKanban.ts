@@ -309,11 +309,11 @@ export function useKanban(onJobsLoaded?: () => void) {
     activeStaffFilters.value = staffIds
   }
 
-  // Ordenação dos jobs por prioridade antes de exibir
+  // Sort jobs by priority before displaying
   const jobsSortedByPriority = computed(() => {
     const arr = jobs.value.slice().sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
     console.log(
-      '[KANBAN DEBUG] Jobs ordenados por prioridade:',
+      '[KANBAN DEBUG] Jobs sorted by priority:',
       arr.map((j) => ({
         job_number: j.job_number,
         id: j.id,
