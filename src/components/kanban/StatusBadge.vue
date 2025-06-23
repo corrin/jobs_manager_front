@@ -6,6 +6,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { statusColorMap } from '@/utils/statusMappings'
 
 interface Props {
   label: string
@@ -16,20 +17,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   size: 'sm',
 })
-
-const statusColorMap: Record<string, string> = {
-  quoting: 'text-yellow-700',
-  quote_sent: 'text-blue-700',
-  awaiting_materials: 'text-orange-700',
-  job_won: 'text-green-700',
-  in_progress: 'text-indigo-700',
-  ready_for_qc: 'text-purple-700',
-  ready_for_pickup: 'text-teal-700',
-  complete: 'text-emerald-700',
-  cancelled: 'text-red-700',
-  on_hold: 'text-amber-700',
-  archived: 'text-gray-700',
-}
 
 const textColorClass = computed(() => {
   return statusColorMap[props.status] || 'text-gray-700'

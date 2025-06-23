@@ -1,0 +1,40 @@
+// Centralised status mappings for job status keys, names and colours
+// Keep this in sync with backend Job.JOB_STATUS_CHOICES
+
+export const statusNameMap: Record<string, string> = {
+  quoting: 'Quoting',
+  accepted_quote: 'Accepted Quote',
+  awaiting_materials: 'Awaiting Materials',
+  awaiting_staff: 'Awaiting Staff',
+  awaiting_site_availability: 'Awaiting Site Availability',
+  in_progress: 'In Progress',
+  on_hold: 'On Hold',
+  special: 'Special',
+  recently_completed: 'Recently Completed',
+  completed: 'Completed',
+  rejected: 'Rejected',
+  archived: 'Archived',
+}
+
+export const statusColorMap: Record<string, string> = {
+  quoting: 'text-yellow-700',
+  accepted_quote: 'text-blue-800',
+  awaiting_materials: 'text-orange-700',
+  awaiting_staff: 'text-pink-700',
+  awaiting_site_availability: 'text-cyan-700',
+  in_progress: 'text-indigo-700',
+  on_hold: 'text-amber-700',
+  special: 'text-fuchsia-700',
+  recently_completed: 'text-lime-700',
+  completed: 'text-emerald-700',
+  rejected: 'text-red-700',
+  archived: 'text-gray-700',
+  quote_sent: 'text-blue-700',
+  awaiting_approval: 'text-blue-500',
+  ready_for_qc: 'text-purple-700',
+  ready_for_pickup: 'text-teal-700',
+  job_won: 'text-green-700',
+  complete: 'text-emerald-700',
+  cancelled: 'text-red-700',
+  draft: 'text-gray-500',
+}

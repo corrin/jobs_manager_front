@@ -76,6 +76,7 @@ import { ref, computed, onMounted } from 'vue'
 import StaffAvatar from '@/components/StaffAvatar.vue'
 import StatusBadge from '@/components/kanban/StatusBadge.vue'
 import { useJobCard } from '@/composables/useJobCard'
+import { statusNameMap } from '@/utils/statusMappings'
 import type { Job } from '@/types'
 
 interface JobCardProps {
@@ -104,23 +105,6 @@ const jobStaffContainerRef = ref<HTMLElement>()
 
 // Use job card composable
 const { handleClick } = useJobCard(props.job, emit)
-
-// Mapping for friendly status names
-const statusNameMap: Record<string, string> = {
-  quoting: 'Quoting',
-  quote_sent: 'Quote Sent',
-  awaiting_approval: 'Awaiting Approval',
-  awaiting_materials: 'Awaiting Materials',
-  job_won: 'Job Won',
-  in_progress: 'In Progress',
-  ready_for_qc: 'Ready for QC',
-  ready_for_pickup: 'Ready for Pickup',
-  complete: 'Complete',
-  cancelled: 'Cancelled',
-  on_hold: 'On Hold',
-  archived: 'Archived',
-  draft: 'Draft',
-}
 
 // Computed property for friendly status name
 const friendlyStatusName = computed(() => {
