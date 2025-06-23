@@ -1,55 +1,201 @@
 <template>
   <AppLayout>
-    <!-- Mobile-First Responsive Header -->
+    <!-- Wrapper para fundo escuro em toda a view -->
     <div
-      v-if="loading"
-      class="sticky top-0 py-5 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 backdrop-blur-md border-b border-blue-500/20 flex items-center justify-center min-h-[120px]"
+      class="bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 min-h-screen flex flex-col"
     >
-      <div class="flex flex-col items-center w-full">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
-        <span class="text-blue-100 text-sm">Loading timesheet data...</span>
+      <!-- Mobile-First Responsive Header -->
+      <div
+        v-if="loading"
+        class="sticky top-0 z-20 py-5 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 backdrop-blur-md border-b border-blue-500/20 flex items-center justify-center min-h-[120px]"
+      >
+        <div class="flex flex-col items-center w-full">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
+          <span class="text-blue-100 text-sm">Loading timesheet data...</span>
+        </div>
       </div>
-    </div>
-    <div v-else>
-      <!-- Mobile Layout (Stack Vertically) -->
-      <div class="block lg:hidden">
-        <!-- Top Row - Staff Navigation -->
-        <div class="flex items-center justify-between p-3 border-b border-blue-500/10">
-          <div class="flex items-center space-x-2">
-            <Avatar class="h-8 w-8 ring-2 ring-blue-500/30">
+      <div v-else class="flex-1 flex flex-col">
+        <!-- Mobile Layout (Stack Vertically) -->
+        <div class="block lg:hidden pt-4">
+          <!-- Top Row - Staff Navigation -->
+          <div
+            class="flex items-center justify-between p-3 border-b border-blue-500/10 bg-slate-900/80"
+          >
+            <div class="flex items-center space-x-2">
+              <Avatar class="h-8 w-8 ring-2 ring-blue-500/30">
+                <AvatarFallback
+                  class="bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold text-xs"
+                >
+                  {{ getStaffInitials(currentStaff) }}
+                </AvatarFallback>
+              </Avatar>
+
+              <div class="flex items-center space-x-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  @click="navigateStaff(-1)"
+                  :disabled="!canNavigateStaff(-1)"
+                  class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+                >
+                  <ChevronLeft class="h-3 w-3" />
+                </Button>
+
+                <Select
+                  v-model="selectedStaffId"
+                  @update:model-value="(value) => handleStaffChange(value as string)"
+                >
+                  <SelectTrigger
+                    class="h-7 w-32 text-xs bg-slate-800/50 border-blue-500/30 text-white"
+                  >
+                    <SelectValue placeholder="Staff..." />
+                  </SelectTrigger>
+                  <SelectContent class="bg-slate-800 border-blue-500/30">
+                    <SelectItem
+                      v-for="staff in staffList"
+                      :key="staff.id"
+                      :value="staff.id"
+                      class="text-white hover:bg-blue-500/20 text-xs"
+                    >
+                      {{ staff.firstName }} {{ staff.lastName }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  @click="navigateStaff(1)"
+                  :disabled="!canNavigateStaff(1)"
+                  class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+                >
+                  <ChevronRight class="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+
+            <!-- Mobile Total Hours -->
+            <div class="text-xs text-blue-200">
+              <span class="font-semibold">{{ todayStats.totalHours.toFixed(1) }}h</span>
+            </div>
+          </div>
+          <!-- Bottom Row - Date Navigation and Actions -->
+          <div class="flex items-center justify-between p-3 bg-slate-900/80">
+            <!-- Date Navigation -->
+            <div class="flex items-center space-x-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                @click="navigateDate(-1)"
+                class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+              >
+                <ChevronLeft class="h-3 w-3" />
+              </Button>
+
+              <div
+                class="text-white font-medium text-xs px-2 py-1 bg-slate-800/50 rounded border border-blue-500/30"
+              >
+                {{ formatShortDate(currentDate) }}
+              </div>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                @click="navigateDate(1)"
+                class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+              >
+                <ChevronRight class="h-3 w-3" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                @click="goToToday"
+                class="h-7 text-xs px-2 text-white hover:bg-blue-500/20"
+              >
+                Today
+              </Button>
+            </div>
+            <!-- Mobile Action Buttons -->
+            <div class="flex items-center space-x-1">
+              <Button
+                @click="addNewEntry"
+                size="sm"
+                variant="default"
+                class="h-7 text-xs px-2 bg-blue-600 hover:bg-blue-700 text-white border-blue-500"
+              >
+                <Plus class="h-3 w-3" />
+              </Button>
+
+              <Button
+                @click="saveChanges"
+                size="sm"
+                variant="default"
+                :disabled="!hasUnsavedChanges || loading"
+                class="h-7 text-xs px-2 bg-green-600 hover:bg-green-700 text-white border-green-500"
+              >
+                <Save class="h-3 w-3" />
+              </Button>
+
+              <Button
+                @click="refreshData"
+                variant="ghost"
+                size="sm"
+                :disabled="loading"
+                class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+              >
+                <RefreshCw :class="['h-3 w-3', { 'animate-spin': loading }]" />
+              </Button>
+
+              <Button
+                @click="showHelpModal = true"
+                variant="ghost"
+                size="sm"
+                class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+              >
+                <HelpCircle class="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        </div>
+        <!-- Desktop Layout (Single Row) -->
+        <div
+          class="hidden lg:flex items-center h-16 px-6 pt-4 bg-slate-900/80 border-b border-blue-500/10"
+        >
+          <!-- Staff Navigation -->
+          <div class="flex items-center space-x-4">
+            <Avatar class="h-10 w-10 ring-2 ring-blue-500/30">
               <AvatarFallback
-                class="bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold text-xs"
+                class="bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold"
               >
                 {{ getStaffInitials(currentStaff) }}
               </AvatarFallback>
             </Avatar>
 
-            <div class="flex items-center space-x-1">
+            <div class="flex items-center space-x-2">
               <Button
                 variant="ghost"
                 size="sm"
                 @click="navigateStaff(-1)"
                 :disabled="!canNavigateStaff(-1)"
-                class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+                class="text-white hover:bg-blue-500/20"
               >
-                <ChevronLeft class="h-3 w-3" />
+                <ChevronLeft class="h-4 w-4" />
               </Button>
 
               <Select
                 v-model="selectedStaffId"
                 @update:model-value="(value) => handleStaffChange(value as string)"
               >
-                <SelectTrigger
-                  class="h-7 w-32 text-xs bg-slate-800/50 border-blue-500/30 text-white"
-                >
-                  <SelectValue placeholder="Staff..." />
+                <SelectTrigger class="w-48 bg-slate-800/50 border-blue-500/30 text-white">
+                  <SelectValue placeholder="Select staff..." />
                 </SelectTrigger>
                 <SelectContent class="bg-slate-800 border-blue-500/30">
                   <SelectItem
                     v-for="staff in staffList"
                     :key="staff.id"
                     :value="staff.id"
-                    class="text-white hover:bg-blue-500/20 text-xs"
+                    class="text-white hover:bg-blue-500/20"
                   >
                     {{ staff.firstName }} {{ staff.lastName }}
                   </SelectItem>
@@ -61,66 +207,61 @@
                 size="sm"
                 @click="navigateStaff(1)"
                 :disabled="!canNavigateStaff(1)"
-                class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+                class="text-white hover:bg-blue-500/20"
               >
-                <ChevronRight class="h-3 w-3" />
+                <ChevronRight class="h-4 w-4" />
               </Button>
             </div>
           </div>
-
-          <!-- Mobile Total Hours -->
-          <div class="text-xs text-blue-200">
-            <span class="font-semibold">{{ todayStats.totalHours.toFixed(1) }}h</span>
-          </div>
-        </div>
-
-        <!-- Bottom Row - Date Navigation and Actions -->
-        <div class="flex items-center justify-between p-3">
           <!-- Date Navigation -->
-          <div class="flex items-center space-x-1">
+          <div class="flex items-center space-x-2 mx-6">
             <Button
               variant="ghost"
               size="sm"
               @click="navigateDate(-1)"
-              class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+              class="text-white hover:bg-blue-500/20"
             >
-              <ChevronLeft class="h-3 w-3" />
+              <ChevronLeft class="h-4 w-4" />
             </Button>
 
             <div
-              class="text-white font-medium text-xs px-2 py-1 bg-slate-800/50 rounded border border-blue-500/30"
+              class="text-white font-semibold px-4 py-2 bg-slate-800/50 rounded-md border border-blue-500/30"
             >
-              {{ formatShortDate(currentDate) }}
+              {{ formatDisplayDate(currentDate) }}
             </div>
 
             <Button
               variant="ghost"
               size="sm"
               @click="navigateDate(1)"
-              class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+              class="text-white hover:bg-blue-500/20"
             >
-              <ChevronRight class="h-3 w-3" />
+              <ChevronRight class="h-4 w-4" />
             </Button>
 
             <Button
               variant="ghost"
               size="sm"
               @click="goToToday"
-              class="h-7 text-xs px-2 text-white hover:bg-blue-500/20"
+              class="text-white hover:bg-blue-500/20 ml-2"
             >
               Today
             </Button>
           </div>
+          <!-- Desktop Action Buttons -->
+          <div class="flex items-center space-x-2 ml-auto">
+            <div class="text-xs text-blue-200 mr-4">
+              <span class="font-semibold">{{ todayStats.totalHours.toFixed(1) }}h</span> Total
+            </div>
 
-          <!-- Mobile Action Buttons -->
-          <div class="flex items-center space-x-1">
             <Button
               @click="addNewEntry"
               size="sm"
               variant="default"
-              class="h-7 text-xs px-2 bg-blue-600 hover:bg-blue-700 text-white border-blue-500"
+              class="bg-blue-600 hover:bg-blue-700 text-white border-blue-500"
             >
-              <Plus class="h-3 w-3" />
+              <Plus class="h-4 w-4 mr-1" />
+              Add Entry
             </Button>
 
             <Button
@@ -128,9 +269,10 @@
               size="sm"
               variant="default"
               :disabled="!hasUnsavedChanges || loading"
-              class="h-7 text-xs px-2 bg-green-600 hover:bg-green-700 text-white border-green-500"
+              class="bg-green-600 hover:bg-green-700 text-white border-green-500"
             >
-              <Save class="h-3 w-3" />
+              <Save class="h-4 w-4 mr-1" />
+              {{ loading ? 'Saving...' : 'Save All' }}
             </Button>
 
             <Button
@@ -138,304 +280,162 @@
               variant="ghost"
               size="sm"
               :disabled="loading"
-              class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+              class="text-white hover:bg-blue-500/20"
             >
-              <RefreshCw :class="['h-3 w-3', { 'animate-spin': loading }]" />
+              <RefreshCw :class="['h-4 w-4', { 'animate-spin': loading }]" />
             </Button>
 
             <Button
               @click="showHelpModal = true"
               variant="ghost"
               size="sm"
-              class="h-7 w-7 p-0 text-white hover:bg-blue-500/20"
+              class="text-white hover:bg-blue-500/20"
             >
-              <HelpCircle class="h-3 w-3" />
+              <HelpCircle class="h-4 w-4" />
             </Button>
           </div>
         </div>
-      </div>
-
-      <!-- Desktop Layout (Single Row) -->
-      <div class="hidden lg:flex items-center h-16 px-6">
-        <!-- Staff Navigation -->
-        <div class="flex items-center space-x-4">
-          <Avatar class="h-10 w-10 ring-2 ring-blue-500/30">
-            <AvatarFallback
-              class="bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold"
-            >
-              {{ getStaffInitials(currentStaff) }}
-            </AvatarFallback>
-          </Avatar>
-
-          <div class="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              @click="navigateStaff(-1)"
-              :disabled="!canNavigateStaff(-1)"
-              class="text-white hover:bg-blue-500/20"
-            >
-              <ChevronLeft class="h-4 w-4" />
-            </Button>
-
-            <Select
-              v-model="selectedStaffId"
-              @update:model-value="(value) => handleStaffChange(value as string)"
-            >
-              <SelectTrigger class="w-48 bg-slate-800/50 border-blue-500/30 text-white">
-                <SelectValue placeholder="Select staff..." />
-              </SelectTrigger>
-              <SelectContent class="bg-slate-800 border-blue-500/30">
-                <SelectItem
-                  v-for="staff in staffList"
-                  :key="staff.id"
-                  :value="staff.id"
-                  class="text-white hover:bg-blue-500/20"
-                >
-                  {{ staff.firstName }} {{ staff.lastName }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              @click="navigateStaff(1)"
-              :disabled="!canNavigateStaff(1)"
-              class="text-white hover:bg-blue-500/20"
-            >
-              <ChevronRight class="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        <!-- Date Navigation -->
-        <div class="flex items-center space-x-2 mx-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            @click="navigateDate(-1)"
-            class="text-white hover:bg-blue-500/20"
-          >
-            <ChevronLeft class="h-4 w-4" />
-          </Button>
-
+        <!-- Main Content -->
+        <div
+          class="flex-1 flex flex-col overflow-hidden"
+          :class="'h-[calc(100vh-6rem)] lg:h-[calc(100vh-4rem)]'"
+        >
+          <!-- Loading State -->
           <div
-            class="text-white font-semibold px-4 py-2 bg-slate-800/50 rounded-md border border-blue-500/30"
+            v-if="loading"
+            class="flex-1 flex items-center justify-center bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900"
           >
-            {{ formatDisplayDate(currentDate) }}
+            <div class="text-center">
+              <div
+                class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"
+              ></div>
+              <p class="text-blue-100 text-sm lg:text-base">Loading timesheet...</p>
+            </div>
           </div>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            @click="navigateDate(1)"
-            class="text-white hover:bg-blue-500/20"
-          >
-            <ChevronRight class="h-4 w-4" />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            @click="goToToday"
-            class="text-white hover:bg-blue-500/20 ml-2"
-          >
-            Today
-          </Button>
-        </div>
-
-        <!-- Desktop Action Buttons -->
-        <div class="flex items-center space-x-2 ml-auto">
-          <div class="text-xs text-blue-200 mr-4">
-            <span class="font-semibold">{{ todayStats.totalHours.toFixed(1) }}h</span> Total
+          <!-- Error State -->
+          <div v-else-if="error" class="flex-1 flex items-center justify-center">
+            <div class="text-center px-4">
+              <AlertTriangle class="h-8 w-8 lg:h-12 lg:w-12 text-red-500 mx-auto mb-4" />
+              <h3 class="text-base lg:text-lg font-semibold text-slate-900 mb-2">
+                Error Loading Timesheet
+              </h3>
+              <p class="text-sm lg:text-base text-slate-600 mb-4">{{ error }}</p>
+              <Button @click="reloadData" variant="outline" size="sm">
+                <RefreshCw class="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
+                Retry
+              </Button>
+            </div>
           </div>
-
-          <Button
-            @click="addNewEntry"
-            size="sm"
-            variant="default"
-            class="bg-blue-600 hover:bg-blue-700 text-white border-blue-500"
+          <!-- AG Grid Container - Responsive Height -->
+          <div
+            v-else
+            class="flex-1 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 shadow-sm border border-blue-900/20 rounded-lg m-2 lg:m-4 overflow-hidden"
           >
-            <Plus class="h-4 w-4 mr-1" />
-            Add Entry
-          </Button>
+            <div class="h-full">
+              <AgGridVue
+                ref="agGridRef"
+                class="h-full ag-theme-custom ag-theme-responsive"
+                :columnDefs="columnDefs"
+                :rowData="gridData"
+                :gridOptions="gridOptions"
+                @grid-ready="onGridReady"
+                @cell-value-changed="onCellValueChanged"
+                @first-data-rendered="onFirstDataRendered"
+                @cell-clicked="onCellClicked"
+              />
+            </div>
+          </div>
+          <!-- Mobile Summary Footer -->
+          <div class="bg-slate-900/80 border-t border-blue-900/30 p-2 lg:hidden">
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-1">
+                  <Clock class="h-3 w-3 text-slate-500" />
+                  <span class="font-medium text-slate-700">
+                    {{ todayStats.totalHours.toFixed(1) }}h
+                  </span>
+                </div>
 
-          <Button
-            @click="saveChanges"
-            size="sm"
-            variant="default"
-            :disabled="!hasUnsavedChanges || loading"
-            class="bg-green-600 hover:bg-green-700 text-white border-green-500"
-          >
-            <Save class="h-4 w-4 mr-1" />
-            {{ loading ? 'Saving...' : 'Save All' }}
-          </Button>
+                <div class="flex items-center space-x-1">
+                  <DollarSign class="h-3 w-3 text-green-600" />
+                  <span class="font-medium text-slate-700">
+                    ${{ todayStats.totalBill.toFixed(0) }}
+                  </span>
+                </div>
 
-          <Button
-            @click="refreshData"
-            variant="ghost"
-            size="sm"
-            :disabled="loading"
-            class="text-white hover:bg-blue-500/20"
-          >
-            <RefreshCw :class="['h-4 w-4', { 'animate-spin': loading }]" />
-          </Button>
+                <div class="flex items-center space-x-1">
+                  <TrendingUp class="h-3 w-3 text-blue-600" />
+                  <span class="font-medium text-slate-700">
+                    {{ todayStats.entryCount }}
+                  </span>
+                </div>
+              </div>
 
-          <Button
-            @click="showHelpModal = true"
-            variant="ghost"
-            size="sm"
-            class="text-white hover:bg-blue-500/20"
+              <div v-if="hasUnsavedChanges" class="flex items-center space-x-1 text-amber-600">
+                <AlertCircle class="h-3 w-3" />
+                <span class="font-medium">Unsaved</span>
+              </div>
+            </div>
+          </div>
+          <!-- Desktop Summary Footer -->
+          <div
+            class="hidden lg:flex h-16 bg-slate-900/80 border-t border-blue-900/30 items-center justify-between px-6"
           >
-            <HelpCircle class="h-4 w-4" />
-          </Button>
+            <div class="flex items-center space-x-6">
+              <div class="flex items-center space-x-2">
+                <Clock class="h-4 w-4 text-slate-500" />
+                <span class="text-sm font-medium text-slate-700">
+                  Total: {{ todayStats.totalHours.toFixed(1) }}h
+                </span>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <DollarSign class="h-4 w-4 text-green-600" />
+                <span class="text-sm font-medium text-slate-700">
+                  Bill: ${{ todayStats.totalBill.toFixed(2) }}
+                </span>
+              </div>
+
+              <div class="flex items-center space-x-2">
+                <TrendingUp class="h-4 w-4 text-blue-600" />
+                <span class="text-sm font-medium text-slate-700">
+                  Entries: {{ todayStats.entryCount }}
+                </span>
+              </div>
+            </div>
+            <div v-if="hasUnsavedChanges" class="flex items-center space-x-2 text-amber-400">
+              <AlertCircle class="h-4 w-4" />
+              <span class="text-sm font-medium">Unsaved changes</span>
+            </div>
+          </div>
         </div>
+        <!-- Help Modal -->
+        <Dialog v-model:open="showHelpModal">
+          <DialogContent class="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Keyboard Shortcuts</DialogTitle>
+            </DialogHeader>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-sm text-slate-600">Add new entry</span>
+                <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+N</kbd>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-slate-600">Save changes</span>
+                <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+S</kbd>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-slate-600">Delete entry</span>
+                <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Delete</kbd>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-slate-600">Navigate entries</span>
+                <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Tab / Enter</kbd>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
-
-      <!-- Main Content -->
-      <div
-        class="flex-1 flex flex-col overflow-hidden"
-        :class="'h-[calc(100vh-6rem)] lg:h-[calc(100vh-4rem)]'"
-      >
-        <!-- Loading State -->
-        <div v-if="loading" class="flex-1 flex items-center justify-center">
-          <div class="text-center">
-            <div
-              class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"
-            ></div>
-            <p class="text-slate-600 text-sm lg:text-base">Loading timesheet...</p>
-          </div>
-        </div>
-
-        <!-- Error State -->
-        <div v-else-if="error" class="flex-1 flex items-center justify-center">
-          <div class="text-center px-4">
-            <AlertTriangle class="h-8 w-8 lg:h-12 lg:w-12 text-red-500 mx-auto mb-4" />
-            <h3 class="text-base lg:text-lg font-semibold text-slate-900 mb-2">
-              Error Loading Timesheet
-            </h3>
-            <p class="text-sm lg:text-base text-slate-600 mb-4">{{ error }}</p>
-            <Button @click="reloadData" variant="outline" size="sm">
-              <RefreshCw class="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
-              Retry
-            </Button>
-          </div>
-        </div>
-
-        <!-- AG Grid Container - Responsive Height -->
-        <div
-          v-else
-          class="flex-1 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 shadow-sm border border-blue-900/20 rounded-lg m-2 lg:m-4 overflow-hidden"
-        >
-          <div class="h-full">
-            <AgGridVue
-              ref="agGridRef"
-              class="h-full ag-theme-custom ag-theme-responsive"
-              :columnDefs="columnDefs"
-              :rowData="gridData"
-              :gridOptions="gridOptions"
-              @grid-ready="onGridReady"
-              @cell-value-changed="onCellValueChanged"
-              @first-data-rendered="onFirstDataRendered"
-              @cell-clicked="onCellClicked"
-            />
-          </div>
-        </div>
-
-        <!-- Mobile Summary Footer -->
-        <div class="bg-slate-50 border-t border-slate-200 p-2 lg:hidden">
-          <div class="flex items-center justify-between text-xs">
-            <div class="flex items-center space-x-3">
-              <div class="flex items-center space-x-1">
-                <Clock class="h-3 w-3 text-slate-500" />
-                <span class="font-medium text-slate-700">
-                  {{ todayStats.totalHours.toFixed(1) }}h
-                </span>
-              </div>
-
-              <div class="flex items-center space-x-1">
-                <DollarSign class="h-3 w-3 text-green-600" />
-                <span class="font-medium text-slate-700">
-                  ${{ todayStats.totalBill.toFixed(0) }}
-                </span>
-              </div>
-
-              <div class="flex items-center space-x-1">
-                <TrendingUp class="h-3 w-3 text-blue-600" />
-                <span class="font-medium text-slate-700">
-                  {{ todayStats.entryCount }}
-                </span>
-              </div>
-            </div>
-
-            <div v-if="hasUnsavedChanges" class="flex items-center space-x-1 text-amber-600">
-              <AlertCircle class="h-3 w-3" />
-              <span class="font-medium">Unsaved</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Desktop Summary Footer -->
-        <div
-          class="hidden lg:flex h-16 bg-slate-50 border-t border-slate-200 items-center justify-between px-6"
-        >
-          <div class="flex items-center space-x-6">
-            <div class="flex items-center space-x-2">
-              <Clock class="h-4 w-4 text-slate-500" />
-              <span class="text-sm font-medium text-slate-700">
-                Total: {{ todayStats.totalHours.toFixed(1) }}h
-              </span>
-            </div>
-
-            <div class="flex items-center space-x-2">
-              <DollarSign class="h-4 w-4 text-green-600" />
-              <span class="text-sm font-medium text-slate-700">
-                Bill: ${{ todayStats.totalBill.toFixed(2) }}
-              </span>
-            </div>
-
-            <div class="flex items-center space-x-2">
-              <TrendingUp class="h-4 w-4 text-blue-600" />
-              <span class="text-sm font-medium text-slate-700">
-                Entries: {{ todayStats.entryCount }}
-              </span>
-            </div>
-          </div>
-
-          <div v-if="hasUnsavedChanges" class="flex items-center space-x-2 text-amber-600">
-            <AlertCircle class="h-4 w-4" />
-            <span class="text-sm font-medium">Unsaved changes</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Help Modal -->
-      <Dialog v-model:open="showHelpModal">
-        <DialogContent class="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Keyboard Shortcuts</DialogTitle>
-          </DialogHeader>
-          <div class="space-y-3">
-            <div class="flex justify-between">
-              <span class="text-sm text-slate-600">Add new entry</span>
-              <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+N</kbd>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-sm text-slate-600">Save changes</span>
-              <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+S</kbd>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-sm text-slate-600">Delete entry</span>
-              <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Delete</kbd>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-sm text-slate-600">Navigate entries</span>
-              <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Tab / Enter</kbd>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   </AppLayout>
 </template>
