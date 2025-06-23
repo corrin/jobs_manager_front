@@ -148,7 +148,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
 import type { JobData, JobUpdateData } from '@/services/job-rest.service'
-import { JobService } from '@/services/job.service'
 import { jobRestService } from '@/services/job-rest.service'
 import { useJobsStore } from '@/stores/jobs'
 import { toast } from 'vue-sonner'
@@ -180,7 +179,6 @@ const emit = defineEmits<{
 }>()
 
 // Services e Store
-const jobService = JobService.getInstance()
 const jobsStore = useJobsStore()
 
 // Reactive state - dados locais apenas para o form
@@ -235,27 +233,27 @@ onMounted(async () => {
 // Methods
 const loadStatusChoices = async () => {
   isLoadingStatuses.value = true
-
   try {
-    const response = await jobService.getStatusChoices()
-
-    if (!response.success || !response.statuses) {
-      throw new Error('Invalid response from status choices API')
-    }
-
-    // Convert statuses object to array, same as KanbanView
-    statusChoices.value = Object.entries(response.statuses).map(([key, label]) => ({
-      key,
-      label: label as string,
-    }))
-
-    // Ensure current job status is preserved after loading choices
+    const statusMap = await jobRestService.getStatusValues()
+    statusChoices.value = Object.entries(statusMap).map(([key, label]) => ({ key, label }))
     preserveCurrentJobStatus()
-  } catch (error) {
-    console.error('Failed to load status choices:', error)
-    toast.error('Failed to load status options', {
-      description: 'Could not load status options. Please try again.',
-    })
+  } catch {
+    // Fallback: use hardcoded values if backend fails
+    statusChoices.value = [
+      { key: 'quoting', label: 'Quoting' },
+      { key: 'accepted_quote', label: 'Accepted Quote' },
+      { key: 'awaiting_materials', label: 'Awaiting Materials' },
+      { key: 'awaiting_staff', label: 'Awaiting Staff' },
+      { key: 'awaiting_site_availability', label: 'Awaiting Site Availability' },
+      { key: 'in_progress', label: 'In Progress' },
+      { key: 'on_hold', label: 'On Hold' },
+      { key: 'special', label: 'Special' },
+      { key: 'recently_completed', label: 'Recently Completed' },
+      { key: 'completed', label: 'Completed' },
+      { key: 'rejected', label: 'Rejected' },
+      { key: 'archived', label: 'Archived' },
+    ]
+    preserveCurrentJobStatus()
   } finally {
     isLoadingStatuses.value = false
   }
