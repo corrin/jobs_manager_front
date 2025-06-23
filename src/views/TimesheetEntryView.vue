@@ -2,8 +2,15 @@
   <AppLayout>
     <!-- Mobile-First Responsive Header -->
     <div
-      class="sticky top-0 py-5 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 backdrop-blur-md border-b border-blue-500/20"
+      v-if="loading"
+      class="sticky top-0 py-5 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 backdrop-blur-md border-b border-blue-500/20 flex items-center justify-center min-h-[120px]"
     >
+      <div class="flex flex-col items-center w-full">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-2"></div>
+        <span class="text-blue-100 text-sm">Loading timesheet data...</span>
+      </div>
+    </div>
+    <div v-else>
       <!-- Mobile Layout (Stack Vertically) -->
       <div class="block lg:hidden">
         <!-- Top Row - Staff Navigation -->
@@ -285,160 +292,179 @@
           </Button>
         </div>
       </div>
-    </div>
 
-    <!-- Main Content -->
-    <div
-      class="flex-1 flex flex-col overflow-hidden"
-      :class="'h-[calc(100vh-6rem)] lg:h-[calc(100vh-4rem)]'"
-    >
-      <!-- Loading State -->
-      <div v-if="loading" class="flex-1 flex items-center justify-center">
-        <div class="text-center">
-          <div
-            class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"
-          ></div>
-          <p class="text-slate-600 text-sm lg:text-base">Loading timesheet...</p>
-        </div>
-      </div>
-
-      <!-- Error State -->
-      <div v-else-if="error" class="flex-1 flex items-center justify-center">
-        <div class="text-center px-4">
-          <AlertTriangle class="h-8 w-8 lg:h-12 lg:w-12 text-red-500 mx-auto mb-4" />
-          <h3 class="text-base lg:text-lg font-semibold text-slate-900 mb-2">
-            Error Loading Timesheet
-          </h3>
-          <p class="text-sm lg:text-base text-slate-600 mb-4">{{ error }}</p>
-          <Button @click="reloadData" variant="outline" size="sm">
-            <RefreshCw class="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
-            Retry
-          </Button>
-        </div>
-      </div>
-
-      <!-- AG Grid Container - Responsive Height -->
+      <!-- Main Content -->
       <div
-        v-else
-        class="flex-1 bg-white shadow-sm border border-slate-200 rounded-lg m-2 lg:m-4 overflow-hidden"
+        class="flex-1 flex flex-col overflow-hidden"
+        :class="'h-[calc(100vh-6rem)] lg:h-[calc(100vh-4rem)]'"
       >
-        <div class="h-full">
+        <!-- Loading State -->
+        <div v-if="loading" class="flex-1 flex items-center justify-center">
+          <div class="text-center">
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"
+            ></div>
+            <p class="text-slate-600 text-sm lg:text-base">Loading timesheet...</p>
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="flex-1 flex items-center justify-center">
+          <div class="text-center px-4">
+            <AlertTriangle class="h-8 w-8 lg:h-12 lg:w-12 text-red-500 mx-auto mb-4" />
+            <h3 class="text-base lg:text-lg font-semibold text-slate-900 mb-2">
+              Error Loading Timesheet
+            </h3>
+            <p class="text-sm lg:text-base text-slate-600 mb-4">{{ error }}</p>
+            <Button @click="reloadData" variant="outline" size="sm">
+              <RefreshCw class="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
+              Retry
+            </Button>
+          </div>
+        </div>
+
+        <!-- AG Grid Container - Responsive Height -->
+        <div
+          v-else
+          class="flex-1 bg-white shadow-sm border border-slate-200 rounded-lg m-2 lg:m-4 overflow-hidden"
+        >
           <AgGridVue
             ref="agGridRef"
-            class="h-full ag-theme-custom ag-theme-responsive"
-            :columnDefs="columnDefs"
+            class="ag-theme-custom w-full h-full"
+            :columnDefs="[
+              ...columnDefs,
+              {
+                headerName: 'Delete',
+                field: 'delete',
+                width: 80,
+                cellRenderer: deleteCellRenderer,
+                pinned: 'right',
+                cellStyle: { textAlign: 'center' },
+                sortable: false,
+                filter: false,
+                resizable: false,
+              },
+            ]"
             :rowData="gridData"
             :gridOptions="gridOptions"
             @grid-ready="onGridReady"
             @cell-value-changed="onCellValueChanged"
+            @first-data-rendered="onFirstDataRendered"
+            @cell-clicked="onCellClicked"
           />
         </div>
-      </div>
 
-      <!-- Mobile Summary Footer -->
-      <div class="bg-slate-50 border-t border-slate-200 p-2 lg:hidden">
-        <div class="flex items-center justify-between text-xs">
-          <div class="flex items-center space-x-3">
-            <div class="flex items-center space-x-1">
-              <Clock class="h-3 w-3 text-slate-500" />
-              <span class="font-medium text-slate-700">
-                {{ todayStats.totalHours.toFixed(1) }}h
+        <!-- Mobile Summary Footer -->
+        <div class="bg-slate-50 border-t border-slate-200 p-2 lg:hidden">
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center space-x-3">
+              <div class="flex items-center space-x-1">
+                <Clock class="h-3 w-3 text-slate-500" />
+                <span class="font-medium text-slate-700">
+                  {{ todayStats.totalHours.toFixed(1) }}h
+                </span>
+              </div>
+
+              <div class="flex items-center space-x-1">
+                <DollarSign class="h-3 w-3 text-green-600" />
+                <span class="font-medium text-slate-700">
+                  ${{ todayStats.totalBill.toFixed(0) }}
+                </span>
+              </div>
+
+              <div class="flex items-center space-x-1">
+                <TrendingUp class="h-3 w-3 text-blue-600" />
+                <span class="font-medium text-slate-700">
+                  {{ todayStats.entryCount }}
+                </span>
+              </div>
+            </div>
+
+            <div v-if="hasUnsavedChanges" class="flex items-center space-x-1 text-amber-600">
+              <AlertCircle class="h-3 w-3" />
+              <span class="font-medium">Unsaved</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Summary Footer -->
+        <div
+          class="hidden lg:flex h-16 bg-slate-50 border-t border-slate-200 items-center justify-between px-6"
+        >
+          <div class="flex items-center space-x-6">
+            <div class="flex items-center space-x-2">
+              <Clock class="h-4 w-4 text-slate-500" />
+              <span class="text-sm font-medium text-slate-700">
+                Total: {{ todayStats.totalHours.toFixed(1) }}h
               </span>
             </div>
 
-            <div class="flex items-center space-x-1">
-              <DollarSign class="h-3 w-3 text-green-600" />
-              <span class="font-medium text-slate-700">
-                ${{ todayStats.totalBill.toFixed(0) }}
+            <div class="flex items-center space-x-2">
+              <DollarSign class="h-4 w-4 text-green-600" />
+              <span class="text-sm font-medium text-slate-700">
+                Bill: ${{ todayStats.totalBill.toFixed(2) }}
               </span>
             </div>
 
-            <div class="flex items-center space-x-1">
-              <TrendingUp class="h-3 w-3 text-blue-600" />
-              <span class="font-medium text-slate-700">
-                {{ todayStats.entryCount }}
+            <div class="flex items-center space-x-2">
+              <TrendingUp class="h-4 w-4 text-blue-600" />
+              <span class="text-sm font-medium text-slate-700">
+                Entries: {{ todayStats.entryCount }}
               </span>
             </div>
           </div>
 
-          <div v-if="hasUnsavedChanges" class="flex items-center space-x-1 text-amber-600">
-            <AlertCircle class="h-3 w-3" />
-            <span class="font-medium">Unsaved</span>
+          <div v-if="hasUnsavedChanges" class="flex items-center space-x-2 text-amber-600">
+            <AlertCircle class="h-4 w-4" />
+            <span class="text-sm font-medium">Unsaved changes</span>
           </div>
         </div>
       </div>
 
-      <!-- Desktop Summary Footer -->
-      <div
-        class="hidden lg:flex h-16 bg-slate-50 border-t border-slate-200 items-center justify-between px-6"
-      >
-        <div class="flex items-center space-x-6">
-          <div class="flex items-center space-x-2">
-            <Clock class="h-4 w-4 text-slate-500" />
-            <span class="text-sm font-medium text-slate-700">
-              Total: {{ todayStats.totalHours.toFixed(1) }}h
-            </span>
+      <!-- Help Modal -->
+      <Dialog v-model:open="showHelpModal">
+        <DialogContent class="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          </DialogHeader>
+          <div class="space-y-3">
+            <div class="flex justify-between">
+              <span class="text-sm text-slate-600">Add new entry</span>
+              <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+N</kbd>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-slate-600">Save changes</span>
+              <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+S</kbd>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-slate-600">Delete entry</span>
+              <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Delete</kbd>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-slate-600">Navigate entries</span>
+              <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Tab / Enter</kbd>
+            </div>
           </div>
-
-          <div class="flex items-center space-x-2">
-            <DollarSign class="h-4 w-4 text-green-600" />
-            <span class="text-sm font-medium text-slate-700">
-              Bill: ${{ todayStats.totalBill.toFixed(2) }}
-            </span>
-          </div>
-
-          <div class="flex items-center space-x-2">
-            <TrendingUp class="h-4 w-4 text-blue-600" />
-            <span class="text-sm font-medium text-slate-700">
-              Entries: {{ todayStats.entryCount }}
-            </span>
-          </div>
-        </div>
-
-        <div v-if="hasUnsavedChanges" class="flex items-center space-x-2 text-amber-600">
-          <AlertCircle class="h-4 w-4" />
-          <span class="text-sm font-medium">Unsaved changes</span>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
-
-    <!-- Help Modal -->
-    <Dialog v-model:open="showHelpModal">
-      <DialogContent class="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Keyboard Shortcuts</DialogTitle>
-        </DialogHeader>
-        <div class="space-y-3">
-          <div class="flex justify-between">
-            <span class="text-sm text-slate-600">Add new entry</span>
-            <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+N</kbd>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-sm text-slate-600">Save changes</span>
-            <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+S</kbd>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-sm text-slate-600">Delete entry</span>
-            <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Delete</kbd>
-          </div>
-          <div class="flex justify-between">
-            <span class="text-sm text-slate-600">Navigate entries</span>
-            <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Tab / Enter</kbd>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
   </AppLayout>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 // DEPRECATED: Use apenas TimesheetEntryView.vue
 // Este arquivo será removido em breve. Toda lógica e UI devem migrar para TimesheetEntryView.vue
 
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
-import type { GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community'
+import type {
+  GridReadyEvent,
+  CellValueChangedEvent,
+  ICellRendererParams,
+  CellClickedEvent,
+} from 'ag-grid-community'
+import { v4 as uuidv4 } from 'uuid'
 
 // UI Components
 import AppLayout from '@/components/AppLayout.vue'
@@ -505,7 +531,7 @@ const isInitializing = ref(true)
 
 const staffList = ref<Staff[]>([])
 const jobsList = ref<Job[]>([])
-const timeEntries = ref<OptimizedTimeEntry[]>([])
+const timeEntries = ref<TimesheetEntryWithMeta[]>([])
 const companyDefaults = ref<CompanyDefaults | null>(null)
 
 // Computed Properties
@@ -717,38 +743,45 @@ function syncGridState() {
   )
 }
 
+// Tipo local para entradas da timesheet com propriedades auxiliares
+interface TimesheetEntryWithMeta extends OptimizedTimeEntry {
+  _isSaving?: boolean
+  tempId?: string
+}
+
 // Entry management handlers - using modern CostLine API
-async function handleSaveEntry(entry: OptimizedTimeEntry): Promise<void> {
+async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
+  // Early return: do not save if required fields are missing
+  const hasJob = entry.jobId || entry.jobNumber
+  const hasDescription = entry.description && entry.description.trim().length > 0
+  const hasHours = entry.hours > 0
+  if (!hasJob || !hasDescription || !hasHours) {
+    console.warn('Skipping save: missing required fields', { entry })
+    return
+  }
+
+  // Early return: prevent duplicate save if already saving or already has a real id
+  if (entry._isSaving) {
+    console.warn('Skipping save: entry is already being saved', { entry })
+    return
+  }
+
   try {
     loading.value = true
+    entry._isSaving = true
 
-    console.log('🔄 Saving entry:', entry)
-    console.log('🔍 Looking for job with jobId:', entry.jobId)
-    console.log('🔍 Looking for job with jobNumber:', entry.jobNumber)
-    console.log('🔍 Entry object keys:', Object.keys(entry))
-    console.log(
-      '📋 Available jobs:',
-      jobsList.value.map((j: Job) => ({ id: j.id, jobId: j.jobNumber, jobNumber: j.jobNumber })),
-    )
+    // Use a unique key for new entries (temporary id)
+    if (!entry.id && !entry.tempId) {
+      entry.tempId = uuidv4()
+    }
 
     // WORKAROUND: If jobId is empty but we have a jobNumber, find the job by jobNumber
     let targetJobId = entry.jobId
     if (!targetJobId && entry.jobNumber) {
-      console.log('🔧 jobId is empty, searching by jobNumber:', entry.jobNumber)
       const jobByNumber = jobsList.value.find((j: Job) => j.jobNumber === entry.jobNumber)
       if (jobByNumber) {
         targetJobId = jobByNumber.id
-        entry.jobId = targetJobId // Update the entry
-        entry.client = jobByNumber.clientName || ''
-        entry.jobName = jobByNumber.jobName || ''
-        entry.chargeOutRate = jobByNumber.chargeOutRate || 0
-        console.log('✅ Found job by number:', jobByNumber.jobNumber, 'id:', targetJobId)
-      } else {
-        console.error('❌ Job not found by jobNumber:', entry.jobNumber)
       }
-    } else if (!targetJobId) {
-      console.error('❌ Both jobId and jobNumber are empty!')
-      console.error('Entry data:', entry)
     }
 
     // Convert to CostLine format - use currentDate instead of entry.date
@@ -759,56 +792,42 @@ async function handleSaveEntry(entry: OptimizedTimeEntry): Promise<void> {
       unit_cost: entry.wageRate.toString(),
       unit_rev: entry.chargeOutRate.toString(),
       meta: {
-        // Only timesheet-specific metadata - NO job data (comes from CostSet relationship)
-        staff_id: entry.staffId,
-        date: currentDate.value, // FIXED: Use currentDate from navigation instead of entry.date
-        is_billable: entry.billable,
-        rate_multiplier: entry.rateMultiplier,
         created_from_timesheet: true,
       },
     }
 
-    console.log('📅 Saving entry with date:', currentDate.value)
-    console.log('🔍 Entry ID check:', {
-      entryId: entry.id,
-      idType: typeof entry.id,
-      isNumber: typeof entry.id === 'number',
-      hasId: entry.id !== null && entry.id !== undefined,
-    })
-    console.log('🏗️ CostLine payload:', costLinePayload)
-
+    let savedLine
     if (entry.id && typeof entry.id === 'number') {
       // Update existing CostLine
-      console.log('🔄 Updating existing entry with ID:', entry.id)
-      const updatedLine = await costlineService.updateCostLine(entry.id, costLinePayload)
-      console.log('✅ Entry updated successfully:', updatedLine.id)
+      savedLine = await costlineService.updateCostLine(entry.id, costLinePayload)
     } else {
-      // Create new CostLine - need to find job ID first
-      console.log('➕ Creating new entry')
+      // Create new CostLine
       const job = jobsList.value.find((j: Job) => j.id === targetJobId)
       if (!job) {
-        console.error('❌ Job not found for jobId:', targetJobId)
-        console.error('Available jobs:', jobsList.value)
-        throw new Error('Job not found')
+        throw new Error('Job not found for entry')
       }
-
-      const newLine = await costlineService.createCostLine(job.id, 'actual', costLinePayload)
-      entry.id = newLine.id
-      console.log('✅ Entry created successfully with new ID:', newLine.id)
+      savedLine = await costlineService.createCostLine(job.id, 'actual', costLinePayload)
+      entry.id = savedLine.id
+      delete entry.tempId
     }
 
-    // Update local state
-    const entryIndex = timeEntries.value.findIndex((e: OptimizedTimeEntry) => e === entry)
+    // Update local state: replace by id or tempId
+    const entryIndex = timeEntries.value.findIndex((e: TimesheetEntryWithMeta) => {
+      if (entry.id && e.id === entry.id) return true
+      if (entry.tempId && e.tempId === entry.tempId) return true
+      return false
+    })
     if (entryIndex >= 0) {
-      timeEntries.value[entryIndex] = { ...entry, isNewRow: false, isModified: false }
+      timeEntries.value[entryIndex] = { ...entry, ...savedLine, isNewRow: false, isModified: false }
     } else {
-      timeEntries.value.push({ ...entry, isNewRow: false, isModified: false })
+      timeEntries.value.push({ ...entry, ...savedLine, isNewRow: false, isModified: false })
     }
   } catch (err) {
     console.error('❌ Error saving entry:', err)
     error.value = 'Failed to save entry'
   } finally {
     loading.value = false
+    entry._isSaving = false
   }
 }
 
@@ -852,6 +871,21 @@ function onGridReady(params: GridReadyEvent) {
 
 function onCellValueChanged(event: CellValueChangedEvent) {
   handleCellValueChanged(event)
+}
+
+function onFirstDataRendered() {
+  setTimeout(() => agGridRef.value?.api?.sizeColumnsToFit(), 100)
+}
+
+function deleteCellRenderer(params: ICellRendererParams) {
+  if (!params.data || !params.data.id) return ''
+  return `<button title='Delete this row' class='delete-row-btn' data-id='${params.data.id}' style='background:transparent;border:none;cursor:pointer;padding:0 8px;'>🗑️</button>`
+}
+
+function onCellClicked(event: CellClickedEvent) {
+  if (event.colDef.field === 'delete' && event.data && event.data.id) {
+    handleDeleteEntry(event.data.id)
+  }
 }
 
 // Action handlers
@@ -1114,6 +1148,8 @@ const handleKeydown = (event: KeyboardEvent) => {
 // Lifecycle
 onMounted(async () => {
   try {
+    loading.value = true // Ativar loading imediatamente
+
     console.log('🚀 Initializing optimized timesheet...')
 
     // Load initial data

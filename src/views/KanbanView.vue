@@ -7,11 +7,11 @@
         <!-- Search section -->
         <div class="mb-2 md:mb-3 space-y-2">
           <div
-            class="flex flex-col sm:flex-row items-centre justify-centre space-y-2 sm:space-y-0 sm:space-x-4"
+            class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 w-full"
           >
             <button
               @click="showAdvancedSearchDialog = true"
-              class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-all duration-200 flex items-centre flex-shrink-0"
+              class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-all duration-200 flex items-center flex-shrink-0"
             >
               <Search class="mr-1.5 h-3.5 w-3.5" />
               Advanced Search
@@ -37,8 +37,8 @@
         <!-- Main Kanban content area – uses remaining space -->
         <div class="flex-1 flex flex-col px-2 sm:px-4 lg:px-6 py-1 md:py-2">
           <!-- Team members -->
-          <div v-if="!showSearchResults" class="mb-2 md:mb-3">
-            <div class="flex justify-centre">
+          <div v-if="!showSearchResults" class="mb-2 md:mb-3 flex justify-center">
+            <div class="flex justify-center w-full">
               <StaffPanel
                 :active-filters="activeStaffFilters"
                 @staff-filter-changed="handleStaffFilterChanged"
