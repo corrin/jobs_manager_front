@@ -27,21 +27,20 @@ import type {
 } from '@/types/timesheet.types'
 import type { CompanyDefaults } from '@/types/timesheet.types'
 
+// Adicione isSaving ao tipo TimesheetEntryGridRow para evitar erros de tipo
+// (Ajuste local, pois o tipo pode estar em outro arquivo, mas para garantir a tipagem)
+type TimesheetEntryGridRowWithSaving = TimesheetEntryGridRow & { isSaving?: boolean }
+
 export function useTimesheetEntryGrid(
   companyDefaults: Ref<CompanyDefaults | null>,
   onSaveEntry: (entry: TimesheetEntry) => Promise<void>,
   onDeleteEntry: (id: number) => Promise<void>,
 ) {
-  // State
   const gridApi = ref<GridApi | null>(null)
   const gridData = ref<TimesheetEntryGridRow[]>([])
   const loading = ref(false)
   const selectedRowIndex = ref(-1)
-
-  // Calculations composable
   const calculations = useTimesheetEntryCalculations(companyDefaults)
-
-  // Column definitions following clean structure
   const columnDefs = ref<ColDef<TimesheetEntryGridRow, unknown>[]>([
     {
       headerName: 'Job',
@@ -54,7 +53,6 @@ export function useTimesheetEntryGrid(
       cellRenderer: (params: AgICellRendererParams) => {
         const { jobNumber, client } = params.data as TimesheetEntryGridRow
         if (!jobNumber) return '<em style="color: #9CA3AF;">Select job...</em>'
-
         return `
           <div style="display: flex; flex-direction: column;">
             <span style="font-weight: 600; color: #1F2937;">#${jobNumber}</span>
@@ -95,7 +93,6 @@ export function useTimesheetEntryGrid(
         const isOvertime = hours > 8
         const color = isOvertime ? '#DC2626' : '#374151'
         const weight = isOvertime ? '600' : '400'
-
         return `<span style="color: ${color}; font-weight: ${weight};">${hours.toFixed(2)}h</span>`
       },
       cellClass: 'text-right',
@@ -178,7 +175,6 @@ export function useTimesheetEntryGrid(
     },
   ])
 
-  // Grid options
   const gridOptions = computed(() => ({
     theme: customTheme,
     columnDefs: columnDefs.value,
@@ -205,8 +201,6 @@ export function useTimesheetEntryGrid(
     onCellKeyDown: handleCellKeyDown,
     getRowStyle: (params: { data?: TimesheetEntryGridRow }) => {
       if (!params.data) return undefined
-
-      // Highlight new rows
       if (params.data.isNewRow) {
         return { backgroundColor: '#F0F9FF', border: '1px dashed #3B82F6' }
       }
@@ -214,7 +208,6 @@ export function useTimesheetEntryGrid(
     },
   }))
 
-  // Helper functions
   function handleJobSelection(
     rowData: TimesheetEntryGridRow & { rowIndex: number },
     job: TimesheetEntryJobSelectionItem,
@@ -236,99 +229,57 @@ export function useTimesheetEntryGrid(
     updateRowData(rowData.rowIndex, recalculated)
   }
 
-  // Event handlers
+  function isDuplicateEntry(entry: TimesheetEntry, ignoreIndex?: number): boolean {
+    return (gridData.value as TimesheetEntryGridRowWithSaving[]).some((row, idx) => {
+      if (ignoreIndex !== undefined && idx === ignoreIndex) return false
+      return (
+        row.jobNumber === entry.jobNumber &&
+        row.date === entry.date &&
+        row.staffId === entry.staffId &&
+        row.description.trim() === entry.description.trim() &&
+        !row.isSaving &&
+        (!row.id || !entry.id || row.id !== entry.id)
+      )
+    })
+  }
+
   async function handleCellValueChanged(event: CellValueChangedEvent): Promise<void> {
     const { data, colDef, newValue, oldValue } = event
-
-    console.log('🔧 handleCellValueChanged called!', {
-      field: colDef.field,
-      newValue,
-      oldValue,
-      data: data,
-    })
-
-    // Guard clause - early return if no changes
-    if (newValue === oldValue) {
-      console.log('⏭️ No changes detected, skipping')
-      return
-    }
-
+    if (newValue === oldValue) return
     try {
       loading.value = true
-
-      console.log('🔄 Cell value changed:', {
-        field: colDef.field,
-        newValue: newValue,
-        oldValue: oldValue,
-        selectedJob: data.selectedJob,
-        data: data,
-      })
-
-      // Handle job selection specially
-      if (colDef.field === 'jobNumber') {
-        const lastSelectedJobRaw =
-          typeof window !== 'undefined' &&
-          typeof (window as unknown as { lastSelectedJob?: unknown }).lastSelectedJob !==
-            'undefined'
-            ? (window as unknown as { lastSelectedJob?: unknown }).lastSelectedJob
-            : null
-        console.log('🎯 Job field changed, checking for selected job:', lastSelectedJobRaw)
-
-        // Type guard para garantir o shape
-        function isJobSelectionItem(obj: unknown): obj is TimesheetEntryJobSelectionItem {
-          return (
-            !!obj &&
-            typeof obj === 'object' &&
-            'id' in obj &&
-            'job_number' in obj &&
-            'name' in obj &&
-            'client_name' in obj &&
-            'charge_out_rate' in obj &&
-            'status' in obj
-          )
+      if (
+        colDef.field &&
+        ['hours', 'rate', 'billable', 'jobNumber', 'jobId', 'chargeOutRate'].includes(colDef.field)
+      ) {
+        const entry = createEntryFromRowData(data)
+        const recalculated = calculations.recalculateEntry(entry)
+        if (typeof event.node.rowIndex === 'number') {
+          updateRowData(event.node.rowIndex, recalculated)
         }
-
-        if (isJobSelectionItem(lastSelectedJobRaw)) {
-          const jobSelectionItem = lastSelectedJobRaw
-          // Use the helper function
-          const entry = createEntryFromRowData(data)
-          const populated = calculations.populateJobFields(entry, jobSelectionItem)
-          const recalculated = calculations.recalculateEntry(populated)
-          if (typeof updateRowData === 'function') {
-            updateRowData(data.rowIndex || 0, recalculated)
-          }
-          // Clear the global variable
-          ;(window as unknown as { lastSelectedJob?: unknown }).lastSelectedJob = null
+      }
+      const updatedEntry = createEntryFromRowData(data)
+      if ((data as TimesheetEntryGridRowWithSaving).isSaving) return
+      if (!data.isNewRow && updatedEntry.id && !isRowEmpty(updatedEntry)) {
+        if (
+          typeof event.node.rowIndex === 'number' &&
+          isDuplicateEntry(updatedEntry, event.node.rowIndex)
+        ) {
           return
         }
-      }
-
-      // Update the row data
-      const updatedEntry = createEntryFromRowData(data)
-
-      // Recalculate amounts when relevant fields change
-      if (
-        ['hours', 'rate', 'billable', 'jobNumber', 'jobId', 'chargeOutRate'].includes(
-          colDef.field || '',
-        ) &&
-        event.node.rowIndex !== null
-      ) {
-        const recalculated = calculations.recalculateEntry(updatedEntry)
-        updateRowData(event.node.rowIndex, recalculated)
-      }
-
-      // Save if not a new row AND has valid data
-      if (!data.isNewRow && updatedEntry.id && !isRowEmpty(updatedEntry)) {
+        ;(data as TimesheetEntryGridRowWithSaving).isSaving = true
         await onSaveEntry(updatedEntry)
+        ;(data as TimesheetEntryGridRowWithSaving).isSaving = false
       }
-
-      // Auto-save new rows when they have enough data (not empty)
-      if (data.isNewRow && isRowComplete(updatedEntry) && event.node.rowIndex !== null) {
+      if (data.isNewRow && isRowComplete(updatedEntry) && typeof event.node.rowIndex === 'number') {
+        if (isDuplicateEntry(updatedEntry)) {
+          return
+        }
+        ;(data as TimesheetEntryGridRowWithSaving).isSaving = true
         await saveNewRow(event.node.rowIndex, updatedEntry)
+        ;(data as TimesheetEntryGridRowWithSaving).isSaving = false
       }
-    } catch (error) {
-      console.error('Error handling cell value change:', error)
-      // Revert the change
+    } catch {
       event.api.refreshCells({ rowNodes: [event.node], force: true })
     } finally {
       loading.value = false
@@ -336,11 +287,8 @@ export function useTimesheetEntryGrid(
   }
 
   function handleRowDoubleClicked(event: RowDoubleClickedEvent): void {
-    // Guard clause - ensure rowIndex is not null
     if (event.rowIndex === null) return
-
-    // Enter edit mode on double-click
-    const colId = 'description' // Default to description field
+    const colId = 'description'
     event.api.startEditingCell({
       rowIndex: event.rowIndex,
       colKey: colId,
@@ -403,18 +351,13 @@ export function useTimesheetEntryGrid(
           }
           break
         }
-
-        // Regular Enter just moves to next cell (default AG Grid behavior)
-        // No special handling needed - let AG Grid handle navigation
         break
 
       default:
-        // Let other keys pass through normally
         break
     }
   }
 
-  // Helper functions
   function createEntryFromRowData(rowData: TimesheetEntryGridRow): TimesheetEntry {
     return {
       id: rowData.id,
@@ -443,7 +386,6 @@ export function useTimesheetEntryGrid(
 
   function updateRowData(rowIndex: number, entry: TimesheetEntry): void {
     if (!gridApi.value) return
-
     const rowNode = gridApi.value.getRowNode(rowIndex.toString())
     if (rowNode) {
       Object.assign(rowNode.data, entry)
@@ -464,44 +406,36 @@ export function useTimesheetEntryGrid(
   }
 
   async function saveNewRow(rowIndex: number, entry: TimesheetEntry): Promise<void> {
+    if (isDuplicateEntry(entry)) return
     try {
-      // Remove the isNewRow flag and save
-      const entryToSave = { ...entry, isNewRow: false }
-      await onSaveEntry(entryToSave)
-
-      // Update the row to reflect it's no longer new
-      updateRowData(rowIndex, entryToSave)
-
-      // Add a new empty row
+      const entryToSave = { ...entry, isNewRow: false, isSaving: true }
+      const entryToSaveClean = { ...entryToSave } as Partial<TimesheetEntryGridRowWithSaving>
+      delete entryToSaveClean.isSaving
+      updateRowData(rowIndex, entryToSaveClean as TimesheetEntry)
+      await onSaveEntry(entryToSaveClean as TimesheetEntry)
+      updateRowData(rowIndex, { ...entryToSaveClean } as TimesheetEntry)
       addNewRow()
-    } catch (error) {
-      console.error('Error saving new row:', error)
-      throw error
+    } catch {
+      updateRowData(rowIndex, entry)
+      throw new Error('Failed to save new row')
     }
   }
 
   async function deleteRow(rowIndex: number): Promise<void> {
     if (!gridApi.value) return
-
-    const rowNode = gridApi.value.getRowNode(rowIndex.toString())
-    if (!rowNode || !rowNode.data) return
-
-    // Guard clause - don't delete new rows, just clear them
-    if (rowNode.data.isNewRow) {
+    const [rowDataToRemove] = gridData.value.splice(rowIndex, 1)
+    if (gridApi.value && !gridApi.value.isDestroyed()) {
+      gridApi.value.applyTransaction({ update: gridData.value })
+    }
+    if (rowDataToRemove && rowDataToRemove.isNewRow) {
       clearRow(rowIndex)
       return
     }
-
     try {
       loading.value = true
-      if (rowNode.data.id) {
-        await onDeleteEntry(rowNode.data.id)
+      if (rowDataToRemove && rowDataToRemove.id) {
+        await onDeleteEntry(rowDataToRemove.id)
       }
-      // Remove da grid imediatamente
-      gridData.value.splice(rowIndex, 1)
-      gridApi.value.applyTransaction({ remove: [rowNode.data] })
-    } catch (error) {
-      console.error('Error deleting row:', error)
     } finally {
       loading.value = false
     }
@@ -509,68 +443,40 @@ export function useTimesheetEntryGrid(
 
   function clearRow(rowIndex: number, staffId?: string): void {
     if (!gridApi.value) return
-
     const rowNode = gridApi.value.getRowNode(rowIndex.toString())
     if (rowNode) {
-      // Reset to empty new row with proper staffId
       const currentStaffId = staffId || rowNode.data.staffId || ''
       const date = rowNode.data.date || new Date().toISOString().split('T')[0]
       const staffMember = { id: currentStaffId } as TimesheetEntryStaffMember
       const newRow = calculations.createNewRow(staffMember, date)
-
       Object.assign(rowNode.data, newRow)
       gridApi.value.refreshCells({ rowNodes: [rowNode], force: true })
     }
   }
 
-  // Public methods
   function setGridApi(api: GridApi): void {
     gridApi.value = api
   }
 
   function loadData(entries: TimesheetEntry[], staffId?: string): void {
-    console.log('📋 loadData called with:', entries.length, 'entries for staff:', staffId)
-    console.log(
-      '📄 Entries details:',
-      entries.map((e) => ({
-        id: e.id,
-        jobId: e.jobId,
-        jobNumber: e.jobNumber,
-        hours: e.hours,
-        description: e.description,
-      })),
-    )
-
     const rows: TimesheetEntryGridRow[] = entries.map((entry) => ({ ...entry }))
     gridData.value = rows
-    console.log('✅ Grid data updated with', gridData.value.length, 'rows')
-
-    // Only add empty row if there are no rows at all
+    if (gridApi.value && !gridApi.value.isDestroyed()) {
+      gridApi.value.applyTransaction({ update: gridData.value })
+    }
     if (gridData.value.length === 0) {
-      console.log('📝 No entries exist, adding first empty row')
       addNewRow(staffId)
     }
   }
 
   function addNewRow(staffId?: string, date?: string): void {
-    console.log('➕ addNewRow called with staffId:', staffId, 'date:', date)
-
-    // Use provided staffId or default
     const currentStaffId = staffId || ''
-    // Use provided date or default to today
     const currentDate = date || new Date().toISOString().split('T')[0]
     const staffMember = { id: currentStaffId } as TimesheetEntryStaffMember
     const newRow = calculations.createNewRow(staffMember, currentDate)
-
-    console.log('📝 Creating new row:', newRow)
     gridData.value.push(newRow)
-
-    // Wait for grid to be ready before applying transaction
     if (gridApi.value && !gridApi.value.isDestroyed()) {
-      console.log('🔄 Applying transaction to grid')
       gridApi.value.applyTransaction({ add: [newRow] })
-
-      // Focus the new row after a short delay
       setTimeout(() => {
         if (gridApi.value && !gridApi.value.isDestroyed()) {
           const newRowIndex = gridData.value.length - 1
@@ -578,11 +484,8 @@ export function useTimesheetEntryGrid(
         }
       }, 100)
     } else {
-      console.log('⚠️ Grid API not available or destroyed, will add on next grid ready')
-      // Store the row to be added when grid becomes ready
       nextTick(() => {
         if (gridApi.value && !gridApi.value.isDestroyed()) {
-          console.log('🔄 Retrying transaction to grid after nextTick')
           gridApi.value.applyTransaction({ add: [newRow] })
         }
       })
@@ -591,8 +494,6 @@ export function useTimesheetEntryGrid(
 
   function focusFirstEditableCell(): void {
     if (!gridApi.value) return
-
-    // Focus on the job field of the first new row
     const newRowIndex = gridData.value.findIndex((row: TimesheetEntryGridRow) => row.isNewRow)
     if (newRowIndex >= 0) {
       gridApi.value.setFocusedCell(newRowIndex, 'jobNumber')
@@ -605,77 +506,46 @@ export function useTimesheetEntryGrid(
 
   function getSelectedEntry(): TimesheetEntry | null {
     if (!gridApi.value || selectedRowIndex.value < 0) return null
-
     const rowNode = gridApi.value.getRowNode(selectedRowIndex.value.toString())
     return rowNode ? createEntryFromRowData(rowNode.data) : null
   }
 
-  // Keyboard shortcuts
   function handleKeyboardShortcut(event: KeyboardEvent, staffId?: string): boolean {
     if (!gridApi.value) return false
-
-    // Shift+N - Add new row (primary method)
     if (event.shiftKey && event.key === 'N') {
       event.preventDefault()
-      console.log('🎯 Shift+N pressed - adding new row')
       addNewRow(staffId)
       focusFirstEditableCell()
       return true
     }
-
-    // Ctrl+S - Save all (handled by parent)
     if (event.ctrlKey && event.key === 's') {
       event.preventDefault()
-      return true // Let parent handle the save
+      return true
     }
-
-    // Delete - Delete selected row
     if (event.key === 'Delete' && selectedRowIndex.value >= 0) {
       event.preventDefault()
       deleteRow(selectedRowIndex.value)
       return true
     }
-
     return false
   }
 
-  /**
-   * Get current grid data from AG Grid rows
-   */
   function getGridData(): TimesheetEntryGridRow[] {
-    if (!gridApi.value) {
-      console.log('⚠️ Grid API not available for data extraction')
-      return []
-    }
-
-    console.log('📊 Extracting data from AG Grid...')
+    if (!gridApi.value) return []
     const data: TimesheetEntryGridRow[] = []
-
     gridApi.value.forEachNode((node: { data?: TimesheetEntryGridRow }) => {
       if (node.data && !node.data.isEmptyRow) {
         data.push(node.data)
-        console.log('✅ Extracted node data:', {
-          jobId: node.data.jobId,
-          jobNumber: node.data.jobNumber,
-          client: node.data.client,
-          jobName: node.data.jobName,
-          hours: node.data.hours,
-        })
       }
     })
-
-    console.log('📋 Total extracted data:', data.length, 'entries')
     return data
   }
 
   return {
-    // State
     gridData,
     loading,
     gridOptions,
     columnDefs,
-
-    // Methods
     setGridApi,
     loadData,
     addNewRow,
@@ -685,8 +555,6 @@ export function useTimesheetEntryGrid(
     handleKeyboardShortcut,
     handleJobSelection,
     handleCellValueChanged,
-
-    // Computed
     hasData: computed(() => gridData.value.length > 0),
   }
 }
