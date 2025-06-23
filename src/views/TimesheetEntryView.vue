@@ -328,17 +328,19 @@
           v-else
           class="flex-1 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 shadow-sm border border-blue-900/20 rounded-lg m-2 lg:m-4 overflow-hidden"
         >
-          <AgGridVue
-            ref="agGridRef"
-            class="ag-theme-custom w-full h-full"
-            :columnDefs="columnDefs"
-            :rowData="gridData"
-            :gridOptions="gridOptions"
-            @grid-ready="onGridReady"
-            @cell-value-changed="onCellValueChanged"
-            @first-data-rendered="onFirstDataRendered"
-            @cell-clicked="onCellClicked"
-          />
+          <div class="h-full">
+            <AgGridVue
+              ref="agGridRef"
+              class="h-full ag-theme-custom ag-theme-responsive"
+              :columnDefs="columnDefs"
+              :rowData="gridData"
+              :gridOptions="gridOptions"
+              @grid-ready="onGridReady"
+              @cell-value-changed="onCellValueChanged"
+              @first-data-rendered="onFirstDataRendered"
+              @cell-clicked="onCellClicked"
+            />
+          </div>
         </div>
 
         <!-- Mobile Summary Footer -->
