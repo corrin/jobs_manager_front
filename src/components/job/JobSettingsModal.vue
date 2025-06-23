@@ -164,6 +164,23 @@
             </select>
           </div>
 
+          <!-- Status do Job -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2"> Status </label>
+            <select
+              v-model="localJobData.status"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option
+                v-for="status in JOB_STATUS_CHOICES"
+                :key="status.value"
+                :value="status.value"
+              >
+                {{ status.label }}
+              </option>
+            </select>
+          </div>
+
           <!-- Notes -->
           <div>
             <RichTextEditor
@@ -268,6 +285,22 @@ const selectedNewClient = ref<Client | null>(null)
 
 // Contact display value for ContactSelector
 const contactDisplayValue = ref('')
+
+// Statuses disponíveis conforme definido no backend (Job.JOB_STATUS_CHOICES)
+const JOB_STATUS_CHOICES = [
+  { value: 'quoting', label: 'Quoting' },
+  { value: 'accepted_quote', label: 'Accepted Quote' },
+  { value: 'awaiting_materials', label: 'Awaiting Materials' },
+  { value: 'awaiting_staff', label: 'Awaiting Staff' },
+  { value: 'awaiting_site_availability', label: 'Awaiting Site Availability' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'on_hold', label: 'On Hold' },
+  { value: 'special', label: 'Special' },
+  { value: 'recently_completed', label: 'Recently Completed' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'rejected', label: 'Rejected' },
+  { value: 'archived', label: 'Archived' },
+]
 
 // Computed properties
 const currentClientId = computed(() => {

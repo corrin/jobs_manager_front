@@ -247,15 +247,21 @@ export class KanbanCategorizationService {
   }
 
   /**
-   * Get the default status for a column when a job is dragged to it
-   * Uses switch-case pattern for discrete column values
+   * Retorna o status correto para o job ao ser movido para uma coluna do kanban.
+   * draft             → quoting
+   * awaiting_approval → accepted_quote
+   * on_hold           → on_hold
+   * in_progress       → in_progress
+   * recently_completed→ recently_completed
+   * archived          → archived
+   * (fallback: retorna o próprio columnId)
    */
   static getDefaultStatusForColumn(columnId: string): string {
     switch (columnId) {
       case 'draft':
         return 'quoting'
       case 'awaiting_approval':
-        return 'accepted_quote' // Corrigido para garantir jobs visíveis na coluna
+        return 'accepted_quote'
       case 'on_hold':
         return 'on_hold'
       case 'in_progress':
@@ -265,7 +271,7 @@ export class KanbanCategorizationService {
       case 'archived':
         return 'archived'
       default:
-        return columnId // Fallback to column ID
+        return columnId // Fallback para casos customizados
     }
   }
 }

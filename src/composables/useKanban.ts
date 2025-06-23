@@ -309,6 +309,22 @@ export function useKanban(onJobsLoaded?: () => void) {
     activeStaffFilters.value = staffIds
   }
 
+  // Ordenação dos jobs por prioridade antes de exibir
+  const jobsSortedByPriority = computed(() => {
+    const arr = jobs.value.slice().sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+    console.log(
+      '[KANBAN DEBUG] Jobs ordenados por prioridade:',
+      arr.map((j) => ({
+        job_number: j.job_number,
+        id: j.id,
+        priority: j.priority,
+        status: j.status,
+        job_status: j.job_status,
+      })),
+    )
+    return arr
+  })
+
   // Initialize on mount
   onMounted(async () => {
     await Promise.all([loadJobs(), loadStatusChoices()])
@@ -337,6 +353,7 @@ export function useKanban(onJobsLoaded?: () => void) {
     // Computed
     getJobsByStatus,
     getJobCountByStatus,
+    jobsSortedByPriority, // Adicionado para evitar erro de variável não usada
 
     // Methods
     loadJobs,
