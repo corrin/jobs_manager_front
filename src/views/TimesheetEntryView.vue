@@ -441,9 +441,6 @@
 </template>
 
 <script lang="ts" setup>
-// DEPRECATED: Use apenas TimesheetEntryView.vue
-// Este arquivo será removido em breve. Toda lógica e UI devem migrar para TimesheetEntryView.vue
-
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
@@ -727,7 +724,7 @@ function syncGridState() {
   )
 }
 
-// Tipo local para entradas da timesheet com propriedades auxiliares
+// Local type for timesheet entries with additional metadata
 interface TimesheetEntryWithMeta extends OptimizedTimeEntry {
   _isSaving?: boolean
   tempId?: string
@@ -735,40 +732,41 @@ interface TimesheetEntryWithMeta extends OptimizedTimeEntry {
 
 // Entry management handlers - using modern CostLine API
 async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
-  // Early return: do not save if required fields are missing
+  // Early return: não salva entradas dummy
   const hasJob = entry.jobId || entry.jobNumber
   const hasDescription = entry.description && entry.description.trim().length > 0
   const hasHours = entry.hours > 0
   if (!hasJob || !hasDescription || !hasHours) {
-    console.warn('Skipping save: missing required fields', { entry })
     return
   }
 
-  // Early return: prevent duplicate save if already saving or already has a real id
-  if (entry._isSaving) {
-    console.warn('Skipping save: entry is already being saved', { entry })
-    return
-  }
+  // Early return: previne save duplicado
+  if (entry._isSaving) return
 
   try {
     loading.value = true
     entry._isSaving = true
 
-    // Use a unique key for new entries (temporary id)
+    // Gera tempId para novas entradas
     if (!entry.id && !entry.tempId) {
       entry.tempId = uuidv4()
     }
 
-    // WORKAROUND: If jobId is empty but we have a jobNumber, find the job by jobNumber
+    const staffId = selectedStaffId.value
+    const date = currentDate.value
+
     let targetJobId = entry.jobId
     if (!targetJobId && entry.jobNumber) {
       const jobByNumber = jobsList.value.find((j: Job) => j.jobNumber === entry.jobNumber)
       if (jobByNumber) {
         targetJobId = jobByNumber.id
+        entry.jobId = targetJobId
+        entry.client = jobByNumber.clientName || ''
+        entry.jobName = jobByNumber.jobName || ''
+        entry.chargeOutRate = jobByNumber.chargeOutRate || 0
       }
     }
 
-    // Convert to CostLine format - use currentDate instead of entry.date
     const costLinePayload = {
       kind: 'time' as const,
       desc: entry.description,
@@ -776,26 +774,26 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
       unit_cost: entry.wageRate.toString(),
       unit_rev: entry.chargeOutRate.toString(),
       meta: {
+        staff_id: staffId,
+        date: date,
+        is_billable: entry.billable,
+        rate_multiplier: entry.rateMultiplier,
         created_from_timesheet: true,
       },
     }
 
     let savedLine
     if (entry.id && typeof entry.id === 'number') {
-      // Update existing CostLine
       savedLine = await costlineService.updateCostLine(entry.id, costLinePayload)
     } else {
-      // Create new CostLine
       const job = jobsList.value.find((j: Job) => j.id === targetJobId)
-      if (!job) {
-        throw new Error('Job not found for entry')
-      }
+      if (!job) throw new Error('Job not found')
       savedLine = await costlineService.createCostLine(job.id, 'actual', costLinePayload)
       entry.id = savedLine.id
       delete entry.tempId
     }
 
-    // Update local state: replace by id or tempId
+    // Atualiza local state: substitui por id ou tempId
     const entryIndex = timeEntries.value.findIndex((e: TimesheetEntryWithMeta) => {
       if (entry.id && e.id === entry.id) return true
       if (entry.tempId && e.tempId === entry.tempId) return true

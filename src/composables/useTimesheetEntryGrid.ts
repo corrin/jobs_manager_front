@@ -161,23 +161,20 @@ export function useTimesheetEntryGrid(
     },
     {
       headerName: 'Delete',
-      field: undefined,
-      width: 70,
+      width: 60,
       pinned: 'right',
+      field: 'delete' as unknown as undefined,
       editable: false,
       cellRenderer: (params: AgICellRendererParams) => {
         if (!params.data || !params.data.id) return ''
-        return `<button title='Delete this row' class='delete-row-btn' data-id='${params.data.id}' style='background:transparent;border:none;cursor:pointer;padding:0 8px;font-size:18px;'>🗑️</button>`
+        return `
+          <button title='Delete this row' class='delete-row-btn' data-id='${params.data.id}' style='background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;width:100%;height:32px;font-size:20px;line-height:1;'>🗑️</button>
+        `
       },
       cellStyle: { textAlign: 'center' },
       sortable: false,
       filter: false,
       resizable: false,
-      onCellClicked: (event: CellClickedEvent) => {
-        if (event.data && event.data.id) {
-          onDeleteEntry(event.data.id)
-        }
-      },
     },
   ])
 
@@ -350,15 +347,19 @@ export function useTimesheetEntryGrid(
     })
   }
 
-  function handleCellClicked(event: CellClickedEvent): void {
+  function handleCellClicked(event: CellClickedEvent): Promise<void> {
     if (
       event.event?.target &&
       event.event.target instanceof HTMLElement &&
-      event.event.target.classList.contains('delete-btn')
+      event.event.target.classList.contains('delete-row-btn')
     ) {
-      const rowIndex = parseInt(event.event.target.dataset.rowId || '0')
-      deleteRow(rowIndex)
+      const rowId = event.event.target.getAttribute('data-id')
+      if (!rowId) return Promise.resolve()
+      const rowIndex = gridData.value.findIndex((row) => String(row.id) === String(rowId))
+      if (rowIndex === -1) return Promise.resolve()
+      return deleteRow(rowIndex)
     }
+    return Promise.resolve()
   }
 
   function handleCellKeyDown(params: CellKeyDownEvent): void {
@@ -493,11 +494,10 @@ export function useTimesheetEntryGrid(
 
     try {
       loading.value = true
-
       if (rowNode.data.id) {
         await onDeleteEntry(rowNode.data.id)
       }
-      // Remove from grid
+      // Remove da grid imediatamente
       gridData.value.splice(rowIndex, 1)
       gridApi.value.applyTransaction({ remove: [rowNode.data] })
     } catch (error) {
