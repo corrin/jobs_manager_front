@@ -273,7 +273,7 @@ const emit = defineEmits<{
 const jobsStore = useJobsStore()
 
 // Local state seguindo clean code principles - apenas para dados do form
-const localJobData = ref<Partial<JobData>>({})
+const localJobData = ref<Partial<JobData & { status?: string }>>({})
 const isLoading = ref(false)
 const errorMessages = ref<string[]>([])
 
