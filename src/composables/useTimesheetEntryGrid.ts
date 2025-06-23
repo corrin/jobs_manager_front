@@ -160,13 +160,24 @@ export function useTimesheetEntryGrid(
       cellStyle: { color: '#2563EB', fontWeight: '600' },
     },
     {
-      headerName: 'Actions',
+      headerName: 'Delete',
       field: undefined,
-      cellRenderer: 'actionsRenderer',
-      width: 120,
+      width: 70,
       pinned: 'right',
-      suppressMovable: true,
-      suppressSizeToFit: true,
+      editable: false,
+      cellRenderer: (params: AgICellRendererParams) => {
+        if (!params.data || !params.data.id) return ''
+        return `<button title='Delete this row' class='delete-row-btn' data-id='${params.data.id}' style='background:transparent;border:none;cursor:pointer;padding:0 8px;font-size:18px;'>🗑️</button>`
+      },
+      cellStyle: { textAlign: 'center' },
+      sortable: false,
+      filter: false,
+      resizable: false,
+      onCellClicked: (event: CellClickedEvent) => {
+        if (event.data && event.data.id) {
+          onDeleteEntry(event.data.id)
+        }
+      },
     },
   ])
 

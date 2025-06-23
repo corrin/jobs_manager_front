@@ -326,25 +326,12 @@
         <!-- AG Grid Container - Responsive Height -->
         <div
           v-else
-          class="flex-1 bg-white shadow-sm border border-slate-200 rounded-lg m-2 lg:m-4 overflow-hidden"
+          class="flex-1 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 shadow-sm border border-blue-900/20 rounded-lg m-2 lg:m-4 overflow-hidden"
         >
           <AgGridVue
             ref="agGridRef"
             class="ag-theme-custom w-full h-full"
-            :columnDefs="[
-              ...columnDefs,
-              {
-                headerName: 'Delete',
-                field: 'delete',
-                width: 80,
-                cellRenderer: deleteCellRenderer,
-                pinned: 'right',
-                cellStyle: { textAlign: 'center' },
-                sortable: false,
-                filter: false,
-                resizable: false,
-              },
-            ]"
+            :columnDefs="columnDefs"
             :rowData="gridData"
             :gridOptions="gridOptions"
             @grid-ready="onGridReady"
@@ -458,12 +445,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
-import type {
-  GridReadyEvent,
-  CellValueChangedEvent,
-  ICellRendererParams,
-  CellClickedEvent,
-} from 'ag-grid-community'
+import type { GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community'
 import { v4 as uuidv4 } from 'uuid'
 
 // UI Components
@@ -875,17 +857,6 @@ function onCellValueChanged(event: CellValueChangedEvent) {
 
 function onFirstDataRendered() {
   setTimeout(() => agGridRef.value?.api?.sizeColumnsToFit(), 100)
-}
-
-function deleteCellRenderer(params: ICellRendererParams) {
-  if (!params.data || !params.data.id) return ''
-  return `<button title='Delete this row' class='delete-row-btn' data-id='${params.data.id}' style='background:transparent;border:none;cursor:pointer;padding:0 8px;'>🗑️</button>`
-}
-
-function onCellClicked(event: CellClickedEvent) {
-  if (event.colDef.field === 'delete' && event.data && event.data.id) {
-    handleDeleteEntry(event.data.id)
-  }
 }
 
 // Action handlers
