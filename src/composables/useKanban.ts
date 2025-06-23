@@ -116,23 +116,29 @@ export function useKanban(onJobsLoaded?: () => void) {
       const data = await jobService.getAllJobs()
 
       // Converter jobs para o formato do kanban e salvar no store
-      const kanbanJobs = [...data.activeJobs, ...data.archivedJobs].map((job) => ({
-        id: job.id,
-        name: job.name,
-        description: job.description,
-        job_number: job.job_number,
-        client_name: job.client_name,
-        contact_person: job.contact_person,
-        people: job.people || [],
-        status: job.status_key || '', // Use status_key for categorization
-        status_key: job.status_key || '',
-        status_display: job.status || '', // Keep display name separate
-        job_status: job.status_key || '', // Mapear status_key para job_status
-        paid: job.paid,
-        created_by_id: job.created_by_id,
-        created_at: job.created_at,
-        priority: job.priority,
-      }))
+      const kanbanJobs = [...data.activeJobs, ...data.archivedJobs].map((job) => {
+        // Normalise status for kanban columns
+        let status_key = job.status_key || ''
+        if (status_key === 'draft') status_key = 'quoting'
+        if (status_key === 'awaiting_approval') status_key = 'accepted_quote'
+        return {
+          id: job.id,
+          name: job.name,
+          description: job.description,
+          job_number: job.job_number,
+          client_name: job.client_name,
+          contact_person: job.contact_person,
+          people: job.people || [],
+          status: status_key, // Use normalised status for categorisation
+          status_key: status_key,
+          status_display: job.status || '', // Keep display name separate
+          job_status: status_key, // Map status_key to job_status
+          paid: job.paid,
+          created_by_id: job.created_by_id,
+          created_at: job.created_at,
+          priority: job.priority,
+        }
+      })
 
       jobsStore.setKanbanJobs(kanbanJobs)
 

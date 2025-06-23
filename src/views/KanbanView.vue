@@ -1,17 +1,17 @@
 <template>
   <AppLayout>
-    <!-- Main Content with flex layout for full height utilization -->
+    <!-- Main content with flex layout for full height utilisation -->
     <div class="flex flex-col min-h-screen mt-5 md:mt-15 lg:mt-0">
-      <!-- Header Section - flexible size -->
+      <!-- Header section – flexible size -->
       <div class="flex-shrink-0 p-3 sm:p-4 lg:p-6 pt-2 sm:pt-3 md:pt-1 lg:pt-6">
-        <!-- Search Section -->
+        <!-- Search section -->
         <div class="mb-2 md:mb-3 space-y-2">
           <div
-            class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4"
+            class="flex flex-col sm:flex-row items-centre justify-centre space-y-2 sm:space-y-0 sm:space-x-4"
           >
             <button
               @click="showAdvancedSearchDialog = true"
-              class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-all duration-200 flex items-center flex-shrink-0"
+              class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-all duration-200 flex items-centre flex-shrink-0"
             >
               <Search class="mr-1.5 h-3.5 w-3.5" />
               Advanced Search
@@ -20,13 +20,13 @@
             <div class="w-full max-w-xs sm:max-w-md">
               <div class="relative">
                 <Search
-                  class="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400"
+                  class="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-grey-400"
                 />
                 <input
                   v-model="searchQuery"
                   type="text"
                   placeholder="Search..."
-                  class="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="w-full pl-8 pr-3 py-2 text-sm border border-grey-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   @input="handleSearch"
                 />
               </div>
@@ -34,11 +34,11 @@
           </div>
         </div>
 
-        <!-- Main Kanban Content Area - uses remaining space -->
+        <!-- Main Kanban content area – uses remaining space -->
         <div class="flex-1 flex flex-col px-2 sm:px-4 lg:px-6 py-1 md:py-2">
-          <!-- Team Members -->
+          <!-- Team members -->
           <div v-if="!showSearchResults" class="mb-2 md:mb-3">
-            <div class="flex justify-center">
+            <div class="flex justify-centre">
               <StaffPanel
                 :active-filters="activeStaffFilters"
                 @staff-filter-changed="handleStaffFilterChanged"
@@ -47,15 +47,15 @@
             </div>
           </div>
 
-          <!-- Search Results Grid -->
+          <!-- Search results grid -->
           <div v-if="showSearchResults" class="mb-2 md:mb-3">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-lg font-semibold text-gray-900">
+            <div class="flex items-centre justify-between mb-4">
+              <h2 class="text-lg font-semibold text-grey-900">
                 Search Results ({{ filteredJobs.length }} jobs found)
               </h2>
               <button
                 @click="backToKanban"
-                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors flex items-center text-sm"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colours flex items-centre text-sm"
               >
                 <LayoutGrid class="mr-2 h-4 w-4" />
                 Back to Kanban
@@ -66,13 +66,13 @@
             </div>
           </div>
 
-          <!-- Kanban Board - grows to fill available space -->
+          <!-- Kanban board – grows to fill available space -->
           <div v-if="!showSearchResults" class="flex-1 flex flex-col space-y-1 md:space-y-2">
             <!-- Mobile: Dropdown to select status -->
             <div class="block md:hidden">
               <select
                 v-model="selectedMobileStatus"
-                class="w-full p-3 text-base border border-gray-300 rounded-lg bg-white text-gray-900 font-medium shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full p-3 text-base border border-grey-300 rounded-lg bg-white text-grey-900 font-medium shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option
                   v-for="status in visibleStatusChoices"
@@ -86,7 +86,7 @@
 
             <!-- Mobile: Single column view -->
             <div class="block md:hidden">
-              <div class="flex justify-center px-4">
+              <div class="flex justify-centre px-4">
                 <KanbanColumn
                   v-if="
                     selectedMobileStatus &&
@@ -106,7 +106,7 @@
               </div>
             </div>
 
-            <!-- Desktop: kanban - grows to fill space -->
+            <!-- Desktop: kanban – grows to fill space -->
             <div class="hidden md:flex md:flex-1 md:flex-col">
               <!-- Tablet: Responsive grid layout for optimal viewing -->
               <div class="block lg:hidden">
@@ -140,7 +140,7 @@
                 </div>
               </div>
 
-              <!-- Large Desktop: Responsive grid que mostra todas as colunas -->
+              <!-- Large Desktop: Responsive grid that shows all columns -->
               <div class="hidden lg:block">
                 <div class="w-full mx-auto px-2">
                   <div
@@ -196,7 +196,7 @@ import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { AdvancedFilters } from '@/types'
 
-// Initialize store
+// Initialise store
 const jobsStore = useJobsStore()
 
 // Set kanban context when component mounts
@@ -229,7 +229,7 @@ const {
 
   // Computed
   getJobsByStatus,
-  jobsSortedByPriority, // ADICIONADO
+  jobsSortedByPriority, // ADDED
 
   // Methods
   loadJobs,
@@ -243,16 +243,16 @@ const {
   reorderJob,
   handleStaffFilterChanged,
 } = useKanban(() => {
-  // Callback called after jobs are loaded - initialize sortable for all ready columns
+  // Callback called after jobs are loaded – initialise sortable for all ready columns
   nextTick(() => {
-    initializeSortableForAllColumns()
+    initialiseSortableForAllColumns()
   })
 })
 
 // Local state for dialog
 const showAdvancedSearchDialog = ref(false)
 
-// Handle advanced search from dialog seguindo clean code principles
+// Handle advanced search from dialog following clean code principles
 const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
   try {
     Object.assign(advancedFilters.value, filters)
@@ -262,12 +262,12 @@ const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
   }
 }
 
-// Drag and drop para jobs (com callback para atualizar estado)
+// Drag and drop for jobs (with callback to update state)
 const { isDragging, initializeSortable, destroyAllSortables } = useDragAndDrop((event, payload) => {
   if (event === 'job-moved') {
     const { jobId, fromStatus, toStatus, beforeId, afterId } = payload
     if (fromStatus !== toStatus) {
-      // Map column to appropriate status using categorization service
+      // Map column to appropriate status using categorisation service
       const actualStatus = KanbanCategorizationService.getDefaultStatusForColumn(toStatus)
       updateJobStatus(jobId, actualStatus)
     } else {
@@ -301,15 +301,15 @@ const { initializeStaffPool, initializeJobStaffContainer, updateJobStaffContaine
     }
   })
 
-// Sortable instances tracking to prevent multiple initializations
+// Sortable instances tracking to prevent multiple initialisations
 const sortableInitialized = ref<Set<string>>(new Set())
 const columnsReadyForSortable = ref<Map<string, HTMLElement>>(new Map())
 
 const handleSortableReady = (element: HTMLElement, status: string) => {
-  // Store the column element for later initialization
+  // Store the column element for later initialisation
   columnsReadyForSortable.value.set(status, element)
 
-  // Only initialize if jobs are already loaded and we haven't initialized this column yet
+  // Only initialise if jobs are already loaded and we haven't initialised this column yet
   if (jobs.value.length > 0 && !sortableInitialized.value.has(status)) {
     initializeSortableForColumn(status, element)
   }
@@ -322,7 +322,7 @@ const initializeSortableForColumn = (status: string, element: HTMLElement) => {
 
   nextTick(() => {
     const jobCards = element.querySelectorAll('.job-card-simple')
-    console.log(`🔧 Initializing SortableJS for status ${status}:`, {
+    console.log(`🔧 Initialising SortableJS for status ${status}:`, {
       jobCards: jobCards.length,
     })
 
@@ -331,8 +331,8 @@ const initializeSortableForColumn = (status: string, element: HTMLElement) => {
   })
 }
 
-// Initialize sortable for all ready columns when jobs are loaded
-const initializeSortableForAllColumns = () => {
+// Initialise sortable for all ready columns when jobs are loaded
+const initialiseSortableForAllColumns = () => {
   columnsReadyForSortable.value.forEach((element, status) => {
     if (!sortableInitialized.value.has(status)) {
       initializeSortableForColumn(status, element)
@@ -341,7 +341,7 @@ const initializeSortableForAllColumns = () => {
 }
 
 const handleStaffPanelReady = (staffPanelElement: HTMLElement) => {
-  console.log('🧑‍💼 Staff panel ready, initializing staff pool')
+  console.log('🧑‍💼 Staff panel ready, initialising staff pool')
   initializeStaffPool(staffPanelElement)
 }
 
@@ -350,9 +350,10 @@ const handleJobReady = (payload: { jobId: string; element: HTMLElement }) => {
   initializeJobStaffContainer(payload.element, payload.jobId)
 }
 
-// Função utilitária para filtrar jobs ordenados por prioridade por status
+// Utility function to filter jobs ordered by priority by status (NZ English comment)
 function getSortedJobsByStatus(statusKey: string) {
-  return jobsSortedByPriority.value.filter((job) => job.status === statusKey)
+  // Use kanban categorisation logic, but keep priority order
+  return KanbanCategorizationService.getJobsForColumn(jobsSortedByPriority.value, statusKey)
 }
 
 // Setup drag and drop functionality
@@ -416,7 +417,7 @@ onUnmounted(() => {
   }
 }
 
-/* Override default column sizing for tablet layout - maintain normal heights */
+/* Override default column sizing for tablet layout – maintain normal heights */
 @media (min-width: 768px) and (max-width: 1023px) {
   .tablet-column :deep(.kanban-column) {
     min-width: 160px;
