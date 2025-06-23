@@ -255,7 +255,7 @@ export class KanbanCategorizationService {
       case 'draft':
         return 'quoting'
       case 'awaiting_approval':
-        return 'awaiting_approval'
+        return 'accepted_quote' // Corrigido para garantir jobs visíveis na coluna
       case 'on_hold':
         return 'on_hold'
       case 'in_progress':
