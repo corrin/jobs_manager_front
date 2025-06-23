@@ -16,6 +16,7 @@ import type {
   ReorderJobRequest,
 } from '@/schemas/kanban.schemas'
 import type { Job, AdvancedFilters } from '@/types'
+import { validate as validateUuid } from 'uuid'
 
 // Base interface for API responses to ensure type safety
 interface BaseApiResponse {
@@ -139,6 +140,15 @@ export class JobService {
     status?: string,
   ): Promise<void> {
     try {
+      if (!validateUuid(jobId)) {
+        throw new Error(`Invalid jobId: ${jobId}`)
+      }
+      if (beforeId && !validateUuid(beforeId)) {
+        throw new Error(`Invalid beforeId: ${beforeId}`)
+      }
+      if (afterId && !validateUuid(afterId)) {
+        throw new Error(`Invalid afterId: ${afterId}`)
+      }
       const requestData: ReorderJobRequest = ReorderJobRequestSchema.parse({
         before_id: beforeId || null,
         after_id: afterId || null,

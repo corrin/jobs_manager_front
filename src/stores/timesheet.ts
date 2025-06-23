@@ -35,34 +35,25 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   const byDate = computed(() => {
     if (!lines.value.length) return {} as Record<string, CostLine[]>
 
-    return lines.value.reduce<Record<string, CostLine[]>>( // tipar explicitamente o reduce
-      (groups, line) => {
-        // Extract date from metadata or use current selected date
-        const dateKey = String(line.meta?.date || selectedDate.value)
-
-        if (!Object.prototype.hasOwnProperty.call(groups, dateKey)) {
-          groups[dateKey] = []
-        }
-
-        groups[dateKey].push(line)
-        return groups
-      },
-      {} as Record<string, CostLine[]>,
-    )
+    const groups: Record<string, CostLine[]> = {}
+    for (const line of lines.value) {
+      const dateKey = String(line.meta?.date || selectedDate.value)
+      if (!groups[dateKey]) {
+        groups[dateKey] = []
+      }
+      groups[dateKey].push(line)
+    }
+    return groups
   })
 
   const dailyTotals = computed(() => {
-    if (!lines.value.length)
-      return {} as Record<string, { hours: number; cost: number; revenue: number }>
+    if (!lines.value.length) return {}
 
     return Object.entries(byDate.value as Record<string, CostLine[]>).reduce(
-      (
-        totals: Record<string, { hours: number; cost: number; revenue: number }>,
-        [date, dayLines],
-      ) => {
+      (totals, [date, dayLines]) => {
         totals[date] = {
           hours: dayLines.reduce((sum, line) => {
-            // For time entries, quantity representa horas
+            // For time entries, quantity represents hours
             return line.kind === 'time' ? sum + parseFloat(line.quantity) : sum
           }, 0),
           cost: dayLines.reduce((sum, line) => sum + line.total_cost, 0),

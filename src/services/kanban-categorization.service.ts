@@ -26,7 +26,6 @@ export class KanbanCategorizationService {
       columnTitle: 'Draft',
       subCategories: [
         { statusKey: 'quoting', badgeLabel: 'Quoting', badgeColorClass: 'bg-yellow-500' },
-        { statusKey: 'draft', badgeLabel: 'Draft', badgeColorClass: 'bg-gray-500' },
       ],
       colorTheme: 'yellow',
     },
@@ -38,11 +37,6 @@ export class KanbanCategorizationService {
           statusKey: 'accepted_quote',
           badgeLabel: 'Quote Accepted',
           badgeColorClass: 'bg-green-500',
-        },
-        {
-          statusKey: 'awaiting_approval',
-          badgeLabel: 'Awaiting Approval',
-          badgeColorClass: 'bg-blue-500',
         },
       ],
       colorTheme: 'green',
@@ -105,20 +99,17 @@ export class KanbanCategorizationService {
   // Status to column mapping for quick lookup
   // Note: 'special' is intentionally excluded (filtered from kanban)
   private static readonly STATUS_TO_COLUMN_MAP: Record<string, string> = {
-    draft: 'draft',
     quoting: 'draft',
     accepted_quote: 'awaiting_approval',
-    awaiting_approval: 'awaiting_approval', // Direct mapping for API compatibility
     awaiting_materials: 'on_hold',
     awaiting_staff: 'on_hold',
     awaiting_site_availability: 'on_hold',
     in_progress: 'in_progress',
     recently_completed: 'recently_completed',
-    completed: 'archived', // completed goes to archived now
+    completed: 'archived',
     rejected: 'archived',
     archived: 'archived',
-    on_hold: 'on_hold', // Fallback for generic on_hold
-    // 'special' is intentionally omitted - filtered from kanban
+    on_hold: 'on_hold',
   }
 
   /**

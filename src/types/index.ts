@@ -1,3 +1,6 @@
+import type { JobPricing, JobEvent } from '@/schemas/job.schemas'
+import type { CostSet } from '@/types/costing.types'
+
 // Central shared types used across multiple views
 // These are internal TypeScript types, not for validation
 
@@ -61,6 +64,46 @@ export interface Job extends BaseEntity {
   badge_color?: string
   // Quote sheet integration
   quote_sheet?: QuoteSheet | null
+}
+
+// Tipo unificado para Job detalhado, compatível com o backend e frontend
+export interface JobData extends Job {
+  // Campos extras obrigatórios para compatibilidade com o store e backend
+  client_id: string
+  job_status: string
+  pricing_methodology: 'fixed_price' | 'time_materials'
+  created_at: string
+  updated_at: string
+  // Campos extras opcionais
+  delivery_date?: string | null
+  quote_acceptance_date?: string | null
+  quoted?: boolean
+  invoiced?: boolean
+  paid: boolean // já obrigatório
+  charge_out_rate?: string
+  order_number?: string | null
+  notes?: string | null
+  contact_id?: string | null
+  contact_name?: string | null
+  complex_job?: boolean
+  latest_estimate_pricing?: JobPricing
+  latest_quote_pricing?: JobPricing
+  latest_reality_pricing?: JobPricing
+  latest_estimate?: CostSet | null
+  latest_quote?: CostSet | null
+  latest_actual?: CostSet | null
+  latest_pricings?: {
+    estimate?: JobPricing | null
+    quote?: JobPricing | null
+    reality?: JobPricing | null
+  }
+  company_defaults?: {
+    materials_markup: number
+    time_markup: number
+    charge_out_rate: number
+    wage_rate: number
+  } | null
+  events?: JobEvent[]
 }
 
 // Job status types

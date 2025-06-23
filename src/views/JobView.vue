@@ -73,16 +73,6 @@
             >
               <Paperclip class="w-4 h-4" />
             </DraggableButton>
-
-            <DraggableButton
-              variant="ghost"
-              @click="openQuotingChat"
-              class="text-emerald-600 hover:bg-emerald-50 flex-shrink-0"
-              size="sm"
-              title="Interactive Quote"
-            >
-              <Calculator class="w-4 h-4" />
-            </DraggableButton>
           </div>
         </div>
 
@@ -142,16 +132,6 @@
                 size="sm"
               >
                 <Paperclip class="w-4 h-4" />
-              </DraggableButton>
-
-              <DraggableButton
-                variant="ghost"
-                @click="openQuotingChat"
-                class="text-emerald-600 hover:bg-emerald-50"
-                size="sm"
-                title="Interactive Quote"
-              >
-                <Calculator class="w-4 h-4" />
               </DraggableButton>
             </div>
           </div>
@@ -427,7 +407,6 @@ import {
   Wrench,
   BookOpen,
   Paperclip,
-  Calculator,
 } from 'lucide-vue-next'
 
 import AppLayout from '@/components/AppLayout.vue'
@@ -819,27 +798,6 @@ const deleteJob = async () => {
       id: 'delete-job',
       duration: 6000,
     })
-  }
-}
-
-const openQuotingChat = () => {
-  console.log('Opening quoting chat...')
-  console.log('Job ID:', jobId.value)
-  console.log('Job Data:', jobData.value)
-
-  try {
-    router.push({
-      name: 'QuotingChatView',
-      query: {
-        jobId: jobId.value,
-        jobName: jobData.value?.name,
-        jobNumber: jobData.value?.job_number,
-        clientName: jobData.value?.client_name,
-      },
-    })
-    console.log('Router push successful')
-  } catch (error) {
-    console.error('Router push failed:', error)
   }
 }
 
