@@ -171,11 +171,7 @@
               v-model="localJobData.status"
               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option
-                v-for="status in JOB_STATUS_CHOICES"
-                :key="status.value"
-                :value="status.value"
-              >
+              <option v-for="status in jobStatusChoices" :key="status.value" :value="status.value">
                 {{ status.label }}
               </option>
             </select>
@@ -239,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import type { JobData, JobUpdateData } from '@/services/job-rest.service'
 import { jobRestService } from '@/services/job-rest.service'
 import { useJobsStore } from '@/stores/jobs'
@@ -264,15 +260,15 @@ interface Props {
 
 const props = defineProps<Props>()
 
-// Events - apenas close, a store cuida do resto
+// Events – only close, the store handles the rest
 const emit = defineEmits<{
   close: []
 }>()
 
-// Store - única fonte de verdade
+// Store – single source of truth
 const jobsStore = useJobsStore()
 
-// Local state seguindo clean code principles - apenas para dados do form
+// Local state following clean code principles – only for form data
 const localJobData = ref<Partial<JobData & { status?: string }>>({})
 const isLoading = ref(false)
 const errorMessages = ref<string[]>([])
@@ -286,21 +282,31 @@ const selectedNewClient = ref<Client | null>(null)
 // Contact display value for ContactSelector
 const contactDisplayValue = ref('')
 
-// Statuses disponíveis conforme definido no backend (Job.JOB_STATUS_CHOICES)
-const JOB_STATUS_CHOICES = [
-  { value: 'quoting', label: 'Quoting' },
-  { value: 'accepted_quote', label: 'Accepted Quote' },
-  { value: 'awaiting_materials', label: 'Awaiting Materials' },
-  { value: 'awaiting_staff', label: 'Awaiting Staff' },
-  { value: 'awaiting_site_availability', label: 'Awaiting Site Availability' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'on_hold', label: 'On Hold' },
-  { value: 'special', label: 'Special' },
-  { value: 'recently_completed', label: 'Recently Completed' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'archived', label: 'Archived' },
-]
+// Statuses fetched from backend
+const jobStatusChoices = ref<{ value: string; label: string }[]>([])
+
+onMounted(async () => {
+  try {
+    const statusMap = await jobRestService.getStatusValues()
+    jobStatusChoices.value = Object.entries(statusMap).map(([value, label]) => ({ value, label }))
+  } catch {
+    // Fallback: use hardcoded values if backend fails
+    jobStatusChoices.value = [
+      { value: 'quoting', label: 'Quoting' },
+      { value: 'accepted_quote', label: 'Accepted Quote' },
+      { value: 'awaiting_materials', label: 'Awaiting Materials' },
+      { value: 'awaiting_staff', label: 'Awaiting Staff' },
+      { value: 'awaiting_site_availability', label: 'Awaiting Site Availability' },
+      { value: 'in_progress', label: 'In Progress' },
+      { value: 'on_hold', label: 'On Hold' },
+      { value: 'special', label: 'Special' },
+      { value: 'recently_completed', label: 'Recently Completed' },
+      { value: 'completed', label: 'Completed' },
+      { value: 'rejected', label: 'Rejected' },
+      { value: 'archived', label: 'Archived' },
+    ]
+  }
+})
 
 // Computed properties
 const currentClientId = computed(() => {
@@ -339,7 +345,7 @@ const jobNotesComputed = computed({
   },
 })
 
-// Helper functions - declared before watchers
+// Helper functions – declared before watchers
 const resetClientChangeState = () => {
   isChangingClient.value = false
   newClientId.value = ''
@@ -381,7 +387,7 @@ watch(
  * Converte valores null para undefined conforme esperado pela API
  */
 const sanitizeJobData = (data: Record<string, unknown>): JobUpdateData => {
-  // Guard clause - early return se não há dados
+  // Guard clause – early return if no data
   if (!data) return {}
 
   // Converter null para undefined para campos específicos
@@ -409,7 +415,7 @@ const sanitizeJobData = (data: Record<string, unknown>): JobUpdateData => {
   return sanitized
 }
 
-// Methods seguindo SRP e early return patterns
+// Methods following SRP and early return patterns
 const closeModal = () => {
   emit('close')
 }
@@ -436,17 +442,17 @@ const handleClientLookupSelected = (client: Client | null) => {
 }
 
 const confirmClientChange = () => {
-  // Guard clause - verificar se novo cliente foi selecionado
+  // Guard clause – check if new client was selected
   if (!newClientId.value || !selectedNewClient.value) {
     console.warn('No new client selected')
     return
   }
 
-  // Update job data com novo cliente
+  // Update job data with new client
   localJobData.value.client_id = newClientId.value
   localJobData.value.client_name = selectedNewClient.value.name
 
-  // Clear contact quando client muda
+  // Clear contact when client changes
   localJobData.value.contact_id = undefined
   localJobData.value.contact_name = undefined
   contactDisplayValue.value = ''
@@ -455,13 +461,13 @@ const confirmClientChange = () => {
 }
 
 const editCurrentClient = () => {
-  // Guard clause - verificar se há cliente atual
+  // Guard clause – check if there is a current client
   if (!props.jobData?.client_id) {
     console.warn('No current client to edit')
     return
   }
 
-  // Abrir edição de cliente em nova janela
+  // Open client edit in new window
   const url = `/clients/${props.jobData.client_id}/edit`
   window.open(url, '_blank')
 }
@@ -778,7 +784,7 @@ const updateJobInStore = (apiData: unknown) => {
     console.log(
       `JobSettingsModal - Called jobsStore.setDetailedJob with job ID: ${jobDataToStore.id}`,
     )
-    // Store gerencia os dados, não precisamos emitir evento
+    // Store manages the data, no need to emit event
     closeModal()
     console.log(
       'JobSettingsModal - Settings saved, store updated, event emitted, and modal closed.',
@@ -788,4 +794,5 @@ const updateJobInStore = (apiData: unknown) => {
 
 // Ajustar tipagem de setDetailedJob para aceitar Partial apenas onde permitido
 // Isso garante que apenas as propriedades permitidas sejam atualizadas parcialmente
+defineExpose({ jobStatusChoices })
 </script>
