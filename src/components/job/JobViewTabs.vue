@@ -104,22 +104,28 @@ function handleTabChange(tab: TabKey) {
 }
 
 const props = defineProps<{
-  activeTab: 'estimate' | 'quote' | 'financial' | 'costAnalysis';
-  jobData: Record<string, unknown> | null;
-  companyDefaults: Record<string, unknown> | null;
-  latestPricings: Record<string, unknown> | null;
+  activeTab: 'estimate' | 'quote' | 'financial' | 'costAnalysis'
+  jobData: Record<string, unknown> | null
+  companyDefaults: Record<string, unknown> | null
+  latestPricings: Record<string, unknown> | null
 }>()
 
-watch(() => props.jobData, (val) => {
-   
-  console.log('[JobViewTabs] jobData prop changed:', val)
-})
-watch(() => props.companyDefaults, (val) => {
-   
-  console.log('[JobViewTabs] companyDefaults prop changed:', val)
-})
-watch(() => props.activeTab, (val) => {
-   
-  console.log('[JobViewTabs] activeTab changed:', val)
-})
+watch(
+  () => props.jobData,
+  (val) => {
+    console.log('[JobViewTabs] jobData prop changed:', val)
+  },
+)
+watch(
+  () => props.companyDefaults,
+  (val) => {
+    console.log('[JobViewTabs] companyDefaults prop changed:', val)
+  },
+)
+watch(
+  () => props.activeTab,
+  (val) => {
+    console.log('[JobViewTabs] activeTab changed:', val)
+  },
+)
 </script>

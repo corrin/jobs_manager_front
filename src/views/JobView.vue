@@ -301,7 +301,7 @@ import { useJobData } from '@/composables/useJobData'
 import { useJobTabs } from '@/composables/useJobTabs'
 import { useJobNotifications } from '@/composables/useJobNotifications'
 import { useJobEvents } from '@/composables/useJobEvents'
-import { CompanyDefaultsService } from '@/services/company-defaults.service'
+import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import {
   ArrowLeft,
   Printer,
@@ -323,25 +323,9 @@ const { jobEvents, addEvent, loading: jobEventsLoading } = useJobEvents(jobId)
 const { activeTab, setTab } = useJobTabs('estimate')
 const notifications = useJobNotifications()
 
-const companyDefaultsLoaded = ref(null)
+const companyDefaultsStore = useCompanyDefaultsStore()
+const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
 
-onMounted(async () => {
-  await loadJob()
-  if (!jobData.value?.companyDefaults) {
-    companyDefaultsLoaded.value = await CompanyDefaultsService.getDefaults()
-    console.log(
-      'JobView - Loaded company defaults from service (fallback)',
-      companyDefaultsLoaded.value,
-    )
-  } else {
-    companyDefaultsLoaded.value = jobData.value.companyDefaults
-    console.log('JobView - Loaded company defaults from jobData', companyDefaultsLoaded.value)
-  }
-})
-
-const companyDefaults = computed(() => {
-  return jobData.value?.companyDefaults || companyDefaultsLoaded.value || null
-})
 const latestPricings = computed(() => jobData.value?.latestPricings || {})
 const jobDataWithPaid = computed(() => {
   if (!jobData.value) return undefined
@@ -357,6 +341,10 @@ const showWorkflowModal = ref(false)
 const showHistoryModal = ref(false)
 const showAttachmentsModal = ref(false)
 const showPdfDialog = ref(false)
+
+onMounted(async () => {
+  await loadJob()
+})
 
 function openSettingsModal() {
   showSettingsModal.value = true

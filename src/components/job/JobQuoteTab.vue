@@ -59,9 +59,9 @@
     <div v-else class="flex-1">
       <AddCostLineDropdown
         :disabled="true"
-        :wageRate="0"
-        :chargeOutRate="0"
-        :materialsMarkup="0"
+        :wageRate="wageRate"
+        :chargeOutRate="chargeOutRate"
+        :materialsMarkup="materialsMarkup"
       />
       <CostLinesGrid :costLines="quoteCostLines" :showActions="true" />
       <CostSetSummaryCard
@@ -83,36 +83,53 @@
         <div v-if="previewData" class="space-y-6">
           <div class="bg-blue-50 rounded-lg p-4">
             <h4 class="font-medium text-blue-900 mb-3">Summary of Changes</h4>
-            <div v-if="previewData.diff_preview.total_changes > 0" class="grid grid-cols-3 gap-4 text-sm">
+            <div
+              v-if="previewData.diff_preview.total_changes > 0"
+              class="grid grid-cols-3 gap-4 text-sm"
+            >
               <div class="text-center">
-                <div class="text-lg font-bold text-green-600">{{ previewData.diff_preview.additions_count }}</div>
+                <div class="text-lg font-bold text-green-600">
+                  {{ previewData.diff_preview.additions_count }}
+                </div>
                 <div class="text-gray-600">Additions</div>
               </div>
               <div class="text-center">
-                <div class="text-lg font-bold text-blue-600">{{ previewData.diff_preview.updates_count }}</div>
+                <div class="text-lg font-bold text-blue-600">
+                  {{ previewData.diff_preview.updates_count }}
+                </div>
                 <div class="text-gray-600">Updates</div>
               </div>
               <div class="text-center">
-                <div class="text-lg font-bold text-red-600">{{ previewData.diff_preview.deletions_count }}</div>
+                <div class="text-lg font-bold text-red-600">
+                  {{ previewData.diff_preview.deletions_count }}
+                </div>
                 <div class="text-gray-600">Deletions</div>
               </div>
             </div>
             <div v-else class="text-center">
               <div class="text-lg font-bold text-gray-600">0</div>
               <div class="text-gray-600">No changes detected</div>
-              <div class="text-sm text-gray-500 mt-1">The spreadsheet is in sync with the system</div>
+              <div class="text-sm text-gray-500 mt-1">
+                The spreadsheet is in sync with the system
+              </div>
             </div>
           </div>
           <!-- Adicione aqui detalhes dos itens, erros e warnings se necessário -->
         </div>
         <DialogFooter>
-          <button class="px-4 py-2 bg-gray-200 rounded-md mr-2" @click="showPreviewModal = false">Cancel</button>
+          <button class="px-4 py-2 bg-gray-200 rounded-md mr-2" @click="showPreviewModal = false">
+            Cancel
+          </button>
           <button
             class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium"
             :disabled="!previewData || previewData.diff_preview.total_changes === 0 || isRefreshing"
             @click="onApplySpreadsheetChanges"
           >
-            {{ previewData?.diff_preview.total_changes === 0 ? 'No Changes to Apply' : `Apply ${previewData?.diff_preview.total_changes} Changes` }}
+            {{
+              previewData?.diff_preview.total_changes === 0
+                ? 'No Changes to Apply'
+                : `Apply ${previewData?.diff_preview.total_changes} Changes`
+            }}
           </button>
         </DialogFooter>
       </DialogContent>
@@ -125,10 +142,15 @@ import { ref, computed } from 'vue'
 import AddCostLineDropdown from './AddCostLineDropdown.vue'
 import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
-import { quoteService, type QuotePreview, type QuoteApplyResult } from '../../services/quote.service'
+import {
+  quoteService,
+  type QuotePreview,
+  type QuoteApplyResult,
+} from '../../services/quote.service'
 import { toast } from 'vue-sonner'
 import type { Job } from '../../types/costing.types'
 import type { CostLine } from '../../types/costing.types'
+import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 
 interface Props {
   jobId: string
@@ -182,6 +204,12 @@ const isLoading = ref(false)
 const isRefreshing = ref(false)
 const showPreviewModal = ref(false)
 const previewData = ref<QuotePreview | null>(null)
+
+const companyDefaultsStore = useCompanyDefaultsStore()
+const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
+const wageRate = computed(() => companyDefaults.value?.wage_rate || 0)
+const chargeOutRate = computed(() => companyDefaults.value?.charge_out_rate || 0)
+const materialsMarkup = computed(() => companyDefaults.value?.materials_markup || 0)
 
 const quoteCostLines = computed(() => {
   const lines = currentQuote.value?.quote?.cost_lines || []

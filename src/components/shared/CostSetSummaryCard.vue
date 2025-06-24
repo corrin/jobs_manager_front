@@ -1,5 +1,7 @@
 <template>
-  <div class="costset-summary-card bg-white rounded-lg border border-gray-200 p-6 h-full flex flex-col">
+  <div
+    class="costset-summary-card bg-white rounded-lg border border-gray-200 p-6 h-full flex flex-col"
+  >
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
       <div v-if="summary && summary.rev !== undefined" class="text-right text-sm text-gray-600">
@@ -9,8 +11,19 @@
     </div>
     <div v-if="isLoading" class="flex-1 flex items-center justify-center">
       <svg class="animate-spin h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
       </svg>
     </div>
     <div v-else-if="summary" class="flex-1 flex flex-col">
@@ -20,15 +33,21 @@
           <div class="space-y-2">
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Material Cost</span>
-              <span class="text-lg font-semibold text-red-600">${{ formatCurrency(breakdown.material.cost) }}</span>
+              <span class="text-lg font-semibold text-red-600"
+                >${{ formatCurrency(breakdown.material.cost) }}</span
+              >
             </div>
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Time Cost</span>
-              <span class="text-lg font-semibold text-red-600">${{ formatCurrency(breakdown.labour.cost) }}</span>
+              <span class="text-lg font-semibold text-red-600"
+                >${{ formatCurrency(breakdown.labour.cost) }}</span
+              >
             </div>
             <div class="flex flex-col pt-2 border-t border-gray-200">
               <span class="text-xs text-gray-500">Total Cost</span>
-              <span class="text-xl font-bold text-red-600">${{ formatCurrency(summary.cost) }}</span>
+              <span class="text-xl font-bold text-red-600"
+                >${{ formatCurrency(summary.cost) }}</span
+              >
             </div>
           </div>
         </div>
@@ -37,15 +56,21 @@
           <div class="space-y-2">
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Material Revenue</span>
-              <span class="text-lg font-semibold text-green-600">${{ formatCurrency(breakdown.material.revenue) }}</span>
+              <span class="text-lg font-semibold text-green-600"
+                >${{ formatCurrency(breakdown.material.revenue) }}</span
+              >
             </div>
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Time Revenue</span>
-              <span class="text-lg font-semibold text-green-600">${{ formatCurrency(breakdown.labour.revenue) }}</span>
+              <span class="text-lg font-semibold text-green-600"
+                >${{ formatCurrency(breakdown.labour.revenue) }}</span
+              >
             </div>
             <div class="flex flex-col pt-2 border-t border-gray-200">
               <span class="text-xs text-gray-500">Total Revenue</span>
-              <span class="text-xl font-bold text-green-600">${{ formatCurrency(summary.rev) }}</span>
+              <span class="text-xl font-bold text-green-600"
+                >${{ formatCurrency(summary.rev) }}</span
+              >
             </div>
           </div>
         </div>
@@ -54,11 +79,19 @@
           <div class="space-y-3">
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Profit Margin</span>
-              <span :class="['text-lg font-semibold', profitMargin >= 0 ? 'text-green-600' : 'text-red-600']">{{ formatPercentage(profitMargin) }}%</span>
+              <span
+                :class="[
+                  'text-lg font-semibold',
+                  profitMargin >= 0 ? 'text-green-600' : 'text-red-600',
+                ]"
+                >{{ formatPercentage(profitMargin) }}%</span
+              >
             </div>
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Total Hours</span>
-              <span class="text-lg font-semibold text-blue-600">{{ formatNumber(summary.hours) }} hrs</span>
+              <span class="text-lg font-semibold text-blue-600"
+                >{{ formatNumber(summary.hours) }} hrs</span
+              >
             </div>
           </div>
         </div>

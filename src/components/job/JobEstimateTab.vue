@@ -9,7 +9,7 @@
         :disabled="isLoading"
         :wageRate="wageRate"
         :chargeOutRate="chargeOutRate"
-        :materialsMarkup="props.companyDefaults?.materials_markup || 0"
+        :materialsMarkup="materialsMarkup"
         @add-material="handleAddMaterial"
         @add-time="handleAddTime"
       />
@@ -21,7 +21,12 @@
           <h3 class="text-lg font-semibold text-gray-900">Estimate Details</h3>
         </div>
         <div class="flex-1 overflow-hidden">
-          <CostLinesGrid :costLines="costLines" :showActions="true" @edit="() => {}" @delete="() => {}" />
+          <CostLinesGrid
+            :costLines="costLines"
+            :showActions="true"
+            @edit="() => {}"
+            @delete="() => {}"
+          />
         </div>
       </div>
 
@@ -40,29 +45,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { onMounted, ref, computed } from 'vue'
+import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import AddCostLineDropdown from './AddCostLineDropdown.vue'
 import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
 import { costlineService, type CostLineCreatePayload } from '@/services/costline.service'
+import { fetchCostSet } from '@/services/costing.service'
 import type { CostLine } from '@/types/costing.types'
 
 interface Props {
   jobId: string
-  companyDefaults?: {
-    charge_out_rate: number
-    materials_markup: number
-    wage_rate: number
-  }
 }
 
 const props = defineProps<Props>()
 
+const companyDefaultsStore = useCompanyDefaultsStore()
+const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
+const chargeOutRate = computed(() => companyDefaults.value?.charge_out_rate || 0)
+const wageRate = computed(() => companyDefaults.value?.wage_rate || 0)
+const materialsMarkup = computed(() => companyDefaults.value?.materials_markup || 0)
+
 const costLines = ref<CostLine[]>([])
 const isLoading = ref(false)
 
-const chargeOutRate = computed(() => props.companyDefaults?.charge_out_rate || 150)
-const wageRate = computed(() => props.companyDefaults?.wage_rate || 60)
+async function loadEstimate() {
+  isLoading.value = true
+  try {
+    const costSet = await fetchCostSet(props.jobId, 'estimate')
+    costLines.value = costSet.cost_lines.map((line) => ({
+      ...line,
+      quantity: typeof line.quantity === 'string' ? Number(line.quantity) : line.quantity,
+      unit_cost: typeof line.unit_cost === 'string' ? Number(line.unit_cost) : line.unit_cost,
+      unit_rev: typeof line.unit_rev === 'string' ? Number(line.unit_rev) : line.unit_rev,
+    }))
+  } catch (error) {
+    // TODO: show error toast
+    console.error('Failed to load estimate cost lines:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  await loadEstimate()
+})
 
 const estimateSummary = computed(() => {
   let cost = 0
@@ -83,7 +110,7 @@ const estimateSummary = computed(() => {
     cost,
     rev,
     hours,
-    created: undefined
+    created: undefined,
   }
 })
 
@@ -95,16 +122,27 @@ async function handleAddMaterial(payload: CostLine) {
       kind: 'material',
       desc: payload.desc,
       quantity: payload.quantity,
-      unit_cost: payload.unit_cost,
-      unit_rev: payload.unit_rev,
+      unit_cost: payload.unit_cost ?? 0,
+      unit_rev: payload.unit_rev ?? 0,
       ext_refs: payload.ext_refs,
       meta: payload.meta,
     }
     const created = await costlineService.createCostLine(props.jobId, 'estimate', createPayload)
-    costLines.value = [...costLines.value, created]
+    costLines.value = [
+      ...costLines.value,
+      {
+        ...created,
+        quantity:
+          typeof created.quantity === 'string' ? Number(created.quantity) : created.quantity,
+        unit_cost:
+          typeof created.unit_cost === 'string' ? Number(created.unit_cost) : created.unit_cost,
+        unit_rev:
+          typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
+      },
+    ]
   } catch (error) {
-    // TODO: exibir mensagem de erro para o usuário (ex: toast)
-    console.error('Erro ao adicionar material:', error)
+    // TODO: show error toast
+    console.error('Failed to add material:', error)
   } finally {
     isLoading.value = false
   }
@@ -118,16 +156,27 @@ async function handleAddTime(payload: CostLine) {
       kind: 'time',
       desc: payload.desc,
       quantity: payload.quantity,
-      unit_cost: payload.unit_cost,
-      unit_rev: payload.unit_rev,
+      unit_cost: payload.unit_cost ?? wageRate.value,
+      unit_rev: payload.unit_rev ?? chargeOutRate.value,
       ext_refs: payload.ext_refs,
       meta: payload.meta,
     }
     const created = await costlineService.createCostLine(props.jobId, 'estimate', createPayload)
-    costLines.value = [...costLines.value, created]
+    costLines.value = [
+      ...costLines.value,
+      {
+        ...created,
+        quantity:
+          typeof created.quantity === 'string' ? Number(created.quantity) : created.quantity,
+        unit_cost:
+          typeof created.unit_cost === 'string' ? Number(created.unit_cost) : created.unit_cost,
+        unit_rev:
+          typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
+      },
+    ]
   } catch (error) {
-    // TODO: exibir mensagem de erro para o usuário (ex: toast)
-    console.error('Erro ao adicionar tempo:', error)
+    // TODO: show error toast
+    console.error('Failed to add time:', error)
   } finally {
     isLoading.value = false
   }

@@ -34,7 +34,12 @@
 
 <script lang="ts" setup>
 import { ref, defineEmits } from 'vue'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Plus, Package, Clock } from 'lucide-vue-next'
 import MaterialModal from './AddCostLineMaterialModal.vue'

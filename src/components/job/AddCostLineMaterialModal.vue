@@ -9,24 +9,59 @@
       <form @submit.prevent="submit" class="grid gap-5">
         <div class="grid grid-cols-1 gap-3">
           <label class="block">
-            <span class="block text-sm font-medium text-gray-700 mb-1">Description <span class="text-red-500">*</span></span>
-            <input v-model.trim="form.desc" type="text" required maxlength="120" class="input" :class="{'border-red-500': descError}" @blur="validateDesc" />
+            <span class="block text-sm font-medium text-gray-700 mb-1">Quantity</span>
+            <input
+              v-model.number="form.quantity"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              class="input"
+            />
+          </label>
+          <label class="block">
+            <span class="block text-sm font-medium text-gray-700 mb-1"
+              >Description <span class="text-red-500">*</span></span
+            >
+            <input
+              v-model.trim="form.desc"
+              type="text"
+              required
+              maxlength="120"
+              class="input"
+              :class="{ 'border-red-500': descError }"
+              @blur="validateDesc"
+            />
             <span v-if="descError" class="text-xs text-red-500 mt-1">This field is required.</span>
           </label>
-          <label class="block">
-            <span class="block text-sm font-medium text-gray-700 mb-1">Unit cost</span>
-            <input v-model.number="form.unitCost" type="number" min="0" step="0.01" required class="input" />
-          </label>
-          <label class="block">
-            <span class="block text-sm font-medium text-gray-700 mb-1">Quantity</span>
-            <input v-model.number="form.quantity" type="number" min="0" step="0.01" required class="input" />
-          </label>
-          <label class="block">
-            <span class="block text-sm font-medium text-gray-700 mb-1">Unit revenue</span>
-            <input v-model.number="form.unitRevenue" type="number" min="0" step="0.01" required class="input" />
-          </label>
+          <div class="flex gap-3">
+            <label class="flex-1">
+              <span class="block text-sm font-medium text-gray-700 mb-1">Unit cost</span>
+              <input
+                v-model.number="form.unitCost"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                class="input"
+              />
+            </label>
+            <label class="flex-1">
+              <span class="block text-sm font-medium text-gray-700 mb-1">Unit revenue</span>
+              <input
+                v-model.number="form.unitRevenue"
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                class="input"
+              />
+            </label>
+          </div>
         </div>
-        <div class="summary-card bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-4 flex flex-col gap-2 shadow-sm">
+        <div
+          class="summary-card bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-4 flex flex-col gap-2 shadow-sm"
+        >
           <div class="flex items-center gap-2">
             <DollarSign class="w-5 h-5 text-blue-500" />
             <span class="font-semibold text-gray-700">Unit revenue:</span>
@@ -44,9 +79,7 @@
           </div>
         </div>
         <DialogFooter class="flex gap-2 justify-end mt-2">
-          <Button type="button" variant="outline" @click="$emit('close')">
-            Cancel
-          </Button>
+          <Button type="button" variant="outline" @click="$emit('close')"> Cancel </Button>
           <Button type="submit" variant="default" :disabled="descError">
             <Plus class="w-4 h-4 mr-1" /> Add
           </Button>
@@ -58,12 +91,18 @@
 
 <script lang="ts" setup>
 import { ref, computed, defineProps, defineEmits, watch } from 'vue'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Plus, Package, DollarSign, TrendingUp } from 'lucide-vue-next'
 
 const props = defineProps({
-  materialsMarkup: Number
+  materialsMarkup: Number,
 })
 const emit = defineEmits(['close', 'submit'])
 
@@ -71,7 +110,7 @@ const form = ref({
   desc: '',
   unitCost: 0,
   quantity: 1,
-  unitRevenue: 0
+  unitRevenue: 0,
 })
 const descError = ref(false)
 
@@ -86,7 +125,7 @@ watch(
       form.value.unitRevenue = Number((unitCost * (1 + markup)).toFixed(2))
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 const totalRevenue = computed(() => form.value.unitRevenue * form.value.quantity)
@@ -102,7 +141,7 @@ function submit() {
     unit_rev: form.value.unitRevenue,
     total_rev: totalRevenue.value,
     total_cost: totalCost.value,
-    kind: 'material'
+    kind: 'material',
   })
 }
 </script>
