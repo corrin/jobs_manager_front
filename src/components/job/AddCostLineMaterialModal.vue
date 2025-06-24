@@ -44,6 +44,7 @@
                 step="0.01"
                 required
                 class="input"
+                @input="handleUnitCostInput"
               />
             </label>
             <label class="flex-1">
@@ -55,6 +56,13 @@
                 step="0.01"
                 required
                 class="input"
+                @input="handleUnitRevenueInput"
+                :value="
+                  form.unitRevenueManual
+                    ? form.unitRevenue
+                    : (form.unitCost * (1 + (props.materialsMarkup ?? 0))).toFixed(2)
+                "
+                @blur="form.unitRevenue = Number($event.target.value)"
               />
             </label>
           </div>
@@ -111,6 +119,7 @@ const form = ref({
   unitCost: 0,
   quantity: 1,
   unitRevenue: 0,
+  unitRevenueManual: false,
 })
 const descError = ref(false)
 
@@ -118,15 +127,27 @@ function validateDesc() {
   descError.value = !form.value.desc.trim()
 }
 
+function handleUnitRevenueInput() {
+  form.value.unitRevenueManual = true
+}
+
 watch(
   () => [form.value.unitCost, props.materialsMarkup],
   ([unitCost, markup]) => {
-    if (typeof unitCost === 'number' && typeof markup === 'number') {
+    if (
+      !form.value.unitRevenueManual &&
+      typeof unitCost === 'number' &&
+      typeof markup === 'number'
+    ) {
       form.value.unitRevenue = Number((unitCost * (1 + markup)).toFixed(2))
     }
   },
   { immediate: true },
 )
+
+function handleUnitCostInput() {
+  form.value.unitRevenueManual = false
+}
 
 const totalRevenue = computed(() => form.value.unitRevenue * form.value.quantity)
 const totalCost = computed(() => form.value.unitCost * form.value.quantity)
