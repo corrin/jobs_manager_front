@@ -156,13 +156,24 @@ export function useTimesheetEntryGrid(
       cellRenderer: (params: AgICellRendererParams) => {
         if (!params.data || !params.data.id) return ''
         return `
-          <button title='Delete this row' class='delete-row-btn' data-id='${params.data.id}' style='background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;width:100%;height:32px;font-size:20px;line-height:1;'>🗑️</button>
+          <button title='Delete this row' class='delete-row-btn' data-id='${params.data.id}'
+            style='background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;width:100%;height:32px;font-size:20px;line-height:1;'
+          >🗑️</button>
         `
       },
       cellStyle: { textAlign: 'center' },
       sortable: false,
       filter: false,
       resizable: false,
+      onCellClicked: (params: CellClickedEvent) => {
+        console.log('[TimesheetGrid] Delete cell clicked:', params)
+        const rowId = params.data?.id
+        if (!rowId) return
+        const rowIndex = gridData.value.findIndex((row) => String(row.id) === String(rowId))
+        console.log('[TimesheetGrid] Found rowIndex for delete:', rowIndex)
+        if (rowIndex === -1) return
+        deleteRow(rowIndex)
+      },
     },
   ])
 
@@ -179,7 +190,7 @@ export function useTimesheetEntryGrid(
     headerHeight: 44,
     animateRows: true,
     onCellValueChanged: (event: CellValueChangedEvent) => {
-      console.log('📊 Cell value changed:', {
+      console.log('Cell value changed:', {
         field: event.colDef.field,
         newValue: event.newValue,
         oldValue: event.oldValue,
@@ -203,19 +214,19 @@ export function useTimesheetEntryGrid(
     rowData: TimesheetEntryGridRow & { rowIndex: number },
     job: TimesheetEntryJobSelectionItem,
   ): void {
-    console.log('🏆 Handling job selection:', {
+    console.log('Handling job selection:', {
       job: job,
       rowData: rowData,
     })
 
     const entry = createEntryFromRowData(rowData)
-    console.log('📝 Entry before populate:', entry)
+    console.log('Entry before populate:', entry)
 
     const populated = calculations.populateJobFields(entry, job)
-    console.log('🎨 Entry after populate:', populated)
+    console.log('Entry after populate:', populated)
 
     const recalculated = calculations.recalculateEntry(populated)
-    console.log('🧮 Entry after recalculate:', recalculated)
+    console.log('Entry after recalculate:', recalculated)
 
     updateRowData(rowData.rowIndex, recalculated)
   }
@@ -287,16 +298,24 @@ export function useTimesheetEntryGrid(
   }
 
   function handleCellClicked(event: CellClickedEvent): Promise<void> {
-    if (
-      event.event?.target &&
-      event.event.target instanceof HTMLElement &&
-      event.event.target.classList.contains('delete-row-btn')
-    ) {
-      const rowId = event.event.target.getAttribute('data-id')
-      if (!rowId) return Promise.resolve()
-      const rowIndex = gridData.value.findIndex((row) => String(row.id) === String(rowId))
-      if (rowIndex === -1) return Promise.resolve()
-      return deleteRow(rowIndex)
+    console.log('[TimesheetGrid] handleCellClicked called. Event:', event)
+    if (event.event) {
+      console.log('[TimesheetGrid] event.event type:', event.event.type)
+      if (event.event.target) {
+        console.log('[TimesheetGrid] event.event.target:', event.event.target)
+        if (event.event.target instanceof HTMLElement) {
+          console.log('[TimesheetGrid] event.event.target.classList:', event.event.target.classList)
+          if (event.event.target.classList.contains('delete-row-btn')) {
+            const rowId = event.event.target.getAttribute('data-id')
+            console.log('[TimesheetGrid] Delete button clicked. data-id:', rowId)
+            if (!rowId) return Promise.resolve()
+            const rowIndex = gridData.value.findIndex((row) => String(row.id) === String(rowId))
+            console.log('[TimesheetGrid] Found rowIndex for delete:', rowIndex)
+            if (rowIndex === -1) return Promise.resolve()
+            return deleteRow(rowIndex)
+          }
+        }
+      }
     }
     return Promise.resolve()
   }
@@ -308,7 +327,7 @@ export function useTimesheetEntryGrid(
       return
     }
 
-    console.log('⌨️ Cell key down:', {
+    console.log('Cell key down:', {
       key: event.key,
       shiftKey: event.shiftKey,
       column: column.getColId(),
@@ -414,21 +433,48 @@ export function useTimesheetEntryGrid(
 
   async function deleteRow(rowIndex: number): Promise<void> {
     if (!gridApi.value) return
+    console.log('[TimesheetGrid] Attempting to delete row at index:', rowIndex)
     const [rowDataToRemove] = gridData.value.splice(rowIndex, 1)
-    if (gridApi.value && !gridApi.value.isDestroyed()) {
-      gridApi.value.applyTransaction({ update: gridData.value })
+    console.log('[TimesheetGrid] Row data to remove:', rowDataToRemove)
+    if (rowDataToRemove) {
+      if (gridApi.value && !gridApi.value.isDestroyed()) {
+        gridApi.value.applyTransaction({ remove: [rowDataToRemove] })
+        console.log('[TimesheetGrid] Row visually removed from grid.')
+      }
     }
     if (rowDataToRemove && rowDataToRemove.isNewRow) {
+      console.log('[TimesheetGrid] Row is new, clearing row instead of backend delete.')
       clearRow(rowIndex)
+
+      if (gridData.value.length === 0) {
+        addNewRow()
+        console.log('[TimesheetGrid] Added new empty row after deleting last row.')
+      }
       return
     }
     try {
       loading.value = true
       if (rowDataToRemove && rowDataToRemove.id) {
+        console.log('[TimesheetGrid] Calling onDeleteEntry for id:', rowDataToRemove.id)
         await onDeleteEntry(rowDataToRemove.id)
+        console.log('[TimesheetGrid] Backend delete successful for id:', rowDataToRemove.id)
       }
+    } catch (error) {
+      console.error('[TimesheetGrid] Error deleting row, restoring row:', error)
+      gridData.value.splice(rowIndex, 0, rowDataToRemove)
+      if (gridApi.value && !gridApi.value.isDestroyed()) {
+        gridApi.value.applyTransaction({ add: [rowDataToRemove] })
+        console.log('[TimesheetGrid] Row restored in grid after failed delete.')
+      }
+      throw error
     } finally {
       loading.value = false
+
+      if (gridData.value.length === 0) {
+        addNewRow()
+        console.log('[TimesheetGrid] Added new empty row after deleting last row.')
+      }
+      console.log('[TimesheetGrid] Delete row process finished.')
     }
   }
 

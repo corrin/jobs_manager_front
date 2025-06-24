@@ -29,8 +29,10 @@
             <button
               @click="addEvent"
               class="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+              :disabled="isAdding"
             >
-              Add Event
+              <span v-if="isAdding">Adding...</span>
+              <span v-else>Add Event</span>
             </button>
             <button
               @click="cancelAddEvent"
@@ -76,9 +78,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { JobEvent } from '@/services/job-rest.service'
-import { jobRestService } from '@/services/job-rest.service'
 import {
   Dialog,
   DialogContent,
@@ -92,6 +93,7 @@ interface Props {
   jobId: string
   events: JobEvent[]
   isOpen: boolean
+  loading?: boolean
 }
 
 const props = defineProps<Props>()
@@ -103,34 +105,15 @@ const emit = defineEmits<{
 
 const showAddEventForm = ref(false)
 const newEventDescription = ref('')
+const isAdding = computed(() => props.loading)
 
 const closeModal = () => {
   emit('close')
 }
 
 const addEvent = async () => {
-  if (!newEventDescription.value.trim()) return
-
-  try {
-    const result = await jobRestService.addJobEvent(props.jobId, newEventDescription.value)
-
-    if (
-      result.success &&
-      result.data &&
-      typeof result.data === 'object' &&
-      'id' in result.data &&
-      'description' in result.data &&
-      'timestamp' in result.data &&
-      'event_type' in result.data
-    ) {
-      emit('event-added', result.data as JobEvent)
-      newEventDescription.value = ''
-      showAddEventForm.value = false
-    }
-  } catch (error) {
-    console.error('Error adding event:', error)
-    alert('Failed to add event. Please try again.')
-  }
+  if (!newEventDescription.value.trim() || isAdding.value) return
+  emit('event-added', { description: newEventDescription.value })
 }
 
 const cancelAddEvent = () => {

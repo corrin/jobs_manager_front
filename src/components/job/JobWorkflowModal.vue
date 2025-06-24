@@ -276,15 +276,27 @@ const saveWorkflow = async () => {
   isLoading.value = true
 
   try {
+    // Log: Collecting form data before preparing update
+    console.log(
+      'JobWorkflowModal - saveWorkflow - Collecting form data:',
+      JSON.parse(JSON.stringify(localJobData.value)),
+    )
     const updateData = prepareUpdateData()
-    const result = await jobRestService.updateJob(props.jobData.id, updateData)
+    // Log: Data prepared for API call
+    console.log(
+      'JobWorkflowModal - saveWorkflow - Prepared updateData:',
+      JSON.parse(JSON.stringify(updateData)),
+    )
 
-    if (!result.success) {
+    // Replaced 'any' with 'unknown' and added type guard if needed
+    const response = (await JobRestService.updateJob(jobData.value.id, updatedJobData)) as unknown
+
+    if (!response.success) {
       throw new Error('Failed to update workflow - request failed')
     }
 
-    if (result.data) {
-      handleSuccessfulUpdate(result.data)
+    if (response.data) {
+      handleSuccessfulUpdate(response.data)
     } else {
       console.log('⚠️ JobWorkflowModal - API returned success but no data, using local updates')
 
@@ -320,13 +332,19 @@ const prepareUpdateData = (): JobUpdateData => {
 }
 
 const handleSuccessfulUpdate = (updatedJobData: unknown) => {
+  // Log: About to update store with API data
+  console.log(
+    'JobWorkflowModal - handleSuccessfulUpdate - About to update store with:',
+    JSON.parse(JSON.stringify(updatedJobData)),
+  )
+
   if (!updatedJobData) {
     console.error('🚨 JobWorkflowModal - handleSuccessfulUpdate called with null/undefined data')
     throw new Error('Invalid job data received - data is null or undefined')
   }
 
   const data = updatedJobData as unknown
-  let jobData: JobData
+  let jobData: JobData | undefined
 
   if (
     typeof data === 'object' &&
@@ -334,17 +352,20 @@ const handleSuccessfulUpdate = (updatedJobData: unknown) => {
     'data' in data &&
     typeof (data as Record<string, unknown>).data === 'object' &&
     (data as Record<string, unknown>).data !== null &&
-    (() => {
-      const dataObj = (data as Record<string, unknown>).data
-      if (!dataObj || typeof dataObj !== 'object') return false
-      const jobObj = (dataObj as { job?: Record<string, unknown> }).job
-      return jobObj !== undefined && jobObj !== null && typeof jobObj === 'object' && 'id' in jobObj
-    })()
+    isObjectWithJob((data as Record<string, unknown>).data)
   ) {
-    jobData = { ...(data as { data: { job: object } }).data.job } as JobData
+    jobData = { ...(data as { data: { job: Record<string, unknown> } }).data.job } as JobData
+  } else if (
+    typeof data === 'object' &&
+    data !== null &&
+    'job' in data &&
+    typeof (data as Record<string, unknown>).job === 'object'
+  ) {
+    jobData = { ...(data as { job: object }).job } as JobData
   } else if (typeof data === 'object' && data !== null && 'id' in data) {
     jobData = { ...(data as object) } as JobData
   } else {
+    console.error('🚨 JobWorkflowModal - Invalid job data structure:', data)
     throw new Error('Invalid job data structure')
   }
 
@@ -378,5 +399,9 @@ const handleUpdateError = (error: unknown) => {
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
+}
+
+function isObjectWithJob(obj: unknown): obj is { job: unknown } {
+  return typeof obj === 'object' && obj !== null && 'job' in obj
 }
 </script>

@@ -466,6 +466,28 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
+  async function fetchJob(jobId: string): Promise<unknown> {
+    if (!jobId) return undefined
+    try {
+      const { jobRestService } = await import('@/services/job-rest.service')
+      const response = await jobRestService.getJobForEdit(jobId)
+
+      switch (true) {
+        case !!(response.success && response.data):
+          setDetailedJob(response.data.job)
+          return { job: response.data.job, events: response.data.events || [] }
+        case !!response.job:
+          setDetailedJob(response.job)
+          return { job: response.job, events: response.events || [] }
+        default:
+          throw new Error('Job not found')
+      }
+    } catch (error) {
+      console.error('❌ Store - fetchJob error:', error)
+      throw error
+    }
+  }
+
   return {
     detailedJobs,
     kanbanJobs,
@@ -507,5 +529,7 @@ export const useJobsStore = defineStore('jobs', () => {
 
     linkQuote,
     refreshQuote,
+
+    fetchJob,
   }
 })

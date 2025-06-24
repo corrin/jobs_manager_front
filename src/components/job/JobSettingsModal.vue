@@ -434,10 +434,14 @@ const saveSettings = async () => {
   isLoading.value = true
   errorMessages.value = []
   try {
+    console.log(
+      'JobSettingsModal - saveSettings - Collecting form data:',
+      JSON.parse(JSON.stringify(localJobData.value)),
+    )
     const sanitizedData = sanitizeJobData(localJobData.value)
 
     console.log(
-      `JobSettingsModal - saveSettings - Updating job ID: ${props.jobData.id} with data:`,
+      `JobSettingsModal - saveSettings - Sanitized data for job ID: ${props.jobData.id}:`,
       JSON.parse(JSON.stringify(sanitizedData)),
     )
     const result = await jobRestService.updateJob(props.jobData.id, sanitizedData)
@@ -478,6 +482,11 @@ const saveSettings = async () => {
 }
 
 const handleSuccessfulSettingsUpdate = (apiData: unknown) => {
+  console.log(
+    'JobSettingsModal - handleSuccessfulSettingsUpdate - About to update store with:',
+    JSON.parse(JSON.stringify(apiData)),
+  )
+
   console.log(
     'JobSettingsModal - handleSuccessfulSettingsUpdate - Entry. Raw apiData:',
     JSON.parse(JSON.stringify(apiData)),

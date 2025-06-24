@@ -262,7 +262,7 @@ const ensureEmptyRowAtEnd = () => {
     !lastLine.meta?.total_cost
 
   if (!isLastLineEmpty) {
-    console.log('📝 Adding empty row at end for better UX')
+    console.log('📝 Adding an empty row at the end for a better user experience (NZ English)')
     const emptyLine: Partial<CostLine> = {
       id: Date.now() + Math.random(),
       kind: 'material',
