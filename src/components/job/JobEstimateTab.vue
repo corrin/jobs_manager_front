@@ -14,9 +14,10 @@
         @add-time="handleAddTime"
       />
     </div>
-
-    <div class="flex gap-4 h-full">
-      <div class="flex-[3] bg-white rounded-lg border border-gray-200 flex flex-col min-h-0">
+    <div class="flex gap-4 h-[600px] min-h-0">
+      <div
+        class="flex-[3] bg-white rounded-lg border border-gray-200 flex flex-col min-h-0 max-h-full"
+      >
         <div class="flex-shrink-0 p-4 border-b border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900">Estimate Details</h3>
         </div>
@@ -24,14 +25,13 @@
           <CostLinesGrid
             :costLines="costLines"
             :showActions="true"
-            @edit="() => {}"
-            @delete="() => {}"
+            @edit="handleEditCostLine"
+            @delete="handleDeleteCostLine"
           />
         </div>
       </div>
-
       <div
-        class="flex-[2] bg-gray-50 rounded-lg p-3 border border-gray-200 overflow-y-auto max-h-96"
+        class="flex-[2] bg-gray-50 rounded-lg p-3 border border-gray-200 overflow-y-auto max-h-full min-h-0 flex flex-col"
       >
         <CostSetSummaryCard
           title="Estimate Summary"
@@ -177,6 +177,28 @@ async function handleAddTime(payload: CostLine) {
   } catch (error) {
     // TODO: show error toast
     console.error('Failed to add time:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const editingCostLine = ref<CostLine | null>(null)
+
+function handleEditCostLine(line: CostLine) {
+  editingCostLine.value = line
+  // Aqui você pode abrir um modal de edição, etc.
+  // Exemplo: showEditModal.value = true
+}
+
+async function handleDeleteCostLine(line: CostLine) {
+  if (!line.id) return
+  isLoading.value = true
+  try {
+    await costlineService.deleteCostLine(line.id)
+    costLines.value = costLines.value.filter((l) => l.id !== line.id)
+  } catch (error) {
+    // TODO: show error toast
+    console.error('Failed to delete cost line:', error)
   } finally {
     isLoading.value = false
   }

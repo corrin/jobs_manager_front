@@ -128,6 +128,7 @@
                 <button
                   @click="onEdit(line)"
                   class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-blue-800 focus:outline-none"
+                  aria-label="Edit cost line"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -140,13 +141,14 @@
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
-                      d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 00-4-4l-8 8v3h3z"
+                      d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.213l-4 1 1-4 12.362-12.726z"
                     />
                   </svg>
                 </button>
                 <button
                   @click="onDelete(line)"
                   class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 focus:outline-none"
+                  aria-label="Delete cost line"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
