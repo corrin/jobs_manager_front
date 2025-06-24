@@ -10,6 +10,30 @@
           </h2>
           <p class="text-gray-600">Manage quote details and cost breakdown for this job.</p>
         </div>
+        <div class="flex gap-2">
+          <button
+            v-if="!currentQuote?.has_quote"
+            class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            @click="onLinkQuote"
+          >
+            Link Quote
+          </button>
+          <template v-else>
+            <button
+              class="px-4 py-2 bg-gray-100 text-blue-700 border border-blue-300 rounded-md font-medium hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              @click="onGoToSpreadsheet"
+            >
+              Go to Spreadsheet
+            </button>
+            <button
+              class="px-4 py-2 bg-gray-100 text-blue-700 border border-blue-300 rounded-md font-medium hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              @click="onRefreshSpreadsheet"
+              :disabled="isLoading || isRefreshing"
+            >
+              Refresh Spreadsheet
+            </button>
+          </template>
+        </div>
       </div>
     </div>
 
@@ -23,12 +47,11 @@
         </div>
       </div>
       <div class="flex-1">
-        <QuoteSummaryCard
-          :quote-data="currentQuote.quote"
-          :is-loading="isLoading"
-          :job="jobData as Job"
-          @quote-refreshed="handleQuoteRefreshed"
-          class="h-full"
+        <CostSetSummaryCard
+          title="Quote Summary"
+          :summary="currentQuote.quote?.summary"
+          :costLines="quoteCostLines"
+          :isLoading="isLoading"
         />
       </div>
     </div>
@@ -41,35 +64,78 @@
         :materialsMarkup="0"
       />
       <CostLinesGrid :costLines="quoteCostLines" :showActions="true" />
-      <QuoteSummaryCard
-        :quote-data="null"
-        :is-loading="isLoading"
-        :job="jobData"
-        @quote-refreshed="handleQuoteRefreshed"
-        class="h-full"
+      <CostSetSummaryCard
+        title="Quote Summary"
+        :summary="null"
+        :costLines="quoteCostLines"
+        :isLoading="isLoading"
       />
     </div>
+
+    <Dialog :open="showPreviewModal" @update:open="showPreviewModal = $event">
+      <DialogContent class="sm:max-w-4xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>Quote Refresh Preview</DialogTitle>
+          <DialogDescription>
+            Review the changes that will be applied to your quote
+          </DialogDescription>
+        </DialogHeader>
+        <div v-if="previewData" class="space-y-6">
+          <div class="bg-blue-50 rounded-lg p-4">
+            <h4 class="font-medium text-blue-900 mb-3">Summary of Changes</h4>
+            <div v-if="previewData.diff_preview.total_changes > 0" class="grid grid-cols-3 gap-4 text-sm">
+              <div class="text-center">
+                <div class="text-lg font-bold text-green-600">{{ previewData.diff_preview.additions_count }}</div>
+                <div class="text-gray-600">Additions</div>
+              </div>
+              <div class="text-center">
+                <div class="text-lg font-bold text-blue-600">{{ previewData.diff_preview.updates_count }}</div>
+                <div class="text-gray-600">Updates</div>
+              </div>
+              <div class="text-center">
+                <div class="text-lg font-bold text-red-600">{{ previewData.diff_preview.deletions_count }}</div>
+                <div class="text-gray-600">Deletions</div>
+              </div>
+            </div>
+            <div v-else class="text-center">
+              <div class="text-lg font-bold text-gray-600">0</div>
+              <div class="text-gray-600">No changes detected</div>
+              <div class="text-sm text-gray-500 mt-1">The spreadsheet is in sync with the system</div>
+            </div>
+          </div>
+          <!-- Adicione aqui detalhes dos itens, erros e warnings se necessário -->
+        </div>
+        <DialogFooter>
+          <button class="px-4 py-2 bg-gray-200 rounded-md mr-2" @click="showPreviewModal = false">Cancel</button>
+          <button
+            class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium"
+            :disabled="!previewData || previewData.diff_preview.total_changes === 0 || isRefreshing"
+            @click="onApplySpreadsheetChanges"
+          >
+            {{ previewData?.diff_preview.total_changes === 0 ? 'No Changes to Apply' : `Apply ${previewData?.diff_preview.total_changes} Changes` }}
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed } from 'vue'
 import AddCostLineDropdown from './AddCostLineDropdown.vue'
 import CostLinesGrid from '../shared/CostLinesGrid.vue'
-import QuoteSummaryCard from '@/components/quote/QuoteSummaryCard.vue'
-import type { Job, QuoteOperationResult, QuoteSheet } from '@/types'
+import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
+import { quoteService, type QuotePreview, type QuoteApplyResult } from '../../services/quote.service'
+import { toast } from 'vue-sonner'
+import type { Job } from '../../types/costing.types'
+import type { CostLine } from '../../types/costing.types'
 
 interface Props {
   jobId: string
   jobData?: Job
 }
 
-interface Emits {
-  quoteImported: [result: QuoteOperationResult]
-}
-
 const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
 
 const currentQuote = computed(() => {
   const jobData = props.jobData as unknown
@@ -80,7 +146,7 @@ const currentQuote = computed(() => {
     rev: number
     created: string
     summary: { cost: number; rev: number; hours: number }
-    cost_lines: import('@/schemas/costing.schemas').CostLine[]
+    cost_lines: CostLine[]
   }
   type JobData = { latest_quote?: QuoteData; latest_quote_pricing?: { id: string } }
   const isJobData = (data: unknown): data is JobData => typeof data === 'object' && data !== null
@@ -89,22 +155,11 @@ const currentQuote = computed(() => {
     return { has_quote: false, quote: null }
   }
 
-  console.log('🔍 [JobQuoteTab] Debug jobData structure:', {
-    hasJobData: !!props.jobData,
-    hasLatestQuote: !!jobData.latest_quote,
-    hasLatestQuotePricing: !!jobData.latest_quote_pricing,
-    latestQuoteId: jobData.latest_quote?.id,
-    latestQuotePricingId: jobData.latest_quote_pricing?.id,
-  })
-
   if (!jobData.latest_quote) {
-    console.log('📊 [JobQuoteTab] No quote data in jobData')
     return { has_quote: false, quote: null }
   }
 
   const quoteData = jobData.latest_quote
-  console.log('📊 [JobQuoteTab] Using quote data from jobData:', quoteData)
-
   return {
     has_quote: true,
     quote: {
@@ -124,38 +179,63 @@ const currentQuote = computed(() => {
 })
 
 const isLoading = ref(false)
+const isRefreshing = ref(false)
+const showPreviewModal = ref(false)
+const previewData = ref<QuotePreview | null>(null)
 
 const quoteCostLines = computed(() => {
   const lines = currentQuote.value?.quote?.cost_lines || []
   return lines
 })
 
-function handleQuoteRefreshed(
-  data: QuoteOperationResult | (QuoteSheet & { shouldReloadJob: boolean }),
-) {
-  emit('quoteImported', data as QuoteOperationResult)
+function onLinkQuote() {
+  // TODO: implementar lógica de linkar quote
+  // Exemplo: abrir modal ou chamar service
+  alert('Link Quote action triggered!')
 }
 
-onMounted(() => {
-  console.log('🚀 [JobQuoteTab] Component mounted, jobId:', props.jobId)
-  console.log('📊 [JobQuoteTab] Initial jobData:', props.jobData)
-})
+function onGoToSpreadsheet() {
+  // TODO: implementar navegação para a planilha vinculada
+  // Exemplo: abrir URL em nova aba
+  // window.open(sheetUrl, '_blank')
+  alert('Go to Spreadsheet action triggered!')
+}
 
-watch(
-  () => props.jobData,
-  (newJobData) => {
-    console.log('👀 [JobQuoteTab] Job data changed:', newJobData)
-  },
-  { deep: true },
-)
+async function onRefreshSpreadsheet() {
+  if (!props.jobData?.id) return
+  isRefreshing.value = true
+  toast.loading('Checking for updates...', { id: 'quote-refresh' })
+  try {
+    const preview = await quoteService.previewQuote(props.jobId)
+    previewData.value = preview
+    showPreviewModal.value = true
+    toast.dismiss('quote-refresh')
+  } catch {
+    toast.error('Error checking for updates', { id: 'quote-refresh' })
+  } finally {
+    isRefreshing.value = false
+  }
+}
 
-watch(
-  currentQuote,
-  (newQuote) => {
-    console.log('📊 [JobQuoteTab] currentQuote updated:', newQuote)
-  },
-  { deep: true },
-)
+async function onApplySpreadsheetChanges() {
+  if (!props.jobData?.id) return
+  toast.loading('Applying changes...', { id: 'quote-apply' })
+  try {
+    const result: QuoteApplyResult = await quoteService.applyQuote(props.jobId)
+    if (result.success) {
+      toast.success('Changes applied successfully!')
+      // TODO: atualizar estado local com os novos dados da quote
+    } else {
+      toast.error('Failed to apply changes')
+    }
+  } catch {
+    toast.error('Error applying changes', { id: 'quote-apply' })
+  } finally {
+    toast.dismiss('quote-apply')
+  }
+}
 </script>
 
-<style scoped></style>
+<style scoped>
+/* Adicione estilos personalizados aqui, se necessário */
+</style>

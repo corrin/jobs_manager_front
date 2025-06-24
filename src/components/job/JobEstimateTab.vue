@@ -19,61 +19,12 @@
       <div
         class="flex-[2] bg-gray-50 rounded-lg p-3 border border-gray-200 overflow-y-auto max-h-96"
       >
-        <h3 class="text-sm font-semibold text-gray-900 mb-3">Summary</h3>
-
-        <div class="space-y-2 mb-3">
-          <div class="bg-blue-50 p-2 rounded border border-blue-200">
-            <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-blue-800">Labour Cost</div>
-              <div class="text-sm font-bold text-blue-900">
-                {{ formatCurrency(totalLabourCost) }}
-              </div>
-            </div>
-            <div class="text-xs text-blue-600">
-              {{ totalLabourHours.toFixed(1) }}h × ${{ wageRate }}/h (internal)
-            </div>
-          </div>
-
-          <div class="bg-green-50 p-2 rounded border border-green-200">
-            <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-green-800">Material Cost</div>
-              <div class="text-sm font-bold text-green-900">
-                {{ formatCurrency(materialCostBeforeMarkup) }}
-              </div>
-            </div>
-            <div class="text-xs text-green-600">Total material costs</div>
-          </div>
-
-          <div class="bg-orange-50 p-2 rounded border border-orange-200">
-            <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-orange-800">Labour Revenue</div>
-              <div class="text-sm font-bold text-orange-900">
-                {{ formatCurrency(labourHoursCost) }}
-              </div>
-            </div>
-            <div class="text-xs text-orange-600">
-              {{ totalLabourHours.toFixed(1) }}h × ${{ chargeOutRate }}/h
-            </div>
-          </div>
-
-          <div class="bg-yellow-50 p-2 rounded border border-yellow-200">
-            <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-yellow-800">Material Revenue</div>
-              <div class="text-sm font-bold text-yellow-900">
-                {{ formatCurrency(materialCostAfterMarkup) }}
-              </div>
-            </div>
-            <div class="text-xs text-yellow-600">{{ materialMarkupPercent }}% markup</div>
-          </div>
-
-          <div class="bg-purple-50 p-2 rounded border border-purple-200">
-            <div class="flex justify-between items-center">
-              <div class="text-xs font-medium text-purple-800">Total Revenue</div>
-              <div class="text-base font-bold text-purple-900">{{ formatCurrency(finalCost) }}</div>
-            </div>
-            <div class="text-xs text-purple-600">Labour + Material Revenue</div>
-          </div>
-        </div>
+        <CostSetSummaryCard
+          title="Estimate Summary"
+          :summary="estimateSummary"
+          :costLines="costLines"
+          :isLoading="isLoading"
+        />
       </div>
     </div>
 
@@ -93,6 +44,8 @@
 import { ref, computed } from 'vue'
 import AddCostLineDropdown from './AddCostLineDropdown.vue'
 import CostLinesGrid from './CostLinesGrid.vue'
+import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
+import { costlineService, type CostLineCreatePayload } from '@/services/costline.service'
 import type { CostLine } from '@/types/costing.types'
 
 interface Props {
@@ -110,90 +63,75 @@ const costLines = ref<CostLine[]>([])
 const isLoading = ref(false)
 
 const chargeOutRate = computed(() => props.companyDefaults?.charge_out_rate || 150)
-const materialMarkupPercent = computed(() => {
-  const markup = props.companyDefaults?.materials_markup || 0.2
-  return markup * 100
-})
 const wageRate = computed(() => props.companyDefaults?.wage_rate || 60)
 
-const totalLabourHours = computed(() => {
-  console.log(
-    '⏰ Labour calculation - Lines:',
-    costLines.value.filter((line) => line.kind === 'time').length,
-  )
-
-  const totalHours = costLines.value
-    .filter((line) => line.kind === 'time')
-    .reduce((total, line) => {
-      const totalCost = parseFloat(String(line.total_cost)) || 0
-      const wageRateValue = wageRate.value || 32
-
-      const hoursForLine = wageRateValue > 0 ? totalCost / wageRateValue : 0
-
-      console.log(
-        `Line ${line.id}: total_cost=${totalCost} ÷ wage_rate=${wageRateValue} = ${hoursForLine}h`,
-      )
-      return total + hoursForLine
-    }, 0)
-
-  console.log('⏰ Labour calculation - Total hours from DB fields:', totalHours)
-  return totalHours
-})
-
-const labourHoursCost = computed(() => {
-  const cost = totalLabourHours.value * chargeOutRate.value
-  console.log(
-    '💰 Labour Hours Cost calculation - Hours:',
-    totalLabourHours.value,
-    'Rate:',
-    chargeOutRate.value,
-    'Cost:',
+const estimateSummary = computed(() => {
+  let cost = 0
+  let rev = 0
+  let hours = 0
+  for (const line of costLines.value) {
+    const quantity = typeof line.quantity === 'string' ? Number(line.quantity) : line.quantity
+    if (line.kind === 'time') {
+      cost += quantity * Number(line.unit_cost)
+      rev += quantity * Number(line.unit_rev)
+      hours += quantity
+    } else if (line.kind === 'material') {
+      cost += quantity * Number(line.unit_cost)
+      rev += quantity * Number(line.unit_rev)
+    }
+  }
+  return {
     cost,
-  )
-  return cost
+    rev,
+    hours,
+    created: undefined
+  }
 })
 
-const totalLabourCost = computed(() => {
-  const cost = totalLabourHours.value * wageRate.value
-  console.log(
-    '💼 Total Labour Cost calculation - Hours:',
-    totalLabourHours.value,
-    'Wage:',
-    wageRate.value,
-    'Cost:',
-    cost,
-  )
-  return cost
-})
-
-const materialCostBeforeMarkup = computed(() => {
-  return costLines.value
-    .filter((line) => line.meta?.total_cost && !line.meta?.labour_minutes)
-    .reduce((total, line) => total + parseFloat(String(line.meta?.total_cost || 0)), 0)
-})
-
-const materialCostAfterMarkup = computed(() => {
-  const markup = materialMarkupPercent.value / 100
-  return materialCostBeforeMarkup.value * (1 + markup)
-})
-
-const finalCost = computed(() => {
-  return labourHoursCost.value + materialCostAfterMarkup.value
-})
-
-function handleAddMaterial(payload: CostLine) {
-  console.log('Material payload received in parent:', payload)
+async function handleAddMaterial(payload: CostLine) {
+  if (!payload || payload.kind !== 'material') return
+  isLoading.value = true
+  try {
+    const createPayload: CostLineCreatePayload = {
+      kind: 'material',
+      desc: payload.desc,
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
+      ext_refs: payload.ext_refs,
+      meta: payload.meta,
+    }
+    const created = await costlineService.createCostLine(props.jobId, 'estimate', createPayload)
+    costLines.value = [...costLines.value, created]
+  } catch (error) {
+    // TODO: exibir mensagem de erro para o usuário (ex: toast)
+    console.error('Erro ao adicionar material:', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 
-function handleAddTime(payload: CostLine) {
-  console.log('Time payload received in parent:', payload)
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
+async function handleAddTime(payload: CostLine) {
+  if (!payload || payload.kind !== 'time') return
+  isLoading.value = true
+  try {
+    const createPayload: CostLineCreatePayload = {
+      kind: 'time',
+      desc: payload.desc,
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
+      ext_refs: payload.ext_refs,
+      meta: payload.meta,
+    }
+    const created = await costlineService.createCostLine(props.jobId, 'estimate', createPayload)
+    costLines.value = [...costLines.value, created]
+  } catch (error) {
+    // TODO: exibir mensagem de erro para o usuário (ex: toast)
+    console.error('Erro ao adicionar tempo:', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
