@@ -15,51 +15,62 @@ Unify the cost line management experience (materials and time) in the Estimate a
 - _JobQuoteTab.vue_: Uses QuoteCostLinesGrid.vue, but no actions.
 - _QuoteSummaryCard.vue_: Cost set/quote summary, can be generalised.
 - _Endpoints_: Backend already supports create/update/delete costline for any costset (estimate, quote, actual).
-- _Company Defaults_: wage_rate, charge_out_rate, materials_markup available via props.
+- _Company Defaults_: wage_rate, charge_out_rate, materials_markup available via service.
 
 ---
 
-## 2. Modular Refactor Plan
+## 2. Modular Refactor Plan (Updated)
 
 ### PART 1: Centralised CostLinesGrid Component
 
-- Create CostLinesGrid.vue based on QuoteCostLinesGrid.vue, but with optional "Actions" column (edit/delete).
-- Allow edit/delete via props/callbacks.
-- Use for estimate and quote.
-- **Status: Done**
+- Single CostLinesGrid.vue in shared/ for both estimate and quote.
+- Always use "$" as the currency symbol.
+- Columns: Item, Description, Kind, Quantity, Unit cost, Unit revenue, Total cost, Total revenue, Actions (optional).
+- Edit/delete via props/callbacks.
+- Component centralised and legacy job/ version removed.
 
-### PART 2: Add Entry Dropdown/Modal
+### PART 2: Add Entry Dropdown/Modal (Updated)
 
-- Create AddCostLineDropdown.vue (dropdown + modals for material/time).
-- Material modal: unit cost, quantity, show unit revenue/total revenue (uses company defaults).
-- Time modal: time (decimal), show total cost/revenue (uses wage_rate/charge_out_rate).
-- "+ Add entry" button always visible, dropdown disabled if quote_sheet present.
-- **Status: Next**
+- AddCostLineDropdown.vue triggers modals for material/time.
+- **Material modal:**
+  - Only two fields: unit cost and quantity.
+  - Mini summary: unit revenue (editable), total revenue, total cost (all calculated live).
+  - unit revenue defaults to unit cost * (1 + materials_markup from company defaults), but is editable.
+  - All calculations use company defaults from service.
+- **Time modal:**
+  - Only one field: hours (decimal, becomes quantity).
+  - Mini summary: total cost and total revenue (calculated live).
+  - unit cost = wage_rate, unit revenue = charge_out_rate (from company defaults, not shown, sent to backend).
+- Both modals implemented conforme requisitos.
 
 ### PART 3: Refactor JobEstimateTab.vue
 
 - Remove AG Grid.
-- Use CostLinesGrid.vue to list estimate cost lines.
+- Use shared/CostLinesGrid.vue.
 - Use AddCostLineDropdown.vue to add.
 - Edit/delete via modals and service.
 - Update summary reactively (use generic SummaryCard).
+- [em andamento]
 
 ### PART 4: Refactor JobQuoteTab.vue
 
-- Use CostLinesGrid.vue for quote if no quote_sheet.
+- Use shared/CostLinesGrid.vue for quote if no quote_sheet.
 - Dropdown disabled if quote_sheet.
 - Generic SummaryCard.
+- [próximo]
 
 ### PART 5: Generic SummaryCard
 
 - Generalise QuoteSummaryCard.vue for any costset.
 - Use in Estimate and Quote.
+- [próximo]
 
 ### PART 6: Integration and Testing
 
 - Ensure reactive update after CRUD.
 - Test edit lock when quote_sheet.
 - Test UX of modals and dropdown.
+- [próximo]
 
 ---
 
@@ -69,6 +80,7 @@ Unify the cost line management experience (materials and time) in the Estimate a
 - updateCostLine(id, payload)
 - deleteCostLine(id)
 - fetchCostSet(jobId, kind)
+- get company defaults from CompanyDefaultsService
 
 ---
 
@@ -81,8 +93,8 @@ Unify the cost line management experience (materials and time) in the Estimate a
 
 ## 5. Incremental Execution
 
-- [x] Part 1: CostLinesGrid.vue
-- [ ] Part 2: AddCostLineDropdown.vue + modals
+- [x] Part 1: CostLinesGrid.vue (shared, centralised)
+- [x] Part 2: AddCostLineDropdown.vue + modals (updated requirements)
 - [ ] Part 3: Refactor JobEstimateTab.vue
 - [ ] Part 4: Refactor JobQuoteTab.vue
 - [ ] Part 5: Generic SummaryCard
@@ -94,9 +106,9 @@ Unify the cost line management experience (materials and time) in the Estimate a
 
 - The plan allows incremental execution, with testing at each step.
 - Backend is ready for the flow.
-- Modal design can be simple, prioritising UX and clarity.
+- Modal design is simple, prioritising UX and clarity.
 - The centralised component makes future maintenance easier.
 
 ---
 
-_Plan updated. Part 1 complete. Ready to proceed with Part 2: AddCostLineDropdown.vue + modals._
+_Plan updated. Part 1 and 2 complete and centralised. Proceeding to refactor tabs and summary._

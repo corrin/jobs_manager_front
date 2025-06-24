@@ -95,6 +95,16 @@
         </div>
       </div>
     </div>
+
+    <AddCostLineDropdown
+      :disabled="isLoading"
+      :wageRate="wageRate"
+      :chargeOutRate="chargeOutRate"
+      :materialsMarkup="props.companyDefaults?.materials_markup || 0"
+      @add-material="handleAddMaterial"
+      @add-time="handleAddTime"
+    />
+    <CostLinesGrid :costLines="costLines" :showActions="true" @edit="() => {}" @delete="() => {}" />
   </div>
 </template>
 
@@ -121,6 +131,8 @@ import { customTheme } from '@/plugins/ag-grid'
 import { createCostLine, updateCostLine, deleteCostLine } from '@/services/costline.service'
 import { fetchCostSet } from '@/services/costing.service'
 import type { CostLine } from '@/types/costing.types'
+import AddCostLineDropdown from './AddCostLineDropdown.vue'
+import CostLinesGrid from './CostLinesGrid.vue'
 
 interface Props {
   jobId: string
