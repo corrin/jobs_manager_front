@@ -5,10 +5,14 @@
         Job Estimate
         <span v-if="isLoading" class="ml-2 text-sm text-gray-500">Loading...</span>
       </h2>
-      <div class="flex space-x-2">
-        <button title="Add new item (Shift+N)"></button>
-        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"></button>
-      </div>
+      <AddCostLineDropdown
+        :disabled="isLoading"
+        :wageRate="wageRate"
+        :chargeOutRate="chargeOutRate"
+        :materialsMarkup="props.companyDefaults?.materials_markup || 0"
+        @add-material="handleAddMaterial"
+        @add-time="handleAddTime"
+      />
     </div>
 
     <div class="flex gap-4 h-full">
@@ -28,14 +32,6 @@
       </div>
     </div>
 
-    <AddCostLineDropdown
-      :disabled="isLoading"
-      :wageRate="wageRate"
-      :chargeOutRate="chargeOutRate"
-      :materialsMarkup="props.companyDefaults?.materials_markup || 0"
-      @add-material="handleAddMaterial"
-      @add-time="handleAddTime"
-    />
     <CostLinesGrid :costLines="costLines" :showActions="true" @edit="() => {}" @delete="() => {}" />
   </div>
 </template>

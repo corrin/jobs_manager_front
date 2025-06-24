@@ -1,50 +1,54 @@
 <template>
-  <div>
-    <button @click="toggleDropdown" :disabled="disabled" class="add-entry-btn">
-      + Add entry
-    </button>
-    <div v-if="dropdownOpen" class="dropdown-menu">
-      <button @click="openMaterialModal">Material</button>
-      <button @click="openTimeModal">Time</button>
-    </div>
-    <MaterialModal
-      v-if="showMaterialModal"
-      :wageRate="wageRate"
-      :chargeOutRate="chargeOutRate"
-      :materialsMarkup="materialsMarkup"
-      @close="closeMaterialModal"
-      @submit="onMaterialSubmit"
-    />
-    <TimeModal
-      v-if="showTimeModal"
-      :wageRate="wageRate"
-      :chargeOutRate="chargeOutRate"
-      @close="closeTimeModal"
-      @submit="onTimeSubmit"
-    />
-  </div>
+  <DropdownMenu>
+    <DropdownMenuTrigger as-child>
+      <Button :disabled="disabled" variant="outline" class="gap-2">
+        <Plus class="w-4 h-4" />
+        Add entry
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end">
+      <DropdownMenuItem @click="openMaterialModal">
+        <Package class="w-4 h-4 mr-2 text-blue-600" /> Material
+      </DropdownMenuItem>
+      <DropdownMenuItem @click="openTimeModal">
+        <Clock class="w-4 h-4 mr-2 text-green-600" /> Time
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+  <MaterialModal
+    v-if="showMaterialModal"
+    :wageRate="wageRate"
+    :chargeOutRate="chargeOutRate"
+    :materialsMarkup="materialsMarkup"
+    @close="closeMaterialModal"
+    @submit="onMaterialSubmit"
+  />
+  <TimeModal
+    v-if="showTimeModal"
+    :wageRate="wageRate"
+    :chargeOutRate="chargeOutRate"
+    @close="closeTimeModal"
+    @submit="onTimeSubmit"
+  />
 </template>
 
 <script lang="ts" setup>
 import { ref, defineEmits } from 'vue'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
+import { Plus, Package, Clock } from 'lucide-vue-next'
 import MaterialModal from './AddCostLineMaterialModal.vue'
 import TimeModal from './AddCostLineTimeModal.vue'
 
 const emit = defineEmits(['add-material', 'add-time'])
 
-const dropdownOpen = ref(false)
 const showMaterialModal = ref(false)
 const showTimeModal = ref(false)
 
-function toggleDropdown() {
-  dropdownOpen.value = !dropdownOpen.value
-}
 function openMaterialModal() {
-  dropdownOpen.value = false
   showMaterialModal.value = true
 }
 function openTimeModal() {
-  dropdownOpen.value = false
   showTimeModal.value = true
 }
 function closeMaterialModal() {
@@ -66,22 +70,5 @@ function onTimeSubmit(payload: Record<string, unknown>) {
 <style scoped>
 .add-entry-btn {
   min-width: 120px;
-}
-.dropdown-menu {
-  position: absolute;
-  background: #fff;
-  border: 1px solid #ccc;
-  z-index: 10;
-  margin-top: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-.dropdown-menu button {
-  display: block;
-  width: 100%;
-  padding: 8px 16px;
-  background: none;
-  border: none;
-  text-align: left;
-  cursor: pointer;
 }
 </style>

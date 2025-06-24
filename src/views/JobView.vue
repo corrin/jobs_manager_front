@@ -181,7 +181,7 @@
           @invoice-created="handleInvoiceCreated"
         />
         <div v-else class="text-red-600 text-sm mt-4">
-          Não foi possível renderizar as abas. Verifique se jobData, companyDefaults e activeTab estão definidos.
+          Unable to render tabs. Please check if jobData, companyDefaults and activeTab are defined.
         </div>
       </template>
       <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-4">
