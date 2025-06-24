@@ -19,10 +19,9 @@
           <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
         </div>
         <div class="flex-1 overflow-hidden">
-          <QuoteCostLinesGrid :cost-lines="quoteCostLines" :is-loading="isLoading" />
+          <CostLinesGrid :costLines="quoteCostLines" :showActions="false" />
         </div>
       </div>
-
       <div class="flex-1">
         <QuoteSummaryCard
           :quote-data="currentQuote.quote"
@@ -35,6 +34,13 @@
     </div>
 
     <div v-else class="flex-1">
+      <AddCostLineDropdown
+        :disabled="true"
+        :wageRate="0"
+        :chargeOutRate="0"
+        :materialsMarkup="0"
+      />
+      <CostLinesGrid :costLines="quoteCostLines" :showActions="true" />
       <QuoteSummaryCard
         :quote-data="null"
         :is-loading="isLoading"
@@ -48,7 +54,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import QuoteCostLinesGrid from '@/components/quote/QuoteCostLinesGrid.vue'
+import AddCostLineDropdown from './AddCostLineDropdown.vue'
+import CostLinesGrid from '../shared/CostLinesGrid.vue'
 import QuoteSummaryCard from '@/components/quote/QuoteSummaryCard.vue'
 import type { Job, QuoteOperationResult, QuoteSheet } from '@/types'
 
@@ -120,14 +127,12 @@ const isLoading = ref(false)
 
 const quoteCostLines = computed(() => {
   const lines = currentQuote.value?.quote?.cost_lines || []
-  console.log('💰 [JobQuoteTab] quoteCostLines computed:', lines)
   return lines
 })
 
 function handleQuoteRefreshed(
   data: QuoteOperationResult | (QuoteSheet & { shouldReloadJob: boolean }),
 ) {
-  console.log('🔄 [JobQuoteTab] Quote refreshed:', data)
   emit('quoteImported', data as QuoteOperationResult)
 }
 
