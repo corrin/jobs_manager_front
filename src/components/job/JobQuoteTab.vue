@@ -123,7 +123,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import AddCostLineDropdown from './AddCostLineDropdown.vue'
-import CostLinesGrid from '@/shared/CostLinesGrid.vue'
+import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import { quoteService, type QuotePreview, type QuoteApplyResult } from '../../services/quote.service'
 import { toast } from 'vue-sonner'

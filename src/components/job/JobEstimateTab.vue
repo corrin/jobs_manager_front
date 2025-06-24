@@ -44,7 +44,7 @@
 import { ref, computed } from 'vue'
 import AddCostLineDropdown from './AddCostLineDropdown.vue'
 import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
-import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
+import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
 import { costlineService, type CostLineCreatePayload } from '@/services/costline.service'
 import type { CostLine } from '@/types/costing.types'
 
