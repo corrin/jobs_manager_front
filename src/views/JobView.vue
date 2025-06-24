@@ -163,7 +163,15 @@
         <span class="text-red-500 text-lg font-medium">Failed to load job data.</span>
       </div>
       <template v-else>
+        <div>
+          <pre class="bg-yellow-50 text-xs text-yellow-800 p-2 rounded mb-2">
+            jobDataWithPaid: {{ jobDataWithPaid }}
+            companyDefaults: {{ companyDefaults }}
+            activeTab: {{ activeTab }}
+          </pre>
+        </div>
         <JobViewTabs
+          v-if="jobDataWithPaid && companyDefaults && activeTab"
           :active-tab="activeTab"
           @change-tab="setTab"
           :job-data="jobDataWithPaid"
@@ -179,6 +187,9 @@
           @quote-accepted="handleQuoteAccepted"
           @invoice-created="handleInvoiceCreated"
         />
+        <div v-else class="text-red-600 text-sm mt-4">
+          Não foi possível renderizar as abas. Verifique se jobData, companyDefaults e activeTab estão definidos.
+        </div>
         <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-4">
           <div class="md:hidden space-y-3">
             <div class="flex space-x-3">
