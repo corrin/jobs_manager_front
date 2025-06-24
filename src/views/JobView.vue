@@ -163,13 +163,6 @@
         <span class="text-red-500 text-lg font-medium">Failed to load job data.</span>
       </div>
       <template v-else>
-        <div>
-          <pre class="bg-yellow-50 text-xs text-yellow-800 p-2 rounded mb-2">
-            jobDataWithPaid: {{ jobDataWithPaid }}
-            companyDefaults: {{ companyDefaults }}
-            activeTab: {{ activeTab }}
-          </pre>
-        </div>
         <JobViewTabs
           v-if="jobDataWithPaid && companyDefaults && activeTab"
           :active-tab="activeTab"
@@ -190,106 +183,106 @@
         <div v-else class="text-red-600 text-sm mt-4">
           Não foi possível renderizar as abas. Verifique se jobData, companyDefaults e activeTab estão definidos.
         </div>
-        <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-4">
-          <div class="md:hidden space-y-3">
-            <div class="flex space-x-3">
-              <DraggableButton
-                variant="primary"
-                @click="openPdfDialog"
-                class="bg-blue-600 hover:bg-blue-700 flex-1"
-                size="sm"
-              >
-                <Printer class="w-4 h-4 mr-2" />
-                Print
-              </DraggableButton>
-              <DraggableButton
-                variant="destructive"
-                @click="confirmDeleteJob"
-                class="bg-red-600 hover:bg-red-700 flex-1"
-                size="sm"
-              >
-                <Trash2 class="w-4 h-4 mr-2" />
-                Delete
-              </DraggableButton>
-              <DraggableButton
-                variant="secondary"
-                @click="navigateBack"
-                class="bg-gray-600 hover:bg-gray-700 w-full"
-                size="sm"
-              >
-                <X class="w-4 h-4 mr-2" />
-                Close
-              </DraggableButton>
-            </div>
-          </div>
-          <div class="hidden md:block">
-            <div class="flex items-center justify-center space-x-3 mb-2">
-              <DraggableButton
-                variant="primary"
-                @click="openPdfDialog"
-                class="bg-blue-600 hover:bg-blue-700"
-              >
-                <Printer class="w-4 h-4 mr-2" />
-                Print Job Sheet
-              </DraggableButton>
-              <DraggableButton
-                variant="destructive"
-                @click="confirmDeleteJob"
-                class="bg-red-600 hover:bg-red-700"
-              >
-                <Trash2 class="w-4 h-4 mr-2" />
-                Delete Job
-              </DraggableButton>
-              <DraggableButton
-                variant="secondary"
-                @click="navigateBack"
-                class="bg-gray-600 hover:bg-gray-700"
-              >
-                <X class="w-4 h-4 mr-2" />
-                Close
-              </DraggableButton>
-            </div>
+      </template>
+      <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-4">
+        <div class="md:hidden space-y-3">
+          <div class="flex space-x-3">
+            <DraggableButton
+              variant="primary"
+              @click="openPdfDialog"
+              class="bg-blue-600 hover:bg-blue-700 flex-1"
+              size="sm"
+            >
+              <Printer class="w-4 h-4 mr-2" />
+              Print
+            </DraggableButton>
+            <DraggableButton
+              variant="destructive"
+              @click="confirmDeleteJob"
+              class="bg-red-600 hover:bg-red-700 flex-1"
+              size="sm"
+            >
+              <Trash2 class="w-4 h-4 mr-2" />
+              Delete
+            </DraggableButton>
+            <DraggableButton
+              variant="secondary"
+              @click="navigateBack"
+              class="bg-gray-600 hover:bg-gray-700 w-full"
+              size="sm"
+            >
+              <X class="w-4 h-4 mr-2" />
+              Close
+            </DraggableButton>
           </div>
         </div>
-        <JobSettingsModal
-          v-if="showSettingsModal && jobDataWithPaid"
-          :job-data="jobDataWithPaid"
-          :is-open="showSettingsModal"
-          @close="showSettingsModal = false"
-          @job-updated="handleJobUpdated"
-        />
-        <JobWorkflowModal
-          v-if="showWorkflowModal && jobDataWithPaid"
-          :job-data="jobDataWithPaid"
-          :is-open="showWorkflowModal"
-          @close="showWorkflowModal = false"
-        />
-        <JobHistoryModal
-          v-if="showHistoryModal && jobDataWithPaid"
-          :job-id="jobId"
-          :events="jobEvents"
-          :is-open="showHistoryModal"
-          :loading="loadingJob || jobEventsLoading"
-          @close="showHistoryModal = false"
-          @event-added="handleEventAdded"
-        />
-        <JobAttachmentsModal
-          v-if="showAttachmentsModal && jobDataWithPaid"
-          :job-id="jobId"
-          :job-number="jobDataWithPaid.job_number"
-          :is-open="showAttachmentsModal"
-          @close="showAttachmentsModal = false"
-          @file-uploaded="handleFileUploaded"
-          @file-deleted="handleFileDeleted"
-        />
-        <JobPdfDialog
-          v-if="showPdfDialog && jobDataWithPaid"
-          :job-id="jobId"
-          :job-number="jobDataWithPaid.job_number"
-          :is-open="showPdfDialog"
-          @update:open="showPdfDialog = $event"
-        />
-      </template>
+        <div class="hidden md:block">
+          <div class="flex items-center justify-center space-x-3 mb-2">
+            <DraggableButton
+              variant="primary"
+              @click="openPdfDialog"
+              class="bg-blue-600 hover:bg-blue-700"
+            >
+              <Printer class="w-4 h-4 mr-2" />
+              Print Job Sheet
+            </DraggableButton>
+            <DraggableButton
+              variant="destructive"
+              @click="confirmDeleteJob"
+              class="bg-red-600 hover:bg-red-700"
+            >
+              <Trash2 class="w-4 h-4 mr-2" />
+              Delete Job
+            </DraggableButton>
+            <DraggableButton
+              variant="secondary"
+              @click="navigateBack"
+              class="bg-gray-600 hover:bg-gray-700"
+            >
+              <X class="w-4 h-4 mr-2" />
+              Close
+            </DraggableButton>
+          </div>
+        </div>
+      </div>
+      <JobSettingsModal
+        v-if="showSettingsModal && jobDataWithPaid"
+        :job-data="jobDataWithPaid"
+        :is-open="showSettingsModal"
+        @close="showSettingsModal = false"
+        @job-updated="handleJobUpdated"
+      />
+      <JobWorkflowModal
+        v-if="showWorkflowModal && jobDataWithPaid"
+        :job-data="jobDataWithPaid"
+        :is-open="showWorkflowModal"
+        @close="showWorkflowModal = false"
+      />
+      <JobHistoryModal
+        v-if="showHistoryModal && jobDataWithPaid"
+        :job-id="jobId"
+        :events="jobEvents"
+        :is-open="showHistoryModal"
+        :loading="loadingJob || jobEventsLoading"
+        @close="showHistoryModal = false"
+        @event-added="handleEventAdded"
+      />
+      <JobAttachmentsModal
+        v-if="showAttachmentsModal && jobDataWithPaid"
+        :job-id="jobId"
+        :job-number="jobDataWithPaid.job_number"
+        :is-open="showAttachmentsModal"
+        @close="showAttachmentsModal = false"
+        @file-uploaded="handleFileUploaded"
+        @file-deleted="handleFileDeleted"
+      />
+      <JobPdfDialog
+        v-if="showPdfDialog && jobDataWithPaid"
+        :job-id="jobId"
+        :job-number="jobDataWithPaid.job_number"
+        :is-open="showPdfDialog"
+        @update:open="showPdfDialog = $event"
+      />
     </div>
   </AppLayout>
 </template>
