@@ -17,7 +17,12 @@
 
     <div class="flex gap-4 h-full">
       <div class="flex-[3] bg-white rounded-lg border border-gray-200 flex flex-col min-h-0">
-        <!-- grid removed -->
+        <div class="flex-shrink-0 p-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Estimate Details</h3>
+        </div>
+        <div class="flex-1 overflow-hidden">
+          <CostLinesGrid :costLines="costLines" :showActions="true" @edit="() => {}" @delete="() => {}" />
+        </div>
       </div>
 
       <div
@@ -31,8 +36,6 @@
         />
       </div>
     </div>
-
-    <CostLinesGrid :costLines="costLines" :showActions="true" @edit="() => {}" @delete="() => {}" />
   </div>
 </template>
 

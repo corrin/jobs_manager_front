@@ -6,27 +6,27 @@
           <Package class="w-5 h-5 mr-2 inline-block text-blue-600" /> Add Material Cost Line
         </DialogTitle>
       </DialogHeader>
-      <form @submit.prevent="submit" class="space-y-4">
-        <div class="grid gap-3">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Unit cost</label>
+      <form @submit.prevent="submit" class="grid gap-5">
+        <div class="grid grid-cols-1 gap-3">
+          <label class="block">
+            <span class="block text-sm font-medium text-gray-700 mb-1">Unit cost</span>
             <input v-model.number="form.unitCost" type="number" min="0" step="0.01" required class="input" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+          </label>
+          <label class="block">
+            <span class="block text-sm font-medium text-gray-700 mb-1">Quantity</span>
             <input v-model.number="form.quantity" type="number" min="0" step="0.01" required class="input" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Unit revenue</label>
+          </label>
+          <label class="block">
+            <span class="block text-sm font-medium text-gray-700 mb-1">Unit revenue</span>
             <input v-model.number="form.unitRevenue" type="number" min="0" step="0.01" required class="input" />
-          </div>
+          </label>
         </div>
         <div class="bg-gray-50 rounded p-3 text-sm flex flex-col gap-1">
           <div><span class="font-medium">Unit revenue:</span> ${{ form.unitRevenue.toFixed(2) }}</div>
           <div><span class="font-medium">Total revenue:</span> ${{ totalRevenue.toFixed(2) }}</div>
           <div><span class="font-medium">Total cost:</span> ${{ totalCost.toFixed(2) }}</div>
         </div>
-        <DialogFooter class="flex gap-2 justify-end">
+        <DialogFooter class="flex gap-2 justify-end mt-2">
           <Button type="button" variant="outline" @click="$emit('close')">
             Cancel
           </Button>
@@ -90,8 +90,10 @@ function submit() {
   font-size: 1rem;
   outline: none;
   transition: border 0.2s;
+  background: #fff;
 }
 .input:focus {
   border-color: #2563eb;
+  background: #f0f6ff;
 }
 </style>

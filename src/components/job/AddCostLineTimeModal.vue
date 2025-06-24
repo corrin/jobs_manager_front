@@ -1,27 +1,40 @@
 <template>
-  <div class="modal-overlay">
-    <div class="modal">
-      <h3>Add Time Cost Line</h3>
-      <form @submit.prevent="submit">
-        <label>
-          Hours (decimal)
-          <input v-model.number="form.hours" type="number" min="0" step="0.01" required />
-        </label>
-        <div class="summary">
-          <div>Total cost: ${{ totalCost.toFixed(2) }}</div>
-          <div>Total revenue: ${{ totalRevenue.toFixed(2) }}</div>
+  <Dialog :open="true" @update:open="$emit('close')">
+    <DialogContent class="max-w-md">
+      <DialogHeader>
+        <DialogTitle>
+          <Clock class="w-5 h-5 mr-2 inline-block text-green-600" /> Add Time Cost Line
+        </DialogTitle>
+      </DialogHeader>
+      <form @submit.prevent="submit" class="grid gap-5">
+        <div class="grid grid-cols-1 gap-3">
+          <label class="block">
+            <span class="block text-sm font-medium text-gray-700 mb-1">Hours (decimal)</span>
+            <input v-model.number="form.hours" type="number" min="0" step="0.01" required class="input" />
+          </label>
         </div>
-        <div class="actions">
-          <button type="button" @click="$emit('close')">Cancel</button>
-          <button type="submit">Add</button>
+        <div class="bg-gray-50 rounded p-3 text-sm flex flex-col gap-1">
+          <div><span class="font-medium">Total cost:</span> ${{ totalCost.toFixed(2) }}</div>
+          <div><span class="font-medium">Total revenue:</span> ${{ totalRevenue.toFixed(2) }}</div>
         </div>
+        <DialogFooter class="flex gap-2 justify-end mt-2">
+          <Button type="button" variant="outline" @click="$emit('close')">
+            Cancel
+          </Button>
+          <Button type="submit" variant="default">
+            <Plus class="w-4 h-4 mr-1" /> Add
+          </Button>
+        </DialogFooter>
       </form>
-    </div>
-  </div>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, defineProps, defineEmits } from 'vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Plus, Clock } from 'lucide-vue-next'
 
 const props = defineProps({
   wageRate: Number,
@@ -49,28 +62,18 @@ function submit() {
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-.modal {
+.input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s;
   background: #fff;
-  padding: 24px;
-  border-radius: 8px;
-  min-width: 320px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
 }
-.summary {
-  margin: 12px 0;
-}
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+.input:focus {
+  border-color: #2563eb;
+  background: #f0f6ff;
 }
 </style>
