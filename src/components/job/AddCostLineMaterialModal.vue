@@ -9,6 +9,11 @@
       <form @submit.prevent="submit" class="grid gap-5">
         <div class="grid grid-cols-1 gap-3">
           <label class="block">
+            <span class="block text-sm font-medium text-gray-700 mb-1">Description <span class="text-red-500">*</span></span>
+            <input v-model.trim="form.desc" type="text" required maxlength="120" class="input" :class="{'border-red-500': descError}" @blur="validateDesc" />
+            <span v-if="descError" class="text-xs text-red-500 mt-1">This field is required.</span>
+          </label>
+          <label class="block">
             <span class="block text-sm font-medium text-gray-700 mb-1">Unit cost</span>
             <input v-model.number="form.unitCost" type="number" min="0" step="0.01" required class="input" />
           </label>
@@ -21,16 +26,28 @@
             <input v-model.number="form.unitRevenue" type="number" min="0" step="0.01" required class="input" />
           </label>
         </div>
-        <div class="bg-gray-50 rounded p-3 text-sm flex flex-col gap-1">
-          <div><span class="font-medium">Unit revenue:</span> ${{ form.unitRevenue.toFixed(2) }}</div>
-          <div><span class="font-medium">Total revenue:</span> ${{ totalRevenue.toFixed(2) }}</div>
-          <div><span class="font-medium">Total cost:</span> ${{ totalCost.toFixed(2) }}</div>
+        <div class="summary-card bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-4 flex flex-col gap-2 shadow-sm">
+          <div class="flex items-center gap-2">
+            <DollarSign class="w-5 h-5 text-blue-500" />
+            <span class="font-semibold text-gray-700">Unit revenue:</span>
+            <span class="text-blue-700 font-bold">${{ form.unitRevenue.toFixed(2) }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <TrendingUp class="w-5 h-5 text-green-500" />
+            <span class="font-semibold text-gray-700">Total revenue:</span>
+            <span class="text-green-700 font-bold">${{ totalRevenue.toFixed(2) }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <Package class="w-5 h-5 text-gray-500" />
+            <span class="font-semibold text-gray-700">Total cost:</span>
+            <span class="text-gray-700 font-bold">${{ totalCost.toFixed(2) }}</span>
+          </div>
         </div>
         <DialogFooter class="flex gap-2 justify-end mt-2">
           <Button type="button" variant="outline" @click="$emit('close')">
             Cancel
           </Button>
-          <Button type="submit" variant="default">
+          <Button type="submit" variant="default" :disabled="descError">
             <Plus class="w-4 h-4 mr-1" /> Add
           </Button>
         </DialogFooter>
@@ -43,7 +60,7 @@
 import { ref, computed, defineProps, defineEmits, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Plus, Package } from 'lucide-vue-next'
+import { Plus, Package, DollarSign, TrendingUp } from 'lucide-vue-next'
 
 const props = defineProps({
   materialsMarkup: Number
@@ -51,10 +68,16 @@ const props = defineProps({
 const emit = defineEmits(['close', 'submit'])
 
 const form = ref({
+  desc: '',
   unitCost: 0,
   quantity: 1,
   unitRevenue: 0
 })
+const descError = ref(false)
+
+function validateDesc() {
+  descError.value = !form.value.desc.trim()
+}
 
 watch(
   () => [form.value.unitCost, props.materialsMarkup],
@@ -70,7 +93,10 @@ const totalRevenue = computed(() => form.value.unitRevenue * form.value.quantity
 const totalCost = computed(() => form.value.unitCost * form.value.quantity)
 
 function submit() {
+  validateDesc()
+  if (descError.value) return
   emit('submit', {
+    desc: form.value.desc,
     unit_cost: form.value.unitCost,
     quantity: form.value.quantity,
     unit_rev: form.value.unitRevenue,
@@ -95,5 +121,8 @@ function submit() {
 .input:focus {
   border-color: #2563eb;
   background: #f0f6ff;
+}
+.summary-card {
+  margin-top: 0.5rem;
 }
 </style>
