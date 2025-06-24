@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import AddCostLineDropdown from './AddCostLineDropdown.vue'
-import CostLinesGrid from './CostLinesGrid.vue'
+import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import { costlineService, type CostLineCreatePayload } from '@/services/costline.service'
 import type { CostLine } from '@/types/costing.types'
