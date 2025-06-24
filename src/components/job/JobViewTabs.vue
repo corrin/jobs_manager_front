@@ -75,6 +75,7 @@ import JobEstimateTab from './JobEstimateTab.vue'
 import JobQuoteTab from './JobQuoteTab.vue'
 import JobFinancialTab from './JobFinancialTab.vue'
 import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
+import { watch, toRefs } from 'vue'
 
 const emit = defineEmits<{
   (e: 'change-tab', tab: 'estimate' | 'quote' | 'financial' | 'costAnalysis'): void
@@ -101,4 +102,19 @@ type TabKey = (typeof tabs)[number]['key']
 function handleTabChange(tab: TabKey) {
   emit('change-tab', tab)
 }
+
+const props = defineProps<{ activeTab: string; jobData: any; companyDefaults: any; latestPricings: any }>()
+
+watch(() => props.jobData, (val) => {
+  // eslint-disable-next-line no-console
+  console.log('[JobViewTabs] jobData prop changed:', val)
+})
+watch(() => props.companyDefaults, (val) => {
+  // eslint-disable-next-line no-console
+  console.log('[JobViewTabs] companyDefaults prop changed:', val)
+})
+watch(() => props.activeTab, (val) => {
+  // eslint-disable-next-line no-console
+  console.log('[JobViewTabs] activeTab changed:', val)
+})
 </script>
