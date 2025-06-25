@@ -18,7 +18,7 @@
               @click="onGoToSpreadsheet"
               :title="'Go to Spreadsheet'"
             >
-              <ExternalLink class="w-4 h-4" />
+              <ExternalLink class="w-4 h-4 mr-1" /> Go to Spreadsheet
             </button>
             <button
               class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-black text-white border border-gray-800 text-sm font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -27,7 +27,7 @@
               :disabled="isLoading || isRefreshing"
               :title="'Refresh Spreadsheet'"
             >
-              <RefreshCw class="w-4 h-4" />
+              <RefreshCw class="w-4 h-4 mr-1" /> Refresh Spreadsheet
             </button>
           </template>
           <template v-else>
@@ -37,7 +37,7 @@
               @click="onLinkQuote"
               :title="'Link Spreadsheet'"
             >
-              <Link2 class="w-4 h-4" />
+              <Link2 class="w-4 h-4 mr-1" /> Link Spreadsheet
             </button>
           </template>
           <CostLineDropdown
@@ -70,6 +70,7 @@
       </div>
       <div class="flex-1 flex flex-col">
         <CostSetSummaryCard
+          class="h-full flex-1"
           title="Quote Summary"
           :summary="currentQuote.quote?.summary"
           :costLines="quoteCostLines"
