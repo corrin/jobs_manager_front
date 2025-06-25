@@ -39,7 +39,7 @@
         <div
           class="summary-card bg-gradient-to-br from-green-50 to-white border border-green-100 rounded-xl p-4 flex flex-col gap-2 shadow-sm"
         >
-          <div class="flex items-center justify-center gap-0 text-2xl font-bold">
+          <div class="flex items-center justify-center gap-0 text-base font-semibold">
             <span class="flex items-center gap-2 text-green-700">
               <TrendingUp class="w-7 h-7 text-green-500" />
               <span>Total revenue:</span>
