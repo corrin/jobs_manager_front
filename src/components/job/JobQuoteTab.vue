@@ -18,6 +18,8 @@
             :materialsMarkup="materialsMarkup"
             @add-material="handleAddMaterial"
             @add-time="handleAddTime"
+            @open-material-modal="showMaterialModal = true"
+            @open-time-modal="showTimeModal = true"
           />
         </div>
       </div>
@@ -29,7 +31,12 @@
           <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
         </div>
         <div class="flex-1 overflow-hidden">
-          <CostLinesGrid :costLines="quoteCostLines" :showActions="true" />
+          <CostLinesGrid
+            :costLines="costLines"
+            :showActions="true"
+            @edit="openEditModal"
+            @delete="handleDeleteCostLine"
+          />
         </div>
       </div>
       <div class="flex-1 flex flex-col">
@@ -144,11 +151,42 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AddCostLineMaterialModal
+      v-if="showMaterialModal"
+      :materialsMarkup="materialsMarkup"
+      @close="showMaterialModal = false"
+      @submit="handleAddMaterial"
+    />
+    <AddCostLineTimeModal
+      v-if="showTimeModal"
+      :wageRate="wageRate"
+      :chargeOutRate="chargeOutRate"
+      @close="showTimeModal = false"
+      @submit="handleAddTime"
+    />
+    <AddCostLineMaterialModal
+      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'material'"
+      :materialsMarkup="materialsMarkup"
+      :initial="editingCostLine"
+      mode="edit"
+      @close="closeEditModal"
+      @submit="submitEditCostLine"
+    />
+    <AddCostLineTimeModal
+      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'time'"
+      :wageRate="wageRate"
+      :chargeOutRate="chargeOutRate"
+      :initial="editingCostLine"
+      mode="edit"
+      @close="closeEditModal"
+      @submit="submitEditCostLine"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Link2, ExternalLink, RefreshCw } from 'lucide-vue-next'
 import AddCostLineDropdown from './CostLineDropdown.vue'
 import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
@@ -162,6 +200,9 @@ import { toast } from 'vue-sonner'
 import type { Job } from '../../types/costing.types'
 import type { CostLine } from '../../types/costing.types'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
+import { costlineService } from '@/services/costline.service'
+import AddCostLineMaterialModal from './AddCostLineMaterialModal.vue'
+import AddCostLineTimeModal from './AddCostLineTimeModal.vue'
 
 interface Props {
   jobId: string
@@ -215,6 +256,11 @@ const isLoading = ref(false)
 const isRefreshing = ref(false)
 const showPreviewModal = ref(false)
 const previewData = ref<QuotePreview | null>(null)
+const showMaterialModal = ref(false)
+const showTimeModal = ref(false)
+const editingCostLine = ref<CostLine | null>(null)
+const showEditModal = ref(false)
+const costLines = ref<CostLine[]>([])
 
 const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
@@ -226,6 +272,14 @@ const quoteCostLines = computed(() => {
   const lines = currentQuote.value?.quote?.cost_lines || []
   return lines
 })
+
+watch(
+  () => currentQuote.value.quote?.cost_lines,
+  (lines) => {
+    if (lines) costLines.value = [...lines]
+  },
+  { immediate: true },
+)
 
 function onLinkQuote() {
   // TODO: implementar lógica de linkar quote
@@ -274,8 +328,120 @@ async function onApplySpreadsheetChanges() {
   }
 }
 
-function handleAddMaterial() {}
-function handleAddTime() {}
+async function handleAddMaterial(payload: CostLine) {
+  if (!payload || payload.kind !== 'material') return
+  isLoading.value = true
+  toast.loading('Adding material cost line...')
+  try {
+    const createPayload = {
+      kind: 'material',
+      desc: payload.desc,
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
+      ext_refs: payload.ext_refs,
+      meta: payload.meta,
+    }
+    const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
+    costLines.value = [
+      ...costLines.value,
+      {
+        ...created,
+        quantity:
+          typeof created.quantity === 'string' ? Number(created.quantity) : created.quantity,
+        unit_cost:
+          typeof created.unit_cost === 'string' ? Number(created.unit_cost) : created.unit_cost,
+        unit_rev:
+          typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
+      },
+    ]
+    toast.success('Material cost line added!')
+  } catch (error) {
+    toast.error('Failed to add material cost line.')
+    console.error('Failed to add material:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function handleAddTime(payload: CostLine) {
+  if (!payload || payload.kind !== 'time') return
+  isLoading.value = true
+  toast.loading('Adding time cost line...')
+  try {
+    const createPayload = {
+      kind: 'time',
+      desc: payload.desc,
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
+      ext_refs: payload.ext_refs,
+      meta: payload.meta,
+    }
+    const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
+    costLines.value = [
+      ...costLines.value,
+      {
+        ...created,
+        quantity:
+          typeof created.quantity === 'string' ? Number(created.quantity) : created.quantity,
+        unit_cost:
+          typeof created.unit_cost === 'string' ? Number(created.unit_cost) : created.unit_cost,
+        unit_rev:
+          typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
+      },
+    ]
+    toast.success('Time cost line added!')
+  } catch (error) {
+    toast.error('Failed to add time cost line.')
+    console.error('Failed to add time:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function openEditModal(line: CostLine) {
+  editingCostLine.value = line
+  showEditModal.value = true
+}
+
+function closeEditModal() {
+  showEditModal.value = false
+  editingCostLine.value = null
+}
+
+async function submitEditCostLine(payload: CostLine) {
+  if (!payload || !payload.id) return
+  isLoading.value = true
+  toast.loading('Updating cost line...')
+  try {
+    const updated = await costlineService.updateCostLine(payload.id, payload)
+    costLines.value = costLines.value.map((l) => (l.id === updated.id ? { ...updated } : l))
+    toast.success('Cost line updated!')
+    closeEditModal()
+  } catch (error) {
+    toast.error('Failed to update cost line.')
+    console.error('Failed to update cost line:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function handleDeleteCostLine(line: CostLine) {
+  if (!line.id) return
+  isLoading.value = true
+  toast.loading('Deleting cost line...')
+  try {
+    await costlineService.deleteCostLine(line.id)
+    costLines.value = costLines.value.filter((l) => l.id !== line.id)
+    toast.success('Cost line deleted successfully!')
+  } catch (error) {
+    toast.error('Failed to delete cost line.')
+    console.error('Failed to delete cost line:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
