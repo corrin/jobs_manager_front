@@ -10,29 +10,15 @@
           </h2>
           <p class="text-gray-600">Manage quote details and cost breakdown for this job.</p>
         </div>
-        <div class="flex gap-2">
-          <button
-            v-if="!currentQuote?.has_quote"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            @click="onLinkQuote"
-          >
-            Link Quote
-          </button>
-          <template v-else>
-            <button
-              class="px-4 py-2 bg-gray-100 text-blue-700 border border-blue-300 rounded-md font-medium hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              @click="onGoToSpreadsheet"
-            >
-              Go to Spreadsheet
-            </button>
-            <button
-              class="px-4 py-2 bg-gray-100 text-blue-700 border border-blue-300 rounded-md font-medium hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              @click="onRefreshSpreadsheet"
-              :disabled="isLoading || isRefreshing"
-            >
-              Refresh Spreadsheet
-            </button>
-          </template>
+        <div v-if="currentQuote?.has_quote">
+          <AddCostLineDropdown
+            :disabled="isLoading"
+            :wageRate="wageRate"
+            :chargeOutRate="chargeOutRate"
+            :materialsMarkup="materialsMarkup"
+            @add-material="handleAddMaterial"
+            @add-time="handleAddTime"
+          />
         </div>
       </div>
     </div>
@@ -43,16 +29,41 @@
           <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
         </div>
         <div class="flex-1 overflow-hidden">
-          <CostLinesGrid :costLines="quoteCostLines" :showActions="false" />
+          <CostLinesGrid :costLines="quoteCostLines" :showActions="true" />
         </div>
       </div>
-      <div class="flex-1">
+      <div class="flex-1 flex flex-col">
         <CostSetSummaryCard
           title="Quote Summary"
           :summary="currentQuote.quote?.summary"
           :costLines="quoteCostLines"
           :isLoading="isLoading"
         />
+        <div class="mt-6">
+          <div v-if="!props.jobData?.quote_sheet">
+            <button
+              class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-black text-white rounded-md font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              @click="onLinkQuote"
+            >
+              <Link2 class="w-5 h-5" /> Link Spreadsheet
+            </button>
+          </div>
+          <div v-else class="grid grid-cols-2 gap-3">
+            <button
+              class="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white border border-gray-800 rounded-md font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              @click="onGoToSpreadsheet"
+            >
+              <ExternalLink class="w-5 h-5" /> Go to Spreadsheet
+            </button>
+            <button
+              class="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white border border-gray-800 rounded-md font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              @click="onRefreshSpreadsheet"
+              :disabled="isLoading || isRefreshing"
+            >
+              <RefreshCw class="w-5 h-5" /> Refresh Spreadsheet
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -114,7 +125,6 @@
               </div>
             </div>
           </div>
-          <!-- Adicione aqui detalhes dos itens, erros e warnings se necessário -->
         </div>
         <DialogFooter>
           <button class="px-4 py-2 bg-gray-200 rounded-md mr-2" @click="showPreviewModal = false">
@@ -139,6 +149,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { Link2, ExternalLink, RefreshCw } from 'lucide-vue-next'
 import AddCostLineDropdown from './CostLineDropdown.vue'
 import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
@@ -262,6 +273,9 @@ async function onApplySpreadsheetChanges() {
     toast.dismiss('quote-apply')
   }
 }
+
+function handleAddMaterial() {}
+function handleAddTime() {}
 </script>
 
 <style scoped>

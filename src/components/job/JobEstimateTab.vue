@@ -33,7 +33,7 @@
       <div class="flex-1">
         <CostSetSummaryCard
           title="Estimate Summary"
-          :summary="estimateSummary"
+          :summary="props.estimateSummaryFromBackend || estimateSummary"
           :costLines="costLines"
           :isLoading="isLoading"
         />
@@ -74,6 +74,7 @@ import AddCostLineTimeModal from './CostLineTimeModal.vue'
 
 interface Props {
   jobId: string
+  estimateSummaryFromBackend?: { cost: number; rev: number; hours: number; created?: string }
 }
 
 const props = defineProps<Props>()
@@ -110,6 +111,9 @@ onMounted(async () => {
 })
 
 const estimateSummary = computed(() => {
+  if (props.estimateSummaryFromBackend) {
+    return props.estimateSummaryFromBackend
+  }
   let cost = 0
   let rev = 0
   let hours = 0
