@@ -36,6 +36,7 @@
           :summary="props.estimateSummaryFromBackend || estimateSummary"
           :costLines="costLines"
           :isLoading="isLoading"
+          :revision="revision"
         />
       </div>
     </div>
@@ -71,6 +72,7 @@ import type { CostLine } from '@/types/costing.types'
 import { toast } from 'vue-sonner'
 import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
+import { CostSet } from '../../types/costing.types'
 
 interface Props {
   jobId: string
@@ -87,17 +89,19 @@ const materialsMarkup = computed(() => companyDefaults.value?.materials_markup |
 
 const costLines = ref<CostLine[]>([])
 const isLoading = ref(false)
+const revision = ref(0)
 
 async function loadEstimate() {
   isLoading.value = true
   try {
-    const costSet = await fetchCostSet(props.jobId, 'estimate')
+    const costSet: CostSet = await fetchCostSet(props.jobId, 'estimate')
     costLines.value = costSet.cost_lines.map((line) => ({
       ...line,
       quantity: typeof line.quantity === 'string' ? Number(line.quantity) : line.quantity,
       unit_cost: typeof line.unit_cost === 'string' ? Number(line.unit_cost) : line.unit_cost,
       unit_rev: typeof line.unit_rev === 'string' ? Number(line.unit_rev) : line.unit_rev,
     }))
+    revision.value = costSet.rev || 0
   } catch (error) {
     // TODO: show error toast
     console.error('Failed to load estimate cost lines:', error)

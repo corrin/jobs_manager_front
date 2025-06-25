@@ -5,7 +5,7 @@
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
       <div v-if="summary && summary.rev !== undefined" class="text-right text-sm text-gray-600">
-        <div class="font-medium">Rev #{{ summary.rev }}</div>
+        <div class="font-medium">Rev #{{ revision }}</div>
         <div>{{ formatDate(summary.created) }}</div>
       </div>
     </div>
@@ -130,6 +130,7 @@ const props = defineProps<{
   summary?: CostLineSummary | null
   costLines?: CostLine[]
   isLoading?: boolean
+  revision?: number
 }>()
 
 const profitMargin = computed(() => {

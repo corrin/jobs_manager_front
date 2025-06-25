@@ -75,6 +75,7 @@
           :summary="currentQuote.quote?.summary"
           :costLines="quoteCostLines"
           :isLoading="isLoading"
+          :revision="currentQuote.quote?.rev"
         />
       </div>
     </div>
@@ -92,6 +93,7 @@
         :summary="null"
         :costLines="quoteCostLines"
         :isLoading="isLoading"
+        :revision="currentQuote.quote?.rev"
       />
     </div>
 
