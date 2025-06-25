@@ -297,7 +297,7 @@ import JobHistoryModal from '@/components/job/JobHistoryModal.vue'
 import JobAttachmentsModal from '@/components/job/JobAttachmentsModal.vue'
 import JobPdfDialog from '@/components/job/JobPdfDialog.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useJobData } from '@/composables/useJobData'
+import { useJobsStore } from '../stores/jobs'
 import { useJobTabs } from '@/composables/useJobTabs'
 import { useJobNotifications } from '@/composables/useJobNotifications'
 import { useJobEvents } from '@/composables/useJobEvents'
@@ -316,9 +316,16 @@ import DraggableButton from '@/components/job/DraggableButton.vue'
 
 const route = useRoute()
 const router = useRouter()
+const jobsStore = useJobsStore()
 const jobId = computed(() => route.params.id as string)
+const jobData = computed(() => jobsStore.getJobById(jobId.value))
+const loadingJob = computed(() => jobsStore.isLoadingJob)
 
-const { jobData, loading: loadingJob, loadJob, updateJob } = useJobData(jobId)
+onMounted(async () => {
+  jobsStore.setCurrentJobId(jobId.value)
+  await jobsStore.fetchJob(jobId.value)
+})
+
 const { jobEvents, addEvent, loading: jobEventsLoading } = useJobEvents(jobId)
 const { activeTab, setTab } = useJobTabs('estimate')
 const notifications = useJobNotifications()
@@ -341,10 +348,6 @@ const showWorkflowModal = ref(false)
 const showHistoryModal = ref(false)
 const showAttachmentsModal = ref(false)
 const showPdfDialog = ref(false)
-
-onMounted(async () => {
-  await loadJob()
-})
 
 function openSettingsModal() {
   showSettingsModal.value = true
@@ -376,14 +379,14 @@ function openQuotingChat() {
 }
 
 function handleJobUpdated(updatedJob) {
-  updateJob(updatedJob)
+  jobsStore.setDetailedJob(updatedJob)
   notifications.notifyJobUpdated(updatedJob?.name || 'Job')
 }
 
 async function handleEventAdded(event) {
   if (event?.description) {
     await addEvent(event.description)
-    await loadJob()
+    await jobsStore.fetchJob(jobId.value)
     notifications.notifyEventAdded(event.event_type || 'Event')
   }
 }

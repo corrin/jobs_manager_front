@@ -203,6 +203,7 @@ import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import { costlineService } from '@/services/costline.service'
 import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
+import { useJobsStore } from '../../stores/jobs'
 
 interface Props {
   jobId: string
@@ -273,6 +274,15 @@ const quoteCostLines = computed(() => {
   return lines
 })
 
+const quoteData = ref(currentQuote.value.quote)
+watch(
+  () => currentQuote.value.quote,
+  (val) => {
+    quoteData.value = val
+  },
+  { immediate: true, deep: true },
+)
+
 watch(
   () => currentQuote.value.quote?.cost_lines,
   (lines) => {
@@ -281,17 +291,46 @@ watch(
   { immediate: true },
 )
 
-function onLinkQuote() {
-  // TODO: implementar lógica de linkar quote
-  // Exemplo: abrir modal ou chamar service
-  alert('Link Quote action triggered!')
+async function refreshQuoteData() {
+  if (!props.jobId) return
+  isLoading.value = true
+  try {
+    // Busca o job atualizado do backend
+    const response = await fetch(`/api/job/${props.jobId}`)
+    const updatedJob = await response.json()
+    if (updatedJob && updatedJob.latest_quote) {
+      // Atualiza o estado local do jobData
+      if (props.jobData) {
+        Object.assign(props.jobData, updatedJob)
+      }
+      // Atualiza o resumo e cost lines
+      quoteData.value = updatedJob.latest_quote
+      costLines.value = [...(updatedJob.latest_quote.cost_lines || [])]
+    }
+  } catch (error) {
+    toast.error('Failed to refresh quote data')
+    console.error('Failed to refresh quote data:', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 
-function onGoToSpreadsheet() {
-  // TODO: implementar navegação para a planilha vinculada
-  // Exemplo: abrir URL em nova aba
-  // window.open(sheetUrl, '_blank')
-  alert('Go to Spreadsheet action triggered!')
+async function onApplySpreadsheetChanges() {
+  if (!props.jobData?.id) return
+  toast.loading('Applying changes...', { id: 'quote-apply' })
+  try {
+    const result: QuoteApplyResult = await quoteService.applyQuote(props.jobId)
+    if (result.success) {
+      toast.success('Changes applied successfully!')
+      await refreshQuoteData()
+    } else {
+      toast.error('Failed to apply changes')
+    }
+  } catch {
+    toast.error('Error applying changes', { id: 'quote-apply' })
+  } finally {
+    toast.dismiss('quote-apply')
+  }
 }
 
 async function onRefreshSpreadsheet() {
@@ -310,22 +349,27 @@ async function onRefreshSpreadsheet() {
   }
 }
 
-async function onApplySpreadsheetChanges() {
-  if (!props.jobData?.id) return
-  toast.loading('Applying changes...', { id: 'quote-apply' })
+async function onLinkQuote() {
+  if (!props.jobId) return
+  isLoading.value = true
+  toast.loading('Linking spreadsheet...')
   try {
-    const result: QuoteApplyResult = await quoteService.applyQuote(props.jobId)
-    if (result.success) {
-      toast.success('Changes applied successfully!')
-      // TODO: atualizar estado local com os novos dados da quote
-    } else {
-      toast.error('Failed to apply changes')
-    }
-  } catch {
-    toast.error('Error applying changes', { id: 'quote-apply' })
+    const jobsStore = useJobsStore()
+    await jobsStore.linkQuote(props.jobId)
+    toast.success('Spreadsheet linked successfully!')
+    await jobsStore.fetchJob(props.jobId)
+    await refreshQuoteData()
+  } catch (error) {
+    toast.error('Error linking spreadsheet')
+    console.error('Error linking spreadsheet:', error)
   } finally {
-    toast.dismiss('quote-apply')
+    isLoading.value = false
   }
+}
+
+function onGoToSpreadsheet() {
+  if (!props.jobData?.quote_sheet?.sheet_url) return
+  window.open(props.jobData.quote_sheet.sheet_url, '_blank')
 }
 
 async function handleAddMaterial(payload: CostLine) {
