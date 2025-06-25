@@ -10,7 +10,36 @@
           </h2>
           <p class="text-gray-600">Manage quote details and cost breakdown for this job.</p>
         </div>
-        <div v-if="currentQuote?.has_quote">
+        <div v-if="currentQuote?.has_quote" class="flex items-center gap-2">
+          <template v-if="props.jobData?.quote_sheet">
+            <button
+              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-black text-white border border-gray-800 text-sm font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style="min-width: 0"
+              @click="onGoToSpreadsheet"
+              :title="'Go to Spreadsheet'"
+            >
+              <ExternalLink class="w-4 h-4" />
+            </button>
+            <button
+              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-black text-white border border-gray-800 text-sm font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style="min-width: 0"
+              @click="onRefreshSpreadsheet"
+              :disabled="isLoading || isRefreshing"
+              :title="'Refresh Spreadsheet'"
+            >
+              <RefreshCw class="w-4 h-4" />
+            </button>
+          </template>
+          <template v-else>
+            <button
+              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-black text-white border border-gray-800 text-sm font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style="min-width: 0"
+              @click="onLinkQuote"
+              :title="'Link Spreadsheet'"
+            >
+              <Link2 class="w-4 h-4" />
+            </button>
+          </template>
           <CostLineDropdown
             :disabled="isLoading"
             :wageRate="wageRate"
@@ -47,29 +76,7 @@
           :isLoading="isLoading"
         />
         <div class="mt-6">
-          <div v-if="!props.jobData?.quote_sheet">
-            <button
-              class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-black text-white rounded-md font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              @click="onLinkQuote"
-            >
-              <Link2 class="w-5 h-5" /> Link Spreadsheet
-            </button>
-          </div>
-          <div v-else class="grid grid-cols-2 gap-3">
-            <button
-              class="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white border border-gray-800 rounded-md font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              @click="onGoToSpreadsheet"
-            >
-              <ExternalLink class="w-5 h-5" /> Go to Spreadsheet
-            </button>
-            <button
-              class="flex items-center justify-center gap-2 px-4 py-2 bg-black text-white border border-gray-800 rounded-md font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              @click="onRefreshSpreadsheet"
-              :disabled="isLoading || isRefreshing"
-            >
-              <RefreshCw class="w-5 h-5" /> Refresh Spreadsheet
-            </button>
-          </div>
+          <!-- Botões de spreadsheet removidos daqui, agora estão acima -->
         </div>
       </div>
     </div>
