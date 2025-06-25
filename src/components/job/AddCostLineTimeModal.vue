@@ -72,6 +72,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Plus, Clock, DollarSign, TrendingUp } from 'lucide-vue-next'
+import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 
 const props = defineProps({
   wageRate: Number,
@@ -89,6 +90,9 @@ function validateDesc() {
   descError.value = !form.value.desc.trim()
 }
 
+const companyDefaultsStore = useCompanyDefaultsStore()
+ 
+console.log('[TimeModal] Store companyDefaults:', companyDefaultsStore.companyDefaults)
 const unitCost = computed(() => {
   const wage = typeof props.wageRate === 'number' ? props.wageRate : 0
    

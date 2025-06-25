@@ -100,6 +100,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Plus, Package, DollarSign, TrendingUp } from 'lucide-vue-next'
+import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 
 const props = defineProps({
   materialsMarkup: Number,
@@ -117,6 +118,9 @@ function validateDesc() {
   descError.value = !form.value.desc.trim()
 }
 
+const companyDefaultsStore = useCompanyDefaultsStore()
+ 
+console.log('[MaterialModal] Store companyDefaults:', companyDefaultsStore.companyDefaults)
 const unitRevenue = computed(() => {
   const cost = Number(form.value.unitCost) || 0
   const markup = typeof props.materialsMarkup === 'number' ? props.materialsMarkup : 0
