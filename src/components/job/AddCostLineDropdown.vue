@@ -33,7 +33,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, defineEmits } from 'vue'
+import { ref, defineEmits, defineProps } from 'vue'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -47,13 +47,32 @@ import TimeModal from './AddCostLineTimeModal.vue'
 
 const emit = defineEmits(['add-material', 'add-time'])
 
+const props = defineProps({
+  wageRate: { type: Number, required: true },
+  chargeOutRate: { type: Number, required: true },
+  materialsMarkup: { type: Number, required: true },
+  disabled: { type: Boolean, default: false },
+})
+
 const showMaterialModal = ref(false)
 const showTimeModal = ref(false)
 
 function openMaterialModal() {
+   
+  console.log('[AddCostLineDropdown] Opening MaterialModal with props:', {
+    wageRate: props.wageRate,
+    chargeOutRate: props.chargeOutRate,
+    materialsMarkup: props.materialsMarkup,
+  })
   showMaterialModal.value = true
 }
 function openTimeModal() {
+   
+  console.log('[AddCostLineDropdown] Opening TimeModal with props:', {
+    wageRate: props.wageRate,
+    chargeOutRate: props.chargeOutRate,
+    materialsMarkup: props.materialsMarkup,
+  })
   showTimeModal.value = true
 }
 function closeMaterialModal() {
