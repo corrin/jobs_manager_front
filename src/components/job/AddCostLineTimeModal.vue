@@ -89,10 +89,18 @@ function validateDesc() {
   descError.value = !form.value.desc.trim()
 }
 
-const unitCost = computed(() => (typeof props.wageRate === 'number' ? props.wageRate : 0))
-const unitRevenue = computed(() =>
-  typeof props.chargeOutRate === 'number' ? props.chargeOutRate : 0,
-)
+const unitCost = computed(() => {
+  const wage = typeof props.wageRate === 'number' ? props.wageRate : 0
+   
+  console.log('[TimeModal] Calculating unitCost', { wageRate: wage })
+  return wage
+})
+const unitRevenue = computed(() => {
+  const charge = typeof props.chargeOutRate === 'number' ? props.chargeOutRate : 0
+   
+  console.log('[TimeModal] Calculating unitRevenue', { chargeOutRate: charge })
+  return charge
+})
 const totalCost = computed(() => unitCost.value * form.value.hours)
 const totalRevenue = computed(() => unitRevenue.value * form.value.hours)
 
