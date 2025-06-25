@@ -94,6 +94,28 @@ const router = createRouter({
         title: 'Weekly Timesheet',
       },
     },
+    {
+      path: '/admin',
+      component: () => import('@/views/AdminView.vue'),
+      meta: { requiresAuth: true, requiresSuperUser: true, title: 'Admin - Jobs Manager' },
+      children: [
+        {
+          path: 'staff',
+          name: 'admin-staff',
+          component: () => import('@/views/AdminStaffView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresSuperUser: true,
+            title: 'Staff Admin - Jobs Manager',
+          },
+        },
+        // Futuras abas: company-defaults, etc
+        {
+          path: '',
+          redirect: { name: 'admin-staff' },
+        },
+      ],
+    },
   ],
 })
 

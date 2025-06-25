@@ -107,7 +107,7 @@
           </div>
         </div>
 
-        <div class="relative" @click.stop>
+        <div class="relative" @click.stop v-if="userInfo.is_superuser">
           <button
             @click="toggleDropdown('admin')"
             class="text-gray-700 hover:text-blue-600 transition-colors flex items-center text-sm"
@@ -119,18 +119,13 @@
             v-if="activeDropdown === 'admin'"
             class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
           >
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >Run Month End</a
+            <router-link
+              to="/admin/staff"
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >Edit Staff</a
-            >
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >Edit Company Defaults</a
-            >
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >Archive Complete Jobs</a
-            >
+              Staff
+            </router-link>
+            <!-- Futuras abas: Company Defaults, etc -->
           </div>
         </div>
       </div>
@@ -298,54 +293,29 @@
                 </Transition>
               </div>
 
-              <div class="bg-gray-50 rounded-md">
+              <div class="bg-gray-50 rounded-md" v-if="userInfo.is_superuser">
                 <button
                   @click="toggleMobileSection('admin')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
                   Admin
-                  <ChevronDown
-                    :class="[
-                      'h-4 w-4 transition-transform duration-200',
-                      mobileSections.admin ? 'rotate-180' : '',
-                    ]"
-                  />
+                  <ChevronDown :class="[mobileSections.admin ? 'rotate-180' : '']" />
                 </button>
                 <Transition
                   enter-active-class="transition-all duration-200 ease-out"
                   enter-from-class="opacity-0 max-h-0"
-                  enter-to-class="opacity-100 max-h-48"
+                  enter-to-class="opacity-100 max-h-40"
                   leave-active-class="transition-all duration-200 ease-in"
-                  leave-from-class="opacity-100 max-h-48"
                   leave-to-class="opacity-0 max-h-0"
                 >
                   <div v-if="mobileSections.admin" class="overflow-hidden">
-                    <div class="px-3 pb-2 space-y-1">
-                      <a
-                        href="#"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
-                        >Run Month End</a
-                      >
-                      <a
-                        href="#"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
-                        >Edit Staff</a
-                      >
-                      <a
-                        href="#"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
-                        >Edit Company Defaults</a
-                      >
-                      <a
-                        href="#"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
-                        >Archive Complete Jobs</a
-                      >
-                    </div>
+                    <router-link
+                      to="/admin/staff"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Staff
+                    </router-link>
+                    <!-- Futuras abas: Company Defaults, etc -->
                   </div>
                 </Transition>
               </div>
