@@ -39,18 +39,38 @@
         />
       </div>
     </div>
+    <AddCostLineMaterialModal
+      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'material'"
+      :materialsMarkup="materialsMarkup"
+      :initial="editingCostLine"
+      mode="edit"
+      @close="closeEditModal"
+      @submit="submitEditCostLine"
+    />
+    <AddCostLineTimeModal
+      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'time'"
+      :wageRate="wageRate"
+      :chargeOutRate="chargeOutRate"
+      :initial="editingCostLine"
+      mode="edit"
+      @close="closeEditModal"
+      @submit="submitEditCostLine"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
-import AddCostLineDropdown from './AddCostLineDropdown.vue'
+import AddCostLineDropdown from './CostLineDropdown.vue'
 import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
 import { costlineService, type CostLineCreatePayload } from '@/services/costline.service'
 import { fetchCostSet } from '@/services/costing.service'
 import type { CostLine } from '@/types/costing.types'
+import { toast } from 'vue-sonner'
+import AddCostLineMaterialModal from './CostLineMaterialModal.vue'
+import AddCostLineTimeModal from './CostLineTimeModal.vue'
 
 interface Props {
   jobId: string
@@ -112,20 +132,60 @@ const estimateSummary = computed(() => {
   }
 })
 
+const editingCostLine = ref<CostLine | null>(null)
+const showEditModal = ref(false)
+
+function handleEditCostLine(line: CostLine) {
+  editingCostLine.value = line
+  showEditModal.value = true
+}
+
+function closeEditModal() {
+  showEditModal.value = false
+  editingCostLine.value = null
+}
+
+async function submitEditCostLine(payload: CostLine) {
+  if (!payload || !payload.id) return
+  isLoading.value = true
+  toast.loading('Updating cost line...')
+  try {
+    const updated = await costlineService.updateCostLine(payload.id, payload)
+    costLines.value = costLines.value.map((l) => (l.id === updated.id ? { ...updated } : l))
+    toast.success('Cost line updated!')
+    closeEditModal()
+  } catch (error) {
+    toast.error('Failed to update cost line.')
+    console.error('Failed to update cost line:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+async function handleDeleteCostLine(line: CostLine) {
+  if (!line.id) return
+  isLoading.value = true
+  toast.loading('Deleting cost line...')
+  try {
+    await costlineService.deleteCostLine(line.id)
+    costLines.value = costLines.value.filter((l) => l.id !== line.id)
+    toast.success('Cost line deleted successfully!')
+  } catch (error) {
+    toast.error('Failed to delete cost line.')
+    console.error('Failed to delete cost line:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
 async function handleAddMaterial(payload: CostLine) {
   if (!isCompanyDefaultsReady.value) {
-    console.warn('[JobEstimateTab] Tried to add material before company defaults ready')
+    toast.error('Company defaults not loaded yet.')
     return
   }
-
-  console.log('[JobEstimateTab] Adding Material with props:', {
-    materialsMarkup: materialsMarkup.value,
-    wageRate: wageRate.value,
-    chargeOutRate: chargeOutRate.value,
-    payload,
-  })
   if (!payload || payload.kind !== 'material') return
   isLoading.value = true
+  toast.loading('Adding material cost line...')
   try {
     const createPayload: CostLineCreatePayload = {
       kind: 'material',
@@ -149,8 +209,9 @@ async function handleAddMaterial(payload: CostLine) {
           typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
       },
     ]
+    toast.success('Material cost line added!')
   } catch (error) {
-    // TODO: show error toast
+    toast.error('Failed to add material cost line.')
     console.error('Failed to add material:', error)
   } finally {
     isLoading.value = false
@@ -159,18 +220,12 @@ async function handleAddMaterial(payload: CostLine) {
 
 async function handleAddTime(payload: CostLine) {
   if (!isCompanyDefaultsReady.value) {
-    console.warn('[JobEstimateTab] Tried to add time before company defaults ready')
+    toast.error('Company defaults not loaded yet.')
     return
   }
-
-  console.log('[JobEstimateTab] Adding Time with props:', {
-    materialsMarkup: materialsMarkup.value,
-    wageRate: wageRate.value,
-    chargeOutRate: chargeOutRate.value,
-    payload,
-  })
   if (!payload || payload.kind !== 'time') return
   isLoading.value = true
+  toast.loading('Adding time cost line...')
   try {
     const createPayload: CostLineCreatePayload = {
       kind: 'time',
@@ -194,31 +249,10 @@ async function handleAddTime(payload: CostLine) {
           typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
       },
     ]
+    toast.success('Time cost line added!')
   } catch (error) {
-    // TODO: show error toast
+    toast.error('Failed to add time cost line.')
     console.error('Failed to add time:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const editingCostLine = ref<CostLine | null>(null)
-
-function handleEditCostLine(line: CostLine) {
-  editingCostLine.value = line
-  // Aqui você pode abrir um modal de edição, etc.
-  // Exemplo: showEditModal.value = true
-}
-
-async function handleDeleteCostLine(line: CostLine) {
-  if (!line.id) return
-  isLoading.value = true
-  try {
-    await costlineService.deleteCostLine(line.id)
-    costLines.value = costLines.value.filter((l) => l.id !== line.id)
-  } catch (error) {
-    // TODO: show error toast
-    console.error('Failed to delete cost line:', error)
   } finally {
     isLoading.value = false
   }

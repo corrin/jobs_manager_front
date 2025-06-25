@@ -139,7 +139,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import AddCostLineDropdown from './AddCostLineDropdown.vue'
+import AddCostLineDropdown from './CostLineDropdown.vue'
 import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import {

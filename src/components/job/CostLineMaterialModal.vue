@@ -60,22 +60,18 @@
         <div
           class="summary-card bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-4 flex flex-col gap-2 shadow-sm"
         >
-          <div class="flex items-center gap-2">
-            <DollarSign class="w-5 h-5 text-blue-500" />
-            <span class="font-semibold text-gray-700">Unit revenue:</span>
-            <span class="text-blue-700 font-bold"
-              >${{ isNaN(unitRevenue) ? '0.00' : unitRevenue.toFixed(2) }}</span
-            >
-          </div>
-          <div class="flex items-center gap-2">
-            <TrendingUp class="w-5 h-5 text-green-500" />
-            <span class="font-semibold text-gray-700">Total revenue:</span>
-            <span class="text-green-700 font-bold">${{ totalRevenue.toFixed(2) }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <Package class="w-5 h-5 text-gray-500" />
-            <span class="font-semibold text-gray-700">Total cost:</span>
-            <span class="text-gray-700 font-bold">${{ totalCost.toFixed(2) }}</span>
+          <div class="flex items-center justify-center gap-0 text-2xl font-bold">
+            <span class="flex items-center gap-2 text-green-700">
+              <DollarSign class="w-7 h-7 text-green-500" />
+              <span>Total revenue:</span>
+              <span class="text-green-700">${{ totalRevenue.toFixed(2) }}</span>
+            </span>
+            <span class="mx-6 h-10 border-l border-gray-300"></span>
+            <span class="flex items-center gap-2 text-blue-700">
+              <Package class="w-7 h-7 text-blue-500" />
+              <span>Total cost:</span>
+              <span class="text-blue-700">${{ totalCost.toFixed(2) }}</span>
+            </span>
           </div>
         </div>
         <DialogFooter class="flex gap-2 justify-end mt-2">
@@ -90,7 +86,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, defineProps, defineEmits } from 'vue'
+import { ref, computed, defineProps, defineEmits, watch } from 'vue'
 import {
   Dialog,
   DialogContent,
@@ -99,11 +95,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Plus, Package, DollarSign, TrendingUp } from 'lucide-vue-next'
+import { Plus, Package, DollarSign } from 'lucide-vue-next'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 
 const props = defineProps({
   materialsMarkup: Number,
+  initial: Object,
+  mode: { type: String, default: 'add' },
 })
 const emit = defineEmits(['close', 'submit'])
 
@@ -114,17 +112,29 @@ const form = ref({
 })
 const descError = ref(false)
 
+watch(
+  () => props.initial,
+  (val) => {
+    if (val) {
+      form.value.desc = val.desc || ''
+      form.value.unitCost = val.unit_cost || 0
+      form.value.quantity = val.quantity || 1
+    }
+  },
+  { immediate: true },
+)
+
 function validateDesc() {
   descError.value = !form.value.desc.trim()
 }
 
 const companyDefaultsStore = useCompanyDefaultsStore()
- 
+
 console.log('[MaterialModal] Store companyDefaults:', companyDefaultsStore.companyDefaults)
 const unitRevenue = computed(() => {
   const cost = Number(form.value.unitCost) || 0
   const markup = typeof props.materialsMarkup === 'number' ? props.materialsMarkup : 0
-   
+
   console.log('[MaterialModal] Calculating unitRevenue', {
     unitCost: cost,
     materialsMarkup: markup,
@@ -151,6 +161,7 @@ function submit() {
     total_rev: totalRevenue.value,
     total_cost: totalCost.value,
     kind: 'material',
+    id: props.initial?.id,
   })
 }
 </script>

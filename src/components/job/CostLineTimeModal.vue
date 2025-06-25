@@ -37,17 +37,17 @@
           </label>
         </div>
         <div
-          class="summary-card bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-4 flex flex-col gap-2 shadow-sm"
+          class="summary-card bg-gradient-to-br from-green-50 to-white border border-green-100 rounded-xl p-4 flex flex-col gap-2 shadow-sm"
         >
           <div class="flex items-center justify-center gap-0 text-2xl font-bold">
             <span class="flex items-center gap-2 text-green-700">
-              <DollarSign class="w-7 h-7 text-green-500" />
+              <TrendingUp class="w-7 h-7 text-green-500" />
               <span>Total revenue:</span>
               <span class="text-green-700">${{ totalRevenue.toFixed(2) }}</span>
             </span>
             <span class="mx-6 h-10 border-l border-gray-300"></span>
             <span class="flex items-center gap-2 text-blue-700">
-              <Package class="w-7 h-7 text-blue-500" />
+              <DollarSign class="w-7 h-7 text-blue-500" />
               <span>Total cost:</span>
               <span class="text-blue-700">${{ totalCost.toFixed(2) }}</span>
             </span>
@@ -74,7 +74,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Plus, Clock, Package, DollarSign } from 'lucide-vue-next'
+import { Plus, Clock, DollarSign, TrendingUp } from 'lucide-vue-next'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 
 const props = defineProps({

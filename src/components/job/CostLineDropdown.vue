@@ -42,8 +42,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Plus, Package, Clock } from 'lucide-vue-next'
-import MaterialModal from './AddCostLineMaterialModal.vue'
-import TimeModal from './AddCostLineTimeModal.vue'
+import MaterialModal from './CostLineMaterialModal.vue'
+import TimeModal from './CostLineTimeModal.vue'
 
 const emit = defineEmits(['add-material', 'add-time'])
 
@@ -58,7 +58,6 @@ const showMaterialModal = ref(false)
 const showTimeModal = ref(false)
 
 function openMaterialModal() {
-   
   console.log('[AddCostLineDropdown] Opening MaterialModal with props:', {
     wageRate: props.wageRate,
     chargeOutRate: props.chargeOutRate,
@@ -67,7 +66,6 @@ function openMaterialModal() {
   showMaterialModal.value = true
 }
 function openTimeModal() {
-   
   console.log('[AddCostLineDropdown] Opening TimeModal with props:', {
     wageRate: props.wageRate,
     chargeOutRate: props.chargeOutRate,
