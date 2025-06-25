@@ -11,7 +11,7 @@
           <p class="text-gray-600">Manage quote details and cost breakdown for this job.</p>
         </div>
         <div v-if="currentQuote?.has_quote">
-          <AddCostLineDropdown
+          <CostLineDropdown
             :disabled="isLoading"
             :wageRate="wageRate"
             :chargeOutRate="chargeOutRate"
@@ -152,20 +152,20 @@
       </DialogContent>
     </Dialog>
 
-    <AddCostLineMaterialModal
+    <CostLineMaterialModal
       v-if="showMaterialModal"
       :materialsMarkup="materialsMarkup"
       @close="showMaterialModal = false"
       @submit="handleAddMaterial"
     />
-    <AddCostLineTimeModal
+    <CostLineTimeModal
       v-if="showTimeModal"
       :wageRate="wageRate"
       :chargeOutRate="chargeOutRate"
       @close="showTimeModal = false"
       @submit="handleAddTime"
     />
-    <AddCostLineMaterialModal
+    <CostLineMaterialModal
       v-if="showEditModal && editingCostLine && editingCostLine.kind === 'material'"
       :materialsMarkup="materialsMarkup"
       :initial="editingCostLine"
@@ -173,7 +173,7 @@
       @close="closeEditModal"
       @submit="submitEditCostLine"
     />
-    <AddCostLineTimeModal
+    <CostLineTimeModal
       v-if="showEditModal && editingCostLine && editingCostLine.kind === 'time'"
       :wageRate="wageRate"
       :chargeOutRate="chargeOutRate"
@@ -188,7 +188,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { Link2, ExternalLink, RefreshCw } from 'lucide-vue-next'
-import AddCostLineDropdown from './CostLineDropdown.vue'
+import CostLineDropdown from './CostLineDropdown.vue'
 import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import {
@@ -201,8 +201,8 @@ import type { Job } from '../../types/costing.types'
 import type { CostLine } from '../../types/costing.types'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import { costlineService } from '@/services/costline.service'
-import AddCostLineMaterialModal from './AddCostLineMaterialModal.vue'
-import AddCostLineTimeModal from './AddCostLineTimeModal.vue'
+import CostLineMaterialModal from './CostLineMaterialModalModal.vue'
+import CostLineTimeModal from './CostLineTimeModal.vue'
 
 interface Props {
   jobId: string
