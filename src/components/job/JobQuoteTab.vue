@@ -76,14 +76,11 @@
           :costLines="quoteCostLines"
           :isLoading="isLoading"
         />
-        <div class="mt-6">
-          <!-- Botões de spreadsheet removidos daqui, agora estão acima -->
-        </div>
       </div>
     </div>
 
     <div v-else class="flex-1">
-      <AddCostLineDropdown
+      <CostLineDropdown
         :disabled="true"
         :wageRate="wageRate"
         :chargeOutRate="chargeOutRate"
@@ -303,15 +300,12 @@ async function refreshQuoteData() {
   if (!props.jobId) return
   isLoading.value = true
   try {
-    // Busca o job atualizado do backend
     const response = await fetch(`/api/job/${props.jobId}`)
     const updatedJob = await response.json()
     if (updatedJob && updatedJob.latest_quote) {
-      // Atualiza o estado local do jobData
       if (props.jobData) {
         Object.assign(props.jobData, updatedJob)
       }
-      // Atualiza o resumo e cost lines
       quoteData.value = updatedJob.latest_quote
       costLines.value = [...(updatedJob.latest_quote.cost_lines || [])]
     }
@@ -495,7 +489,3 @@ async function handleDeleteCostLine(line: CostLine) {
   }
 }
 </script>
-
-<style scoped>
-/* Adicione estilos personalizados aqui, se necessário */
-</style>
