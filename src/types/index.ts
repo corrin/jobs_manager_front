@@ -58,6 +58,29 @@ export interface Job extends BaseEntity {
   quote_sheet?: QuoteSheet | null
 }
 
+export interface Invoice {
+  id: string
+  xero_id: string
+  number: string
+  status: string
+  date: string
+  due_date: string | null
+  total_excl_tax: number
+  total_incl_tax: number
+  amount_due: number
+  online_url?: string | null
+}
+
+export interface Quote {
+  id: string
+  xero_id: string
+  status: string
+  date: string
+  total_excl_tax: number
+  total_incl_tax: number
+  online_url?: string | null
+}
+
 export interface JobData extends Job {
   client_id: string
   job_status: string
@@ -94,6 +117,8 @@ export interface JobData extends Job {
     wage_rate: number
   } | null
   events?: JobEvent[]
+  invoice?: Invoice | null
+  quote?: Quote | null
 }
 
 export interface JobStatus {

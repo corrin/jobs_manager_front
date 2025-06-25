@@ -86,6 +86,29 @@ export const JobEventSchema = z.object({
   staff: z.string().nullable(),
 })
 
+export const InvoiceSchema = z.object({
+  id: z.string(),
+  xero_id: z.string(),
+  number: z.string(),
+  status: z.string(),
+  date: z.string(),
+  due_date: z.string().nullable(),
+  total_excl_tax: z.number(),
+  total_incl_tax: z.number(),
+  amount_due: z.number(),
+  online_url: z.string().nullable().optional(),
+})
+
+export const QuoteSchema = z.object({
+  id: z.string(),
+  xero_id: z.string(),
+  status: z.string(),
+  date: z.string(),
+  total_excl_tax: z.number(),
+  total_incl_tax: z.number(),
+  online_url: z.string().nullable().optional(),
+})
+
 export const JobDetailSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -137,6 +160,8 @@ export const JobDetailSchema = z.object({
     .nullable()
     .optional(),
   events: z.array(JobEventSchema).optional(),
+  invoice: InvoiceSchema.nullable().optional(),
+  quote: QuoteSchema.nullable().optional(),
 })
 
 export const ApiSuccessResponseSchema = z.object({

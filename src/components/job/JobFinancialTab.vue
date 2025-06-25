@@ -128,6 +128,7 @@
 import { computed } from 'vue'
 import type { JobData } from '@/services/job-rest.service'
 import { useJobsStore } from '@/stores/jobs'
+import axios from 'axios'
 
 interface Props {
   jobData: JobData | null
@@ -181,11 +182,11 @@ const daysUntilDeadline = computed(() => {
 })
 
 const quoteUrl = computed(() => {
-  return props.jobData?.quoted ? '#' : null
+  return props.jobData?.quote?.online_url || null
 })
 
 const invoiceUrl = computed(() => {
-  return props.jobData?.invoiced ? '#' : null
+  return props.jobData?.invoice?.online_url || null
 })
 
 const formatCurrency = (amount: number | undefined | null): string => {
@@ -210,9 +211,23 @@ const formatDate = (dateString: string) => {
   })
 }
 
-const createQuote = () => {
-  console.log('Creating quote...')
-  emit('quote-created')
+const createQuote = async () => {
+  if (!props.jobData?.id) return
+  try {
+    const response = await axios.post(`/api/xero/create_quote/${props.jobData.id}`)
+    if (response.data?.success) {
+      if (response.data.job) {
+        jobsStore.setDetailedJob(response.data.job)
+      } else {
+        await jobsStore.fetchJob(props.jobData.id)
+      }
+      emit('quote-created')
+    } else {
+      console.error(response.data?.error || response.data)
+    }
+  } catch (err) {
+    console.error('Error creating quote:', err)
+  }
 }
 
 const acceptQuote = () => {
@@ -227,9 +242,23 @@ const acceptQuote = () => {
   }
 }
 
-const createInvoice = () => {
-  console.log('Creating invoice...')
-  emit('invoice-created')
+const createInvoice = async () => {
+  if (!props.jobData?.id) return
+  try {
+    const response = await axios.post(`/api/xero/create_invoice/${props.jobData.id}`)
+    if (response.data?.success) {
+      if (response.data.job) {
+        jobsStore.setDetailedJob(response.data.job)
+      } else {
+        await jobsStore.fetchJob(props.jobData.id)
+      }
+      emit('invoice-created')
+    } else {
+      console.error(response.data?.error || response.data)
+    }
+  } catch (err) {
+    console.error('Error creating invoice:', err)
+  }
 }
 
 const goToQuoteOnXero = () => {
