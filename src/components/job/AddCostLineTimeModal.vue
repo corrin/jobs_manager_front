@@ -96,6 +96,11 @@ const unitRevenue = computed(() =>
 const totalCost = computed(() => unitCost.value * form.value.hours)
 const totalRevenue = computed(() => unitRevenue.value * form.value.hours)
 
+function handleHoursInput(e: Event) {
+  const input = (e.target as HTMLInputElement).value.replace(',', '.')
+  form.value.hours = Number(input)
+}
+
 function submit() {
   validateDesc()
   if (descError.value) return

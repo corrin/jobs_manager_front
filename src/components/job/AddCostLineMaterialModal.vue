@@ -39,6 +39,7 @@
               <span class="block text-sm font-medium text-gray-700 mb-1">Unit cost</span>
               <input
                 v-model.number="form.unitCost"
+                @input="handleUnitCostInput"
                 type="number"
                 min="0"
                 step="0.01"
@@ -48,7 +49,11 @@
             </label>
             <label class="flex-1">
               <span class="block text-sm font-medium text-gray-700 mb-1">Unit revenue</span>
-              <input :value="unitRevenue" readonly class="input bg-gray-100 cursor-not-allowed" />
+              <input
+                :value="isNaN(unitRevenue) ? '' : unitRevenue"
+                readonly
+                class="input bg-gray-100 cursor-not-allowed"
+              />
             </label>
           </div>
         </div>
@@ -58,7 +63,9 @@
           <div class="flex items-center gap-2">
             <DollarSign class="w-5 h-5 text-blue-500" />
             <span class="font-semibold text-gray-700">Unit revenue:</span>
-            <span class="text-blue-700 font-bold">${{ form.unitRevenue.toFixed(2) }}</span>
+            <span class="text-blue-700 font-bold"
+              >${{ isNaN(unitRevenue) ? '0.00' : unitRevenue.toFixed(2) }}</span
+            >
           </div>
           <div class="flex items-center gap-2">
             <TrendingUp class="w-5 h-5 text-green-500" />
@@ -118,6 +125,11 @@ const unitRevenue = computed(() => {
 
 const totalRevenue = computed(() => unitRevenue.value * form.value.quantity)
 const totalCost = computed(() => form.value.unitCost * form.value.quantity)
+
+function handleUnitCostInput(e: Event) {
+  const input = (e.target as HTMLInputElement).value.replace(',', '.')
+  form.value.unitCost = Number(input)
+}
 
 function submit() {
   validateDesc()
