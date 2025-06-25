@@ -44,26 +44,11 @@
                 step="0.01"
                 required
                 class="input"
-                @input="handleUnitCostInput"
               />
             </label>
             <label class="flex-1">
               <span class="block text-sm font-medium text-gray-700 mb-1">Unit revenue</span>
-              <input
-                v-model.number="form.unitRevenue"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-                class="input"
-                @input="handleUnitRevenueInput"
-                :value="
-                  form.unitRevenueManual
-                    ? form.unitRevenue
-                    : (form.unitCost * (1 + (props.materialsMarkup ?? 0))).toFixed(2)
-                "
-                @blur="form.unitRevenue = Number($event.target.value)"
-              />
+              <input :value="unitRevenue" readonly class="input bg-gray-100 cursor-not-allowed" />
             </label>
           </div>
         </div>
@@ -98,7 +83,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, defineProps, defineEmits, watch } from 'vue'
+import { ref, computed, defineProps, defineEmits } from 'vue'
 import {
   Dialog,
   DialogContent,
@@ -118,8 +103,6 @@ const form = ref({
   desc: '',
   unitCost: 0,
   quantity: 1,
-  unitRevenue: 0,
-  unitRevenueManual: false,
 })
 const descError = ref(false)
 
@@ -127,29 +110,13 @@ function validateDesc() {
   descError.value = !form.value.desc.trim()
 }
 
-function handleUnitRevenueInput() {
-  form.value.unitRevenueManual = true
-}
+const unitRevenue = computed(() => {
+  const cost = Number(form.value.unitCost) || 0
+  const markup = typeof props.materialsMarkup === 'number' ? props.materialsMarkup : 0
+  return Number((cost * (1 + markup)).toFixed(2))
+})
 
-watch(
-  () => [form.value.unitCost, props.materialsMarkup],
-  ([unitCost, markup]) => {
-    if (
-      !form.value.unitRevenueManual &&
-      typeof unitCost === 'number' &&
-      typeof markup === 'number'
-    ) {
-      form.value.unitRevenue = Number((unitCost * (1 + markup)).toFixed(2))
-    }
-  },
-  { immediate: true },
-)
-
-function handleUnitCostInput() {
-  form.value.unitRevenueManual = false
-}
-
-const totalRevenue = computed(() => form.value.unitRevenue * form.value.quantity)
+const totalRevenue = computed(() => unitRevenue.value * form.value.quantity)
 const totalCost = computed(() => form.value.unitCost * form.value.quantity)
 
 function submit() {
@@ -159,7 +126,7 @@ function submit() {
     desc: form.value.desc,
     unit_cost: form.value.unitCost,
     quantity: form.value.quantity,
-    unit_rev: form.value.unitRevenue,
+    unit_rev: unitRevenue.value,
     total_rev: totalRevenue.value,
     total_cost: totalCost.value,
     kind: 'material',

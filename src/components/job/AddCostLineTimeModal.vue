@@ -35,30 +35,6 @@
               class="input"
             />
           </label>
-          <label class="block">
-            <span class="block text-sm font-medium text-gray-700 mb-1">Unit Cost</span>
-            <input
-              v-model.number="form.unitCost"
-              @input="handleUnitCostInput"
-              type="number"
-              min="0"
-              step="0.01"
-              required
-              class="input"
-            />
-          </label>
-          <label class="block">
-            <span class="block text-sm font-medium text-gray-700 mb-1">Unit Revenue</span>
-            <input
-              v-model.number="form.unitRevenue"
-              @input="handleUnitRevenueInput"
-              type="number"
-              min="0"
-              step="0.01"
-              required
-              class="input"
-            />
-          </label>
         </div>
         <div
           class="summary-card bg-gradient-to-br from-green-50 to-white border border-green-100 rounded-xl p-4 flex flex-col gap-2 shadow-sm"
@@ -86,7 +62,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, defineProps, defineEmits, watch } from 'vue'
+import { ref, computed, defineProps, defineEmits } from 'vue'
 import {
   Dialog,
   DialogContent,
@@ -106,10 +82,6 @@ const emit = defineEmits(['close', 'submit'])
 const form = ref({
   desc: '',
   hours: 1,
-  unitCost: props.wageRate ?? 0,
-  unitRevenue: props.chargeOutRate ?? 0,
-  unitCostManual: false,
-  unitRevenueManual: false,
 })
 const descError = ref(false)
 
@@ -117,28 +89,12 @@ function validateDesc() {
   descError.value = !form.value.desc.trim()
 }
 
-function handleUnitCostInput() {
-  form.value.unitCostManual = true
-}
-function handleUnitRevenueInput() {
-  form.value.unitRevenueManual = true
-}
-function handleHoursInput() {
-  form.value.unitCostManual = false
-  form.value.unitRevenueManual = false
-}
-
-watch(
-  () => [props.wageRate, props.chargeOutRate],
-  ([wage, charge]) => {
-    if (!form.value.unitCostManual) form.value.unitCost = wage ?? 0
-    if (!form.value.unitRevenueManual) form.value.unitRevenue = charge ?? 0
-  },
-  { immediate: true },
+const unitCost = computed(() => (typeof props.wageRate === 'number' ? props.wageRate : 0))
+const unitRevenue = computed(() =>
+  typeof props.chargeOutRate === 'number' ? props.chargeOutRate : 0,
 )
-
-const totalCost = computed(() => form.value.unitCost * form.value.hours)
-const totalRevenue = computed(() => form.value.unitRevenue * form.value.hours)
+const totalCost = computed(() => unitCost.value * form.value.hours)
+const totalRevenue = computed(() => unitRevenue.value * form.value.hours)
 
 function submit() {
   validateDesc()
@@ -146,8 +102,8 @@ function submit() {
   emit('submit', {
     desc: form.value.desc,
     quantity: form.value.hours,
-    unit_cost: form.value.unitCost,
-    unit_rev: form.value.unitRevenue,
+    unit_cost: unitCost.value,
+    unit_rev: unitRevenue.value,
     total_cost: totalCost.value,
     total_rev: totalRevenue.value,
     kind: 'time',

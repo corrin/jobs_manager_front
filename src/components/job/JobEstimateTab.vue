@@ -1,23 +1,23 @@
 <template>
-  <div class="space-y-4">
-    <div class="flex items-center justify-between">
-      <h2 class="text-lg font-semibold text-gray-900">
-        Job Estimate
-        <span v-if="isLoading" class="ml-2 text-sm text-gray-500">Loading...</span>
-      </h2>
-      <AddCostLineDropdown
-        :disabled="isLoading"
-        :wageRate="wageRate"
-        :chargeOutRate="chargeOutRate"
-        :materialsMarkup="materialsMarkup"
-        @add-material="handleAddMaterial"
-        @add-time="handleAddTime"
-      />
+  <div class="job-estimate-tab h-full flex flex-col">
+    <div class="flex-shrink-0 mb-6">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">
+          Job Estimate
+          <span v-if="isLoading" class="ml-2 text-sm text-gray-500">Loading...</span>
+        </h2>
+        <AddCostLineDropdown
+          :disabled="isLoading"
+          :wageRate="wageRate"
+          :chargeOutRate="chargeOutRate"
+          :materialsMarkup="materialsMarkup"
+          @add-material="handleAddMaterial"
+          @add-time="handleAddTime"
+        />
+      </div>
     </div>
-    <div class="flex gap-4 h-[600px] min-h-0">
-      <div
-        class="flex-[3] bg-white rounded-lg border border-gray-200 flex flex-col min-h-0 max-h-full"
-      >
+    <div class="flex-1 flex gap-6 min-h-0">
+      <div class="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col">
         <div class="flex-shrink-0 p-4 border-b border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900">Estimate Details</h3>
         </div>
@@ -30,9 +30,7 @@
           />
         </div>
       </div>
-      <div
-        class="flex-[2] bg-gray-50 rounded-lg p-3 border border-gray-200 overflow-y-auto max-h-full min-h-0 flex flex-col"
-      >
+      <div class="flex-1">
         <CostSetSummaryCard
           title="Estimate Summary"
           :summary="estimateSummary"
