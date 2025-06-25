@@ -113,6 +113,17 @@ const estimateSummary = computed(() => {
 })
 
 async function handleAddMaterial(payload: CostLine) {
+  if (!isCompanyDefaultsReady.value) {
+    console.warn('[JobEstimateTab] Tried to add material before company defaults ready')
+    return
+  }
+
+  console.log('[JobEstimateTab] Adding Material with props:', {
+    materialsMarkup: materialsMarkup.value,
+    wageRate: wageRate.value,
+    chargeOutRate: chargeOutRate.value,
+    payload,
+  })
   if (!payload || payload.kind !== 'material') return
   isLoading.value = true
   try {
@@ -147,6 +158,17 @@ async function handleAddMaterial(payload: CostLine) {
 }
 
 async function handleAddTime(payload: CostLine) {
+  if (!isCompanyDefaultsReady.value) {
+    console.warn('[JobEstimateTab] Tried to add time before company defaults ready')
+    return
+  }
+
+  console.log('[JobEstimateTab] Adding Time with props:', {
+    materialsMarkup: materialsMarkup.value,
+    wageRate: wageRate.value,
+    chargeOutRate: chargeOutRate.value,
+    payload,
+  })
   if (!payload || payload.kind !== 'time') return
   isLoading.value = true
   try {
@@ -201,6 +223,10 @@ async function handleDeleteCostLine(line: CostLine) {
     isLoading.value = false
   }
 }
+
+const isCompanyDefaultsReady = computed(
+  () => !!companyDefaults.value && companyDefaultsStore.isLoaded,
+)
 </script>
 
 <style scoped>
