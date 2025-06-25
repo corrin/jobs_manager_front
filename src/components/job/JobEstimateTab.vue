@@ -6,7 +6,7 @@
           Job Estimate
           <span v-if="isLoading" class="ml-2 text-sm text-gray-500">Loading...</span>
         </h2>
-        <AddCostLineDropdown
+        <CostLineDropdown
           :disabled="isLoading"
           :wageRate="wageRate"
           :chargeOutRate="chargeOutRate"
@@ -39,7 +39,7 @@
         />
       </div>
     </div>
-    <AddCostLineMaterialModal
+    <CostLineMaterialModal
       v-if="showEditModal && editingCostLine && editingCostLine.kind === 'material'"
       :materialsMarkup="materialsMarkup"
       :initial="editingCostLine"
@@ -47,7 +47,7 @@
       @close="closeEditModal"
       @submit="submitEditCostLine"
     />
-    <AddCostLineTimeModal
+    <CostLineTimeModal
       v-if="showEditModal && editingCostLine && editingCostLine.kind === 'time'"
       :wageRate="wageRate"
       :chargeOutRate="chargeOutRate"
@@ -62,15 +62,15 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
-import AddCostLineDropdown from './CostLineDropdown.vue'
+import CostLineDropdown from './CostLineDropdown.vue'
 import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
 import { costlineService, type CostLineCreatePayload } from '@/services/costline.service'
 import { fetchCostSet } from '@/services/costing.service'
 import type { CostLine } from '@/types/costing.types'
 import { toast } from 'vue-sonner'
-import AddCostLineMaterialModal from './CostLineMaterialModal.vue'
-import AddCostLineTimeModal from './CostLineTimeModal.vue'
+import CostLineMaterialModal from './CostLineMaterialModal.vue'
+import CostLineTimeModal from './CostLineTimeModal.vue'
 
 interface Props {
   jobId: string
