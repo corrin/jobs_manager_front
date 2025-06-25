@@ -201,7 +201,7 @@ import type { Job } from '../../types/costing.types'
 import type { CostLine } from '../../types/costing.types'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import { costlineService } from '@/services/costline.service'
-import CostLineMaterialModal from './CostLineMaterialModalModal.vue'
+import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
 
 interface Props {
