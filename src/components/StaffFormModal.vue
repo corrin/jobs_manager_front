@@ -28,88 +28,183 @@
         <!-- Tab Content -->
         <div v-show="activeTab === 'personal'" class="space-y-4">
           <div class="flex gap-2">
-            <Input v-model="form.first_name" placeholder="First Name" required class="w-1/2" />
-            <Input v-model="form.last_name" placeholder="Last Name" required class="w-1/2" />
+            <div class="w-1/2">
+              <label class="block text-sm font-medium mb-1" for="first_name">First Name</label>
+              <Input id="first_name" v-model="form.first_name" placeholder="First Name" required />
+            </div>
+            <div class="w-1/2">
+              <label class="block text-sm font-medium mb-1" for="last_name">Last Name</label>
+              <Input id="last_name" v-model="form.last_name" placeholder="Last Name" required />
+            </div>
           </div>
-          <Input v-model="form.preferred_name" placeholder="Preferred Name" />
-          <Input v-model="form.email" type="email" placeholder="E-mail" required />
-          <Input
-            v-model="form.wage_rate"
-            type="number"
-            placeholder="Wage Rate"
-            min="0"
-            step="0.01"
-            required
-          />
-          <Input v-model="form.ims_payroll_id" placeholder="IMS Payroll ID" />
-          <div class="space-y-2">
-            <label class="text-sm font-medium">Profile Icon/Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              @change="onFileChange"
-              class="file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-colors"
+          <div>
+            <label class="block text-sm font-medium mb-1" for="preferred_name"
+              >Preferred Name</label
+            >
+            <Input id="preferred_name" v-model="form.preferred_name" placeholder="Preferred Name" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="email">E-mail</label>
+            <Input id="email" v-model="form.email" type="email" placeholder="E-mail" required />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="wage_rate"
+              >Wage Rate (NZD/hour)</label
+            >
+            <Input
+              id="wage_rate"
+              v-model="form.wage_rate"
+              type="number"
+              placeholder="Wage Rate"
+              min="0"
+              step="0.01"
+              required
             />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="ims_payroll_id"
+              >IMS Payroll ID</label
+            >
+            <Input id="ims_payroll_id" v-model="form.ims_payroll_id" placeholder="IMS Payroll ID" />
+          </div>
+          <div class="space-y-2">
+            <label class="block text-sm font-medium mb-1">Profile Icon/Image</label>
+            <div class="flex flex-col items-center">
+              <label
+                class="relative group cursor-pointer"
+                tabindex="0"
+                @keydown.enter.prevent="$refs.avatarInput.click()"
+                :aria-label="
+                  form.first_name || form.last_name
+                    ? `${form.first_name} ${form.last_name}`
+                    : 'User avatar'
+                "
+              >
+                <div
+                  class="avatar-upload flex items-center justify-center rounded-full bg-indigo-100 border-2 border-indigo-300 w-24 h-24 text-3xl font-bold text-indigo-700 overflow-hidden transition-all duration-150 group-hover:ring-4 group-hover:ring-indigo-300 group-hover:opacity-90"
+                >
+                  <template v-if="avatarUrl">
+                    <img :src="avatarUrl" alt="Profile image" class="object-cover w-full h-full" />
+                  </template>
+                  <template v-else>
+                    {{ initials }}
+                  </template>
+                  <div
+                    class="absolute inset-0 flex flex-col items-center justify-center bg-indigo-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
+                  >
+                    <svg
+                      class="w-8 h-8 text-white mb-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M12 16v-4m0 0V8m0 4h4m-4 0H8"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    <span class="text-xs text-white">Change</span>
+                  </div>
+                </div>
+                <input
+                  ref="avatarInput"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="onFileChange"
+                />
+              </label>
+            </div>
           </div>
         </div>
         <div v-show="activeTab === 'working'" class="space-y-2">
           <div class="grid grid-cols-2 gap-2">
-            <Input
-              v-model.number="form.hours_mon"
-              type="number"
-              min="0"
-              max="24"
-              step="0.25"
-              placeholder="Monday Hours"
-            />
-            <Input
-              v-model.number="form.hours_tue"
-              type="number"
-              min="0"
-              max="24"
-              step="0.25"
-              placeholder="Tuesday Hours"
-            />
-            <Input
-              v-model.number="form.hours_wed"
-              type="number"
-              min="0"
-              max="24"
-              step="0.25"
-              placeholder="Wednesday Hours"
-            />
-            <Input
-              v-model.number="form.hours_thu"
-              type="number"
-              min="0"
-              max="24"
-              step="0.25"
-              placeholder="Thursday Hours"
-            />
-            <Input
-              v-model.number="form.hours_fri"
-              type="number"
-              min="0"
-              max="24"
-              step="0.25"
-              placeholder="Friday Hours"
-            />
-            <Input
-              v-model.number="form.hours_sat"
-              type="number"
-              min="0"
-              max="24"
-              step="0.25"
-              placeholder="Saturday Hours"
-            />
-            <Input
-              v-model.number="form.hours_sun"
-              type="number"
-              min="0"
-              max="24"
-              step="0.25"
-              placeholder="Sunday Hours"
-            />
+            <div>
+              <label class="block text-sm font-medium mb-1" for="hours_mon">Monday Hours</label>
+              <Input
+                id="hours_mon"
+                v-model.number="form.hours_mon"
+                type="number"
+                min="0"
+                max="24"
+                step="0.25"
+                placeholder="Monday Hours"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="hours_tue">Tuesday Hours</label>
+              <Input
+                id="hours_tue"
+                v-model.number="form.hours_tue"
+                type="number"
+                min="0"
+                max="24"
+                step="0.25"
+                placeholder="Tuesday Hours"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="hours_wed">Wednesday Hours</label>
+              <Input
+                id="hours_wed"
+                v-model.number="form.hours_wed"
+                type="number"
+                min="0"
+                max="24"
+                step="0.25"
+                placeholder="Wednesday Hours"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="hours_thu">Thursday Hours</label>
+              <Input
+                id="hours_thu"
+                v-model.number="form.hours_thu"
+                type="number"
+                min="0"
+                max="24"
+                step="0.25"
+                placeholder="Thursday Hours"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="hours_fri">Friday Hours</label>
+              <Input
+                id="hours_fri"
+                v-model.number="form.hours_fri"
+                type="number"
+                min="0"
+                max="24"
+                step="0.25"
+                placeholder="Friday Hours"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="hours_sat">Saturday Hours</label>
+              <Input
+                id="hours_sat"
+                v-model.number="form.hours_sat"
+                type="number"
+                min="0"
+                max="24"
+                step="0.25"
+                placeholder="Saturday Hours"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1" for="hours_sun">Sunday Hours</label>
+              <Input
+                id="hours_sun"
+                v-model.number="form.hours_sun"
+                type="number"
+                min="0"
+                max="24"
+                step="0.25"
+                placeholder="Sunday Hours"
+              />
+            </div>
           </div>
         </div>
         <div v-show="activeTab === 'permissions'" class="space-y-2">
@@ -125,17 +220,21 @@
             >
           </div>
           <div>
-            <label class="text-sm font-medium">Groups</label>
-            <Input v-model="form.groups" placeholder="Group IDs (comma separated)" />
+            <label class="block text-sm font-medium mb-1" for="groups"
+              >Groups (IDs, comma separated)</label
+            >
+            <Input id="groups" v-model="form.groups" placeholder="Group IDs (comma separated)" />
           </div>
           <div>
-            <label class="text-sm font-medium">Permissions</label>
-            <Input v-model="form.user_permissions" placeholder="Permission IDs (comma separated)" />
+            <label class="block text-sm font-medium mb-1" for="user_permissions"
+              >Permissions (IDs, comma separated)</label
+            >
+            <Input
+              id="user_permissions"
+              v-model="form.user_permissions"
+              placeholder="Permission IDs (comma separated)"
+            />
           </div>
-        </div>
-        <div v-show="activeTab === 'dates'" class="space-y-2">
-          <Input v-model="form.last_login" type="datetime-local" placeholder="Last Login" />
-          <Input v-model="form.date_joined" type="datetime-local" placeholder="Date Joined" />
         </div>
         <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
         <DialogFooter class="flex gap-2 justify-end">
@@ -155,17 +254,16 @@ import DialogTitle from '@/components/ui/dialog/DialogTitle.vue'
 import DialogFooter from '@/components/ui/dialog/DialogFooter.vue'
 import Button from '@/components/ui/button/Button.vue'
 import Input from '@/components/ui/input/Input.vue'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { z } from 'zod'
 import type { Staff } from '@/types/staff'
 import { useStaffApi } from '@/composables/useStaffApi'
-import { UserIcon, LockIcon, ClockIcon, CalendarIcon } from 'lucide-vue-next'
+import { UserIcon, LockIcon, ClockIcon } from 'lucide-vue-next'
 
 const tabs = [
   { key: 'personal', label: 'Personal Info', icon: UserIcon },
   { key: 'working', label: 'Working Hours', icon: ClockIcon },
   { key: 'permissions', label: 'Permissions', icon: LockIcon },
-  { key: 'dates', label: 'Important Dates', icon: CalendarIcon },
 ]
 const activeTab = ref('personal')
 
@@ -197,6 +295,22 @@ const form = ref({
   date_joined: '',
 })
 const error = ref('')
+
+const avatarUrl = computed(() => {
+  if (form.value.icon) {
+    return URL.createObjectURL(form.value.icon)
+  }
+  if (props.staff && props.staff.icon_url) {
+    return props.staff.icon_url
+  }
+  return null
+})
+
+const initials = computed(() => {
+  const first = form.value.first_name?.trim()[0] || ''
+  const last = form.value.last_name?.trim()[0] || ''
+  return (first + last).toUpperCase() || 'U'
+})
 
 const staffSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
@@ -334,5 +448,30 @@ async function submitForm() {
     opacity: 1;
     transform: scale(1);
   }
+}
+.avatar-upload {
+  position: relative;
+  width: 6rem;
+  height: 6rem;
+  border-radius: 9999px;
+  background: #e0e7ff;
+  border: 2px solid #a5b4fc;
+  color: #3730a3;
+  font-size: 2rem;
+  font-weight: 700;
+  overflow: hidden;
+  transition:
+    box-shadow 0.2s,
+    border 0.2s;
+  cursor: pointer;
+}
+.avatar-upload img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar-upload:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
 }
 </style>

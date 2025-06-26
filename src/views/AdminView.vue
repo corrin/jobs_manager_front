@@ -1,44 +1,34 @@
 <template>
-  <div v-if="isStaff" class="h-full w-full flex">
+  <div v-if="isStaff" class="admin-layout">
     <!-- Sidebar -->
-    <nav
-      class="w-72 min-w-60 bg-gradient-to-b from-indigo-900 via-indigo-800 to-zinc-900 text-white flex flex-col p-6 gap-8 shadow-2xl rounded-r-3xl h-full relative animate-fade-in"
-    >
-      <div class="flex flex-col items-center gap-2 mb-6">
-        <div
-          class="w-16 h-16 rounded-full bg-indigo-700 flex items-center justify-center shadow-lg animate-bounce"
-        >
+    <nav class="sidebar">
+      <div class="user-card">
+        <div class="avatar">
           <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" stroke-width="2" />
             <path d="M12 6v6l4 2" stroke-width="2" />
           </svg>
         </div>
-        <div class="text-lg font-bold mt-2">{{ userInfo.value?.first_name || 'User' }}</div>
-        <div class="text-sm text-indigo-200">{{ today }}</div>
-        <div class="italic text-indigo-300 text-xs mt-1 animate-pulse">
-          What are we going to do today?
-        </div>
+        <div class="user-name">{{ userInfo.value?.first_name || 'User' }}</div>
+        <div class="user-date">{{ today }}</div>
+        <div class="user-quote">What are we going to do today?</div>
       </div>
-      <ul class="flex-1 space-y-2">
+      <ul class="tab-list">
         <li v-for="tab in tabs" :key="tab.name">
           <RouterLink
             :to="{ name: tab.route }"
-            class="block px-4 py-3 rounded-xl font-semibold transition-all duration-150 flex items-center gap-2 text-base"
-            :class="
-              isActive(tab.key)
-                ? 'bg-indigo-600 text-white shadow-lg scale-105'
-                : 'hover:bg-indigo-700 hover:text-indigo-100 text-indigo-200'
-            "
+            class="tab-link"
+            :class="isActive(tab.key) ? 'tab-link--active' : ''"
           >
-            <span v-if="tab.icon" class="w-5 h-5"> <component :is="tab.icon" /> </span>
+            <span v-if="tab.icon" class="tab-icon"> <component :is="tab.icon" /> </span>
             {{ tab.label }}
           </RouterLink>
         </li>
       </ul>
-      <div class="mt-auto text-xs text-indigo-300 text-center opacity-70">Admin Panel</div>
+      <div class="sidebar-footer">Admin Panel</div>
     </nav>
     <!-- Main Content -->
-    <main class="flex-1 h-full overflow-auto bg-zinc-50 p-0">
+    <main class="admin-main">
       <RouterView />
     </main>
   </div>
@@ -57,7 +47,7 @@ const { userInfo } = useAppLayout()
 const isStaff = computed(() => Boolean(userInfo.value?.is_staff))
 const route = useRoute()
 
-const today = new Date().toLocaleDateString(undefined, {
+const today = new Date().toLocaleDateString('en-NZ', {
   weekday: 'long',
   year: 'numeric',
   month: 'long',
@@ -81,15 +71,131 @@ function isActive(tab: string) {
 </script>
 
 <style scoped>
-.animate-fade-in {
-  animation: fadeIn 0.7s;
+.admin-layout {
+  display: flex;
+  height: 100vh;
+  min-height: 0;
+  background: #f4f4f5;
 }
-@keyframes fadeIn {
-  from {
-    opacity: 0;
+.sidebar {
+  width: 18rem;
+  min-width: 15rem;
+  background: linear-gradient(to bottom, #312e81, #3730a3 60%, #18181b 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  gap: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(31, 41, 55, 0.25);
+  border-top-right-radius: 1.5rem;
+  border-bottom-right-radius: 1.5rem;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.user-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.avatar {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+  background: #4338ca;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px 0 rgba(49, 46, 129, 0.25);
+  margin-bottom: 0.5rem;
+  animation: bounce 1.2s infinite alternate;
+}
+@keyframes bounce {
+  0% {
+    transform: translateY(0);
   }
-  to {
+  100% {
+    transform: translateY(-8px);
+  }
+}
+.user-name {
+  font-size: 1.125rem;
+  font-weight: bold;
+  margin-top: 0.25rem;
+}
+.user-date {
+  font-size: 0.95rem;
+  color: #c7d2fe;
+}
+.user-quote {
+  font-style: italic;
+  color: #a5b4fc;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  animation: pulse 2s infinite alternate;
+}
+@keyframes pulse {
+  0% {
+    opacity: 0.7;
+  }
+  100% {
     opacity: 1;
   }
+}
+.tab-list {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.tab-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #c7d2fe;
+  background: transparent;
+  transition: all 0.15s;
+  box-shadow: none;
+}
+.tab-link--active {
+  background: #4f46e5;
+  color: #fff;
+  box-shadow: 0 2px 8px 0 rgba(49, 46, 129, 0.15);
+  transform: scale(1.04);
+}
+.tab-link:not(.tab-link--active):hover {
+  background: #3730a3;
+  color: #e0e7ff;
+}
+.tab-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-footer {
+  margin-top: auto;
+  font-size: 0.8rem;
+  color: #a5b4fc;
+  text-align: center;
+  opacity: 0.7;
+  padding-bottom: 0.5rem;
+}
+.admin-main {
+  flex: 1 1 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: #f4f4f5;
+  padding: 0;
+  min-width: 0;
 }
 </style>
