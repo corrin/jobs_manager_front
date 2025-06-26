@@ -72,7 +72,7 @@ import type { CostLine } from '@/types/costing.types'
 import { toast } from 'vue-sonner'
 import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
-import { CostSet } from '../../types/costing.types'
+import type { CostSet } from '../../types/costing.types'
 
 interface Props {
   jobId: string

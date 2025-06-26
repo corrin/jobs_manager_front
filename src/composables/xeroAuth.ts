@@ -6,7 +6,11 @@ export function useXeroAuth() {
 
   function startLogin() {
     const next = encodeURIComponent(router.currentRoute.value.fullPath)
-    window.location.href = `/api/xero/authenticate?next=${next}`
+    const apiBase = import.meta.env.VITE_API_BASE_URL || ''
+    const url = `${apiBase}/api/xero/authenticate?next=${next}`
+
+    console.log('[XeroAuth] Redirecting to:', url)
+    window.location.href = url
   }
 
   async function ensureAuth(): Promise<boolean> {
