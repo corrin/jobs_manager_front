@@ -6,5 +6,7 @@ export async function addCostLine(jobId: string, costLine: CostLine): Promise<Co
   // const response = await api.post(`/jobs/${jobId}/cost-lines/`, costLine)
   // return response.data
   // Mock para exemplo:
-  return new Promise((resolve) => setTimeout(() => resolve({ ...costLine, id: Math.random().toString() }), 500))
+  return new Promise((resolve) =>
+    setTimeout(() => resolve({ ...costLine, id: Math.random().toString() }), 500),
+  )
 }

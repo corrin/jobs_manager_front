@@ -7,8 +7,16 @@
         >?
       </p>
       <div class="flex justify-end gap-2 mt-6">
-        <button type="button" class="btn" @click="$emit('close')">Cancelar</button>
-        <button type="button" class="btn btn-error" @click="$emit('confirm')">Excluir</button>
+        <button type="button" class="px-3 py-1 rounded border" @click="$emit('close')">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="px-3 py-1 rounded bg-red-500 text-white"
+          @click="$emit('confirm')"
+        >
+          Excluir
+        </button>
       </div>
     </div>
   </div>
@@ -20,10 +28,5 @@ defineProps<{ staff?: Staff }>()
 </script>
 
 <style scoped>
-.btn {
-  @apply px-3 py-1 rounded;
-}
-.btn-error {
-  @apply bg-red-500 text-white;
-}
+/* Removido uso de @apply e classes customizadas, tudo está no template */
 </style>

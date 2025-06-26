@@ -41,12 +41,12 @@ import type { CostLine } from '@/types/costing.types'
 defineProps({
   costLines: {
     type: Array as () => CostLine[],
-    required: true
+    required: true,
   },
   showActions: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 defineEmits(['edit', 'delete'])

@@ -6,31 +6,43 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label>Nome</label>
-            <input v-model="form.first_name" required class="input w-full" />
+            <input v-model="form.first_name" required class="border rounded px-2 py-1 w-full" />
           </div>
           <div>
             <label>Sobrenome</label>
-            <input v-model="form.last_name" required class="input w-full" />
+            <input v-model="form.last_name" required class="border rounded px-2 py-1 w-full" />
           </div>
           <div>
             <label>Email</label>
-            <input v-model="form.email" type="email" required class="input w-full" />
+            <input
+              v-model="form.email"
+              type="email"
+              required
+              class="border rounded px-2 py-1 w-full"
+            />
           </div>
           <div>
             <label>Wage Rate</label>
-            <input v-model="form.wage_rate" type="number" step="0.01" class="input w-full" />
+            <input
+              v-model="form.wage_rate"
+              type="number"
+              step="0.01"
+              class="border rounded px-2 py-1 w-full"
+            />
           </div>
           <div>
             <label>Ícone</label>
-            <input type="file" @change="onFileChange" class="input w-full" />
+            <input type="file" @change="onFileChange" class="border rounded px-2 py-1 w-full" />
             <div v-if="form.icon_url" class="mt-2">
               <img :src="form.icon_url" alt="Ícone" class="h-12 w-12 rounded-full" />
             </div>
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-6">
-          <button type="button" class="btn" @click="$emit('close')">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar</button>
+          <button type="button" class="px-3 py-1 rounded border" @click="$emit('close')">
+            Cancelar
+          </button>
+          <button type="submit" class="px-3 py-1 rounded bg-blue-600 text-white">Salvar</button>
         </div>
       </form>
     </div>
@@ -113,13 +125,5 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.input {
-  @apply border rounded px-2 py-1;
-}
-.btn {
-  @apply px-3 py-1 rounded;
-}
-.btn-primary {
-  @apply bg-blue-600 text-white;
-}
+/* Removido uso de @apply e classes customizadas, tudo está no template */
 </style>
