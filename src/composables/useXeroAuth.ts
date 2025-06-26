@@ -118,13 +118,17 @@ export function useXeroAuth() {
     loading.value = true
     error.value = ''
     try {
+      console.log('[Xero] Fetching sync info...')
       const res = await fetch('/api/xero/sync-info/')
+      console.log('[Xero] sync-info status:', res.status)
       if (res.status === 401) {
         isAuthenticated.value = false
         loading.value = false
+        console.log('[Xero] Not authenticated (401)')
         return
       }
       const data = await res.json()
+      console.log('[Xero] sync-info data:', data)
       isAuthenticated.value = true
       entities.value = data.entities || Object.keys(data.last_syncs || {})
       for (const entity of entities.value) {
@@ -142,8 +146,9 @@ export function useXeroAuth() {
         currentEntity.value = ''
         syncing.value = false
       }
-    } catch {
+    } catch (err) {
       error.value = 'Failed to load Xero sync status.'
+      console.error('[Xero] Error fetching sync info:', err)
     } finally {
       loading.value = false
     }
