@@ -14,9 +14,12 @@ import { NativeEventSource, EventSourcePolyfill } from 'event-source-polyfill'
 
 const Impl = NativeEventSource || EventSourcePolyfill
 
-if (typeof window !== 'undefined') {
-  ;(window as { EventSource: typeof EventSource }).EventSource = Impl as typeof EventSource
+declare global {
+  interface Window {
+    EventSource: typeof EventSource
+  }
 }
+window.EventSource = Impl as unknown as typeof EventSource
 
 const app = createApp(App)
 
