@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import axios from 'axios'
 import type { Staff } from '@/types/staff'
 
-const API_URL = '/api/staff/'
+const API_URL = '/accounts/api/staff/'
 
 export function useStaffApi() {
   const error = ref<string | null>(null)
