@@ -7,9 +7,11 @@
           v-model="search"
           type="text"
           placeholder="Buscar por nome ou email..."
-          class="input input-bordered w-full md:w-64"
+          class="border rounded px-2 py-1 w-full md:w-64"
         />
-        <button @click="openCreate" class="btn btn-primary">Novo Staff</button>
+        <button @click="openCreate" class="px-3 py-1 rounded bg-blue-600 text-white">
+          Novo Staff
+        </button>
       </div>
       <div v-if="loading" class="text-center py-8">Carregando...</div>
       <div v-else>
@@ -28,8 +30,18 @@
               <td>{{ staff.email }}</td>
               <td>{{ staff.wage_rate }}</td>
               <td>
-                <button @click="editStaff(staff)" class="btn btn-xs btn-info mr-2">Editar</button>
-                <button @click="confirmDelete(staff)" class="btn btn-xs btn-error">Excluir</button>
+                <button
+                  @click="editStaff(staff)"
+                  class="px-2 py-1 rounded bg-blue-400 text-white text-xs mr-2"
+                >
+                  Editar
+                </button>
+                <button
+                  @click="confirmDelete(staff)"
+                  class="px-2 py-1 rounded bg-red-500 text-white text-xs"
+                >
+                  Excluir
+                </button>
               </td>
             </tr>
           </tbody>
@@ -107,19 +119,5 @@ onMounted(fetchStaff)
 </script>
 
 <style scoped>
-.input {
-  @apply border rounded px-2 py-1;
-}
-.btn {
-  @apply px-3 py-1 rounded;
-}
-.btn-primary {
-  @apply bg-blue-600 text-white;
-}
-.btn-info {
-  @apply bg-blue-400 text-white;
-}
-.btn-error {
-  @apply bg-red-500 text-white;
-}
+/* Removido uso de @apply e classes customizadas, tudo está no template */
 </style>
