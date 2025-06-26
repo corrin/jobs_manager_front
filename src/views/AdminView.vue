@@ -51,7 +51,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppLayout } from '@/composables/useAppLayout'
-import { UsersIcon } from '@heroicons/vue/24/outline'
+import { Users } from 'lucide-vue-next'
 
 const { userInfo } = useAppLayout()
 const isStaff = computed(() => Boolean(userInfo.value?.is_staff))
@@ -70,7 +70,7 @@ const tabs = [
     key: 'staff',
     label: 'Staff',
     route: 'admin-staff',
-    icon: UsersIcon,
+    icon: Users,
   },
   // Add more tabs here as needed
 ]
