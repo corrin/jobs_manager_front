@@ -1,109 +1,140 @@
 <template>
   <AppLayout>
-    <Card
-      class="p-6 space-y-6 rounded-2xl shadow-lg transition-transform duration-200 ease-out min-h-[80vh]"
-      v-motion="{ initial: { y: 0 }, hover: { y: -4 } }"
-    >
-      <CardHeader
-        class="p-0 flex flex-col gap-6 md:flex-row md:items-center md:justify-between sticky top-0 bg-white z-10"
-      >
-        <div>
-          <CardTitle class="text-indigo-600">Staff Management</CardTitle>
-          <CardDescription>Manage your team members with ease.</CardDescription>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <Input
-            v-model="search"
-            placeholder="Search by any field…"
-            class="w-full sm:w-64"
-            aria-label="Search staff"
-          />
-          <Button variant="default" aria-label="Create new staff member" @click="openCreate">
-            New Staff
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent class="p-0">
-        <div v-if="loading" class="py-12 text-center text-slate-500">Loading…</div>
-        <Table v-else role="table" aria-label="Staff list" class="min-w-full">
-          <TableHeader>
-            <TableRow class="bg-slate-50">
-              <TableHead>Name</TableHead>
-              <TableHead>E-mail</TableHead>
-              <TableHead>Preferred Name</TableHead>
-              <TableHead>Wage Rate</TableHead>
-              <TableHead>IMS Payroll ID</TableHead>
-              <TableHead>Working Hours</TableHead>
-              <TableHead>Staff</TableHead>
-              <TableHead>Active</TableHead>
-              <TableHead>Superuser</TableHead>
-              <TableHead>Groups</TableHead>
-              <TableHead>Permissions</TableHead>
-              <TableHead>Last Login</TableHead>
-              <TableHead>Date Joined</TableHead>
-              <TableHead class="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <template v-if="filteredStaff.length">
-              <TableRow
+    <div class="w-full h-full flex flex-col overflow-hidden">
+      <div class="flex-1 overflow-y-auto p-0">
+        <div class="max-w-5xl mx-auto py-8 px-2 md:px-8 h-full flex flex-col gap-8">
+          <div class="flex items-center justify-between mb-2">
+            <h1 class="text-3xl font-extrabold text-indigo-700 flex items-center gap-3">
+              <svg
+                class="w-8 h-8 text-indigo-400 animate-pulse"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="12" cy="12" r="10" stroke-width="2" />
+                <path d="M12 6v6l4 2" stroke-width="2" />
+              </svg>
+              Staff Management
+            </h1>
+            <Button variant="default" class="text-lg px-6 py-3" @click="openCreate">
+              New Staff
+            </Button>
+          </div>
+          <div
+            v-if="loading"
+            class="flex-1 flex items-center justify-center text-2xl text-slate-400"
+          >
+            Loading…
+          </div>
+          <div v-else class="flex flex-col gap-8 overflow-y-auto max-h-[calc(100vh-8rem)] pr-2">
+            <div v-if="filteredStaff.length" class="flex flex-col gap-8">
+              <section
                 v-for="staff in filteredStaff"
                 :key="staff.id"
-                class="hover:bg-emerald-50 focus-within:bg-emerald-100 transition-colours"
+                class="bg-white rounded-2xl shadow-xl p-8 flex flex-col gap-6 border border-slate-200 hover:shadow-2xl transition-all relative"
               >
-                <TableCell>{{ staff.first_name }} {{ staff.last_name }}</TableCell>
-                <TableCell>{{ staff.email }}</TableCell>
-                <TableCell>{{ staff.preferred_name }}</TableCell>
-                <TableCell>{{ staff.wage_rate }}</TableCell>
-                <TableCell>{{ staff.ims_payroll_id }}</TableCell>
-                <TableCell>
-                  <div class="flex flex-col text-xs">
-                    <span>Mon: {{ staff.hours_mon }}</span>
-                    <span>Tue: {{ staff.hours_tue }}</span>
-                    <span>Wed: {{ staff.hours_wed }}</span>
-                    <span>Thu: {{ staff.hours_thu }}</span>
-                    <span>Fri: {{ staff.hours_fri }}</span>
-                    <span>Sat: {{ staff.hours_sat }}</span>
-                    <span>Sun: {{ staff.hours_sun }}</span>
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center text-2xl font-bold text-indigo-700 border-2 border-indigo-300"
+                    >
+                      {{ staff.first_name?.[0] || '?' }}{{ staff.last_name?.[0] || '' }}
+                    </div>
+                    <div>
+                      <div class="text-xl font-bold text-indigo-800">
+                        {{ staff.first_name }} {{ staff.last_name }}
+                      </div>
+                      <div class="text-slate-500 text-sm">{{ staff.email }}</div>
+                    </div>
                   </div>
-                </TableCell>
-                <TableCell>{{ staff.is_staff ? '✔️' : '' }}</TableCell>
-                <TableCell>{{ staff.is_active ? '✔️' : '' }}</TableCell>
-                <TableCell>{{ staff.is_superuser ? '✔️' : '' }}</TableCell>
-                <TableCell>{{ staff.groups }}</TableCell>
-                <TableCell>{{ staff.user_permissions }}</TableCell>
-                <TableCell>{{ staff.last_login }}</TableCell>
-                <TableCell>{{ staff.date_joined }}</TableCell>
-                <TableCell class="flex justify-end gap-2">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    aria-label="Edit staff"
-                    @click="editStaff(staff)"
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    aria-label="Delete staff"
-                    @click="confirmDelete(staff)"
-                  >
-                    Delete
-                  </Button>
-                </TableCell>
-              </TableRow>
-            </template>
-            <TableRow v-else>
-              <TableCell colspan="14" class="text-center py-10 text-slate-500">
-                No staff found.
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </CardContent>
-
+                  <div class="flex gap-2 mt-2 md:mt-0">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      aria-label="Edit staff"
+                      @click="editStaff(staff)"
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      aria-label="Delete staff"
+                      @click="confirmDelete(staff)"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <!-- Personal Info -->
+                  <div class="space-y-2">
+                    <div class="font-semibold text-indigo-600 mb-1">Personal Info</div>
+                    <div>
+                      <span class="font-medium">Preferred Name:</span> {{ staff.preferred_name }}
+                    </div>
+                    <div><span class="font-medium">Wage Rate:</span> {{ staff.wage_rate }}</div>
+                    <div>
+                      <span class="font-medium">IMS Payroll ID:</span> {{ staff.ims_payroll_id }}
+                    </div>
+                  </div>
+                  <!-- Permissions -->
+                  <div class="space-y-2">
+                    <div class="font-semibold text-indigo-600 mb-1">Permissions</div>
+                    <div>
+                      <span class="font-medium">Staff:</span> <span v-if="staff.is_staff">✔️</span>
+                    </div>
+                    <div>
+                      <span class="font-medium">Active:</span>
+                      <span v-if="staff.is_active">✔️</span>
+                    </div>
+                    <div>
+                      <span class="font-medium">Superuser:</span>
+                      <span v-if="staff.is_superuser">✔️</span>
+                    </div>
+                    <div><span class="font-medium">Groups:</span> {{ staff.groups }}</div>
+                    <div>
+                      <span class="font-medium">Permissions:</span> {{ staff.user_permissions }}
+                    </div>
+                  </div>
+                  <!-- Working Hours -->
+                  <div class="space-y-2">
+                    <div class="font-semibold text-indigo-600 mb-1">Working Hours</div>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                      <div>
+                        Mon: <span class="font-mono">{{ staff.hours_mon }}</span>
+                      </div>
+                      <div>
+                        Tue: <span class="font-mono">{{ staff.hours_tue }}</span>
+                      </div>
+                      <div>
+                        Wed: <span class="font-mono">{{ staff.hours_wed }}</span>
+                      </div>
+                      <div>
+                        Thu: <span class="font-mono">{{ staff.hours_thu }}</span>
+                      </div>
+                      <div>
+                        Fri: <span class="font-mono">{{ staff.hours_fri }}</span>
+                      </div>
+                      <div>
+                        Sat: <span class="font-mono">{{ staff.hours_sat }}</span>
+                      </div>
+                      <div>
+                        Sun: <span class="font-mono">{{ staff.hours_sun }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-6 mt-4 text-xs text-slate-500">
+                  <div><span class="font-medium">Last Login:</span> {{ staff.last_login }}</div>
+                  <div><span class="font-medium">Date Joined:</span> {{ staff.date_joined }}</div>
+                </div>
+              </section>
+            </div>
+            <div v-else class="text-center py-10 text-slate-400 text-lg">No staff found.</div>
+          </div>
+        </div>
+      </div>
       <StaffFormModal
         v-if="showModal"
         :staff="selectedStaff"
@@ -116,25 +147,13 @@
         @close="closeConfirm"
         @confirm="deleteStaff"
       />
-    </Card>
+    </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
 import AppLayout from '@/components/AppLayout.vue'
-import Card from '@/components/ui/card/Card.vue'
-import CardHeader from '@/components/ui/card/CardHeader.vue'
-import CardTitle from '@/components/ui/card/CardTitle.vue'
-import CardDescription from '@/components/ui/card/CardDescription.vue'
-import CardContent from '@/components/ui/card/CardContent.vue'
 import Button from '@/components/ui/button/Button.vue'
-import Input from '@/components/ui/input/Input.vue'
-import Table from '@/components/ui/table/Table.vue'
-import TableHeader from '@/components/ui/table/TableHeader.vue'
-import TableRow from '@/components/ui/table/TableRow.vue'
-import TableHead from '@/components/ui/table/TableHead.vue'
-import TableBody from '@/components/ui/table/TableBody.vue'
-import TableCell from '@/components/ui/table/TableCell.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useStaffApi } from '@/composables/useStaffApi'
 import StaffFormModal from '@/components/StaffFormModal.vue'
@@ -222,5 +241,12 @@ onMounted(fetchStaff)
 </script>
 
 <style scoped>
-/* No custom styles needed */
+/* Custom scroll for the staff list */
+.max-h-\[calc\(100vh-8rem\)\]::-webkit-scrollbar {
+  width: 8px;
+}
+.max-h-\[calc\(100vh-8rem\)\]::-webkit-scrollbar-thumb {
+  background: #c7d2fe;
+  border-radius: 8px;
+}
 </style>

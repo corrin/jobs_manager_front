@@ -1,15 +1,15 @@
 <template>
   <AppLayout>
-    <div class="max-w-6xl mx-auto py-12 px-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <!-- Left Column: Progress Section with improved contrast and larger elements -->
+    <div class="max-w-6xl mx-auto py-10 px-4 bg-white min-h-screen">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Left Column: Progress Section with high contrast and simple modern look -->
         <section>
           <div class="flex items-center justify-between mb-8">
             <h1
-              class="text-4xl font-extrabold tracking-tight text-indigo-100 flex items-center gap-3 drop-shadow-lg"
+              class="text-3xl font-extrabold tracking-tight text-gray-900 flex items-center gap-3"
             >
               <svg
-                class="w-10 h-10 text-indigo-400 animate-pulse drop-shadow"
+                class="w-8 h-8 text-indigo-500 animate-pulse"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -19,12 +19,12 @@
               </svg>
               Xero Sync Progress
             </h1>
-            <div class="flex gap-3">
+            <div class="flex gap-2">
               <Button
                 v-if="!isAuthenticated && !loading"
                 @click="loginXero"
                 variant="default"
-                class="text-lg px-6 py-3"
+                class="text-base px-4 py-2"
               >
                 Login with Xero
               </Button>
@@ -33,7 +33,7 @@
                 @click="startSync"
                 variant="default"
                 :disabled="syncing || loading"
-                class="text-lg px-6 py-3"
+                class="text-base px-4 py-2"
               >
                 Start Sync
               </Button>
@@ -41,72 +41,63 @@
                 v-if="isAuthenticated && !loading"
                 @click="logoutXero"
                 variant="ghost"
-                class="text-lg px-6 py-3"
+                class="text-base px-4 py-2"
               >
                 Disconnect
               </Button>
             </div>
           </div>
-          <div v-if="loading" class="flex justify-center items-center h-52">
-            <span class="text-2xl animate-pulse text-indigo-200">Loading...</span>
+          <div v-if="loading" class="flex justify-center items-center h-40">
+            <span class="text-xl animate-pulse text-gray-600">Loading...</span>
           </div>
           <div v-else>
             <div
               v-if="!isAuthenticated"
-              class="text-center text-red-500 font-semibold py-12 text-xl bg-zinc-900/80 rounded-lg shadow-lg"
+              class="text-center text-red-600 font-semibold py-8 text-lg bg-gray-100 rounded-lg shadow"
             >
               <span>Your Xero session has expired or is not connected.</span>
             </div>
             <div v-else>
-              <div class="mb-8">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="font-semibold text-zinc-100 text-lg">Overall Progress</span>
-                  <span class="text-lg text-zinc-300"
+              <div class="mb-6">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-medium text-gray-800">Overall Progress</span>
+                  <span class="text-sm text-gray-500"
                     >{{ Math.round(overallProgress * 100) }}%</span
                   >
                 </div>
-                <Progress
-                  :value="overallProgress * 100"
-                  class="mt-2 h-6 bg-zinc-800/90 rounded-xl shadow-inner"
-                />
+                <Progress :value="overallProgress * 100" class="mt-1 h-4" />
               </div>
-              <div class="mb-8">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="font-semibold text-zinc-100 text-lg">
+              <div class="mb-6">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-medium text-gray-800">
                     Current Entity:
-                    <span class="font-bold text-indigo-200">{{ currentEntityLabel }}</span>
+                    <span class="font-semibold text-indigo-600">{{ currentEntityLabel }}</span>
                   </span>
-                  <span class="text-lg text-zinc-300">{{ Math.round(entityProgress * 100) }}%</span>
+                  <span class="text-sm text-gray-500">{{ Math.round(entityProgress * 100) }}%</span>
                 </div>
-                <Progress
-                  :value="entityProgress * 100"
-                  color="teal"
-                  class="mt-2 h-6 bg-zinc-800/90 rounded-xl shadow-inner"
-                />
+                <Progress :value="entityProgress * 100" color="teal" class="mt-1 h-4" />
               </div>
-              <div class="mb-8">
-                <table
-                  class="w-full text-lg border rounded-xl overflow-hidden bg-zinc-900/90 shadow-xl"
-                >
-                  <thead class="bg-zinc-950/90">
+              <div class="mb-6 overflow-x-auto">
+                <table class="w-full text-sm border rounded-lg overflow-hidden bg-white shadow-sm">
+                  <thead class="bg-gray-100">
                     <tr>
-                      <th class="px-5 py-4 text-left text-zinc-200">Entity</th>
-                      <th class="px-5 py-4 text-left text-zinc-200">Last Sync</th>
-                      <th class="px-5 py-4 text-left text-zinc-200">Status</th>
-                      <th class="px-5 py-4 text-right text-zinc-200">Records Updated</th>
+                      <th class="px-3 py-2 text-left text-gray-700 font-semibold">Entity</th>
+                      <th class="px-3 py-2 text-left text-gray-700 font-semibold">Last Sync</th>
+                      <th class="px-3 py-2 text-left text-gray-700 font-semibold">Status</th>
+                      <th class="px-3 py-2 text-right text-gray-700 font-semibold">Records</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr
                       v-for="entity in entities"
                       :key="entity"
-                      :class="'border-b border-zinc-800 last:border-b-0'"
+                      :class="'border-b border-gray-200 last:border-b-0'"
                     >
-                      <td class="px-5 py-4 text-zinc-100">{{ formatEntityName(entity) }}</td>
-                      <td class="px-5 py-4 text-zinc-100">
+                      <td class="px-3 py-2 text-gray-900">{{ formatEntityName(entity) }}</td>
+                      <td class="px-3 py-2 text-gray-700">
                         <template v-if="entityStats[entity]?.lastSync === '-'">
                           <svg
-                            class="animate-spin w-5 h-5 inline text-indigo-300"
+                            class="animate-spin w-4 h-4 inline text-indigo-400"
                             fill="none"
                             viewBox="0 0 24 24"
                           >
@@ -129,27 +120,27 @@
                           {{ formatLastSync(entityStats[entity]?.lastSync) }}
                         </template>
                       </td>
-                      <td class="px-5 py-4">
-                        <span :class="statusClass(entityStats[entity]?.status) + ' text-lg'">{{
+                      <td class="px-3 py-2">
+                        <span :class="statusClass(entityStats[entity]?.status) + ' text-sm'">{{
                           entityStats[entity]?.status
                         }}</span>
                       </td>
-                      <td class="px-5 py-4 text-right text-zinc-100">
+                      <td class="px-3 py-2 text-right text-gray-900">
                         {{ entityStats[entity]?.recordsUpdated ?? 0 }}
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-              <div v-if="error" class="text-red-500 font-semibold mb-6 text-lg">{{ error }}</div>
+              <div v-if="error" class="text-red-600 font-semibold mb-4 text-base">{{ error }}</div>
             </div>
           </div>
         </section>
-        <!-- Right Column: Log (unchanged) -->
+        <!-- Right Column: Log (unchanged, but with scroll) -->
         <aside>
-          <h2 class="text-lg font-bold mb-2 text-indigo-400 flex items-center gap-2">
+          <h2 class="text-lg font-bold mb-2 text-indigo-600 flex items-center gap-2">
             <svg
-              class="w-5 h-5 text-green-400 animate-pulse"
+              class="w-5 h-5 text-green-500 animate-pulse"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -161,7 +152,7 @@
             Sync Log
           </h2>
           <div
-            class="bg-zinc-900 rounded-lg p-4 h-[32rem] max-h-[40vh] min-h-[16rem] overflow-y-auto font-mono text-sm shadow-inner border border-zinc-800 animate-fade-in"
+            class="bg-gray-100 rounded-lg p-4 h-[32rem] max-h-[40vh] min-h-[16rem] overflow-y-auto font-mono text-sm shadow-inner border border-gray-200 animate-fade-in"
           >
             <transition-group name="fade" tag="div">
               <div
@@ -169,8 +160,8 @@
                 :key="i"
                 :class="logClass(msg.severity) + ' flex items-center gap-2'"
               >
-                <span class="text-zinc-500">[{{ formatTime(msg.datetime) }}]</span>
-                <span>{{ msg.message }}</span>
+                <span class="text-gray-500">[{{ formatTime(msg.datetime) }}]</span>
+                <span class="text-gray-900">{{ msg.message }}</span>
               </div>
             </transition-group>
           </div>
