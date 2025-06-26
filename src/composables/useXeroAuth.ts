@@ -78,9 +78,11 @@ export function useXeroAuth() {
 
   // Auth
   function loginXero() {
-    const next = encodeURIComponent(router.currentRoute.value.fullPath)
+    // Usa o endpoint correto e next como URL do front-end
+    const frontendUrl = window.location.origin + router.currentRoute.value.fullPath
+    const next = encodeURIComponent(frontendUrl)
     const apiBase = import.meta.env.VITE_API_BASE_URL || ''
-    const url = `${apiBase}/api/xero/auth/?next=${next}`
+    const url = `${apiBase}/api/xero/authenticate/?next=${next}`
     window.location.href = url
   }
   function logoutXero() {
