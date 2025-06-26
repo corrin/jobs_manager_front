@@ -118,18 +118,20 @@ export function useXeroAuth() {
     loading.value = true
     error.value = ''
     try {
-      console.log('[Xero] Fetching sync info...')
-      const res = await fetch('/api/xero/sync-info/')
-      console.log('[Xero] sync-info status:', res.status)
-      if (res.status === 401) {
-        isAuthenticated.value = false
+      console.log('[Xero] Checking authentication (ping)...')
+      const pingRes = await axios.get(`${getApiBaseUrl()}/api/xero/ping`, { withCredentials: true })
+      isAuthenticated.value = !!(pingRes.data && pingRes.data.connected)
+      if (!isAuthenticated.value) {
         loading.value = false
-        console.log('[Xero] Not authenticated (401)')
+        console.log('[Xero] Not authenticated (ping)')
         return
       }
-      const data = await res.json()
-      console.log('[Xero] sync-info data:', data)
-      isAuthenticated.value = true
+      console.log('[Xero] Fetching sync info...')
+      const res = await axios.get(`${getApiBaseUrl()}/api/xero/sync-info/`, {
+        withCredentials: true,
+      })
+      console.log('[Xero] sync-info status:', res.status)
+      const data = res.data
       entities.value = data.entities || Object.keys(data.last_syncs || {})
       for (const entity of entities.value) {
         entityStats[entity] = {
@@ -148,6 +150,7 @@ export function useXeroAuth() {
       }
     } catch (err) {
       error.value = 'Failed to load Xero sync status.'
+      isAuthenticated.value = false
       console.error('[Xero] Error fetching sync info:', err)
     } finally {
       loading.value = false
@@ -157,12 +160,16 @@ export function useXeroAuth() {
   async function startSync() {
     error.value = ''
     try {
-      const res = await fetch('/api/xero/sync/', { method: 'POST' })
+      const res = await axios.post(
+        `${getApiBaseUrl()}/api/xero/sync/`,
+        {},
+        { withCredentials: true },
+      )
       if (res.status === 401) {
         isAuthenticated.value = false
         return
       }
-      if (!res.ok) throw new Error('Failed to start sync')
+      if (!res.data || res.data.status !== 'success') throw new Error('Failed to start sync')
       startSSE()
     } catch {
       error.value = 'Failed to start Xero sync.'
@@ -184,7 +191,9 @@ export function useXeroAuth() {
       entityStats[entity].status = 'Pending'
       entityStats[entity].recordsUpdated = 0
     }
-    eventSource.value = new EventSource('/api/xero/sync-stream/')
+    // EventSource não usa axios, mas precisa da URL absoluta se o front e API estão em domínios diferentes
+    const sseUrl = `${getApiBaseUrl()}/api/xero/sync-stream/`
+    eventSource.value = new EventSource(sseUrl)
     eventSource.value.onmessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data)
       log.value.push(data)
