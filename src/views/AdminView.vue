@@ -75,8 +75,8 @@ function isActive(tab: string) {
 <style scoped>
 .admin-layout {
   display: flex;
-  height: 100%;
-  min-height: 0;
+  min-height: 100vh;
+  height: auto;
   background: #f4f4f5;
   overflow: hidden;
 }
@@ -92,10 +92,8 @@ function isActive(tab: string) {
   box-shadow: 0 8px 32px 0 rgba(31, 41, 55, 0.25);
   border-top-right-radius: 1.5rem;
   border-bottom-right-radius: 1.5rem;
-  height: 100%;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  align-self: stretch;
+  height: auto;
 }
 .user-card {
   display: flex;
@@ -195,7 +193,8 @@ function isActive(tab: string) {
 }
 .admin-main {
   flex: 1 1 0;
-  height: 100%;
+  min-height: 0;
+  height: auto;
   overflow-y: auto;
   background: #f4f4f5;
   padding: 0;
