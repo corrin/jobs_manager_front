@@ -1,4 +1,4 @@
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { getApiBaseUrl } from '../plugins/axios'
@@ -19,6 +19,7 @@ export function useXeroAuth() {
       entity?: string
       progress?: number
       recordsUpdated?: number
+      status?: string
     }>
   >([])
   const logOpen = ref(false)
@@ -49,29 +50,33 @@ export function useXeroAuth() {
   function statusClass(status: string) {
     switch (status) {
       case 'In Progress':
-        return 'text-blue-600 font-medium'
+        return 'text-blue-400 font-medium'
       case 'Completed':
-        return 'text-green-600 font-medium'
+        return 'text-green-400 font-medium'
       case 'Error':
-        return 'text-red-600 font-medium'
+        return 'text-red-400 font-medium'
       default:
-        return 'text-gray-500'
+        return 'text-zinc-400'
     }
   }
   function logClass(severity: string) {
     switch (severity) {
       case 'error':
-        return 'text-red-600'
+        return 'text-red-400'
       case 'warning':
-        return 'text-yellow-700'
+        return 'text-yellow-400'
       case 'info':
-        return 'text-gray-700'
+        return 'text-green-400'
       default:
-        return ''
+        return 'text-zinc-400'
     }
   }
   function toggleLog() {
     logOpen.value = !logOpen.value
+    nextTick(() => {
+      const logEl = document.querySelector('.bg-zinc-900.overflow-y-auto')
+      if (logEl) logEl.scrollTop = logEl.scrollHeight
+    })
   }
   const currentEntityLabel = computed(() =>
     currentEntity.value ? formatEntityName(currentEntity.value) : 'None',
@@ -118,19 +123,15 @@ export function useXeroAuth() {
     loading.value = true
     error.value = ''
     try {
-      console.log('[Xero] Checking authentication (ping)...')
       const pingRes = await axios.get(`${getApiBaseUrl()}/api/xero/ping`, { withCredentials: true })
       isAuthenticated.value = !!(pingRes.data && pingRes.data.connected)
       if (!isAuthenticated.value) {
         loading.value = false
-        console.log('[Xero] Not authenticated (ping)')
         return
       }
-      console.log('[Xero] Fetching sync info...')
       const res = await axios.get(`${getApiBaseUrl()}/api/xero/sync-info/`, {
         withCredentials: true,
       })
-      console.log('[Xero] sync-info status:', res.status)
       const data = res.data
       entities.value = data.entities || Object.keys(data.last_syncs || {})
       for (const entity of entities.value) {
@@ -148,10 +149,9 @@ export function useXeroAuth() {
         currentEntity.value = ''
         syncing.value = false
       }
-    } catch (err) {
+    } catch {
       error.value = 'Failed to load Xero sync status.'
       isAuthenticated.value = false
-      console.error('[Xero] Error fetching sync info:', err)
     } finally {
       loading.value = false
     }
@@ -191,12 +191,12 @@ export function useXeroAuth() {
       entityStats[entity].status = 'Pending'
       entityStats[entity].recordsUpdated = 0
     }
-    // EventSource não usa axios, mas precisa da URL absoluta se o front e API estão em domínios diferentes
     const sseUrl = `${getApiBaseUrl()}/api/xero/sync-stream/`
     eventSource.value = new EventSource(sseUrl, { withCredentials: true })
     eventSource.value.onmessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data)
       log.value.push(data)
+      // Atualiza status, progresso e registros
       if (!data) return
       if (data.severity === 'error') {
         error.value = data.message
@@ -214,25 +214,30 @@ export function useXeroAuth() {
         fetchEntitiesAndStatus()
         return
       }
+      // Atualização de progresso e entidade
       if (data.entity && data.entity !== 'sync') {
         currentEntity.value = data.entity
         if (typeof data.progress === 'number') {
           entityProgress.value = data.progress
-          entityStats[data.entity].status = 'In Progress'
+          entityStats[data.entity].status = data.status || 'In Progress'
         }
-        if (typeof data.progress === 'number') {
-          entityStats[data.entity].recordsUpdated =
-            data.recordsUpdated ?? entityStats[data.entity].recordsUpdated
+        if (typeof data.recordsUpdated === 'number') {
+          entityStats[data.entity].recordsUpdated = data.recordsUpdated
         }
         if (data.message?.includes('Completed sync of')) {
           entityStats[data.entity].status = 'Completed'
           entityStats[data.entity].lastSync = data.datetime
           entityProgress.value = 1
-          return
         }
       }
+      // Calcula progresso geral
       const completed = entities.value.filter((e) => entityStats[e].status === 'Completed').length
-      overallProgress.value = completed / entities.value.length
+      overallProgress.value = entities.value.length > 0 ? completed / entities.value.length : 0
+      nextTick(() => {
+        // Auto-scroll para o final do log
+        const logEl = document.querySelector('.bg-zinc-900.overflow-y-auto')
+        if (logEl) logEl.scrollTop = logEl.scrollHeight
+      })
     }
     eventSource.value.onerror = () => {
       error.value = 'Connection to sync stream lost.'
