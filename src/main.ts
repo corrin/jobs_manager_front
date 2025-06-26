@@ -12,7 +12,6 @@ import './plugins/ag-grid'
 import './polyfills'
 import { NativeEventSource, EventSourcePolyfill } from 'event-source-polyfill'
 
-// escolhe implementação nativa ou polyfill
 const Impl = NativeEventSource || EventSourcePolyfill
 
 if (typeof window !== 'undefined') {
