@@ -26,6 +26,8 @@ export function useAppLayout() {
       return {
         displayName: 'Guest',
         username: 'guest',
+        is_staff: false,
+        is_active: false,
       }
     }
 
@@ -33,6 +35,9 @@ export function useAppLayout() {
     return {
       displayName: fullName || user.username,
       username: user.username,
+      is_staff: typeof user.is_staff === 'boolean' ? user.is_staff : false,
+      is_active: typeof user.is_active === 'boolean' ? user.is_active : false,
+      // Add other fields as needed
     }
   })
 
