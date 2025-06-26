@@ -87,7 +87,9 @@
             >
           </div>
         </div>
-        <a href="#" class="text-gray-700 hover:text-blue-600 transition-colors text-sm">Xero</a>
+        <router-link to="/xero" class="text-gray-700 hover:text-blue-600 transition-colors text-sm"
+          >Xero</router-link
+        >
 
         <div class="relative" @click.stop>
           <button
@@ -196,11 +198,11 @@
                 @click="closeMobileMenu"
                 >Daily Overview</router-link
               >
-              <a
-                href="#"
+              <router-link
+                to="/xero"
                 class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
                 @click="closeMobileMenu"
-                >Xero</a
+                >Xero</router-link
               >
             </div>
 

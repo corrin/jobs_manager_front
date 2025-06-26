@@ -116,6 +116,16 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: '/xero',
+      name: 'xero-sync',
+      component: () => import('@/views/XeroView.vue'),
+      meta: {
+        requiresAuth: true,
+        requiresSuperUser: true,
+        title: 'Xero Sync - Jobs Manager',
+      },
+    },
   ],
 })
 
