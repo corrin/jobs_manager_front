@@ -1,6 +1,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { getApiBaseUrl } from '../plugins/axios'
 
 export function useXeroAuth() {
   const router = useRouter()
@@ -78,7 +79,6 @@ export function useXeroAuth() {
 
   // Auth
   function loginXero() {
-    // Usa o endpoint correto e next como URL do front-end
     const frontendUrl = window.location.origin + router.currentRoute.value.fullPath
     const next = encodeURIComponent(frontendUrl)
     const apiBase = import.meta.env.VITE_API_BASE_URL || ''
@@ -93,7 +93,7 @@ export function useXeroAuth() {
 
   async function ensureAuth(): Promise<boolean> {
     try {
-      await axios.get('/api/xero/ping', { withCredentials: true })
+      await axios.get(`${getApiBaseUrl()}/api/xero/ping`, { withCredentials: true })
       return true
     } catch (err: unknown) {
       if (
