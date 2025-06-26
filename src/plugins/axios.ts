@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
+import { useXeroAuth } from '../composables/xeroAuth'
 
 const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_BASE_URL) {
@@ -33,7 +34,11 @@ axios.interceptors.response.use(
     const isAuthError = error.response?.status === 401
     const currentPath = router.currentRoute.value.path
     const isOnLoginPage = currentPath === '/login'
-
+    if (error.response?.data?.redirect_to_auth) {
+      const { startLogin } = useXeroAuth()
+      startLogin()
+      return Promise.reject(error)
+    }
     if (isAuthError && !isOnLoginPage && !isRedirecting) {
       console.warn('Authentication failed - cookies may have expired')
 
