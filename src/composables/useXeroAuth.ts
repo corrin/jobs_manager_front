@@ -193,7 +193,7 @@ export function useXeroAuth() {
     }
     // EventSource não usa axios, mas precisa da URL absoluta se o front e API estão em domínios diferentes
     const sseUrl = `${getApiBaseUrl()}/api/xero/sync-stream/`
-    eventSource.value = new EventSource(sseUrl)
+    eventSource.value = new EventSource(sseUrl, { withCredentials: true })
     eventSource.value.onmessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data)
       log.value.push(data)
