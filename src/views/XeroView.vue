@@ -1,13 +1,15 @@
 <template>
   <AppLayout>
-    <div class="max-w-6xl mx-auto py-8 px-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Coluna Esquerda: Progresso -->
+    <div class="max-w-6xl mx-auto py-12 px-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <!-- Left Column: Progress Section with improved contrast and larger elements -->
         <section>
-          <div class="flex items-center justify-between mb-6">
-            <h1 class="text-2xl font-bold tracking-tight text-indigo-400 flex items-center gap-2">
+          <div class="flex items-center justify-between mb-8">
+            <h1
+              class="text-4xl font-extrabold tracking-tight text-indigo-100 flex items-center gap-3 drop-shadow-lg"
+            >
               <svg
-                class="w-7 h-7 text-indigo-500 animate-pulse"
+                class="w-10 h-10 text-indigo-400 animate-pulse drop-shadow"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -17,8 +19,13 @@
               </svg>
               Xero Sync Progress
             </h1>
-            <div class="flex gap-2">
-              <Button v-if="!isAuthenticated && !loading" @click="loginXero" variant="default">
+            <div class="flex gap-3">
+              <Button
+                v-if="!isAuthenticated && !loading"
+                @click="loginXero"
+                variant="default"
+                class="text-lg px-6 py-3"
+              >
                 Login with Xero
               </Button>
               <Button
@@ -26,62 +33,80 @@
                 @click="startSync"
                 variant="default"
                 :disabled="syncing || loading"
+                class="text-lg px-6 py-3"
               >
                 Start Sync
               </Button>
-              <Button v-if="isAuthenticated && !loading" @click="logoutXero" variant="ghost">
+              <Button
+                v-if="isAuthenticated && !loading"
+                @click="logoutXero"
+                variant="ghost"
+                class="text-lg px-6 py-3"
+              >
                 Disconnect
               </Button>
             </div>
           </div>
-          <div v-if="loading" class="flex justify-center items-center h-40">
-            <span class="text-lg animate-pulse text-indigo-400">Loading...</span>
+          <div v-if="loading" class="flex justify-center items-center h-52">
+            <span class="text-2xl animate-pulse text-indigo-200">Loading...</span>
           </div>
           <div v-else>
-            <div v-if="!isAuthenticated" class="text-center text-red-600 font-medium py-8">
+            <div
+              v-if="!isAuthenticated"
+              class="text-center text-red-500 font-semibold py-12 text-xl bg-zinc-900/80 rounded-lg shadow-lg"
+            >
               <span>Your Xero session has expired or is not connected.</span>
             </div>
             <div v-else>
-              <div class="mb-6">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="font-medium text-zinc-200">Overall Progress</span>
-                  <span class="text-sm text-zinc-400"
+              <div class="mb-8">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-semibold text-zinc-100 text-lg">Overall Progress</span>
+                  <span class="text-lg text-zinc-300"
                     >{{ Math.round(overallProgress * 100) }}%</span
                   >
                 </div>
-                <Progress :value="overallProgress * 100" class="mt-1" />
+                <Progress
+                  :value="overallProgress * 100"
+                  class="mt-2 h-6 bg-zinc-800/90 rounded-xl shadow-inner"
+                />
               </div>
-              <div class="mb-6">
-                <div class="flex items-center justify-between mb-1">
-                  <span class="font-medium text-zinc-200">
+              <div class="mb-8">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-semibold text-zinc-100 text-lg">
                     Current Entity:
-                    <span class="font-semibold text-indigo-300">{{ currentEntityLabel }}</span>
+                    <span class="font-bold text-indigo-200">{{ currentEntityLabel }}</span>
                   </span>
-                  <span class="text-sm text-zinc-400">{{ Math.round(entityProgress * 100) }}%</span>
+                  <span class="text-lg text-zinc-300">{{ Math.round(entityProgress * 100) }}%</span>
                 </div>
-                <Progress :value="entityProgress * 100" color="teal" class="mt-1" />
+                <Progress
+                  :value="entityProgress * 100"
+                  color="teal"
+                  class="mt-2 h-6 bg-zinc-800/90 rounded-xl shadow-inner"
+                />
               </div>
-              <div class="mb-6">
-                <table class="w-full text-sm border rounded overflow-hidden bg-zinc-800/60 shadow">
-                  <thead class="bg-zinc-900/80">
+              <div class="mb-8">
+                <table
+                  class="w-full text-lg border rounded-xl overflow-hidden bg-zinc-900/90 shadow-xl"
+                >
+                  <thead class="bg-zinc-950/90">
                     <tr>
-                      <th class="px-3 py-2 text-left text-zinc-300">Entity</th>
-                      <th class="px-3 py-2 text-left text-zinc-300">Last Sync</th>
-                      <th class="px-3 py-2 text-left text-zinc-300">Status</th>
-                      <th class="px-3 py-2 text-right text-zinc-300">Records Updated</th>
+                      <th class="px-5 py-4 text-left text-zinc-200">Entity</th>
+                      <th class="px-5 py-4 text-left text-zinc-200">Last Sync</th>
+                      <th class="px-5 py-4 text-left text-zinc-200">Status</th>
+                      <th class="px-5 py-4 text-right text-zinc-200">Records Updated</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr
                       v-for="entity in entities"
                       :key="entity"
-                      :class="'border-b border-zinc-700 last:border-b-0'"
+                      :class="'border-b border-zinc-800 last:border-b-0'"
                     >
-                      <td class="px-3 py-2 text-zinc-100">{{ formatEntityName(entity) }}</td>
-                      <td class="px-3 py-2 text-zinc-200">
+                      <td class="px-5 py-4 text-zinc-100">{{ formatEntityName(entity) }}</td>
+                      <td class="px-5 py-4 text-zinc-100">
                         <template v-if="entityStats[entity]?.lastSync === '-'">
                           <svg
-                            class="animate-spin w-4 h-4 inline text-indigo-400"
+                            class="animate-spin w-5 h-5 inline text-indigo-300"
                             fill="none"
                             viewBox="0 0 24 24"
                           >
@@ -104,23 +129,23 @@
                           {{ formatLastSync(entityStats[entity]?.lastSync) }}
                         </template>
                       </td>
-                      <td class="px-3 py-2">
-                        <span :class="statusClass(entityStats[entity]?.status)">{{
+                      <td class="px-5 py-4">
+                        <span :class="statusClass(entityStats[entity]?.status) + ' text-lg'">{{
                           entityStats[entity]?.status
                         }}</span>
                       </td>
-                      <td class="px-3 py-2 text-right text-zinc-100">
+                      <td class="px-5 py-4 text-right text-zinc-100">
                         {{ entityStats[entity]?.recordsUpdated ?? 0 }}
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-              <div v-if="error" class="text-red-600 font-medium mb-4">{{ error }}</div>
+              <div v-if="error" class="text-red-500 font-semibold mb-6 text-lg">{{ error }}</div>
             </div>
           </div>
         </section>
-        <!-- Coluna Direita: Log -->
+        <!-- Right Column: Log (unchanged) -->
         <aside>
           <h2 class="text-lg font-bold mb-2 text-indigo-400 flex items-center gap-2">
             <svg
