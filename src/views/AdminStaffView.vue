@@ -1,27 +1,27 @@
 <template>
   <div>
-    <h2 class="text-2xl font-bold mb-4">Gerenciamento de Staff</h2>
+    <h2 class="text-2xl font-bold mb-4">Staff Management</h2>
     <div class="flex flex-col gap-4">
       <div class="flex flex-col md:flex-row md:items-center gap-2 mb-2">
         <input
           v-model="search"
           type="text"
-          placeholder="Buscar por nome ou email..."
+          placeholder="Search by name or email..."
           class="border rounded px-2 py-1 w-full md:w-64"
         />
         <button @click="openCreate" class="px-3 py-1 rounded bg-blue-600 text-white">
-          Novo Staff
+          New Staff
         </button>
       </div>
-      <div v-if="loading" class="text-center py-8">Carregando...</div>
+      <div v-if="loading" class="text-center py-8">Loading...</div>
       <div v-else>
         <table class="min-w-full bg-white border rounded shadow">
           <thead>
             <tr>
-              <th class="px-4 py-2">Nome</th>
+              <th class="px-4 py-2">Name</th>
               <th class="px-4 py-2">Email</th>
               <th class="px-4 py-2">Wage Rate</th>
-              <th class="px-4 py-2">Ações</th>
+              <th class="px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -34,13 +34,13 @@
                   @click="editStaff(staff)"
                   class="px-2 py-1 rounded bg-blue-400 text-white text-xs mr-2"
                 >
-                  Editar
+                  Edit
                 </button>
                 <button
                   @click="confirmDelete(staff)"
                   class="px-2 py-1 rounded bg-red-500 text-white text-xs"
                 >
-                  Excluir
+                  Delete
                 </button>
               </td>
             </tr>
@@ -65,7 +65,7 @@ import StaffFormModal from '@/components/StaffFormModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import type { Staff } from '@/types/staff'
 
-const { listStaff, deleteStaffApi } = useStaffApi()
+const { listStaff, removeStaff } = useStaffApi()
 const staffList = ref<Staff[]>([])
 const loading = ref(true)
 const search = ref('')
@@ -106,7 +106,7 @@ function closeConfirm() {
 }
 async function deleteStaff() {
   if (!selectedStaff.value) return
-  await deleteStaffApi(selectedStaff.value.id)
+  await removeStaff(selectedStaff.value.id)
   fetchStaff()
   closeConfirm()
 }
@@ -119,5 +119,5 @@ onMounted(fetchStaff)
 </script>
 
 <style scoped>
-/* Removido uso de @apply e classes customizadas, tudo está no template */
+/* No custom styles needed */
 </style>

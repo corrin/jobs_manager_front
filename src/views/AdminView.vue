@@ -12,7 +12,7 @@
               Staff
             </RouterLink>
           </li>
-          <!-- Futuras abas: Company Defaults, etc -->
+          <!-- Future tabs: Company Defaults, etc -->
         </ul>
       </nav>
       <main class="flex-1 p-4">
@@ -21,7 +21,7 @@
     </div>
   </div>
   <div v-else class="text-center text-red-500 py-10">
-    <p>Você não tem permissão para acessar o painel administrativo.</p>
+    <p>You do not have permission to access the admin panel.</p>
   </div>
 </template>
 
@@ -40,5 +40,5 @@ function isActiveTab(tab: string) {
 </script>
 
 <style scoped>
-/* Adicione estilos customizados se necessário */
+/* No custom styles needed */
 </style>

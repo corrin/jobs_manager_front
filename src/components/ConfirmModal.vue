@@ -1,21 +1,16 @@
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm relative">
-      <h3 class="text-lg font-bold mb-4">Confirmar exclusão</h3>
-      <p>
-        Tem certeza que deseja excluir <b>{{ staff?.first_name }} {{ staff?.last_name }}</b
-        >?
+  <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+      <h3 class="text-lg font-bold mb-4">Confirm Deletion</h3>
+      <p class="mb-6">
+        Are you sure you want to delete
+        <span class="font-semibold">{{ staff?.first_name }} {{ staff?.last_name }}</span
+        >? This action cannot be undone.
       </p>
-      <div class="flex justify-end gap-2 mt-6">
-        <button type="button" class="px-3 py-1 rounded border" @click="$emit('close')">
-          Cancelar
-        </button>
-        <button
-          type="button"
-          class="px-3 py-1 rounded bg-red-500 text-white"
-          @click="$emit('confirm')"
-        >
-          Excluir
+      <div class="flex gap-2 justify-end">
+        <button @click="$emit('close')" class="px-3 py-1 rounded bg-gray-300">Cancel</button>
+        <button @click="$emit('confirm')" class="px-3 py-1 rounded bg-red-600 text-white">
+          Delete
         </button>
       </div>
     </div>
@@ -24,9 +19,10 @@
 
 <script setup lang="ts">
 import type { Staff } from '@/types/staff'
-defineProps<{ staff?: Staff }>()
+
+defineProps<{ staff: Staff | null }>()
 </script>
 
 <style scoped>
-/* Removido uso de @apply e classes customizadas, tudo está no template */
+/* No custom styles needed */
 </style>
