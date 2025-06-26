@@ -107,7 +107,7 @@
           </div>
         </div>
 
-        <div class="relative" @click.stop v-if="userInfo.is_superuser">
+        <div class="relative" @click.stop v-if="userInfo.is_staff">
           <button
             @click="toggleDropdown('admin')"
             class="text-gray-700 hover:text-blue-600 transition-colors flex items-center text-sm"
@@ -293,7 +293,7 @@
                 </Transition>
               </div>
 
-              <div class="bg-gray-50 rounded-md" v-if="userInfo.is_superuser">
+              <div class="bg-gray-50 rounded-md" v-if="userInfo.is_staff">
                 <button
                   @click="toggleMobileSection('admin')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"

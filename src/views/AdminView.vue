@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isSuperUser">
+  <div v-if="isStaff">
     <div class="flex flex-col lg:flex-row gap-4">
       <nav class="w-full lg:w-56 bg-white border-r border-gray-200 p-4 rounded-md shadow-sm">
         <ul class="space-y-2">
@@ -31,7 +31,7 @@ import { useRoute } from 'vue-router'
 import { useAppLayout } from '@/composables/useAppLayout'
 
 const { userInfo } = useAppLayout()
-const isSuperUser = computed(() => userInfo.value?.is_superuser)
+const isStaff = computed(() => userInfo.value?.is_staff)
 const route = useRoute()
 
 function isActiveTab(tab: string) {
