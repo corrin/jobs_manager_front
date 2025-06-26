@@ -1,53 +1,76 @@
 <template>
-  <div>
-    <h2 class="text-2xl font-bold mb-4">Staff Management</h2>
-    <div class="flex flex-col gap-4">
-      <div class="flex flex-col md:flex-row md:items-center gap-2 mb-2">
-        <input
-          v-model="search"
-          type="text"
-          placeholder="Search by name or email..."
-          class="border rounded px-2 py-1 w-full md:w-64"
-        />
-        <button @click="openCreate" class="px-3 py-1 rounded bg-blue-600 text-white">
-          New Staff
-        </button>
+  <Card
+    class="p-6 space-y-6 rounded-2xl shadow-lg transition-transform duration-200 ease-out"
+    v-motion="{ initial: { y: 0 }, hover: { y: -4 } }"
+  >
+    <CardHeader class="p-0 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+      <div>
+        <CardTitle class="text-indigo-600">Staff Management</CardTitle>
+        <CardDescription>Manage your team members with ease.</CardDescription>
       </div>
-      <div v-if="loading" class="text-center py-8">Loading...</div>
-      <div v-else>
-        <table class="min-w-full bg-white border rounded shadow">
-          <thead>
-            <tr>
-              <th class="px-4 py-2">Name</th>
-              <th class="px-4 py-2">Email</th>
-              <th class="px-4 py-2">Wage Rate</th>
-              <th class="px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="staff in filteredStaff" :key="staff.id">
-              <td>{{ staff.first_name }} {{ staff.last_name }}</td>
-              <td>{{ staff.email }}</td>
-              <td>{{ staff.wage_rate }}</td>
-              <td>
-                <button
+      <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+        <Input
+          v-model="search"
+          placeholder="Search by name or e-mail…"
+          class="w-full sm:w-64"
+          aria-label="Search staff"
+        />
+        <Button variant="default" aria-label="Create new staff member" @click="openCreate">
+          New Staff
+        </Button>
+      </div>
+    </CardHeader>
+
+    <CardContent class="p-0">
+      <div v-if="loading" class="py-12 text-center text-slate-500">Loading…</div>
+      <Table v-else role="table" aria-label="Staff list" class="min-w-full">
+        <TableHeader>
+          <TableRow class="bg-slate-50">
+            <TableHead>Name</TableHead>
+            <TableHead>E-mail</TableHead>
+            <TableHead>Wage Rate</TableHead>
+            <TableHead class="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <template v-if="filteredStaff.length">
+            <TableRow
+              v-for="staff in filteredStaff"
+              :key="staff.id"
+              class="hover:bg-emerald-50 focus-within:bg-emerald-100 transition-colours"
+            >
+              <TableCell>{{ staff.first_name }} {{ staff.last_name }}</TableCell>
+              <TableCell>{{ staff.email }}</TableCell>
+              <TableCell>{{ staff.wage_rate }}</TableCell>
+              <TableCell class="flex justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  aria-label="Edit staff"
                   @click="editStaff(staff)"
-                  class="px-2 py-1 rounded bg-blue-400 text-white text-xs mr-2"
                 >
                   Edit
-                </button>
-                <button
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  aria-label="Delete staff"
                   @click="confirmDelete(staff)"
-                  class="px-2 py-1 rounded bg-red-500 text-white text-xs"
                 >
                   Delete
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+                </Button>
+              </TableCell>
+            </TableRow>
+          </template>
+          <TableRow v-else>
+            <TableCell colspan="4" class="text-center py-10 text-slate-500">
+              No staff found.
+            </TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    </CardContent>
+
     <StaffFormModal v-if="showModal" :staff="selectedStaff" @close="closeModal" @saved="onSaved" />
     <ConfirmModal
       v-if="showConfirm"
@@ -55,16 +78,28 @@
       @close="closeConfirm"
       @confirm="deleteStaff"
     />
-  </div>
+  </Card>
 </template>
 
 <script setup lang="ts">
+import Card from '@/components/ui/card/Card.vue'
+import CardHeader from '@/components/ui/card/CardHeader.vue'
+import CardTitle from '@/components/ui/card/CardTitle.vue'
+import CardDescription from '@/components/ui/card/CardDescription.vue'
+import CardContent from '@/components/ui/card/CardContent.vue'
+import Button from '@/components/ui/button/Button.vue'
+import Input from '@/components/ui/input/Input.vue'
+import Table from '@/components/ui/table/Table.vue'
+import TableHeader from '@/components/ui/table/TableHeader.vue'
+import TableRow from '@/components/ui/table/TableRow.vue'
+import TableHead from '@/components/ui/table/TableHead.vue'
+import TableBody from '@/components/ui/table/TableBody.vue'
+import TableCell from '@/components/ui/table/TableCell.vue'
 import { ref, computed, onMounted } from 'vue'
 import { useStaffApi } from '@/composables/useStaffApi'
 import StaffFormModal from '@/components/StaffFormModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import type { Staff } from '@/types/staff'
-import { useAppLayout } from '@/composables/useAppLayout'
 
 const { listStaff, removeStaff } = useStaffApi()
 const staffList = ref<Staff[]>([])
@@ -74,19 +109,15 @@ const showModal = ref(false)
 const showConfirm = ref(false)
 const selectedStaff = ref<Staff | null>(null)
 
-const { userInfo } = useAppLayout()
-console.log('[AdminStaffView] userInfo:', userInfo.value)
-if (userInfo.value) {
-  console.log('[AdminStaffView] userInfo keys:', Object.keys(userInfo.value))
-  console.log('[AdminStaffView] is_staff:', userInfo.value.is_staff)
-}
-
-const filteredStaff = computed(() => {
-  if (!search.value) return staffList.value
-  return staffList.value.filter((s) =>
-    `${s.first_name} ${s.last_name} ${s.email}`.toLowerCase().includes(search.value.toLowerCase()),
-  )
-})
+const filteredStaff = computed(() =>
+  !search.value
+    ? staffList.value
+    : staffList.value.filter((s) =>
+        `${s.first_name} ${s.last_name} ${s.email}`
+          .toLowerCase()
+          .includes(search.value.toLowerCase()),
+      ),
+)
 
 function openCreate() {
   selectedStaff.value = null
@@ -118,6 +149,7 @@ async function deleteStaff() {
   fetchStaff()
   closeConfirm()
 }
+
 async function fetchStaff() {
   loading.value = true
   staffList.value = await listStaff()

@@ -1,28 +1,51 @@
 <template>
-  <div class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-    <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-      <h3 class="text-lg font-bold mb-4">Confirm Deletion</h3>
+  <Dialog :open="true" @update:open="handleClose">
+    <DialogContent class="max-w-md animate-in fade-in-0 zoom-in-95">
+      <DialogHeader>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+      </DialogHeader>
       <p class="mb-6">
         Are you sure you want to delete
         <span class="font-semibold">{{ staff?.first_name }} {{ staff?.last_name }}</span
         >? This action cannot be undone.
       </p>
-      <div class="flex gap-2 justify-end">
-        <button @click="$emit('close')" class="px-3 py-1 rounded bg-gray-300">Cancel</button>
-        <button @click="$emit('confirm')" class="px-3 py-1 rounded bg-red-600 text-white">
-          Delete
-        </button>
-      </div>
-    </div>
-  </div>
+      <DialogFooter class="flex gap-2 justify-end">
+        <Button variant="ghost" @click="handleClose">Cancel</Button>
+        <Button variant="destructive" @click="handleConfirm">Delete</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import type { Staff } from '@/types/staff'
-
-defineProps<{ staff: Staff | null }>()
+import Dialog from '@/components/ui/dialog/Dialog.vue'
+import DialogContent from '@/components/ui/dialog/DialogContent.vue'
+import DialogHeader from '@/components/ui/dialog/DialogHeader.vue'
+import DialogTitle from '@/components/ui/dialog/DialogTitle.vue'
+import DialogFooter from '@/components/ui/dialog/DialogFooter.vue'
+import Button from '@/components/ui/button/Button.vue'
+const { staff } = defineProps<{ staff: { first_name?: string; last_name?: string } | null }>()
+const emit = defineEmits(['close', 'confirm'])
+function handleClose() {
+  emit('close')
+}
+function handleConfirm() {
+  emit('confirm')
+}
 </script>
 
 <style scoped>
-/* No custom styles needed */
+.animate-in {
+  animation: fadeInZoom 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes fadeInZoom {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 </style>
