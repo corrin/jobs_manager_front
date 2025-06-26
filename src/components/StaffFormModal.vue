@@ -2,10 +2,10 @@
   <Dialog :open="true" @update:open="handleClose">
     <DialogContent class="max-w-2xl space-y-6 animate-in fade-in-0 zoom-in-95">
       <DialogHeader>
-        <DialogTitle>{{ staff ? 'Editar Staff' : 'Novo Staff' }}</DialogTitle>
+        <DialogTitle>{{ staff ? 'Edit Staff' : 'New Staff' }}</DialogTitle>
       </DialogHeader>
       <form @submit.prevent="submitForm" class="space-y-4">
-        <!-- Navegação de Abas -->
+        <!-- Tab Navigation -->
         <div class="flex border-b mb-2 gap-2">
           <button
             v-for="tab in tabs"
@@ -25,13 +25,13 @@
             {{ tab.label }}
           </button>
         </div>
-        <!-- Conteúdo das Abas -->
+        <!-- Tab Content -->
         <div v-show="activeTab === 'personal'" class="space-y-4">
           <div class="flex gap-2">
-            <Input v-model="form.first_name" placeholder="Primeiro Nome" required class="w-1/2" />
-            <Input v-model="form.last_name" placeholder="Sobrenome" required class="w-1/2" />
+            <Input v-model="form.first_name" placeholder="First Name" required class="w-1/2" />
+            <Input v-model="form.last_name" placeholder="Last Name" required class="w-1/2" />
           </div>
-          <Input v-model="form.preferred_name" placeholder="Nome Preferido" />
+          <Input v-model="form.preferred_name" placeholder="Preferred Name" />
           <Input v-model="form.email" type="email" placeholder="E-mail" required />
           <Input
             v-model="form.wage_rate"
@@ -43,7 +43,7 @@
           />
           <Input v-model="form.ims_payroll_id" placeholder="IMS Payroll ID" />
           <div class="space-y-2">
-            <label class="text-sm font-medium">Ícone/Imagem de Perfil</label>
+            <label class="text-sm font-medium">Profile Icon/Image</label>
             <input
               type="file"
               accept="image/*"
@@ -60,7 +60,7 @@
               min="0"
               max="24"
               step="0.25"
-              placeholder="Horas Segunda"
+              placeholder="Monday Hours"
             />
             <Input
               v-model.number="form.hours_tue"
@@ -68,7 +68,7 @@
               min="0"
               max="24"
               step="0.25"
-              placeholder="Horas Terça"
+              placeholder="Tuesday Hours"
             />
             <Input
               v-model.number="form.hours_wed"
@@ -76,7 +76,7 @@
               min="0"
               max="24"
               step="0.25"
-              placeholder="Horas Quarta"
+              placeholder="Wednesday Hours"
             />
             <Input
               v-model.number="form.hours_thu"
@@ -84,7 +84,7 @@
               min="0"
               max="24"
               step="0.25"
-              placeholder="Horas Quinta"
+              placeholder="Thursday Hours"
             />
             <Input
               v-model.number="form.hours_fri"
@@ -92,7 +92,7 @@
               min="0"
               max="24"
               step="0.25"
-              placeholder="Horas Sexta"
+              placeholder="Friday Hours"
             />
             <Input
               v-model.number="form.hours_sat"
@@ -100,7 +100,7 @@
               min="0"
               max="24"
               step="0.25"
-              placeholder="Horas Sábado"
+              placeholder="Saturday Hours"
             />
             <Input
               v-model.number="form.hours_sun"
@@ -108,7 +108,7 @@
               min="0"
               max="24"
               step="0.25"
-              placeholder="Horas Domingo"
+              placeholder="Sunday Hours"
             />
           </div>
         </div>
@@ -118,32 +118,29 @@
               ><input type="checkbox" v-model="form.is_staff" /> Staff</label
             >
             <label class="flex items-center gap-2"
-              ><input type="checkbox" v-model="form.is_active" /> Ativo</label
+              ><input type="checkbox" v-model="form.is_active" /> Active</label
             >
             <label class="flex items-center gap-2"
-              ><input type="checkbox" v-model="form.is_superuser" /> Superusuário</label
+              ><input type="checkbox" v-model="form.is_superuser" /> Superuser</label
             >
           </div>
           <div>
-            <label class="text-sm font-medium">Grupos</label>
-            <Input v-model="form.groups" placeholder="IDs dos grupos (separados por vírgula)" />
+            <label class="text-sm font-medium">Groups</label>
+            <Input v-model="form.groups" placeholder="Group IDs (comma separated)" />
           </div>
           <div>
-            <label class="text-sm font-medium">Permissões</label>
-            <Input
-              v-model="form.user_permissions"
-              placeholder="IDs das permissões (separados por vírgula)"
-            />
+            <label class="text-sm font-medium">Permissions</label>
+            <Input v-model="form.user_permissions" placeholder="Permission IDs (comma separated)" />
           </div>
         </div>
         <div v-show="activeTab === 'dates'" class="space-y-2">
-          <Input v-model="form.last_login" type="datetime-local" placeholder="Último Login" />
-          <Input v-model="form.date_joined" type="datetime-local" placeholder="Data de Criação" />
+          <Input v-model="form.last_login" type="datetime-local" placeholder="Last Login" />
+          <Input v-model="form.date_joined" type="datetime-local" placeholder="Date Joined" />
         </div>
         <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
         <DialogFooter class="flex gap-2 justify-end">
-          <Button variant="ghost" type="button" @click="handleClose">Cancelar</Button>
-          <Button type="submit">{{ staff ? 'Salvar Alterações' : 'Criar Staff' }}</Button>
+          <Button variant="ghost" type="button" @click="handleClose">Cancel</Button>
+          <Button type="submit">{{ staff ? 'Save Changes' : 'Create Staff' }}</Button>
         </DialogFooter>
       </form>
     </DialogContent>
@@ -162,14 +159,13 @@ import { ref, watch } from 'vue'
 import { z } from 'zod'
 import type { Staff } from '@/types/staff'
 import { useStaffApi } from '@/composables/useStaffApi'
-// Ícones modernos (exemplo, pode ser substituído por outros do projeto)
 import { UserIcon, LockIcon, ClockIcon, CalendarIcon } from 'lucide-vue-next'
 
 const tabs = [
-  { key: 'personal', label: 'Dados Pessoais', icon: UserIcon },
-  { key: 'working', label: 'Horas', icon: ClockIcon },
-  { key: 'permissions', label: 'Permissões', icon: LockIcon },
-  { key: 'dates', label: 'Datas', icon: CalendarIcon },
+  { key: 'personal', label: 'Personal Info', icon: UserIcon },
+  { key: 'working', label: 'Working Hours', icon: ClockIcon },
+  { key: 'permissions', label: 'Permissions', icon: LockIcon },
+  { key: 'dates', label: 'Important Dates', icon: CalendarIcon },
 ]
 const activeTab = ref('personal')
 
@@ -203,10 +199,10 @@ const form = ref({
 const error = ref('')
 
 const staffSchema = z.object({
-  first_name: z.string().min(1, 'Primeiro nome obrigatório'),
-  last_name: z.string().min(1, 'Sobrenome obrigatório'),
-  email: z.string().email('E-mail inválido'),
-  wage_rate: z.number().min(0, 'Wage rate deve ser positivo'),
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email'),
+  wage_rate: z.number().min(0, 'Wage rate must be positive'),
   preferred_name: z.string().optional(),
   ims_payroll_id: z.string().optional(),
   hours_mon: z.number().min(0).max(24),
@@ -319,7 +315,7 @@ async function submitForm() {
     if (e instanceof Error) {
       error.value = e.message
     } else {
-      error.value = 'Falha ao salvar staff.'
+      error.value = 'Failed to save staff.'
     }
   }
 }
