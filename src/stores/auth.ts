@@ -31,6 +31,11 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await api.get<User>('/accounts/me/')
       user.value = response.data
+      // Debug log: show user info source and available keys
+      console.log('[Auth] /accounts/me/ response:', response.data)
+      if (response.data) {
+        console.log('[Auth] User keys:', Object.keys(response.data))
+      }
       return true
     } catch {
       user.value = null

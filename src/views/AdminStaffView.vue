@@ -64,6 +64,7 @@ import { useStaffApi } from '@/composables/useStaffApi'
 import StaffFormModal from '@/components/StaffFormModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import type { Staff } from '@/types/staff'
+import { useAppLayout } from '@/composables/useAppLayout'
 
 const { listStaff, removeStaff } = useStaffApi()
 const staffList = ref<Staff[]>([])
@@ -72,6 +73,13 @@ const search = ref('')
 const showModal = ref(false)
 const showConfirm = ref(false)
 const selectedStaff = ref<Staff | null>(null)
+
+const { userInfo } = useAppLayout()
+console.log('[AdminStaffView] userInfo:', userInfo.value)
+if (userInfo.value) {
+  console.log('[AdminStaffView] userInfo keys:', Object.keys(userInfo.value))
+  console.log('[AdminStaffView] is_staff:', userInfo.value.is_staff)
+}
 
 const filteredStaff = computed(() => {
   if (!search.value) return staffList.value

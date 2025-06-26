@@ -31,7 +31,12 @@ import { useRoute } from 'vue-router'
 import { useAppLayout } from '@/composables/useAppLayout'
 
 const { userInfo } = useAppLayout()
-const isStaff = computed(() => userInfo.value?.is_staff)
+const isStaff = computed(() => {
+  const staffFlag = userInfo.value?.is_staff
+  console.log('[AdminView] userInfo:', userInfo.value)
+  console.log('[AdminView] is_staff:', staffFlag)
+  return staffFlag
+})
 const route = useRoute()
 
 function isActiveTab(tab: string) {
