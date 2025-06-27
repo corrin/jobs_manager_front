@@ -42,7 +42,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppLayout } from '@/composables/useAppLayout'
-import { Users, Building2, CalendarClock, Archive } from 'lucide-vue-next'
+import { Users, Building2, CalendarClock, Archive, Bot } from 'lucide-vue-next'
 
 const { userInfo } = useAppLayout()
 const isStaff = computed(() => Boolean(userInfo.value?.is_staff))
@@ -75,15 +75,21 @@ const tabs = computed(() => [
     key: 'django-jobs',
     label: 'Django Jobs',
     route: 'admin-django-jobs',
-    icon: CalendarClock,
+    icon: Bot,
   },
-  // Tab Archive Jobs, visível para staff e superusuário
   {
     name: 'ArchiveJobs',
     key: 'archive-jobs',
     label: 'Archive Jobs',
     route: 'admin-archive-jobs',
     icon: Archive,
+  },
+  {
+    name: 'MonthEnd',
+    key: 'month-end',
+    label: 'Month End',
+    route: 'admin-month-end',
+    icon: CalendarClock,
   },
 ])
 
