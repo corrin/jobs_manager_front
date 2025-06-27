@@ -6,18 +6,13 @@ const props = defineProps<ToasterProps>()
 </script>
 
 <template>
-  <div class="app-sonner">
-    <Sonner
-      class="toaster group"
-      v-bind="props"
-      :closeButton="true"
-      :duration="4000"
-      position="top-right"
-      :style="{
-        '--normal-bg': 'var(--popover)',
-        '--normal-text': 'var(--popover-foreground)',
-        '--normal-border': 'var(--border)',
-      }"
-    />
-  </div>
+  <Sonner
+    class="toaster group"
+    v-bind="props"
+    :style="{
+      '--normal-bg': 'var(--popover)',
+      '--normal-text': 'var(--popover-foreground)',
+      '--normal-border': 'var(--border)',
+    }"
+  />
 </template>

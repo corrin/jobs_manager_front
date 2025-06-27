@@ -50,6 +50,7 @@ export function useJobNotifications() {
   const notifyDataChanged = (dataType: string) => {
     toast.info('Data changed', {
       description: `${dataType} was changed - saving automatically`,
+      duration: 4000, // auto-dismiss after 4s
     })
   }
 
@@ -62,6 +63,7 @@ export function useJobNotifications() {
   const notifyPricingUpdated = () => {
     toast.info('Prices updated', {
       description: 'Pricing data was updated automatically',
+      duration: 4000, // auto-dismiss after 4s
     })
   }
 
@@ -111,6 +113,7 @@ export function useJobNotifications() {
       toast.info('No changes found', {
         description: 'The spreadsheet is synchronized with the system',
         id: 'quote-refresh',
+        duration: 4000, // auto-dismiss after 4s
       })
     }
   }

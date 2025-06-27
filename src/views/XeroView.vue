@@ -65,7 +65,7 @@
                     >{{ Math.round(overallProgress * 100) }}%</span
                   >
                 </div>
-                <Progress :value="overallProgress * 100" class="mt-1 h-4" />
+                <Progress :model-value="overallProgress * 100" class="mt-1 h-4" />
               </div>
               <div class="mb-6">
                 <div class="flex items-center justify-between mb-1">
@@ -75,7 +75,7 @@
                   </span>
                   <span class="text-sm text-gray-500">{{ Math.round(entityProgress * 100) }}%</span>
                 </div>
-                <Progress :value="entityProgress * 100" color="teal" class="mt-1 h-4" />
+                <Progress :model-value="entityProgress * 100" color="teal" class="mt-1 h-4" />
               </div>
               <div class="mb-6 overflow-x-auto">
                 <table class="w-full text-sm border rounded-lg overflow-hidden bg-white shadow-sm">
@@ -136,11 +136,11 @@
             </div>
           </div>
         </section>
-        <!-- Right Column: Log (unchanged, but with scroll) -->
+        <!-- Right Column: Log -->
         <aside>
-          <h2 class="text-lg font-bold mb-2 text-indigo-600 flex items-center gap-2">
+          <h2 class="text-lg font-bold mb-2 text-indigo-400 flex items-center gap-2">
             <svg
-              class="w-5 h-5 text-green-500 animate-pulse"
+              class="w-5 h-5 text-green-400 animate-pulse"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -152,7 +152,7 @@
             Sync Log
           </h2>
           <div
-            class="bg-gray-100 rounded-lg p-4 h-[32rem] max-h-[40vh] min-h-[16rem] overflow-y-auto font-mono text-sm shadow-inner border border-gray-200 animate-fade-in"
+            class="bg-zinc-900 rounded-lg p-4 h-[32rem] max-h-[40vh] min-h-[16rem] overflow-y-auto font-mono text-sm shadow-inner border border-zinc-800 animate-fade-in"
           >
             <transition-group name="fade" tag="div">
               <div
@@ -160,11 +160,32 @@
                 :key="i"
                 :class="logClass(msg.severity) + ' flex items-center gap-2'"
               >
-                <span class="text-gray-500">[{{ formatTime(msg.datetime) }}]</span>
-                <span class="text-gray-900">{{ msg.message }}</span>
+                <span class="text-zinc-500">[{{ formatTime(msg.datetime) }}]</span>
+                <span :class="logClass(msg.severity) + ' font-semibold'">{{ msg.message }}</span>
               </div>
             </transition-group>
           </div>
+          <details
+            class="bg-zinc-100 rounded p-2 text-xs text-zinc-700 mt-4 max-h-60 overflow-y-auto"
+          >
+            <summary class="cursor-pointer font-semibold">Debug: Sync State</summary>
+            <div class="mt-1">
+              <div><b>Current Entity:</b> {{ currentEntityLabel }}</div>
+              <div><b>Overall Progress:</b> {{ Math.round(overallProgress * 100) }}%</div>
+              <div><b>Entity Progress:</b> {{ Math.round(entityProgress * 100) }}%</div>
+              <div><b>Entities:</b> {{ entities }}</div>
+              <div>
+                <b>entityStats:</b>
+                <pre class="whitespace-pre-wrap">{{ JSON.stringify(entityStats, null, 2) }}</pre>
+              </div>
+              <div>
+                <b>Last event received:</b>
+                <pre class="whitespace-pre-wrap">{{
+                  log.length ? JSON.stringify(log[log.length - 1], null, 2) : ''
+                }}</pre>
+              </div>
+            </div>
+          </details>
         </aside>
       </div>
     </div>
@@ -172,11 +193,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import AppLayout from '../components/AppLayout.vue'
 import Button from '../components/ui/button/Button.vue'
 import Progress from '../components/ui/progress/Progress.vue'
 import { useXeroAuth } from '../composables/useXeroAuth'
+import { toast } from 'vue-sonner'
 
 const {
   entities,
@@ -199,7 +221,22 @@ const {
   formatLastSync,
   formatTime,
   startSSE,
+  syncStatus,
+  syncErrorMessages,
 } = useXeroAuth()
+
+watch(syncStatus, (val) => {
+  if (val === 'success') {
+    toast.success('Sync completed successfully!')
+  } else if (val === 'error') {
+    toast.error(
+      syncErrorMessages.value.length
+        ? `Sync completed with errors: ${syncErrorMessages.value.join('; ')}`
+        : 'Sync completed with errors.',
+      { duration: 7000 },
+    )
+  }
+})
 
 onMounted(() => {
   fetchEntitiesAndStatus()
@@ -216,17 +253,21 @@ onUnmounted(() => {
 .fade-leave-active {
   transition: opacity 0.3s;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
+
 .animate-fade-in {
   animation: fadeIn 0.7s;
 }
+
 @keyframes fadeIn {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }

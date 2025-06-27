@@ -12,12 +12,12 @@
       </div>
 
       <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
-        <div class="text-sm font-medium text-orange-800">Invoiced</div>
-        <div class="text-2xl font-bold text-orange-900">{{ formatCurrency(invoicedAmount) }}</div>
+        <div class="text-sm font-medium text-orange-800">Invoiced (Excl. Taxes)</div>
+        <div class="text-2xl font-bold text-orange-900">{{ formatCurrency(invoiceTotal) }}</div>
       </div>
 
       <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
-        <div class="text-sm font-medium text-purple-800">To Be Invoiced</div>
+        <div class="text-sm font-medium text-purple-800">To Be Invoiced (Excl. Taxes)</div>
         <div class="text-2xl font-bold text-purple-900">{{ formatCurrency(toBeInvoiced) }}</div>
       </div>
 
@@ -94,7 +94,7 @@
 
         <div v-else class="space-y-4">
           <div class="border-l-4 border-orange-400 pl-4">
-            <div class="text-sm text-gray-600">Invoice Total</div>
+            <div class="text-sm text-gray-600">Invoice Total (Excl. Taxes)</div>
             <div class="text-xl font-semibold text-gray-900">
               {{ formatCurrency(invoiceTotal) }}
             </div>
@@ -129,6 +129,7 @@ import { computed } from 'vue'
 import type { JobData } from '@/services/job-rest.service'
 import { useJobsStore } from '@/stores/jobs'
 import axios from 'axios'
+import { toast } from 'vue-sonner'
 
 interface Props {
   jobData: JobData | null
@@ -147,27 +148,33 @@ const emit = defineEmits<{
 }>()
 
 const estimateTotal = computed(() => {
-  return props.jobData?.latest_estimate_pricing?.total_revenue || 0
+  return props.jobData?.latest_estimate?.summary?.rev || 0
 })
 
 const timeAndExpenses = computed(() => {
-  return 0
-})
+  const totalTime =
+    props.jobData?.latest_actual?.cost_lines?.reduce((sum, line) => {
+      if (line.kind === 'time') return sum + (line.total_rev || 0)
+    }, 0) || 0
 
-const invoicedAmount = computed(() => {
-  return 0
+  const totalExpenses =
+    props.jobData?.latest_actual?.cost_lines?.reduce((sum, line) => {
+      if (line.kind === 'material') return sum + (line.total_rev || 0)
+    }, 0) || 0
+
+  return totalTime + totalExpenses
 })
 
 const toBeInvoiced = computed(() => {
-  return timeAndExpenses.value - invoicedAmount.value
+  return props.jobData?.latest_actual?.summary?.rev - invoiceTotal.value || 0
 })
 
 const quoteTotal = computed(() => {
-  return 0
+  return props.jobData?.quote?.total_excl_tax || 0
 })
 
 const invoiceTotal = computed(() => {
-  return 0
+  return props.jobData?.invoice?.total_excl_tax || 0
 })
 
 const daysUntilDeadline = computed(() => {
@@ -215,18 +222,20 @@ const createQuote = async () => {
   if (!props.jobData?.id) return
   try {
     const response = await axios.post(`/api/xero/create_quote/${props.jobData.id}`)
-    if (response.data?.success) {
-      if (response.data.job) {
-        jobsStore.setDetailedJob(response.data.job)
-      } else {
-        await jobsStore.fetchJob(props.jobData.id)
-      }
-      emit('quote-created')
-    } else {
-      console.error(response.data?.error || response.data)
+    if (!response.data?.success) {
+      console.error(response.data?.error || 'Failed to create quote')
+      return
     }
+    if (!response.data.job) {
+      await jobsStore.fetchJob(props.jobData.id)
+      return
+    }
+    jobsStore.setDetailedJob(response.data.job)
+    toast.success('Quote created successfully!')
+    emit('quote-created')
   } catch (err) {
     console.error('Error creating quote:', err)
+    toast.error('Failed to create quote.')
   }
 }
 
@@ -246,18 +255,20 @@ const createInvoice = async () => {
   if (!props.jobData?.id) return
   try {
     const response = await axios.post(`/api/xero/create_invoice/${props.jobData.id}`)
-    if (response.data?.success) {
-      if (response.data.job) {
-        jobsStore.setDetailedJob(response.data.job)
-      } else {
-        await jobsStore.fetchJob(props.jobData.id)
-      }
-      emit('invoice-created')
-    } else {
-      console.error(response.data?.error || response.data)
+    if (!response.data?.success) {
+      console.error(response.data?.error || 'Failed to create invoice')
+      return
     }
+    if (!response.data.job) {
+      await jobsStore.fetchJob(props.jobData.id)
+      return
+    }
+    jobsStore.setDetailedJob(response.data.job)
+    toast.success('Invoice created successfully!')
+    emit('invoice-created')
   } catch (err) {
     console.error('Error creating invoice:', err)
+    toast.error('Failed to create invoice.')
   }
 }
 
@@ -267,8 +278,24 @@ const goToQuoteOnXero = () => {
   }
 }
 
-const deleteQuoteOnXero = () => {
-  console.log('Deleting quote...')
+const deleteQuoteOnXero = async () => {
+  if (!props.jobData?.id) return
+  try {
+    const response = await axios.post(`/api/xero/delete_quote/${props.jobData.id}`)
+    if (!response.data?.success) {
+      console.error(response.data?.error || 'Failed to delete quote')
+      return
+    }
+    if (!response.data.job) {
+      await jobsStore.fetchJob(props.jobData.id)
+      return
+    }
+    jobsStore.setDetailedJob(response.data.job)
+    toast.success('Quote deleted successfully!')
+  } catch (err) {
+    console.error('Error deleting quote:', err)
+    toast.error('Failed to delete quote.')
+  }
 }
 
 const goToInvoiceOnXero = () => {
@@ -277,7 +304,23 @@ const goToInvoiceOnXero = () => {
   }
 }
 
-const deleteInvoiceOnXero = () => {
-  console.log('Deleting invoice...')
+const deleteInvoiceOnXero = async () => {
+  if (!props.jobData?.id) return
+  try {
+    const response = await axios.post(`/api/xero/delete_invoice/${props.jobData.id}`)
+    if (!response.data?.success) {
+      console.error(response.data?.error || 'Failed to delete invoice')
+      return
+    }
+    if (!response.data.job) {
+      await jobsStore.fetchJob(props.jobData.id)
+      return
+    }
+    jobsStore.setDetailedJob(response.data.job)
+    toast.success('Invoice deleted successfully!')
+  } catch (err) {
+    console.error('Error deleting invoice:', err)
+    toast.error('Failed to delete invoice.')
+  }
 }
 </script>

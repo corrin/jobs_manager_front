@@ -291,6 +291,7 @@ const handleFileUpload = async (event: Event) => {
 
   toast.info('File upload', {
     description: `Selected ${files.length} file(s). File upload will be implemented next.`,
+    duration: 4000, // auto-dismiss after 4s
   })
 
   target.value = ''

@@ -156,7 +156,7 @@ function closeEditModal() {
 async function submitEditCostLine(payload: CostLine) {
   if (!payload || !payload.id) return
   isLoading.value = true
-  toast.loading('Updating cost line...')
+  toast.loading('Updating cost line...', { id: 'update-cost-line' })
   try {
     const updated = await costlineService.updateCostLine(payload.id, payload)
     costLines.value = costLines.value.map((l) => (l.id === updated.id ? { ...updated } : l))
@@ -167,13 +167,14 @@ async function submitEditCostLine(payload: CostLine) {
     console.error('Failed to update cost line:', error)
   } finally {
     isLoading.value = false
+    toast.dismiss('update-cost-line')
   }
 }
 
 async function handleDeleteCostLine(line: CostLine) {
   if (!line.id) return
   isLoading.value = true
-  toast.loading('Deleting cost line...')
+  toast.loading('Deleting cost line...', { id: 'delete-cost-line' })
   try {
     await costlineService.deleteCostLine(line.id)
     costLines.value = costLines.value.filter((l) => l.id !== line.id)
@@ -183,6 +184,7 @@ async function handleDeleteCostLine(line: CostLine) {
     console.error('Failed to delete cost line:', error)
   } finally {
     isLoading.value = false
+    toast.dismiss('delete-cost-line')
   }
 }
 
@@ -193,7 +195,7 @@ async function handleAddMaterial(payload: CostLine) {
   }
   if (!payload || payload.kind !== 'material') return
   isLoading.value = true
-  toast.loading('Adding material cost line...')
+  toast.loading('Adding material cost line...', { id: 'add-material' })
   try {
     const createPayload: CostLineCreatePayload = {
       kind: 'material',
@@ -223,6 +225,7 @@ async function handleAddMaterial(payload: CostLine) {
     console.error('Failed to add material:', error)
   } finally {
     isLoading.value = false
+    toast.dismiss('add-material')
   }
 }
 
@@ -233,7 +236,7 @@ async function handleAddTime(payload: CostLine) {
   }
   if (!payload || payload.kind !== 'time') return
   isLoading.value = true
-  toast.loading('Adding time cost line...')
+  toast.loading('Adding time cost line...', { id: 'add-time' })
   try {
     const createPayload: CostLineCreatePayload = {
       kind: 'time',
@@ -263,6 +266,7 @@ async function handleAddTime(payload: CostLine) {
     console.error('Failed to add time:', error)
   } finally {
     isLoading.value = false
+    toast.dismiss('add-time')
   }
 }
 

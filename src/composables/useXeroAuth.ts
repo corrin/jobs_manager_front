@@ -31,6 +31,8 @@ export function useXeroAuth() {
   const overallProgress = ref(0)
   const entityProgress = ref(0)
   const currentEntity = ref('')
+  const syncStatus = ref<string | null>(null)
+  const syncErrorMessages = ref<string[]>([])
 
   // Utils
   function formatEntityName(entity: string) {
@@ -195,27 +197,74 @@ export function useXeroAuth() {
     eventSource.value = new EventSource(sseUrl, { withCredentials: true })
     eventSource.value.onmessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data)
-      log.value.push(data)
-      // Atualiza status, progresso e registros
+      // DEBUG: log recebido do backend
+
+      console.log('[Xero SSE] Received:', data)
       if (!data) return
+      // Adiciona ao log
+      log.value.push({
+        datetime: data.datetime || new Date().toISOString(),
+        message: data.message || '',
+        severity: data.severity || 'info',
+        entity: data.entity,
+        progress: data.progress,
+        recordsUpdated: data.recordsUpdated,
+        status: data.status,
+      })
+      // Atualiza status, progresso e registros
       if (data.severity === 'error') {
         error.value = data.message
         if (data.entity && entityStats[data.entity]) {
           entityStats[data.entity].status = 'Error'
         }
+        syncing.value = false
+
+        console.log('[Xero SSE] Error state:', {
+          entityStats,
+          overallProgress: overallProgress.value,
+          entityProgress: entityProgress.value,
+          currentEntity: currentEntity.value,
+        })
         return
       }
-      if (data.message === 'Sync stream ended') {
-        syncing.value = false
-        eventSource.value?.close()
-        overallProgress.value = 1
-        entityProgress.value = 1
-        currentEntity.value = ''
-        fetchEntitiesAndStatus()
+      // Captura status final do sync
+      if (typeof data.syncStatus === 'string') {
+        syncStatus.value = data.syncStatus
+        syncErrorMessages.value = Array.isArray(data.errorMessages) ? data.errorMessages : []
+        if (data.message === 'Sync stream ended') {
+          syncing.value = false
+          eventSource.value?.close()
+          overallProgress.value = 1
+          entityProgress.value = 1
+          currentEntity.value = ''
+          fetchEntitiesAndStatus()
+
+          console.log('[Xero SSE] Sync ended (com syncStatus):', {
+            syncStatus: syncStatus.value,
+            syncErrorMessages: syncErrorMessages.value,
+          })
+          return
+        }
+      } else if (data.message === 'Sync stream ended') {
+        // Ignora eventos finais sem syncStatus
+
+        console.warn('[Xero SSE] Ignorando evento final sem syncStatus:', data)
         return
       }
       // Atualização de progresso e entidade
+      if (typeof data.overallProgress === 'number') {
+        overallProgress.value = data.overallProgress
+      }
       if (data.entity && data.entity !== 'sync') {
+        // Adiciona entidade nova se não existir
+        if (!entities.value.includes(data.entity)) {
+          entities.value.push(data.entity)
+          entityStats[data.entity] = {
+            status: 'Pending',
+            lastSync: '-',
+            recordsUpdated: 0,
+          }
+        }
         currentEntity.value = data.entity
         if (typeof data.progress === 'number') {
           entityProgress.value = data.progress
@@ -224,15 +273,21 @@ export function useXeroAuth() {
         if (typeof data.recordsUpdated === 'number') {
           entityStats[data.entity].recordsUpdated = data.recordsUpdated
         }
-        if (data.message?.includes('Completed sync of')) {
+        if (data.status === 'Completed' || data.message?.includes('Completed sync of')) {
           entityStats[data.entity].status = 'Completed'
-          entityStats[data.entity].lastSync = data.datetime
+          entityStats[data.entity].lastSync = data.datetime || new Date().toISOString()
           entityProgress.value = 1
+        } else if (data.status) {
+          entityStats[data.entity].status = data.status
         }
       }
-      // Calcula progresso geral
-      const completed = entities.value.filter((e) => entityStats[e].status === 'Completed').length
-      overallProgress.value = entities.value.length > 0 ? completed / entities.value.length : 0
+
+      console.log('[Xero SSE] Updated state:', {
+        entityStats,
+        overallProgress: overallProgress.value,
+        entityProgress: entityProgress.value,
+        currentEntity: currentEntity.value,
+      })
       nextTick(() => {
         // Auto-scroll para o final do log
         const logEl = document.querySelector('.bg-zinc-900.overflow-y-auto')
@@ -280,5 +335,7 @@ export function useXeroAuth() {
     formatTime,
     startSSE,
     guard,
+    syncStatus,
+    syncErrorMessages,
   }
 }
