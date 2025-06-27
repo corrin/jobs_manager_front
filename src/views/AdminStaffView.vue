@@ -82,43 +82,17 @@
                   <td class="px-4 py-3 text-center">
                     <button
                       @click="editStaff(staff)"
-                      class="inline-flex items-center p-1 text-indigo-600 hover:text-indigo-900"
+                      class="inline-flex items-center p-1 text-indigo-600 hover:text-indigo-900 transition-colors duration-150 hover:scale-110 active:scale-95"
                       aria-label="Edit"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M15.232 5.232l3.536 3.536M9 13l6-6m2 2l-6 6m-2 2h6"
-                        />
-                      </svg>
+                      <PencilLine class="w-5 h-5" />
                     </button>
                     <button
                       @click="confirmDelete(staff)"
-                      class="inline-flex items-center p-1 text-red-500 hover:text-red-700 ml-2"
+                      class="inline-flex items-center p-1 text-red-500 hover:text-red-700 ml-2 transition-colors duration-150 hover:scale-110 active:scale-95"
                       aria-label="Delete"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
+                      <Trash2 class="w-5 h-5" />
                     </button>
                   </td>
                 </tr>
@@ -156,6 +130,7 @@ import { useStaffApi } from '@/composables/useStaffApi'
 import StaffFormModal from '@/components/StaffFormModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import type { Staff } from '@/types/staff'
+import { PencilLine, Trash2 } from 'lucide-vue-next'
 
 const { listStaff, removeStaff } = useStaffApi()
 const staffList = ref<Staff[]>([])

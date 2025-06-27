@@ -6,7 +6,7 @@
       <div class="flex items-center">
         <button
           @click="toggleMobileMenu"
-          class="lg:hidden mr-2 p-1 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+          class="lg:hidden mr-2 p-1 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors duration-200"
         >
           <Menu v-if="!showMobileMenu" class="h-4 w-4" />
           <X v-else class="h-4 w-4" />
@@ -14,19 +14,22 @@
         <router-link
           to="/kanban"
           class="text-sm md:text-sm lg:text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
-          >Jobs Manager</router-link
         >
+          <LayoutDashboard class="inline w-5 h-5 mr-1 align-text-bottom" /> Jobs Manager
+        </router-link>
       </div>
 
       <div class="hidden lg:flex items-center space-x-6">
         <router-link
           to="/jobs/create"
-          class="text-gray-700 hover:text-blue-600 transition-colors text-sm"
-          >Create Job</router-link
+          class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium"
         >
+          <FilePlus class="w-4 h-4 mr-1" /> Create Job
+        </router-link>
 
         <div class="relative group">
           <button
+            @click="toggleDropdown('timesheets')"
             class="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-200 z-60"
           >
             <Calendar class="w-4 h-4" />
@@ -34,101 +37,155 @@
             <ChevronDown class="w-4 h-4" />
           </button>
 
-          <div
-            class="absolute left-0 mt-2 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-60"
+          <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 -translate-y-2 scale-95"
+            enter-to-class="opacity-100 translate-y-0 scale-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0 scale-100"
+            leave-to-class="opacity-0 -translate-y-2 scale-95"
           >
-            <div class="py-1">
-              <router-link
-                to="/timesheets/entry"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <PlusCircle class="w-4 h-4 mr-3" />
-                Entry & Management
-              </router-link>
-              <router-link
-                to="/timesheets/daily"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <Calendar class="w-4 h-4 mr-3" />
-                Daily Overview
-              </router-link>
-              <router-link
-                to="/timesheets/weekly"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <BarChart3 class="w-4 h-4 mr-3" />
-                Weekly Overview
-              </router-link>
+            <div
+              v-if="activeDropdown === 'timesheets'"
+              class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
+            >
+              <div class="py-1">
+                <router-link
+                  to="/timesheets/entry"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                >
+                  <PlusCircle class="w-4 h-4 mr-3" /> Entry & Management
+                </router-link>
+                <router-link
+                  to="/timesheets/daily"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                >
+                  <Calendar class="w-4 h-4 mr-3" /> Daily Overview
+                </router-link>
+                <router-link
+                  to="/timesheets/weekly"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                >
+                  <BarChart3 class="w-4 h-4 mr-3" /> Weekly Overview
+                </router-link>
+              </div>
             </div>
-          </div>
+          </Transition>
         </div>
 
         <div class="relative" @click.stop>
           <button
             @click="toggleDropdown('purchases')"
-            class="text-gray-700 hover:text-blue-600 transition-colors flex items-center text-sm"
+            class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
           >
-            Purchases
+            <ShoppingCart class="w-4 h-4 mr-1" /> Purchases
             <ChevronDown class="ml-1 h-4 w-4" />
           </button>
-          <div
-            v-if="activeDropdown === 'purchases'"
-            class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
+          <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 -translate-y-2 scale-95"
+            enter-to-class="opacity-100 translate-y-0 scale-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0 scale-100"
+            leave-to-class="opacity-0 -translate-y-2 scale-95"
           >
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >Purchase Orders</a
+            <div
+              v-if="activeDropdown === 'purchases'"
+              class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
             >
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >Delivery Receipts</a
-            >
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Use Stock</a>
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >Upload Supplier Pricing</a
-            >
-          </div>
+              <a
+                href="#"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <FileText class="w-4 h-4 mr-2" /> Purchase Orders
+              </a>
+              <a
+                href="#"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Package class="w-4 h-4 mr-2" /> Delivery Receipts
+              </a>
+              <a
+                href="#"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Box class="w-4 h-4 mr-2" /> Use Stock
+              </a>
+              <a
+                href="#"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <UploadCloud class="w-4 h-4 mr-2" /> Upload Supplier Pricing
+              </a>
+            </div>
+          </Transition>
         </div>
-        <router-link to="/xero" class="text-gray-700 hover:text-blue-600 transition-colors text-sm"
-          >Xero</router-link
+        <router-link
+          to="/xero"
+          class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium"
         >
+          <Link2 class="w-4 h-4 mr-1" /> Xero
+        </router-link>
 
         <div class="relative" @click.stop>
           <button
             @click="toggleDropdown('reports')"
-            class="text-gray-700 hover:text-blue-600 transition-colors flex items-center text-sm"
+            class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
           >
-            Reports
+            <BarChart3 class="w-4 h-4 mr-1" /> Reports
             <ChevronDown class="ml-1 h-4 w-4" />
           </button>
-          <div
-            v-if="activeDropdown === 'reports'"
-            class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
+          <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 -translate-y-2 scale-95"
+            enter-to-class="opacity-100 translate-y-0 scale-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0 scale-100"
+            leave-to-class="opacity-0 -translate-y-2 scale-95"
           >
-            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >KPI Reports</a
+            <div
+              v-if="activeDropdown === 'reports'"
+              class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
             >
-          </div>
+              <a
+                href="#"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <BarChart3 class="w-4 h-4 mr-2" /> KPI Reports
+              </a>
+            </div>
+          </Transition>
         </div>
 
         <div class="relative" @click.stop v-if="userInfo.is_staff">
           <button
             @click="toggleDropdown('admin')"
-            class="text-gray-700 hover:text-blue-600 transition-colors flex items-center text-sm"
+            class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
           >
-            Admin
+            <Settings class="w-4 h-4 mr-1" /> Admin
             <ChevronDown class="ml-1 h-4 w-4" />
           </button>
-          <div
-            v-if="activeDropdown === 'admin'"
-            class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
+          <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 -translate-y-2 scale-95"
+            enter-to-class="opacity-100 translate-y-0 scale-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0 scale-100"
+            leave-to-class="opacity-0 -translate-y-2 scale-95"
           >
-            <router-link
-              to="/admin/staff"
-              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            <div
+              v-if="activeDropdown === 'admin'"
+              class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
             >
-              Staff
-            </router-link>
-            <!-- Futuras abas: Company Defaults, etc -->
-          </div>
+              <router-link
+                to="/admin/staff"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Users class="w-4 h-4 mr-2" /> Staff
+              </router-link>
+              <!-- Futuras abas: Company Defaults, etc -->
+            </div>
+          </Transition>
         </div>
       </div>
 
@@ -331,7 +388,24 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { ChevronDown, Menu, X, Calendar, PlusCircle, BarChart3 } from 'lucide-vue-next'
+import {
+  ChevronDown,
+  Menu,
+  X,
+  Calendar,
+  PlusCircle,
+  BarChart3,
+  LayoutDashboard,
+  FilePlus,
+  ShoppingCart,
+  FileText,
+  Package,
+  Box,
+  UploadCloud,
+  Link2,
+  Settings,
+  Users,
+} from 'lucide-vue-next'
 import { useAppLayout } from '@/composables/useAppLayout'
 
 const activeDropdown = ref<string | null>(null)
@@ -378,15 +452,21 @@ const toggleMobileSection = (section: 'purchases' | 'reports' | 'admin') => {
   mobileSections.value[section] = !mobileSections.value[section]
 }
 
-const closeDropdowns = () => {
-  activeDropdown.value = null
-}
+let clickHandler: ((e: MouseEvent) => void) | null = null
 
 onMounted(() => {
-  document.addEventListener('click', closeDropdowns)
+  clickHandler = (e: MouseEvent) => {
+    const dropdowns = document.querySelectorAll('.absolute, .z-60, .z-[60]')
+    let insideDropdown = false
+    dropdowns.forEach((el) => {
+      if (el.contains(e.target as Node)) insideDropdown = true
+    })
+    if (!insideDropdown) activeDropdown.value = null
+  }
+  document.addEventListener('click', clickHandler)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', closeDropdowns)
+  if (clickHandler) document.removeEventListener('click', clickHandler)
 })
 </script>

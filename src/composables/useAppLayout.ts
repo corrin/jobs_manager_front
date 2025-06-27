@@ -37,7 +37,9 @@ export function useAppLayout() {
       username: user.username,
       is_staff: typeof user.is_staff === 'boolean' ? user.is_staff : false,
       is_active: typeof user.is_active === 'boolean' ? user.is_active : false,
-      // Add other fields as needed
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      preferred_name: user.preferred_name || '',
     }
   })
 

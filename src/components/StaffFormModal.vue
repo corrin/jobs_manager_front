@@ -26,7 +26,7 @@
           </button>
         </div>
         <!-- Tab Content -->
-        <div v-show="activeTab === 'personal'" class="space-y-4">
+        <div v-show="activeTab === 'personal'" class="space-y-2">
           <div class="flex gap-2">
             <div class="w-1/2">
               <label class="block text-sm font-medium mb-1" for="first_name">First Name</label>
@@ -37,39 +37,51 @@
               <Input id="last_name" v-model="form.last_name" placeholder="Last Name" required />
             </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-1" for="preferred_name"
-              >Preferred Name</label
-            >
-            <Input id="preferred_name" v-model="form.preferred_name" placeholder="Preferred Name" />
+          <div class="flex gap-2">
+            <div class="w-1/2">
+              <label class="block text-sm font-medium mb-1" for="preferred_name"
+                >Preferred Name</label
+              >
+              <Input
+                id="preferred_name"
+                v-model="form.preferred_name"
+                placeholder="Preferred Name"
+              />
+            </div>
+            <div class="w-1/2">
+              <label class="block text-sm font-medium mb-1" for="email">E-mail</label>
+              <Input id="email" v-model="form.email" type="email" placeholder="E-mail" required />
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-1" for="email">E-mail</label>
-            <Input id="email" v-model="form.email" type="email" placeholder="E-mail" required />
+          <div class="flex gap-2">
+            <div class="w-1/2">
+              <label class="block text-sm font-medium mb-1" for="wage_rate"
+                >Wage Rate (NZD/hour)</label
+              >
+              <Input
+                id="wage_rate"
+                v-model="form.wage_rate"
+                type="number"
+                placeholder="Wage Rate"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+            <div class="w-1/2">
+              <label class="block text-sm font-medium mb-1" for="ims_payroll_id"
+                >IMS Payroll ID</label
+              >
+              <Input
+                id="ims_payroll_id"
+                v-model="form.ims_payroll_id"
+                placeholder="IMS Payroll ID"
+              />
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium mb-1" for="wage_rate"
-              >Wage Rate (NZD/hour)</label
-            >
-            <Input
-              id="wage_rate"
-              v-model="form.wage_rate"
-              type="number"
-              placeholder="Wage Rate"
-              min="0"
-              step="0.01"
-              required
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1" for="ims_payroll_id"
-              >IMS Payroll ID</label
-            >
-            <Input id="ims_payroll_id" v-model="form.ims_payroll_id" placeholder="IMS Payroll ID" />
-          </div>
-          <div class="space-y-2">
-            <label class="block text-sm font-medium mb-1">Profile Icon/Image</label>
-            <div class="flex flex-col items-center">
+          <div class="flex justify-center mt-2">
+            <div>
+              <label class="block text-sm font-medium mb-1 text-center">Profile Icon/Image</label>
               <label
                 class="relative group cursor-pointer"
                 tabindex="0"
@@ -81,7 +93,7 @@
                 "
               >
                 <div
-                  class="avatar-upload flex items-center justify-center rounded-full bg-indigo-100 border-2 border-indigo-300 w-24 h-24 text-3xl font-bold text-indigo-700 overflow-hidden transition-all duration-150 group-hover:ring-4 group-hover:ring-indigo-300 group-hover:opacity-90"
+                  class="avatar-upload flex items-center justify-center rounded-full bg-indigo-100 border-2 border-indigo-300 w-16 h-16 text-xl font-bold text-indigo-700 overflow-hidden transition-all duration-150 group-hover:ring-4 group-hover:ring-indigo-300 group-hover:opacity-90 mx-auto"
                 >
                   <template v-if="avatarUrl">
                     <img :src="avatarUrl" alt="Profile image" class="object-cover w-full h-full" />
@@ -93,7 +105,7 @@
                     class="absolute inset-0 flex flex-col items-center justify-center bg-indigo-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
                   >
                     <svg
-                      class="w-8 h-8 text-white mb-1"
+                      class="w-6 h-6 text-white mb-1"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"

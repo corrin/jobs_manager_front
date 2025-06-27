@@ -10,7 +10,7 @@
           </svg>
         </div>
         <div class="user-name">
-          {{ userInfo.value?.preferred_name || userInfo.value?.first_name || 'User' }}
+          Welcome, {{ userInfo.preferred_name || userInfo.first_name || 'User' }}!
         </div>
         <div class="user-date">{{ today }}</div>
         <div class="user-quote">What are we going to do today?</div>
@@ -75,7 +75,7 @@ function isActive(tab: string) {
 <style scoped>
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  max-height: 100vh;
   height: auto;
   background: #f4f4f5;
   overflow: hidden;
@@ -83,17 +83,18 @@ function isActive(tab: string) {
 .sidebar {
   width: 18rem;
   min-width: 15rem;
-  background: linear-gradient(to bottom, #312e81, #3730a3 60%, #18181b 100%);
-  color: #fff;
+  background: linear-gradient(to bottom, #e0e7ff, #c7d2fe 60%, #a5b4fc 100%);
+  color: #3730a3;
   display: flex;
   flex-direction: column;
   padding: 2rem 1.5rem 1.5rem 1.5rem;
   gap: 2rem;
-  box-shadow: 0 8px 32px 0 rgba(31, 41, 55, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(49, 46, 129, 0.12);
   border-top-right-radius: 1.5rem;
   border-bottom-right-radius: 1.5rem;
   align-self: stretch;
-  height: auto;
+  height: 100vh;
+  margin-top: 8vh;
 }
 .user-card {
   display: flex;
@@ -106,11 +107,11 @@ function isActive(tab: string) {
   width: 4rem;
   height: 4rem;
   border-radius: 9999px;
-  background: #4338ca;
+  background: #6366f1;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px 0 rgba(49, 46, 129, 0.25);
+  box-shadow: 0 4px 16px 0 rgba(99, 102, 241, 0.18);
   margin-bottom: 0.5rem;
   animation: bounce 1.2s infinite alternate;
 }
@@ -126,14 +127,15 @@ function isActive(tab: string) {
   font-size: 1.125rem;
   font-weight: bold;
   margin-top: 0.25rem;
+  color: #3730a3;
 }
 .user-date {
   font-size: 0.95rem;
-  color: #c7d2fe;
+  color: #6366f1;
 }
 .user-quote {
   font-style: italic;
-  color: #a5b4fc;
+  color: #818cf8;
   font-size: 0.8rem;
   margin-top: 0.25rem;
   animation: pulse 2s infinite alternate;
@@ -161,20 +163,20 @@ function isActive(tab: string) {
   border-radius: 0.75rem;
   font-weight: 600;
   font-size: 1rem;
-  color: #c7d2fe;
+  color: #3730a3;
   background: transparent;
   transition: all 0.15s;
   box-shadow: none;
 }
 .tab-link--active {
-  background: #4f46e5;
+  background: #6366f1;
   color: #fff;
-  box-shadow: 0 2px 8px 0 rgba(49, 46, 129, 0.15);
+  box-shadow: 0 2px 8px 0 rgba(99, 102, 241, 0.12);
   transform: scale(1.04);
 }
 .tab-link:not(.tab-link--active):hover {
-  background: #3730a3;
-  color: #e0e7ff;
+  background: #a5b4fc;
+  color: #3730a3;
 }
 .tab-icon {
   width: 1.25rem;
@@ -186,10 +188,11 @@ function isActive(tab: string) {
 .sidebar-footer {
   margin-top: auto;
   font-size: 0.8rem;
-  color: #a5b4fc;
+  color: #6366f1;
   text-align: center;
   opacity: 0.7;
   padding-bottom: 0.5rem;
+  margin-bottom: 4rem;
 }
 .admin-main {
   flex: 1 1 0;

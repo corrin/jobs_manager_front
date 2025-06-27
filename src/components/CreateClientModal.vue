@@ -16,11 +16,23 @@
           <div class="ml-3">
             <p class="text-sm font-medium text-red-800">Error creating client</p>
             <p class="mt-1 text-sm text-red-700">{{ errorMessage }}</p>
+            <div v-if="duplicateClientInfo" class="mt-2 text-xs text-gray-700">
+              Existing client in Xero: <b>{{ duplicateClientInfo.name }}</b>
+              <span
+                v-if="duplicateClientInfo.xero_contact_id"
+                class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded"
+                >Xero</span
+              >
+            </div>
           </div>
         </div>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+      <form
+        v-if="!blockedNoXeroId && !duplicateClientInfo"
+        @submit.prevent="handleSubmit"
+        class="space-y-4"
+      >
         <div>
           <label for="clientName" class="block text-sm font-medium text-gray-700 mb-1">
             Client Name <span class="text-red-500">*</span>
@@ -115,6 +127,20 @@
           </Button>
         </DialogFooter>
       </form>
+
+      <div v-else class="flex flex-col items-center gap-4 py-6">
+        <p class="text-sm text-gray-700" v-if="blockedNoXeroId">
+          The client was created but does not have a Xero ID. This client cannot be used until it is
+          synced with Xero.
+        </p>
+        <p class="text-sm text-gray-700" v-if="duplicateClientInfo">
+          This client already exists in Xero and cannot be created again.
+        </p>
+        <div class="flex gap-2">
+          <Button type="button" variant="outline" @click="handleAddOther">Add other</Button>
+          <Button type="button" variant="outline" @click="handleCancel">Cancel</Button>
+        </div>
+      </div>
     </DialogContent>
   </Dialog>
 </template>
@@ -165,6 +191,8 @@ const formData = ref<CreateClientData>({
 const isLoading = ref(false)
 const errorMessage = ref('')
 const fieldErrors = ref<Record<string, string>>({})
+const blockedNoXeroId = ref(false)
+const duplicateClientInfo = ref<{ name: string; xero_contact_id: string } | null>(null)
 
 const isFormValid = computed(() => {
   if (!formData.value.name.trim()) return false
@@ -208,15 +236,29 @@ const handleSubmit = async () => {
 
   isLoading.value = true
   errorMessage.value = ''
+  blockedNoXeroId.value = false
+  duplicateClientInfo.value = null
 
   try {
     const result: CreateClientResponse = await clientService.createClient(formData.value)
 
     if (!result.success) {
+      // Handle duplicate client (409)
+      if (result.existing_client && result.existing_client.xero_contact_id) {
+        duplicateClientInfo.value = result.existing_client
+        errorMessage.value = result.error || 'Client already exists in Xero.'
+        return
+      }
       throw new Error(result.error || 'Failed to create client')
     }
 
     if (result.client) {
+      if (!result.client.xero_contact_id) {
+        blockedNoXeroId.value = true
+        errorMessage.value =
+          'Client was created but does not have a Xero ID. Please try again or contact support.'
+        return
+      }
       const newClient: Client = {
         id: result.client.id,
         name: result.client.name,
@@ -225,7 +267,6 @@ const handleSubmit = async () => {
         address: result.client.address || '',
         xero_contact_id: result.client.xero_contact_id || '',
       }
-
       emit('client-created', newClient)
       emit('update:isOpen', false)
     }
@@ -235,6 +276,12 @@ const handleSubmit = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+const handleAddOther = () => {
+  resetForm()
+  blockedNoXeroId.value = false
+  duplicateClientInfo.value = null
 }
 
 const handleCancel = () => {
