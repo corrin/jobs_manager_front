@@ -87,7 +87,7 @@ const tabs = computed(() => [
   {
     name: 'MonthEnd',
     key: 'month-end',
-    label: 'Month End',
+    label: 'Month-End',
     route: 'admin-month-end',
     icon: CalendarClock,
   },
