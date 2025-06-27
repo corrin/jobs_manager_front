@@ -140,6 +140,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'month-end',
+          name: 'admin-month-end',
+          component: () => import('@/views/MonthEnd.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresSuperUser: true,
+            title: 'Month-End - Jobs Manager',
+          },
+        },
+        {
           path: '',
           redirect: { name: 'admin-staff' },
         },

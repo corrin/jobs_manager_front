@@ -85,6 +85,13 @@ const tabs = computed(() => [
     route: 'admin-archive-jobs',
     icon: Archive,
   },
+  {
+    name: 'MonthEnd',
+    key: 'month-end',
+    label: 'Month-End',
+    route: 'admin-month-end',
+    icon: CalendarClock,
+  },
 ])
 
 function isActive(tab: string) {
