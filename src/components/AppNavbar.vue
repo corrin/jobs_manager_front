@@ -189,7 +189,12 @@
               >
                 <Building2 class="w-4 h-4 mr-2" /> Company
               </router-link>
-              <!-- Futuras abas: Company Defaults, etc -->
+              <router-link
+                to="/admin/archive-jobs"
+                class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
+              >
+                <Archive class="w-4 h-4 mr-1" /> Archive Jobs
+              </router-link>
             </div>
           </Transition>
         </div>
@@ -386,7 +391,6 @@
                     >
                       Company
                     </router-link>
-                    <!-- Futuras abas: Company Defaults, etc -->
                   </div>
                 </Transition>
               </div>
@@ -418,6 +422,7 @@ import {
   Settings,
   Users,
   Building2,
+  Archive,
 } from 'lucide-vue-next'
 import { useAppLayout } from '@/composables/useAppLayout'
 

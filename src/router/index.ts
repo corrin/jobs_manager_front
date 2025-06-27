@@ -130,6 +130,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'archive-jobs',
+          name: 'admin-archive-jobs',
+          component: () => import('@/views/AdminArchiveJobsView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresSuperUser: true,
+            title: 'Archive Jobs - Jobs Manager',
+          },
+        },
+        {
           path: '',
           redirect: { name: 'admin-staff' },
         },

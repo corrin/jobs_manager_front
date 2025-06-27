@@ -42,7 +42,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppLayout } from '@/composables/useAppLayout'
-import { Users, Building2, CalendarClock } from 'lucide-vue-next'
+import { Users, Building2, CalendarClock, Archive } from 'lucide-vue-next'
 
 const { userInfo } = useAppLayout()
 const isStaff = computed(() => Boolean(userInfo.value?.is_staff))
@@ -55,7 +55,7 @@ const today = new Date().toLocaleDateString('en-NZ', {
   day: 'numeric',
 })
 
-const tabs = [
+const tabs = computed(() => [
   {
     name: 'Staff',
     key: 'staff',
@@ -77,8 +77,15 @@ const tabs = [
     route: 'admin-django-jobs',
     icon: CalendarClock,
   },
-  // TODO: Add "Run Month-end" tab and "Archive Complete Jobs" tab
-]
+  // Tab Archive Jobs, visível para staff e superusuário
+  {
+    name: 'ArchiveJobs',
+    key: 'archive-jobs',
+    label: 'Archive Jobs',
+    route: 'admin-archive-jobs',
+    icon: Archive,
+  },
+])
 
 function isActive(tab: string) {
   return route.name === `admin-${tab}`
