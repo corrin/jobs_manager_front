@@ -13,7 +13,6 @@
           Welcome, {{ userInfo.preferred_name || userInfo.first_name || 'User' }}!
         </div>
         <div class="user-date">{{ today }}</div>
-        <div class="user-quote">What are we going to do today?</div>
       </div>
       <ul class="tab-list">
         <li v-for="tab in tabs" :key="tab.name">
@@ -27,7 +26,7 @@
           </RouterLink>
         </li>
       </ul>
-      <div class="sidebar-footer">Admin Panel</div>
+      <div class="sidebar-footer text-white bold">Admin Panel</div>
     </nav>
     <!-- Main Content -->
     <main class="admin-main">
@@ -43,7 +42,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppLayout } from '@/composables/useAppLayout'
-import { Users } from 'lucide-vue-next'
+import { Users, Building2, CalendarClock } from 'lucide-vue-next'
 
 const { userInfo } = useAppLayout()
 const isStaff = computed(() => Boolean(userInfo.value?.is_staff))
@@ -64,7 +63,21 @@ const tabs = [
     route: 'admin-staff',
     icon: Users,
   },
-  // Add more tabs here as needed
+  {
+    name: 'Company',
+    key: 'company',
+    label: 'Company',
+    route: 'admin-company',
+    icon: Building2,
+  },
+  {
+    name: 'DjangoJobs',
+    key: 'django-jobs',
+    label: 'Django Jobs',
+    route: 'admin-django-jobs',
+    icon: CalendarClock,
+  },
+  // TODO: Add "Run Month-end" tab and "Archive Complete Jobs" tab
 ]
 
 function isActive(tab: string) {
@@ -187,12 +200,17 @@ function isActive(tab: string) {
 }
 .sidebar-footer {
   margin-top: auto;
-  font-size: 0.8rem;
-  color: #6366f1;
+  font-size: 1.1rem;
   text-align: center;
-  opacity: 0.7;
+  opacity: 1;
   padding-bottom: 0.5rem;
   margin-bottom: 4rem;
+  font-weight: bold;
+  color: #3730a3;
+  text-decoration: underline overline;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 3px;
+  letter-spacing: 1px;
 }
 .admin-main {
   flex: 1 1 0;

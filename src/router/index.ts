@@ -109,7 +109,26 @@ const router = createRouter({
             title: 'Staff Admin - Jobs Manager',
           },
         },
-        // Futuras abas: company-defaults, etc
+        {
+          path: 'company',
+          name: 'admin-company',
+          component: () => import('@/views/AdminCompanyView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresSuperUser: true,
+            title: 'Company Defaults - Jobs Manager',
+          },
+        },
+        {
+          path: 'django-jobs',
+          name: 'admin-django-jobs',
+          component: () => import('@/views/AdminDjangoJobsView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresSuperUser: true,
+            title: 'Django Jobs - Jobs Manager',
+          },
+        },
         {
           path: '',
           redirect: { name: 'admin-staff' },

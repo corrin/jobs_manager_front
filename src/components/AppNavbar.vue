@@ -183,6 +183,12 @@
               >
                 <Users class="w-4 h-4 mr-2" /> Staff
               </router-link>
+              <router-link
+                to="/admin/company"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Building2 class="w-4 h-4 mr-2" /> Company
+              </router-link>
               <!-- Futuras abas: Company Defaults, etc -->
             </div>
           </Transition>
@@ -374,6 +380,12 @@
                     >
                       Staff
                     </router-link>
+                    <router-link
+                      to="/admin/company"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Company
+                    </router-link>
                     <!-- Futuras abas: Company Defaults, etc -->
                   </div>
                 </Transition>
@@ -405,6 +417,7 @@ import {
   Link2,
   Settings,
   Users,
+  Building2,
 } from 'lucide-vue-next'
 import { useAppLayout } from '@/composables/useAppLayout'
 
@@ -456,7 +469,7 @@ let clickHandler: ((e: MouseEvent) => void) | null = null
 
 onMounted(() => {
   clickHandler = (e: MouseEvent) => {
-    const dropdowns = document.querySelectorAll('.absolute, .z-60, .z-[60]')
+    const dropdowns = document.querySelectorAll('.absolute, .z-60')
     let insideDropdown = false
     dropdowns.forEach((el) => {
       if (el.contains(e.target as Node)) insideDropdown = true

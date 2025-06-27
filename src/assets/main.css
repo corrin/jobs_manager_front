@@ -382,9 +382,9 @@ body {
   position: fixed !important;
   z-index: 999999 !important;
   pointer-events: auto !important;
-  bottom: 2rem !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+  top: 2rem !important;
+  right: 2rem !important;
+  /* Removido bottom, left e transform para top-right */
   width: auto !important;
   max-width: 420px !important;
   display: flex !important;
@@ -432,14 +432,22 @@ body {
 }
 [data-sonner-toast][data-dismissed='true'] {
   animation: sonner-slide-out 0.4s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+  opacity: 0 !important;
 }
-@keyframes sonner-slide-out {
-  0% {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100%) scale(0.95);
-    opacity: 0;
-  }
+.sonner-close-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground, #888);
+  font-size: 1.25rem;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  z-index: 2;
+}
+.sonner-close-button:hover {
+  opacity: 1;
+  color: var(--foreground, #222);
 }
