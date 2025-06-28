@@ -6,7 +6,6 @@ import { getApiBaseUrl } from '../plugins/axios'
 export function useXeroAuth() {
   const router = useRouter()
 
-  // State
   const entities = ref<string[]>([])
   const entityStats = reactive<
     Record<string, { status: string; lastSync: string; recordsUpdated: number }>
@@ -34,7 +33,6 @@ export function useXeroAuth() {
   const syncStatus = ref<string | null>(null)
   const syncErrorMessages = ref<string[]>([])
 
-  // Utils
   function formatEntityName(entity: string) {
     return entity
       .replace(/_/g, ' ')
@@ -84,7 +82,6 @@ export function useXeroAuth() {
     currentEntity.value ? formatEntityName(currentEntity.value) : 'None',
   )
 
-  // Auth
   function loginXero() {
     const frontendUrl = window.location.origin + router.currentRoute.value.fullPath
     const next = encodeURIComponent(frontendUrl)
@@ -120,7 +117,6 @@ export function useXeroAuth() {
     return await ensureAuth()
   }
 
-  // Data fetch & sync
   async function fetchEntitiesAndStatus() {
     loading.value = true
     error.value = ''
@@ -197,11 +193,7 @@ export function useXeroAuth() {
     eventSource.value = new EventSource(sseUrl, { withCredentials: true })
     eventSource.value.onmessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data)
-      // DEBUG: log recebido do backend
-
-      console.log('[Xero SSE] Received:', data)
       if (!data) return
-      // Adiciona ao log
       log.value.push({
         datetime: data.datetime || new Date().toISOString(),
         message: data.message || '',
@@ -211,23 +203,14 @@ export function useXeroAuth() {
         recordsUpdated: data.recordsUpdated,
         status: data.status,
       })
-      // Atualiza status, progresso e registros
       if (data.severity === 'error') {
         error.value = data.message
         if (data.entity && entityStats[data.entity]) {
           entityStats[data.entity].status = 'Error'
         }
         syncing.value = false
-
-        console.log('[Xero SSE] Error state:', {
-          entityStats,
-          overallProgress: overallProgress.value,
-          entityProgress: entityProgress.value,
-          currentEntity: currentEntity.value,
-        })
         return
       }
-      // Captura status final do sync
       if (typeof data.syncStatus === 'string') {
         syncStatus.value = data.syncStatus
         syncErrorMessages.value = Array.isArray(data.errorMessages) ? data.errorMessages : []
@@ -238,25 +221,15 @@ export function useXeroAuth() {
           entityProgress.value = 1
           currentEntity.value = ''
           fetchEntitiesAndStatus()
-
-          console.log('[Xero SSE] Sync ended (com syncStatus):', {
-            syncStatus: syncStatus.value,
-            syncErrorMessages: syncErrorMessages.value,
-          })
           return
         }
       } else if (data.message === 'Sync stream ended') {
-        // Ignora eventos finais sem syncStatus
-
-        console.warn('[Xero SSE] Ignorando evento final sem syncStatus:', data)
         return
       }
-      // Atualização de progresso e entidade
       if (typeof data.overallProgress === 'number') {
         overallProgress.value = data.overallProgress
       }
       if (data.entity && data.entity !== 'sync') {
-        // Adiciona entidade nova se não existir
         if (!entities.value.includes(data.entity)) {
           entities.value.push(data.entity)
           entityStats[data.entity] = {
@@ -281,15 +254,7 @@ export function useXeroAuth() {
           entityStats[data.entity].status = data.status
         }
       }
-
-      console.log('[Xero SSE] Updated state:', {
-        entityStats,
-        overallProgress: overallProgress.value,
-        entityProgress: entityProgress.value,
-        currentEntity: currentEntity.value,
-      })
       nextTick(() => {
-        // Auto-scroll para o final do log
         const logEl = document.querySelector('.bg-zinc-900.overflow-y-auto')
         if (logEl) logEl.scrollTop = logEl.scrollHeight
       })
