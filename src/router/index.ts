@@ -142,7 +142,7 @@ const router = createRouter({
         {
           path: 'month-end',
           name: 'admin-month-end',
-          component: () => import('@/views/MonthEnd.vue'),
+          component: () => import('@/views/AdminMonthEnd.vue'),
           meta: {
             requiresAuth: true,
             requiresSuperUser: true,

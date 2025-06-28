@@ -191,9 +191,15 @@
               </router-link>
               <router-link
                 to="/admin/archive-jobs"
-                class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
               >
-                <Archive class="w-4 h-4 mr-1" /> Archive Jobs
+                <Archive class="w-4 h-4 mr-2" /> Archive Jobs
+              </router-link>
+              <router-link
+                to="/admin/month-end"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <CalendarClock class="w-4 h-4 mr-2" /> Month-End
               </router-link>
             </div>
           </Transition>
@@ -423,6 +429,7 @@ import {
   Users,
   Building2,
   Archive,
+  CalendarClock,
 } from 'lucide-vue-next'
 import { useAppLayout } from '@/composables/useAppLayout'
 

@@ -21,7 +21,9 @@
             class="tab-link"
             :class="isActive(tab.key) ? 'tab-link--active' : ''"
           >
-            <span v-if="tab.icon" class="tab-icon"> <component :is="tab.icon" /> </span>
+            <span v-if="tab.icon" class="tab-icon">
+              <component :is="tab.icon" />
+            </span>
             {{ tab.label }}
           </RouterLink>
         </li>
@@ -71,13 +73,6 @@ const tabs = computed(() => [
     icon: Building2,
   },
   {
-    name: 'DjangoJobs',
-    key: 'django-jobs',
-    label: 'Django Jobs',
-    route: 'admin-django-jobs',
-    icon: Bot,
-  },
-  {
     name: 'ArchiveJobs',
     key: 'archive-jobs',
     label: 'Archive Jobs',
@@ -90,6 +85,13 @@ const tabs = computed(() => [
     label: 'Month-End',
     route: 'admin-month-end',
     icon: CalendarClock,
+  },
+  {
+    name: 'DjangoJobs',
+    key: 'django-jobs',
+    label: 'Django Jobs',
+    route: 'admin-django-jobs',
+    icon: Bot,
   },
 ])
 
@@ -106,6 +108,7 @@ function isActive(tab: string) {
   background: #f4f4f5;
   overflow: hidden;
 }
+
 .sidebar {
   width: 18rem;
   min-width: 15rem;
@@ -122,6 +125,7 @@ function isActive(tab: string) {
   height: 100vh;
   margin-top: 8vh;
 }
+
 .user-card {
   display: flex;
   flex-direction: column;
@@ -129,6 +133,7 @@ function isActive(tab: string) {
   gap: 0.5rem;
   margin-bottom: 1.5rem;
 }
+
 .avatar {
   width: 4rem;
   height: 4rem;
@@ -141,24 +146,29 @@ function isActive(tab: string) {
   margin-bottom: 0.5rem;
   animation: bounce 1.2s infinite alternate;
 }
+
 @keyframes bounce {
   0% {
     transform: translateY(0);
   }
+
   100% {
     transform: translateY(-8px);
   }
 }
+
 .user-name {
   font-size: 1.125rem;
   font-weight: bold;
   margin-top: 0.25rem;
   color: #3730a3;
 }
+
 .user-date {
   font-size: 0.95rem;
   color: #6366f1;
 }
+
 .user-quote {
   font-style: italic;
   color: #818cf8;
@@ -166,14 +176,17 @@ function isActive(tab: string) {
   margin-top: 0.25rem;
   animation: pulse 2s infinite alternate;
 }
+
 @keyframes pulse {
   0% {
     opacity: 0.7;
   }
+
   100% {
     opacity: 1;
   }
 }
+
 .tab-list {
   flex: 1 1 0;
   display: flex;
@@ -181,6 +194,7 @@ function isActive(tab: string) {
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
+
 .tab-link {
   display: flex;
   align-items: center;
@@ -194,16 +208,19 @@ function isActive(tab: string) {
   transition: all 0.15s;
   box-shadow: none;
 }
+
 .tab-link--active {
   background: #6366f1;
   color: #fff;
   box-shadow: 0 2px 8px 0 rgba(99, 102, 241, 0.12);
   transform: scale(1.04);
 }
+
 .tab-link:not(.tab-link--active):hover {
   background: #a5b4fc;
   color: #3730a3;
 }
+
 .tab-icon {
   width: 1.25rem;
   height: 1.25rem;
@@ -211,6 +228,7 @@ function isActive(tab: string) {
   align-items: center;
   justify-content: center;
 }
+
 .sidebar-footer {
   margin-top: auto;
   font-size: 1.1rem;
@@ -225,6 +243,7 @@ function isActive(tab: string) {
   text-decoration-thickness: 3px;
   letter-spacing: 1px;
 }
+
 .admin-main {
   flex: 1 1 0;
   min-height: 0;
