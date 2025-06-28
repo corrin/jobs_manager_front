@@ -55,7 +55,7 @@ async function loadErrors() {
   loading.value = true
   const res = await fetchErrors(activeTab.value, page.value, searchTerm.value, dateRange.value)
   errors.value = res.results
-  totalPages.value = Math.ceil(res.totalRecords / 50)
+  totalPages.value = Math.ceil(res.totalCount / 50)
   loading.value = false
 }
 
