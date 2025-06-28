@@ -14,7 +14,7 @@
           :errors="errors"
           :loading="loading"
           :page="page"
-          :total-count="totalPages"
+          :page-count="pageCount"
           @rowClick="openErrorDialog"
           @update:page="page = $event"
         />
@@ -47,7 +47,7 @@ const { fetchErrors, error: fetchError } = useErrorApi()
 const errors = ref<ErrorRecord[]>([])
 const loading = ref(false)
 const page = ref(1)
-const totalPages = ref(1)
+const pageCount = ref(1)
 const searchTerm = ref('')
 const dateRange = ref<DateRange>({ start: null, end: null })
 const activeTab = ref<'xero' | 'system'>('xero')
@@ -57,7 +57,7 @@ async function loadErrors() {
   loading.value = true
   const res = await fetchErrors(activeTab.value, page.value, searchTerm.value, dateRange.value)
   errors.value = res.results
-  totalPages.value = Math.ceil(res.totalCount / 50)
+  pageCount.value = res.pageCount
   loading.value = false
 }
 

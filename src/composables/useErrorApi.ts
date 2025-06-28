@@ -23,10 +23,11 @@ export function useErrorApi() {
     page: number,
     search: string,
     range: DateRange,
-  ): Promise<{ results: ErrorRecord[]; totalCount: number }> {
+  ): Promise<{ results: ErrorRecord[]; pageCount: number }> {
     error.value = null
     try {
-      const params: Record<string, unknown> = { page, search }
+      const params: Record<string, unknown> = { page }
+      if (search.trim()) params.search = search.trim()
       if (range.start) params.start = range.start
       if (range.end) params.end = range.end
       const base = import.meta.env.VITE_API_BASE_URL || ''
@@ -34,12 +35,12 @@ export function useErrorApi() {
       const res = await axios.get(`${base}${path}`, { params })
       return {
         results: res.data.results,
-        totalCount: res.data.count,
+        pageCount: Math.ceil(res.data.count / 50),
       }
     } catch (e: unknown) {
       if (e instanceof Error) error.value = e.message
       else error.value = 'Failed to fetch errors.'
-      return { results: [], totalCount: 0 }
+      return { results: [], pageCount: 0 }
     }
   }
 

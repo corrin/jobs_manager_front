@@ -7,7 +7,9 @@ import { computed } from 'vue'
 const props = defineProps<{ page: number; total: number }>()
 const emit = defineEmits(['update:page'])
 
-const pages = computed(() => Array.from({ length: props.total }, (_, i) => i + 1))
+const pages = computed(() =>
+  props.total < 1 ? [1] : Array.from({ length: props.total }, (_, i) => i + 1),
+)
 function select(p: number) {
   if (p !== props.page) emit('update:page', p)
 }
@@ -21,7 +23,7 @@ function next() {
 
 <template>
   <div class="flex items-center justify-center gap-1 py-2">
-    <Button variant="ghost" size="sm" @click="prev" :disabled="props.page <= 1">
+    <Button variant="ghost" size="sm" @click="prev" :disabled="props.page <= 1 || props.total < 2">
       <ChevronLeft class="w-4 h-4" />
     </Button>
     <Button
@@ -34,7 +36,12 @@ function next() {
     >
       {{ p }}
     </Button>
-    <Button variant="ghost" size="sm" @click="next" :disabled="props.page >= props.total">
+    <Button
+      variant="ghost"
+      size="sm"
+      @click="next"
+      :disabled="props.page >= props.total || props.total < 2"
+    >
       <ChevronRight class="w-4 h-4" />
     </Button>
   </div>

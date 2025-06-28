@@ -21,7 +21,7 @@ const props = defineProps<{
   errors: ErrorRecord[]
   loading: boolean
   page: number
-  totalCount: number
+  pageCount: number
 }>()
 const emit = defineEmits(['rowClick', 'update:page'])
 
@@ -66,7 +66,7 @@ function onRowClick(id: string) {
     <Pagination
       class="mt-2"
       :page="props.page"
-      :total="props.totalCount"
+      :total="props.pageCount"
       @update:page="emit('update:page', $event)"
     />
   </div>
