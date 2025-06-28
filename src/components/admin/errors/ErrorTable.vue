@@ -25,8 +25,8 @@ const props = defineProps<{
 }>()
 const emit = defineEmits(['rowClick', 'update:page'])
 
-function onRowClick(id: string) {
-  emit('rowClick', id)
+function onRowClick(record: ErrorRecord) {
+  emit('rowClick', record)
 }
 </script>
 
@@ -50,7 +50,7 @@ function onRowClick(id: string) {
             v-for="err in props.errors"
             :key="err.id"
             class="cursor-pointer hover:bg-accent"
-            @click="onRowClick(err.id)"
+            @click="onRowClick(err)"
           >
             <TableCell>{{ new Date(err.timestamp).toLocaleString() }}</TableCell>
             <TableCell>{{ err.message }}</TableCell>
