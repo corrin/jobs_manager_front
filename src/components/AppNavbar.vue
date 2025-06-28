@@ -93,30 +93,36 @@
               v-if="activeDropdown === 'purchases'"
               class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
             >
-              <a
-                href="#"
+              <RouterLink
+                to="/purchasing/po"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
               >
                 <FileText class="w-4 h-4 mr-2" /> Purchase Orders
-              </a>
-              <a
-                href="#"
+              </RouterLink>
+              <RouterLink
+                to="/purchasing/receipts"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
               >
                 <Package class="w-4 h-4 mr-2" /> Delivery Receipts
-              </a>
-              <a
-                href="#"
+              </RouterLink>
+              <RouterLink
+                to="/purchasing/stock"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
               >
                 <Box class="w-4 h-4 mr-2" /> Use Stock
-              </a>
-              <a
-                href="#"
+              </RouterLink>
+              <RouterLink
+                to="/purchasing/pricing"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
               >
                 <UploadCloud class="w-4 h-4 mr-2" /> Upload Supplier Pricing
-              </a>
+              </RouterLink>
+              <RouterLink
+                to="/purchasing/mappings"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <FileText class="w-4 h-4 mr-2" /> Product Mappings
+              </RouterLink>
             </div>
           </Transition>
         </div>
@@ -312,29 +318,35 @@
                 >
                   <div v-if="mobileSections.purchases" class="overflow-hidden">
                     <div class="px-3 pb-2 space-y-1">
-                      <a
-                        href="#"
+                      <RouterLink
+                        to="/purchasing/po"
                         class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Purchase Orders</a
+                        >Purchase Orders</RouterLink
                       >
-                      <a
-                        href="#"
+                      <RouterLink
+                        to="/purchasing/receipts"
                         class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Delivery Receipts</a
+                        >Delivery Receipts</RouterLink
                       >
-                      <a
-                        href="#"
+                      <RouterLink
+                        to="/purchasing/stock"
                         class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Use Stock</a
+                        >Use Stock</RouterLink
                       >
-                      <a
-                        href="#"
+                      <RouterLink
+                        to="/purchasing/pricing"
                         class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Upload Supplier Pricing</a
+                        >Upload Supplier Pricing</RouterLink
+                      >
+                      <RouterLink
+                        to="/purchasing/mappings"
+                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                        >Product Mappings</RouterLink
                       >
                     </div>
                   </div>

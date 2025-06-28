@@ -175,6 +175,48 @@ const router = createRouter({
         title: 'Xero Sync - Jobs Manager',
       },
     },
+    {
+      path: '/purchasing/po',
+      name: 'purchase-orders',
+      component: () => import('@/views/purchasing/PurchaseOrderView.vue'),
+      meta: { requiresAuth: true, title: 'Purchase Orders - Jobs Manager' },
+    },
+    {
+      path: '/purchasing/po/:id',
+      name: 'purchase-order-form',
+      component: () => import('@/views/purchasing/PurchaseOrderFormView.vue'),
+      meta: { requiresAuth: true, title: 'Purchase Order - Jobs Manager' },
+    },
+    {
+      path: '/purchasing/stock',
+      name: 'stock',
+      component: () => import('@/views/purchasing/StockView.vue'),
+      meta: { requiresAuth: true, title: 'Stock - Jobs Manager' },
+    },
+    {
+      path: '/purchasing/receipts',
+      name: 'delivery-receipts',
+      component: () => import('@/views/purchasing/DeliveryReceiptListView.vue'),
+      meta: { requiresAuth: true, title: 'Delivery Receipts - Jobs Manager' },
+    },
+    {
+      path: '/purchasing/receipt/:poId',
+      name: 'delivery-receipt-form',
+      component: () => import('@/views/purchasing/DeliveryReceiptFormView.vue'),
+      meta: { requiresAuth: true, title: 'Delivery Receipt - Jobs Manager' },
+    },
+    {
+      path: '/purchasing/mappings',
+      name: 'product-mappings',
+      component: () => import('@/views/purchasing/ProductMappingValidationView.vue'),
+      meta: { requiresAuth: true, title: 'Product Mappings - Jobs Manager' },
+    },
+    {
+      path: '/purchasing/pricing',
+      name: 'supplier-pricing',
+      component: () => import('@/views/purchasing/SupplierPricingUploadView.vue'),
+      meta: { requiresAuth: true, title: 'Supplier Pricing - Jobs Manager' },
+    },
   ],
 })
 
