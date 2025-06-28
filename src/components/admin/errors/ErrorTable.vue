@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Pagination } from '@/components/ui/pagination'
 
 interface ErrorRecord {
   id: string
@@ -60,5 +61,11 @@ function onRowClick(id: string) {
         </TableRow>
       </TableBody>
     </Table>
+    <Pagination
+      class="mt-2"
+      :page="props.page"
+      :total="props.total"
+      @update:page="emit('update:page', $event)"
+    />
   </div>
 </template>

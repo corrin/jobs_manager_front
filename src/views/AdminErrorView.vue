@@ -15,8 +15,8 @@
           :page="page"
           :total="totalPages"
           @rowClick="openErrorDialog"
+          @update:page="page = $event"
         />
-        <Pagination class="mt-2" :page="page" :total="totalPages" @update:page="page = $event" />
       </div>
       <div v-else>To be implemented.</div>
       <ErrorDialog :error="selectedError" @close="closeErrorDialog" />
@@ -28,7 +28,6 @@
 <script setup lang="ts">
 import AppLayout from '@/components/AppLayout.vue'
 import Progress from '@/components/ui/progress/Progress.vue'
-import { Pagination } from '@/components/ui/pagination'
 import ErrorTabs from '@/components/admin/errors/ErrorTabs.vue'
 import ErrorFilter from '@/components/admin/errors/ErrorFilter.vue'
 import ErrorTable from '@/components/admin/errors/ErrorTable.vue'
