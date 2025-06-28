@@ -27,5 +27,14 @@ export const useStockStore = defineStore('stock', () => {
     await api.post(`/purchasing/rest/stock/${id}/consume/`, payload)
   }
 
-  return { items, loading, fetchStock, consumeStock }
+  async function create(payload: unknown) {
+    const res = await api.post('/purchasing/rest/stock/', payload)
+    return res.data
+  }
+
+  async function deactivate(id: string) {
+    await api.delete(`/purchasing/rest/stock/${id}/`)
+  }
+
+  return { items, loading, fetchStock, consumeStock, create, deactivate }
 })

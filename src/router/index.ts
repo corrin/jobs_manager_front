@@ -233,16 +233,10 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.requiresAuth) {
-    if (!authStore.isAuthenticated) {
-      const wasAuthenticated = await authStore.initializeAuth()
-
-      if (!authStore.isAuthenticated && !wasAuthenticated) {
-        next({
-          name: 'login',
-          query: { redirect: to.fullPath },
-        })
-        return
-      }
+    const ok = await authStore.userIsLogged()
+    if (!ok) {
+      next({ name: 'login', query: { redirect: to.fullPath } })
+      return
     }
   }
 

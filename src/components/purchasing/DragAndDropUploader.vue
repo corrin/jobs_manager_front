@@ -10,7 +10,14 @@
         <span class="font-medium text-indigo-600">Click to upload</span> or drag and drop
       </p>
     </slot>
-    <input ref="input" type="file" class="hidden" multiple @change="handleFiles" />
+    <input
+      ref="input"
+      type="file"
+      class="hidden"
+      multiple
+      accept="application/pdf,image/*"
+      @change="handleFiles"
+    />
   </div>
 </template>
 <script setup lang="ts">

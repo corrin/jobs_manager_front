@@ -9,14 +9,17 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { computed } from 'vue'
 
 const props = defineProps<{
   columns: ColumnDef<TData>[]
   data: TData[]
+  pageSize?: number
 }>()
 
-const emit = defineEmits<{ add: [] }>()
+const emit = defineEmits<{ add: []; rowClick: [TData] }>()
 
 const table = useVueTable({
   get data() {
@@ -46,9 +49,28 @@ const colCount = computed(() => props.columns.length)
       </TableHeader>
       <TableBody>
         <template v-if="table.getRowModel().rows.length">
-          <TableRow v-for="row in table.getRowModel().rows" :key="row.id">
+          <TableRow
+            v-for="row in table.getRowModel().rows"
+            :key="row.id"
+            class="hover:bg-slate-50 cursor-pointer"
+            @click="emit('rowClick', row.original)"
+          >
             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-              <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+              <template v-if="cell.column.columnDef.meta?.editable === false">
+                {{ cell.getValue() }}
+              </template>
+              <template v-else-if="typeof cell.getValue() === 'boolean'">
+                <Checkbox
+                  :model-value="(row.original as any)[cell.column.id]"
+                  @update:model-value="(v) => ((row.original as any)[cell.column.id] = v)"
+                />
+              </template>
+              <template v-else>
+                <Input
+                  :model-value="(row.original as any)[cell.column.id]"
+                  @update:model-value="(v) => ((row.original as any)[cell.column.id] = v)"
+                />
+              </template>
             </TableCell>
           </TableRow>
         </template>

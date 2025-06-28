@@ -10,7 +10,7 @@
           </div>
         </CardHeader>
         <CardContent>
-          <DataTable :columns="columns" :data="items" @add="openAdd" />
+          <DataTable :columns="columns" :data="items" @add="openAdd" @row-click="openUse" />
         </CardContent>
       </Card>
     </div>
@@ -68,7 +68,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Box } from 'lucide-vue-next'
 import { useStockStore } from '@/stores/stockStore'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, h } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import { toast } from 'vue-sonner'
 
@@ -79,11 +79,26 @@ const columns: ColumnDef<(typeof items.value)[0]>[] = [
   { accessorKey: 'description', header: 'Description' },
   { accessorKey: 'quantity', header: 'Qty' },
   { accessorKey: 'unit_cost', header: 'Cost' },
+  {
+    id: 'actions',
+    header: '',
+    cell: ({ row }) =>
+      h(
+        Button,
+        {
+          variant: 'destructive',
+          size: 'sm',
+          onClick: () => openDelete(row.original.id),
+        },
+        () => 'Delete',
+      ),
+  },
 ]
 
 const showUse = ref(false)
 const showAdd = ref(false)
 const showDelete = ref(false)
+const activeId = ref<string>('')
 
 const jobId = ref('')
 const qty = ref(1)
@@ -93,17 +108,44 @@ const cost = ref(0)
 function openAdd() {
   showAdd.value = true
 }
-function submitUse() {
-  showUse.value = false
+function openUse(item: (typeof items.value)[0]) {
+  activeId.value = item.id
+  showUse.value = true
+}
+
+async function submitUse() {
+  await store.consumeStock(activeId.value, { job_id: jobId.value, quantity: qty.value })
   toast.success('Stock used')
+  showUse.value = false
+  store.fetchStock()
 }
-function submitAdd() {
-  showAdd.value = false
+
+async function submitAdd() {
+  await store.create({
+    description: desc.value,
+    quantity: qty.value,
+    unit_cost: cost.value,
+    metal_type: '',
+    alloy: '',
+    specifics: '',
+    location: '',
+    source: 'manual',
+  })
   toast.success('Stock added')
+  showAdd.value = false
+  store.fetchStock()
 }
-function submitDelete() {
-  showDelete.value = false
+
+function openDelete(id: string) {
+  activeId.value = id
+  showDelete.value = true
+}
+
+async function submitDelete() {
+  await store.deactivate(activeId.value)
   toast.success('Stock deleted')
+  showDelete.value = false
+  store.fetchStock()
 }
 
 onMounted(() => store.fetchStock())

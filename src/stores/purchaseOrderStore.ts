@@ -28,5 +28,15 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     return res.data
   }
 
-  return { orders, loading, fetchOrders, createOrder }
+  async function fetchOne(id: string) {
+    const res = await api.get(`/purchasing/rest/purchase-orders/${id}/`)
+    return res.data
+  }
+
+  async function patch(id: string, data: unknown) {
+    const res = await api.patch(`/purchasing/rest/purchase-orders/${id}/`, data)
+    return res.data
+  }
+
+  return { orders, loading, fetchOrders, createOrder, fetchOne, patch }
 })

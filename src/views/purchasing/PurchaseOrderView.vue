@@ -9,7 +9,7 @@
           </div>
         </CardHeader>
         <CardContent>
-          <DataTable :columns="columns" :data="orders" @add="createNew" />
+          <DataTable :columns="columns" :data="orders" @add="createNew" @row-click="openRow" />
         </CardContent>
       </Card>
     </div>
@@ -22,8 +22,10 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { FileText } from 'lucide-vue-next'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import type { ColumnDef } from '@tanstack/vue-table'
 
+const router = useRouter()
 const store = usePurchaseOrderStore()
 const orders = store.orders
 
@@ -42,8 +44,13 @@ const columns: ColumnDef<(typeof orders.value)[0]>[] = [
   },
 ]
 
-function createNew() {
-  /* placeholder */
+async function createNew() {
+  const res = await store.createOrder({})
+  if (res?.id) router.push(`/purchasing/po/${res.id}`)
+}
+
+function openRow(row: (typeof orders.value)[0]) {
+  router.push(`/purchasing/po/${row.id}`)
 }
 
 onMounted(() => {
