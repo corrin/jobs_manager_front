@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 export interface ErrorRecord {
   id: string
-  created: string
+  timestamp: string
   message: string
   entity?: string
   severity?: string
@@ -23,18 +23,23 @@ export function useErrorApi() {
     page: number,
     search: string,
     range: DateRange,
-  ): Promise<{ results: ErrorRecord[]; total: number }> {
+  ): Promise<{ results: ErrorRecord[]; totalRecords: number }> {
     error.value = null
     try {
       const params: Record<string, unknown> = { page, search }
       if (range.start) params.start = range.start
       if (range.end) params.end = range.end
-      const res = await axios.get(`/api/errors/${type}/`, { params })
-      return res.data
+      const base = import.meta.env.VITE_API_BASE_URL || ''
+      const path = type === 'xero' ? '/xero-errors/' : '/system-errors/'
+      const res = await axios.get(`${base}${path}`, { params })
+      return {
+        results: res.data.results,
+        totalRecords: res.data.totalRecords,
+      }
     } catch (e: unknown) {
       if (e instanceof Error) error.value = e.message
       else error.value = 'Failed to fetch errors.'
-      return { results: [], total: 0 }
+      return { results: [], totalRecords: 0 }
     }
   }
 

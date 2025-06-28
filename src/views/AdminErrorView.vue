@@ -13,7 +13,7 @@
           :errors="errors"
           :loading="loading"
           :page="page"
-          :total="totalPages"
+          :total-pages="totalPages"
           @rowClick="openErrorDialog"
           @update:page="page = $event"
         />
@@ -55,7 +55,7 @@ async function loadErrors() {
   loading.value = true
   const res = await fetchErrors(activeTab.value, page.value, searchTerm.value, dateRange.value)
   errors.value = res.results
-  totalPages.value = res.total
+  totalPages.value = Math.ceil(res.totalRecords / 50)
   loading.value = false
 }
 

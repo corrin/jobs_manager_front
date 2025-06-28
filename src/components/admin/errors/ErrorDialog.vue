@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 
 interface ErrorRecord {
   id: string
-  created: string
+  timestamp: string
   message: string
   entity?: string
   severity?: string
@@ -23,7 +23,7 @@ const emit = defineEmits(['close'])
       </DialogHeader>
       <div v-if="props.error" class="space-y-2">
         <div class="text-sm text-muted-foreground">
-          {{ new Date(props.error.created).toLocaleString() }}
+          {{ new Date(props.error.timestamp).toLocaleString() }}
         </div>
         <div class="font-medium">{{ props.error.message }}</div>
         <div class="text-sm">Entity: {{ props.error.entity || '-' }}</div>

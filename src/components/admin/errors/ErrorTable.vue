@@ -11,7 +11,7 @@ import { Pagination } from '@/components/ui/pagination'
 
 interface ErrorRecord {
   id: string
-  created: string
+  timestamp: string
   message: string
   entity?: string
   severity?: string
@@ -21,7 +21,7 @@ const props = defineProps<{
   errors: ErrorRecord[]
   loading: boolean
   page: number
-  total: number
+  totalPages: number
 }>()
 const emit = defineEmits(['rowClick', 'update:page'])
 
@@ -51,7 +51,7 @@ function onRowClick(id: string) {
           class="cursor-pointer hover:bg-accent"
           @click="onRowClick(err.id)"
         >
-          <TableCell>{{ new Date(err.created).toLocaleString() }}</TableCell>
+          <TableCell>{{ new Date(err.timestamp).toLocaleString() }}</TableCell>
           <TableCell>{{ err.message }}</TableCell>
           <TableCell>{{ err.entity || '-' }}</TableCell>
           <TableCell>{{ err.severity || 'error' }}</TableCell>
@@ -64,7 +64,7 @@ function onRowClick(id: string) {
     <Pagination
       class="mt-2"
       :page="props.page"
-      :total="props.total"
+      :total-pages="props.totalPages"
       @update:page="emit('update:page', $event)"
     />
   </div>
