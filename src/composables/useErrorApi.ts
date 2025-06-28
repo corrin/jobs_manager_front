@@ -30,7 +30,8 @@ export function useErrorApi() {
       if (range.start) params.start = range.start
       if (range.end) params.end = range.end
       const base = import.meta.env.VITE_API_BASE_URL || ''
-      const res = await axios.get(`${base}/xero-errors/`, { params })
+      const path = type === 'xero' ? '/xero-errors/' : '/system-errors/'
+      const res = await axios.get(`${base}${path}`, { params })
       return {
         results: res.data.results,
         totalCount: res.data.count,

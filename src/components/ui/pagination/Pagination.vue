@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { computed } from 'vue'
 
-const props = defineProps<{ page: number; totalPages: number }>()
+const props = defineProps<{ page: number; total: number }>()
 const emit = defineEmits(['update:page'])
 
-const pages = computed(() => Array.from({ length: props.totalPages }, (_, i) => i + 1))
+const pages = computed(() => Array.from({ length: props.total }, (_, i) => i + 1))
 function select(p: number) {
   if (p !== props.page) emit('update:page', p)
 }
@@ -15,7 +15,7 @@ function prev() {
   if (props.page > 1) emit('update:page', props.page - 1)
 }
 function next() {
-  if (props.page < props.totalPages) emit('update:page', props.page + 1)
+  if (props.page < props.total) emit('update:page', props.page + 1)
 }
 </script>
 
@@ -34,7 +34,7 @@ function next() {
     >
       {{ p }}
     </Button>
-    <Button variant="ghost" size="sm" @click="next" :disabled="props.page >= props.totalPages">
+    <Button variant="ghost" size="sm" @click="next" :disabled="props.page >= props.total">
       <ChevronRight class="w-4 h-4" />
     </Button>
   </div>

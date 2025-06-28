@@ -2,6 +2,7 @@
   <AppLayout>
     <div class="p-4 relative space-y-4">
       <ErrorTabs v-model="activeTab" />
+      <Alert v-if="fetchError" variant="destructive">{{ fetchError }}</Alert>
       <ErrorFilter
         :search="searchTerm"
         :range="dateRange"
@@ -13,7 +14,7 @@
           :errors="errors"
           :loading="loading"
           :page="page"
-          :total-pages="totalPages"
+          :total-count="totalPages"
           @rowClick="openErrorDialog"
           @update:page="page = $event"
         />
@@ -28,11 +29,12 @@
 <script setup lang="ts">
 import AppLayout from '@/components/AppLayout.vue'
 import Progress from '@/components/ui/progress/Progress.vue'
+import { Alert } from '@/components/ui/alert'
 import ErrorTabs from '@/components/admin/errors/ErrorTabs.vue'
 import ErrorFilter from '@/components/admin/errors/ErrorFilter.vue'
 import ErrorTable from '@/components/admin/errors/ErrorTable.vue'
 import ErrorDialog from '@/components/admin/errors/ErrorDialog.vue'
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useErrorApi, type ErrorRecord } from '@/composables/useErrorApi'
 
 interface DateRange {
@@ -40,7 +42,7 @@ interface DateRange {
   end: string | null
 }
 
-const { fetchErrors } = useErrorApi()
+const { fetchErrors, error: fetchError } = useErrorApi()
 
 const errors = ref<ErrorRecord[]>([])
 const loading = ref(false)
@@ -68,7 +70,7 @@ function closeErrorDialog() {
 
 watch([page, searchTerm, dateRange, activeTab], loadErrors, { deep: true })
 
-loadErrors()
+onMounted(() => loadErrors())
 </script>
 
 <style scoped></style>
