@@ -150,6 +150,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'errors',
+          name: 'admin-errors',
+          component: () => import('@/views/AdminErrorView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresSuperUser: true,
+            title: 'Errors - Jobs Manager',
+          },
+        },
+        {
           path: '',
           redirect: { name: 'admin-staff' },
         },
