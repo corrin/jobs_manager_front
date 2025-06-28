@@ -201,6 +201,12 @@
               >
                 <CalendarClock class="w-4 h-4 mr-2" /> Month-End
               </router-link>
+              <router-link
+                to="/admin/errors"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <X class="w-4 h-4 mr-2" /> App Errors
+              </router-link>
             </div>
           </Transition>
         </div>

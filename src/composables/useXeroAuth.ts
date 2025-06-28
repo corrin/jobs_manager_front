@@ -175,6 +175,11 @@ export function useXeroAuth() {
     }
   }
 
+  function inferEntityFromMsg(msg: string): string {
+    const match = msg.match(/for (\w+)\s/i)
+    return match ? match[1] : 'Unknown'
+  }
+
   function startSSE(_event?: unknown, closeOnly = false) {
     if (eventSource.value) {
       eventSource.value.close()
@@ -193,30 +198,41 @@ export function useXeroAuth() {
     const sseUrl = `${getApiBaseUrl()}/api/xero/sync-stream/`
     eventSource.value = new EventSource(sseUrl, { withCredentials: true })
     eventSource.value.onmessage = (event: MessageEvent) => {
-      const data = JSON.parse(event.data)
+      type SseEvt = {
+        datetime: string
+        message: string
+        severity?: 'info' | 'warning' | 'error'
+        entity?: string | null
+        progress?: number | null
+        records_updated?: number | null
+        status?: string | null
+        overall_progress?: number
+        entity_progress?: number
+        sync_status?: 'success' | 'error' | 'running'
+        error_messages?: string[]
+        missing_fields?: string[]
+      }
+      const data = JSON.parse(event.data) as SseEvt
       if (!data) return
       log.value.push({
-        datetime: data.datetime || new Date().toISOString(),
-        message: data.message || '',
-        severity: data.severity || 'info',
-        entity: data.entity,
-        progress: data.progress,
-        recordsUpdated: data.recordsUpdated,
-        status: data.status,
+        datetime: data.datetime,
+        message: data.message,
+        severity: data.severity ?? 'info',
+        entity: data.entity ?? inferEntityFromMsg(data.message),
+        progress: data.entity_progress, // sempre presente
+        recordsUpdated: data.records_updated ?? undefined,
+        status: data.status ?? undefined,
       })
       if (data.severity === 'error') {
-        const entity = data.entity || 'Unknown'
-        const missingFields: string[] = data.data?.missing_fields || []
-
+        const entity = data.entity ?? inferEntityFromMsg(data.message)
+        const missingFields = data.missing_fields ?? []
         if (entityStats[entity]) {
           entityStats[entity].status = 'Error'
         }
-
         toast.error(
           `${formatEntityName(entity)}: ${data.message}` +
             (missingFields.length ? ` (missing: ${missingFields.join(', ')})` : ''),
         )
-
         console.error('[Xero SSE Error]', {
           entity,
           message: data.message,
@@ -224,9 +240,9 @@ export function useXeroAuth() {
           raw: data,
         })
       }
-      if (typeof data.syncStatus === 'string') {
-        syncStatus.value = data.syncStatus
-        syncErrorMessages.value = Array.isArray(data.errorMessages) ? data.errorMessages : []
+      if (data.sync_status) {
+        syncStatus.value = data.sync_status
+        syncErrorMessages.value = data.error_messages ?? []
         if (data.message === 'Sync stream ended') {
           syncing.value = false
           eventSource.value?.close()
@@ -239,8 +255,8 @@ export function useXeroAuth() {
       } else if (data.message === 'Sync stream ended') {
         return
       }
-      if (typeof data.overallProgress === 'number') {
-        overallProgress.value = data.overallProgress
+      if (typeof data.overall_progress === 'number') {
+        overallProgress.value = data.overall_progress
       }
       if (data.entity && data.entity !== 'sync') {
         if (!entities.value.includes(data.entity)) {
@@ -252,12 +268,12 @@ export function useXeroAuth() {
           }
         }
         currentEntity.value = data.entity
-        if (typeof data.progress === 'number') {
-          entityProgress.value = data.progress
+        if (typeof data.entity_progress === 'number') {
+          entityProgress.value = data.entity_progress
           entityStats[data.entity].status = data.status || 'In Progress'
         }
-        if (typeof data.recordsUpdated === 'number') {
-          entityStats[data.entity].recordsUpdated = data.recordsUpdated
+        if (typeof data.records_updated === 'number') {
+          entityStats[data.entity].recordsUpdated = data.records_updated
         }
         if (data.status === 'Completed' || data.message?.includes('Completed sync of')) {
           entityStats[data.entity].status = 'Completed'

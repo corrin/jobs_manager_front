@@ -166,11 +166,9 @@ export function useTimesheetEntryGrid(
       filter: false,
       resizable: false,
       onCellClicked: (params: CellClickedEvent) => {
-        console.log('[TimesheetGrid] Delete cell clicked:', params)
         const rowId = params.data?.id
         if (!rowId) return
         const rowIndex = gridData.value.findIndex((row) => String(row.id) === String(rowId))
-        console.log('[TimesheetGrid] Found rowIndex for delete:', rowIndex)
         if (rowIndex === -1) return
         deleteRow(rowIndex)
       },
@@ -190,12 +188,6 @@ export function useTimesheetEntryGrid(
     headerHeight: 44,
     animateRows: true,
     onCellValueChanged: (event: CellValueChangedEvent) => {
-      console.log('Cell value changed:', {
-        field: event.colDef.field,
-        newValue: event.newValue,
-        oldValue: event.oldValue,
-        data: event.data,
-      })
       handleCellValueChanged(event)
     },
     onRowDoubleClicked: handleRowDoubleClicked,
@@ -210,24 +202,22 @@ export function useTimesheetEntryGrid(
     },
   }))
 
+  async function handleCellClicked(event: CellClickedEvent): Promise<void> {
+    const rowIndex = event.node.rowIndex
+    const colKey = event.colDef.field
+    if (colKey && event.colDef.editable && typeof rowIndex === 'number' && rowIndex >= 0) {
+      event.api.startEditingCell({ rowIndex, colKey })
+      event.api.setFocusedCell(rowIndex, colKey)
+    }
+  }
+
   function handleJobSelection(
     rowData: TimesheetEntryGridRow & { rowIndex: number },
     job: TimesheetEntryJobSelectionItem,
   ): void {
-    console.log('Handling job selection:', {
-      job: job,
-      rowData: rowData,
-    })
-
     const entry = createEntryFromRowData(rowData)
-    console.log('Entry before populate:', entry)
-
     const populated = calculations.populateJobFields(entry, job)
-    console.log('Entry after populate:', populated)
-
     const recalculated = calculations.recalculateEntry(populated)
-    console.log('Entry after recalculate:', recalculated)
-
     updateRowData(rowData.rowIndex, recalculated)
   }
 
@@ -290,63 +280,30 @@ export function useTimesheetEntryGrid(
 
   function handleRowDoubleClicked(event: RowDoubleClickedEvent): void {
     if (event.rowIndex === null) return
-    const colId = 'description'
+    const editableCol = columnDefs.value.find(
+      (col) => col.editable && typeof col.field === 'string',
+    )
+    if (!editableCol || typeof editableCol.field !== 'string') return
     event.api.startEditingCell({
       rowIndex: event.rowIndex,
-      colKey: colId,
+      colKey: editableCol.field,
     })
-  }
-
-  function handleCellClicked(event: CellClickedEvent): Promise<void> {
-    console.log('[TimesheetGrid] handleCellClicked called. Event:', event)
-    if (event.event) {
-      console.log('[TimesheetGrid] event.event type:', event.event.type)
-      if (event.event.target) {
-        console.log('[TimesheetGrid] event.event.target:', event.event.target)
-        if (event.event.target instanceof HTMLElement) {
-          console.log('[TimesheetGrid] event.event.target.classList:', event.event.target.classList)
-          if (event.event.target.classList.contains('delete-row-btn')) {
-            const rowId = event.event.target.getAttribute('data-id')
-            console.log('[TimesheetGrid] Delete button clicked. data-id:', rowId)
-            if (!rowId) return Promise.resolve()
-            const rowIndex = gridData.value.findIndex((row) => String(row.id) === String(rowId))
-            console.log('[TimesheetGrid] Found rowIndex for delete:', rowIndex)
-            if (rowIndex === -1) return Promise.resolve()
-            return deleteRow(rowIndex)
-          }
-        }
-      }
-    }
-    return Promise.resolve()
   }
 
   function handleCellKeyDown(params: CellKeyDownEvent): void {
     const { event, api, node, column } = params
-
     if (!event || !(event instanceof KeyboardEvent) || !node.rowIndex !== null) {
       return
     }
-
-    console.log('Cell key down:', {
-      key: event.key,
-      shiftKey: event.shiftKey,
-      column: column.getColId(),
-      rowIndex: node.rowIndex,
-    })
-
     switch (event.key) {
       case 'Escape':
-        console.log('ESC pressed - stopping edit')
         if (!column.getColDef().editable) {
           return
         }
         api.stopEditing(true)
         break
-
       case 'Enter':
         if (event.shiftKey) {
-          console.log('Shift+Enter pressed - confirming edit or toggling billable')
-
           if (column.getColId() === 'billable') {
             event.preventDefault()
             node.data.billable = !node.data.billable
@@ -354,7 +311,6 @@ export function useTimesheetEntryGrid(
               rowNodes: [node],
               force: true,
             })
-
             const entry = createEntryFromRowData(node.data)
             const recalculated = calculations.recalculateEntry(entry)
             updateRowData(node.rowIndex!, recalculated)
@@ -362,7 +318,6 @@ export function useTimesheetEntryGrid(
           break
         }
         break
-
       default:
         break
     }
@@ -433,48 +388,35 @@ export function useTimesheetEntryGrid(
 
   async function deleteRow(rowIndex: number): Promise<void> {
     if (!gridApi.value) return
-    console.log('[TimesheetGrid] Attempting to delete row at index:', rowIndex)
     const [rowDataToRemove] = gridData.value.splice(rowIndex, 1)
-    console.log('[TimesheetGrid] Row data to remove:', rowDataToRemove)
     if (rowDataToRemove) {
       if (gridApi.value && !gridApi.value.isDestroyed()) {
         gridApi.value.applyTransaction({ remove: [rowDataToRemove] })
-        console.log('[TimesheetGrid] Row visually removed from grid.')
       }
     }
     if (rowDataToRemove && rowDataToRemove.isNewRow) {
-      console.log('[TimesheetGrid] Row is new, clearing row instead of backend delete.')
       clearRow(rowIndex)
-
       if (gridData.value.length === 0) {
         addNewRow()
-        console.log('[TimesheetGrid] Added new empty row after deleting last row.')
       }
       return
     }
     try {
       loading.value = true
       if (rowDataToRemove && rowDataToRemove.id) {
-        console.log('[TimesheetGrid] Calling onDeleteEntry for id:', rowDataToRemove.id)
         await onDeleteEntry(rowDataToRemove.id)
-        console.log('[TimesheetGrid] Backend delete successful for id:', rowDataToRemove.id)
       }
     } catch (error) {
-      console.error('[TimesheetGrid] Error deleting row, restoring row:', error)
       gridData.value.splice(rowIndex, 0, rowDataToRemove)
       if (gridApi.value && !gridApi.value.isDestroyed()) {
         gridApi.value.applyTransaction({ add: [rowDataToRemove] })
-        console.log('[TimesheetGrid] Row restored in grid after failed delete.')
       }
       throw error
     } finally {
       loading.value = false
-
       if (gridData.value.length === 0) {
         addNewRow()
-        console.log('[TimesheetGrid] Added new empty row after deleting last row.')
       }
-      console.log('[TimesheetGrid] Delete row process finished.')
     }
   }
 
@@ -514,29 +456,11 @@ export function useTimesheetEntryGrid(
     gridData.value.push(newRow)
     if (gridApi.value && !gridApi.value.isDestroyed()) {
       gridApi.value.applyTransaction({ add: [newRow] })
-      setTimeout(() => {
-        if (gridApi.value && !gridApi.value.isDestroyed()) {
-          const newRowIndex = gridData.value.length - 1
-          gridApi.value.setFocusedCell(newRowIndex, 'jobNumber')
-        }
-      }, 100)
     } else {
       nextTick(() => {
         if (gridApi.value && !gridApi.value.isDestroyed()) {
           gridApi.value.applyTransaction({ add: [newRow] })
         }
-      })
-    }
-  }
-
-  function focusFirstEditableCell(): void {
-    if (!gridApi.value) return
-    const newRowIndex = gridData.value.findIndex((row: TimesheetEntryGridRow) => row.isNewRow)
-    if (newRowIndex >= 0) {
-      gridApi.value.setFocusedCell(newRowIndex, 'jobNumber')
-      gridApi.value.startEditingCell({
-        rowIndex: newRowIndex,
-        colKey: 'jobNumber',
       })
     }
   }
@@ -552,7 +476,6 @@ export function useTimesheetEntryGrid(
     if (event.shiftKey && event.key === 'N') {
       event.preventDefault()
       addNewRow(staffId)
-      focusFirstEditableCell()
       return true
     }
     if (event.ctrlKey && event.key === 's') {
@@ -586,7 +509,6 @@ export function useTimesheetEntryGrid(
     setGridApi,
     loadData,
     addNewRow,
-    focusFirstEditableCell,
     getSelectedEntry,
     getGridData,
     handleKeyboardShortcut,

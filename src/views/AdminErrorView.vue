@@ -4,6 +4,7 @@
       <ErrorTabs v-model="activeTab" />
       <Alert v-if="fetchError" variant="destructive">{{ fetchError }}</Alert>
       <ErrorFilter
+        v-if="activeTab === 'xero'"
         :search="searchTerm"
         :range="dateRange"
         @update:search="searchTerm = $event"
@@ -19,7 +20,10 @@
           @update:page="page = $event"
         />
       </div>
-      <div v-else>To be implemented.</div>
+      <div v-else class="flex flex-col items-center justify-center min-h-[40vh]">
+        <div class="text-3xl font-bold text-center mb-6">To be implemented</div>
+        <AlertCircle class="w-24 h-24 text-black opacity-80" />
+      </div>
       <ErrorDialog :error="selectedError" @close="closeErrorDialog" />
       <Progress v-if="loading" class="absolute top-0 left-0 right-0" />
     </div>
@@ -29,6 +33,7 @@
 <script setup lang="ts">
 import AppLayout from '@/components/AppLayout.vue'
 import Progress from '@/components/ui/progress/Progress.vue'
+import { AlertCircle } from 'lucide-vue-next'
 import { Alert } from '@/components/ui/alert'
 import ErrorTabs from '@/components/admin/errors/ErrorTabs.vue'
 import ErrorFilter from '@/components/admin/errors/ErrorFilter.vue'
@@ -55,6 +60,13 @@ const selectedError = ref<ErrorRecord | null>(null)
 
 async function loadErrors() {
   loading.value = true
+  if (activeTab.value === 'system') {
+    // TODO: Implement system errors endpoint when available
+    errors.value = []
+    pageCount.value = 1
+    loading.value = false
+    return
+  }
   const res = await fetchErrors(activeTab.value, page.value, searchTerm.value, dateRange.value)
   errors.value = res.results
   pageCount.value = res.pageCount
@@ -68,6 +80,9 @@ function closeErrorDialog() {
   selectedError.value = null
 }
 
+watch([searchTerm, dateRange, activeTab], () => {
+  page.value = 1
+})
 watch([page, searchTerm, dateRange, activeTab], loadErrors, { deep: true })
 
 onMounted(() => loadErrors())

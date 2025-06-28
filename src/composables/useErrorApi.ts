@@ -28,8 +28,8 @@ export function useErrorApi() {
     try {
       const params: Record<string, unknown> = { page }
       if (search.trim()) params.search = search.trim()
-      if (range.start) params.start = range.start
-      if (range.end) params.end = range.end
+      if (range.start) params.date_from = range.start
+      if (range.end) params.date_to = range.end
       const base = import.meta.env.VITE_API_BASE_URL || ''
       const path = type === 'xero' ? '/xero-errors/' : '/system-errors/'
       const res = await axios.get(`${base}${path}`, { params })

@@ -21,7 +21,7 @@ const alertVariants = cva(
   },
 )
 
-interface Props extends VariantProps<typeof alertVariants> {
+interface Props extends /* @vue-ignore */ VariantProps<typeof alertVariants> {
   class?: HTMLAttributes['class']
 }
 

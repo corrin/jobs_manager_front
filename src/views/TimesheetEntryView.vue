@@ -333,7 +333,6 @@
                 @grid-ready="onGridReady"
                 @cell-value-changed="onCellValueChanged"
                 @first-data-rendered="onFirstDataRendered"
-                @cell-clicked="onCellClicked"
               />
             </div>
           </div>
@@ -436,7 +435,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
-import type { GridReadyEvent, CellValueChangedEvent, CellClickedEvent } from 'ag-grid-community'
+import type { GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community'
 import { v4 as uuidv4 } from 'uuid'
 
 import AppLayout from '@/components/AppLayout.vue'
@@ -801,6 +800,11 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
 
   gridHandleCellValueChanged(event)
 
+  // Marcar a entrada como modificada para qualquer alteração
+  if (event.data && typeof event.data === 'object') {
+    event.data.isModified = true
+  }
+
   hasUnsavedChanges.value = true
 }
 
@@ -814,12 +818,6 @@ function onCellValueChanged(event: CellValueChangedEvent) {
 
 function onFirstDataRendered() {
   setTimeout(() => agGridRef.value?.api?.sizeColumnsToFit(), 100)
-}
-
-function onCellClicked(event: CellClickedEvent) {
-  if (event.colDef.field === 'delete' && event.data && event.data.id) {
-    handleDeleteEntry(event.data.id)
-  }
 }
 
 const addNewEntry = () => {

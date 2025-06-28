@@ -131,6 +131,9 @@ import {
   Key,
   ArrowLeft,
   Clock,
+  Percent,
+  TrendingUp,
+  Folder,
 } from 'lucide-vue-next'
 import { ref, computed, watch } from 'vue'
 import { CalendarDateTime, parseDateTime } from '@internationalized/date'

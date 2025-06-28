@@ -87,18 +87,18 @@ const tabs = computed(() => [
     icon: CalendarClock,
   },
   {
-    name: 'DjangoJobs',
-    key: 'django-jobs',
-    label: 'Django Jobs',
-    route: 'admin-django-jobs',
-    icon: Bot,
-  },
-  {
     name: 'Errors',
     key: 'errors',
     label: 'Errors',
     route: 'admin-errors',
     icon: AlertTriangle,
+  },
+  {
+    name: 'DjangoJobs',
+    key: 'django-jobs',
+    label: 'Django Jobs',
+    route: 'admin-django-jobs',
+    icon: Bot,
   },
 ])
 
