@@ -2,6 +2,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { getApiBaseUrl } from '../plugins/axios'
+import { toast } from 'vue-sonner'
 
 export function useXeroAuth() {
   const router = useRouter()
@@ -204,12 +205,24 @@ export function useXeroAuth() {
         status: data.status,
       })
       if (data.severity === 'error') {
-        error.value = data.message
-        if (data.entity && entityStats[data.entity]) {
-          entityStats[data.entity].status = 'Error'
+        const entity = data.entity || 'Unknown'
+        const missingFields: string[] = data.data?.missing_fields || []
+
+        if (entityStats[entity]) {
+          entityStats[entity].status = 'Error'
         }
-        syncing.value = false
-        return
+
+        toast.error(
+          `${formatEntityName(entity)}: ${data.message}` +
+            (missingFields.length ? ` (missing: ${missingFields.join(', ')})` : ''),
+        )
+
+        console.error('[Xero SSE Error]', {
+          entity,
+          message: data.message,
+          missingFields,
+          raw: data,
+        })
       }
       if (typeof data.syncStatus === 'string') {
         syncStatus.value = data.syncStatus
