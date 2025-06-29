@@ -9,7 +9,13 @@
           </div>
         </CardHeader>
         <CardContent>
-          <DataTable :columns="columns" :data="orders" @add="createNew" @row-click="openRow" />
+          <DataTable
+            :columns="columns"
+            :data="orders"
+            @add="createNew"
+            @row-click="openRow"
+            class="overflow-y-auto max-h-[68vh]"
+          />
         </CardContent>
       </Card>
     </div>

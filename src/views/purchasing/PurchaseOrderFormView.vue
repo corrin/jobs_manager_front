@@ -13,7 +13,12 @@
             <Input v-model="reference" placeholder="Reference" />
             <Input v-model="supplier" placeholder="Supplier" />
           </div>
-          <DataTable :columns="columns" :data="lines" @add="addLine" />
+          <DataTable
+            :columns="columns"
+            :data="lines"
+            @add="addLine"
+            class="max-h-[55vh] overflow-y-auto"
+          />
         </CardContent>
         <CardFooter class="flex justify-end">
           <Button variant="secondary" @click="save">Save</Button>
@@ -29,13 +34,7 @@ import DataTable from '@/components/DataTable.vue'
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import ItemSelect from './ItemSelect.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { FileText } from 'lucide-vue-next'
 import { ref, h, onMounted } from 'vue'
@@ -64,36 +63,16 @@ const reference = ref('')
 const supplier = ref('')
 const lines = ref<Line[]>([])
 
-function itemSelectCell(row: { original: Line }) {
-  return h(
-    Select,
-    {
-      modelValue: row.original.item_code,
-      'onUpdate:modelValue': (val: string) => {
-        row.original.item_code = val
-        const found = itemStore.items.find((i) => i.code === val)
-        row.original.description = found ? found.name : ''
-      },
-      class: 'w-32',
-    },
-    {
-      default: () => [
-        h(SelectTrigger, null, {
-          default: () => h(SelectValue, { placeholder: 'Select' }),
-        }),
-        h(SelectContent, null, {
-          default: () => itemStore.items.map((i) => h(SelectItem, { value: i.code }, () => i.code)),
-        }),
-      ],
-    },
-  )
-}
-
 const columns: ColumnDef<Line>[] = [
   {
     accessorKey: 'item_code',
     header: 'Item',
-    cell: itemSelectCell,
+    cell: ({ row }) =>
+      h(ItemSelect, {
+        modelValue: row.original.item_code,
+        'onUpdate:modelValue': (v: string) => (row.original.item_code = v),
+        'onUpdate:description': (d: string) => (row.original.description = d),
+      }),
   },
   { accessorKey: 'description', header: 'Description', meta: { editable: false } },
   { accessorKey: 'quantity', header: 'Qty' },
@@ -124,14 +103,17 @@ const columns: ColumnDef<Line>[] = [
 ]
 
 function addLine() {
-  lines.value.push({ item_code: '', description: '', quantity: 1, unit_cost: 0, price_tbc: false })
+  lines.value = [
+    ...lines.value,
+    { item_code: '', description: '', quantity: 1, unit_cost: 0, price_tbc: false },
+  ]
 }
 
 async function load() {
   const data = await store.fetchOne(orderId)
   reference.value = data.reference || ''
   supplier.value = data.supplier || ''
-  lines.value = (data.lines as Line[]) || []
+  lines.value = (data.lines as Line[]).map((l) => ({ ...l, item_code: l.item_code ?? '' })) || []
 }
 
 async function save() {

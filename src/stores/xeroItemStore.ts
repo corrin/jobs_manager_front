@@ -17,6 +17,7 @@ export const useXeroItemStore = defineStore('xeroItems', () => {
     try {
       const res = await api.get('/purchasing/rest/xero-items/')
       items.value = Array.isArray(res.data) ? res.data : []
+      console.log('Xero items fetched:', items.value)
     } finally {
       loading.value = false
     }

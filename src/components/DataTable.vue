@@ -47,7 +47,7 @@ const colCount = computed(() => props.columns.length)
           </TableHead>
         </TableRow>
       </TableHeader>
-      <TableBody>
+      <TableBody class="overflow-y-auto">
         <template v-if="table.getRowModel().rows.length">
           <TableRow
             v-for="row in table.getRowModel().rows"
@@ -55,21 +55,31 @@ const colCount = computed(() => props.columns.length)
             class="hover:bg-slate-50 cursor-pointer"
             @click="emit('rowClick', row.original)"
           >
-            <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id">
-              <template v-if="cell.column.columnDef.meta?.editable === false">
-                {{ cell.getValue() }}
-              </template>
-              <template v-else-if="typeof cell.getValue() === 'boolean'">
-                <Checkbox
-                  :model-value="(row.original as any)[cell.column.id]"
-                  @update:model-value="(v) => ((row.original as any)[cell.column.id] = v)"
-                />
-              </template>
+            <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="p-1">
+              <!-- use the column renderer if it exists -->
+              <FlexRender
+                v-if="cell.column.columnDef.cell"
+                :render="cell.column.columnDef.cell"
+                :props="cell.getContext()"
+              />
+
+              <!-- simple fallback for columns without a renderer -->
               <template v-else>
-                <Input
-                  :model-value="(row.original as any)[cell.column.id]"
-                  @update:model-value="(v) => ((row.original as any)[cell.column.id] = v)"
-                />
+                <template v-if="cell.column.columnDef.meta?.editable === false">
+                  {{ cell.getValue() }}
+                </template>
+                <template v-else-if="typeof cell.getValue() === 'boolean'">
+                  <Checkbox
+                    :model-value="(row.original as any)[cell.column.id]"
+                    @update:model-value="(v) => ((row.original as any)[cell.column.id] = v)"
+                  />
+                </template>
+                <template v-else>
+                  <Input
+                    :model-value="(row.original as any)[cell.column.id]"
+                    @update:model-value="(v) => ((row.original as any)[cell.column.id] = v)"
+                  />
+                </template>
               </template>
             </TableCell>
           </TableRow>

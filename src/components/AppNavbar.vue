@@ -461,12 +461,6 @@ const mobileSections = ref({
 
 const { userInfo, handleLogout } = useAppLayout()
 
-console.log('[AppNavbar] userInfo:', userInfo.value)
-if (userInfo.value) {
-  console.log('[AppNavbar] userInfo keys:', Object.keys(userInfo.value))
-  console.log('[AppNavbar] is_staff:', userInfo.value.is_staff)
-}
-
 const toggleDropdown = (dropdown: string) => {
   activeDropdown.value = activeDropdown.value === dropdown ? null : dropdown
 }
