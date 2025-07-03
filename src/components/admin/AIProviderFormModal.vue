@@ -49,7 +49,7 @@
             <Input
               id="model_name"
               v-model="model_name"
-              placeholder="e.g., claude-3-5-sonnet-20240620"
+              placeholder="e.g., gemini-2.5-flash-lite-preview-06-17"
             />
             <p v-if="errors.model_name" class="text-red-500 text-sm mt-1">
               {{ errors.model_name }}
@@ -150,7 +150,7 @@ const { handleSubmit, defineField, errors, isSubmitting } = useForm<AIProvider>(
   initialValues: {
     id: props.provider?.id ?? null,
     name: props.provider?.name ?? '',
-    provider_type: props.provider?.provider_type ?? undefined,
+    provider_type: props.provider?.provider_type ?? 'Gemini',
     model_name: props.provider?.model_name ?? '',
     api_key: '', // Always start empty for security
     default: props.provider?.default ?? false,
