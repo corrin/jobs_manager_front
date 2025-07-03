@@ -160,6 +160,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'ai-providers',
+          name: 'admin-ai-providers',
+          component: () => import('@/views/AdminAIProvidersView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresSuperUser: true,
+            title: 'AI Providers - Jobs Manager',
+          },
+        },
+        {
           path: '',
           redirect: { name: 'admin-staff' },
         },

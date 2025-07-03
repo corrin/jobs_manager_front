@@ -150,27 +150,25 @@ const handleSendMessage = async () => {
 
     await saveMessage(userMessage, 'user')
 
-    const assistantMessage: VueChatMessage = {
-      _id: `assistant-${Date.now()}`,
-      content: 'Processing your request...',
-      senderId: 'assistant-1',
-      username: 'Quoting Assistant',
-      timestamp: new Date().toISOString(),
-      system: false,
+    // ---------------------------------------------------------------------
+    // Get real assistant response from backend/LLM
+    // ---------------------------------------------------------------------
+    if (!jobContext.value?.jobId) {
+      throw new Error('Missing job context')
     }
+
+    const backendAssistantMessage = await quoteChatService.getAssistantResponse(
+      jobContext.value.jobId,
+      messageContent,
+    )
+
+    const assistantMessage = quoteChatService.convertToVueMessage(backendAssistantMessage)
     messages.value.push(assistantMessage)
-
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    assistantMessage.content = `I understand you need: "${messageContent}". Let me analyze this and calculate pricing...\n\n**Next steps:**\n1. Parse material specifications\n2. Calculate quantities using 3 methods\n3. Get supplier pricing via MCP\n4. Generate quote table`
-
-    await saveMessage(assistantMessage, 'assistant')
   } catch (error) {
     console.error('Chat processing failed:', error)
     const lastMessage = messages.value[messages.value.length - 1]
     if (lastMessage && lastMessage.senderId === 'assistant-1') {
       lastMessage.content = 'Sorry, I had trouble processing that. Please try again.'
-      await saveMessage(lastMessage, 'assistant')
     }
   } finally {
     isLoading.value = false
