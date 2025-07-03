@@ -44,7 +44,15 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppLayout } from '@/composables/useAppLayout'
-import { Users, Building2, CalendarClock, Archive, Bot, AlertTriangle } from 'lucide-vue-next'
+import {
+  Users,
+  Building2,
+  CalendarClock,
+  Archive,
+  Bot,
+  AlertTriangle,
+  Brain /* icon for AI Providers */,
+} from 'lucide-vue-next'
 
 const { userInfo } = useAppLayout()
 const isStaff = computed(() => Boolean(userInfo.value?.is_staff))
@@ -99,6 +107,13 @@ const tabs = computed(() => [
     label: 'Django Jobs',
     route: 'admin-django-jobs',
     icon: Bot,
+  },
+  {
+    name: 'AIProviders',
+    key: 'ai-providers',
+    label: 'AI Providers',
+    route: 'admin-ai-providers',
+    icon: Brain,
   },
 ])
 
