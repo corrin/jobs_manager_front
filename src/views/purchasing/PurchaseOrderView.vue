@@ -28,12 +28,15 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { FileText } from 'lucide-vue-next'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import type { ColumnDef } from '@tanstack/vue-table'
 
 const router = useRouter()
 const store = usePurchaseOrderStore()
-const orders = store.orders
+
+// ensure reactivity with Pinia stores
+const { orders } = storeToRefs(store)
 
 const columns: ColumnDef<(typeof orders.value)[0]>[] = [
   {

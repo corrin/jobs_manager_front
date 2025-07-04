@@ -15,9 +15,20 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 
   async function fetchOrders() {
     loading.value = true
+    const url = '/purchasing/rest/purchase-orders/'
+
     try {
-      const res = await api.get('/purchasing/rest/purchase-orders/')
+      const res = await api.get(url)
       orders.value = Array.isArray(res.data) ? res.data : []
+    } catch (error) {
+      // -------------------------------------------------------------------
+      // Surface any error so the UI can react (e.g. toast) and ensure we
+      // keep a useful breadcrumb in the console for debugging.
+      // -------------------------------------------------------------------
+      console.error('[PO Store] fetchOrders: request failed', error)
+      // Optional: clear existing list on failure to avoid stale data
+      orders.value = []
+      throw error
     } finally {
       loading.value = false
     }
