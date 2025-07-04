@@ -5,7 +5,6 @@ import { useXeroAuth } from '../composables/useXeroAuth'
 
 export const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_BASE_URL) {
-    console.log('Using API base URL from environment:', import.meta.env.VITE_API_BASE_URL)
     return import.meta.env.VITE_API_BASE_URL
   }
 

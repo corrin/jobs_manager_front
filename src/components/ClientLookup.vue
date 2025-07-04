@@ -45,7 +45,7 @@
           >
             <div class="flex items-center">
               <Plus class="w-4 h-4 mr-2" />
-              Add new client "{{ searchQuery }}"
+              Add new {{ supplierLookup ? 'supplier' : 'client' }} "{{ searchQuery }}"
             </div>
           </div>
 
@@ -104,12 +104,14 @@ interface Props {
   placeholder?: string
   required?: boolean
   modelValue?: string
+  supplierLookup?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   placeholder: 'Search for a client...',
   required: false,
   modelValue: '',
+  supplierLookup: false,
 })
 
 const emit = defineEmits<{

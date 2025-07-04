@@ -38,5 +38,26 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     return res.data
   }
 
-  return { orders, loading, fetchOrders, createOrder, fetchOne, patch }
+  async function fetchPurchaseOrderPdf(id: string): Promise<Blob> {
+    const res = await api.get(`/purchasing/api/purchase-orders/${id}/pdf/`, {
+      responseType: 'blob',
+    })
+    return res.data
+  }
+
+  async function emailPurchaseOrder(id: string) {
+    const res = await api.post(`/purchasing/api/purchase-orders/${id}/email/`)
+    return res.data
+  }
+
+  return {
+    orders,
+    loading,
+    fetchOrders,
+    createOrder,
+    fetchOne,
+    patch,
+    fetchPurchaseOrderPdf,
+    emailPurchaseOrder,
+  }
 })

@@ -188,6 +188,12 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Purchase Order - Jobs Manager' },
     },
     {
+      path: '/purchasing/po/create',
+      name: 'purchase-order-create',
+      component: () => import('@/views/purchasing/PoCreateView.vue'),
+      meta: { requiresAuth: true, title: 'Create Purchase Order - Jobs Manager' },
+    },
+    {
       path: '/purchasing/stock',
       name: 'stock',
       component: () => import('@/views/purchasing/StockView.vue'),

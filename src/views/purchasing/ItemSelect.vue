@@ -7,14 +7,15 @@ import {
   SelectItem,
 } from '@/components/ui/select'
 import { useXeroItemStore } from '@/stores/xeroItemStore'
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 
 const props = defineProps<{
-  modelValue: string
+  modelValue: string | null
 }>()
 const emit = defineEmits<{
   'update:modelValue': [string]
   'update:description': [string]
+  'update:unit_cost': [number | null]
 }>()
 
 const store = useXeroItemStore()
@@ -23,7 +24,12 @@ onMounted(async () => {
   if (store.items.length === 0 && !store.loading) {
     await store.fetchItems()
   }
-  console.log('[ItemSelect] Items loaded:', store.items)
+})
+
+const displayLabel = computed(() => {
+  if (!props.modelValue) return 'Select'
+  const found = store.items.find((i) => i.code === props.modelValue)
+  return found ? found.code : 'Select'
 })
 </script>
 
@@ -36,11 +42,14 @@ onMounted(async () => {
         emit('update:modelValue', val)
         const found = store.items.find((i) => i.code === val)
         emit('update:description', found ? found.name : '')
+        emit('update:unit_cost', found && found.unit_cost != null ? Number(found.unit_cost) : null)
       }
     "
   >
     <SelectTrigger>
-      <SelectValue placeholder="Select" />
+      <SelectValue :placeholder="'Select'">
+        {{ displayLabel }}
+      </SelectValue>
     </SelectTrigger>
 
     <SelectContent>

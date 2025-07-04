@@ -1,50 +1,72 @@
 <template>
   <AppLayout>
     <div class="p-4 md:p-8 flex flex-col gap-4">
-      <Card class="rounded-2xl shadow-lg">
-        <CardHeader class="border-b">
-          <div class="flex items-center gap-2">
-            <FileText class="w-6 h-6 text-indigo-600" />
-            <h1 class="text-xl font-bold">Purchase Order</h1>
-          </div>
-        </CardHeader>
-        <CardContent class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input v-model="reference" placeholder="Reference" />
-            <Input v-model="supplier" placeholder="Supplier" />
-          </div>
-          <DataTable
-            :columns="columns"
-            :data="lines"
-            @add="addLine"
-            class="max-h-[55vh] overflow-y-auto"
-          />
-        </CardContent>
-        <CardFooter class="flex justify-end">
-          <Button variant="secondary" @click="save">Save</Button>
-        </CardFooter>
-      </Card>
+      <div class="flex flex-col lg:flex-row gap-6">
+        <PoSummaryCard
+          :po="po"
+          :is-create-mode="false"
+          :show-actions="true"
+          :sync-enabled="canSync"
+          @update:supplier="po.supplier = $event"
+          @update:supplier_id="po.supplier_id = $event"
+          @update:reference="po.reference = $event"
+          @update:order_date="po.order_date = $event"
+          @update:expected_delivery="po.expected_delivery = $event"
+          @update:status="po.status = $event"
+          @save="saveSummary"
+          @sync-xero="syncWithXero"
+          @view-xero="viewInXero"
+          @print="printPo"
+          @email="emailPo"
+        />
+        <Card class="flex-1 flex flex-col">
+          <CardHeader>
+            <h2 class="font-semibold">Line Items</h2>
+          </CardHeader>
+          <CardContent class="flex-1 flex flex-col">
+            <PoLinesTable
+              :lines="po.lines"
+              :items="xeroItemStore.items"
+              @update:lines="po.lines = $event"
+              @add-line="addLine"
+              @delete-line="deleteLine"
+            />
+          </CardContent>
+        </Card>
+      </div>
+      <div class="flex flex-wrap gap-2 justify-end">
+        <Button aria-label="Close" @click="close">Close</Button>
+      </div>
     </div>
+
+    <!-- PDF Dialog -->
+    <PoPdfDialog
+      :open="showPdfDialog"
+      :purchase-order-id="orderId"
+      :po-number="po.po_number"
+      @update:open="showPdfDialog = $event"
+    />
   </AppLayout>
 </template>
 
 <script setup lang="ts">
+import { ref, watch, onMounted, computed } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
-import DataTable from '@/components/DataTable.vue'
-import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import ItemSelect from './ItemSelect.vue'
-import { Checkbox } from '@/components/ui/checkbox'
-import { FileText } from 'lucide-vue-next'
-import { ref, h, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import type { ColumnDef } from '@tanstack/vue-table'
+import PoSummaryCard from '@/components/purchasing/PoSummaryCard.vue'
+import PoLinesTable from '@/components/purchasing/PoLinesTable.vue'
+import PoPdfDialog from '@/components/purchasing/PoPdfDialog.vue'
+import { useRoute, useRouter } from 'vue-router'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { useXeroItemStore } from '@/stores/xeroItemStore'
+import { extractErrorMessage, createErrorToast } from '@/utils/errorHandler'
 import { toast } from 'vue-sonner'
+import axios from 'axios'
 
-interface Line {
+type Status = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
+
+interface PurchaseOrderLine {
   id?: string
   item_code: string
   description: string
@@ -53,84 +75,277 @@ interface Line {
   price_tbc: boolean
 }
 
+interface PurchaseOrder {
+  po_number: string
+  supplier: string
+  supplier_id?: string
+  supplier_has_xero_id: boolean
+  reference: string
+  order_date: string
+  expected_delivery: string
+  status: Status
+  lines: PurchaseOrderLine[]
+  online_url?: string
+  xero_id?: string
+}
+
+interface XeroSyncResponse {
+  success: boolean
+  error?: string
+  is_incomplete_po?: boolean
+  online_url?: string
+  xero_id?: string
+}
+
 const route = useRoute()
+const router = useRouter()
 const orderId = route.params.id as string
-
 const store = usePurchaseOrderStore()
-const itemStore = useXeroItemStore()
+const xeroItemStore = useXeroItemStore()
+const originalLines = ref<PurchaseOrderLine[]>([])
+const isSyncing = ref(false)
+const showPdfDialog = ref(false)
 
-const reference = ref('')
-const supplier = ref('')
-const lines = ref<Line[]>([])
+const po = ref<PurchaseOrder>({
+  po_number: '',
+  supplier: '',
+  supplier_id: undefined,
+  supplier_has_xero_id: false,
+  reference: '',
+  order_date: '',
+  expected_delivery: '',
+  status: 'draft',
+  lines: [],
+})
 
-const columns: ColumnDef<Line>[] = [
-  {
-    accessorKey: 'item_code',
-    header: 'Item',
-    cell: ({ row }) =>
-      h(ItemSelect, {
-        modelValue: row.original.item_code,
-        'onUpdate:modelValue': (v: string) => (row.original.item_code = v),
-        'onUpdate:description': (d: string) => (row.original.description = d),
-      }),
-  },
-  { accessorKey: 'description', header: 'Description', meta: { editable: false } },
-  { accessorKey: 'quantity', header: 'Qty' },
-  {
-    accessorKey: 'unit_cost',
-    header: 'Unit Cost',
-    cell: ({ row }) =>
-      h(Input, {
-        type: 'number',
-        class: 'w-24',
-        disabled: row.original.price_tbc,
-        modelValue: row.original.unit_cost,
-        'onUpdate:modelValue': (v: number) => (row.original.unit_cost = Number(v)),
-      }),
-  },
-  {
-    accessorKey: 'price_tbc',
-    header: 'Price TBC',
-    cell: ({ row }) =>
-      h(Checkbox, {
-        modelValue: row.original.price_tbc,
-        'onUpdate:modelValue': (v: boolean) => {
-          row.original.price_tbc = v
-          if (v) row.original.unit_cost = null
-        },
-      }),
-  },
-]
+const linesToDelete = ref<string[]>([])
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+async function load() {
+  const data = await store.fetchOne(orderId)
+  po.value = {
+    ...data,
+    lines: Array.isArray(data.lines) ? data.lines : [],
+  }
+  originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
+}
+
+async function saveSummary() {
+  const updateData = {
+    reference: po.value.reference,
+    order_date: po.value.order_date,
+    expected_delivery: po.value.expected_delivery,
+    status: po.value.status,
+  } as Record<string, unknown>
+
+  // Include supplier data if it has changed
+  if (po.value.supplier) {
+    updateData.supplier = po.value.supplier
+  }
+  if (po.value.supplier_id) {
+    updateData.supplier_id = po.value.supplier_id
+  }
+
+  await store.patch(orderId, updateData)
+  toast.success('Summary saved')
+  await load()
+}
 
 function addLine() {
-  lines.value = [
-    ...lines.value,
+  po.value.lines = [
+    ...po.value.lines,
     { item_code: '', description: '', quantity: 1, unit_cost: 0, price_tbc: false },
   ]
 }
 
-async function load() {
-  const data = await store.fetchOne(orderId)
-  reference.value = data.reference || ''
-  supplier.value = data.supplier || ''
-  lines.value = (data.lines as Line[]).map((l) => ({ ...l, item_code: l.item_code ?? '' })) || []
+function deleteLine(idOrIdx: string | number) {
+  if (typeof idOrIdx === 'string') {
+    linesToDelete.value.push(idOrIdx)
+    po.value.lines = po.value.lines.filter((l: PurchaseOrderLine) => l.id !== idOrIdx)
+  } else {
+    po.value.lines = po.value.lines.filter((_: PurchaseOrderLine, idx: number) => idx !== idOrIdx)
+  }
 }
 
-async function save() {
-  const payload = {
-    reference: reference.value,
-    supplier: supplier.value,
-    lines: lines.value.map((l) => ({
-      ...l,
-      unit_cost: l.price_tbc ? null : l.unit_cost,
-    })),
-  }
-  await store.patch(orderId, payload)
-  toast.success('Purchase order saved')
-  await load()
+function lineChanged(line: PurchaseOrderLine) {
+  if (!line.id) return true
+  const orig = originalLines.value.find((o) => o.id === line.id)
+  if (!orig) return true
+
+  return (
+    orig.item_code !== line.item_code ||
+    orig.description !== line.description ||
+    +orig.quantity !== +line.quantity ||
+    +(orig.unit_cost ?? 0) !== +(line.unit_cost ?? 0) ||
+    orig.price_tbc !== line.price_tbc
+  )
 }
+
+function isValidLine(line: PurchaseOrderLine) {
+  const hasContent =
+    (line.item_code && line.item_code.trim() !== '') ||
+    (line.description && line.description.trim() !== '')
+
+  const hasPrice = (line.unit_cost != null && Number(line.unit_cost) > 0) || line.price_tbc === true
+
+  return hasContent && hasPrice
+}
+
+async function saveLines() {
+  linesToDelete.value = linesToDelete.value.filter((id) => {
+    const l = po.value.lines.find((x: PurchaseOrderLine) => x.id === id)
+    return l ? isValidLine(l) : true
+  })
+
+  const validLines = po.value.lines.filter(isValidLine)
+
+  if (!validLines.length && !linesToDelete.value.length) return
+
+  const changedLines = validLines.filter(lineChanged)
+  if (!changedLines.length && !linesToDelete.value.length) return
+
+  await store.patch(orderId, {
+    lines: changedLines,
+    lines_to_delete: linesToDelete.value.length ? linesToDelete.value : undefined,
+  })
+
+  originalLines.value = JSON.parse(JSON.stringify(validLines))
+  linesToDelete.value = []
+  toast.success('Lines saved')
+}
+
+async function syncWithXero() {
+  if (isSyncing.value) return
+
+  isSyncing.value = true
+  toast.loading('Syncing with Xero…', { id: 'po-sync-loading' })
+
+  try {
+    const { data: res } = await axios.post<XeroSyncResponse>(
+      `/api/xero/create_purchase_order/${orderId}`,
+    )
+
+    switch (true) {
+      case res.success:
+        if (res.online_url) po.value.online_url = res.online_url
+        if (res.xero_id) po.value.xero_id = res.xero_id
+        toast.dismiss('po-sync-loading')
+        toast.success('Synced with Xero successfully!')
+        break
+      case res.is_incomplete_po:
+        toast.dismiss('po-sync-loading')
+        toast.warning(res.error || 'Purchase order incomplete - missing required fields')
+        break
+      default:
+        toast.dismiss('po-sync-loading')
+        throw new Error(res.error || 'Unknown sync error')
+    }
+  } catch (err: unknown) {
+    toast.dismiss('po-sync-loading')
+    const errorMessage = extractErrorMessage(err, 'Sync failed')
+    toast.error(`Xero sync failed: ${errorMessage}`, createErrorToast())
+  } finally {
+    isSyncing.value = false
+  }
+}
+
+function viewInXero() {
+  if (!po.value.online_url) {
+    toast.error('No Xero URL available. Please sync with Xero first.')
+    return
+  }
+
+  try {
+    window.open(po.value.online_url, '_blank', 'noopener,noreferrer')
+    toast.success('Opened Purchase Order in Xero')
+  } catch (error) {
+    console.error('Failed to open Xero URL:', error)
+    toast.error('Failed to open Xero. Please check if pop-ups are blocked.')
+  }
+}
+
+function printPo() {
+  showPdfDialog.value = true
+}
+
+function emailPo() {
+  emailPurchaseOrder()
+}
+
+async function emailPurchaseOrder() {
+  try {
+    toast.loading('Preparing email...', { id: 'po-email-loading' })
+
+    const emailData = await store.emailPurchaseOrder(orderId)
+
+    if (emailData.success && emailData.mailto_url) {
+      // Open Gmail compose in new tab
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(emailData.email)}&su=${encodeURIComponent(emailData.subject)}&body=${encodeURIComponent(emailData.body)}`
+      window.open(gmailUrl, '_blank', 'noopener,noreferrer')
+
+      toast.dismiss('po-email-loading')
+      toast.success(`Gmail opened for ${emailData.email}`)
+    } else {
+      toast.dismiss('po-email-loading')
+      throw new Error(emailData.error || 'Failed to prepare email')
+    }
+  } catch (error) {
+    toast.dismiss('po-email-loading')
+    const errorMessage = extractErrorMessage(error, 'Failed to prepare email')
+    toast.error(`Email failed: ${errorMessage}`, createErrorToast())
+    console.error('Error preparing email:', error)
+  }
+}
+
+function close() {
+  router.back()
+}
+
+const canSync = computed(() => {
+  if (!po.value.supplier_has_xero_id) return false
+
+  return po.value.lines.some(
+    (l: PurchaseOrderLine) => l.description && l.unit_cost !== null && l.unit_cost !== undefined,
+  )
+})
 
 onMounted(async () => {
-  await Promise.all([itemStore.fetchItems(), load()])
+  await Promise.all([xeroItemStore.fetchItems(), load()])
+
+  watch(
+    () => po.value.lines,
+    () => {
+      if (debounceTimer) clearTimeout(debounceTimer)
+      debounceTimer = setTimeout(saveLines, 500)
+    },
+    { deep: true, flush: 'post' },
+  )
+
+  // Watch for supplier changes and auto-save
+  watch(
+    () => [po.value.supplier, po.value.supplier_id],
+    (newVals, oldVals) => {
+      // Only auto-save if values actually changed and we have a supplier name
+      if (newVals[0] && (newVals[0] !== oldVals?.[0] || newVals[1] !== oldVals?.[1])) {
+        // Debounce supplier changes
+        if (debounceTimer) clearTimeout(debounceTimer)
+        debounceTimer = setTimeout(async () => {
+          try {
+            await store.patch(orderId, {
+              supplier: po.value.supplier,
+              supplier_id: po.value.supplier_id,
+            })
+            toast.success('Supplier updated')
+            // Reload to get updated supplier_has_xero_id status
+            await load()
+          } catch (error) {
+            const errorMessage = extractErrorMessage(error, 'Failed to update supplier')
+            toast.error(`Update failed: ${errorMessage}`)
+          }
+        }, 1000) // Longer debounce for supplier changes
+      }
+    },
+    { deep: true },
+  )
 })
 </script>

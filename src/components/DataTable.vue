@@ -17,6 +17,7 @@ const props = defineProps<{
   columns: ColumnDef<TData>[]
   data: TData[]
   pageSize?: number
+  hideFooter?: boolean
 }>()
 
 const emit = defineEmits<{ add: []; rowClick: [TData] }>()
@@ -91,7 +92,7 @@ const colCount = computed(() => props.columns.length)
         </template>
       </TableBody>
     </Table>
-    <div class="px-2">
+    <div v-if="!props.hideFooter" class="px-2">
       <Button variant="secondary" class="w-full" @click="emit('add')">＋ Add line</Button>
     </div>
   </div>

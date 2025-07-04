@@ -1,40 +1,75 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
-import Input from '@/components/ui/input/Input.vue'
+import { DateFormatter, getLocalTimeZone, parseDate, type DateValue } from '@internationalized/date'
+import { ref, watch, computed } from 'vue'
+import { CalendarIcon } from 'lucide-vue-next'
 
-interface DateRange {
-  start: string | null
-  end: string | null
-}
+import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
-const props = defineProps<{ modelValue: DateRange }>()
-const emit = defineEmits(['update:modelValue'])
+const props = withDefaults(
+  defineProps<{
+    modelValue: string | null
+    min?: string | null
+    max?: string | null
+    placeholder?: string
+    label?: string
+    class?: string
+  }>(),
+  { modelValue: null },
+)
 
-const range = reactive<DateRange>({
-  start: props.modelValue?.start || null,
-  end: props.modelValue?.end || null,
-})
+const emit = defineEmits<{
+  (e: 'update:modelValue', v: string | null): void
+}>()
+
+const tz = getLocalTimeZone()
+const df = new DateFormatter('en-NZ', { dateStyle: 'long' })
+
+const internal = ref<DateValue>()
 
 watch(
   () => props.modelValue,
-  (val) => {
-    range.start = val?.start || null
-    range.end = val?.end || null
+  (v) => {
+    internal.value = v ? parseDate(v) : undefined
   },
-  { deep: true },
+  { immediate: true },
 )
 
-watch(
-  () => ({ ...range }),
-  (val) => emit('update:modelValue', val),
-  { deep: true },
+function select(date?: DateValue) {
+  internal.value = date
+  emit('update:modelValue', date ? date.toDate(tz).toISOString().slice(0, 10) : null)
+}
+
+const minValue = computed(() => (props.min ? parseDate(props.min) : undefined))
+const maxValue = computed(() => (props.max ? parseDate(props.max) : undefined))
+
+const text = computed(() =>
+  internal.value ? df.format(internal.value.toDate(tz)) : (props.placeholder ?? 'Pick a date'),
 )
 </script>
 
 <template>
-  <div class="flex items-center gap-2">
-    <Input type="date" v-model="range.start" class="w-36" />
-    <span class="mx-1">–</span>
-    <Input type="date" v-model="range.end" class="w-36" />
+  <div class="flex flex-col gap-1" :class="props.class">
+    <label v-if="props.label" class="text-sm font-medium">{{ props.label }}</label>
+
+    <Popover>
+      <PopoverTrigger as-child>
+        <Button variant="outline" class="justify-start font-normal w-full">
+          <CalendarIcon class="mr-2 h-4 w-4" />
+          {{ text }}
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent class="w-auto p-0">
+        <Calendar
+          v-model="internal"
+          :min-value="minValue"
+          :max-value="maxValue"
+          initial-focus
+          @update:modelValue="select"
+        />
+      </PopoverContent>
+    </Popover>
   </div>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Input from '@/components/ui/input/Input.vue'
-import { DatePicker } from '@/components/ui/date-picker'
+import { CustomDatePicker } from '@/components/ui/custom-date-picker'
 import { ref, watch } from 'vue'
 
 interface DateRange {
@@ -35,6 +35,6 @@ watch(localRange, (v) => emit('update:range', v), { deep: true })
 <template>
   <div class="flex flex-col md:flex-row items-end gap-4">
     <Input v-model="localSearch" placeholder="Search…" class="md:w-64" />
-    <DatePicker v-model="localRange" />
+    <CustomDatePicker v-model="localRange" />
   </div>
 </template>
