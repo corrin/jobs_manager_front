@@ -199,23 +199,100 @@
               <!-- Overview Section -->
               <div v-if="activeTab === 'overview'" class="space-y-6">
                 <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                  <h1 class="text-2xl font-bold text-gray-900 mb-2">Performance Overview</h1>
+                  <h1 class="text-2xl font-bold text-gray-900 mb-2">KPI Reports</h1>
                   <p class="text-gray-600">
                     Key Performance Indicators and business metrics dashboard
                   </p>
                 </div>
 
-                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <!-- Loading State -->
+                <div
+                  v-if="kpiLoading"
+                  class="bg-white p-6 rounded-lg shadow-sm border border-gray-200"
+                >
                   <div class="text-center py-12">
-                    <BarChart3 class="mx-auto h-16 w-16 text-gray-400 mb-4" />
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">
-                      KPI Dashboard Coming Soon
-                    </h3>
-                    <p class="text-gray-500 max-w-md mx-auto">
-                      This section will display comprehensive KPI metrics including revenue, profit
-                      margins, billable hours, and other key business indicators.
+                    <RefreshCw class="mx-auto h-8 w-8 text-gray-400 mb-4 animate-spin" />
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Loading KPI Data...</h3>
+                    <p class="text-gray-500">
+                      Please wait while we fetch your performance metrics.
                     </p>
                   </div>
+                </div>
+
+                <!-- Error State -->
+                <div
+                  v-else-if="kpiError"
+                  class="bg-white p-6 rounded-lg shadow-sm border border-red-200"
+                >
+                  <div class="text-center py-12">
+                    <div
+                      class="mx-auto h-12 w-12 bg-red-100 rounded-full flex items-center justify-center mb-4"
+                    >
+                      <span class="text-red-600 font-bold">!</span>
+                    </div>
+                    <h3 class="text-lg font-medium text-red-900 mb-2">Error Loading KPI Data</h3>
+                    <p class="text-red-600 mb-4">{{ kpiError }}</p>
+                    <Button
+                      @click="fetchKPIData"
+                      variant="outline"
+                      class="border-red-300 text-red-600"
+                    >
+                      <RefreshCw class="h-4 w-4 mr-2" />
+                      Retry
+                    </Button>
+                  </div>
+                </div>
+
+                <!-- KPI Dashboard -->
+                <div v-else-if="kpiData" class="space-y-6">
+                  <!-- KPI Metric Cards -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <KPICard
+                      title="Labour"
+                      :value="formatHours(kpiData.monthly_totals.billable_hours)"
+                      :subtitle="`of ${formatHours(kpiData.monthly_totals.total_hours)} total`"
+                      :percentage="utilizationPercentage + '%'"
+                      description="Billable hours"
+                      :trend="utilizationTrend"
+                      :trend-direction="utilizationTrendDirection"
+                      :variant="utilizationVariant"
+                    />
+                    <KPICard
+                      title="Materials & Adjustments"
+                      :value="formatCurrency(materialRevenue)"
+                      :percentage="materialPercentage + '%'"
+                      description="Material markup"
+                      :trend="'Rev: ' + formatCurrency(totalRevenue)"
+                      trend-direction="neutral"
+                    />
+                    <KPICard
+                      title="Profit"
+                      :value="formatCurrency(kpiData.monthly_totals.gross_profit)"
+                      :percentage="profitPercentage + '%'"
+                      description="Gross profit"
+                      :trend="profitTrend"
+                      :trend-direction="profitTrendDirection"
+                      :variant="profitVariant"
+                    />
+                    <KPICard
+                      title="Performance"
+                      :value="performanceRating"
+                      :percentage="performancePercentage + '%'"
+                      description="Good days"
+                      :trend="performanceTrend"
+                      :trend-direction="performanceTrendDirection"
+                      :variant="performanceVariant"
+                    />
+                  </div>
+
+                  <!-- Calendar View -->
+                  <KPICalendar
+                    :calendar-data="kpiData.calendar_data"
+                    :thresholds="kpiData.thresholds"
+                    :year="kpiData.year"
+                    :month="kpiData.month"
+                    @day-click="handleDayClick"
+                  />
                 </div>
               </div>
 
@@ -289,9 +366,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import Button from '@/components/ui/button/Button.vue'
+import KPICard from '@/components/kpi/KPICard.vue'
+import KPICalendar from '@/components/kpi/KPICalendar.vue'
+import { kpiService } from '@/services/kpi.service'
+import type { KPICalendarResponse, DayKPI } from '@/services/kpi.service'
 import {
   BarChart3,
   DollarSign,
@@ -308,6 +389,13 @@ const activeTab = ref('overview')
 const currentDate = ref(new Date())
 const loading = ref(false)
 const showSettingsModal = ref(false)
+
+// KPI Data State
+const kpiData = ref<KPICalendarResponse | null>(null)
+const kpiLoading = ref(false)
+const kpiError = ref<string | null>(null)
+const selectedYear = ref(new Date().getFullYear())
+const selectedMonth = ref(new Date().getMonth() + 1)
 
 const today = new Date().toLocaleDateString('en-NZ', {
   weekday: 'long',
@@ -345,16 +433,27 @@ const tabs = computed(() => [
 
 // Date navigation functions
 function navigateDate(direction: number) {
-  const newDate = new Date(currentDate.value)
-  newDate.setDate(newDate.getDate() + direction)
-  currentDate.value = newDate
+  if (activeTab.value === 'overview') {
+    navigateMonth(direction)
+  } else {
+    const newDate = new Date(currentDate.value)
+    newDate.setDate(newDate.getDate() + direction)
+    currentDate.value = newDate
+  }
 }
 
 function goToToday() {
-  currentDate.value = new Date()
+  if (activeTab.value === 'overview') {
+    goToCurrentMonth()
+  } else {
+    currentDate.value = new Date()
+  }
 }
 
 function formatDisplayDate(date: Date) {
+  if (activeTab.value === 'overview' && kpiData.value) {
+    return `${kpiService.getMonthName(kpiData.value.month)} ${kpiData.value.year}`
+  }
   return date.toLocaleDateString('en-NZ', {
     weekday: 'long',
     year: 'numeric',
@@ -364,6 +463,9 @@ function formatDisplayDate(date: Date) {
 }
 
 function formatShortDate(date: Date) {
+  if (activeTab.value === 'overview' && kpiData.value) {
+    return `${kpiService.getMonthName(kpiData.value.month).slice(0, 3)} ${kpiData.value.year}`
+  }
   return date.toLocaleDateString('en-NZ', {
     month: 'short',
     day: 'numeric',
@@ -377,17 +479,177 @@ function exportData() {
 }
 
 function refreshData() {
-  loading.value = true
-  // TODO: Implement data refresh
-  setTimeout(() => {
-    loading.value = false
-  }, 1000)
+  if (activeTab.value === 'overview') {
+    fetchKPIData()
+  } else {
+    loading.value = true
+    // TODO: Implement data refresh for other tabs
+    setTimeout(() => {
+      loading.value = false
+    }, 1000)
+  }
 }
 
-// TODO: Implement KPI data fetching using existing KPIService
-// TODO: Add KPI charts and visualizations
-// TODO: Add date range selector for historical data
-// TODO: Add export functionality
+// KPI Data Management
+async function fetchKPIData() {
+  try {
+    kpiLoading.value = true
+    kpiError.value = null
+
+    const response = await kpiService.getAccountingKPICalendarData({
+      year: selectedYear.value,
+      month: selectedMonth.value,
+    })
+
+    kpiData.value = response
+  } catch (error) {
+    console.error('Error fetching KPI data:', error)
+    kpiError.value = error instanceof Error ? error.message : 'Failed to load KPI data'
+  } finally {
+    kpiLoading.value = false
+  }
+}
+
+// KPI Computed Properties
+const utilizationPercentage = computed(() => {
+  if (!kpiData.value) return 0
+  const { billable_hours, total_hours } = kpiData.value.monthly_totals
+  if (total_hours === 0) return 0
+  return Math.round((billable_hours / total_hours) * 100)
+})
+
+const utilizationTrend = computed(() => {
+  if (!kpiData.value) return ''
+  return `${Math.round(kpiData.value.monthly_totals.billable_hours)}h`
+})
+
+const utilizationTrendDirection = computed(() => {
+  const percentage = utilizationPercentage.value
+  if (percentage >= 80) return 'up'
+  if (percentage >= 60) return 'neutral'
+  return 'down'
+})
+
+const utilizationVariant = computed(() => {
+  const percentage = utilizationPercentage.value
+  if (percentage >= 80) return 'success'
+  if (percentage >= 60) return 'warning'
+  return 'danger'
+})
+
+const materialRevenue = computed(() => {
+  if (!kpiData.value) return 0
+  // Calculate material revenue from calendar data
+  return Object.values(kpiData.value.calendar_data).reduce((sum, day) => {
+    return sum + day.details.material_revenue
+  }, 0)
+})
+
+const totalRevenue = computed(() => {
+  if (!kpiData.value) return 0
+  return Object.values(kpiData.value.calendar_data).reduce((sum, day) => {
+    return sum + day.details.total_revenue
+  }, 0)
+})
+
+const materialPercentage = computed(() => {
+  if (!kpiData.value || totalRevenue.value === 0) return 0
+  return Math.round((materialRevenue.value / totalRevenue.value) * 100)
+})
+
+const profitPercentage = computed(() => {
+  if (!kpiData.value) return 0
+  const target =
+    kpiData.value.thresholds.daily_gp_target * kpiData.value.monthly_totals.working_days
+  if (target === 0) return 0
+  return Math.round((kpiData.value.monthly_totals.gross_profit / target) * 100)
+})
+
+const profitTrend = computed(() => {
+  if (!kpiData.value) return ''
+  return `Target: ${formatCurrency(kpiData.value.thresholds.daily_gp_target * kpiData.value.monthly_totals.working_days)}`
+})
+
+const profitTrendDirection = computed(() => {
+  const percentage = profitPercentage.value
+  if (percentage >= 100) return 'up'
+  if (percentage >= 80) return 'neutral'
+  return 'down'
+})
+
+const profitVariant = computed(() => {
+  const percentage = profitPercentage.value
+  if (percentage >= 100) return 'success'
+  if (percentage >= 80) return 'warning'
+  return 'danger'
+})
+
+const performanceRating = computed(() => {
+  if (!kpiData.value) return '0'
+  const { days_green, days_amber, days_red } = kpiData.value.monthly_totals
+  return kpiService.getPerformanceRating(days_green, days_amber, days_red)
+})
+
+const performancePercentage = computed(() => {
+  if (!kpiData.value) return 0
+  const { days_green, working_days } = kpiData.value.monthly_totals
+  if (working_days === 0) return 0
+  return Math.round((days_green / working_days) * 100)
+})
+
+const performanceTrend = computed(() => {
+  if (!kpiData.value) return ''
+  const { days_green, days_amber, days_red } = kpiData.value.monthly_totals
+  return `${days_green}G ${days_amber}A ${days_red}R`
+})
+
+const performanceTrendDirection = computed(() => {
+  const percentage = performancePercentage.value
+  if (percentage >= 80) return 'up'
+  if (percentage >= 60) return 'neutral'
+  return 'down'
+})
+
+const performanceVariant = computed(() => {
+  const percentage = performancePercentage.value
+  if (percentage >= 80) return 'success'
+  if (percentage >= 60) return 'warning'
+  return 'danger'
+})
+
+// Helper Functions
+function formatHours(hours: number): string {
+  return kpiService.formatHours(hours)
+}
+
+function formatCurrency(value: number): string {
+  return kpiService.formatCurrency(value)
+}
+
+function handleDayClick(day: DayKPI) {
+  console.log('Day clicked:', day)
+  // TODO: Implement day detail modal
+}
+
+// Navigation Functions
+function navigateMonth(direction: number) {
+  const newDate = new Date(selectedYear.value, selectedMonth.value - 1 + direction)
+  selectedYear.value = newDate.getFullYear()
+  selectedMonth.value = newDate.getMonth() + 1
+  fetchKPIData()
+}
+
+function goToCurrentMonth() {
+  const now = new Date()
+  selectedYear.value = now.getFullYear()
+  selectedMonth.value = now.getMonth() + 1
+  fetchKPIData()
+}
+
+// Lifecycle
+onMounted(() => {
+  fetchKPIData()
+})
 </script>
 
 <style scoped>
