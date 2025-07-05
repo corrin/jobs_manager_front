@@ -273,6 +273,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import AppLayout from '@/components/AppLayout.vue'
 import Button from '@/components/ui/button/Button.vue'
 import KPICard from '@/components/kpi/KPICard.vue'
@@ -283,6 +284,7 @@ import { kpiService } from '@/services/kpi.service'
 import type { KPICalendarResponse, DayKPI } from '@/services/kpi.service'
 import { BarChart3, Download, RefreshCw, Settings } from 'lucide-vue-next'
 
+const router = useRouter()
 const loading = ref(false)
 const showSettingsModal = ref(false)
 const showDayModal = ref(false)
@@ -360,14 +362,14 @@ const materialRevenue = computed(() => {
   if (!kpiData.value) return 0
   // Calculate material revenue from calendar data
   return Object.values(kpiData.value.calendar_data).reduce((sum, day) => {
-    return sum + day.details.material_revenue
+    return sum + (day?.details?.material_revenue || 0)
   }, 0)
 })
 
 const totalRevenue = computed(() => {
   if (!kpiData.value) return 0
   return Object.values(kpiData.value.calendar_data).reduce((sum, day) => {
-    return sum + day.details.total_revenue
+    return sum + (day?.details?.total_revenue || 0)
   }, 0)
 })
 
@@ -450,9 +452,9 @@ function handleDayClick(day: DayKPI) {
   showDayModal.value = true
 }
 
-function handleJobClick(jobNumber: string) {
-  // TODO: Navigate to job details page
-  console.log('Job clicked:', jobNumber)
+function handleJobClick(jobId: string) {
+  // Navigate to job details page
+  router.push(`/jobs/${jobId}`)
 }
 
 // Navigation Functions

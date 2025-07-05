@@ -5,6 +5,9 @@
         <DialogTitle class="text-xl font-semibold">
           {{ formatDateTitle(dayData?.date) }}
         </DialogTitle>
+        <DialogDescription>
+          Daily revenue, cost, and profit breakdown with job-by-job analysis
+        </DialogDescription>
         <DialogClose />
       </DialogHeader>
 
@@ -108,7 +111,7 @@
               >
                 <td class="py-1.5 px-2">
                   <button
-                    @click="handleJobClick(job.job_number)"
+                    @click="handleJobClick(job.job_id)"
                     class="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                   >
                     {{ job.job_number }}
@@ -140,6 +143,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog'
 import type { DayKPI } from '@/services/kpi.service'
@@ -154,7 +158,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'update:isOpen': [value: boolean]
-  jobClick: [jobNumber: string]
+  jobClick: [jobId: string]
 }>()
 
 const isOpen = computed({
@@ -216,7 +220,7 @@ function formatDateTitle(dateString: string | undefined): string {
   })
 }
 
-function handleJobClick(jobNumber: string) {
-  emit('jobClick', jobNumber)
+function handleJobClick(jobId: string) {
+  emit('jobClick', jobId)
 }
 </script>
