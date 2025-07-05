@@ -227,6 +227,12 @@ const router = createRouter({
       component: () => import('@/views/purchasing/SupplierPricingUploadView.vue'),
       meta: { requiresAuth: true, title: 'Supplier Pricing - Jobs Manager' },
     },
+    {
+      path: '/reports/kpi',
+      name: 'kpi-reports',
+      component: () => import('@/views/KPIReportsView.vue'),
+      meta: { requiresAuth: true, title: 'KPI Reports - Jobs Manager' },
+    },
   ],
 })
 

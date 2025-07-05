@@ -153,12 +153,12 @@
               v-if="activeDropdown === 'reports'"
               class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
             >
-              <a
-                href="#"
+              <router-link
+                to="/reports/kpi"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
               >
                 <BarChart3 class="w-4 h-4 mr-2" /> KPI Reports
-              </a>
+              </router-link>
             </div>
           </Transition>
         </div>
@@ -376,11 +376,11 @@
                 >
                   <div v-if="mobileSections.reports" class="overflow-hidden">
                     <div class="px-3 pb-2 space-y-1">
-                      <a
-                        href="#"
+                      <router-link
+                        to="/reports/kpi"
                         class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >KPI Reports</a
+                        >KPI Reports</router-link
                       >
                     </div>
                   </div>
