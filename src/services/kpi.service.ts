@@ -67,12 +67,13 @@ export interface DayDetails {
 }
 
 export interface JobBreakdown {
-  job_number: string
-  client_name: string
-  billable_hours: number
-  revenue: number
-  cost: number
-  profit: number
+  job_id: string
+  job_number: number
+  job_display_name: string
+  labour_profit: number
+  material_profit: number
+  adjustment_profit: number
+  total_profit: number
 }
 
 export interface MonthlyTotals {
