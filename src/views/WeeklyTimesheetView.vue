@@ -211,6 +211,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, onMounted, computed } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
@@ -260,8 +262,8 @@ const imsMode = ref(false)
 const showJobMetricsModal = ref(false)
 const showWeekPicker = ref(false)
 
-console.log('🔗 WeeklyTimesheetView URL params:', { week: route.query.week })
-console.log('📊 Using initial week start:', formatToLocalString(selectedWeekStart.value))
+debugLog('🔗 WeeklyTimesheetView URL params:', { week: route.query.week })
+debugLog('📊 Using initial week start:', formatToLocalString(selectedWeekStart.value))
 
 const displayDays = computed(() => {
   if (!weeklyData.value) return []
@@ -271,7 +273,7 @@ const displayDays = computed(() => {
     : (weeklyData.value as WeeklyTimesheetData).week_days || []
 
   if (!imsMode.value) {
-    console.log('displayDays raw:', days)
+    debugLog('displayDays raw:', days)
     return days
       .map((dateStr) => {
         return {
@@ -309,18 +311,13 @@ const loadData = async (): Promise<void> => {
     error.value = null
 
     const weekRange = dateService.getWeekRange(selectedWeekStart.value)
-    console.log(
-      'Loading weekly timesheet data for:',
-      weekRange.startDate,
-      'IMS Mode:',
-      imsMode.value,
-    )
+    debugLog('Loading weekly timesheet data for:', weekRange.startDate, 'IMS Mode:', imsMode.value)
 
     weeklyData.value = await getWeeklyTimesheetOverview(weekRange.startDate, imsMode.value)
 
-    console.log('Loaded weekly data:', weeklyData.value)
+    debugLog('Loaded weekly data:', weeklyData.value)
   } catch (err) {
-    console.error('Error loading weekly timesheet data:', err)
+    debugLog('Error loading weekly timesheet data:', err)
     error.value = 'Failed to load weekly timesheet data. Please try again.'
   } finally {
     loading.value = false
@@ -359,7 +356,7 @@ const toggleIMSMode = async (checked: boolean): Promise<void> => {
 }
 
 const goToDailyViewHeader = (date: string) => {
-  console.log('🔗 Navigating to daily view for date:', date)
+  debugLog('🔗 Navigating to daily view for date:', date)
   router.push({ name: 'timesheet-daily', query: { date } })
 }
 

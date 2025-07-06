@@ -192,6 +192,18 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Purchase Orders - Jobs Manager' },
     },
     {
+      path: '/purchasing/po/create',
+      name: 'purchase-order-create',
+      component: () => import('@/views/purchasing/PoCreateView.vue'),
+      meta: { requiresAuth: true, title: 'Create Purchase Order - Jobs Manager' },
+    },
+    {
+      path: '/purchasing/po/create-from-quote',
+      name: 'purchase-order-create-from-quote',
+      component: () => import('@/views/purchasing/CreateFromQuoteView.vue'),
+      meta: { requiresAuth: true, title: 'Create PO from Quote - Jobs Manager' },
+    },
+    {
       path: '/purchasing/po/:id',
       name: 'purchase-order-form',
       component: () => import('@/views/purchasing/PurchaseOrderFormView.vue'),

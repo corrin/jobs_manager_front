@@ -328,6 +328,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { computed, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { toast } from 'vue-sonner'
@@ -438,21 +440,21 @@ const breakdown = computed(() => {
 async function handleLinkQuote() {
   if (!props.job?.id) return
 
-  console.log('🔗 handleLinkQuote - Starting quote link process')
+  debugLog('🔗 handleLinkQuote - Starting quote link process')
   isLinking.value = true
 
-  console.log('🍞 Showing loading toast for quote link')
+  debugLog('🍞 Showing loading toast for quote link')
   toast.loading('Linking spreadsheet...', {
     description: 'Creating and configuring quote spreadsheet',
     id: 'quote-link',
   })
 
   try {
-    console.log('📞 Calling quoteService.linkQuote with job ID:', props.job.id)
+    debugLog('📞 Calling quoteService.linkQuote with job ID:', props.job.id)
     const result = await quoteService.linkQuote(props.job.id)
-    console.log('✅ Quote link result:', result)
+    debugLog('✅ Quote link result:', result)
 
-    console.log('🍞 Showing success toast for quote link')
+    debugLog('🍞 Showing success toast for quote link')
     toast.success('Spreadsheet linked successfully!', {
       description: 'The spreadsheet has been created and is now accessible',
       id: 'quote-link',
@@ -465,7 +467,7 @@ async function handleLinkQuote() {
     })
 
     if (result.sheet_url) {
-      console.log('🌐 Opening spreadsheet in new tab:', result.sheet_url)
+      debugLog('🌐 Opening spreadsheet in new tab:', result.sheet_url)
       window.open(result.sheet_url, '_blank')
     }
 
@@ -475,7 +477,7 @@ async function handleLinkQuote() {
 
     const errorMessage = extractQuoteErrorMessage(error)
 
-    console.log('🍞 Showing error toast for quote link:', errorMessage)
+    debugLog('🍞 Showing error toast for quote link:', errorMessage)
     toast.error('Error linking spreadsheet', {
       description: errorMessage,
       id: 'quote-link',
@@ -483,7 +485,7 @@ async function handleLinkQuote() {
     })
   } finally {
     isLinking.value = false
-    console.log('🔗 handleLinkQuote - Process completed')
+    debugLog('🔗 handleLinkQuote - Process completed')
   }
 }
 
@@ -497,31 +499,31 @@ function handleGoToSpreadsheet() {
 async function handleRefreshSpreadsheet() {
   if (!props.job?.id) return
 
-  console.log('🔄 handleRefreshSpreadsheet - Starting refresh process')
+  debugLog('🔄 handleRefreshSpreadsheet - Starting refresh process')
   isRefreshing.value = true
 
-  console.log('🍞 Showing loading toast for quote refresh')
+  debugLog('🍞 Showing loading toast for quote refresh')
   toast.loading('Checking for updates...', {
     description: 'Verifying spreadsheet changes',
     id: 'quote-refresh',
   })
 
   try {
-    console.log('📞 Calling quoteService.previewQuote with job ID:', props.job.id)
+    debugLog('📞 Calling quoteService.previewQuote with job ID:', props.job.id)
 
     const preview = await quoteService.previewQuote(props.job.id)
-    console.log('✅ Quote preview result:', preview)
+    debugLog('✅ Quote preview result:', preview)
     previewData.value = preview
     showPreviewModal.value = true
 
-    console.log('🍞 Dismissing loading toast for quote refresh')
+    debugLog('🍞 Dismissing loading toast for quote refresh')
     toast.dismiss('quote-refresh')
   } catch (error) {
     logError('handleRefreshSpreadsheet', error, { jobId: props.job?.id })
 
     const errorMessage = extractQuoteErrorMessage(error)
 
-    console.log('🍞 Showing error toast for quote refresh:', errorMessage)
+    debugLog('🍞 Showing error toast for quote refresh:', errorMessage)
     toast.error('Error checking for updates', {
       description: errorMessage,
       id: 'quote-refresh',
@@ -529,19 +531,19 @@ async function handleRefreshSpreadsheet() {
     })
   } finally {
     isRefreshing.value = false
-    console.log('🔄 handleRefreshSpreadsheet - Process completed')
+    debugLog('🔄 handleRefreshSpreadsheet - Process completed')
   }
 }
 
 async function confirmRefresh() {
   if (!props.job?.id) return
 
-  console.log('✅ confirmRefresh - Starting apply process')
+  debugLog('✅ confirmRefresh - Starting apply process')
 
   try {
-    console.log('📞 Calling quoteService.applyQuote with job ID:', props.job.id)
+    debugLog('📞 Calling quoteService.applyQuote with job ID:', props.job.id)
     const result = await quoteService.applyQuote(props.job.id)
-    console.log('✅ Quote apply result:', result)
+    debugLog('✅ Quote apply result:', result)
 
     if (result.success) {
       let changesCount = 0
@@ -549,16 +551,16 @@ async function confirmRefresh() {
         changesCount = result.draft_lines.length
       }
 
-      console.log('📊 Changes count:', changesCount)
+      debugLog('📊 Changes count:', changesCount)
 
       if (changesCount > 0) {
-        console.log('🍞 Showing success toast with changes count')
+        debugLog('🍞 Showing success toast with changes count')
         toast.success('Quote updated!', {
           description: `${changesCount} changes have been applied`,
           id: 'quote-refresh',
         })
       } else {
-        console.log('🍞 Showing info toast - no changes')
+        debugLog('🍞 Showing info toast - no changes')
         toast.info('No changes found', {
           description: 'The spreadsheet is in sync with the system',
           id: 'quote-refresh',
@@ -575,14 +577,14 @@ async function confirmRefresh() {
 
     const errorMessage = extractQuoteErrorMessage(error)
 
-    console.log('🍞 Showing error toast for confirm refresh:', errorMessage)
+    debugLog('🍞 Showing error toast for confirm refresh:', errorMessage)
     toast.error('Error applying changes', {
       description: errorMessage,
       id: 'quote-refresh',
       duration: 6000,
     })
   }
-  console.log('✅ confirmRefresh - Process completed')
+  debugLog('✅ confirmRefresh - Process completed')
 }
 
 function formatNumber(value: number): string {

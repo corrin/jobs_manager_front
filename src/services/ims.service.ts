@@ -1,4 +1,5 @@
 import apiClient from './api'
+import { debugLog } from '@/utils/debug'
 
 export interface IMSStaffData {
   staff_id: string
@@ -60,7 +61,7 @@ class IMSService {
     try {
       const formattedDate = this.formatDateForAPI(startDate)
 
-      console.log('📊 Exporting to IMS for date:', formattedDate)
+      debugLog('📊 Exporting to IMS for date:', formattedDate)
 
       const response = await apiClient.get(`${this.baseUrl}/ims-export/`, {
         params: {
@@ -68,10 +69,10 @@ class IMSService {
         },
       })
 
-      console.log('✅ IMS export successful:', response.data)
+      debugLog('✅ IMS export successful:', response.data)
       return response.data
     } catch (error) {
-      console.error('❌ Error exporting to IMS:', error)
+      debugLog('❌ Error exporting to IMS:', error)
       throw error
     }
   }

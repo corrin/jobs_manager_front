@@ -43,6 +43,12 @@
                 >${{ formatCurrency(breakdown.labour.cost) }}</span
               >
             </div>
+            <div v-if="breakdown.other.cost > 0" class="flex flex-col">
+              <span class="text-xs text-gray-500">Other Cost</span>
+              <span class="text-lg font-semibold text-red-600"
+                >${{ formatCurrency(breakdown.other.cost) }}</span
+              >
+            </div>
             <div class="flex flex-col pt-2 border-t border-gray-200">
               <span class="text-xs text-gray-500">Total Cost</span>
               <span class="text-xl font-bold text-red-600"
@@ -64,6 +70,12 @@
               <span class="text-xs text-gray-500">Time Revenue</span>
               <span class="text-lg font-semibold text-green-600"
                 >${{ formatCurrency(breakdown.labour.revenue) }}</span
+              >
+            </div>
+            <div v-if="breakdown.other.revenue > 0" class="flex flex-col">
+              <span class="text-xs text-gray-500">Other Revenue</span>
+              <span class="text-lg font-semibold text-green-600"
+                >${{ formatCurrency(breakdown.other.revenue) }}</span
               >
             </div>
             <div class="flex flex-col pt-2 border-t border-gray-200">
@@ -143,6 +155,7 @@ const breakdown = computed(() => {
     return {
       labour: { count: 0, cost: 0, revenue: 0 },
       material: { count: 0, cost: 0, revenue: 0 },
+      other: { count: 0, cost: 0, revenue: 0 },
     }
   }
   const labour = props.costLines
@@ -165,7 +178,17 @@ const breakdown = computed(() => {
       }),
       { count: 0, cost: 0, revenue: 0 },
     )
-  return { labour, material }
+  const other = props.costLines
+    .filter((line) => line.kind !== 'time' && line.kind !== 'material')
+    .reduce(
+      (acc, line) => ({
+        count: acc.count + 1,
+        cost: acc.cost + line.quantity * line.unit_cost,
+        revenue: acc.revenue + line.quantity * line.unit_rev,
+      }),
+      { count: 0, cost: 0, revenue: 0 },
+    )
+  return { labour, material, other }
 })
 
 function formatNumber(value: number): string {

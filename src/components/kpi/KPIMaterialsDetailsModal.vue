@@ -243,7 +243,6 @@ const sortedDays = computed(() => {
   })
 })
 
-// Calculate revenue totals
 const materialRevenue = computed(() => {
   if (!props.calendarData) return 0
   return Object.values(props.calendarData).reduce((sum, day) => {
@@ -273,7 +272,6 @@ const totalNonLabourRevenue = computed(() => {
   return materialRevenue.value + adjustmentRevenue.value
 })
 
-// Calculate cost totals
 const materialCosts = computed(() => {
   if (!props.calendarData) return 0
   return Object.values(props.calendarData).reduce((sum, day) => {
@@ -303,7 +301,6 @@ const totalNonLabourCosts = computed(() => {
   return materialCosts.value + adjustmentCosts.value
 })
 
-// Calculate profits and margins
 const materialProfit = computed(() => {
   return materialRevenue.value - materialCosts.value
 })
@@ -321,7 +318,6 @@ const materialMargin = computed(() => {
   return Math.round((materialProfit.value / materialRevenue.value) * 100)
 })
 
-// Revenue mix percentages
 const labourPercentage = computed(() => {
   if (totalRevenue.value === 0) return 0
   return Math.round((labourRevenue.value / totalRevenue.value) * 100)
@@ -332,7 +328,6 @@ const nonLabourPercentage = computed(() => {
   return Math.round((totalNonLabourRevenue.value / totalRevenue.value) * 100)
 })
 
-// Helper functions for daily calculations
 function getDayAdjustmentRevenue(day: DayKPI): number {
   const totalRev = day.details?.total_revenue || 0
   const labourRev = day.details?.time_revenue || 0

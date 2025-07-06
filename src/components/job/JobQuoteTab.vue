@@ -193,6 +193,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, watch } from 'vue'
 import { Link2, ExternalLink, RefreshCw } from 'lucide-vue-next'
 import CostLineDropdown from './CostLineDropdown.vue'
@@ -313,7 +315,7 @@ async function refreshQuoteData() {
     }
   } catch (error) {
     toast.error('Failed to refresh quote data')
-    console.error('Failed to refresh quote data:', error)
+    debugLog('Failed to refresh quote data:', error)
   } finally {
     isLoading.value = false
   }
@@ -365,7 +367,7 @@ async function onLinkQuote() {
     await refreshQuoteData()
   } catch (error) {
     toast.error('Error linking spreadsheet')
-    console.error('Error linking spreadsheet:', error)
+    debugLog('Error linking spreadsheet:', error)
   } finally {
     isLoading.value = false
   }
@@ -406,7 +408,7 @@ async function handleAddMaterial(payload: CostLine) {
     toast.success('Material cost line added!')
   } catch (error) {
     toast.error('Failed to add material cost line.')
-    console.error('Failed to add material:', error)
+    debugLog('Failed to add material:', error)
   } finally {
     isLoading.value = false
   }
@@ -442,7 +444,7 @@ async function handleAddTime(payload: CostLine) {
     toast.success('Time cost line added!')
   } catch (error) {
     toast.error('Failed to add time cost line.')
-    console.error('Failed to add time:', error)
+    debugLog('Failed to add time:', error)
   } finally {
     isLoading.value = false
   }
@@ -469,7 +471,7 @@ async function submitEditCostLine(payload: CostLine) {
     closeEditModal()
   } catch (error) {
     toast.error('Failed to update cost line.')
-    console.error('Failed to update cost line:', error)
+    debugLog('Failed to update cost line:', error)
   } finally {
     isLoading.value = false
   }
@@ -485,7 +487,7 @@ async function handleDeleteCostLine(line: CostLine) {
     toast.success('Cost line deleted successfully!')
   } catch (error) {
     toast.error('Failed to delete cost line.')
-    console.error('Failed to delete cost line:', error)
+    debugLog('Failed to delete cost line:', error)
   } finally {
     isLoading.value = false
   }

@@ -7,6 +7,7 @@ import { CompanyDefaultsService } from '@/services/company-defaults.service'
 import type { CostLine } from '@/types/costing.types'
 import type { Staff, TimeEntry, Job, WeeklyOverviewData } from '@/types/timesheet.types'
 import type { CostLineCreatePayload, CostLineUpdatePayload } from '@/services/costline.service'
+import { debugLog } from '@/utils/debug'
 
 export const useTimesheetStore = defineStore('timesheet', () => {
   const lines = ref<CostLine[]>([])
@@ -79,7 +80,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
   async function load(targetJobId: string, targetKind: 'estimate' | 'quote' | 'actual' = 'actual') {
     if (!targetJobId) {
-      console.warn('Load called without jobId')
+      debugLog('Load called without jobId')
       return
     }
 
@@ -87,7 +88,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      console.log(`Loading cost lines for job ${targetJobId}, kind: ${targetKind}`)
+      debugLog(`Loading cost lines for job ${targetJobId}, kind: ${targetKind}`)
 
       const costSet = await fetchCostSet(targetJobId, targetKind)
 
@@ -95,11 +96,11 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       jobId.value = targetJobId
       kind.value = targetKind
 
-      console.log(`Loaded ${costSet.cost_lines.length} cost lines successfully`)
+      debugLog(`Loaded ${costSet.cost_lines.length} cost lines successfully`)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load cost lines'
       error.value = errorMessage
-      console.error('Error loading cost lines:', err)
+      debugLog('Error loading cost lines:', err)
       throw err
     } finally {
       loading.value = false
@@ -119,12 +120,12 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
       lines.value.push(newLine)
 
-      console.log('Cost line added successfully:', newLine.id)
+      debugLog('Cost line added successfully:', newLine.id)
       return newLine
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to add cost line'
       error.value = errorMessage
-      console.error('Error adding cost line:', err)
+      debugLog('Error adding cost line:', err)
       throw err
     } finally {
       loading.value = false
@@ -146,12 +147,12 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
       Object.assign(lines.value[lineIndex], updatedLine)
 
-      console.log('Cost line updated successfully:', id)
+      debugLog('Cost line updated successfully:', id)
       return updatedLine
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update cost line'
       error.value = errorMessage
-      console.error('Error updating cost line:', err)
+      debugLog('Error updating cost line:', err)
       throw err
     } finally {
       loading.value = false
@@ -167,11 +168,11 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
       lines.value = lines.value.filter((line) => line.id !== id)
 
-      console.log('Cost line deleted successfully:', id)
+      debugLog('Cost line deleted successfully:', id)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete cost line'
       error.value = errorMessage
-      console.error('Error deleting cost line:', err)
+      debugLog('Error deleting cost line:', err)
       throw err
     } finally {
       loading.value = false
@@ -190,7 +191,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       await CompanyDefaultsService.getDefaults()
     } catch (err) {
-      console.error('Error loading company defaults:', err)
+      debugLog('Error loading company defaults:', err)
     }
   }
 
@@ -202,7 +203,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       staff.value = await TimesheetService.getStaff()
     } catch (err) {
       error.value = 'Failed to load staff members'
-      console.error('Error loading staff:', err)
+      debugLog('Error loading staff:', err)
     } finally {
       loading.value = false
     }
@@ -216,7 +217,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       jobs.value = await TimesheetService.getJobs()
     } catch (err) {
       error.value = 'Failed to load jobs'
-      console.error('Error loading jobs:', err)
+      debugLog('Error loading jobs:', err)
     } finally {
       loading.value = false
     }
@@ -235,7 +236,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       )
     } catch (err) {
       error.value = 'Failed to load time entries'
-      console.error('Error loading time entries:', err)
+      debugLog('Error loading time entries:', err)
     } finally {
       loading.value = false
     }
@@ -247,18 +248,18 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
     try {
       const weekStart = startDate || TimesheetService.getCurrentWeekRange().startDate
-      console.log('📊 Loading weekly overview for:', weekStart)
+      debugLog('📊 Loading weekly overview for:', weekStart)
 
       currentWeekData.value = await TimesheetService.getWeeklyOverview(weekStart)
 
-      console.log('✅ Weekly overview loaded successfully:', {
+      debugLog('✅ Weekly overview loaded successfully:', {
         staffCount: currentWeekData.value?.staffData?.length || 0,
         startDate: currentWeekData.value?.startDate,
         endDate: currentWeekData.value?.endDate,
       })
     } catch (err) {
       error.value = 'Failed to load weekly overview'
-      console.error('❌ Error loading weekly overview:', err)
+      debugLog('❌ Error loading weekly overview:', err)
       throw err
     } finally {
       loading.value = false
@@ -285,7 +286,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      console.log('📝 Creating new time entry:', entryData)
+      debugLog('📝 Creating new time entry:', entryData)
 
       const newEntry = await TimesheetService.createTimeEntry({
         staffId: selectedStaffId.value,
@@ -302,21 +303,21 @@ export const useTimesheetStore = defineStore('timesheet', () => {
         rateMultiplier: entryData.rateMultiplier || 1.0,
       })
 
-      console.log('✅ Time entry created in backend:', newEntry)
+      debugLog('✅ Time entry created in backend:', newEntry)
 
       const existingIndex = timeEntries.value.findIndex((e: TimeEntry) => e.id === newEntry.id)
       if (existingIndex === -1) {
         timeEntries.value.push(newEntry)
-        console.log('📝 Added new entry to local state')
+        debugLog('📝 Added new entry to local state')
       } else {
         timeEntries.value[existingIndex] = newEntry
-        console.log('🔄 Updated existing entry in local state')
+        debugLog('🔄 Updated existing entry in local state')
       }
 
       return newEntry
     } catch (err) {
       error.value = 'Failed to create time entry'
-      console.error('❌ Error creating time entry:', err)
+      debugLog('❌ Error creating time entry:', err)
       throw err
     } finally {
       loading.value = false
@@ -342,25 +343,25 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      console.log('🔄 Updating time entry:', entryId, updates)
+      debugLog('🔄 Updating time entry:', entryId, updates)
 
       const updatedEntry = await TimesheetService.updateTimeEntry(entryId, updates)
 
-      console.log('✅ Time entry updated in backend:', updatedEntry)
+      debugLog('✅ Time entry updated in backend:', updatedEntry)
 
       const index = timeEntries.value.findIndex((e: TimeEntry) => e.id === entryId)
       if (index !== -1) {
         timeEntries.value[index] = updatedEntry
-        console.log('🔄 Updated entry in local state')
+        debugLog('🔄 Updated entry in local state')
       } else {
         timeEntries.value.push(updatedEntry)
-        console.log('📝 Added updated entry to local state')
+        debugLog('📝 Added updated entry to local state')
       }
 
       return updatedEntry
     } catch (err) {
       error.value = 'Failed to update time entry'
-      console.error('❌ Error updating time entry:', err)
+      debugLog('❌ Error updating time entry:', err)
       throw err
     } finally {
       loading.value = false
@@ -372,23 +373,23 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      console.log('🗑️ Deleting time entry:', entryId)
+      debugLog('🗑️ Deleting time entry:', entryId)
 
       await TimesheetService.deleteTimeEntry(entryId)
 
-      console.log('✅ Time entry deleted in backend')
+      debugLog('✅ Time entry deleted in backend')
 
       const initialLength = timeEntries.value.length
       timeEntries.value = timeEntries.value.filter((e: TimeEntry) => e.id !== entryId)
 
       if (timeEntries.value.length < initialLength) {
-        console.log('🗑️ Removed entry from local state')
+        debugLog('🗑️ Removed entry from local state')
       } else {
-        console.log('⚠️ Entry not found in local state')
+        debugLog('⚠️ Entry not found in local state')
       }
     } catch (err) {
       error.value = 'Failed to delete time entry'
-      console.error('❌ Error deleting time entry:', err)
+      debugLog('❌ Error deleting time entry:', err)
       throw err
     } finally {
       loading.value = false
@@ -406,7 +407,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       await TimesheetService.autosaveTimeEntry(entryId, updates)
     } catch (err) {
-      console.error('Autosave failed:', err)
+      debugLog('Autosave failed:', err)
     }
   }
 
@@ -449,9 +450,9 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     const existingIndex = attachedJobs.value.findIndex((j) => j.id === job.id)
     if (existingIndex === -1) {
       attachedJobs.value.push(job)
-      console.log('Job attached to timesheet:', job.name)
+      debugLog('Job attached to timesheet:', job.name)
     } else {
-      console.log('Job already attached:', job.name)
+      debugLog('Job already attached:', job.name)
     }
   }
 
@@ -460,9 +461,9 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     if (index !== -1) {
       const removedJob = attachedJobs.value[index]
       attachedJobs.value.splice(index, 1)
-      console.log('Job removed from timesheet:', removedJob.name)
+      debugLog('Job removed from timesheet:', removedJob.name)
     } else {
-      console.log('Job not found in attached jobs:', jobId)
+      debugLog('Job not found in attached jobs:', jobId)
     }
   }
 

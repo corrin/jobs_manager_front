@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { JobDetail, JobEvent, JobPricing } from '@/schemas/job.schemas'
 import type { CompanyDefaults } from '@/types/timesheet.types'
+import { debugLog } from '@/utils/debug'
 
 export interface JobPricings {
   estimate_pricing?: JobPricing
@@ -85,30 +86,25 @@ export const useJobsStore = defineStore('jobs', () => {
 
   const setDetailedJob = (job: JobDetail): void => {
     if (!job) {
-      console.error('🚨 Store - setDetailedJob called with null/undefined job')
+      debugLog('🚨 Store - setDetailedJob called with null/undefined job')
       console.trace('Stack trace for undefined job call')
       return
     }
 
     if (!job.id || typeof job.id !== 'string') {
-      console.error(
-        '🚨 Store - setDetailedJob called with invalid job.id:',
-        job.id,
-        'Full job:',
-        job,
-      )
+      debugLog('🚨 Store - setDetailedJob called with invalid job.id:', job.id, 'Full job:', job)
       console.trace('Stack trace for invalid job.id call')
       return
     }
 
     const existingJob = detailedJobs.value[job.id]
     if (existingJob && JSON.stringify(existingJob) === JSON.stringify(job)) {
-      console.log('🔄 Store - Job data identical, skipping update to prevent loop:', job.id)
+      debugLog('🔄 Store - Job data identical, skipping update to prevent loop:', job.id)
       return
     }
 
-    console.log('🏪 Store - setDetailedJob called with job:', job.id, 'job_status:', job.job_status)
-    console.log(
+    debugLog('🏪 Store - setDetailedJob called with job:', job.id, 'job_status:', job.job_status)
+    debugLog(
       '🏪 Store - Before update, current job in store:',
       detailedJobs.value[job.id]?.job_status || 'NOT_FOUND',
     )
@@ -119,10 +115,10 @@ export const useJobsStore = defineStore('jobs', () => {
       [job.id]: newJob,
     }
 
-    console.log('🏪 Store - After update, job in store:', detailedJobs.value[job.id]?.job_status)
+    debugLog('🏪 Store - After update, job in store:', detailedJobs.value[job.id]?.job_status)
 
     if (kanbanJobs.value[job.id]) {
-      console.log('🏪 Store - Also updating kanban job')
+      debugLog('🏪 Store - Also updating kanban job')
       updateKanbanJobFromDetailed(newJob)
     }
   }
@@ -275,7 +271,7 @@ export const useJobsStore = defineStore('jobs', () => {
     timeEntryData: Record<string, unknown>,
   ): Promise<void> => {
     try {
-      console.log('🏪 Store - Adding time entry for job:', jobId, timeEntryData)
+      debugLog('🏪 Store - Adding time entry for job:', jobId, timeEntryData)
 
       const { jobRestService } = await import('@/services/job-rest.service')
 
@@ -292,7 +288,7 @@ export const useJobsStore = defineStore('jobs', () => {
         105.0
       const baseWageRate = Number(currentJob.company_defaults?.wage_rate) || 32.0
 
-      console.log('🔍 Store - Debug wage_rate and charge_out_rate:', {
+      debugLog('🔍 Store - Debug wage_rate and charge_out_rate:', {
         company_defaults: currentJob.company_defaults,
         job_charge_out_rate: currentJob.charge_out_rate,
         calculated_charge_out_rate: chargeMultiplier * baseChargeOutRate,
@@ -320,12 +316,12 @@ export const useJobsStore = defineStore('jobs', () => {
           setDetailedJob(freshResponse.data.job)
         }
 
-        console.log('✅ Store - Time entry added successfully and job reloaded')
+        debugLog('✅ Store - Time entry added successfully and job reloaded')
       } else {
         throw new Error('Failed to add time entry')
       }
     } catch (error) {
-      console.error('❌ Store - Error adding time entry:', error)
+      debugLog('❌ Store - Error adding time entry:', error)
       throw error
     }
   }
@@ -335,7 +331,7 @@ export const useJobsStore = defineStore('jobs', () => {
     materialEntryData: MaterialEntryData,
   ): Promise<void> => {
     try {
-      console.log('🏪 Store - Adding material entry for job:', jobId, materialEntryData)
+      debugLog('🏪 Store - Adding material entry for job:', jobId, materialEntryData)
 
       const { jobRestService } = await import('@/services/job-rest.service')
 
@@ -367,12 +363,12 @@ export const useJobsStore = defineStore('jobs', () => {
           setDetailedJob(freshResponse.data.job)
         }
 
-        console.log('✅ Store - Material entry added successfully and job reloaded')
+        debugLog('✅ Store - Material entry added successfully and job reloaded')
       } else {
         throw new Error('Failed to add material entry')
       }
     } catch (error) {
-      console.error('❌ Store - Error adding material entry:', error)
+      debugLog('❌ Store - Error adding material entry:', error)
       throw error
     }
   }
@@ -382,7 +378,7 @@ export const useJobsStore = defineStore('jobs', () => {
     adjustmentEntryData: AdjustmentEntryData,
   ): Promise<void> => {
     try {
-      console.log('🏪 Store - Adding adjustment entry for job:', jobId, adjustmentEntryData)
+      debugLog('🏪 Store - Adding adjustment entry for job:', jobId, adjustmentEntryData)
 
       const { jobRestService } = await import('@/services/job-rest.service')
 
@@ -410,26 +406,26 @@ export const useJobsStore = defineStore('jobs', () => {
           setDetailedJob(freshResponse.data.job)
         }
 
-        console.log('✅ Store - Adjustment entry added successfully and job reloaded')
+        debugLog('✅ Store - Adjustment entry added successfully and job reloaded')
       } else {
         throw new Error('Failed to add adjustment entry')
       }
     } catch (error) {
-      console.error('❌ Store - Error adding adjustment entry:', error)
+      debugLog('❌ Store - Error adding adjustment entry:', error)
       throw error
     }
   }
 
   const linkQuote = async (jobId: string, templateUrl?: string): Promise<void> => {
     try {
-      console.log('🏪 Store - Linking quote sheet for job:', jobId)
+      debugLog('🏪 Store - Linking quote sheet for job:', jobId)
 
       const { quoteService } = await import('@/services/quote.service')
       const result = await quoteService.linkQuote(jobId, templateUrl)
 
-      console.log('✅ Store - Quote sheet linked successfully:', result)
+      debugLog('✅ Store - Quote sheet linked successfully:', result)
     } catch (error) {
-      console.error('❌ Store - Error linking quote sheet:', error)
+      debugLog('❌ Store - Error linking quote sheet:', error)
       throw error
     }
   }
@@ -439,7 +435,7 @@ export const useJobsStore = defineStore('jobs', () => {
     options: { skipValidation?: boolean } = {},
   ): Promise<void> => {
     try {
-      console.log('🏪 Store - Refreshing quote for job:', jobId)
+      debugLog('🏪 Store - Refreshing quote for job:', jobId)
 
       const { quoteService } = await import('@/services/quote.service')
 
@@ -456,12 +452,12 @@ export const useJobsStore = defineStore('jobs', () => {
           setDetailedJob(freshResponse.data.job)
         }
 
-        console.log('✅ Store - Quote refreshed successfully')
+        debugLog('✅ Store - Quote refreshed successfully')
       } else {
         throw new Error(result.error || 'Quote refresh failed')
       }
     } catch (error) {
-      console.error('❌ Store - Error refreshing quote:', error)
+      debugLog('❌ Store - Error refreshing quote:', error)
       throw error
     }
   }
@@ -483,7 +479,7 @@ export const useJobsStore = defineStore('jobs', () => {
           throw new Error('Job not found')
       }
     } catch (error) {
-      console.error('❌ Store - fetchJob error:', error)
+      debugLog('❌ Store - fetchJob error:', error)
       throw error
     }
   }

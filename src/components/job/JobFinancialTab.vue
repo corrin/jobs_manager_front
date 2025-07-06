@@ -29,7 +29,11 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <!-- Only show Quotes section for Fixed Price jobs -->
+      <div
+        v-if="jobData?.pricing_methodology !== 'time_materials'"
+        class="bg-white rounded-lg border border-gray-200 p-6"
+      >
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Quotes</h3>
 
         <div v-if="!jobData?.quoted" class="text-center py-8">
@@ -125,11 +129,43 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { computed } from 'vue'
-import type { JobData } from '@/services/job-rest.service'
-import { useJobsStore } from '@/stores/jobs'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
+
+interface JobData {
+  id: string
+  delivery_date?: string | null
+  quote_acceptance_date?: string | null
+  quoted?: boolean
+  invoiced?: boolean
+  paid: boolean
+  pricing_methodology?: 'fixed_price' | 'time_materials'
+  latest_estimate?: {
+    summary?: {
+      rev: number
+    }
+  } | null
+  latest_actual?: {
+    summary?: {
+      rev: number
+    }
+    cost_lines?: Array<{
+      kind: string
+      total_rev: number
+    }>
+  } | null
+  quote?: {
+    total_excl_tax: number
+    online_url?: string
+  } | null
+  invoice?: {
+    total_excl_tax: number
+    online_url?: string
+  } | null
+}
 
 interface Props {
   jobData: JobData | null
@@ -138,8 +174,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-
-const jobsStore = useJobsStore()
 
 const emit = defineEmits<{
   'quote-created': []
@@ -152,21 +186,17 @@ const estimateTotal = computed(() => {
 })
 
 const timeAndExpenses = computed(() => {
-  const totalTime =
+  return (
     props.jobData?.latest_actual?.cost_lines?.reduce((sum, line) => {
-      if (line.kind === 'time') return sum + (line.total_rev || 0)
+      return sum + (line.total_rev || 0)
     }, 0) || 0
-
-  const totalExpenses =
-    props.jobData?.latest_actual?.cost_lines?.reduce((sum, line) => {
-      if (line.kind === 'material') return sum + (line.total_rev || 0)
-    }, 0) || 0
-
-  return totalTime + totalExpenses
+  )
 })
 
 const toBeInvoiced = computed(() => {
-  return props.jobData?.latest_actual?.summary?.rev - invoiceTotal.value || 0
+  const actualTotal = props.jobData?.latest_actual?.summary?.rev || 0
+  const invoiced = invoiceTotal.value
+  return Math.max(0, actualTotal - invoiced)
 })
 
 const quoteTotal = computed(() => {
@@ -223,30 +253,19 @@ const createQuote = async () => {
   try {
     const response = await axios.post(`/api/xero/create_quote/${props.jobData.id}`)
     if (!response.data?.success) {
-      console.error(response.data?.error || 'Failed to create quote')
+      debugLog(response.data?.error || 'Failed to create quote')
       return
     }
-    if (!response.data.job) {
-      await jobsStore.fetchJob(props.jobData.id)
-      return
-    }
-    jobsStore.setDetailedJob(response.data.job)
     toast.success('Quote created successfully!')
     emit('quote-created')
   } catch (err) {
-    console.error('Error creating quote:', err)
+    debugLog('Error creating quote:', err)
     toast.error('Failed to create quote.')
   }
 }
 
 const acceptQuote = () => {
   if (props.jobData) {
-    const updatedData = {
-      ...props.jobData,
-      quote_acceptance_date: new Date().toISOString(),
-    }
-
-    jobsStore.setDetailedJob(updatedData)
     emit('quote-accepted')
   }
 }
@@ -256,18 +275,13 @@ const createInvoice = async () => {
   try {
     const response = await axios.post(`/api/xero/create_invoice/${props.jobData.id}`)
     if (!response.data?.success) {
-      console.error(response.data?.error || 'Failed to create invoice')
+      debugLog(response.data?.error || 'Failed to create invoice')
       return
     }
-    if (!response.data.job) {
-      await jobsStore.fetchJob(props.jobData.id)
-      return
-    }
-    jobsStore.setDetailedJob(response.data.job)
     toast.success('Invoice created successfully!')
     emit('invoice-created')
   } catch (err) {
-    console.error('Error creating invoice:', err)
+    debugLog('Error creating invoice:', err)
     toast.error('Failed to create invoice.')
   }
 }
@@ -283,17 +297,12 @@ const deleteQuoteOnXero = async () => {
   try {
     const response = await axios.post(`/api/xero/delete_quote/${props.jobData.id}`)
     if (!response.data?.success) {
-      console.error(response.data?.error || 'Failed to delete quote')
+      debugLog(response.data?.error || 'Failed to delete quote')
       return
     }
-    if (!response.data.job) {
-      await jobsStore.fetchJob(props.jobData.id)
-      return
-    }
-    jobsStore.setDetailedJob(response.data.job)
     toast.success('Quote deleted successfully!')
   } catch (err) {
-    console.error('Error deleting quote:', err)
+    debugLog('Error deleting quote:', err)
     toast.error('Failed to delete quote.')
   }
 }
@@ -309,17 +318,12 @@ const deleteInvoiceOnXero = async () => {
   try {
     const response = await axios.post(`/api/xero/delete_invoice/${props.jobData.id}`)
     if (!response.data?.success) {
-      console.error(response.data?.error || 'Failed to delete invoice')
+      debugLog(response.data?.error || 'Failed to delete invoice')
       return
     }
-    if (!response.data.job) {
-      await jobsStore.fetchJob(props.jobData.id)
-      return
-    }
-    jobsStore.setDetailedJob(response.data.job)
     toast.success('Invoice deleted successfully!')
   } catch (err) {
-    console.error('Error deleting invoice:', err)
+    debugLog('Error deleting invoice:', err)
     toast.error('Failed to delete invoice.')
   }
 }

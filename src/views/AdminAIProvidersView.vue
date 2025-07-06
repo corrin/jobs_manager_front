@@ -105,7 +105,6 @@ import {
 import { Plus } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 
-// These components and services are assumed to exist and will be created in subsequent steps.
 import AIProviderFormModal from '@/components/admin/AIProviderFormModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import { aiProviderService, type AIProvider } from '@/services/aiProviderService'
@@ -161,7 +160,7 @@ const handleSave = async (providerData: AIProvider) => {
       toast.success('Provider created successfully.')
     }
     closeModal()
-    await fetchProviders() // Refresh the list
+    await fetchProviders()
   } catch (error: unknown) {
     const errMessage = (error as Error).message || 'An unknown error occurred.'
     toast.error('Failed to save provider.', {
@@ -177,7 +176,7 @@ const toggleDefault = async (provider: AIProvider) => {
   try {
     await aiProviderService.setDefaultProvider(provider.id)
     toast.success(`'${provider.name}' is now the default provider.`)
-    await fetchProviders() // Refresh to show updated default status for all items
+    await fetchProviders()
   } catch (error: unknown) {
     const errMessage = (error as Error).message || 'An unknown error occurred.'
     toast.error('Failed to set default provider.', {

@@ -1,4 +1,5 @@
 import { toast } from 'vue-sonner'
+import { debugLog } from '@/utils/debug'
 
 export function useJobNotifications() {
   const notifyJobUpdated = (jobName: string) => {
@@ -8,7 +9,7 @@ export function useJobNotifications() {
   }
 
   const notifyJobLoaded = (jobName: string) => {
-    console.log(`✅ Job ${jobName} loaded successfully`)
+    debugLog(`✅ Job ${jobName} loaded successfully`)
   }
 
   const notifyJobError = (jobId: string, error: string) => {
@@ -50,7 +51,7 @@ export function useJobNotifications() {
   const notifyDataChanged = (dataType: string) => {
     toast.info('Data changed', {
       description: `${dataType} was changed - saving automatically`,
-      duration: 4000, // auto-dismiss after 4s
+      duration: 4000,
     })
   }
 
@@ -63,7 +64,7 @@ export function useJobNotifications() {
   const notifyPricingUpdated = () => {
     toast.info('Prices updated', {
       description: 'Pricing data was updated automatically',
-      duration: 4000, // auto-dismiss after 4s
+      duration: 4000,
     })
   }
 
@@ -113,7 +114,7 @@ export function useJobNotifications() {
       toast.info('No changes found', {
         description: 'The spreadsheet is synchronized with the system',
         id: 'quote-refresh',
-        duration: 4000, // auto-dismiss after 4s
+        duration: 4000,
       })
     }
   }

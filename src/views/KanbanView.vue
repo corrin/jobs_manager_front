@@ -168,6 +168,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, onUnmounted, onMounted, nextTick } from 'vue'
 import { Search, LayoutGrid } from 'lucide-vue-next'
 import JobCard from '@/components/JobCard.vue'
@@ -233,7 +235,7 @@ const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
     Object.assign(advancedFilters.value, filters)
     await handleAdvancedSearch()
   } catch (error) {
-    console.error('Error performing advanced search from dialog:', error)
+    debugLog('Error performing advanced search from dialog:', error)
   }
 }
 
@@ -258,11 +260,11 @@ const { initializeStaffPool, initializeJobStaffContainer, updateJobStaffContaine
   useStaffDragAndDrop(async (event: string, payload?: StaffAssignmentPayload) => {
     if (event === 'staff-assigned') {
       if (payload) {
-        console.log(`Staff ${payload.staffId} assigned to job ${payload.jobId}`)
+        debugLog(`Staff ${payload.staffId} assigned to job ${payload.jobId}`)
       }
     } else if (event === 'staff-removed') {
       if (payload) {
-        console.log(`Staff ${payload.staffId} removed from job ${payload.jobId}`)
+        debugLog(`Staff ${payload.staffId} removed from job ${payload.jobId}`)
       }
     } else if (event === 'jobs-reload-needed') {
       await loadJobs()
@@ -290,7 +292,7 @@ const initializeSortableForColumn = (status: string, element: HTMLElement) => {
 
   nextTick(() => {
     const jobCards = element.querySelectorAll('.job-card-simple')
-    console.log(`🔧 Initialising SortableJS for status ${status}:`, {
+    debugLog(`🔧 Initialising SortableJS for status ${status}:`, {
       jobCards: jobCards.length,
     })
 
@@ -308,7 +310,7 @@ const initialiseSortableForAllColumns = () => {
 }
 
 const handleStaffPanelReady = (staffPanelElement: HTMLElement) => {
-  console.log('🧑‍💼 Staff panel ready, initialising staff pool')
+  debugLog('🧑‍💼 Staff panel ready, initialising staff pool')
   initializeStaffPool(staffPanelElement)
 }
 

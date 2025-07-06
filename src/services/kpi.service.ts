@@ -1,6 +1,6 @@
 import apiClient from './api'
+import { debugLog } from '@/utils/debug'
 
-// Legacy interfaces - keeping for backward compatibility
 export interface KPIDay {
   date: string
   total_hours: number
@@ -43,7 +43,6 @@ export interface KPICalendarParams {
   mode?: 'timesheet' | 'ims'
 }
 
-// New interfaces for accounting API
 export interface DayKPI {
   date: string
   day: number
@@ -111,7 +110,6 @@ class KPIService {
   private baseUrl = '/timesheet/api'
   private accountingBaseUrl = '/accounting/api'
 
-  // Legacy method - keeping for backward compatibility
   async getKPICalendarData(params: KPICalendarParams): Promise<KPICalendarData> {
     try {
       const searchParams = new URLSearchParams({
@@ -122,12 +120,11 @@ class KPIService {
       const response = await apiClient.get(`${this.baseUrl}/kpi-calendar/?${searchParams}`)
       return response.data
     } catch (error) {
-      console.error('❌ Error fetching KPI calendar data:', error)
+      debugLog('❌ Error fetching KPI calendar data:', error)
       throw error
     }
   }
 
-  // New method for accounting API
   async getAccountingKPICalendarData(
     params: KPIAccountingParams = {},
   ): Promise<KPICalendarResponse> {
@@ -142,7 +139,7 @@ class KPIService {
       const response = await apiClient.get(url)
       return response.data
     } catch (error) {
-      console.error('❌ Error fetching accounting KPI calendar data:', error)
+      debugLog('❌ Error fetching accounting KPI calendar data:', error)
       throw error
     }
   }
@@ -151,7 +148,6 @@ class KPIService {
     return date.toISOString().split('T')[0]
   }
 
-  // Helper methods for the new accounting API
   formatCurrency(value: number): string {
     return new Intl.NumberFormat('en-NZ', {
       style: 'currency',

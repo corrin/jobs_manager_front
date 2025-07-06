@@ -1,4 +1,5 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { debugLog } from '@/utils/debug'
 
 export function useDeviceDetection() {
   const windowWidth = ref(window.innerWidth)
@@ -27,7 +28,7 @@ export function useDeviceDetection() {
       windowHeight.value <= 1366 &&
       !(windowWidth.value <= 430 && windowHeight.value <= 932)
 
-    console.log('Device detection:', {
+    debugLog('Device detection:', {
       windowWidth: windowWidth.value,
       windowHeight: windowHeight.value,
       isTabletDimensions,

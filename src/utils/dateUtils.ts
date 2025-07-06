@@ -1,5 +1,6 @@
 import type { DateValue } from '@internationalized/date'
 import { CalendarDate } from '@internationalized/date'
+import { debugLog } from '@/utils/debug'
 
 export function toDateValue(date: Date | string | null | undefined): DateValue | undefined {
   if (!date) {
@@ -18,7 +19,7 @@ export function toDateValue(date: Date | string | null | undefined): DateValue |
 
     return new CalendarDate(year, month, day)
   } catch (error) {
-    console.warn('Failed to convert date to DateValue:', error)
+    debugLog('Failed to convert date to DateValue:', error)
     return undefined
   }
 }
@@ -31,7 +32,7 @@ export function fromDateValue(dateValue: DateValue | null | undefined): Date | n
   try {
     return new Date(dateValue.year, dateValue.month - 1, dateValue.day)
   } catch (error) {
-    console.warn('Failed to convert DateValue to Date:', error)
+    debugLog('Failed to convert DateValue to Date:', error)
     return null
   }
 }

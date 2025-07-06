@@ -68,10 +68,8 @@ const monthOptions = computed(() => {
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth() + 1
 
-  // Generate options for current year and previous 2 years
   for (let year = currentYear; year >= currentYear - 2; year--) {
     for (let month = 12; month >= 1; month--) {
-      // Don't show future months
       if (year === currentYear && month > currentMonth) {
         continue
       }

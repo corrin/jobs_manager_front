@@ -1,5 +1,6 @@
 import api from '@/plugins/axios'
 import '@/types/global.d.ts'
+import { debugLog } from '@/utils/debug'
 
 export interface CompanyDefaults {
   materials_markup: number
@@ -16,11 +17,11 @@ export const CompanyDefaultsService = {
       return cachedDefaults
     }
     try {
-      console.log('🔄 Loading company defaults from API...')
+      debugLog('🔄 Loading company defaults from API...')
       const response = await api.get<CompanyDefaults>('/job/api/company_defaults/')
       cachedDefaults = response.data
 
-      console.log('✅ Company defaults loaded successfully:', cachedDefaults)
+      debugLog('✅ Company defaults loaded successfully:', cachedDefaults)
 
       window.companyDefaults = cachedDefaults
 
@@ -31,7 +32,7 @@ export const CompanyDefaultsService = {
         message?: string
         config?: { url?: string }
       }
-      console.warn('⚠️ Failed to load company defaults from API:', {
+      debugLog('⚠️ Failed to load company defaults from API:', {
         status: errorObj.response?.status,
         message: errorObj.message,
         url: errorObj.config?.url,
@@ -44,7 +45,7 @@ export const CompanyDefaultsService = {
         wage_rate: 32.0,
       }
 
-      console.log('📋 Using fallback company defaults:', fallback)
+      debugLog('📋 Using fallback company defaults:', fallback)
       window.companyDefaults = fallback
       cachedDefaults = fallback
       return fallback

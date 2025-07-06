@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import api from '@/plugins/axios'
 import type { ClientContact } from '@/composables/useClientLookup'
+import { debugLog } from '@/utils/debug'
 
 export interface NewContactData {
   name: string
@@ -44,7 +45,7 @@ export function useContactManagement() {
 
   const openModal = async (clientId: string, clientName: string) => {
     if (!clientId) {
-      console.warn('Cannot open contact modal without client ID')
+      debugLog('Cannot open contact modal without client ID')
       return
     }
 
@@ -78,7 +79,7 @@ export function useContactManagement() {
         contacts.value = []
       }
     } catch (error) {
-      console.error('Error loading contacts:', error)
+      debugLog('Error loading contacts:', error)
       contacts.value = []
     } finally {
       isLoading.value = false
@@ -96,12 +97,12 @@ export function useContactManagement() {
 
   const createNewContact = async (): Promise<boolean> => {
     if (!currentClientId.value) {
-      console.error('Cannot create contact without client ID')
+      debugLog('Cannot create contact without client ID')
       return false
     }
 
     if (!newContactForm.value.name.trim()) {
-      console.error('Contact name is required')
+      debugLog('Contact name is required')
       return false
     }
 
@@ -133,7 +134,7 @@ export function useContactManagement() {
       closeModal()
       return true
     } catch (error) {
-      console.error('Error creating contact:', error)
+      debugLog('Error creating contact:', error)
       return false
     } finally {
       isLoading.value = false
@@ -163,7 +164,7 @@ export function useContactManagement() {
         return true
 
       default:
-        console.warn('Please select an existing contact or create a new one')
+        debugLog('Please select an existing contact or create a new one')
         return false
     }
   }

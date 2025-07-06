@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useDeviceDetection } from '@/composables/useDeviceDetection'
 import type { Job } from '@/types'
+import { debugLog } from '@/utils/debug'
 
 export function useMobileJobMovement() {
   const { isMobile, isTablet } = useDeviceDetection()
@@ -11,7 +12,7 @@ export function useMobileJobMovement() {
 
   const shouldShowMovementControls = computed(() => {
     const shouldShow = window.innerWidth < 1024
-    console.log('Movement controls visibility:', {
+    debugLog('Movement controls visibility:', {
       isMobile: isMobile.value,
       isTablet: isTablet.value,
       windowWidth: window.innerWidth,
@@ -52,7 +53,7 @@ export function useMobileJobMovement() {
       await onMoveJob(selectedJobForMovement.value.id.toString(), targetStatus)
       exitMovementMode()
     } catch (error) {
-      console.error('Error moving job:', error)
+      debugLog('Error moving job:', error)
     }
   }
 

@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { getApiBaseUrl } from '../plugins/axios'
 import { toast } from 'vue-sonner'
+import { debugLog } from '@/utils/debug'
 
 export function useXeroAuth() {
   const router = useRouter()
@@ -219,7 +220,7 @@ export function useXeroAuth() {
         message: data.message,
         severity: data.severity ?? 'info',
         entity: data.entity ?? inferEntityFromMsg(data.message),
-        progress: data.entity_progress, // sempre presente
+        progress: data.entity_progress,
         recordsUpdated: data.records_updated ?? undefined,
         status: data.status ?? undefined,
       })
@@ -233,7 +234,7 @@ export function useXeroAuth() {
           `${formatEntityName(entity)}: ${data.message}` +
             (missingFields.length ? ` (missing: ${missingFields.join(', ')})` : ''),
         )
-        console.error('[Xero SSE Error]', {
+        debugLog('[Xero SSE Error]', {
           entity,
           message: data.message,
           missingFields,

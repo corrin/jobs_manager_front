@@ -5,6 +5,7 @@ import {
   type QuoteImportResponse,
   type QuoteStatusResponse,
 } from '@/services/quote-import.service'
+import { debugLog } from '@/utils/debug'
 
 export function useQuoteImport() {
   const isLoading = ref(false)
@@ -49,12 +50,12 @@ export function useQuoteImport() {
     error.value = null
 
     try {
-      console.log('🔍 [useQuoteImport] Loading quote status for jobId:', jobId)
+      debugLog('🔍 [useQuoteImport] Loading quote status for jobId:', jobId)
       currentQuote.value = await quoteImportService.getQuoteStatus(jobId)
-      console.log('✅ [useQuoteImport] Quote status loaded:', currentQuote.value)
+      debugLog('✅ [useQuoteImport] Quote status loaded:', currentQuote.value)
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Failed to load quote status'
-      console.error('❌ [useQuoteImport] Failed to load quote status:', err)
+      debugLog('❌ [useQuoteImport] Failed to load quote status:', err)
     } finally {
       isLoading.value = false
     }
@@ -74,7 +75,7 @@ export function useQuoteImport() {
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Preview failed'
       previewData.value = null
-      console.error('Preview import failed:', err)
+      debugLog('Preview import failed:', err)
     } finally {
       isLoading.value = false
     }
@@ -98,7 +99,7 @@ export function useQuoteImport() {
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Import failed'
       importResult.value = null
-      console.error('Execute import failed:', err)
+      debugLog('Execute import failed:', err)
     } finally {
       isLoading.value = false
     }

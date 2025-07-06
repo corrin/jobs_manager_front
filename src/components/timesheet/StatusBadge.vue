@@ -41,6 +41,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { Check, AlertTriangle, Clock, Plane } from 'lucide-vue-next'
 
 interface Props {
@@ -50,7 +52,7 @@ interface Props {
 
 const props = defineProps<Props>()
 
-console.debug('StatusBadge', { status: props.status, leaveType: props.leaveType })
+debugLog('StatusBadge', { status: props.status, leaveType: props.leaveType })
 
 const getLeaveTypeDisplay = (leaveType?: string): string => {
   if (!leaveType) return 'Leave'

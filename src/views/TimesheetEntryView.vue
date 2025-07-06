@@ -432,6 +432,8 @@
 </template>
 
 <script lang="ts" setup>
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
@@ -483,13 +485,13 @@ const showHelpModal = ref(false)
 const agGridRef = ref()
 
 const todayDate = new Date().toISOString().split('T')[0]
-console.log('🗓️ Today is:', todayDate, 'Day of week:', new Date().getDay())
+debugLog('🗓️ Today is:', todayDate, 'Day of week:', new Date().getDay())
 
 const initialDate = (route.query.date as string) || todayDate
 const initialStaffId = (route.query.staffId as string) || ''
 
-console.log('🔗 URL params:', { date: route.query.date, staffId: route.query.staffId })
-console.log('📊 Using initial values:', { date: initialDate, staffId: initialStaffId })
+debugLog('🔗 URL params:', { date: route.query.date, staffId: route.query.staffId })
+debugLog('📊 Using initial values:', { date: initialDate, staffId: initialStaffId })
 
 const currentDate = ref<string>(initialDate)
 const selectedStaffId = ref<string>(initialStaffId)
@@ -574,7 +576,7 @@ const navigateDate = (direction: number) => {
   const newDay = date.getDate().toString().padStart(2, '0')
 
   currentDate.value = `${newYear}-${newMonth}-${newDay}`
-  console.log('📅 Navigated to:', currentDate.value, 'Day of week:', date.getDay())
+  debugLog('📅 Navigated to:', currentDate.value, 'Day of week:', date.getDay())
   updateRoute()
 }
 
@@ -592,7 +594,7 @@ const goToToday = () => {
   const day = today.getDate().toString().padStart(2, '0')
 
   currentDate.value = `${year}-${month}-${day}`
-  console.log('📅 Going to today (or next workday):', currentDate.value)
+  debugLog('📅 Going to today (or next workday):', currentDate.value)
   updateRoute()
 }
 
@@ -647,12 +649,12 @@ const formatShortDate = (date: string): string => {
 }
 
 function syncGridState() {
-  console.log('🔄 Starting syncGridState...')
+  debugLog('🔄 Starting syncGridState...')
 
   const gridData = getGridData()
 
-  console.log('📋 Got grid data from composable:', gridData.length, 'entries')
-  console.log(
+  debugLog('📋 Got grid data from composable:', gridData.length, 'entries')
+  debugLog(
     '🔍 Raw grid data:',
     gridData.map((d) => ({
       jobId: d.jobId,
@@ -667,7 +669,7 @@ function syncGridState() {
 
   timeEntries.value = gridData.filter((d) => {
     const hasJob = d && !d.isEmptyRow && (d.jobId || d.jobNumber)
-    console.log('🔍 Filtering entry:', {
+    debugLog('🔍 Filtering entry:', {
       jobId: d?.jobId,
       jobNumber: d?.jobNumber,
       isEmptyRow: d?.isEmptyRow,
@@ -676,8 +678,8 @@ function syncGridState() {
     return hasJob
   }) as OptimizedTimeEntry[]
 
-  console.log('✅ Synced grid state with timeEntries:', timeEntries.value.length, 'entries')
-  console.log(
+  debugLog('✅ Synced grid state with timeEntries:', timeEntries.value.length, 'entries')
+  debugLog(
     '📊 Synced entries detail:',
     timeEntries.value.map((e: OptimizedTimeEntry) => ({
       id: e.id,
@@ -765,7 +767,7 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
       timeEntries.value.push({ ...entry, ...savedLine, isNewRow: false, isModified: false })
     }
   } catch (err) {
-    console.error('❌ Error saving entry:', err)
+    debugLog('❌ Error saving entry:', err)
     error.value = 'Failed to save entry'
   } finally {
     loading.value = false
@@ -782,9 +784,9 @@ async function handleDeleteEntry(id: number): Promise<void> {
     timeEntries.value = timeEntries.value.filter((e: OptimizedTimeEntry) => e.id !== id)
 
     hasUnsavedChanges.value = false
-    console.log('✅ Entry deleted successfully:', id)
+    debugLog('✅ Entry deleted successfully:', id)
   } catch (err) {
-    console.error('❌ Error deleting entry:', err)
+    debugLog('❌ Error deleting entry:', err)
     error.value = 'Failed to delete entry'
   } finally {
     loading.value = false
@@ -792,7 +794,7 @@ async function handleDeleteEntry(id: number): Promise<void> {
 }
 
 function handleCellValueChanged(event: CellValueChangedEvent) {
-  console.log('🔧 TimesheetEntryView handleCellValueChanged called:', {
+  debugLog('🔧 TimesheetEntryView handleCellValueChanged called:', {
     field: event.colDef.field,
     newValue: event.newValue,
     oldValue: event.oldValue,
@@ -800,7 +802,6 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
 
   gridHandleCellValueChanged(event)
 
-  // Marcar a entrada como modificada para qualquer alteração
   if (event.data && typeof event.data === 'object') {
     event.data.isModified = true
   }
@@ -821,15 +822,15 @@ function onFirstDataRendered() {
 }
 
 const addNewEntry = () => {
-  console.log('➕ Adding new entry for staff:', selectedStaffId.value)
+  debugLog('➕ Adding new entry for staff:', selectedStaffId.value)
 
   hasUnsavedChanges.value = true
 }
 
 const saveChanges = async () => {
-  console.log('💾 Starting saveChanges...')
-  console.log('🔍 agGridRef.value:', !!agGridRef.value)
-  console.log('🔍 agGridRef.value?.api:', !!agGridRef.value?.api)
+  debugLog('💾 Starting saveChanges...')
+  debugLog('🔍 agGridRef.value:', !!agGridRef.value)
+  debugLog('🔍 agGridRef.value?.api:', !!agGridRef.value?.api)
 
   syncGridState()
 
@@ -837,8 +838,8 @@ const saveChanges = async () => {
     (entry: OptimizedTimeEntry) => entry.isNewRow || entry.isModified,
   )
 
-  console.log('📊 Found', changedEntries.length, 'changed entries to save')
-  console.log(
+  debugLog('📊 Found', changedEntries.length, 'changed entries to save')
+  debugLog(
     '🔍 Changed entries details:',
     changedEntries.map((e) => ({
       id: e.id,
@@ -850,7 +851,7 @@ const saveChanges = async () => {
   )
 
   if (changedEntries.length === 0) {
-    console.log('⚠️ No entries to save')
+    debugLog('⚠️ No entries to save')
     return
   }
 
@@ -863,7 +864,7 @@ const saveChanges = async () => {
   })
 
   if (invalidEntries.length > 0) {
-    console.log('❌ Found invalid entries:', invalidEntries)
+    debugLog('❌ Found invalid entries:', invalidEntries)
     const missingFields = invalidEntries
       .map((entry) => {
         const missing = []
@@ -879,14 +880,14 @@ const saveChanges = async () => {
   }
 
   for (const entry of changedEntries) {
-    console.log('🔄 Saving entry:', {
+    debugLog('🔄 Saving entry:', {
       id: entry.id,
       isNewRow: entry.isNewRow,
       isModified: entry.isModified,
       description: entry.description,
     })
-    console.log('Call-stack: ', new Error().stack)
-    console.log('Timestamp:', new Date().toISOString())
+    debugLog('Call-stack: ', new Error().stack)
+    debugLog('Timestamp:', new Date().toISOString())
     await handleSaveEntry(entry)
 
     entry.isModified = false
@@ -906,16 +907,16 @@ const refreshData = () => {
 
 const handleStaffChange = async (staffId: string | null) => {
   if (!staffId) {
-    console.log('⏭️ Skipping staff change - no staffId provided')
+    debugLog('⏭️ Skipping staff change - no staffId provided')
     return
   }
 
   if (staffId === selectedStaffId.value) {
-    console.log('⏭️ Skipping staff change - same staff selected')
+    debugLog('⏭️ Skipping staff change - same staff selected')
     return
   }
 
-  console.log('👤 Staff changed:', { from: selectedStaffId.value, to: staffId })
+  debugLog('👤 Staff changed:', { from: selectedStaffId.value, to: staffId })
 
   selectedStaffId.value = staffId
   updateRoute()
@@ -924,22 +925,22 @@ const handleStaffChange = async (staffId: string | null) => {
 }
 
 const loadTimesheetData = async () => {
-  console.log('function loadTimesheetData called with:', {
+  debugLog('function loadTimesheetData called with:', {
     staffId: selectedStaffId.value,
     date: currentDate.value,
     isInitializing: isInitializing.value,
   })
 
-  console.log('Call-stack: ', new Error().stack)
-  console.log('Timestamp:', new Date().toISOString())
+  debugLog('Call-stack: ', new Error().stack)
+  debugLog('Timestamp:', new Date().toISOString())
 
   if (!selectedStaffId.value) {
-    console.log('⏭️ Skipping data load - no staff selected')
+    debugLog('⏭️ Skipping data load - no staff selected')
     return
   }
 
   if (!currentDate.value) {
-    console.log('⏭️ Skipping data load - no date selected')
+    debugLog('⏭️ Skipping data load - no date selected')
     return
   }
 
@@ -947,7 +948,7 @@ const loadTimesheetData = async () => {
     loading.value = true
     error.value = null
 
-    console.log('📊 Loading timesheet data for:', {
+    debugLog('📊 Loading timesheet data for:', {
       staffId: selectedStaffId.value,
       date: currentDate.value,
     })
@@ -957,9 +958,9 @@ const loadTimesheetData = async () => {
       currentDate.value,
     )
 
-    console.log('📡 API Response:', response)
-    console.log('📄 Cost lines from API:', response.cost_lines)
-    console.log('📊 Number of cost lines:', response.cost_lines?.length || 0)
+    debugLog('📡 API Response:', response)
+    debugLog('📄 Cost lines from API:', response.cost_lines)
+    debugLog('📊 Number of cost lines:', response.cost_lines?.length || 0)
 
     interface BackendCostLine extends CostLine {
       job_id?: string
@@ -996,9 +997,9 @@ const loadTimesheetData = async () => {
 
     loadData(timeEntries.value, selectedStaffId.value)
 
-    console.log(`✅ Loaded ${timeEntries.value.length} timesheet entries`)
+    debugLog(`✅ Loaded ${timeEntries.value.length} timesheet entries`)
   } catch (err) {
-    console.error('❌ Error loading timesheet data:', err)
+    debugLog('❌ Error loading timesheet data:', err)
     error.value = 'Failed to load timesheet data'
   } finally {
     loading.value = false
@@ -1048,7 +1049,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.shiftKey && event.key === 'N') {
     event.preventDefault()
     event.stopPropagation()
-    console.log('🎯 Shift+N pressed - adding new entry')
+    debugLog('🎯 Shift+N pressed - adding new entry')
     addNewEntry()
   }
 }
@@ -1057,7 +1058,7 @@ onMounted(async () => {
   try {
     loading.value = true
 
-    console.log('🚀 Initializing optimized timesheet...')
+    debugLog('🚀 Initializing optimized timesheet...')
 
     await timesheetStore.initialize()
     await timesheetStore.loadStaff()
@@ -1087,9 +1088,9 @@ onMounted(async () => {
       staffList.value.length > 0
     ) {
       validStaffId = staffList.value[0].id
-      console.log('📋 No valid staff from URL, using first available:', validStaffId)
+      debugLog('📋 No valid staff from URL, using first available:', validStaffId)
     } else if (validStaffId && staffList.value.find((s: Staff) => s.id === validStaffId)) {
-      console.log('👤 Using staff from URL parameters:', validStaffId)
+      debugLog('👤 Using staff from URL parameters:', validStaffId)
     }
 
     selectedStaffId.value = validStaffId
@@ -1099,29 +1100,29 @@ onMounted(async () => {
 
     window.companyDefaults = companyDefaults.value
 
-    console.log('📋 Available staff:', staffList.value.length)
-    console.log('💼 Available jobs:', jobsList.value.length)
-    console.log('🔧 Converted jobs for editor:', convertedJobs.length)
-    console.log(
+    debugLog('📋 Available staff:', staffList.value.length)
+    debugLog('💼 Available jobs:', jobsList.value.length)
+    debugLog('🔧 Converted jobs for editor:', convertedJobs.length)
+    debugLog(
       '👤 Current staff for calculations:',
       currentStaffData?.name,
       'wage rate:',
       currentStaffData?.wageRate,
     )
-    console.log('💰 Company defaults for calculations:', companyDefaults.value)
+    debugLog('💰 Company defaults for calculations:', companyDefaults.value)
 
     updateRoute()
 
     isInitializing.value = false
 
-    console.log('📊 Starting initial data load...')
+    debugLog('📊 Starting initial data load...')
     await loadTimesheetData()
 
     window.addEventListener('keydown', handleKeydown)
 
-    console.log('✅ Optimized timesheet initialized successfully')
+    debugLog('✅ Optimized timesheet initialized successfully')
   } catch (err) {
-    console.error('❌ Error initializing optimized timesheet:', err)
+    debugLog('❌ Error initializing optimized timesheet:', err)
     error.value = 'Failed to initialize timesheet'
   }
 })
@@ -1130,26 +1131,26 @@ watch(
   [selectedStaffId, currentDate],
   async ([newStaffId, newDate], [oldStaffId, oldDate]) => {
     if (!newStaffId || !newDate) {
-      console.log('⏭️ Skipping watcher - missing staffId or date')
+      debugLog('⏭️ Skipping watcher - missing staffId or date')
       return
     }
 
     if (newStaffId === oldStaffId && newDate === oldDate) {
-      console.log('⏭️ Skipping watcher - no actual change')
+      debugLog('⏭️ Skipping watcher - no actual change')
       return
     }
 
     if (isInitializing.value) {
-      console.log('⏭️ Skipping watcher - still initializing')
+      debugLog('⏭️ Skipping watcher - still initializing')
       return
     }
 
     if (!oldStaffId || !oldDate) {
-      console.log('⏭️ Skipping watcher - initial setup detected')
+      debugLog('⏭️ Skipping watcher - initial setup detected')
       return
     }
 
-    console.log('📊 Loading data due to staff/date change:', {
+    debugLog('📊 Loading data due to staff/date change:', {
       newStaffId,
       newDate,
       oldStaffId,
@@ -1164,16 +1165,16 @@ watch(
   () => route.query,
   (newQuery, oldQuery) => {
     if (isInitializing.value) {
-      console.log('⏭️ Skipping URL watcher - still initializing')
+      debugLog('⏭️ Skipping URL watcher - still initializing')
       return
     }
 
-    console.log('🔗 URL query changed:', { old: oldQuery, new: newQuery })
+    debugLog('🔗 URL query changed:', { old: oldQuery, new: newQuery })
 
     let hasChanges = false
 
     if (newQuery.date && newQuery.date !== currentDate.value) {
-      console.log('📅 Updating date from URL:', newQuery.date)
+      debugLog('📅 Updating date from URL:', newQuery.date)
       currentDate.value = newQuery.date as string
       hasChanges = true
     }
@@ -1181,16 +1182,16 @@ watch(
     if (newQuery.staffId && newQuery.staffId !== selectedStaffId.value) {
       const staffExists = staffList.value.find((s: Staff) => s.id === newQuery.staffId)
       if (staffExists) {
-        console.log('👤 Updating staff from URL:', newQuery.staffId)
+        debugLog('👤 Updating staff from URL:', newQuery.staffId)
         selectedStaffId.value = newQuery.staffId as string
         hasChanges = true
       } else {
-        console.warn('⚠️ Staff ID from URL not found:', newQuery.staffId)
+        debugLog('⚠️ Staff ID from URL not found:', newQuery.staffId)
       }
     }
 
     if (hasChanges) {
-      console.log('🔄 Reloading data due to URL changes')
+      debugLog('🔄 Reloading data due to URL changes')
       loadTimesheetData()
     }
   },

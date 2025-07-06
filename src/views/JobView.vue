@@ -156,11 +156,11 @@
           </div>
         </div>
       </div>
-      <div v-if="loadingJob" class="flex flex-1 items-center justify-center min-h-[200px]">
+      <div
+        v-if="loadingJob || jobError"
+        class="flex flex-1 items-center justify-center min-h-[200px]"
+      >
         <span class="text-gray-500 text-lg font-medium">Loading...</span>
-      </div>
-      <div v-else-if="jobError" class="flex flex-1 items-center justify-center min-h-[200px]">
-        <span class="text-red-500 text-lg font-medium">Failed to load job data.</span>
       </div>
       <template v-else>
         <JobViewTabs
@@ -180,9 +180,6 @@
           @quote-accepted="handleQuoteAccepted"
           @invoice-created="handleInvoiceCreated"
         />
-        <div v-else class="text-red-600 text-sm mt-4">
-          Unable to render tabs. Please check if jobData, companyDefaults and activeTab are defined.
-        </div>
       </template>
       <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-4">
         <div class="md:hidden space-y-3">
@@ -288,6 +285,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, onMounted, watch } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import JobViewTabs from '@/components/job/JobViewTabs.vue'
@@ -375,7 +374,7 @@ function openQuotingChat() {
       clientName: jobDataWithPaid.value.client_name,
     },
   })
-  console.log('JobView - Navigated to QuotingChatView', jobDataWithPaid.value)
+  debugLog('JobView - Navigated to QuotingChatView', jobDataWithPaid.value)
 }
 
 function handleJobUpdated(updatedJob) {
@@ -437,10 +436,10 @@ function handleFileDeleted() {
   notifications.notifyJobUpdated('File deleted')
 }
 
-console.log('JobView - jobId:', jobId.value)
+debugLog('JobView - jobId:', jobId.value)
 
 watch(jobData, (val) => {
-  console.log('JobView - jobData changed:', val)
+  debugLog('JobView - jobData changed:', val)
 })
 </script>
 

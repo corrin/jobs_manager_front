@@ -153,7 +153,6 @@ const calendarField = ref<string | null>(null)
 
 function openCalendar(field: string) {
   calendarField.value = field
-  // Se não houver valor, inicializa com a data atual
   if (!localForm.value[field]) {
     const now = new Date()
     localForm.value[field] = now.toISOString()
@@ -328,7 +327,7 @@ const sectionMap = {
   ai: {
     title: 'AI Providers',
     icon: Sparkles,
-    fields: [], // Deixe vazio, pois AIProvidersDialog é usado para editar
+    fields: [],
   },
   working_hours: {
     title: 'Working Hours',
@@ -382,7 +381,6 @@ label {
 .fade-leave-to {
   opacity: 0;
 }
-/* Calendário abre para cima */
 [data-calendar-popup] {
   bottom: 2.5rem !important;
   top: auto !important;

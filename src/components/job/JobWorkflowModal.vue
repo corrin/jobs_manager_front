@@ -141,6 +141,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, watch, onMounted, computed } from 'vue'
 import type { JobData, JobUpdateData } from '@/services/job-rest.service'
 import { jobRestService } from '@/services/job-rest.service'
@@ -203,11 +205,11 @@ watch(
   () => props.jobData,
   (newJobData) => {
     if (!newJobData) {
-      console.log('🚫 JobWorkflowModal - Received null/undefined jobData, skipping initialization')
+      debugLog('🚫 JobWorkflowModal - Received null/undefined jobData, skipping initialization')
       return
     }
 
-    console.log('✅ JobWorkflowModal - Received valid jobData, initializing:', newJobData.id)
+    debugLog('✅ JobWorkflowModal - Received valid jobData, initializing:', newJobData.id)
     initializeLocalJobData(newJobData)
   },
   { immediate: true },
@@ -276,19 +278,16 @@ const saveWorkflow = async () => {
   isLoading.value = true
 
   try {
-    // Log: Collecting form data before preparing update
-    console.log(
+    debugLog(
       'JobWorkflowModal - saveWorkflow - Collecting form data:',
       JSON.parse(JSON.stringify(localJobData.value)),
     )
     const updateData = prepareUpdateData()
-    // Log: Data prepared for API call
-    console.log(
+    debugLog(
       'JobWorkflowModal - saveWorkflow - Prepared updateData:',
       JSON.parse(JSON.stringify(updateData)),
     )
 
-    // Replaced 'any' with 'unknown' and added type guard if needed
     const response = (await JobRestService.updateJob(jobData.value.id, updatedJobData)) as unknown
 
     if (!response.success) {
@@ -298,7 +297,7 @@ const saveWorkflow = async () => {
     if (response.data) {
       handleSuccessfulUpdate(response.data)
     } else {
-      console.log('⚠️ JobWorkflowModal - API returned success but no data, using local updates')
+      debugLog('⚠️ JobWorkflowModal - API returned success but no data, using local updates')
 
       if (!props.jobData?.id) {
         throw new Error('Invalid job data - missing id')
@@ -332,14 +331,13 @@ const prepareUpdateData = (): JobUpdateData => {
 }
 
 const handleSuccessfulUpdate = (updatedJobData: unknown) => {
-  // Log: About to update store with API data
-  console.log(
+  debugLog(
     'JobWorkflowModal - handleSuccessfulUpdate - About to update store with:',
     JSON.parse(JSON.stringify(updatedJobData)),
   )
 
   if (!updatedJobData) {
-    console.error('🚨 JobWorkflowModal - handleSuccessfulUpdate called with null/undefined data')
+    debugLog('🚨 JobWorkflowModal - handleSuccessfulUpdate called with null/undefined data')
     throw new Error('Invalid job data received - data is null or undefined')
   }
 
@@ -365,31 +363,31 @@ const handleSuccessfulUpdate = (updatedJobData: unknown) => {
   } else if (typeof data === 'object' && data !== null && 'id' in data) {
     jobData = { ...(data as object) } as JobData
   } else {
-    console.error('🚨 JobWorkflowModal - Invalid job data structure:', data)
+    debugLog('🚨 JobWorkflowModal - Invalid job data structure:', data)
     throw new Error('Invalid job data structure')
   }
 
   if (!jobData.id || typeof jobData.id !== 'string' || jobData.id.trim() === '') {
-    console.error('🚨 JobWorkflowModal - Invalid job ID received:', jobData.id)
+    debugLog('🚨 JobWorkflowModal - Invalid job ID received:', jobData.id)
     throw new Error('Invalid job data received - missing or invalid job ID')
   }
 
-  console.log('🎯 JobWorkflowModal - Processing valid job data:', jobData.id)
-  console.log('🔍 JobWorkflowModal - Updated job_status:', jobData.job_status)
+  debugLog('🎯 JobWorkflowModal - Processing valid job data:', jobData.id)
+  debugLog('🔍 JobWorkflowModal - Updated job_status:', jobData.job_status)
 
   toast.success('Workflow updated', {
     description: `Status and settings for ${jobData.name} have been saved`,
   })
 
-  console.log('📝 JobWorkflowModal - Calling jobsStore.setDetailedJob')
+  debugLog('📝 JobWorkflowModal - Calling jobsStore.setDetailedJob')
   jobsStore.setDetailedJob(jobData)
 
-  console.log('✅ JobWorkflowModal - Store updated successfully')
+  debugLog('✅ JobWorkflowModal - Store updated successfully')
   closeModal()
 }
 
 const handleUpdateError = (error: unknown) => {
-  console.error('Error saving workflow:', error)
+  debugLog('Error saving workflow:', error)
 
   const errorMessage = error instanceof Error ? error.message : 'Unknown error'
   toast.error('Failed to save workflow', {

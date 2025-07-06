@@ -33,6 +33,8 @@
 </template>
 
 <script lang="ts" setup>
+import { debugLog } from '@/utils/debug'
+
 import { ref, defineEmits, defineProps } from 'vue'
 import {
   DropdownMenu,
@@ -58,7 +60,7 @@ const showMaterialModal = ref(false)
 const showTimeModal = ref(false)
 
 function openMaterialModal() {
-  console.log('[AddCostLineDropdown] Opening MaterialModal with props:', {
+  debugLog('[AddCostLineDropdown] Opening MaterialModal with props:', {
     wageRate: props.wageRate,
     chargeOutRate: props.chargeOutRate,
     materialsMarkup: props.materialsMarkup,
@@ -66,7 +68,7 @@ function openMaterialModal() {
   showMaterialModal.value = true
 }
 function openTimeModal() {
-  console.log('[AddCostLineDropdown] Opening TimeModal with props:', {
+  debugLog('[AddCostLineDropdown] Opening TimeModal with props:', {
     wageRate: props.wageRate,
     chargeOutRate: props.chargeOutRate,
     materialsMarkup: props.materialsMarkup,

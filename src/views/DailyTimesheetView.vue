@@ -178,6 +178,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppLayout from '@/components/AppLayout.vue'
@@ -216,8 +218,8 @@ const selectedStaff = ref<StaffDailyData | null>(null)
 const showStaffModal = ref(false)
 const showMetricsModal = ref(false)
 
-console.log('🔗 DailyTimesheetView URL params:', { date: route.query.date })
-console.log('📊 Using initial date:', initialDate)
+debugLog('🔗 DailyTimesheetView URL params:', { date: route.query.date })
+debugLog('📊 Using initial date:', initialDate)
 
 const formatDisplayDate = (date: string): string => {
   return dateService.formatDisplayDate(date, {
@@ -234,13 +236,13 @@ const loadData = async (): Promise<void> => {
     loading.value = true
     error.value = null
 
-    console.log('Loading daily timesheet data for:', selectedDate.value)
+    debugLog('Loading daily timesheet data for:', selectedDate.value)
 
     summary.value = await getDailyTimesheetSummary(selectedDate.value)
 
-    console.log('Loaded summary:', summary.value)
+    debugLog('Loaded summary:', summary.value)
   } catch (err) {
-    console.error('Error loading timesheet data:', err)
+    debugLog('Error loading timesheet data:', err)
     error.value = 'Failed to load timesheet data. Please try again.'
   } finally {
     loading.value = false
@@ -297,7 +299,7 @@ watch(
   () => route.query.date,
   (newDate) => {
     if (newDate && newDate !== selectedDate.value) {
-      console.log('📅 Updating date from URL:', newDate)
+      debugLog('📅 Updating date from URL:', newDate)
       selectedDate.value = newDate as string
       loadData()
     }
@@ -307,7 +309,7 @@ watch(
 
 watch(selectedDate, (newDate) => {
   if (newDate && newDate !== route.query.date) {
-    console.log('📅 Updating URL from date change:', newDate)
+    debugLog('📅 Updating URL from date change:', newDate)
     updateRoute()
   }
 })

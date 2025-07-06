@@ -1,6 +1,7 @@
 import api from '@/plugins/axios'
 import { CostLineSchema } from '@/schemas/costing.schemas'
 import type { CostLine } from '@/types/costing.types'
+import { debugLog } from '@/utils/debug'
 
 export interface CostLineCreatePayload {
   kind: 'time' | 'material' | 'adjust'
@@ -81,19 +82,15 @@ export const updateCostLine = async (
 }
 
 export const deleteCostLine = async (id: number): Promise<void> => {
-  console.log('🚀 SERVICE: Starting DELETE request for cost line ID:', id)
-  console.log('🌐 DELETE URL:', `/job/rest/cost_lines/${id}/delete/`)
+  debugLog('🚀 SERVICE: Starting DELETE request for cost line ID:', id)
+  debugLog('🌐 DELETE URL:', `/job/rest/cost_lines/${id}/delete/`)
 
   try {
     const response = await api.delete(`/job/rest/cost_lines/${id}/delete/`)
-    console.log(
-      '✅ SERVICE: DELETE request completed successfully:',
-      response.status,
-      response.data,
-    )
+    debugLog('✅ SERVICE: DELETE request completed successfully:', response.status, response.data)
     return response.data
   } catch (error) {
-    console.error('❌ SERVICE: DELETE request failed:', error)
+    debugLog('❌ SERVICE: DELETE request failed:', error)
     throw error
   }
 }

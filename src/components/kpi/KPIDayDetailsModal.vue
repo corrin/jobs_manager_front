@@ -170,7 +170,6 @@ const isOpen = computed({
   set: (value: boolean) => emit('update:isOpen', value),
 })
 
-// Calculate derived values
 const adjustmentRevenue = computed(() => {
   if (!props.dayData) return 0
   return (
@@ -204,7 +203,6 @@ const adjustmentProfit = computed(() => {
   return adjustmentRevenue.value - adjustmentCost.value
 })
 
-// Helper functions
 function formatCurrency(value: number): string {
   if (typeof value !== 'number' || isNaN(value)) {
     return '$0.00'

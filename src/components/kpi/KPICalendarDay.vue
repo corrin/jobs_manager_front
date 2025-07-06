@@ -56,7 +56,7 @@ const dayClass = computed(() => {
     'kpi-calendar-day--amber': props.dayData.color === 'amber',
     'kpi-calendar-day--red': props.dayData.color === 'red',
     'kpi-calendar-day--holiday': props.dayData.holiday,
-    'kpi-calendar-day--clickable': true, // Make all days clickable, including holidays
+    'kpi-calendar-day--clickable': true,
   }
 })
 
@@ -159,7 +159,6 @@ function formatCurrency(value: number): string {
   @apply flex items-center justify-center text-gray-400 font-medium flex-1;
 }
 
-/* Color-specific text colors */
 .kpi-calendar-day--green .kpi-calendar-day__number {
   @apply text-green-800;
 }

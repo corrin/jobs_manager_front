@@ -6,6 +6,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { Toaster } from '@/components/ui/sonner'
@@ -16,19 +18,19 @@ import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 
 const authStore = useAuthStore()
 
-console.log(useFeatureFlags().isCostingApiEnabled)
+debugLog(useFeatureFlags().isCostingApiEnabled)
 
 onMounted(async () => {
   try {
     await authStore.initializeAuth()
     const companyDefaultsStore = useCompanyDefaultsStore()
 
-    console.log('[App] Before loading company defaults:', companyDefaultsStore.companyDefaults)
+    debugLog('[App] Before loading company defaults:', companyDefaultsStore.companyDefaults)
     await companyDefaultsStore.loadCompanyDefaults()
 
-    console.log('[App] After loading company defaults:', companyDefaultsStore.companyDefaults)
+    debugLog('[App] After loading company defaults:', companyDefaultsStore.companyDefaults)
   } catch (error) {
-    console.warn('Failed to initialize auth or company defaults on app start:', error)
+    debugLog('Failed to initialize auth or company defaults on app start:', error)
   }
 })
 </script>
