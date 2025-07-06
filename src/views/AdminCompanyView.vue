@@ -60,9 +60,9 @@
       </div>
       <AIProvidersDialog
         v-if="showAIProvidersDialog"
-        :providers="form.ai_providers"
+        :providers="form.ai_providers || []"
         @close="closeAIProvidersDialog"
-        @saved="onSaved"
+        @update:providers="onProvidersUpdate"
       />
     </div>
   </AppLayout>
@@ -74,6 +74,7 @@ import { debugLog } from '@/utils/debug'
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { ref, onMounted } from 'vue'
+import type { AIProvider } from '../services/admin-company-defaults-service'
 import {
   Building2,
   Save,
@@ -103,6 +104,10 @@ debugLog('[AdminCompanyView] companyDefaults:', companyDefaults.value)
 debugLog('[AdminCompanyView] form:', form.value)
 
 function openAIProvidersDialog() {
+  // Guard clause para garantir que ai_providers existe
+  if (!form.value.ai_providers) {
+    form.value.ai_providers = []
+  }
   debugLog('[AdminCompanyView] openAIProvidersDialog, form.ai_providers:', form.value.ai_providers)
   showAIProvidersDialog.value = true
 }
@@ -121,17 +126,30 @@ async function fetchDefaults() {
 async function saveAll() {
   loading.value = true
   try {
+    debugLog('[AdminCompanyView] saveAll() called with form.value:', form.value)
+    debugLog('[AdminCompanyView] saveAll() AI providers specifically:', form.value.ai_providers)
     await updateCompanyDefaults(form.value)
     toast.success('Company defaults saved successfully!')
     await fetchDefaults()
-  } catch {
+  } catch (error) {
+    debugLog('[AdminCompanyView] saveAll() error:', error)
     toast.error('Failed to save company defaults.')
   }
   loading.value = false
 }
-function onSaved() {
-  fetchDefaults()
-  closeAIProvidersDialog()
+function onProvidersUpdate(providers: AIProvider[]) {
+  debugLog('[AdminCompanyView] onProvidersUpdate called with:', providers)
+  debugLog(
+    '[AdminCompanyView] onProvidersUpdate, new providers:',
+    providers.map((p) => ({
+      name: p.name,
+      default: p.default,
+      id: p.id,
+    })),
+  )
+
+  form.value.ai_providers = providers
+  debugLog('[AdminCompanyView] form.value.ai_providers updated to:', form.value.ai_providers)
 }
 function openSection(section: string) {
   modalSection.value = section

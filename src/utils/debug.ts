@@ -1,5 +1,3 @@
-import { debugLog } from '@/utils/debug'
-
 interface ViteImportMeta {
   env: {
     MODE?: string
@@ -10,6 +8,12 @@ interface ViteImportMeta {
 const isDevelopment = (import.meta as unknown as ViteImportMeta).env?.MODE === 'development'
 const debugEnabled =
   (import.meta as unknown as ViteImportMeta).env?.VITE_DEBUG === 'true' || isDevelopment
+
+export function debugLog(...args: unknown[]): void {
+  if (debugEnabled) {
+    console.log('[DEBUG]', ...args)
+  }
+}
 
 export const debug = {
   log: (...args: unknown[]) => {
@@ -47,12 +51,6 @@ export const debug = {
       console.table(data)
     }
   },
-}
-
-export function debugLog(...args: unknown[]): void {
-  if (debugEnabled) {
-    console.log('[DEBUG]', ...args)
-  }
 }
 
 export const isDebugEnabled = () => debugEnabled

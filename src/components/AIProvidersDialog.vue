@@ -20,15 +20,28 @@
           <div class="flex flex-wrap gap-2 items-center w-full justify-center">
             <input
               v-model="localProviders[idx].name"
+              @input="emitProviders"
               class="input ai-input"
               placeholder="Provider Name"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
             />
             <input
               v-model="localProviders[idx].model_name"
+              @input="emitProviders"
               class="input ai-input"
               placeholder="Model"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
             />
-            <select v-model="localProviders[idx].provider_type" class="input ai-input">
+            <select
+              v-model="localProviders[idx].provider_type"
+              @change="emitProviders"
+              class="input ai-input"
+              autocomplete="off"
+            >
               <option value="openai">OpenAI</option>
               <option value="google">Google</option>
               <option value="mistral">Mistral</option>
@@ -36,11 +49,41 @@
             </select>
             <input
               v-model="localProviders[idx].api_key"
+              @input="
+                (event) => {
+                  const value = (event.target as HTMLInputElement).value
+                  localProviders[idx].api_key = value.trim()
+                  emitProviders()
+                }
+              "
               class="input ai-input"
-              placeholder="API Key"
+              :placeholder="localProviders[idx].id ? 'Leave blank to keep current' : 'API Key *'"
+              type="password"
+              autocomplete="new-password"
+              autocorrect="off"
+              spellcheck="false"
             />
             <label class="flex items-center gap-1 whitespace-nowrap">
-              <Checkbox v-model="localProviders[idx].default" @change="setDefault(idx)" /> Default
+              <input
+                type="checkbox"
+                :checked="localProviders[idx].default"
+                @change="
+                  (event) => {
+                    const checked = (event.target as HTMLInputElement).checked
+                    debugLog(
+                      `[AIProvidersDialog] Native checkbox clicked for idx ${idx}, new value:`,
+                      checked,
+                    )
+                    debugLog(
+                      `[AIProvidersDialog] Current provider before setDefault:`,
+                      localProviders[idx],
+                    )
+                    setDefault(idx, checked)
+                  }
+                "
+                class="mr-1"
+              />
+              Default
             </label>
             <Button variant="ghost" size="sm" class="ai-remove-btn" @click="removeProvider(idx)"
               >Remove</Button
@@ -52,18 +95,18 @@
         <Button
           type="button"
           variant="outline"
-          @click="handleClose"
-          class="ai-close-btn flex items-center gap-1"
-        >
-          <ArrowLeft class="w-4 h-4" /> Close
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
           @click="addProvider"
           class="ai-close-btn flex items-center gap-1"
         >
           <span class="text-lg font-bold">+</span> Add Provider
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          @click="handleClose"
+          class="ai-close-btn flex items-center gap-1"
+        >
+          <ArrowLeft class="w-4 h-4" /> Close
         </Button>
       </div>
     </DialogContent>
@@ -73,43 +116,70 @@
 <script setup lang="ts">
 import { debugLog } from '@/utils/debug'
 
-import Dialog from '@/components/ui/dialog/Dialog.vue'
-import DialogContent from '@/components/ui/dialog/DialogContent.vue'
-import DialogHeader from '@/components/ui/dialog/DialogHeader.vue'
-import DialogTitle from '@/components/ui/dialog/DialogTitle.vue'
-import Button from '@/components/ui/button/Button.vue'
-import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog'
+import Button from './ui/button/Button.vue'
 import { ref, watch } from 'vue'
 import { ArrowLeft } from 'lucide-vue-next'
-
 interface AIProvider {
-  id?: string
+  id?: number
   name: string
   provider_type: string
   model_name: string
-  api_key: string
+  api_key?: string // Optional since backend may not return sensitive data
   default: boolean
 }
 
-const props = defineProps<{ providers: AIProvider[] }>()
-const emit = defineEmits(['close', 'saved'])
-const providers = ref(props.providers.map((p) => ({ ...p })))
-const localProviders = ref<AIProvider[]>(props.providers.map((p) => ({ ...p })))
+const props = defineProps<{ providers?: AIProvider[] }>()
+const emit = defineEmits(['close', 'update:providers'])
+
+// Guard clause para providers undefined
+const safeProviders = props.providers || []
+const localProviders = ref<AIProvider[]>(
+  safeProviders.map((p) => ({
+    ...p,
+    api_key: typeof p.api_key === 'string' ? p.api_key.trim() : '', // Limpar api_key corrompida
+  })),
+)
 
 debugLog('[AIProvidersDialog] props.providers:', props.providers)
-debugLog('[AIProvidersDialog] local providers:', providers.value)
+debugLog('[AIProvidersDialog] safe providers:', safeProviders)
+debugLog('[AIProvidersDialog] local providers:', localProviders.value)
+debugLog('[AIProvidersDialog] localProviders.value.length:', localProviders.value.length)
 
+if (props.providers && props.providers.length > 0) {
+  debugLog('[AIProvidersDialog] First provider:', props.providers[0])
+}
+
+// Watch apenas para quando props.providers mudar externamente
 watch(
   () => props.providers,
   (newVal) => {
-    localProviders.value = newVal.map((p) => ({ ...p }))
+    if (newVal && JSON.stringify(newVal) !== JSON.stringify(localProviders.value)) {
+      localProviders.value = newVal.map((p) => ({
+        ...p,
+        api_key: p.api_key || '',
+      }))
+    }
   },
   { deep: true },
 )
 
 function handleClose() {
+  // Forçar uma última verificação e emissão dos dados
+  debugLog(
+    '[AIProvidersDialog] handleClose - final localProviders:',
+    localProviders.value.map((p) => ({
+      name: p.name,
+      default: p.default,
+      id: p.id,
+    })),
+  )
+
+  // Emitir as alterações finais ao fechar
+  emitProviders()
   emit('close')
 }
+
 function addProvider() {
   localProviders.value.push({
     name: '',
@@ -118,25 +188,84 @@ function addProvider() {
     api_key: '',
     default: false,
   })
+  debugLog('[AIProvidersDialog] addProvider - new provider added')
   emitProviders()
 }
+
 function removeProvider(idx: number) {
   localProviders.value.splice(idx, 1)
+  debugLog('[AIProvidersDialog] removeProvider - provider removed at index:', idx)
   emitProviders()
 }
-function setDefault(idx: number) {
-  localProviders.value.forEach((p, i) => {
-    p.default = i === idx
+
+function setDefault(idx: number, checked: boolean) {
+  debugLog(`[AIProvidersDialog] setDefault called for idx: ${idx}, checked: ${checked}`)
+  debugLog(`[AIProvidersDialog] Provider BEFORE setDefault:`, {
+    name: localProviders.value[idx].name,
+    default: localProviders.value[idx].default,
   })
+
+  if (checked) {
+    // Se está marcando como true, unset todos os outros
+    localProviders.value.forEach((p, i) => {
+      debugLog(`[AIProvidersDialog] Setting provider ${i} default to ${i === idx}`)
+      p.default = i === idx
+    })
+  } else {
+    // Se está desmarcando, apenas desmarcar este
+    debugLog(`[AIProvidersDialog] Unchecking provider ${idx}`)
+    localProviders.value[idx].default = false
+  }
+
+  debugLog(`[AIProvidersDialog] Provider AFTER setDefault:`, {
+    name: localProviders.value[idx].name,
+    default: localProviders.value[idx].default,
+  })
+  debugLog(
+    '[AIProvidersDialog] All providers after setDefault:',
+    localProviders.value.map((p) => ({ name: p.name, default: p.default })),
+  )
+
+  // Forçar emissão imediata
   emitProviders()
 }
-watch(localProviders, emitProviders, { deep: true })
 
 function emitProviders() {
-  emit(
-    'update:providers',
-    localProviders.value.map((p) => ({ ...p })),
+  // Preparar providers para envio - garantir que novos providers tenham api_key
+  const providersToSend = localProviders.value.map((p) => {
+    const provider = { ...p }
+
+    // Limpar api_key de qualquer caractere inválido
+    if (provider.api_key && typeof provider.api_key === 'string') {
+      provider.api_key = provider.api_key.trim()
+    }
+
+    // Se é um provider novo (sem id) e não tem api_key, é um problema
+    if (!provider.id && !provider.api_key) {
+      console.warn('New provider without API key:', provider)
+    }
+
+    // Para providers existentes, se api_key está vazio, omitir do payload
+    // Isso indica que não queremos alterar a api_key existente
+    if (provider.id && !provider.api_key) {
+      delete provider.api_key
+    }
+
+    return provider
+  })
+
+  debugLog('[AIProvidersDialog] emitProviders, sending providers count:', providersToSend.length)
+  debugLog(
+    '[AIProvidersDialog] emitProviders, default values:',
+    providersToSend.map((p) => ({
+      name: p.name,
+      default: p.default,
+      hasApiKey: !!p.api_key,
+      apiKeyLength: p.api_key ? p.api_key.length : 0,
+    })),
   )
+
+  emit('update:providers', providersToSend)
 }
 </script>
 

@@ -1,5 +1,14 @@
 import axios from 'axios'
 
+export interface AIProvider {
+  id?: string
+  name: string
+  provider_type: string
+  model_name: string
+  api_key: string
+  default: boolean
+}
+
 export interface CompanyDefaults {
   company_name: string
   charge_out_rate: number
@@ -9,6 +18,7 @@ export interface CompanyDefaults {
   starting_job_number: number
   po_prefix: string
   shop_client_name?: string
+  ai_providers?: AIProvider[]
 }
 
 export async function getCompanyDefaults(): Promise<CompanyDefaults> {

@@ -7,9 +7,10 @@
         </h1>
         <div class="flex gap-2">
           <Button @click="goToCreate"> <PlusCircle class="w-4 h-4 mr-2" /> New PO </Button>
-          <Button @click="createFromQuote" variant="secondary" class="px-5 py-2 text-base"
-            >From Quote</Button
-          >
+          <Button @click="createFromQuote" variant="secondary" class="px-5 py-2 text-base">
+            <FileSpreadsheet class="w-4 h-4 mr-2" />
+            From Quote
+          </Button>
         </div>
       </div>
 
@@ -83,7 +84,7 @@ import { debugLog } from '@/utils/debug'
 
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
-import { FileText, Pencil, Trash2, PlusCircle } from 'lucide-vue-next'
+import { FileText, Pencil, Trash2, PlusCircle, FileSpreadsheet } from 'lucide-vue-next'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
