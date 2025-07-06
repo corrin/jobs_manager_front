@@ -186,7 +186,6 @@ const emit = defineEmits<{
 
 const nameError = ref('')
 
-// Local copy to avoid mutating prop
 type ContactForm = NewContactData
 const localContactForm = ref<ContactForm>({ ...props.newContactForm })
 

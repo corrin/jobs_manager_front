@@ -1,4 +1,5 @@
 import api from '@/plugins/axios'
+import { debugLog } from '@/utils/debug'
 
 export interface Client {
   id?: number
@@ -47,7 +48,7 @@ export class ClientService {
       const response = await api.post('/clients/rest/create/', data)
       return response.data
     } catch (error: unknown) {
-      console.error('Error creating client:', error)
+      debugLog('Error creating client:', error)
 
       if (error && typeof error === 'object' && 'response' in error) {
         const apiError = error as { response?: { data?: { error?: string } } }
@@ -69,7 +70,7 @@ export class ClientService {
 
       return Array.isArray(response.data) ? response.data : []
     } catch (error) {
-      console.error('Error fetching clients:', error)
+      debugLog('Error fetching clients:', error)
       throw new Error('Failed to load clients')
     }
   }

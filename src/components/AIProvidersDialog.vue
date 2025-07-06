@@ -71,6 +71,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import Dialog from '@/components/ui/dialog/Dialog.vue'
 import DialogContent from '@/components/ui/dialog/DialogContent.vue'
 import DialogHeader from '@/components/ui/dialog/DialogHeader.vue'
@@ -94,11 +96,9 @@ const emit = defineEmits(['close', 'saved'])
 const providers = ref(props.providers.map((p) => ({ ...p })))
 const localProviders = ref<AIProvider[]>(props.providers.map((p) => ({ ...p })))
 
-console.log('[AIProvidersDialog] props.providers:', props.providers)
-console.log('[AIProvidersDialog] local providers:', providers.value)
+debugLog('[AIProvidersDialog] props.providers:', props.providers)
+debugLog('[AIProvidersDialog] local providers:', providers.value)
 
-// Local copy for editing, always in sync with props
-// Sync local copy if parent changes (e.g. modal reopens)
 watch(
   () => props.providers,
   (newVal) => {
@@ -130,7 +130,6 @@ function setDefault(idx: number) {
   })
   emitProviders()
 }
-// Emit changes to parent on any edit
 watch(localProviders, emitProviders, { deep: true })
 
 function emitProviders() {

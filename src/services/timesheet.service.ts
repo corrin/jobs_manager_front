@@ -7,6 +7,7 @@ import type {
   CreateTimeEntryRequest,
   UpdateTimeEntryRequest,
 } from '@/types/timesheet.types'
+import { debugLog } from '../utils/debug'
 
 export class TimesheetService {
   private static readonly BASE_URL = '/timesheets/api'
@@ -16,7 +17,7 @@ export class TimesheetService {
       const response = await api.get(`${this.BASE_URL}/staff/`)
       return response.data.staff
     } catch (error) {
-      console.error('Error fetching staff:', error)
+      debugLog('Error fetching staff:', error)
       throw error
     }
   }
@@ -28,7 +29,7 @@ export class TimesheetService {
       })
       return response.data.time_entries
     } catch (error) {
-      console.error('Error fetching time entries:', error)
+      debugLog('Error fetching time entries:', error)
       throw error
     }
   }
@@ -44,7 +45,7 @@ export class TimesheetService {
       })
       return response.data.time_entries
     } catch (error) {
-      console.error('Error fetching time entries for range:', error)
+      debugLog('Error fetching time entries for range:', error)
       throw error
     }
   }
@@ -69,7 +70,7 @@ export class TimesheetService {
       const response = await api.post(`${this.BASE_URL}/entries/`, requestData)
       return response.data.time_entry
     } catch (error) {
-      console.error('Error creating time entry:', error)
+      debugLog('Error creating time entry:', error)
       throw error
     }
   }
@@ -79,7 +80,7 @@ export class TimesheetService {
       const response = await api.put(`${this.BASE_URL}/entries/${entryId}/`, data)
       return response.data.time_entry
     } catch (error) {
-      console.error('Error updating time entry:', error)
+      debugLog('Error updating time entry:', error)
       throw error
     }
   }
@@ -88,7 +89,7 @@ export class TimesheetService {
     try {
       await api.delete(`${this.BASE_URL}/entries/${entryId}/`)
     } catch (error) {
-      console.error('Error deleting time entry:', error)
+      debugLog('Error deleting time entry:', error)
       throw error
     }
   }
@@ -98,7 +99,7 @@ export class TimesheetService {
       const response = await api.get(`${this.BASE_URL}/jobs/`)
       return response.data.jobs
     } catch (error) {
-      console.error('Error fetching jobs:', error)
+      debugLog('Error fetching jobs:', error)
       throw error
     }
   }
@@ -110,7 +111,7 @@ export class TimesheetService {
       })
       return response.data
     } catch (error) {
-      console.error('Error fetching weekly overview:', error)
+      debugLog('Error fetching weekly overview:', error)
       throw error
     }
   }
@@ -125,7 +126,7 @@ export class TimesheetService {
         ...data,
       })
     } catch (error) {
-      console.error('Error auto-saving time entry:', error)
+      debugLog('Error auto-saving time entry:', error)
     }
   }
 
@@ -174,7 +175,7 @@ export class TimesheetService {
       })
       return response.data.time_entries
     } catch (error) {
-      console.error('Error fetching entries for date range:', error)
+      debugLog('Error fetching entries for date range:', error)
       throw error
     }
   }
@@ -245,7 +246,7 @@ export class TimesheetService {
   }
 
   static async exportToIMS(weekStart: Date): Promise<string> {
-    console.log('IMS export not yet implemented for:', weekStart)
+    debugLog('IMS export not yet implemented for:', weekStart)
     return 'IMS export functionality coming soon'
   }
 
@@ -257,7 +258,7 @@ export class TimesheetService {
         const updated = await this.updateEntry(entry)
         updatedEntries.push(updated)
       } catch (error) {
-        console.error('Error updating entry:', entry.id, error)
+        debugLog('Error updating entry:', entry.id, error)
       }
     }
 

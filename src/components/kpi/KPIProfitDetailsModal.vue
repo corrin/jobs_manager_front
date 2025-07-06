@@ -176,7 +176,6 @@ const monthYear = computed(() => {
   return `${kpiService.getMonthName(props.month)} ${props.year}`
 })
 
-// Calculate totals from calendar data
 const totalRevenue = computed(() => {
   if (!props.calendarData) return 0
   return Object.values(props.calendarData).reduce((sum, day) => {

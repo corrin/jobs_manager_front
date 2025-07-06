@@ -1,5 +1,6 @@
 import { ref, type Ref } from 'vue'
 import Sortable from 'sortablejs'
+import { debugLog } from '@/utils/debug'
 
 export interface DragEventPayload {
   jobId: string
@@ -23,7 +24,7 @@ export function useDragAndDrop(onDragEvent?: DragEventHandler) {
     }
     if (!element || !element.isConnected) return
 
-    console.log(`🔧 Creating Sortable for ${status}:`, {
+    debugLog(`🔧 Creating Sortable for ${status}:`, {
       element,
       dataStatus: element.dataset.status,
       children: element.children.length,
@@ -46,25 +47,25 @@ export function useDragAndDrop(onDragEvent?: DragEventHandler) {
       fallbackOnBody: true,
       swapThreshold: 0.65,
       onStart: () => {
-        console.log(`🎯 Drag started from: ${status}`)
+        debugLog(`🎯 Drag started from: ${status}`)
         isDragging.value = true
         document.body.classList.add('is-dragging')
       },
       onMove: (evt) => {
         const toColumn = (evt.to.closest('[data-status]') as HTMLElement)?.dataset.status
-        console.log(`🎯 Drag moving to: ${toColumn}`)
+        debugLog(`🎯 Drag moving to: ${toColumn}`)
         return true
       },
       onAdd: (evt) => {
         const toStatus = evt.to.dataset.status
-        console.log(`➕ Item added to column: ${toStatus}`)
+        debugLog(`➕ Item added to column: ${toStatus}`)
       },
       onChange: (evt) => {
         const status = evt.to.dataset.status || evt.from.dataset.status
-        console.log(`🔄 Change detected in column: ${status}`)
+        debugLog(`🔄 Change detected in column: ${status}`)
       },
       onEnd: (evt) => {
-        console.log(`🎯 Drag ended:`, {
+        debugLog(`🎯 Drag ended:`, {
           from: evt.from.dataset.status,
           to: evt.to.dataset.status,
           item: evt.item.dataset.jobId,

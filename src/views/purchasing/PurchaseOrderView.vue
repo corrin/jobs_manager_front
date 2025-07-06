@@ -79,6 +79,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { FileText, Pencil, Trash2, PlusCircle } from 'lucide-vue-next'
@@ -102,7 +104,6 @@ const pagedOrders = computed(() => {
   return orders.value.slice(start, start + pageSize)
 })
 
-// Reset to first page if orders change and current page is out of range
 watch(
   () => orders.value.length,
   () => {
@@ -157,29 +158,25 @@ const goToCreate = () => router.push('/purchasing/po/create')
 const createFromQuote = () => router.push('/purchasing/po/create-from-quote')
 
 const deletePo = async (id: string) => {
-  // Guard clause: prevent deletion of already deleted POs
   const po = orders.value.find((p) => p.id === id)
   if (!po || isPoDeleted(po.status)) {
     toast.warning('This purchase order is already deleted')
     return
   }
 
-  // Confirmation dialog
   const confirmed = confirm(
     `Are you sure you want to delete Purchase Order ${po.po_number}? This action will mark it as deleted but preserve the record.`,
   )
   if (!confirmed) return
 
   try {
-    // Soft delete: update status to 'deleted' instead of hard delete
     await store.patch(id, { status: 'deleted' })
 
-    // Refresh the orders list to show updated status
     await store.fetchOrders()
 
     toast.success('Purchase order deleted successfully')
   } catch (error) {
-    console.error('Error deleting purchase order:', error)
+    debugLog('Error deleting purchase order:', error)
     toast.error('Failed to delete the purchase order. Please try again.')
   }
 }

@@ -71,7 +71,6 @@ type Emits = {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-// Modal state
 const showAdditionalFieldsModal = ref(false)
 const editingLineIndex = ref<number>(-1)
 const additionalFields = ref({
@@ -82,16 +81,12 @@ const additionalFields = ref({
   dimensions: '',
 })
 
-// Metal type options imported from utility
-// const metalTypeOptions = [...] - removed, now imported from @/utils/metalType
-
 const openAdditionalFieldsModal = (lineIndex: number) => {
   if (props.readOnly) return
 
   editingLineIndex.value = lineIndex
   const line = props.lines[lineIndex]
 
-  // Pre-fill modal with existing data
   additionalFields.value = {
     metal_type: line.metal_type || '',
     alloy: line.alloy || '',

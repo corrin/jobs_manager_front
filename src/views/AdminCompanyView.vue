@@ -69,6 +69,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { ref, onMounted } from 'vue'
@@ -97,14 +99,11 @@ const loading = ref(true)
 const showAIProvidersDialog = ref(false)
 const modalSection = ref<string | null>(null)
 
-console.log('[AdminCompanyView] companyDefaults:', companyDefaults.value)
-console.log('[AdminCompanyView] form:', form.value)
+debugLog('[AdminCompanyView] companyDefaults:', companyDefaults.value)
+debugLog('[AdminCompanyView] form:', form.value)
 
 function openAIProvidersDialog() {
-  console.log(
-    '[AdminCompanyView] openAIProvidersDialog, form.ai_providers:',
-    form.value.ai_providers,
-  )
+  debugLog('[AdminCompanyView] openAIProvidersDialog, form.ai_providers:', form.value.ai_providers)
   showAIProvidersDialog.value = true
 }
 function closeAIProvidersDialog() {
@@ -113,10 +112,10 @@ function closeAIProvidersDialog() {
 async function fetchDefaults() {
   loading.value = true
   const data = await getCompanyDefaults()
-  console.log('[AdminCompanyView] getCompanyDefaults() result:', data)
+  debugLog('[AdminCompanyView] getCompanyDefaults() result:', data)
   companyDefaults.value = data
   form.value = JSON.parse(JSON.stringify(data))
-  console.log('[AdminCompanyView] form after fetch:', form.value)
+  debugLog('[AdminCompanyView] form after fetch:', form.value)
   loading.value = false
 }
 async function saveAll() {

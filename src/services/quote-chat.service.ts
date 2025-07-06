@@ -1,4 +1,5 @@
 import api from './api'
+import { debugLog } from '@/utils/debug'
 
 export interface VueChatMessage {
   _id: string
@@ -63,7 +64,7 @@ export class QuoteChatService {
       const response = await api.get<ChatHistoryResponse>(`/job/api/jobs/${jobId}/quote-chat/`)
       return response.data
     } catch (error) {
-      console.error('Failed to load chat history:', error)
+      debugLog('Failed to load chat history:', error)
       throw error
     }
   }
@@ -76,7 +77,7 @@ export class QuoteChatService {
       )
       return response.data
     } catch (error) {
-      console.error('Failed to save chat message:', error)
+      debugLog('Failed to save chat message:', error)
       throw error
     }
   }
@@ -93,7 +94,7 @@ export class QuoteChatService {
       )
       return response.data
     } catch (error) {
-      console.error('Failed to update chat message:', error)
+      debugLog('Failed to update chat message:', error)
       throw error
     }
   }
@@ -103,7 +104,7 @@ export class QuoteChatService {
       const response = await api.delete<ClearChatResponse>(`/job/api/jobs/${jobId}/quote-chat/`)
       return response.data
     } catch (error) {
-      console.error('Failed to clear chat history:', error)
+      debugLog('Failed to clear chat history:', error)
       throw error
     }
   }
@@ -132,15 +133,6 @@ export class QuoteChatService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // AI assistant interaction
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Send a user's message to the backend interaction endpoint.
-   * The backend will call the configured LLM (via MCPChatService)
-   * and persist the assistant's reply before returning it.
-   */
   async getAssistantResponse(jobId: string, message: string): Promise<ChatMessage> {
     interface AssistantInteractionRequest {
       message: string
@@ -157,7 +149,7 @@ export class QuoteChatService {
       )
       return response.data.data
     } catch (error) {
-      console.error('Failed to get assistant response:', error)
+      debugLog('Failed to get assistant response:', error)
       throw error
     }
   }

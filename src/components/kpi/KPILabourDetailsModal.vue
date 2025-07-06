@@ -208,7 +208,6 @@ const sortedDays = computed(() => {
   })
 })
 
-// Calculate totals from calendar data
 const totalShopHours = computed(() => {
   if (!props.calendarData) return 0
   return Object.values(props.calendarData).reduce((sum, day) => {
@@ -230,10 +229,8 @@ const totalLabourRevenue = computed(() => {
   }, 0)
 })
 
-// Estimated shop labour cost (this might need backend calculation for accuracy)
 const shopLabourCost = computed(() => {
   if (!props.monthlyData || props.monthlyData.total_hours === 0) return 0
-  // Estimate shop labour cost as proportional to shop hours
   const shopHourRatio = totalShopHours.value / props.monthlyData.total_hours
   return totalLabourCost.value * shopHourRatio
 })

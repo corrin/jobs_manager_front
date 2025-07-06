@@ -201,7 +201,6 @@ const columns = computed(() => [
           const num = Number(val)
           if (!Number.isNaN(num) && num >= 0) {
             emit('update:line', row.original.id, 'job_allocation', num)
-            // Auto-calculate stock allocation
             const stockAllocation = row.original.total_received - num
             emit('update:line', row.original.id, 'stock_allocation', stockAllocation)
           }

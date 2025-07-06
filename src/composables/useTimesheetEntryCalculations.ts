@@ -6,6 +6,7 @@ import type {
   TimesheetEntryStaffMember,
 } from '@/types/timesheet.types'
 import type { CompanyDefaults } from '@/types/timesheet.types'
+import { debugLog } from '@/utils/debug'
 
 export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaults | null>) {
   const getRateMultiplier = (rateType: string): number => {
@@ -38,7 +39,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     entry: TimesheetEntry,
     job: TimesheetEntryJobSelectionItem,
   ): TimesheetEntry => {
-    console.log('🔧 Populating job fields:', {
+    debugLog('🔧 Populating job fields:', {
       entry: entry,
       job: job,
     })
@@ -63,7 +64,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       billable,
     }
 
-    console.log('✨ Populated job fields result:', result)
+    debugLog('✨ Populated job fields result:', result)
     return result
   }
 

@@ -199,6 +199,8 @@
   </AppLayout>
 </template>
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import {
@@ -225,7 +227,6 @@ const jobService = JobService.getInstance()
 const items = computed(() => stockStore.items)
 const jobs = computed(() => jobsStore.allKanbanJobs)
 
-// Search and pagination
 const searchQuery = ref('')
 const page = ref(1)
 const pageSize = 25
@@ -252,12 +253,10 @@ const pagedItems = computed(() => {
   return filteredItems.value.slice(start, start + pageSize)
 })
 
-// Reset to first page when search changes
 watch(searchQuery, () => {
   page.value = 1
 })
 
-// Reset to first page if filtered items change and current page is out of range
 watch(
   () => filteredItems.value.length,
   () => {
@@ -267,13 +266,11 @@ watch(
   },
 )
 
-// Modal states
 const showAllocate = ref(false)
 const showAdd = ref(false)
 const showDelete = ref(false)
 const activeId = ref<string>('')
 
-// Form data
 const allocateForm = ref({
   description: '',
   availableQty: 0,
@@ -282,11 +279,10 @@ const allocateForm = ref({
   qtyToUse: 0,
 })
 
-// Watch for changes in allocateForm (optional - can be removed in production)
 watch(
   allocateForm,
   (newValue) => {
-    console.log('📝 allocateForm changed:', newValue)
+    debugLog('📝 allocateForm changed:', newValue)
   },
   { deep: true },
 )
@@ -301,7 +297,6 @@ const addForm = ref({
   location: '',
 })
 
-// Utility functions
 function formatQuantity(value: number | string): string {
   const numValue = typeof value === 'string' ? parseFloat(value) : value
   return isNaN(numValue) ? '0.00' : numValue.toFixed(2)
@@ -312,14 +307,11 @@ function formatCurrency(value: number | string): string {
   return isNaN(numValue) ? '0.00' : numValue.toFixed(2)
 }
 
-// Modal functions
 function openAllocate(item: StockItem) {
-  // Ensure quantity is properly converted to number
   const availableQuantity =
     typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity
   const unitCost = typeof item.unit_cost === 'string' ? parseFloat(item.unit_cost) : item.unit_cost
 
-  // Reset form first, then set new values
   allocateForm.value = {
     description: item.description,
     availableQty: availableQuantity || 0,
@@ -350,21 +342,17 @@ function openDelete(id: string) {
   showDelete.value = true
 }
 
-// Submit functions
 async function submitAllocate() {
-  // Guard clause: Check if job is selected
   if (!allocateForm.value.jobId) {
     toast.error('Please select a job')
     return
   }
 
-  // Guard clause: Check if quantity is valid (greater than 0)
   if (allocateForm.value.qtyToUse <= 0) {
     toast.error('Quantity to use must be greater than 0')
     return
   }
 
-  // Guard clause: Check if quantity doesn't exceed available quantity
   if (allocateForm.value.qtyToUse > allocateForm.value.availableQty) {
     toast.error(
       `Quantity to use (${allocateForm.value.qtyToUse}) cannot exceed available quantity (${allocateForm.value.availableQty})`,
@@ -382,7 +370,7 @@ async function submitAllocate() {
     await stockStore.fetchStock()
   } catch (error) {
     toast.error('Failed to allocate stock')
-    console.error('Error allocating stock:', error)
+    debugLog('Error allocating stock:', error)
   }
 }
 
@@ -408,7 +396,7 @@ async function submitAdd() {
     await stockStore.fetchStock()
   } catch (error) {
     toast.error('Failed to add stock')
-    console.error('Error adding stock:', error)
+    debugLog('Error adding stock:', error)
   }
 }
 
@@ -420,16 +408,14 @@ async function submitDelete() {
     await stockStore.fetchStock()
   } catch (error) {
     toast.error('Failed to delete stock')
-    console.error('Error deleting stock:', error)
+    debugLog('Error deleting stock:', error)
   }
 }
 
-// Initialize data
 onMounted(async () => {
   await Promise.all([stockStore.fetchStock(), loadJobs()])
 })
 
-// Load jobs function using JobService
 async function loadJobs() {
   try {
     const data = await jobService.getAllJobs()
@@ -451,7 +437,7 @@ async function loadJobs() {
     }))
     jobsStore.setKanbanJobs(kanbanJobs)
   } catch (error) {
-    console.error('Error loading jobs:', error)
+    debugLog('Error loading jobs:', error)
     toast.error('Failed to load jobs')
   }
 }

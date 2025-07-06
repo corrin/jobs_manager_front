@@ -126,7 +126,6 @@ const emit = defineEmits(['close', 'save'])
 
 const isEditing = computed(() => !!props.provider)
 
-// Define the validation schema using Zod
 const formSchema = toTypedSchema(
   z
     .object({
@@ -152,7 +151,7 @@ const { handleSubmit, defineField, errors, isSubmitting } = useForm<AIProvider>(
     name: props.provider?.name ?? '',
     provider_type: props.provider?.provider_type ?? 'Gemini',
     model_name: props.provider?.model_name ?? '',
-    api_key: '', // Always start empty for security
+    api_key: '',
     default: props.provider?.default ?? false,
   },
 })
@@ -166,7 +165,6 @@ const [is_default] = defineField('default')
 const onSubmit = handleSubmit((values) => {
   const dataToSave = { ...values }
 
-  // If editing and api_key is blank, don't send it so it remains unchanged on the backend
   if (isEditing.value && !dataToSave.api_key) {
     delete dataToSave.api_key
   }

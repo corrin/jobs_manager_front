@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { useJobsStore } from '@/stores/jobs'
+import { debugLog } from '@/utils/debug'
 
 export function useJobData(jobId: string | Ref<string | null>) {
   const jobsStore = useJobsStore()
@@ -16,7 +17,7 @@ export function useJobData(jobId: string | Ref<string | null>) {
     error.value = null
     try {
       const data = await jobsStore.fetchJob(jobId.value)
-      console.log('[useJobData] fetchJob result:', data)
+      debugLog('[useJobData] fetchJob result:', data)
       if (data && data.job) {
         jobsStore.setDetailedJob({ ...data.job, events: data.events || [] })
       } else if (data && data.id) {
@@ -28,7 +29,7 @@ export function useJobData(jobId: string | Ref<string | null>) {
       const e = err as Error
       error.value = e.message || 'Failed to load job data.'
 
-      console.error('[useJobData] Error in loadJob:', err)
+      debugLog('[useJobData] Error in loadJob:', err)
     } finally {
       loading.value = false
     }

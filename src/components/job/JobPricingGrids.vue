@@ -86,6 +86,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, watch } from 'vue'
 import SimpleTotalTable from './SimpleTotalTable.vue'
 import type { JobData, CompanyDefaults } from '@/services/job-rest.service'
@@ -204,7 +206,7 @@ watch(
           reality.value = extractSectionTotals(pricingData.reality)
         }
       } catch (error) {
-        console.error('Error parsing pricing data:', error)
+        debugLog('Error parsing pricing data:', error)
 
         estimates.value = { time: 100, materials: 200, adjustments: 50, total: 350 }
         quotes.value = { time: 120, materials: 220, adjustments: 60, total: 400 }

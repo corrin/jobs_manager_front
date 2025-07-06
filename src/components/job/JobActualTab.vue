@@ -209,6 +209,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
@@ -235,7 +237,6 @@ const staffMap = ref<Record<string, Staff>>({})
 const isLoading = ref(false)
 const revision = ref(0)
 
-// Utility functions
 function formatCurrency(value: number | string): string {
   const num = typeof value === 'string' ? parseFloat(value) : value
   return num.toFixed(2)
@@ -246,7 +247,6 @@ function formatNumber(value: number | string): string {
   return num.toFixed(3)
 }
 
-// Load staff data for time entries
 async function loadStaff() {
   try {
     const response = await api.get('/api/staff/')
@@ -259,7 +259,7 @@ async function loadStaff() {
       {} as Record<string, Staff>,
     )
   } catch (error) {
-    console.error('Failed to load staff data:', error)
+    debugLog('Failed to load staff data:', error)
   }
 }
 
@@ -268,7 +268,6 @@ async function loadActualCosts() {
   try {
     const costSet: CostSet = await fetchCostSet(props.jobId, 'actual')
 
-    // Process cost lines
     costLines.value = costSet.cost_lines.map((line) => ({
       ...line,
       quantity: typeof line.quantity === 'string' ? Number(line.quantity) : line.quantity,
@@ -278,7 +277,7 @@ async function loadActualCosts() {
 
     revision.value = costSet.rev || 0
   } catch (error) {
-    console.error('Failed to load actual cost lines:', error)
+    debugLog('Failed to load actual cost lines:', error)
   } finally {
     isLoading.value = false
   }
@@ -302,11 +301,9 @@ const actualSummary = computed(() => {
     const unitCost = typeof line.unit_cost === 'string' ? Number(line.unit_cost) : line.unit_cost
     const unitRev = typeof line.unit_rev === 'string' ? Number(line.unit_rev) : line.unit_rev
 
-    // Add to cost and revenue for all types of cost lines
     cost += quantity * unitCost
     rev += quantity * unitRev
 
-    // Only add to hours if it's time-based
     if (line.kind === 'time') {
       hours += quantity
     }

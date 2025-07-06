@@ -77,7 +77,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 
-// Props
 const props = defineProps({
   modelValue: {
     type: [String, Number],
@@ -105,10 +104,8 @@ const props = defineProps({
   },
 })
 
-// Emits
 const emit = defineEmits(['update:modelValue', 'jobSelected'])
 
-// Refs
 const inputRef = ref(null)
 const dropdownRef = ref(null)
 const searchTerm = ref('')
@@ -116,20 +113,16 @@ const showDropdown = ref(false)
 const highlightedIndex = ref(-1)
 const dropdownStyle = ref({})
 
-// Computed
 const filteredJobs = computed(() => {
-  // Filter out excluded statuses first
   const excludedStatuses = ['rejected', 'archived', 'completed', 'special']
   const availableJobs = props.jobs.filter(
     (job) => !excludedStatuses.includes(job.status?.toLowerCase()),
   )
 
-  // If no search term, return all available jobs
   if (!searchTerm.value.trim()) {
     return availableJobs
   }
 
-  // Filter by search term (job number, name/description, or client name)
   const term = searchTerm.value.toLowerCase()
 
   const filtered = availableJobs.filter((job) => {
@@ -145,7 +138,6 @@ const filteredJobs = computed(() => {
   return filtered
 })
 
-// Helper function to update search term from modelValue
 const updateSearchTermFromModelValue = (modelValue) => {
   if (modelValue) {
     const selectedJob = props.jobs.find((job) => job.id === modelValue)
@@ -159,7 +151,6 @@ const updateSearchTermFromModelValue = (modelValue) => {
   }
 }
 
-// Watch for modelValue changes to update search term
 watch(
   () => props.modelValue,
   (newValue) => {
@@ -168,11 +159,9 @@ watch(
   { immediate: true },
 )
 
-// Watch for jobs changes
 watch(
   () => props.jobs,
   (newJobs) => {
-    // When jobs are updated, try to update search term if we have a modelValue
     if (props.modelValue && newJobs.length > 0) {
       updateSearchTermFromModelValue(props.modelValue)
     }
@@ -180,16 +169,8 @@ watch(
   { immediate: true },
 )
 
-// Watch for searchTerm changes
-watch(
-  searchTerm,
-  () => {
-    // Search term updated - will trigger filteredJobs recomputation
-  },
-  { immediate: true },
-)
+watch(searchTerm, () => {}, { immediate: true })
 
-// Methods
 const onFocus = () => {
   if (props.disabled) return
   showDropdown.value = true
@@ -199,7 +180,6 @@ const onFocus = () => {
 
 const onBlur = (event) => {
   if (props.disabled) return
-  // Small delay to allow click events on dropdown items
   setTimeout(() => {
     if (!dropdownRef.value?.contains(event.relatedTarget)) {
       showDropdown.value = false
@@ -214,7 +194,6 @@ const onInput = () => {
   highlightedIndex.value = -1
   calculateDropdownPosition()
 
-  // Clear selection if user is typing
   if (props.modelValue) {
     emit('update:modelValue', null)
     emit('jobSelected', null)
@@ -270,22 +249,18 @@ const calculateDropdownPosition = async () => {
 
   const inputRect = inputRef.value.getBoundingClientRect()
   const viewportHeight = window.innerHeight
-  const dropdownHeight = 240 // max-height: 60 * 4 = 240px (approximate)
+  const dropdownHeight = 240
 
-  // Calculate position
   let top = inputRect.bottom + window.scrollY
   let left = inputRect.left + window.scrollX
   const width = inputRect.width
 
-  // Check if dropdown would be cut off at bottom of viewport
   if (inputRect.bottom + dropdownHeight > viewportHeight) {
-    // Position above input if there's more space
     if (inputRect.top > dropdownHeight) {
       top = inputRect.top + window.scrollY - dropdownHeight
     }
   }
 
-  // Ensure dropdown doesn't go off-screen horizontally
   const maxLeft = window.innerWidth - width - 20
   left = Math.min(left, maxLeft)
   left = Math.max(left, 10)
@@ -299,7 +274,6 @@ const calculateDropdownPosition = async () => {
   }
 }
 
-// Handle click outside
 const handleClickOutside = (event) => {
   if (
     inputRef.value &&
@@ -312,14 +286,12 @@ const handleClickOutside = (event) => {
   }
 }
 
-// Handle window resize
 const handleResize = () => {
   if (showDropdown.value) {
     calculateDropdownPosition()
   }
 }
 
-// Lifecycle
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('resize', handleResize)
@@ -332,7 +304,6 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleResize)
 })
 
-// Expose methods for parent component
 defineExpose({
   focus: () => inputRef.value?.focus(),
   blur: () => inputRef.value?.blur(),

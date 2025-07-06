@@ -1,5 +1,6 @@
 import type { ICellEditor, ICellEditorParams } from 'ag-grid-community'
 import type { JobSelectionItem } from '@/types/timesheet.types'
+import { debugLog } from '@/utils/debug'
 
 export class TimesheetEntryJobCellEditor implements ICellEditor {
   private value: string = ''
@@ -275,12 +276,12 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     this.value = job.job_number
     this.input.value = job.job_number
 
-    console.log('🎯 Job selected in editor:', job)
+    debugLog('🎯 Job selected in editor:', job)
     ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob = job
 
     if (this.params.node) {
       const rowData = this.params.node.data
-      console.log('🔄 Updating row data with job info:', job)
+      debugLog('🔄 Updating row data with job info:', job)
 
       rowData.jobId = job.id
       rowData.jobNumber = job.job_number
@@ -313,28 +314,21 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       const multiplier = getRateMultiplier(rate)
       rowData.wage = hours > 0 ? Math.round(hours * wageRate * multiplier * 100) / 100 : 0
 
-      console.log(
-        '💰 Using wage rate:',
-        wageRate,
-        'for',
-        hours,
-        'hours with multiplier',
-        multiplier,
-      )
+      debugLog('💰 Using wage rate:', wageRate, 'for', hours, 'hours with multiplier', multiplier)
 
       rowData.bill =
         rowData.billable && hours > 0 && job.charge_out_rate > 0
           ? Math.round(hours * job.charge_out_rate * 100) / 100
           : 0
 
-      console.log('💰 Calculated wage:', rowData.wage, 'and bill:', rowData.bill)
+      debugLog('💰 Calculated wage:', rowData.wage, 'and bill:', rowData.bill)
 
       this.params.api?.refreshCells({
         rowNodes: [this.params.node],
         force: true,
       })
 
-      console.log('✅ Row updated with job data')
+      debugLog('✅ Row updated with job data')
     }
 
     this.hideDropdown()
@@ -357,7 +351,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     if (this.selectedJob) {
       ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob =
         this.selectedJob
-      console.log('🎯 Returning job number from editor:', this.selectedJob.job_number)
+      debugLog('🎯 Returning job number from editor:', this.selectedJob.job_number)
       return this.selectedJob.job_number
     }
     return this.value

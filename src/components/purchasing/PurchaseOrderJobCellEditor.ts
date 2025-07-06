@@ -1,4 +1,5 @@
 import type { ICellEditor, ICellEditorParams } from 'ag-grid-community'
+import { debugLog } from '@/utils/debug'
 
 interface JobSelectionItem {
   id: string
@@ -24,7 +25,6 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
     this.value = params.value || ''
     this.params = params
 
-    // Get jobs from the same source as TimesheetEntryJobCellEditor
     const win = window as unknown as { timesheetJobs?: unknown }
     if (Array.isArray(win.timesheetJobs)) {
       this.jobs = win.timesheetJobs as JobSelectionItem[]
@@ -249,7 +249,7 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
       case 'Escape':
         event.preventDefault()
         this.hideDropdown()
-        this.params.stopEditing(true) // Cancel edit
+        this.params.stopEditing(true)
         break
 
       case 'Tab':
@@ -279,12 +279,11 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
     this.value = job.job_number
     this.input.value = job.job_number
 
-    console.log('🎯 Job selected in PO editor:', job)
+    debugLog('🎯 Job selected in PO editor:', job)
 
-    // Update the row data directly like in TimesheetEntryJobCellEditor
     if (this.params.node) {
       const rowData = this.params.node.data
-      console.log('🔄 Updating PO line with job info:', job)
+      debugLog('🔄 Updating PO line with job info:', job)
 
       rowData.job_id = job.id
       rowData.job_number = job.job_number
@@ -296,7 +295,7 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
         force: true,
       })
 
-      console.log('✅ PO line updated with job data')
+      debugLog('✅ PO line updated with job data')
     }
 
     this.hideDropdown()
@@ -318,7 +317,7 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
 
   getValue(): string {
     if (this.selectedJob) {
-      console.log('🎯 Returning job ID from PO editor:', this.selectedJob.id)
+      debugLog('🎯 Returning job ID from PO editor:', this.selectedJob.id)
       return this.selectedJob.id
     }
     return this.value

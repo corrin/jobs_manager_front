@@ -101,6 +101,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Send, Paperclip, RotateCcw } from 'lucide-vue-next'
@@ -150,9 +152,6 @@ const handleSendMessage = async () => {
 
     await saveMessage(userMessage, 'user')
 
-    // ---------------------------------------------------------------------
-    // Get real assistant response from backend/LLM
-    // ---------------------------------------------------------------------
     if (!jobContext.value?.jobId) {
       throw new Error('Missing job context')
     }
@@ -165,7 +164,7 @@ const handleSendMessage = async () => {
     const assistantMessage = quoteChatService.convertToVueMessage(backendAssistantMessage)
     messages.value.push(assistantMessage)
   } catch (error) {
-    console.error('Chat processing failed:', error)
+    debugLog('Chat processing failed:', error)
     const lastMessage = messages.value[messages.value.length - 1]
     if (lastMessage && lastMessage.senderId === 'assistant-1') {
       lastMessage.content = 'Sorry, I had trouble processing that. Please try again.'
@@ -188,7 +187,7 @@ const formatTime = (timestamp: string): string => {
       hour12: true,
     })
   } catch (error) {
-    console.error('Error formatting time:', error)
+    debugLog('Error formatting time:', error)
     return 'Invalid time'
   }
 }
@@ -221,7 +220,7 @@ const loadChatHistory = async () => {
       }
     }
   } catch (error) {
-    console.error('Failed to load chat history:', error)
+    debugLog('Failed to load chat history:', error)
     toast.error('Failed to load chat history', {
       description: 'Could not retrieve previous conversation. Starting fresh.',
     })
@@ -235,7 +234,7 @@ const saveMessage = async (message: VueChatMessage, role: 'user' | 'assistant') 
     const backendMessage = quoteChatService.convertFromVueMessage(message, role)
     await quoteChatService.saveMessage(jobContext.value.jobId, backendMessage)
   } catch (error) {
-    console.error('Failed to save chat message:', error)
+    debugLog('Failed to save chat message:', error)
     toast.error('Failed to save message', {
       description: 'Message was not saved to database',
     })
@@ -264,7 +263,7 @@ const clearChatHistory = async () => {
         description: 'All messages have been deleted',
       })
     } catch (error) {
-      console.error('Failed to clear chat history:', error)
+      debugLog('Failed to clear chat history:', error)
       toast.error('Failed to clear chat history', {
         description: 'Could not delete messages from database',
       })
@@ -282,14 +281,14 @@ const handleFileUpload = async (event: Event) => {
 
   if (!files || files.length === 0) return
 
-  console.log(
+  debugLog(
     'Files selected:',
     Array.from(files).map((f) => f.name),
   )
 
   toast.info('File upload', {
     description: `Selected ${files.length} file(s). File upload will be implemented next.`,
-    duration: 4000, // auto-dismiss after 4s
+    duration: 4000,
   })
 
   target.value = ''
@@ -304,18 +303,18 @@ const navigateBack = () => {
 }
 
 onMounted(async () => {
-  console.log('QuotingChatView mounted')
-  console.log('Route query:', route.query)
-  console.log('Job context:', jobContext.value)
+  debugLog('QuotingChatView mounted')
+  debugLog('Route query:', route.query)
+  debugLog('Job context:', jobContext.value)
 
   if (!jobContext.value) {
-    console.warn('No job context provided')
+    debugLog('No job context provided')
     return
   }
 
-  console.log('Loading chat history...')
+  debugLog('Loading chat history...')
 
   await loadChatHistory()
-  console.log('Chat history loaded')
+  debugLog('Chat history loaded')
 })
 </script>

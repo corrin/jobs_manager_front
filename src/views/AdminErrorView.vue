@@ -61,7 +61,6 @@ const selectedError = ref<ErrorRecord | null>(null)
 async function loadErrors() {
   loading.value = true
   if (activeTab.value === 'system') {
-    // TODO: Implement system errors endpoint when available
     errors.value = []
     pageCount.value = 1
     loading.value = false

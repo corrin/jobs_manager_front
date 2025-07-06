@@ -285,6 +285,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, onMounted, watch } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import JobViewTabs from '@/components/job/JobViewTabs.vue'
@@ -372,7 +374,7 @@ function openQuotingChat() {
       clientName: jobDataWithPaid.value.client_name,
     },
   })
-  console.log('JobView - Navigated to QuotingChatView', jobDataWithPaid.value)
+  debugLog('JobView - Navigated to QuotingChatView', jobDataWithPaid.value)
 }
 
 function handleJobUpdated(updatedJob) {
@@ -434,10 +436,10 @@ function handleFileDeleted() {
   notifications.notifyJobUpdated('File deleted')
 }
 
-console.log('JobView - jobId:', jobId.value)
+debugLog('JobView - jobId:', jobId.value)
 
 watch(jobData, (val) => {
-  console.log('JobView - jobData changed:', val)
+  debugLog('JobView - jobData changed:', val)
 })
 </script>
 

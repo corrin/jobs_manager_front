@@ -66,6 +66,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import AppLayout from '@/components/AppLayout.vue'
 import { Package, Edit, Trash2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -85,7 +87,7 @@ const receipts = ref<Receipt[]>([])
 const router = useRouter()
 
 const page = ref(1)
-const pageSize = 25 // Updated to match requirement
+const pageSize = 25
 
 const totalPages = computed(() => Math.max(1, Math.ceil(receipts.value.length / pageSize)))
 
@@ -94,7 +96,6 @@ const pagedReceipts = computed(() => {
   return receipts.value.slice(start, start + pageSize)
 })
 
-// Reset to first page if receipts change and current page is out of range
 watch(
   () => receipts.value.length,
   () => {
@@ -132,8 +133,7 @@ const editReceipt = (id: string) => {
 }
 
 const deleteReceipt = (id: string) => {
-  // TODO: Implement delete functionality
-  console.log('Delete receipt:', id)
+  debugLog('Delete receipt:', id)
 }
 
 onMounted(async () => {

@@ -57,6 +57,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { watch } from 'vue'
 import { Users, X } from 'lucide-vue-next'
 import { useContactManagement } from '@/composables/useContactManagement'
@@ -102,7 +104,7 @@ const {
 } = useContactManagement()
 
 const handleOpenModal = async () => {
-  console.log('ContactSelector - handleOpenModal called:', {
+  debugLog('ContactSelector - handleOpenModal called:', {
     clientId: props.clientId,
     clientName: props.clientName,
     initialContactId: props.initialContactId,
@@ -112,12 +114,12 @@ const handleOpenModal = async () => {
   })
 
   if (!props.clientId) {
-    console.warn('Cannot open contact modal without client')
+    debugLog('Cannot open contact modal without client')
     return
   }
 
   await openModal(props.clientId, props.clientName)
-  console.log('ContactSelector - after openModal:', {
+  debugLog('ContactSelector - after openModal:', {
     isModalOpen: isModalOpen.value,
     contacts: contacts.value,
     selectedContact: selectedContact.value,
@@ -126,18 +128,18 @@ const handleOpenModal = async () => {
 }
 
 const selectExistingContact = (contact: ClientContact) => {
-  console.log('ContactSelector - selectExistingContact:', contact)
+  debugLog('ContactSelector - selectExistingContact:', contact)
   selectFromComposable(contact)
   emitUpdates()
 }
 
 const handleSaveContact = async () => {
-  console.log('ContactSelector - handleSaveContact: before save', {
+  debugLog('ContactSelector - handleSaveContact: before save', {
     newContactForm: newContactForm.value,
     selectedContact: selectedContact.value,
   })
   const success = await saveContact()
-  console.log('ContactSelector - handleSaveContact: after save', {
+  debugLog('ContactSelector - handleSaveContact: after save', {
     success,
     newContactForm: newContactForm.value,
     selectedContact: selectedContact.value,
@@ -148,13 +150,13 @@ const handleSaveContact = async () => {
 }
 
 const clearSelection = () => {
-  console.log('ContactSelector - clearSelection')
+  debugLog('ContactSelector - clearSelection')
   clearFromComposable()
   emitUpdates()
 }
 
 const emitUpdates = () => {
-  console.log('ContactSelector - emitUpdates', {
+  debugLog('ContactSelector - emitUpdates', {
     displayValue: displayValue.value,
     selectedContact: selectedContact.value,
   })
@@ -163,7 +165,7 @@ const emitUpdates = () => {
 }
 
 watch(selectedContact, () => {
-  console.log('ContactSelector - selectedContact changed:', selectedContact.value)
+  debugLog('ContactSelector - selectedContact changed:', selectedContact.value)
   emitUpdates()
 })
 
@@ -171,7 +173,7 @@ watch(
   () => props.clientId,
   (newClientId, oldClientId) => {
     if (newClientId !== oldClientId) {
-      console.log('ContactSelector - clientId changed:', { newClientId, oldClientId })
+      debugLog('ContactSelector - clientId changed:', { newClientId, oldClientId })
       clearSelection()
     }
   },
@@ -180,7 +182,7 @@ watch(
 watch(
   () => [props.clientId, props.initialContactId],
   async ([clientId, contactId]) => {
-    console.log('ContactSelector - watch clientId/initialContactId:', { clientId, contactId })
+    debugLog('ContactSelector - watch clientId/initialContactId:', { clientId, contactId })
     if (clientId && contactId && contacts.value.length === 0) {
       await loadContactsOnly(clientId)
       const initialContact = contacts.value.find((contact) => contact.id === contactId)

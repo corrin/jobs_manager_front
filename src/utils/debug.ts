@@ -1,6 +1,4 @@
-/**
- * Debug utility for controlled logging in development/production
- */
+import { debugLog } from '@/utils/debug'
 
 interface ViteImportMeta {
   env: {
@@ -16,19 +14,19 @@ const debugEnabled =
 export const debug = {
   log: (...args: unknown[]) => {
     if (debugEnabled) {
-      console.log('[DEBUG]', ...args)
+      debugLog('[DEBUG]', ...args)
     }
   },
 
   warn: (...args: unknown[]) => {
     if (debugEnabled) {
-      console.warn('[DEBUG-WARN]', ...args)
+      debugLog('[DEBUG-WARN]', ...args)
     }
   },
 
   error: (...args: unknown[]) => {
     if (debugEnabled) {
-      console.error('[DEBUG-ERROR]', ...args)
+      debugLog('[DEBUG-ERROR]', ...args)
     }
   },
 
@@ -51,9 +49,6 @@ export const debug = {
   },
 }
 
-/**
- * Simple debug log function for backward compatibility with console.log replacements
- */
 export function debugLog(...args: unknown[]): void {
   if (debugEnabled) {
     console.log('[DEBUG]', ...args)

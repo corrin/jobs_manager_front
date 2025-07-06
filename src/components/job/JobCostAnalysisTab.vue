@@ -286,17 +286,14 @@ const hoursIcon = computed(() =>
 )
 
 const happyFace = computed(() => {
-  // Only show happy face if we have meaningful quote and actual data
   if (!quote.value.rev || !actual.value.rev) return false
   return actual.value.rev >= quote.value.rev && actual.value.cost <= quote.value.cost
 })
 
 const quoteAccuracy = computed(() => {
-  // If no quote data or no actual data, don't show accuracy
   if (!quote.value.rev || !actual.value.rev) return 0
 
   const diff = Math.abs(percentDiff(actual.value.rev, quote.value.rev))
-  // Cap the accuracy calculation to avoid showing more than 100% inaccuracy
   return Math.max(0, 100 - Math.min(diff, 100))
 })
 

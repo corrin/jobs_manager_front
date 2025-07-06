@@ -146,6 +146,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, watch } from 'vue'
 import { XCircle } from 'lucide-vue-next'
 import { ZodError } from 'zod'
@@ -243,7 +245,6 @@ const handleSubmit = async () => {
     const result: CreateClientResponse = await clientService.createClient(formData.value)
 
     if (!result.success) {
-      // Handle duplicate client (409)
       if (result.existing_client && result.existing_client.xero_contact_id) {
         duplicateClientInfo.value = result.existing_client
         errorMessage.value = result.error || 'Client already exists in Xero.'
@@ -271,7 +272,7 @@ const handleSubmit = async () => {
       emit('update:isOpen', false)
     }
   } catch (error) {
-    console.error('Error creating client:', error)
+    debugLog('Error creating client:', error)
     errorMessage.value = error instanceof Error ? error.message : 'An unexpected error occurred'
   } finally {
     isLoading.value = false

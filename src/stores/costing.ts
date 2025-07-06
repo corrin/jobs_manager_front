@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { fetchCostSet } from '@/services/costing.service'
 import type { CostSet, CostLine } from '@/types/costing.types'
+import { debugLog } from '@/utils/debug'
 
 function createEmptyGrouping() {
   return {
@@ -48,28 +49,28 @@ export const useCostingStore = defineStore('costing', () => {
     const targetKind = kind || currentKind.value
 
     try {
-      console.log(`Loading costing data for job ${jobId}, kind: ${targetKind}`)
+      debugLog(`Loading costing data for job ${jobId}, kind: ${targetKind}`)
 
       const data = await fetchCostSet(jobId, targetKind)
       costSet.value = data
 
       currentKind.value = targetKind
 
-      console.log('Costing data loaded successfully')
+      debugLog('Costing data loaded successfully')
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load costing data'
-      console.error(`Error loading costing data for ${targetKind}:`, err)
+      debugLog(`Error loading costing data for ${targetKind}:`, err)
 
       if (targetKind !== 'estimate') {
-        console.log('Trying to fallback to estimate data...')
+        debugLog('Trying to fallback to estimate data...')
         try {
           const fallbackData = await fetchCostSet(jobId, 'estimate')
           costSet.value = fallbackData
           currentKind.value = 'estimate'
-          console.log('Fallback to estimate successful')
+          debugLog('Fallback to estimate successful')
           error.value = null
         } catch (fallbackErr) {
-          console.error('Fallback to estimate also failed:', fallbackErr)
+          debugLog('Fallback to estimate also failed:', fallbackErr)
         }
       }
 
@@ -89,7 +90,7 @@ export const useCostingStore = defineStore('costing', () => {
       try {
         await load(jobId, kind)
       } catch {
-        console.warn(`Failed to load ${kind} data, keeping current data`)
+        debugLog(`Failed to load ${kind} data, keeping current data`)
       }
     }
   }

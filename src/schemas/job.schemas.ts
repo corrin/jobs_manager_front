@@ -72,17 +72,11 @@ export const JobDetailSchema = z.object({
   paid: z.boolean().optional(),
   charge_out_rate: z.string().optional(),
 
-  // LEGACY PRICING FIELDS REMOVED - Use CostSet/CostLine instead
-  // latest_estimate_pricing, latest_quote_pricing, latest_reality_pricing removed
-
   latest_estimate: CostSetSchema.nullable().optional(),
   latest_quote: CostSetSchema.nullable().optional(),
   latest_actual: CostSetSchema.nullable().optional(),
 
   quote_sheet: QuoteSheetSchema.nullable().optional(),
-
-  // LEGACY PRICING FIELD REMOVED - Use CostSet/CostLine instead
-  // latest_pricings removed
 
   company_defaults: z
     .object({
@@ -107,8 +101,6 @@ export const JobUpdateResponseSchema = z.object({
   success: z.literal(true),
   data: z.object({
     job: JobDetailSchema,
-    // LEGACY PRICING FIELDS REMOVED - Use CostSet/CostLine instead
-    // latest_pricings removed
     events: z.array(JobEventSchema).optional(),
     company_defaults: z
       .object({
@@ -121,9 +113,6 @@ export const JobUpdateResponseSchema = z.object({
   }),
   message: z.string().optional(),
 })
-
-// LEGACY CREATE SCHEMAS REMOVED - Use CostLine endpoints instead
-// TimeEntryCreateSchema, MaterialEntryCreateSchema, AdjustmentEntryCreateSchema removed
 
 export const JobFileSchema = z.object({
   id: z.string(),
@@ -151,14 +140,10 @@ export const UploadFilesResponseSchema = z
   .describe('Response from file upload endpoint')
 
 export type QuoteSheet = z.infer<typeof QuoteSheetSchema>
-// LEGACY TYPES REMOVED - Use CostSet/CostLine types instead
-// JobPricing, TimeEntryCreate, MaterialEntryCreate, AdjustmentEntryCreate removed
 export type CompanyDefaults = z.infer<typeof CompanyDefaultsSchema>
 export type JobDetail = z.infer<typeof JobDetailSchema>
 export type ApiSuccessResponse = z.infer<typeof ApiSuccessResponseSchema>
 export type JobUpdateResponse = z.infer<typeof JobUpdateResponseSchema>
-// LEGACY CREATE TYPES REMOVED - Use CostLine endpoints instead
-// TimeEntryCreate, MaterialEntryCreate, AdjustmentEntryCreate removed
 export type JobEvent = z.infer<typeof JobEventSchema>
 export type FileListResponse = z.infer<typeof FileListResponseSchema>
 export type JobFile = z.infer<typeof JobFileSchema>

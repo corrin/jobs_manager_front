@@ -2,6 +2,7 @@ import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
 import { useXeroAuth } from '../composables/useXeroAuth'
+import { debugLog } from '@/utils/debug'
 
 export const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_BASE_URL) {
@@ -39,7 +40,7 @@ axios.interceptors.response.use(
       return Promise.reject(error)
     }
     if (isAuthError && !isOnLoginPage && !isRedirecting) {
-      console.warn('Authentication failed - cookies may have expired')
+      debugLog('Authentication failed - cookies may have expired')
 
       isRedirecting = true
 
@@ -48,7 +49,7 @@ axios.interceptors.response.use(
 
         await router.push({ name: 'login', query: { redirect: currentPath } })
       } catch (redirectError) {
-        console.error('Error during auth redirect:', redirectError)
+        debugLog('Error during auth redirect:', redirectError)
 
         window.location.href = '/login'
       } finally {

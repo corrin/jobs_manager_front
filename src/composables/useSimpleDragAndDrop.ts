@@ -1,5 +1,6 @@
 import { ref, nextTick } from 'vue'
 import Sortable from 'sortablejs'
+import { debugLog } from '@/utils/debug'
 
 interface DragEventData {
   jobId: string
@@ -49,10 +50,10 @@ export function useSimpleDragAndDrop() {
   const sortableInstances = new Map<string, Sortable>()
 
   const logColumnInitialization = (element: HTMLElement, status: string): void => {
-    console.log(`📍 Initializing simple drag for ${status}`)
-    console.log(`📍 Element:`, element)
-    console.log(`📍 Element classes:`, element.className)
-    console.log(`📍 Element data-status:`, element.dataset.status)
+    debugLog(`📍 Initializing simple drag for ${status}`)
+    debugLog(`📍 Element:`, element)
+    debugLog(`📍 Element classes:`, element.className)
+    debugLog(`📍 Element data-status:`, element.dataset.status)
   }
   const createJobCardElementData = (htmlElement: HTMLElement): JobCardElement => ({
     id: htmlElement.dataset.id || '',
@@ -65,9 +66,9 @@ export function useSimpleDragAndDrop() {
     const jobCardElements = element.querySelectorAll('.job-card-simple')
     const draggableJobCards = element.querySelectorAll('.job-card-simple[data-id]')
 
-    console.log(`📦 Found ${draggableElements.length} draggable elements in ${status}`)
-    console.log(`🃏 Found ${jobCardElements.length} job-card elements in ${status}`)
-    console.log(`🎯 Found ${draggableJobCards.length} draggable job-card elements in ${status}`)
+    debugLog(`📦 Found ${draggableElements.length} draggable elements in ${status}`)
+    debugLog(`🃏 Found ${jobCardElements.length} job-card elements in ${status}`)
+    debugLog(`🎯 Found ${draggableJobCards.length} draggable job-card elements in ${status}`)
 
     if (jobCardElements.length === 0) return
 
@@ -75,10 +76,10 @@ export function useSimpleDragAndDrop() {
       createJobCardElementData(el as HTMLElement),
     )
 
-    console.log('🎴 Job card elements:', jobCardData)
+    debugLog('🎴 Job card elements:', jobCardData)
 
     if (draggableJobCards.length > 0) {
-      console.log(
+      debugLog(
         '🎯 Draggable job cards:',
         Array.from(draggableJobCards).map((el) => ({
           id: el.getAttribute('data-id'),
@@ -89,7 +90,7 @@ export function useSimpleDragAndDrop() {
   }
 
   const handleDragStart = (evt: Sortable.SortableEvent): void => {
-    console.log('🎯 Simple drag started', {
+    debugLog('🎯 Simple drag started', {
       item: evt.item,
       itemId: evt.item.dataset.id,
       from: evt.from.dataset.status,
@@ -99,7 +100,7 @@ export function useSimpleDragAndDrop() {
   }
 
   const handleDragMove = (evt: Sortable.MoveEvent): boolean => {
-    console.log('🔄 Move event', {
+    debugLog('🔄 Move event', {
       related: evt.related,
       relatedRect: evt.relatedRect,
       willInsertAfter: evt.willInsertAfter,
@@ -119,12 +120,12 @@ export function useSimpleDragAndDrop() {
 
   const shouldProcessJobMove = (dragData: DragEventData): boolean => {
     if (!isValidDragEventData(dragData)) {
-      console.warn('⚠️ Missing data for job move:', dragData)
+      debugLog('⚠️ Missing data for job move:', dragData)
       return false
     }
 
     if (dragData.fromStatus === dragData.toStatus) {
-      console.log('📍 Job moved within same column, no status change needed')
+      debugLog('📍 Job moved within same column, no status change needed')
       return false
     }
 
@@ -135,9 +136,7 @@ export function useSimpleDragAndDrop() {
     dragData: DragEventData,
     onJobMoved: (from: string, to: string, jobId: string) => void,
   ): void => {
-    console.log(
-      `📦 Moving job ${dragData.jobId} from ${dragData.fromStatus} to ${dragData.toStatus}`,
-    )
+    debugLog(`📦 Moving job ${dragData.jobId} from ${dragData.fromStatus} to ${dragData.toStatus}`)
     onJobMoved(dragData.fromStatus, dragData.toStatus, dragData.jobId)
   }
 
@@ -145,7 +144,7 @@ export function useSimpleDragAndDrop() {
     evt: Sortable.SortableEvent,
     onJobMoved: (from: string, to: string, jobId: string) => void,
   ): void => {
-    console.log('🏁 Simple drag ended', {
+    debugLog('🏁 Simple drag ended', {
       item: evt.item,
       itemId: evt.item.dataset.id,
       from: evt.from.dataset.status,
@@ -187,7 +186,7 @@ export function useSimpleDragAndDrop() {
     if (!existingInstance) return
 
     existingInstance.destroy()
-    console.log(`🗑️ Destroyed existing sortable for ${status}`)
+    debugLog(`🗑️ Destroyed existing sortable for ${status}`)
     sortableInstances.delete(status)
   }
 
@@ -196,25 +195,25 @@ export function useSimpleDragAndDrop() {
     status: string,
     config: SortableOptions,
   ): Sortable => {
-    console.log(`🚀 Creating Sortable instance for ${status} with config:`, config)
-    console.log(`🎯 Element HTML:`, element.outerHTML.substring(0, 300))
-    console.log(`🔍 Selector being used:`, SORTABLE_CONFIG.DRAGGABLE_SELECTOR)
+    debugLog(`🚀 Creating Sortable instance for ${status} with config:`, config)
+    debugLog(`🎯 Element HTML:`, element.outerHTML.substring(0, 300))
+    debugLog(`🔍 Selector being used:`, SORTABLE_CONFIG.DRAGGABLE_SELECTOR)
 
     const testElements = element.querySelectorAll(SORTABLE_CONFIG.DRAGGABLE_SELECTOR)
-    console.log(`🧪 Test selector found ${testElements.length} elements before Sortable creation`)
+    debugLog(`🧪 Test selector found ${testElements.length} elements before Sortable creation`)
 
     const sortableInstance = new Sortable(element, config)
     sortableInstances.set(status, sortableInstance)
 
-    console.log(`✅ Sortable initialized for ${status}:`, {
+    debugLog(`✅ Sortable initialized for ${status}:`, {
       sortable: sortableInstance,
       options: sortableInstance.options,
       element: sortableInstance.el,
     })
 
-    console.log(`🔍 Sortable disabled state:`, sortableInstance.option('disabled'))
-    console.log(`🔍 Sortable group:`, sortableInstance.option('group'))
-    console.log(`🔍 Sortable draggable:`, sortableInstance.option('draggable'))
+    debugLog(`🔍 Sortable disabled state:`, sortableInstance.option('disabled'))
+    debugLog(`🔍 Sortable group:`, sortableInstance.option('group'))
+    debugLog(`🔍 Sortable draggable:`, sortableInstance.option('draggable'))
 
     return sortableInstance
   }
@@ -225,7 +224,7 @@ export function useSimpleDragAndDrop() {
     onJobMoved: (from: string, to: string, jobId: string) => void,
   ): Sortable | undefined => {
     if (!element) {
-      console.warn(`⚠️ No element provided for ${status}`)
+      debugLog(`⚠️ No element provided for ${status}`)
       return undefined
     }
 
@@ -238,11 +237,11 @@ export function useSimpleDragAndDrop() {
 
     setTimeout(() => {
       const draggableItems = element.querySelectorAll(SORTABLE_CONFIG.DRAGGABLE_SELECTOR)
-      console.log(
+      debugLog(
         `🔍 Post-init verification for ${status}: Found ${draggableItems.length} draggable items`,
       )
       draggableItems.forEach((item, index) => {
-        console.log(`  Item ${index}:`, {
+        debugLog(`  Item ${index}:`, {
           element: item,
           dataId: item.getAttribute('data-id'),
           classes: item.className,
@@ -250,10 +249,10 @@ export function useSimpleDragAndDrop() {
 
         const htmlItem = item as HTMLElement
         htmlItem.addEventListener('mousedown', (e) => {
-          console.log(`🖱️ Manual mousedown on item ${index}:`, e)
+          debugLog(`🖱️ Manual mousedown on item ${index}:`, e)
         })
         htmlItem.addEventListener('dragstart', (e) => {
-          console.log(`🎭 Manual dragstart on item ${index}:`, e)
+          debugLog(`🎭 Manual dragstart on item ${index}:`, e)
         })
       })
     }, 100)
@@ -272,10 +271,10 @@ export function useSimpleDragAndDrop() {
     const element = findColumnElement(status)
 
     if (element) {
-      console.log(`🔧 Reinitializing ${status} with element:`, element)
+      debugLog(`🔧 Reinitializing ${status} with element:`, element)
       initializeColumn(element, status, onJobMoved)
     } else {
-      console.warn(`⚠️ No element found for status: ${status}`)
+      debugLog(`⚠️ No element found for status: ${status}`)
     }
   }
 
@@ -283,7 +282,7 @@ export function useSimpleDragAndDrop() {
     statuses: string[],
     onJobMoved: (from: string, to: string, jobId: string) => void,
   ): Promise<void> => {
-    console.log('🔄 Reinitializing all columns...')
+    debugLog('🔄 Reinitializing all columns...')
 
     await nextTick()
 
@@ -293,11 +292,11 @@ export function useSimpleDragAndDrop() {
   }
 
   const destroyAllSortableInstances = (): void => {
-    console.log('🧹 Destroying all sortable instances...')
+    debugLog('🧹 Destroying all sortable instances...')
 
     sortableInstances.forEach((sortableInstance, status) => {
       sortableInstance.destroy()
-      console.log(`🗑️ Destroyed sortable for ${status}`)
+      debugLog(`🗑️ Destroyed sortable for ${status}`)
     })
 
     sortableInstances.clear()

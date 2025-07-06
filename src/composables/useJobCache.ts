@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import type { JobData } from '@/services/job-rest.service'
+import { debugLog } from '@/utils/debug'
 
 interface CacheEntry {
   data: JobData
@@ -26,17 +27,17 @@ export function useJobCache() {
     const entry = cache.value.get(jobId)
 
     if (!entry) {
-      console.log(`📦 Cache miss for job ${jobId}`)
+      debugLog(`📦 Cache miss for job ${jobId}`)
       return null
     }
 
     if (!isCacheValid(entry, ttl)) {
-      console.log(`📦 Cache expired for job ${jobId}`)
+      debugLog(`📦 Cache expired for job ${jobId}`)
       cache.value.delete(jobId)
       return null
     }
 
-    console.log(`📦 Cache hit for job ${jobId}`)
+    debugLog(`📦 Cache hit for job ${jobId}`)
     return entry.data
   }
 
@@ -48,23 +49,23 @@ export function useJobCache() {
     }
 
     cache.value.set(jobId, entry)
-    console.log(`📦 Job ${jobId} cached`)
+    debugLog(`📦 Job ${jobId} cached`)
   }
 
   const removeCachedJob = (jobId: string): void => {
     if (cache.value.delete(jobId)) {
-      console.log(`📦 Job ${jobId} removed from cache`)
+      debugLog(`📦 Job ${jobId} removed from cache`)
     }
   }
 
   const invalidateAll = (): void => {
     currentVersion.value++
-    console.log(`📦 Cache invalidated - new version: ${currentVersion.value}`)
+    debugLog(`📦 Cache invalidated - new version: ${currentVersion.value}`)
   }
 
   const clearCache = (): void => {
     cache.value.clear()
-    console.log('📦 Cache cleared')
+    debugLog('📦 Cache cleared')
   }
 
   const updateCachedJob = (jobId: string, updates: Partial<JobData>): void => {
@@ -73,7 +74,7 @@ export function useJobCache() {
     if (entry && isCacheValid(entry)) {
       const updatedData = { ...entry.data, ...updates }
       setCachedJob(jobId, updatedData)
-      console.log(`📦 Job ${jobId} updated in cache`)
+      debugLog(`📦 Job ${jobId} updated in cache`)
     }
   }
 
@@ -113,7 +114,7 @@ export function useJobCache() {
       return cached as T
     }
 
-    console.log(`📦 Loading job ${jobId} from API...`)
+    debugLog(`📦 Loading job ${jobId} from API...`)
     const freshData = await loadFunction()
 
     setCachedJob(jobId, freshData)

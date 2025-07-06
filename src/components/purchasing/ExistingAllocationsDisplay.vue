@@ -107,10 +107,8 @@ const hasExistingAllocations = computed(() => {
 })
 
 const getLineDescription = (lineId: string): string => {
-  // Try to find the line with exact string match first, then numeric match
   let line = props.lines.find((l) => l.id === lineId)
   if (!line) {
-    // Try finding with numeric conversion in case of type mismatch
     line = props.lines.find((l) => l.id === String(lineId) || String(l.id) === lineId)
   }
 

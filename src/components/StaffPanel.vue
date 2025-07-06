@@ -29,6 +29,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, onMounted, watch, nextTick } from 'vue'
 import StaffAvatar from './StaffAvatar.vue'
 import { staffService } from '@/services/staff.service'
@@ -73,7 +75,7 @@ const loadStaffMembers = async (): Promise<void> => {
     staffMembers.value = validatedStaff
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load staff members'
-    console.error('Error loading staff members:', err)
+    debugLog('Error loading staff members:', err)
   } finally {
     isLoading.value = false
   }

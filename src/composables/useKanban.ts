@@ -4,6 +4,7 @@ import { JobService } from '@/services/job.service'
 import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { Job, StatusChoice, AdvancedFilters, Staff } from '@/types'
+import { debugLog } from '@/utils/debug'
 
 export function useKanban(onJobsLoaded?: () => void) {
   const jobService = JobService.getInstance()
@@ -126,7 +127,7 @@ export function useKanban(onJobsLoaded?: () => void) {
 
       jobsStore.setKanbanJobs(kanbanJobs)
 
-      console.log('Jobs loaded and stored:', {
+      debugLog('Jobs loaded and stored:', {
         activeJobs: data.activeJobs.length,
         archivedJobs: data.archivedJobs.length,
         totalArchived: data.totalArchived,
@@ -137,7 +138,7 @@ export function useKanban(onJobsLoaded?: () => void) {
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load jobs'
-      console.error('Error loading jobs:', err)
+      debugLog('Error loading jobs:', err)
     } finally {
       isLoading.value = false
       jobsStore.setLoadingKanban(false)
@@ -159,7 +160,7 @@ export function useKanban(onJobsLoaded?: () => void) {
         selectedMobileStatus.value = firstStatus?.key || statusChoices.value[0].key
       }
     } catch (err) {
-      console.error('Error loading status choices:', err)
+      debugLog('Error loading status choices:', err)
 
       const columns = KanbanCategorizationService.getAllColumns()
       statusChoices.value = columns.map((col) => ({
@@ -195,7 +196,7 @@ export function useKanban(onJobsLoaded?: () => void) {
       showSearchResults.value = true
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to perform advanced search'
-      console.error('Error performing advanced search:', err)
+      debugLog('Error performing advanced search:', err)
     } finally {
       isLoading.value = false
     }
@@ -235,7 +236,7 @@ export function useKanban(onJobsLoaded?: () => void) {
   }
 
   const loadMoreJobs = (status: string): void => {
-    console.log('Load more jobs for status:', status)
+    debugLog('Load more jobs for status:', status)
   }
 
   const viewJob = (job: Job): void => {
@@ -250,10 +251,10 @@ export function useKanban(onJobsLoaded?: () => void) {
 
       await loadJobs()
 
-      console.log(`✅ Job ${jobId} status updated to ${newStatus}`)
+      debugLog(`✅ Job ${jobId} status updated to ${newStatus}`)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to update job status'
-      console.error('Error updating job status:', err)
+      debugLog('Error updating job status:', err)
 
       await loadJobs()
     }
@@ -268,10 +269,10 @@ export function useKanban(onJobsLoaded?: () => void) {
     try {
       await jobService.reorderJob(jobId, beforeId, afterId, status)
 
-      console.log(`✅ Job ${jobId} reordered`)
+      debugLog(`✅ Job ${jobId} reordered`)
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to reorder job'
-      console.error('Error reordering job:', err)
+      debugLog('Error reordering job:', err)
 
       await loadJobs()
     }
@@ -283,7 +284,7 @@ export function useKanban(onJobsLoaded?: () => void) {
 
   const jobsSortedByPriority = computed(() => {
     const arr = jobs.value.slice().sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
-    console.log(
+    debugLog(
       '[KANBAN DEBUG] Jobs sorted by priority:',
       arr.map((j) => ({
         job_number: j.job_number,

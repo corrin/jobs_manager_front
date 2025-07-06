@@ -21,6 +21,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, onMounted, watch } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
 import { staffService, type Staff } from '@/services/staff.service'
@@ -55,7 +57,7 @@ const loadStaffOptions = async (): Promise<void> => {
     staffOptions.value = data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load staff options'
-    console.error('Error loading staff options:', err)
+    debugLog('Error loading staff options:', err)
   } finally {
     isLoading.value = false
   }

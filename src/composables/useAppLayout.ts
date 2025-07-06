@@ -2,6 +2,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import type { NavigationItem, UserInfo } from '@/types/app-layout.types'
+import { debugLog } from '@/utils/debug'
 
 export function useAppLayout() {
   const router = useRouter()
@@ -48,7 +49,7 @@ export function useAppLayout() {
       await authStore.logout()
       await router.push('/login')
     } catch (error) {
-      console.error('Logout failed:', error)
+      debugLog('Logout failed:', error)
 
       await router.push('/login')
     }

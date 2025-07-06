@@ -86,6 +86,8 @@
 </template>
 
 <script lang="ts" setup>
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, defineProps, defineEmits, watch } from 'vue'
 import {
   Dialog,
@@ -130,12 +132,12 @@ function validateDesc() {
 
 const companyDefaultsStore = useCompanyDefaultsStore()
 
-console.log('[MaterialModal] Store companyDefaults:', companyDefaultsStore.companyDefaults)
+debugLog('[MaterialModal] Store companyDefaults:', companyDefaultsStore.companyDefaults)
 const unitRevenue = computed(() => {
   const cost = Number(form.value.unitCost) || 0
   const markup = typeof props.materialsMarkup === 'number' ? props.materialsMarkup : 0
 
-  console.log('[MaterialModal] Calculating unitRevenue', {
+  debugLog('[MaterialModal] Calculating unitRevenue', {
     unitCost: cost,
     materialsMarkup: markup,
   })

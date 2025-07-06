@@ -1,6 +1,7 @@
 import { useJobsStore, type JobPricings } from '@/stores/jobs'
 import { jobRestService, type JobEvent, type JobData } from '@/services/job-rest.service'
 import { useJobCache } from './useJobCache'
+import { debugLog } from '@/utils/debug'
 
 export function useJobReactivity() {
   const jobsStore = useJobsStore()
@@ -11,27 +12,27 @@ export function useJobReactivity() {
   const updateJobReactively = (jobId: string, updates: Partial<JobData>) => {
     jobsStore.updateJobPartialData(jobId, updates)
     updateCachedJob(jobId, updates)
-    console.log(`🔄 Job ${jobId} updated reactively:`, Object.keys(updates))
+    debugLog(`🔄 Job ${jobId} updated reactively:`, Object.keys(updates))
   }
 
   const addEventReactively = (jobId: string, event: JobEvent) => {
     jobsStore.addJobEvent(jobId, event)
-    console.log(`📝 Event added reactively to job ${jobId}:`, event.event_type)
+    debugLog(`📝 Event added reactively to job ${jobId}:`, event.event_type)
   }
 
   const updateStatusReactively = (jobId: string, newStatus: string) => {
     jobsStore.updateJobStatus(jobId, newStatus)
-    console.log(`📊 Status updated reactively for job ${jobId}:`, newStatus)
+    debugLog(`📊 Status updated reactively for job ${jobId}:`, newStatus)
   }
 
   const updatePricingsReactively = (jobId: string, pricings: JobPricings) => {
     jobsStore.updateJobPricings(jobId, pricings)
-    console.log(`💰 Pricings updated reactively for job ${jobId}`)
+    debugLog(`💰 Pricings updated reactively for job ${jobId}`)
   }
 
   const reloadJobDataReactively = async (jobId: string, forceReload = false): Promise<void> => {
     if (ongoingReloads.has(jobId)) {
-      console.log(`⏳ Job ${jobId} reload already in progress, skipping duplicate request`)
+      debugLog(`⏳ Job ${jobId} reload already in progress, skipping duplicate request`)
       return
     }
 
@@ -64,11 +65,11 @@ export function useJobReactivity() {
       jobsStore.setDetailedJob(enrichedJob)
       setCachedJob(jobId, enrichedJob)
 
-      console.log(
+      debugLog(
         `♻️ Job ${jobId} data reloaded reactively ${forceReload ? '(forced)' : '(with cache)'}`,
       )
     } catch (error) {
-      console.error(`Error reloading job ${jobId}:`, error)
+      debugLog(`Error reloading job ${jobId}:`, error)
       throw error
     } finally {
       ongoingReloads.delete(jobId)

@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import api from '@/plugins/axios'
+import { debugLog } from '@/utils/debug'
 
 export interface Client {
   id: string
@@ -55,7 +56,7 @@ export function useClientLookup() {
       suggestions.value = response.data.results
       showSuggestions.value = true
     } catch (error) {
-      console.error('Error searching clients:', error)
+      debugLog('Error searching clients:', error)
       suggestions.value = []
       showSuggestions.value = false
     } finally {
@@ -81,7 +82,7 @@ export function useClientLookup() {
         contacts.value = response.data.results
       }
     } catch (error) {
-      console.error('Error loading client contacts:', error)
+      debugLog('Error loading client contacts:', error)
       contacts.value = []
     }
   }
@@ -121,7 +122,7 @@ export function useClientLookup() {
   }
 
   const createNewClient = (clientName: string) => {
-    console.log('Request to create new client:', clientName.trim())
+    debugLog('Request to create new client:', clientName.trim())
 
     return clientName.trim()
   }

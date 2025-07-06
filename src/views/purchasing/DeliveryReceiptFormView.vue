@@ -205,6 +205,8 @@
   </AppLayout>
 </template>
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -246,7 +248,6 @@ const route = useRoute()
 const router = useRouter()
 const deliveryReceiptStore = useDeliveryReceiptStore()
 
-// Reactive state
 const isLoading = ref(true)
 const isSaving = ref(false)
 const error = ref<string | null>(null)
@@ -255,12 +256,10 @@ const allocations = ref<Record<string, DeliveryAllocation[]>>({})
 const existingAllocations = ref<Record<string, ExistingAllocation[]>>({})
 const showPreviousAllocationsModal = ref(false)
 
-// Computed properties
 const availableJobs = computed(() => {
   const allocatable = deliveryReceiptStore.allocatableJobs || []
   const stockHolding = deliveryReceiptStore.stockHoldingJob
 
-  // Include both allocatable jobs and stock holding job for allocation purposes
   return stockHolding ? [stockHolding, ...allocatable] : allocatable
 })
 
@@ -285,7 +284,6 @@ const isCompanyConfigured = computed(() => {
   return defaultRate > 0
 })
 
-// Helper functions
 function formatDate(dateString: string): string {
   if (!dateString) return ''
   return new Date(dateString).toLocaleDateString()
@@ -372,7 +370,6 @@ function goBack() {
   router.push({ name: 'delivery-receipts' })
 }
 
-// Save changes using the new allocations format
 async function saveChanges() {
   if (!purchaseOrder.value) return
 
@@ -390,7 +387,6 @@ async function saveChanges() {
   isSaving.value = true
 
   try {
-    // Transform allocations to match backend format
     const deliveryReceiptData: Record<
       string,
       {
@@ -423,20 +419,13 @@ async function saveChanges() {
     await deliveryReceiptStore.submitDeliveryReceipt(purchaseOrder.value.id, deliveryReceiptData)
     toast.success('Delivery receipt saved successfully!')
 
-    // Reload data to get updated received quantities
     await loadData()
 
-    // Clear allocations after successful save
     const clearedAllocations: Record<string, DeliveryAllocation[]> = {}
     purchaseOrder.value.lines.forEach((line) => {
       clearedAllocations[line.id] = []
     })
     allocations.value = clearedAllocations
-
-    // Optional: Redirect after a brief delay if needed
-    // setTimeout(() => {
-    //   goBack()
-    // }, 2000)
   } catch (err) {
     const errorMsg =
       err &&
@@ -450,7 +439,7 @@ async function saveChanges() {
       'error' in err.response.data
         ? (err.response.data.error as string)
         : 'Failed to save delivery receipt'
-    console.error('Error saving delivery receipt:', err)
+    debugLog('Error saving delivery receipt:', err)
     toast.error(errorMsg)
   } finally {
     isSaving.value = false
@@ -468,17 +457,15 @@ async function loadData() {
   error.value = null
 
   try {
-    // Load PO, jobs, and existing allocations in parallel
     const [po, , existingAllocationsData] = await Promise.all([
       deliveryReceiptStore.fetchPurchaseOrder(poId),
       deliveryReceiptStore.fetchJobs(),
-      deliveryReceiptStore.fetchExistingAllocations(poId).catch(() => ({ allocations: {} })), // Don't fail if no existing allocations
+      deliveryReceiptStore.fetchExistingAllocations(poId).catch(() => ({ allocations: {} })),
     ])
 
     purchaseOrder.value = po
     existingAllocations.value = existingAllocationsData.allocations || {}
 
-    // Initialize empty allocations for each line
     const initialAllocations: Record<string, DeliveryAllocation[]> = {}
     po.lines.forEach((line) => {
       initialAllocations[line.id] = []
@@ -497,14 +484,13 @@ async function loadData() {
       'error' in err.response.data
         ? (err.response.data.error as string)
         : 'Failed to load purchase order'
-    console.error('Error loading data:', err)
+    debugLog('Error loading data:', err)
     error.value = errorMsg
   } finally {
     isLoading.value = false
   }
 }
 
-// Lifecycle
 onMounted(() => {
   loadData()
 })

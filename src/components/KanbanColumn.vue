@@ -118,6 +118,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import JobCard from '@/components/JobCard.vue'
 import type { Job, StatusChoice } from '@/types'
@@ -155,7 +157,7 @@ const emit = defineEmits<KanbanColumnEmits>()
 const jobListRef = ref<HTMLElement>()
 
 const handleArchivedJobDrop = (event: CustomEvent) => {
-  console.log('KanbanColumn received archived job drop:', event.detail)
+  debugLog('KanbanColumn received archived job drop:', event.detail)
 
   const dropEvent = new CustomEvent('archived-job-drop', {
     detail: event.detail,
@@ -168,7 +170,7 @@ onMounted(async () => {
   await nextTick()
 
   if (jobListRef.value) {
-    console.log(`🔧 Column ${props.status.key} ready, emitting sortable-ready`)
+    debugLog(`🔧 Column ${props.status.key} ready, emitting sortable-ready`)
     emit('sortable-ready', jobListRef.value, props.status.key)
 
     jobListRef.value.addEventListener('archived-job-drop', handleArchivedJobDrop as EventListener)

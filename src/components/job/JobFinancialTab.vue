@@ -129,6 +129,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { computed } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
@@ -184,7 +186,6 @@ const estimateTotal = computed(() => {
 })
 
 const timeAndExpenses = computed(() => {
-  // Sum all actual cost lines (time, material, adjust) - this represents all time & expenses incurred
   return (
     props.jobData?.latest_actual?.cost_lines?.reduce((sum, line) => {
       return sum + (line.total_rev || 0)
@@ -252,13 +253,13 @@ const createQuote = async () => {
   try {
     const response = await axios.post(`/api/xero/create_quote/${props.jobData.id}`)
     if (!response.data?.success) {
-      console.error(response.data?.error || 'Failed to create quote')
+      debugLog(response.data?.error || 'Failed to create quote')
       return
     }
     toast.success('Quote created successfully!')
     emit('quote-created')
   } catch (err) {
-    console.error('Error creating quote:', err)
+    debugLog('Error creating quote:', err)
     toast.error('Failed to create quote.')
   }
 }
@@ -274,13 +275,13 @@ const createInvoice = async () => {
   try {
     const response = await axios.post(`/api/xero/create_invoice/${props.jobData.id}`)
     if (!response.data?.success) {
-      console.error(response.data?.error || 'Failed to create invoice')
+      debugLog(response.data?.error || 'Failed to create invoice')
       return
     }
     toast.success('Invoice created successfully!')
     emit('invoice-created')
   } catch (err) {
-    console.error('Error creating invoice:', err)
+    debugLog('Error creating invoice:', err)
     toast.error('Failed to create invoice.')
   }
 }
@@ -296,12 +297,12 @@ const deleteQuoteOnXero = async () => {
   try {
     const response = await axios.post(`/api/xero/delete_quote/${props.jobData.id}`)
     if (!response.data?.success) {
-      console.error(response.data?.error || 'Failed to delete quote')
+      debugLog(response.data?.error || 'Failed to delete quote')
       return
     }
     toast.success('Quote deleted successfully!')
   } catch (err) {
-    console.error('Error deleting quote:', err)
+    debugLog('Error deleting quote:', err)
     toast.error('Failed to delete quote.')
   }
 }
@@ -317,12 +318,12 @@ const deleteInvoiceOnXero = async () => {
   try {
     const response = await axios.post(`/api/xero/delete_invoice/${props.jobData.id}`)
     if (!response.data?.success) {
-      console.error(response.data?.error || 'Failed to delete invoice')
+      debugLog(response.data?.error || 'Failed to delete invoice')
       return
     }
     toast.success('Invoice deleted successfully!')
   } catch (err) {
-    console.error('Error deleting invoice:', err)
+    debugLog('Error deleting invoice:', err)
     toast.error('Failed to delete invoice.')
   }
 }

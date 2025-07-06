@@ -6,6 +6,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, onMounted } from 'vue'
 import PDF from 'pdf-vue3'
 import { jobRestService } from '@/services/job-rest.service'
@@ -19,7 +21,7 @@ onMounted(async () => {
     const buffer = await blob.arrayBuffer()
     pdfData.value = new Uint8Array(buffer)
   } catch (err) {
-    console.error('Error loading PDF:', err)
+    debugLog('Error loading PDF:', err)
   }
 })
 </script>

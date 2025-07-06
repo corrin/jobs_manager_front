@@ -147,6 +147,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 
@@ -287,7 +289,7 @@ async function submitAbsence() {
     closeModal()
   } catch (err) {
     error.value = 'Failed to add paid absence. Please try again.'
-    console.error('Error adding absence:', err)
+    debugLog('Error adding absence:', err)
   } finally {
     loading.value = false
   }

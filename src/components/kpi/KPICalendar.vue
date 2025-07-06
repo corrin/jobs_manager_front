@@ -68,16 +68,14 @@ const calendarDays = computed(() => {
 })
 
 const paddingDays = computed(() => {
-  // Get the first day of the month
   const firstDay = new Date(props.year, props.month - 1, 1)
   const dayOfWeek = firstDay.getDay()
 
-  // Convert Sunday (0) to Monday (1) based week
   return dayOfWeek === 0 ? 6 : dayOfWeek - 1
 })
 
 const remainingDays = computed(() => {
-  const totalCells = 42 // 6 rows × 7 days
+  const totalCells = 42
   const usedCells = paddingDays.value + calendarDays.value.length
   return totalCells - usedCells
 })

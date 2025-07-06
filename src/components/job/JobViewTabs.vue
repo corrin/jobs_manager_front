@@ -81,6 +81,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import JobEstimateTab from './JobEstimateTab.vue'
 import JobQuoteTab from './JobQuoteTab.vue'
 import JobActualTab from './JobActualTab.vue'
@@ -112,7 +114,6 @@ const allTabs = [
 ] as const
 
 const tabs = computed(() => {
-  // Hide quote tab for Time & Materials jobs
   if (props.jobData?.pricing_methodology === 'time_materials') {
     return allTabs.filter((tab) => tab.key !== 'quote')
   }
@@ -150,19 +151,19 @@ const props = defineProps<{
 watch(
   () => props.jobData,
   (val) => {
-    console.log('[JobViewTabs] jobData prop changed:', val)
+    debugLog('[JobViewTabs] jobData prop changed:', val)
   },
 )
 watch(
   () => props.companyDefaults,
   (val) => {
-    console.log('[JobViewTabs] companyDefaults prop changed:', val)
+    debugLog('[JobViewTabs] companyDefaults prop changed:', val)
   },
 )
 watch(
   () => props.activeTab,
   (val) => {
-    console.log('[JobViewTabs] activeTab changed:', val)
+    debugLog('[JobViewTabs] activeTab changed:', val)
   },
 )
 </script>

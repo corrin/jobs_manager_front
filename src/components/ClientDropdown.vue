@@ -25,6 +25,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, onMounted, watch } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
 import { clientService, type Client } from '@/services/clientService'
@@ -59,7 +61,7 @@ const loadClientOptions = async (): Promise<void> => {
     clientOptions.value = data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load client options'
-    console.error('Error loading client options:', err)
+    debugLog('Error loading client options:', err)
   } finally {
     isLoading.value = false
   }

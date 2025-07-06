@@ -16,6 +16,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type Quill from 'quill'
 import RangeStatic from 'quill'
@@ -52,7 +54,7 @@ let isUpdatingFromProp = false
 
 const initializeEditor = async () => {
   if (!editorContainer.value) {
-    console.error('Editor container not found')
+    debugLog('Editor container not found')
     return
   }
   try {
@@ -83,7 +85,7 @@ const initializeEditor = async () => {
 
     setupEventHandlers()
   } catch (error) {
-    console.error('Failed to initialize Quill editor:', error)
+    debugLog('Failed to initialize Quill editor:', error)
   }
 }
 

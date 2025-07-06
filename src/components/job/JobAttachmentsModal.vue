@@ -207,6 +207,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, onMounted, watch } from 'vue'
 import {
   Dialog,
@@ -241,7 +243,7 @@ const isCameraModalOpen = ref(false)
 
 async function loadFiles() {
   if (!props.jobNumber) {
-    console.error('Job number is required for loading files')
+    debugLog('Job number is required for loading files')
     return
   }
 
@@ -249,7 +251,7 @@ async function loadFiles() {
     const list = await jobRestService.listJobFiles(String(props.jobNumber))
     files.value = list
   } catch (err) {
-    console.error('Failed to load files:', err)
+    debugLog('Failed to load files:', err)
   }
 }
 
@@ -287,7 +289,7 @@ const handleDrop = (event: DragEvent) => {
 const handleFiles = async (fileList: File[]) => {
   for (const file of fileList) {
     if (file.size === 0) {
-      console.warn(`File ${file.name} has 0 bytes and will be ignored`)
+      debugLog(`File ${file.name} has 0 bytes and will be ignored`)
       continue
     }
 
@@ -300,13 +302,13 @@ const processAndUploadFile = async (file: File) => {
     let fileToUpload = file
 
     if (isImageFile(file)) {
-      console.log(`Compressing image before upload: ${file.name}`)
+      debugLog(`Compressing image before upload: ${file.name}`)
       fileToUpload = await compressImage(file)
     }
 
     await uploadFile(fileToUpload)
   } catch (err) {
-    console.error(`Error processing file ${file.name}:`, err)
+    debugLog(`Error processing file ${file.name}:`, err)
   }
 }
 
@@ -364,7 +366,7 @@ const compressImage = (
               lastModified: Date.now(),
             })
 
-            console.log(`Image compressed: ${file.name}
+            debugLog(`Image compressed: ${file.name}
               Original: ${(file.size / 1024 / 1024).toFixed(2)}MB
               Compressed: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`)
 
@@ -380,7 +382,7 @@ const compressImage = (
 
 const uploadFile = async (file: File) => {
   if (!props.jobNumber) {
-    console.error('Job number is required for file upload')
+    debugLog('Job number is required for file upload')
     return
   }
 
@@ -401,7 +403,7 @@ const uploadFile = async (file: File) => {
 
     await loadFiles()
   } catch (err) {
-    console.error('Error uploading file:', err)
+    debugLog('Error uploading file:', err)
   } finally {
     uploadProgress.value = 0
     uploading.value = false
@@ -422,17 +424,17 @@ async function deleteFile(id: string) {
     emit('file-deleted', id)
     await loadFiles()
   } catch (err) {
-    console.error('Error deleting file:', err)
+    debugLog('Error deleting file:', err)
   }
 }
 
 async function updatePrintSetting(file: JobFile) {
   if (!props.jobNumber) {
-    console.error('Job number is required for updating print setting')
+    debugLog('Job number is required for updating print setting')
     return
   }
 
-  console.log('Updating print setting for file:', {
+  debugLog('Updating print setting for file:', {
     filename: file.filename,
     current_value: file.print_on_jobsheet,
     job_number: props.jobNumber,
@@ -446,11 +448,11 @@ async function updatePrintSetting(file: JobFile) {
       print_on_jobsheet: file.print_on_jobsheet,
     })
 
-    console.log('Print setting update response:', response)
+    debugLog('Print setting update response:', response)
 
     await loadFiles()
   } catch (err) {
-    console.error('Error updating print setting:', err)
+    debugLog('Error updating print setting:', err)
 
     file.print_on_jobsheet = !file.print_on_jobsheet
   }
@@ -458,7 +460,7 @@ async function updatePrintSetting(file: JobFile) {
 
 const openCameraModal = () => {
   if (!props.jobNumber) {
-    console.error('Job number is required for camera capture')
+    debugLog('Job number is required for camera capture')
     return
   }
   isCameraModalOpen.value = true
@@ -470,7 +472,7 @@ const closeCameraModal = () => {
 
 const handlePhotoCaptured = async (photo: File) => {
   try {
-    console.log('Photo captured:', {
+    debugLog('Photo captured:', {
       name: photo.name,
       size: `${(photo.size / 1024 / 1024).toFixed(2)}MB`,
       type: photo.type,
@@ -478,9 +480,9 @@ const handlePhotoCaptured = async (photo: File) => {
 
     await processAndUploadFile(photo)
 
-    console.log('Photo uploaded successfully!')
+    debugLog('Photo uploaded successfully!')
   } catch (err) {
-    console.error('Error uploading captured photo:', err)
+    debugLog('Error uploading captured photo:', err)
   }
 }
 

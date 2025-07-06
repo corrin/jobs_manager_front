@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/plugins/axios'
 import type { User, LoginCredentials } from '@/types/auth.types'
+import { debugLog } from '@/utils/debug'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -58,7 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
         errorMessage = response?.data?.detail || response?.data?.message || errorMessage
       }
       setError(errorMessage)
-      console.error('Login error:', err)
+      debugLog('Login error:', err)
       return false
     } finally {
       setLoading(false)
@@ -69,7 +70,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await api.post('/accounts/logout/')
     } catch (err) {
-      console.warn('Backend logout failed:', err)
+      debugLog('Backend logout failed:', err)
     } finally {
       user.value = null
       clearError()

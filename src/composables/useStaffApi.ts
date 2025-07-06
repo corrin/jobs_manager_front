@@ -7,7 +7,6 @@ const API_URL = '/accounts/api/staff/'
 export function useStaffApi() {
   const error = ref<string | null>(null)
 
-  // Lists all staff members
   async function listStaff(): Promise<Staff[]> {
     error.value = null
     try {
@@ -23,7 +22,6 @@ export function useStaffApi() {
     }
   }
 
-  // Creates a new staff member
   async function createStaff(data: Record<string, unknown>): Promise<Staff> {
     error.value = null
     try {
@@ -45,7 +43,6 @@ export function useStaffApi() {
     }
   }
 
-  // Updates an existing staff member
   async function updateStaff(id: string | number, data: Record<string, unknown>): Promise<Staff> {
     error.value = null
     try {
@@ -67,7 +64,6 @@ export function useStaffApi() {
     }
   }
 
-  // Removes a staff member
   async function removeStaff(id: string | number): Promise<void> {
     error.value = null
     try {

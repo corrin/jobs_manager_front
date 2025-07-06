@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/plugins/axios'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
+import { debugLog } from '@/utils/debug'
 
 interface ExistingAllocation {
   quantity: number
@@ -14,7 +15,6 @@ interface ExistingAllocation {
   stock_location?: string
 }
 
-// Re-export from purchasing types for compatibility
 export interface Job {
   id: string
   job_number: string
@@ -90,21 +90,14 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
   const stockHoldingJob = ref<Job | null>(null)
   const allocatableJobs = ref<Job[]>([])
 
-  /**
-   * Get the default retail rate from company defaults.
-   * Returns percentage (e.g., 20 for 20%) or 0 if not available.
-   * No fallback values - uses only real company configuration.
-   */
   function getDefaultRetailRate(): number {
     const companyDefaultsStore = useCompanyDefaultsStore()
     const materialsMarkup = companyDefaultsStore.companyDefaults?.materials_markup
 
     if (materialsMarkup !== undefined && materialsMarkup !== null) {
-      // Convert from decimal to percentage (e.g., 0.2 -> 20)
       return materialsMarkup * 100
     }
 
-    // No fallback - return 0 if company defaults not available
     return 0
   }
 
@@ -122,7 +115,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     } catch (err) {
       const errorMessage = handleApiError(err, `Failed to fetch purchase order ${id}`)
       error.value = errorMessage
-      console.error(`Error fetching purchase order ${id}:`, err)
+      debugLog(`Error fetching purchase order ${id}:`, err)
       throw new Error(errorMessage)
     } finally {
       loading.value = false
@@ -142,7 +135,6 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
 
       const allJobs = data.jobs || []
 
-      // Find stock holding job using the flag
       const stockHolding = allJobs.find(
         (job: Job & { is_stock_holding: boolean }) => job.is_stock_holding,
       )
@@ -150,7 +142,6 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
         throw new Error('Stock holding job not found')
       }
 
-      // For allocatable jobs, exclude the stock holding job and filter to active status only
       const allocatable = allJobs.filter(
         (job: Job & { is_stock_holding: boolean; status: string }) =>
           !job.is_stock_holding &&
@@ -164,7 +155,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     } catch (err) {
       const errorMessage = handleApiError(err, 'Failed to fetch jobs')
       error.value = errorMessage
-      console.error('Error fetching jobs:', err)
+      debugLog('Error fetching jobs:', err)
       throw new Error(errorMessage)
     }
   }
@@ -191,7 +182,6 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     error.value = null
 
     try {
-      // Use REST API endpoint instead of template view
       const payload = {
         purchase_order_id: purchaseOrderId,
         allocations: receiptData,
@@ -208,7 +198,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
         `Failed to submit delivery receipt for PO ${purchaseOrderId}`,
       )
       error.value = errorMessage
-      console.error(`Error submitting delivery receipt for PO ${purchaseOrderId}:`, err)
+      debugLog(`Error submitting delivery receipt for PO ${purchaseOrderId}:`, err)
       throw new Error(errorMessage)
     } finally {
       loading.value = false
@@ -226,9 +216,9 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     error.value = null
 
     try {
-      console.log(`🔍 Fetching existing allocations for PO: ${purchaseOrderId}`)
+      debugLog(`🔍 Fetching existing allocations for PO: ${purchaseOrderId}`)
       const res = await api.get(`/purchasing/rest/purchase-orders/${purchaseOrderId}/allocations/`)
-      console.log('📦 Existing allocations response:', res.data)
+      debugLog('📦 Existing allocations response:', res.data)
       return res.data
     } catch (err) {
       const errorMessage = handleApiError(
@@ -236,18 +226,16 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
         `Failed to fetch existing allocations for PO ${purchaseOrderId}`,
       )
       error.value = errorMessage
-      console.error(`❌ Error fetching existing allocations for PO ${purchaseOrderId}:`, err)
+      debugLog(`❌ Error fetching existing allocations for PO ${purchaseOrderId}:`, err)
       throw new Error(errorMessage)
     } finally {
       loading.value = false
     }
   }
 
-  // Centralised error handling function
   function handleApiError(err: unknown, defaultMessage: string): string {
     if (!err) return defaultMessage
 
-    // Handle Axios errors
     if (typeof err === 'object' && 'response' in err) {
       const axiosError = err as {
         response?: { status?: number; data?: { error?: string; message?: string } }
@@ -270,7 +258,6 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
       }
     }
 
-    // Handle generic errors
     if (err instanceof Error) {
       return err.message
     }

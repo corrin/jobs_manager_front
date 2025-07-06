@@ -309,6 +309,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '@/components/AppLayout.vue'
@@ -333,7 +335,6 @@ const showLabourModal = ref(false)
 const showMaterialsModal = ref(false)
 const selectedDay = ref<DayKPI | null>(null)
 
-// KPI Data State
 const kpiData = ref<KPICalendarResponse | null>(null)
 const kpiLoading = ref(false)
 const kpiError = ref<string | null>(null)
@@ -344,17 +345,14 @@ function goToToday() {
   goToCurrentMonth()
 }
 
-// Action functions
 function exportData() {
-  // TODO: Implement export functionality
-  console.log('Exporting KPI data for overview')
+  debugLog('Exporting KPI data for overview')
 }
 
 function refreshData() {
   fetchKPIData()
 }
 
-// KPI Data Management
 async function fetchKPIData() {
   try {
     kpiLoading.value = true
@@ -367,14 +365,13 @@ async function fetchKPIData() {
 
     kpiData.value = response
   } catch (error) {
-    console.error('Error fetching KPI data:', error)
+    debugLog('Error fetching KPI data:', error)
     kpiError.value = error instanceof Error ? error.message : 'Failed to load KPI data'
   } finally {
     kpiLoading.value = false
   }
 }
 
-// KPI Computed Properties
 const utilizationPercentage = computed(() => {
   if (!kpiData.value) return 0
   const { billable_hours, total_hours } = kpiData.value.monthly_totals
@@ -403,7 +400,6 @@ const utilizationVariant = computed(() => {
 
 const materialRevenue = computed(() => {
   if (!kpiData.value) return 0
-  // Calculate material revenue from calendar data
   return Object.values(kpiData.value.calendar_data).reduce((sum, day) => {
     return sum + (day?.details?.material_revenue || 0)
   }, 0)
@@ -423,9 +419,6 @@ const materialPercentage = computed(() => {
 
 const profitPercentage = computed(() => {
   if (!kpiData.value) return 0
-  // For net profit, show as positive (profit) or negative (loss) indicator
-  // Since net profit target is $0 (break-even), percentage vs 0 doesn't make sense
-  // Instead, show the net profit as surplus (+) or deficit (-)
   const netProfit = kpiData.value.monthly_totals.net_profit
   if (netProfit >= 0) return '+' + Math.round(netProfit).toString()
   return Math.round(netProfit).toString()
@@ -485,7 +478,6 @@ const performanceVariant = computed(() => {
   return 'danger'
 })
 
-// Helper Functions
 function formatHours(hours: number): string {
   return kpiService.formatHours(hours)
 }
@@ -500,11 +492,9 @@ function handleDayClick(day: DayKPI) {
 }
 
 function handleJobClick(jobId: string) {
-  // Navigate to job details page
   router.push(`/jobs/${jobId}`)
 }
 
-// Navigation Functions
 function goToCurrentMonth() {
   const now = new Date()
   selectedYear.value = now.getFullYear()
@@ -512,7 +502,6 @@ function goToCurrentMonth() {
   fetchKPIData()
 }
 
-// Lifecycle
 onMounted(() => {
   fetchKPIData()
 })

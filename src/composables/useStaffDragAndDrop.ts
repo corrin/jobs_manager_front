@@ -3,6 +3,7 @@ import Sortable from 'sortablejs'
 import api from '@/plugins/axios'
 import { getCsrfToken } from '@/utils/csrf'
 import type { Job } from '@/types'
+import { debugLog } from '@/utils/debug'
 
 type StaffDragAndDropEmits = {
   (event: 'staff-assigned', payload: { jobId: string; staffId: string }): void
@@ -18,7 +19,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
     if (!shouldRemove || !element) return undefined
 
     try {
-      console.log('🗑️ Removing cloned element:', element)
+      debugLog('🗑️ Removing cloned element:', element)
 
       element.style.transform = 'translate3d(0,0,0)'
 
@@ -29,7 +30,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
 
       if (element.parentNode) {
         element.parentNode.removeChild(element)
-        console.log('✅ Element removed via parentNode')
+        debugLog('✅ Element removed via parentNode')
 
         return
       }
@@ -37,17 +38,17 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       requestAnimationFrame(() => {
         if (element && element.parentNode) {
           element.parentNode.removeChild(element)
-          console.log('✅ Element removed via requestAnimationFrame')
+          debugLog('✅ Element removed via requestAnimationFrame')
         }
       })
     } catch (error) {
-      console.warn('❌ Error removing cloned element:', error)
+      debugLog('❌ Error removing cloned element:', error)
 
       try {
         element.style.cssText =
           'display: none !important; visibility: hidden !important; opacity: 0 !important; position: absolute !important; left: -9999px !important;'
       } catch (hideError) {
-        console.warn('❌ Could not even hide element:', hideError)
+        debugLog('❌ Could not even hide element:', hideError)
       }
     }
   }
@@ -68,9 +69,9 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
   })
 
   const initializeStaffPool = (staffPanelElement: HTMLElement) => {
-    console.log('🧑‍💼 Initializing staff pool:', staffPanelElement)
+    debugLog('🧑‍💼 Initializing staff pool:', staffPanelElement)
     if (!staffPanelElement) {
-      console.warn('Staff panel element not provided for staff drag and drop')
+      debugLog('Staff panel element not provided for staff drag and drop')
       return null
     }
 
@@ -80,7 +81,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         existingInstance.destroy()
         staffSortableInstances.value.delete('staffPool')
       } catch (error) {
-        console.warn('Error destroying existing staff pool sortable:', error)
+        debugLog('Error destroying existing staff pool sortable:', error)
       }
     }
 
@@ -100,7 +101,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         dragClass: 'staff-sortable-drag',
 
         onClone: (evt) => {
-          console.log('📋 Staff clone created:', evt.clone)
+          debugLog('📋 Staff clone created:', evt.clone)
 
           evt.clone.setAttribute('data-is-clone', 'true')
         },
@@ -108,26 +109,26 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         ...staffDragConfig,
 
         onStart: () => {
-          console.log('🧑‍💼 Staff drag started from pool')
+          debugLog('🧑‍💼 Staff drag started from pool')
           isStaffDragging.value = true
           document.body.classList.add('is-staff-dragging')
         },
 
         onEnd: () => {
-          console.log('🧑‍💼 Staff drag ended at pool')
+          debugLog('🧑‍💼 Staff drag ended at pool')
           isStaffDragging.value = false
           document.body.classList.remove('is-staff-dragging')
 
           const cleanupElements = () => {
             const clones = document.querySelectorAll('[data-is-clone="true"]')
             clones.forEach((clone) => {
-              console.log('🗑️ Cleaning up leftover clone:', clone)
+              debugLog('🗑️ Cleaning up leftover clone:', clone)
               removeClonedElement(clone as HTMLElement, true)
             })
 
             const ghosts = document.querySelectorAll('.sortable-ghost, .staff-sortable-ghost')
             ghosts.forEach((ghost) => {
-              console.log('👻 Removing ghost element:', ghost)
+              debugLog('👻 Removing ghost element:', ghost)
               if (ghost.parentNode) {
                 ghost.parentNode.removeChild(ghost)
               }
@@ -140,7 +141,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         },
 
         onAdd: (evt) => {
-          console.log('🔄 Staff returned to pool:', evt)
+          debugLog('🔄 Staff returned to pool:', evt)
 
           const staffId = evt.item.dataset.staffId
           const fromJobCard = evt.from.closest('[data-id]')
@@ -148,12 +149,12 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
           if (fromJobCard && staffId) {
             const jobId = fromJobCard.getAttribute('data-id')
             if (jobId) {
-              console.log(`🧑‍💼 Staff ${staffId} returned to pool from job ${jobId}`)
+              debugLog(`🧑‍💼 Staff ${staffId} returned to pool from job ${jobId}`)
               removeStaffFromJob(jobId, staffId)
             }
           }
 
-          console.log('🗑️ Removing staff element returned to pool')
+          debugLog('🗑️ Removing staff element returned to pool')
           removeClonedElement(evt.item, true)
         },
       })
@@ -161,14 +162,14 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       staffSortableInstances.value.set('staffPool', sortableInstance)
       return sortableInstance
     } catch (error) {
-      console.error('Error initializing staff pool sortable:', error)
+      debugLog('Error initializing staff pool sortable:', error)
       return null
     }
   }
 
   const initializeJobStaffContainer = (jobStaffElement: HTMLElement, jobId: string) => {
     if (!jobStaffElement || !jobId) {
-      console.warn('Job staff element or jobId not provided')
+      debugLog('Job staff element or jobId not provided')
       return null
     }
 
@@ -180,7 +181,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         existingInstance.destroy()
         staffSortableInstances.value.delete(instanceKey)
       } catch (error) {
-        console.warn(`Error destroying existing job staff sortable for job ${jobId}:`, error)
+        debugLog(`Error destroying existing job staff sortable for job ${jobId}:`, error)
       }
     }
 
@@ -211,12 +212,12 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         },
 
         onAdd: async (evt) => {
-          console.log('🎯 Staff dropped on job:', evt)
+          debugLog('🎯 Staff dropped on job:', evt)
           const staffId = evt.item.getAttribute('data-staff-id')
           const targetJobCard = evt.to.closest('[data-id]')
           const isClone = evt.item.getAttribute('data-is-clone') === 'true'
 
-          console.log('📊 Drop details:', {
+          debugLog('📊 Drop details:', {
             staffId,
             targetJobCard: targetJobCard?.getAttribute('data-id'),
             isClone,
@@ -226,7 +227,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
           if (staffId && targetJobCard) {
             const targetJobId = targetJobCard.getAttribute('data-id')
             if (targetJobId) {
-              console.log(`🧑‍💼 Staff ${staffId} added to job ${targetJobId}`)
+              debugLog(`🧑‍💼 Staff ${staffId} added to job ${targetJobId}`)
 
               const fromStaffPool = Boolean(
                 evt.from.classList.contains('staff-list') ||
@@ -236,20 +237,20 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
 
               try {
                 await assignStaffToJob(targetJobId, staffId)
-                console.log('✅ Staff assignment successful')
+                debugLog('✅ Staff assignment successful')
 
                 if (fromStaffPool || isClone) {
-                  console.log('🗑️ Removing clone after successful assignment')
+                  debugLog('🗑️ Removing clone after successful assignment')
                   removeClonedElement(evt.item, true)
                 }
               } catch (error) {
-                console.error('❌ Failed to assign staff, reverting drag operation:', error)
+                debugLog('❌ Failed to assign staff, reverting drag operation:', error)
 
                 removeClonedElement(evt.item, true)
               }
             }
           } else {
-            console.log('⚠️ Invalid drop target, removing element')
+            debugLog('⚠️ Invalid drop target, removing element')
 
             removeClonedElement(evt.item, true)
           }
@@ -259,14 +260,14 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       staffSortableInstances.value.set(instanceKey, sortableInstance)
       return sortableInstance
     } catch (error) {
-      console.error(`Error initializing job staff sortable for job ${jobId}:`, error)
+      debugLog(`Error initializing job staff sortable for job ${jobId}:`, error)
       return null
     }
   }
 
   const assignStaffToJob = async (jobId: string, staffId: string) => {
     try {
-      console.log(`🧑‍💼 Assigning staff ${staffId} to job ${jobId}`)
+      debugLog(`🧑‍💼 Assigning staff ${staffId} to job ${jobId}`)
       const csrfToken = getCsrfToken()
       const response = await api.post(
         `/job/api/job/${jobId}/assignment`,
@@ -282,21 +283,21 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       )
 
       if (response.data.success) {
-        console.log(`✅ Staff assigned successfully`)
+        debugLog(`✅ Staff assigned successfully`)
         emit('staff-assigned', { jobId, staffId })
         emit('jobs-reload-needed')
       } else {
         throw new Error(response.data.error || 'Failed to assign staff')
       }
     } catch (error) {
-      console.error('❌ Error assigning staff to job:', error)
+      debugLog('❌ Error assigning staff to job:', error)
       throw error
     }
   }
 
   const removeStaffFromJob = async (jobId: string, staffId: string) => {
     try {
-      console.log(`🧑‍💼 Removing staff ${staffId} from job ${jobId}`)
+      debugLog(`🧑‍💼 Removing staff ${staffId} from job ${jobId}`)
       const csrfToken = getCsrfToken()
       const response = await api.delete(`/job/api/job/${jobId}/assignment`, {
         data: {
@@ -309,14 +310,14 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       })
 
       if (response.data.success) {
-        console.log(`✅ Staff removed successfully`)
+        debugLog(`✅ Staff removed successfully`)
         emit('staff-removed', { jobId, staffId })
         emit('jobs-reload-needed')
       } else {
         throw new Error(response.data.error || 'Failed to remove staff')
       }
     } catch (error) {
-      console.error('❌ Error removing staff from job:', error)
+      debugLog('❌ Error removing staff from job:', error)
       throw error
     }
   }
@@ -328,7 +329,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         instance.destroy()
         staffSortableInstances.value.delete(key)
       } catch (error) {
-        console.warn(`Error destroying staff sortable instance ${key}:`, error)
+        debugLog(`Error destroying staff sortable instance ${key}:`, error)
         staffSortableInstances.value.delete(key)
       }
     }
@@ -340,7 +341,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
         try {
           instance.destroy()
         } catch (error) {
-          console.warn(`Error destroying staff sortable for ${key}:`, error)
+          debugLog(`Error destroying staff sortable for ${key}:`, error)
         }
       })
       staffSortableInstances.value.clear()
@@ -348,7 +349,7 @@ export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
       isStaffDragging.value = false
       document.body.classList.remove('is-staff-dragging')
     } catch (error) {
-      console.error('Error during staff sortable cleanup:', error)
+      debugLog('Error during staff sortable cleanup:', error)
     }
   }
 

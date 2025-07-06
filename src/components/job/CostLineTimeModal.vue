@@ -65,6 +65,8 @@
 </template>
 
 <script lang="ts" setup>
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, defineProps, defineEmits, watch } from 'vue'
 import {
   Dialog,
@@ -108,17 +110,17 @@ function validateDesc() {
 
 const companyDefaultsStore = useCompanyDefaultsStore()
 
-console.log('[TimeModal] Store companyDefaults:', companyDefaultsStore.companyDefaults)
+debugLog('[TimeModal] Store companyDefaults:', companyDefaultsStore.companyDefaults)
 const unitCost = computed(() => {
   const wage = typeof props.wageRate === 'number' ? props.wageRate : 0
 
-  console.log('[TimeModal] Calculating unitCost', { wageRate: wage })
+  debugLog('[TimeModal] Calculating unitCost', { wageRate: wage })
   return wage
 })
 const unitRevenue = computed(() => {
   const charge = typeof props.chargeOutRate === 'number' ? props.chargeOutRate : 0
 
-  console.log('[TimeModal] Calculating unitRevenue', { chargeOutRate: charge })
+  debugLog('[TimeModal] Calculating unitRevenue', { chargeOutRate: charge })
   return charge
 })
 const totalCost = computed(() => unitCost.value * form.value.hours)

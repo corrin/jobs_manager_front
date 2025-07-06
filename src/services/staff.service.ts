@@ -1,4 +1,5 @@
 import api from '@/plugins/axios'
+import { debugLog } from '@/utils/debug'
 
 export interface Staff {
   id: number
@@ -39,7 +40,7 @@ export class StaffService {
 
       return Array.isArray(response.data) ? response.data : []
     } catch (error) {
-      console.error('Error fetching staff:', error)
+      debugLog('Error fetching staff:', error)
       throw new Error('Failed to load staff members')
     }
   }
@@ -56,7 +57,7 @@ export class StaffService {
 
       return { success: response.data.success, message: response.data.message }
     } catch (error) {
-      console.error('Error assigning staff to job:', error)
+      debugLog('Error assigning staff to job:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to assign staff to job')
     }
   }
@@ -75,7 +76,7 @@ export class StaffService {
 
       return { success: response.data.success, message: response.data.message }
     } catch (error) {
-      console.error('Error removing staff from job:', error)
+      debugLog('Error removing staff from job:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to remove staff from job')
     }
   }
@@ -86,7 +87,7 @@ export class StaffService {
 
       return Array.isArray(response.data.assignments) ? response.data.assignments : []
     } catch (error) {
-      console.error('Error fetching job staff assignments:', error)
+      debugLog('Error fetching job staff assignments:', error)
       throw new Error('Failed to load job staff assignments')
     }
   }

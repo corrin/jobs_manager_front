@@ -215,6 +215,8 @@
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+
 import { ref, computed, watch } from 'vue'
 import ClientLookup from '@/components/ClientLookup.vue'
 import ContactSelectionModal from '@/components/ContactSelectionModal.vue'
@@ -338,7 +340,7 @@ const handleClientSelected = (client: Client | null) => {
 
 const handleOpenContactModal = async () => {
   if (!currentClientId.value) {
-    console.warn('Cannot open contact modal without client')
+    debugLog('Cannot open contact modal without client')
     return
   }
 
@@ -458,7 +460,7 @@ const handleSave = async () => {
       throw new Error('Failed to update job')
     }
   } catch (error) {
-    console.error('Error saving job:', error)
+    debugLog('Error saving job:', error)
     alert('Failed to save job. Please try again.')
   } finally {
     isLoading.value = false

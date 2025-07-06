@@ -49,7 +49,6 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 const deliveryReceiptStore = useDeliveryReceiptStore()
 
-// Modal state
 const isModalOpen = ref(false)
 const editingLineId = ref<string | null>(null)
 const editingAllocationIndex = ref<number | null>(null)
@@ -73,11 +72,8 @@ const getTotalReceived = (lineId: string): number => {
 }
 
 const getRemaining = (line: PurchaseOrderLine): number => {
-  // Calculate remaining based on ordered quantity minus received quantity
-  // received_quantity should now be accurately accumulated by the backend
   const remaining = Math.max(0, line.quantity - (line.received_quantity || 0))
 
-  // Also subtract any current allocations being made in this receipt
   const currentAllocations = getTotalReceived(line.id)
 
   return Math.max(0, remaining - currentAllocations)
@@ -86,7 +82,6 @@ const getRemaining = (line: PurchaseOrderLine): number => {
 const getJobName = (jobId: string | null): string => {
   if (!jobId) return 'Stock'
   const job = props.jobs.find((j) => j.id === jobId)
-  // Show "Stock" for stock holding job, otherwise show the job name
   return job?.is_stock_holding ? 'Stock' : job?.name || 'Unknown Job'
 }
 
@@ -102,11 +97,9 @@ const openModal = (lineId: string, allocationIndex?: number) => {
   const remaining = line ? getRemaining(line) : 0
 
   if (allocationIndex !== undefined) {
-    // Editing existing allocation
     const allocation = getLineAllocations(lineId)[allocationIndex]
     modalData.value = { ...allocation }
   } else {
-    // Creating new allocation - use default retail rate from company defaults
     modalData.value = {
       job_id: props.jobs[0]?.id || null,
       stock_location: null,
@@ -140,10 +133,8 @@ const saveAllocation = () => {
 
   const allocations = [...newAllocations[editingLineId.value]]
 
-  // Create the allocation data
   const allocationData = { ...modalData.value }
 
-  // If job_id is null (stock holding), use the actual stock holding job ID
   if (allocationData.job_id === null) {
     const stockHolding = props.jobs.find((job) => job.is_stock_holding)
     if (stockHolding) {
@@ -152,10 +143,8 @@ const saveAllocation = () => {
   }
 
   if (editingAllocationIndex.value !== null) {
-    // Update existing allocation
     allocations[editingAllocationIndex.value] = allocationData
   } else {
-    // Add new allocation
     allocations.push(allocationData)
   }
 
@@ -237,7 +226,6 @@ const columns = computed(() => [
       const remaining = getRemaining(row.original)
 
       return h('div', { class: 'space-y-2 max-w-sm' }, [
-        // Previous Allocations Summary (if any)
         existingAllocations.length > 0
           ? h('div', { class: 'p-2 border rounded-lg bg-blue-50 border-blue-200' }, [
               h('div', { class: 'flex items-center gap-1 mb-1' }, [
@@ -251,17 +239,14 @@ const columns = computed(() => [
             ])
           : null,
 
-        // Separator if there are both existing and current allocations
         existingAllocations.length > 0 && allocations.length > 0
           ? h('div', { class: 'border-t border-gray-200 my-2' })
           : null,
 
-        // Current Receipt Allocations Header (if there are allocations)
         allocations.length > 0
           ? h('div', { class: 'text-xs font-medium text-gray-700 mb-1' }, 'This Receipt:')
           : null,
 
-        // Current Receipt Allocations
         ...allocations.map((allocation, index) =>
           h('div', { key: index, class: 'p-2 border rounded-lg bg-gray-50 text-sm' }, [
             h('div', { class: 'flex items-center justify-between' }, [
@@ -310,7 +295,6 @@ const columns = computed(() => [
           ]),
         ),
 
-        // Add Allocation Button
         remaining > 0
           ? h('div', { class: 'flex justify-center' }, [
               h(
@@ -326,7 +310,6 @@ const columns = computed(() => [
             ])
           : null,
 
-        // Validation warnings
         getTotalReceived(row.original.id) > remaining
           ? h(
               'div',

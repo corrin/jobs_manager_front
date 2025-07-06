@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/plugins/axios'
+import { debugLog } from '@/utils/debug'
 
 export interface PurchaseOrder {
   id: string
@@ -25,7 +26,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     } catch (err) {
       const errorMessage = handleApiError(err, 'Failed to fetch purchase orders')
       error.value = errorMessage
-      console.error('Error fetching purchase orders:', err)
+      debugLog('Error fetching purchase orders:', err)
       throw new Error(errorMessage)
     } finally {
       loading.value = false
@@ -41,7 +42,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     } catch (err) {
       const errorMessage = handleApiError(err, 'Failed to create purchase order')
       error.value = errorMessage
-      console.error('Error creating purchase order:', err)
+      debugLog('Error creating purchase order:', err)
       throw new Error(errorMessage)
     }
   }
@@ -59,7 +60,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     } catch (err) {
       const errorMessage = handleApiError(err, `Failed to fetch purchase order ${id}`)
       error.value = errorMessage
-      console.error(`Error fetching purchase order ${id}:`, err)
+      debugLog(`Error fetching purchase order ${id}:`, err)
       throw new Error(errorMessage)
     }
   }
@@ -77,7 +78,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     } catch (err) {
       const errorMessage = handleApiError(err, `Failed to update purchase order ${id}`)
       error.value = errorMessage
-      console.error(`Error updating purchase order ${id}:`, err)
+      debugLog(`Error updating purchase order ${id}:`, err)
       throw new Error(errorMessage)
     }
   }
@@ -94,7 +95,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
       return res.data
     } catch (err) {
       const errorMessage = handleApiError(err, `Failed to fetch PDF for purchase order ${id}`)
-      console.error(`Error fetching PDF for purchase order ${id}:`, err)
+      debugLog(`Error fetching PDF for purchase order ${id}:`, err)
       throw new Error(errorMessage)
     }
   }
@@ -109,7 +110,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
       return res.data
     } catch (err) {
       const errorMessage = handleApiError(err, `Failed to email purchase order ${id}`)
-      console.error(`Error emailing purchase order ${id}:`, err)
+      debugLog(`Error emailing purchase order ${id}:`, err)
       throw new Error(errorMessage)
     }
   }
@@ -123,21 +124,18 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 
     try {
       await api.delete(`/purchasing/rest/purchase-orders/${id}/`)
-      // Remove from local state
       orders.value = orders.value.filter((order) => order.id !== id)
     } catch (err) {
       const errorMessage = handleApiError(err, `Failed to delete purchase order ${id}`)
       error.value = errorMessage
-      console.error(`Error deleting purchase order ${id}:`, err)
+      debugLog(`Error deleting purchase order ${id}:`, err)
       throw new Error(errorMessage)
     }
   }
 
-  // Centralised error handling function
   function handleApiError(err: unknown, defaultMessage: string): string {
     if (!err) return defaultMessage
 
-    // Handle Axios errors
     if (typeof err === 'object' && 'response' in err) {
       const axiosError = err as {
         response?: { status?: number; data?: { error?: string; message?: string } }
@@ -160,7 +158,6 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
       }
     }
 
-    // Handle generic errors
     if (err instanceof Error) {
       return err.message
     }

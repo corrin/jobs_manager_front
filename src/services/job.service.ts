@@ -17,6 +17,7 @@ import type {
 } from '@/schemas/kanban.schemas'
 import type { Job, AdvancedFilters } from '@/types'
 import { validate as validateUuid } from 'uuid'
+import { debugLog } from '@/utils/debug'
 
 interface BaseApiResponse {
   success: boolean
@@ -71,7 +72,7 @@ export class JobService {
         totalArchived: data.total_archived,
       }
     } catch (error) {
-      console.error('Error fetching all jobs:', error)
+      debugLog('Error fetching all jobs:', error)
       throw new Error('Failed to load jobs')
     }
   }
@@ -91,7 +92,7 @@ export class JobService {
         jobs: apiResult.jobs.map((job) => ({ ...job, people: job.people ?? [] })),
       }
     } catch (error) {
-      console.error('Error fetching jobs by status:', error)
+      debugLog('Error fetching jobs by status:', error)
       throw new Error('Failed to load jobs by status')
     }
   }
@@ -101,26 +102,26 @@ export class JobService {
       const response = await api.get('/job/api/jobs/status-values/')
       return this.handleApiResponse(response, StatusApiResponseSchema)
     } catch (error) {
-      console.error('Error fetching status choices:', error)
+      debugLog('Error fetching status choices:', error)
       throw new Error('Failed to load status choices')
     }
   }
 
   async updateJobStatus(jobId: string, status: string): Promise<void> {
     try {
-      console.log(`🔄 Updating job ${jobId} to status ${status}`)
+      debugLog(`🔄 Updating job ${jobId} to status ${status}`)
       const requestData: UpdateJobStatusRequest = UpdateJobStatusRequestSchema.parse({ status })
 
       const response = await api.post(`/job/api/jobs/${jobId}/update-status/`, requestData)
-      console.log(`✅ Job status update successful`, response.data)
+      debugLog(`✅ Job status update successful`, response.data)
 
       const { useJobsStore } = await import('@/stores/jobs')
       const jobsStore = useJobsStore()
       jobsStore.updateJobStatus(jobId, status)
     } catch (error) {
-      console.error('❌ Error updating job status:', error)
+      debugLog('❌ Error updating job status:', error)
       if (error instanceof Error) {
-        console.error('Error details:', {
+        debugLog('Error details:', {
           message: error.message,
           stack: error.stack,
         })
@@ -159,7 +160,7 @@ export class JobService {
         jobsStore.updateJobStatus(jobId, status)
       }
     } catch (error) {
-      console.error('Error reordering job:', error)
+      debugLog('Error reordering job:', error)
       throw new Error('Failed to reorder job')
     }
   }
@@ -184,7 +185,7 @@ export class JobService {
         jobs: apiResult.jobs.map((job) => ({ ...job, people: job.people ?? [] })),
       }
     } catch (error) {
-      console.error('Error performing advanced search:', error)
+      debugLog('Error performing advanced search:', error)
       throw new Error('Failed to perform advanced search')
     }
   }
@@ -205,7 +206,7 @@ export class JobService {
         jobs: apiResult.jobs.map((job) => ({ ...job, people: job.people ?? [] })),
       }
     } catch (error) {
-      console.error('Error fetching jobs by kanban column:', error)
+      debugLog('Error fetching jobs by kanban column:', error)
       throw new Error('Failed to load jobs by kanban column')
     }
   }
