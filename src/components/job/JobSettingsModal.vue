@@ -131,13 +131,6 @@
           <h3 class="text-lg font-medium text-gray-900 border-b pb-2">Settings & Notes</h3>
 
           <div>
-            <label class="flex items-center">
-              <input v-model="localJobData.complex_job" type="checkbox" class="mr-2" />
-              <span class="text-sm font-medium text-gray-700">Itemised Pricing</span>
-            </label>
-          </div>
-
-          <div>
             <label class="block text-sm font-medium text-gray-700 mb-2"> Pricing Type </label>
             <select
               v-model="localJobData.pricing_methodology"

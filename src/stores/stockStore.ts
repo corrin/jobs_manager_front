@@ -7,6 +7,13 @@ export interface StockItem {
   description: string
   quantity: number
   unit_cost: number
+  metal_type?: string
+  alloy?: string
+  specifics?: string
+  location?: string
+  dimensions?: string
+  source?: string
+  is_active?: boolean
 }
 
 export const useStockStore = defineStore('stock', () => {
@@ -27,7 +34,7 @@ export const useStockStore = defineStore('stock', () => {
     await api.post(`/purchasing/rest/stock/${id}/consume/`, payload)
   }
 
-  async function create(payload: unknown) {
+  async function create(payload: Partial<StockItem>) {
     const res = await api.post('/purchasing/rest/stock/', payload)
     return res.data
   }

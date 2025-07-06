@@ -53,7 +53,7 @@
               :jobs="jobs"
               :read-only="!canEditLineItems"
               @update:lines="canEditLineItems ? (po.lines = $event) : null"
-              @add-line="addLine"
+              @add-line="handleAddLineEvent"
               @delete-line="deleteLine"
             />
           </CardContent>
@@ -149,6 +149,11 @@ interface PurchaseOrderLine {
   unit_cost: number | null
   price_tbc: boolean
   job_id?: string // Job is now optional
+  metal_type?: string
+  alloy?: string
+  specifics?: string
+  location?: string
+  dimensions?: string
 }
 
 interface PurchaseOrder {
@@ -300,8 +305,17 @@ async function load() {
     return
   }
 
+  console.log('🔄 Loading PO data...')
   isLoading.value = true
+  isReloading.value = true // Prevent watcher from triggering during reload
   error.value = null
+
+  // Cancel any pending autosave to prevent conflicts
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+    console.log('⏰ Cancelled pending autosave during reload')
+  }
 
   try {
     const data = await store.fetchOne(orderId)
@@ -310,6 +324,8 @@ async function load() {
       lines: Array.isArray(data.lines) ? data.lines : [],
     }
     originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
+
+    console.log('✅ PO loaded successfully. Lines:', po.value.lines.length)
 
     // Show warning toast if PO is deleted
     if (po.value.status === 'deleted') {
@@ -334,6 +350,11 @@ async function load() {
     }
   } finally {
     isLoading.value = false
+    // Wait a bit before allowing watchers again to ensure data is settled
+    setTimeout(() => {
+      isReloading.value = false
+      console.log('🔓 Reload complete, watchers re-enabled')
+    }, 200) // Increased from 100ms to 200ms for more stability
   }
 }
 
@@ -365,26 +386,58 @@ async function saveSummary() {
   await load()
 }
 
+const handleAddLineEvent = () => {
+  console.log('🎯 handleAddLineEvent triggered from PoLinesTable')
+  console.log('🔑 canEditLineItems:', canEditLineItems.value)
+
+  if (!canEditLineItems.value) {
+    console.log('❌ Cannot edit line items - permission denied')
+    return
+  }
+
+  addLine()
+}
+
 function addLine() {
+  console.log('🏗️ addLine function called')
+  console.log('📊 Current PO lines:', po.value.lines.length)
+  console.log('🔒 Is PO deleted:', isPoDeleted.value)
+  console.log('📤 Is PO submitted:', isPoSubmitted.value)
+
   if (isPoDeleted.value) {
+    console.log('❌ Blocked: PO is deleted')
     toast.error('Cannot add lines - this purchase order has been deleted')
     return
   }
   if (isPoSubmitted.value) {
+    console.log('❌ Blocked: PO is submitted')
     toast.error('Cannot add lines - this purchase order has been submitted to supplier')
     return
   }
-  po.value.lines = [
-    ...po.value.lines,
-    {
-      item_code: '',
-      description: '',
-      quantity: 1,
-      unit_cost: 0,
-      price_tbc: false,
-      job_id: '', // Job is required but user must select one
-    },
-  ]
+
+  const newLine = {
+    item_code: '',
+    description: '',
+    quantity: 1,
+    unit_cost: 0,
+    price_tbc: false,
+    job_id: '', // Job is required but user must select one
+    metal_type: undefined,
+    alloy: undefined,
+    specifics: undefined,
+    location: undefined,
+    dimensions: undefined,
+  }
+
+  console.log('➕ Adding new line:', newLine)
+
+  try {
+    po.value.lines = [...po.value.lines, newLine]
+    console.log('✅ Line added successfully. New count:', po.value.lines.length)
+  } catch (error) {
+    console.error('❌ Error adding line:', error)
+    toast.error('Failed to add line: ' + error)
+  }
 }
 
 function deleteLine(idOrIdx: string | number) {
@@ -397,29 +450,41 @@ function deleteLine(idOrIdx: string | number) {
     return
   }
 
-  console.log('deleteLine called with:', idOrIdx)
+  console.log('🗑️ Deleting line:', idOrIdx)
 
-  if (typeof idOrIdx === 'string') {
-    // Find the line being deleted
-    const lineToDelete = po.value.lines.find((l: PurchaseOrderLine) => l.id === idOrIdx)
-    console.log('Line to delete:', lineToDelete)
-
-    // Add to linesToDelete if the line has any meaningful content
-    // (not completely empty) - this covers partially filled lines that should be deleted from backend
-    if (lineToDelete && hasAnyContent(lineToDelete)) {
-      console.log('Adding to linesToDelete:', idOrIdx)
-      linesToDelete.value.push(idOrIdx)
-    } else {
-      console.log('Not adding to linesToDelete - line is empty or not found')
-    }
-
-    po.value.lines = po.value.lines.filter((l: PurchaseOrderLine) => l.id !== idOrIdx)
-  } else {
-    console.log('Deleting by index:', idOrIdx)
-    po.value.lines = po.value.lines.filter((_: PurchaseOrderLine, idx: number) => idx !== idOrIdx)
+  // Cancel any pending autosave
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+    debounceTimer = null
+    console.log('⏰ Cancelled pending autosave timer')
   }
 
-  console.log('Lines after deletion:', po.value.lines.length)
+  isDeletingLine.value = true // Prevent autosave during deletion
+
+  try {
+    if (typeof idOrIdx === 'string') {
+      // Find the line being deleted
+      const lineToDelete = po.value.lines.find((l: PurchaseOrderLine) => l.id === idOrIdx)
+
+      // Add to linesToDelete if the line has any meaningful content
+      if (lineToDelete && hasAnyContent(lineToDelete)) {
+        linesToDelete.value.push(idOrIdx)
+        console.log('📝 Added line to delete list:', idOrIdx)
+      }
+
+      po.value.lines = po.value.lines.filter((l: PurchaseOrderLine) => l.id !== idOrIdx)
+    } else {
+      po.value.lines = po.value.lines.filter((_: PurchaseOrderLine, idx: number) => idx !== idOrIdx)
+    }
+
+    console.log('✅ Line deleted. Remaining lines:', po.value.lines.length)
+  } finally {
+    // Allow autosave again after a longer delay to prevent watcher activation
+    setTimeout(() => {
+      isDeletingLine.value = false
+      console.log('🔓 Deletion flag cleared, autosave re-enabled')
+    }, 500)
+  }
 }
 
 function hasAnyContent(line: PurchaseOrderLine) {
@@ -434,7 +499,9 @@ function hasAnyContent(line: PurchaseOrderLine) {
 }
 
 function lineChanged(line: PurchaseOrderLine) {
+  // If line has no ID, it's a new line and should be saved
   if (!line.id) return true
+
   const orig = originalLines.value.find((o) => o.id === line.id)
   if (!orig) return true
 
@@ -444,44 +511,71 @@ function lineChanged(line: PurchaseOrderLine) {
     +orig.quantity !== +line.quantity ||
     +(orig.unit_cost ?? 0) !== +(line.unit_cost ?? 0) ||
     orig.price_tbc !== line.price_tbc ||
-    orig.job_id !== line.job_id
+    orig.job_id !== line.job_id ||
+    // Compare new additional fields
+    orig.metal_type !== line.metal_type ||
+    orig.alloy !== line.alloy ||
+    orig.specifics !== line.specifics ||
+    orig.location !== line.location ||
+    orig.dimensions !== line.dimensions
   )
 }
 
 function isValidLine(line: PurchaseOrderLine) {
+  // A line is valid if it has content AND price information
   const hasContent =
     (line.item_code && line.item_code.trim() !== '') ||
     (line.description && line.description.trim() !== '')
 
+  // Don't save empty lines (no content)
+  if (!hasContent) {
+    return false
+  }
+
+  // If line has content, it must have price information
   const hasPrice = (line.unit_cost != null && Number(line.unit_cost) > 0) || line.price_tbc === true
 
-  // Job is now optional for purchase order lines
-  return hasContent && hasPrice
+  return hasPrice
 }
 
 async function saveLines() {
   if (isPoDeleted.value) {
+    console.log('❌ Cannot save - PO is deleted')
     toast.error('Cannot save changes - this purchase order has been deleted')
     return
   }
 
+  // Skip save if we're currently reloading or deleting
+  if (isReloading.value || isDeletingLine.value) {
+    console.log(
+      '⏸️ Skipping save - reloading:',
+      isReloading.value,
+      'deleting:',
+      isDeletingLine.value,
+    )
+    return
+  }
+
+  // Filter out lines that should be deleted (invalid lines with IDs)
   linesToDelete.value = linesToDelete.value.filter((id) => {
     const l = po.value.lines.find((x: PurchaseOrderLine) => x.id === id)
     return l ? isValidLine(l) : true
   })
 
+  // Get valid lines that should be saved
   const validLines = po.value.lines.filter(isValidLine)
 
-  // Check for lines missing required fields (price information)
-  const invalidLines = po.value.lines.filter((line) => {
+  // Get lines that have content but are missing required fields
+  const incompleteLines = po.value.lines.filter((line) => {
     const hasContent =
       (line.item_code && line.item_code.trim() !== '') ||
       (line.description && line.description.trim() !== '')
     return hasContent && !isValidLine(line)
   })
 
-  if (invalidLines.length > 0) {
-    const missingPrices = invalidLines.filter(
+  // Show specific error for incomplete lines
+  if (incompleteLines.length > 0) {
+    const missingPrices = incompleteLines.filter(
       (line) => (!line.unit_cost || Number(line.unit_cost) <= 0) && !line.price_tbc,
     )
 
@@ -493,19 +587,56 @@ async function saveLines() {
     }
   }
 
-  if (!validLines.length && !linesToDelete.value.length) return
+  // Only save if there are valid lines to save or lines to delete
+  if (!validLines.length && !linesToDelete.value.length) {
+    console.log('⏸️ No valid lines or deletes to save')
+    return
+  }
 
+  // Only send changed lines to reduce payload
   const changedLines = validLines.filter(lineChanged)
-  if (!changedLines.length && !linesToDelete.value.length) return
 
-  await store.patch(orderId, {
-    lines: changedLines,
-    lines_to_delete: linesToDelete.value.length ? linesToDelete.value : undefined,
+  // Only make API call if there are actual changes
+  if (!changedLines.length && !linesToDelete.value.length) {
+    console.log('⏸️ No changes detected - skipping save')
+    return
+  }
+
+  console.log('💾 Saving lines...', {
+    validLines: validLines.length,
+    changedLines: changedLines.length,
+    toDelete: linesToDelete.value.length,
   })
 
-  originalLines.value = JSON.parse(JSON.stringify(validLines))
-  linesToDelete.value = []
-  toast.success('Lines saved')
+  try {
+    const linesToDeleteBackup = [...linesToDelete.value] // Backup before clearing
+
+    await store.patch(orderId, {
+      lines: changedLines,
+      lines_to_delete: linesToDelete.value.length ? linesToDelete.value : undefined,
+    })
+
+    // Clear the delete list after successful save
+    linesToDelete.value = []
+
+    // Only reload if we saved lines with IDs or deleted lines
+    // This prevents unnecessary reloads for simple field updates
+    const needsReload = changedLines.some((line) => !line.id) || linesToDeleteBackup.length > 0
+
+    if (needsReload) {
+      console.log('🔄 Reloading PO after save to ensure consistency...')
+      await load()
+    } else {
+      // Update originalLines to reflect saved state without full reload
+      originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
+      console.log('✅ Updated original lines without reload')
+    }
+
+    toast.success('Lines saved')
+  } catch (error) {
+    console.error('❌ Error saving lines:', error)
+    toast.error('Failed to save lines: ' + extractErrorMessage(error, 'Unknown error'))
+  }
 }
 
 async function syncWithXero() {
@@ -616,6 +747,9 @@ const canSync = computed(() => {
   )
 })
 
+const isReloading = ref(false)
+const isDeletingLine = ref(false)
+
 onMounted(async () => {
   try {
     await Promise.all([xeroItemStore.fetchItems(), fetchJobs(), load()])
@@ -627,6 +761,23 @@ onMounted(async () => {
   watch(
     () => po.value.lines,
     (newLines, oldLines) => {
+      // Skip autosave during reloading or deleting operations
+      if (isReloading.value || isDeletingLine.value) {
+        console.log(
+          '⏸️ Skipping autosave - reloading:',
+          isReloading.value,
+          'deleting:',
+          isDeletingLine.value,
+        )
+        return
+      }
+
+      // Don't autosave if there are no lines or if lines are empty
+      if (!newLines || newLines.length === 0) {
+        console.log('⏸️ Skipping autosave - no lines to save')
+        return
+      }
+
       // Check for job changes when status is not draft
       if (po.value.status !== 'draft' && oldLines) {
         const jobChanges = newLines.some((newLine, index) => {
@@ -641,8 +792,15 @@ onMounted(async () => {
         }
       }
 
-      if (debounceTimer) clearTimeout(debounceTimer)
-      debounceTimer = setTimeout(saveLines, 500)
+      console.log('⏱️ Lines changed, scheduling autosave in 500ms')
+      if (debounceTimer) {
+        clearTimeout(debounceTimer)
+        console.log('⏰ Cleared previous timer')
+      }
+      debounceTimer = setTimeout(() => {
+        console.log('💾 Executing scheduled autosave')
+        saveLines()
+      }, 500)
     },
     { deep: true, flush: 'post' },
   )

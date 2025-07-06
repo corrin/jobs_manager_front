@@ -4,7 +4,12 @@
       <div>
         <h2 class="text-lg font-semibold text-gray-900">Cost Analysis</h2>
         <p class="text-sm text-gray-500">
-          Compare Estimate, Quote, and Actual cost sets with visual performance indicators
+          <span v-if="props.jobData?.pricing_methodology === 'time_materials'">
+            Compare Estimate and Actual cost sets for this Time & Materials job
+          </span>
+          <span v-else>
+            Compare Estimate, Quote, and Actual cost sets with visual performance indicators
+          </span>
         </p>
       </div>
     </div>
@@ -24,7 +29,12 @@
           <tr class="bg-gray-50">
             <th class="py-3 px-4 text-left font-semibold text-gray-700">Metric</th>
             <th class="py-3 px-4 text-center font-semibold text-blue-700">Estimate</th>
-            <th class="py-3 px-4 text-center font-semibold text-green-700">Quote</th>
+            <th
+              v-if="props.jobData?.pricing_methodology !== 'time_materials'"
+              class="py-3 px-4 text-center font-semibold text-green-700"
+            >
+              Quote
+            </th>
             <th class="py-3 px-4 text-center font-semibold text-orange-700">Actual</th>
           </tr>
         </thead>
@@ -32,7 +42,12 @@
           <tr>
             <td class="py-2 px-4 font-medium">Total Cost</td>
             <td class="py-2 px-4 text-center">{{ formatCurrency(estimate.cost) }}</td>
-            <td class="py-2 px-4 text-center">{{ formatCurrency(quote.cost) }}</td>
+            <td
+              v-if="props.jobData?.pricing_methodology !== 'time_materials'"
+              class="py-2 px-4 text-center"
+            >
+              {{ formatCurrency(quote.cost) }}
+            </td>
             <td class="py-2 px-4 text-center">
               <span :class="costClass">
                 {{ formatCurrency(actual.cost) }}
@@ -48,7 +63,12 @@
           <tr>
             <td class="py-2 px-4 font-medium">Total Revenue</td>
             <td class="py-2 px-4 text-center">{{ formatCurrency(estimate.rev) }}</td>
-            <td class="py-2 px-4 text-center">{{ formatCurrency(quote.rev) }}</td>
+            <td
+              v-if="props.jobData?.pricing_methodology !== 'time_materials'"
+              class="py-2 px-4 text-center"
+            >
+              {{ formatCurrency(quote.rev) }}
+            </td>
             <td class="py-2 px-4 text-center">
               <span :class="revenueClass">
                 {{ formatCurrency(actual.rev) }}
@@ -64,7 +84,12 @@
           <tr>
             <td class="py-2 px-4 font-medium">Profit Margin</td>
             <td class="py-2 px-4 text-center">{{ formatPercent(estimate.profitMargin) }}</td>
-            <td class="py-2 px-4 text-center">{{ formatPercent(quote.profitMargin) }}</td>
+            <td
+              v-if="props.jobData?.pricing_methodology !== 'time_materials'"
+              class="py-2 px-4 text-center"
+            >
+              {{ formatPercent(quote.profitMargin) }}
+            </td>
             <td class="py-2 px-4 text-center">
               <span :class="profitClass">
                 {{ formatPercent(actual.profitMargin) }}
@@ -80,7 +105,12 @@
           <tr>
             <td class="py-2 px-4 font-medium">Total Hours</td>
             <td class="py-2 px-4 text-center">{{ formatNumber(estimate.hours) }}</td>
-            <td class="py-2 px-4 text-center">{{ formatNumber(quote.hours) }}</td>
+            <td
+              v-if="props.jobData?.pricing_methodology !== 'time_materials'"
+              class="py-2 px-4 text-center"
+            >
+              {{ formatNumber(quote.hours) }}
+            </td>
             <td class="py-2 px-4 text-center">
               <span :class="hoursClass">
                 {{ formatNumber(actual.hours) }}
@@ -95,8 +125,14 @@
           </tr>
         </tbody>
       </table>
-      <div class="mt-6 flex flex-col md:flex-row gap-4">
-        <div class="flex-1 bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-3">
+      <div
+        v-if="props.jobData?.pricing_methodology !== 'time_materials'"
+        class="mt-6 flex flex-col md:flex-row gap-4"
+      >
+        <div
+          v-if="quote.rev > 0 && actual.rev > 0"
+          class="flex-1 bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-3"
+        >
           <Smile v-if="happyFace" class="w-8 h-8 text-green-500" />
           <Frown v-else class="w-8 h-8 text-red-500" />
           <div>
@@ -105,6 +141,20 @@
               {{ formatPercent(quoteAccuracy) }}
             </div>
             <div class="text-xs text-gray-500">How close the quote was to the actual result</div>
+          </div>
+        </div>
+        <div
+          v-else
+          class="flex-1 bg-gray-50 rounded-lg border border-gray-200 p-4 flex items-center gap-3"
+        >
+          <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+            <span class="text-gray-500 text-sm">?</span>
+          </div>
+          <div>
+            <div class="font-semibold text-gray-500">Quote Accuracy</div>
+            <div class="text-sm text-gray-500">
+              {{ !quote.rev ? 'No quote data available' : 'No actual data available' }}
+            </div>
           </div>
         </div>
       </div>
@@ -135,7 +185,13 @@ interface CostSetSummary {
   profitMargin: number
 }
 
-const props = defineProps<{ jobId: string }>()
+const props = defineProps<{
+  jobId: string
+  jobData?: {
+    pricing_methodology?: 'fixed_price' | 'time_materials'
+    [key: string]: unknown
+  }
+}>()
 const costingStore = useCostingStore()
 const loading = ref(true)
 
@@ -174,13 +230,33 @@ function summarise(costSet: CostSet | undefined): CostSetSummary {
   return { cost, rev, hours, profitMargin }
 }
 
-const costDiff = computed(() => percentDiff(actual.value.cost, quote.value.cost))
-const revenueDiff = computed(() => percentDiff(actual.value.rev, quote.value.rev))
-const profitDiff = computed(() => percentDiff(actual.value.profitMargin, quote.value.profitMargin))
-const hoursDiff = computed(() => percentDiff(actual.value.hours, quote.value.hours))
+const costDiff = computed(() => {
+  const referenceValue =
+    props.jobData?.pricing_methodology === 'time_materials' ? estimate.value.cost : quote.value.cost
+  return percentDiff(actual.value.cost, referenceValue)
+})
+const revenueDiff = computed(() => {
+  const referenceValue =
+    props.jobData?.pricing_methodology === 'time_materials' ? estimate.value.rev : quote.value.rev
+  return percentDiff(actual.value.rev, referenceValue)
+})
+const profitDiff = computed(() => {
+  const referenceValue =
+    props.jobData?.pricing_methodology === 'time_materials'
+      ? estimate.value.profitMargin
+      : quote.value.profitMargin
+  return percentDiff(actual.value.profitMargin, referenceValue)
+})
+const hoursDiff = computed(() => {
+  const referenceValue =
+    props.jobData?.pricing_methodology === 'time_materials'
+      ? estimate.value.hours
+      : quote.value.hours
+  return percentDiff(actual.value.hours, referenceValue)
+})
 
 function percentDiff(actual: number, ref: number): number {
-  if (!ref) return 0
+  if (!ref || ref === 0) return 0
   return ((actual - ref) / ref) * 100
 }
 
@@ -210,12 +286,18 @@ const hoursIcon = computed(() =>
 )
 
 const happyFace = computed(() => {
+  // Only show happy face if we have meaningful quote and actual data
+  if (!quote.value.rev || !actual.value.rev) return false
   return actual.value.rev >= quote.value.rev && actual.value.cost <= quote.value.cost
 })
 
 const quoteAccuracy = computed(() => {
-  if (!actual.value.rev) return 0
-  return 100 - Math.abs(percentDiff(actual.value.rev, quote.value.rev))
+  // If no quote data or no actual data, don't show accuracy
+  if (!quote.value.rev || !actual.value.rev) return 0
+
+  const diff = Math.abs(percentDiff(actual.value.rev, quote.value.rev))
+  // Cap the accuracy calculation to avoid showing more than 100% inaccuracy
+  return Math.max(0, 100 - Math.min(diff, 100))
 })
 
 function formatCurrency(value: number): string {

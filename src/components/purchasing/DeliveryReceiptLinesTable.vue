@@ -13,6 +13,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Plus, Edit, Trash2, Package, MapPin, DollarSign, Target, History } from 'lucide-vue-next'
 import { useDeliveryReceiptStore } from '@/stores/deliveryReceiptStore'
+import { formatMetalType } from '@/utils/metalType'
 import type { PurchaseOrderLine, Job, DeliveryAllocation } from '@/types/purchasing'
 
 interface ExistingAllocation {
@@ -185,7 +186,7 @@ const columns = computed(() => [
           ? h(
               'div',
               { class: 'text-sm text-gray-500' },
-              [line.metal_type, line.alloy].filter(Boolean).join(' - '),
+              [formatMetalType(line.metal_type), line.alloy].filter(Boolean).join(' - '),
             )
           : null,
       ])

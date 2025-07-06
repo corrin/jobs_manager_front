@@ -299,14 +299,16 @@ const actualSummary = computed(() => {
 
   for (const line of costLines.value) {
     const quantity = typeof line.quantity === 'string' ? Number(line.quantity) : line.quantity
+    const unitCost = typeof line.unit_cost === 'string' ? Number(line.unit_cost) : line.unit_cost
+    const unitRev = typeof line.unit_rev === 'string' ? Number(line.unit_rev) : line.unit_rev
 
+    // Add to cost and revenue for all types of cost lines
+    cost += quantity * unitCost
+    rev += quantity * unitRev
+
+    // Only add to hours if it's time-based
     if (line.kind === 'time') {
-      cost += quantity * Number(line.unit_cost)
-      rev += quantity * Number(line.unit_rev)
       hours += quantity
-    } else if (line.kind === 'material') {
-      cost += quantity * Number(line.unit_cost)
-      rev += quantity * Number(line.unit_rev)
     }
   }
 

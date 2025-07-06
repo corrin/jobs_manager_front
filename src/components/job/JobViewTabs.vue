@@ -44,7 +44,10 @@
           :company-defaults="companyDefaults"
         />
       </div>
-      <div v-if="activeTab === 'quote'" class="h-full p-4 md:p-6">
+      <div
+        v-if="activeTab === 'quote' && jobData?.pricing_methodology !== 'time_materials'"
+        class="h-full p-4 md:p-6"
+      >
         <JobQuoteTab
           v-if="jobData"
           :job-id="jobData.id"
@@ -83,7 +86,7 @@ import JobQuoteTab from './JobQuoteTab.vue'
 import JobActualTab from './JobActualTab.vue'
 import JobFinancialTab from './JobFinancialTab.vue'
 import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
-import { watch } from 'vue'
+import { watch, computed } from 'vue'
 
 const emit = defineEmits<{
   (e: 'change-tab', tab: 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'): void
@@ -98,7 +101,9 @@ const emit = defineEmits<{
   (e: 'invoice-created'): void
 }>()
 
-const tabs = [
+type TabKey = 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'
+
+const allTabs = [
   { key: 'estimate', label: 'Estimate' },
   { key: 'quote', label: 'Quote' },
   { key: 'actual', label: 'Actual' },
@@ -106,7 +111,14 @@ const tabs = [
   { key: 'costAnalysis', label: 'Cost Analysis' },
 ] as const
 
-type TabKey = (typeof tabs)[number]['key']
+const tabs = computed(() => {
+  // Hide quote tab for Time & Materials jobs
+  if (props.jobData?.pricing_methodology === 'time_materials') {
+    return allTabs.filter((tab) => tab.key !== 'quote')
+  }
+
+  return allTabs
+})
 
 function handleTabChange(tab: TabKey) {
   emit('change-tab', tab)
