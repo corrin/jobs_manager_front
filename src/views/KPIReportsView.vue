@@ -216,6 +216,8 @@
                       :trend="utilizationTrend"
                       :trend-direction="utilizationTrendDirection"
                       :variant="utilizationVariant"
+                      :clickable="true"
+                      @click="showLabourModal = true"
                     />
                     <KPICard
                       title="Materials & Adjustments"
@@ -224,6 +226,8 @@
                       description="Material markup"
                       :trend="'Rev: ' + formatCurrency(totalRevenue)"
                       trend-direction="neutral"
+                      :clickable="true"
+                      @click="showMaterialsModal = true"
                     />
                     <KPICard
                       title="Profit"
@@ -272,6 +276,25 @@
       @job-click="handleJobClick"
     />
 
+    <!-- Labour Details Modal -->
+    <KPILabourDetailsModal
+      :monthly-data="kpiData?.monthly_totals || null"
+      :calendar-data="kpiData?.calendar_data || null"
+      :year="kpiData?.year || selectedYear"
+      :month="kpiData?.month || selectedMonth"
+      :is-open="showLabourModal"
+      @update:is-open="showLabourModal = $event"
+    />
+
+    <!-- Materials Details Modal -->
+    <KPIMaterialsDetailsModal
+      :calendar-data="kpiData?.calendar_data || null"
+      :year="kpiData?.year || selectedYear"
+      :month="kpiData?.month || selectedMonth"
+      :is-open="showMaterialsModal"
+      @update:is-open="showMaterialsModal = $event"
+    />
+
     <!-- Profit Details Modal -->
     <KPIProfitDetailsModal
       :monthly-data="kpiData?.monthly_totals || null"
@@ -294,6 +317,8 @@ import KPICard from '@/components/kpi/KPICard.vue'
 import KPICalendar from '@/components/kpi/KPICalendar.vue'
 import KPIDayDetailsModal from '@/components/kpi/KPIDayDetailsModal.vue'
 import KPIProfitDetailsModal from '@/components/kpi/KPIProfitDetailsModal.vue'
+import KPILabourDetailsModal from '@/components/kpi/KPILabourDetailsModal.vue'
+import KPIMaterialsDetailsModal from '@/components/kpi/KPIMaterialsDetailsModal.vue'
 import MonthSelector from '@/components/kpi/MonthSelector.vue'
 import { kpiService } from '@/services/kpi.service'
 import type { KPICalendarResponse, DayKPI } from '@/services/kpi.service'
@@ -304,6 +329,8 @@ const loading = ref(false)
 const showSettingsModal = ref(false)
 const showDayModal = ref(false)
 const showProfitModal = ref(false)
+const showLabourModal = ref(false)
+const showMaterialsModal = ref(false)
 const selectedDay = ref<DayKPI | null>(null)
 
 // KPI Data State
@@ -396,28 +423,32 @@ const materialPercentage = computed(() => {
 
 const profitPercentage = computed(() => {
   if (!kpiData.value) return 0
-  const target =
-    kpiData.value.thresholds.daily_gp_target * kpiData.value.monthly_totals.working_days
-  if (target === 0) return 0
-  return Math.round((kpiData.value.monthly_totals.gross_profit / target) * 100)
+  // For net profit, show as positive (profit) or negative (loss) indicator
+  // Since net profit target is $0 (break-even), percentage vs 0 doesn't make sense
+  // Instead, show the net profit as surplus (+) or deficit (-)
+  const netProfit = kpiData.value.monthly_totals.net_profit
+  if (netProfit >= 0) return '+' + Math.round(netProfit).toString()
+  return Math.round(netProfit).toString()
 })
 
 const profitTrend = computed(() => {
   if (!kpiData.value) return ''
-  return `Target: ${formatCurrency(kpiData.value.thresholds.daily_gp_target * kpiData.value.monthly_totals.working_days)}`
+  return `GP: ${formatCurrency(kpiData.value.monthly_totals.gross_profit)}`
 })
 
 const profitTrendDirection = computed(() => {
-  const percentage = profitPercentage.value
-  if (percentage >= 100) return 'up'
-  if (percentage >= 80) return 'neutral'
+  if (!kpiData.value) return 'neutral'
+  const netProfit = kpiData.value.monthly_totals.net_profit
+  if (netProfit > 0) return 'up'
+  if (netProfit === 0) return 'neutral'
   return 'down'
 })
 
 const profitVariant = computed(() => {
-  const percentage = profitPercentage.value
-  if (percentage >= 100) return 'success'
-  if (percentage >= 80) return 'warning'
+  if (!kpiData.value) return 'default'
+  const netProfit = kpiData.value.monthly_totals.net_profit
+  if (netProfit > 0) return 'success'
+  if (netProfit === 0) return 'warning'
   return 'danger'
 })
 

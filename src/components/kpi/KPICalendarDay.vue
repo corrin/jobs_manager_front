@@ -56,7 +56,7 @@ const dayClass = computed(() => {
     'kpi-calendar-day--amber': props.dayData.color === 'amber',
     'kpi-calendar-day--red': props.dayData.color === 'red',
     'kpi-calendar-day--holiday': props.dayData.holiday,
-    'kpi-calendar-day--clickable': !props.dayData.holiday,
+    'kpi-calendar-day--clickable': true, // Make all days clickable, including holidays
   }
 })
 
