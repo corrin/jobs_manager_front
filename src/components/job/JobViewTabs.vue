@@ -52,12 +52,19 @@
           @quote-imported="$emit('quote-imported', $event)"
         />
       </div>
+      <div v-if="activeTab === 'actual'" class="h-full p-4 md:p-6">
+        <JobActualTab
+          v-if="jobData"
+          :job-id="jobData.id"
+          :actual-summary-from-backend="jobData.latest_actual?.summary"
+        />
+      </div>
       <div v-if="activeTab === 'financial'" class="h-full p-4 md:p-6">
         <JobFinancialTab
           v-if="jobData"
           :job-data="jobData"
           :job-id="jobData.id"
-          :latest-pricings="latestPricings"
+          :latest-pricings="latestPricings || undefined"
           @quote-created="$emit('quote-created')"
           @quote-accepted="$emit('quote-accepted')"
           @invoice-created="$emit('invoice-created')"
@@ -73,12 +80,13 @@
 <script setup lang="ts">
 import JobEstimateTab from './JobEstimateTab.vue'
 import JobQuoteTab from './JobQuoteTab.vue'
+import JobActualTab from './JobActualTab.vue'
 import JobFinancialTab from './JobFinancialTab.vue'
 import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
 import { watch } from 'vue'
 
 const emit = defineEmits<{
-  (e: 'change-tab', tab: 'estimate' | 'quote' | 'financial' | 'costAnalysis'): void
+  (e: 'change-tab', tab: 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'): void
   (e: 'open-settings'): void
   (e: 'open-workflow'): void
   (e: 'open-history'): void
@@ -93,6 +101,7 @@ const emit = defineEmits<{
 const tabs = [
   { key: 'estimate', label: 'Estimate' },
   { key: 'quote', label: 'Quote' },
+  { key: 'actual', label: 'Actual' },
   { key: 'financial', label: 'Financial' },
   { key: 'costAnalysis', label: 'Cost Analysis' },
 ] as const
@@ -103,9 +112,25 @@ function handleTabChange(tab: TabKey) {
   emit('change-tab', tab)
 }
 
+interface JobData {
+  id: string
+  name?: string
+  job_number?: string
+  client_name?: string
+  latest_actual?: {
+    summary?: {
+      cost: number
+      rev: number
+      hours: number
+      created?: string
+    }
+  }
+  [key: string]: unknown
+}
+
 const props = defineProps<{
-  activeTab: 'estimate' | 'quote' | 'financial' | 'costAnalysis'
-  jobData: Record<string, unknown> | null
+  activeTab: 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'
+  jobData: JobData | null
   companyDefaults: Record<string, unknown> | null
   latestPricings: Record<string, unknown> | null
 }>()

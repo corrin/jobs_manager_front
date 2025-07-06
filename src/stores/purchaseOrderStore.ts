@@ -17,9 +17,10 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
   async function fetchOrders() {
     loading.value = true
     error.value = null
+    const url = '/purchasing/rest/purchase-orders/'
 
     try {
-      const res = await api.get('/purchasing/rest/purchase-orders/')
+      const res = await api.get(url)
       orders.value = Array.isArray(res.data) ? res.data : []
     } catch (err) {
       const errorMessage = handleApiError(err, 'Failed to fetch purchase orders')

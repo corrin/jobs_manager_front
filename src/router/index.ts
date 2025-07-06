@@ -160,6 +160,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'ai-providers',
+          name: 'admin-ai-providers',
+          component: () => import('@/views/AdminAIProvidersView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresSuperUser: true,
+            title: 'AI Providers - Jobs Manager',
+          },
+        },
+        {
           path: '',
           redirect: { name: 'admin-staff' },
         },
@@ -222,6 +232,12 @@ const router = createRouter({
       name: 'supplier-pricing',
       component: () => import('@/views/purchasing/SupplierPricingUploadView.vue'),
       meta: { requiresAuth: true, title: 'Supplier Pricing - Jobs Manager' },
+    },
+    {
+      path: '/reports/kpi',
+      name: 'kpi-reports',
+      component: () => import('@/views/KPIReportsView.vue'),
+      meta: { requiresAuth: true, title: 'KPI Reports - Jobs Manager' },
     },
   ],
 })

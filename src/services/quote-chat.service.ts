@@ -131,4 +131,34 @@ export class QuoteChatService {
       metadata: vueMessage.metadata || {},
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // AI assistant interaction
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Send a user's message to the backend interaction endpoint.
+   * The backend will call the configured LLM (via MCPChatService)
+   * and persist the assistant's reply before returning it.
+   */
+  async getAssistantResponse(jobId: string, message: string): Promise<ChatMessage> {
+    interface AssistantInteractionRequest {
+      message: string
+    }
+    interface AssistantInteractionResponse {
+      success: boolean
+      data: ChatMessage
+    }
+
+    try {
+      const response = await api.post<AssistantInteractionResponse>(
+        `/job/api/jobs/${jobId}/quote-chat/interaction/`,
+        { message } as AssistantInteractionRequest,
+      )
+      return response.data.data
+    } catch (error) {
+      console.error('Failed to get assistant response:', error)
+      throw error
+    }
+  }
 }
