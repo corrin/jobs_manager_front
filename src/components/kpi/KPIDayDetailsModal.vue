@@ -4,9 +4,13 @@
       <DialogHeader>
         <DialogTitle class="text-xl font-semibold">
           {{ formatDateTitle(dayData?.date) }}
+          <span v-if="dayData?.holiday" class="text-sm font-normal text-gray-500 ml-2"
+            >(Holiday)</span
+          >
         </DialogTitle>
         <DialogDescription>
-          Daily revenue, cost, and profit breakdown with job-by-job analysis
+          <span v-if="dayData?.holiday"> Holiday wage costs and staff breakdown </span>
+          <span v-else> Daily revenue, cost, and profit breakdown with job-by-job analysis </span>
         </DialogDescription>
         <DialogClose />
       </DialogHeader>

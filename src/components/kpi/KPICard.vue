@@ -1,5 +1,5 @@
 <template>
-  <div class="kpi-card">
+  <div class="kpi-card" :class="{ 'kpi-card--clickable': clickable }" @click="handleClick">
     <div class="kpi-card__header">
       <h3 class="kpi-card__title">{{ title }}</h3>
       <div v-if="trend" class="kpi-card__trend" :class="trendClass">
@@ -35,12 +35,24 @@ interface Props {
   trend?: string
   trendDirection?: 'up' | 'down' | 'neutral'
   variant?: 'default' | 'success' | 'warning' | 'danger'
+  clickable?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   trendDirection: 'neutral',
   variant: 'default',
+  clickable: false,
 })
+
+const emit = defineEmits<{
+  click: []
+}>()
+
+function handleClick() {
+  if (props.clickable) {
+    emit('click')
+  }
+}
 
 const trendIcon = computed(() => {
   switch (props.trendDirection) {
@@ -79,6 +91,10 @@ const percentageClass = computed(() => {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+
+.kpi-card--clickable {
+  @apply cursor-pointer transition-all duration-200 hover:shadow-md hover:border-blue-300;
 }
 
 .kpi-card__header {
