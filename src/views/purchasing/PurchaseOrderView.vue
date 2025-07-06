@@ -13,7 +13,7 @@
         </div>
       </div>
 
-      <div class="overflow-y-auto max-h-[75vh] rounded-2xl shadow-lg border">
+      <div class="overflow-y-auto max-h-[67vh] rounded-2xl shadow-lg border">
         <table class="min-w-full text-sm">
           <thead class="bg-slate-50 border-b">
             <tr>

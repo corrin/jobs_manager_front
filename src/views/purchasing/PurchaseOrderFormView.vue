@@ -1,7 +1,19 @@
 <template>
   <AppLayout>
     <div class="p-4 md:p-8 flex flex-col gap-4">
-      <div class="flex flex-col lg:flex-row gap-6">
+      <!-- Loading State -->
+      <div v-if="isLoading" class="flex justify-center py-8">
+        <div class="text-gray-600">Loading purchase order...</div>
+      </div>
+
+      <!-- Error State -->
+      <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p class="text-red-800">{{ error }}</p>
+        <Button @click="load" class="mt-2" variant="outline" size="sm"> Try Again </Button>
+      </div>
+
+      <!-- Main Content -->
+      <div v-else class="flex flex-col lg:flex-row gap-6">
         <PoSummaryCard
           :po="po"
           :is-create-mode="false"
@@ -105,6 +117,8 @@ const xeroItemStore = useXeroItemStore()
 const originalLines = ref<PurchaseOrderLine[]>([])
 const isSyncing = ref(false)
 const showPdfDialog = ref(false)
+const isLoading = ref(false)
+const error = ref<string | null>(null)
 
 const po = ref<PurchaseOrder>({
   po_number: '',
@@ -122,12 +136,38 @@ const linesToDelete = ref<string[]>([])
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 async function load() {
-  const data = await store.fetchOne(orderId)
-  po.value = {
-    ...data,
-    lines: Array.isArray(data.lines) ? data.lines : [],
+  if (!orderId) {
+    error.value = 'Purchase order ID is required'
+    return
   }
-  originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
+
+  isLoading.value = true
+  error.value = null
+
+  try {
+    const data = await store.fetchOne(orderId)
+    po.value = {
+      ...data,
+      lines: Array.isArray(data.lines) ? data.lines : [],
+    }
+    originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to load purchase order'
+    error.value = errorMessage
+    console.error('Error loading purchase order:', err)
+
+    // Navigate back to list if PO not found
+    if (errorMessage.includes('not found') || errorMessage.includes('404')) {
+      toast.error('Purchase order not found')
+      setTimeout(() => {
+        router.push('/purchasing')
+      }, 2000)
+    } else {
+      toast.error(`Failed to load purchase order: ${errorMessage}`)
+    }
+  } finally {
+    isLoading.value = false
+  }
 }
 
 async function saveSummary() {
@@ -310,7 +350,12 @@ const canSync = computed(() => {
 })
 
 onMounted(async () => {
-  await Promise.all([xeroItemStore.fetchItems(), load()])
+  try {
+    await Promise.all([xeroItemStore.fetchItems(), load()])
+  } catch (err) {
+    console.error('Error during component initialization:', err)
+    // Error handling is already done in individual functions
+  }
 
   watch(
     () => po.value.lines,

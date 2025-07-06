@@ -6,7 +6,7 @@
           <Package class="w-6 h-6 text-indigo-600" /> Delivery Receipts
         </h1>
       </div>
-      <div class="overflow-y-auto max-h-[75vh] rounded-2xl shadow-lg border">
+      <div class="overflow-x-auto overflow-y-auto max-h-[67vh] rounded-2xl shadow-lg border">
         <table class="min-w-full text-sm">
           <thead class="bg-slate-50 border-b">
             <tr>
@@ -40,11 +40,11 @@
                 <Button
                   size="sm"
                   variant="outline"
-                  @click="viewReceipt(receipt.id)"
+                  @click="deleteReceipt(receipt.id)"
                   class="w-8 h-8 p-0"
-                  aria-label="View Receipt"
+                  aria-label="Delete Receipt"
                 >
-                  <Package class="w-4 h-4" />
+                  <Trash2 class="w-4 h-4 text-red-500" />
                 </Button>
               </td>
             </tr>
@@ -67,7 +67,7 @@
 
 <script setup lang="ts">
 import AppLayout from '@/components/AppLayout.vue'
-import { Package, Edit } from 'lucide-vue-next'
+import { Package, Edit, Trash2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -85,7 +85,7 @@ const receipts = ref<Receipt[]>([])
 const router = useRouter()
 
 const page = ref(1)
-const pageSize = 10
+const pageSize = 25 // Updated to match requirement
 
 const totalPages = computed(() => Math.max(1, Math.ceil(receipts.value.length / pageSize)))
 
@@ -131,8 +131,9 @@ const editReceipt = (id: string) => {
   router.push({ name: 'delivery-receipt-form', params: { poId: id } })
 }
 
-const viewReceipt = (id: string) => {
-  router.push(`/purchasing/receipt/${id}`)
+const deleteReceipt = (id: string) => {
+  // TODO: Implement delete functionality
+  console.log('Delete receipt:', id)
 }
 
 onMounted(async () => {

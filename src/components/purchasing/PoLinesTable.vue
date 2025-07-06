@@ -173,7 +173,7 @@ const columns = computed(() => [
 
 <template>
   <div class="flex flex-col h-full">
-    <div class="flex-1 overflow-y-auto max-h-[70vh]">
+    <div class="flex-1 overflow-y-auto max-h-[60vh]">
       <DataTable
         :columns="columns"
         :data="props.lines"
