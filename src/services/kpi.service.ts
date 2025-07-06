@@ -80,6 +80,7 @@ export interface MonthlyTotals {
   billable_hours: number
   total_hours: number
   gross_profit: number
+  net_profit: number
   working_days: number
   days_green: number
   days_amber: number

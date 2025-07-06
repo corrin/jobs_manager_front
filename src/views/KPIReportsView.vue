@@ -227,12 +227,15 @@
                     />
                     <KPICard
                       title="Profit"
-                      :value="formatCurrency(kpiData.monthly_totals.gross_profit)"
+                      :value="formatCurrency(kpiData.monthly_totals.net_profit)"
+                      :subtitle="`GP: ${formatCurrency(kpiData.monthly_totals.gross_profit)}`"
                       :percentage="profitPercentage + '%'"
-                      description="Gross profit"
+                      description="Net profit"
                       :trend="profitTrend"
                       :trend-direction="profitTrendDirection"
                       :variant="profitVariant"
+                      :clickable="true"
+                      @click="showProfitModal = true"
                     />
                     <KPICard
                       title="Performance"
@@ -268,6 +271,17 @@
       @update:is-open="showDayModal = $event"
       @job-click="handleJobClick"
     />
+
+    <!-- Profit Details Modal -->
+    <KPIProfitDetailsModal
+      :monthly-data="kpiData?.monthly_totals || null"
+      :thresholds="kpiData?.thresholds || null"
+      :calendar-data="kpiData?.calendar_data || null"
+      :year="kpiData?.year || selectedYear"
+      :month="kpiData?.month || selectedMonth"
+      :is-open="showProfitModal"
+      @update:is-open="showProfitModal = $event"
+    />
   </AppLayout>
 </template>
 
@@ -279,6 +293,7 @@ import Button from '@/components/ui/button/Button.vue'
 import KPICard from '@/components/kpi/KPICard.vue'
 import KPICalendar from '@/components/kpi/KPICalendar.vue'
 import KPIDayDetailsModal from '@/components/kpi/KPIDayDetailsModal.vue'
+import KPIProfitDetailsModal from '@/components/kpi/KPIProfitDetailsModal.vue'
 import MonthSelector from '@/components/kpi/MonthSelector.vue'
 import { kpiService } from '@/services/kpi.service'
 import type { KPICalendarResponse, DayKPI } from '@/services/kpi.service'
@@ -288,6 +303,7 @@ const router = useRouter()
 const loading = ref(false)
 const showSettingsModal = ref(false)
 const showDayModal = ref(false)
+const showProfitModal = ref(false)
 const selectedDay = ref<DayKPI | null>(null)
 
 // KPI Data State
