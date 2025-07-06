@@ -1,11 +1,28 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/plugins/axios'
+import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
+
+interface ExistingAllocation {
+  quantity: number
+  type: string
+  job_id: string
+  job_name: string
+  allocation_date?: string
+  description?: string
+  retail_rate?: number
+  stock_location?: string
+}
 
 // Re-export from purchasing types for compatibility
 export interface Job {
   id: string
+  job_number: string
   name: string
+  client_name?: string
+  status?: string
+  is_stock_holding?: boolean
+  job_display_name?: string
 }
 
 export interface PurchaseOrderLine {
@@ -67,19 +84,29 @@ export interface DeliveryReceiptData {
   [lineId: string]: LineAllocation
 }
 
-interface TransformedLineData {
-  total_received: number
-  job_allocation: number
-  stock_allocation: number
-  job_id: string | null
-  retail_rate: number
-}
-
 export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const stockHoldingJob = ref<Job | null>(null)
   const allocatableJobs = ref<Job[]>([])
+
+  /**
+   * Get the default retail rate from company defaults.
+   * Returns percentage (e.g., 20 for 20%) or 0 if not available.
+   * No fallback values - uses only real company configuration.
+   */
+  function getDefaultRetailRate(): number {
+    const companyDefaultsStore = useCompanyDefaultsStore()
+    const materialsMarkup = companyDefaultsStore.companyDefaults?.materials_markup
+
+    if (materialsMarkup !== undefined && materialsMarkup !== null) {
+      // Convert from decimal to percentage (e.g., 0.2 -> 20)
+      return materialsMarkup * 100
+    }
+
+    // No fallback - return 0 if company defaults not available
+    return 0
+  }
 
   async function fetchPurchaseOrder(id: string): Promise<PurchaseOrder> {
     if (!id) {
@@ -106,24 +133,29 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     error.value = null
 
     try {
-      const res = await api.get('/job/api/jobs/fetch-all/')
+      const res = await api.get('/purchasing/rest/all-jobs/')
       const data = res.data
 
       if (!data.success) {
         throw new Error(data.error || 'Failed to fetch jobs')
       }
 
-      // Get both active and archived jobs to find special jobs like Worker Admin
-      const allJobs = [...(data.active_jobs || []), ...(data.archived_jobs || [])]
+      const allJobs = data.jobs || []
 
-      // Find stock holding job (Worker Admin) - it might be marked as special
-      const stockHolding = allJobs.find((job: Job) => job.name === 'Worker Admin')
+      // Find stock holding job using the flag
+      const stockHolding = allJobs.find(
+        (job: Job & { is_stock_holding: boolean }) => job.is_stock_holding,
+      )
       if (!stockHolding) {
-        throw new Error('Stock holding job (Worker Admin) not found')
+        throw new Error('Stock holding job not found')
       }
 
-      // For allocatable jobs, use only active jobs and exclude the stock holding job
-      const allocatable = (data.active_jobs || []).filter((job: Job) => job.id !== stockHolding.id)
+      // For allocatable jobs, exclude the stock holding job and filter to active status only
+      const allocatable = allJobs.filter(
+        (job: Job & { is_stock_holding: boolean; status: string }) =>
+          !job.is_stock_holding &&
+          !['rejected', 'archived', 'completed', 'special'].includes(job.status),
+      )
 
       stockHoldingJob.value = stockHolding
       allocatableJobs.value = allocatable
@@ -139,7 +171,13 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
 
   async function submitDeliveryReceipt(
     purchaseOrderId: string,
-    receiptData: DeliveryReceiptData,
+    receiptData: Record<
+      string,
+      {
+        total_received: number
+        allocations: { jobId: string | null; quantity: number; retailRate: number }[]
+      }
+    >,
   ): Promise<void> {
     if (!purchaseOrderId) {
       throw new Error('Purchase order ID is required')
@@ -153,41 +191,15 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     error.value = null
 
     try {
-      // Transform data to match backend format
-      const transformedData: { [lineId: string]: TransformedLineData } = {}
-
-      for (const [lineId, allocation] of Object.entries(receiptData)) {
-        const lineData: TransformedLineData = {
-          total_received: allocation.total_received,
-          job_allocation: 0,
-          stock_allocation: 0,
-          job_id: null,
-          retail_rate: 20, // Default retail rate
-        }
-
-        // Process allocations
-        for (const alloc of allocation.allocations) {
-          if (alloc.job_id === stockHoldingJob.value?.id) {
-            // Stock allocation
-            lineData.stock_allocation = alloc.quantity
-            lineData.retail_rate = alloc.retail_rate
-          } else {
-            // Job allocation
-            lineData.job_allocation = alloc.quantity
-            lineData.job_id = alloc.job_id
-            lineData.retail_rate = alloc.retail_rate
-          }
-        }
-
-        transformedData[lineId] = lineData
+      // Use REST API endpoint instead of template view
+      const payload = {
+        purchase_order_id: purchaseOrderId,
+        allocations: receiptData,
       }
 
-      const formData = new FormData()
-      formData.append('received_quantities', JSON.stringify(transformedData))
-
-      await api.post(`/purchasing/delivery-receipt/${purchaseOrderId}/`, formData, {
+      await api.post('/purchasing/rest/delivery-receipts/', payload, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
         },
       })
     } catch (err) {
@@ -197,6 +209,34 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
       )
       error.value = errorMessage
       console.error(`Error submitting delivery receipt for PO ${purchaseOrderId}:`, err)
+      throw new Error(errorMessage)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchExistingAllocations(
+    purchaseOrderId: string,
+  ): Promise<{ po_id: string; allocations: Record<string, ExistingAllocation[]> }> {
+    if (!purchaseOrderId) {
+      throw new Error('Purchase order ID is required')
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      console.log(`🔍 Fetching existing allocations for PO: ${purchaseOrderId}`)
+      const res = await api.get(`/purchasing/rest/purchase-orders/${purchaseOrderId}/allocations/`)
+      console.log('📦 Existing allocations response:', res.data)
+      return res.data
+    } catch (err) {
+      const errorMessage = handleApiError(
+        err,
+        `Failed to fetch existing allocations for PO ${purchaseOrderId}`,
+      )
+      error.value = errorMessage
+      console.error(`❌ Error fetching existing allocations for PO ${purchaseOrderId}:`, err)
       throw new Error(errorMessage)
     } finally {
       loading.value = false
@@ -246,5 +286,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     fetchPurchaseOrder,
     fetchJobs,
     submitDeliveryReceipt,
+    getDefaultRetailRate,
+    fetchExistingAllocations,
   }
 })

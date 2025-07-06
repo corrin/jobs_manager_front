@@ -25,11 +25,20 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="po in pagedOrders" :key="po.id" class="border-b hover:bg-slate-50">
+            <tr
+              v-for="po in pagedOrders"
+              :key="po.id"
+              class="border-b hover:bg-slate-50"
+              :class="{ 'opacity-60 bg-red-50': isPoDeleted(po.status) }"
+            >
               <td class="p-3">{{ po.po_number }}</td>
               <td class="p-3">{{ po.supplier }}</td>
               <td class="p-3">{{ formatDate(po.order_date) }}</td>
-              <td class="p-3">{{ formatStatus(po.status) }}</td>
+              <td class="p-3">
+                <span :class="getStatusClass(po.status)">
+                  {{ formatStatus(po.status) }}
+                </span>
+              </td>
               <td class="p-3 flex justify-center gap-2">
                 <Button
                   size="sm"
@@ -44,6 +53,7 @@
                   size="sm"
                   variant="outline"
                   @click="deletePo(po.id)"
+                  :disabled="isPoDeleted(po.status)"
                   class="w-8 h-8 p-0"
                   aria-label="Delete Purchase Order"
                 >
@@ -76,6 +86,7 @@ import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Pagination from '@/components/ui/pagination/Pagination.vue'
+import { toast } from 'vue-sonner'
 
 const router = useRouter()
 const store = usePurchaseOrderStore()
@@ -116,6 +127,23 @@ const formatStatus = (status: string) => {
   }
 }
 
+const getStatusClass = (status: string) => {
+  switch (status) {
+    case 'draft':
+      return 'px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
+    case 'submitted':
+      return 'px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800'
+    case 'partially_received':
+      return 'px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800'
+    case 'fully_received':
+      return 'px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800'
+    case 'deleted':
+      return 'px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800'
+    default:
+      return 'px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
+  }
+}
+
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-NZ', {
     year: 'numeric',
@@ -127,7 +155,36 @@ const formatDate = (date: string) => {
 const openRow = (id: string) => router.push(`/purchasing/po/${id}`)
 const goToCreate = () => router.push('/purchasing/po/create')
 const createFromQuote = () => router.push('/purchasing/po/create-from-quote')
-const deletePo = (id: string) => store.deleteOrder(id)
+
+const deletePo = async (id: string) => {
+  // Guard clause: prevent deletion of already deleted POs
+  const po = orders.value.find((p) => p.id === id)
+  if (!po || isPoDeleted(po.status)) {
+    toast.warning('This purchase order is already deleted')
+    return
+  }
+
+  // Confirmation dialog
+  const confirmed = confirm(
+    `Are you sure you want to delete Purchase Order ${po.po_number}? This action will mark it as deleted but preserve the record.`,
+  )
+  if (!confirmed) return
+
+  try {
+    // Soft delete: update status to 'deleted' instead of hard delete
+    await store.patch(id, { status: 'deleted' })
+
+    // Refresh the orders list to show updated status
+    await store.fetchOrders()
+
+    toast.success('Purchase order deleted successfully')
+  } catch (error) {
+    console.error('Error deleting purchase order:', error)
+    toast.error('Failed to delete the purchase order. Please try again.')
+  }
+}
+
+const isPoDeleted = (status: string) => status === 'deleted'
 
 onMounted(() => {
   store.fetchOrders()

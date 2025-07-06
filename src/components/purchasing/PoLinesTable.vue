@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import { computed, h } from 'vue'
 import DataTable from '@/components/DataTable.vue'
-import ItemSelect from '@/views/purchasing/ItemSelect.vue'
 import { Button } from '@/components/ui/button'
-import { Trash2 } from 'lucide-vue-next'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Trash2 } from 'lucide-vue-next'
+import ItemSelect from '@/views/purchasing/ItemSelect.vue'
+import JobSelect from './JobSelect.vue'
+
+interface DataTableRowContext {
+  row: {
+    original: Line
+    index: number
+  }
+}
 
 interface Line {
   id?: string
@@ -14,6 +22,19 @@ interface Line {
   quantity: number
   unit_cost: number | null
   price_tbc: boolean
+  job_id?: string
+  job_number?: string
+  job_name?: string
+  client_name?: string
+}
+
+interface Job {
+  id: string
+  job_number: string
+  name: string
+  client_name: string
+  status: string
+  charge_out_rate: number
 }
 
 interface XeroItem {
@@ -23,22 +44,17 @@ interface XeroItem {
   unit_cost?: number | null
 }
 
-interface DataTableRowContext {
-  row: {
-    original: Line
-    index: number
-  }
-}
-
 type Props = {
   lines: Line[]
   items: XeroItem[]
+  jobs: Job[]
+  readOnly?: boolean
 }
 
 type Emits = {
   (e: 'update:lines', lines: Line[]): void
   (e: 'add-line'): void
-  (e: 'delete-line', id: string): void
+  (e: 'delete-line', id: string | number): void
 }
 
 const props = defineProps<Props>()
@@ -53,22 +69,25 @@ const columns = computed(() => [
         modelValue: row.original.item_code,
         items: props.items,
         clearable: true,
-        'onUpdate:modelValue': (val: string) => {
-          const found = props.items.find((i) => i.code === val)
-          const updated = props.lines.map((l, idx) =>
-            idx === row.index
-              ? {
-                  ...l,
-                  item_code: val,
-                  description: found ? found.name : '',
-                  unit_cost: found && found.unit_cost != null ? found.unit_cost : null,
-                }
-              : l,
-          )
-          emit('update:lines', updated)
-        },
+        disabled: props.readOnly,
+        'onUpdate:modelValue': props.readOnly
+          ? undefined
+          : (val: string) => {
+              const found = props.items.find((i) => i.code === val)
+              const updated = props.lines.map((l, idx) =>
+                idx === row.index
+                  ? {
+                      ...l,
+                      item_code: val,
+                      description: found ? found.name : '',
+                      unit_cost: found && found.unit_cost != null ? found.unit_cost : null,
+                    }
+                  : l,
+              )
+              emit('update:lines', updated)
+            },
       }),
-    meta: { editable: true },
+    meta: { editable: !props.readOnly },
   },
   {
     id: 'description',
@@ -76,16 +95,57 @@ const columns = computed(() => [
     cell: ({ row }: DataTableRowContext) =>
       h(Input, {
         modelValue: row.original.description,
-        disabled: !!row.original.item_code,
+        disabled: !!row.original.item_code || props.readOnly,
         class: 'w-full',
         onClick: (e: Event) => e.stopPropagation(),
-        'onUpdate:modelValue': (val: string) => {
-          const updated = props.lines.map((l, idx) =>
-            idx === row.index ? { ...l, description: val } : l,
-          )
-          emit('update:lines', updated)
-        },
+        'onUpdate:modelValue': props.readOnly
+          ? undefined
+          : (val: string) => {
+              const updated = props.lines.map((l, idx) =>
+                idx === row.index ? { ...l, description: val } : l,
+              )
+              emit('update:lines', updated)
+            },
       }),
+  },
+  {
+    id: 'job_id',
+    header: 'Job',
+    cell: ({ row }: DataTableRowContext) =>
+      h(JobSelect, {
+        modelValue: row.original.job_id || '',
+        required: false,
+        placeholder: 'Select Job (Optional)',
+        jobs: props.jobs,
+        disabled: props.readOnly,
+        'onUpdate:modelValue': props.readOnly
+          ? undefined
+          : (val: string) => {
+              const updated = props.lines.map((l, idx) =>
+                idx === row.index ? { ...l, job_id: val || undefined } : l,
+              )
+              emit('update:lines', updated)
+            },
+        onJobSelected: props.readOnly
+          ? undefined
+          : (job: { id: string; job_number: string; name: string; client_name: string }) => {
+              if (job) {
+                const updated = props.lines.map((l, idx) =>
+                  idx === row.index
+                    ? {
+                        ...l,
+                        job_id: job.id,
+                        job_number: job.job_number,
+                        job_name: job.name,
+                        client_name: job.client_name,
+                      }
+                    : l,
+                )
+                emit('update:lines', updated)
+              }
+            },
+      }),
+    meta: { editable: !props.readOnly },
   },
   {
     id: 'quantity',
@@ -96,17 +156,20 @@ const columns = computed(() => [
         step: '1',
         min: '0',
         modelValue: row.original.quantity,
+        disabled: props.readOnly,
         class: 'w-20 text-right',
         onClick: (e: Event) => e.stopPropagation(),
-        'onUpdate:modelValue': (val: string | number) => {
-          const num = Number(val)
-          if (!Number.isNaN(num)) {
-            const updated = props.lines.map((l, idx) =>
-              idx === row.index ? { ...l, quantity: num } : l,
-            )
-            emit('update:lines', updated)
-          }
-        },
+        'onUpdate:modelValue': props.readOnly
+          ? undefined
+          : (val: string | number) => {
+              const num = Number(val)
+              if (!Number.isNaN(num)) {
+                const updated = props.lines.map((l, idx) =>
+                  idx === row.index ? { ...l, quantity: num } : l,
+                )
+                emit('update:lines', updated)
+              }
+            },
       }),
   },
   {
@@ -118,16 +181,18 @@ const columns = computed(() => [
         step: '0.01',
         min: '0',
         modelValue: row.original.unit_cost ?? '',
-        disabled: !!row.original.item_code,
+        disabled: !!row.original.item_code || props.readOnly,
         class: 'w-24 text-right',
         onClick: (e: Event) => e.stopPropagation(),
-        'onUpdate:modelValue': (val: string | number) => {
-          const cost = val === '' ? null : Number(val)
-          const updated = props.lines.map((l, idx) =>
-            idx === row.index ? { ...l, unit_cost: cost } : l,
-          )
-          emit('update:lines', updated)
-        },
+        'onUpdate:modelValue': props.readOnly
+          ? undefined
+          : (val: string | number) => {
+              const cost = val === '' ? null : Number(val)
+              const updated = props.lines.map((l, idx) =>
+                idx === row.index ? { ...l, unit_cost: cost } : l,
+              )
+              emit('update:lines', updated)
+            },
       }),
   },
   {
@@ -136,16 +201,18 @@ const columns = computed(() => [
     cell: ({ row }: DataTableRowContext) =>
       h(Checkbox, {
         modelValue: row.original.price_tbc,
-        disabled: row.original.unit_cost !== null,
-        'onUpdate:modelValue': (checked: boolean) => {
-          const updated = props.lines.map((l, idx) =>
-            idx === row.index ? { ...l, price_tbc: checked } : l,
-          )
-          emit('update:lines', updated)
-        },
+        disabled: row.original.unit_cost !== null || props.readOnly,
+        'onUpdate:modelValue': props.readOnly
+          ? undefined
+          : (checked: boolean) => {
+              const updated = props.lines.map((l, idx) =>
+                idx === row.index ? { ...l, price_tbc: checked } : l,
+              )
+              emit('update:lines', updated)
+            },
         class: 'mx-auto',
       }),
-    meta: { editable: true },
+    meta: { editable: !props.readOnly },
   },
   {
     id: 'actions',
@@ -156,17 +223,20 @@ const columns = computed(() => [
         {
           variant: 'destructive',
           size: 'icon',
-          onClick: () => {
-            if (row.original.id) {
-              emit('delete-line', row.original.id)
-            } else {
-              emit('delete-line', row.index.toString())
-            }
-          },
+          disabled: props.readOnly,
+          onClick: props.readOnly
+            ? undefined
+            : () => {
+                if (row.original.id) {
+                  emit('delete-line', row.original.id)
+                } else {
+                  emit('delete-line', row.index)
+                }
+              },
         },
         () => h(Trash2, { class: 'w-4 h-4' }),
       ),
-    meta: { editable: true },
+    meta: { editable: !props.readOnly },
   },
 ])
 </script>
@@ -183,7 +253,13 @@ const columns = computed(() => [
       />
     </div>
     <div class="sticky bottom-0 bg-white z-10 p-2 border-t">
-      <Button class="w-full" @click="() => emit('add-line')">＋ Add line</Button>
+      <Button
+        class="w-full"
+        :disabled="readOnly"
+        @click="readOnly ? undefined : () => emit('add-line')"
+      >
+        ＋ Add line
+      </Button>
     </div>
   </div>
 </template>

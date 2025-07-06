@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between">
         <h1 class="text-xl font-bold flex items-center gap-2">
           <Package class="w-6 h-6 text-indigo-600" />
-          Delivery Receipt - PO {{ purchaseOrder?.po_number || 'Loading...' }}
+          Delivery Receipt - Purchase Order {{ purchaseOrder?.po_number || 'Loading...' }}
         </h1>
         <div class="flex gap-2">
           <Button variant="outline" @click="goBack">
@@ -26,188 +26,220 @@
         <Button @click="loadData" class="mt-2" variant="outline" size="sm"> Try Again </Button>
       </div>
 
+      <!-- Company Configuration Warning -->
+      <div
+        v-else-if="purchaseOrder && !isCompanyConfigured"
+        class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4"
+      >
+        <div class="flex items-center">
+          <AlertCircle class="w-5 h-5 text-yellow-600 mr-2 flex-shrink-0" />
+          <div>
+            <p class="text-yellow-800 font-medium">Company Configuration Required</p>
+            <p class="text-yellow-700 text-sm mt-1">
+              Company materials markup is not configured. Retail rates will default to 0%. Please
+              contact your administrator to configure company defaults.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Main Content -->
-      <div v-else-if="purchaseOrder" class="flex flex-col gap-6">
-        <!-- PO Summary -->
-        <Card>
-          <CardHeader>
-            <h2 class="font-semibold">Purchase Order Details</h2>
-          </CardHeader>
-          <CardContent>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <span class="font-medium text-gray-600">Supplier:</span>
-                <div>{{ purchaseOrder.supplier }}</div>
+      <div v-else-if="purchaseOrder" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <!-- Left Column: PO Summary -->
+        <div class="space-y-6">
+          <Card class="h-fit">
+            <CardHeader class="pb-4">
+              <div class="flex items-center justify-between">
+                <h2 class="font-semibold text-lg">Purchase Order Details</h2>
+                <div class="flex items-center gap-2">
+                  <component
+                    :is="getStatusIcon(purchaseOrder.status)"
+                    :class="getStatusIconClass(purchaseOrder.status)"
+                  />
+                  <span
+                    :class="getStatusClass(purchaseOrder.status)"
+                    class="px-3 py-1 rounded-full text-sm font-medium"
+                  >
+                    {{ formatStatus(purchaseOrder.status) }}
+                  </span>
+                </div>
               </div>
-              <div>
-                <span class="font-medium text-gray-600">Order Date:</span>
-                <div>{{ formatDate(purchaseOrder.order_date) }}</div>
-              </div>
-              <div>
-                <span class="font-medium text-gray-600">Status:</span>
-                <div>{{ purchaseOrder.status }}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <!-- Action Buttons -->
-        <div class="flex justify-between items-center">
-          <div class="flex gap-2">
-            <Button
-              @click="moveSelectedToPending"
-              :disabled="selectedReceivedLines.length === 0"
-              variant="outline"
-              size="sm"
-            >
-              <ArrowUp class="w-4 h-4 mr-2" />
-              Move Selected to Pending
-            </Button>
-            <Button
-              @click="moveAllToPending"
-              :disabled="receivedLines.length === 0"
-              variant="outline"
-              size="sm"
-            >
-              <ArrowUpToLine class="w-4 h-4 mr-2" />
-              Move All to Pending
-            </Button>
-          </div>
-          <div class="flex gap-2">
-            <Button
-              @click="moveSelectedToReceived"
-              :disabled="selectedPendingLines.length === 0"
-              variant="outline"
-              size="sm"
-            >
-              <ArrowDown class="w-4 h-4 mr-2" />
-              Move Selected to Received
-            </Button>
-            <Button
-              @click="moveAllToReceived"
-              :disabled="pendingLines.length === 0"
-              variant="outline"
-              size="sm"
-            >
-              <ArrowDownToLine class="w-4 h-4 mr-2" />
-              Move All to Received
-            </Button>
-          </div>
-        </div>
-
-        <!-- Tables Container -->
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <!-- Pending Items -->
-          <Card class="flex flex-col">
-            <CardHeader>
-              <h2 class="font-semibold">Pending Items ({{ pendingLines.length }})</h2>
             </CardHeader>
-            <CardContent class="flex-1">
-              <PendingItemsTable
-                :lines="pendingLines"
-                :selected-lines="selectedPendingLines"
-                @update:selected-lines="selectedPendingLines = $event"
-                @move-selected-to-received="moveSelectedToReceived"
-                @move-all-to-received="moveAllToReceived"
-              />
+            <CardContent>
+              <div class="space-y-6">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <Building2 class="w-4 h-4 text-gray-500" />
+                    <span class="font-medium text-gray-600">Supplier</span>
+                  </div>
+                  <div class="text-lg font-semibold">{{ purchaseOrder.supplier }}</div>
+                </div>
+
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <Calendar class="w-4 h-4 text-gray-500" />
+                    <span class="font-medium text-gray-600">Order Date</span>
+                  </div>
+                  <div class="text-lg">{{ formatDate(purchaseOrder.order_date) }}</div>
+                </div>
+
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <FileText class="w-4 h-4 text-gray-500" />
+                    <span class="font-medium text-gray-600">PO Number</span>
+                  </div>
+                  <div class="text-lg font-mono">{{ purchaseOrder.po_number }}</div>
+                </div>
+              </div>
+
+              <!-- Summary Statistics -->
+              <div class="mt-6 pt-4 border-t">
+                <div class="grid grid-cols-3 gap-3">
+                  <div class="text-center p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <div class="text-xl font-bold text-blue-600">
+                      {{ purchaseOrder.lines.length }}
+                    </div>
+                    <div class="text-xs text-gray-600 mt-1">Line Items</div>
+                  </div>
+                  <div class="text-center p-3 bg-green-50 rounded-lg border border-green-100">
+                    <div class="text-xl font-bold text-green-600">{{ getTotalOrdered() }}</div>
+                    <div class="text-xs text-gray-600 mt-1">Total Ordered</div>
+                  </div>
+                  <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-100">
+                    <div class="text-xl font-bold text-purple-600">{{ getTotalReceived() }}</div>
+                    <div class="text-xs text-gray-600 mt-1">Previously Received</div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <!-- Received Items -->
-          <Card class="flex flex-col">
-            <CardHeader>
-              <h2 class="font-semibold">Received Items ({{ receivedLines.length }})</h2>
-            </CardHeader>
-            <CardContent class="flex-1">
-              <ReceivedItemsTable
-                :lines="receivedLines"
-                :selected-lines="selectedReceivedLines"
-                :jobs="availableJobs"
-                :stock-holding-job="stockHoldingJob"
-                @update:selected-lines="selectedReceivedLines = $event"
-                @update:line="updateReceivedLine"
-                @move-selected-to-pending="moveSelectedToPending"
-                @move-all-to-pending="moveAllToPending"
-              />
+          <!-- Actions Card -->
+          <Card>
+            <CardContent class="p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                  <Button @click="goBack" variant="outline" size="sm">
+                    <ArrowLeft class="w-4 h-4 mr-2" />
+                    Close
+                  </Button>
+
+                  <Button
+                    v-if="hasExistingAllocations"
+                    @click="showPreviousAllocationsModal = true"
+                    variant="outline"
+                    size="sm"
+                  >
+                    <History class="w-4 h-4 mr-2" />
+                    Previous Allocations
+                  </Button>
+                </div>
+
+                <Button @click="saveChanges" :disabled="!hasChanges || isSaving" size="sm">
+                  <div v-if="isSaving" class="flex items-center gap-2">
+                    <div
+                      class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+                    ></div>
+                    <span>Saving...</span>
+                  </div>
+                  <div v-else class="flex items-center gap-2">
+                    <Save class="w-4 h-4" />
+                    <span>Save Receipt</span>
+                  </div>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        <!-- Save Actions -->
-        <div class="flex justify-end gap-2 border-t pt-4">
-          <Button variant="outline" @click="goBack"> Cancel </Button>
-          <Button @click="saveChanges" :disabled="!hasChanges || isSaving" class="min-w-32">
-            <div v-if="isSaving" class="flex items-center">
-              <div
-                class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"
-              ></div>
-              Saving...
-            </div>
-            <div v-else>Save Changes</div>
-          </Button>
+        <!-- Right Column: Line Items Table -->
+        <div class="space-y-6">
+          <Card class="flex flex-col">
+            <CardHeader>
+              <h2 class="font-semibold text-lg">New Delivery Receipt</h2>
+              <p class="text-sm text-gray-600">
+                Specify quantities received and allocate to jobs or stock locations
+              </p>
+            </CardHeader>
+            <CardContent class="flex-1 p-0">
+              <div class="px-6 pb-6">
+                <DeliveryReceiptLinesTable
+                  :lines="purchaseOrder.lines"
+                  :jobs="availableJobs"
+                  :allocations="allocations"
+                  :existing-allocations="existingAllocations"
+                  @update:allocations="allocations = $event"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
 
-    <!-- Success/Error Messages -->
-    <div
-      v-if="successMessage"
-      class="fixed top-4 right-4 bg-green-50 border border-green-200 rounded-lg p-4 shadow-lg z-50"
+    <!-- Previous Allocations Modal -->
+    <Dialog
+      :open="showPreviousAllocationsModal"
+      @update:open="
+        (open) => {
+          showPreviousAllocationsModal = open
+        }
+      "
     >
-      <div class="flex items-center">
-        <CheckCircle class="w-5 h-5 text-green-600 mr-2" />
-        <span class="text-green-800">{{ successMessage }}</span>
-      </div>
-    </div>
+      <DialogContent class="sm:max-w-4xl max-h-[80vh] overflow-auto">
+        <DialogHeader>
+          <DialogTitle class="flex items-center gap-2">
+            <History class="w-5 h-5" />
+            Previous Allocations
+          </DialogTitle>
+        </DialogHeader>
 
-    <div
-      v-if="errorMessage"
-      class="fixed top-4 right-4 bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg z-50"
-    >
-      <div class="flex items-center">
-        <XCircle class="w-5 h-5 text-red-600 mr-2" />
-        <span class="text-red-800">{{ errorMessage }}</span>
-      </div>
-    </div>
+        <div class="py-4">
+          <ExistingAllocationsDisplay
+            :existing-allocations="existingAllocations"
+            :lines="purchaseOrder?.lines || []"
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
   </AppLayout>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 import AppLayout from '@/components/AppLayout.vue'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import PendingItemsTable from '@/components/purchasing/PendingItemsTable.vue'
-import ReceivedItemsTable from '@/components/purchasing/ReceivedItemsTable.vue'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import DeliveryReceiptLinesTable from '@/components/purchasing/DeliveryReceiptLinesTable.vue'
+import ExistingAllocationsDisplay from '@/components/purchasing/ExistingAllocationsDisplay.vue'
 import {
   Package,
   ArrowLeft,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpToLine,
-  ArrowDownToLine,
+  Building2,
+  Calendar,
+  FileText,
+  Clock,
+  Truck,
+  AlertCircle,
   CheckCircle,
   XCircle,
+  Save,
+  History,
 } from 'lucide-vue-next'
-import {
-  useDeliveryReceiptStore,
-  type PurchaseOrder,
-  type PurchaseOrderLine,
-  type DeliveryReceiptData,
-  type AllocationData,
-} from '@/stores/deliveryReceiptStore'
+import { useDeliveryReceiptStore, type PurchaseOrder } from '@/stores/deliveryReceiptStore'
+import type { DeliveryAllocation } from '@/types/purchasing'
 
-interface PendingLine extends PurchaseOrderLine {
-  selected?: boolean
-}
-
-interface ReceivedLine extends PurchaseOrderLine {
-  selected?: boolean
-  total_received: number
-  job_allocation: number
-  stock_allocation: number
-  allocated_job_id: string
-  retail_rate: number
+interface ExistingAllocation {
+  quantity: number
+  type: string
+  job_id: string
+  job_name: string
+  allocation_date?: string
+  description?: string
+  retail_rate?: number
+  stock_location?: string
 }
 
 const route = useRoute()
@@ -218,22 +250,39 @@ const deliveryReceiptStore = useDeliveryReceiptStore()
 const isLoading = ref(true)
 const isSaving = ref(false)
 const error = ref<string | null>(null)
-const successMessage = ref<string | null>(null)
-const errorMessage = ref<string | null>(null)
 const purchaseOrder = ref<PurchaseOrder | null>(null)
-const pendingLines = ref<PendingLine[]>([])
-const receivedLines = ref<ReceivedLine[]>([])
-const selectedPendingLines = ref<string[]>([])
-const selectedReceivedLines = ref<string[]>([])
+const allocations = ref<Record<string, DeliveryAllocation[]>>({})
+const existingAllocations = ref<Record<string, ExistingAllocation[]>>({})
+const showPreviousAllocationsModal = ref(false)
 
 // Computed properties
-const availableJobs = computed(() => deliveryReceiptStore.allocatableJobs)
-const stockHoldingJob = computed(() => deliveryReceiptStore.stockHoldingJob)
+const availableJobs = computed(() => {
+  const allocatable = deliveryReceiptStore.allocatableJobs || []
+  const stockHolding = deliveryReceiptStore.stockHoldingJob
+
+  // Include both allocatable jobs and stock holding job for allocation purposes
+  return stockHolding ? [stockHolding, ...allocatable] : allocatable
+})
 
 const hasChanges = computed(() => {
-  return (
-    receivedLines.value.length > 0 && receivedLines.value.some((line) => line.total_received > 0)
+  return Object.keys(allocations.value).some(
+    (lineId) =>
+      allocations.value[lineId].length > 0 &&
+      allocations.value[lineId].some((alloc) => alloc.quantity > 0),
   )
+})
+
+const hasExistingAllocations = computed(() => {
+  const hasKeys = Object.keys(existingAllocations.value).length > 0
+  const hasData = Object.values(existingAllocations.value).some(
+    (allocations) => allocations && allocations.length > 0,
+  )
+  return hasKeys && hasData
+})
+
+const isCompanyConfigured = computed(() => {
+  const defaultRate = deliveryReceiptStore.getDefaultRetailRate()
+  return defaultRate > 0
 })
 
 // Helper functions
@@ -242,229 +291,152 @@ function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString()
 }
 
-function clearMessages() {
-  successMessage.value = null
-  errorMessage.value = null
+function formatStatus(status: string): string {
+  return status
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 }
 
-function showSuccess(message: string) {
-  clearMessages()
-  successMessage.value = message
-  setTimeout(() => {
-    successMessage.value = null
-  }, 3000)
+function getStatusIcon(status: string) {
+  switch (status.toLowerCase()) {
+    case 'draft':
+      return FileText
+    case 'sent':
+      return Truck
+    case 'confirmed':
+      return CheckCircle
+    case 'partially_received':
+      return Clock
+    case 'received':
+      return CheckCircle
+    case 'cancelled':
+      return XCircle
+    default:
+      return AlertCircle
+  }
 }
 
-function showError(message: string) {
-  clearMessages()
-  errorMessage.value = message
-  setTimeout(() => {
-    errorMessage.value = null
-  }, 5000)
+function getStatusIconClass(status: string): string {
+  switch (status.toLowerCase()) {
+    case 'draft':
+      return 'w-5 h-5 text-gray-500'
+    case 'sent':
+      return 'w-5 h-5 text-blue-500'
+    case 'confirmed':
+      return 'w-5 h-5 text-green-500'
+    case 'partially_received':
+      return 'w-5 h-5 text-yellow-500'
+    case 'received':
+      return 'w-5 h-5 text-green-600'
+    case 'cancelled':
+      return 'w-5 h-5 text-red-500'
+    default:
+      return 'w-5 h-5 text-gray-400'
+  }
+}
+
+function getStatusClass(status: string): string {
+  switch (status.toLowerCase()) {
+    case 'draft':
+      return 'bg-gray-100 text-gray-800'
+    case 'sent':
+      return 'bg-blue-100 text-blue-800'
+    case 'confirmed':
+      return 'bg-green-100 text-green-800'
+    case 'partially_received':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'received':
+      return 'bg-green-100 text-green-800'
+    case 'cancelled':
+      return 'bg-red-100 text-red-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
+
+function getTotalOrdered(): number {
+  if (!purchaseOrder.value) return 0
+  return purchaseOrder.value.lines.reduce((sum, line) => sum + (Number(line.quantity) || 0), 0)
+}
+
+function getTotalReceived(): number {
+  if (!purchaseOrder.value) return 0
+  return purchaseOrder.value.lines.reduce(
+    (sum, line) => sum + (Number(line.received_quantity) || 0),
+    0,
+  )
 }
 
 function goBack() {
   router.push({ name: 'delivery-receipts' })
 }
 
-function getRemainingQuantity(line: PurchaseOrderLine): number {
-  return Math.max(0, line.quantity - line.received_quantity)
-}
-
-function createPendingLine(line: PurchaseOrderLine): PendingLine {
-  return {
-    ...line,
-    selected: false,
-  }
-}
-
-function createReceivedLine(line: PurchaseOrderLine): ReceivedLine {
-  const remaining = getRemainingQuantity(line)
-  const defaultJobId = availableJobs.value[0]?.id || ''
-
-  return {
-    ...line,
-    selected: false,
-    total_received: remaining,
-    job_allocation: remaining,
-    stock_allocation: 0,
-    allocated_job_id: defaultJobId,
-    retail_rate: 20,
-  }
-}
-
-// Line management functions
-function moveSelectedToReceived() {
-  const linesToMove = pendingLines.value.filter((line) =>
-    selectedPendingLines.value.includes(line.id),
-  )
-
-  for (const line of linesToMove) {
-    const receivedLine = createReceivedLine(line)
-    receivedLines.value.push(receivedLine)
-  }
-
-  pendingLines.value = pendingLines.value.filter(
-    (line) => !selectedPendingLines.value.includes(line.id),
-  )
-
-  selectedPendingLines.value = []
-}
-
-function moveAllToReceived() {
-  for (const line of pendingLines.value) {
-    const receivedLine = createReceivedLine(line)
-    receivedLines.value.push(receivedLine)
-  }
-
-  pendingLines.value = []
-  selectedPendingLines.value = []
-}
-
-function moveSelectedToPending() {
-  const linesToMove = receivedLines.value.filter((line) =>
-    selectedReceivedLines.value.includes(line.id),
-  )
-
-  for (const line of linesToMove) {
-    const pendingLine = createPendingLine(line)
-    pendingLines.value.push(pendingLine)
-  }
-
-  receivedLines.value = receivedLines.value.filter(
-    (line) => !selectedReceivedLines.value.includes(line.id),
-  )
-
-  selectedReceivedLines.value = []
-}
-
-function moveAllToPending() {
-  for (const line of receivedLines.value) {
-    const pendingLine = createPendingLine(line)
-    pendingLines.value.push(pendingLine)
-  }
-
-  receivedLines.value = []
-  selectedReceivedLines.value = []
-}
-
-function updateReceivedLine(lineId: string, field: string, value: unknown) {
-  const lineIndex = receivedLines.value.findIndex((line) => line.id === lineId)
-  if (lineIndex === -1) return
-
-  const line = receivedLines.value[lineIndex]
-  const remaining = getRemainingQuantity(line)
-
-  // Update the field
-  if (typeof field === 'string') {
-    ;(line as Record<string, unknown>)[field] = value
-  }
-
-  // Recalculate allocations quando total_received muda
-  if (field === 'total_received') {
-    const totalReceived = Math.min(Number(value), remaining)
-    line.total_received = totalReceived
-    if (totalReceived === 0) {
-      line.job_allocation = 0
-      line.stock_allocation = 0
-    } else {
-      line.job_allocation = totalReceived
-      line.stock_allocation = 0
-    }
-  }
-
-  // Ensure allocations don't exceed total received
-  if (field === 'job_allocation' || field === 'stock_allocation') {
-    const maxAllocation = line.total_received
-    line.job_allocation = Math.min(line.job_allocation, maxAllocation)
-    line.stock_allocation = Math.min(line.stock_allocation, maxAllocation)
-
-    // Ensure sum doesn't exceed total
-    const sum = line.job_allocation + line.stock_allocation
-    if (sum > maxAllocation) {
-      if (field === 'job_allocation') {
-        line.stock_allocation = maxAllocation - line.job_allocation
-      } else {
-        line.job_allocation = maxAllocation - line.stock_allocation
-      }
-    }
-  }
-}
-
-function validateReceiptData(): string | null {
-  for (const line of receivedLines.value) {
-    const remaining = getRemainingQuantity(line)
-
-    if (line.total_received <= 0) {
-      return `Line "${line.description}" has zero or negative received quantity`
-    }
-
-    if (line.total_received > remaining) {
-      return `Line "${line.description}" received quantity (${line.total_received}) exceeds remaining quantity (${remaining})`
-    }
-
-    const totalAllocated = line.job_allocation + line.stock_allocation
-    if (totalAllocated !== line.total_received) {
-      return `Line "${line.description}" allocations (${totalAllocated}) don't match total received (${line.total_received})`
-    }
-
-    if (line.job_allocation > 0 && !line.allocated_job_id) {
-      return `Line "${line.description}" has job allocation but no job selected`
-    }
-  }
-
-  return null
-}
-
+// Save changes using the new allocations format
 async function saveChanges() {
   if (!purchaseOrder.value) return
 
-  const validationError = validateReceiptData()
-  if (validationError) {
-    showError(validationError)
+  const hasChanges = Object.keys(allocations.value).some(
+    (lineId) =>
+      allocations.value[lineId].length > 0 &&
+      allocations.value[lineId].some((alloc) => alloc.quantity > 0),
+  )
+
+  if (!hasChanges) {
+    toast.error('No changes to save')
     return
   }
 
   isSaving.value = true
-  clearMessages()
 
   try {
-    // Build receipt data
-    const receiptData: DeliveryReceiptData = {}
-
-    for (const line of receivedLines.value) {
-      const allocations: AllocationData[] = []
-
-      if (line.job_allocation > 0) {
-        allocations.push({
-          job_id: line.allocated_job_id,
-          quantity: line.job_allocation,
-          retail_rate: line.retail_rate,
-        })
+    // Transform allocations to match backend format
+    const deliveryReceiptData: Record<
+      string,
+      {
+        total_received: number
+        allocations: { jobId: string | null; quantity: number; retailRate: number }[]
       }
+    > = {}
 
-      if (line.stock_allocation > 0 && stockHoldingJob.value) {
-        allocations.push({
-          job_id: stockHoldingJob.value.id,
-          quantity: line.stock_allocation,
-          retail_rate: line.retail_rate,
-        })
-      }
+    for (const [lineId, lineAllocations] of Object.entries(allocations.value)) {
+      if (lineAllocations.length > 0) {
+        const totalReceived = lineAllocations.reduce((sum, alloc) => sum + alloc.quantity, 0)
 
-      receiptData[line.id] = {
-        total_received: line.total_received,
-        allocations,
+        const allocationsData = lineAllocations
+          .filter((alloc) => alloc.quantity > 0)
+          .map((alloc) => ({
+            jobId: alloc.job_id,
+            quantity: alloc.quantity,
+            retailRate: alloc.retail_rate || deliveryReceiptStore.getDefaultRetailRate(),
+          }))
+
+        if (allocationsData.length > 0) {
+          deliveryReceiptData[lineId] = {
+            total_received: totalReceived,
+            allocations: allocationsData,
+          }
+        }
       }
     }
 
-    await deliveryReceiptStore.submitDeliveryReceipt(purchaseOrder.value.id, receiptData)
+    await deliveryReceiptStore.submitDeliveryReceipt(purchaseOrder.value.id, deliveryReceiptData)
+    toast.success('Delivery receipt saved successfully!')
 
-    showSuccess('Delivery receipt saved successfully!')
+    // Reload data to get updated received quantities
+    await loadData()
 
-    // Redirect after a brief delay
-    setTimeout(() => {
-      goBack()
-    }, 1500)
+    // Clear allocations after successful save
+    const clearedAllocations: Record<string, DeliveryAllocation[]> = {}
+    purchaseOrder.value.lines.forEach((line) => {
+      clearedAllocations[line.id] = []
+    })
+    allocations.value = clearedAllocations
+
+    // Optional: Redirect after a brief delay if needed
+    // setTimeout(() => {
+    //   goBack()
+    // }, 2000)
   } catch (err) {
     const errorMsg =
       err &&
@@ -479,7 +451,7 @@ async function saveChanges() {
         ? (err.response.data.error as string)
         : 'Failed to save delivery receipt'
     console.error('Error saving delivery receipt:', err)
-    showError(errorMsg)
+    toast.error(errorMsg)
   } finally {
     isSaving.value = false
   }
@@ -496,22 +468,22 @@ async function loadData() {
   error.value = null
 
   try {
-    // Load PO and jobs in parallel
-    const [po] = await Promise.all([
+    // Load PO, jobs, and existing allocations in parallel
+    const [po, , existingAllocationsData] = await Promise.all([
       deliveryReceiptStore.fetchPurchaseOrder(poId),
       deliveryReceiptStore.fetchJobs(),
+      deliveryReceiptStore.fetchExistingAllocations(poId).catch(() => ({ allocations: {} })), // Don't fail if no existing allocations
     ])
 
     purchaseOrder.value = po
+    existingAllocations.value = existingAllocationsData.allocations || {}
 
-    // Initialize pending lines with all PO lines that have remaining quantity
-    pendingLines.value = po.lines
-      .filter((line) => getRemainingQuantity(line) > 0)
-      .map(createPendingLine)
-
-    receivedLines.value = []
-    selectedPendingLines.value = []
-    selectedReceivedLines.value = []
+    // Initialize empty allocations for each line
+    const initialAllocations: Record<string, DeliveryAllocation[]> = {}
+    po.lines.forEach((line) => {
+      initialAllocations[line.id] = []
+    })
+    allocations.value = initialAllocations
   } catch (err) {
     const errorMsg =
       err &&
@@ -536,12 +508,4 @@ async function loadData() {
 onMounted(() => {
   loadData()
 })
-
-// Clear messages when navigating away
-watch(
-  () => route.path,
-  () => {
-    clearMessages()
-  },
-)
 </script>

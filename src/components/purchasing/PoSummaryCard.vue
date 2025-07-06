@@ -33,6 +33,7 @@ defineProps<{
   isCreateMode?: boolean
   showActions?: boolean
   syncEnabled?: boolean
+  supplierReadonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -91,8 +92,15 @@ const statusOptions: { value: Status; label: string }[] = [
           />
         </template>
         <template v-else>
+          <Label for="supplier-readonly">Supplier</Label>
           <div class="flex items-center gap-2">
-            <Input :value="po.supplier" disabled class="flex-1 px-2 py-1 text-sm" />
+            <Input
+              id="supplier-readonly"
+              :model-value="po.supplier || ''"
+              disabled
+              class="flex-1 px-2 py-1 text-sm"
+              placeholder="No supplier selected"
+            />
             <span
               class="flex items-center px-1 py-0.5 rounded text-[11px] font-semibold"
               :class="
@@ -152,13 +160,14 @@ const statusOptions: { value: Status; label: string }[] = [
       </div>
     </CardContent>
 
-    <CardFooter class="flex justify-end" v-if="!isCreateMode">
-      <Button @click="$emit('save')" type="button">Save changes</Button>
-    </CardFooter>
+    <CardFooter v-if="!isCreateMode" class="flex flex-col gap-2">
+      <!-- First row: Save changes -->
+      <div class="flex justify-center">
+        <Button @click="$emit('save')" type="button">Save changes</Button>
+      </div>
 
-    <CardFooter v-if="!isCreateMode && showActions" class="flex flex-col gap-2">
-      <!-- First row: Sync with Xero -->
-      <div class="flex justify-start">
+      <!-- Second row: Sync with Xero (only if showActions is true) -->
+      <div v-if="showActions" class="flex justify-start">
         <Button
           variant="default"
           :disabled="!syncEnabled"
@@ -169,8 +178,8 @@ const statusOptions: { value: Status; label: string }[] = [
         </Button>
       </div>
 
-      <!-- Second row: View, Print, Email (only show if View in Xero is available) -->
-      <div v-if="po.online_url" class="flex flex-wrap gap-2">
+      <!-- Third row: View, Print, Email (only show if View in Xero is available and showActions is true) -->
+      <div v-if="showActions && po.online_url" class="flex flex-wrap gap-2">
         <Button variant="outline" @click="$emit('view-xero')" aria-label="View in Xero">
           <ExternalLink class="mr-2 h-4 w-4" /> View in Xero
         </Button>
@@ -184,8 +193,8 @@ const statusOptions: { value: Status; label: string }[] = [
         </Button>
       </div>
 
-      <!-- Fallback: Print and Email only (when no Xero URL) -->
-      <div v-else class="flex flex-wrap gap-2">
+      <!-- Fallback: Print and Email only (when no Xero URL but showActions is true) -->
+      <div v-else-if="showActions" class="flex flex-wrap gap-2">
         <Button variant="outline" aria-label="Print" @click="$emit('print')">
           <Printer class="mr-2 h-4 w-4" /> Print
         </Button>

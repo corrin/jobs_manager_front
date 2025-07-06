@@ -71,3 +71,19 @@ export interface Stock {
   quantity_available: number
   unit_cost: number
 }
+
+export interface ExistingAllocation {
+  type: 'job' | 'stock'
+  job_id: string
+  job_name: string
+  quantity: number
+  retail_rate: number
+  allocation_date: string | null
+  description: string
+  stock_location?: string
+}
+
+export interface ExistingAllocationsResponse {
+  po_id: string
+  allocations: Record<string, ExistingAllocation[]>
+}
