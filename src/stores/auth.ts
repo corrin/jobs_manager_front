@@ -4,6 +4,18 @@ import api from '@/plugins/axios'
 import type { User, LoginCredentials } from '@/types/auth.types'
 import { debugLog } from '@/utils/debug'
 
+interface ErrorResponse {
+  detail?: string
+  message?: string
+  error?: string
+  non_field_errors?: string[]
+}
+
+interface AxiosErrorResponse {
+  status?: number
+  data?: ErrorResponse
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const isLoading = ref(false)
@@ -53,11 +65,51 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (err: unknown) {
       user.value = null
       let errorMessage = 'Login error. Check if the server is running.'
-      if (typeof err === 'object' && err !== null && 'response' in err) {
-        const response = (err as { response?: { data?: { detail?: string; message?: string } } })
-          .response
-        errorMessage = response?.data?.detail || response?.data?.message || errorMessage
+
+      // Handle AxiosError specifically
+      if (typeof err === 'object' && err !== null) {
+        // Check if it's an AxiosError with response
+        if ('response' in err) {
+          const axiosError = err as { response?: AxiosErrorResponse }
+          const response = axiosError.response
+
+          if (response?.status && response.status >= 400 && response.status < 500) {
+            // Extract error message from various possible fields in response data
+            const responseData = response.data || {}
+            const originalError =
+              responseData.detail ||
+              responseData.message ||
+              responseData.error ||
+              responseData.non_field_errors?.[0] ||
+              ''
+
+            debugLog('Server error response:', originalError)
+
+            // Replace authentication errors with user-friendly message
+            if (
+              originalError === 'Invalid credentials' ||
+              originalError === 'Authentication credentials not provided' ||
+              originalError.toLowerCase().includes('invalid') ||
+              originalError.toLowerCase().includes('authentication') ||
+              originalError.toLowerCase().includes('credentials') ||
+              originalError.toLowerCase().includes('password') ||
+              originalError.toLowerCase().includes('email')
+            ) {
+              errorMessage = 'Wrong e-mail or password, please try again'
+            } else if (originalError) {
+              errorMessage = originalError
+            } else {
+              errorMessage = 'Wrong e-mail or password, please try again'
+            }
+          } else {
+            // Server error (5xx) or no status
+            errorMessage = 'Login error. Check if the server is running.'
+          }
+        } else if ('code' in err && (err.code === 'NETWORK_ERROR' || err.code === 'ERR_NETWORK')) {
+          errorMessage = 'Network error. Please check your internet connection.'
+        }
       }
+
       setError(errorMessage)
       debugLog('Login error:', err)
       return false
