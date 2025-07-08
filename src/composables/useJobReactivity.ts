@@ -1,4 +1,4 @@
-import { useJobsStore, type JobPricings } from '@/stores/jobs'
+import { useJobsStore } from '@/stores/jobs'
 import { jobRestService, type JobEvent, type JobData } from '@/services/job-rest.service'
 import { useJobCache } from './useJobCache'
 import { debugLog } from '@/utils/debug'
@@ -23,11 +23,6 @@ export function useJobReactivity() {
   const updateStatusReactively = (jobId: string, newStatus: string) => {
     jobsStore.updateJobStatus(jobId, newStatus)
     debugLog(`📊 Status updated reactively for job ${jobId}:`, newStatus)
-  }
-
-  const updatePricingsReactively = (jobId: string, pricings: JobPricings) => {
-    jobsStore.updateJobPricings(jobId, pricings)
-    debugLog(`💰 Pricings updated reactively for job ${jobId}`)
   }
 
   const reloadJobDataReactively = async (jobId: string, forceReload = false): Promise<void> => {
@@ -80,7 +75,6 @@ export function useJobReactivity() {
     updateJobReactively,
     addEventReactively,
     updateStatusReactively,
-    updatePricingsReactively,
     reloadJobDataReactively,
   }
 }

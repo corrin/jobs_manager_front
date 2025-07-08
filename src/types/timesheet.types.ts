@@ -1,26 +1,9 @@
 import type { CostLine } from './costing.types'
 
-export interface OptimizedTimeEntry {
-  id: number | null
-  jobNumber: string
-  client: string
-  jobName: string
-  hours: number
-  billable: boolean
-  description: string
-  rate: string
-  wage: number
-  bill: number
+// Use CostLine directly for timesheet entries
+export type TimesheetEntry = CostLine
 
-  staffId: string
-  date: string
-  wageRate: number
-  chargeOutRate: number
-  rateMultiplier: number
-  isNewRow?: boolean
-  isModified?: boolean
-  jobId?: string
-}
+// Job and Staff interfaces unified
 
 export interface JobSelectionItem {
   id: string
@@ -30,6 +13,17 @@ export interface JobSelectionItem {
   charge_out_rate: number
   status: string
   job_display_name: string
+  // Alternative field names for compatibility
+  number?: string | number
+  jobNumber?: string | number
+  job_name?: string
+  jobName?: string
+  clientName?: string
+  client?: string
+  chargeOutRate?: number
+  rate?: number
+  job_id?: string
+  jobId?: string
 }
 
 export interface StaffMember {
@@ -67,57 +61,24 @@ export const RATE_TYPES = [
 export interface Job {
   id: string
   jobNumber: string
-  number?: string
-  jobName?: string
-  name?: string
-  clientName?: string
-  chargeOutRate?: number
-  status?: string
-  displayName?: string
-  jobId?: string
+  number: string // Alias for jobNumber
+  jobName: string
+  name: string // Alias for jobName
+  clientName: string
+  chargeOutRate: number
+  status: string
+  displayName: string
+  jobId: string // Alias for id
 }
 
 export interface Staff {
   id: string
   firstName: string
   lastName: string
-  wageRate?: number
-  fullName?: string
-  name?: string
+  wageRate: number
+  fullName: string
+  name: string // Alias for fullName
   avatarUrl?: string
-}
-
-export interface TimeEntry {
-  id: string
-  description: string
-  jobPricingId?: string
-  jobNumber: string
-  jobName: string
-  hours: number
-  isBillable: boolean
-  billable?: boolean
-  notes: string
-  rateMultiplier: number
-  timesheetDate: string
-  hoursSpent: number
-  estimatedHours: number
-  staffId: string
-  items?: number
-  minsPerItem?: number
-  wageRate?: number
-  chargeOutRate?: number
-  jobId?: string
-  clientName?: string
-  staffName?: string
-  date?: string
-  startTime?: string
-  endTime?: string
-  rateType?: 'Ord' | '1.5' | '2.0' | 'Unpaid'
-  wageAmount?: number
-  billAmount?: number
-  isShopJob?: boolean
-  createdAt?: string
-  updatedAt?: string
 }
 
 export interface WeeklyOverviewData {
@@ -138,7 +99,7 @@ export interface WeeklyStaffData {
 export interface DayData {
   date: string
   hours: number
-  entries: TimeEntry[]
+  entries: CostLine[]
   leaveHours?: number
   status?: string
   overtime?: number
@@ -190,33 +151,3 @@ export interface CompanyDefaults {
   charge_out_rate: number
   wage_rate: number
 }
-
-export interface CreateTimeEntryRequest {
-  staffId: string
-  jobPricingId: string
-  date: string
-  description: string
-  hours: number
-  items?: number
-  minsPerItem?: number
-  wageRate?: number
-  chargeOutRate?: number
-  isBillable: boolean
-  notes?: string
-  rateMultiplier: number
-}
-
-export interface UpdateTimeEntryRequest {
-  description?: string
-  hours?: number
-  items?: number
-  minsPerItem?: number
-  wageRate?: number
-  chargeOutRate?: number
-  isBillable?: boolean
-  notes?: string
-  rateMultiplier?: number
-  jobPricingId?: string
-}
-
-export type TimesheetEntry = OptimizedTimeEntry

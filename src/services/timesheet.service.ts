@@ -1,95 +1,85 @@
 import api from '@/plugins/axios'
-import type {
-  Staff,
-  TimeEntry,
-  Job,
-  WeeklyOverviewData,
-  CreateTimeEntryRequest,
-  UpdateTimeEntryRequest,
-} from '@/types/timesheet.types'
+import type { Staff, Job, WeeklyOverviewData } from '@/types/timesheet.types'
+import type { CostLine } from '@/types/costing.types'
 import { debugLog } from '../utils/debug'
 
 export class TimesheetService {
   private static readonly BASE_URL = '/timesheets/api'
+  private static readonly MODERN_BASE_URL = '/job/rest/timesheet'
 
   static async getStaff(): Promise<Staff[]> {
     try {
       const response = await api.get(`${this.BASE_URL}/staff/`)
-      return response.data.staff
+      const rawStaff = response.data.staff || []
+
+      // Get company defaults for fallback wage rate
+      let defaultWageRate = 32
+      try {
+        const defaultsResponse = await api.get('/job/rest/company-defaults/')
+        defaultWageRate = parseFloat(defaultsResponse.data.wage_rate || '32') || 32
+      } catch {
+        debugLog('Could not fetch company defaults, using fallback wage rate:', defaultWageRate)
+      }
+
+      // Normalize staff data to ensure consistent field names
+      const normalizedStaff = rawStaff.map(
+        (staff: {
+          id: string
+          firstName?: string
+          first_name?: string
+          lastName?: string
+          last_name?: string
+          wageRate?: string | number
+          wage_rate?: string | number
+          fullName?: string
+          full_name?: string
+          name?: string
+          avatarUrl?: string
+          avatar_url?: string
+        }) => ({
+          id: staff.id,
+          firstName: staff.firstName || staff.first_name || 'Unknown',
+          lastName: staff.lastName || staff.last_name || '',
+          wageRate:
+            parseFloat(String(staff.wageRate || staff.wage_rate || defaultWageRate)) ||
+            defaultWageRate,
+          fullName:
+            staff.fullName ||
+            staff.full_name ||
+            `${staff.firstName || staff.first_name || 'Unknown'} ${staff.lastName || staff.last_name || ''}`.trim(),
+          name:
+            staff.name ||
+            staff.fullName ||
+            staff.full_name ||
+            `${staff.firstName || staff.first_name || 'Unknown'} ${staff.lastName || staff.last_name || ''}`.trim(),
+          avatarUrl: staff.avatarUrl || staff.avatar_url,
+        }),
+      )
+
+      debugLog('👥 Staff normalized for timesheet:', {
+        count: normalizedStaff.length,
+        sample: normalizedStaff[0],
+        defaultWageRate,
+        keys: normalizedStaff[0] ? Object.keys(normalizedStaff[0]) : [],
+      })
+
+      return normalizedStaff
     } catch (error) {
       debugLog('Error fetching staff:', error)
       throw error
     }
   }
 
-  static async getTimeEntries(staffId: string, date: string): Promise<TimeEntry[]> {
+  // Legacy method - use CostLine queries instead
+  static async getTimeEntries(staffId: string, date: string): Promise<CostLine[]> {
     try {
-      const response = await api.get(`${this.BASE_URL}/entries/`, {
-        params: { staff_id: staffId, date },
+      // Use modern CostLine-based API
+      const response = await api.get(`${this.MODERN_BASE_URL}/cost-lines/`, {
+        params: { staff_id: staffId, date, kind: 'time' },
       })
-      return response.data.time_entries
+      return response.data.cost_lines || response.data.lines || []
     } catch (error) {
-      debugLog('Error fetching time entries:', error)
-      throw error
-    }
-  }
-
-  static async getTimeEntriesRange(
-    staffId: string,
-    startDate: string,
-    endDate: string,
-  ): Promise<TimeEntry[]> {
-    try {
-      const response = await api.get(`${this.BASE_URL}/entries/`, {
-        params: { staff_id: staffId, start_date: startDate, end_date: endDate },
-      })
-      return response.data.time_entries
-    } catch (error) {
-      debugLog('Error fetching time entries for range:', error)
-      throw error
-    }
-  }
-
-  static async createTimeEntry(data: CreateTimeEntryRequest): Promise<TimeEntry> {
-    try {
-      const requestData = {
-        staff_id: data.staffId,
-        job_pricing_id: data.jobPricingId,
-        date: data.date,
-        description: data.description,
-        hours: data.hours,
-        items: data.items || 0,
-        minutes_per_item: data.minsPerItem || 0,
-        wage_rate: data.wageRate || 0,
-        charge_out_rate: data.chargeOutRate || 0,
-        is_billable: data.isBillable,
-        notes: data.notes || '',
-        rate_multiplier: data.rateMultiplier || 1.0,
-      }
-
-      const response = await api.post(`${this.BASE_URL}/entries/`, requestData)
-      return response.data.time_entry
-    } catch (error) {
-      debugLog('Error creating time entry:', error)
-      throw error
-    }
-  }
-
-  static async updateTimeEntry(entryId: string, data: UpdateTimeEntryRequest): Promise<TimeEntry> {
-    try {
-      const response = await api.put(`${this.BASE_URL}/entries/${entryId}/`, data)
-      return response.data.time_entry
-    } catch (error) {
-      debugLog('Error updating time entry:', error)
-      throw error
-    }
-  }
-
-  static async deleteTimeEntry(entryId: string): Promise<void> {
-    try {
-      await api.delete(`${this.BASE_URL}/entries/${entryId}/`)
-    } catch (error) {
-      debugLog('Error deleting time entry:', error)
+      debugLog('Error fetching cost lines:', error)
       throw error
     }
   }
@@ -97,7 +87,38 @@ export class TimesheetService {
   static async getJobs(): Promise<Job[]> {
     try {
       const response = await api.get(`${this.BASE_URL}/jobs/`)
-      return response.data.jobs
+      const rawJobs = response.data.jobs || []
+
+      // Normalize job data to ensure consistent field names
+      const normalizedJobs = rawJobs.map(
+        (job: {
+          id: string
+          job_number?: string | number
+          name?: string
+          client_name?: string
+          charge_out_rate?: string | number
+          status?: string
+        }) => ({
+          id: job.id,
+          jobNumber: job.job_number?.toString() || 'N/A',
+          number: job.job_number?.toString() || 'N/A',
+          name: job.name || 'Unnamed Job',
+          jobName: job.name || 'Unnamed Job',
+          clientName: job.client_name || 'No Client',
+          chargeOutRate: parseFloat(String(job.charge_out_rate || '0')) || 0,
+          status: job.status || 'unknown',
+          displayName: `${job.job_number || 'N/A'} - ${job.name || 'Unnamed Job'}`,
+          jobId: job.id,
+        }),
+      )
+
+      debugLog('📋 Jobs normalized for timesheet:', {
+        count: normalizedJobs.length,
+        sample: normalizedJobs[0],
+        keys: normalizedJobs[0] ? Object.keys(normalizedJobs[0]) : [],
+      })
+
+      return normalizedJobs
     } catch (error) {
       debugLog('Error fetching jobs:', error)
       throw error
@@ -113,20 +134,6 @@ export class TimesheetService {
     } catch (error) {
       debugLog('Error fetching weekly overview:', error)
       throw error
-    }
-  }
-
-  static async autosaveTimeEntry(
-    entryId: string,
-    data: Partial<UpdateTimeEntryRequest>,
-  ): Promise<void> {
-    try {
-      await api.post(`${this.BASE_URL}/autosave/`, {
-        entry_id: entryId,
-        ...data,
-      })
-    } catch (error) {
-      debugLog('Error auto-saving time entry:', error)
     }
   }
 
@@ -165,103 +172,8 @@ export class TimesheetService {
     return this.getJobs()
   }
 
-  static async getEntriesForDateRange(startDate: Date, endDate: Date): Promise<TimeEntry[]> {
-    const start = startDate.toISOString().split('T')[0]
-    const end = endDate.toISOString().split('T')[0]
-
-    try {
-      const response = await api.get(`${this.BASE_URL}/entries/`, {
-        params: { start_date: start, end_date: end },
-      })
-      return response.data.time_entries
-    } catch (error) {
-      debugLog('Error fetching entries for date range:', error)
-      throw error
-    }
-  }
-
-  static async getEntriesForStaffAndDate(staffId: string, date: Date): Promise<TimeEntry[]> {
-    const dateStr = date.toISOString().split('T')[0]
-    return this.getTimeEntries(staffId, dateStr)
-  }
-
-  static async createEntry(entryData: Omit<TimeEntry, 'id'>): Promise<TimeEntry> {
-    const createRequest: CreateTimeEntryRequest = {
-      staffId: entryData.staffId,
-      jobPricingId: entryData.jobPricingId || '',
-      date: entryData.timesheetDate,
-      description: entryData.description,
-      hours: entryData.hours,
-      items: entryData.items,
-      minsPerItem: entryData.minsPerItem,
-      wageRate: entryData.wageRate,
-      chargeOutRate: entryData.chargeOutRate,
-      isBillable: entryData.isBillable,
-      notes: entryData.notes,
-      rateMultiplier: entryData.rateMultiplier,
-    }
-
-    return this.createTimeEntry(createRequest)
-  }
-
-  static async updateEntry(entry: TimeEntry): Promise<TimeEntry> {
-    const updateRequest: UpdateTimeEntryRequest = {
-      description: entry.description,
-      hours: entry.hours,
-      items: entry.items,
-      minsPerItem: entry.minsPerItem,
-      wageRate: entry.wageRate,
-      chargeOutRate: entry.chargeOutRate,
-      isBillable: entry.isBillable,
-      notes: entry.notes,
-      rateMultiplier: entry.rateMultiplier,
-      jobPricingId: entry.jobPricingId,
-    }
-
-    return this.updateTimeEntry(entry.id, updateRequest)
-  }
-
-  static async deleteEntry(entryId: string): Promise<void> {
-    return this.deleteTimeEntry(entryId)
-  }
-
-  static async autosaveEntry(entryData: Partial<TimeEntry>): Promise<void> {
-    if (!entryData.id) {
-      throw new Error('Entry ID is required for autosave')
-    }
-
-    const updateData: Partial<UpdateTimeEntryRequest> = {
-      description: entryData.description,
-      hours: entryData.hours,
-      items: entryData.items,
-      minsPerItem: entryData.minsPerItem,
-      wageRate: entryData.wageRate,
-      chargeOutRate: entryData.chargeOutRate,
-      isBillable: entryData.isBillable,
-      notes: entryData.notes,
-      rateMultiplier: entryData.rateMultiplier,
-    }
-
-    return this.autosaveTimeEntry(entryData.id, updateData)
-  }
-
   static async exportToIMS(weekStart: Date): Promise<string> {
     debugLog('IMS export not yet implemented for:', weekStart)
     return 'IMS export functionality coming soon'
-  }
-
-  static async bulkUpdateEntries(entries: TimeEntry[]): Promise<TimeEntry[]> {
-    const updatedEntries: TimeEntry[] = []
-
-    for (const entry of entries) {
-      try {
-        const updated = await this.updateEntry(entry)
-        updatedEntries.push(updated)
-      } catch (error) {
-        debugLog('Error updating entry:', entry.id, error)
-      }
-    }
-
-    return updatedEntries
   }
 }

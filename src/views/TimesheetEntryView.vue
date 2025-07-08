@@ -466,7 +466,7 @@ import {
   AlertCircle,
 } from 'lucide-vue-next'
 
-import type { OptimizedTimeEntry } from '@/types/timesheet.types'
+import type { CostLine } from '@/types/costing.types'
 import type { Job, Staff } from '@/types/timesheet.types'
 import type { CompanyDefaults } from '@/services/company-defaults.service'
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
@@ -510,13 +510,10 @@ const hasUnsavedChanges = ref(false)
 
 const todayStats = computed(() => {
   const totalHours = timeEntries.value.reduce(
-    (sum: number, entry: OptimizedTimeEntry) => sum + entry.hours,
+    (sum: number, entry: CostLine) => sum + entry.hours,
     0,
   )
-  const totalBill = timeEntries.value.reduce(
-    (sum: number, entry: OptimizedTimeEntry) => sum + entry.bill,
-    0,
-  )
+  const totalBill = timeEntries.value.reduce((sum: number, entry: CostLine) => sum + entry.bill, 0)
   const entryCount = timeEntries.value.length
 
   return {
@@ -676,12 +673,12 @@ function syncGridState() {
       hasJob,
     })
     return hasJob
-  }) as OptimizedTimeEntry[]
+  }) as CostLine[]
 
   debugLog('✅ Synced grid state with timeEntries:', timeEntries.value.length, 'entries')
   debugLog(
     '📊 Synced entries detail:',
-    timeEntries.value.map((e: OptimizedTimeEntry) => ({
+    timeEntries.value.map((e: CostLine) => ({
       id: e.id,
       jobId: e.jobId,
       jobNumber: e.jobNumber,
@@ -692,7 +689,7 @@ function syncGridState() {
   )
 }
 
-interface TimesheetEntryWithMeta extends OptimizedTimeEntry {
+interface TimesheetEntryWithMeta extends CostLine {
   _isSaving?: boolean
   tempId?: string
 }
@@ -781,7 +778,7 @@ async function handleDeleteEntry(id: number): Promise<void> {
 
     await costlineService.deleteCostLine(id)
 
-    timeEntries.value = timeEntries.value.filter((e: OptimizedTimeEntry) => e.id !== id)
+    timeEntries.value = timeEntries.value.filter((e: CostLine) => e.id !== id)
 
     hasUnsavedChanges.value = false
     debugLog('✅ Entry deleted successfully:', id)
@@ -835,7 +832,7 @@ const saveChanges = async () => {
   syncGridState()
 
   const changedEntries = timeEntries.value.filter(
-    (entry: OptimizedTimeEntry) => entry.isNewRow || entry.isModified,
+    (entry: CostLine) => entry.isNewRow || entry.isModified,
   )
 
   debugLog('📊 Found', changedEntries.length, 'changed entries to save')
@@ -1071,12 +1068,14 @@ onMounted(async () => {
 
     const convertedJobs = timesheetStore.jobs.map((job: Job) => ({
       id: job.id,
-      job_number: job.jobNumber,
-      name: job.jobName || job.name || '',
-      client_name: job.clientName || '',
+      job_number: job.jobNumber || job.number || 'N/A',
+      name: job.jobName || job.name || 'Unnamed Job',
+      client_name: job.clientName || 'No Client',
       charge_out_rate: job.chargeOutRate || 0,
       status: job.status || 'active',
-      job_display_name: job.displayName || `${job.jobNumber} - ${job.jobName || job.name || ''}`,
+      job_display_name:
+        job.displayName ||
+        `${job.jobNumber || job.number || 'N/A'} - ${job.jobName || job.name || 'Unnamed Job'}`,
     }))
 
     window.timesheetJobs = convertedJobs

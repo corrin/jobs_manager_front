@@ -1,29 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { JobDetail, JobEvent, JobPricing } from '@/schemas/job.schemas'
+import type { JobDetail, JobEvent } from '@/schemas/job.schemas'
 import type { CompanyDefaults } from '@/types/timesheet.types'
 import { debugLog } from '@/utils/debug'
-
-export interface JobPricings {
-  estimate_pricing?: JobPricing
-  quote_pricing?: JobPricing
-  reality_pricing?: JobPricing
-}
-
-export interface MaterialEntryData {
-  description: string
-  quantity: number
-  unit_cost: number
-  supplier?: string
-  [key: string]: unknown
-}
-
-export interface AdjustmentEntryData {
-  description: string
-  amount: number
-  adjustment_type: 'add' | 'subtract'
-  [key: string]: unknown
-}
 
 export interface JobKanbanData {
   id: string
@@ -230,24 +209,6 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
-  const updateJobPricings = (jobId: string, pricings: JobPricings): void => {
-    const job = detailedJobs.value[jobId]
-    if (job) {
-      const updates: Partial<JobDetail> = {}
-      if (pricings.estimate_pricing) {
-        updates.latest_estimate_pricing = pricings.estimate_pricing
-      }
-      if (pricings.quote_pricing) {
-        updates.latest_quote_pricing = pricings.quote_pricing
-      }
-      if (pricings.reality_pricing) {
-        updates.latest_reality_pricing = pricings.reality_pricing
-      }
-
-      detailedJobs.value[jobId] = { ...job, ...updates }
-    }
-  }
-
   const updateJobCompanyDefaults = (jobId: string, companyDefaults: CompanyDefaults): void => {
     const job = detailedJobs.value[jobId]
     if (job) {
@@ -266,218 +227,24 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
-  const addTimeEntry = async (
-    jobId: string,
-    timeEntryData: Record<string, unknown>,
-  ): Promise<void> => {
-    try {
-      debugLog('🏪 Store - Adding time entry for job:', jobId, timeEntryData)
-
-      const { jobRestService } = await import('@/services/job-rest.service')
-
-      const currentJob = detailedJobs.value[jobId]
-      if (!currentJob?.latest_estimate_pricing?.id) {
-        throw new Error('Job or estimate pricing not found')
-      }
-
-      const hours = Number(timeEntryData.estimatedHours || timeEntryData.hours || 0)
-      const chargeMultiplier = Number(timeEntryData.chargeMultiplier || 1)
-      const baseChargeOutRate =
-        Number(currentJob.company_defaults?.charge_out_rate) ||
-        Number(currentJob.charge_out_rate) ||
-        105.0
-      const baseWageRate = Number(currentJob.company_defaults?.wage_rate) || 32.0
-
-      debugLog('🔍 Store - Debug wage_rate and charge_out_rate:', {
-        company_defaults: currentJob.company_defaults,
-        job_charge_out_rate: currentJob.charge_out_rate,
-        calculated_charge_out_rate: chargeMultiplier * baseChargeOutRate,
-        base_wage_rate: baseWageRate,
-      })
-
-      const entryData = {
-        job_pricing_id: currentJob.latest_estimate_pricing.id,
-        description: String(timeEntryData.taskName || timeEntryData.description || ''),
-        hours: hours,
-        items: 1,
-        minutes_per_item: hours * 60,
-        wage_rate: baseWageRate,
-        charge_out_rate: chargeMultiplier * baseChargeOutRate,
-      }
-
-      const response = await jobRestService.createTimeEntry(jobId, entryData)
-
-      if (response.success && response.data) {
-        setDetailedJob(response.data.job)
-
-        const { jobRestService: reloadService } = await import('@/services/job-rest.service')
-        const freshResponse = await reloadService.getJobForEdit(jobId)
-        if (freshResponse.success && freshResponse.data) {
-          setDetailedJob(freshResponse.data.job)
-        }
-
-        debugLog('✅ Store - Time entry added successfully and job reloaded')
-      } else {
-        throw new Error('Failed to add time entry')
-      }
-    } catch (error) {
-      debugLog('❌ Store - Error adding time entry:', error)
-      throw error
-    }
-  }
-
-  const addMaterialEntry = async (
-    jobId: string,
-    materialEntryData: MaterialEntryData,
-  ): Promise<void> => {
-    try {
-      debugLog('🏪 Store - Adding material entry for job:', jobId, materialEntryData)
-
-      const { jobRestService } = await import('@/services/job-rest.service')
-
-      const currentJob = detailedJobs.value[jobId]
-      if (!currentJob?.latest_estimate_pricing?.id) {
-        throw new Error('Job or estimate pricing not found')
-      }
-
-      const unitCost = Number(materialEntryData.unitPrice || materialEntryData.unit_cost || 0)
-      const markupPercent = Number(materialEntryData.chargePercentage || 0)
-      const unitRevenue = unitCost * (1 + markupPercent / 100)
-
-      const entryData = {
-        job_pricing_id: currentJob.latest_estimate_pricing.id,
-        description: materialEntryData.description,
-        quantity: materialEntryData.quantity || 1,
-        unit_cost: unitCost,
-        unit_revenue: unitRevenue,
-      }
-
-      const response = await jobRestService.createMaterialEntry(jobId, entryData)
-
-      if (response.success && response.data) {
-        setDetailedJob(response.data.job)
-
-        const { jobRestService: reloadService } = await import('@/services/job-rest.service')
-        const freshResponse = await reloadService.getJobForEdit(jobId)
-        if (freshResponse.success && freshResponse.data) {
-          setDetailedJob(freshResponse.data.job)
-        }
-
-        debugLog('✅ Store - Material entry added successfully and job reloaded')
-      } else {
-        throw new Error('Failed to add material entry')
-      }
-    } catch (error) {
-      debugLog('❌ Store - Error adding material entry:', error)
-      throw error
-    }
-  }
-
-  const addAdjustmentEntry = async (
-    jobId: string,
-    adjustmentEntryData: AdjustmentEntryData,
-  ): Promise<void> => {
-    try {
-      debugLog('🏪 Store - Adding adjustment entry for job:', jobId, adjustmentEntryData)
-
-      const { jobRestService } = await import('@/services/job-rest.service')
-
-      const currentJob = detailedJobs.value[jobId]
-      if (!currentJob?.latest_estimate_pricing?.id) {
-        throw new Error('Job or estimate pricing not found')
-      }
-
-      const entryData = {
-        job_pricing_id: currentJob.latest_estimate_pricing.id,
-        description: adjustmentEntryData.description,
-        cost_adjustment: adjustmentEntryData.amount || 0,
-        price_adjustment: adjustmentEntryData.amount || 0,
-        comments: `Adjustment type: ${adjustmentEntryData.adjustmentType || 'add'}`,
-      }
-
-      const response = await jobRestService.createAdjustmentEntry(jobId, entryData)
-
-      if (response.success && response.data) {
-        setDetailedJob(response.data.job)
-
-        const { jobRestService: reloadService } = await import('@/services/job-rest.service')
-        const freshResponse = await reloadService.getJobForEdit(jobId)
-        if (freshResponse.success && freshResponse.data) {
-          setDetailedJob(freshResponse.data.job)
-        }
-
-        debugLog('✅ Store - Adjustment entry added successfully and job reloaded')
-      } else {
-        throw new Error('Failed to add adjustment entry')
-      }
-    } catch (error) {
-      debugLog('❌ Store - Error adding adjustment entry:', error)
-      throw error
-    }
-  }
-
-  const linkQuote = async (jobId: string, templateUrl?: string): Promise<void> => {
-    try {
-      debugLog('🏪 Store - Linking quote sheet for job:', jobId)
-
-      const { quoteService } = await import('@/services/quote.service')
-      const result = await quoteService.linkQuote(jobId, templateUrl)
-
-      debugLog('✅ Store - Quote sheet linked successfully:', result)
-    } catch (error) {
-      debugLog('❌ Store - Error linking quote sheet:', error)
-      throw error
-    }
-  }
-
-  const refreshQuote = async (
-    jobId: string,
-    options: { skipValidation?: boolean } = {},
-  ): Promise<void> => {
-    try {
-      debugLog('🏪 Store - Refreshing quote for job:', jobId)
-
-      const { quoteService } = await import('@/services/quote.service')
-
-      if (!options.skipValidation) {
-        await quoteService.previewQuote(jobId)
-      }
-
-      const result = await quoteService.applyQuote(jobId)
-
-      if (result.success && result.cost_set) {
-        const { jobRestService } = await import('@/services/job-rest.service')
-        const freshResponse = await jobRestService.getJobForEdit(jobId)
-        if (freshResponse.success && freshResponse.data) {
-          setDetailedJob(freshResponse.data.job)
-        }
-
-        debugLog('✅ Store - Quote refreshed successfully')
-      } else {
-        throw new Error(result.error || 'Quote refresh failed')
-      }
-    } catch (error) {
-      debugLog('❌ Store - Error refreshing quote:', error)
-      throw error
-    }
-  }
-
   async function fetchJob(jobId: string): Promise<unknown> {
     if (!jobId) return undefined
+
     try {
       const { jobRestService } = await import('@/services/job-rest.service')
       const response = await jobRestService.getJobForEdit(jobId)
 
-      switch (true) {
-        case !!(response.success && response.data):
-          setDetailedJob(response.data.job)
-          return { job: response.data.job, events: response.data.events || [] }
-        case !!response.job:
-          setDetailedJob(response.job)
-          return { job: response.job, events: response.events || [] }
-        default:
-          throw new Error('Job not found')
+      if (response.success && response.data) {
+        setDetailedJob(response.data.job)
+        return { job: response.data.job, events: response.data.events || [] }
       }
+
+      if (response.job) {
+        setDetailedJob(response.job)
+        return { job: response.job, events: response.events || [] }
+      }
+
+      throw new Error('Job not found')
     } catch (error) {
       debugLog('❌ Store - fetchJob error:', error)
       throw error
@@ -515,16 +282,8 @@ export const useJobsStore = defineStore('jobs', () => {
     updateJobStatus,
     updateJobEvents,
     addJobEvent,
-    updateJobPricings,
     updateJobCompanyDefaults,
     updateJobPartialData,
-
-    addTimeEntry,
-    addMaterialEntry,
-    addAdjustmentEntry,
-
-    linkQuote,
-    refreshQuote,
 
     fetchJob,
   }
