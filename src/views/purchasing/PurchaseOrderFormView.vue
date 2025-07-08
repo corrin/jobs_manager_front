@@ -258,13 +258,12 @@ async function fetchJobs() {
         id: job.id,
         job_number: job.job_number,
         number: job.job_number,
-        name: job.name || job.job_name || '',
-        description: job.name || job.job_name || '',
+        name: job.name,
+        description: job.name, // BUG: WHY MAP DESCRIPTION TO NAME?
         client_name: job.client_name || '',
         charge_out_rate: job.charge_out_rate || 0,
         status: job.status || 'active',
-        job_display_name:
-          job.job_display_name || `${job.job_number} - ${job.name || job.job_name || ''}`,
+        job_display_name: job.job_display_name || `${job.job_number} - ${job.name}`,
       }),
     )
 
