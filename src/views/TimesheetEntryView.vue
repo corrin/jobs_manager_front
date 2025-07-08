@@ -467,13 +467,37 @@ import {
 } from 'lucide-vue-next'
 
 import type { CostLine } from '@/types/costing.types'
-import type { Job, Staff } from '@/types/timesheet.types'
-import type { CompanyDefaults } from '@/services/company-defaults.service'
+import { CompanyDefaultsService } from '@/services/company-defaults.service'
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
 import { useTimesheetStore } from '@/stores/timesheet'
-import { CompanyDefaultsService } from '@/services/company-defaults.service'
 import * as costlineService from '@/services/costline.service'
-import type { CostLine } from '@/types/costing.types'
+
+// Local type definitions
+interface Job {
+  id: string
+  jobNumber: string
+  jobName: string
+  clientName: string
+  chargeOutRate: number
+  number?: string
+  name?: string
+  status?: string
+  displayName?: string
+}
+
+interface Staff {
+  id: string
+  firstName: string
+  lastName: string
+  wageRate: number
+  fullName: string
+  name?: string
+}
+
+interface CompanyDefaults {
+  defaultWageRate: number
+  defaultChargeOutRate: number
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -689,9 +713,24 @@ function syncGridState() {
   )
 }
 
-interface TimesheetEntryWithMeta extends CostLine {
-  _isSaving?: boolean
+interface TimesheetEntryWithMeta {
+  id?: number
   tempId?: string
+  jobId: string
+  jobNumber?: string
+  description: string
+  hours: number
+  wageRate: number
+  chargeOutRate: number
+  billable: boolean
+  rateMultiplier: number
+  client?: string
+  jobName?: string
+  bill: number
+  cost: number
+  _isSaving?: boolean
+  isNewRow?: boolean
+  isModified?: boolean
 }
 
 async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
@@ -864,7 +903,7 @@ const saveChanges = async () => {
     debugLog('❌ Found invalid entries:', invalidEntries)
     const missingFields = invalidEntries
       .map((entry) => {
-        const missing = []
+        const missing: string[] = []
         if (!entry.jobId && !entry.jobNumber) missing.push('Job')
         if (!entry.description || !entry.description.trim()) missing.push('Description')
         if (entry.hours <= 0) missing.push('Hours')
@@ -959,7 +998,20 @@ const loadTimesheetData = async () => {
     debugLog('📄 Cost lines from API:', response.cost_lines)
     debugLog('📊 Number of cost lines:', response.cost_lines?.length || 0)
 
-    interface BackendCostLine extends CostLine {
+    interface BackendCostLine {
+      id: number
+      kind: 'time' | 'material' | 'adjust'
+      desc: string
+      quantity: string
+      unit_cost: string
+      unit_rev: string
+      total_cost: number
+      total_rev: number
+      meta: {
+        is_billable?: boolean
+        rate_multiplier?: number
+        [key: string]: unknown
+      }
       job_id?: string
       job_number?: string
       client_name?: string
@@ -1205,7 +1257,7 @@ declare global {
   interface Window {
     timesheetJobs?: unknown
     currentStaff?: unknown
-    companyDefaults: import('@/types/timesheet.types').CompanyDefaults | null
+    companyDefaults: CompanyDefaults | null
   }
 }
 </script>
