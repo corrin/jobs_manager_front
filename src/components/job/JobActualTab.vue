@@ -169,6 +169,7 @@
                       v-else-if="line.kind === 'time' && line.meta?.staff_id"
                       @click="navigateToTimesheet(line.meta.staff_id, line.meta.date)"
                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-md text-sm font-medium transition-colors"
+                      :title="`Staff: ${staffMap[line.meta.staff_id]?.name || 'Unknown'} - Date: ${line.meta.date || 'Unknown'}`"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path

@@ -131,6 +131,9 @@ const estimateSummary = computed(() => {
     } else if (line.kind === 'material') {
       cost += quantity * Number(line.unit_cost)
       rev += quantity * Number(line.unit_rev)
+    } else if (line.kind === 'adjust') {
+      cost += quantity * Number(line.unit_cost)
+      rev += quantity * Number(line.unit_rev)
     }
   }
   return {
