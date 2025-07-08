@@ -66,7 +66,6 @@ export interface Job {
   status: string
   charge_out_rate: string
   has_actual_costset: boolean
-  // Legacy aliases for backward compatibility
   jobNumber?: string
   jobName?: string
   clientName?: string
