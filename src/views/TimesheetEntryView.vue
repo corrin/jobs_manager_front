@@ -475,13 +475,18 @@ import * as costlineService from '@/services/costline.service'
 // Local type definitions
 interface Job {
   id: string
-  jobNumber: string
-  jobName: string
-  clientName: string
-  chargeOutRate: number
+  job_number: number
+  name: string
+  client_name: string
+  charge_out_rate: string
+  status: string
+  has_actual_costset: boolean
+  // Legacy fields for backward compatibility
+  jobNumber?: string
+  jobName?: string
+  clientName?: string
+  chargeOutRate?: number
   number?: string
-  name?: string
-  status?: string
   displayName?: string
 }
 
@@ -756,13 +761,14 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
 
     let targetJobId = entry.jobId
     if (!targetJobId && entry.jobNumber) {
-      const jobByNumber = jobsList.value.find((j: Job) => j.jobNumber === entry.jobNumber)
+      const jobNumber = parseInt(entry.jobNumber, 10)
+      const jobByNumber = jobsList.value.find((j: Job) => j.job_number === jobNumber)
       if (jobByNumber) {
         targetJobId = jobByNumber.id
         entry.jobId = targetJobId
-        entry.client = jobByNumber.clientName || ''
-        entry.jobName = jobByNumber.jobName || ''
-        entry.chargeOutRate = jobByNumber.chargeOutRate || 0
+        entry.client = jobByNumber.client_name || ''
+        entry.jobName = jobByNumber.name || ''
+        entry.chargeOutRate = parseFloat(jobByNumber.charge_out_rate) || 0
       }
     }
 
@@ -1120,14 +1126,12 @@ onMounted(async () => {
 
     const convertedJobs = timesheetStore.jobs.map((job: Job) => ({
       id: job.id,
-      job_number: job.jobNumber || job.number || 'N/A',
-      name: job.jobName || job.name || 'Unnamed Job',
-      client_name: job.clientName || 'No Client',
-      charge_out_rate: job.chargeOutRate || 0,
-      status: job.status || 'active',
-      job_display_name:
-        job.displayName ||
-        `${job.jobNumber || job.number || 'N/A'} - ${job.jobName || job.name || 'Unnamed Job'}`,
+      job_number: job.job_number,
+      name: job.name,
+      client_name: job.client_name,
+      charge_out_rate: parseFloat(job.charge_out_rate) || 0,
+      status: job.status,
+      job_display_name: `${job.job_number} - ${job.name}`,
     }))
 
     window.timesheetJobs = convertedJobs
