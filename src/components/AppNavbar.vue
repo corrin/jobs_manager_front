@@ -159,6 +159,12 @@
               >
                 <BarChart3 class="w-4 h-4 mr-2" /> KPI Reports
               </router-link>
+              <router-link
+                to="/reports/job-aging"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Clock class="w-4 h-4 mr-2" /> Job Aging Report
+              </router-link>
             </div>
           </Transition>
         </div>
@@ -448,6 +454,7 @@ import {
   Building2,
   Archive,
   CalendarClock,
+  Clock,
 } from 'lucide-vue-next'
 import { useAppLayout } from '@/composables/useAppLayout'
 
