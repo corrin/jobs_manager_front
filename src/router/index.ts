@@ -245,6 +245,12 @@ const router = createRouter({
       component: () => import('@/views/KPIReportsView.vue'),
       meta: { requiresAuth: true, title: 'KPI Reports - Jobs Manager' },
     },
+    {
+      path: '/reports/job-aging',
+      name: 'job-aging-report',
+      component: () => import('@/views/JobAgingReportView.vue'),
+      meta: { requiresAuth: true, title: 'Job Aging Report - Jobs Manager' },
+    },
   ],
 })
 
