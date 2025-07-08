@@ -129,9 +129,9 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       this.filteredJobs = this.jobs
         .filter((job) => {
           // Handle different possible field names from API
-          const jobNumber = job.job_number || job.number || job.jobNumber || ''
-          const jobName = job.name || job.job_name || job.jobName || ''
-          const clientName = job.client_name || job.clientName || job.client || ''
+          const jobNumber = job.job_number
+          const jobName = job.name
+          const clientName = job.client_name
 
           return (
             jobNumber.toString().toLowerCase().includes(term) ||
@@ -171,11 +171,11 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       const searchTerm = this.input.value.toLowerCase()
 
       // Handle different possible field names from API
-      const jobNumber = job.job_number || job.number || job.jobNumber || 'N/A'
-      const jobName = job.name || job.job_name || job.jobName || 'Unnamed Job'
-      const clientName = job.client_name || job.clientName || job.client || 'Unknown Client'
-      const chargeOutRate = job.charge_out_rate || job.chargeOutRate || job.rate || 0
-      const status = job.status || 'active'
+      const jobNumber = job.job_number
+      const jobName = job.name
+      const clientName = job.client_name
+      const chargeOutRate = job.charge_out_rate
+      const status = job.job_status
 
       const highlightedJobNumber = this.highlightText(jobNumber.toString(), searchTerm)
       const highlightedJobName = this.highlightText(jobName, searchTerm)
@@ -299,12 +299,12 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     this.selectedJob = job
 
     // Handle different possible field names from API
-    const jobNumber = job.job_number || job.number || job.jobNumber || ''
-    const jobName = job.name || job.job_name || job.jobName || ''
-    const clientName = job.client_name || job.clientName || job.client || ''
-    const chargeOutRate = job.charge_out_rate || job.chargeOutRate || job.rate || 0
-    const jobId = job.id || job.job_id || job.jobId || ''
-    const status = job.status || 'active'
+    const jobNumber = job.job_number
+    const jobName = job.name
+    const clientName = job.client_name
+    const chargeOutRate = job.charge_out_rate
+    const jobId = job.id
+    const status = job.job_status
 
     this.value = jobNumber.toString()
     this.input.value = jobNumber.toString()
@@ -398,25 +398,16 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   getValue(): string {
     if (this.selectedJob) {
       // Handle different possible field names from API
-      const jobNumber =
-        this.selectedJob.job_number || this.selectedJob.number || this.selectedJob.jobNumber || ''
+      const jobNumber = this.selectedJob.job_number
 
       // Store normalized job data
       const normalizedJob = {
         ...this.selectedJob,
         job_number: jobNumber.toString(),
-        name: this.selectedJob.name || this.selectedJob.job_name || this.selectedJob.jobName || '',
-        client_name:
-          this.selectedJob.client_name ||
-          this.selectedJob.clientName ||
-          this.selectedJob.client ||
-          '',
-        charge_out_rate:
-          this.selectedJob.charge_out_rate ||
-          this.selectedJob.chargeOutRate ||
-          this.selectedJob.rate ||
-          0,
-        id: this.selectedJob.id || this.selectedJob.job_id || this.selectedJob.jobId || '',
+        name: this.selectedJob.name,
+        client_name: this.selectedJob.client_name,
+        charge_out_rate: this.selectedJob.charge_out_rate,
+        id: this.selectedJob.id,
       }
 
       ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob = normalizedJob
