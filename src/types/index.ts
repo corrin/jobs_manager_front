@@ -1,4 +1,4 @@
-import type { JobPricing, JobEvent } from '@/schemas/job.schemas'
+import type { JobEvent } from '@/schemas/job.schemas'
 import type { CostSet } from '@/types/costing.types'
 
 export interface BaseEntity {
@@ -99,17 +99,9 @@ export interface JobData extends Job {
   contact_id?: string | null
   contact_name?: string | null
   complex_job?: boolean
-  latest_estimate_pricing?: JobPricing
-  latest_quote_pricing?: JobPricing
-  latest_reality_pricing?: JobPricing
   latest_estimate?: CostSet | null
   latest_quote?: CostSet | null
   latest_actual?: CostSet | null
-  latest_pricings?: {
-    estimate?: JobPricing | null
-    quote?: JobPricing | null
-    reality?: JobPricing | null
-  }
   company_defaults?: {
     materials_markup: number
     time_markup: number

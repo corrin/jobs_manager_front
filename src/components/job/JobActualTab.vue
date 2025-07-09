@@ -111,13 +111,9 @@
                   <td class="px-4 py-4 whitespace-nowrap">
                     <span
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                      :class="
-                        line.kind === 'material'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-blue-100 text-blue-800'
-                      "
+                      :class="getKindClasses(line.kind)"
                     >
-                      {{ line.kind === 'time' ? 'Labour' : 'Material' }}
+                      {{ getKindDisplayName(line.kind) }}
                     </span>
                   </td>
                   <td class="px-4 py-4">
@@ -173,6 +169,7 @@
                       v-else-if="line.kind === 'time' && line.meta?.staff_id"
                       @click="navigateToTimesheet(line.meta.staff_id, line.meta.date)"
                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-md text-sm font-medium transition-colors"
+                      :title="`Staff: ${staffMap[line.meta.staff_id]?.name || 'Unknown'} - Date: ${line.meta.date || 'Unknown'}`"
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
@@ -184,6 +181,22 @@
                       </svg>
                       {{ staffMap[line.meta.staff_id]?.name || 'Timesheet' }}
                     </button>
+
+                    <!-- Adjustment Entry -->
+                    <span
+                      v-else-if="line.kind === 'adjust'"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-100 text-pink-800 rounded-md text-sm font-medium"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                      Adjustment
+                    </span>
 
                     <!-- No source info -->
                     <span v-else class="text-gray-400 text-sm">-</span>
@@ -247,6 +260,32 @@ function formatNumber(value: number | string): string {
   return num.toFixed(3)
 }
 
+function getKindDisplayName(kind: string): string {
+  switch (kind) {
+    case 'time':
+      return 'Labour'
+    case 'material':
+      return 'Material'
+    case 'adjust':
+      return 'Adjustment'
+    default:
+      return kind.charAt(0).toUpperCase() + kind.slice(1)
+  }
+}
+
+function getKindClasses(kind: string): string {
+  switch (kind) {
+    case 'time':
+      return 'bg-blue-100 text-blue-800'
+    case 'material':
+      return 'bg-green-100 text-green-800'
+    case 'adjust':
+      return 'bg-pink-100 text-pink-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
+
 async function loadStaff() {
   try {
     const response = await api.get('/api/staff/')
@@ -304,9 +343,13 @@ const actualSummary = computed(() => {
     cost += quantity * unitCost
     rev += quantity * unitRev
 
+    // Count hours for time entries
     if (line.kind === 'time') {
       hours += quantity
     }
+
+    // For adjustments, the revenue calculation is already included above,
+    // but we might want to handle them specially in the future
   }
 
   return {

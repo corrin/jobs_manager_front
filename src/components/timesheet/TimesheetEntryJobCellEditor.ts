@@ -20,8 +20,18 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     const win = window as unknown as { timesheetJobs?: unknown }
     if (Array.isArray(win.timesheetJobs)) {
       this.jobs = win.timesheetJobs as JobSelectionItem[]
+      debugLog('📋 Jobs loaded for timesheet:', {
+        count: this.jobs.length,
+        sample: this.jobs[0]
+          ? {
+              keys: Object.keys(this.jobs[0]),
+              job: this.jobs[0],
+            }
+          : 'no jobs',
+      })
     } else {
       this.jobs = []
+      debugLog('⚠️ No jobs found in window.timesheetJobs:', win.timesheetJobs)
     }
     this.filteredJobs = [...this.jobs]
 
@@ -117,12 +127,18 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     } else {
       const term = searchTerm.toLowerCase()
       this.filteredJobs = this.jobs
-        .filter(
-          (job) =>
-            job.job_number.toLowerCase().includes(term) ||
-            job.name.toLowerCase().includes(term) ||
-            job.client_name.toLowerCase().includes(term),
-        )
+        .filter((job) => {
+          // Handle different possible field names from API
+          const jobNumber = job.job_number
+          const jobName = job.name
+          const clientName = job.client_name
+
+          return (
+            jobNumber.toString().toLowerCase().includes(term) ||
+            jobName.toLowerCase().includes(term) ||
+            clientName.toLowerCase().includes(term)
+          )
+        })
         .slice(0, 15)
     }
 
@@ -153,22 +169,30 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       item.dataset.index = index.toString()
 
       const searchTerm = this.input.value.toLowerCase()
-      const jobNumber = this.highlightText(job.job_number, searchTerm)
-      const jobName = this.highlightText(job.name, searchTerm)
-      const clientName = this.highlightText(job.client_name, searchTerm)
+
+      // Handle different possible field names from API
+      const jobNumber = job.job_number
+      const jobName = job.name
+      const clientName = job.client_name
+      const chargeOutRate = job.charge_out_rate
+      const status = job.job_status
+
+      const highlightedJobNumber = this.highlightText(jobNumber.toString(), searchTerm)
+      const highlightedJobName = this.highlightText(jobName, searchTerm)
+      const highlightedClientName = this.highlightText(clientName, searchTerm)
 
       item.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 2px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-weight: 600; color: #1F2937;">#${jobNumber}</span>
-            <span style="font-size: 12px; color: ${this.getStatusColor(job.status)}; font-weight: 500;">
-              ${job.status.toUpperCase()}
+            <span style="font-weight: 600; color: #1F2937;">#${highlightedJobNumber}</span>
+            <span style="font-size: 12px; color: ${this.getStatusColor(status)}; font-weight: 500;">
+              ${status.toUpperCase()}
             </span>
           </div>
-          <div style="font-size: 14px; color: #374151; font-weight: 500;">${jobName}</div>
-          <div style="font-size: 12px; color: #6B7280;">Client: ${clientName}</div>
+          <div style="font-size: 14px; color: #374151; font-weight: 500;">${highlightedJobName}</div>
+          <div style="font-size: 12px; color: #6B7280;">Client: ${highlightedClientName}</div>
           <div style="font-size: 11px; color: #9CA3AF;">
-            Rate: $${job.charge_out_rate}/hr
+            Rate: $${chargeOutRate}/hr
           </div>
         </div>
       `
@@ -273,22 +297,46 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   }
   private selectJob(job: JobSelectionItem): void {
     this.selectedJob = job
-    this.value = job.job_number
-    this.input.value = job.job_number
 
-    debugLog('🎯 Job selected in editor:', job)
-    ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob = job
+    // Handle different possible field names from API
+    const jobNumber = job.job_number
+    const jobName = job.name
+    const clientName = job.client_name
+    const chargeOutRate = job.charge_out_rate
+    const jobId = job.id
+    const status = job.job_status
+
+    this.value = jobNumber.toString()
+    this.input.value = jobNumber.toString()
+
+    debugLog('🎯 Job selected in editor:', {
+      original: job,
+      normalized: { jobNumber, jobName, clientName, chargeOutRate, jobId, status },
+    })
+
+    // Store the normalized job data
+    const normalizedJob = {
+      ...job,
+      job_number: jobNumber,
+      name: jobName,
+      client_name: clientName,
+      charge_out_rate: chargeOutRate,
+      id: jobId,
+      status,
+    }
+
+    ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob = normalizedJob
 
     if (this.params.node) {
       const rowData = this.params.node.data
-      debugLog('🔄 Updating row data with job info:', job)
+      debugLog('🔄 Updating row data with job info:', normalizedJob)
 
-      rowData.jobId = job.id
-      rowData.jobNumber = job.job_number
-      rowData.client = job.client_name
-      rowData.jobName = job.name
-      rowData.chargeOutRate = job.charge_out_rate
-      rowData.billable = job.status !== 'special' && job.status !== 'shop'
+      rowData.jobId = jobId
+      rowData.jobNumber = jobNumber.toString()
+      rowData.client = clientName
+      rowData.jobName = jobName
+      rowData.chargeOutRate = chargeOutRate
+      rowData.billable = status !== 'special' && status !== 'shop'
 
       const hours = rowData.hours || 0
       const rate = rowData.rate || 'Ord'
@@ -317,8 +365,8 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       debugLog('💰 Using wage rate:', wageRate, 'for', hours, 'hours with multiplier', multiplier)
 
       rowData.bill =
-        rowData.billable && hours > 0 && job.charge_out_rate > 0
-          ? Math.round(hours * job.charge_out_rate * 100) / 100
+        rowData.billable && hours > 0 && chargeOutRate > 0
+          ? Math.round(hours * chargeOutRate * 100) / 100
           : 0
 
       debugLog('💰 Calculated wage:', rowData.wage, 'and bill:', rowData.bill)
@@ -349,10 +397,22 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   }
   getValue(): string {
     if (this.selectedJob) {
-      ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob =
-        this.selectedJob
-      debugLog('🎯 Returning job number from editor:', this.selectedJob.job_number)
-      return this.selectedJob.job_number
+      // Handle different possible field names from API
+      const jobNumber = this.selectedJob.job_number
+
+      // Store normalized job data
+      const normalizedJob = {
+        ...this.selectedJob,
+        job_number: jobNumber.toString(),
+        name: this.selectedJob.name,
+        client_name: this.selectedJob.client_name,
+        charge_out_rate: this.selectedJob.charge_out_rate,
+        id: this.selectedJob.id,
+      }
+
+      ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob = normalizedJob
+      debugLog('🎯 Returning job number from editor:', jobNumber)
+      return jobNumber.toString()
     }
     return this.value
   }

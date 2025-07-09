@@ -466,14 +466,43 @@ import {
   AlertCircle,
 } from 'lucide-vue-next'
 
-import type { OptimizedTimeEntry } from '@/types/timesheet.types'
-import type { Job, Staff } from '@/types/timesheet.types'
-import type { CompanyDefaults } from '@/services/company-defaults.service'
+import type { CostLine } from '@/types/costing.types'
+import { CompanyDefaultsService } from '@/services/company-defaults.service'
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
 import { useTimesheetStore } from '@/stores/timesheet'
-import { CompanyDefaultsService } from '@/services/company-defaults.service'
 import * as costlineService from '@/services/costline.service'
-import type { CostLine } from '@/types/costing.types'
+
+// Local type definitions
+interface Job {
+  id: string
+  job_number: number
+  name: string
+  client_name: string
+  charge_out_rate: string
+  status: string
+  has_actual_costset: boolean
+  // Legacy fields for backward compatibility
+  jobNumber?: string
+  jobName?: string
+  clientName?: string
+  chargeOutRate?: number
+  number?: string
+  displayName?: string
+}
+
+interface Staff {
+  id: string
+  firstName: string
+  lastName: string
+  wageRate: number
+  fullName: string
+  name?: string
+}
+
+interface CompanyDefaults {
+  defaultWageRate: number
+  defaultChargeOutRate: number
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -510,13 +539,10 @@ const hasUnsavedChanges = ref(false)
 
 const todayStats = computed(() => {
   const totalHours = timeEntries.value.reduce(
-    (sum: number, entry: OptimizedTimeEntry) => sum + entry.hours,
+    (sum: number, entry: CostLine) => sum + entry.hours,
     0,
   )
-  const totalBill = timeEntries.value.reduce(
-    (sum: number, entry: OptimizedTimeEntry) => sum + entry.bill,
-    0,
-  )
+  const totalBill = timeEntries.value.reduce((sum: number, entry: CostLine) => sum + entry.bill, 0)
   const entryCount = timeEntries.value.length
 
   return {
@@ -676,12 +702,12 @@ function syncGridState() {
       hasJob,
     })
     return hasJob
-  }) as OptimizedTimeEntry[]
+  }) as CostLine[]
 
   debugLog('✅ Synced grid state with timeEntries:', timeEntries.value.length, 'entries')
   debugLog(
     '📊 Synced entries detail:',
-    timeEntries.value.map((e: OptimizedTimeEntry) => ({
+    timeEntries.value.map((e: CostLine) => ({
       id: e.id,
       jobId: e.jobId,
       jobNumber: e.jobNumber,
@@ -692,9 +718,24 @@ function syncGridState() {
   )
 }
 
-interface TimesheetEntryWithMeta extends OptimizedTimeEntry {
-  _isSaving?: boolean
+interface TimesheetEntryWithMeta {
+  id?: number
   tempId?: string
+  jobId: string
+  jobNumber?: string
+  description: string
+  hours: number
+  wageRate: number
+  chargeOutRate: number
+  billable: boolean
+  rateMultiplier: number
+  client?: string
+  jobName?: string
+  bill: number
+  cost: number
+  _isSaving?: boolean
+  isNewRow?: boolean
+  isModified?: boolean
 }
 
 async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
@@ -720,13 +761,14 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
 
     let targetJobId = entry.jobId
     if (!targetJobId && entry.jobNumber) {
-      const jobByNumber = jobsList.value.find((j: Job) => j.jobNumber === entry.jobNumber)
+      const jobNumber = parseInt(entry.jobNumber, 10)
+      const jobByNumber = jobsList.value.find((j: Job) => j.job_number === jobNumber)
       if (jobByNumber) {
         targetJobId = jobByNumber.id
         entry.jobId = targetJobId
-        entry.client = jobByNumber.clientName || ''
-        entry.jobName = jobByNumber.jobName || ''
-        entry.chargeOutRate = jobByNumber.chargeOutRate || 0
+        entry.client = jobByNumber.client_name || ''
+        entry.jobName = jobByNumber.name || ''
+        entry.chargeOutRate = parseFloat(jobByNumber.charge_out_rate) || 0
       }
     }
 
@@ -781,7 +823,7 @@ async function handleDeleteEntry(id: number): Promise<void> {
 
     await costlineService.deleteCostLine(id)
 
-    timeEntries.value = timeEntries.value.filter((e: OptimizedTimeEntry) => e.id !== id)
+    timeEntries.value = timeEntries.value.filter((e: CostLine) => e.id !== id)
 
     hasUnsavedChanges.value = false
     debugLog('✅ Entry deleted successfully:', id)
@@ -835,7 +877,7 @@ const saveChanges = async () => {
   syncGridState()
 
   const changedEntries = timeEntries.value.filter(
-    (entry: OptimizedTimeEntry) => entry.isNewRow || entry.isModified,
+    (entry: CostLine) => entry.isNewRow || entry.isModified,
   )
 
   debugLog('📊 Found', changedEntries.length, 'changed entries to save')
@@ -867,7 +909,7 @@ const saveChanges = async () => {
     debugLog('❌ Found invalid entries:', invalidEntries)
     const missingFields = invalidEntries
       .map((entry) => {
-        const missing = []
+        const missing: string[] = []
         if (!entry.jobId && !entry.jobNumber) missing.push('Job')
         if (!entry.description || !entry.description.trim()) missing.push('Description')
         if (entry.hours <= 0) missing.push('Hours')
@@ -962,7 +1004,20 @@ const loadTimesheetData = async () => {
     debugLog('📄 Cost lines from API:', response.cost_lines)
     debugLog('📊 Number of cost lines:', response.cost_lines?.length || 0)
 
-    interface BackendCostLine extends CostLine {
+    interface BackendCostLine {
+      id: number
+      kind: 'time' | 'material' | 'adjust'
+      desc: string
+      quantity: string
+      unit_cost: string
+      unit_rev: string
+      total_cost: number
+      total_rev: number
+      meta: {
+        is_billable?: boolean
+        rate_multiplier?: number
+        [key: string]: unknown
+      }
       job_id?: string
       job_number?: string
       client_name?: string
@@ -1071,12 +1126,12 @@ onMounted(async () => {
 
     const convertedJobs = timesheetStore.jobs.map((job: Job) => ({
       id: job.id,
-      job_number: job.jobNumber,
-      name: job.jobName || job.name || '',
-      client_name: job.clientName || '',
-      charge_out_rate: job.chargeOutRate || 0,
-      status: job.status || 'active',
-      job_display_name: job.displayName || `${job.jobNumber} - ${job.jobName || job.name || ''}`,
+      job_number: job.job_number,
+      name: job.name,
+      client_name: job.client_name,
+      charge_out_rate: parseFloat(job.charge_out_rate) || 0,
+      status: job.status,
+      job_display_name: `${job.job_number} - ${job.name}`,
     }))
 
     window.timesheetJobs = convertedJobs
@@ -1206,7 +1261,7 @@ declare global {
   interface Window {
     timesheetJobs?: unknown
     currentStaff?: unknown
-    companyDefaults: import('@/types/timesheet.types').CompanyDefaults | null
+    companyDefaults: CompanyDefaults | null
   }
 }
 </script>

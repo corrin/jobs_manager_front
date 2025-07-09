@@ -93,7 +93,14 @@
             <tr
               v-for="(line, index) in costLines"
               :key="line.id || index"
-              :class="['hover:bg-gray-50', line.kind === 'time' ? 'bg-blue-50' : 'bg-white']"
+              :class="[
+                'hover:bg-gray-50',
+                line.kind === 'time'
+                  ? 'bg-blue-50'
+                  : line.kind === 'adjust'
+                    ? 'bg-pink-50'
+                    : 'bg-white',
+              ]"
             >
               <td class="px-4 py-3 text-sm">
                 <span
@@ -101,10 +108,12 @@
                     'inline-flex px-2 py-1 text-xs font-semibold rounded-full',
                     line.kind === 'time'
                       ? 'bg-blue-100 text-blue-800'
-                      : 'bg-green-100 text-green-800',
+                      : line.kind === 'adjust'
+                        ? 'bg-pink-100 text-pink-800'
+                        : 'bg-green-100 text-green-800',
                   ]"
                 >
-                  {{ line.kind === 'time' ? 'Labour' : 'Material' }}
+                  {{ getKindDisplayName(line.kind) }}
                 </span>
               </td>
               <td class="px-4 py-3 text-sm text-gray-900">{{ line.desc }}</td>
@@ -221,6 +230,19 @@ function formatCurrency(value: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
+}
+
+function getKindDisplayName(kind: string): string {
+  switch (kind) {
+    case 'time':
+      return 'Labour'
+    case 'material':
+      return 'Material'
+    case 'adjust':
+      return 'Adjustment'
+    default:
+      return kind.charAt(0).toUpperCase() + kind.slice(1)
+  }
 }
 </script>
 

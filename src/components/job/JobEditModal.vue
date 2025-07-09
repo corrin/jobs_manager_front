@@ -424,15 +424,6 @@ const handleSave = async () => {
         invoiced: (result.data as { invoiced?: boolean }).invoiced,
         paid: (result.data as { paid?: boolean }).paid,
         charge_out_rate: (result.data as { charge_out_rate?: string }).charge_out_rate,
-        latest_estimate_pricing: (
-          result.data as { latest_estimate_pricing?: import('@/schemas/job.schemas').JobPricing }
-        ).latest_estimate_pricing,
-        latest_quote_pricing: (
-          result.data as { latest_quote_pricing?: import('@/schemas/job.schemas').JobPricing }
-        ).latest_quote_pricing,
-        latest_reality_pricing: (
-          result.data as { latest_reality_pricing?: import('@/schemas/job.schemas').JobPricing }
-        ).latest_reality_pricing,
         latest_estimate: (
           result.data as { latest_estimate?: import('@/schemas/costing.schemas').CostSet }
         ).latest_estimate,
@@ -444,11 +435,6 @@ const handleSave = async () => {
         ).latest_actual,
         quote_sheet: (result.data as { quote_sheet?: import('@/schemas/job.schemas').QuoteSheet })
           .quote_sheet,
-        latest_pricings: (
-          result.data as {
-            latest_pricings?: Record<string, import('@/schemas/job.schemas').JobPricing>
-          }
-        ).latest_pricings,
         company_defaults: (
           result.data as { company_defaults?: import('@/schemas/job.schemas').CompanyDefaults }
         ).company_defaults,

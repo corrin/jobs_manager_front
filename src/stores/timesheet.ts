@@ -5,7 +5,7 @@ import { costlineService } from '@/services/costline.service'
 import { TimesheetService } from '@/services/timesheet.service'
 import { CompanyDefaultsService } from '@/services/company-defaults.service'
 import type { CostLine } from '@/types/costing.types'
-import type { Staff, TimeEntry, Job, WeeklyOverviewData } from '@/types/timesheet.types'
+import type { Staff, Job, WeeklyOverviewData } from '@/types/timesheet.types'
 import type { CostLineCreatePayload, CostLineUpdatePayload } from '@/services/costline.service'
 import { debugLog } from '@/utils/debug'
 
@@ -17,7 +17,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
   const staff = ref<Staff[]>([])
   const jobs = ref<Job[]>([])
-  const timeEntries = ref<TimeEntry[]>([])
   const currentWeekData = ref<WeeklyOverviewData | null>(null)
   const selectedDate = ref<string>(new Date().toISOString().split('T')[0])
   const selectedStaffId = ref<string>('')
@@ -61,21 +60,27 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     )
   })
 
-  const entriesForSelectedDate = computed(() =>
-    timeEntries.value.filter(
-      (entry: TimeEntry) =>
-        entry.timesheetDate === selectedDate.value && entry.staffId === selectedStaffId.value,
+  // Time-based computed properties - using CostLine data
+  const timeLinesForSelectedDate = computed(() =>
+    lines.value.filter(
+      (line: CostLine) =>
+        line.kind === 'time' &&
+        line.meta?.date === selectedDate.value &&
+        line.meta?.staff_id === selectedStaffId.value,
     ),
   )
 
   const totalHoursForDate = computed(() =>
-    entriesForSelectedDate.value.reduce((sum: number, entry: TimeEntry) => sum + entry.hours, 0),
+    timeLinesForSelectedDate.value.reduce(
+      (sum: number, line: CostLine) => sum + parseFloat(line.quantity),
+      0,
+    ),
   )
 
   const billableHoursForDate = computed(() =>
-    entriesForSelectedDate.value
-      .filter((entry: TimeEntry) => entry.isBillable)
-      .reduce((sum: number, entry: TimeEntry) => sum + entry.hours, 0),
+    timeLinesForSelectedDate.value
+      .filter((line: CostLine) => line.meta?.is_billable)
+      .reduce((sum: number, line: CostLine) => sum + parseFloat(line.quantity), 0),
   )
 
   async function load(targetJobId: string, targetKind: 'estimate' | 'quote' | 'actual' = 'actual') {
@@ -223,20 +228,18 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  async function loadTimeEntries() {
-    if (!selectedStaffId.value) return
+  async function loadTimeLines() {
+    if (!selectedStaffId.value || !jobId.value) return
 
     loading.value = true
     error.value = null
 
     try {
-      timeEntries.value = await TimesheetService.getTimeEntries(
-        selectedStaffId.value,
-        selectedDate.value,
-      )
+      // Load cost lines for the current job and filter by staff/date
+      await load(jobId.value, 'actual')
     } catch (err) {
-      error.value = 'Failed to load time entries'
-      debugLog('Error loading time entries:', err)
+      error.value = 'Failed to load time lines'
+      debugLog('Error loading time lines:', err)
     } finally {
       loading.value = false
     }
@@ -268,7 +271,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
   async function createTimeEntry(entryData: {
     description: string
-    jobPricingId: string
+    jobId: string
     hours: number
     isBillable: boolean
     notes?: string
@@ -288,33 +291,36 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       debugLog('📝 Creating new time entry:', entryData)
 
-      const newEntry = await TimesheetService.createTimeEntry({
-        staffId: selectedStaffId.value,
-        date: selectedDate.value,
+      // Use CostLine service to create time entry
+      const costLineData: CostLineCreatePayload = {
+        job_id: entryData.jobId,
+        kind: 'actual',
+        line_type: 'time',
         description: entryData.description,
-        jobPricingId: entryData.jobPricingId,
-        hours: entryData.hours,
-        isBillable: entryData.isBillable,
-        notes: entryData.notes || '',
-        items: entryData.items || 0,
-        minsPerItem: entryData.minsPerItem || 0,
-        wageRate: entryData.wageRate || 0,
-        chargeOutRate: entryData.chargeOutRate || 0,
-        rateMultiplier: entryData.rateMultiplier || 1.0,
-      })
-
-      debugLog('✅ Time entry created in backend:', newEntry)
-
-      const existingIndex = timeEntries.value.findIndex((e: TimeEntry) => e.id === newEntry.id)
-      if (existingIndex === -1) {
-        timeEntries.value.push(newEntry)
-        debugLog('📝 Added new entry to local state')
-      } else {
-        timeEntries.value[existingIndex] = newEntry
-        debugLog('🔄 Updated existing entry in local state')
+        quantity: entryData.hours,
+        unit_cost: entryData.wageRate || 32.0,
+        unit_rev: entryData.chargeOutRate || 105.0,
+        meta: {
+          staff_id: selectedStaffId.value,
+          date: selectedDate.value,
+          is_billable: entryData.isBillable,
+          rate_multiplier: entryData.rateMultiplier || 1.0,
+        },
       }
 
-      return newEntry
+      const newCostLine = await costlineService.create(costLineData)
+
+      if (newCostLine) {
+        // Add to lines if we're viewing the same job
+        if (jobId.value === entryData.jobId && kind.value === 'actual') {
+          lines.value.push(newCostLine)
+        }
+
+        debugLog('✅ Time entry created successfully:', newCostLine)
+
+        // Reload cost lines to get updated data
+        await loadTimeLines()
+      }
     } catch (err) {
       error.value = 'Failed to create time entry'
       debugLog('❌ Error creating time entry:', err)
@@ -336,7 +342,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       wageRate?: number
       chargeOutRate?: number
       rateMultiplier?: number
-      jobPricingId?: string
+      jobId?: string
     },
   ) {
     loading.value = true
@@ -345,20 +351,40 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       debugLog('🔄 Updating time entry:', entryId, updates)
 
-      const updatedEntry = await TimesheetService.updateTimeEntry(entryId, updates)
+      // Use CostLine service to update time entry
+      const updatePayload: CostLineUpdatePayload = {}
 
-      debugLog('✅ Time entry updated in backend:', updatedEntry)
+      if (updates.description !== undefined) updatePayload.description = updates.description
+      if (updates.hours !== undefined) updatePayload.quantity = updates.hours
+      if (updates.wageRate !== undefined) updatePayload.unit_cost = updates.wageRate
+      if (updates.chargeOutRate !== undefined) updatePayload.unit_rev = updates.chargeOutRate
 
-      const index = timeEntries.value.findIndex((e: TimeEntry) => e.id === entryId)
-      if (index !== -1) {
-        timeEntries.value[index] = updatedEntry
-        debugLog('🔄 Updated entry in local state')
-      } else {
-        timeEntries.value.push(updatedEntry)
-        debugLog('📝 Added updated entry to local state')
+      if (updates.isBillable !== undefined || updates.rateMultiplier !== undefined) {
+        // Need to preserve existing meta and update specific fields
+        const existingLine = lines.value.find((line) => line.id === entryId)
+        updatePayload.meta = {
+          ...existingLine?.meta,
+          ...(updates.isBillable !== undefined && { is_billable: updates.isBillable }),
+          ...(updates.rateMultiplier !== undefined && { rate_multiplier: updates.rateMultiplier }),
+        }
       }
 
-      return updatedEntry
+      const updatedCostLine = await costlineService.update(entryId, updatePayload)
+
+      if (updatedCostLine) {
+        // Update in local state
+        const index = lines.value.findIndex((line) => line.id === entryId)
+        if (index !== -1) {
+          lines.value[index] = updatedCostLine
+        }
+
+        debugLog('✅ Time entry updated successfully:', updatedCostLine)
+
+        // Reload cost lines to get updated data
+        await loadTimeLines()
+
+        return updatedCostLine
+      }
     } catch (err) {
       error.value = 'Failed to update time entry'
       debugLog('❌ Error updating time entry:', err)
@@ -368,60 +394,16 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  async function deleteTimeEntry(entryId: string) {
-    loading.value = true
-    error.value = null
-
-    try {
-      debugLog('🗑️ Deleting time entry:', entryId)
-
-      await TimesheetService.deleteTimeEntry(entryId)
-
-      debugLog('✅ Time entry deleted in backend')
-
-      const initialLength = timeEntries.value.length
-      timeEntries.value = timeEntries.value.filter((e: TimeEntry) => e.id !== entryId)
-
-      if (timeEntries.value.length < initialLength) {
-        debugLog('🗑️ Removed entry from local state')
-      } else {
-        debugLog('⚠️ Entry not found in local state')
-      }
-    } catch (err) {
-      error.value = 'Failed to delete time entry'
-      debugLog('❌ Error deleting time entry:', err)
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function autosaveTimeEntry(
-    entryId: string,
-    updates: {
-      description?: string
-      hours?: number
-      notes?: string
-    },
-  ) {
-    try {
-      await TimesheetService.autosaveTimeEntry(entryId, updates)
-    } catch (err) {
-      debugLog('Autosave failed:', err)
-    }
-  }
-
   function setSelectedStaff(staffId: string) {
     selectedStaffId.value = staffId
-
-    timeEntries.value = []
-    loadTimeEntries()
+    // Clear lines when changing staff
+    lines.value = []
+    loadTimeLines()
   }
 
   function setSelectedDate(date: string) {
     selectedDate.value = date
-
-    loadTimeEntries()
+    loadTimeLines()
   }
 
   function setCurrentView(view: 'staff-day' | 'weekly-kanban' | 'calendar-grid') {
@@ -430,7 +412,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     if (view === 'weekly-kanban' || view === 'calendar-grid') {
       loadWeeklyOverview()
     } else {
-      loadTimeEntries()
+      loadTimeLines()
     }
   }
 
@@ -474,7 +456,6 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
     staff,
     jobs,
-    timeEntries,
     currentWeekData,
     selectedDate,
     selectedStaffId,
@@ -487,7 +468,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     dailyTotals,
 
     currentStaff,
-    entriesForSelectedDate,
+    timeLinesForSelectedDate,
     totalHoursForDate,
     billableHoursForDate,
 
@@ -500,12 +481,10 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     loadStaff,
     loadJobs,
     loadCompanyDefaults,
-    loadTimeEntries,
+    loadTimeLines,
     loadWeeklyOverview,
     createTimeEntry,
     updateTimeEntry,
-    deleteTimeEntry,
-    autosaveTimeEntry,
     setSelectedStaff,
     setSelectedDate,
     setCurrentView,

@@ -67,6 +67,15 @@ src/
 - Typed responses using TypeScript interfaces
 - Error handling with automatic logout on 401
 
+#### No Fallbacks in Our Own Code
+
+**Do not use fallback patterns when accessing our own API or component data.** Use the correct field names directly.
+
+❌ `job.job_number || job.number || job.jobNumber`
+✅ `job.job_number`
+
+If fields are missing or inconsistent, fix the source code, don't mask with fallbacks.
+
 ### Component Architecture
 
 - **Composition API** with `<script setup>` syntax

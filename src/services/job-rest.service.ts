@@ -4,9 +4,6 @@ import {
   JobUpdateResponseSchema,
   type JobDetail,
   type JobUpdateResponse,
-  type TimeEntryCreate,
-  type MaterialEntryCreate,
-  type AdjustmentEntryCreate,
   type JobEvent,
   type FileListResponse,
   FileListResponseSchema,
@@ -36,9 +33,6 @@ export interface JobUpdateData {
 }
 
 export type JobData = JobDetail
-export type TimeEntryCreateData = TimeEntryCreate
-export type MaterialEntryCreateData = MaterialEntryCreate
-export type AdjustmentEntryCreateData = AdjustmentEntryCreate
 export type JobDetailResponse = JobUpdateResponse
 export type { JobEvent }
 
@@ -145,51 +139,6 @@ export class JobRestService {
         {
           description,
         },
-      )
-      return this.handleResponse(response)
-    } catch (error) {
-      return this.handleError(error)
-    }
-  }
-
-  async createTimeEntry(
-    jobId: string,
-    timeEntryData: TimeEntryCreateData,
-  ): Promise<JobDetailResponse> {
-    try {
-      const response: AxiosResponse<JobDetailResponse> = await api.post(
-        `/job/rest/jobs/${jobId}/time-entries/`,
-        timeEntryData,
-      )
-      return this.handleResponse(response)
-    } catch (error) {
-      return this.handleError(error)
-    }
-  }
-
-  async createMaterialEntry(
-    jobId: string,
-    materialEntryData: MaterialEntryCreateData,
-  ): Promise<JobDetailResponse> {
-    try {
-      const response: AxiosResponse<JobDetailResponse> = await api.post(
-        `/job/rest/jobs/${jobId}/material-entries/`,
-        materialEntryData,
-      )
-      return this.handleResponse(response)
-    } catch (error) {
-      return this.handleError(error)
-    }
-  }
-
-  async createAdjustmentEntry(
-    jobId: string,
-    adjustmentEntryData: AdjustmentEntryCreateData,
-  ): Promise<JobDetailResponse> {
-    try {
-      const response: AxiosResponse<JobDetailResponse> = await api.post(
-        `/job/rest/jobs/${jobId}/adjustment-entries/`,
-        adjustmentEntryData,
       )
       return this.handleResponse(response)
     } catch (error) {
