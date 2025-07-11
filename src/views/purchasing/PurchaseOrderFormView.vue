@@ -141,76 +141,18 @@ import { extractErrorMessage, createErrorToast } from '@/utils/errorHandler'
 import { toast } from 'vue-sonner'
 import axios from 'axios'
 
-/**
+// Import types from generated API schemas
+import type { 
+  PurchaseOrderLine, 
+  PurchaseOrderDetail, 
+  Job 
+} from '@/api/generated/api'
 
- * @deprecated Use generated types from src/api/generated instead
+// Import UI-specific types from local schemas
+import type { XeroSyncResponse } from '@/api/local/schemas'
 
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-type Status = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface PurchaseOrderLine {
-  id?: string
-  item_code: string
-  description: string
-  quantity: number
-  unit_cost: number | null
-  price_tbc: boolean
-  job_id?: string
-  metal_type?: string
-  alloy?: string
-  specifics?: string
-  location?: string
-  dimensions?: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface PurchaseOrder {
-  po_number: string
-  supplier: string
-  supplier_id?: string
-  supplier_has_xero_id: boolean
-  reference: string
-  order_date: string
-  expected_delivery: string
-  status: Status
-  lines: PurchaseOrderLine[]
-  online_url?: string
-  xero_id?: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface XeroSyncResponse {
-  success: boolean
-  error?: string
-  is_incomplete_po?: boolean
-  online_url?: string
-  xero_id?: string
-}
+// Use the generated interface instead of local type
+type PurchaseOrder = PurchaseOrderDetail
 
 const route = useRoute()
 const router = useRouter()
@@ -224,27 +166,6 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const jobs = ref<Job[]>([])
 const isLoadingJobs = ref(false)
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Job {
-  id: string
-  job_number: string
-  name: string
-  client_name: string
-  status: string
-  charge_out_rate: number
-  cost_set_id?: string
-  cost_centre?: string
-  budget_code?: string
-  job_display_name?: string
-}
 
 const po = ref<PurchaseOrder>({
   po_number: '',

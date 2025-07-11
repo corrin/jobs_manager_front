@@ -10,3 +10,15 @@ export const TimesheetEntryWithMetaSchema = TimesheetCostLineSchema.extend({
 })
 
 export type TimesheetEntryWithMeta = z.infer<typeof TimesheetEntryWithMetaSchema>
+
+// Xero Sync Response for custom Xero endpoints that aren't in the generated API
+export const XeroSyncResponseSchema = z.object({
+  success: z.boolean(),
+  error: z.string().optional(),
+  xero_id: z.string().optional(),
+  online_url: z.string().url().optional(),
+  error_type: z.string().optional(),
+  details: z.string().optional(),
+})
+
+export type XeroSyncResponse = z.infer<typeof XeroSyncResponseSchema>
