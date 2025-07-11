@@ -57,6 +57,14 @@ import { ref, computed, onMounted } from 'vue'
 import { getDjangoJobs, deleteDjangoJob } from '@/services/django-jobs-service'
 import JobFormModal from '@/components/JobFormModal.vue'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface DjangoJob {
   id: string
   next_run_time: string | null

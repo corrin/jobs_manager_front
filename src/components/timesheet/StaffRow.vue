@@ -171,6 +171,14 @@ import { CheckCircle, AlertCircle, AlertTriangle, Clock, Edit, Eye } from 'lucid
 import { formatHours } from '@/services/daily-timesheet.service'
 import type { StaffDailyData } from '@/services/daily-timesheet.service'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   staff: StaffDailyData
   date: string

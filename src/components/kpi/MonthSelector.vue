@@ -30,10 +30,26 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   year: number
   month: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Emits {
   (e: 'update:year', value: number): void

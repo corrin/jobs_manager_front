@@ -473,6 +473,10 @@ import { useTimesheetStore } from '@/stores/timesheet'
 import * as costlineService from '@/services/costline.service'
 
 // Local type definitions
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 interface Job {
   id: string
   job_number: number
@@ -490,6 +494,14 @@ interface Job {
   displayName?: string
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Staff {
   id: string
   firstName: string
@@ -498,6 +510,14 @@ interface Staff {
   fullName: string
   name?: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface CompanyDefaults {
   defaultWageRate: number
@@ -717,6 +737,14 @@ function syncGridState() {
     })),
   )
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface TimesheetEntryWithMeta {
   id?: number
@@ -1004,6 +1032,14 @@ const loadTimesheetData = async () => {
     debugLog('📄 Cost lines from API:', response.cost_lines)
     debugLog('📊 Number of cost lines:', response.cost_lines?.length || 0)
 
+    /**
+
+     * @deprecated Use generated types from src/api/generated instead
+
+     * This interface will be removed after migration to openapi-zod-client generated types
+
+     */
+
     interface BackendCostLine {
       id: number
       kind: 'time' | 'material' | 'adjust'
@@ -1258,6 +1294,10 @@ onUnmounted(() => {
 })
 
 declare global {
+  /**
+   * @deprecated Use generated types from src/api/generated instead
+   * This interface will be removed after migration to openapi-zod-client generated types
+   */
   interface Window {
     timesheetJobs?: unknown
     currentStaff?: unknown

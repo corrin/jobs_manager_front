@@ -214,6 +214,14 @@ import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
 import { useJobsStore } from '../../stores/jobs'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   jobId: string
   jobData?: Job
@@ -224,6 +232,14 @@ const props = defineProps<Props>()
 const currentQuote = computed(() => {
   const jobData = props.jobData as unknown
 
+  /**
+
+   * @deprecated Use generated types from src/api/generated instead
+
+   * This interface will be removed after migration to openapi-zod-client generated types
+
+   */
+
   type QuoteData = {
     id: string
     kind: 'quote'
@@ -232,6 +248,10 @@ const currentQuote = computed(() => {
     summary: { cost: number; rev: number; hours: number }
     cost_lines: CostLine[]
   }
+  /**
+   * @deprecated Use generated types from src/api/generated instead
+   * This interface will be removed after migration to openapi-zod-client generated types
+   */
   type JobData = { latest_quote?: QuoteData; latest_quote_pricing?: { id: string } }
   const isJobData = (data: unknown): data is JobData => typeof data === 'object' && data !== null
 

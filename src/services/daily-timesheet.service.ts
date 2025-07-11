@@ -1,5 +1,13 @@
 import api from '@/plugins/axios'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface JobBreakdown {
   job_id: string
   job_number: string
@@ -10,6 +18,14 @@ export interface JobBreakdown {
   cost: number
   is_billable: boolean
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface StaffDailyData {
   staff_id: string
@@ -31,6 +47,14 @@ export interface StaffDailyData {
   alerts: string[]
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface DailyTotals {
   total_scheduled_hours: number
   total_actual_hours: number
@@ -44,6 +68,14 @@ export interface DailyTotals {
   missing_hours: number
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface SummaryStats {
   total_staff: number
   complete_staff: number
@@ -51,6 +83,14 @@ export interface SummaryStats {
   missing_staff: number
   completion_rate: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface DailyTimesheetSummary {
   date: string

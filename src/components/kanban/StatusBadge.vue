@@ -8,6 +8,14 @@
 import { computed } from 'vue'
 import { statusColorMap } from '@/utils/statusMappings'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   label: string
   status: string

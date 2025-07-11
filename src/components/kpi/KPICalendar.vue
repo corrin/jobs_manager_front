@@ -38,6 +38,14 @@ import { computed } from 'vue'
 import type { DayKPI, Thresholds } from '@/services/kpi.service'
 import KPICalendarDay from './KPICalendarDay.vue'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   calendarData: Record<string, DayKPI>
   thresholds: Thresholds

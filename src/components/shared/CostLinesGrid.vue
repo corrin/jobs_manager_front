@@ -186,6 +186,14 @@
 <script setup lang="ts">
 import { defineEmits, withDefaults } from 'vue'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface CostLine {
   id?: number
   kind: string
@@ -196,6 +204,14 @@ interface CostLine {
   ext_refs?: unknown
   meta?: unknown
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Props {
   costLines: CostLine[]

@@ -37,9 +37,25 @@ import { staffService } from '@/services/staff.service'
 import type { Staff } from '@/types'
 import { PersonSchema } from '@/schemas/kanban.schemas'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   activeFilters?: string[]
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Emits {
   (e: 'staff-filter-changed', staffIds: string[]): void

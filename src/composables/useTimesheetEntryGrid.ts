@@ -20,6 +20,14 @@ import type {
 } from '@/types/timesheet.types'
 import type { CompanyDefaults } from '@/types/timesheet.types'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 type TimesheetEntryGridRowWithSaving = TimesheetEntryGridRow & { isSaving?: boolean }
 
 export function useTimesheetEntryGrid(

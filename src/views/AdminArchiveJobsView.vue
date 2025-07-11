@@ -62,6 +62,14 @@ import JobTable from './JobTable.vue'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Job {
   id: string
   job_number: number

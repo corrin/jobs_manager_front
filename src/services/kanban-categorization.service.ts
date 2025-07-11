@@ -1,8 +1,20 @@
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface KanbanSubCategory {
   statusKey: string
   badgeLabel: string
   badgeColorClass: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface KanbanColumn {
   columnId: string

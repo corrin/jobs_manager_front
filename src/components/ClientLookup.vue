@@ -98,6 +98,14 @@ import { useClientLookup } from '@/composables/useClientLookup'
 import CreateClientModal from '@/components/CreateClientModal.vue'
 import type { Client } from '@/composables/useClientLookup'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   id: string
   label: string

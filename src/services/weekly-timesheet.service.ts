@@ -1,6 +1,10 @@
 import api from '@/plugins/axios'
 import { dateService } from '@/services/date.service'
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface WeeklyStaffData {
   staff_id: string
   name: string
@@ -19,6 +23,10 @@ export interface WeeklyStaffData {
   total_leave_hours?: number
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface WeeklyDayData {
   day: string
   hours: number
@@ -33,11 +41,19 @@ export interface WeeklyDayData {
   leave_hours?: number
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface WeeklySummary {
   total_hours: number
   billable_percentage: number
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface JobMetrics {
   job_count: number
   graphic?: string
@@ -47,6 +63,10 @@ export interface JobMetrics {
   jobs_over_budget?: number
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface WeeklyTimesheetData {
   week_days: string[]
   staff_data: WeeklyStaffData[]
@@ -58,10 +78,18 @@ export interface WeeklyTimesheetData {
   end_date: string
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface IMSWeeklyData extends WeeklyTimesheetData {
   ims_week: string[]
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 interface WeeklyTimesheetParams {
   start_date?: string
   export_to_ims?: 'true'
@@ -97,6 +125,10 @@ export const exportToIMS = async (startDate: string): Promise<IMSWeeklyData> => 
   return response.data
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface PaidAbsenceRequest {
   staff_id: string
   start_date: string

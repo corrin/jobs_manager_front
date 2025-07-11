@@ -347,6 +347,14 @@ import type { QuotePreview, QuoteApplyResult } from '@/services/quote.service'
 import type { QuoteSheet } from '@/schemas/job.schemas'
 import { extractQuoteErrorMessage, logError } from '@/utils/error-handler'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface QuoteData {
   id: string
   kind: 'quote'
@@ -368,6 +376,14 @@ interface QuoteData {
 }
 
 import type { Job } from '@/types'
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Props {
   quoteData?: QuoteData | null

@@ -199,6 +199,10 @@ export function useXeroAuth() {
     const sseUrl = `${getApiBaseUrl()}/api/xero/sync-stream/`
     eventSource.value = new EventSource(sseUrl, { withCredentials: true })
     eventSource.value.onmessage = (event: MessageEvent) => {
+      /**
+       * @deprecated Use generated types from src/api/generated instead
+       * This interface will be removed after migration to openapi-zod-client generated types
+       */
       type SseEvt = {
         datetime: string
         message: string

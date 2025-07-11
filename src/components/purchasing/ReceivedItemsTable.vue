@@ -13,10 +13,26 @@ import {
 } from '@/components/ui/select'
 import { ArrowUp, ArrowUpToLine } from 'lucide-vue-next'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface Job {
   id: string
   name: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface ReceivedLine {
   id: string
@@ -33,6 +49,14 @@ export interface ReceivedLine {
   selected?: boolean
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface DataTableRowContext {
   row: {
     original: ReceivedLine
@@ -40,12 +64,28 @@ interface DataTableRowContext {
   }
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 type Props = {
   lines: ReceivedLine[]
   selectedLines: string[]
   jobs: Job[]
   stockHoldingJob: Job | null
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 type Emits = {
   (e: 'update:selected-lines', lineIds: string[]): void

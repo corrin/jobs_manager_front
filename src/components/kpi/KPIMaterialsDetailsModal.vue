@@ -213,6 +213,14 @@ import {
 import type { DayKPI } from '@/services/kpi.service'
 import { kpiService } from '@/services/kpi.service'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   calendarData: Record<string, DayKPI> | null
   year: number

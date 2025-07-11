@@ -20,4 +20,8 @@ export const badgeVariants = cva(
     },
   },
 )
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export type BadgeVariants = VariantProps<typeof badgeVariants>

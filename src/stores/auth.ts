@@ -4,6 +4,10 @@ import api from '@/plugins/axios'
 import type { User, LoginCredentials } from '@/types/auth.types'
 import { debugLog } from '@/utils/debug'
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 interface ErrorResponse {
   detail?: string
   message?: string
@@ -11,6 +15,10 @@ interface ErrorResponse {
   non_field_errors?: string[]
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 interface AxiosErrorResponse {
   status?: number
   data?: ErrorResponse

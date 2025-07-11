@@ -1,6 +1,14 @@
 import api from '@/plugins/axios'
 import { debugLog } from '@/utils/debug'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface Client {
   id?: number
   name: string
@@ -10,6 +18,14 @@ export interface Client {
   contact_person?: string
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface CreateClientData {
   name: string
   email?: string
@@ -17,6 +33,14 @@ export interface CreateClientData {
   address?: string
   is_account_customer?: boolean
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface CreateClientResponse {
   success: boolean

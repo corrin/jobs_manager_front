@@ -14,7 +14,23 @@ import {
 import { Check, AlertCircle, UploadCloud, ExternalLink, Printer, Mail } from 'lucide-vue-next'
 import ClientLookup from '@/components/ClientLookup.vue'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 type Status = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface PurchaseOrder {
   po_number: string

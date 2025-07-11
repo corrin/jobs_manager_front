@@ -5,6 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ArrowDown, ArrowDownToLine } from 'lucide-vue-next'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface PendingLine {
   id: string
   job_name?: string
@@ -15,6 +23,14 @@ export interface PendingLine {
   selected?: boolean
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface DataTableRowContext {
   row: {
     original: PendingLine
@@ -22,10 +38,26 @@ interface DataTableRowContext {
   }
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 type Props = {
   lines: PendingLine[]
   selectedLines: string[]
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 type Emits = {
   (e: 'update:selected-lines', lineIds: string[]): void

@@ -92,12 +92,28 @@ import { ref, watch } from 'vue'
 import SimpleTotalTable from './SimpleTotalTable.vue'
 import type { JobData, CompanyDefaults } from '@/services/job-rest.service'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface PricingSection {
   time: number
   materials: number
   adjustments: number
   total: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Props {
   jobData: JobData

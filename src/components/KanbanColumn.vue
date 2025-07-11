@@ -124,6 +124,14 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import JobCard from '@/components/JobCard.vue'
 import type { Job, StatusChoice } from '@/types'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface KanbanColumnProps {
   status: StatusChoice
   jobs: Job[]
@@ -134,6 +142,14 @@ interface KanbanColumnProps {
   isMovementModeActive?: boolean
   isJobSelectedForMovement?: (jobId: string) => boolean
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface KanbanColumnEmits {
   (e: 'job-click', job: Job): void

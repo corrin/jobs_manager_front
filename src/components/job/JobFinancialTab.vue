@@ -135,6 +135,14 @@ import { computed } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface JobData {
   id: string
   delivery_date?: string | null
@@ -166,6 +174,14 @@ interface JobData {
     online_url?: string
   } | null
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Props {
   jobData: JobData | null

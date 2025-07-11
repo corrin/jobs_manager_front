@@ -2,11 +2,27 @@ import axios from 'axios'
 
 const API_BASE = '/quoting/api/'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface DjangoJob {
   id: string
   next_run_time: string | null
   job_state: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface DjangoJobExecution {
   id: number

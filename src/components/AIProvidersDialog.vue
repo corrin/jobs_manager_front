@@ -120,6 +120,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import Button from './ui/button/Button.vue'
 import { ref, watch } from 'vue'
 import { ArrowLeft } from 'lucide-vue-next'
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 interface AIProvider {
   id?: number
   name: string

@@ -141,7 +141,23 @@ import { extractErrorMessage, createErrorToast } from '@/utils/errorHandler'
 import { toast } from 'vue-sonner'
 import axios from 'axios'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 type Status = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface PurchaseOrderLine {
   id?: string
@@ -158,6 +174,14 @@ interface PurchaseOrderLine {
   dimensions?: string
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface PurchaseOrder {
   po_number: string
   supplier: string
@@ -171,6 +195,14 @@ interface PurchaseOrder {
   online_url?: string
   xero_id?: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface XeroSyncResponse {
   success: boolean
@@ -192,6 +224,14 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const jobs = ref<Job[]>([])
 const isLoadingJobs = ref(false)
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Job {
   id: string

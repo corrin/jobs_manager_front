@@ -122,6 +122,14 @@
 import { computed } from 'vue'
 import { FileX } from 'lucide-vue-next'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface CostLineSummary {
   cost: number
   rev: number
@@ -129,6 +137,14 @@ interface CostLineSummary {
   created?: string
   [key: string]: unknown
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface CostLine {
   kind: 'time' | 'material' | string

@@ -168,6 +168,14 @@ import {
 } from '@/schemas/client.schemas'
 import type { Client } from '@/composables/useClientLookup'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   isOpen: boolean
   initialName?: string

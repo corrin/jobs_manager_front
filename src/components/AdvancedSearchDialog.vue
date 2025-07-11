@@ -131,6 +131,14 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface AdvancedFilters {
   job_number: string
   name: string
@@ -143,6 +151,14 @@ interface AdvancedFilters {
   created_before: string
   paid: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Props {
   isOpen: boolean

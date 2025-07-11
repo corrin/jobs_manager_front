@@ -35,12 +35,28 @@ import { computed } from 'vue'
 import type { Staff } from '@/types'
 import type { StaffAvatarSize } from '@/types/staff'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   staff: Staff
   size?: StaffAvatarSize
   isActive?: boolean
   isDragging?: boolean
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Emits {
   (e: 'click'): void

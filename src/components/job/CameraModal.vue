@@ -118,6 +118,14 @@ import {
 } from '@/components/ui/dialog'
 import { useCamera } from '@/composables/useCamera'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   isOpen: boolean
 }

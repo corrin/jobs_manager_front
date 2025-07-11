@@ -1,6 +1,14 @@
 import { computed } from 'vue'
 import type { Job } from '@/types'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface StatusConfig {
   variant: 'default' | 'secondary' | 'outline'
   borderClass: string

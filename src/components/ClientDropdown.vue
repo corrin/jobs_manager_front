@@ -31,12 +31,28 @@ import { ref, onMounted, watch } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
 import { clientService, type Client } from '@/services/clientService'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   id: string
   label: string
   placeholder?: string
   modelValue?: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Emits {
   (e: 'update:modelValue', value: string): void

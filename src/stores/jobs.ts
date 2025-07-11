@@ -4,6 +4,10 @@ import type { JobDetail, JobEvent } from '@/schemas/job.schemas'
 import type { CompanyDefaults } from '@/types/timesheet.types'
 import { debugLog } from '@/utils/debug'
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface JobKanbanData {
   id: string
   name: string
@@ -21,6 +25,10 @@ export interface JobKanbanData {
   priority?: number
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface JobsStoreState {
   detailedJobs: Record<string, JobDetail>
 

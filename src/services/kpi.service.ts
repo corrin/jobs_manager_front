@@ -1,6 +1,14 @@
 import apiClient from './api'
 import { debugLog } from '@/utils/debug'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface KPIDay {
   date: string
   total_hours: number
@@ -13,6 +21,14 @@ export interface KPIDay {
   entries_count: number
   staff_count: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface KPICalendarData {
   calendar_data: Record<string, KPIDay>
@@ -38,10 +54,26 @@ export interface KPICalendarData {
   mode: 'timesheet' | 'ims'
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface KPICalendarParams {
   start_date: string
   mode?: 'timesheet' | 'ims'
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface DayKPI {
   date: string
@@ -55,6 +87,14 @@ export interface DayKPI {
   details: DayDetails
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface DayDetails {
   time_revenue: number
   material_revenue: number
@@ -65,6 +105,14 @@ export interface DayDetails {
   job_breakdown: JobBreakdown[]
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface JobBreakdown {
   job_id: string
   job_number: number
@@ -74,6 +122,14 @@ export interface JobBreakdown {
   adjustment_profit: number
   total_profit: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface MonthlyTotals {
   billable_hours: number
@@ -86,12 +142,28 @@ export interface MonthlyTotals {
   days_red: number
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface Thresholds {
   billable_threshold_green: number
   billable_threshold_amber: number
   daily_gp_target: number
   shop_hours_target: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface KPICalendarResponse {
   calendar_data: Record<string, DayKPI>
@@ -100,6 +172,14 @@ export interface KPICalendarResponse {
   year: number
   month: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface KPIAccountingParams {
   year?: number

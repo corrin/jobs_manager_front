@@ -22,6 +22,14 @@ import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type Quill from 'quill'
 import RangeStatic from 'quill'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   id?: string
   label?: string

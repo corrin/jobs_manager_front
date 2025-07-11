@@ -58,6 +58,14 @@ import Button from '@/components/ui/button/Button.vue'
 import { ref, watch } from 'vue'
 import { updateCompanyDefaults } from '@/services/admin-company-defaults-service'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface CompanyDefaultsForm {
   company_name: string
   charge_out_rate: number

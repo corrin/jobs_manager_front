@@ -325,9 +325,25 @@ import { ref, computed } from 'vue'
 import { useQuoteImport } from '@/composables/useQuoteImport'
 import type { QuoteImportResponse } from '@/services/quote-import.service'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   jobId: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Emits {
   (e: 'success', result: QuoteImportResponse): void

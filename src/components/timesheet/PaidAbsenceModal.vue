@@ -152,11 +152,27 @@ import { debugLog } from '@/utils/debug'
 import { ref, computed, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Staff {
   id: string
   name: string
   initials: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface AbsenceForm {
   staffId: string
@@ -168,16 +184,40 @@ interface AbsenceForm {
   description: string
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface AbsenceSummary {
   duration: string
   totalHours: number
   workingDays: number
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   isOpen: boolean
   availableStaff: Staff[]
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Emits {
   (e: 'close'): void

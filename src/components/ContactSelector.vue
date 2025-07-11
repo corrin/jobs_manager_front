@@ -65,6 +65,14 @@ import { useContactManagement } from '@/composables/useContactManagement'
 import ContactSelectionModal from './ContactSelectionModal.vue'
 import type { ClientContact } from '@/composables/useClientLookup'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   id: string
   label: string

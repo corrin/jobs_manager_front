@@ -3,6 +3,14 @@ import { CostLineSchema } from '@/schemas/costing.schemas'
 import type { CostLine } from '@/types/costing.types'
 import { debugLog } from '@/utils/debug'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface CostLineCreatePayload {
   kind: 'time' | 'material' | 'adjust'
   desc: string
@@ -13,6 +21,14 @@ export interface CostLineCreatePayload {
   meta?: Record<string, unknown>
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface CostLineUpdatePayload {
   desc?: string
   quantity?: string
@@ -22,6 +38,14 @@ export interface CostLineUpdatePayload {
   meta?: Record<string, unknown>
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface TimesheetCostLine extends CostLine {
   job_id: string
   job_number: string
@@ -29,6 +53,14 @@ export interface TimesheetCostLine extends CostLine {
   client_name: string
   charge_out_rate: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface TimesheetEntriesResponse {
   cost_lines: TimesheetCostLine[]

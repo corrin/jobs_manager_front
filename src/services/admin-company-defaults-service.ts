@@ -1,5 +1,13 @@
 import axios from 'axios'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface AIProvider {
   id?: string
   name: string
@@ -8,6 +16,14 @@ export interface AIProvider {
   api_key: string
   default: boolean
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface CompanyDefaults {
   company_name: string

@@ -74,10 +74,26 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ChevronDown, X } from 'lucide-vue-next'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface StatusOption {
   value: string
   label: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Props {
   modelValue: string[]

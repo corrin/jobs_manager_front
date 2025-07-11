@@ -120,6 +120,14 @@ import { BarChart3, Briefcase, Clock, TrendingUp, DollarSign, Users } from 'luci
 import type { JobMetrics } from '@/services/weekly-timesheet.service'
 import { formatHours, formatPercentage } from '@/services/weekly-timesheet.service'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   open: boolean
   metrics: JobMetrics

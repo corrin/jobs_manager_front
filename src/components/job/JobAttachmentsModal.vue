@@ -221,6 +221,14 @@ import CameraModal from './CameraModal.vue'
 import type { JobFile } from '@/schemas/job.schemas'
 import { jobRestService } from '@/services/job-rest.service'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   jobId: string
   jobNumber: number | undefined

@@ -32,7 +32,23 @@ import { useRouter } from 'vue-router'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { toast } from 'vue-sonner'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 type Status = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface PurchaseOrderForm {
   po_number: string

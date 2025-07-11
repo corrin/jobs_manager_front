@@ -3,6 +3,14 @@ import Input from '@/components/ui/input/Input.vue'
 import { CustomDatePicker } from '@/components/ui/custom-date-picker'
 import { ref, watch } from 'vue'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface DateRange {
   start: string | null
   end: string | null

@@ -1,12 +1,28 @@
 import api from '@/services/api'
 import type { CostLine } from '@/types/costing.types'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface ValidationIssue {
   severity: 'error' | 'warning'
   message: string
   line_number?: number
   column?: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface DraftLine {
   kind: string
@@ -17,6 +33,14 @@ export interface DraftLine {
   category?: string
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface DiffPreview {
   additions_count: number
   updates_count: number
@@ -25,11 +49,27 @@ export interface DiffPreview {
   next_revision: number
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface ValidationReport {
   issues: ValidationIssue[]
   warnings: string[]
   errors: string[]
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface PreviewResult {
   success: boolean
@@ -40,11 +80,27 @@ export interface PreviewResult {
   error?: string
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface QuoteImportPreviewResponse {
   job_id: string
   job_name: string
   preview: PreviewResult
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface CostSet {
   id: number
@@ -59,11 +115,27 @@ export interface CostSet {
   cost_lines: CostLine[]
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface ImportChanges {
   additions: number
   updates: number
   deletions: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface ImportValidation {
   warnings_count?: number
@@ -72,6 +144,14 @@ export interface ImportValidation {
   critical_count?: number
   can_proceed?: boolean
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface QuoteImportResponse {
   success: boolean
@@ -82,6 +162,14 @@ export interface QuoteImportResponse {
   validation?: ImportValidation
   error?: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface QuoteStatusResponse {
   job_id: string

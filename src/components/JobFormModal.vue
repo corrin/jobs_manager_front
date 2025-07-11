@@ -41,11 +41,27 @@ import Input from '@/components/ui/input/Input.vue'
 import { ref, watch } from 'vue'
 import { createDjangoJob, updateDjangoJob } from '@/services/django-jobs-service'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface DjangoJobForm {
   id: string
   next_run_time: string
   job_state: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface DjangoJob {
   id: string

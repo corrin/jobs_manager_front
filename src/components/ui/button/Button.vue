@@ -5,6 +5,17 @@ import { Primitive, type PrimitiveProps } from 'reka-ui'
 import { cn } from '@/lib/utils'
 import { type ButtonVariants, buttonVariants } from '.'
 
+/**
+
+
+ * @deprecated Use generated types from src/api/generated instead
+
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+
+ */
+
 interface Props extends PrimitiveProps {
   variant?: ButtonVariants['variant']
   size?: ButtonVariants['size']

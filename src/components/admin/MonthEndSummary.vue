@@ -90,11 +90,27 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface JobHistoryEntry {
   date: string
   total_hours: number
   total_dollars: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Job {
   job_id: string
@@ -102,6 +118,14 @@ interface Job {
   job_name: string
   history: JobHistoryEntry[]
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface StockSummary {
   material_line_count: number

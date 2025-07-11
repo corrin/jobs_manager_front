@@ -233,6 +233,14 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   jobData: JobData | null
   isOpen: boolean

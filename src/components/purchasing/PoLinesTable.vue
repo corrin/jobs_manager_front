@@ -14,12 +14,28 @@ import { metalTypeOptions } from '@/utils/metalType'
 import ItemSelect from '@/views/purchasing/ItemSelect.vue'
 import JobSelect from './JobSelect.vue'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface DataTableRowContext {
   row: {
     original: Line
     index: number
   }
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Line {
   id?: string
@@ -39,6 +55,14 @@ interface Line {
   dimensions?: string
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Job {
   id: string
   job_number: string
@@ -48,6 +72,14 @@ interface Job {
   charge_out_rate: number
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface XeroItem {
   id: string
   code: string
@@ -55,12 +87,28 @@ interface XeroItem {
   unit_cost?: number | null
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 type Props = {
   lines: Line[]
   items: XeroItem[]
   jobs: Job[]
   readOnly?: boolean
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 type Emits = {
   (e: 'update:lines', lines: Line[]): void

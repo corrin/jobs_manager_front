@@ -107,10 +107,26 @@
 import { X, Clock, DollarSign, TrendingUp, BarChart3 } from 'lucide-vue-next'
 import type { WeeklySummaryData } from '@/types/weekly-timesheet.types'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   isOpen: boolean
   data: WeeklySummaryData | null
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Emits {
   (e: 'close'): void

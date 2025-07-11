@@ -3,6 +3,14 @@ import type { QuoteSheet } from '../schemas/job.schemas'
 import type { CostLine } from '@/types/costing.types'
 import type { Job } from '@/types/index'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface QuotePreview {
   draft_lines: Array<{
     kind: string
@@ -29,6 +37,14 @@ export interface QuotePreview {
     errors: string[]
   } | null
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface QuoteApplyResult {
   success: boolean

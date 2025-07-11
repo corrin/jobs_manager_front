@@ -10,6 +10,14 @@ import {
   type JobFile,
 } from '@/schemas/job.schemas'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface JobCreateData {
   name: string
   client_id: string
@@ -20,6 +28,14 @@ export interface JobCreateData {
   contact_id?: string
   contact_person?: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface JobUpdateData {
   name?: string
@@ -32,9 +48,29 @@ export interface JobUpdateData {
   [key: string]: unknown
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export type JobData = JobDetail
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export type JobDetailResponse = JobUpdateResponse
 export type { JobEvent }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface CompanyDefaults {
   materials_markup: number
@@ -42,6 +78,14 @@ export interface CompanyDefaults {
   charge_out_rate: number
   wage_rate: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface ApiResponse<T = unknown> {
   success: boolean
@@ -51,6 +95,14 @@ export interface ApiResponse<T = unknown> {
   job_id?: string
   job_number?: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface UploadFilesResponse {
   status: string

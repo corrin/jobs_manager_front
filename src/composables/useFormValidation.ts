@@ -1,9 +1,25 @@
 import { ref, computed } from 'vue'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface ValidationRule<T = unknown> {
   test: (value: T) => boolean
   message: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface ValidationErrors {
   [key: string]: string

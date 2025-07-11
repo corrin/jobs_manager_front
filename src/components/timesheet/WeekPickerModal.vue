@@ -113,6 +113,14 @@ import { ref, computed, watch } from 'vue'
 import { X, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface CalendarDay {
   date: Date
   day: number
@@ -122,10 +130,26 @@ interface CalendarDay {
   isInSelectedWeek: boolean
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   isOpen: boolean
   initialWeekStart?: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Emits {
   (e: 'close'): void

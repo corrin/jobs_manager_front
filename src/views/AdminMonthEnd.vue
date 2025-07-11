@@ -199,11 +199,27 @@ import { toast } from 'vue-sonner'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import MonthEndSummary from '@/components/admin/MonthEndSummary.vue'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface MonthEndJobHistory {
   date: string
   total_hours: number
   total_dollars: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface MonthEndJob {
   job_id: string
@@ -215,11 +231,27 @@ interface MonthEndJob {
   total_dollars: number
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface StockJobHistory {
   date: string
   material_line_count: number
   material_cost: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface StockJob {
   job_id: string
@@ -227,6 +259,14 @@ interface StockJob {
   job_name: string
   history: StockJobHistory[]
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface MonthTab {
   key: string

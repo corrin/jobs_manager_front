@@ -167,6 +167,14 @@ import { computed, ref, onMounted } from 'vue'
 import { Smile, Frown, ArrowUp, ArrowDown } from 'lucide-vue-next'
 import { useCostingStore } from '../../stores/costing'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface CostLine {
   quantity: number | string
   unit_cost: number | string
@@ -174,9 +182,25 @@ interface CostLine {
   kind: string
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface CostSet {
   cost_lines: CostLine[]
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface CostSetSummary {
   cost: number

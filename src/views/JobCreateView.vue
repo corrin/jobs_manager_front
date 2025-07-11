@@ -210,6 +210,14 @@ const formData = ref<JobCreateData & { estimatedMaterials: number; estimatedTime
   estimatedTime: 0,
 })
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Client {
   id: string
   name: string

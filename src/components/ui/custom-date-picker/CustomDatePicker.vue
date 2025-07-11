@@ -2,6 +2,14 @@
 import { reactive, watch } from 'vue'
 import Input from '@/components/ui/input/Input.vue'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface DateRange {
   start: string | null
   end: string | null

@@ -4,6 +4,10 @@ import api from '@/plugins/axios'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import { debugLog } from '@/utils/debug'
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 interface ExistingAllocation {
   quantity: number
   type: string
@@ -15,6 +19,10 @@ interface ExistingAllocation {
   stock_location?: string
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface Job {
   id: string
   job_number: string
@@ -25,6 +33,10 @@ export interface Job {
   job_display_name?: string
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface PurchaseOrderLine {
   id: string
   po_id?: string
@@ -44,6 +56,10 @@ export interface PurchaseOrderLine {
   retail_rate?: number
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface PurchaseOrder {
   id: string
   po_number: string
@@ -53,12 +69,20 @@ export interface PurchaseOrder {
   lines: PurchaseOrderLine[]
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface AllocationData {
   job_id: string
   quantity: number
   retail_rate: number
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface DeliveryAllocation {
   job_id: string | null
   stock_location: string | null
@@ -66,6 +90,10 @@ export interface DeliveryAllocation {
   retail_rate: number
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface DeliveryReceipt {
   id: string
   po_number: string
@@ -75,11 +103,19 @@ export interface DeliveryReceipt {
   allocations: Record<string, DeliveryAllocation[]>
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface LineAllocation {
   total_received: number
   allocations: AllocationData[]
 }
 
+/**
+ * @deprecated Use generated types from src/api/generated instead
+ * This interface will be removed after migration to openapi-zod-client generated types
+ */
 export interface DeliveryReceiptData {
   [lineId: string]: LineAllocation
 }

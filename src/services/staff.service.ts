@@ -1,6 +1,14 @@
 import api from '@/plugins/axios'
 import { debugLog } from '@/utils/debug'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface Staff {
   id: number
   first_name: string
@@ -10,6 +18,14 @@ export interface Staff {
   initials?: string
   avatar_url?: string
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface StaffAssignment {
   id: number

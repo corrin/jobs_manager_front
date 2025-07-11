@@ -9,6 +9,14 @@ import {
 } from '@/components/ui/table'
 import { Pagination } from '@/components/ui/pagination'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface ErrorRecord {
   id: string
   timestamp: string

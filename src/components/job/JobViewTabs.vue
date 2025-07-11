@@ -103,6 +103,14 @@ const emit = defineEmits<{
   (e: 'invoice-created'): void
 }>()
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 type TabKey = 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'
 
 const allTabs = [
@@ -124,6 +132,14 @@ const tabs = computed(() => {
 function handleTabChange(tab: TabKey) {
   emit('change-tab', tab)
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface JobData {
   id: string

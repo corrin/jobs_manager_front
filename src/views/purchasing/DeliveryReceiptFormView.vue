@@ -233,6 +233,14 @@ import {
 import { useDeliveryReceiptStore, type PurchaseOrder } from '@/stores/deliveryReceiptStore'
 import type { DeliveryAllocation } from '@/types/purchasing'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface ExistingAllocation {
   quantity: number
   type: string

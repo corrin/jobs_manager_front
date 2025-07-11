@@ -34,6 +34,14 @@
 import { computed } from 'vue'
 import { Clock, TrendingUp, DollarSign, Users, AlertCircle, CheckCircle } from 'lucide-vue-next'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   title: string
   value: string

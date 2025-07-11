@@ -72,6 +72,14 @@ import { useJobCard } from '@/composables/useJobCard'
 import { statusNameMap } from '@/utils/statusMappings'
 import type { Job } from '@/types'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface JobCardProps {
   job: Job
   isDragging?: boolean
@@ -79,6 +87,14 @@ interface JobCardProps {
   isMovementModeActive?: boolean
   isJobSelectedForMovement?: boolean
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface JobCardEmits {
   (e: 'click', job: Job): void

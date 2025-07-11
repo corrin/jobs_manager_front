@@ -16,6 +16,14 @@ import { useDeliveryReceiptStore } from '@/stores/deliveryReceiptStore'
 import { formatMetalType } from '@/utils/metalType'
 import type { PurchaseOrderLine, Job, DeliveryAllocation } from '@/types/purchasing'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface ExistingAllocation {
   quantity: number
   type: string
@@ -27,6 +35,14 @@ interface ExistingAllocation {
   stock_location?: string
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface DataTableRowContext {
   row: {
     original: PurchaseOrderLine
@@ -34,12 +50,28 @@ interface DataTableRowContext {
   }
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 type Props = {
   lines: PurchaseOrderLine[]
   jobs: Job[]
   allocations: Record<string, DeliveryAllocation[]>
   existingAllocations?: Record<string, ExistingAllocation[]>
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 type Emits = {
   (e: 'update:allocations', allocations: Record<string, DeliveryAllocation[]>): void

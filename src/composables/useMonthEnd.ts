@@ -1,10 +1,26 @@
 import api from '@/plugins/axios'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface JobHistoryEntry {
   date: string
   total_hours: number
   total_dollars: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface MonthEndJob {
   job_id: string
@@ -16,11 +32,27 @@ export interface MonthEndJob {
   total_dollars: number
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface StockJobHistoryEntry {
   date: string
   material_line_count: number
   material_cost: number
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface StockJob {
   job_id: string

@@ -1,6 +1,14 @@
 import api from './api'
 import { debugLog } from '@/utils/debug'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface VueChatMessage {
   _id: string
   content: string
@@ -11,6 +19,14 @@ export interface VueChatMessage {
   metadata?: Record<string, unknown>
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface ChatMessage {
   message_id: string
   role: 'user' | 'assistant'
@@ -18,6 +34,14 @@ export interface ChatMessage {
   timestamp: string
   metadata?: Record<string, unknown>
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface ChatHistoryResponse {
   success: boolean
@@ -27,12 +51,28 @@ export interface ChatHistoryResponse {
   }
 }
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 export interface SaveMessageRequest {
   message_id: string
   role: 'user' | 'assistant'
   content: string
   metadata?: Record<string, unknown>
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface SaveMessageResponse {
   success: boolean
@@ -41,6 +81,14 @@ export interface SaveMessageResponse {
     timestamp: string
   }
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 export interface ClearChatResponse {
   success: boolean
@@ -134,9 +182,17 @@ export class QuoteChatService {
   }
 
   async getAssistantResponse(jobId: string, message: string): Promise<ChatMessage> {
+    /**
+     * @deprecated Use generated types from src/api/generated instead
+     * This interface will be removed after migration to openapi-zod-client generated types
+     */
     interface AssistantInteractionRequest {
       message: string
     }
+    /**
+     * @deprecated Use generated types from src/api/generated instead
+     * This interface will be removed after migration to openapi-zod-client generated types
+     */
     interface AssistantInteractionResponse {
       success: boolean
       data: ChatMessage

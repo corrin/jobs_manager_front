@@ -42,6 +42,14 @@ import ErrorDialog from '@/components/admin/errors/ErrorDialog.vue'
 import { ref, watch, onMounted } from 'vue'
 import { useErrorApi, type ErrorRecord } from '@/composables/useErrorApi'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface DateRange {
   start: string | null
   end: string | null

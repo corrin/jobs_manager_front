@@ -231,10 +231,26 @@ import { fetchCostSet } from '@/services/costing.service'
 import type { CostLine, CostSet } from '@/types/costing.types'
 import api from '@/plugins/axios'
 
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
+
 interface Props {
   jobId: string
   actualSummaryFromBackend?: { cost: number; rev: number; hours: number; created?: string }
 }
+
+/**
+
+ * @deprecated Use generated types from src/api/generated instead
+
+ * This interface will be removed after migration to openapi-zod-client generated types
+
+ */
 
 interface Staff {
   id: string
