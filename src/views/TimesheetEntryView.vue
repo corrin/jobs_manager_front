@@ -466,63 +466,16 @@ import {
   AlertCircle,
 } from 'lucide-vue-next'
 
-import type { CostLine } from '@/types/costing.types'
 import { CompanyDefaultsService } from '@/services/company-defaults.service'
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
 import { useTimesheetStore } from '@/stores/timesheet'
 import * as costlineService from '@/services/costline.service'
 
-// Local type definitions
-/**
- * @deprecated Use generated types from src/api/generated instead
- * This interface will be removed after migration to openapi-zod-client generated types
- */
-interface Job {
-  id: string
-  job_number: number
-  name: string
-  client_name: string
-  charge_out_rate: string
-  status: string
-  has_actual_costset: boolean
-  // Legacy fields for backward compatibility
-  jobNumber?: string
-  jobName?: string
-  clientName?: string
-  chargeOutRate?: number
-  number?: string
-  displayName?: string
-}
+// Import types from generated API schemas
+import type { Job, Staff, CompanyDefaults, TimesheetCostLine, CostLine } from '@/api/generated/api'
+// Import UI-specific types from local schemas
+import type { TimesheetEntryWithMeta } from '@/api/local/schemas'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Staff {
-  id: string
-  firstName: string
-  lastName: string
-  wageRate: number
-  fullName: string
-  name?: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface CompanyDefaults {
-  defaultWageRate: number
-  defaultChargeOutRate: number
-}
 
 const router = useRouter()
 const route = useRoute()
@@ -736,34 +689,6 @@ function syncGridState() {
       hours: e.hours,
     })),
   )
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface TimesheetEntryWithMeta {
-  id?: number
-  tempId?: string
-  jobId: string
-  jobNumber?: string
-  description: string
-  hours: number
-  wageRate: number
-  chargeOutRate: number
-  billable: boolean
-  rateMultiplier: number
-  client?: string
-  jobName?: string
-  bill: number
-  cost: number
-  _isSaving?: boolean
-  isNewRow?: boolean
-  isModified?: boolean
 }
 
 async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
@@ -1032,36 +957,7 @@ const loadTimesheetData = async () => {
     debugLog('📄 Cost lines from API:', response.cost_lines)
     debugLog('📊 Number of cost lines:', response.cost_lines?.length || 0)
 
-    /**
-
-     * @deprecated Use generated types from src/api/generated instead
-
-     * This interface will be removed after migration to openapi-zod-client generated types
-
-     */
-
-    interface BackendCostLine {
-      id: number
-      kind: 'time' | 'material' | 'adjust'
-      desc: string
-      quantity: string
-      unit_cost: string
-      unit_rev: string
-      total_cost: number
-      total_rev: number
-      meta: {
-        is_billable?: boolean
-        rate_multiplier?: number
-        [key: string]: unknown
-      }
-      job_id?: string
-      job_number?: string
-      client_name?: string
-      job_name?: string
-      charge_out_rate?: number
-    }
-
-    timeEntries.value = response.cost_lines.map((line: BackendCostLine) => ({
+    timeEntries.value = response.cost_lines.map((line: TimesheetCostLine) => ({
       id: line.id,
       jobId: line.job_id || '',
       jobNumber: line.job_number || '',
@@ -1078,8 +974,7 @@ const loadTimesheetData = async () => {
       staffId: selectedStaffId.value,
       date: currentDate.value,
       wageRate: parseFloat(line.unit_cost),
-      chargeOutRate:
-        typeof line.charge_out_rate === 'number' ? line.charge_out_rate : parseFloat(line.unit_rev),
+      chargeOutRate: parseFloat(line.charge_out_rate),
       rateMultiplier:
         typeof line.meta?.rate_multiplier === 'number' ? line.meta.rate_multiplier : 1.0,
       isNewRow: false,
@@ -1294,10 +1189,6 @@ onUnmounted(() => {
 })
 
 declare global {
-  /**
-   * @deprecated Use generated types from src/api/generated instead
-   * This interface will be removed after migration to openapi-zod-client generated types
-   */
   interface Window {
     timesheetJobs?: unknown
     currentStaff?: unknown
