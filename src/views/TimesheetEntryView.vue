@@ -48,12 +48,12 @@
                   </SelectTrigger>
                   <SelectContent class="bg-slate-800 border-blue-500/30">
                     <SelectItem
-                      v-for="staff in staffList"
+                      v-for="staff in timesheetStore.staff"
                       :key="staff.id"
                       :value="staff.id"
                       class="text-white hover:bg-blue-500/20 text-xs"
                     >
-                      {{ staff.firstName }} {{ staff.lastName }}
+                      {{ staff.first_name }} {{ staff.last_name }}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -185,12 +185,12 @@
                 </SelectTrigger>
                 <SelectContent class="bg-slate-800 border-blue-500/30">
                   <SelectItem
-                    v-for="staff in staffList"
+                    v-for="staff in timesheetStore.staff"
                     :key="staff.id"
                     :value="staff.id"
                     class="text-white hover:bg-blue-500/20"
                   >
-                    {{ staff.firstName }} {{ staff.lastName }}
+                    {{ staff.first_name }} {{ staff.last_name }}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -466,20 +466,20 @@ import {
   AlertCircle,
 } from 'lucide-vue-next'
 
-import { CompanyDefaultsService } from '@/services/company-defaults.service'
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
 import { useTimesheetStore } from '@/stores/timesheet'
+import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import * as costlineService from '@/services/costline.service'
 
 // Import types from generated API schemas
-import type { Job, Staff, CompanyDefaults, TimesheetCostLine, CostLine } from '@/api/generated/api'
+import type { Job, Staff, TimesheetCostLine, CostLine } from '@/api/generated/api'
 // Import UI-specific types from local schemas
 import type { TimesheetEntryWithMeta } from '@/api/local/schemas'
-
 
 const router = useRouter()
 const route = useRoute()
 const timesheetStore = useTimesheetStore()
+const companyDefaultsStore = useCompanyDefaultsStore()
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -499,13 +499,10 @@ const currentDate = ref<string>(initialDate)
 const selectedStaffId = ref<string>(initialStaffId)
 const isInitializing = ref(true)
 
-const staffList = ref<Staff[]>([])
-const jobsList = ref<Job[]>([])
 const timeEntries = ref<TimesheetEntryWithMeta[]>([])
-const companyDefaults = ref<CompanyDefaults | null>(null)
 
 const currentStaff = computed(
-  () => staffList.value.find((s) => s.id === selectedStaffId.value) || null,
+  () => timesheetStore.staff.find((s) => s.id === selectedStaffId.value) || null,
 )
 
 const hasUnsavedChanges = ref(false)
@@ -534,23 +531,23 @@ const {
   getGridData,
   handleKeyboardShortcut,
   handleCellValueChanged: gridHandleCellValueChanged,
-} = useTimesheetEntryGrid(companyDefaults, handleSaveEntry, handleDeleteEntry)
+} = useTimesheetEntryGrid(companyDefaultsStore.companyDefaults, handleSaveEntry, handleDeleteEntry)
 
 const canNavigateStaff = (direction: number): boolean => {
-  if (!staffList.value.length) return false
-  const currentIndex = staffList.value.findIndex((s) => s.id === selectedStaffId.value)
+  if (!timesheetStore.staff.length) return false
+  const currentIndex = timesheetStore.staff.findIndex((s) => s.id === selectedStaffId.value)
   if (currentIndex === -1) return false
 
   const newIndex = currentIndex + direction
-  return newIndex >= 0 && newIndex < staffList.value.length
+  return newIndex >= 0 && newIndex < timesheetStore.staff.length
 }
 
 const navigateStaff = (direction: number) => {
   if (!canNavigateStaff(direction)) return
 
-  const currentIndex = staffList.value.findIndex((s) => s.id === selectedStaffId.value)
+  const currentIndex = timesheetStore.staff.findIndex((s) => s.id === selectedStaffId.value)
   const newIndex = currentIndex + direction
-  const newStaff = staffList.value[newIndex]
+  const newStaff = timesheetStore.staff[newIndex]
 
   if (newStaff) {
     selectedStaffId.value = newStaff.id
@@ -715,7 +712,7 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
     let targetJobId = entry.jobId
     if (!targetJobId && entry.jobNumber) {
       const jobNumber = parseInt(entry.jobNumber, 10)
-      const jobByNumber = jobsList.value.find((j: Job) => j.job_number === jobNumber)
+      const jobByNumber = timesheetStore.jobs.find((j: Job) => j.job_number === jobNumber)
       if (jobByNumber) {
         targetJobId = jobByNumber.id
         entry.jobId = targetJobId
@@ -744,7 +741,7 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
     if (entry.id && typeof entry.id === 'number') {
       savedLine = await costlineService.updateCostLine(entry.id, costLinePayload)
     } else {
-      const job = jobsList.value.find((j: Job) => j.id === targetJobId)
+      const job = timesheetStore.jobs.find((j: Job) => j.id === targetJobId)
       if (!job) throw new Error('Job not found')
       savedLine = await costlineService.createCostLine(job.id, 'actual', costLinePayload)
       entry.id = savedLine.id
@@ -1049,53 +1046,33 @@ onMounted(async () => {
     await timesheetStore.initialize()
     await timesheetStore.loadStaff()
     await timesheetStore.loadJobs()
-
-    companyDefaults.value = await CompanyDefaultsService.getDefaults()
-
-    staffList.value = timesheetStore.staff
-    jobsList.value = timesheetStore.jobs
-
-    const convertedJobs = timesheetStore.jobs.map((job: Job) => ({
-      id: job.id,
-      job_number: job.job_number,
-      name: job.name,
-      client_name: job.client_name,
-      charge_out_rate: parseFloat(job.charge_out_rate) || 0,
-      status: job.status,
-      job_display_name: `${job.job_number} - ${job.name}`,
-    }))
-
-    window.timesheetJobs = convertedJobs
+    await companyDefaultsStore.loadDefaults()
 
     let validStaffId = selectedStaffId.value
 
     if (
-      (!validStaffId || !staffList.value.find((s: Staff) => s.id === validStaffId)) &&
-      staffList.value.length > 0
+      (!validStaffId || !timesheetStore.staff.find((s: Staff) => s.id === validStaffId)) &&
+      timesheetStore.staff.length > 0
     ) {
-      validStaffId = staffList.value[0].id
+      validStaffId = timesheetStore.staff[0].id
       debugLog('📋 No valid staff from URL, using first available:', validStaffId)
-    } else if (validStaffId && staffList.value.find((s: Staff) => s.id === validStaffId)) {
+    } else if (validStaffId && timesheetStore.staff.find((s: Staff) => s.id === validStaffId)) {
       debugLog('👤 Using staff from URL parameters:', validStaffId)
     }
 
     selectedStaffId.value = validStaffId
 
-    const currentStaffData = staffList.value.find((s: Staff) => s.id === validStaffId)
-    window.currentStaff = currentStaffData
+    const currentStaffData = timesheetStore.staff.find((s: Staff) => s.id === validStaffId)
 
-    window.companyDefaults = companyDefaults.value
-
-    debugLog('📋 Available staff:', staffList.value.length)
-    debugLog('💼 Available jobs:', jobsList.value.length)
-    debugLog('🔧 Converted jobs for editor:', convertedJobs.length)
+    debugLog('📋 Available staff:', timesheetStore.staff.length)
+    debugLog('💼 Available jobs:', timesheetStore.jobs.length)
     debugLog(
       '👤 Current staff for calculations:',
       currentStaffData?.name,
       'wage rate:',
       currentStaffData?.wageRate,
     )
-    debugLog('💰 Company defaults for calculations:', companyDefaults.value)
+    debugLog('💰 Company defaults for calculations:', companyDefaultsStore.companyDefaults)
 
     updateRoute()
 
@@ -1166,7 +1143,7 @@ watch(
     }
 
     if (newQuery.staffId && newQuery.staffId !== selectedStaffId.value) {
-      const staffExists = staffList.value.find((s: Staff) => s.id === newQuery.staffId)
+      const staffExists = timesheetStore.staff.find((s: Staff) => s.id === newQuery.staffId)
       if (staffExists) {
         debugLog('👤 Updating staff from URL:', newQuery.staffId)
         selectedStaffId.value = newQuery.staffId as string
@@ -1187,14 +1164,6 @@ watch(
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
-
-declare global {
-  interface Window {
-    timesheetJobs?: unknown
-    currentStaff?: unknown
-    companyDefaults: CompanyDefaults | null
-  }
-}
 </script>
 
 <style scoped>

@@ -233,24 +233,11 @@ import {
 import { useDeliveryReceiptStore, type PurchaseOrder } from '@/stores/deliveryReceiptStore'
 import type { DeliveryAllocation } from '@/types/purchasing'
 
-/**
+// Import types from generated API schemas
+import type { DeliveryReceiptLine } from '@/api/generated/api'
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface ExistingAllocation {
-  quantity: number
-  type: string
-  job_id: string
-  job_name: string
-  allocation_date?: string
-  description?: string
-  retail_rate?: number
-  stock_location?: string
-}
+// Use the generated interface instead of local ExistingAllocation
+type ExistingAllocation = DeliveryReceiptLine
 
 const route = useRoute()
 const router = useRouter()

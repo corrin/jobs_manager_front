@@ -59,18 +59,11 @@ import Button from '@/components/ui/button/Button.vue'
 import { Archive, ArrowRight, Save } from 'lucide-vue-next'
 import { jobColumns as columns } from './jobColumns'
 import JobTable from './JobTable.vue'
-import axios from 'axios'
 import { toast } from 'vue-sonner'
+import { api } from '../api/generated/api'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Job {
+// Create a local Job type for archive functionality
+type JobArchive = {
   id: string
   job_number: number
   name: string
@@ -78,6 +71,8 @@ interface Job {
   updated_at: string
   job_status?: string
 }
+
+type Job = JobArchive
 
 const jobs = ref<Job[]>([])
 const toArchive = ref<Job[]>([])
@@ -94,8 +89,8 @@ async function fetchJobs() {
   loading.value = true
   error.value = ''
   try {
-    const res = await axios.get('/job/api/job/completed/', { withCredentials: true })
-    jobs.value = res.data.results
+    const response = await api.job_api_job_completed_list()
+    jobs.value = response.results || []
     selectedLeft.value = []
     toArchive.value = []
     selectedRight.value = []
@@ -133,19 +128,17 @@ async function saveArchive() {
   message.value = ''
   const toastId = toast.loading('Arquivando jobs...')
   try {
-    const res = await axios.post(
-      '/job/api/job/completed/archive',
-      { ids: toArchive.value.map((j) => j.id) },
-      { withCredentials: true },
-    )
+    const response = await api.job_api_job_completed_archive_create({
+      ids: toArchive.value.map((j) => j.id),
+    })
     toast.dismiss(toastId)
-    if (res.data.success) {
-      toast.success(res.data.message || 'Jobs arquivados com sucesso.')
-      message.value = res.data.message || 'Jobs archived successfully.'
+    if (response.success) {
+      toast.success(response.message || 'Jobs arquivados com sucesso.')
+      message.value = response.message || 'Jobs archived successfully.'
       fetchJobs()
     } else {
-      toast.error(res.data.error || 'Alguns jobs não puderam ser arquivados.')
-      error.value = res.data.error || 'Some jobs could not be archived.'
+      toast.error(response.error || 'Alguns jobs não puderam ser arquivados.')
+      error.value = response.error || 'Some jobs could not be archived.'
     }
   } catch (e) {
     toast.dismiss(toastId)

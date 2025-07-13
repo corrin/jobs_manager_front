@@ -194,79 +194,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { fetchMonthEnd, runMonthEnd, MonthEndJob, StockJob } from '@/composables/useMonthEnd'
+import { fetchMonthEnd, runMonthEnd } from '@/composables/useMonthEnd'
+import type { MonthEndJob, MonthEndStockJob } from '@/api/generated/api'
 import { toast } from 'vue-sonner'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import MonthEndSummary from '@/components/admin/MonthEndSummary.vue'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface MonthEndJobHistory {
-  date: string
-  total_hours: number
-  total_dollars: number
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface MonthEndJob {
-  job_id: string
-  job_number: number
-  job_name: string
-  client_name: string
-  history: MonthEndJobHistory[]
-  total_hours: number
-  total_dollars: number
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface StockJobHistory {
-  date: string
-  material_line_count: number
-  material_cost: number
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface StockJob {
-  job_id: string
-  job_number: number
-  job_name: string
-  history: StockJobHistory[]
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
 
 interface MonthTab {
   key: string
@@ -287,7 +219,7 @@ const customMonthData = ref<{
 } | null>(null)
 
 const jobs = ref<MonthEndJob[]>([])
-const stockJob = ref<StockJob | null>(null)
+const stockJob = ref<MonthEndStockJob | null>(null)
 const totalHours = computed(() => jobs.value.reduce((a, j) => a + j.total_hours, 0))
 const totalDollars = computed(() => jobs.value.reduce((a, j) => a + j.total_dollars, 0))
 const allSelected = computed(
@@ -332,7 +264,7 @@ async function fetchMonthEndData() {
   loading.value = true
   toast.loading('Loading Month-End data...', { id: 'month-end-loading' })
   try {
-    const data = await fetchMonthEnd(selectedMonth.value || new Date().getMonth())
+    const data = await fetchMonthEnd()
     jobs.value = data.jobs
     stockJob.value = data.stockJob
     selectedIds.value = []
@@ -372,7 +304,7 @@ function loadMonthData(month: MonthTab) {
   if (monthData.value[month.key]) return
   loading.value = true
   toast.loading(`Loading data for ${month.label}...`, { id: `month-end-${month.key}` })
-  fetchMonthEnd(month.key)
+  fetchMonthEnd()
     .then((data) => {
       monthData.value[month.key] = {
         jobs: data.jobs,
@@ -400,7 +332,7 @@ function loadMonthData(month: MonthTab) {
 function loadCustomMonth() {
   loading.value = true
   toast.loading('Loading Month-End data...', { id: 'month-end-custom' })
-  fetchMonthEnd(selectedMonth.value)
+  fetchMonthEnd()
     .then((data) => {
       customMonthData.value = {
         jobs: data.jobs,

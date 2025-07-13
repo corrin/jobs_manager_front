@@ -32,35 +32,11 @@ import { useRouter } from 'vue-router'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { toast } from 'vue-sonner'
 
-/**
+// Import types from generated API schemas
+import type { PurchaseOrderCreate } from '@/api/generated/api'
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-type Status = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface PurchaseOrderForm {
-  po_number: string
-  supplier: string
-  supplier_name: string
-  supplier_has_xero_id: boolean
-  supplier_id: string | null
-  reference: string
-  order_date: string
-  expected_delivery: string
-  status: Status
-}
+// Use the generated type instead of local interface
+type PurchaseOrderForm = PurchaseOrderCreate
 
 const router = useRouter()
 const store = usePurchaseOrderStore()

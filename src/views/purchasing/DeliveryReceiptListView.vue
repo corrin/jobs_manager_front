@@ -74,23 +74,14 @@ import { Button } from '@/components/ui/button'
 import { onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Pagination from '@/components/ui/pagination/Pagination.vue'
-import api from '@/plugins/axios'
+import { api } from '../../api/generated/api'
 
-/**
+// Import types from generated API schemas
+import type { PurchaseOrderList } from '@/api/generated/api'
 
- * @deprecated Use generated types from src/api/generated instead
+// Use PurchaseOrderList as it contains the same fields needed for receipt listing
+type Receipt = PurchaseOrderList
 
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Receipt {
-  id: string
-  po_number: string
-  supplier: string
-  order_date: string
-  status: string
-}
 const receipts = ref<Receipt[]>([])
 const router = useRouter()
 
@@ -145,9 +136,14 @@ const deleteReceipt = (id: string) => {
 }
 
 onMounted(async () => {
-  const res = await api.get('/purchasing/rest/purchase-orders/', {
-    params: { status: 'submitted,partially_received' },
-  })
-  receipts.value = Array.isArray(res.data) ? res.data : []
+  try {
+    const response = await api.purchasing_rest_purchase_orders_list({
+      queries: { status: 'submitted,partially_received' },
+    })
+    receipts.value = response || []
+  } catch (error) {
+    console.error('Error loading delivery receipts:', error)
+    receipts.value = []
+  }
 })
 </script>

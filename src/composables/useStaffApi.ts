@@ -1,8 +1,8 @@
 import { ref } from 'vue'
-import axios from 'axios'
-import type { Staff } from '@/types/staff'
+import { z } from 'zod'
+import { api, schemas } from '../api/generated/api'
 
-const API_URL = '/accounts/api/staff/'
+type Staff = z.infer<typeof schemas.Staff>
 
 export function useStaffApi() {
   const error = ref<string | null>(null)
@@ -10,8 +10,7 @@ export function useStaffApi() {
   async function listStaff(): Promise<Staff[]> {
     error.value = null
     try {
-      const res = await axios.get(API_URL)
-      return res.data
+      return await api.accounts_api_staff_list()
     } catch (e: unknown) {
       if (e instanceof Error) {
         error.value = e.message
@@ -25,14 +24,7 @@ export function useStaffApi() {
   async function createStaff(data: Record<string, unknown>): Promise<Staff> {
     error.value = null
     try {
-      const formData = new FormData()
-      for (const key in data) {
-        if (data[key] !== null && data[key] !== undefined) {
-          formData.append(key, data[key] as string | Blob)
-        }
-      }
-      const res = await axios.post(API_URL, formData)
-      return res.data
+      return await api.accounts_api_staff_create(data as z.infer<typeof schemas.Staff>)
     } catch (e: unknown) {
       if (e instanceof Error) {
         error.value = e.message
@@ -46,14 +38,9 @@ export function useStaffApi() {
   async function updateStaff(id: string | number, data: Record<string, unknown>): Promise<Staff> {
     error.value = null
     try {
-      const formData = new FormData()
-      for (const key in data) {
-        if (data[key] !== null && data[key] !== undefined) {
-          formData.append(key, data[key] as string | Blob)
-        }
-      }
-      const res = await axios.put(`${API_URL}${id}/`, formData)
-      return res.data
+      return await api.accounts_api_staff_update(data as z.infer<typeof schemas.Staff>, {
+        params: { id: String(id) },
+      })
     } catch (e: unknown) {
       if (e instanceof Error) {
         error.value = e.message
@@ -67,7 +54,7 @@ export function useStaffApi() {
   async function removeStaff(id: string | number): Promise<void> {
     error.value = null
     try {
-      await axios.delete(`${API_URL}${id}/`)
+      await api.accounts_api_staff_destroy(undefined, { params: { id: String(id) } })
     } catch (e: unknown) {
       if (e instanceof Error) {
         error.value = e.message

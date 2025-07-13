@@ -22,3 +22,21 @@ export const XeroSyncResponseSchema = z.object({
 })
 
 export type XeroSyncResponse = z.infer<typeof XeroSyncResponseSchema>
+
+// Server-Sent Event type for Xero sync progress (UI-specific SSE events)
+export const XeroSseEventSchema = z.object({
+  datetime: z.string(),
+  message: z.string(),
+  severity: z.enum(['info', 'warning', 'error']).optional(),
+  entity: z.string().nullable().optional(),
+  progress: z.number().nullable().optional(),
+  records_updated: z.number().nullable().optional(),
+  status: z.string().nullable().optional(),
+  overall_progress: z.number().optional(),
+  entity_progress: z.number().optional(),
+  sync_status: z.enum(['success', 'error', 'running']).optional(),
+  error_messages: z.array(z.string()).optional(),
+  missing_fields: z.array(z.string()).optional(),
+})
+
+export type XeroSseEvent = z.infer<typeof XeroSseEventSchema>
