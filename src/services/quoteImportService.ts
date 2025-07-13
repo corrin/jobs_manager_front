@@ -1,5 +1,6 @@
-import api from '@/services/api'
-import type { CostLine } from '@/types/costing.types'
+import api from '../plugins/axios'
+import { schemas } from '../api/generated/api'
+import { z } from 'zod'
 
 /**
  * @deprecated Use generated types from src/api/generated instead
@@ -71,22 +72,8 @@ export interface QuoteImportPreviewResponse {
   preview: PreviewResult
 }
 
-/**
- * @deprecated Use generated types from src/api/generated instead
- * This interface will be removed after migration to openapi-zod-client generated types
- */
-export interface CostSet {
-  id: number
-  kind: 'quote'
-  rev: number
-  created: string
-  summary: {
-    cost: number
-    rev: number
-    hours: number
-  }
-  cost_lines: CostLine[]
-}
+// Use generated type instead of deprecated interface
+type CostSet = z.infer<typeof schemas.CostSet>
 
 /**
  * @deprecated Use generated types from src/api/generated instead

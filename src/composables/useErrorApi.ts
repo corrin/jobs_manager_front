@@ -1,30 +1,9 @@
-import axios from 'axios'
 import { ref } from 'vue'
+import { z } from 'zod'
+import { api, schemas } from '../api/generated/api'
+import { getApiBaseUrl } from '../plugins/axios'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-export interface ErrorRecord {
-  id: string
-  timestamp: string
-  message: string
-  entity?: string
-  severity?: string
-  stack?: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
+type XeroError = z.infer<typeof schemas.XeroError>
 
 interface DateRange {
   start: string | null
@@ -39,19 +18,43 @@ export function useErrorApi() {
     page: number,
     search: string,
     range: DateRange,
-  ): Promise<{ results: ErrorRecord[]; pageCount: number }> {
+  ): Promise<{ results: XeroError[]; pageCount: number }> {
     error.value = null
     try {
-      const params: Record<string, unknown> = { page }
-      if (search.trim()) params.search = search.trim()
-      if (range.start) params.date_from = range.start
-      if (range.end) params.date_to = range.end
-      const base = import.meta.env.VITE_API_BASE_URL || ''
-      const path = type === 'xero' ? '/xero-errors/' : '/system-errors/'
-      const res = await axios.get(`${base}${path}`, { params })
-      return {
-        results: res.data.results,
-        pageCount: Math.ceil(res.data.count / 50),
+      if (type === 'xero') {
+        // Use Zodios API for xero errors
+        // Note: search and date filtering not available in current API, would need backend update
+        if (page > 1) {
+          const response = await api.xero_errors_list({ queries: { page } })
+          return {
+            results: response.results || [],
+            pageCount: response.count
+              ? Math.ceil(response.count / (response.results?.length || 50))
+              : 0,
+          }
+        } else {
+          const response = await api.xero_errors_list()
+          return {
+            results: response.results || [],
+            pageCount: response.count
+              ? Math.ceil(response.count / (response.results?.length || 50))
+              : 0,
+          }
+        }
+      } else {
+        // System errors endpoint not available in generated API yet - fallback to axios
+        // This should be migrated when the system errors endpoint is added to the OpenAPI spec
+        const axios = (await import('axios')).default
+        const params: Record<string, unknown> = { page }
+        if (search.trim()) params.search = search.trim()
+        if (range.start) params.date_from = range.start
+        if (range.end) params.date_to = range.end
+        const base = getApiBaseUrl()
+        const res = await axios.get(`${base}/system-errors/`, { params })
+        return {
+          results: res.data.results,
+          pageCount: Math.ceil(res.data.count / 50),
+        }
       }
     } catch (e: unknown) {
       if (e instanceof Error) error.value = e.message

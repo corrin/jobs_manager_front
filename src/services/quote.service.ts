@@ -1,83 +1,39 @@
-import api from './api'
-import type { QuoteSheet } from '../schemas/job.schemas'
-import type { CostLine } from '@/types/costing.types'
-import type { Job } from '@/types/index'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-export interface QuotePreview {
-  draft_lines: Array<{
-    kind: string
-    desc: string
-    quantity: number
-    unit_cost: number
-    total_cost: number
-    category?: string
-  }>
-  diff_preview: {
-    additions_count: number
-    updates_count: number
-    deletions_count: number
-    total_changes: number
-    next_revision: number
-    current_revision?: number
-    net_cost_change?: number
-    net_revenue_change?: number
-  }
-  can_proceed: boolean
-  success: boolean
-  validation_report?: {
-    warnings: string[]
-    errors: string[]
-  } | null
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-export interface QuoteApplyResult {
-  success: boolean
-  message: string
-  cost_set?: CostLine[]
-  draft_lines?: Array<{
-    kind: string
-    desc: string
-    quantity: number
-    unit_cost: number
-    total_cost: number
-  }>
-  error?: string
-}
+import { api } from '@/api/generated/api'
+import type {
+  QuoteSpreadsheet,
+  PreviewQuoteResponse,
+  ApplyQuoteResponse,
+  Job,
+  LinkQuoteSheetRequest,
+} from '@/api/generated/api'
 
 class QuoteService {
-  async linkQuote(jobId: string, templateUrl?: string): Promise<QuoteSheet> {
-    const payload = templateUrl ? { template_url: templateUrl } : {}
+  async linkQuote(jobId: string, templateUrl?: string): Promise<QuoteSpreadsheet> {
+    const payload: LinkQuoteSheetRequest = templateUrl ? { template_url: templateUrl } : {}
 
-    const response = await api.post(`/job/rest/jobs/${jobId}/quote/link/`, payload, {
-      timeout: 30000,
+    await api.job_rest_jobs_quote_link_create({
+      id: jobId,
+      body: payload,
     })
-    return response.data
+
+    // The endpoint only returns { template_url }, but we need to return QuoteSpreadsheet
+    // Let's fetch the updated job to get the complete quote_sheet
+    const jobResponse = await api.job_rest_jobs_retrieve({ job_id: jobId })
+    return jobResponse.quote_sheet
   }
 
-  async previewQuote(jobId: string): Promise<QuotePreview> {
-    const response = await api.post(`/job/rest/jobs/${jobId}/quote/preview/`)
-    return response.data
+  async previewQuote(jobId: string): Promise<PreviewQuoteResponse> {
+    return await api.job_rest_jobs_quote_preview_create({
+      id: jobId,
+      body: {},
+    })
   }
 
-  async applyQuote(jobId: string): Promise<QuoteApplyResult> {
-    const response = await api.post(`/job/rest/jobs/${jobId}/quote/apply/`)
-    return response.data
+  async applyQuote(jobId: string): Promise<ApplyQuoteResponse> {
+    return await api.job_rest_jobs_quote_apply_create({
+      id: jobId,
+      body: {},
+    })
   }
 
   hasLinkedSheet(job: Job): boolean {
