@@ -110,7 +110,8 @@ export class JobRestService {
     formData.append('job_number', jobNumber.toString())
     formData.append('files', file)
 
-    // File upload endpoint not in OpenAPI schema - using axios directly
+    // File upload with FormData - keeping axios due to complex multipart/form-data handling
+    // The generated Zodios endpoint has incorrect schema for form-data uploads
     const response = await axios.post('/job/rest/jobs/files/upload/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -120,14 +121,27 @@ export class JobRestService {
   }
 
   async listJobFiles(jobNumber: string): Promise<JobFile[]> {
-    // File listing endpoint not in OpenAPI schema - using axios directly
-    const response = await axios.get(`/job/rest/jobs/files/${jobNumber}/`)
-    return response.data.files || []
+    try {
+      // Using Zodios endpoint instead of axios
+      const response = await api.retrieveJobFilesApi_6({
+        job_number: parseInt(jobNumber),
+        format: 'json',
+      })
+      return Array.isArray(response) ? response : [response]
+    } catch (error) {
+      throw this.handleError(error)
+    }
   }
 
   async deleteJobFile(fileId: string): Promise<void> {
-    // File deletion endpoint not in OpenAPI schema - using axios directly
-    await axios.delete(`/job/rest/jobs/files/${fileId}/`)
+    try {
+      // Using Zodios endpoint instead of axios
+      await api.deleteJobFilesApi_5({
+        file_path: fileId,
+      })
+    } catch (error) {
+      throw this.handleError(error)
+    }
   }
 
   async uploadJobFile(
@@ -141,7 +155,8 @@ export class JobRestService {
       form.append('files', f)
     })
 
-    // File upload endpoint not in OpenAPI schema - using axios directly
+    // File upload with FormData - keeping axios due to complex multipart/form-data handling
+    // The generated Zodios endpoint has incorrect schema for form-data uploads
     const response = await axios.post('/job/rest/jobs/files/upload/', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: (ev) => {
@@ -160,8 +175,19 @@ export class JobRestService {
     filename: string
     print_on_jobsheet: boolean
   }): Promise<void> {
-    // File update endpoint not in OpenAPI schema - using axios directly
-    await axios.put('/job/rest/jobs/files/', params)
+    try {
+      // Using Zodios endpoint instead of axios
+      await api.updateJobFilesApi_4({
+        body: {
+          status: 'success',
+          message: 'File updated',
+          print_on_jobsheet: params.print_on_jobsheet,
+        },
+        format: 'json',
+      })
+    } catch (error) {
+      throw this.handleError(error)
+    }
   }
 
   private handleError(error: unknown): never {

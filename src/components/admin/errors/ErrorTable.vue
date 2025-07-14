@@ -66,7 +66,9 @@ function onRowClick(record: ErrorRecord) {
             <TableCell>{{ err.severity || 'error' }}</TableCell>
           </TableRow>
           <TableRow v-if="!props.loading && props.errors.length === 0">
-            <TableCell colspan="4" class="text-center py-6">No errors found.</TableCell>
+            <TableCell colspan="4" class="text-center py-6"
+              >No errors found for the current filters.</TableCell
+            >
           </TableRow>
         </TableBody>
       </Table>

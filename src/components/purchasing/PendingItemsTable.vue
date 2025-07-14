@@ -49,6 +49,7 @@ interface DataTableRowContext {
 type Props = {
   lines: PendingLine[]
   selectedLines: string[]
+  isLoading?: boolean
 }
 
 /**
@@ -166,8 +167,17 @@ const columns = computed(() => [
         class="min-h-[200px]"
       />
 
+      <!-- Loading State -->
+      <div v-if="lines.length === 0 && isLoading" class="p-8 text-center text-gray-500">
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+          <div class="text-lg font-medium">Loading pending items</div>
+        </div>
+        <div class="text-sm">Please wait while we fetch the data</div>
+      </div>
+
       <!-- Empty State -->
-      <div v-if="lines.length === 0" class="p-8 text-center text-gray-500">
+      <div v-if="lines.length === 0 && !isLoading" class="p-8 text-center text-gray-500">
         <div class="text-lg font-medium">No pending items</div>
         <div class="text-sm">All items have been received</div>
       </div>

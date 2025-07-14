@@ -44,10 +44,27 @@
           @job-selected-for-movement="$emit('job-selected-for-movement', $event)"
         />
 
-        <div v-if="jobs.length === 0" class="flex items-center justify-center text-gray-500 h-32">
+        <div
+          v-if="jobs.length === 0 && !isLoading"
+          class="flex items-center justify-center text-gray-500 h-32"
+        >
           <div class="text-center">
             <div class="text-sm">No jobs in {{ status.label.toLowerCase() }}</div>
             <div class="text-xs mt-1">Drag jobs here to update status</div>
+          </div>
+        </div>
+
+        <div
+          v-if="jobs.length === 0 && isLoading"
+          class="flex items-center justify-center text-gray-500 h-32"
+        >
+          <div class="text-center">
+            <div
+              class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"
+            ></div>
+            <div class="text-sm">
+              Jobs in {{ status.label.toLowerCase() }} status are still loading, please wait
+            </div>
           </div>
         </div>
 

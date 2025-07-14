@@ -1,79 +1,6 @@
 ﻿{
   "ApiOnlyFiles": [
     {
-      "Values": ["src\\services\\job-rest.service.ts"],
-      "Count": 6,
-      "Group": [
-        {
-          "File": "src\\services\\job-rest.service.ts",
-          "Line": 61,
-          "Method": "POST",
-          "Call": "axios.post(\u0027/job/rest/jobs/toggle-complex/\u0027, {\n        job_id: jobId,\n        complex_job: complexJob,\n      })",
-          "URL": "/job/rest/jobs/toggle-complex/",
-          "FullURL": "/job/rest/jobs/toggle-complex/",
-          "ZodiosAvailable": false,
-          "PotentialEndpoint": "",
-          "Priority": "MANUAL"
-        },
-        {
-          "File": "src\\services\\job-rest.service.ts",
-          "Line": 114,
-          "Method": "POST",
-          "Call": "axios.post(\u0027/job/rest/jobs/files/upload/\u0027, formData, {\n      headers: {\n        \u0027Content-Type\u0027: \u0027multipart/form-data\u0027,\n      },\n    })",
-          "URL": "/job/rest/jobs/files/upload/",
-          "FullURL": "/job/rest/jobs/files/upload/",
-          "ZodiosAvailable": true,
-          "PotentialEndpoint": "uploadJobFilesRest",
-          "Priority": "HIGH"
-        },
-        {
-          "File": "src\\services\\job-rest.service.ts",
-          "Line": 124,
-          "Method": "GET",
-          "Call": "axios.get(`/job/rest/jobs/files/${jobNumber}/`)",
-          "URL": "/job/rest/jobs/files/${jobNumber}/",
-          "FullURL": "/job/rest/jobs/files/${jobNumber}/",
-          "ZodiosAvailable": true,
-          "PotentialEndpoint": "retrieveJobFilesApi",
-          "Priority": "HIGH"
-        },
-        {
-          "File": "src\\services\\job-rest.service.ts",
-          "Line": 130,
-          "Method": "DELETE",
-          "Call": "axios.delete(`/job/rest/jobs/files/${fileId}/`)",
-          "URL": "/job/rest/jobs/files/${fileId}/",
-          "FullURL": "/job/rest/jobs/files/${fileId}/",
-          "ZodiosAvailable": true,
-          "PotentialEndpoint": "retrieveJobFilesApi",
-          "Priority": "HIGH"
-        },
-        {
-          "File": "src\\services\\job-rest.service.ts",
-          "Line": 145,
-          "Method": "POST",
-          "Call": "axios.post(\u0027/job/rest/jobs/files/upload/\u0027, form, {\n      headers: { \u0027Content-Type\u0027: \u0027multipart/form-data\u0027 },\n      onUploadProgress: (ev)",
-          "URL": "/job/rest/jobs/files/upload/",
-          "FullURL": "/job/rest/jobs/files/upload/",
-          "ZodiosAvailable": true,
-          "PotentialEndpoint": "uploadJobFilesRest",
-          "Priority": "HIGH"
-        },
-        {
-          "File": "src\\services\\job-rest.service.ts",
-          "Line": 164,
-          "Method": "PUT",
-          "Call": "axios.put(\u0027/job/rest/jobs/files/\u0027, params)",
-          "URL": "/job/rest/jobs/files/",
-          "FullURL": "/job/rest/jobs/files/",
-          "ZodiosAvailable": true,
-          "PotentialEndpoint": "retrieveJobFilesApi",
-          "Priority": "HIGH"
-        }
-      ],
-      "Name": "src\\services\\job-rest.service.ts"
-    },
-    {
       "Values": ["src\\composables\\useXeroAuth.ts"],
       "Count": 4,
       "Group": [
@@ -176,12 +103,52 @@
       "Name": "src\\components\\job\\JobFinancialTab.vue"
     },
     {
+      "Values": ["src\\services\\job-rest.service.ts"],
+      "Count": 3,
+      "Group": [
+        {
+          "File": "src\\services\\job-rest.service.ts",
+          "Line": 61,
+          "Method": "POST",
+          "Call": "axios.post(\u0027/job/rest/jobs/toggle-complex/\u0027, {\n        job_id: jobId,\n        complex_job: complexJob,\n      })",
+          "URL": "/job/rest/jobs/toggle-complex/",
+          "FullURL": "/job/rest/jobs/toggle-complex/",
+          "ZodiosAvailable": false,
+          "PotentialEndpoint": "",
+          "Priority": "MANUAL"
+        },
+        {
+          "File": "src\\services\\job-rest.service.ts",
+          "Line": 115,
+          "Method": "POST",
+          "Call": "axios.post(\u0027/job/rest/jobs/files/upload/\u0027, formData, {\n      headers: {\n        \u0027Content-Type\u0027: \u0027multipart/form-data\u0027,\n      },\n    })",
+          "URL": "/job/rest/jobs/files/upload/",
+          "FullURL": "/job/rest/jobs/files/upload/",
+          "ZodiosAvailable": true,
+          "PotentialEndpoint": "uploadJobFilesRest",
+          "Priority": "HIGH"
+        },
+        {
+          "File": "src\\services\\job-rest.service.ts",
+          "Line": 160,
+          "Method": "POST",
+          "Call": "axios.post(\u0027/job/rest/jobs/files/upload/\u0027, form, {\n      headers: { \u0027Content-Type\u0027: \u0027multipart/form-data\u0027 },\n      onUploadProgress: (ev)",
+          "URL": "/job/rest/jobs/files/upload/",
+          "FullURL": "/job/rest/jobs/files/upload/",
+          "ZodiosAvailable": true,
+          "PotentialEndpoint": "uploadJobFilesRest",
+          "Priority": "HIGH"
+        }
+      ],
+      "Name": "src\\services\\job-rest.service.ts"
+    },
+    {
       "Values": ["src\\services\\quote.service.ts"],
       "Count": 2,
       "Group": [
         {
           "File": "src\\services\\quote.service.ts",
-          "Line": 62,
+          "Line": 55,
           "Method": "POST",
           "Call": "axios.post(`/job/rest/jobs/${jobId}/quote/import/preview/`, formData, {\n      headers: {\n        \u0027Content-Type\u0027: \u0027multipart/form-data\u0027,\n      },\n    })",
           "URL": "/job/rest/jobs/${jobId}/quote/import/preview/",
@@ -192,7 +159,7 @@
         },
         {
           "File": "src\\services\\quote.service.ts",
-          "Line": 82,
+          "Line": 75,
           "Method": "POST",
           "Call": "axios.post(`/job/rest/jobs/${jobId}/quote/import/`, formData, {\n      headers: {\n        \u0027Content-Type\u0027: \u0027multipart/form-data\u0027,\n      },\n    })",
           "URL": "/job/rest/jobs/${jobId}/quote/import/",
@@ -215,9 +182,9 @@
           "Call": "axios.get(`${base}/system-errors/`, { params })",
           "URL": "/system-errors",
           "FullURL": "axios.get(`${base}/system-errors/`, { params })",
-          "ZodiosAvailable": true,
-          "PotentialEndpoint": "xero_errors_list",
-          "Priority": "HIGH"
+          "ZodiosAvailable": false,
+          "PotentialEndpoint": "",
+          "Priority": "MANUAL"
         }
       ],
       "Name": "src\\composables\\useErrorApi.ts"
@@ -372,11 +339,11 @@
     "xero_errors_retrieve"
   ],
   "Summary": {
-    "TotalMigrationItems": 184,
-    "ManualMigration": 12,
-    "TotalDeprecated": 166,
-    "TotalAxiosCalls": 18,
-    "ReadyToMigrate": 6,
+    "TotalMigrationItems": 176,
+    "ManualMigration": 13,
+    "TotalDeprecated": 161,
+    "TotalAxiosCalls": 15,
+    "ReadyToMigrate": 2,
     "TotalZodiosEndpoints": 127
   },
   "AxiosCalls": [
@@ -431,9 +398,9 @@
       "Call": "axios.get(`${base}/system-errors/`, { params })",
       "URL": "/system-errors",
       "FullURL": "axios.get(`${base}/system-errors/`, { params })",
-      "ZodiosAvailable": true,
-      "PotentialEndpoint": "xero_errors_list",
-      "Priority": "HIGH"
+      "ZodiosAvailable": false,
+      "PotentialEndpoint": "",
+      "Priority": "MANUAL"
     },
     {
       "File": "src\\composables\\useXeroAuth.ts",
@@ -492,7 +459,7 @@
     },
     {
       "File": "src\\services\\job-rest.service.ts",
-      "Line": 114,
+      "Line": 115,
       "Method": "POST",
       "Call": "axios.post(\u0027/job/rest/jobs/files/upload/\u0027, formData, {\n      headers: {\n        \u0027Content-Type\u0027: \u0027multipart/form-data\u0027,\n      },\n    })",
       "URL": "/job/rest/jobs/files/upload/",
@@ -503,46 +470,13 @@
     },
     {
       "File": "src\\services\\job-rest.service.ts",
-      "Line": 124,
-      "Method": "GET",
-      "Call": "axios.get(`/job/rest/jobs/files/${jobNumber}/`)",
-      "URL": "/job/rest/jobs/files/${jobNumber}/",
-      "FullURL": "/job/rest/jobs/files/${jobNumber}/",
-      "ZodiosAvailable": true,
-      "PotentialEndpoint": "retrieveJobFilesApi",
-      "Priority": "HIGH"
-    },
-    {
-      "File": "src\\services\\job-rest.service.ts",
-      "Line": 130,
-      "Method": "DELETE",
-      "Call": "axios.delete(`/job/rest/jobs/files/${fileId}/`)",
-      "URL": "/job/rest/jobs/files/${fileId}/",
-      "FullURL": "/job/rest/jobs/files/${fileId}/",
-      "ZodiosAvailable": true,
-      "PotentialEndpoint": "retrieveJobFilesApi",
-      "Priority": "HIGH"
-    },
-    {
-      "File": "src\\services\\job-rest.service.ts",
-      "Line": 145,
+      "Line": 160,
       "Method": "POST",
       "Call": "axios.post(\u0027/job/rest/jobs/files/upload/\u0027, form, {\n      headers: { \u0027Content-Type\u0027: \u0027multipart/form-data\u0027 },\n      onUploadProgress: (ev)",
       "URL": "/job/rest/jobs/files/upload/",
       "FullURL": "/job/rest/jobs/files/upload/",
       "ZodiosAvailable": true,
       "PotentialEndpoint": "uploadJobFilesRest",
-      "Priority": "HIGH"
-    },
-    {
-      "File": "src\\services\\job-rest.service.ts",
-      "Line": 164,
-      "Method": "PUT",
-      "Call": "axios.put(\u0027/job/rest/jobs/files/\u0027, params)",
-      "URL": "/job/rest/jobs/files/",
-      "FullURL": "/job/rest/jobs/files/",
-      "ZodiosAvailable": true,
-      "PotentialEndpoint": "retrieveJobFilesApi",
       "Priority": "HIGH"
     },
     {
@@ -558,7 +492,7 @@
     },
     {
       "File": "src\\services\\quote.service.ts",
-      "Line": 62,
+      "Line": 55,
       "Method": "POST",
       "Call": "axios.post(`/job/rest/jobs/${jobId}/quote/import/preview/`, formData, {\n      headers: {\n        \u0027Content-Type\u0027: \u0027multipart/form-data\u0027,\n      },\n    })",
       "URL": "/job/rest/jobs/${jobId}/quote/import/preview/",
@@ -569,7 +503,7 @@
     },
     {
       "File": "src\\services\\quote.service.ts",
-      "Line": 82,
+      "Line": 75,
       "Method": "POST",
       "Call": "axios.post(`/job/rest/jobs/${jobId}/quote/import/`, formData, {\n      headers: {\n        \u0027Content-Type\u0027: \u0027multipart/form-data\u0027,\n      },\n    })",
       "URL": "/job/rest/jobs/${jobId}/quote/import/",
@@ -1351,7 +1285,7 @@
     },
     {
       "File": "src\\components\\ContactSelectionModal.vue",
-      "Line": 172,
+      "Line": 173,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",
@@ -1359,7 +1293,7 @@
     },
     {
       "File": "src\\components\\ContactSelectionModal.vue",
-      "Line": 199,
+      "Line": 200,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",
@@ -1415,7 +1349,7 @@
     },
     {
       "File": "src\\components\\JobsModal.vue",
-      "Line": 62,
+      "Line": 70,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",
@@ -1423,7 +1357,7 @@
     },
     {
       "File": "src\\components\\KanbanColumn.vue",
-      "Line": 129,
+      "Line": 136,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",
@@ -1431,7 +1365,7 @@
     },
     {
       "File": "src\\components\\KanbanColumn.vue",
-      "Line": 148,
+      "Line": 155,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",
@@ -1680,46 +1614,6 @@
     {
       "File": "src\\services\\clientService.ts",
       "Line": 39,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\services\\daily-timesheet.service.ts",
-      "Line": 5,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\services\\daily-timesheet.service.ts",
-      "Line": 24,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\services\\daily-timesheet.service.ts",
-      "Line": 52,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\services\\daily-timesheet.service.ts",
-      "Line": 73,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\services\\daily-timesheet.service.ts",
-      "Line": 89,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",

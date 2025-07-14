@@ -89,11 +89,12 @@ Get-ChildItem -Path $srcDir -Recurse -Include *.ts,*.vue |
                     $knownMappings = @{
                         "/job/rest/jobs/files/upload/" = "uploadJobFilesRest"
                         "/api/company-defaults/" = "api_company_defaults_retrieve"
-                        "/system-errors" = "xero_errors_list"
+                        "/xero-errors/" = "xero_errors_list"  # Fixed: xero-errors, not system-errors
                         "/api/xero/" = ""  # No Zodios endpoint for Xero custom endpoints
                         "/job/rest/jobs/toggle-complex/" = ""  # No Zodios endpoint
                         "/django-jobs/" = "quoting_api_django_jobs_list"
                         "/django-job-executions/" = "quoting_api_django_job_executions_list"
+                        "/system-errors" = ""  # No Zodios endpoint available
                     }
                     
                     foreach ($mapping in $knownMappings.GetEnumerator()) {

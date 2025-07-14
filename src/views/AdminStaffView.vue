@@ -98,7 +98,7 @@
                 </tr>
                 <tr v-if="!filteredStaff.length">
                   <td colspan="9" class="text-center py-8 text-slate-400 text-lg">
-                    No staff found.
+                    No staff found for the current search criteria.
                   </td>
                 </tr>
               </tbody>

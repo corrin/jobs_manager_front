@@ -61,8 +61,16 @@
                 </Button>
               </td>
             </tr>
-            <tr v-if="filteredItems.length === 0">
+            <tr v-if="filteredItems.length === 0 && !isLoading">
               <td colspan="8" class="p-8 text-center text-gray-500">No stock items found</td>
+            </tr>
+            <tr v-if="filteredItems.length === 0 && isLoading">
+              <td colspan="8" class="p-8 text-center text-gray-500">
+                <div class="flex items-center justify-center gap-2">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  Stock items are still loading, please wait
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -225,6 +233,7 @@ const jobsStore = useJobsStore()
 const jobService = JobService.getInstance()
 
 const items = computed(() => stockStore.items)
+const isLoading = computed(() => stockStore.loading)
 const jobs = computed(() => jobsStore.allKanbanJobs)
 
 const searchQuery = ref('')

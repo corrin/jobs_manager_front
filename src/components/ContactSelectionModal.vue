@@ -57,7 +57,8 @@
 
           <div v-else class="text-center py-4 text-gray-500">
             <Users class="w-12 h-12 mx-auto mb-2 text-gray-300" />
-            <p>No contacts found for this client</p>
+            <p>No existing contacts found for this client</p>
+            <p class="text-xs mt-1">You can create a new contact below</p>
           </div>
 
           <div class="border-t pt-4">

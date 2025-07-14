@@ -4,12 +4,12 @@
 
 **CRITICAL**: Complete migration from Axios + manual interfaces to Zodios + Zod schemas required.
 
-| Category          | Total Found | Migrated | Remaining | Progress |
-| ----------------- | ----------- | -------- | --------- | -------- |
-| Axios API calls   | 18          | 0        | 18        | 0%       |
-| Fetch API calls   | 0           | 0        | 0         | 0%       |
-| @deprecated types | 166         | 24       | 142       | 14.5%    |
-| **TOTAL ITEMS**   | **184**     | **24**   | **160**   | **13%**  |
+| Category          | Total Found | Migrated | Remaining | Progress  |
+| ----------------- | ----------- | -------- | --------- | --------- |
+| Axios API calls   | 15          | 0        | 15        | 0%        |
+| Fetch API calls   | 0           | 0        | 0         | 0%        |
+| @deprecated types | 161         | 24       | 137       | 14.9%     |
+| **TOTAL ITEMS**   | **176**     | **24**   | **152**   | **13.6%** |
 
 ## Available Zodios Endpoints (127 total)
 
@@ -147,57 +147,54 @@
 
 | Migration Type        | Count | Percentage |
 | --------------------- | ----- | ---------- |
-| **Ready for Zodios**  | 6     | 33.3%      |
-| **Manual Migration**  | 12    | 66.7%      |
-| **Total Axios Calls** | 18    | 100%       |
+| **Ready for Zodios**  | 2     | 13.3%      |
+| **Manual Migration**  | 13    | 86.7%      |
+| **Total Axios Calls** | 15    | 100%       |
 
-## Axios Calls Requiring Migration (18 total)
+## Axios Calls Requiring Migration (15 total)
 
-| File                                     | Line | Method | URL                                             | Zodios Available              | Status       |
-| ---------------------------------------- | ---- | ------ | ----------------------------------------------- | ----------------------------- | ------------ |
-| `src\components\job\JobFinancialTab.vue` | 223  | POST   | `/api/xero/create_quote/${props.jobData.id}`    | âŒ NO                         | âš ï¸ Manual |
-| `src\components\job\JobFinancialTab.vue` | 246  | POST   | `/api/xero/create_invoice/${props.jobData.id}`  | âŒ NO                         | âš ï¸ Manual |
-| `src\components\job\JobFinancialTab.vue` | 269  | POST   | `/api/xero/delete_quote/${props.jobData.id}`    | âŒ NO                         | âš ï¸ Manual |
-| `src\components\job\JobFinancialTab.vue` | 291  | POST   | `/api/xero/delete_invoice/${props.jobData.id}`  | âŒ NO                         | âš ï¸ Manual |
-| `src\composables\useErrorApi.ts`         | 53   | GET    | `/system-errors`                                | âœ… YES (xero_errors_list)    | ðŸ„ Ready    |
-| `src\composables\useXeroAuth.ts`         | 103  | GET    | `axios call`                                    | âŒ NO                         | âš ï¸ Manual |
-| `src\composables\useXeroAuth.ts`         | 127  | GET    | `axios call`                                    | âŒ NO                         | âš ï¸ Manual |
-| `src\composables\useXeroAuth.ts`         | 133  | GET    | `axios call`                                    | âŒ NO                         | âš ï¸ Manual |
-| `src\composables\useXeroAuth.ts`         | 164  | POST   | `axios call`                                    | âŒ NO                         | âš ï¸ Manual |
-| `src\services\job-rest.service.ts`       | 61   | POST   | `/job/rest/jobs/toggle-complex/`                | âŒ NO                         | âš ï¸ Manual |
-| `src\services\job-rest.service.ts`       | 114  | POST   | `/job/rest/jobs/files/upload/`                  | âœ… YES (uploadJobFilesRest)  | ðŸ„ Ready    |
-| `src\services\job-rest.service.ts`       | 124  | GET    | `/job/rest/jobs/files/${jobNumber}/`            | âœ… YES (retrieveJobFilesApi) | ðŸ„ Ready    |
-| `src\services\job-rest.service.ts`       | 130  | DELETE | `/job/rest/jobs/files/${fileId}/`               | âœ… YES (retrieveJobFilesApi) | ðŸ„ Ready    |
-| `src\services\job-rest.service.ts`       | 145  | POST   | `/job/rest/jobs/files/upload/`                  | âœ… YES (uploadJobFilesRest)  | ðŸ„ Ready    |
-| `src\services\job-rest.service.ts`       | 164  | PUT    | `/job/rest/jobs/files/`                         | âœ… YES (retrieveJobFilesApi) | ðŸ„ Ready    |
-| `src\services\kpi.service.ts`            | 44   | GET    | `/kpi-calendar`                                 | âŒ NO                         | âš ï¸ Manual |
-| `src\services\quote.service.ts`          | 62   | POST   | `/job/rest/jobs/${jobId}/quote/import/preview/` | âŒ NO                         | âš ï¸ Manual |
-| `src\services\quote.service.ts`          | 82   | POST   | `/job/rest/jobs/${jobId}/quote/import/`         | âŒ NO                         | âš ï¸ Manual |
+| File                                     | Line | Method | URL                                             | Zodios Available             | Status       |
+| ---------------------------------------- | ---- | ------ | ----------------------------------------------- | ---------------------------- | ------------ |
+| `src\components\job\JobFinancialTab.vue` | 223  | POST   | `/api/xero/create_quote/${props.jobData.id}`    | âŒ NO                        | âš ï¸ Manual |
+| `src\components\job\JobFinancialTab.vue` | 246  | POST   | `/api/xero/create_invoice/${props.jobData.id}`  | âŒ NO                        | âš ï¸ Manual |
+| `src\components\job\JobFinancialTab.vue` | 269  | POST   | `/api/xero/delete_quote/${props.jobData.id}`    | âŒ NO                        | âš ï¸ Manual |
+| `src\components\job\JobFinancialTab.vue` | 291  | POST   | `/api/xero/delete_invoice/${props.jobData.id}`  | âŒ NO                        | âš ï¸ Manual |
+| `src\composables\useErrorApi.ts`         | 53   | GET    | `/system-errors`                                | âŒ NO                        | âš ï¸ Manual |
+| `src\composables\useXeroAuth.ts`         | 103  | GET    | `axios call`                                    | âŒ NO                        | âš ï¸ Manual |
+| `src\composables\useXeroAuth.ts`         | 127  | GET    | `axios call`                                    | âŒ NO                        | âš ï¸ Manual |
+| `src\composables\useXeroAuth.ts`         | 133  | GET    | `axios call`                                    | âŒ NO                        | âš ï¸ Manual |
+| `src\composables\useXeroAuth.ts`         | 164  | POST   | `axios call`                                    | âŒ NO                        | âš ï¸ Manual |
+| `src\services\job-rest.service.ts`       | 61   | POST   | `/job/rest/jobs/toggle-complex/`                | âŒ NO                        | âš ï¸ Manual |
+| `src\services\job-rest.service.ts`       | 115  | POST   | `/job/rest/jobs/files/upload/`                  | âœ… YES (uploadJobFilesRest) | ðŸ„ Ready    |
+| `src\services\job-rest.service.ts`       | 160  | POST   | `/job/rest/jobs/files/upload/`                  | âœ… YES (uploadJobFilesRest) | ðŸ„ Ready    |
+| `src\services\kpi.service.ts`            | 44   | GET    | `/kpi-calendar`                                 | âŒ NO                        | âš ï¸ Manual |
+| `src\services\quote.service.ts`          | 55   | POST   | `/job/rest/jobs/${jobId}/quote/import/preview/` | âŒ NO                        | âš ï¸ Manual |
+| `src\services\quote.service.ts`          | 75   | POST   | `/job/rest/jobs/${jobId}/quote/import/`         | âŒ NO                        | âš ï¸ Manual |
 
-## @deprecated Types by File (166 total)
+## @deprecated Types by File (161 total)
 
 | File                                                      | Count | Sample Deprecated Items                                                                      | Priority |
 | --------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------- | -------- |
 | `src\components\purchasing\PoLinesTable.vue`              | 6     | `, , `                                                                                       | MEDIUM   |
 | `src\components\timesheet\PaidAbsenceModal.vue`           | 5     | `, , `                                                                                       | MEDIUM   |
 | `src\components\purchasing\ReceivedItemsTable.vue`        | 5     | `, , `                                                                                       | MEDIUM   |
-| `src\services\daily-timesheet.service.ts`                 | 5     | `, , `                                                                                       | MEDIUM   |
-| `src\components\purchasing\PendingItemsTable.vue`         | 4     | `, , `                                                                                       | LOW      |
 | `src\components\job\DraggableButton.vue`                  | 4     | `, * This interface will be removed after migration to openapi-zod-client generated types, ` | LOW      |
+| `src\components\purchasing\PendingItemsTable.vue`         | 4     | `, , `                                                                                       | LOW      |
 | `src\components\purchasing\DeliveryReceiptLinesTable.vue` | 4     | `, , `                                                                                       | LOW      |
-| `src\components\timesheet\WeekPickerModal.vue`            | 3     | `, , `                                                                                       | LOW      |
-| `src\services\clientService.ts`                           | 3     | `, , `                                                                                       | LOW      |
-| `src\composables\useSimpleDragAndDrop.ts`                 | 3     | `, , `                                                                                       | LOW      |
 | `src\components\job\JobCostAnalysisTab.vue`               | 3     | `, , `                                                                                       | LOW      |
+| `src\composables\useSimpleDragAndDrop.ts`                 | 3     | `, , `                                                                                       | LOW      |
+| `src\services\clientService.ts`                           | 3     | `, , `                                                                                       | LOW      |
 | `src\components\admin\MonthEndSummary.vue`                | 3     | `, , `                                                                                       | LOW      |
-| `src\components\StaffAvatar.vue`                          | 2     | `, `                                                                                         | LOW      |
-| `src\components\quote\QuoteCostLinesGrid.vue`             | 2     | `* This interface will be removed after migration to openapi-zod-client generated types, `   | LOW      |
-| `src\components\quote\QuoteSummaryCard.vue`               | 2     | `, `                                                                                         | LOW      |
-| `src\components\ContactSelectionModal.vue`                | 2     | `, `                                                                                         | LOW      |
-| `src\components\QuoteImportDialog.vue`                    | 2     | `, `                                                                                         | LOW      |
-| `src\components\JobCard.vue`                              | 2     | `, `                                                                                         | LOW      |
+| `src\components\timesheet\WeekPickerModal.vue`            | 3     | `, , `                                                                                       | LOW      |
+| `src\composables\useFormValidation.ts`                    | 2     | `, `                                                                                         | LOW      |
 | `src\components\JobFormModal.vue`                         | 2     | `, `                                                                                         | LOW      |
-| `src\components\KanbanColumn.vue`                         | 2     | `, `                                                                                         | LOW      |
+| `src\components\JobCard.vue`                              | 2     | `, `                                                                                         | LOW      |
+| `src\components\quote\QuoteSummaryCard.vue`               | 2     | `, `                                                                                         | LOW      |
+| `src\components\quote\QuoteCostLinesGrid.vue`             | 2     | `* This interface will be removed after migration to openapi-zod-client generated types, `   | LOW      |
+| `src\composables\useDragAndDrop.ts`                       | 2     | `, `                                                                                         | LOW      |
+| `src\components\ClientDropdown.vue`                       | 2     | `, `                                                                                         | LOW      |
+| `src\components\StaffAvatar.vue`                          | 2     | `, `                                                                                         | LOW      |
+| `src\components\ContactSelectionModal.vue`                | 2     | `, `                                                                                         | LOW      |
 
 ## Migration Action Plan
 
@@ -223,10 +220,10 @@
 
 #### High Priority (Many API calls + deprecated types)
 
-#### API-Only Files (No deprecated types)- `src\services\job-rest.service.ts` - 6 API calls
+#### API-Only Files (No deprecated types)- `src\composables\useXeroAuth.ts` - 4 API calls
 
-- `src\composables\useXeroAuth.ts` - 4 API calls
 - `src\components\job\JobFinancialTab.vue` - 4 API calls
+- `src\services\job-rest.service.ts` - 3 API calls
 - `src\services\quote.service.ts` - 2 API calls
 - `src\composables\useErrorApi.ts` - 1 API calls
 
@@ -239,6 +236,6 @@
 
 ---
 
-_Generated on: 2025-07-14 15:37:46_
+_Generated on: 2025-07-14 18:47:31_
 _Zodios endpoints available: 127_
-_Total migration items: 184_
+_Total migration items: 176_

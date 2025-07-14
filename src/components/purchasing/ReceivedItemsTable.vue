@@ -77,6 +77,7 @@ type Props = {
   selectedLines: string[]
   jobs: Job[]
   stockHoldingJob: Job | null
+  isLoading?: boolean
 }
 
 /**
@@ -312,8 +313,17 @@ const columns = computed(() => [
         class="min-h-[200px]"
       />
 
+      <!-- Loading State -->
+      <div v-if="lines.length === 0 && isLoading" class="p-8 text-center text-gray-500">
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+          <div class="text-lg font-medium">Loading received items</div>
+        </div>
+        <div class="text-sm">Please wait while we fetch the data</div>
+      </div>
+
       <!-- Empty State -->
-      <div v-if="lines.length === 0" class="p-8 text-center text-gray-500">
+      <div v-if="lines.length === 0 && !isLoading" class="p-8 text-center text-gray-500">
         <div class="text-lg font-medium">No received items</div>
         <div class="text-sm">Move items from pending to configure allocation</div>
       </div>
