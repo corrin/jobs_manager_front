@@ -1,11 +1,14 @@
 import { api } from '@/api/generated/api'
+import axios from 'axios'
 import type {
   QuoteSpreadsheet,
   PreviewQuoteResponse,
   ApplyQuoteResponse,
   Job,
   LinkQuoteSheetRequest,
+  QuoteImportStatusResponse,
 } from '@/api/generated/api'
+import type { QuoteImportPreviewResponse, QuoteImportResponse } from '@/api/local/schemas'
 
 class QuoteService {
   async linkQuote(jobId: string, templateUrl?: string): Promise<QuoteSpreadsheet> {
@@ -43,7 +46,44 @@ class QuoteService {
   getSheetUrl(job: Job): string | null {
     return job?.quote_sheet?.sheet_url || null
   }
+
+  // Quote Import Methods (for endpoints not in OpenAPI schema)
+  async previewQuoteImport(jobId: string, file: File): Promise<QuoteImportPreviewResponse> {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const response = await axios.post(`/job/rest/jobs/${jobId}/quote/import/preview/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    return response.data
+  }
+
+  async importQuote(
+    jobId: string,
+    file: File,
+    skipValidation: boolean = false,
+  ): Promise<QuoteImportResponse> {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (skipValidation) {
+      formData.append('skip_validation', 'true')
+    }
+
+    const response = await axios.post(`/job/rest/jobs/${jobId}/quote/import/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+
+    return response.data
+  }
+
+  async getQuoteStatus(jobId: string): Promise<QuoteImportStatusResponse> {
+    return await api.job_rest_jobs_quote_status_retrieve({ job_id: jobId })
+  }
 }
 
 export const quoteService = new QuoteService()
-export default quoteService

@@ -1,22 +1,5 @@
-import api from './api'
+import { api, type AIProvider } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-export interface AIProvider {
-  id: number
-  name: string
-  provider_type: 'Claude' | 'Gemini' | 'Mistral'
-  model_name: string
-  api_key?: string
-  default: boolean
-}
 
 export class AIProviderService {
   private static instance: AIProviderService

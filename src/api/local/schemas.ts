@@ -250,3 +250,18 @@ export const XeroSseEventSchema = z.object({
 })
 
 export type XeroSseEvent = z.infer<typeof XeroSseEventSchema>
+
+// UI-specific type for vue-advanced-chat component
+// REASON: The vue-advanced-chat component requires a specific message format
+// that differs from the API's JobQuoteChat structure
+export const VueChatMessageSchema = z.object({
+  _id: z.string(),
+  content: z.string(),
+  senderId: z.string(),
+  username: z.string(),
+  timestamp: z.string(),
+  system: z.boolean(),
+  metadata: z.record(z.unknown()).optional(),
+})
+
+export type VueChatMessage = z.infer<typeof VueChatMessageSchema>

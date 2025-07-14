@@ -323,7 +323,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useQuoteImport } from '@/composables/useQuoteImport'
-import type { QuoteImportResponse } from '@/services/quote-import.service'
+import type { QuoteImportResponse } from '@/api/local/schemas'
 
 /**
 
