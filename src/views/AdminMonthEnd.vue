@@ -127,8 +127,18 @@
                     </svg>
                   </TableCell>
                 </TableRow>
-                <TableRow v-if="jobs.length === 0">
+                <TableRow v-if="jobs.length === 0 && !isLoading">
                   <TableCell colspan="6" class="text-center py-4">No jobs</TableCell>
+                </TableRow>
+                <TableRow v-if="jobs.length === 0 && isLoading">
+                  <TableCell colspan="6" class="text-center py-4">
+                    <div class="flex items-center justify-center gap-2">
+                      <div
+                        class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"
+                      ></div>
+                      Month-end jobs are still loading, please wait
+                    </div>
+                  </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -210,13 +220,14 @@ const activeMonthTab = ref<string>('')
 const selectedMonth = ref(new Date().toISOString().slice(0, 7))
 const selectedIds = ref<string[]>([])
 const loading = ref(false)
-const progress = ref(0)
-const showDialog = ref(false)
-const customMonthLoaded = ref(false)
-const customMonthData = ref<{
-  jobs: MonthEndJob[]
-  stockSummary: { material_line_count: number; material_cost: number }
-} | null>(null)
+const jobs = ref<MonthEndJob[]>([])
+const stockJob = ref<MonthEndStockJob | null>(null)
+const isLoading = computed(() => loading.value)
+const totalHours = computed(() => jobs.value.reduce((a, j) => a + j.total_hours, 0))
+const totalDollars = computed(() => jobs.value.reduce((a, j) => a + j.total_dollars, 0))
+const allSelected =
+  computed(() => jobs.value.length > 0 && selectedIds.value.length === jobs.value.length) |
+  (null > null)
 
 const jobs = ref<MonthEndJob[]>([])
 const stockJob = ref<MonthEndStockJob | null>(null)

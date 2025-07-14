@@ -339,9 +339,9 @@
     "xero_errors_retrieve"
   ],
   "Summary": {
-    "TotalMigrationItems": 176,
+    "TotalMigrationItems": 167,
     "ManualMigration": 13,
-    "TotalDeprecated": 161,
+    "TotalDeprecated": 152,
     "TotalAxiosCalls": 15,
     "ReadyToMigrate": 2,
     "TotalZodiosEndpoints": 127
@@ -541,7 +541,7 @@
     },
     {
       "File": "src\\components\\admin\\MonthEndSummary.vue",
-      "Line": 95,
+      "Line": 103,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",
@@ -549,7 +549,7 @@
     },
     {
       "File": "src\\components\\admin\\MonthEndSummary.vue",
-      "Line": 109,
+      "Line": 117,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",
@@ -557,7 +557,7 @@
     },
     {
       "File": "src\\components\\admin\\MonthEndSummary.vue",
-      "Line": 124,
+      "Line": 132,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",
@@ -868,38 +868,6 @@
       "Category": "Type"
     },
     {
-      "File": "src\\components\\purchasing\\PendingItemsTable.vue",
-      "Line": 10,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\components\\purchasing\\PendingItemsTable.vue",
-      "Line": 28,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\components\\purchasing\\PendingItemsTable.vue",
-      "Line": 43,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\components\\purchasing\\PendingItemsTable.vue",
-      "Line": 56,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
       "File": "src\\components\\purchasing\\PoLinesTable.vue",
       "Line": 19,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
@@ -966,46 +934,6 @@
     {
       "File": "src\\components\\purchasing\\PurchaseOrderJobCellEditor.ts",
       "Line": 6,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\components\\purchasing\\ReceivedItemsTable.vue",
-      "Line": 18,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\components\\purchasing\\ReceivedItemsTable.vue",
-      "Line": 31,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\components\\purchasing\\ReceivedItemsTable.vue",
-      "Line": 54,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\components\\purchasing\\ReceivedItemsTable.vue",
-      "Line": 69,
-      "Content": "* @deprecated Use generated types from src/api/generated instead",
-      "Context": "",
-      "TypeName": "",
-      "Category": "Type"
-    },
-    {
-      "File": "src\\components\\purchasing\\ReceivedItemsTable.vue",
-      "Line": 84,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",
@@ -1357,7 +1285,7 @@
     },
     {
       "File": "src\\components\\KanbanColumn.vue",
-      "Line": 136,
+      "Line": 146,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",
@@ -1365,7 +1293,7 @@
     },
     {
       "File": "src\\components\\KanbanColumn.vue",
-      "Line": 155,
+      "Line": 165,
       "Content": "* @deprecated Use generated types from src/api/generated instead",
       "Context": "",
       "TypeName": "",

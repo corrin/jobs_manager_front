@@ -18,7 +18,19 @@
             </tr>
           </thead>
           <tbody>
+            <tr v-if="isLoading">
+              <td colspan="5" class="p-8 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  Delivery receipts are still loading, please wait
+                </div>
+              </td>
+            </tr>
+            <tr v-else-if="pagedReceipts.length === 0">
+              <td colspan="5" class="p-8 text-center text-gray-500">No delivery receipts found</td>
+            </tr>
             <tr
+              v-else
               v-for="receipt in pagedReceipts"
               :key="receipt.id"
               class="border-b hover:bg-slate-50"
@@ -82,6 +94,7 @@ import type { PurchaseOrderList } from '@/api/generated/api'
 // Use PurchaseOrderList as it contains the same fields needed for receipt listing
 type Receipt = PurchaseOrderList
 
+const isLoading = ref(true)
 const receipts = ref<Receipt[]>([])
 const router = useRouter()
 
@@ -137,6 +150,7 @@ const deleteReceipt = (id: string) => {
 
 onMounted(async () => {
   try {
+    isLoading.value = true
     const response = await api.purchasing_rest_purchase_orders_list({
       queries: { status: 'submitted,partially_received' },
     })
@@ -144,6 +158,8 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error loading delivery receipts:', error)
     receipts.value = []
+  } finally {
+    isLoading.value = false
   }
 })
 </script>

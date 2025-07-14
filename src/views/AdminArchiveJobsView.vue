@@ -5,8 +5,11 @@
         <Archive class="w-7 h-7 text-indigo-500" />
         Archive Completed Jobs
       </h1>
-      <div v-if="loading" class="flex-1 flex items-center justify-center text-2xl text-slate-400">
-        Loading…
+      <div v-if="loading" class="flex-1 flex items-center justify-center">
+        <div class="flex items-center space-x-2 text-lg text-gray-600">
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+          <span>Completed jobs are still loading, please wait</span>
+        </div>
       </div>
       <div v-else class="flex flex-row gap-8 items-start">
         <div class="flex-1 min-w-[450px] max-w-full">

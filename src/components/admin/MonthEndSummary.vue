@@ -69,8 +69,16 @@
               </svg>
             </TableCell>
           </TableRow>
-          <TableRow v-if="jobsWithTotals.length === 0">
-            <TableCell colspan="6" class="text-center py-4">No jobs</TableCell>
+          <TableRow v-if="jobsWithTotals.length === 0 && !isLoading">
+            <TableCell colspan="6" class="text-center py-4">No jobs found for this month</TableCell>
+          </TableRow>
+          <TableRow v-if="jobsWithTotals.length === 0 && isLoading">
+            <TableCell colspan="6" class="text-center py-4">
+              <div class="flex items-center justify-center gap-2">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                Monthly job data is still loading, please wait
+              </div>
+            </TableCell>
           </TableRow>
         </TableBody>
       </Table>
@@ -137,6 +145,7 @@ const props = defineProps<{
   stockSummary: StockSummary
   monthKey: string
   selectedIds: string[]
+  isLoading?: boolean
 }>()
 const emit = defineEmits(['selectJob', 'runMonthEnd'])
 

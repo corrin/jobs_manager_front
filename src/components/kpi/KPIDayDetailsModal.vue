@@ -133,6 +133,13 @@
         </div>
       </div>
 
+      <div v-else-if="isLoading" class="bg-gray-50 p-4 rounded-lg text-center">
+        <div class="flex items-center justify-center gap-2">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+          <p class="text-gray-500">Loading day details, please wait</p>
+        </div>
+      </div>
+
       <div v-else-if="dayData" class="bg-gray-50 p-4 rounded-lg text-center">
         <p class="text-gray-500">No job data available for this day</p>
       </div>
@@ -164,6 +171,7 @@ import { kpiService } from '@/services/kpi.service'
 interface Props {
   dayData: DayKPI | null
   isOpen: boolean
+  isLoading?: boolean
 }
 
 const props = defineProps<Props>()

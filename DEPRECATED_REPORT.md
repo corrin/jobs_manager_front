@@ -8,8 +8,8 @@
 | ----------------- | ----------- | -------- | --------- | --------- |
 | Axios API calls   | 15          | 0        | 15        | 0%        |
 | Fetch API calls   | 0           | 0        | 0         | 0%        |
-| @deprecated types | 161         | 24       | 137       | 14.9%     |
-| **TOTAL ITEMS**   | **176**     | **24**   | **152**   | **13.6%** |
+| @deprecated types | 152         | 24       | 128       | 15.8%     |
+| **TOTAL ITEMS**   | **167**     | **24**   | **143**   | **14.4%** |
 
 ## Available Zodios Endpoints (127 total)
 
@@ -171,30 +171,30 @@
 | `src\services\quote.service.ts`          | 55   | POST   | `/job/rest/jobs/${jobId}/quote/import/preview/` | âŒ NO                        | âš ï¸ Manual |
 | `src\services\quote.service.ts`          | 75   | POST   | `/job/rest/jobs/${jobId}/quote/import/`         | âŒ NO                        | âš ï¸ Manual |
 
-## @deprecated Types by File (161 total)
+## @deprecated Types by File (152 total)
 
-| File                                                      | Count | Sample Deprecated Items                                                                      | Priority |
-| --------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------- | -------- |
-| `src\components\purchasing\PoLinesTable.vue`              | 6     | `, , `                                                                                       | MEDIUM   |
-| `src\components\timesheet\PaidAbsenceModal.vue`           | 5     | `, , `                                                                                       | MEDIUM   |
-| `src\components\purchasing\ReceivedItemsTable.vue`        | 5     | `, , `                                                                                       | MEDIUM   |
-| `src\components\job\DraggableButton.vue`                  | 4     | `, * This interface will be removed after migration to openapi-zod-client generated types, ` | LOW      |
-| `src\components\purchasing\PendingItemsTable.vue`         | 4     | `, , `                                                                                       | LOW      |
-| `src\components\purchasing\DeliveryReceiptLinesTable.vue` | 4     | `, , `                                                                                       | LOW      |
-| `src\components\job\JobCostAnalysisTab.vue`               | 3     | `, , `                                                                                       | LOW      |
-| `src\composables\useSimpleDragAndDrop.ts`                 | 3     | `, , `                                                                                       | LOW      |
-| `src\services\clientService.ts`                           | 3     | `, , `                                                                                       | LOW      |
-| `src\components\admin\MonthEndSummary.vue`                | 3     | `, , `                                                                                       | LOW      |
-| `src\components\timesheet\WeekPickerModal.vue`            | 3     | `, , `                                                                                       | LOW      |
-| `src\composables\useFormValidation.ts`                    | 2     | `, `                                                                                         | LOW      |
-| `src\components\JobFormModal.vue`                         | 2     | `, `                                                                                         | LOW      |
-| `src\components\JobCard.vue`                              | 2     | `, `                                                                                         | LOW      |
-| `src\components\quote\QuoteSummaryCard.vue`               | 2     | `, `                                                                                         | LOW      |
-| `src\components\quote\QuoteCostLinesGrid.vue`             | 2     | `* This interface will be removed after migration to openapi-zod-client generated types, `   | LOW      |
-| `src\composables\useDragAndDrop.ts`                       | 2     | `, `                                                                                         | LOW      |
-| `src\components\ClientDropdown.vue`                       | 2     | `, `                                                                                         | LOW      |
-| `src\components\StaffAvatar.vue`                          | 2     | `, `                                                                                         | LOW      |
-| `src\components\ContactSelectionModal.vue`                | 2     | `, `                                                                                         | LOW      |
+| File                                                       | Count | Sample Deprecated Items                                                                      | Priority |
+| ---------------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------- | -------- |
+| `src\components\purchasing\PoLinesTable.vue`               | 6     | `, , `                                                                                       | MEDIUM   |
+| `src\components\timesheet\PaidAbsenceModal.vue`            | 5     | `, , `                                                                                       | MEDIUM   |
+| `src\components\job\DraggableButton.vue`                   | 4     | `, * This interface will be removed after migration to openapi-zod-client generated types, ` | LOW      |
+| `src\components\purchasing\DeliveryReceiptLinesTable.vue`  | 4     | `, , `                                                                                       | LOW      |
+| `src\composables\useSimpleDragAndDrop.ts`                  | 3     | `, , `                                                                                       | LOW      |
+| `src\components\job\JobCostAnalysisTab.vue`                | 3     | `, , `                                                                                       | LOW      |
+| `src\services\clientService.ts`                            | 3     | `, , `                                                                                       | LOW      |
+| `src\components\admin\MonthEndSummary.vue`                 | 3     | `, , `                                                                                       | LOW      |
+| `src\components\timesheet\WeekPickerModal.vue`             | 3     | `, , `                                                                                       | LOW      |
+| `src\composables\useDragAndDrop.ts`                        | 2     | `, `                                                                                         | LOW      |
+| `src\composables\useFormValidation.ts`                     | 2     | `, `                                                                                         | LOW      |
+| `src\components\purchasing\ExistingAllocationsDisplay.vue` | 2     | `, `                                                                                         | LOW      |
+| `src\components\JobCard.vue`                               | 2     | `, `                                                                                         | LOW      |
+| `src\components\JobFormModal.vue`                          | 2     | `, `                                                                                         | LOW      |
+| `src\components\quote\QuoteSummaryCard.vue`                | 2     | `, `                                                                                         | LOW      |
+| `src\components\quote\QuoteCostLinesGrid.vue`              | 2     | `* This interface will be removed after migration to openapi-zod-client generated types, `   | LOW      |
+| `src\components\ClientDropdown.vue`                        | 2     | `, `                                                                                         | LOW      |
+| `src\components\StaffAvatar.vue`                           | 2     | `, `                                                                                         | LOW      |
+| `src\components\ContactSelectionModal.vue`                 | 2     | `, `                                                                                         | LOW      |
+| `src\components\KanbanColumn.vue`                          | 2     | `, `                                                                                         | LOW      |
 
 ## Migration Action Plan
 
@@ -236,6 +236,6 @@
 
 ---
 
-_Generated on: 2025-07-14 18:47:31_
+_Generated on: 2025-07-14 19:13:11_
 _Zodios endpoints available: 127_
-_Total migration items: 176_
+_Total migration items: 167_

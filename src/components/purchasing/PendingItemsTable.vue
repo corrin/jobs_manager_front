@@ -1,35 +1,17 @@
 <script setup lang="ts">
 import { computed, h } from 'vue'
-import DataTable from '@/components/DataTable.vue'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import DataTable from '../DataTable.vue'
+import { Button } from '../ui/button'
+import { Checkbox } from '../ui/checkbox'
 import { ArrowDown, ArrowDownToLine } from 'lucide-vue-next'
+import { schemas } from '../../api/generated/api'
+import type { z } from 'zod'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-export interface PendingLine {
-  id: string
+// Use generated types from API schema
+type PendingLine = z.infer<typeof schemas.PurchaseOrderLine> & {
   job_name?: string
-  description: string
-  quantity: number
-  received_quantity: number
-  unit_cost: number | null
   selected?: boolean
 }
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
 
 interface DataTableRowContext {
   row: {
@@ -38,27 +20,11 @@ interface DataTableRowContext {
   }
 }
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
 type Props = {
   lines: PendingLine[]
   selectedLines: string[]
   isLoading?: boolean
 }
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
 
 type Emits = {
   (e: 'update:selected-lines', lineIds: string[]): void
@@ -80,8 +46,8 @@ const columns = computed(() => [
     header: () =>
       h(Checkbox, {
         modelValue: allSelected.value,
-        'onUpdate:modelValue': (checked: boolean) => {
-          if (checked) {
+        'onUpdate:modelValue': (checked: boolean | 'indeterminate') => {
+          if (checked === true) {
             emit(
               'update:selected-lines',
               props.lines.map((line) => line.id),
@@ -95,10 +61,11 @@ const columns = computed(() => [
     cell: ({ row }: DataTableRowContext) =>
       h(Checkbox, {
         modelValue: props.selectedLines.includes(row.original.id),
-        'onUpdate:modelValue': (checked: boolean) => {
-          const newSelection = checked
-            ? [...props.selectedLines, row.original.id]
-            : props.selectedLines.filter((id) => id !== row.original.id)
+        'onUpdate:modelValue': (checked: boolean | 'indeterminate') => {
+          const newSelection =
+            checked === true
+              ? [...props.selectedLines, row.original.id]
+              : props.selectedLines.filter((id) => id !== row.original.id)
           emit('update:selected-lines', newSelection)
         },
         class: 'mx-auto',
@@ -120,15 +87,19 @@ const columns = computed(() => [
     id: 'remaining_quantity',
     header: 'Remaining',
     cell: ({ row }: DataTableRowContext) => {
-      const remaining = row.original.quantity - row.original.received_quantity
+      const quantity = parseFloat(row.original.quantity) || 0
+      const receivedQuantity = parseFloat(row.original.received_quantity || '0') || 0
+      const remaining = quantity - receivedQuantity
       return remaining.toFixed(2)
     },
   },
   {
     id: 'unit_cost',
     header: 'Unit Cost',
-    cell: ({ row }: DataTableRowContext) =>
-      row.original.unit_cost ? `$${row.original.unit_cost.toFixed(2)}` : 'N/A',
+    cell: ({ row }: DataTableRowContext) => {
+      const unitCost = row.original.unit_cost ? parseFloat(row.original.unit_cost) : null
+      return unitCost ? `$${unitCost.toFixed(2)}` : 'N/A'
+    },
   },
 ])
 </script>

@@ -167,7 +167,7 @@
             </div>
           </div>
 
-          <div v-if="files.length === 0" class="text-center py-8">
+          <div v-if="files.length === 0 && !isLoading" class="text-center py-8">
             <svg
               class="mx-auto h-12 w-12 text-gray-400"
               stroke="currentColor"
@@ -183,6 +183,13 @@
             </svg>
             <h3 class="mt-2 text-sm font-medium text-gray-900">No attachments</h3>
             <p class="mt-1 text-sm text-gray-500">Get started by uploading a file.</p>
+          </div>
+
+          <div v-if="files.length === 0 && isLoading" class="text-center py-8">
+            <div class="flex flex-col items-center gap-2">
+              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+              <p class="text-sm text-gray-500">Loading job attachments, please wait</p>
+            </div>
           </div>
         </div>
       </div>
@@ -219,7 +226,7 @@ import {
 } from '@/components/ui/dialog'
 import CameraModal from './CameraModal.vue'
 import type { JobFile } from '@/schemas/job.schemas'
-import { jobRestService } from '@/services/job-rest.service'
+import { jobService } from '@/services/job.service'
 
 /**
 
@@ -247,6 +254,7 @@ const files = ref<JobFile[]>([])
 const uploadProgress = ref(0)
 const fileInput = ref<HTMLInputElement>()
 const uploading = ref(false)
+const isLoading = ref(false)
 const isCameraModalOpen = ref(false)
 
 async function loadFiles() {
@@ -255,11 +263,14 @@ async function loadFiles() {
     return
   }
 
+  isLoading.value = true
   try {
-    const list = await jobRestService.listJobFiles(String(props.jobNumber))
+    const list = await jobService.listJobFiles(String(props.jobNumber))
     files.value = list
   } catch (err) {
     debugLog('Failed to load files:', err)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -398,11 +409,7 @@ const uploadFile = async (file: File) => {
   uploading.value = true
 
   try {
-    const uploaded = await jobRestService.uploadJobFile(
-      props.jobNumber,
-      [file],
-      (progress) => (uploadProgress.value = progress),
-    )
+    const uploaded = await jobService.uploadJobFiles(String(props.jobNumber), [file])
 
     if (uploaded.length > 0) {
       files.value.push(...uploaded)
@@ -428,7 +435,7 @@ async function deleteFile(id: string) {
   if (!confirm('Are you sure you want to delete this file?')) return
 
   try {
-    await jobRestService.deleteJobFile(id)
+    await jobService.deleteJobFile(id)
     emit('file-deleted', id)
     await loadFiles()
   } catch (err) {
@@ -449,10 +456,8 @@ async function updatePrintSetting(file: JobFile) {
   })
 
   try {
-    const response = await jobRestService.updateJobFile({
-      job_number: String(props.jobNumber),
+    const response = await jobService.updateJobFile({
       file_id: file.id,
-      filename: file.filename,
       print_on_jobsheet: file.print_on_jobsheet,
     })
 

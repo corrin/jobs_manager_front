@@ -56,6 +56,15 @@
                 </div>
               </div>
             </div>
+            <!-- Loading indicator for AI response -->
+            <div v-if="isLoading" class="flex justify-start">
+              <div class="rounded-lg p-4 max-w-md shadow-sm bg-white text-gray-800">
+                <div class="flex items-center space-x-2">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                  <span>AI is processing your request...</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

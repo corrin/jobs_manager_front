@@ -20,11 +20,11 @@
               New Staff
             </Button>
           </div>
-          <div
-            v-if="loading"
-            class="flex-1 flex items-center justify-center text-2xl text-slate-400"
-          >
-            Loading…
+          <div v-if="loading" class="flex-1 flex items-center justify-center">
+            <div class="flex items-center space-x-2 text-lg text-gray-600">
+              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+              <span>Staff members are still loading, please wait</span>
+            </div>
           </div>
           <div
             v-else

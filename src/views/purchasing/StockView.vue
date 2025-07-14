@@ -223,14 +223,13 @@ import Pagination from '@/components/ui/pagination/Pagination.vue'
 import { Box, PlusCircle, Package, Trash2, X, Check } from 'lucide-vue-next'
 import { useStockStore, type StockItem } from '@/stores/stockStore'
 import { useJobsStore } from '@/stores/jobs'
-import { JobService } from '@/services/job.service'
+import { jobService } from '@/services/job.service'
 import { onMounted, ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { formatMetalType } from '@/utils/metalType'
 
 const stockStore = useStockStore()
 const jobsStore = useJobsStore()
-const jobService = JobService.getInstance()
 
 const items = computed(() => stockStore.items)
 const isLoading = computed(() => stockStore.loading)
