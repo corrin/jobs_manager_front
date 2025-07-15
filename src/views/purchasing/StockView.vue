@@ -354,10 +354,10 @@ async function submitAllocate() {
   }
 
   if (allocateForm.value.qtyToUse > allocateForm.value.availableQty) {
-    toast.error(
-      `Quantity to use (${allocateForm.value.qtyToUse}) cannot exceed available quantity (${allocateForm.value.availableQty})`,
+    const newStockLevel = allocateForm.value.availableQty - allocateForm.value.qtyToUse
+    toast.warning(
+      `Warning: This will put ${allocateForm.value.description} stock level to ${newStockLevel}`,
     )
-    return
   }
 
   try {

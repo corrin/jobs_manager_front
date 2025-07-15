@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ArrowUp, ArrowUpToLine } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 
 export interface Job {
   id: string
@@ -193,16 +194,26 @@ const columns = computed(() => [
       h(Input, {
         type: 'number',
         step: '0.01',
-        min: '0',
         max: row.original.total_received,
         modelValue: row.original.job_allocation,
         class: 'w-24 text-right',
         'onUpdate:modelValue': (val: string | number) => {
           const num = Number(val)
-          if (!Number.isNaN(num) && num >= 0) {
-            emit('update:line', row.original.id, 'job_allocation', num)
-            const stockAllocation = row.original.total_received - num
-            emit('update:line', row.original.id, 'stock_allocation', stockAllocation)
+          if (!Number.isNaN(num)) {
+            if (num < 0) {
+              toast.warning(`Warning: Job allocation cannot be negative. Setting to 0.`)
+              emit('update:line', row.original.id, 'job_allocation', 0)
+              const stockAllocation = row.original.total_received - 0
+              emit('update:line', row.original.id, 'stock_allocation', stockAllocation)
+            } else {
+              emit('update:line', row.original.id, 'job_allocation', num)
+              const stockAllocation = row.original.total_received - num
+              emit('update:line', row.original.id, 'stock_allocation', stockAllocation)
+
+              if (stockAllocation < 0) {
+                toast.warning(`Warning: This will put stock allocation to ${stockAllocation}`)
+              }
+            }
           }
         },
       }),
