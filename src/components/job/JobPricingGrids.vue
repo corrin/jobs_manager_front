@@ -90,7 +90,7 @@ import { debugLog } from '@/utils/debug'
 
 import { ref, watch } from 'vue'
 import SimpleTotalTable from './SimpleTotalTable.vue'
-import type { JobData, CompanyDefaults } from '@/services/job-rest.service'
+import type { CompanyDefaults } from '@/api/generated/api'
 
 /**
 

@@ -190,7 +190,7 @@ import AppLayout from '@/components/AppLayout.vue'
 import ClientLookup from '@/components/ClientLookup.vue'
 import ContactSelector from '@/components/ContactSelector.vue'
 import RichTextEditor from '@/components/RichTextEditor.vue'
-import { jobRestService, type JobCreateData } from '@/services/job-rest.service'
+import { jobService, type JobCreateData } from '@/services/job.service'
 import { costlineService } from '@/services/costline.service'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import { toast } from 'vue-sonner'
@@ -287,7 +287,7 @@ const handleSubmit = async () => {
   toast.loading('Creating job…', { id: 'create-job' })
 
   try {
-    const result = await jobRestService.createJob(formData.value)
+    const result = await jobService.createJob(formData.value)
 
     if (result.success && result.job_id) {
       const job_id = result.job_id

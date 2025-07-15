@@ -26,19 +26,14 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
-
 import { ref, onMounted, watch } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
-import { staffService, type Staff } from '@/services/staff.service'
+import { useStaffApi } from '@/composables/useStaffApi'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
+// Use generated types from Zodios API
+type Staff = z.infer<typeof schemas.Staff>
 
 interface Props {
   id: string
@@ -70,15 +65,18 @@ const selectedValue = ref<string | number>(props.modelValue || '')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
+// Use Zodios API composable
+const { getAllStaff } = useStaffApi()
+
 const loadStaffOptions = async (): Promise<void> => {
   try {
     isLoading.value = true
     error.value = null
-    const data = await staffService.getAllStaff()
+    const data = await getAllStaff()
     staffOptions.value = data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load staff options'
-    debugLog('Error loading staff options:', err)
+    console.error('Error loading staff options:', err)
   } finally {
     isLoading.value = false
   }

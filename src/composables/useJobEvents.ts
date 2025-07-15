@@ -2,7 +2,6 @@ import { ref, computed, watch } from 'vue'
 import { useJobsStore } from '@/stores/jobs'
 import type { JobEvent } from '@/schemas/job.schemas'
 import { useJobData } from '@/composables/useJobData'
-import { jobRestService } from '@/services/job-rest.service'
 import type { Ref } from 'vue'
 import { debugLog } from '@/utils/debug'
 

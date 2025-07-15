@@ -1,13 +1,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { JobService } from '@/services/job.service'
+import { jobService } from '@/services/job.service'
 import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { Job, StatusChoice, AdvancedFilters, Staff } from '@/types'
 import { debugLog } from '@/utils/debug'
 
 export function useKanban(onJobsLoaded?: () => void) {
-  const jobService = JobService.getInstance()
+  // jobService is already imported directly
   const router = useRouter()
   const jobsStore = useJobsStore()
 
@@ -81,13 +81,11 @@ export function useKanban(onJobsLoaded?: () => void) {
   })
 
   const visibleStatusChoices = computed(() => {
-    return KanbanCategorizationService.getAllColumns()
-      .filter((col) => col.columnId !== 'archived')
-      .map((col) => ({
-        key: col.columnId,
-        label: col.columnTitle,
-        tooltip: `Includes: ${col.subCategories.map((sub) => sub.badgeLabel).join(', ')}`,
-      }))
+    return KanbanCategorizationService.getAllColumns().map((col) => ({
+      key: col.columnId,
+      label: col.columnTitle,
+      tooltip: `Status: ${col.statusKey.replace('_', ' ')}`,
+    }))
   })
 
   const loadJobs = async (): Promise<void> => {
@@ -103,9 +101,7 @@ export function useKanban(onJobsLoaded?: () => void) {
       const data = await jobService.getAllJobs()
 
       const kanbanJobs = [...data.activeJobs, ...data.archivedJobs].map((job) => {
-        let status_key = job.status_key || ''
-        if (status_key === 'draft') status_key = 'quoting'
-        if (status_key === 'awaiting_approval') status_key = 'accepted_quote'
+        const status_key = job.status_key || ''
         return {
           id: job.id,
           name: job.name,
@@ -166,7 +162,7 @@ export function useKanban(onJobsLoaded?: () => void) {
       statusChoices.value = columns.map((col) => ({
         key: col.columnId,
         label: col.columnTitle,
-        tooltip: `Includes: ${col.subCategories.map((sub) => sub.badgeLabel).join(', ')}`,
+        tooltip: `Status: ${col.statusKey.replace('_', ' ')}`,
       }))
 
       if (!selectedMobileStatus.value) {

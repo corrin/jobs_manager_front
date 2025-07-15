@@ -30,19 +30,13 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
-
 import { ref, onMounted, watch } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
-import { clientService, type Client } from '@/services/clientService'
+import { api, schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
+// Use generated types from Zodios API
+type Client = z.infer<typeof schemas.Client>
 
 interface Props {
   id: string
@@ -50,14 +44,6 @@ interface Props {
   placeholder?: string
   modelValue?: string
 }
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
 
 interface Emits {
   (e: 'update:modelValue', value: string): void
@@ -78,11 +64,12 @@ const loadClientOptions = async (): Promise<void> => {
   try {
     isLoading.value = true
     error.value = null
-    const data = await clientService.getAllClients()
+    // Use Zodios API to get all clients
+    const data = await api.clients_all_retrieve()
     clientOptions.value = data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load client options'
-    debugLog('Error loading client options:', err)
+    console.error('Error loading client options:', err)
   } finally {
     isLoading.value = false
   }

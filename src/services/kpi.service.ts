@@ -1,5 +1,5 @@
-import axios from '@/plugins/axios'
 import { api } from '@/api/generated/api'
+import axios from '@/plugins/axios'
 import type {
   KPICalendarData,
   KPIDayData,
@@ -36,6 +36,7 @@ class KPIService {
 
   async getKPICalendarData(params: KPICalendarParams): Promise<KPICalendarData> {
     try {
+      // This endpoint is not in the generated Zodios client yet
       const searchParams = new URLSearchParams({
         start_date: params.start_date,
         ...(params.mode && { mode: params.mode }),

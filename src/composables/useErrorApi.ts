@@ -42,7 +42,7 @@ export function useErrorApi() {
           }
         }
       } else {
-        // System errors endpoint not available in generated API yet - fallback to axios
+        // TODO: System errors endpoint not available in generated API yet
         // This should be migrated when the system errors endpoint is added to the OpenAPI spec
         const axios = (await import('axios')).default
         const params: Record<string, unknown> = { page }

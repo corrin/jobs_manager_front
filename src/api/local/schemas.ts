@@ -251,6 +251,19 @@ export const XeroSseEventSchema = z.object({
 
 export type XeroSseEvent = z.infer<typeof XeroSseEventSchema>
 
+// UI-specific Kanban Column schema for frontend kanban organization
+// REASON: Frontend-specific structure for organizing kanban columns with visual properties
+// (colorTheme, badgeColorClass) that are not part of the backend API
+export const KanbanColumnSchema = z.object({
+  columnId: z.string(),
+  columnTitle: z.string(),
+  statusKey: z.string(), // Direct 1:1 mapping to job status
+  colorTheme: z.string(),
+  badgeColorClass: z.string(),
+})
+
+export type KanbanColumn = z.infer<typeof KanbanColumnSchema>
+
 // UI-specific type for vue-advanced-chat component
 // REASON: The vue-advanced-chat component requires a specific message format
 // that differs from the API's JobQuoteChat structure

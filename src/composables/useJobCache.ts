@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import type { JobData } from '@/services/job-rest.service'
+import type { JobDetailResponse } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
 
 /**
@@ -11,7 +11,7 @@ import { debugLog } from '@/utils/debug'
  */
 
 interface CacheEntry {
-  data: JobData
+  data: JobDetailResponse
   timestamp: Date
   version: number
 }
@@ -31,7 +31,7 @@ export function useJobCache() {
     return isWithinTTL && isCurrentVersion
   }
 
-  const getCachedJob = (jobId: string, ttl?: number): JobData | null => {
+  const getCachedJob = (jobId: string, ttl?: number): JobDetailResponse | null => {
     const entry = cache.value.get(jobId)
 
     if (!entry) {
@@ -49,7 +49,7 @@ export function useJobCache() {
     return entry.data
   }
 
-  const setCachedJob = (jobId: string, jobData: JobData): void => {
+  const setCachedJob = (jobId: string, jobData: JobDetailResponse): void => {
     const entry: CacheEntry = {
       data: { ...jobData },
       timestamp: new Date(),
@@ -76,7 +76,7 @@ export function useJobCache() {
     debugLog('📦 Cache cleared')
   }
 
-  const updateCachedJob = (jobId: string, updates: Partial<JobData>): void => {
+  const updateCachedJob = (jobId: string, updates: Partial<JobDetailResponse>): void => {
     const entry = cache.value.get(jobId)
 
     if (entry && isCacheValid(entry)) {
@@ -112,7 +112,7 @@ export function useJobCache() {
     }
   })
 
-  const withCache = async <T extends JobData>(
+  const withCache = async <T extends JobDetailResponse>(
     jobId: string,
     loadFunction: () => Promise<T>,
     ttl?: number,

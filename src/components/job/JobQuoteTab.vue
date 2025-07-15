@@ -55,29 +55,37 @@
     </div>
 
     <div v-if="currentQuote?.has_quote" class="flex-1 flex gap-6 min-h-0">
-      <div class="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col">
-        <div class="flex-shrink-0 p-4 border-b border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
+      <div v-if="isLoading" class="flex-1 flex items-center justify-center">
+        <div class="flex items-center gap-2">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+          Quote data is still loading, please wait
         </div>
-        <div class="flex-1 overflow-hidden">
-          <CostLinesGrid
-            :costLines="costLines"
-            :showActions="true"
-            @edit="openEditModal"
-            @delete="handleDeleteCostLine"
+      </div>
+      <template v-else>
+        <div class="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col">
+          <div class="flex-shrink-0 p-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
+          </div>
+          <div class="flex-1 overflow-hidden">
+            <CostLinesGrid
+              :costLines="costLines"
+              :showActions="true"
+              @edit="openEditModal"
+              @delete="handleDeleteCostLine"
+            />
+          </div>
+        </div>
+        <div class="flex-1 flex flex-col min-h-0">
+          <CostSetSummaryCard
+            class="h-full min-h-0 flex-1"
+            title="Quote Summary"
+            :summary="currentQuote.quote?.summary"
+            :costLines="quoteCostLines"
+            :isLoading="isLoading"
+            :revision="currentQuote.quote?.rev"
           />
         </div>
-      </div>
-      <div class="flex-1 flex flex-col min-h-0">
-        <CostSetSummaryCard
-          class="h-full min-h-0 flex-1"
-          title="Quote Summary"
-          :summary="currentQuote.quote?.summary"
-          :costLines="quoteCostLines"
-          :isLoading="isLoading"
-          :revision="currentQuote.quote?.rev"
-        />
-      </div>
+      </template>
     </div>
 
     <div v-else class="flex-1">

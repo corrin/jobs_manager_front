@@ -11,7 +11,10 @@
       </div>
 
       <div v-if="isLoading" class="text-center py-10">
-        <p>Loading providers...</p>
+        <div class="flex items-center justify-center gap-2">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+          AI providers are still loading, please wait
+        </div>
       </div>
       <div
         v-else-if="error"

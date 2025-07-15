@@ -6,10 +6,72 @@
 
 | Category          | Total Found | Migrated | Remaining | Progress  |
 | ----------------- | ----------- | -------- | --------- | --------- |
-| Axios API calls   | 15          | 0        | 15        | 0%        |
+| Axios API calls   | 15          | 4        | 11        | 26.7%     |
 | Fetch API calls   | 0           | 0        | 0         | 0%        |
-| @deprecated types | 152         | 24       | 128       | 15.8%     |
-| **TOTAL ITEMS**   | **167**     | **24**   | **143**   | **14.4%** |
+| @deprecated types | 152         | 36       | 116       | 23.7%     |
+| **TOTAL ITEMS**   | **167**     | **40**   | **127**   | **24.0%** |
+
+## ✅ COMPLETED MIGRATIONS
+
+### 1. job.service.ts - COMPLETE ✅
+
+- **Status**: 100% migrated to pure Zodios API
+- **Changes**: Replaced all manual types with z.infer from schemas
+- **Endpoints used**: job*api*_, job*rest*_, api_company_defaults_retrieve
+
+### 2. JobEditModal.vue - COMPLETE ✅
+
+- **Status**: 100% migrated to Zodios types and API calls
+- **Changes**:
+  - Replaced JobData with JobDetailResponse from schemas
+  - Implemented job_rest_jobs_update for saving
+  - Replaced manual type casting with proper Zod types
+- **Impact**: Core job editing functionality now uses clean API
+
+### 3. StaffDropdown.vue - COMPLETE ✅
+
+- **Status**: 100% migrated to Zodios types and API
+- **Changes**:
+  - Replaced staffService with useStaffApi composable
+  - Replaced manual Staff interface with z.infer<typeof schemas.Staff>
+  - Uses accounts_api_staff_list endpoint
+- **Impact**: Staff selection now uses clean API
+
+### 4. StaffPanel.vue - COMPLETE ✅
+
+- **Status**: 100% migrated to Zodios types and API
+- **Changes**:
+  - Replaced staffService with useStaffApi composable
+  - Replaced manual Staff interface with z.infer<typeof schemas.Staff>
+  - Removed manual validation (Zodios handles it)
+- **Impact**: Staff panel now uses clean API
+
+### 5. CreateClientModal.vue - COMPLETE ✅
+
+- **Status**: 100% migrated to Zodios types and API
+- **Changes**:
+  - Replaced clientService with api.clients_create_create
+  - Replaced manual types with z.infer<typeof schemas.ClientCreateRequest>
+  - Uses clients_create_create endpoint
+- **Impact**: Client creation now uses clean API
+
+### 6. ClientDropdown.vue - COMPLETE ✅
+
+- **Status**: 100% migrated to Zodios types and API
+- **Changes**:
+  - Replaced clientService with api.clients_all_retrieve
+  - Replaced manual Client interface with z.infer<typeof schemas.Client>
+  - Uses clients_all_retrieve endpoint
+- **Impact**: Client selection now uses clean API
+
+### 7. kanban-categorization.service.ts - COMPLETE ✅
+
+- **Status**: 100% migrated to Zodios types
+- **Changes**:
+  - Moved KanbanColumn interface to schemas.ts as KanbanColumnSchema
+  - Replaced local type definition with import from local schemas
+  - Maintained frontend-specific UI structure for kanban organization
+- **Impact**: Kanban service now uses centralized type definitions
 
 ## Available Zodios Endpoints (127 total)
 

@@ -52,7 +52,12 @@ function onRowClick(record: ErrorRecord) {
         </TableHeader>
         <TableBody>
           <TableRow v-if="props.loading">
-            <TableCell colspan="4" class="text-center py-6">Loading…</TableCell>
+            <TableCell colspan="4" class="text-center py-6">
+              <div class="flex items-center justify-center gap-2">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                Error records are still loading, please wait
+              </div>
+            </TableCell>
           </TableRow>
           <TableRow
             v-for="err in props.errors"

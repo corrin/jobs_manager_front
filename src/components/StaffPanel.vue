@@ -1,7 +1,14 @@
 <template>
   <div class="mb-2">
     <div class="flex justify-center px-2">
-      <div ref="staffListRef" class="flex flex-wrap justify-center gap-2 max-w-full">
+      <div v-if="isLoading" class="flex items-center justify-center gap-2 py-4">
+        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+        Loading staff members...
+      </div>
+      <div v-else-if="error" class="text-red-500 text-center py-4">
+        Error loading staff: {{ error }}
+      </div>
+      <div v-else ref="staffListRef" class="flex flex-wrap justify-center gap-2 max-w-full">
         <div
           v-for="staff in staffMembers"
           :key="staff.id"
@@ -33,29 +40,16 @@ import { debugLog } from '@/utils/debug'
 
 import { ref, onMounted, watch, nextTick } from 'vue'
 import StaffAvatar from './StaffAvatar.vue'
-import { staffService } from '@/services/staff.service'
-import type { Staff } from '@/types'
-import { PersonSchema } from '@/schemas/kanban.schemas'
+import { useStaffApi } from '@/composables/useStaffApi'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
+// Use generated types from Zodios API
+type Staff = z.infer<typeof schemas.Staff>
 
 interface Props {
   activeFilters?: string[]
 }
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
 
 interface Emits {
   (e: 'staff-filter-changed', staffIds: string[]): void
@@ -74,21 +68,21 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const staffListRef = ref<HTMLElement>()
 
+// Use Zodios API composable
+const { getAllStaff } = useStaffApi()
+
 const loadStaffMembers = async (): Promise<void> => {
   try {
     isLoading.value = true
     error.value = null
-    const data = await staffService.getAllStaff()
+    const data = await getAllStaff()
 
-    const validatedStaff = data.map((staffData) => {
-      return PersonSchema.parse({
-        ...staffData,
-        display_name:
-          staffData.display_name || `${staffData.first_name} ${staffData.last_name}`.trim(),
-      })
-    })
-
-    staffMembers.value = validatedStaff
+    // Use the Staff data directly from Zodios API (already validated)
+    staffMembers.value = data.map((staffData) => ({
+      ...staffData,
+      display_name:
+        staffData.display_name || `${staffData.first_name} ${staffData.last_name}`.trim(),
+    }))
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load staff members'
     debugLog('Error loading staff members:', err)

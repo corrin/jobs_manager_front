@@ -1,5 +1,5 @@
 import { api } from '@/api/generated/api'
-import axios from 'axios'
+import axios from '@/plugins/axios'
 import type {
   QuoteSpreadsheet,
   PreviewQuoteResponse,
@@ -47,7 +47,7 @@ class QuoteService {
     return job?.quote_sheet?.sheet_url || null
   }
 
-  // Quote Import Methods (for endpoints not in OpenAPI schema)
+  // File upload endpoints (not available in Zodios API yet)
   async previewQuoteImport(jobId: string, file: File): Promise<QuoteImportPreviewResponse> {
     const formData = new FormData()
     formData.append('file', file)
@@ -82,7 +82,7 @@ class QuoteService {
   }
 
   async getQuoteStatus(jobId: string): Promise<QuoteImportStatusResponse> {
-    return await api.job_rest_jobs_quote_status_retrieve({ job_id: jobId })
+    return await api.job_rest_jobs_quote_status_retrieve({ params: { job_id: jobId } })
   }
 }
 

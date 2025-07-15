@@ -250,8 +250,16 @@
         </div>
         <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
         <DialogFooter class="flex gap-2 justify-end">
-          <Button variant="ghost" type="button" @click="handleClose">Cancel</Button>
-          <Button type="submit">{{ staff ? 'Save Changes' : 'Create Staff' }}</Button>
+          <Button variant="ghost" type="button" @click="handleClose" :disabled="isLoading"
+            >Cancel</Button
+          >
+          <Button type="submit" :disabled="isLoading">
+            <div v-if="isLoading" class="flex items-center gap-2">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              {{ staff ? 'Saving...' : 'Creating...' }}
+            </div>
+            <span v-else>{{ staff ? 'Save Changes' : 'Create Staff' }}</span>
+          </Button>
         </DialogFooter>
       </form>
     </DialogContent>
@@ -282,6 +290,7 @@ const activeTab = ref('personal')
 const props = defineProps<{ staff: Staff | null }>()
 const emit = defineEmits(['close', 'saved'])
 
+const isLoading = ref(false)
 const { createStaff, updateStaff } = useStaffApi()
 const form = ref({
   first_name: '',
@@ -415,6 +424,8 @@ function handleClose() {
 
 async function submitForm() {
   error.value = ''
+  isLoading.value = true
+
   const parsed = staffSchema.safeParse({
     ...form.value,
     wage_rate: Number(form.value.wage_rate),
@@ -428,6 +439,7 @@ async function submitForm() {
   })
   if (!parsed.success) {
     error.value = parsed.error.errors[0].message
+    isLoading.value = false
     return
   }
   try {
@@ -443,6 +455,8 @@ async function submitForm() {
     } else {
       error.value = 'Failed to save staff.'
     }
+  } finally {
+    isLoading.value = false
   }
 }
 </script>

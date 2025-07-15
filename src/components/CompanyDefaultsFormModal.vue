@@ -40,8 +40,16 @@
           </div>
         </div>
         <div class="flex gap-2 justify-end mt-4">
-          <Button type="button" variant="outline" @click="handleClose">Cancel</Button>
-          <Button type="submit" variant="default">Save</Button>
+          <Button type="button" variant="outline" @click="handleClose" :disabled="isLoading"
+            >Cancel</Button
+          >
+          <Button type="submit" variant="default" :disabled="isLoading">
+            <div v-if="isLoading" class="flex items-center gap-2">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Saving...
+            </div>
+            <span v-else>Save</span>
+          </Button>
         </div>
         <p v-if="error" class="text-red-600 text-sm mt-2">{{ error }}</p>
       </form>
@@ -81,6 +89,7 @@ const props = defineProps<{ defaults: CompanyDefaultsForm }>()
 const emit = defineEmits(['close', 'saved'])
 const form = ref<CompanyDefaultsForm>({ ...props.defaults })
 const error = ref('')
+const isLoading = ref(false)
 
 watch(
   () => props.defaults,
@@ -95,11 +104,14 @@ function handleClose() {
 
 async function submitForm() {
   error.value = ''
+  isLoading.value = true
   try {
     await updateCompanyDefaults(form.value)
     emit('saved')
   } catch {
     error.value = 'Failed to save company defaults.'
+  } finally {
+    isLoading.value = false
   }
 }
 </script>

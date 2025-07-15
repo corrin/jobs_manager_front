@@ -220,6 +220,8 @@ const formatDate = (dateString: string) => {
 const createQuote = async () => {
   if (!props.jobData?.id) return
   try {
+    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
+    // Xero integration endpoints are not yet available in the generated API
     const response = await axios.post(`/api/xero/create_quote/${props.jobData.id}`)
     const validatedResponse = XeroSyncResponseSchema.parse(response.data)
     if (!validatedResponse.success) {
@@ -243,6 +245,8 @@ const acceptQuote = () => {
 const createInvoice = async () => {
   if (!props.jobData?.id) return
   try {
+    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
+    // Xero integration endpoints are not yet available in the generated API
     const response = await axios.post(`/api/xero/create_invoice/${props.jobData.id}`)
     const validatedResponse = XeroSyncResponseSchema.parse(response.data)
     if (!validatedResponse.success) {
@@ -266,6 +270,8 @@ const goToQuoteOnXero = () => {
 const deleteQuoteOnXero = async () => {
   if (!props.jobData?.id) return
   try {
+    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
+    // Xero integration endpoints are not yet available in the generated API
     const response = await axios.post(`/api/xero/delete_quote/${props.jobData.id}`)
     const validatedResponse = XeroSyncResponseSchema.parse(response.data)
     if (!validatedResponse.success) {
@@ -288,6 +294,8 @@ const goToInvoiceOnXero = () => {
 const deleteInvoiceOnXero = async () => {
   if (!props.jobData?.id) return
   try {
+    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
+    // Xero integration endpoints are not yet available in the generated API
     const response = await axios.post(`/api/xero/delete_invoice/${props.jobData.id}`)
     const validatedResponse = XeroSyncResponseSchema.parse(response.data)
     if (!validatedResponse.success) {
