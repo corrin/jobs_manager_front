@@ -165,6 +165,12 @@
               >
                 <Clock class="w-4 h-4 mr-2" /> Job Aging Report
               </router-link>
+              <router-link
+                to="/reports/staff-performance"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Users class="w-4 h-4 mr-2" /> Staff Performance
+              </router-link>
             </div>
           </Transition>
         </div>
@@ -387,6 +393,18 @@
                         class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
                         >KPI Reports</router-link
+                      >
+                      <router-link
+                        to="/reports/job-aging"
+                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                        >Job Aging Report</router-link
+                      >
+                      <router-link
+                        to="/reports/staff-performance"
+                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                        >Staff Performance</router-link
                       >
                     </div>
                   </div>

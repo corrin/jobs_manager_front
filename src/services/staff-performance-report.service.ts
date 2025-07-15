@@ -5,7 +5,7 @@ import type {
   StaffPerformanceReportParams,
   StaffPerformanceData,
   TeamAverages,
-} from '@/types/staff-utilisation.types'
+} from '@/types/staff-performance.types'
 
 export class StaffPerformanceReportService {
   private static instance: StaffPerformanceReportService
@@ -154,22 +154,19 @@ export class StaffPerformanceReportService {
     return `${percentage.toFixed(0)}%`
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   detectProblems(staff: StaffPerformanceData, teamAverages: TeamAverages): string[] {
-    const problems: string[] = []
+    // Problem detection rules should be set by the business, not hardcoded
+    // Business can implement their own rules here based on their standards
 
-    if (staff.billable_percentage < teamAverages.billable_percentage - 10) {
-      problems.push('Low billable percentage')
-    }
+    // Example business rule implementation:
+    // const problems: string[] = []
+    // if (staff.billable_percentage < teamAverages.billable_percentage - 10) {
+    //   problems.push('Below team average for billable percentage')
+    // }
+    // return problems
 
-    if (staff.revenue_per_hour < teamAverages.revenue_per_hour * 0.8) {
-      problems.push('Low revenue per hour')
-    }
-
-    if (staff.jobs_worked > teamAverages.jobs_per_person * 1.5) {
-      problems.push('High job count (potential time dumping)')
-    }
-
-    return problems
+    return []
   }
 }
 
