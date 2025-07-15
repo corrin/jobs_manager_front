@@ -170,6 +170,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'uat',
+          name: 'admin-uat',
+          component: () => import('@/views/UATManagementView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresSuperUser: true,
+            title: 'Manage UAT - Jobs Manager',
+          },
+        },
+        {
           path: '',
           redirect: { name: 'admin-staff' },
         },
