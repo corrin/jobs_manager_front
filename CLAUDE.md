@@ -7,7 +7,9 @@ This is a Vue 3 + TypeScript frontend for a job management system built for Morr
 ## Backend
 
 The backend is in /home/corrin/src/jobs_manager
-It's a standard Django app. You should reference it to confirm the API as required.
+It's a standard Django app.
+
+**IMPORTANT: This Claude instance is NOT permitted to read or modify the backend directory or source code.** If you need information about the backend API, models, or validation logic, you must ask the user to coordinate with the Claude instance managing the backend code.
 
 ## Tech Stack & Architecture
 
