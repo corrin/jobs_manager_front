@@ -1,24 +1,8 @@
 import { ref, computed } from 'vue'
-import api from '@/plugins/axios'
+import { api } from '../api/generated/api'
 import type { ClientContact } from '@/composables/useClientLookup'
 import { debugLog } from '@/utils/debug'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-export interface NewContactData {
-  name: string
-  position?: string
-  email?: string
-  phone?: string
-  notes?: string
-  is_primary: boolean
-}
+import { type NewContactData } from '@/api/local/schemas'
 
 export function useContactManagement() {
   const isModalOpen = ref(false)
@@ -79,10 +63,12 @@ export function useContactManagement() {
 
     isLoading.value = true
     try {
-      const response = await api.get(`/clients/rest/${clientId}/contacts/`)
+      const response = await api.clients_contacts_retrieve({
+        params: { client_id: clientId },
+      })
 
-      if (response.data && response.data.results && Array.isArray(response.data.results)) {
-        contacts.value = response.data.results
+      if (response && response.results && Array.isArray(response.results)) {
+        contacts.value = response.results
       } else {
         contacts.value = []
       }
@@ -127,13 +113,14 @@ export function useContactManagement() {
         is_primary: newContactForm.value.is_primary,
       }
 
-      const response = await api.post('/clients/rest/contacts/', contactData)
+      const response = await api.clients_contacts_create(contactData)
 
-      if (!response.data || !response.data.contact) {
+      if (!response) {
         throw new Error('Invalid response from server')
       }
 
-      const newContact: ClientContact = response.data.contact
+      // The response should be the created contact itself
+      const newContact: ClientContact = response as ClientContact
 
       selectedContact.value = newContact
 

@@ -1,15 +1,21 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api } from '@/api/generated/api'
-import type {
-  Job,
-  PurchaseOrderDetail,
-  DeliveryReceiptRequest,
-  AllJobsResponse,
-  PurchaseOrderAllocationsResponse,
-} from '@/api/generated/api'
+import { api, schemas } from '@/api/generated/api'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import { debugLog } from '@/utils/debug'
+import type { z } from 'zod'
+
+type Job = z.infer<typeof schemas.JobForPurchasing>
+type PurchaseOrderDetail = z.infer<typeof schemas.PurchaseOrderDetail>
+type DeliveryReceiptRequest = z.infer<typeof schemas.DeliveryReceiptRequest>
+type AllJobsResponse = z.infer<typeof schemas.AllJobsResponse>
+type PurchaseOrderAllocationsResponse = z.infer<typeof schemas.PurchaseOrderAllocationsResponse>
+
+// Extended Job type for delivery receipt functionality
+type ExtendedJob = Job & {
+  is_stock_holding?: boolean
+  status?: string
+}
 
 export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
   const loading = ref(false)
@@ -63,15 +69,13 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
 
       const allJobs = data.jobs || []
 
-      const stockHolding = allJobs.find(
-        (job: Job & { is_stock_holding?: boolean }) => job.is_stock_holding,
-      )
+      const stockHolding = allJobs.find((job: ExtendedJob) => job.is_stock_holding)
       if (!stockHolding) {
         throw new Error('Stock holding job not found')
       }
 
       const allocatable = allJobs.filter(
-        (job: Job & { is_stock_holding?: boolean; status?: string }) =>
+        (job: ExtendedJob) =>
           !job.is_stock_holding &&
           !['rejected', 'archived', 'completed', 'special'].includes(job.status || ''),
       )

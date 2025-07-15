@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import api from '@/plugins/axios'
-import type { User, LoginCredentials } from '@/types/auth.types'
+import { axios } from 'axios'
+import { api, schemas } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
+import type { z } from 'zod'
 
-/**
- * @deprecated Use generated types from src/api/generated instead
- * This interface will be removed after migration to openapi-zod-client generated types
- */
+type User = z.infer<typeof schemas.UserProfile>
+type LoginCredentials = z.infer<typeof schemas.CustomTokenObtainPair>
+
 interface ErrorResponse {
   detail?: string
   message?: string
@@ -15,10 +15,6 @@ interface ErrorResponse {
   non_field_errors?: string[]
 }
 
-/**
- * @deprecated Use generated types from src/api/generated instead
- * This interface will be removed after migration to openapi-zod-client generated types
- */
 interface AxiosErrorResponse {
   status?: number
   data?: ErrorResponse
@@ -50,8 +46,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const userIsLogged = async (): Promise<boolean> => {
     try {
-      const response = await api.get<User>('/accounts/me/')
-      user.value = response.data
+      const response = await api.accounts_me_retrieve()
+      user.value = response
       return true
     } catch {
       user.value = null
@@ -64,10 +60,10 @@ export const useAuthStore = defineStore('auth', () => {
     clearError()
 
     try {
-      await api.post('/accounts/api/token/', credentials)
+      await api.accounts_api_token_create({ body: credentials })
 
-      const userResponse = await api.get<User>('/accounts/me/')
-      user.value = userResponse.data
+      const userResponse = await api.accounts_me_retrieve()
+      user.value = userResponse
 
       return true
     } catch (err: unknown) {
@@ -128,7 +124,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   const logout = async (): Promise<void> => {
     try {
-      await api.post('/accounts/logout/')
+      // Note: logout endpoint might not be available in generated API
+      // Will need to implement via direct axios call if needed
+      await axios.post('/accounts/logout/')
     } catch (err) {
       debugLog('Backend logout failed:', err)
     } finally {

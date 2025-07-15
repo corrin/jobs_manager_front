@@ -131,37 +131,20 @@
 </template>
 
 <script setup lang="ts">
-/**
- * @deprecated Use generated types from src/api/generated instead
- * This interface will be removed after migration to openapi-zod-client generated types
- */
-interface CostLine {
-  id?: number
-  kind: string
-  desc: string
-  quantity: number
-  unit_cost: number
-  unit_rev: number
-  ext_refs?: unknown
-  meta?: unknown
-}
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-/**
+type CostLine = z.infer<typeof schemas.CostLine>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
-  costLines: CostLine[]
-  isLoading?: boolean
-}
-
-withDefaults(defineProps<Props>(), {
-  isLoading: false,
-})
+withDefaults(
+  defineProps<{
+    costLines: CostLine[]
+    isLoading?: boolean
+  }>(),
+  {
+    isLoading: false,
+  },
+)
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US', {

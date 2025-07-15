@@ -1,59 +1,7 @@
 import { ref, nextTick } from 'vue'
 import Sortable from 'sortablejs'
 import { debugLog } from '@/utils/debug'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface DragEventData {
-  jobId: string
-  fromStatus: string
-  toStatus: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface JobCardElement {
-  id: string
-  classes: string
-  hasDataId: boolean
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface SortableOptions {
-  group: string
-  animation: number
-  ghostClass: string
-  chosenClass: string
-  dragClass: string
-  draggable: string
-  disabled: boolean
-  delay: number
-  touchStartThreshold: number
-  forceFallback: boolean
-  fallbackOnBody: boolean
-  onStart: (evt: Sortable.SortableEvent) => void
-  onEnd: (evt: Sortable.SortableEvent) => void
-  onMove: (evt: Sortable.MoveEvent) => boolean
-}
+import type { DragEventData, JobCardElement, SortableOptions } from '../api/local/schemas'
 
 const SORTABLE_CONFIG = {
   GROUP: 'jobs',

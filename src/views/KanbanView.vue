@@ -182,8 +182,8 @@ import { useDragAndDrop } from '@/composables/useDragAndDrop'
 import { useStaffDragAndDrop } from '@/composables/useStaffDragAndDrop'
 import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
-import type { AdvancedFilters } from '@/types'
-import type { StaffAssignmentPayload } from '@/api/local/schemas'
+import type { AdvancedFilters } from '../api/local/schemas'
+import { type StaffAssignmentPayload } from '../api/local/schemas'
 
 const jobsStore = useJobsStore()
 

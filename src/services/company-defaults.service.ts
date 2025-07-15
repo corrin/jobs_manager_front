@@ -1,6 +1,5 @@
 import { api } from '@/api/generated/api'
 import type { CompanyDefaults } from '@/api/generated/api'
-import '@/types/global.d.ts'
 import { debugLog } from '@/utils/debug'
 
 let cachedDefaults: CompanyDefaults | null = null

@@ -54,9 +54,9 @@
                     <div
                       class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-lg font-bold text-indigo-700 border-2 border-indigo-300 overflow-hidden"
                     >
-                      <template v-if="staff.icon_url">
+                      <template v-if="staff.icon">
                         <img
-                          :src="staff.icon_url"
+                          :src="staff.icon"
                           alt="Profile image"
                           class="object-cover w-full h-full"
                         />
@@ -129,8 +129,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useStaffApi } from '@/composables/useStaffApi'
 import StaffFormModal from '@/components/StaffFormModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
-import type { Staff } from '@/types/staff'
+import { schemas } from '@/api/generated/api'
 import { PencilLine, Trash2 } from 'lucide-vue-next'
+import type { z } from 'zod'
+
+type Staff = z.infer<typeof schemas.Staff>
 
 const { listStaff, removeStaff } = useStaffApi()
 const staffList = ref<Staff[]>([])

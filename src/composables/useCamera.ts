@@ -1,14 +1,6 @@
 import { ref } from 'vue'
 import { debugLog } from '@/utils/debug'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
 interface CameraOptions {
   facingMode?: 'user' | 'environment'
   width?: number

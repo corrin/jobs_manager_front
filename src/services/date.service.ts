@@ -1,25 +1,6 @@
-/**
- * @deprecated Use generated types from src/api/generated instead
- * This interface will be removed after migration to openapi-zod-client generated types
- */
-export interface WeekRange {
-  startDate: string
-  endDate: string
-  weekDays: string[]
-}
+import { type WeekRange, type DateRange } from '@/api/local/schemas'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-export interface DateRange {
-  startDate: string
-  endDate: string
-}
+export { type WeekRange, type DateRange }
 
 export class DateService {
   private static instance: DateService

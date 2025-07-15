@@ -1,6 +1,9 @@
 import type { ICellEditor, ICellEditorParams } from 'ag-grid-community'
-import type { JobSelectionItem } from '@/types/timesheet.types'
+import { schemas } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
+import type { z } from 'zod'
+
+type JobSelectionItem = z.infer<typeof schemas.ModernTimesheetJob>
 
 export class TimesheetEntryJobCellEditor implements ICellEditor {
   private value: string = ''
@@ -175,7 +178,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       const jobName = job.name
       const clientName = job.client_name
       const chargeOutRate = job.charge_out_rate
-      const status = job.job_status
+      const status = job.status
 
       const highlightedJobNumber = this.highlightText(jobNumber.toString(), searchTerm)
       const highlightedJobName = this.highlightText(jobName, searchTerm)
@@ -226,16 +229,31 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
 
   private getStatusColor(status: string): string {
     switch (status) {
-      case 'active':
+      case 'approved':
+      case 'accepted_quote':
+      case 'awaiting_materials':
+      case 'awaiting_staff':
+      case 'awaiting_site_availability':
       case 'in_progress':
-        return '#059669'
+        return '#059669' // Green for active/ready work
       case 'completed':
-        return '#6B7280'
+      case 'recently_completed':
+      case 'archived':
+        return '#6B7280' // Gray for finished
       case 'special':
-      case 'shop':
-        return '#DC2626'
+        return '#DC2626' // Red for special jobs
+      case 'draft':
+      case 'quoting':
+        return '#D97706' // Orange for in preparation
+      case 'awaiting_approval':
+        return '#3B82F6' // Blue for awaiting approval
+      case 'on_hold':
+      case 'unusual':
+        return '#EAB308' // Yellow for attention needed
+      case 'rejected':
+        return '#EF4444' // Red for rejected
       default:
-        return '#D97706'
+        return '#D97706' // Orange for unknown status
     }
   }
 
@@ -304,7 +322,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     const clientName = job.client_name
     const chargeOutRate = job.charge_out_rate
     const jobId = job.id
-    const status = job.job_status
+    const status = job.status
 
     this.value = jobNumber.toString()
     this.input.value = jobNumber.toString()
@@ -336,7 +354,8 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       rowData.client = clientName
       rowData.jobName = jobName
       rowData.chargeOutRate = chargeOutRate
-      rowData.billable = status !== 'special' && status !== 'shop'
+      // Based on backend Job model: special jobs are shop jobs (non-billable), rejected jobs are not billable
+      rowData.billable = status !== 'special' && status !== 'rejected'
 
       const hours = rowData.hours || 0
       const rate = rowData.rate || 'Ord'
@@ -364,9 +383,10 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
 
       debugLog('💰 Using wage rate:', wageRate, 'for', hours, 'hours with multiplier', multiplier)
 
+      const chargeOutRateNum = parseFloat(chargeOutRate) || 0
       rowData.bill =
-        rowData.billable && hours > 0 && chargeOutRate > 0
-          ? Math.round(hours * chargeOutRate * 100) / 100
+        rowData.billable && hours > 0 && chargeOutRateNum > 0
+          ? Math.round(hours * chargeOutRateNum * 100) / 100
           : 0
 
       debugLog('💰 Calculated wage:', rowData.wage, 'and bill:', rowData.bill)
@@ -408,6 +428,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         client_name: this.selectedJob.client_name,
         charge_out_rate: this.selectedJob.charge_out_rate,
         id: this.selectedJob.id,
+        status: this.selectedJob.status,
       }
 
       ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob = normalizedJob

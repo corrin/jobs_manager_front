@@ -1,23 +1,14 @@
 import { ref, nextTick, onBeforeUnmount } from 'vue'
 import Sortable from 'sortablejs'
-import api from '@/plugins/axios'
-import { getCsrfToken } from '@/utils/csrf'
-import type { Job } from '@/types'
-import { debugLog } from '@/utils/debug'
+import { api } from '../api/generated/api'
+import { getCsrfToken } from '../utils/csrf'
+import { schemas } from '../api/generated/api'
+import { debugLog } from '../utils/debug'
+import type { StaffDragAndDropEmits } from '../api/local/schemas'
+import type { z } from 'zod'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-type StaffDragAndDropEmits = {
-  (event: 'staff-assigned', payload: { jobId: string; staffId: string }): void
-  (event: 'staff-removed', payload: { jobId: string; staffId: string }): void
-  (event: 'jobs-reload-needed'): void
-}
+// Use KanbanJob for staff drag and drop
+type Job = z.infer<typeof schemas.KanbanJob>
 
 export function useStaffDragAndDrop(emit: StaffDragAndDropEmits) {
   const staffSortableInstances = ref<Map<string, Sortable>>(new Map())

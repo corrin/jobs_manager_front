@@ -1,5 +1,5 @@
 <template>
-  <div v-if="props.isOpen" class="fixed inset-0 z-50 overflow-y-auto">
+  <div v-if="isOpen" class="fixed inset-0 z-50 overflow-y-auto">
     <div
       class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"
     >
@@ -153,20 +153,14 @@ import { ref, computed, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import type { StaffMemberUI, AbsenceForm, AbsenceSummary } from '@/api/local/schemas'
 
-interface Props {
+defineProps<{
   isOpen: boolean
   availableStaff: StaffMemberUI[]
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  isOpen: false,
-  availableStaff: () => [],
-})
+}>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'close'): void
-  (e: 'absenceAdded', form: AbsenceForm): void
+  close: []
+  absenceAdded: [absence: AbsenceForm]
 }>()
 
 const loading = ref(false)
@@ -194,7 +188,7 @@ const isFormValid = computed(() => {
     return basic && form.value.customHours && form.value.customHours > 0
   }
 
-  return !!basic
+  return basic
 })
 
 const absenceSummary = computed((): AbsenceSummary | null => {

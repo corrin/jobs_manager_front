@@ -276,9 +276,11 @@ import Button from '@/components/ui/button/Button.vue'
 import Input from '@/components/ui/input/Input.vue'
 import { computed, ref, watch } from 'vue'
 import { z } from 'zod'
-import type { Staff } from '@/types/staff'
+import { schemas } from '../api/generated/api'
 import { useStaffApi } from '@/composables/useStaffApi'
 import { UserIcon, LockIcon, ClockIcon } from 'lucide-vue-next'
+
+type Staff = z.infer<typeof schemas.Staff>
 
 const tabs = [
   { key: 'personal', label: 'Personal Info', icon: UserIcon },

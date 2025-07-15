@@ -1,5 +1,4 @@
 import { api } from '@/api/generated/api'
-import axios from '@/plugins/axios'
 import type {
   KPICalendarData,
   KPIDayData,
@@ -36,14 +35,11 @@ class KPIService {
 
   async getKPICalendarData(params: KPICalendarParams): Promise<KPICalendarData> {
     try {
-      // This endpoint is not in the generated Zodios client yet
-      const searchParams = new URLSearchParams({
+      // Use the generated API
+      return await api.accounting_api_reports_calendar_retrieve({
         start_date: params.start_date,
-        ...(params.mode && { mode: params.mode }),
+        mode: params.mode,
       })
-
-      const response = await axios.get(`${this.baseUrl}/kpi-calendar/?${searchParams}`)
-      return response.data
     } catch (error) {
       debugLog('❌ Error fetching KPI calendar data:', error)
       throw error

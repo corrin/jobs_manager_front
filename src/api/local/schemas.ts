@@ -1,6 +1,31 @@
 import { z } from 'zod'
 import { schemas } from '../generated/api'
 
+// App Layout Schemas - For navigation and UI components
+export const NavigationItemSchema = z.object({
+  name: z.string(),
+  to: z.string(),
+  label: z.string(),
+})
+
+export type NavigationItem = z.infer<typeof NavigationItemSchema>
+
+// Extend UserProfile for UI-specific user info
+export const UserInfoSchema = z.object({
+  displayName: z.string(),
+  username: z.string(),
+  is_staff: z.boolean(),
+  is_active: z.boolean(),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
+  preferred_name: z.string().optional(),
+  email: z.string().optional(),
+  id: z.string().optional(),
+  fullName: z.string().optional(),
+})
+
+export type UserInfo = z.infer<typeof UserInfoSchema>
+
 // UI-specific extension of TimesheetCostLine with client-side metadata
 export const TimesheetEntryWithMetaSchema = schemas.TimesheetCostLine.extend({
   tempId: z.string().optional(),
@@ -585,6 +610,67 @@ export type XeroItemUI = z.infer<typeof XeroItemUISchema>
 // REASON: These schemas are specific to IMS export service and don't have
 // corresponding generated types in the API
 
+export const IMSStaffDataSchema = z.object({
+  staff_id: z.string(),
+  name: z.string(),
+  total_hours: z.number(),
+  total_billable_hours: z.number(),
+  billable_percentage: z.number(),
+  total_standard_hours: z.number(),
+  total_time_and_half_hours: z.number(),
+  total_double_time_hours: z.number(),
+  total_annual_leave_hours: z.number(),
+  total_sick_leave_hours: z.number(),
+  total_other_leave_hours: z.number(),
+  total_leave_hours: z.number(),
+  weekly_hours: z.array(
+    z.object({
+      date: z.string(),
+      hours: z.number(),
+      billable_hours: z.number(),
+      standard_hours: z.number(),
+      time_and_half_hours: z.number(),
+      double_time_hours: z.number(),
+      annual_leave_hours: z.number(),
+      sick_leave_hours: z.number(),
+      other_leave_hours: z.number(),
+      overtime: z.number(),
+      status: z.string(),
+      leave_type: z.string().optional(),
+      entries: z.array(
+        z.object({
+          id: z.string(),
+          job_number: z.string(),
+          description: z.string(),
+          hours: z.number(),
+          billable: z.boolean(),
+          start_time: z.string().optional(),
+          end_time: z.string().optional(),
+        }),
+      ),
+    }),
+  ),
+})
+
+export type IMSStaffData = z.infer<typeof IMSStaffDataSchema>
+
+export const IMSExportDataSchema = z.object({
+  success: z.boolean(),
+  staff_data: z.array(IMSStaffDataSchema),
+  totals: z.object({
+    total_hours: z.number(),
+    total_billable_hours: z.number(),
+    total_standard_hours: z.number(),
+    total_time_and_half_hours: z.number(),
+    total_double_time_hours: z.number(),
+  }),
+  week_days: z.array(z.string()),
+  prev_week_url: z.string(),
+  next_week_url: z.string(),
+})
+
+export type IMSExportData = z.infer<typeof IMSExportDataSchema>
+
 // Staff Avatar Schema - Extends ModernStaff with UI-specific display properties
 // REASON: Avatar component needs display_name, initials, and avatar_url fields
 // that are computed/derived from the base Staff data for UI presentation
@@ -623,3 +709,258 @@ export const DateRangeSchema = z.object({
 })
 
 export type DateRange = z.infer<typeof DateRangeSchema>
+
+// Week Range for date service functionality
+// REASON: Used by date service for weekly date calculations and timesheet operations,
+// represents UI-specific week range data
+
+export const WeekRangeSchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  weekDays: z.array(z.string()),
+})
+
+export type WeekRange = z.infer<typeof WeekRangeSchema>
+
+// Client Service Response schemas for custom endpoints not in generated API
+// REASON: Client creation endpoint response structure uses generated ClientSearchResult
+// but wraps it in a success/error response format
+
+export const CreateClientResponseSchema = z.object({
+  success: z.boolean(),
+  client: schemas.ClientSearchResult.optional(),
+  error: z.string().optional(),
+  message: z.string().optional(),
+})
+
+export type CreateClientResponse = z.infer<typeof CreateClientResponseSchema>
+
+// Purchase Order Job Selection Schema for PO job cell editor
+// REASON: Used by PurchaseOrderJobCellEditor for job selection in purchase order lines,
+// represents job data structure specific to PO job assignment
+
+export const POJobSelectionItemSchema = z.object({
+  id: z.string(),
+  job_number: z.string(),
+  name: z.string(),
+  client_name: z.string(),
+  status: z.string(),
+  charge_out_rate: z.number(),
+})
+
+export type POJobSelectionItem = z.infer<typeof POJobSelectionItemSchema>
+
+// Contact Management Schema for client contact creation
+// REASON: Used by useContactManagement composable for contact form data,
+// represents the contact creation request structure
+
+export const NewContactDataSchema = schemas.ClientContactCreateRequest
+
+export type NewContactData = z.infer<typeof NewContactDataSchema>
+
+// Kanban Job UI Schema - Extends KanbanJob with UI-specific job_status field
+// REASON: UI components need job_status field in addition to the status field
+// for compatibility with existing job management functionality
+export const KanbanJobUISchema = schemas.KanbanJob.extend({
+  job_status: z.string(),
+})
+
+export type KanbanJobUI = z.infer<typeof KanbanJobUISchema>
+
+// Job Cache Entry Schema - For useJobCache composable caching functionality
+// REASON: Cache entry structure for job data caching with versioning and timestamps
+export const JobCacheEntrySchema = z.object({
+  data: schemas.JobDetailResponse,
+  timestamp: z.date(),
+  version: z.number(),
+})
+
+export type JobCacheEntry = z.infer<typeof JobCacheEntrySchema>
+
+// Job Card Status Config Schema - For useJobCard composable UI configuration
+// REASON: Status configuration for job card styling and display
+export const JobCardStatusConfigSchema = z.object({
+  variant: z.enum(['default', 'secondary', 'outline']),
+  borderClass: z.string(),
+})
+
+export type JobCardStatusConfig = z.infer<typeof JobCardStatusConfigSchema>
+
+// Job Tab Schema - For useJobTabs composable tab management
+// REASON: Tab key enumeration for job tab navigation functionality
+export const JobTabKeySchema = z.enum(['estimate', 'quote', 'actual', 'financial', 'costAnalysis'])
+
+export type JobTabKey = z.infer<typeof JobTabKeySchema>
+
+// Drag and Drop Schemas - For useSimpleDragAndDrop composable
+// REASON: UI-specific drag and drop event data and configuration for kanban functionality
+
+export const DragEventDataSchema = z.object({
+  jobId: z.string(),
+  fromStatus: z.string(),
+  toStatus: z.string(),
+})
+
+export const JobCardElementSchema = z.object({
+  id: z.string(),
+  classes: z.string(),
+  hasDataId: z.boolean(),
+})
+
+export const SortableOptionsSchema = z.object({
+  group: z.string(),
+  animation: z.number(),
+  ghostClass: z.string(),
+  chosenClass: z.string(),
+  dragClass: z.string(),
+  draggable: z.string(),
+  disabled: z.boolean(),
+  delay: z.number(),
+  touchStartThreshold: z.number(),
+})
+
+export type DragEventData = z.infer<typeof DragEventDataSchema>
+export type JobCardElement = z.infer<typeof JobCardElementSchema>
+export type SortableOptions = z.infer<typeof SortableOptionsSchema>
+
+// Staff Drag and Drop Schema - For useStaffDragAndDrop composable
+// REASON: Event emissions for staff assignment drag and drop functionality
+export const StaffDragAndDropEmitsSchema = z.object({
+  'staff-assigned': z
+    .function()
+    .args(
+      z.object({
+        jobId: z.string(),
+        staffId: z.string(),
+      }),
+    )
+    .returns(z.void()),
+  'staff-removed': z
+    .function()
+    .args(
+      z.object({
+        jobId: z.string(),
+        staffId: z.string(),
+      }),
+    )
+    .returns(z.void()),
+  'jobs-reload-needed': z.function().args().returns(z.void()),
+})
+
+export type StaffDragAndDropEmits = {
+  (event: 'staff-assigned', payload: { jobId: string; staffId: string }): void
+  (event: 'staff-removed', payload: { jobId: string; staffId: string }): void
+  (event: 'jobs-reload-needed'): void
+}
+
+// Advanced Search Filters Schema - For Kanban advanced search functionality
+// REASON: Centralized type definition for advanced search form data
+export const AdvancedFiltersSchema = z.object({
+  job_number: z.string(),
+  name: z.string(),
+  description: z.string(),
+  client_name: z.string(),
+  contact_person: z.string(),
+  created_by: z.string(),
+  status: z.array(z.string()),
+  created_after: z.string(),
+  created_before: z.string(),
+  paid: z.string(),
+})
+
+export type AdvancedFilters = z.infer<typeof AdvancedFiltersSchema>
+
+// Dashboard UI schema for transforming UserProfile to dashboard-specific format
+// REASON: Frontend needs camelCase field names for dashboard display
+export const DashboardStatsSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  email: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  isActive: z.boolean(),
+  isStaff: z.boolean(),
+})
+
+export type DashboardStats = z.infer<typeof DashboardStatsSchema>
+
+// Purchase Order Line UI schema for grid functionality
+// REASON: Frontend grid needs different field names and calculated fields
+// that are not present in the backend PurchaseOrderLine schema
+export const PurchaseOrderLineUISchema = z.object({
+  id: z.string(),
+  job_number: z.string().optional(),
+  client_name: z.string().optional(),
+  item_name: z.string(),
+  description: z.string(),
+  quantity: z.number(),
+  unit_price: z.number(),
+  total_price: z.number(),
+  job_id: z.string().optional(),
+})
+
+export type PurchaseOrderLineUI = z.infer<typeof PurchaseOrderLineUISchema>
+
+// Delivery Receipt Allocation UI schema for frontend functionality
+// REASON: Frontend needs number types for calculations and camelCase field names
+// Based on backend delivery_receipt.py structure: {jobId, quantity, retailRate}
+export const DeliveryAllocationUISchema = z.object({
+  jobId: z.string().uuid().nullable(),
+  quantity: z.number(),
+  retailRate: z.number(),
+})
+
+export type DeliveryAllocationUI = z.infer<typeof DeliveryAllocationUISchema>
+
+// Transform function to convert UI types to backend types
+export const transformDeliveryAllocationToBackend = (
+  allocUI: DeliveryAllocationUI,
+): z.infer<typeof schemas.DeliveryReceiptAllocation> => ({
+  job_id: allocUI.jobId,
+  quantity: allocUI.quantity.toString(),
+  retail_rate: allocUI.retailRate.toString(),
+})
+
+// Transform function to convert backend types to UI types
+export const transformDeliveryAllocationFromBackend = (
+  allocBackend: z.infer<typeof schemas.DeliveryReceiptAllocation>,
+): DeliveryAllocationUI => ({
+  jobId: allocBackend.job_id,
+  quantity: parseFloat(allocBackend.quantity),
+  retailRate: 0, // Default value, should be set from other sources
+})
+
+// Helper function to transform complete delivery receipt data for API submission
+export const transformDeliveryReceiptForAPI = (
+  purchaseOrderId: string,
+  allocations: Record<string, DeliveryAllocationUI[]>,
+  defaultRetailRate: number = 0,
+): z.infer<typeof schemas.DeliveryReceiptRequest> => {
+  const backendAllocations: Record<string, z.infer<typeof schemas.DeliveryReceiptLine>> = {}
+
+  for (const [lineId, lineAllocations] of Object.entries(allocations)) {
+    if (lineAllocations.length > 0 && lineAllocations.some((alloc) => alloc.quantity > 0)) {
+      const totalReceived = lineAllocations.reduce((sum, alloc) => sum + alloc.quantity, 0)
+      const validAllocations = lineAllocations
+        .filter((alloc) => alloc.quantity > 0)
+        .map((alloc) =>
+          transformDeliveryAllocationToBackend({
+            ...alloc,
+            retailRate: alloc.retailRate || defaultRetailRate,
+          }),
+        )
+
+      if (validAllocations.length > 0) {
+        backendAllocations[lineId] = {
+          total_received: totalReceived.toString(),
+          allocations: validAllocations,
+        }
+      }
+    }
+  }
+
+  return {
+    purchase_order_id: purchaseOrderId,
+    allocations: backendAllocations,
+  }
+}

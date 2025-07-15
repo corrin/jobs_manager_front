@@ -230,14 +230,15 @@ import {
   Save,
   History,
 } from 'lucide-vue-next'
-import { useDeliveryReceiptStore, type PurchaseOrder } from '@/stores/deliveryReceiptStore'
-import type { DeliveryAllocation } from '@/types/purchasing'
+import { useDeliveryReceiptStore } from '@/stores/deliveryReceiptStore'
+import { schemas } from '@/api/generated/api'
+import type { DeliveryAllocationUI } from '@/api/local/schemas.ts'
+import { transformDeliveryReceiptForAPI } from '@/api/local/schemas.ts'
+import type { z } from 'zod'
 
 // Import types from generated API schemas
-import type { DeliveryReceiptLine } from '@/api/generated/api'
-
-// Use the generated interface instead of local ExistingAllocation
-type ExistingAllocation = DeliveryReceiptLine
+type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
+type ExistingAllocation = z.infer<typeof schemas.DeliveryReceiptLine>
 
 const route = useRoute()
 const router = useRouter()
@@ -247,7 +248,7 @@ const isLoading = ref(true)
 const isSaving = ref(false)
 const error = ref<string | null>(null)
 const purchaseOrder = ref<PurchaseOrder | null>(null)
-const allocations = ref<Record<string, DeliveryAllocation[]>>({})
+const allocations = ref<Record<string, DeliveryAllocationUI[]>>({})
 const existingAllocations = ref<Record<string, ExistingAllocation[]>>({})
 const showPreviousAllocationsModal = ref(false)
 
@@ -382,41 +383,19 @@ async function saveChanges() {
   isSaving.value = true
 
   try {
-    const deliveryReceiptData: Record<
-      string,
-      {
-        total_received: number
-        allocations: { jobId: string | null; quantity: number; retailRate: number }[]
-      }
-    > = {}
-
-    for (const [lineId, lineAllocations] of Object.entries(allocations.value)) {
-      if (lineAllocations.length > 0) {
-        const totalReceived = lineAllocations.reduce((sum, alloc) => sum + alloc.quantity, 0)
-
-        const allocationsData = lineAllocations
-          .filter((alloc) => alloc.quantity > 0)
-          .map((alloc) => ({
-            jobId: alloc.job_id,
-            quantity: alloc.quantity,
-            retailRate: alloc.retail_rate || deliveryReceiptStore.getDefaultRetailRate(),
-          }))
-
-        if (allocationsData.length > 0) {
-          deliveryReceiptData[lineId] = {
-            total_received: totalReceived,
-            allocations: allocationsData,
-          }
-        }
-      }
-    }
+    // Use transformation function to convert UI data to backend format
+    const deliveryReceiptData = transformDeliveryReceiptForAPI(
+      purchaseOrder.value.id,
+      allocations.value,
+      deliveryReceiptStore.getDefaultRetailRate(),
+    )
 
     await deliveryReceiptStore.submitDeliveryReceipt(purchaseOrder.value.id, deliveryReceiptData)
     toast.success('Delivery receipt saved successfully!')
 
     await loadData()
 
-    const clearedAllocations: Record<string, DeliveryAllocation[]> = {}
+    const clearedAllocations: Record<string, DeliveryAllocationUI[]> = {}
     purchaseOrder.value.lines.forEach((line) => {
       clearedAllocations[line.id] = []
     })
@@ -461,7 +440,7 @@ async function loadData() {
     purchaseOrder.value = po
     existingAllocations.value = existingAllocationsData.allocations || {}
 
-    const initialAllocations: Record<string, DeliveryAllocation[]> = {}
+    const initialAllocations: Record<string, DeliveryAllocationUI[]> = {}
     po.lines.forEach((line) => {
       initialAllocations[line.id] = []
     })

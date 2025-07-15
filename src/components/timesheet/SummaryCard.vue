@@ -34,27 +34,20 @@
 import { computed } from 'vue'
 import { Clock, TrendingUp, DollarSign, Users, AlertCircle, CheckCircle } from 'lucide-vue-next'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
-  title: string
-  value: string
-  subtitle?: string
-  progress?: number
-  icon: string
-  color: 'blue' | 'green' | 'emerald' | 'purple' | 'amber' | 'red'
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  subtitle: '',
-  progress: undefined,
-})
+const props = withDefaults(
+  defineProps<{
+    title: string
+    value: string
+    subtitle?: string
+    progress?: number
+    icon: string
+    color: 'blue' | 'green' | 'emerald' | 'purple' | 'amber' | 'red'
+  }>(),
+  {
+    subtitle: '',
+    progress: undefined,
+  },
+)
 
 const iconMap = {
   Clock,

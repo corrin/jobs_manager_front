@@ -1,5 +1,4 @@
 import { api } from '@/api/generated/api'
-import axios from '@/plugins/axios'
 import type {
   QuoteSpreadsheet,
   PreviewQuoteResponse,
@@ -52,11 +51,15 @@ class QuoteService {
     const formData = new FormData()
     formData.append('file', file)
 
-    const response = await axios.post(`/job/rest/jobs/${jobId}/quote/import/preview/`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
+    const response = await api.axiosInstance.post(
+      `/job/rest/jobs/${jobId}/quote/import/preview/`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       },
-    })
+    )
 
     return response.data
   }
@@ -72,11 +75,15 @@ class QuoteService {
       formData.append('skip_validation', 'true')
     }
 
-    const response = await axios.post(`/job/rest/jobs/${jobId}/quote/import/`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
+    const response = await api.axiosInstance.post(
+      `/job/rest/jobs/${jobId}/quote/import/`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       },
-    })
+    )
 
     return response.data
   }

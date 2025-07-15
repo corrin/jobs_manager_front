@@ -1,28 +1,15 @@
 import { ref, computed } from 'vue'
 import type { JobDetailResponse } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface CacheEntry {
-  data: JobDetailResponse
-  timestamp: Date
-  version: number
-}
+import type { JobCacheEntry } from '../api/local/schemas'
 
 export function useJobCache() {
-  const cache = ref<Map<string, CacheEntry>>(new Map())
+  const cache = ref<Map<string, JobCacheEntry>>(new Map())
   const currentVersion = ref(1)
 
   const DEFAULT_TTL = 5 * 60 * 1000
 
-  const isCacheValid = (entry: CacheEntry, ttl: number = DEFAULT_TTL): boolean => {
+  const isCacheValid = (entry: JobCacheEntry, ttl: number = DEFAULT_TTL): boolean => {
     const now = new Date().getTime()
     const entryTime = entry.timestamp.getTime()
     const isWithinTTL = now - entryTime < ttl
@@ -50,7 +37,7 @@ export function useJobCache() {
   }
 
   const setCachedJob = (jobId: string, jobData: JobDetailResponse): void => {
-    const entry: CacheEntry = {
+    const entry: JobCacheEntry = {
       data: { ...jobData },
       timestamp: new Date(),
       version: currentVersion.value,

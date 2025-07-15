@@ -2398,6 +2398,58 @@ assistant&#x27;s reply.`,
     alias: 'job_api_jobs_advanced_search_retrieve',
     description: `Endpoint for advanced job search - API endpoint.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_number',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'name',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'description',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'client_name',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'contact_person',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'created_by',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'status',
+        type: 'Query',
+        schema: z.array(z.string()).optional(),
+      },
+      {
+        name: 'created_after',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'created_before',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'paid',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
     response: AdvancedSearchResponse,
   },
   {
@@ -3254,7 +3306,7 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
     alias: 'listPurchaseOrders',
     description: `Get list of purchase orders with optional status filtering.`,
     requestFormat: 'json',
-    response: PurchaseOrderList,
+    response: z.array(PurchaseOrderList),
   },
   {
     method: 'post',
@@ -3700,7 +3752,6 @@ Endpoint: /api/xero/errors/&lt;id&gt;/`,
     response: XeroError,
   },
 ])
-
 
 export const api = new Zodios(getApiBaseUrl(), endpoints, { axiosInstance: axios })
 

@@ -2,14 +2,6 @@ import { ref, type Ref } from 'vue'
 import Sortable from 'sortablejs'
 import { debugLog } from '@/utils/debug'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
 export interface DragEventPayload {
   jobId: string
   fromStatus: string
@@ -17,14 +9,6 @@ export interface DragEventPayload {
   beforeId?: string
   afterId?: string
 }
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
 
 export type DragEventHandler = (event: string, payload: DragEventPayload) => void
 

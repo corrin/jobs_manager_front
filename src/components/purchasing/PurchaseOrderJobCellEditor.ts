@@ -1,33 +1,17 @@
 import type { ICellEditor, ICellEditorParams } from 'ag-grid-community'
 import { debugLog } from '@/utils/debug'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface JobSelectionItem {
-  id: string
-  job_number: string
-  name: string
-  client_name: string
-  status: string
-  charge_out_rate: number
-}
+import { type POJobSelectionItem } from '@/api/local/schemas'
 
 export class PurchaseOrderJobCellEditor implements ICellEditor {
   private value: string = ''
   private params!: ICellEditorParams
-  private jobs: JobSelectionItem[] = []
-  private filteredJobs: JobSelectionItem[] = []
+  private jobs: POJobSelectionItem[] = []
+  private filteredJobs: POJobSelectionItem[] = []
   private highlightedIndex: number = -1
   private container!: HTMLDivElement
   private input!: HTMLInputElement
   private dropdown!: HTMLDivElement
-  private selectedJob: JobSelectionItem | null = null
+  private selectedJob: POJobSelectionItem | null = null
 
   init(params: ICellEditorParams): void {
     this.value = params.value || ''
@@ -35,7 +19,7 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
 
     const win = window as unknown as { timesheetJobs?: unknown }
     if (Array.isArray(win.timesheetJobs)) {
-      this.jobs = win.timesheetJobs as JobSelectionItem[]
+      this.jobs = win.timesheetJobs as POJobSelectionItem[]
     } else {
       this.jobs = []
     }
@@ -282,7 +266,7 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
     })
   }
 
-  private selectJob(job: JobSelectionItem): void {
+  private selectJob(job: POJobSelectionItem): void {
     this.selectedJob = job
     this.value = job.job_number
     this.input.value = job.job_number

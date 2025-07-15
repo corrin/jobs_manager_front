@@ -1,4 +1,4 @@
-import type { ApiError } from '@/api/local/schemas'
+import { type ApiError } from '@/api/local/schemas'
 
 export function extractErrorMessage(error: unknown, fallbackMessage = 'An error occurred'): string {
   if (!error) {

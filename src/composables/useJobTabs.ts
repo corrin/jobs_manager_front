@@ -1,14 +1,5 @@
 import { ref } from 'vue'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-export type JobTabKey = 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'
+import type { JobTabKey } from '../api/local/schemas'
 
 export function useJobTabs(initialTab: JobTabKey = 'estimate') {
   const activeTab = ref<JobTabKey>(initialTab)

@@ -53,7 +53,7 @@ const props = withDefaults(
 )
 
 defineEmits<{
-  (e: 'click', event: MouseEvent): void
+  click: []
 }>()
 
 const getInitials = (staff: StaffAvatar): string => {
