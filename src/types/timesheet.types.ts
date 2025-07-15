@@ -117,6 +117,7 @@ export interface TimesheetEntryJobSelectionItem {
   charge_out_rate: number
   status: string
   job_display_name: string
+  shop_job: boolean
 }
 
 export interface TimesheetEntryStaffMember {

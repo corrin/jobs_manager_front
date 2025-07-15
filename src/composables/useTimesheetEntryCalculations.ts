@@ -45,13 +45,17 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     })
 
     const billable = (() => {
-      switch (job.status) {
-        case 'special':
-        case 'shop':
-          return false
-        default:
-          return true
+      // Shop jobs are never billable
+      if (job.shop_job) {
+        return false
       }
+
+      // Special status jobs are also not billable
+      if (job.status === 'special') {
+        return false
+      }
+
+      return true
     })()
 
     const result = {
