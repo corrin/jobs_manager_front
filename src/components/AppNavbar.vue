@@ -225,6 +225,24 @@
               >
                 <X class="w-4 h-4 mr-2" /> App Errors
               </router-link>
+              <router-link
+                to="/admin/django-jobs"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Cog class="w-4 h-4 mr-2" /> Django Jobs
+              </router-link>
+              <router-link
+                to="/admin/ai-providers"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Brain class="w-4 h-4 mr-2" /> AI Providers
+              </router-link>
+              <router-link
+                to="/admin/uat"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Server class="w-4 h-4 mr-2" /> Manage UAT
+              </router-link>
             </div>
           </Transition>
         </div>
@@ -430,14 +448,58 @@
                     <router-link
                       to="/admin/staff"
                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      @click="closeMobileMenu"
                     >
                       Staff
                     </router-link>
                     <router-link
                       to="/admin/company"
                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      @click="closeMobileMenu"
                     >
                       Company
+                    </router-link>
+                    <router-link
+                      to="/admin/archive-jobs"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      @click="closeMobileMenu"
+                    >
+                      Archive Jobs
+                    </router-link>
+                    <router-link
+                      to="/admin/month-end"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      @click="closeMobileMenu"
+                    >
+                      Month-End
+                    </router-link>
+                    <router-link
+                      to="/admin/errors"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      @click="closeMobileMenu"
+                    >
+                      App Errors
+                    </router-link>
+                    <router-link
+                      to="/admin/django-jobs"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      @click="closeMobileMenu"
+                    >
+                      Django Jobs
+                    </router-link>
+                    <router-link
+                      to="/admin/ai-providers"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      @click="closeMobileMenu"
+                    >
+                      AI Providers
+                    </router-link>
+                    <router-link
+                      to="/admin/uat"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      @click="closeMobileMenu"
+                    >
+                      Manage UAT
                     </router-link>
                   </div>
                 </Transition>
@@ -473,6 +535,9 @@ import {
   Archive,
   CalendarClock,
   Clock,
+  Server,
+  Cog,
+  Brain,
 } from 'lucide-vue-next'
 import { useAppLayout } from '@/composables/useAppLayout'
 
