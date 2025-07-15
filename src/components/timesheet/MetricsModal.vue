@@ -137,21 +137,16 @@ import {
   formatCurrency,
   type DailyTimesheetSummary,
 } from '@/services/daily-timesheet.service'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 
-/**
+// Type alias for schema-based type (replacing deprecated interface)
+type DailyTimesheetSummary = z.infer<typeof schemas.DailyTimesheetSummary>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+defineProps<{
   open: boolean
   summary: DailyTimesheetSummary
-}
-
-defineProps<Props>()
+}>()
 
 const emit = defineEmits<{
   close: []

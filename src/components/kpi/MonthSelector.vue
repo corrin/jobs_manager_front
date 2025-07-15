@@ -30,34 +30,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+const props = defineProps<{
   year: number
   month: number
-}
+}>()
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Emits {
-  (e: 'update:year', value: number): void
-  (e: 'update:month', value: number): void
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+const emit = defineEmits<{
+  'update:year': [value: number]
+  'update:month': [value: number]
+}>()
 
 const selectedValue = computed(() => `${props.year}-${props.month.toString().padStart(2, '0')}`)
 

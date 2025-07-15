@@ -1,17 +1,4 @@
-/**
- * @deprecated Use generated types from src/api/generated instead
- * This interface will be removed after migration to openapi-zod-client generated types
- */
-export interface ApiError {
-  response?: {
-    data?: {
-      error?: string
-      message?: string
-      details?: string
-    }
-  }
-  message?: string
-}
+import type { ApiError } from '@/api/local/schemas'
 
 export function extractErrorMessage(error: unknown, fallbackMessage = 'An error occurred'): string {
   if (!error) {

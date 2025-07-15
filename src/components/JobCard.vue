@@ -70,45 +70,32 @@ import StaffAvatar from '@/components/StaffAvatar.vue'
 import StatusBadge from '@/components/kanban/StatusBadge.vue'
 import { useJobCard } from '@/composables/useJobCard'
 import { statusNameMap } from '@/utils/statusMappings'
-import type { Job } from '@/types'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-/**
+type KanbanJob = z.infer<typeof schemas.KanbanJob>
 
- * @deprecated Use generated types from src/api/generated instead
+const props = withDefaults(
+  defineProps<{
+    job: KanbanJob
+    isDragging?: boolean
+    isStaffDragTarget?: boolean
+    isMovementModeActive?: boolean
+    isJobSelectedForMovement?: boolean
+  }>(),
+  {
+    isDragging: false,
+    isStaffDragTarget: false,
+    isMovementModeActive: false,
+    isJobSelectedForMovement: false,
+  },
+)
 
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface JobCardProps {
-  job: Job
-  isDragging?: boolean
-  isStaffDragTarget?: boolean
-  isMovementModeActive?: boolean
-  isJobSelectedForMovement?: boolean
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface JobCardEmits {
-  (e: 'click', job: Job): void
-  (e: 'job-ready', payload: { jobId: string; element: HTMLElement }): void
-  (e: 'job-selected-for-movement', job: Job): void
-}
-
-const props = withDefaults(defineProps<JobCardProps>(), {
-  isDragging: false,
-  isStaffDragTarget: false,
-  isMovementModeActive: false,
-  isJobSelectedForMovement: false,
-})
-const emit = defineEmits<JobCardEmits>()
+const emit = defineEmits<{
+  click: [job: KanbanJob]
+  'job-ready': [payload: { jobId: string; element: HTMLElement }]
+  'job-selected-for-movement': [job: KanbanJob]
+}>()
 
 const jobStaffContainerRef = ref<HTMLElement>()
 

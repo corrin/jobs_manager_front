@@ -33,26 +33,16 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { DayKPI } from '@/services/kpi.service'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-/**
+type DayKPI = z.infer<typeof schemas.KPIDayData>
+type Thresholds = z.infer<typeof schemas.KPIThresholds>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+const props = defineProps<{
   dayData: DayKPI
-  thresholds: {
-    billable_threshold_green: number
-    billable_threshold_amber: number
-    daily_gp_target: number
-  }
-}
-
-const props = defineProps<Props>()
+  thresholds: Thresholds
+}>()
 
 defineEmits<{
   click: [dayData: DayKPI]

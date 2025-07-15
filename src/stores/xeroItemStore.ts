@@ -2,19 +2,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/plugins/axios'
 import { debugLog } from '@/utils/debug'
-
-/**
- * @deprecated Use generated types from src/api/generated instead
- * This interface will be removed after migration to openapi-zod-client generated types
- */
-export interface XeroItem {
-  id: string
-  code: string
-  name: string
-}
+import type { XeroItemUI } from '@/api/local/schemas'
 
 export const useXeroItemStore = defineStore('xeroItems', () => {
-  const items = ref<XeroItem[]>([])
+  const items = ref<XeroItemUI[]>([])
   const loading = ref(false)
 
   async function fetchItems() {

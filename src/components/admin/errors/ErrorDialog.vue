@@ -1,23 +1,7 @@
 <script setup lang="ts">
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface ErrorRecord {
-  id: string
-  timestamp: string
-  message: string
-  entity?: string
-  severity?: string
-  stack?: string
-}
+import { type ErrorRecord } from '@/api/local/schemas'
 
 const props = defineProps<{ error: ErrorRecord | null }>()
 const emit = defineEmits(['close'])

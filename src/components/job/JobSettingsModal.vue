@@ -217,15 +217,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+type Props = {
   jobData: JobDetailResponse | null
   isOpen: boolean
 }
@@ -254,7 +246,10 @@ const jobStatusChoices = ref<{ value: string; label: string }[]>([])
 onMounted(async () => {
   try {
     const statusMap = await jobService.getStatusChoices()
-    jobStatusChoices.value = Object.entries(statusMap).map(([value, label]) => ({ value, label }))
+    jobStatusChoices.value = Object.entries(statusMap).map(([value, label]) => ({
+      value,
+      label: String(label),
+    }))
   } catch {
     jobStatusChoices.value = [
       { value: 'quoting', label: 'Quoting' },

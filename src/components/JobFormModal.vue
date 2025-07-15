@@ -48,32 +48,13 @@ import Button from '@/components/ui/button/Button.vue'
 import Input from '@/components/ui/input/Input.vue'
 import { ref, watch } from 'vue'
 import { createDjangoJob, updateDjangoJob } from '@/services/django-jobs-service'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface DjangoJobForm {
+type DjangoJob = z.infer<typeof schemas.DjangoJob>
+type DjangoJobForm = {
   id: string
   next_run_time: string
-  job_state: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface DjangoJob {
-  id: string
-  next_run_time: string | null
   job_state: string
 }
 

@@ -68,23 +68,20 @@ import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import CostLineDropdown from './CostLineDropdown.vue'
 import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
-import { costlineService, type CostLineCreatePayload } from '@/services/costline.service'
+import { costlineService } from '@/services/costline.service'
 import { fetchCostSet } from '@/services/costing.service'
-import type { CostLine } from '@/types/costing.types'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
-import type { CostSet } from '../../types/costing.types'
 
-/**
+// Use generated API types
+type CostLine = z.infer<typeof schemas.CostLine>
+type CostSet = z.infer<typeof schemas.CostSet>
+type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+type Props = {
   jobId: string
   estimateSummaryFromBackend?: { cost: number; rev: number; hours: number; created?: string }
 }
@@ -209,7 +206,7 @@ async function handleAddMaterial(payload: CostLine) {
   isLoading.value = true
   toast.loading('Adding material cost line...', { id: 'add-material' })
   try {
-    const createPayload: CostLineCreatePayload = {
+    const createPayload: CostLineCreateUpdate = {
       kind: 'material',
       desc: payload.desc,
       quantity: payload.quantity,
@@ -250,7 +247,7 @@ async function handleAddTime(payload: CostLine) {
   isLoading.value = true
   toast.loading('Adding time cost line...', { id: 'add-time' })
   try {
-    const createPayload: CostLineCreatePayload = {
+    const createPayload: CostLineCreateUpdate = {
       kind: 'time',
       desc: payload.desc,
       quantity: payload.quantity,

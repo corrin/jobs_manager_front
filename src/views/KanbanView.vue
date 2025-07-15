@@ -183,6 +183,7 @@ import { useStaffDragAndDrop } from '@/composables/useStaffDragAndDrop'
 import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { AdvancedFilters } from '@/types'
+import type { StaffAssignmentPayload } from '@/api/local/schemas'
 
 const jobsStore = useJobsStore()
 
@@ -250,19 +251,6 @@ const { isDragging, initializeSortable, destroyAllSortables } = useDragAndDrop((
     }
   }
 })
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface StaffAssignmentPayload {
-  staffId: string
-  jobId: string
-}
 
 const { initializeStaffPool, initializeJobStaffContainer, updateJobStaffContainers } =
   useStaffDragAndDrop(async (event: string, payload?: StaffAssignmentPayload) => {

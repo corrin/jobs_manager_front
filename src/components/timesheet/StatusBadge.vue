@@ -45,14 +45,6 @@ import { debugLog } from '@/utils/debug'
 
 import { Check, AlertTriangle, Clock, Plane } from 'lucide-vue-next'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
 interface Props {
   status: string
   leaveType?: string

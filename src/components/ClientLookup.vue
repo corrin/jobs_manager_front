@@ -53,7 +53,7 @@
             v-if="suggestions.length === 0 && searchQuery.length >= 3 && !isLoading"
             class="px-4 py-2 text-gray-500 text-center"
           >
-            No clients found for "{{ searchQuery }}"
+            No clients found
           </div>
         </div>
       </div>
@@ -98,29 +98,22 @@ import { useClientLookup } from '@/composables/useClientLookup'
 import CreateClientModal from '@/components/CreateClientModal.vue'
 import type { Client } from '@/composables/useClientLookup'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
-  id: string
-  label: string
-  placeholder?: string
-  required?: boolean
-  modelValue?: string
-  supplierLookup?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  placeholder: 'Search for a client...',
-  required: false,
-  modelValue: '',
-  supplierLookup: false,
-})
+const props = withDefaults(
+  defineProps<{
+    id: string
+    label: string
+    placeholder?: string
+    required?: boolean
+    modelValue?: string
+    supplierLookup?: boolean
+  }>(),
+  {
+    placeholder: 'Search for a client...',
+    required: false,
+    modelValue: '',
+    supplierLookup: false,
+  },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]

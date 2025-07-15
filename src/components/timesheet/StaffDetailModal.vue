@@ -167,15 +167,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, Edit } from 'lucide-vue-next'
 import { formatHours, formatCurrency } from '@/services/daily-timesheet.service'
-import type { StaffDailyData } from '@/services/daily-timesheet.service'
+import { z } from 'zod'
+import { schemas } from '@/api/generated/api'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
+// Use generated type from Zodios API
+type StaffDailyData = z.infer<typeof schemas.StaffDailyData>
 
 interface Props {
   staff: StaffDailyData

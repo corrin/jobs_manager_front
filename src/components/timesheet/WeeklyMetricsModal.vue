@@ -105,35 +105,19 @@
 
 <script setup lang="ts">
 import { X, Clock, DollarSign, TrendingUp, BarChart3 } from 'lucide-vue-next'
-import type { WeeklySummaryData } from '@/types/weekly-timesheet.types'
+import { WeeklySummaryDataSchema } from '@/api/local/schemas'
+import { z } from 'zod'
 
-/**
+type WeeklySummaryData = z.infer<typeof WeeklySummaryDataSchema>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+defineProps<{
   isOpen: boolean
   data: WeeklySummaryData | null
-}
+}>()
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Emits {
-  (e: 'close'): void
-}
-
-defineProps<Props>()
-const emit = defineEmits<Emits>()
+const emit = defineEmits<{
+  close: []
+}>()
 
 const closeModal = () => {
   emit('close')

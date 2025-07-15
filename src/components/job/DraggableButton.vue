@@ -19,28 +19,9 @@
 import { ref, computed, type HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
 type ButtonVariant = 'primary' | 'secondary' | 'destructive' | 'outline' | 'ghost'
-/**
- * @deprecated Use generated types from src/api/generated instead
- * This interface will be removed after migration to openapi-zod-client generated types
- */
+
 type ButtonSize = 'sm' | 'md' | 'lg'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
 
 interface Props {
   variant?: ButtonVariant
@@ -49,14 +30,6 @@ interface Props {
   draggable?: boolean
   class?: HTMLAttributes['class']
 }
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
 
 interface Emits {
   (e: 'click', event: MouseEvent): void

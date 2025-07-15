@@ -1,74 +1,8 @@
 import apiClient from './api'
 import { debugLog } from '@/utils/debug'
+import { IMSExportDataSchema, type IMSStaffData, type IMSExportData } from '@/api/local/schemas'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-export interface IMSStaffData {
-  staff_id: string
-  name: string
-  total_hours: number
-  total_billable_hours: number
-  billable_percentage: number
-  total_standard_hours: number
-  total_time_and_half_hours: number
-  total_double_time_hours: number
-  total_annual_leave_hours: number
-  total_sick_leave_hours: number
-  total_other_leave_hours: number
-  total_leave_hours: number
-  weekly_hours: Array<{
-    date: string
-    hours: number
-    billable_hours: number
-    standard_hours: number
-    time_and_half_hours: number
-    double_time_hours: number
-    annual_leave_hours: number
-    sick_leave_hours: number
-    other_leave_hours: number
-    overtime: number
-    status: string
-    leave_type?: string
-    entries: Array<{
-      id: string
-      job_number: string
-      description: string
-      hours: number
-      billable: boolean
-      start_time?: string
-      end_time?: string
-    }>
-  }>
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-export interface IMSExportData {
-  success: boolean
-  staff_data: IMSStaffData[]
-  totals: {
-    total_hours: number
-    total_billable_hours: number
-    total_standard_hours: number
-    total_time_and_half_hours: number
-    total_double_time_hours: number
-  }
-  week_days: string[]
-  prev_week_url: string
-  next_week_url: string
-}
+export { type IMSStaffData, type IMSExportData }
 
 class IMSService {
   private baseUrl = '/timesheets/api'
@@ -85,8 +19,14 @@ class IMSService {
         },
       })
 
-      debugLog('✅ IMS export successful:', response.data)
-      return response.data
+      const validation = IMSExportDataSchema.safeParse(response.data)
+      if (validation.success) {
+        debugLog('✅ IMS export successful:', validation.data)
+        return validation.data
+      } else {
+        debugLog('❌ Invalid IMS export data:', validation.error)
+        throw new Error('Invalid data structure received from IMS export endpoint.')
+      }
     } catch (error) {
       debugLog('❌ Error exporting to IMS:', error)
       throw error

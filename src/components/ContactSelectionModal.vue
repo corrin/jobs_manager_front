@@ -159,6 +159,8 @@ import { ref, watch } from 'vue'
 import { Users } from 'lucide-vue-next'
 import type { ClientContact } from '@/composables/useClientLookup'
 import type { NewContactData } from '@/composables/useContactManagement'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 import {
   Dialog,
   DialogContent,
@@ -168,15 +170,11 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
-/**
+// Type aliases for schema-based types (replacing deprecated interface)
+type ClientContact = z.infer<typeof schemas.ClientContactResult>
+type NewContactData = z.infer<typeof schemas.ClientContactCreateRequest>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+const props = defineProps<{
   isOpen: boolean
   clientId: string
   clientName: string
@@ -184,9 +182,7 @@ interface Props {
   selectedContact: ClientContact | null
   isLoading: boolean
   newContactForm: NewContactData
-}
-
-const props = defineProps<Props>()
+}>()
 const emit = defineEmits<{
   close: []
   'select-contact': [contact: ClientContact]
@@ -194,14 +190,6 @@ const emit = defineEmits<{
 }>()
 
 const nameError = ref('')
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
 
 type ContactForm = NewContactData
 const localContactForm = ref<ContactForm>({ ...props.newContactForm })

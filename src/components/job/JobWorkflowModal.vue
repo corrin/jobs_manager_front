@@ -148,6 +148,7 @@ import type { JobDetailResponse, JobCreateRequest } from '@/api/generated/api'
 import { jobService } from '@/services/job.service'
 import { useJobsStore } from '@/stores/jobs'
 import { toast } from 'vue-sonner'
+import type { StatusChoice } from '@/api/local/schemas'
 import {
   Dialog,
   DialogContent,
@@ -157,28 +158,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface StatusChoice {
-  key: string
-  label: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+type Props = {
   jobData: JobDetailResponse | null
   isOpen: boolean
 }

@@ -193,6 +193,10 @@ import RichTextEditor from '@/components/RichTextEditor.vue'
 import { jobService, type JobCreateData } from '@/services/job.service'
 import { costlineService } from '@/services/costline.service'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
+
+type ClientSearchResult = z.infer<typeof schemas.ClientSearchResult>
 import { toast } from 'vue-sonner'
 
 const router = useRouter()
@@ -210,25 +214,12 @@ const formData = ref<JobCreateData & { estimatedMaterials: number; estimatedTime
   estimatedTime: 0,
 })
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Client {
-  id: string
-  name: string
-}
-
-const selectedClient = ref<Client | null>(null)
+const selectedClient = ref<ClientSearchResult | null>(null)
 
 const errors = ref<Record<string, string>>({})
 const isSubmitting = ref(false)
 
-const handleClientSelection = (client: Client | null) => {
+const handleClientSelection = (client: ClientSearchResult | null) => {
   selectedClient.value = client
   if (client) {
     formData.value.client_name = client.name

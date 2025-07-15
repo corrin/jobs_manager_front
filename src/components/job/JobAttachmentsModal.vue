@@ -225,24 +225,17 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import CameraModal from './CameraModal.vue'
-import type { JobFile } from '@/schemas/job.schemas'
+import { schemas } from '@/api/generated/api'
 import { jobService } from '@/services/job.service'
+import { z } from 'zod'
 
-/**
+type JobFile = z.infer<typeof schemas.JobFile>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+const props = defineProps<{
   jobId: string
   jobNumber: number | undefined
   isOpen: boolean
-}
-
-const props = defineProps<Props>()
+}>()
 
 const emit = defineEmits<{
   close: []

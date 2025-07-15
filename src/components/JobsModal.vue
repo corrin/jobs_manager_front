@@ -64,20 +64,10 @@ import { CalendarClock } from 'lucide-vue-next'
 import { ref, computed, onMounted } from 'vue'
 import { getDjangoJobs, deleteDjangoJob } from '@/services/django-jobs-service'
 import JobFormModal from '@/components/JobFormModal.vue'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface DjangoJob {
-  id: string
-  next_run_time: string | null
-  job_state: string
-}
+type DjangoJob = z.infer<typeof schemas.DjangoJob>
 
 const jobs = ref<DjangoJob[]>([])
 const search = ref('')

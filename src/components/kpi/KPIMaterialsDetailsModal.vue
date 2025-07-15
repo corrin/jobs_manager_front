@@ -210,25 +210,18 @@ import {
   DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog'
-import type { DayKPI } from '@/services/kpi.service'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 import { kpiService } from '@/services/kpi.service'
 
-/**
+type DayKPI = z.infer<typeof schemas.KPIDayData>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+const props = defineProps<{
   calendarData: Record<string, DayKPI> | null
   year: number
   month: number
   isOpen: boolean
-}
-
-const props = defineProps<Props>()
+}>()
 
 const emit = defineEmits<{
   'update:isOpen': [value: boolean]

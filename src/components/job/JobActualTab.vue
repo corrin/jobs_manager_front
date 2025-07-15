@@ -228,37 +228,19 @@ import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
 import { fetchCostSet } from '@/services/costing.service'
-import type { CostLine, CostSet } from '@/types/costing.types'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 import api from '@/plugins/axios'
 
-/**
+type CostLine = z.infer<typeof schemas.CostLine>
+type CostSet = z.infer<typeof schemas.CostSet>
+type Staff = z.infer<typeof schemas.Staff>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+const props = defineProps<{
   jobId: string
   actualSummaryFromBackend?: { cost: number; rev: number; hours: number; created?: string }
-}
+}>()
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Staff {
-  id: string
-  name: string
-  email?: string
-}
-
-const props = defineProps<Props>()
 const router = useRouter()
 
 const costLines = ref<CostLine[]>([])

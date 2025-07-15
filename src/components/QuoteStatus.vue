@@ -134,22 +134,15 @@
 import { onMounted, watch } from 'vue'
 import { useQuoteImport } from '@/composables/useQuoteImport'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
-  jobId: string
-  autoRefresh?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  autoRefresh: false,
-})
+const props = withDefaults(
+  defineProps<{
+    jobId: string
+    autoRefresh?: boolean
+  }>(),
+  {
+    autoRefresh: false,
+  },
+)
 
 const { isLoading, currentQuote, error, loadQuoteStatus } = useQuoteImport()
 

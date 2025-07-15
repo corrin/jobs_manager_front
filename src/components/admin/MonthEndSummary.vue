@@ -30,8 +30,8 @@
           <CardTitle>Stock Job</CardTitle>
         </CardHeader>
         <CardContent class="text-center space-y-1">
-          <div>Lines: {{ stockSummary.material_line_count }}</div>
-          <div>Cost: {{ stockSummary.material_cost.toFixed(2) }}</div>
+          <div>Lines: {{ stockSummaryData.material_line_count }}</div>
+          <div>Cost: {{ stockSummaryData.material_cost.toFixed(2) }}</div>
         </CardContent>
       </Card>
     </div>
@@ -97,52 +97,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { z } from 'zod'
+import { schemas } from '@/api/generated/api'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface JobHistoryEntry {
-  date: string
-  total_hours: number
-  total_dollars: number
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Job {
-  job_id: string
-  job_number: number
-  job_name: string
-  history: JobHistoryEntry[]
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface StockSummary {
-  material_line_count: number
-  material_cost: number
-}
+// Use generated types from Zodios API
+type MonthEndJobHistory = z.infer<typeof schemas.MonthEndJobHistory>
+type MonthEndJob = z.infer<typeof schemas.MonthEndJob>
+type MonthEndStockJob = z.infer<typeof schemas.MonthEndStockJob>
 
 const props = defineProps<{
-  jobs: Job[]
-  stockSummary: StockSummary
+  jobs: MonthEndJob[]
+  stockSummary: MonthEndStockJob
   monthKey: string
   selectedIds: string[]
   isLoading?: boolean
@@ -157,7 +122,7 @@ watch(
   { immediate: true },
 )
 
-function entriesInMonth(history: JobHistoryEntry[], monthKey: string) {
+function entriesInMonth(history: MonthEndJobHistory[], monthKey: string) {
   return Array.isArray(history)
     ? history.filter((h) => {
         const d = new Date(h.date)
@@ -182,6 +147,15 @@ const historyTotalHours = computed(() =>
 const historyTotalDollars = computed(() =>
   jobsWithTotals.value.reduce((sum, j) => sum + j.monthDollars, 0),
 )
+
+// Extract stock summary data from MonthEndStockJob
+const stockSummaryData = computed(() => {
+  const latestEntry = props.stockSummary.history?.[props.stockSummary.history.length - 1]
+  return {
+    material_line_count: latestEntry?.material_line_count || 0,
+    material_cost: latestEntry?.material_cost || 0,
+  }
+})
 
 const allSelected = computed(
   () => props.jobs.length > 0 && selectedIdsProxy.value.length === props.jobs.length,

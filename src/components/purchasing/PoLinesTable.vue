@@ -13,105 +13,23 @@ import { Trash2, Settings2 } from 'lucide-vue-next'
 import { metalTypeOptions } from '@/utils/metalType'
 import ItemSelect from '@/views/purchasing/ItemSelect.vue'
 import JobSelect from './JobSelect.vue'
+import { schemas } from '@/api/generated/api'
+import { DataTableRowContextSchema, PoLineUISchema, type XeroItemUI } from '@/api/local/schemas'
+import { z } from 'zod'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface DataTableRowContext {
-  row: {
-    original: Line
-    index: number
-  }
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Line {
-  id?: string
-  item_code: string
-  description: string
-  quantity: number
-  unit_cost: number | null
-  price_tbc: boolean
-  job_id?: string
-  job_number?: string
-  job_name?: string
-  client_name?: string
-  metal_type?: string
-  alloy?: string
-  specifics?: string
-  location?: string
-  dimensions?: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Job {
-  id: string
-  job_number: string
-  name: string
-  client_name: string
-  status: string
-  charge_out_rate: number
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface XeroItem {
-  id: string
-  code: string
-  name: string
-  unit_cost?: number | null
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
+type PoLineUI = z.infer<typeof PoLineUISchema>
+type DataTableRowContext = z.infer<typeof DataTableRowContextSchema>
+type JobForPurchasing = z.infer<typeof schemas.JobForPurchasing>
 
 type Props = {
-  lines: Line[]
-  items: XeroItem[]
-  jobs: Job[]
+  lines: PoLineUI[]
+  items: XeroItemUI[]
+  jobs: JobForPurchasing[]
   readOnly?: boolean
 }
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
 type Emits = {
-  (e: 'update:lines', lines: Line[]): void
+  (e: 'update:lines', lines: PoLineUI[]): void
   (e: 'add-line'): void
   (e: 'delete-line', id: string | number): void
 }

@@ -8,32 +8,21 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Pagination } from '@/components/ui/pagination'
+import { z } from 'zod'
+import { schemas } from '@/api/generated/api'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface ErrorRecord {
-  id: string
-  timestamp: string
-  message: string
-  entity?: string
-  severity?: string
-}
+// Use generated XeroError type from Zodios API
+type XeroError = z.infer<typeof schemas.XeroError>
 
 const props = defineProps<{
-  errors: ErrorRecord[]
+  errors: XeroError[]
   loading: boolean
   page: number
   pageCount: number
 }>()
 const emit = defineEmits(['rowClick', 'update:page'])
 
-function onRowClick(record: ErrorRecord) {
+function onRowClick(record: XeroError) {
   emit('rowClick', record)
 }
 </script>

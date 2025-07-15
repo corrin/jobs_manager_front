@@ -14,64 +14,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, Edit, Trash2, Package, MapPin, DollarSign, Target, History } from 'lucide-vue-next'
 import { useDeliveryReceiptStore } from '@/stores/deliveryReceiptStore'
 import { formatMetalType } from '@/utils/metalType'
-import type { PurchaseOrderLine, Job, DeliveryAllocation } from '@/types/purchasing'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
+import type { DeliveryAllocation, DeliveryDataTableRowContext } from '@/api/local/schemas'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface ExistingAllocation {
-  quantity: number
-  type: string
-  job_id: string
-  job_name: string
-  allocation_date?: string
-  description?: string
-  retail_rate?: number
-  stock_location?: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface DataTableRowContext {
-  row: {
-    original: PurchaseOrderLine
-    index: number
-  }
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
+// Use generated API types
+type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
+type Job = z.infer<typeof schemas.Job>
+type AllocationItem = z.infer<typeof schemas.AllocationItem>
 
 type Props = {
   lines: PurchaseOrderLine[]
   jobs: Job[]
   allocations: Record<string, DeliveryAllocation[]>
-  existingAllocations?: Record<string, ExistingAllocation[]>
+  existingAllocations?: Record<string, AllocationItem[]>
 }
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
 
 type Emits = {
   (e: 'update:allocations', allocations: Record<string, DeliveryAllocation[]>): void
@@ -95,7 +52,7 @@ const getLineAllocations = (lineId: string): DeliveryAllocation[] => {
   return props.allocations[lineId] || []
 }
 
-const getExistingAllocations = (lineId: string): ExistingAllocation[] => {
+const getExistingAllocations = (lineId: string): AllocationItem[] => {
   return props.existingAllocations?.[lineId] || []
 }
 
@@ -198,7 +155,7 @@ const columns = computed(() => [
     id: 'description',
     header: 'Description',
     headerClass: 'text-center',
-    cell: ({ row }: DataTableRowContext) => {
+    cell: ({ row }: DeliveryDataTableRowContext) => {
       const line = row.original
       return h('div', { class: 'space-y-1' }, [
         h('div', { class: 'font-medium' }, line.description || '-'),
@@ -217,7 +174,7 @@ const columns = computed(() => [
     id: 'quantities',
     header: 'Quantities',
     headerClass: 'text-center',
-    cell: ({ row }: DataTableRowContext) => {
+    cell: ({ row }: DeliveryDataTableRowContext) => {
       const line = row.original
       const remaining = getRemaining(line)
       const totalReceived = getTotalReceived(line.id)
@@ -252,7 +209,7 @@ const columns = computed(() => [
     id: 'allocations',
     header: 'Delivery Allocations',
     headerClass: 'text-center',
-    cell: ({ row }: DataTableRowContext) => {
+    cell: ({ row }: DeliveryDataTableRowContext) => {
       const allocations = getLineAllocations(row.original.id)
       const existingAllocations = getExistingAllocations(row.original.id)
       const remaining = getRemaining(row.original)

@@ -2,19 +2,10 @@
 import Input from '@/components/ui/input/Input.vue'
 import { CustomDatePicker } from '@/components/ui/custom-date-picker'
 import { ref, watch } from 'vue'
+import { DateRangeSchema } from '@/api/local/schemas'
+import { z } from 'zod'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface DateRange {
-  start: string | null
-  end: string | null
-}
+type DateRange = z.infer<typeof DateRangeSchema>
 
 const props = defineProps<{ search: string; range: DateRange }>()
 const emit = defineEmits(['update:search', 'update:range'])

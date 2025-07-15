@@ -346,54 +346,23 @@ import { quoteService } from '@/services/quote.service'
 import type { QuotePreview, QuoteApplyResult } from '@/services/quote.service'
 import type { QuoteSheet } from '@/schemas/job.schemas'
 import { extractQuoteErrorMessage, logError } from '@/utils/error-handler'
+import { schemas } from '@/api/generated/api'
+import { QuoteDataSchema } from '@/api/local/schemas'
+import { z } from 'zod'
 
-/**
+type Job = z.infer<typeof schemas.Job>
+type QuoteData = z.infer<typeof QuoteDataSchema>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface QuoteData {
-  id: string
-  kind: 'quote'
-  rev: number
-  created: string
-  summary: {
-    cost: number
-    rev: number
-    hours: number
-  }
-  cost_lines: Array<{
-    id?: number
-    kind: string
-    desc: string
-    quantity: number
-    unit_cost: number
-    unit_rev: number
-  }>
-}
-
-import type { Job } from '@/types'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
-  quoteData?: QuoteData | null
-  isLoading?: boolean
-  job?: Job | null
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  isLoading: false,
-})
+const props = withDefaults(
+  defineProps<{
+    quoteData?: QuoteData | null
+    isLoading?: boolean
+    job?: Job | null
+  }>(),
+  {
+    isLoading: false,
+  },
+)
 
 const emit = defineEmits<{
   'quote-refreshed': [data: QuoteApplyResult | (QuoteSheet & { shouldReloadJob: boolean })]

@@ -14,43 +14,27 @@ import {
 import { Check, AlertCircle, UploadCloud, ExternalLink, Printer, Mail } from 'lucide-vue-next'
 import ClientLookup from '@/components/ClientLookup.vue'
 
-/**
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
- * @deprecated Use generated types from src/api/generated instead
+type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
+type Status = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
 
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-type Status = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface PurchaseOrder {
-  po_number: string
-  supplier: string
-  supplier_id?: string
-  supplier_has_xero_id: boolean
-  reference: string
-  order_date: string
-  expected_delivery: string
-  status: Status
-  online_url?: string
-}
-
-defineProps<{
-  po: PurchaseOrder
-  isCreateMode?: boolean
-  showActions?: boolean
-  syncEnabled?: boolean
-  supplierReadonly?: boolean
-}>()
+withDefaults(
+  defineProps<{
+    po: PurchaseOrder
+    isCreateMode?: boolean
+    showActions?: boolean
+    syncEnabled?: boolean
+    supplierReadonly?: boolean
+  }>(),
+  {
+    isCreateMode: false,
+    showActions: true,
+    syncEnabled: true,
+    supplierReadonly: false,
+  },
+)
 
 const emit = defineEmits<{
   (e: 'update:supplier', v: string): void

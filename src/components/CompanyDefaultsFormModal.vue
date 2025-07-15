@@ -65,25 +65,10 @@ import DialogTitle from '@/components/ui/dialog/DialogTitle.vue'
 import Button from '@/components/ui/button/Button.vue'
 import { ref, watch } from 'vue'
 import { updateCompanyDefaults } from '@/services/admin-company-defaults-service'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface CompanyDefaultsForm {
-  company_name: string
-  charge_out_rate: number
-  wage_rate: number
-  time_markup: number
-  materials_markup: number
-  starting_job_number: number
-  po_prefix: string
-  shop_client_name?: string
-}
+type CompanyDefaultsForm = z.infer<typeof schemas.CompanyDefaults>
 
 const props = defineProps<{ defaults: CompanyDefaultsForm }>()
 const emit = defineEmits(['close', 'saved'])

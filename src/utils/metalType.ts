@@ -1,11 +1,4 @@
-/**
- * @deprecated Use generated types from src/api/generated instead
- * This interface will be removed after migration to openapi-zod-client generated types
- */
-export interface MetalTypeOption {
-  value: string
-  label: string
-}
+import type { MetalTypeOption } from '@/api/local/schemas'
 
 export const metalTypeOptions: MetalTypeOption[] = [
   { value: 'stainless_steel', label: 'Stainless Steel' },

@@ -325,33 +325,14 @@ import { ref, computed } from 'vue'
 import { useQuoteImport } from '@/composables/useQuoteImport'
 import type { QuoteImportResponse } from '@/api/local/schemas'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+const props = defineProps<{
   jobId: string
-}
+}>()
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Emits {
+const emit = defineEmits<{
   (e: 'success', result: QuoteImportResponse): void
   (e: 'cancel'): void
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+}>()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)

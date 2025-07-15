@@ -42,14 +42,6 @@ interface Props {
   modelValue?: string | number
 }
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
 interface Emits {
   (e: 'update:modelValue', value: string | number): void
 }

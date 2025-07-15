@@ -23,14 +23,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
 interface Props {
   title: string
   value: number

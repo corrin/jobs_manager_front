@@ -117,27 +117,17 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Briefcase, Clock, TrendingUp, DollarSign, Users } from 'lucide-vue-next'
-import type { JobMetrics } from '@/services/weekly-timesheet.service'
+import type { JobMetrics } from '@/api/local/schemas'
 import { formatHours, formatPercentage } from '@/services/weekly-timesheet.service'
 
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
+const props = defineProps<{
   open: boolean
   metrics: JobMetrics
   totalHours?: number
   billablePercentage?: number
   staffCount?: number
   completedStaff?: number
-}
-
-const props = defineProps<Props>()
+}>()
 const emit = defineEmits<{ close: [] }>()
 
 const totalHours = computed(() => formatHours(props.totalHours || 0))

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen" class="fixed inset-0 z-50 overflow-y-auto">
+  <div v-if="props.isOpen" class="fixed inset-0 z-50 overflow-y-auto">
     <div
       class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0"
     >
@@ -151,81 +151,23 @@ import { debugLog } from '@/utils/debug'
 
 import { ref, computed, watch } from 'vue'
 import { X } from 'lucide-vue-next'
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Staff {
-  id: string
-  name: string
-  initials: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface AbsenceForm {
-  staffId: string
-  absenceType: string
-  startDate: string
-  endDate: string
-  hoursPerDay: string
-  customHours?: number
-  description: string
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface AbsenceSummary {
-  duration: string
-  totalHours: number
-  workingDays: number
-}
-
-/**
-
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
+import type { StaffMemberUI, AbsenceForm, AbsenceSummary } from '@/api/local/schemas'
 
 interface Props {
   isOpen: boolean
-  availableStaff: Staff[]
+  availableStaff: StaffMemberUI[]
 }
 
-/**
+const props = withDefaults(defineProps<Props>(), {
+  isOpen: false,
+  availableStaff: () => [],
+})
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Emits {
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void
   (e: 'close'): void
-  (e: 'absenceAdded', absence: AbsenceForm): void
-}
-
-defineProps<Props>()
-const emit = defineEmits<Emits>()
+  (e: 'absenceAdded', form: AbsenceForm): void
+}>()
 
 const loading = ref(false)
 const error = ref('')
@@ -252,7 +194,7 @@ const isFormValid = computed(() => {
     return basic && form.value.customHours && form.value.customHours > 0
   }
 
-  return basic
+  return !!basic
 })
 
 const absenceSummary = computed((): AbsenceSummary | null => {

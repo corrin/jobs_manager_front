@@ -157,19 +157,15 @@ import {
   DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog'
-import type { DayKPI } from '@/services/kpi.service'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 import { kpiService } from '@/services/kpi.service'
 
-/**
+// Use generated API types
+type KPIDayData = z.infer<typeof schemas.KPIDayData>
 
- * @deprecated Use generated types from src/api/generated instead
-
- * This interface will be removed after migration to openapi-zod-client generated types
-
- */
-
-interface Props {
-  dayData: DayKPI | null
+type Props = {
+  dayData: KPIDayData | null
   isOpen: boolean
   isLoading?: boolean
 }
