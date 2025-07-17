@@ -54,6 +54,11 @@
                 <div class="text-xs mt-1 opacity-70">
                   {{ formatTime(message.timestamp) }}
                 </div>
+
+                <!-- MCP Tool Details for Assistant Messages -->
+                <div v-if="message.senderId !== currentUserId && message.metadata" class="mt-3">
+                  <McpToolDetails :metadata="message.metadata" />
+                </div>
               </div>
             </div>
           </div>
@@ -107,6 +112,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Send, Paperclip, RotateCcw } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
+import McpToolDetails from '@/components/chat/McpToolDetails.vue'
 import { QuoteChatService, type VueChatMessage } from '@/services/quote-chat.service'
 import { toast } from 'vue-sonner'
 
