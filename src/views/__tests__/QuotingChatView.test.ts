@@ -273,9 +273,10 @@ describe('QuotingChatView MCP Integration', () => {
           stubs: {
             AppLayout: true,
             McpToolDetails: {
-              template: '<div data-testid="mcp-tool-details">{{ errorMessage || "Tool Details" }}</div>',
+              template:
+                '<div data-testid="mcp-tool-details">{{ errorMessage || "Tool Details" }}</div>',
               props: ['metadata'],
-              setup(props) {
+              setup() {
                 return {
                   errorMessage: 'Invalid metadata format',
                 }
@@ -298,7 +299,7 @@ describe('QuotingChatView MCP Integration', () => {
     it('does not crash with null metadata', async () => {
       const messageWithNullMetadata: VueChatMessage = {
         ...mockAssistantMessage,
-        metadata: null as any,
+        metadata: null as unknown,
       }
 
       const wrapper = mount(QuotingChatView, {
@@ -346,8 +347,8 @@ describe('QuotingChatView MCP Integration', () => {
       expect(messageContainers.length).toBeGreaterThan(0)
 
       // Tool details should be inside the message container
-      const assistantMessageContainer = messageContainers.find(container => 
-        container.find('[data-testid="mcp-tool-details"]').exists()
+      const assistantMessageContainer = messageContainers.find((container) =>
+        container.find('[data-testid="mcp-tool-details"]').exists(),
       )
       expect(assistantMessageContainer).toBeTruthy()
     })

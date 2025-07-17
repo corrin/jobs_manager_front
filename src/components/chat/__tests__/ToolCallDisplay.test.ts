@@ -11,7 +11,8 @@ describe('ToolCallDisplay', () => {
       category: 'metal',
       limit: 10,
     },
-    result_preview: 'Found 15 products matching your search criteria. Top results include: 1. Steel Sheet 2mm - $12.50/sq ft, 2. Steel Sheet 3mm - $15.00/sq ft...',
+    result_preview:
+      'Found 15 products matching your search criteria. Top results include: 1. Steel Sheet 2mm - $12.50/sq ft, 2. Steel Sheet 3mm - $15.00/sq ft...',
   }
 
   describe('basic rendering', () => {
@@ -61,7 +62,7 @@ describe('ToolCallDisplay', () => {
       })
 
       const chevron = wrapper.find('[data-lucide="chevron-down"]')
-      
+
       // Initially not rotated
       expect(chevron.classes()).not.toContain('rotate-180')
 
@@ -87,7 +88,7 @@ describe('ToolCallDisplay', () => {
 
       const argumentsSection = wrapper.find('pre')
       expect(argumentsSection.exists()).toBe(true)
-      
+
       // Check that JSON is formatted
       expect(argumentsSection.text()).toContain('"query": "steel sheet"')
       expect(argumentsSection.text()).toContain('"category": "metal"')
@@ -117,7 +118,7 @@ describe('ToolCallDisplay', () => {
     it('handles malformed arguments gracefully', async () => {
       const toolCallWithBadArgs: ToolCall = {
         name: 'bad_args_tool',
-        arguments: { circular: null } as any,
+        arguments: { circular: null } as Record<string, unknown>,
         result_preview: 'Some result',
       }
 
@@ -269,7 +270,8 @@ describe('ToolCallDisplay', () => {
       const xssToolCall: ToolCall = {
         name: 'xss_tool',
         arguments: {},
-        result_preview: '<script>alert("xss")</script><img src="x" onerror="alert(1)">Malicious content',
+        result_preview:
+          '<script>alert("xss")</script><img src="x" onerror="alert(1)">Malicious content',
       }
 
       const wrapper = mount(ToolCallDisplay, {
@@ -285,7 +287,7 @@ describe('ToolCallDisplay', () => {
       expect(wrapper.html()).not.toContain('<img')
       expect(wrapper.html()).not.toContain('alert("xss")')
       expect(wrapper.html()).not.toContain('onerror')
-      
+
       // Should contain safe text content
       expect(wrapper.text()).toContain('Malicious content')
     })

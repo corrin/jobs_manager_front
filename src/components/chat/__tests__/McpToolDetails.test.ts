@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import McpToolDetails from '../McpToolDetails.vue'
 import type { McpMetadata } from '@/schemas/mcp-tool-metadata.schema'
@@ -57,10 +57,10 @@ describe('McpToolDetails', () => {
 
       // Check that tool details content is visible
       expect(wrapper.find('.tool-details-content').exists()).toBe(true)
-      
+
       // Check model information
       expect(wrapper.text()).toContain('gemini-1.5-pro')
-      
+
       // Check tool definitions
       expect(wrapper.text()).toContain('search_products')
       expect(wrapper.text()).toContain('get_pricing_for_material')

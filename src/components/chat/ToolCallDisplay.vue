@@ -16,15 +16,8 @@
         >
           <Copy class="h-3 w-3" />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          @click="toggleExpanded"
-          class="h-6 w-6 p-0"
-        >
-          <ChevronDown
-            :class="['h-4 w-4 transition-transform', isExpanded ? 'rotate-180' : '']"
-          />
+        <Button variant="ghost" size="sm" @click="toggleExpanded" class="h-6 w-6 p-0">
+          <ChevronDown :class="['h-4 w-4 transition-transform', isExpanded ? 'rotate-180' : '']" />
         </Button>
       </div>
     </div>
@@ -90,22 +83,22 @@ const hasResult = computed(() => {
 
 const formattedArguments = computed(() => {
   if (!hasArguments.value) return ''
-  
+
   try {
     return JSON.stringify(props.toolCall.arguments, null, 2)
-  } catch (error) {
+  } catch {
     return String(props.toolCall.arguments)
   }
 })
 
 const sanitizedResult = computed(() => {
   if (!hasResult.value) return ''
-  
+
   // Basic XSS prevention - strip HTML tags and limit length
   const result = props.toolCall.result_preview
     .replace(/<[^>]*>/g, '') // Remove HTML tags
     .trim()
-  
+
   return result
 })
 
@@ -123,23 +116,27 @@ const copyToolCallData = async () => {
       arguments: props.toolCall.arguments,
       result_preview: props.toolCall.result_preview,
     }
-    
+
     const jsonString = JSON.stringify(data, null, 2)
     await navigator.clipboard.writeText(jsonString)
-    
+
     // You could add a toast notification here if available
     console.log('Tool call data copied to clipboard')
   } catch (error) {
     console.error('Failed to copy tool call data:', error)
-    
+
     // Fallback for older browsers
     const textArea = document.createElement('textarea')
-    textArea.value = JSON.stringify({
-      name: props.toolCall.name,
-      arguments: props.toolCall.arguments,
-      result_preview: props.toolCall.result_preview,
-    }, null, 2)
-    
+    textArea.value = JSON.stringify(
+      {
+        name: props.toolCall.name,
+        arguments: props.toolCall.arguments,
+        result_preview: props.toolCall.result_preview,
+      },
+      null,
+      2,
+    )
+
     document.body.appendChild(textArea)
     textArea.select()
     document.execCommand('copy')

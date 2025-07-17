@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <div class="collapsible">
     <slot />
@@ -23,9 +24,12 @@ const emit = defineEmits<{
 const isOpen: Ref<boolean> = ref(props.open)
 
 // Watch for prop changes and update internal state
-watch(() => props.open, (newValue) => {
-  isOpen.value = newValue
-})
+watch(
+  () => props.open,
+  (newValue) => {
+    isOpen.value = newValue
+  },
+)
 
 // Watch internal state and emit changes
 watch(isOpen, (newValue) => {

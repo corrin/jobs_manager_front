@@ -71,11 +71,14 @@
             </div>
 
             <!-- Tool Calls -->
-            <div v-if="validMetadata.tool_calls && validMetadata.tool_calls.length > 0" class="tool-calls">
+            <div
+              v-if="validMetadata.tool_calls && validMetadata.tool_calls.length > 0"
+              class="tool-calls"
+            >
               <h3 class="text-sm font-medium text-gray-700 mb-2">Tool Calls Executed</h3>
               <div class="space-y-2">
                 <!-- Virtual scrolling for large numbers of tool calls -->
-                <div 
+                <div
                   v-if="toolCallCount > MAX_TOOL_CALLS_DIRECT_RENDER"
                   class="virtualized-tool-calls"
                   :style="{ maxHeight: '400px', overflowY: 'auto' }"
@@ -96,7 +99,7 @@
                     </Button>
                   </div>
                 </div>
-                
+
                 <!-- Direct render for small numbers -->
                 <div v-else class="direct-render-tool-calls">
                   <ToolCallDisplay
@@ -153,13 +156,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { ChevronDown, AlertCircle, Copy } from 'lucide-vue-next'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible'
 import ToolCallDisplay from './ToolCallDisplay.vue'
-import { parseMetadata, getToolCallCount, type McpMetadata } from '@/schemas/mcp-tool-metadata.schema'
+import {
+  parseMetadata,
+  getToolCallCount,
+  type McpMetadata,
+} from '@/schemas/mcp-tool-metadata.schema'
 
 interface Props {
   /**
@@ -217,17 +224,17 @@ watch(isDetailsExpanded, async (newValue) => {
 // Load more tool calls for virtualized rendering
 const loadMoreToolCalls = async () => {
   if (loadingMore.value || !validMetadata.value?.tool_calls) return
-  
+
   loadingMore.value = true
-  
+
   // Simulate loading delay for better UX
-  await new Promise(resolve => setTimeout(resolve, 150))
-  
+  await new Promise((resolve) => setTimeout(resolve, 150))
+
   const newCount = Math.min(
     visibleToolCallsCount.value + TOOL_CALLS_LOAD_BATCH_SIZE,
-    validMetadata.value.tool_calls.length
+    validMetadata.value.tool_calls.length,
   )
-  
+
   visibleToolCallsCount.value = newCount
   loadingMore.value = false
 }
@@ -246,7 +253,7 @@ const metadataValidation = computed(() => {
   if (!props.metadata) {
     return { success: false, error: 'No metadata provided' }
   }
-  
+
   return parseMetadata(props.metadata)
 })
 
@@ -282,9 +289,11 @@ const toolCallCount = computed(() => {
  * Whether there are tool definitions to show
  */
 const hasToolDefinitions = computed(() => {
-  return validMetadata.value && 
-         validMetadata.value.tool_definitions && 
-         validMetadata.value.tool_definitions.length > 0
+  return (
+    validMetadata.value &&
+    validMetadata.value.tool_definitions &&
+    validMetadata.value.tool_definitions.length > 0
+  )
 })
 
 /**
@@ -292,7 +301,7 @@ const hasToolDefinitions = computed(() => {
  */
 const visibleToolCalls = computed(() => {
   if (!validMetadata.value?.tool_calls) return []
-  
+
   return validMetadata.value.tool_calls.slice(0, visibleToolCallsCount.value)
 })
 
@@ -301,7 +310,7 @@ const visibleToolCalls = computed(() => {
  */
 const hasMoreToolCalls = computed(() => {
   if (!validMetadata.value?.tool_calls) return false
-  
+
   return visibleToolCallsCount.value < validMetadata.value.tool_calls.length
 })
 
@@ -310,7 +319,7 @@ const hasMoreToolCalls = computed(() => {
  */
 const remainingToolCallCount = computed(() => {
   if (!validMetadata.value?.tool_calls) return 0
-  
+
   return validMetadata.value.tool_calls.length - visibleToolCallsCount.value
 })
 
@@ -319,13 +328,13 @@ const remainingToolCallCount = computed(() => {
  */
 const truncatedSystemPrompt = computed(() => {
   if (!validMetadata.value?.system_prompt) return ''
-  
+
   const prompt = validMetadata.value.system_prompt
-  
+
   if (showFullSystemPrompt.value || prompt.length <= SYSTEM_PROMPT_TRUNCATE_LENGTH) {
     return prompt
   }
-  
+
   return prompt.substring(0, SYSTEM_PROMPT_TRUNCATE_LENGTH) + '...'
 })
 
@@ -334,7 +343,7 @@ const truncatedSystemPrompt = computed(() => {
  */
 const systemPromptTruncated = computed(() => {
   if (!validMetadata.value?.system_prompt) return false
-  
+
   return validMetadata.value.system_prompt.length > SYSTEM_PROMPT_TRUNCATE_LENGTH
 })
 
@@ -343,32 +352,38 @@ const systemPromptTruncated = computed(() => {
  */
 const copyAllMetadata = async () => {
   if (!validMetadata.value) return
-  
+
   try {
     const cleanedMetadata = {
       ...validMetadata.value,
       // Remove empty arrays and undefined values for cleaner output
-      tool_calls: validMetadata.value.tool_calls?.length ? validMetadata.value.tool_calls : undefined,
-      tool_definitions: validMetadata.value.tool_definitions?.length ? validMetadata.value.tool_definitions : undefined,
-      chat_history: validMetadata.value.chat_history?.length ? validMetadata.value.chat_history : undefined,
+      tool_calls: validMetadata.value.tool_calls?.length
+        ? validMetadata.value.tool_calls
+        : undefined,
+      tool_definitions: validMetadata.value.tool_definitions?.length
+        ? validMetadata.value.tool_definitions
+        : undefined,
+      chat_history: validMetadata.value.chat_history?.length
+        ? validMetadata.value.chat_history
+        : undefined,
     }
-    
+
     // Remove undefined values
     const filteredMetadata = Object.fromEntries(
-      Object.entries(cleanedMetadata).filter(([_, value]) => value !== undefined)
+      Object.entries(cleanedMetadata).filter(([, value]) => value !== undefined),
     )
-    
+
     const jsonString = JSON.stringify(filteredMetadata, null, 2)
     await navigator.clipboard.writeText(jsonString)
-    
+
     console.log('All metadata copied to clipboard')
   } catch (error) {
     console.error('Failed to copy metadata:', error)
-    
+
     // Fallback for older browsers
     const textArea = document.createElement('textarea')
     textArea.value = JSON.stringify(validMetadata.value, null, 2)
-    
+
     document.body.appendChild(textArea)
     textArea.select()
     document.execCommand('copy')
