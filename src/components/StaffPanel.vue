@@ -69,13 +69,13 @@ const error = ref<string | null>(null)
 const staffListRef = ref<HTMLElement>()
 
 // Use Zodios API composable
-const { getAllStaff } = useStaffApi()
+const { listStaffForKanban } = useStaffApi()
 
 const loadStaffMembers = async (): Promise<void> => {
   try {
     isLoading.value = true
     error.value = null
-    const data = await getAllStaff()
+    const data = await listStaffForKanban(true)
 
     // Use the Staff data directly from Zodios API (already validated)
     staffMembers.value = data.map((staffData) => ({

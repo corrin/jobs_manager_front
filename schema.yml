@@ -8,9 +8,9 @@ paths:
       operationId: accounting_api_reports_calendar_retrieve
       description: API Endpoint to provide KPI data for calendar display
       tags:
-      - accounting
+        - accounting
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -30,9 +30,9 @@ paths:
         Returns:
             JSON response with job aging data structure
       tags:
-      - accounting
+        - accounting
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -50,9 +50,9 @@ paths:
         Requires authentication and staff permissions. Handles multipart/form data
         for file uploads (e.g., profile pictures).
       tags:
-      - accounts
+        - accounts
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -71,7 +71,7 @@ paths:
         Requires authentication and staff permissions. Handles multipart/form data
         for file uploads (e.g., profile pictures).
       tags:
-      - accounts
+        - accounts
       requestBody:
         content:
           multipart/form-data:
@@ -82,7 +82,7 @@ paths:
               $ref: '#/components/schemas/Staff'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '201':
           content:
@@ -100,16 +100,16 @@ paths:
         specific staff members. Includes comprehensive logging for update operations
         and handles multipart/form data for file uploads.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - accounts
+        - accounts
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -126,14 +126,14 @@ paths:
         specific staff members. Includes comprehensive logging for update operations
         and handles multipart/form data for file uploads.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - accounts
+        - accounts
       requestBody:
         content:
           multipart/form-data:
@@ -144,7 +144,7 @@ paths:
               $ref: '#/components/schemas/Staff'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -161,14 +161,14 @@ paths:
         specific staff members. Includes comprehensive logging for update operations
         and handles multipart/form data for file uploads.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - accounts
+        - accounts
       requestBody:
         content:
           multipart/form-data:
@@ -178,7 +178,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedStaff'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -195,16 +195,16 @@ paths:
         specific staff members. Includes comprehensive logging for update operations
         and handles multipart/form data for file uploads.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - accounts
+        - accounts
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -216,10 +216,21 @@ paths:
 
         Supports filtering to return only actual users (excluding system/test accounts)
         based on the 'actual_users' query parameter.
+      parameters:
+        - in: query
+          name: actual_users
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+            default: 'false'
+          required: false
+          description: Filter to return only actual users (excluding system/test accounts). Pass "true" to filter.
       tags:
-      - accounts
+        - accounts
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -236,7 +247,7 @@ paths:
         Customized token obtain view that handles password reset requirement
         and sets JWT tokens as httpOnly cookies
       tags:
-      - accounts
+        - accounts
       requestBody:
         content:
           application/json:
@@ -261,7 +272,7 @@ paths:
       operationId: accounts_api_token_refresh_create
       description: Customized token refresh view that uses httpOnly cookies
       tags:
-      - accounts
+        - accounts
       requestBody:
         content:
           application/json:
@@ -288,7 +299,7 @@ paths:
         Takes a token and indicates if it is valid.  This view provides no
         information about a token's fitness for a particular use.
       tags:
-      - accounts
+        - accounts
       requestBody:
         content:
           application/json:
@@ -314,9 +325,9 @@ paths:
       description: Custom logout view that clears JWT httpOnly cookies
       summary: Logs out the current user by clearing JWT cookies
       tags:
-      - accounts
+        - accounts
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -339,9 +350,9 @@ paths:
         cookie
       summary: Returns the current authenticated user profile
       tags:
-      - accounts
+        - accounts
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -369,9 +380,9 @@ paths:
         Returns:
             Company defaults data serialized using CompanyDefaultsSerializer
       tags:
-      - api
+        - api
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -398,7 +409,7 @@ paths:
         Returns:
             Company defaults data serialized using CompanyDefaultsSerializer
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -412,7 +423,7 @@ paths:
               $ref: '#/components/schemas/CompanyDefaults'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -439,7 +450,7 @@ paths:
         Returns:
             Company defaults data serialized using CompanyDefaultsSerializer
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -452,7 +463,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCompanyDefaults'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -469,9 +480,9 @@ paths:
         Provides standard CRUD operations and a custom action to set a
         provider as the default for the company.
       tags:
-      - api
+        - api
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -489,7 +500,7 @@ paths:
         Provides standard CRUD operations and a custom action to set a
         provider as the default for the company.
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -503,7 +514,7 @@ paths:
               $ref: '#/components/schemas/AIProviderCreateUpdate'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '201':
           content:
@@ -520,16 +531,16 @@ paths:
         Provides standard CRUD operations and a custom action to set a
         provider as the default for the company.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this AI Provider.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this AI Provider.
+          required: true
       tags:
-      - api
+        - api
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -545,14 +556,14 @@ paths:
         Provides standard CRUD operations and a custom action to set a
         provider as the default for the company.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this AI Provider.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this AI Provider.
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -566,7 +577,7 @@ paths:
               $ref: '#/components/schemas/AIProviderCreateUpdate'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -582,14 +593,14 @@ paths:
         Provides standard CRUD operations and a custom action to set a
         provider as the default for the company.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this AI Provider.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this AI Provider.
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -602,7 +613,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedAIProviderCreateUpdate'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -618,16 +629,16 @@ paths:
         Provides standard CRUD operations and a custom action to set a
         provider as the default for the company.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this AI Provider.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this AI Provider.
+          required: true
       tags:
-      - api
+        - api
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -639,14 +650,14 @@ paths:
         This will atomically unset any other provider that is currently the default
         for the same company.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this AI Provider.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this AI Provider.
+          required: true
       tags:
-      - api
+        - api
       requestBody:
         content:
           application/json:
@@ -660,7 +671,7 @@ paths:
               $ref: '#/components/schemas/AIProvider'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -673,16 +684,16 @@ paths:
       operationId: clients_contacts_retrieve
       description: Fetches contacts for a specific client.
       parameters:
-      - in: path
-        name: client_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: client_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - clients
+        - clients
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -695,9 +706,9 @@ paths:
       operationId: clients_all_retrieve
       description: Lists all clients (only id and name) for fast dropdowns.
       tags:
-      - clients
+        - clients
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -722,7 +733,7 @@ paths:
             "notes": "Additional notes"
         }
       tags:
-      - clients
+        - clients
       requestBody:
         content:
           application/json:
@@ -736,7 +747,7 @@ paths:
               $ref: '#/components/schemas/ClientContactCreateRequest'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -749,7 +760,7 @@ paths:
       operationId: clients_create_create
       description: Create a new client, first in Xero, then sync locally.
       tags:
-      - clients
+        - clients
       requestBody:
         content:
           application/json:
@@ -763,7 +774,7 @@ paths:
               $ref: '#/components/schemas/ClientCreateRequest'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -776,9 +787,9 @@ paths:
       operationId: clients_search_retrieve
       description: Searches clients by name following early return pattern.
       tags:
-      - clients
+        - clients
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -792,17 +803,17 @@ paths:
       description: Based on the request, serve a file for download or return the file
         list of the job.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -818,15 +829,15 @@ paths:
       description: Handle file uploads. Creates new files or updates existing ones
         with POST.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -840,7 +851,7 @@ paths:
               $ref: '#/components/schemas/JobFileUploadSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -858,15 +869,15 @@ paths:
         - If a new file is provided (files[] in request), replace the file on disk.
         - If no file_obj is provided, only update print_on_jobsheet.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -880,7 +891,7 @@ paths:
               $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -895,17 +906,17 @@ paths:
       operationId: deleteJobFilesApi
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -915,22 +926,22 @@ paths:
       description: Based on the request, serve a file for download or return the file
         list of the job.
       parameters:
-      - in: path
-        name: file_path
-        schema:
-          type: string
-        required: true
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: path
+          name: file_path
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -946,20 +957,20 @@ paths:
       description: Handle file uploads. Creates new files or updates existing ones
         with POST.
       parameters:
-      - in: path
-        name: file_path
-        schema:
-          type: string
-        required: true
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: path
+          name: file_path
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -973,7 +984,7 @@ paths:
               $ref: '#/components/schemas/JobFileUploadSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -991,20 +1002,20 @@ paths:
         - If a new file is provided (files[] in request), replace the file on disk.
         - If no file_obj is provided, only update print_on_jobsheet.
       parameters:
-      - in: path
-        name: file_path
-        schema:
-          type: string
-        required: true
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: path
+          name: file_path
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1018,7 +1029,7 @@ paths:
               $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1033,22 +1044,22 @@ paths:
       operationId: deleteJobFilesApi_2
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
       parameters:
-      - in: path
-        name: file_path
-        schema:
-          type: string
-        required: true
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: path
+          name: file_path
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -1058,22 +1069,22 @@ paths:
       description: Based on the request, serve a file for download or return the file
         list of the job.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
-      - in: path
-        name: job_number
-        schema:
-          type: integer
-        required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_number
+          schema:
+            type: integer
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1089,20 +1100,20 @@ paths:
       description: Handle file uploads. Creates new files or updates existing ones
         with POST.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
-      - in: path
-        name: job_number
-        schema:
-          type: integer
-        required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_number
+          schema:
+            type: integer
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1116,7 +1127,7 @@ paths:
               $ref: '#/components/schemas/JobFileUploadSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1134,20 +1145,20 @@ paths:
         - If a new file is provided (files[] in request), replace the file on disk.
         - If no file_obj is provided, only update print_on_jobsheet.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
-      - in: path
-        name: job_number
-        schema:
-          type: integer
-        required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_number
+          schema:
+            type: integer
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1161,7 +1172,7 @@ paths:
               $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1176,22 +1187,22 @@ paths:
       operationId: deleteJobFilesApi_3
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
-      - in: path
-        name: job_number
-        schema:
-          type: integer
-        required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_number
+          schema:
+            type: integer
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -1200,14 +1211,14 @@ paths:
       operationId: job_api_job_assignment_create
       description: API Endpoint for activities related to job assignment
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1221,7 +1232,7 @@ paths:
               $ref: '#/components/schemas/AssignJobResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1233,16 +1244,16 @@ paths:
       operationId: job_api_job_assignment_destroy
       description: API Endpoint for activities related to job assignment
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -1251,22 +1262,22 @@ paths:
       operationId: job_api_job_completed_list
       description: API Endpoint to provide Job data for archiving display
       parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
+        - name: page
+          required: false
+          in: query
+          description: A page number within the paginated result set.
+          schema:
+            type: integer
+        - name: page_size
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1279,7 +1290,7 @@ paths:
       operationId: job_api_job_completed_archive_create
       description: API Endpoint to set 'paid' flag as True in the received jobs
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1293,7 +1304,7 @@ paths:
               $ref: '#/components/schemas/ArchiveJobsRequest'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1309,16 +1320,16 @@ paths:
 
         Response format matches job_quote_chat_plan.md specification.
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1339,14 +1350,14 @@ paths:
             "metadata": {}
         }
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1360,7 +1371,7 @@ paths:
               $ref: '#/components/schemas/JobQuoteChat'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1372,16 +1383,16 @@ paths:
       operationId: job_api_jobs_quote_chat_destroy
       description: Delete all chat messages for a job (start fresh).
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -1397,19 +1408,19 @@ paths:
             "metadata": {"final": true}
         }
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      - in: path
-        name: message_id
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: message_id
+          schema:
+            type: string
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1422,7 +1433,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdate'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1441,14 +1452,14 @@ paths:
         JobQuoteChatHistoryView, and then call this endpoint to get the
         assistant's reply.
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1462,7 +1473,7 @@ paths:
               $ref: '#/components/schemas/JobQuoteChatInteractionRequest'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1475,14 +1486,14 @@ paths:
       operationId: job_api_jobs_reorder_create
       description: Reorder job within or between columns - API endpoint.
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1495,7 +1506,7 @@ paths:
             schema:
               $ref: '#/components/schemas/JobReorderRequest'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1508,13 +1519,13 @@ paths:
       operationId: job_api_jobs_update_status_create
       description: Update job status - API endpoint.
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1528,7 +1539,7 @@ paths:
               $ref: '#/components/schemas/JobStatusUpdateRequest'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1541,9 +1552,9 @@ paths:
       operationId: job_api_jobs_advanced_search_retrieve
       description: Endpoint for advanced job search - API endpoint.
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1556,9 +1567,9 @@ paths:
       operationId: job_api_jobs_fetch_all_retrieve
       description: Fetch all jobs for Kanban board - API endpoint.
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1571,15 +1582,15 @@ paths:
       operationId: job_api_jobs_fetch_by_column_retrieve
       description: Fetch jobs by kanban column using new categorization system.
       parameters:
-      - in: path
-        name: column_id
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: column_id
+          schema:
+            type: string
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1592,15 +1603,15 @@ paths:
       operationId: job_api_jobs_fetch_retrieve
       description: Fetch jobs by status with optional search - API endpoint.
       parameters:
-      - in: path
-        name: status
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: status
+          schema:
+            type: string
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1613,9 +1624,9 @@ paths:
       operationId: job_api_jobs_status_values_retrieve
       description: Return available status values for Kanban - API endpoint.
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1628,16 +1639,16 @@ paths:
       operationId: job_job_workshop_pdf_retrieve
       description: Generate and return a workshop PDF for printing.
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1650,13 +1661,13 @@ paths:
       operationId: job_rest_cost_lines_partial_update
       description: Update a cost line
       parameters:
-      - in: path
-        name: cost_line_id
-        schema:
-          type: integer
-        required: true
+        - in: path
+          name: cost_line_id
+          schema:
+            type: integer
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1669,7 +1680,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCostLineCreateUpdate'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1682,15 +1693,15 @@ paths:
       operationId: job_rest_cost_lines_delete_destroy
       description: Delete a cost line
       parameters:
-      - in: path
-        name: cost_line_id
-        schema:
-          type: integer
-        required: true
+        - in: path
+          name: cost_line_id
+          schema:
+            type: integer
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -1710,7 +1721,7 @@ paths:
             "contact_id": "optional-contact-uuid"
         }
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1724,7 +1735,7 @@ paths:
               $ref: '#/components/schemas/JobCreateRequest'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1737,16 +1748,16 @@ paths:
       operationId: job_rest_jobs_retrieve
       description: Fetch complete Job data for editing.
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1758,14 +1769,14 @@ paths:
       operationId: job_rest_jobs_update
       description: Update Job data (autosave).
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1779,7 +1790,7 @@ paths:
               $ref: '#/components/schemas/JobDetailResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1791,16 +1802,16 @@ paths:
       operationId: job_rest_jobs_destroy
       description: Delete a Job if permitted.
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -1809,19 +1820,19 @@ paths:
       operationId: job_rest_jobs_cost_sets_cost_lines_create
       description: Create a new cost line
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      - in: path
-        name: kind
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: kind
+          schema:
+            type: string
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1835,7 +1846,7 @@ paths:
               $ref: '#/components/schemas/CostLineCreateUpdate'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1848,14 +1859,14 @@ paths:
       operationId: job_rest_jobs_cost_sets_actual_cost_lines_create
       description: Create a new cost line
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1869,7 +1880,7 @@ paths:
               $ref: '#/components/schemas/CostLineCreateUpdate'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1888,14 +1899,14 @@ paths:
             "description": "Event description"
         }
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -1909,7 +1920,7 @@ paths:
               $ref: '#/components/schemas/JobRestErrorResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1922,16 +1933,16 @@ paths:
       operationId: job_rest_jobs_quote_status_retrieve
       description: Get quote status for job
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1944,16 +1955,16 @@ paths:
       operationId: job_rest_jobs_workshop_pdf_retrieve
       description: Generate and return a workshop PDF for printing.
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -1974,21 +1985,21 @@ paths:
         Returns:
             Response: Serialized CostSet data or 404
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      - in: path
-        name: kind
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: kind
+          schema:
+            type: string
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2004,14 +2015,14 @@ paths:
 
         POST /job/rest/jobs/<uuid:pk>/quote/apply/
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2025,7 +2036,7 @@ paths:
               $ref: '#/components/schemas/ApplyQuoteResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2041,14 +2052,14 @@ paths:
 
         POST /job/rest/jobs/<uuid:pk>/quote/link/
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2061,7 +2072,7 @@ paths:
             schema:
               $ref: '#/components/schemas/LinkQuoteSheetRequest'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2077,14 +2088,14 @@ paths:
 
         POST /job/rest/jobs/<uuid:pk>/quote/preview/
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2097,7 +2108,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PreviewQuoteResponse'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2111,17 +2122,17 @@ paths:
       description: Based on the request, serve a file for download or return the file
         list of the job.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2137,15 +2148,15 @@ paths:
       description: Handle file uploads. Creates new files or updates existing ones
         with POST.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2159,7 +2170,7 @@ paths:
               $ref: '#/components/schemas/JobFileUploadSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2177,15 +2188,15 @@ paths:
         - If a new file is provided (files[] in request), replace the file on disk.
         - If no file_obj is provided, only update print_on_jobsheet.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2199,7 +2210,7 @@ paths:
               $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2214,17 +2225,17 @@ paths:
       operationId: deleteJobFilesApi_4
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -2241,16 +2252,16 @@ paths:
         GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
              the thumbnail doesn't exist or cannot be generated.
       parameters:
-      - in: path
-        name: file_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: file_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2264,22 +2275,22 @@ paths:
       description: Based on the request, serve a file for download or return the file
         list of the job.
       parameters:
-      - in: path
-        name: file_path
-        schema:
-          type: string
-        required: true
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: path
+          name: file_path
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2295,20 +2306,20 @@ paths:
       description: Handle file uploads. Creates new files or updates existing ones
         with POST.
       parameters:
-      - in: path
-        name: file_path
-        schema:
-          type: string
-        required: true
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: path
+          name: file_path
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2322,7 +2333,7 @@ paths:
               $ref: '#/components/schemas/JobFileUploadSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2340,20 +2351,20 @@ paths:
         - If a new file is provided (files[] in request), replace the file on disk.
         - If no file_obj is provided, only update print_on_jobsheet.
       parameters:
-      - in: path
-        name: file_path
-        schema:
-          type: string
-        required: true
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: path
+          name: file_path
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2367,7 +2378,7 @@ paths:
               $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2382,22 +2393,22 @@ paths:
       operationId: deleteJobFilesApi_5
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
       parameters:
-      - in: path
-        name: file_path
-        schema:
-          type: string
-        required: true
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
+        - in: path
+          name: file_path
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -2407,22 +2418,22 @@ paths:
       description: Based on the request, serve a file for download or return the file
         list of the job.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
-      - in: path
-        name: job_number
-        schema:
-          type: integer
-        required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_number
+          schema:
+            type: integer
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2438,20 +2449,20 @@ paths:
       description: Handle file uploads. Creates new files or updates existing ones
         with POST.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
-      - in: path
-        name: job_number
-        schema:
-          type: integer
-        required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_number
+          schema:
+            type: integer
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2465,7 +2476,7 @@ paths:
               $ref: '#/components/schemas/JobFileUploadSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2483,20 +2494,20 @@ paths:
         - If a new file is provided (files[] in request), replace the file on disk.
         - If no file_obj is provided, only update print_on_jobsheet.
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
-      - in: path
-        name: job_number
-        schema:
-          type: integer
-        required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_number
+          schema:
+            type: integer
+          required: true
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2510,7 +2521,7 @@ paths:
               $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2525,22 +2536,22 @@ paths:
       operationId: deleteJobFilesApi_6
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
       parameters:
-      - in: query
-        name: format
-        schema:
-          type: string
-          enum:
-          - file
-          - json
-      - in: path
-        name: job_number
-        schema:
-          type: integer
-        required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_number
+          schema:
+            type: integer
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -2553,7 +2564,7 @@ paths:
         Handles multipart file uploads, saves files to the Dropbox workflow folder,
         and creates JobFile database records with proper file metadata.
       tags:
-      - job
+        - job
       requestBody:
         content:
           multipart/form-data:
@@ -2564,7 +2575,7 @@ paths:
               $ref: '#/components/schemas/JobFileUploadViewResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2581,9 +2592,9 @@ paths:
         GET: Returns special jobs data and stock job information for month-end review
         POST: Processes selected jobs for month-end archiving and status updates
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2599,7 +2610,7 @@ paths:
         GET: Returns special jobs data and stock job information for month-end review
         POST: Processes selected jobs for month-end archiving and status updates
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2613,7 +2624,7 @@ paths:
               $ref: '#/components/schemas/MonthEndPostResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2627,9 +2638,9 @@ paths:
       description: Get timesheet entries (CostLines) for a specific staff member and
         date
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2641,7 +2652,7 @@ paths:
       operationId: job_rest_timesheet_entries_create
       description: Create a timesheet entry as a CostLine in the actual CostSet
       tags:
-      - job
+        - job
       requestBody:
         content:
           application/json:
@@ -2655,7 +2666,7 @@ paths:
               $ref: '#/components/schemas/ModernTimesheetEntryPostResponse'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2668,16 +2679,16 @@ paths:
       operationId: job_rest_timesheet_jobs_retrieve
       description: Get all timesheet cost lines for a job
       parameters:
-      - in: path
-        name: job_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2690,21 +2701,21 @@ paths:
       operationId: job_rest_timesheet_staff_date_retrieve
       description: Get all cost lines for a staff member on a specific date
       parameters:
-      - in: path
-        name: entry_date
-        schema:
-          type: string
-        required: true
-      - in: path
-        name: staff_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: entry_date
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: staff_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - job
+        - job
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2720,7 +2731,7 @@ paths:
 
         POST: Processes delivery receipt for a purchase order with stock allocations
       tags:
-      - purchasing
+        - purchasing
       requestBody:
         content:
           application/json:
@@ -2734,7 +2745,7 @@ paths:
               $ref: '#/components/schemas/DeliveryReceiptRequest'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2756,14 +2767,14 @@ paths:
             Response: Email details if successful
             Response: Error details if unsuccessful
       parameters:
-      - in: path
-        name: purchase_order_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: purchase_order_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - purchasing
+        - purchasing
       requestBody:
         content:
           application/json:
@@ -2776,7 +2787,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PurchaseOrderEmailRequest'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2798,16 +2809,16 @@ paths:
             FileResponse: PDF file if successful
             Response: Error details if unsuccessful
       parameters:
-      - in: path
-        name: purchase_order_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: purchase_order_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - purchasing
+        - purchasing
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2820,9 +2831,9 @@ paths:
       operationId: purchasing_rest_all_jobs_retrieve
       description: Get all jobs with stock holding job flag.
       tags:
-      - purchasing
+        - purchasing
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2838,7 +2849,7 @@ paths:
 
         POST: Processes delivery receipt for a purchase order with stock allocations
       tags:
-      - purchasing
+        - purchasing
       requestBody:
         content:
           application/json:
@@ -2852,7 +2863,7 @@ paths:
               $ref: '#/components/schemas/DeliveryReceiptRequest'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2865,9 +2876,9 @@ paths:
       operationId: purchasing_rest_jobs_retrieve
       description: Get list of jobs suitable for purchasing operations.
       tags:
-      - purchasing
+        - purchasing
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2880,9 +2891,9 @@ paths:
       operationId: listPurchaseOrders
       description: Get list of purchase orders with optional status filtering.
       tags:
-      - purchasing
+        - purchasing
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2894,7 +2905,7 @@ paths:
       operationId: purchasing_rest_purchase_orders_create
       description: Create new purchase order.
       tags:
-      - purchasing
+        - purchasing
       requestBody:
         content:
           application/json:
@@ -2907,7 +2918,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PurchaseOrderCreate'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2920,16 +2931,16 @@ paths:
       operationId: retrievePurchaseOrder
       description: Get purchase order details including lines.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - purchasing
+        - purchasing
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2941,14 +2952,14 @@ paths:
       operationId: purchasing_rest_purchase_orders_partial_update
       description: Update purchase order.
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - purchasing
+        - purchasing
       requestBody:
         content:
           application/json:
@@ -2961,7 +2972,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdate'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2974,16 +2985,16 @@ paths:
       operationId: purchasing_rest_purchase_orders_allocations_retrieve
       description: Get existing allocations for a purchase order.
       parameters:
-      - in: path
-        name: po_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - purchasing
+        - purchasing
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -2996,9 +3007,9 @@ paths:
       operationId: purchasing_rest_stock_retrieve
       description: Get list of all active stock items.
       tags:
-      - purchasing
+        - purchasing
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3010,7 +3021,7 @@ paths:
       operationId: purchasing_rest_stock_create
       description: Create new stock item.
       tags:
-      - purchasing
+        - purchasing
       requestBody:
         content:
           application/json:
@@ -3024,7 +3035,7 @@ paths:
               $ref: '#/components/schemas/StockCreate'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3040,16 +3051,16 @@ paths:
 
         DELETE: Marks a stock item as inactive instead of deleting it
       parameters:
-      - in: path
-        name: stock_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: stock_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - purchasing
+        - purchasing
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -3061,14 +3072,14 @@ paths:
 
         POST: Records stock consumption for a specific job, reducing available quantity
       parameters:
-      - in: path
-        name: stock_id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: stock_id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - purchasing
+        - purchasing
       requestBody:
         content:
           application/json:
@@ -3082,7 +3093,7 @@ paths:
               $ref: '#/components/schemas/StockConsumeRequest'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3095,9 +3106,9 @@ paths:
       operationId: purchasing_rest_xero_items_retrieve
       description: Return list of items from Xero.
       tags:
-      - purchasing
+        - purchasing
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3109,16 +3120,16 @@ paths:
     get:
       operationId: quoting_api_django_job_executions_list
       parameters:
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
+        - name: search
+          required: false
+          in: query
+          description: A search term.
+          schema:
+            type: string
       tags:
-      - quoting
+        - quoting
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3132,16 +3143,16 @@ paths:
     get:
       operationId: quoting_api_django_job_executions_retrieve
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-          description: Unique ID for this job execution.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: integer
+            description: Unique ID for this job execution.
+          required: true
       tags:
-      - quoting
+        - quoting
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3153,16 +3164,16 @@ paths:
     get:
       operationId: quoting_api_django_jobs_list
       parameters:
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
+        - name: search
+          required: false
+          in: query
+          description: A search term.
+          schema:
+            type: string
       tags:
-      - quoting
+        - quoting
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3175,7 +3186,7 @@ paths:
     post:
       operationId: quoting_api_django_jobs_create
       tags:
-      - quoting
+        - quoting
       requestBody:
         content:
           application/json:
@@ -3189,7 +3200,7 @@ paths:
               $ref: '#/components/schemas/DjangoJob'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '201':
           content:
@@ -3201,16 +3212,16 @@ paths:
     get:
       operationId: quoting_api_django_jobs_retrieve
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          description: Unique id for this job.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            description: Unique id for this job.
+          required: true
       tags:
-      - quoting
+        - quoting
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3221,14 +3232,14 @@ paths:
     put:
       operationId: quoting_api_django_jobs_update
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          description: Unique id for this job.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            description: Unique id for this job.
+          required: true
       tags:
-      - quoting
+        - quoting
       requestBody:
         content:
           application/json:
@@ -3242,7 +3253,7 @@ paths:
               $ref: '#/components/schemas/DjangoJob'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3253,14 +3264,14 @@ paths:
     patch:
       operationId: quoting_api_django_jobs_partial_update
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          description: Unique id for this job.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            description: Unique id for this job.
+          required: true
       tags:
-      - quoting
+        - quoting
       requestBody:
         content:
           application/json:
@@ -3273,7 +3284,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedDjangoJob'
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3284,16 +3295,16 @@ paths:
     delete:
       operationId: quoting_api_django_jobs_destroy
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          description: Unique id for this job.
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            description: Unique id for this job.
+          required: true
       tags:
-      - quoting
+        - quoting
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -3309,9 +3320,9 @@ paths:
         Returns:
             JSON response with daily timesheet data
       tags:
-      - timesheets
+        - timesheets
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3331,15 +3342,15 @@ paths:
         Returns:
             JSON response with daily timesheet data
       parameters:
-      - in: path
-        name: target_date
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: target_date
+          schema:
+            type: string
+          required: true
       tags:
-      - timesheets
+        - timesheets
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3352,9 +3363,9 @@ paths:
       operationId: timesheets_api_jobs_retrieve
       description: Get list of active jobs for timesheet entries using CostSet system.
       tags:
-      - timesheets
+        - timesheets
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3367,9 +3378,9 @@ paths:
       operationId: timesheets_api_staff_retrieve
       description: Get filtered list of staff members.
       tags:
-      - timesheets
+        - timesheets
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3390,15 +3401,15 @@ paths:
         Returns:
             JSON response with staff timesheet detail
       parameters:
-      - in: path
-        name: staff_id
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: staff_id
+          schema:
+            type: string
+          required: true
       tags:
-      - timesheets
+        - timesheets
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3419,20 +3430,20 @@ paths:
         Returns:
             JSON response with staff timesheet detail
       parameters:
-      - in: path
-        name: staff_id
-        schema:
-          type: string
-        required: true
-      - in: path
-        name: target_date
-        schema:
-          type: string
-        required: true
+        - in: path
+          name: staff_id
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: target_date
+          schema:
+            type: string
+          required: true
       tags:
-      - timesheets
+        - timesheets
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3457,9 +3468,9 @@ paths:
             - Job statistics
             - Summary statistics
       tags:
-      - timesheets
+        - timesheets
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3482,7 +3493,7 @@ paths:
             "description": "Optional description"
         }
       tags:
-      - timesheets
+        - timesheets
       requestBody:
         content:
           application/json:
@@ -3496,7 +3507,7 @@ paths:
               $ref: '#/components/schemas/WeeklyTimesheetData'
         required: true
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3516,16 +3527,16 @@ paths:
 
         Endpoint: /api/xero/errors/
       parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
+        - name: page
+          required: false
+          in: query
+          description: A page number within the paginated result set.
+          schema:
+            type: integer
       tags:
-      - xero-errors
+        - xero-errors
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3545,16 +3556,16 @@ paths:
 
         Endpoint: /api/xero/errors/<id>/
       parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-          format: uuid
-        required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
       tags:
-      - xero-errors
+        - xero-errors
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -3579,7 +3590,7 @@ components:
           maxLength: 100
         provider_type:
           allOf:
-          - $ref: '#/components/schemas/ProviderTypeEnum'
+            - $ref: '#/components/schemas/ProviderTypeEnum'
           description: |-
             Type of AI provider
 
@@ -3594,9 +3605,9 @@ components:
           type: boolean
           description: Use this provider as the default
       required:
-      - id
-      - name
-      - provider_type
+        - id
+        - name
+        - provider_type
     AIProviderCreateUpdate:
       type: object
       description: |-
@@ -3612,7 +3623,7 @@ components:
           maxLength: 100
         provider_type:
           allOf:
-          - $ref: '#/components/schemas/ProviderTypeEnum'
+            - $ref: '#/components/schemas/ProviderTypeEnum'
           description: |-
             Type of AI provider
 
@@ -3635,10 +3646,10 @@ components:
           type: string
           readOnly: true
       required:
-      - company
-      - id
-      - name
-      - provider_type
+        - company
+        - id
+        - name
+        - provider_type
     AdvancedSearchResponse:
       type: object
       description: Serializer for advanced_search response.
@@ -3667,9 +3678,9 @@ components:
         stock_holding_job_id:
           type: string
       required:
-      - jobs
-      - stock_holding_job_id
-      - success
+        - jobs
+        - stock_holding_job_id
+        - success
     AllocationItem:
       type: object
       description: Serializer for individual allocation items (job or stock).
@@ -3698,12 +3709,12 @@ components:
           type: string
           nullable: true
       required:
-      - allocation_date
-      - description
-      - job_id
-      - job_name
-      - quantity
-      - type
+        - allocation_date
+        - description
+        - job_id
+        - job_name
+        - quantity
+        - type
     ApplyQuoteResponse:
       type: object
       description: Serializer for apply quote response.
@@ -3712,7 +3723,7 @@ components:
           type: boolean
         cost_set:
           allOf:
-          - $ref: '#/components/schemas/CostSet'
+            - $ref: '#/components/schemas/CostSet'
           nullable: true
         draft_lines:
           type: array
@@ -3723,7 +3734,7 @@ components:
         error:
           type: string
       required:
-      - success
+        - success
     ArchiveJobsRequest:
       type: object
       description: Serialiser for job archiving request
@@ -3734,7 +3745,7 @@ components:
             type: string
           description: List of job IDs to archive
       required:
-      - ids
+        - ids
     AssignJobResponse:
       type: object
       description: Serialiser for job assignment response
@@ -3746,10 +3757,10 @@ components:
         error:
           type: string
       required:
-      - success
+        - success
     BlankEnum:
       enum:
-      - ''
+        - ''
     ClientContactCreateRequest:
       type: object
       description: Serializer for client contact creation request
@@ -3775,8 +3786,8 @@ components:
         notes:
           type: string
       required:
-      - client_id
-      - name
+        - client_id
+        - name
     ClientContactResult:
       type: object
       description: Serializer for individual client contact result
@@ -3794,12 +3805,12 @@ components:
         is_primary:
           type: boolean
       required:
-      - email
-      - id
-      - is_primary
-      - name
-      - phone
-      - position
+        - email
+        - id
+        - is_primary
+        - name
+        - phone
+        - position
     ClientContactsResponse:
       type: object
       description: Serializer for client contacts response
@@ -3809,7 +3820,7 @@ components:
           items:
             $ref: '#/components/schemas/ClientContactResult'
       required:
-      - results
+        - results
     ClientCreateRequest:
       type: object
       description: Serializer for client creation request
@@ -3829,7 +3840,7 @@ components:
           type: boolean
           default: true
       required:
-      - name
+        - name
     ClientListResponse:
       type: object
       description: Serializer for client list response
@@ -3839,8 +3850,8 @@ components:
         name:
           type: string
       required:
-      - id
-      - name
+        - id
+        - name
     ClientSearchResponse:
       type: object
       description: Serializer for client search response
@@ -3850,7 +3861,7 @@ components:
           items:
             $ref: '#/components/schemas/ClientSearchResult'
       required:
-      - results
+        - results
     ClientSearchResult:
       type: object
       description: Serializer for individual client search result
@@ -3875,15 +3886,15 @@ components:
           type: string
         raw_json: {}
       required:
-      - address
-      - email
-      - id
-      - is_account_customer
-      - last_invoice_date
-      - name
-      - phone
-      - total_spend
-      - xero_contact_id
+        - address
+        - email
+        - id
+        - is_account_customer
+        - last_invoice_date
+        - name
+        - phone
+        - total_spend
+        - xero_contact_id
     CompanyDefaults:
       type: object
       properties:
@@ -4036,10 +4047,10 @@ components:
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
       required:
-      - ai_providers
-      - company_name
-      - created_at
-      - updated_at
+        - ai_providers
+        - company_name
+        - created_at
+        - updated_at
     CompleteJob:
       type: object
       properties:
@@ -4064,12 +4075,12 @@ components:
         job_status:
           type: string
       required:
-      - client_name
-      - id
-      - job_number
-      - job_status
-      - name
-      - updated_at
+        - client_name
+        - id
+        - job_number
+        - job_status
+        - name
+        - updated_at
     CostLine:
       type: object
       description: Serializer for CostLine model - read-only with basic depth
@@ -4110,11 +4121,11 @@ components:
         meta:
           description: Additional metadata
       required:
-      - desc
-      - id
-      - kind
-      - total_cost
-      - total_rev
+        - desc
+        - id
+        - kind
+        - total_cost
+        - total_rev
     CostLineCreateUpdate:
       type: object
       description: Serializer for CostLine creation and updates - full write capabilities
@@ -4142,8 +4153,8 @@ components:
         meta:
           description: Additional metadata
       required:
-      - desc
-      - kind
+        - desc
+        - kind
     CostSet:
       type: object
       description: Serializer for CostSet model - includes nested cost lines
@@ -4153,7 +4164,7 @@ components:
           readOnly: true
         kind:
           allOf:
-          - $ref: '#/components/schemas/CostSetKindEnum'
+            - $ref: '#/components/schemas/CostSetKindEnum'
           readOnly: true
         rev:
           type: integer
@@ -4171,17 +4182,17 @@ components:
             $ref: '#/components/schemas/CostLine'
           readOnly: true
       required:
-      - cost_lines
-      - created
-      - id
-      - kind
-      - rev
-      - summary
+        - cost_lines
+        - created
+        - id
+        - kind
+        - rev
+        - summary
     CostSetKindEnum:
       enum:
-      - estimate
-      - quote
-      - actual
+        - estimate
+        - quote
+        - actual
       type: string
       description: |-
         * `estimate` - Estimate
@@ -4198,8 +4209,8 @@ components:
           type: string
           writeOnly: true
       required:
-      - password
-      - username
+        - password
+        - username
     DailyTimesheetSummary:
       type: object
       description: Serializer for complete daily timesheet summary
@@ -4216,10 +4227,10 @@ components:
         summary_stats:
           $ref: '#/components/schemas/SummaryStats'
       required:
-      - daily_totals
-      - date
-      - staff_data
-      - summary_stats
+        - daily_totals
+        - date
+        - staff_data
+        - summary_stats
     DailyTotals:
       type: object
       description: Serializer for daily totals
@@ -4254,16 +4265,16 @@ components:
           type: number
           format: double
       required:
-      - billable_percentage
-      - completion_percentage
-      - missing_hours
-      - total_actual_hours
-      - total_billable_hours
-      - total_cost
-      - total_entries
-      - total_non_billable_hours
-      - total_revenue
-      - total_scheduled_hours
+        - billable_percentage
+        - completion_percentage
+        - missing_hours
+        - total_actual_hours
+        - total_billable_hours
+        - total_cost
+        - total_entries
+        - total_non_billable_hours
+        - total_revenue
+        - total_scheduled_hours
     DeliveryReceiptAllocation:
       type: object
       description: Serializer for individual allocation within a delivery receipt
@@ -4277,8 +4288,8 @@ components:
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
       required:
-      - job_id
-      - quantity
+        - job_id
+        - quantity
     DeliveryReceiptLine:
       type: object
       description: Serializer for delivery receipt line allocation data.
@@ -4292,8 +4303,8 @@ components:
           items:
             $ref: '#/components/schemas/DeliveryReceiptAllocation'
       required:
-      - allocations
-      - total_received
+        - allocations
+        - total_received
     DeliveryReceiptRequest:
       type: object
       description: Serializer for delivery receipt request data.
@@ -4308,8 +4319,8 @@ components:
           description: Dictionary where keys are PurchaseOrderLine IDs and values
             are allocation data
       required:
-      - allocations
-      - purchase_order_id
+        - allocations
+        - purchase_order_id
     DjangoJob:
       type: object
       properties:
@@ -4328,8 +4339,8 @@ components:
           format: byte
           readOnly: true
       required:
-      - id
-      - job_state
+        - id
+        - job_state
     DjangoJobExecution:
       type: object
       properties:
@@ -4342,7 +4353,7 @@ components:
           readOnly: true
         status:
           allOf:
-          - $ref: '#/components/schemas/DjangoJobExecutionStatusEnum'
+            - $ref: '#/components/schemas/DjangoJobExecutionStatusEnum'
           description: |-
             The current status of this job execution.
 
@@ -4371,15 +4382,15 @@ components:
           description: Traceback of exception that occurred during job execution (if
             any).
       required:
-      - id
-      - job_id
-      - run_time
-      - status
+        - id
+        - job_id
+        - run_time
+        - status
     DjangoJobExecutionStatusEnum:
       enum:
-      - Started execution
-      - Error!
-      - Executed
+        - Started execution
+        - Error!
+        - Executed
       type: string
       description: |-
         * `Started execution` - Started execution
@@ -4414,13 +4425,13 @@ components:
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
       required:
-      - desc
-      - kind
-      - quantity
-      - total_cost
-      - total_rev
-      - unit_cost
-      - unit_rev
+        - desc
+        - kind
+        - quantity
+        - total_cost
+        - total_rev
+        - unit_cost
+        - unit_rev
     FetchAllJobsResponse:
       type: object
       description: Serializer for fetch_all_jobs response.
@@ -4580,7 +4591,7 @@ components:
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         pricing_methodology:
           allOf:
-          - $ref: '#/components/schemas/PricingMethodologyEnum'
+            - $ref: '#/components/schemas/PricingMethodologyEnum'
           description: |-
             Determines whether job uses quotes or time and materials pricing type.
 
@@ -4588,7 +4599,7 @@ components:
             * `fixed_price` - Fixed Price
         quote_sheet:
           allOf:
-          - $ref: '#/components/schemas/QuoteSpreadsheet'
+            - $ref: '#/components/schemas/QuoteSpreadsheet'
           readOnly: true
         quoted:
           type: boolean
@@ -4607,24 +4618,24 @@ components:
           nullable: true
           readOnly: true
       required:
-      - charge_out_rate
-      - client_id
-      - client_name
-      - contact_name
-      - created_at
-      - id
-      - invoice
-      - invoiced
-      - job_number
-      - job_status
-      - latest_actual
-      - latest_estimate
-      - latest_quote
-      - name
-      - quote
-      - quote_sheet
-      - quoted
-      - updated_at
+        - charge_out_rate
+        - client_id
+        - client_name
+        - contact_name
+        - created_at
+        - id
+        - invoice
+        - invoiced
+        - job_number
+        - job_status
+        - latest_actual
+        - latest_estimate
+        - latest_quote
+        - name
+        - quote
+        - quote_sheet
+        - quoted
+        - updated_at
     JobAgingFinancialData:
       type: object
       description: Serialiser for job aging financial data
@@ -4639,9 +4650,9 @@ components:
           type: number
           format: double
       required:
-      - actual_total
-      - estimate_total
-      - quote_total
+        - actual_total
+        - estimate_total
+        - quote_total
     JobAgingJobData:
       type: object
       description: Serialiser for individual job aging data
@@ -4663,14 +4674,14 @@ components:
         timing_data:
           $ref: '#/components/schemas/JobAgingTimingData'
       required:
-      - client_name
-      - financial_data
-      - id
-      - job_number
-      - name
-      - status
-      - status_display
-      - timing_data
+        - client_name
+        - financial_data
+        - id
+        - job_number
+        - name
+        - status
+        - status_display
+        - timing_data
     JobAgingResponse:
       type: object
       description: Serialiser for job aging API response
@@ -4680,7 +4691,7 @@ components:
           items:
             $ref: '#/components/schemas/JobAgingJobData'
       required:
-      - jobs
+        - jobs
     JobAgingTimingData:
       type: object
       description: Serialiser for job aging timing data
@@ -4706,11 +4717,11 @@ components:
           type: string
           nullable: true
       required:
-      - created_date
-      - created_days_ago
-      - days_in_current_status
-      - last_activity_date
-      - last_activity_days_ago
+        - created_date
+        - created_days_ago
+        - days_in_current_status
+        - last_activity_date
+        - last_activity_days_ago
     JobBreakdown:
       type: object
       description: Serializer for job breakdown data
@@ -4735,14 +4746,14 @@ components:
         is_billable:
           type: boolean
       required:
-      - client
-      - cost
-      - hours
-      - is_billable
-      - job_id
-      - job_name
-      - job_number
-      - revenue
+        - client
+        - cost
+        - hours
+        - is_billable
+        - job_id
+        - job_name
+        - job_number
+        - revenue
     JobCreateRequest:
       type: object
       description: Serializer for job creation request data.
@@ -4764,8 +4775,8 @@ components:
           format: uuid
           nullable: true
       required:
-      - client_id
-      - name
+        - client_id
+        - name
     JobDetailResponse:
       type: object
       description: Serializer for job detail response.
@@ -4776,7 +4787,7 @@ components:
         data:
           $ref: '#/components/schemas/Job'
       required:
-      - data
+        - data
     JobFile:
       type: object
       properties:
@@ -4811,16 +4822,16 @@ components:
         status:
           $ref: '#/components/schemas/JobFileStatusEnum'
       required:
-      - download_url
-      - filename
-      - id
-      - size
-      - thumbnail_url
-      - uploaded_at
+        - download_url
+        - filename
+        - id
+        - size
+        - thumbnail_url
+        - uploaded_at
     JobFileStatusEnum:
       enum:
-      - active
-      - deleted
+        - active
+        - deleted
       type: string
       description: |-
         * `active` - Active
@@ -4835,7 +4846,7 @@ components:
         message:
           type: string
       required:
-      - message
+        - message
     JobFileUpdateSuccessResponse:
       type: object
       description: Serializer for successful file update response.
@@ -4848,8 +4859,8 @@ components:
         print_on_jobsheet:
           type: boolean
       required:
-      - message
-      - print_on_jobsheet
+        - message
+        - print_on_jobsheet
     JobFileUploadSuccessResponse:
       type: object
       description: Serializer for successful file upload response.
@@ -4864,8 +4875,8 @@ components:
         message:
           type: string
       required:
-      - message
-      - uploaded
+        - message
+        - uploaded
     JobFileUploadViewResponse:
       type: object
       description: Serializer for JobFileUploadView response.
@@ -4880,8 +4891,8 @@ components:
         message:
           type: string
       required:
-      - message
-      - uploaded
+        - message
+        - uploaded
     JobForPurchasing:
       type: object
       description: Serializer for Job model in purchasing contexts.
@@ -4909,12 +4920,12 @@ components:
           type: string
           readOnly: true
       required:
-      - client_name
-      - id
-      - is_stock_holding
-      - job_display_name
-      - job_number
-      - name
+        - client_name
+        - id
+        - is_stock_holding
+        - job_display_name
+        - job_number
+        - name
     JobQuoteChat:
       type: object
       description: |-
@@ -4936,10 +4947,10 @@ components:
           format: date-time
           readOnly: true
       required:
-      - content
-      - message_id
-      - role
-      - timestamp
+        - content
+        - message_id
+        - role
+        - timestamp
     JobQuoteChatHistoryResponse:
       type: object
       description: Serializer for chat history response.
@@ -4950,8 +4961,8 @@ components:
           type: object
           additionalProperties: {}
       required:
-      - data
-      - success
+        - data
+        - success
     JobQuoteChatInteractionRequest:
       type: object
       description: Serializer for chat interaction request data.
@@ -4961,7 +4972,7 @@ components:
           description: User message content to send to the AI assistant
           maxLength: 5000
       required:
-      - message
+        - message
     JobQuoteChatUpdate:
       type: object
       description: |-
@@ -4997,7 +5008,7 @@ components:
         error:
           type: string
       required:
-      - error
+        - error
     JobStatusUpdateRequest:
       type: object
       description: Serializer for job status update request data.
@@ -5006,7 +5017,7 @@ components:
           type: string
           description: New status for the job
       required:
-      - status
+        - status
     JobsListResponse:
       type: object
       description: Serializer for jobs list API response
@@ -5018,8 +5029,8 @@ components:
         total_count:
           type: integer
       required:
-      - jobs
-      - total_count
+        - jobs
+        - total_count
     KPICalendarData:
       type: object
       description: Serializer for KPI Calendar data response.
@@ -5037,11 +5048,11 @@ components:
         month:
           type: integer
       required:
-      - calendar_data
-      - month
-      - monthly_totals
-      - thresholds
-      - year
+        - calendar_data
+        - month
+        - monthly_totals
+        - thresholds
+        - year
     KPIDayData:
       type: object
       description: Serializer for individual day data in KPI calendar
@@ -5078,17 +5089,17 @@ components:
         details:
           $ref: '#/components/schemas/KPIDetails'
       required:
-      - billable_hours
-      - color
-      - date
-      - day
-      - details
-      - gp_target_achievement
-      - gross_profit
-      - holiday
-      - shop_hours
-      - shop_percentage
-      - total_hours
+        - billable_hours
+        - color
+        - date
+        - day
+        - details
+        - gp_target_achievement
+        - gross_profit
+        - holiday
+        - shop_hours
+        - shop_percentage
+        - total_hours
     KPIDetails:
       type: object
       description: Serializer for detailed KPI data per day
@@ -5124,16 +5135,16 @@ components:
           items:
             $ref: '#/components/schemas/KPIJobBreakdown'
       required:
-      - adjustment_cost
-      - adjustment_revenue
-      - job_breakdown
-      - material_cost
-      - material_revenue
-      - profit_breakdown
-      - staff_cost
-      - time_revenue
-      - total_cost
-      - total_revenue
+        - adjustment_cost
+        - adjustment_revenue
+        - job_breakdown
+        - material_cost
+        - material_revenue
+        - profit_breakdown
+        - staff_cost
+        - time_revenue
+        - total_cost
+        - total_revenue
     KPIJobBreakdown:
       type: object
       description: Serializer for job breakdown data in KPI calendar
@@ -5159,14 +5170,14 @@ components:
           type: number
           format: double
       required:
-      - billable_hours
-      - client_name
-      - cost
-      - job_id
-      - job_name
-      - job_number
-      - profit
-      - revenue
+        - billable_hours
+        - client_name
+        - cost
+        - job_id
+        - job_name
+        - job_number
+        - profit
+        - revenue
     KPIMonthlyTotals:
       type: object
       description: Serializer for monthly totals in KPI calendar
@@ -5265,42 +5276,42 @@ components:
         color_shop:
           type: string
       required:
-      - adjustment_cost
-      - adjustment_profit
-      - adjustment_revenue
-      - avg_billable_hours_so_far
-      - avg_daily_gp
-      - avg_daily_gp_so_far
-      - billable_hours
-      - billable_percentage
-      - color_gp
-      - color_hours
-      - color_shop
-      - days_amber
-      - days_green
-      - days_red
-      - elapsed_target
-      - elapsed_workdays
-      - gross_profit
-      - labour_amber_days
-      - labour_green_days
-      - labour_red_days
-      - material_cost
-      - material_profit
-      - material_revenue
-      - net_profit
-      - profit_amber_days
-      - profit_green_days
-      - profit_red_days
-      - remaining_workdays
-      - shop_hours
-      - shop_percentage
-      - staff_cost
-      - time_revenue
-      - total_cost
-      - total_hours
-      - total_revenue
-      - working_days
+        - adjustment_cost
+        - adjustment_profit
+        - adjustment_revenue
+        - avg_billable_hours_so_far
+        - avg_daily_gp
+        - avg_daily_gp_so_far
+        - billable_hours
+        - billable_percentage
+        - color_gp
+        - color_hours
+        - color_shop
+        - days_amber
+        - days_green
+        - days_red
+        - elapsed_target
+        - elapsed_workdays
+        - gross_profit
+        - labour_amber_days
+        - labour_green_days
+        - labour_red_days
+        - material_cost
+        - material_profit
+        - material_revenue
+        - net_profit
+        - profit_amber_days
+        - profit_green_days
+        - profit_red_days
+        - remaining_workdays
+        - shop_hours
+        - shop_percentage
+        - staff_cost
+        - time_revenue
+        - total_cost
+        - total_hours
+        - total_revenue
+        - working_days
     KPIProfitBreakdown:
       type: object
       description: Serializer for profit breakdown in KPI calendar details
@@ -5315,9 +5326,9 @@ components:
           type: number
           format: double
       required:
-      - adjustment_profit
-      - labor_profit
-      - material_profit
+        - adjustment_profit
+        - labor_profit
+        - material_profit
     KPIThresholds:
       type: object
       description: Serializer for KPI thresholds
@@ -5335,10 +5346,10 @@ components:
           type: number
           format: double
       required:
-      - billable_threshold_amber
-      - billable_threshold_green
-      - daily_gp_target
-      - shop_hours_target
+        - billable_threshold_amber
+        - billable_threshold_green
+        - daily_gp_target
+        - shop_hours_target
     KanbanColumnJob:
       type: object
       description: Serializer for job data in kanban column context (from get_jobs_by_kanban_column).
@@ -5379,21 +5390,21 @@ components:
         badge_color:
           type: string
       required:
-      - badge_color
-      - badge_label
-      - client_name
-      - contact_person
-      - created_at
-      - created_by_id
-      - description
-      - id
-      - job_number
-      - name
-      - paid
-      - people
-      - priority
-      - status
-      - status_key
+        - badge_color
+        - badge_label
+        - client_name
+        - contact_person
+        - created_at
+        - created_by_id
+        - description
+        - id
+        - job_number
+        - name
+        - paid
+        - people
+        - priority
+        - status
+        - status_key
     KanbanJob:
       type: object
       description: Serializer for job data in kanban context (matches KanbanService.serialize_job_for_api).
@@ -5431,19 +5442,19 @@ components:
         priority:
           type: integer
       required:
-      - client_name
-      - contact_person
-      - created_at
-      - created_by_id
-      - description
-      - id
-      - job_number
-      - name
-      - paid
-      - people
-      - priority
-      - status
-      - status_key
+        - client_name
+        - contact_person
+        - created_at
+        - created_by_id
+        - description
+        - id
+        - job_number
+        - name
+        - paid
+        - people
+        - priority
+        - status
+        - status_key
     KanbanJobPerson:
       type: object
       description: Serializer for person data in kanban job context.
@@ -5458,9 +5469,9 @@ components:
           format: uri
           nullable: true
       required:
-      - display_name
-      - icon
-      - id
+        - display_name
+        - icon
+        - id
     KanbanStaff:
       type: object
       properties:
@@ -5482,16 +5493,16 @@ components:
           type: string
           readOnly: true
       required:
-      - display_name
-      - first_name
-      - icon
-      - id
-      - last_name
+        - display_name
+        - first_name
+        - icon
+        - id
+        - last_name
     Kind332Enum:
       enum:
-      - time
-      - material
-      - adjust
+        - time
+        - material
+        - adjust
       type: string
       description: |-
         * `time` - Time
@@ -5506,16 +5517,16 @@ components:
           format: uri
     MetalTypeEnum:
       enum:
-      - stainless_steel
-      - mild_steel
-      - aluminum
-      - brass
-      - copper
-      - titanium
-      - zinc
-      - galvanized
-      - unspecified
-      - other
+        - stainless_steel
+        - mild_steel
+        - aluminum
+        - brass
+        - copper
+        - titanium
+        - zinc
+        - galvanized
+        - unspecified
+        - other
       type: string
       description: |-
         * `stainless_steel` - Stainless Steel
@@ -5546,12 +5557,12 @@ components:
           type: string
           nullable: true
       required:
-      - avatarUrl
-      - email
-      - firstName
-      - id
-      - lastName
-      - name
+        - avatarUrl
+        - email
+        - firstName
+        - id
+        - lastName
+        - name
     ModernTimesheetDayGetResponse:
       type: object
       description: Serializer for timesheet day GET response
@@ -5566,9 +5577,9 @@ components:
           type: string
           format: date
       required:
-      - date
-      - entries
-      - summary
+        - date
+        - entries
+        - summary
     ModernTimesheetEntryGetResponse:
       type: object
       description: Serializer for timesheet entry GET response
@@ -5585,10 +5596,10 @@ components:
         summary:
           $ref: '#/components/schemas/ModernTimesheetSummary'
       required:
-      - cost_lines
-      - date
-      - staff
-      - summary
+        - cost_lines
+        - date
+        - staff
+        - summary
     ModernTimesheetEntryPostResponse:
       type: object
       description: Serializer for timesheet entry POST response
@@ -5601,7 +5612,7 @@ components:
         message:
           type: string
       required:
-      - success
+        - success
     ModernTimesheetJob:
       type: object
       description: Serializer for jobs in timesheet context using modern CostSet system
@@ -5631,12 +5642,12 @@ components:
           description: Check if job has an actual cost set
           readOnly: true
       required:
-      - charge_out_rate
-      - client_name
-      - has_actual_costset
-      - id
-      - job_number
-      - name
+        - charge_out_rate
+        - client_name
+        - has_actual_costset
+        - id
+        - job_number
+        - name
     ModernTimesheetJobGetResponse:
       type: object
       description: Serializer for timesheet job GET response
@@ -5648,8 +5659,8 @@ components:
         total_count:
           type: integer
       required:
-      - jobs
-      - total_count
+        - jobs
+        - total_count
     ModernTimesheetStaff:
       type: object
       description: Serializer for staff information in timesheet responses
@@ -5664,10 +5675,10 @@ components:
         lastName:
           type: string
       required:
-      - firstName
-      - id
-      - lastName
-      - name
+        - firstName
+        - id
+        - lastName
+        - name
     ModernTimesheetSummary:
       type: object
       description: Serializer for timesheet entry summary
@@ -5690,12 +5701,12 @@ components:
         entry_count:
           type: integer
       required:
-      - billable_hours
-      - entry_count
-      - non_billable_hours
-      - total_cost
-      - total_hours
-      - total_revenue
+        - billable_hours
+        - entry_count
+        - non_billable_hours
+        - total_cost
+        - total_hours
+        - total_revenue
     MonthEndGetResponse:
       type: object
       description: Serializer for month-end GET response
@@ -5707,8 +5718,8 @@ components:
         stock_job:
           $ref: '#/components/schemas/MonthEndStockJob'
       required:
-      - jobs
-      - stock_job
+        - jobs
+        - stock_job
     MonthEndJob:
       type: object
       description: Serializer for special jobs in month-end processing
@@ -5733,13 +5744,13 @@ components:
           type: number
           format: double
       required:
-      - client_name
-      - history
-      - job_id
-      - job_name
-      - job_number
-      - total_dollars
-      - total_hours
+        - client_name
+        - history
+        - job_id
+        - job_name
+        - job_number
+        - total_dollars
+        - total_hours
     MonthEndJobHistory:
       type: object
       description: Serializer for job history in month-end data
@@ -5754,9 +5765,9 @@ components:
           type: number
           format: double
       required:
-      - date
-      - total_dollars
-      - total_hours
+        - date
+        - total_dollars
+        - total_hours
     MonthEndPostResponse:
       type: object
       description: Serializer for month-end POST response
@@ -5773,8 +5784,8 @@ components:
             type: string
           description: List of error messages for failed processing
       required:
-      - errors
-      - processed
+        - errors
+        - processed
     MonthEndStockHistory:
       type: object
       description: Serializer for stock job history in month-end data
@@ -5788,9 +5799,9 @@ components:
           type: number
           format: double
       required:
-      - date
-      - material_cost
-      - material_line_count
+        - date
+        - material_cost
+        - material_line_count
     MonthEndStockJob:
       type: object
       description: Serializer for stock job in month-end processing
@@ -5807,18 +5818,18 @@ components:
           items:
             $ref: '#/components/schemas/MonthEndStockHistory'
       required:
-      - history
-      - job_id
-      - job_name
-      - job_number
+        - history
+        - job_id
+        - job_name
+        - job_number
     NullEnum:
       enum:
-      - null
+        - null
     PaginatedCompleteJobList:
       type: object
       required:
-      - count
-      - results
+        - count
+        - results
       properties:
         count:
           type: integer
@@ -5840,8 +5851,8 @@ components:
     PaginatedXeroErrorList:
       type: object
       required:
-      - count
-      - results
+        - count
+        - results
       properties:
         count:
           type: integer
@@ -5875,7 +5886,7 @@ components:
           maxLength: 100
         provider_type:
           allOf:
-          - $ref: '#/components/schemas/ProviderTypeEnum'
+            - $ref: '#/components/schemas/ProviderTypeEnum'
           description: |-
             Type of AI provider
 
@@ -6254,17 +6265,17 @@ components:
           type: string
     PricingMethodologyEnum:
       enum:
-      - time_materials
-      - fixed_price
+        - time_materials
+        - fixed_price
       type: string
       description: |-
         * `time_materials` - Time & Materials
         * `fixed_price` - Fixed Price
     ProviderTypeEnum:
       enum:
-      - Claude
-      - Gemini
-      - Mistral
+        - Claude
+        - Gemini
+        - Mistral
       type: string
       description: |-
         * `Claude` - Anthropic
@@ -6286,8 +6297,8 @@ components:
           description: Dictionary where keys are PurchaseOrderLine IDs and values
             are lists of allocations
       required:
-      - allocations
-      - po_id
+        - allocations
+        - po_id
     PurchaseOrderCreate:
       type: object
       description: Serializer for creating purchase orders.
@@ -6360,19 +6371,19 @@ components:
           format: uuid
           nullable: true
       required:
-      - id
-      - lines
-      - po_number
-      - supplier
-      - supplier_has_xero_id
-      - supplier_id
+        - id
+        - lines
+        - po_number
+        - supplier
+        - supplier_has_xero_id
+        - supplier_id
     PurchaseOrderDetailStatusEnum:
       enum:
-      - draft
-      - submitted
-      - partially_received
-      - fully_received
-      - deleted
+        - draft
+        - submitted
+        - partially_received
+        - fully_received
+        - deleted
       type: string
       description: |-
         * `draft` - Draft
@@ -6427,9 +6438,9 @@ components:
         metal_type:
           nullable: true
           oneOf:
-          - $ref: '#/components/schemas/MetalTypeEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-          - $ref: '#/components/schemas/NullEnum'
+            - $ref: '#/components/schemas/MetalTypeEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
         alloy:
           type: string
           nullable: true
@@ -6455,9 +6466,9 @@ components:
           format: uuid
           nullable: true
       required:
-      - description
-      - id
-      - quantity
+        - description
+        - id
+        - quantity
     PurchaseOrderLineCreate:
       type: object
       description: Serializer for creating purchase order lines.
@@ -6518,12 +6529,12 @@ components:
           format: uuid
           nullable: true
       required:
-      - id
-      - order_date
-      - po_number
-      - status
-      - supplier
-      - supplier_id
+        - id
+        - order_date
+        - po_number
+        - status
+        - supplier
+        - supplier_id
     PurchaseOrderPDFResponse:
       type: object
       description: Serializer for purchase order PDF generation response
@@ -6571,8 +6582,8 @@ components:
         total_count:
           type: integer
       required:
-      - jobs
-      - total_count
+        - jobs
+        - total_count
     QuoteChanges:
       type: object
       description: Serializer for quote changes data.
@@ -6590,9 +6601,9 @@ components:
           items:
             $ref: '#/components/schemas/DraftLine'
       required:
-      - additions
-      - deletions
-      - updates
+        - additions
+        - deletions
+        - updates
     QuoteImportStatusResponse:
       type: object
       description: Serializer for quote import status response
@@ -6612,9 +6623,9 @@ components:
           format: date-time
         summary: {}
       required:
-      - has_quote
-      - job_id
-      - job_name
+        - has_quote
+        - job_id
+        - job_name
     QuoteSpreadsheet:
       type: object
       description: |-
@@ -6650,15 +6661,15 @@ components:
           type: string
           readOnly: true
       required:
-      - id
-      - job_id
-      - job_name
-      - job_number
-      - sheet_id
+        - id
+        - job_id
+        - job_name
+        - job_number
+        - sheet_id
     RoleEnum:
       enum:
-      - user
-      - assistant
+        - user
+        - assistant
       type: string
       description: |-
         * `user` - User
@@ -6773,11 +6784,11 @@ components:
             type: integer
           description: Specific permissions for this user.
       required:
-      - email
-      - first_name
-      - id
-      - last_name
-      - updated_at
+        - email
+        - first_name
+        - id
+        - last_name
+        - updated_at
     StaffDailyData:
       type: object
       description: Serializer for individual staff daily timesheet data
@@ -6830,23 +6841,23 @@ components:
           items:
             type: string
       required:
-      - actual_hours
-      - alerts
-      - avatar_url
-      - billable_hours
-      - billable_percentage
-      - completion_percentage
-      - entry_count
-      - job_breakdown
-      - non_billable_hours
-      - scheduled_hours
-      - staff_id
-      - staff_initials
-      - staff_name
-      - status
-      - status_class
-      - total_cost
-      - total_revenue
+        - actual_hours
+        - alerts
+        - avatar_url
+        - billable_hours
+        - billable_percentage
+        - completion_percentage
+        - entry_count
+        - job_breakdown
+        - non_billable_hours
+        - scheduled_hours
+        - staff_id
+        - staff_initials
+        - staff_name
+        - status
+        - status_class
+        - total_cost
+        - total_revenue
     StaffListResponse:
       type: object
       description: Serializer for staff list API response
@@ -6858,22 +6869,22 @@ components:
         total_count:
           type: integer
       required:
-      - staff
-      - total_count
+        - staff
+        - total_count
     StatusE5cEnum:
       enum:
-      - quoting
-      - accepted_quote
-      - awaiting_materials
-      - awaiting_staff
-      - awaiting_site_availability
-      - in_progress
-      - on_hold
-      - special
-      - recently_completed
-      - completed
-      - rejected
-      - archived
+        - quoting
+        - accepted_quote
+        - awaiting_materials
+        - awaiting_staff
+        - awaiting_site_availability
+        - in_progress
+        - on_hold
+        - special
+        - recently_completed
+        - completed
+        - rejected
+        - archived
       type: string
       description: |-
         * `quoting` - Quoting
@@ -6900,8 +6911,8 @@ components:
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
       required:
-      - job_id
-      - quantity
+        - job_id
+        - quantity
     StockCreate:
       type: object
       description: Serializer for creating stock items.
@@ -6936,10 +6947,10 @@ components:
           type: string
           maxLength: 255
       required:
-      - description
-      - quantity
-      - source
-      - unit_cost
+        - description
+        - quantity
+        - source
+        - unit_cost
     StockList:
       type: object
       description: Serializer for listing stock items from service data.
@@ -6976,18 +6987,18 @@ components:
         notes:
           type: string
       required:
-      - alloy
-      - date
-      - description
-      - id
-      - job_id
-      - location
-      - metal_type
-      - notes
-      - quantity
-      - source
-      - specifics
-      - unit_cost
+        - alloy
+        - date
+        - description
+        - id
+        - job_id
+        - location
+        - metal_type
+        - notes
+        - quantity
+        - source
+        - specifics
+        - unit_cost
     SummaryStats:
       type: object
       description: Serializer for summary statistics
@@ -7004,11 +7015,11 @@ components:
           type: number
           format: double
       required:
-      - complete_staff
-      - completion_rate
-      - missing_staff
-      - partial_staff
-      - total_staff
+        - complete_staff
+        - completion_rate
+        - missing_staff
+        - partial_staff
+        - total_staff
     TimesheetCostLine:
       type: object
       description: |-
@@ -7029,7 +7040,7 @@ components:
           readOnly: true
         kind:
           allOf:
-          - $ref: '#/components/schemas/Kind332Enum'
+            - $ref: '#/components/schemas/Kind332Enum'
           readOnly: true
         desc:
           type: string
@@ -7085,21 +7096,21 @@ components:
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
           readOnly: true
       required:
-      - charge_out_rate
-      - client_name
-      - desc
-      - ext_refs
-      - id
-      - job_id
-      - job_name
-      - job_number
-      - kind
-      - meta
-      - quantity
-      - total_cost
-      - total_rev
-      - unit_cost
-      - unit_rev
+        - charge_out_rate
+        - client_name
+        - desc
+        - ext_refs
+        - id
+        - job_id
+        - job_name
+        - job_number
+        - kind
+        - meta
+        - quantity
+        - total_cost
+        - total_rev
+        - unit_cost
+        - unit_rev
     TokenRefresh:
       type: object
       properties:
@@ -7110,8 +7121,8 @@ components:
           type: string
           writeOnly: true
       required:
-      - access
-      - refresh
+        - access
+        - refresh
     TokenVerify:
       type: object
       properties:
@@ -7119,11 +7130,11 @@ components:
           type: string
           writeOnly: true
       required:
-      - token
+        - token
     TypeEnum:
       enum:
-      - job
-      - stock
+        - job
+        - stock
       type: string
       description: |-
         * `job` - Job
@@ -7141,10 +7152,10 @@ components:
         print_on_jobsheet:
           type: boolean
       required:
-      - file_path
-      - filename
-      - id
-      - print_on_jobsheet
+        - file_path
+        - filename
+        - id
+        - print_on_jobsheet
     UserProfile:
       type: object
       description: Serializer for user profile information returned by /accounts/me/
@@ -7179,15 +7190,15 @@ components:
           type: boolean
           readOnly: true
       required:
-      - email
-      - first_name
-      - fullName
-      - id
-      - is_active
-      - is_staff
-      - last_name
-      - preferred_name
-      - username
+        - email
+        - first_name
+        - fullName
+        - id
+        - is_active
+        - is_staff
+        - last_name
+        - preferred_name
+        - username
     WeeklyTimesheetData:
       type: object
       description: Serializer for comprehensive weekly timesheet data
@@ -7223,15 +7234,15 @@ components:
           type: object
           additionalProperties: {}
       required:
-      - end_date
-      - export_mode
-      - is_current_week
-      - job_metrics
-      - staff_data
-      - start_date
-      - summary_stats
-      - week_days
-      - weekly_summary
+        - end_date
+        - export_mode
+        - is_current_week
+        - job_metrics
+        - staff_data
+        - start_date
+        - summary_stats
+        - week_days
+        - weekly_summary
     WorkshopPDFResponse:
       type: object
       description: Serializer for workshop PDF generation response
@@ -7272,12 +7283,12 @@ components:
           type: string
           maxLength: 50
       required:
-      - entity
-      - id
-      - kind
-      - message
-      - reference_id
-      - timestamp
+        - entity
+        - id
+        - kind
+        - message
+        - reference_id
+        - timestamp
     XeroItem:
       type: object
       description: Serializer for Xero item data
@@ -7295,8 +7306,8 @@ components:
           type: object
           additionalProperties: {}
       required:
-      - code
-      - name
+        - code
+        - name
     XeroItemListResponse:
       type: object
       description: Serializer for XeroItemList response
@@ -7308,7 +7319,7 @@ components:
         total_count:
           type: integer
       required:
-      - items
+        - items
   securitySchemes:
     cookieAuth:
       type: apiKey

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { axios } from 'axios'
+import axios from '@/plugins/axios'
 import { api, schemas } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
 import type { z } from 'zod'
@@ -60,7 +60,49 @@ export const useAuthStore = defineStore('auth', () => {
     clearError()
 
     try {
-      await api.accounts_api_token_create({ body: credentials })
+      debugLog('Login credentials:', credentials)
+      debugLog('Credentials structure:', {
+        username: credentials.username,
+        password: credentials.password ? '[REDACTED]' : 'EMPTY',
+        keys: Object.keys(credentials),
+      })
+
+      // Convert reactive object to plain object to avoid Zodios serialization issues
+      const plainCredentials = JSON.parse(
+        JSON.stringify({
+          username: credentials.username,
+          password: credentials.password,
+        }),
+      )
+
+      debugLog('Plain credentials for API:', {
+        username: plainCredentials.username,
+        password: '[REDACTED]',
+        type: typeof plainCredentials,
+        isPlainObject: plainCredentials.constructor === Object,
+        stringified: JSON.stringify(plainCredentials),
+      })
+
+      // Test Zod schema validation manually
+      try {
+        const validatedCredentials = schemas.CustomTokenObtainPair.parse(plainCredentials)
+        debugLog('Manual Zod validation successful:', {
+          username: validatedCredentials.username,
+          password: '[REDACTED]',
+        })
+      } catch (zodError) {
+        debugLog('Manual Zod validation failed:', zodError)
+      }
+
+      // Try different approaches to call the API
+      try {
+        debugLog('Attempting Zodios call with direct parameters...')
+        await api.accounts_api_token_create(plainCredentials)
+        debugLog('Direct parameters call successful!')
+      } catch (directError) {
+        debugLog('Direct parameters call failed, trying with body wrapper:', directError)
+        await api.accounts_api_token_create({ body: plainCredentials })
+      }
 
       const userResponse = await api.accounts_me_retrieve()
       user.value = userResponse

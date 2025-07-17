@@ -1,10 +1,19 @@
 /**
  * Kanban Categorization Service
  *
- * Service layer for managing simplified kanban structure:
- * - 6 main columns with 1:1 status mapping (no sub-columns)
- * - Column = Status (simplified approach as requested by Cindy)
- * - Hidden statuses: special, rejected, archived (maintained but not shown)
+ * Service layer for managing simplified kanban structure per Cindy's requirements:
+ * - 6 main columns: Draft, Awaiting Approval, Approved, In Progress, Unusual, Recently Completed
+ * - 1:1 status mapping (no sub-columns per Cindy's feedback)
+ * - Hidden statuses: special, archived (maintained but not shown on kanban)
+ * - Legacy status mapping based on Corrin's table:
+ *   - Quoting -> Draft
+ *   - Accepted Quote -> Approved
+ *   - Awaiting Materials/Staff/Site -> Unusual
+ *   - On Hold -> Unusual
+ *   - Completed -> Recently Completed
+ *   - Rejected -> Recently Completed (with rejected_flag=True)
+ *   - Special -> Not visible on kanban without advanced search
+ *   - Archived -> Archived (unchanged)
  */
 
 import { z } from 'zod'
@@ -21,7 +30,7 @@ interface JobWithStatus {
 }
 
 export class KanbanCategorizationService {
-  // Simplified column structure - no more sub-categories
+  // Simplified column structure - no more sub-categories, per Cindy's requirements
   private static readonly COLUMN_STRUCTURE: Record<string, KanbanColumn> = {
     draft: {
       columnId: 'draft',
@@ -67,24 +76,25 @@ export class KanbanCategorizationService {
     },
   }
 
-  // Status to column mapping for quick lookup - simplified 1:1 mapping
+  // Status to column mapping for quick lookup - based on Corrin's mapping table
   private static readonly STATUS_TO_COLUMN_MAP: Record<string, string> = {
-    // New status structure - 1:1 mapping (column = status)
+    // Main kanban statuses - 1:1 mapping (column = status)
     draft: 'draft',
     awaiting_approval: 'awaiting_approval',
     approved: 'approved',
     in_progress: 'in_progress',
     unusual: 'unusual',
     recently_completed: 'recently_completed',
-    // Legacy status mappings for backward compatibility (will be migrated)
-    quoting: 'awaiting_approval', // Legacy: map to awaiting_approval
-    accepted_quote: 'approved', // Legacy: map to approved
-    awaiting_materials: 'in_progress', // Legacy: map to in_progress
-    awaiting_staff: 'in_progress', // Legacy: map to in_progress
-    awaiting_site_availability: 'in_progress', // Legacy: map to in_progress
-    on_hold: 'unusual', // Legacy: map to unusual
-    completed: 'recently_completed', // Legacy: map to recently_completed
-    // Hidden statuses (not shown on kanban): special, rejected, archived
+    // Legacy status mappings based on Corrin's table
+    quoting: 'draft', // Quoting -> Draft
+    accepted_quote: 'approved', // Accepted Quote -> Approved
+    awaiting_materials: 'unusual', // Awaiting Materials -> Unusual
+    awaiting_staff: 'unusual', // Awaiting Staff -> Unusual
+    awaiting_site_availability: 'unusual', // Awaiting Site Availability -> Unusual
+    on_hold: 'unusual', // On Hold -> Unusual
+    completed: 'recently_completed', // Completed -> Recently Completed
+    rejected: 'recently_completed', // Rejected -> Recently Completed (with rejected_flag)
+    // Hidden statuses (not shown on kanban): special, archived
   }
 
   static getColumnForStatus(status: string): string {

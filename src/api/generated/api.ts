@@ -1,6 +1,14 @@
 import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
 import { z } from 'zod'
-import axios, { getApiBaseUrl } from '../../plugins/axios'
+import axios from 'axios'
+
+// Get API base URL without importing plugins to avoid circular dependency
+function getApiBaseUrl() {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
+  }
+  return 'http://localhost:8001'
+}
 
 const KPIProfitBreakdown = z
   .object({ labor_profit: z.number(), material_profit: z.number(), adjustment_profit: z.number() })
@@ -227,7 +235,9 @@ const KanbanStaff = z
     display_name: z.string(),
   })
   .passthrough()
-const CustomTokenObtainPair = z.object({ username: z.string(), password: z.string() }).passthrough()
+const CustomTokenObtainPair = z
+  .object({ username: z.string().nullish(), password: z.string().nullish() })
+  .passthrough()
 const TokenRefresh = z.object({ access: z.string(), refresh: z.string() }).passthrough()
 const TokenVerify = z.object({ token: z.string() }).passthrough()
 const UserProfile = z
@@ -237,7 +247,7 @@ const UserProfile = z
     email: z.string().email(),
     first_name: z.string(),
     last_name: z.string(),
-    preferred_name: z.string(),
+    preferred_name: z.string().nullable(),
     fullName: z.string(),
     is_active: z.boolean(),
     is_staff: z.boolean(),
@@ -520,8 +530,8 @@ const KanbanJob = z
   .object({
     id: z.string().uuid(),
     name: z.string(),
-    description: z.string(),
-    job_number: z.string(),
+    description: z.string().nullable(),
+    job_number: z.union([z.string(), z.number()]).transform((val) => String(val)),
     client_name: z.string(),
     contact_person: z.string(),
     people: z.array(KanbanJobPerson),
@@ -530,7 +540,7 @@ const KanbanJob = z
     paid: z.boolean(),
     created_by_id: z.string().uuid().nullable(),
     created_at: z.string().nullable(),
-    priority: z.number().int(),
+    priority: z.union([z.number().int(), z.number()]).transform((val) => Math.round(val)),
   })
   .passthrough()
 const AdvancedSearchResponse = z
@@ -1554,6 +1564,13 @@ and handles multipart/form data for file uploads.`,
 Supports filtering to return only actual users (excluding system/test accounts)
 based on the &#x27;actual_users&#x27; query parameter.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'actual_users',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
     response: z.array(KanbanStaff),
   },
   {
@@ -3753,7 +3770,18 @@ Endpoint: /api/xero/errors/&lt;id&gt;/`,
   },
 ])
 
-export const api = new Zodios(getApiBaseUrl(), endpoints, { axiosInstance: axios })
+// Create API instance lazily to avoid circular dependency issues
+let _api: Zodios<typeof endpoints> | null = null
+
+export function getApi(): Zodios<typeof endpoints> {
+  if (!_api) {
+    _api = new Zodios(getApiBaseUrl(), endpoints, { axiosInstance: axios })
+  }
+  return _api
+}
+
+// For backward compatibility, export api as getter
+export const api = getApi()
 
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
   return new Zodios(baseUrl, endpoints, options)

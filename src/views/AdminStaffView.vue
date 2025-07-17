@@ -181,6 +181,7 @@ function openCreate() {
   showModal.value = true
 }
 function editStaff(staff: Staff) {
+  console.log('AdminStaffView - Editing staff:', staff)
   selectedStaff.value = staff
   showModal.value = true
 }
@@ -209,7 +210,9 @@ async function deleteStaff() {
 
 async function fetchStaff() {
   loading.value = true
-  staffList.value = await listStaff()
+  // For admin view, show all staff including those without valid IMS IDs
+  staffList.value = await listStaff(false) // false = show all staff
+  console.log('AdminStaffView - Staff data received from API:', staffList.value)
   loading.value = false
 }
 onMounted(fetchStaff)

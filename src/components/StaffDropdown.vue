@@ -58,13 +58,13 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 
 // Use Zodios API composable
-const { getAllStaff } = useStaffApi()
+const { listStaff } = useStaffApi()
 
 const loadStaffOptions = async (): Promise<void> => {
   try {
     isLoading.value = true
     error.value = null
-    const data = await getAllStaff()
+    const data = await listStaff()
     staffOptions.value = data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load staff options'

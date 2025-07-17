@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { api, schemas } from '../api/generated/api'
 
 type Staff = z.infer<typeof schemas.Staff>
+type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
 
 export function useStaffApi() {
   const error = ref<string | null>(null)
@@ -10,7 +11,13 @@ export function useStaffApi() {
   async function listStaff(): Promise<Staff[]> {
     error.value = null
     try {
-      return await api.accounts_api_staff_list()
+      // Use the regular staff endpoint that returns complete Staff objects
+      const result = await api.accounts_api_staff_list()
+
+      // For AdminView, we want to see ALL staff without any filtering
+      // Filtering should only be done on Kanban via the backend
+
+      return result
     } catch (e: unknown) {
       if (e instanceof Error) {
         error.value = e.message
@@ -38,9 +45,13 @@ export function useStaffApi() {
   async function updateStaff(id: string | number, data: Record<string, unknown>): Promise<Staff> {
     error.value = null
     try {
-      return await api.accounts_api_staff_update(data as z.infer<typeof schemas.Staff>, {
-        params: { id: String(id) },
-      })
+      const result = await api.accounts_api_staff_partial_update(
+        data as z.infer<typeof schemas.PatchedStaff>,
+        {
+          params: { id: String(id) },
+        },
+      )
+      return result
     } catch (e: unknown) {
       if (e instanceof Error) {
         error.value = e.message
@@ -65,8 +76,24 @@ export function useStaffApi() {
     }
   }
 
+  async function listStaffForKanban(): Promise<KanbanStaff[]> {
+    error.value = null
+    try {
+      const result = await api.accounts_api_staff_all_list({ queries: { actual_users: 'true' } })
+      return result
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        error.value = e.message
+      } else {
+        error.value = 'Failed to fetch staff for kanban.'
+      }
+      return []
+    }
+  }
+
   return {
     listStaff,
+    listStaffForKanban,
     createStaff,
     updateStaff,
     removeStaff,

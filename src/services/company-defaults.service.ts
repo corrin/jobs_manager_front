@@ -11,7 +11,7 @@ export const CompanyDefaultsService = {
     }
     try {
       debugLog('🔄 Loading company defaults from API...')
-      cachedDefaults = await api.admin_company_defaults_list()
+      cachedDefaults = await api.api_company_defaults_retrieve()
       debugLog('✅ Company defaults loaded successfully:', cachedDefaults)
       return cachedDefaults
     } catch (error) {

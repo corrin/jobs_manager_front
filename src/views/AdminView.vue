@@ -9,9 +9,7 @@
             <path d="M12 6v6l4 2" stroke-width="2" />
           </svg>
         </div>
-        <div class="user-name">
-          Welcome, {{ userInfo.preferred_name || userInfo.first_name || 'User' }}!
-        </div>
+        <div class="user-name">Welcome, {{ username }}!</div>
         <div class="user-date">{{ today }}</div>
       </div>
       <ul class="tab-list">
@@ -53,10 +51,21 @@ import {
   AlertTriangle,
   Brain /* icon for AI Providers */,
 } from 'lucide-vue-next'
+import { debugLog } from '../utils/debug'
 
 const { userInfo } = useAppLayout()
 const isStaff = computed(() => Boolean(userInfo.value?.is_staff))
 const route = useRoute()
+
+const username = computed(() => {
+  return (
+    userInfo.value.displayName.trim() ||
+    userInfo.value.fullName.trim() ||
+    userInfo.value.first_name.trim()
+  )
+})
+
+debugLog('[DEBUG] UserInfo in AdminView:', userInfo.value)
 
 const today = new Date().toLocaleDateString('en-NZ', {
   weekday: 'long',
