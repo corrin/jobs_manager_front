@@ -25,7 +25,9 @@ describe('MCP Tool Metadata Schema', () => {
       if (result.success) {
         expect(result.data.name).toBe('search_products')
         expect(result.data.arguments).toEqual({ query: 'steel sheet', category: 'metal' })
-        expect(result.data.result_preview).toBe('Found 15 products matching your search criteria...')
+        expect(result.data.result_preview).toBe(
+          'Found 15 products matching your search criteria...',
+        )
       }
     })
 

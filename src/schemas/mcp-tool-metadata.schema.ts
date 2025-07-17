@@ -60,7 +60,7 @@ export function parseMetadata(metadata: unknown): ValidationResult<McpMetadata> 
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: `Invalid metadata format: ${error.issues.map(i => i.message).join(', ')}`,
+        error: `Invalid metadata format: ${error.issues.map((i) => i.message).join(', ')}`,
       }
     }
     return {

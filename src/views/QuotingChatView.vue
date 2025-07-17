@@ -54,7 +54,7 @@
                 <div class="text-xs mt-1 opacity-70">
                   {{ formatTime(message.timestamp) }}
                 </div>
-                
+
                 <!-- MCP Tool Details for Assistant Messages -->
                 <div v-if="message.senderId !== currentUserId && message.metadata" class="mt-3">
                   <McpToolDetails :metadata="message.metadata" />
