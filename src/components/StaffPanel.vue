@@ -12,21 +12,24 @@
         <div
           v-for="staff in staffMembers"
           :key="staff.id"
-          class="flex flex-col items-center cursor-pointer transition-transform hover:scale-105 active:scale-95"
+          class="staff-item flex flex-col items-center transition-transform hover:scale-105 active:scale-95 relative"
           :class="{
             'scale-105 ring-2 ring-blue-400 ring-offset-1 rounded-lg': activeFilters.includes(
               staff.id.toString(),
             ),
           }"
-          @click="toggleStaffFilter(staff.id)"
           :data-staff-id="staff.id"
+          draggable="true"
+          @dragstart="handleDragStart(staff.id.toString(), $event)"
+          @dragend="handleDragEnd"
+          @click="toggleStaffFilter(staff.id)"
         >
           <StaffAvatar
             :staff="staff"
             :is-active="activeFilters.includes(staff.id.toString())"
-            class="mb-1"
+            class="mb-1 pointer-events-none"
           />
-          <span class="text-xs text-gray-600 text-center max-w-[60px] truncate">{{
+          <span class="text-xs text-gray-600 text-center max-w-[60px] truncate pointer-events-none">{{
             staff.display_name.split(' ')[0]
           }}</span>
         </div>
@@ -103,6 +106,60 @@ const toggleStaffFilter = (staffId: string): void => {
   emit('staff-filter-changed', [...activeFilters.value])
 }
 
+const handleDragStart = (staffId: string, event: DragEvent): void => {
+  console.log('🎯 Staff drag start:', staffId)
+  if (event.dataTransfer) {
+    event.dataTransfer.setData('text/plain', staffId)
+    event.dataTransfer.effectAllowed = 'copy'
+  }
+  
+  // Add visual feedback to job cards
+  setTimeout(() => {
+    document.querySelectorAll('.job-card').forEach((card) => {
+      (card as HTMLElement).style.outline = '2px dashed #3b82f6'
+      ;(card as HTMLElement).style.outlineOffset = '2px'
+    })
+  }, 10)
+}
+
+const handleDragEnd = (): void => {
+  console.log('🏁 Staff drag end')
+  // Remove visual feedback
+  document.querySelectorAll('.job-card').forEach((card) => {
+    ;(card as HTMLElement).style.outline = ''
+    ;(card as HTMLElement).style.outlineOffset = ''
+  })
+}
+
+// Track drag state to prevent clicks during drag
+const isDragging = ref(false)
+let clickTimeout: number | null = null
+
+const handleStaffClick = (staffId: string, event: Event) => {
+  // Only process click if we're not dragging
+  if (!isDragging.value) {
+    // Small delay to ensure this isn't the start of a drag
+    if (clickTimeout) clearTimeout(clickTimeout)
+    clickTimeout = window.setTimeout(() => {
+      if (!isDragging.value) {
+        toggleStaffFilter(staffId)
+      }
+    }, 50)
+  }
+}
+
+const onMouseDown = () => {
+  // Track mouse down to detect potential drag
+  isDragging.value = false
+}
+
+const onMouseUp = () => {
+  // Reset drag state on mouse up
+  setTimeout(() => {
+    isDragging.value = false
+  }, 100)
+}
+
 watch(
   () => props.activeFilters,
   (newFilters) => {
@@ -121,3 +178,22 @@ onMounted(() => {
   })
 })
 </script>
+
+<style scoped>
+.staff-item {
+  cursor: grab;
+  user-select: none;
+}
+
+.staff-item:active {
+  cursor: grabbing;
+}
+
+.staff-item * {
+  pointer-events: none;
+}
+
+.staff-item:hover {
+  transform: scale(1.05);
+}
+</style>

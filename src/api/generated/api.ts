@@ -473,6 +473,9 @@ const JobFileUpdateSuccessResponse = z
 const AssignJobResponse = z
   .object({ success: z.boolean(), message: z.string().optional(), error: z.string().optional() })
   .passthrough()
+const AssignJobRequest = z
+  .object({ job_id: z.string(), staff_id: z.string() })
+  .passthrough()
 const CompleteJob = z
   .object({
     id: z.string().uuid(),
@@ -1316,6 +1319,7 @@ export const schemas = {
   JobFileUploadSuccessResponse,
   JobFileUpdateSuccessResponse,
   AssignJobResponse,
+  AssignJobRequest,
   CompleteJob,
   PaginatedCompleteJobList,
   ArchiveJobsRequest,
@@ -1925,6 +1929,13 @@ Expected JSON:
     alias: 'clients_search_retrieve',
     description: `Searches clients by name following early return pattern.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'q',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
     response: ClientSearchResponse,
   },
   {
@@ -2193,7 +2204,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: AssignJobResponse,
+        schema: AssignJobRequest,
       },
       {
         name: 'job_id',

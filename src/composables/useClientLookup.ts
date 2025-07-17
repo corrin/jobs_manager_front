@@ -1,7 +1,6 @@
 import { ref, computed } from 'vue'
 import { z } from 'zod'
 import { api, schemas } from '@/api/generated/api'
-import { debugLog } from '@/utils/debug'
 
 // Use generated schemas
 export type Client = z.infer<typeof schemas.ClientSearchResult>
@@ -33,12 +32,16 @@ export function useClientLookup() {
     }
 
     isLoading.value = true
+    
     try {
-      const response = await api.clients_search_retrieve({ q: query })
+      const response = await api.clients_search_retrieve({ 
+        queries: { q: query } 
+      })
+      
       suggestions.value = response.results
       showSuggestions.value = true
     } catch (error) {
-      debugLog('Error searching clients:', error)
+      console.error('Error searching clients:', error)
       suggestions.value = []
       showSuggestions.value = false
     } finally {
@@ -58,10 +61,12 @@ export function useClientLookup() {
 
   const loadClientContacts = async (clientId: string) => {
     try {
-      const response = await api.clients_contacts_retrieve({ client_id: clientId })
+      const response = await api.clients_contacts_retrieve({ 
+        params: { client_id: clientId } 
+      })
       contacts.value = response.results
     } catch (error) {
-      debugLog('Error loading client contacts:', error)
+      console.error('Error loading client contacts:', error)
       contacts.value = []
     }
   }
@@ -101,8 +106,6 @@ export function useClientLookup() {
   }
 
   const createNewClient = (clientName: string) => {
-    debugLog('Request to create new client:', clientName.trim())
-
     return clientName.trim()
   }
 

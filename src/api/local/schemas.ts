@@ -823,36 +823,6 @@ export type DragEventData = z.infer<typeof DragEventDataSchema>
 export type JobCardElement = z.infer<typeof JobCardElementSchema>
 export type SortableOptions = z.infer<typeof SortableOptionsSchema>
 
-// Staff Drag and Drop Schema - For useStaffDragAndDrop composable
-// REASON: Event emissions for staff assignment drag and drop functionality
-export const StaffDragAndDropEmitsSchema = z.object({
-  'staff-assigned': z
-    .function()
-    .args(
-      z.object({
-        jobId: z.string(),
-        staffId: z.string(),
-      }),
-    )
-    .returns(z.void()),
-  'staff-removed': z
-    .function()
-    .args(
-      z.object({
-        jobId: z.string(),
-        staffId: z.string(),
-      }),
-    )
-    .returns(z.void()),
-  'jobs-reload-needed': z.function().args().returns(z.void()),
-})
-
-export type StaffDragAndDropEmits = {
-  (event: 'staff-assigned', payload: { jobId: string; staffId: string }): void
-  (event: 'staff-removed', payload: { jobId: string; staffId: string }): void
-  (event: 'jobs-reload-needed'): void
-}
-
 // Advanced Search Filters Schema - For Kanban advanced search functionality
 // REASON: Centralized type definition for advanced search form data
 export const AdvancedFiltersSchema = z.object({

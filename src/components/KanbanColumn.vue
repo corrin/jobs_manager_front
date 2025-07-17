@@ -28,7 +28,8 @@
         class="p-3 transition-colors duration-200"
         :class="{
           'bg-blue-50 border-blue-200': isDragging,
-          'jobs-grid': jobs.length > 0,
+          // Single column layout with Tailwind - option to toggle back to 2-column by changing 'grid-cols-1' to 'grid-cols-2'
+          'space-y-3': jobs.length > 0,
         }"
         style="height: calc(90vh - 12.5rem); overflow-y: auto"
       >
@@ -41,7 +42,9 @@
           :is-job-selected-for-movement="isJobSelectedForMovement(job.id.toString())"
           @click="$emit('job-click', job)"
           @job-ready="$emit('job-ready', $event)"
+          @card-ready="$emit('card-ready', $event)"
           @job-selected-for-movement="$emit('job-selected-for-movement', $event)"
+          @staff-assigned="$emit('staff-assigned', $event)"
         />
 
         <div
@@ -81,7 +84,7 @@
           </button>
         </div>
 
-        <div v-if="isLoading" :class="jobs.length > 0 ? 'col-span-2' : ''" class="mt-4 text-center">
+        <div v-if="isLoading && jobs.length > 0" :class="jobs.length > 0 ? 'col-span-2' : ''" class="mt-4 text-center">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
         </div>
       </div>
@@ -162,7 +165,9 @@ interface KanbanColumnEmits {
   (e: 'load-more'): void
   (e: 'sortable-ready', element: HTMLElement, status: string): void
   (e: 'job-ready', payload: { jobId: string; element: HTMLElement }): void
+  (e: 'card-ready', payload: { jobId: string; element: HTMLElement }): void
   (e: 'job-selected-for-movement', job: Job): void
+  (e: 'staff-assigned', payload: { staffId: string; jobId: string }): void
 }
 
 const props = withDefaults(defineProps<KanbanColumnProps>(), {

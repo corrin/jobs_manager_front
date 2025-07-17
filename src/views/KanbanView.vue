@@ -92,6 +92,8 @@
                   @load-more="loadMoreJobs(selectedMobileStatus)"
                   @sortable-ready="handleSortableReady"
                   @job-ready="handleJobReady"
+                  @card-ready="handleCardReady"
+                  @staff-assigned="handleStaffAssigned"
                   class="kanban-column w-full max-w-md mx-auto"
                 />
               </div>
@@ -122,6 +124,8 @@
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
                       @job-ready="handleJobReady"
+                      @card-ready="handleCardReady"
+                      @staff-assigned="handleStaffAssigned"
                       class="kanban-column-responsive"
                     />
                   </div>
@@ -145,6 +149,8 @@
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
                       @job-ready="handleJobReady"
+                      @card-ready="handleCardReady"
+                      @staff-assigned="handleStaffAssigned"
                       class="w-full"
                     />
                   </div>
@@ -168,8 +174,6 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
-
 import { ref, onUnmounted, onMounted, nextTick } from 'vue'
 import { Search, LayoutGrid } from 'lucide-vue-next'
 import JobCard from '@/components/JobCard.vue'
@@ -179,11 +183,9 @@ import StaffPanel from '@/components/StaffPanel.vue'
 import AdvancedSearchDialog from '@/components/AdvancedSearchDialog.vue'
 import { useKanban } from '@/composables/useKanban'
 import { useDragAndDrop } from '@/composables/useDragAndDrop'
-import { useStaffDragAndDrop } from '@/composables/useStaffDragAndDrop'
 import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { AdvancedFilters } from '../api/local/schemas'
-import { type StaffAssignmentPayload } from '../api/local/schemas'
 
 const jobsStore = useJobsStore()
 
@@ -199,7 +201,6 @@ onUnmounted(() => {
 
 const {
   jobs,
-  archivedJobs,
   filteredJobs,
   isLoading,
   searchQuery,
@@ -236,7 +237,7 @@ const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
     Object.assign(advancedFilters.value, filters)
     await handleAdvancedSearch()
   } catch (error) {
-    debugLog('Error performing advanced search from dialog:', error)
+    console.error('Error performing advanced search from dialog:', error)
   }
 }
 
@@ -251,24 +252,6 @@ const { isDragging, initializeSortable, destroyAllSortables } = useDragAndDrop((
     }
   }
 })
-
-const { initializeStaffPool, initializeJobStaffContainer, updateJobStaffContainers } =
-  useStaffDragAndDrop(async (event: string, payload?: StaffAssignmentPayload) => {
-    if (event === 'staff-assigned') {
-      if (payload) {
-        debugLog(`Staff ${payload.staffId} assigned to job ${payload.jobId}`)
-      }
-    } else if (event === 'staff-removed') {
-      if (payload) {
-        debugLog(`Staff ${payload.staffId} removed from job ${payload.jobId}`)
-      }
-    } else if (event === 'jobs-reload-needed') {
-      await loadJobs()
-
-      const allJobs = [...jobs.value, ...archivedJobs.value]
-      updateJobStaffContainers(allJobs)
-    }
-  })
 
 const sortableInitialized = ref<Set<string>>(new Set())
 const columnsReadyForSortable = ref<Map<string, HTMLElement>>(new Map())
@@ -287,10 +270,7 @@ const initializeSortableForColumn = (status: string, element: HTMLElement) => {
   }
 
   nextTick(() => {
-    const jobCards = element.querySelectorAll('.job-card-simple')
-    debugLog(`🔧 Initialising SortableJS for status ${status}:`, {
-      jobCards: jobCards.length,
-    })
+    const jobCards = element.querySelectorAll('.job-card')
 
     initializeSortable(element, status)
     sortableInitialized.value.add(status)
@@ -306,16 +286,25 @@ const initialiseSortableForAllColumns = () => {
 }
 
 const handleStaffPanelReady = (staffPanelElement: HTMLElement) => {
-  debugLog('🧑‍💼 Staff panel ready, initialising staff pool')
-  initializeStaffPool(staffPanelElement)
+  // No need to initialize SortableJS - using native HTML5 drag and drop
 }
 
 const handleJobReady = (payload: { jobId: string; element: HTMLElement }) => {
-  initializeJobStaffContainer(payload.element, payload.jobId)
+  // This is for the staff container inside the job card
+}
+
+const handleCardReady = (payload: { jobId: string; element: HTMLElement }) => {
+  // Job cards now handle their own drop events
+}
+
+const handleStaffAssigned = async (payload: { staffId: string; jobId: string }) => {
+  // Refresh jobs data to show the newly assigned staff
+  await loadJobs()
 }
 
 function getSortedJobsByStatus(statusKey: string) {
-  return KanbanCategorizationService.getJobsForColumn(jobsSortedByPriority.value, statusKey)
+  // Use the filtered getJobsByStatus from useKanban instead of directly calling KanbanCategorizationService
+  return getJobsByStatus.value(statusKey)
 }
 
 onMounted(async () => {})
@@ -390,6 +379,15 @@ onUnmounted(() => {
   pointer-events: none !important;
 }
 
+.staff-sortable-chosen {
+  opacity: 0.8 !important;
+}
+
+.staff-sortable-drag {
+  opacity: 0.6 !important;
+  transform: rotate(5deg);
+}
+
 .staff-list [data-is-clone='true'],
 .sortable-chosen[data-is-clone='true'] {
   display: none !important;
@@ -404,5 +402,31 @@ onUnmounted(() => {
 
 [style*='position: absolute'][style*='left: -9999px'] {
   display: none !important;
+}
+
+/* Staff drag visual feedback on job cards */
+.job-card {
+  transition: outline 0.2s ease;
+}
+
+.job-card:hover {
+  cursor: default;
+}
+
+/* When staff is being dragged, job cards get visual feedback */
+.sortable-fallback {
+  display: none !important;
+}
+
+/* Drag handle styles */
+.drag-handle {
+  transition: all 0.2s ease;
+  font-size: 8px;
+  line-height: 1;
+}
+
+.drag-handle:hover {
+  transform: scale(1.1);
+  background-color: #2563eb !important;
 }
 </style>
