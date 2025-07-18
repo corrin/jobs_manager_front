@@ -27,6 +27,12 @@ coverage
 *.sln
 *.sw?
 
+# Environment setup files (personal)
+activate_env.sh
+check_env.js
+ENV_SETUP.md
+.nvmrc
+
 *.tsbuildinfo
 
 .env
