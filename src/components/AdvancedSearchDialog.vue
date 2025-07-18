@@ -29,7 +29,12 @@
           </div>
 
           <div>
-            <ClientDropdown id="client" label="Client" v-model="localFilters.client_name" />
+            <ClientLookup 
+              id="client" 
+              label="Client" 
+              v-model="localFilters.client_name"
+              placeholder="Search for a client..."
+            />
           </div>
 
           <div>
@@ -119,7 +124,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import ClientDropdown from '@/components/ClientDropdown.vue'
+import ClientLookup from '@/components/ClientLookup.vue'
 import StaffDropdown from '@/components/StaffDropdown.vue'
 import StatusMultiSelect from '@/components/StatusMultiSelect.vue'
 import {

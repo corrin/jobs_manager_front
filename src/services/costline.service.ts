@@ -1,8 +1,8 @@
-import api from '@/plugins/axios'
-import { CostLineSchema } from '@/schemas/costing.schemas'
-import type { CostLine } from '@/types/costing.types'
+import { api } from '@/api/generated/api'
+import type { CostLineCreateUpdate, ModernTimesheetEntryGetResponse } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
 
+// Local types for create/update payloads (simplified interfaces for UI)
 export interface CostLineCreatePayload {
   kind: 'time' | 'material' | 'adjust'
   desc: string
@@ -22,73 +22,54 @@ export interface CostLineUpdatePayload {
   meta?: Record<string, unknown>
 }
 
-export interface TimesheetCostLine extends CostLine {
-  job_id: string
-  job_number: string
-  job_name: string
-  client_name: string
-  charge_out_rate: number
-}
-
-export interface TimesheetEntriesResponse {
-  cost_lines: TimesheetCostLine[]
-  staff: {
-    id: string
-    name: string
-    firstName: string
-    lastName: string
-  }
-  date: string
-  summary: {
-    total_hours: number
-    billable_hours: number
-    non_billable_hours: number
-    total_cost: number
-    total_revenue: number
-    entry_count: number
-  }
-}
+// Use generated response type for timesheet entries
+export type TimesheetEntriesResponse = ModernTimesheetEntryGetResponse
 
 export const getTimesheetEntries = async (
   staffId: string,
   date: string,
 ): Promise<TimesheetEntriesResponse> => {
-  const response = await api.get('/job/rest/timesheet/entries/', {
-    params: { staff_id: staffId, date },
+  return await api.job_rest_timesheet_entries_list({
+    params: { query: { staff_id: staffId, date } },
   })
-
-  return response.data
 }
 
 export const createCostLine = async (
   jobId: string | number,
   kind: 'estimate' | 'quote' | 'actual',
   payload: CostLineCreatePayload,
-): Promise<CostLine> => {
-  const response = await api.post(`/job/rest/jobs/${jobId}/cost_sets/${kind}/cost_lines/`, payload)
-
-  const validatedData = CostLineSchema.parse(response.data)
-  return validatedData
+): Promise<CostLineCreateUpdate> => {
+  if (kind === 'actual') {
+    return await api.job_rest_jobs_cost_sets_actual_cost_lines_create({
+      params: { path: { job_id: String(jobId) } },
+      body: payload as CostLineCreateUpdate,
+    })
+  } else {
+    return await api.job_rest_jobs_cost_sets_cost_lines_create({
+      params: { path: { job_id: String(jobId), kind } },
+      body: payload as CostLineCreateUpdate,
+    })
+  }
 }
 
 export const updateCostLine = async (
   id: number,
   payload: CostLineUpdatePayload,
-): Promise<CostLine> => {
-  const response = await api.patch(`/job/rest/cost_lines/${id}/`, payload)
-
-  const validatedData = CostLineSchema.parse(response.data)
-  return validatedData
+): Promise<CostLineCreateUpdate> => {
+  return await api.job_rest_cost_lines_partial_update({
+    params: { path: { cost_line_id: String(id) } },
+    body: payload as CostLineCreateUpdate,
+  })
 }
 
 export const deleteCostLine = async (id: number): Promise<void> => {
   debugLog('🚀 SERVICE: Starting DELETE request for cost line ID:', id)
-  debugLog('🌐 DELETE URL:', `/job/rest/cost_lines/${id}/delete/`)
 
   try {
-    const response = await api.delete(`/job/rest/cost_lines/${id}/delete/`)
-    debugLog('✅ SERVICE: DELETE request completed successfully:', response.status, response.data)
-    return response.data
+    await api.job_rest_cost_lines_delete_destroy({
+      params: { path: { cost_line_id: String(id) } },
+    })
+    debugLog('✅ SERVICE: DELETE request completed successfully')
   } catch (error) {
     debugLog('❌ SERVICE: DELETE request failed:', error)
     throw error

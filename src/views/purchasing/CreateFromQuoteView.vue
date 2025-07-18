@@ -120,6 +120,8 @@ import {
   CheckCircle,
   Loader2,
 } from 'lucide-vue-next'
+// TODO: Remove this axios import when supplier-quotes endpoint is added to generated API
+// The /purchasing/api/supplier-quotes/extract/ endpoint is not yet available in Zodios
 import api from '@/plugins/axios'
 
 const router = useRouter()
@@ -211,10 +213,14 @@ const handleSubmit = async () => {
     console.error('Error uploading quote:', error)
 
     let errorMessage = 'Failed to process the quote. Please try again.'
-    if (error instanceof Error && 'response' in error) {
-      const axiosError = error as { response?: { data?: { error?: string } } }
-      if (axiosError.response?.data?.error) {
-        errorMessage = axiosError.response.data.error
+
+    // Type-safe error handling without any usage
+    if (error instanceof Error) {
+      errorMessage = error.message
+    } else if (typeof error === 'object' && error !== null && 'response' in error) {
+      const responseError = error as { response?: { data?: { error?: string } } }
+      if (responseError.response?.data?.error) {
+        errorMessage = responseError.response.data.error
       }
     }
 

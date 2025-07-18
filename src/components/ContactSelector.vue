@@ -63,25 +63,29 @@ import { watch } from 'vue'
 import { Users, X } from 'lucide-vue-next'
 import { useContactManagement } from '@/composables/useContactManagement'
 import ContactSelectionModal from './ContactSelectionModal.vue'
-import type { ClientContact } from '@/composables/useClientLookup'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-interface Props {
-  id: string
-  label: string
-  placeholder?: string
-  optional?: boolean
-  clientId: string
-  clientName: string
-  modelValue?: string
-  initialContactId?: string
-}
+type ClientContact = z.infer<typeof schemas.ClientContactResult>
 
-const props = withDefaults(defineProps<Props>(), {
-  placeholder: 'No contact selected',
-  optional: true,
-  modelValue: '',
-  initialContactId: '',
-})
+const props = withDefaults(
+  defineProps<{
+    id: string
+    label: string
+    placeholder?: string
+    optional?: boolean
+    clientId: string
+    clientName: string
+    modelValue?: string
+    initialContactId?: string
+  }>(),
+  {
+    placeholder: 'No contact selected',
+    optional: true,
+    modelValue: '',
+    initialContactId: '',
+  },
+)
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]

@@ -55,29 +55,37 @@
     </div>
 
     <div v-if="currentQuote?.has_quote" class="flex-1 flex gap-6 min-h-0">
-      <div class="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col">
-        <div class="flex-shrink-0 p-4 border-b border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
+      <div v-if="isLoading" class="flex-1 flex items-center justify-center">
+        <div class="flex items-center gap-2">
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+          Quote data is still loading, please wait
         </div>
-        <div class="flex-1 overflow-hidden">
-          <CostLinesGrid
-            :costLines="costLines"
-            :showActions="true"
-            @edit="openEditModal"
-            @delete="handleDeleteCostLine"
+      </div>
+      <template v-else>
+        <div class="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col">
+          <div class="flex-shrink-0 p-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
+          </div>
+          <div class="flex-1 overflow-hidden">
+            <CostLinesGrid
+              :costLines="costLines"
+              :showActions="true"
+              @edit="openEditModal"
+              @delete="handleDeleteCostLine"
+            />
+          </div>
+        </div>
+        <div class="flex-1 flex flex-col min-h-0">
+          <CostSetSummaryCard
+            class="h-full min-h-0 flex-1"
+            title="Quote Summary"
+            :summary="currentQuote.quote?.summary"
+            :costLines="quoteCostLines"
+            :isLoading="isLoading"
+            :revision="currentQuote.quote?.rev"
           />
         </div>
-      </div>
-      <div class="flex-1 flex flex-col min-h-0">
-        <CostSetSummaryCard
-          class="h-full min-h-0 flex-1"
-          title="Quote Summary"
-          :summary="currentQuote.quote?.summary"
-          :costLines="quoteCostLines"
-          :isLoading="isLoading"
-          :revision="currentQuote.quote?.rev"
-        />
-      </div>
+      </template>
     </div>
 
     <div v-else class="flex-1">
@@ -109,24 +117,29 @@
           <div class="bg-blue-50 rounded-lg p-4">
             <h4 class="font-medium text-blue-900 mb-3">Summary of Changes</h4>
             <div
-              v-if="previewData.diff_preview.total_changes > 0"
+              v-if="
+                previewData.changes &&
+                (previewData.changes.additions?.length ||
+                  previewData.changes.updates?.length ||
+                  previewData.changes.deletions?.length)
+              "
               class="grid grid-cols-3 gap-4 text-sm"
             >
               <div class="text-center">
                 <div class="text-lg font-bold text-green-600">
-                  {{ previewData.diff_preview.additions_count }}
+                  {{ previewData.changes.additions?.length || 0 }}
                 </div>
                 <div class="text-gray-600">Additions</div>
               </div>
               <div class="text-center">
                 <div class="text-lg font-bold text-blue-600">
-                  {{ previewData.diff_preview.updates_count }}
+                  {{ previewData.changes.updates?.length || 0 }}
                 </div>
                 <div class="text-gray-600">Updates</div>
               </div>
               <div class="text-center">
                 <div class="text-lg font-bold text-red-600">
-                  {{ previewData.diff_preview.deletions_count }}
+                  {{ previewData.changes.deletions?.length || 0 }}
                 </div>
                 <div class="text-gray-600">Deletions</div>
               </div>
@@ -146,13 +159,22 @@
           </button>
           <button
             class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium"
-            :disabled="!previewData || previewData.diff_preview.total_changes === 0 || isRefreshing"
+            :disabled="
+              !previewData?.changes ||
+              (!previewData.changes.additions?.length &&
+                !previewData.changes.updates?.length &&
+                !previewData.changes.deletions?.length) ||
+              isRefreshing
+            "
             @click="onApplySpreadsheetChanges"
           >
             {{
-              previewData?.diff_preview.total_changes === 0
+              !previewData?.changes ||
+              (!previewData.changes.additions?.length &&
+                !previewData.changes.updates?.length &&
+                !previewData.changes.deletions?.length)
                 ? 'No Changes to Apply'
-                : `Apply ${previewData?.diff_preview.total_changes} Changes`
+                : `Apply ${(previewData.changes.additions?.length || 0) + (previewData.changes.updates?.length || 0) + (previewData.changes.deletions?.length || 0)} Changes`
             }}
           </button>
         </DialogFooter>
@@ -193,71 +215,60 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
+import { debugLog } from '../../utils/debug'
 
 import { ref, computed, watch } from 'vue'
 import { Link2, ExternalLink, RefreshCw } from 'lucide-vue-next'
 import CostLineDropdown from './CostLineDropdown.vue'
-import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
+import CostLinesGrid from '../shared/CostLinesGrid.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
-import {
-  quoteService,
-  type QuotePreview,
-  type QuoteApplyResult,
-} from '../../services/quote.service'
+import { quoteService } from '../../services/quote.service'
 import { toast } from 'vue-sonner'
-import type { Job } from '../../types/costing.types'
-import type { CostLine } from '../../types/costing.types'
-import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
-import { costlineService } from '@/services/costline.service'
+import { api, schemas } from '../../api/generated/api'
+import { z } from 'zod'
+import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
+import { costlineService } from '../../services/costline.service'
 import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
 import { useJobsStore } from '../../stores/jobs'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../../components/ui/dialog'
 
-interface Props {
+type CostLine = z.infer<typeof schemas.CostLine>
+type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
+type Job = z.infer<typeof schemas.Job>
+type CostSet = z.infer<typeof schemas.CostSet>
+type PreviewQuoteResponse = z.infer<typeof schemas.PreviewQuoteResponse>
+
+const props = defineProps<{
   jobId: string
   jobData?: Job
-}
-
-const props = defineProps<Props>()
+}>()
 
 const currentQuote = computed(() => {
-  const jobData = props.jobData as unknown
+  const jobData = props.jobData
 
-  type QuoteData = {
-    id: string
-    kind: 'quote'
-    rev: number
-    created: string
-    summary: { cost: number; rev: number; hours: number }
-    cost_lines: CostLine[]
-  }
-  type JobData = { latest_quote?: QuoteData; latest_quote_pricing?: { id: string } }
-  const isJobData = (data: unknown): data is JobData => typeof data === 'object' && data !== null
-
-  if (!isJobData(jobData)) {
+  if (!jobData || !jobData.latest_quote) {
     return { has_quote: false, quote: null }
   }
 
-  if (!jobData.latest_quote) {
-    return { has_quote: false, quote: null }
-  }
-
-  const quoteData = jobData.latest_quote
+  // Use API structure exactly as returned - NO CONVERSIONS
+  const quote = jobData.latest_quote as CostSet
   return {
     has_quote: true,
     quote: {
-      id: String(quoteData.id),
-      kind: 'quote' as const,
-      rev: Number(quoteData.rev),
-      created: String(quoteData.created),
-      summary: quoteData.summary ?? { cost: 0, rev: 0, hours: 0 },
-      cost_lines: (quoteData.cost_lines || []).map((line) => ({
-        ...line,
-        quantity: typeof line.quantity === 'string' ? Number(line.quantity) : line.quantity,
-        unit_cost: typeof line.unit_cost === 'string' ? Number(line.unit_cost) : line.unit_cost,
-        unit_rev: typeof line.unit_rev === 'string' ? Number(line.unit_rev) : line.unit_rev,
-      })),
+      id: quote.id,
+      kind: quote.kind,
+      rev: quote.rev,
+      created: quote.created,
+      summary: quote.summary,
+      cost_lines: quote.cost_lines || [],
     },
   }
 })
@@ -265,7 +276,7 @@ const currentQuote = computed(() => {
 const isLoading = ref(false)
 const isRefreshing = ref(false)
 const showPreviewModal = ref(false)
-const previewData = ref<QuotePreview | null>(null)
+const previewData = ref<PreviewQuoteResponse | null>(null)
 const showMaterialModal = ref(false)
 const showTimeModal = ref(false)
 const editingCostLine = ref<CostLine | null>(null)
@@ -283,19 +294,10 @@ const quoteCostLines = computed(() => {
   return lines
 })
 
-const quoteData = ref(currentQuote.value.quote)
-watch(
-  () => currentQuote.value.quote,
-  (val) => {
-    quoteData.value = val
-  },
-  { immediate: true, deep: true },
-)
-
 watch(
   () => currentQuote.value.quote?.cost_lines,
   (lines) => {
-    if (lines) costLines.value = [...lines]
+    if (lines) costLines.value = lines
   },
   { immediate: true },
 )
@@ -304,14 +306,24 @@ async function refreshQuoteData() {
   if (!props.jobId) return
   isLoading.value = true
   try {
-    const response = await fetch(`/api/job/${props.jobId}`)
-    const updatedJob = await response.json()
-    if (updatedJob && updatedJob.latest_quote) {
+    const response: JobDetailResponse = await api.job_rest_jobs_retrieve({
+      params: { job_id: props.jobId },
+    })
+
+    if (response.success && response.data) {
+      const jobData = response.data
       if (props.jobData) {
-        Object.assign(props.jobData, updatedJob)
+        // Update props.jobData with API response directly - NO CONVERSIONS
+        Object.assign(props.jobData, jobData)
       }
-      quoteData.value = updatedJob.latest_quote
-      costLines.value = [...(updatedJob.latest_quote.cost_lines || [])]
+
+      // Accept latest_quote exactly as the API returns it - NO CONVERSIONS
+      if (jobData.latest_quote) {
+        const latestQuote = jobData.latest_quote as CostSet
+        if (latestQuote.cost_lines && Array.isArray(latestQuote.cost_lines)) {
+          costLines.value = latestQuote.cost_lines
+        }
+      }
     }
   } catch (error) {
     toast.error('Failed to refresh quote data')
@@ -325,10 +337,11 @@ async function onApplySpreadsheetChanges() {
   if (!props.jobData?.id) return
   toast.loading('Applying changes...', { id: 'quote-apply' })
   try {
-    const result: QuoteApplyResult = await quoteService.applyQuote(props.jobId)
+    const result = await quoteService.applyQuote(props.jobId)
     if (result.success) {
       toast.success('Changes applied successfully!')
       await refreshQuoteData()
+      showPreviewModal.value = false
     } else {
       toast.error('Failed to apply changes')
     }
@@ -360,9 +373,9 @@ async function onLinkQuote() {
   isLoading.value = true
   toast.loading('Linking spreadsheet...')
   try {
-    const jobsStore = useJobsStore()
-    await jobsStore.linkQuote(props.jobId)
+    await quoteService.linkQuote(props.jobId)
     toast.success('Spreadsheet linked successfully!')
+    const jobsStore = useJobsStore()
     await jobsStore.fetchJob(props.jobId)
     await refreshQuoteData()
   } catch (error) {
@@ -384,27 +397,17 @@ async function handleAddMaterial(payload: CostLine) {
   toast.loading('Adding material cost line...')
   try {
     const createPayload = {
-      kind: 'material',
+      kind: 'material' as const,
       desc: payload.desc,
-      quantity: payload.quantity,
-      unit_cost: payload.unit_cost,
-      unit_rev: payload.unit_rev,
-      ext_refs: payload.ext_refs,
-      meta: payload.meta,
+      quantity: String(payload.quantity || 0),
+      unit_cost: String(payload.unit_cost || 0),
+      unit_rev: String(payload.unit_rev || 0),
+      ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
+      meta: (payload.meta as Record<string, unknown>) || {},
     }
     const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
-    costLines.value = [
-      ...costLines.value,
-      {
-        ...created,
-        quantity:
-          typeof created.quantity === 'string' ? Number(created.quantity) : created.quantity,
-        unit_cost:
-          typeof created.unit_cost === 'string' ? Number(created.unit_cost) : created.unit_cost,
-        unit_rev:
-          typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
-      },
-    ]
+    // Accept the response exactly as returned by API - NO CONVERSIONS
+    costLines.value = [...costLines.value, created]
     toast.success('Material cost line added!')
   } catch (error) {
     toast.error('Failed to add material cost line.')
@@ -420,27 +423,17 @@ async function handleAddTime(payload: CostLine) {
   toast.loading('Adding time cost line...')
   try {
     const createPayload = {
-      kind: 'time',
+      kind: 'time' as const,
       desc: payload.desc,
-      quantity: payload.quantity,
-      unit_cost: payload.unit_cost,
-      unit_rev: payload.unit_rev,
-      ext_refs: payload.ext_refs,
-      meta: payload.meta,
+      quantity: String(payload.quantity || 0),
+      unit_cost: String(payload.unit_cost || 0),
+      unit_rev: String(payload.unit_rev || 0),
+      ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
+      meta: (payload.meta as Record<string, unknown>) || {},
     }
     const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
-    costLines.value = [
-      ...costLines.value,
-      {
-        ...created,
-        quantity:
-          typeof created.quantity === 'string' ? Number(created.quantity) : created.quantity,
-        unit_cost:
-          typeof created.unit_cost === 'string' ? Number(created.unit_cost) : created.unit_cost,
-        unit_rev:
-          typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
-      },
-    ]
+    // Accept the response exactly as returned by API - NO CONVERSIONS
+    costLines.value = [...costLines.value, created]
     toast.success('Time cost line added!')
   } catch (error) {
     toast.error('Failed to add time cost line.')
@@ -465,7 +458,16 @@ async function submitEditCostLine(payload: CostLine) {
   isLoading.value = true
   toast.loading('Updating cost line...')
   try {
-    const updated = await costlineService.updateCostLine(payload.id, payload)
+    // Convert payload to ensure proper types for API
+    const updatePayload = {
+      ...payload,
+      quantity: String(payload.quantity || 0),
+      unit_cost: String(payload.unit_cost || 0),
+      unit_rev: String(payload.unit_rev || 0),
+      ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
+      meta: (payload.meta as Record<string, unknown>) || {},
+    }
+    const updated = await costlineService.updateCostLine(Number(payload.id), updatePayload)
     costLines.value = costLines.value.map((l) => (l.id === updated.id ? { ...updated } : l))
     toast.success('Cost line updated!')
     closeEditModal()

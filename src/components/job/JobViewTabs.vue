@@ -82,16 +82,23 @@
 
 <script setup lang="ts">
 import { debugLog } from '@/utils/debug'
-
 import JobEstimateTab from './JobEstimateTab.vue'
 import JobQuoteTab from './JobQuoteTab.vue'
 import JobActualTab from './JobActualTab.vue'
 import JobFinancialTab from './JobFinancialTab.vue'
 import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
 import { watch, computed } from 'vue'
+import { z } from 'zod'
+import { schemas } from '@/api/generated/api'
+
+// Use generated Job type from Zodios API
+type Job = z.infer<typeof schemas.Job>
+
+// Tab key type - frontend specific UI type
+type TabKey = 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'
 
 const emit = defineEmits<{
-  (e: 'change-tab', tab: 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'): void
+  (e: 'change-tab', tab: TabKey): void
   (e: 'open-settings'): void
   (e: 'open-workflow'): void
   (e: 'open-history'): void
@@ -102,8 +109,6 @@ const emit = defineEmits<{
   (e: 'quote-accepted'): void
   (e: 'invoice-created'): void
 }>()
-
-type TabKey = 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'
 
 const allTabs = [
   { key: 'estimate', label: 'Estimate' },
@@ -125,25 +130,9 @@ function handleTabChange(tab: TabKey) {
   emit('change-tab', tab)
 }
 
-interface JobData {
-  id: string
-  name?: string
-  job_number?: string
-  client_name?: string
-  latest_actual?: {
-    summary?: {
-      cost: number
-      rev: number
-      hours: number
-      created?: string
-    }
-  }
-  [key: string]: unknown
-}
-
 const props = defineProps<{
-  activeTab: 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'
-  jobData: JobData | null
+  activeTab: TabKey
+  jobData: Job | null
   companyDefaults: Record<string, unknown> | null
   latestPricings: Record<string, unknown> | null
 }>()

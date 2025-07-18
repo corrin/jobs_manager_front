@@ -1,4 +1,7 @@
 import { ref, computed, nextTick, type Ref } from 'vue'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
+import type { TimesheetEntryJobSelectionItem, TimesheetEntryStaffMember } from '@/api/local/schemas'
 import type {
   GridApi,
   ColDef,
@@ -12,15 +15,15 @@ import type {
 import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
-import type {
-  TimesheetEntry,
-  TimesheetEntryGridRow,
-  TimesheetEntryJobSelectionItem,
-  TimesheetEntryStaffMember,
-} from '@/types/timesheet.types'
-import type { CompanyDefaults } from '@/types/timesheet.types'
 
-type TimesheetEntryGridRowWithSaving = TimesheetEntryGridRow & { isSaving?: boolean }
+type TimesheetEntryGridRowWithSaving = z.infer<typeof schemas.TimesheetCostLine> & {
+  isSaving?: boolean
+}
+
+// Type aliases for compatibility with existing code
+type TimesheetEntry = z.infer<typeof schemas.TimesheetCostLine>
+type TimesheetEntryGridRow = z.infer<typeof schemas.TimesheetCostLine>
+type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 
 export function useTimesheetEntryGrid(
   companyDefaults: Ref<CompanyDefaults | null>,

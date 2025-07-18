@@ -13,20 +13,11 @@ import {
 } from '@/components/ui/select'
 import { Check, AlertCircle, UploadCloud, ExternalLink, Printer, Mail } from 'lucide-vue-next'
 import ClientLookup from '@/components/ClientLookup.vue'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-type Status = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
-
-interface PurchaseOrder {
-  po_number: string
-  supplier: string
-  supplier_id?: string
-  supplier_has_xero_id: boolean
-  reference: string
-  order_date: string
-  expected_delivery: string
-  status: Status
-  online_url?: string
-}
+type Status = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
+type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
 
 defineProps<{
   po: PurchaseOrder
@@ -37,17 +28,17 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:supplier', v: string): void
-  (e: 'update:supplier_id', v: string): void
-  (e: 'update:reference', v: string): void
-  (e: 'update:order_date', v: string): void
-  (e: 'update:expected_delivery', v: string): void
-  (e: 'update:status', v: Status): void
-  (e: 'save'): void
-  (e: 'sync-xero'): void
-  (e: 'view-xero'): void
-  (e: 'print'): void
-  (e: 'email'): void
+  'update:supplier': [v: string]
+  'update:supplier_id': [v: string]
+  'update:reference': [v: string]
+  'update:order_date': [v: string]
+  'update:expected_delivery': [v: string]
+  'update:status': [v: Status]
+  save: []
+  'sync-xero': []
+  'view-xero': []
+  print: []
+  email: []
 }>()
 
 function onOrderDateUpdate(value: string) {

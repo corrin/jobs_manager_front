@@ -404,8 +404,8 @@ async function deleteJob() {
   const jobName = jobData.value?.name || `Job #${jobData.value?.job_number}` || 'job'
   try {
     notifications.notifyJobUpdated(`Deleting ${jobName}...`)
-    const { jobRestService } = await import('@/services/job-rest.service')
-    const result = await jobRestService.deleteJob(jobId.value)
+    const { jobService } = await import('@/services/job.service')
+    const result = await jobService.deleteJob(jobId.value)
     if (result.success) {
       notifications.notifyJobUpdated(`${jobName} deleted!`)
       navigateBack()

@@ -129,46 +129,14 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
-
+import { debugLog } from '../../utils/debug'
 import { computed } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
-
-interface JobData {
-  id: string
-  delivery_date?: string | null
-  quote_acceptance_date?: string | null
-  quoted?: boolean
-  invoiced?: boolean
-  paid: boolean
-  pricing_methodology?: 'fixed_price' | 'time_materials'
-  latest_estimate?: {
-    summary?: {
-      rev: number
-    }
-  } | null
-  latest_actual?: {
-    summary?: {
-      rev: number
-    }
-    cost_lines?: Array<{
-      kind: string
-      total_rev: number
-    }>
-  } | null
-  quote?: {
-    total_excl_tax: number
-    online_url?: string
-  } | null
-  invoice?: {
-    total_excl_tax: number
-    online_url?: string
-  } | null
-}
+import { XeroSyncResponseSchema, type JobWithFinancialData } from '../../api/local/schemas'
 
 interface Props {
-  jobData: JobData | null
+  jobData: JobWithFinancialData | null
   latestPricings?: Record<string, unknown>
   jobId?: string
 }
@@ -186,8 +154,9 @@ const estimateTotal = computed(() => {
 })
 
 const timeAndExpenses = computed(() => {
+  const costLines = props.jobData?.latest_actual?.cost_lines
   return (
-    props.jobData?.latest_actual?.cost_lines?.reduce((sum, line) => {
+    costLines?.reduce((sum, line) => {
       return sum + (line.total_rev || 0)
     }, 0) || 0
   )
@@ -251,9 +220,12 @@ const formatDate = (dateString: string) => {
 const createQuote = async () => {
   if (!props.jobData?.id) return
   try {
+    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
+    // Xero integration endpoints are not yet available in the generated API
     const response = await axios.post(`/api/xero/create_quote/${props.jobData.id}`)
-    if (!response.data?.success) {
-      debugLog(response.data?.error || 'Failed to create quote')
+    const validatedResponse = XeroSyncResponseSchema.parse(response.data)
+    if (!validatedResponse.success) {
+      debugLog(validatedResponse.error || 'Failed to create quote')
       return
     }
     toast.success('Quote created successfully!')
@@ -273,9 +245,12 @@ const acceptQuote = () => {
 const createInvoice = async () => {
   if (!props.jobData?.id) return
   try {
+    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
+    // Xero integration endpoints are not yet available in the generated API
     const response = await axios.post(`/api/xero/create_invoice/${props.jobData.id}`)
-    if (!response.data?.success) {
-      debugLog(response.data?.error || 'Failed to create invoice')
+    const validatedResponse = XeroSyncResponseSchema.parse(response.data)
+    if (!validatedResponse.success) {
+      debugLog(validatedResponse.error || 'Failed to create invoice')
       return
     }
     toast.success('Invoice created successfully!')
@@ -295,9 +270,12 @@ const goToQuoteOnXero = () => {
 const deleteQuoteOnXero = async () => {
   if (!props.jobData?.id) return
   try {
+    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
+    // Xero integration endpoints are not yet available in the generated API
     const response = await axios.post(`/api/xero/delete_quote/${props.jobData.id}`)
-    if (!response.data?.success) {
-      debugLog(response.data?.error || 'Failed to delete quote')
+    const validatedResponse = XeroSyncResponseSchema.parse(response.data)
+    if (!validatedResponse.success) {
+      debugLog(validatedResponse.error || 'Failed to delete quote')
       return
     }
     toast.success('Quote deleted successfully!')
@@ -316,9 +294,12 @@ const goToInvoiceOnXero = () => {
 const deleteInvoiceOnXero = async () => {
   if (!props.jobData?.id) return
   try {
+    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
+    // Xero integration endpoints are not yet available in the generated API
     const response = await axios.post(`/api/xero/delete_invoice/${props.jobData.id}`)
-    if (!response.data?.success) {
-      debugLog(response.data?.error || 'Failed to delete invoice')
+    const validatedResponse = XeroSyncResponseSchema.parse(response.data)
+    if (!validatedResponse.success) {
+      debugLog(validatedResponse.error || 'Failed to delete invoice')
       return
     }
     toast.success('Invoice deleted successfully!')

@@ -9,7 +9,17 @@
               Company Defaults
             </h1>
           </div>
-          <div class="flex flex-col items-center justify-center" style="height: 60vh">
+          <div
+            v-if="loading"
+            class="flex flex-col items-center justify-center"
+            style="height: 60vh"
+          >
+            <div class="flex items-center justify-center gap-2">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+              Company defaults are still loading, please wait
+            </div>
+          </div>
+          <div v-else class="flex flex-col items-center justify-center" style="height: 60vh">
             <div class="grid grid-cols-3 gap-6 mb-6 w-full max-w-3xl">
               <button class="section-btn" @click="openSection('general')">
                 <Settings class="w-12 h-12 mb-2" />

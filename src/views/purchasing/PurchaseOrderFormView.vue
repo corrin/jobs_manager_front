@@ -139,46 +139,23 @@ import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { useXeroItemStore } from '@/stores/xeroItemStore'
 import { extractErrorMessage, createErrorToast } from '@/utils/errorHandler'
 import { toast } from 'vue-sonner'
+import { api } from '@/api/generated/api'
 import axios from 'axios'
 
-type Status = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
+// Import types from generated API schemas
+import type {
+  PurchaseOrderLine,
+  PurchaseOrderDetail,
+  JobForPurchasing,
+  PurchasingJobsResponse,
+} from '@/api/generated/api'
 
-interface PurchaseOrderLine {
-  id?: string
-  item_code: string
-  description: string
-  quantity: number
-  unit_cost: number | null
-  price_tbc: boolean
-  job_id?: string
-  metal_type?: string
-  alloy?: string
-  specifics?: string
-  location?: string
-  dimensions?: string
-}
+// Import UI-specific types from local schemas
+import type { XeroSyncResponse } from '@/api/local/schemas'
 
-interface PurchaseOrder {
-  po_number: string
-  supplier: string
-  supplier_id?: string
-  supplier_has_xero_id: boolean
-  reference: string
-  order_date: string
-  expected_delivery: string
-  status: Status
-  lines: PurchaseOrderLine[]
-  online_url?: string
-  xero_id?: string
-}
-
-interface XeroSyncResponse {
-  success: boolean
-  error?: string
-  is_incomplete_po?: boolean
-  online_url?: string
-  xero_id?: string
-}
+// Use the generated interface instead of local type
+type PurchaseOrder = PurchaseOrderDetail
+type Job = JobForPurchasing
 
 const route = useRoute()
 const router = useRouter()
@@ -192,19 +169,6 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const jobs = ref<Job[]>([])
 const isLoadingJobs = ref(false)
-
-interface Job {
-  id: string
-  job_number: string
-  name: string
-  client_name: string
-  status: string
-  charge_out_rate: number
-  cost_set_id?: string
-  cost_centre?: string
-  budget_code?: string
-  job_display_name?: string
-}
 
 const po = ref<PurchaseOrder>({
   po_number: '',
@@ -222,14 +186,12 @@ const linesToDelete = ref<string[]>([])
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 const isPoDeleted = computed(() => po.value.status === 'deleted')
-
 const isPoSubmitted = computed(() => po.value.status === 'submitted')
-
 const canEdit = computed(() => !isPoDeleted.value && !isPoSubmitted.value)
 
-const canEditSupplier = computed(() => !isPoDeleted.value && !isPoSubmitted.value)
-
-const canEditLineItems = computed(() => !isPoDeleted.value && !isPoSubmitted.value)
+// Use the same logic for all editing permissions since they're identical
+const canEditSupplier = canEdit
+const canEditLineItems = canEdit
 
 async function fetchJobs() {
   if (isLoadingJobs.value) return
@@ -239,41 +201,15 @@ async function fetchJobs() {
 
   try {
     debugLog('📊 Loading jobs for purchase order...')
-    const response = await axios.get('/purchasing/rest/jobs/')
-    debugLog('📊 Raw response:', response)
-    const rawJobs = response.data || []
-    debugLog('📊 Raw jobs data:', rawJobs)
+    const response: PurchasingJobsResponse = await api.purchasing_rest_jobs_retrieve()
+    debugLog('📊 Zodios response:', response)
 
-    const convertedJobs = rawJobs.map(
-      (job: {
-        id: string
-        job_number: string
-        name?: string
-        job_name?: string
-        client_name?: string
-        charge_out_rate?: number
-        status?: string
-        job_display_name?: string
-      }) => ({
-        id: job.id,
-        job_number: job.job_number,
-        number: job.job_number,
-        name: job.name,
-        description: job.name, // BUG: WHY MAP DESCRIPTION TO NAME?
-        client_name: job.client_name || '',
-        charge_out_rate: job.charge_out_rate || 0,
-        status: job.status || 'active',
-        job_display_name: job.job_display_name || `${job.job_number} - ${job.name}`,
-      }),
-    )
-
-    jobs.value = convertedJobs
-    ;(window as unknown as Record<string, unknown>).purchasingJobs = convertedJobs
+    jobs.value = response.jobs
+    debugLog(`✅ Loaded ${jobs.value.length} jobs for purchase order`)
 
     if (jobs.value.length === 0) {
       toast.warning('No jobs available for purchase order creation')
     } else {
-      debugLog(`✅ Loaded ${jobs.value.length} jobs for purchase order`)
       debugLog('🔧 First job sample:', jobs.value[0])
     }
   } catch (err) {
@@ -307,11 +243,8 @@ async function load() {
   }
 
   try {
-    const data = await store.fetchOne(orderId)
-    po.value = {
-      ...data,
-      lines: Array.isArray(data.lines) ? data.lines : [],
-    }
+    const data = await api.retrievePurchaseOrder({ id: orderId })
+    po.value = data
     originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
 
     debugLog('✅ PO loaded successfully. Lines:', po.value.lines.length)
@@ -610,24 +543,27 @@ async function syncWithXero() {
   toast.loading('Syncing with Xero…', { id: 'po-sync-loading' })
 
   try {
-    const { data: res } = await axios.post<XeroSyncResponse>(
+    // TODO: Replace with Zodios endpoint when available in schema
+    // This endpoint is not yet in the generated schema
+    const { data } = await axios.post<XeroSyncResponse>(
       `/api/xero/create_purchase_order/${orderId}`,
     )
 
     switch (true) {
-      case res.success:
-        if (res.online_url) po.value.online_url = res.online_url
-        if (res.xero_id) po.value.xero_id = res.xero_id
+      case data.success:
+        if (data.online_url) po.value.online_url = data.online_url
+        if (data.xero_id) po.value.xero_id = data.xero_id
         toast.dismiss('po-sync-loading')
         toast.success('Synced with Xero successfully!')
         break
-      case res.is_incomplete_po:
+      case 'is_incomplete_po' in data &&
+        (data as XeroSyncResponse & { is_incomplete_po?: boolean }).is_incomplete_po:
         toast.dismiss('po-sync-loading')
-        toast.warning(res.error || 'Purchase order incomplete - missing required fields')
+        toast.warning(data.error || 'Purchase order incomplete - missing required fields')
         break
       default:
         toast.dismiss('po-sync-loading')
-        throw new Error(res.error || 'Unknown sync error')
+        throw new Error(data.error || 'Unknown sync error')
     }
   } catch (err: unknown) {
     toast.dismiss('po-sync-loading')

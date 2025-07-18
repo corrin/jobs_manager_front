@@ -1,13 +1,15 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { fetchCostSet } from '@/services/costing.service'
-import { costlineService } from '@/services/costline.service'
-import { TimesheetService } from '@/services/timesheet.service'
-import { CompanyDefaultsService } from '@/services/company-defaults.service'
-import type { CostLine } from '@/types/costing.types'
-import type { Staff, Job, WeeklyOverviewData } from '@/types/timesheet.types'
-import type { CostLineCreatePayload, CostLineUpdatePayload } from '@/services/costline.service'
+import { schemas, api } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
+import type { z } from 'zod'
+
+type CostLine = z.infer<typeof schemas.CostLine>
+type Staff = z.infer<typeof schemas.ModernStaff>
+type Job = z.infer<typeof schemas.ModernTimesheetJob>
+type WeeklyOverviewData = z.infer<typeof schemas.WeeklyTimesheetData>
+type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
+type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdate>
 
 export const useTimesheetStore = defineStore('timesheet', () => {
   const lines = ref<CostLine[]>([])
@@ -49,7 +51,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       (totals, [date, dayLines]) => {
         totals[date] = {
           hours: dayLines.reduce((sum, line) => {
-            return line.kind === 'time' ? sum + parseFloat(line.quantity) : sum
+            return line.kind === 'time' ? sum + Number(line.quantity || 0) : sum
           }, 0),
           cost: dayLines.reduce((sum, line) => sum + line.total_cost, 0),
           revenue: dayLines.reduce((sum, line) => sum + line.total_rev, 0),
@@ -72,7 +74,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
   const totalHoursForDate = computed(() =>
     timeLinesForSelectedDate.value.reduce(
-      (sum: number, line: CostLine) => sum + parseFloat(line.quantity),
+      (sum: number, line: CostLine) => sum + Number(line.quantity || 0),
       0,
     ),
   )
@@ -80,7 +82,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   const billableHoursForDate = computed(() =>
     timeLinesForSelectedDate.value
       .filter((line: CostLine) => line.meta?.is_billable)
-      .reduce((sum: number, line: CostLine) => sum + parseFloat(line.quantity), 0),
+      .reduce((sum: number, line: CostLine) => sum + Number(line.quantity || 0), 0),
   )
 
   async function load(targetJobId: string, targetKind: 'estimate' | 'quote' | 'actual' = 'actual') {
@@ -95,7 +97,10 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       debugLog(`Loading cost lines for job ${targetJobId}, kind: ${targetKind}`)
 
-      const costSet = await fetchCostSet(targetJobId, targetKind)
+      const costSet = await api.job_rest_jobs_cost_sets_retrieve({
+        id: targetJobId,
+        kind: targetKind,
+      })
 
       lines.value = costSet.cost_lines
       jobId.value = targetJobId
@@ -112,7 +117,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  async function addLine(payload: CostLineCreatePayload) {
+  async function addLine(payload: CostLineCreateUpdate) {
     if (!jobId.value) {
       throw new Error('No job loaded. Call load() first.')
     }
@@ -121,7 +126,11 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      const newLine = await costlineService.createCostLine(jobId.value, kind.value, payload)
+      const newLine = await api.job_rest_jobs_cost_sets_cost_lines_create({
+        job_id: jobId.value,
+        kind: kind.value,
+        body: payload,
+      })
 
       lines.value.push(newLine)
 
@@ -137,12 +146,15 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  async function updateLine(id: number, payload: CostLineUpdatePayload) {
+  async function updateLine(id: number, payload: PatchedCostLineCreateUpdate) {
     loading.value = true
     error.value = null
 
     try {
-      const updatedLine = await costlineService.updateCostLine(id, payload)
+      const updatedLine = await api.job_rest_cost_lines_partial_update({
+        cost_line_id: id.toString(),
+        body: payload,
+      })
 
       const lineIndex = lines.value.findIndex((line) => line.id === id)
 
@@ -169,7 +181,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      await costlineService.deleteCostLine(id)
+      await api.job_rest_cost_lines_delete_destroy({ cost_line_id: id.toString() })
 
       lines.value = lines.value.filter((line) => line.id !== id)
 
@@ -194,7 +206,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
   async function loadCompanyDefaults() {
     try {
-      await CompanyDefaultsService.getDefaults()
+      await api.company_defaults_list()
     } catch (err) {
       debugLog('Error loading company defaults:', err)
     }
@@ -205,7 +217,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      staff.value = await TimesheetService.getStaff()
+      staff.value = await api.job_rest_timesheet_staff_list()
     } catch (err) {
       error.value = 'Failed to load staff members'
       debugLog('Error loading staff:', err)
@@ -219,7 +231,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      jobs.value = await TimesheetService.getJobs()
+      jobs.value = await api.job_rest_timesheet_jobs_retrieve()
     } catch (err) {
       error.value = 'Failed to load jobs'
       debugLog('Error loading jobs:', err)
@@ -250,15 +262,16 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      const weekStart = startDate || TimesheetService.getCurrentWeekRange().startDate
+      // Use current date if no start date provided
+      const weekStart = startDate || new Date().toISOString().split('T')[0]
       debugLog('📊 Loading weekly overview for:', weekStart)
 
-      currentWeekData.value = await TimesheetService.getWeeklyOverview(weekStart)
+      currentWeekData.value = await api.job_rest_timesheet_weekly_retrieve({ date: weekStart })
 
       debugLog('✅ Weekly overview loaded successfully:', {
-        staffCount: currentWeekData.value?.staffData?.length || 0,
-        startDate: currentWeekData.value?.startDate,
-        endDate: currentWeekData.value?.endDate,
+        staffCount: currentWeekData.value?.staff_data?.length || 0,
+        startDate: currentWeekData.value?.start_date,
+        endDate: currentWeekData.value?.end_date,
       })
     } catch (err) {
       error.value = 'Failed to load weekly overview'
@@ -291,15 +304,13 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       debugLog('📝 Creating new time entry:', entryData)
 
-      // Use CostLine service to create time entry
-      const costLineData: CostLineCreatePayload = {
-        job_id: entryData.jobId,
-        kind: 'actual',
-        line_type: 'time',
-        description: entryData.description,
-        quantity: entryData.hours,
-        unit_cost: entryData.wageRate || 32.0,
-        unit_rev: entryData.chargeOutRate || 105.0,
+      // Use generated API to create time entry
+      const costLineData = {
+        kind: 'time' as const,
+        desc: entryData.description,
+        quantity: entryData.hours.toString(),
+        unit_cost: (entryData.wageRate || 32.0).toString(),
+        unit_rev: (entryData.chargeOutRate || 105.0).toString(),
         meta: {
           staff_id: selectedStaffId.value,
           date: selectedDate.value,
@@ -308,7 +319,10 @@ export const useTimesheetStore = defineStore('timesheet', () => {
         },
       }
 
-      const newCostLine = await costlineService.create(costLineData)
+      const newCostLine = await api.job_rest_jobs_cost_sets_actual_cost_lines_create({
+        job_id: entryData.jobId,
+        body: costLineData,
+      })
 
       if (newCostLine) {
         // Add to lines if we're viewing the same job
@@ -351,17 +365,18 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       debugLog('🔄 Updating time entry:', entryId, updates)
 
-      // Use CostLine service to update time entry
-      const updatePayload: CostLineUpdatePayload = {}
+      // Use generated API to update time entry
+      const updatePayload: PatchedCostLineCreateUpdate = {}
 
-      if (updates.description !== undefined) updatePayload.description = updates.description
-      if (updates.hours !== undefined) updatePayload.quantity = updates.hours
-      if (updates.wageRate !== undefined) updatePayload.unit_cost = updates.wageRate
-      if (updates.chargeOutRate !== undefined) updatePayload.unit_rev = updates.chargeOutRate
+      if (updates.description !== undefined) updatePayload.desc = updates.description
+      if (updates.hours !== undefined) updatePayload.quantity = updates.hours.toString()
+      if (updates.wageRate !== undefined) updatePayload.unit_cost = updates.wageRate.toString()
+      if (updates.chargeOutRate !== undefined)
+        updatePayload.unit_rev = updates.chargeOutRate.toString()
 
       if (updates.isBillable !== undefined || updates.rateMultiplier !== undefined) {
         // Need to preserve existing meta and update specific fields
-        const existingLine = lines.value.find((line) => line.id === entryId)
+        const existingLine = lines.value.find((line) => line.id === parseInt(entryId))
         updatePayload.meta = {
           ...existingLine?.meta,
           ...(updates.isBillable !== undefined && { is_billable: updates.isBillable }),
@@ -369,11 +384,14 @@ export const useTimesheetStore = defineStore('timesheet', () => {
         }
       }
 
-      const updatedCostLine = await costlineService.update(entryId, updatePayload)
+      const updatedCostLine = await api.job_rest_cost_lines_partial_update({
+        cost_line_id: entryId,
+        body: updatePayload,
+      })
 
       if (updatedCostLine) {
         // Update in local state
-        const index = lines.value.findIndex((line) => line.id === entryId)
+        const index = lines.value.findIndex((line) => line.id === parseInt(entryId))
         if (index !== -1) {
           lines.value[index] = updatedCostLine
         }
@@ -421,11 +439,11 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   }
 
   function formatDate(date: string): string {
-    return TimesheetService.formatDate(date)
+    return new Date(date).toLocaleDateString()
   }
 
   function formatHours(hours: number): string {
-    return TimesheetService.formatHours(hours)
+    return hours.toFixed(2)
   }
 
   function addAttachedJob(job: Job) {

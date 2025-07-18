@@ -4,9 +4,9 @@
   >
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
-      <div v-if="summary && summary.rev !== undefined" class="text-right text-sm text-gray-600">
+      <div v-if="typedSummary && revision !== undefined" class="text-right text-sm text-gray-600">
         <div class="font-medium">Rev #{{ revision }}</div>
-        <div>{{ formatDate(summary.created) }}</div>
+        <div v-if="typedSummary.created">{{ formatDate(typedSummary.created) }}</div>
       </div>
     </div>
     <div v-if="isLoading" class="flex-1 flex items-center justify-center">
@@ -26,7 +26,7 @@
         ></path>
       </svg>
     </div>
-    <div v-else-if="summary" class="flex-1 flex flex-col">
+    <div v-else-if="typedSummary" class="flex-1 flex flex-col">
       <div class="flex-1 grid grid-cols-3 gap-4">
         <div class="space-y-3">
           <h4 class="text-sm font-medium text-gray-900 border-b border-gray-200 pb-2">Costs</h4>
@@ -52,7 +52,7 @@
             <div class="flex flex-col pt-2 border-t border-gray-200">
               <span class="text-xs text-gray-500">Total Cost</span>
               <span class="text-xl font-bold text-red-600"
-                >${{ formatCurrency(summary.cost) }}</span
+                >${{ formatCurrency(typedSummary.cost) }}</span
               >
             </div>
           </div>
@@ -81,7 +81,7 @@
             <div class="flex flex-col pt-2 border-t border-gray-200">
               <span class="text-xs text-gray-500">Total Revenue</span>
               <span class="text-xl font-bold text-green-600"
-                >${{ formatCurrency(summary.rev) }}</span
+                >${{ formatCurrency(typedSummary.rev) }}</span
               >
             </div>
           </div>
@@ -102,7 +102,7 @@
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Total Hours</span>
               <span class="text-lg font-semibold text-blue-600"
-                >{{ formatNumber(summary.hours) }} hrs</span
+                >{{ formatNumber(typedSummary.hours) }} hrs</span
               >
             </div>
           </div>
@@ -121,33 +121,42 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { FileX } from 'lucide-vue-next'
+import { schemas } from '../../api/generated/api'
+import { z } from 'zod'
 
-interface CostLineSummary {
-  cost: number
-  rev: number
-  hours: number
-  created?: string
-  [key: string]: unknown
-}
-
-interface CostLine {
-  kind: 'time' | 'material' | string
-  quantity: number
-  unit_cost: number
-  unit_rev: number
-}
+type CostLine = z.infer<typeof schemas.CostLine>
+type CostSet = z.infer<typeof schemas.CostSet>
 
 const props = defineProps<{
   title?: string
-  summary?: CostLineSummary | null
+  summary?: CostSet['summary'] | null
   costLines?: CostLine[]
   isLoading?: boolean
   revision?: number
 }>()
 
+const typedSummary = computed(() => {
+  if (!props.summary || typeof props.summary !== 'object') return null
+  const summary = props.summary as Record<string, unknown>
+  // Type guard to check if summary has the expected properties
+  if (
+    typeof summary.cost === 'number' &&
+    typeof summary.rev === 'number' &&
+    typeof summary.hours === 'number'
+  ) {
+    return summary as {
+      cost: number
+      rev: number
+      hours: number
+      created?: string
+    }
+  }
+  return null
+})
+
 const profitMargin = computed(() => {
-  if (!props.summary?.rev || props.summary.rev === 0) return 0
-  return ((props.summary.rev - props.summary.cost) / props.summary.rev) * 100
+  if (!typedSummary.value?.rev || typedSummary.value.rev === 0) return 0
+  return ((typedSummary.value.rev - typedSummary.value.cost) / typedSummary.value.rev) * 100
 })
 
 const breakdown = computed(() => {
@@ -158,13 +167,18 @@ const breakdown = computed(() => {
       other: { count: 0, cost: 0, revenue: 0 },
     }
   }
+
+  const parseNumber = (value: string | number | undefined): number => {
+    return typeof value === 'string' ? parseFloat(value) || 0 : value || 0
+  }
+
   const labour = props.costLines
     .filter((line) => line.kind === 'time')
     .reduce(
       (acc, line) => ({
         count: acc.count + 1,
-        cost: acc.cost + line.quantity * line.unit_cost,
-        revenue: acc.revenue + line.quantity * line.unit_rev,
+        cost: acc.cost + parseNumber(line.quantity) * parseNumber(line.unit_cost),
+        revenue: acc.revenue + parseNumber(line.quantity) * parseNumber(line.unit_rev),
       }),
       { count: 0, cost: 0, revenue: 0 },
     )
@@ -173,8 +187,8 @@ const breakdown = computed(() => {
     .reduce(
       (acc, line) => ({
         count: acc.count + 1,
-        cost: acc.cost + line.quantity * line.unit_cost,
-        revenue: acc.revenue + line.quantity * line.unit_rev,
+        cost: acc.cost + parseNumber(line.quantity) * parseNumber(line.unit_cost),
+        revenue: acc.revenue + parseNumber(line.quantity) * parseNumber(line.unit_rev),
       }),
       { count: 0, cost: 0, revenue: 0 },
     )
@@ -183,8 +197,8 @@ const breakdown = computed(() => {
     .reduce(
       (acc, line) => ({
         count: acc.count + 1,
-        cost: acc.cost + line.quantity * line.unit_cost,
-        revenue: acc.revenue + line.quantity * line.unit_rev,
+        cost: acc.cost + parseNumber(line.quantity) * parseNumber(line.unit_cost),
+        revenue: acc.revenue + parseNumber(line.quantity) * parseNumber(line.unit_rev),
       }),
       { count: 0, cost: 0, revenue: 0 },
     )

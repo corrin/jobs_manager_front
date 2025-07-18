@@ -1,20 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import api from '@/plugins/axios'
+import { api, schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-export interface StockItem {
-  id: string
-  description: string
-  quantity: number
-  unit_cost: number
-  metal_type?: string
-  alloy?: string
-  specifics?: string
-  location?: string
-  dimensions?: string
-  source?: string
-  is_active?: boolean
-}
+type StockItem = z.infer<typeof schemas.StockList>
+type StockConsumeRequest = z.infer<typeof schemas.StockConsumeRequest>
+type StockCreate = z.infer<typeof schemas.StockCreate>
+
+export { StockItem }
 
 export const useStockStore = defineStore('stock', () => {
   const items = ref<StockItem[]>([])
@@ -23,24 +16,28 @@ export const useStockStore = defineStore('stock', () => {
   async function fetchStock() {
     loading.value = true
     try {
-      const res = await api.get('/purchasing/rest/stock/')
-      items.value = Array.isArray(res.data) ? res.data : []
+      const response = await api.purchasing_rest_stock_list()
+      items.value = Array.isArray(response) ? response : []
     } finally {
       loading.value = false
     }
   }
 
   async function consumeStock(id: string, payload: { job_id: string; quantity: number }) {
-    await api.post(`/purchasing/rest/stock/${id}/consume/`, payload)
+    const consumePayload: StockConsumeRequest = {
+      job_id: payload.job_id,
+      quantity: payload.quantity,
+    }
+    await api.purchasing_rest_stock_consume_create({ id, body: consumePayload })
   }
 
-  async function create(payload: Partial<StockItem>) {
-    const res = await api.post('/purchasing/rest/stock/', payload)
-    return res.data
+  async function create(payload: StockCreate) {
+    const response = await api.purchasing_rest_stock_create({ body: payload })
+    return response
   }
 
   async function deactivate(id: string) {
-    await api.delete(`/purchasing/rest/stock/${id}/`)
+    await api.purchasing_rest_stock_destroy({ id })
   }
 
   return { items, loading, fetchStock, consumeStock, create, deactivate }

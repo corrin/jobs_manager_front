@@ -105,19 +105,19 @@
 
 <script setup lang="ts">
 import { X, Clock, DollarSign, TrendingUp, BarChart3 } from 'lucide-vue-next'
-import type { WeeklySummaryData } from '@/types/weekly-timesheet.types'
+import { WeeklySummaryDataSchema } from '@/api/local/schemas'
+import { z } from 'zod'
 
-interface Props {
+type WeeklySummaryData = z.infer<typeof WeeklySummaryDataSchema>
+
+defineProps<{
   isOpen: boolean
   data: WeeklySummaryData | null
-}
+}>()
 
-interface Emits {
-  (e: 'close'): void
-}
-
-defineProps<Props>()
-const emit = defineEmits<Emits>()
+const emit = defineEmits<{
+  close: []
+}>()
 
 const closeModal = () => {
   emit('close')

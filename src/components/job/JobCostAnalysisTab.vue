@@ -166,24 +166,11 @@
 import { computed, ref, onMounted } from 'vue'
 import { Smile, Frown, ArrowUp, ArrowDown } from 'lucide-vue-next'
 import { useCostingStore } from '../../stores/costing'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
+import type { CostSetSummary } from '@/api/local/schemas'
 
-interface CostLine {
-  quantity: number | string
-  unit_cost: number | string
-  unit_rev: number | string
-  kind: string
-}
-
-interface CostSet {
-  cost_lines: CostLine[]
-}
-
-interface CostSetSummary {
-  cost: number
-  rev: number
-  hours: number
-  profitMargin: number
-}
+type CostSet = z.infer<typeof schemas.CostSet>
 
 const props = defineProps<{
   jobId: string

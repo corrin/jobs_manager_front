@@ -146,8 +146,6 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
-
 import { ref, computed, watch } from 'vue'
 import { XCircle } from 'lucide-vue-next'
 import { ZodError } from 'zod'
@@ -160,13 +158,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { clientService } from '@/services/clientService'
-import {
-  createClientSchema,
-  type CreateClientData,
-  type CreateClientResponse,
-} from '@/schemas/client.schemas'
+import { api, schemas } from '@/api/generated/api'
+import { z } from 'zod'
 import type { Client } from '@/composables/useClientLookup'
+
+// Use generated types from Zodios API
+type ClientCreateRequest = z.infer<typeof schemas.ClientCreateRequest>
+type ClientCreateResponse = z.infer<typeof schemas.ClientCreateResponse>
 
 interface Props {
   isOpen: boolean
@@ -182,7 +180,7 @@ const emit = defineEmits<{
   'client-created': [client: Client]
 }>()
 
-const formData = ref<CreateClientData>({
+const formData = ref<ClientCreateRequest>({
   name: '',
   email: '',
   phone: '',
@@ -198,15 +196,12 @@ const duplicateClientInfo = ref<{ name: string; xero_contact_id: string } | null
 
 const isFormValid = computed(() => {
   if (!formData.value.name.trim()) return false
-
   if (Object.keys(fieldErrors.value).length > 0) return false
-
   return true
 })
 
 const handleDialogChange = (open: boolean) => {
   emit('update:isOpen', open)
-
   if (!open) {
     resetForm()
   }
@@ -214,9 +209,8 @@ const handleDialogChange = (open: boolean) => {
 
 const validateForm = (): boolean => {
   fieldErrors.value = {}
-
   try {
-    createClientSchema.parse(formData.value)
+    schemas.ClientCreateRequest.parse(formData.value)
     return true
   } catch (error: unknown) {
     if (error instanceof ZodError) {
@@ -242,7 +236,10 @@ const handleSubmit = async () => {
   duplicateClientInfo.value = null
 
   try {
-    const result: CreateClientResponse = await clientService.createClient(formData.value)
+    // Use Zodios API to create client
+    const result: ClientCreateResponse = await api.clients_create_create({
+      body: formData.value,
+    })
 
     if (!result.success) {
       if (result.existing_client && result.existing_client.xero_contact_id) {
@@ -272,7 +269,7 @@ const handleSubmit = async () => {
       emit('update:isOpen', false)
     }
   } catch (error) {
-    debugLog('Error creating client:', error)
+    console.error('Error creating client:', error)
     errorMessage.value = error instanceof Error ? error.message : 'An unexpected error occurred'
   } finally {
     isLoading.value = false
