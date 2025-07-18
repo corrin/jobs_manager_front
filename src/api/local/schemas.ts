@@ -836,6 +836,7 @@ export const AdvancedFiltersSchema = z.object({
   created_after: z.string(),
   created_before: z.string(),
   paid: z.string(),
+  xero_invoice_params: z.string().optional(), // Xero Invoice Number or ID
 })
 
 export type AdvancedFilters = z.infer<typeof AdvancedFiltersSchema>
@@ -936,21 +937,6 @@ export const transformDeliveryReceiptForAPI = (
 }
 
 // Local schemas for job.service internal validation and request.
-
-export const AdvancedSearchFiltersSchema = z.object({
-  job_number: z.string().optional(),
-  name: z.string().optional(),
-  description: z.string().optional(),
-  status: z.string().optional(),
-  client: z.string().optional(),
-  priority: z.string().optional(),
-  date_created_from: z.string().optional(),
-  date_created_to: z.string().optional(),
-  due_date_from: z.string().optional(),
-  due_date_to: z.string().optional(),
-})
-
-export type AdvancedSearchFilters = z.infer<typeof AdvancedSearchFiltersSchema>
 
 export const JobStatusUpdateSchema = z.object({
   status: z.string(),

@@ -48,6 +48,7 @@ export function useKanban(onJobsLoaded?: () => void) {
     created_after: '',
     created_before: '',
     paid: '',
+    xero_invoice_params: '',
   })
 
   const jobs = computed(() =>

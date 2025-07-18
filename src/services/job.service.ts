@@ -1,10 +1,6 @@
 import { api, schemas } from '../api/generated/api'
 import { z } from 'zod'
-import type {
-  AdvancedSearchFilters,
-  JobStatusUpdate,
-  JobReorderPayload,
-} from '../api/local/schemas'
+import type { AdvancedFilters, JobStatusUpdate, JobReorderPayload } from '../api/local/schemas'
 
 type KanbanJob = z.infer<typeof schemas.KanbanJob>
 type JobCreateRequest = z.infer<typeof schemas.JobCreateRequest>
@@ -123,7 +119,7 @@ export const jobService = {
   },
 
   // Advanced search with filters
-  async performAdvancedSearch(filters: AdvancedSearchFilters): Promise<AdvancedSearchResponse> {
+  async performAdvancedSearch(filters: AdvancedFilters): Promise<AdvancedSearchResponse> {
     const response = await api.job_api_jobs_advanced_search_retrieve({
       queries: {
         job_number: filters.job_number || undefined,
@@ -136,6 +132,7 @@ export const jobService = {
         created_after: filters.created_after || undefined,
         created_before: filters.created_before || undefined,
         paid: filters.paid || undefined,
+        xero_invoice_params: filters.xero_invoice_params || undefined, // Xero Invoice Number or ID
       },
     })
     return response
