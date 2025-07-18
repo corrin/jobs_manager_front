@@ -2,7 +2,6 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { schemas } from '../api/generated/api'
-import { debugLog } from '../utils/debug'
 import type { z } from 'zod'
 
 // Use the existing CustomTokenObtainPair schema for login credentials
@@ -56,12 +55,6 @@ export function useLogin() {
     if (!validateForm()) {
       return
     }
-
-    debugLog('useLogin - About to call authStore.login with:', {
-      username: credentials.value.username,
-      password: credentials.value.password ? '[REDACTED]' : 'EMPTY',
-      credentialsValue: credentials.value,
-    })
 
     const success = await authStore.login(credentials.value)
 

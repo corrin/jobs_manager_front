@@ -60,13 +60,6 @@ export const useAuthStore = defineStore('auth', () => {
     clearError()
 
     try {
-      debugLog('Login credentials:', credentials)
-      debugLog('Credentials structure:', {
-        username: credentials.username,
-        password: credentials.password ? '[REDACTED]' : 'EMPTY',
-        keys: Object.keys(credentials),
-      })
-
       // Convert reactive object to plain object to avoid Zodios serialization issues
       const plainCredentials = JSON.parse(
         JSON.stringify({
@@ -75,32 +68,10 @@ export const useAuthStore = defineStore('auth', () => {
         }),
       )
 
-      debugLog('Plain credentials for API:', {
-        username: plainCredentials.username,
-        password: '[REDACTED]',
-        type: typeof plainCredentials,
-        isPlainObject: plainCredentials.constructor === Object,
-        stringified: JSON.stringify(plainCredentials),
-      })
-
-      // Test Zod schema validation manually
-      try {
-        const validatedCredentials = schemas.CustomTokenObtainPair.parse(plainCredentials)
-        debugLog('Manual Zod validation successful:', {
-          username: validatedCredentials.username,
-          password: '[REDACTED]',
-        })
-      } catch (zodError) {
-        debugLog('Manual Zod validation failed:', zodError)
-      }
-
       // Try different approaches to call the API
       try {
-        debugLog('Attempting Zodios call with direct parameters...')
         await api.accounts_api_token_create(plainCredentials)
-        debugLog('Direct parameters call successful!')
-      } catch (directError) {
-        debugLog('Direct parameters call failed, trying with body wrapper:', directError)
+      } catch {
         await api.accounts_api_token_create({ body: plainCredentials })
       }
 

@@ -37,7 +37,6 @@
               <StaffPanel
                 :active-filters="activeStaffFilters"
                 @staff-filter-changed="handleStaffFilterChanged"
-                @staff-panel-ready="handleStaffPanelReady"
               />
             </div>
           </div>
@@ -91,9 +90,6 @@
                   @job-click="viewJob"
                   @load-more="loadMoreJobs(selectedMobileStatus)"
                   @sortable-ready="handleSortableReady"
-                  @job-ready="handleJobReady"
-                  @card-ready="handleCardReady"
-                  @staff-assigned="handleStaffAssigned"
                   class="kanban-column w-full max-w-md mx-auto"
                 />
               </div>
@@ -123,9 +119,6 @@
                       @job-click="viewJob"
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
-                      @job-ready="handleJobReady"
-                      @card-ready="handleCardReady"
-                      @staff-assigned="handleStaffAssigned"
                       class="kanban-column-responsive"
                     />
                   </div>
@@ -148,9 +141,6 @@
                       @job-click="viewJob"
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
-                      @job-ready="handleJobReady"
-                      @card-ready="handleCardReady"
-                      @staff-assigned="handleStaffAssigned"
                       class="w-full"
                     />
                   </div>
@@ -212,7 +202,6 @@ const {
   visibleStatusChoices,
 
   getJobsByStatus,
-  jobsSortedByPriority,
 
   loadJobs,
   handleSearch,
@@ -270,8 +259,6 @@ const initializeSortableForColumn = (status: string, element: HTMLElement) => {
   }
 
   nextTick(() => {
-    const jobCards = element.querySelectorAll('.job-card')
-
     initializeSortable(element, status)
     sortableInitialized.value.add(status)
   })
@@ -285,29 +272,14 @@ const initialiseSortableForAllColumns = () => {
   })
 }
 
-const handleStaffPanelReady = (staffPanelElement: HTMLElement) => {
-  // No need to initialize SortableJS - using native HTML5 drag and drop
-}
-
-const handleJobReady = (payload: { jobId: string; element: HTMLElement }) => {
-  // This is for the staff container inside the job card
-}
-
-const handleCardReady = (payload: { jobId: string; element: HTMLElement }) => {
-  // Job cards now handle their own drop events
-}
-
-const handleStaffAssigned = async (payload: { staffId: string; jobId: string }) => {
-  // Refresh jobs data to show the newly assigned staff
-  await loadJobs()
-}
-
 function getSortedJobsByStatus(statusKey: string) {
   // Use the filtered getJobsByStatus from useKanban instead of directly calling KanbanCategorizationService
   return getJobsByStatus.value(statusKey)
 }
 
-onMounted(async () => {})
+onMounted(async () => {
+  await loadJobs()
+})
 
 onUnmounted(() => {
   destroyAllSortables()

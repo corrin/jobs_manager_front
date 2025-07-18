@@ -29,9 +29,10 @@
             :is-active="activeFilters.includes(staff.id.toString())"
             class="mb-1 pointer-events-none"
           />
-          <span class="text-xs text-gray-600 text-center max-w-[60px] truncate pointer-events-none">{{
-            staff.display_name.split(' ')[0]
-          }}</span>
+          <span
+            class="text-xs text-gray-600 text-center max-w-[60px] truncate pointer-events-none"
+            >{{ staff.display_name.split(' ')[0] }}</span
+          >
         </div>
       </div>
     </div>
@@ -112,11 +113,11 @@ const handleDragStart = (staffId: string, event: DragEvent): void => {
     event.dataTransfer.setData('text/plain', staffId)
     event.dataTransfer.effectAllowed = 'copy'
   }
-  
+
   // Add visual feedback to job cards
   setTimeout(() => {
     document.querySelectorAll('.job-card').forEach((card) => {
-      (card as HTMLElement).style.outline = '2px dashed #3b82f6'
+      ;(card as HTMLElement).style.outline = '2px dashed #3b82f6'
       ;(card as HTMLElement).style.outlineOffset = '2px'
     })
   }, 10)
@@ -129,35 +130,6 @@ const handleDragEnd = (): void => {
     ;(card as HTMLElement).style.outline = ''
     ;(card as HTMLElement).style.outlineOffset = ''
   })
-}
-
-// Track drag state to prevent clicks during drag
-const isDragging = ref(false)
-let clickTimeout: number | null = null
-
-const handleStaffClick = (staffId: string, event: Event) => {
-  // Only process click if we're not dragging
-  if (!isDragging.value) {
-    // Small delay to ensure this isn't the start of a drag
-    if (clickTimeout) clearTimeout(clickTimeout)
-    clickTimeout = window.setTimeout(() => {
-      if (!isDragging.value) {
-        toggleStaffFilter(staffId)
-      }
-    }, 50)
-  }
-}
-
-const onMouseDown = () => {
-  // Track mouse down to detect potential drag
-  isDragging.value = false
-}
-
-const onMouseUp = () => {
-  // Reset drag state on mouse up
-  setTimeout(() => {
-    isDragging.value = false
-  }, 100)
 }
 
 watch(
