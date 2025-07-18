@@ -50,6 +50,7 @@ import {
   Bot,
   AlertTriangle,
   Brain /* icon for AI Providers */,
+  Server,
 } from 'lucide-vue-next'
 import { debugLog } from '../utils/debug'
 
@@ -123,6 +124,13 @@ const tabs = computed(() => [
     label: 'AI Providers',
     route: 'admin-ai-providers',
     icon: Brain,
+  },
+  {
+    name: 'ManageUAT',
+    key: 'uat',
+    label: 'Manage UAT',
+    route: 'admin-uat',
+    icon: Server,
   },
 ])
 

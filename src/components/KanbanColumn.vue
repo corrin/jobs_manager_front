@@ -39,7 +39,7 @@
           :job="job"
           :is-dragging="isDragging"
           :is-movement-mode-active="isMovementModeActive"
-          :is-job-selected-for-movement="isJobSelectedForMovement(job.id.toString())"
+          :is-job-selected-for-movement="isJobSelectedForMovement?.(job.id.toString()) ?? false"
           @click="$emit('job-click', job)"
           @job-ready="$emit('job-ready', $event)"
           @card-ready="$emit('card-ready', $event)"
@@ -52,8 +52,11 @@
           class="flex items-center justify-center text-gray-500 h-32"
         >
           <div class="text-center">
-            <div class="text-sm">No jobs in {{ status.label.toLowerCase() }}</div>
-            <div class="text-xs mt-1">Drag jobs here to update status</div>
+            <div v-if="isLoading" class="text-sm">
+              Still loading jobs {{ status.label.toLowerCase() }}
+            </div>
+            <div v-else class="text-sm">No jobs in {{ status.label.toLowerCase() }}</div>
+            <div v-if="!isLoading" class="text-xs mt-1">Drag jobs here to update status</div>
           </div>
         </div>
 
@@ -84,7 +87,11 @@
           </button>
         </div>
 
-        <div v-if="isLoading && jobs.length > 0" :class="jobs.length > 0 ? 'col-span-2' : ''" class="mt-4 text-center">
+        <div
+          v-if="isLoading && jobs.length > 0"
+          :class="jobs.length > 0 ? 'col-span-2' : ''"
+          class="mt-4 text-center"
+        >
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
         </div>
       </div>

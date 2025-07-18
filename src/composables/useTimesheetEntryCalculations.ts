@@ -7,6 +7,8 @@ import type {
 } from '../api/local/schemas'
 import { debugLog } from '../utils/debug'
 import type { z } from 'zod'
+import { jobService } from '@/services/job.service'
+import { useJobsStore } from '../stores/jobs'
 
 // Use the generated schemas
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
@@ -144,6 +146,23 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
   const toCostLinePayload = (entry: TimesheetEntryWithMeta, jobId: string) => {
     // Type guard for meta object
     const metaObj = entry.meta && typeof entry.meta === 'object' ? entry.meta : {}
+    const job = jobService.serachJobsLocal(useJobsStore().allKanbanJobs, entry.job_number)
+    const billable = (() => {
+      // Shop jobs are never billable
+      if (job.shop_job) {
+        return false
+      }
+
+      // Special status jobs are also not billable
+      if (job.status === 'special') {
+        return false
+      }
+
+      return true
+    })()
+    if ((metaObj as Record<string, unknown>).is_billable) {
+      ;(metaObj as Record<string, unknown>).is_billable = billable
+    }
 
     return {
       kind: 'time' as const,
