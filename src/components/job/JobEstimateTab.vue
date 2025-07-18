@@ -90,9 +90,18 @@ const props = defineProps<Props>()
 
 const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
-const chargeOutRate = computed(() => companyDefaults.value?.charge_out_rate || 0)
-const wageRate = computed(() => companyDefaults.value?.wage_rate || 0)
-const materialsMarkup = computed(() => companyDefaults.value?.materials_markup || 0)
+const chargeOutRate = computed(() => {
+  const rate = companyDefaults.value?.charge_out_rate
+  return rate ? parseFloat(rate) : 0
+})
+const wageRate = computed(() => {
+  const rate = companyDefaults.value?.wage_rate
+  return rate ? parseFloat(rate) : 0
+})
+const materialsMarkup = computed(() => {
+  const markup = companyDefaults.value?.materials_markup
+  return markup ? parseFloat(markup) : 0
+})
 
 const costLines = ref<CostLine[]>([])
 const isLoading = ref(false)

@@ -55,8 +55,10 @@ export const useCostingStore = defineStore('costing', () => {
       debugLog(`Loading costing data for job ${jobId}, kind: ${targetKind}`)
 
       const data = await api.job_rest_jobs_cost_sets_retrieve({
-        job_id: jobId,
-        kind: targetKind,
+        params: {
+          id: jobId.toString(),
+          kind: targetKind,
+        },
       })
       costSet.value = data
 
@@ -66,22 +68,6 @@ export const useCostingStore = defineStore('costing', () => {
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to load costing data'
       debugLog(`Error loading costing data for ${targetKind}:`, err)
-
-      if (targetKind !== 'estimate') {
-        debugLog('Trying to fallback to estimate data...')
-        try {
-          const fallbackData = await api.job_rest_jobs_cost_sets_retrieve({
-            job_id: jobId,
-            kind: 'estimate',
-          })
-          costSet.value = fallbackData
-          currentKind.value = 'estimate'
-          debugLog('Fallback to estimate successful')
-          error.value = null
-        } catch (fallbackErr) {
-          debugLog('Fallback to estimate also failed:', fallbackErr)
-        }
-      }
 
       if (error.value) {
         throw err

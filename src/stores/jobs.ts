@@ -212,11 +212,11 @@ export const useJobsStore = defineStore('jobs', () => {
 
     try {
       const { jobService } = await import('@/services/job.service')
-      const response = await jobService.getJobForEdit(jobId)
+      const response = await jobService.getJob(jobId)
 
-      if (response.success && response.data) {
+      if (response.success && response.data?.job) {
         setDetailedJob(response.data.job)
-        return { job: response.data.job, events: response.data.events || [] }
+        return { job: response.data.job, events: [] }
       }
 
       if (response.job) {

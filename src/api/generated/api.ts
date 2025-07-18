@@ -473,9 +473,7 @@ const JobFileUpdateSuccessResponse = z
 const AssignJobResponse = z
   .object({ success: z.boolean(), message: z.string().optional(), error: z.string().optional() })
   .passthrough()
-const AssignJobRequest = z
-  .object({ job_id: z.string(), staff_id: z.string() })
-  .passthrough()
+const AssignJobRequest = z.object({ job_id: z.string(), staff_id: z.string() }).passthrough()
 const CompleteJob = z
   .object({
     id: z.string().uuid(),
@@ -697,7 +695,7 @@ const Job = z
     job_files: z.array(JobFile).optional(),
     charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
     pricing_methodology: PricingMethodologyEnum.optional(),
-    quote_sheet: QuoteSpreadsheet,
+    quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
     invoiced: z.boolean(),
     quote: z.object({}).partial().passthrough().nullable(),
@@ -705,7 +703,10 @@ const Job = z
   })
   .passthrough()
 const JobDetailResponse = z
-  .object({ success: z.boolean().optional().default(true), data: Job })
+  .object({
+    success: z.boolean().optional().default(true),
+    data: z.object({ job: Job }).passthrough(),
+  })
   .passthrough()
 const JobRestErrorResponse = z.object({ error: z.string() }).passthrough()
 const CostSetKindEnum = z.enum(['estimate', 'quote', 'actual'])

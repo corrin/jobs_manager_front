@@ -47,8 +47,6 @@
             :materialsMarkup="materialsMarkup"
             @add-material="handleAddMaterial"
             @add-time="handleAddTime"
-            @open-material-modal="showMaterialModal = true"
-            @open-time-modal="showTimeModal = true"
           />
         </div>
       </div>
@@ -182,19 +180,6 @@
     </Dialog>
 
     <CostLineMaterialModal
-      v-if="showMaterialModal"
-      :materialsMarkup="materialsMarkup"
-      @close="showMaterialModal = false"
-      @submit="handleAddMaterial"
-    />
-    <CostLineTimeModal
-      v-if="showTimeModal"
-      :wageRate="wageRate"
-      :chargeOutRate="chargeOutRate"
-      @close="showTimeModal = false"
-      @submit="handleAddTime"
-    />
-    <CostLineMaterialModal
       v-if="showEditModal && editingCostLine && editingCostLine.kind === 'material'"
       :materialsMarkup="materialsMarkup"
       :initial="editingCostLine"
@@ -277,17 +262,24 @@ const isLoading = ref(false)
 const isRefreshing = ref(false)
 const showPreviewModal = ref(false)
 const previewData = ref<PreviewQuoteResponse | null>(null)
-const showMaterialModal = ref(false)
-const showTimeModal = ref(false)
 const editingCostLine = ref<CostLine | null>(null)
 const showEditModal = ref(false)
 const costLines = ref<CostLine[]>([])
 
 const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
-const wageRate = computed(() => companyDefaults.value?.wage_rate || 0)
-const chargeOutRate = computed(() => companyDefaults.value?.charge_out_rate || 0)
-const materialsMarkup = computed(() => companyDefaults.value?.materials_markup || 0)
+const wageRate = computed(() => {
+  const rate = companyDefaults.value?.wage_rate
+  return rate ? parseFloat(rate) : 0
+})
+const chargeOutRate = computed(() => {
+  const rate = companyDefaults.value?.charge_out_rate
+  return rate ? parseFloat(rate) : 0
+})
+const materialsMarkup = computed(() => {
+  const markup = companyDefaults.value?.materials_markup
+  return markup ? parseFloat(markup) : 0
+})
 
 const quoteCostLines = computed(() => {
   const lines = currentQuote.value?.quote?.cost_lines || []
