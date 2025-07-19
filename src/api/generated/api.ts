@@ -410,6 +410,21 @@ const ClientContactCreateRequest = z
     notes: z.string().optional(),
   })
   .passthrough()
+const ClientContactCreateResponse = z
+  .object({
+    success: z.boolean(),
+    contact: z.object({
+      id: z.string().uuid(),
+      name: z.string(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      position: z.string().optional(),
+      is_primary: z.boolean(),
+      notes: z.string().optional(),
+    }),
+    message: z.string(),
+  })
+  .passthrough()
 const ClientCreateRequest = z
   .object({
     name: z.string().max(255),
@@ -658,6 +673,14 @@ const JobCreateRequest = z
     contact_id: z.string().uuid().nullish(),
   })
   .passthrough()
+const JobCreateResponse = z
+  .object({
+    success: z.boolean(),
+    job_id: z.string().uuid(),
+    job_number: z.string(),
+    message: z.string(),
+  })
+  .passthrough()
 const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
 const QuoteSpreadsheet = z
   .object({
@@ -677,7 +700,7 @@ const Job = z
     client_id: z.string().uuid(),
     client_name: z.string(),
     contact_id: z.string().uuid().nullish(),
-    contact_name: z.string(),
+    contact_name: z.string().nullish(),
     job_number: z.number().int().gte(-2147483648).lte(2147483647),
     notes: z.string().nullish(),
     order_number: z.string().max(100).nullish(),
@@ -702,13 +725,41 @@ const Job = z
     invoice: z.object({}).partial().passthrough().nullable(),
   })
   .passthrough()
+const JobUpdateRequest = z
+  .object({
+    name: z.string().max(100).optional(),
+    client_id: z.string().uuid().optional(),
+    contact_id: z.string().uuid().nullish(),
+    notes: z.string().nullish(),
+    order_number: z.string().max(100).nullish(),
+    description: z.string().nullish(),
+    job_status: z.string().optional(),
+    delivery_date: z.string().nullish(),
+    paid: z.boolean().optional(),
+    charge_out_rate: z
+      .string()
+      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
+      .optional(),
+    pricing_methodology: PricingMethodologyEnum.optional(),
+  })
+  .passthrough()
 const JobDetailResponse = z
   .object({
     success: z.boolean().optional().default(true),
     data: z.object({ job: Job }).passthrough(),
   })
   .passthrough()
+const JobDeleteResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string(),
+  })
+  .passthrough()
 const JobRestErrorResponse = z.object({ error: z.string() }).passthrough()
+const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
+const JobEventCreateResponse = z
+  .object({ success: z.boolean(), event: z.object({}).passthrough() })
+  .passthrough()
 const CostSetKindEnum = z.enum(['estimate', 'quote', 'actual'])
 const CostLine = z
   .object({
@@ -849,6 +900,7 @@ const TimesheetCostLine = z
     job_name: z.string(),
     client_name: z.string(),
     charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    wage_rate: z.number(),
   })
   .passthrough()
 const ModernTimesheetStaff = z
@@ -910,17 +962,13 @@ const PurchaseOrderPDFResponse = z
   .partial()
   .passthrough()
 const StatusE5cEnum = z.enum([
-  'quoting',
-  'accepted_quote',
-  'awaiting_materials',
-  'awaiting_staff',
-  'awaiting_site_availability',
+  'draft',
+  'awaiting_approval',
+  'approved',
   'in_progress',
-  'on_hold',
-  'special',
+  'unusual',
   'recently_completed',
-  'completed',
-  'rejected',
+  'special',
   'archived',
 ])
 const JobForPurchasing = z
@@ -1226,7 +1274,7 @@ const ModernTimesheetJob = z
     id: z.string().uuid(),
     job_number: z.number().int().gte(-2147483648).lte(2147483647),
     name: z.string().max(100),
-    client_name: z.string(),
+    client_name: z.string().optional(),
     status: StatusE5cEnum.optional(),
     charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
     has_actual_costset: z.boolean(),
@@ -1243,6 +1291,7 @@ const ModernStaff = z
     lastName: z.string(),
     email: z.string(),
     avatarUrl: z.string().nullable(),
+    wageRate: z.number().optional(),
   })
   .passthrough()
 const StaffListResponse = z
@@ -1282,6 +1331,22 @@ const PaginatedXeroErrorList = z
   })
   .passthrough()
 
+const WeeklyMetrics = z.array(
+  z
+    .object({
+      job_id: z.string().uuid(),
+      name: z.string(),
+      client: z.string().nullable(),
+      description: z.string().nullable(),
+      status: z.string(),
+      people: z.array(z.object({}).passthrough()),
+      estimated_hours: z.number(),
+      actual_hours: z.number(),
+      profit: z.number(),
+    })
+    .passthrough(),
+)
+
 export const schemas = {
   KPIProfitBreakdown,
   KPIJobBreakdown,
@@ -1311,6 +1376,7 @@ export const schemas = {
   ClientContactsResponse,
   ClientListResponse,
   ClientContactCreateRequest,
+  ClientContactCreateResponse,
   ClientCreateRequest,
   ClientSearchResult,
   ClientSearchResponse,
@@ -1345,11 +1411,16 @@ export const schemas = {
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
   JobCreateRequest,
+  JobCreateResponse,
   PricingMethodologyEnum,
   QuoteSpreadsheet,
   Job,
+  JobUpdateRequest,
   JobDetailResponse,
+  JobDeleteResponse,
   JobRestErrorResponse,
+  JobEventCreateRequest,
+  JobEventCreateResponse,
   CostSetKindEnum,
   CostLine,
   CostSet,
@@ -1418,6 +1489,7 @@ export const schemas = {
   WeeklyTimesheetData,
   XeroError,
   PaginatedXeroErrorList,
+  WeeklyMetrics,
 }
 
 const endpoints = makeApi([
@@ -1907,7 +1979,7 @@ Expected JSON:
         schema: ClientContactCreateRequest,
       },
     ],
-    response: ClientContactCreateRequest,
+    response: ClientContactCreateResponse,
   },
   {
     method: 'post',
@@ -2121,7 +2193,7 @@ Expected JSON:
         schema: z.number().int(),
       },
     ],
-    response: JobFile,
+    response: z.array(JobFile),
   },
   {
     method: 'post',
@@ -2600,7 +2672,7 @@ Expected JSON:
         schema: JobCreateRequest,
       },
     ],
-    response: JobCreateRequest,
+    response: JobCreateResponse,
   },
   {
     method: 'get',
@@ -2720,7 +2792,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobDetailResponse,
+        schema: JobUpdateRequest,
       },
       {
         name: 'job_id',
@@ -2743,7 +2815,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: JobDeleteResponse,
   },
   {
     method: 'post',
@@ -2805,7 +2877,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ description: z.string().max(500) }).passthrough(),
       },
       {
         name: 'job_id',
@@ -2813,7 +2885,7 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: z.object({ error: z.string() }).passthrough(),
+    response: z.object({ success: z.boolean(), event: z.object({}).passthrough() }).passthrough(),
   },
   {
     method: 'get',
@@ -3049,7 +3121,7 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
         schema: z.number().int(),
       },
     ],
-    response: JobFile,
+    response: z.array(JobFile),
   },
   {
     method: 'post',
@@ -3227,6 +3299,20 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       },
     ],
     response: ModernTimesheetDayGetResponse,
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/weekly-metrics/',
+    alias: 'getWeeklyMetrics',
+    description: 'Get weekly metrics for jobs',
+    parameters: [
+      {
+        name: 'week',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
+    response: WeeklyMetrics,
   },
   {
     method: 'post',
