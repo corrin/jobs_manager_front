@@ -234,7 +234,7 @@ function selectStockItem(item: StockItem) {
   // Auto-calculate unit revenue with markup
   const markup = Number(companyDefaultsStore.companyDefaults?.materials_markup || 0)
   const calculatedRev = unitCostValue * (1 + markup)
-  formData.value.unit_rev = parseFloat(calculatedRev.toFixed(2))
+  formData.value.unit_rev = calculatedRev.toFixed
 
   debugLog(
     'selectStockItem - unit_cost:',
