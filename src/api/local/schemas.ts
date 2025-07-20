@@ -836,6 +836,7 @@ export const AdvancedFiltersSchema = z.object({
   created_after: z.string(),
   created_before: z.string(),
   paid: z.string(),
+  xero_invoice_params: z.string().optional(), // Xero Invoice Number or ID
 })
 
 export type AdvancedFilters = z.infer<typeof AdvancedFiltersSchema>
@@ -874,22 +875,41 @@ export type PurchaseOrderLineUI = z.infer<typeof PurchaseOrderLineUISchema>
 // Delivery Receipt Allocation UI schema for frontend functionality
 // REASON: Frontend needs number types for calculations and camelCase field names
 // Based on backend delivery_receipt.py structure: {jobId, quantity, retailRate}
-export const DeliveryAllocationUISchema = z.object({
-  jobId: z.string().uuid().nullable(),
-  quantity: z.number(),
-  retailRate: z.number(),
-})
+// Note: Supports both jobId (camelCase) and job_id (snake_case) for compatibility
+export const DeliveryAllocationUISchema = z
+  .object({
+    jobId: z.string().uuid().nullable().optional(),
+    job_id: z.string().uuid().nullable().optional(),
+    quantity: z.number(),
+    retailRate: z.number(),
+  })
+  .refine((data) => data.jobId || data.job_id, {
+    message: 'Either jobId or job_id must be provided',
+    path: ['jobId'],
+  })
 
 export type DeliveryAllocationUI = z.infer<typeof DeliveryAllocationUISchema>
 
 // Transform function to convert UI types to backend types
 export const transformDeliveryAllocationToBackend = (
   allocUI: DeliveryAllocationUI,
-): z.infer<typeof schemas.DeliveryReceiptAllocation> => ({
-  job_id: allocUI.jobId,
-  quantity: allocUI.quantity.toString(),
-  retail_rate: allocUI.retailRate.toString(),
-})
+): z.infer<typeof schemas.DeliveryReceiptAllocation> | null => {
+  // Handle both jobId (camelCase) and job_id (snake_case) for compatibility
+  const jobId =
+    (allocUI as DeliveryAllocationUI & { jobId?: number; job_id?: number }).jobId ||
+    (allocUI as DeliveryAllocationUI & { jobId?: number; job_id?: number }).job_id
+
+  // Skip allocations without a valid job_id
+  if (!jobId) {
+    return null
+  }
+
+  return {
+    job_id: jobId,
+    quantity: allocUI.quantity.toString(),
+    retail_rate: allocUI.retailRate.toString(),
+  }
+}
 
 // Transform function to convert backend types to UI types
 export const transformDeliveryAllocationFromBackend = (
@@ -919,6 +939,9 @@ export const transformDeliveryReceiptForAPI = (
             retailRate: alloc.retailRate || defaultRetailRate,
           }),
         )
+        .filter(
+          (alloc): alloc is z.infer<typeof schemas.DeliveryReceiptAllocation> => alloc !== null,
+        )
 
       if (validAllocations.length > 0) {
         backendAllocations[lineId] = {
@@ -936,21 +959,6 @@ export const transformDeliveryReceiptForAPI = (
 }
 
 // Local schemas for job.service internal validation and request.
-
-export const AdvancedSearchFiltersSchema = z.object({
-  job_number: z.string().optional(),
-  name: z.string().optional(),
-  description: z.string().optional(),
-  status: z.string().optional(),
-  client: z.string().optional(),
-  priority: z.string().optional(),
-  date_created_from: z.string().optional(),
-  date_created_to: z.string().optional(),
-  due_date_from: z.string().optional(),
-  due_date_to: z.string().optional(),
-})
-
-export type AdvancedSearchFilters = z.infer<typeof AdvancedSearchFiltersSchema>
 
 export const JobStatusUpdateSchema = z.object({
   status: z.string(),

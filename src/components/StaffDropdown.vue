@@ -12,7 +12,7 @@
         <option v-if="isLoading" value="">Loading staff members...</option>
         <option v-else value="">{{ placeholder }}</option>
         <option v-for="staff in staffOptions" :key="staff.id" :value="staff.id">
-          {{ staff.display_name }}
+          {{ getDisplayName(staff) }}
         </option>
       </select>
       <div v-if="isLoading" class="absolute top-1/2 right-8 transform -translate-y-1/2">
@@ -76,6 +76,26 @@ const loadStaffOptions = async (): Promise<void> => {
 
 const handleChange = (): void => {
   emit('update:modelValue', selectedValue.value)
+}
+
+const getDisplayName = (staff: Staff): string => {
+  // If preferred_name exists, use it, otherwise construct from first_name + last_name
+  if (staff.preferred_name && staff.preferred_name.trim()) {
+    return staff.preferred_name.trim()
+  }
+
+  const firstName = staff.first_name?.trim() || ''
+  const lastName = staff.last_name?.trim() || ''
+
+  if (firstName && lastName) {
+    return `${firstName} ${lastName}`
+  } else if (firstName) {
+    return firstName
+  } else if (lastName) {
+    return lastName
+  } else {
+    return staff.email || 'Unknown User'
+  }
 }
 
 watch(

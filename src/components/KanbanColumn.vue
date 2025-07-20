@@ -4,7 +4,7 @@
       <div class="p-3 border-b border-gray-200">
         <div class="flex items-center justify-between">
           <h3 class="font-semibold text-gray-900 text-sm">
-            {{ status.label }} ({{ jobs.length }})
+            {{ friendlyStatusLabel }} ({{ jobs.length }})
           </h3>
           <div v-if="status.tooltip" class="group relative" :title="status.tooltip">
             <svg
@@ -147,7 +147,7 @@
 <script setup lang="ts">
 import { debugLog } from '@/utils/debug'
 
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import JobCard from '@/components/JobCard.vue'
 import { schemas } from '@/api/generated/api'
 import { StatusChoiceSchema } from '@/api/local/schemas'
@@ -189,6 +189,20 @@ const props = withDefaults(defineProps<KanbanColumnProps>(), {
 const emit = defineEmits<KanbanColumnEmits>()
 
 const jobListRef = ref<HTMLElement>()
+
+const friendlyStatusLabel = computed(() => {
+  if (!props.status || !props.status.label) {
+    return ''
+  }
+  const originalLabel = props.status.label
+  const formattedLabel = originalLabel
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+  debugLog(`Original status label: ${originalLabel}, Formatted label: ${formattedLabel}`)
+  return formattedLabel
+})
 
 const handleArchivedJobDrop = (event: CustomEvent) => {
   debugLog('KanbanColumn received archived job drop:', event.detail)

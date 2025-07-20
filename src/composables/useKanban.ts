@@ -48,6 +48,7 @@ export function useKanban(onJobsLoaded?: () => void) {
     created_after: '',
     created_before: '',
     paid: '',
+    xero_invoice_params: '',
   })
 
   const jobs = computed(() =>
@@ -105,7 +106,11 @@ export function useKanban(onJobsLoaded?: () => void) {
     return KanbanCategorizationService.getAllColumns().map((col) => ({
       key: col.columnId,
       label: col.columnTitle,
-      tooltip: `Status: ${col.statusKey.replace('_', ' ')}`,
+      tooltip: `Status: ${col.statusKey
+        .replace(/_/g, ' ')
+        .split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')}`,
     }))
   })
 
@@ -191,7 +196,11 @@ export function useKanban(onJobsLoaded?: () => void) {
       statusChoices.value = columns.map((col) => ({
         key: col.columnId,
         label: col.columnTitle,
-        tooltip: `Status: ${col.statusKey.replace('_', ' ')}`,
+        tooltip: `Status: ${col.statusKey
+          .replace(/_/g, ' ')
+          .split(' ')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ')}`,
       }))
 
       if (!selectedMobileStatus.value) {

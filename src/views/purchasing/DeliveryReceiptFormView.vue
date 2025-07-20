@@ -390,7 +390,10 @@ async function saveChanges() {
       deliveryReceiptStore.getDefaultRetailRate(),
     )
 
-    await deliveryReceiptStore.submitDeliveryReceipt(purchaseOrder.value.id, deliveryReceiptData)
+    await deliveryReceiptStore.submitDeliveryReceipt(
+      purchaseOrder.value.id,
+      deliveryReceiptData.allocations,
+    )
     toast.success('Delivery receipt saved successfully!')
 
     await loadData()

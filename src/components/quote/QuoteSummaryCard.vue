@@ -429,7 +429,7 @@ async function handleLinkQuote() {
   isLinking.value = true
 
   debugLog('🍞 Showing loading toast for quote link')
-  toast.loading('Linking spreadsheet...', {
+  toast.info('Linking spreadsheet...', {
     description: 'Creating and configuring quote spreadsheet',
     id: 'quote-link',
   })
@@ -488,7 +488,7 @@ async function handleRefreshSpreadsheet() {
   isRefreshing.value = true
 
   debugLog('🍞 Showing loading toast for quote refresh')
-  toast.loading('Checking for updates...', {
+  toast.info('Checking for updates...', {
     description: 'Verifying spreadsheet changes',
     id: 'quote-refresh',
   })

@@ -13,29 +13,38 @@ class QuoteService {
   async linkQuote(jobId: string, templateUrl?: string): Promise<QuoteSpreadsheet> {
     const payload: LinkQuoteSheetRequest = templateUrl ? { template_url: templateUrl } : {}
 
-    await api.job_rest_jobs_quote_link_create({
-      id: jobId,
-      body: payload,
+    await api.job_rest_jobs_quote_link_create(payload, {
+      params: {
+        pk: jobId,
+      },
     })
 
     // The endpoint only returns { template_url }, but we need to return QuoteSpreadsheet
     // Let's fetch the updated job to get the complete quote_sheet
-    const jobResponse = await api.job_rest_jobs_retrieve({ job_id: jobId })
+    const jobResponse = await api.job_rest_jobs_retrieve({}, { params: { job_id: jobId } })
     return jobResponse.quote_sheet
   }
 
   async previewQuote(jobId: string): Promise<PreviewQuoteResponse> {
-    return await api.job_rest_jobs_quote_preview_create({
-      id: jobId,
-      body: {},
-    })
+    return await api.job_rest_jobs_quote_preview_create(
+      {},
+      {
+        params: {
+          pk: jobId,
+        },
+      },
+    )
   }
 
   async applyQuote(jobId: string): Promise<ApplyQuoteResponse> {
-    return await api.job_rest_jobs_quote_apply_create({
-      id: jobId,
-      body: {},
-    })
+    return await api.job_rest_jobs_quote_apply_create(
+      {},
+      {
+        params: {
+          pk: jobId,
+        },
+      },
+    )
   }
 
   hasLinkedSheet(job: Job): boolean {

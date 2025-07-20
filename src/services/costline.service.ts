@@ -29,9 +29,17 @@ export const getTimesheetEntries = async (
   staffId: string,
   date: string,
 ): Promise<TimesheetEntriesResponse> => {
-  return await api.job_rest_timesheet_entries_list({
-    params: { query: { staff_id: staffId, date } },
-  })
+  try {
+    return await api.job_rest_timesheet_entries_retrieve({
+      queries: {
+        staff_id: staffId,
+        date: date,
+      },
+    })
+  } catch (error) {
+    console.error('Error fetching timesheet entries:', error)
+    throw error
+  }
 }
 
 export const createCostLine = async (
@@ -40,14 +48,15 @@ export const createCostLine = async (
   payload: CostLineCreatePayload,
 ): Promise<CostLineCreateUpdate> => {
   if (kind === 'actual') {
-    return await api.job_rest_jobs_cost_sets_actual_cost_lines_create({
-      params: { path: { job_id: String(jobId) } },
-      body: payload as CostLineCreateUpdate,
-    })
+    return await api.job_rest_jobs_cost_sets_actual_cost_lines_create(
+      payload as CostLineCreateUpdate,
+      {
+        params: { job_id: String(jobId) },
+      },
+    )
   } else {
-    return await api.job_rest_jobs_cost_sets_cost_lines_create({
-      params: { path: { job_id: String(jobId), kind } },
-      body: payload as CostLineCreateUpdate,
+    return await api.job_rest_jobs_cost_sets_cost_lines_create(payload as CostLineCreateUpdate, {
+      params: { job_id: String(jobId), kind },
     })
   }
 }
@@ -56,9 +65,11 @@ export const updateCostLine = async (
   id: number,
   payload: CostLineUpdatePayload,
 ): Promise<CostLineCreateUpdate> => {
-  return await api.job_rest_cost_lines_partial_update({
-    params: { path: { cost_line_id: String(id) } },
-    body: payload as CostLineCreateUpdate,
+  // Ensure id is a number
+  const numericId = typeof id === 'string' ? parseInt(id, 10) : id
+
+  return await api.job_rest_cost_lines_partial_update(payload as CostLineCreateUpdate, {
+    params: { cost_line_id: numericId },
   })
 }
 
@@ -66,8 +77,11 @@ export const deleteCostLine = async (id: number): Promise<void> => {
   debugLog('🚀 SERVICE: Starting DELETE request for cost line ID:', id)
 
   try {
-    await api.job_rest_cost_lines_delete_destroy({
-      params: { path: { cost_line_id: String(id) } },
+    // Ensure id is a number
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id
+
+    await api.job_rest_cost_lines_delete_destroy(undefined, {
+      params: { cost_line_id: numericId },
     })
     debugLog('✅ SERVICE: DELETE request completed successfully')
   } catch (error) {

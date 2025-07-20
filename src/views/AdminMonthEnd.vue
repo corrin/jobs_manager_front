@@ -272,7 +272,7 @@ function jobNumber(id: string) {
 
 async function fetchMonthEndData() {
   loading.value = true
-  toast.loading('Loading Month-End data...', { id: 'month-end-loading' })
+  toast.info('Loading Month-End data...', { id: 'month-end-loading' })
   try {
     const data = await fetchMonthEnd()
     jobs.value = data.jobs
@@ -313,7 +313,7 @@ const monthData = ref<
 function loadMonthData(month: MonthTab) {
   if (monthData.value[month.key]) return
   loading.value = true
-  toast.loading(`Loading data for ${month.label}...`, { id: `month-end-${month.key}` })
+  toast.info(`Loading data for ${month.label}...`, { id: `month-end-${month.key}` })
   fetchMonthEnd()
     .then((data) => {
       monthData.value[month.key] = {
@@ -341,7 +341,7 @@ function loadMonthData(month: MonthTab) {
 
 function loadCustomMonth() {
   loading.value = true
-  toast.loading('Loading Month-End data...', { id: 'month-end-custom' })
+  toast.info('Loading Month-End data...', { id: 'month-end-custom' })
   fetchMonthEnd()
     .then((data) => {
       customMonthData.value = {

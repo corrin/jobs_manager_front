@@ -10,10 +10,10 @@
       </div>
 
       <div class="max-w-2xl mx-auto">
-        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
           <div class="space-y-6">
             <div class="text-center">
-              <FileSpreadsheet class="w-16 h-16 mx-auto text-indigo-600 mb-4" />
+              <FileSpreadsheet class="w-16 h-8 mx-auto text-indigo-600 mb-4" />
               <h2 class="text-xl font-semibold mb-2">Upload Supplier Quote</h2>
               <p class="text-gray-600 mb-6">
                 Upload a supplier quote file (preferably in PDF) and we'll automatically extract the

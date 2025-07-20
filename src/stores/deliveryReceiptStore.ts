@@ -43,9 +43,8 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     error.value = null
 
     try {
-      // Endpoint not available in current OpenAPI schema - using direct API call
-      const response = await api.get(`/purchasing/rest/purchase-orders/${id}/`)
-      return response.data as PurchaseOrderDetail
+      const response = await api.retrievePurchaseOrder({ params: { id } })
+      return response
     } catch (err) {
       const errorMessage = handleApiError(err, `Failed to fetch purchase order ${id}`)
       error.value = errorMessage
@@ -113,7 +112,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
         allocations: receiptData,
       }
 
-      await api.purchasing_rest_delivery_receipts_create({ body: payload })
+      await api.purchasing_rest_delivery_receipts_create(payload)
     } catch (err) {
       const errorMessage = handleApiError(
         err,
@@ -140,7 +139,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     try {
       debugLog(`🔍 Fetching existing allocations for PO: ${purchaseOrderId}`)
       const response = await api.purchasing_rest_purchase_orders_allocations_retrieve({
-        po_id: purchaseOrderId,
+        params: { po_id: purchaseOrderId },
       })
       debugLog('📦 Existing allocations response:', response)
       return response

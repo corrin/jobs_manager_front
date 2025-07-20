@@ -11,7 +11,15 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select'
-import { Check, AlertCircle, UploadCloud, ExternalLink, Printer, Mail } from 'lucide-vue-next'
+import {
+  Check,
+  AlertCircle,
+  UploadCloud,
+  ExternalLink,
+  Printer,
+  Mail,
+  CalendarIcon,
+} from 'lucide-vue-next'
 import ClientLookup from '@/components/ClientLookup.vue'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
@@ -31,7 +39,6 @@ const emit = defineEmits<{
   'update:supplier': [v: string]
   'update:supplier_id': [v: string]
   'update:reference': [v: string]
-  'update:order_date': [v: string]
   'update:expected_delivery': [v: string]
   'update:status': [v: Status]
   save: []
@@ -41,16 +48,26 @@ const emit = defineEmits<{
   email: []
 }>()
 
-function onOrderDateUpdate(value: string) {
-  emit('update:order_date', value)
-}
-
 function onExpectedDeliveryUpdate(value: string) {
   emit('update:expected_delivery', value)
 }
 
 function onStatusUpdate(value: Status) {
   emit('update:status', value)
+}
+
+function formatDate(dateString: string | null): string {
+  if (!dateString) return ''
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-NZ', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  } catch {
+    return dateString
+  }
 }
 
 const statusOptions: { value: Status; label: string }[] = [
@@ -119,18 +136,18 @@ const statusOptions: { value: Status; label: string }[] = [
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
         <div class="flex flex-col gap-2">
-          <DatePicker
-            label="Order Date"
-            :modelValue="po.order_date"
-            :max="po.expected_delivery"
-            @update:modelValue="onOrderDateUpdate"
-          />
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium">Order Date</label>
+            <Button variant="outline" class="justify-start font-normal w-full bg-gray-50" disabled>
+              <CalendarIcon class="mr-2 h-4 w-4" />
+              {{ formatDate(po.order_date) || 'Today' }}
+            </Button>
+          </div>
         </div>
         <div class="flex flex-col gap-2">
           <DatePicker
             label="Expected Delivery"
             :modelValue="po.expected_delivery"
-            :min="po.order_date"
             @update:modelValue="onExpectedDeliveryUpdate"
           />
         </div>

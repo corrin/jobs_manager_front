@@ -36,17 +36,39 @@
       >
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Quotes</h3>
 
-        <div v-if="!jobData?.quoted" class="text-center py-8">
+        <div v-if="!jobData?.quoted || isQuoteDeleted" class="text-center py-8">
           <div class="text-gray-500 mb-4">No quotes for this project</div>
           <button
             @click="createQuote"
-            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            :disabled="isCreatingQuote"
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Quote Job
+            <svg
+              v-if="isCreatingQuote"
+              class="animate-spin -ml-1 mr-1 h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            {{ isCreatingQuote ? 'Creating...' : 'Quote Job' }}
           </button>
         </div>
 
-        <div v-else class="space-y-4">
+        <div v-else-if="!isQuoteDeleted" class="space-y-4">
           <div class="border-l-4 border-blue-400 pl-4">
             <div class="text-sm text-gray-600">Quote Total</div>
             <div class="text-xl font-semibold text-gray-900">{{ formatCurrency(quoteTotal) }}</div>
@@ -67,17 +89,61 @@
             <button
               @click="deleteQuoteOnXero"
               v-if="quoteUrl"
-              class="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+              :disabled="isDeletingQuote"
+              class="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              Delete Quote on Xero
+              <svg
+                v-if="isDeletingQuote"
+                class="animate-spin -ml-1 mr-1 h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              {{ isDeletingQuote ? 'Deleting...' : 'Delete Quote on Xero' }}
             </button>
 
             <button
               @click="acceptQuote"
               v-if="!jobData?.quote_acceptance_date"
-              class="px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+              :disabled="isAcceptingQuote"
+              class="px-3 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              Accept Quote
+              <svg
+                v-if="isAcceptingQuote"
+                class="animate-spin -ml-1 mr-1 h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              {{ isAcceptingQuote ? 'Accepting...' : 'Accept Quote' }}
             </button>
           </div>
         </div>
@@ -86,17 +152,39 @@
       <div class="bg-white rounded-lg border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoices</h3>
 
-        <div v-if="!jobData?.invoiced" class="text-center py-8">
+        <div v-if="!jobData?.invoiced || isInvoiceDeleted" class="text-center py-8">
           <div class="text-gray-500 mb-4">No invoices for this project</div>
           <button
             @click="createInvoice"
-            class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+            :disabled="isCreatingInvoice"
+            class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Create Invoice
+            <svg
+              v-if="isCreatingInvoice"
+              class="animate-spin -ml-1 mr-1 h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            {{ isCreatingInvoice ? 'Creating...' : 'Create Invoice' }}
           </button>
         </div>
 
-        <div v-else class="space-y-4">
+        <div v-else-if="!isInvoiceDeleted" class="space-y-4">
           <div class="border-l-4 border-orange-400 pl-4">
             <div class="text-sm text-gray-600">Invoice Total (Excl. Taxes)</div>
             <div class="text-xl font-semibold text-gray-900">
@@ -117,9 +205,31 @@
             <button
               @click="deleteInvoiceOnXero"
               v-if="invoiceUrl"
-              class="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+              :disabled="isDeletingInvoice"
+              class="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              Delete Invoice on Xero
+              <svg
+                v-if="isDeletingInvoice"
+                class="animate-spin -ml-1 mr-1 h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              {{ isDeletingInvoice ? 'Deleting...' : 'Delete Invoice on Xero' }}
             </button>
           </div>
         </div>
@@ -130,10 +240,11 @@
 
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
 import { XeroSyncResponseSchema, type JobWithFinancialData } from '../../api/local/schemas'
+import { api } from '../../api/generated/api'
 
 interface Props {
   jobData: JobWithFinancialData | null
@@ -147,8 +258,24 @@ const emit = defineEmits<{
   'quote-created': []
   'quote-accepted': []
   'invoice-created': []
+  'quote-deleted': []
+  'invoice-deleted': []
 }>()
 
+// Local reactive state to override jobData when items are deleted
+const isQuoteDeleted = ref(false)
+const isInvoiceDeleted = ref(false)
+
+// Loading states for delete operations
+const isDeletingQuote = ref(false)
+const isDeletingInvoice = ref(false)
+
+// Loading states for create operations
+const isCreatingQuote = ref(false)
+const isCreatingInvoice = ref(false)
+
+// Loading state for accepting quote
+const isAcceptingQuote = ref(false)
 const estimateTotal = computed(() => {
   return props.jobData?.latest_estimate?.summary?.rev || 0
 })
@@ -169,10 +296,14 @@ const toBeInvoiced = computed(() => {
 })
 
 const quoteTotal = computed(() => {
+  // Return 0 if quote was deleted locally
+  if (isQuoteDeleted.value) return 0
   return props.jobData?.quote?.total_excl_tax || 0
 })
 
 const invoiceTotal = computed(() => {
+  // Return 0 if invoice was deleted locally
+  if (isInvoiceDeleted.value) return 0
   return props.jobData?.invoice?.total_excl_tax || 0
 })
 
@@ -188,10 +319,14 @@ const daysUntilDeadline = computed(() => {
 })
 
 const quoteUrl = computed(() => {
+  // Return null if quote was deleted locally
+  if (isQuoteDeleted.value) return null
   return props.jobData?.quote?.online_url || null
 })
 
 const invoiceUrl = computed(() => {
+  // Return null if invoice was deleted locally
+  if (isInvoiceDeleted.value) return null
   return props.jobData?.invoice?.online_url || null
 })
 
@@ -218,7 +353,9 @@ const formatDate = (dateString: string) => {
 }
 
 const createQuote = async () => {
-  if (!props.jobData?.id) return
+  if (!props.jobData?.id || isCreatingQuote.value) return
+
+  isCreatingQuote.value = true
   try {
     // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
     // Xero integration endpoints are not yet available in the generated API
@@ -229,21 +366,44 @@ const createQuote = async () => {
       return
     }
     toast.success('Quote created successfully!')
+    // Reset quote deletion state since we created a new quote
+    isQuoteDeleted.value = false
     emit('quote-created')
   } catch (err) {
     debugLog('Error creating quote:', err)
     toast.error('Failed to create quote.')
+  } finally {
+    isCreatingQuote.value = false
   }
 }
 
-const acceptQuote = () => {
-  if (props.jobData) {
-    emit('quote-accepted')
+const acceptQuote = async () => {
+  if (!props.jobData?.id || isAcceptingQuote.value) return
+
+  isAcceptingQuote.value = true
+  try {
+    const response = await api.job_rest_jobs_quote_accept_create(undefined, {
+      params: { job_id: props.jobData.id },
+    })
+
+    if (response.success) {
+      toast.success('Quote accepted successfully!')
+      emit('quote-accepted')
+    } else {
+      toast.error('Failed to accept quote')
+    }
+  } catch (err) {
+    debugLog('Error accepting quote:', err)
+    toast.error('Failed to accept quote.')
+  } finally {
+    isAcceptingQuote.value = false
   }
 }
 
 const createInvoice = async () => {
-  if (!props.jobData?.id) return
+  if (!props.jobData?.id || isCreatingInvoice.value) return
+
+  isCreatingInvoice.value = true
   try {
     // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
     // Xero integration endpoints are not yet available in the generated API
@@ -254,10 +414,14 @@ const createInvoice = async () => {
       return
     }
     toast.success('Invoice created successfully!')
+    // Reset invoice deletion state since we created a new invoice
+    isInvoiceDeleted.value = false
     emit('invoice-created')
   } catch (err) {
     debugLog('Error creating invoice:', err)
     toast.error('Failed to create invoice.')
+  } finally {
+    isCreatingInvoice.value = false
   }
 }
 
@@ -268,7 +432,9 @@ const goToQuoteOnXero = () => {
 }
 
 const deleteQuoteOnXero = async () => {
-  if (!props.jobData?.id) return
+  if (!props.jobData?.id || isDeletingQuote.value) return
+
+  isDeletingQuote.value = true
   try {
     // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
     // Xero integration endpoints are not yet available in the generated API
@@ -278,10 +444,17 @@ const deleteQuoteOnXero = async () => {
       debugLog(validatedResponse.error || 'Failed to delete quote')
       return
     }
+
+    // Set local reactive state to immediately hide quote data
+    isQuoteDeleted.value = true
+
     toast.success('Quote deleted successfully!')
+    emit('quote-deleted')
   } catch (err) {
     debugLog('Error deleting quote:', err)
     toast.error('Failed to delete quote.')
+  } finally {
+    isDeletingQuote.value = false
   }
 }
 
@@ -292,7 +465,9 @@ const goToInvoiceOnXero = () => {
 }
 
 const deleteInvoiceOnXero = async () => {
-  if (!props.jobData?.id) return
+  if (!props.jobData?.id || isDeletingInvoice.value) return
+
+  isDeletingInvoice.value = true
   try {
     // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
     // Xero integration endpoints are not yet available in the generated API
@@ -302,10 +477,51 @@ const deleteInvoiceOnXero = async () => {
       debugLog(validatedResponse.error || 'Failed to delete invoice')
       return
     }
+
+    // Set local reactive state to immediately hide invoice data
+    isInvoiceDeleted.value = true
+
     toast.success('Invoice deleted successfully!')
+    emit('invoice-deleted')
   } catch (err) {
     debugLog('Error deleting invoice:', err)
     toast.error('Failed to delete invoice.')
+  } finally {
+    isDeletingInvoice.value = false
   }
 }
+
+// Watch for jobData changes and reset local deletion states
+watch(
+  () => props.jobData?.id,
+  (newJobId) => {
+    if (newJobId) {
+      // Reset local deletion states when job data changes
+      isQuoteDeleted.value = false
+      isInvoiceDeleted.value = false
+    }
+  },
+)
+
+// Watch for quote status changes to reset quote deletion state
+watch(
+  () => props.jobData?.quoted,
+  (isQuoted) => {
+    if (isQuoted && isQuoteDeleted.value) {
+      // If job becomes quoted again, reset the local deletion state
+      isQuoteDeleted.value = false
+    }
+  },
+)
+
+// Watch for invoice status changes to reset invoice deletion state
+watch(
+  () => props.jobData?.invoiced,
+  (isInvoiced) => {
+    if (isInvoiced && isInvoiceDeleted.value) {
+      // If job becomes invoiced again, reset the local deletion state
+      isInvoiceDeleted.value = false
+    }
+  },
+)
 </script>

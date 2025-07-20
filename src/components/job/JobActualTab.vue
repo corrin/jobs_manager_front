@@ -6,8 +6,15 @@
           Actual Costs
           <span v-if="isLoading" class="ml-2 text-sm text-gray-500">Loading...</span>
         </h2>
-        <div class="text-sm text-gray-500">
-          View only - costs from delivery receipts and timesheets
+        <div class="flex items-center gap-4">
+          <div class="text-sm text-gray-500">
+            View and add actual costs from stock consumption and adjustments
+          </div>
+          <ActualCostDropdown
+            :disabled="isLoading"
+            @add-material="handleAddMaterial"
+            @add-adjustment="handleAddAdjustment"
+          />
         </div>
       </div>
     </div>
@@ -230,6 +237,22 @@
         />
       </div>
     </div>
+
+    <!-- Stock Consumption Modal -->
+    <StockConsumptionModal
+      v-if="showStockModal"
+      @close="closeStockModal"
+      @submit="submitStockConsumption"
+    />
+
+    <!-- Adjustment Modal -->
+    <CostLineAdjustmentModal
+      v-if="showAdjustmentModal"
+      :initial="null"
+      mode="create"
+      @close="closeAdjustmentModal"
+      @submit="submitAdjustment"
+    />
   </div>
 </template>
 
@@ -238,10 +261,15 @@ import { debugLog } from '@/utils/debug'
 
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
 import { fetchCostSet } from '@/services/costing.service'
+import { costlineService } from '@/services/costline.service'
 import { schemas, api } from '../../api/generated/api'
 import { z } from 'zod'
+import ActualCostDropdown from './ActualCostDropdown.vue'
+import StockConsumptionModal from './StockConsumptionModal.vue'
+import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostSet = z.infer<typeof schemas.CostSet>
@@ -281,12 +309,18 @@ const props = defineProps<{
   actualSummaryFromBackend?: { cost: number; rev: number; hours: number; created?: string }
 }>()
 
+const emit = defineEmits<{
+  'cost-line-changed': []
+}>()
+
 const router = useRouter()
 
 const costLines = ref<CostLine[]>([])
 const staffMap = ref<Record<string, KanbanStaff>>({})
 const isLoading = ref(false)
 const revision = ref(0)
+const showStockModal = ref(false)
+const showAdjustmentModal = ref(false)
 
 function formatCurrency(value: number | string | undefined): string {
   const num = typeof value === 'string' ? parseFloat(value) : value || 0
@@ -410,5 +444,106 @@ function navigateToTimesheet(staffId: string, date?: string) {
   }
 
   router.push(routeParams)
+}
+
+// Modal handlers
+function handleAddMaterial() {
+  showStockModal.value = true
+}
+
+function handleAddAdjustment() {
+  showAdjustmentModal.value = true
+}
+
+function closeStockModal() {
+  showStockModal.value = false
+}
+
+function closeAdjustmentModal() {
+  showAdjustmentModal.value = false
+}
+
+async function submitStockConsumption(payload: {
+  stockItem: { id: number; description: string }
+  quantity: number
+  unit_cost: number
+  unit_rev: number
+}) {
+  isLoading.value = true
+  toast.info('Consuming stock and adding cost line...', { id: 'add-stock' })
+  try {
+    // First, consume the stock using the stock consumption endpoint
+    const consumeRequest = {
+      job_id: props.jobId,
+      quantity: payload.quantity.toString(),
+    }
+
+    await api.purchasing_rest_stock_consume_create(consumeRequest, {
+      params: { stock_id: payload.stockItem.id },
+    })
+
+    // Then create the cost line
+    const createPayload = {
+      kind: 'material' as const,
+      desc: `${payload.stockItem.description} (Stock)`,
+      quantity: payload.quantity.toString(),
+      unit_cost: payload.unit_cost.toString(),
+      unit_rev: payload.unit_rev.toString(),
+      ext_refs: {
+        stock_item_id: payload.stockItem.id,
+        source: 'stock_consumption',
+      },
+      meta: {
+        source: 'stock_consumption',
+        stock_item_id: payload.stockItem.id,
+        stock_description: payload.stockItem.description,
+      },
+    }
+
+    const created = await costlineService.createCostLine(props.jobId, 'actual', createPayload)
+    costLines.value = [...costLines.value, created]
+    toast.success('Stock consumption added!')
+    emit('cost-line-changed')
+    closeStockModal()
+  } catch (error) {
+    toast.error('Failed to add stock consumption.')
+    debugLog('Failed to add stock consumption:', error)
+  } finally {
+    isLoading.value = false
+    toast.dismiss('add-stock')
+  }
+}
+
+async function submitAdjustment(payload: CostLine) {
+  if (!payload || payload.kind !== 'adjust') return
+  isLoading.value = true
+  toast.info('Adding adjustment...', { id: 'add-adjustment' })
+  try {
+    const createPayload = {
+      kind: 'adjust' as const,
+      desc: payload.desc,
+      quantity: payload.quantity.toString(),
+      unit_cost: payload.unit_cost?.toString() || '0',
+      unit_rev: payload.unit_rev?.toString() || '0',
+      ext_refs: {
+        source: 'manual_adjustment',
+      },
+      meta: {
+        source: 'manual_adjustment',
+      },
+    }
+
+    const created = await costlineService.createCostLine(props.jobId, 'actual', createPayload)
+    costLines.value = [...costLines.value, created]
+    toast.success('Adjustment added!')
+    emit('cost-line-changed')
+    closeAdjustmentModal()
+  } catch (error) {
+    toast.error('Failed to add adjustment.')
+    debugLog('Failed to add adjustment:', error)
+  } finally {
+    isLoading.value = false
+    toast.dismiss('add-adjustment')
+  }
 }
 </script>

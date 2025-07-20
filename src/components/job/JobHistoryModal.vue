@@ -65,7 +65,7 @@
             </div>
           </div>
 
-          <div v-else-if="events.length === 0" class="text-center text-gray-500 py-8">
+          <div v-else-if="!events || events.length === 0" class="text-center text-gray-500 py-8">
             No events recorded yet.
           </div>
         </div>

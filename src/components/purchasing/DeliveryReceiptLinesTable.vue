@@ -56,6 +56,14 @@ const getExistingAllocations = (lineId: string): AllocationItem[] => {
   return props.existingAllocations?.[lineId] || []
 }
 
+// Get total received from EXISTING (saved) allocations only
+// Used for calculating remaining quantity accurately
+const getTotalReceivedFromSaved = (lineId: string): number => {
+  return getExistingAllocations(lineId).reduce((sum, allocation) => sum + allocation.quantity, 0)
+}
+
+// Get total received including CURRENT (unsaved) allocations
+// Used for display purposes (showing "This Receipt" total)
 const getTotalReceived = (lineId: string): number => {
   return getLineAllocations(lineId).reduce((sum, allocation) => sum + allocation.quantity, 0)
 }
@@ -63,9 +71,10 @@ const getTotalReceived = (lineId: string): number => {
 const getRemaining = (line: PurchaseOrderLine): number => {
   const remaining = Math.max(0, line.quantity - (line.received_quantity || 0))
 
-  const currentAllocations = getTotalReceived(line.id)
+  // Use only EXISTING allocations for calculating remaining
+  const existingAllocations = getTotalReceivedFromSaved(line.id)
 
-  return Math.max(0, remaining - currentAllocations)
+  return Math.max(0, remaining - existingAllocations)
 }
 
 const getJobName = (jobId: string | null): string => {
@@ -299,13 +308,21 @@ const columns = computed(() => [
             ])
           : null,
 
-        getTotalReceived(row.original.id) > remaining
-          ? h(
-              'div',
-              { class: 'p-1 bg-red-50 border border-red-200 rounded text-xs text-red-700' },
-              ['Warning: Exceeds remaining'],
-            )
-          : null,
+        // Check if current total allocations exceed what's available (ordered - already received)
+        (() => {
+          const totalCurrentAllocations = getTotalReceived(row.original.id)
+          const maxAvailable = Math.max(
+            0,
+            row.original.quantity - (row.original.received_quantity || 0),
+          )
+          return totalCurrentAllocations > maxAvailable
+            ? h(
+                'div',
+                { class: 'p-1 bg-red-50 border border-red-200 rounded text-xs text-red-700' },
+                ['Warning: Exceeds remaining'],
+              )
+            : null
+        })(),
       ])
     },
     meta: { editable: true },

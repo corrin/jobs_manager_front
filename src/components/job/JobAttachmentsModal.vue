@@ -91,14 +91,36 @@
           >
             <div class="flex items-center space-x-3">
               <div class="flex-shrink-0">
+                <!-- Show thumbnail if available -->
                 <img
                   v-if="file.thumbnail_url"
                   :src="file.thumbnail_url"
                   :alt="file.filename"
-                  class="w-10 h-10 object-cover rounded"
+                  class="w-10 h-10 object-cover rounded cursor-pointer hover:opacity-80"
+                  @click="openImagePreview(file)"
+                  @error="onImageError"
                 />
+                <!-- Show image preview if it's an image file but no thumbnail -->
+                <img
+                  v-else-if="isImageJobFile(file) && file.download_url"
+                  :src="file.download_url"
+                  :alt="file.filename"
+                  class="w-10 h-10 object-cover rounded cursor-pointer hover:opacity-80"
+                  @click="openImagePreview(file)"
+                  @error="onImageError"
+                />
+                <!-- Show file icon for other files -->
                 <div v-else class="w-10 h-10 bg-gray-300 rounded flex items-center justify-center">
                   <svg
+                    v-if="isPdfFile(file)"
+                    class="w-6 h-6 text-red-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M4 18h12V6l-4-4H4v16zm8-14v2h2l-2-2z" />
+                  </svg>
+                  <svg
+                    v-else
                     class="w-6 h-6 text-gray-600"
                     fill="none"
                     stroke="currentColor"
@@ -199,6 +221,39 @@
           @click="closeModal"
           type="button"
           class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Close
+        </button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+
+  <!-- Image Preview Modal -->
+  <Dialog :open="isImagePreviewOpen" @update:open="closeImagePreview">
+    <DialogContent class="max-w-4xl max-h-[90vh] overflow-auto">
+      <DialogHeader>
+        <DialogTitle>{{ previewImage?.filename }}</DialogTitle>
+      </DialogHeader>
+      <div class="flex justify-center items-center p-4">
+        <img
+          v-if="previewImage"
+          :src="previewImage.thumbnail_url || previewImage.download_url"
+          :alt="previewImage.filename"
+          class="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+        />
+      </div>
+      <DialogFooter>
+        <button
+          @click="downloadFile(previewImage!)"
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-indigo-600 bg-white border border-indigo-300 rounded-md hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Download
+        </button>
+        <button
+          @click="closeImagePreview"
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
         >
           Close
         </button>
@@ -502,6 +557,35 @@ const formatFileSize = (bytes: number) => {
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
+}
+
+// Helper functions for file types
+const isImageJobFile = (file: JobFile): boolean => {
+  return file.mime_type?.startsWith('image/') || false
+}
+
+const isPdfFile = (file: JobFile): boolean => {
+  return file.mime_type === 'application/pdf'
+}
+
+// Image preview modal
+const previewImage = ref<JobFile | null>(null)
+const isImagePreviewOpen = ref(false)
+
+const openImagePreview = (file: JobFile) => {
+  previewImage.value = file
+  isImagePreviewOpen.value = true
+}
+
+const closeImagePreview = () => {
+  previewImage.value = null
+  isImagePreviewOpen.value = false
+}
+
+const onImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  // Hide broken image by setting a placeholder
+  img.style.display = 'none'
 }
 
 onMounted(() => {

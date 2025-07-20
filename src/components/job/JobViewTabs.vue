@@ -42,6 +42,7 @@
           v-if="jobData && companyDefaults"
           :job-id="jobData.id"
           :company-defaults="companyDefaults"
+          @cost-line-changed="$emit('reload-job')"
         />
       </div>
       <div
@@ -53,6 +54,7 @@
           :job-id="jobData.id"
           :job-data="jobData"
           @quote-imported="$emit('quote-imported', $event)"
+          @cost-line-changed="$emit('reload-job')"
         />
       </div>
       <div v-if="activeTab === 'actual'" class="h-full p-4 md:p-6">
@@ -60,6 +62,7 @@
           v-if="jobData"
           :job-id="jobData.id"
           :actual-summary-from-backend="jobData.latest_actual?.summary"
+          @cost-line-changed="$emit('reload-job')"
         />
       </div>
       <div v-if="activeTab === 'financial'" class="h-full p-4 md:p-6">
@@ -74,7 +77,19 @@
         />
       </div>
       <div v-if="activeTab === 'costAnalysis'" class="h-full p-4 md:p-6">
-        <JobCostAnalysisTab v-if="jobData" :job-id="jobData.id" />
+        <JobCostAnalysisTab v-if="jobData" :job-id="jobData.id" :job-data="analysisData" />
+      </div>
+      <div v-if="activeTab === 'settings'" class="h-full p-4 md:p-6">
+        <JobSettingsTab
+          v-if="jobData"
+          :job-data="jobData"
+          @open-settings="$emit('open-settings')"
+          @open-workflow="$emit('open-workflow')"
+          @open-history="$emit('open-history')"
+          @open-attachments="$emit('open-attachments')"
+          @open-pdf="$emit('open-pdf')"
+          @delete-job="$emit('delete-job')"
+        />
       </div>
     </div>
   </div>
@@ -87,6 +102,7 @@ import JobQuoteTab from './JobQuoteTab.vue'
 import JobActualTab from './JobActualTab.vue'
 import JobFinancialTab from './JobFinancialTab.vue'
 import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
+import JobSettingsTab from './JobSettingsTab.vue'
 import { watch, computed } from 'vue'
 import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
@@ -108,6 +124,8 @@ const emit = defineEmits<{
   (e: 'quote-created'): void
   (e: 'quote-accepted'): void
   (e: 'invoice-created'): void
+  (e: 'delete-job'): void
+  (e: 'reload-job'): void
 }>()
 
 const allTabs = [
@@ -116,6 +134,7 @@ const allTabs = [
   { key: 'actual', label: 'Actual' },
   { key: 'financial', label: 'Financial' },
   { key: 'costAnalysis', label: 'Cost Analysis' },
+  { key: 'settings', label: 'Settings' },
 ] as const
 
 const tabs = computed(() => {
@@ -136,6 +155,21 @@ const props = defineProps<{
   companyDefaults: Record<string, unknown> | null
   latestPricings: Record<string, unknown> | null
 }>()
+
+const analysisData = computed(() => {
+  if (!props.jobData) return null
+
+  const hasValidQuote =
+    props.jobData.latest_quote &&
+    typeof props.jobData.latest_quote === 'object' &&
+    Object.keys(props.jobData.latest_quote).length > 0
+
+  return {
+    pricing_methodology: props.jobData.pricing_methodology,
+    has_quote: hasValidQuote,
+    quote: props.jobData.latest_quote || null,
+  }
+})
 
 watch(
   () => props.jobData,

@@ -427,7 +427,10 @@ onMounted(async () => {
 async function loadJobs() {
   try {
     const data = await jobService.getAllJobs()
-    const kanbanJobs = [...data.activeJobs, ...data.archivedJobs].map((job) => ({
+    // Use the correct property names from FetchAllJobsResponse schema
+    const activeJobs = data.active_jobs || []
+    const archivedJobs = data.archived_jobs || []
+    const kanbanJobs = [...activeJobs, ...archivedJobs].map((job) => ({
       id: job.id,
       name: job.name,
       description: job.description,
