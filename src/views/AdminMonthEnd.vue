@@ -225,17 +225,16 @@ const stockJob = ref<MonthEndStockJob | null>(null)
 const isLoading = computed(() => loading.value)
 const totalHours = computed(() => jobs.value.reduce((a, j) => a + j.total_hours, 0))
 const totalDollars = computed(() => jobs.value.reduce((a, j) => a + j.total_dollars, 0))
-const allSelected =
-  computed(() => jobs.value.length > 0 && selectedIds.value.length === jobs.value.length) |
-  (null > null)
-
-const jobs = ref<MonthEndJob[]>([])
-const stockJob = ref<MonthEndStockJob | null>(null)
-const totalHours = computed(() => jobs.value.reduce((a, j) => a + j.total_hours, 0))
-const totalDollars = computed(() => jobs.value.reduce((a, j) => a + j.total_dollars, 0))
 const allSelected = computed(
   () => jobs.value.length > 0 && selectedIds.value.length === jobs.value.length,
 )
+const showDialog = ref(false)
+const progress = ref(0)
+const customMonthLoaded = ref(false)
+const customMonthData = ref<{
+  jobs: MonthEndJob[]
+  stockSummary: { material_line_count: number; material_cost: number }
+} | null>(null)
 const stockSummary = computed(() => {
   if (!stockJob.value) return { material_line_count: 0, material_cost: 0 }
   return {
