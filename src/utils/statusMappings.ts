@@ -14,6 +14,7 @@ export const statusNameMap: Record<string, string> = {
   draft: 'Draft',
   unusual: 'Unusual',
   approved: 'Approved',
+  awaiting_approval: 'Awaiting Approval',
 }
 
 export const statusColorMap: Record<string, string> = {

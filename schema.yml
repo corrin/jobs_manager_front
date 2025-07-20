@@ -1317,7 +1317,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ArchiveJobsRequest'
+                $ref: '#/components/schemas/ArchiveJobsResponse'
           description: ''
   /job/api/jobs/{job_id}/quote-chat/:
     get:
@@ -1893,7 +1893,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CostLineCreateUpdate'
+                $ref: '#/components/schemas/CostLine'
           description: ''
   /job/rest/jobs/{job_id}/events/:
     post:
@@ -1930,6 +1930,40 @@ paths:
         - cookieAuth: []
       responses:
         '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+  /job/rest/jobs/{job_id}/quote/accept/:
+    post:
+      operationId: job_rest_jobs_quote_accept_create
+      description: Accept a quote for the job by setting quote_acceptance_date
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteAcceptResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+        '404':
           content:
             application/json:
               schema:
@@ -2013,6 +2047,79 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CostSet'
+          description: ''
+  /job/rest/jobs/{job_id}/cost_sets/quote/revise/:
+    get:
+      operationId: job_rest_jobs_cost_sets_quote_revise_retrieve
+      description: |-
+        Get the list of archived quote revisions for the specified job.
+
+        Returns a list of all quote revisions that have been archived in the
+        CostSet summary, including revision numbers, timestamps, and full data.
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteRevisionsListResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+    post:
+      operationId: job_rest_jobs_cost_sets_quote_revise_create
+      description: |-
+        Create a new quote revision by archiving current quote data and clearing cost lines.
+
+        This endpoint:
+        1. Archives current quote cost lines and summary in the existing CostSet summary
+        2. Clears all current cost lines from the quote CostSet
+        3. Increments the revision number
+        4. Allows starting fresh quote while preserving historical data
+
+        Only works with kind='quote' CostSets.
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRevisionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/QuoteRevisionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuoteRevisionRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteRevisionResponse'
           description: ''
   /job/rest/jobs/{id}/quote/apply/:
     post:
@@ -2622,13 +2729,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MonthEndPostResponse'
+              $ref: '#/components/schemas/MonthEndPostRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/MonthEndPostResponse'
+              $ref: '#/components/schemas/MonthEndPostRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/MonthEndPostResponse'
+              $ref: '#/components/schemas/MonthEndPostRequest'
         required: true
       security:
         - cookieAuth: []
@@ -2876,7 +2983,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeliveryReceiptRequest'
+                $ref: '#/components/schemas/DeliveryReceiptResponse'
           description: ''
   /purchasing/rest/jobs/:
     get:
@@ -3753,6 +3860,17 @@ components:
           description: List of job IDs to archive
       required:
         - ids
+    ArchiveJobsResponse:
+      type: object
+      description: Response for job archiving operation
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
     AssignJobRequest:
       type: object
       description: Serialiser for job assignment request
@@ -4341,6 +4459,16 @@ components:
       required:
         - allocations
         - purchase_order_id
+    DeliveryReceiptResponse:
+      type: object
+      description: Serializer for delivery receipt response data.
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+      required:
+        - success
     DjangoJob:
       type: object
       properties:
@@ -5788,6 +5916,18 @@ components:
         - date
         - total_dollars
         - total_hours
+    MonthEndPostRequest:
+      type: object
+      description: Serializer for month-end POST request
+      properties:
+        job_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of job IDs to process for month-end
+      required:
+        - job_ids
     MonthEndPostResponse:
       type: object
       description: Serializer for month-end POST response
@@ -6528,6 +6668,49 @@ components:
         location:
           type: string
           maxLength: 255
+    PurchaseOrderLineUpdate:
+      type: object
+      description: Serializer for updating purchase order lines (includes ID).
+      properties:
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        job_id:
+          type: string
+          format: uuid
+          nullable: true
+        description:
+          type: string
+          maxLength: 255
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          default: '0.00'
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        price_tbc:
+          type: boolean
+          default: false
+        item_code:
+          type: string
+          maxLength: 100
+        metal_type:
+          type: string
+          maxLength: 100
+        alloy:
+          type: string
+          maxLength: 100
+        specifics:
+          type: string
+          maxLength: 255
+        location:
+          type: string
+          maxLength: 255
     PurchaseOrderList:
       type: object
       description: Serializer for listing purchase orders from service data.
@@ -6590,7 +6773,7 @@ components:
         lines:
           type: array
           items:
-            $ref: '#/components/schemas/PurchaseOrderLineCreate'
+            $ref: '#/components/schemas/PurchaseOrderLineUpdate'
     PurchasingJobsResponse:
       type: object
       description: Serializer for PurchasingJobsAPIView response
@@ -7340,6 +7523,128 @@ components:
           type: integer
       required:
         - items
+    QuoteRevisionRequest:
+      type: object
+      description: Serializer for quote revision request - validates input data
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+          description: Optional reason for creating a new quote revision
+    QuoteRevisionResponse:
+      type: object
+      description: Serializer for quote revision response
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        quote_revision:
+          type: integer
+        archived_cost_lines_count:
+          type: integer
+        job_id:
+          type: string
+        error:
+          type: string
+          description: Optional error details
+      required:
+        - success
+        - message
+        - quote_revision
+        - archived_cost_lines_count
+        - job_id
+    QuoteAcceptResponse:
+      type: object
+      description: Response for accepting a quote
+      properties:
+        success:
+          type: boolean
+        job_id:
+          type: string
+          format: uuid
+        quote_acceptance_date:
+          type: string
+          description: ISO datetime string when quote was accepted
+        message:
+          type: string
+      required:
+        - success
+        - job_id
+        - quote_acceptance_date
+        - message
+    QuoteResetAcceptanceResponse:
+      type: object
+      description: Response for resetting quote acceptance
+      properties:
+        success:
+          type: boolean
+        job_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+      required:
+        - success
+        - job_id
+        - message
+    QuoteRevisionsListResponse:
+      type: object
+      description: Serializer for listing quote revisions
+      properties:
+        job_id:
+          type: string
+        job_number:
+          type: string
+        current_cost_set_rev:
+          type: integer
+        total_revisions:
+          type: integer
+        revisions:
+          type: array
+          items:
+            type: object
+            properties:
+              quote_revision:
+                type: integer
+              archived_at:
+                type: string
+                format: date-time
+              reason:
+                type: string
+                nullable: true
+              summary:
+                type: object
+                properties:
+                  cost:
+                    type: number
+                    format: float
+                  rev:
+                    type: number
+                    format: float
+                  hours:
+                    type: number
+                    format: float
+                required:
+                  - cost
+                  - rev
+                  - hours
+              cost_lines:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CostLine'
+            required:
+              - quote_revision
+              - archived_at
+              - summary
+              - cost_lines
+          description: List of archived quote revisions with their data
+      required:
+        - job_id
+        - job_number
+        - current_cost_set_rev
+        - total_revisions
+        - revisions
   securitySchemes:
     cookieAuth:
       type: apiKey

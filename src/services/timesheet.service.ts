@@ -10,12 +10,12 @@ type CostLine = z.infer<typeof schemas.CostLine>
 export class TimesheetService {
   static async getStaff(): Promise<Staff[]> {
     try {
-      const staff = await api.job_rest_timesheet_staff_list()
+      const staff = await api.timesheets_api_staff_retrieve()
 
       // Get company defaults for fallback wage rate
       let defaultWageRate = 32
       try {
-        const defaults = await api.company_defaults_list()
+        const defaults = await api.api_company_defaults_retrieve()
         defaultWageRate = parseFloat(defaults.wage_rate || '32') || 32
       } catch {
         debugLog('Could not fetch company defaults, using fallback wage rate:', defaultWageRate)
@@ -87,7 +87,7 @@ export class TimesheetService {
 
   static async getJobs(): Promise<Job[]> {
     try {
-      const jobs = await api.job_rest_timesheet_jobs_retrieve()
+      const jobs = await api.timesheets_api_jobs_retrieve()
       return jobs
     } catch (error) {
       debugLog('Error fetching jobs:', error)

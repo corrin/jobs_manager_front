@@ -129,23 +129,23 @@ async function saveArchive() {
   archiving.value = true
   error.value = ''
   message.value = ''
-  const toastId = toast.loading('Arquivando jobs...')
+  const toastId = toast.info('Archiving jobs...')
   try {
     const response = await api.job_api_job_completed_archive_create({
       ids: toArchive.value.map((j) => j.id),
     })
     toast.dismiss(toastId)
     if (response.success) {
-      toast.success(response.message || 'Jobs arquivados com sucesso.')
+      toast.success(response.message || 'Jobs archived successfully.')
       message.value = response.message || 'Jobs archived successfully.'
       fetchJobs()
     } else {
-      toast.error(response.error || 'Alguns jobs não puderam ser arquivados.')
-      error.value = response.error || 'Some jobs could not be archived.'
+      toast.error(response.error || "Some jobs couldn't be archived.")
+      error.value = response.error || "Some jobs couldn't be archived."
     }
   } catch (e) {
     toast.dismiss(toastId)
-    toast.error((e as Error)?.message || 'Erro ao arquivar jobs.')
+    toast.error((e as Error)?.message || 'Error archiving jobs.')
     error.value = (e as Error)?.message || 'Failed to archive jobs.'
   }
   archiving.value = false

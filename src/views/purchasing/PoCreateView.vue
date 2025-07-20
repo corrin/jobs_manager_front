@@ -7,7 +7,6 @@
         :po="po"
         :is-create-mode="true"
         @update:reference="po.reference = $event"
-        @update:order_date="po.order_date = $event"
         @update:expected_delivery="po.expected_delivery = $event"
         @update:status="po.status = $event"
         @update:supplier_id="po.supplier_id = $event"
@@ -55,7 +54,6 @@ const po = ref<PurchaseOrderForm>({
   supplier_has_xero_id: false,
   supplier_id: null,
   reference: '',
-  order_date: '',
   expected_delivery: '',
   status: 'draft',
 })
@@ -65,7 +63,6 @@ const save = async () => {
   try {
     const payload = {
       ...po.value,
-      order_date: po.value.order_date || null,
       expected_delivery: po.value.expected_delivery || null,
       supplier_id: po.value.supplier_id || null,
     }

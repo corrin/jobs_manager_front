@@ -50,11 +50,23 @@ class KPIService {
     params: KPIAccountingParams = {},
   ): Promise<KPICalendarResponse> {
     try {
-      // Use the generated Zodios client for this endpoint
-      return await api.accounting_api_reports_calendar_retrieve({
-        year: params.year,
-        month: params.month,
+      debugLog('🔍 Fetching KPI data with params:', params)
+
+      // Use the generated Zodios client with query parameters
+      const response = await api.accounting_api_reports_calendar_retrieve({
+        queries: {
+          year: params.year,
+          month: params.month,
+        },
       })
+
+      debugLog('✅ KPI data fetched successfully:', {
+        year: response.year,
+        month: response.month,
+        daysCount: Object.keys(response.calendar_data).length,
+      })
+
+      return response
     } catch (error) {
       debugLog('❌ Error fetching accounting KPI calendar data:', error)
       throw error

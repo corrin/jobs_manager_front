@@ -226,6 +226,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   close: []
+  'job-updated': [job: JobDetailResponse]
 }>()
 
 const jobsStore = useJobsStore()
@@ -442,11 +443,9 @@ const saveSettings = async () => {
       `JobSettingsModal - saveSettings - Sanitized data for job ID: ${props.jobData.id}:`,
       JSON.parse(JSON.stringify(sanitizedData)),
     )
-    // Note: Job update functionality needs implementation in clean API
-    console.warn('Job update temporarily disabled - using placeholder')
 
-    // Placeholder for successful update
-    const result = { success: true, data: sanitizedData, message: 'Update successful' }
+    // Call the real job update API
+    const result = await jobService.updateJob(props.jobData.id, sanitizedData)
 
     debugLog(
       'JobSettingsModal - saveSettings - API call result:',
@@ -698,6 +697,9 @@ const updateJobInStore = (apiData: unknown) => {
     }
     jobsStore.setDetailedJob(jobDataToStore as JobDetailResponse)
     debugLog(`JobSettingsModal - Called jobsStore.setDetailedJob with job ID: ${jobDataToStore.id}`)
+
+    // Emit job-updated event for parent component
+    emit('job-updated', jobDataToStore as JobDetailResponse)
 
     closeModal()
     debugLog('JobSettingsModal - Settings saved, store updated, event emitted, and modal closed.')

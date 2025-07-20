@@ -1,17 +1,18 @@
 import { api, schemas } from '../api/generated/api'
+import axios from '@/plugins/axios'
 import { z } from 'zod'
 import type { AdvancedFilters, JobStatusUpdate, JobReorderPayload } from '../api/local/schemas'
 
 type KanbanJob = z.infer<typeof schemas.KanbanJob>
 type JobCreateRequest = z.infer<typeof schemas.JobCreateRequest>
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
+type JobUpdateRequest = z.infer<typeof schemas.JobUpdateRequest>
 type JobFile = z.infer<typeof schemas.JobFile>
 type FetchAllJobsResponse = z.infer<typeof schemas.FetchAllJobsResponse>
 type FetchJobsResponse = z.infer<typeof schemas.FetchJobsResponse>
 type FetchJobsByColumnResponse = z.infer<typeof schemas.FetchJobsByColumnResponse>
 type FetchStatusValuesResponse = z.infer<typeof schemas.FetchStatusValuesResponse>
 type AdvancedSearchResponse = z.infer<typeof schemas.AdvancedSearchResponse>
-type WorkshopPDFResponse = z.infer<typeof schemas.WorkshopPDFResponse>
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 type PaginatedCompleteJobList = z.infer<typeof schemas.PaginatedCompleteJobList>
 
@@ -33,9 +34,6 @@ export const jobService = {
   },
 
   getStatusChoices(): Promise<FetchStatusValuesResponse> {
-    // Temporarily return mock data to avoid backend error with sub_categories
-    // TODO: Fix backend endpoint /job/api/jobs/status-values/
-    // Error: 'KanbanColumn' object has no attribute 'sub_categories'
     return Promise.resolve({
       success: true,
       statuses: {
@@ -71,6 +69,19 @@ export const jobService = {
     return api.job_rest_jobs_retrieve({ params: { job_id: jobId } })
   },
 
+  deleteJob(jobId: string): Promise<{ success: boolean; error?: string; message?: string }> {
+    return api
+      .job_rest_jobs_destroy(undefined, { params: { job_id: jobId } })
+      .then((response) => ({
+        success: response.success,
+        message: response.message,
+      }))
+      .catch((error) => ({
+        success: false,
+        error: error.message || 'Failed to delete job',
+      }))
+  },
+
   // Archive
   getCompletedJobs(): Promise<PaginatedCompleteJobList> {
     return api.job_api_job_completed_list()
@@ -90,8 +101,16 @@ export const jobService = {
   },
 
   // PDF
-  getWorkshopPdf(jobId: string): Promise<WorkshopPDFResponse> {
-    return api.job_rest_jobs_workshop_pdf_retrieve({ params: { job_id: jobId } })
+  async getWorkshopPdf(jobId: string): Promise<Blob> {
+    try {
+      const response = await axios.get(`/job/rest/jobs/${jobId}/workshop-pdf/`, {
+        responseType: 'blob',
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching workshop PDF:', error)
+      throw error
+    }
   },
 
   // Settings
@@ -146,6 +165,26 @@ export const jobService = {
     )
   },
 
+  // Update job data
+  async updateJob(
+    jobId: string,
+    jobData: JobUpdateRequest,
+  ): Promise<{ success: boolean; data?: JobDetailResponse; error?: string }> {
+    try {
+      const response = await api.job_rest_jobs_update(jobData, { params: { job_id: jobId } })
+      return {
+        success: response.success || true,
+        data: response.data || response,
+      }
+    } catch (error) {
+      console.error('Error updating job:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error updating job',
+      }
+    }
+  },
+
   // Reorder job
   reorderJob(jobId: string, beforeId?: string, afterId?: string, status?: string): Promise<Job> {
     const payload: JobReorderPayload = {}
@@ -154,6 +193,49 @@ export const jobService = {
     if (status) payload.status = status
 
     return api.job_api_jobs_reorder_create(payload, { params: { job_id: jobId } })
+  },
+
+  // Add job event
+  async addJobEvent(jobId: string, description: string): Promise<unknown> {
+    try {
+      const response = await api.job_rest_jobs_events_create(
+        { description },
+        { params: { job_id: jobId } },
+      )
+
+      return response
+    } catch (error) {
+      console.error('Error adding job event:', error)
+      throw error
+    }
+  },
+
+  // Upload job files
+  async uploadJobFiles(jobNumber: string, files: File[]): Promise<unknown> {
+    try {
+      const formData = new FormData()
+      files.forEach((file) => {
+        formData.append('files', file)
+      })
+
+      const response = await axios.post(`/job/api/job-files/${jobNumber}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        params: {
+          format: 'json',
+        },
+      })
+
+      return response.data
+    } catch (error) {
+      console.error('Error uploading job files:', error)
+      if (error.response) {
+        console.error('Response data:', error.response.data)
+        console.error('Response status:', error.response.status)
+      }
+      throw error
+    }
   },
 }
 

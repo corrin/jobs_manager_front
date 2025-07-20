@@ -216,7 +216,7 @@ export const useJobsStore = defineStore('jobs', () => {
 
       if (response.success && response.data?.job) {
         setDetailedJob(response.data.job)
-        return { job: response.data.job, events: [] }
+        return { job: response.data.job, events: response.data.events || [] }
       }
 
       if (response.job) {

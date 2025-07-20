@@ -146,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, toRaw } from 'vue'
 import { XCircle } from 'lucide-vue-next'
 import { ZodError } from 'zod'
 import {
@@ -202,18 +202,25 @@ const isFormValid = computed(() => {
 
 const handleDialogChange = (open: boolean) => {
   emit('update:isOpen', open)
-  if (!open) {
-    resetForm()
-  }
 }
 
 const validateForm = (): boolean => {
+  console.log('🔍 validateForm called')
+  console.log('📋 formData before validation:', formData.value)
+
   fieldErrors.value = {}
   try {
-    schemas.ClientCreateRequest.parse(formData.value)
+    // Convert reactive object to plain object for validation
+    const plainFormData = toRaw(formData.value)
+    console.log('🔧 Plain object for validation:', plainFormData)
+
+    schemas.ClientCreateRequest.parse(plainFormData)
+    console.log('✅ Schema validation passed')
     return true
   } catch (error: unknown) {
+    console.log('❌ Schema validation failed:', error)
     if (error instanceof ZodError) {
+      console.log('📜 Zod errors:', error.errors)
       error.errors.forEach((err) => {
         const field = err.path[0]
         if (field) {
@@ -226,9 +233,18 @@ const validateForm = (): boolean => {
 }
 
 const handleSubmit = async () => {
+  console.log('🚀 handleSubmit called')
+  console.log('📝 formData.value:', formData.value)
+  console.log('📝 formData.value.name:', formData.value.name)
+  console.log('📝 typeof formData.value.name:', typeof formData.value.name)
+  console.log('📝 formData.value.name.trim():', formData.value.name?.trim())
+
   if (!validateForm()) {
+    console.log('❌ Form validation failed')
     return
   }
+
+  console.log('✅ Form validation passed')
 
   isLoading.value = true
   errorMessage.value = ''
@@ -236,10 +252,25 @@ const handleSubmit = async () => {
   duplicateClientInfo.value = null
 
   try {
-    // Use Zodios API to create client
-    const result: ClientCreateResponse = await api.clients_create_create({
-      body: formData.value,
-    })
+    // Convert reactive object to plain object for Zodios
+    const plainFormData = toRaw(formData.value)
+    console.log('🌐 About to call API with body:', formData.value)
+    console.log('🔧 Plain object for API:', plainFormData)
+    console.log('🔧 JSON stringified:', JSON.stringify(plainFormData))
+
+    // Validate the data manually first
+    try {
+      schemas.ClientCreateRequest.parse(plainFormData)
+      console.log('✅ Manual validation passed')
+    } catch (validationError) {
+      console.log('❌ Manual validation failed:', validationError)
+      throw validationError
+    }
+
+    // Use Zodios API to create client - try direct approach
+    const result: ClientCreateResponse = await api.clients_create_create(plainFormData)
+
+    console.log('📡 API response:', result)
 
     if (!result.success) {
       if (result.existing_client && result.existing_client.xero_contact_id) {
@@ -287,6 +318,9 @@ const handleCancel = () => {
 }
 
 const resetForm = () => {
+  console.log('🔄 resetForm called')
+  console.log('📋 formData before reset:', formData.value)
+
   formData.value = {
     name: '',
     email: '',
@@ -294,24 +328,30 @@ const resetForm = () => {
     address: '',
     is_account_customer: false,
   }
+
+  console.log('📋 formData after reset:', formData.value)
+
   errorMessage.value = ''
   fieldErrors.value = {}
 }
 
 watch(
-  () => props.initialName,
-  (newName) => {
-    if (newName && props.isOpen) {
-      formData.value.name = newName
-    }
-  },
-)
-
-watch(
   () => props.isOpen,
   (isOpen) => {
-    if (isOpen && props.initialName) {
-      formData.value.name = props.initialName
+    console.log('👁️ Modal isOpen changed:', isOpen)
+    console.log('🏷️ props.initialName:', props.initialName)
+
+    if (isOpen) {
+      console.log('🔄 Resetting form...')
+      // Reset form first, then set initial name
+      resetForm()
+      console.log('📋 Form after reset:', formData.value)
+
+      if (props.initialName) {
+        console.log('🏷️ Setting initial name:', props.initialName)
+        formData.value.name = props.initialName
+        console.log('📋 Form after setting name:', formData.value)
+      }
     }
   },
 )

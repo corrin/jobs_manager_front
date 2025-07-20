@@ -5,7 +5,7 @@
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-semibold text-gray-900">{{ title }}</h3>
       <div v-if="typedSummary && revision !== undefined" class="text-right text-sm text-gray-600">
-        <div class="font-medium">Rev #{{ revision }}</div>
+        <div class="font-medium">Snapshot #{{ revision }}</div>
         <div v-if="typedSummary.created">{{ formatDate(typedSummary.created) }}</div>
       </div>
     </div>
@@ -136,21 +136,44 @@ const props = defineProps<{
 }>()
 
 const typedSummary = computed(() => {
-  if (!props.summary || typeof props.summary !== 'object') return null
+  console.log('[CostSetSummaryCard] typedSummary computing with:', {
+    summary: props.summary,
+    summaryType: typeof props.summary,
+    isLoading: props.isLoading,
+  })
+
+  if (!props.summary || typeof props.summary !== 'object') {
+    console.log('[CostSetSummaryCard] No summary or not object, returning null')
+    return null
+  }
+
   const summary = props.summary as Record<string, unknown>
+  console.log('[CostSetSummaryCard] Summary object keys:', Object.keys(summary))
+
   // Type guard to check if summary has the expected properties
   if (
     typeof summary.cost === 'number' &&
     typeof summary.rev === 'number' &&
     typeof summary.hours === 'number'
   ) {
-    return summary as {
+    const result = summary as {
       cost: number
       rev: number
       hours: number
       created?: string
     }
+    console.log('[CostSetSummaryCard] Valid summary found:', result)
+    return result
   }
+
+  console.log('[CostSetSummaryCard] Summary does not have expected number properties:', {
+    cost: summary.cost,
+    costType: typeof summary.cost,
+    rev: summary.rev,
+    revType: typeof summary.rev,
+    hours: summary.hours,
+    hoursType: typeof summary.hours,
+  })
   return null
 })
 
@@ -160,7 +183,10 @@ const profitMargin = computed(() => {
 })
 
 const breakdown = computed(() => {
-  if (!props.costLines) {
+  console.log('[CostSetSummaryCard] breakdown computing with costLines:', props.costLines)
+
+  if (!props.costLines || !Array.isArray(props.costLines)) {
+    console.log('[CostSetSummaryCard] No costLines or not array, returning empty breakdown')
     return {
       labour: { count: 0, cost: 0, revenue: 0 },
       material: { count: 0, cost: 0, revenue: 0 },
@@ -172,37 +198,57 @@ const breakdown = computed(() => {
     return typeof value === 'string' ? parseFloat(value) || 0 : value || 0
   }
 
+  console.log('[CostSetSummaryCard] Processing costLines count:', props.costLines.length)
+
   const labour = props.costLines
     .filter((line) => line.kind === 'time')
     .reduce(
-      (acc, line) => ({
-        count: acc.count + 1,
-        cost: acc.cost + parseNumber(line.quantity) * parseNumber(line.unit_cost),
-        revenue: acc.revenue + parseNumber(line.quantity) * parseNumber(line.unit_rev),
-      }),
+      (acc, line) => {
+        const quantity = parseNumber(line.quantity)
+        const unitCost = parseNumber(line.unit_cost)
+        const unitRev = parseNumber(line.unit_rev)
+        return {
+          count: acc.count + 1,
+          cost: acc.cost + quantity * unitCost,
+          revenue: acc.revenue + quantity * unitRev,
+        }
+      },
       { count: 0, cost: 0, revenue: 0 },
     )
   const material = props.costLines
     .filter((line) => line.kind === 'material')
     .reduce(
-      (acc, line) => ({
-        count: acc.count + 1,
-        cost: acc.cost + parseNumber(line.quantity) * parseNumber(line.unit_cost),
-        revenue: acc.revenue + parseNumber(line.quantity) * parseNumber(line.unit_rev),
-      }),
+      (acc, line) => {
+        const quantity = parseNumber(line.quantity)
+        const unitCost = parseNumber(line.unit_cost)
+        const unitRev = parseNumber(line.unit_rev)
+        return {
+          count: acc.count + 1,
+          cost: acc.cost + quantity * unitCost,
+          revenue: acc.revenue + quantity * unitRev,
+        }
+      },
       { count: 0, cost: 0, revenue: 0 },
     )
   const other = props.costLines
     .filter((line) => line.kind !== 'time' && line.kind !== 'material')
     .reduce(
-      (acc, line) => ({
-        count: acc.count + 1,
-        cost: acc.cost + parseNumber(line.quantity) * parseNumber(line.unit_cost),
-        revenue: acc.revenue + parseNumber(line.quantity) * parseNumber(line.unit_rev),
-      }),
+      (acc, line) => {
+        const quantity = parseNumber(line.quantity)
+        const unitCost = parseNumber(line.unit_cost)
+        const unitRev = parseNumber(line.unit_rev)
+        return {
+          count: acc.count + 1,
+          cost: acc.cost + quantity * unitCost,
+          revenue: acc.revenue + quantity * unitRev,
+        }
+      },
       { count: 0, cost: 0, revenue: 0 },
     )
-  return { labour, material, other }
+
+  const result = { labour, material, other }
+  console.log('[CostSetSummaryCard] breakdown result:', result)
+  return result
 })
 
 function formatNumber(value: number): string {

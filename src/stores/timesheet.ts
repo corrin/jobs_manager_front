@@ -97,10 +97,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       debugLog(`Loading cost lines for job ${targetJobId}, kind: ${targetKind}`)
 
-      const costSet = await api.job_rest_jobs_cost_sets_retrieve({
-        id: targetJobId,
-        kind: targetKind,
-      })
+      const costSet = await api.job_rest_jobs_cost_sets_retrieve()
 
       lines.value = costSet.cost_lines
       jobId.value = targetJobId
@@ -206,7 +203,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
   async function loadCompanyDefaults() {
     try {
-      await api.company_defaults_list()
+      await api.api_company_defaults_retrieve()
     } catch (err) {
       debugLog('Error loading company defaults:', err)
     }
@@ -217,7 +214,8 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      staff.value = await api.job_rest_timesheet_staff_list()
+      const response = await api.timesheets_api_staff_retrieve()
+      staff.value = response.staff
     } catch (err) {
       error.value = 'Failed to load staff members'
       debugLog('Error loading staff:', err)
@@ -231,7 +229,8 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      jobs.value = await api.job_rest_timesheet_jobs_retrieve()
+      const response = await api.timesheets_api_jobs_retrieve()
+      jobs.value = response.jobs
     } catch (err) {
       error.value = 'Failed to load jobs'
       debugLog('Error loading jobs:', err)
@@ -266,7 +265,9 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       const weekStart = startDate || new Date().toISOString().split('T')[0]
       debugLog('📊 Loading weekly overview for:', weekStart)
 
-      currentWeekData.value = await api.job_rest_timesheet_weekly_retrieve({ date: weekStart })
+      currentWeekData.value = await api.timesheets_api_weekly_retrieve({
+        queries: { date: weekStart },
+      })
 
       debugLog('✅ Weekly overview loaded successfully:', {
         staffCount: currentWeekData.value?.staff_data?.length || 0,

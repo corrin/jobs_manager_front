@@ -225,14 +225,6 @@ const stockJob = ref<MonthEndStockJob | null>(null)
 const isLoading = computed(() => loading.value)
 const totalHours = computed(() => jobs.value.reduce((a, j) => a + j.total_hours, 0))
 const totalDollars = computed(() => jobs.value.reduce((a, j) => a + j.total_dollars, 0))
-const allSelected =
-  computed(() => jobs.value.length > 0 && selectedIds.value.length === jobs.value.length) |
-  (null > null)
-
-const jobs = ref<MonthEndJob[]>([])
-const stockJob = ref<MonthEndStockJob | null>(null)
-const totalHours = computed(() => jobs.value.reduce((a, j) => a + j.total_hours, 0))
-const totalDollars = computed(() => jobs.value.reduce((a, j) => a + j.total_dollars, 0))
 const allSelected = computed(
   () => jobs.value.length > 0 && selectedIds.value.length === jobs.value.length,
 )
@@ -273,7 +265,7 @@ function jobNumber(id: string) {
 
 async function fetchMonthEndData() {
   loading.value = true
-  toast.loading('Loading Month-End data...', { id: 'month-end-loading' })
+  toast.info('Loading Month-End data...', { id: 'month-end-loading' })
   try {
     const data = await fetchMonthEnd()
     jobs.value = data.jobs
@@ -314,7 +306,7 @@ const monthData = ref<
 function loadMonthData(month: MonthTab) {
   if (monthData.value[month.key]) return
   loading.value = true
-  toast.loading(`Loading data for ${month.label}...`, { id: `month-end-${month.key}` })
+  toast.info(`Loading data for ${month.label}...`, { id: `month-end-${month.key}` })
   fetchMonthEnd()
     .then((data) => {
       monthData.value[month.key] = {
@@ -342,7 +334,7 @@ function loadMonthData(month: MonthTab) {
 
 function loadCustomMonth() {
   loading.value = true
-  toast.loading('Loading Month-End data...', { id: 'month-end-custom' })
+  toast.info('Loading Month-End data...', { id: 'month-end-custom' })
   fetchMonthEnd()
     .then((data) => {
       customMonthData.value = {

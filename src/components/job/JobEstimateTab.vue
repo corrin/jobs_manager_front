@@ -13,6 +13,7 @@
           :materialsMarkup="materialsMarkup"
           @add-material="handleAddMaterial"
           @add-time="handleAddTime"
+          @add-adjustment="handleAddAdjustment"
         />
       </div>
     </div>
@@ -57,6 +58,13 @@
       @close="closeEditModal"
       @submit="submitEditCostLine"
     />
+    <CostLineAdjustmentModal
+      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'adjust'"
+      :initial="editingCostLine"
+      mode="edit"
+      @close="closeEditModal"
+      @submit="submitEditCostLine"
+    />
   </div>
 </template>
 
@@ -75,6 +83,7 @@ import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
+import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
 
 // Use generated API types
 type CostLine = z.infer<typeof schemas.CostLine>
@@ -87,6 +96,10 @@ type Props = {
 }
 
 const props = defineProps<Props>()
+
+const emit = defineEmits<{
+  'cost-line-changed': []
+}>()
 
 const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
@@ -174,11 +187,12 @@ function closeEditModal() {
 async function submitEditCostLine(payload: CostLine) {
   if (!payload || !payload.id) return
   isLoading.value = true
-  toast.loading('Updating cost line...', { id: 'update-cost-line' })
+  toast.info('Updating cost line...', { id: 'update-cost-line' })
   try {
     const updated = await costlineService.updateCostLine(payload.id, payload)
     costLines.value = costLines.value.map((l) => (l.id === updated.id ? { ...updated } : l))
     toast.success('Cost line updated!')
+    emit('cost-line-changed')
     closeEditModal()
   } catch (error) {
     toast.error('Failed to update cost line.')
@@ -192,11 +206,12 @@ async function submitEditCostLine(payload: CostLine) {
 async function handleDeleteCostLine(line: CostLine) {
   if (!line.id) return
   isLoading.value = true
-  toast.loading('Deleting cost line...', { id: 'delete-cost-line' })
+  toast.info('Deleting cost line...', { id: 'delete-cost-line' })
   try {
     await costlineService.deleteCostLine(line.id)
     costLines.value = costLines.value.filter((l) => l.id !== line.id)
     toast.success('Cost line deleted successfully!')
+    emit('cost-line-changed')
   } catch (error) {
     toast.error('Failed to delete cost line.')
     debugLog('Failed to delete cost line:', error)
@@ -213,7 +228,7 @@ async function handleAddMaterial(payload: CostLine) {
   }
   if (!payload || payload.kind !== 'material') return
   isLoading.value = true
-  toast.loading('Adding material cost line...', { id: 'add-material' })
+  toast.info('Adding material cost line...', { id: 'add-material' })
   try {
     const createPayload: CostLineCreateUpdate = {
       kind: 'material',
@@ -238,6 +253,7 @@ async function handleAddMaterial(payload: CostLine) {
       },
     ]
     toast.success('Material cost line added!')
+    emit('cost-line-changed')
   } catch (error) {
     toast.error('Failed to add material cost line.')
     debugLog('Failed to add material:', error)
@@ -254,7 +270,7 @@ async function handleAddTime(payload: CostLine) {
   }
   if (!payload || payload.kind !== 'time') return
   isLoading.value = true
-  toast.loading('Adding time cost line...', { id: 'add-time' })
+  toast.info('Adding time cost line...', { id: 'add-time' })
   try {
     const createPayload: CostLineCreateUpdate = {
       kind: 'time',
@@ -279,12 +295,56 @@ async function handleAddTime(payload: CostLine) {
       },
     ]
     toast.success('Time cost line added!')
+    emit('cost-line-changed')
   } catch (error) {
     toast.error('Failed to add time cost line.')
     debugLog('Failed to add time:', error)
   } finally {
     isLoading.value = false
     toast.dismiss('add-time')
+  }
+}
+
+async function handleAddAdjustment(payload: CostLine) {
+  if (!isCompanyDefaultsReady.value) {
+    toast.error('Company defaults not loaded yet.')
+    return
+  }
+  if (!payload || payload.kind !== 'adjust') return
+  isLoading.value = true
+  toast.info('Adding adjustment cost line...', { id: 'add-adjustment' })
+  try {
+    const createPayload: CostLineCreateUpdate = {
+      kind: 'adjust',
+      desc: payload.desc,
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost ?? 0,
+      unit_rev: payload.unit_rev ?? 0,
+      ext_refs: payload.ext_refs,
+      meta: payload.meta,
+    }
+    const created = await costlineService.createCostLine(props.jobId, 'estimate', createPayload)
+    costLines.value = [
+      ...costLines.value,
+      {
+        ...created,
+        quantity:
+          typeof created.quantity === 'string' ? Number(created.quantity) : created.quantity,
+        unit_cost:
+          typeof created.unit_cost === 'string' ? Number(created.unit_cost) : created.unit_cost,
+        unit_rev:
+          typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
+      },
+    ]
+    toast.success('Adjustment cost line added!')
+    toast.dismiss('add-adjustment')
+    emit('cost-line-changed')
+  } catch (error) {
+    toast.error('Failed to add adjustment cost line.')
+    debugLog('Failed to add adjustment:', error)
+  } finally {
+    isLoading.value = false
+    toast.dismiss('add-adjustment')
   }
 }
 

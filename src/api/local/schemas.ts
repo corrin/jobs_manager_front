@@ -875,22 +875,41 @@ export type PurchaseOrderLineUI = z.infer<typeof PurchaseOrderLineUISchema>
 // Delivery Receipt Allocation UI schema for frontend functionality
 // REASON: Frontend needs number types for calculations and camelCase field names
 // Based on backend delivery_receipt.py structure: {jobId, quantity, retailRate}
-export const DeliveryAllocationUISchema = z.object({
-  jobId: z.string().uuid().nullable(),
-  quantity: z.number(),
-  retailRate: z.number(),
-})
+// Note: Supports both jobId (camelCase) and job_id (snake_case) for compatibility
+export const DeliveryAllocationUISchema = z
+  .object({
+    jobId: z.string().uuid().nullable().optional(),
+    job_id: z.string().uuid().nullable().optional(),
+    quantity: z.number(),
+    retailRate: z.number(),
+  })
+  .refine((data) => data.jobId || data.job_id, {
+    message: 'Either jobId or job_id must be provided',
+    path: ['jobId'],
+  })
 
 export type DeliveryAllocationUI = z.infer<typeof DeliveryAllocationUISchema>
 
 // Transform function to convert UI types to backend types
 export const transformDeliveryAllocationToBackend = (
   allocUI: DeliveryAllocationUI,
-): z.infer<typeof schemas.DeliveryReceiptAllocation> => ({
-  job_id: allocUI.jobId,
-  quantity: allocUI.quantity.toString(),
-  retail_rate: allocUI.retailRate.toString(),
-})
+): z.infer<typeof schemas.DeliveryReceiptAllocation> | null => {
+  // Handle both jobId (camelCase) and job_id (snake_case) for compatibility
+  const jobId =
+    (allocUI as DeliveryAllocationUI & { jobId?: number; job_id?: number }).jobId ||
+    (allocUI as DeliveryAllocationUI & { jobId?: number; job_id?: number }).job_id
+
+  // Skip allocations without a valid job_id
+  if (!jobId) {
+    return null
+  }
+
+  return {
+    job_id: jobId,
+    quantity: allocUI.quantity.toString(),
+    retail_rate: allocUI.retailRate.toString(),
+  }
+}
 
 // Transform function to convert backend types to UI types
 export const transformDeliveryAllocationFromBackend = (
@@ -919,6 +938,9 @@ export const transformDeliveryReceiptForAPI = (
             ...alloc,
             retailRate: alloc.retailRate || defaultRetailRate,
           }),
+        )
+        .filter(
+          (alloc): alloc is z.infer<typeof schemas.DeliveryReceiptAllocation> => alloc !== null,
         )
 
       if (validAllocations.length > 0) {

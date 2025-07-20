@@ -58,6 +58,7 @@
 
 <script setup lang="ts">
 import { debugLog } from '@/utils/debug'
+import { toast } from 'vue-sonner'
 
 import { watch } from 'vue'
 import { Users, X } from 'lucide-vue-next'
@@ -105,6 +106,7 @@ const {
   selectExistingContact: selectFromComposable,
   saveContact,
   clearSelection: clearFromComposable,
+  findPrimaryContact,
 } = useContactManagement()
 
 const handleOpenModal = async () => {
@@ -142,15 +144,36 @@ const handleSaveContact = async () => {
     newContactForm: newContactForm.value,
     selectedContact: selectedContact.value,
   })
+
+  // Validate email format before saving
+  if (newContactForm.value.email && !isValidEmail(newContactForm.value.email)) {
+    toast.error('Please enter a valid email address')
+    return
+  }
+
+  toast.info('Creating contact...', { id: 'create-contact' })
+
   const success = await saveContact()
+
+  toast.dismiss('create-contact')
+
   debugLog('ContactSelector - handleSaveContact: after save', {
     success,
     newContactForm: newContactForm.value,
     selectedContact: selectedContact.value,
   })
   if (success) {
+    toast.success('Contact created successfully!')
     emitUpdates()
+  } else {
+    toast.error('Failed to create contact. Please check the form and try again.')
   }
+}
+
+// Email validation helper
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
 }
 
 const clearSelection = () => {
@@ -158,6 +181,45 @@ const clearSelection = () => {
   clearFromComposable()
   emitUpdates()
 }
+
+const selectPrimaryContact = async () => {
+  debugLog('ContactSelector - selectPrimaryContact called', {
+    clientId: props.clientId,
+    contactsLength: contacts.value.length,
+  })
+
+  if (!props.clientId) {
+    debugLog('Cannot select primary contact without client', {
+      clientId: props.clientId,
+      propsClientId: props.clientId,
+    })
+    return
+  }
+
+  // Load contacts if not already loaded
+  if (contacts.value.length === 0) {
+    debugLog('Loading contacts for client:', props.clientId)
+    await loadContactsOnly(props.clientId)
+  }
+
+  // Find and select the primary contact
+  const primaryContact = findPrimaryContact()
+  if (primaryContact) {
+    debugLog('Found primary contact:', primaryContact)
+    selectFromComposable(primaryContact)
+    emitUpdates()
+  } else {
+    debugLog('No primary contact found', {
+      totalContacts: contacts.value.length,
+      contacts: contacts.value,
+    })
+  }
+}
+
+// Expose the method for parent components
+defineExpose({
+  selectPrimaryContact,
+})
 
 const emitUpdates = () => {
   debugLog('ContactSelector - emitUpdates', {

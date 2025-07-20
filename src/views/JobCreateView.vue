@@ -275,7 +275,7 @@ const handleSubmit = async () => {
   }
 
   isSubmitting.value = true
-  toast.loading('Creating job…', { id: 'create-job' })
+  toast.info('Creating job…', { id: 'create-job' })
 
   try {
     const result = await jobService.createJob(formData.value)

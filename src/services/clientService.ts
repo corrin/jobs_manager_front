@@ -36,7 +36,7 @@ export class ClientService {
 
   async getAllClients(): Promise<Client[]> {
     try {
-      const response = await api.clients_list_list()
+      const response = await api.clients_all_retrieve()
       return Array.isArray(response) ? response : []
     } catch (error) {
       debugLog('Error fetching clients:', error)

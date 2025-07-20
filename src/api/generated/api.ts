@@ -2,6 +2,9 @@ import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
 import { z } from 'zod'
 import axios from 'axios'
 
+// Import configured axios instance
+import '@/plugins/axios'
+
 // Get API base URL without importing plugins to avoid circular dependency
 function getApiBaseUrl() {
   if (import.meta.env.VITE_API_BASE_URL) {
@@ -449,6 +452,13 @@ const ClientSearchResult = z
   })
   .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
+const ClientCreateResponse = z
+  .object({
+    success: z.boolean(),
+    client: ClientSearchResult,
+    message: z.string(),
+  })
+  .passthrough()
 const JobFileStatusEnum = z.enum(['active', 'deleted'])
 const JobFile = z
   .object({
@@ -508,6 +518,7 @@ const PaginatedCompleteJobList = z
   })
   .passthrough()
 const ArchiveJobsRequest = z.object({ ids: z.array(z.string()) }).passthrough()
+const ArchiveJobsResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const JobQuoteChatHistoryResponse = z
   .object({ success: z.boolean(), data: z.object({}).partial().passthrough() })
   .passthrough()
@@ -805,6 +816,62 @@ const QuoteImportStatusResponse = z
     summary: z.unknown().optional(),
   })
   .passthrough()
+const QuoteRevisionRequestSerializer = z
+  .object({
+    reason: z.string().max(500).optional(),
+  })
+  .passthrough()
+const QuoteRevisionResponseSerializer = z
+  .object({
+    success: z.boolean(),
+    message: z.string(),
+    quote_revision: z.number().int(),
+    archived_cost_lines_count: z.number().int(),
+    job_id: z.string(),
+  })
+  .passthrough()
+const QuoteAcceptResponse = z
+  .object({
+    success: z.boolean(),
+    job_id: z.string(),
+    quote_acceptance_date: z.string(),
+    message: z.string(),
+  })
+  .passthrough()
+const QuoteRevisionsListResponse = z
+  .object({
+    job_id: z.string(),
+    job_number: z.string(),
+    current_cost_set_rev: z.number().int(),
+    total_revisions: z.number().int(),
+    revisions: z.array(
+      z.object({
+        quote_revision: z.number().int(),
+        archived_at: z.string(),
+        reason: z.string().nullable(),
+        summary: z.object({
+          cost: z.number(),
+          rev: z.number(),
+          hours: z.number(),
+        }),
+        cost_lines: z.array(
+          z.object({
+            id: z.string(),
+            kind: z.string(),
+            desc: z.string(),
+            quantity: z.number(),
+            unit_cost: z.number(),
+            unit_rev: z.number(),
+            total_cost: z.number(),
+            total_rev: z.number(),
+            ext_refs: z.object({}).passthrough(),
+            meta: z.object({}).passthrough(),
+          }),
+        ),
+      }),
+    ),
+  })
+  .passthrough()
 const DraftLine = z
   .object({
     kind: z.string(),
@@ -880,6 +947,7 @@ const MonthEndStockJob = z
 const MonthEndGetResponse = z
   .object({ jobs: z.array(MonthEndJob), stock_job: MonthEndStockJob })
   .passthrough()
+const MonthEndPostRequest = z.object({ job_ids: z.array(z.string().uuid()) }).passthrough()
 const MonthEndPostResponse = z
   .object({ processed: z.array(z.string().uuid()), errors: z.array(z.string()) })
   .passthrough()
@@ -953,6 +1021,9 @@ const DeliveryReceiptLine = z
 const DeliveryReceiptRequest = z
   .object({ purchase_order_id: z.string().uuid(), allocations: z.record(DeliveryReceiptLine) })
   .passthrough()
+const DeliveryReceiptResponse = z
+  .object({ success: z.boolean(), error: z.string().optional() })
+  .passthrough()
 const PurchaseOrderEmailRequest = z
   .object({ recipient_email: z.string().email(), message: z.string().max(1000) })
   .partial()
@@ -1020,6 +1091,30 @@ const PurchaseOrderLineCreate = z
     alloy: z.string().max(100),
     specifics: z.string().max(255),
     location: z.string().max(255),
+    dimensions: z.string().max(255),
+  })
+  .partial()
+  .passthrough()
+const PurchaseOrderLineUpdate = z
+  .object({
+    id: z.string().uuid().nullable(),
+    job_id: z.string().uuid().nullable(),
+    description: z.string().max(255),
+    quantity: z
+      .string()
+      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
+      .default('0.00'),
+    unit_cost: z
+      .string()
+      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
+      .nullable(),
+    price_tbc: z.boolean().default(false),
+    item_code: z.string().max(100),
+    metal_type: z.string().max(100),
+    alloy: z.string().max(100),
+    specifics: z.string().max(255),
+    location: z.string().max(255),
+    dimensions: z.string().max(255),
   })
   .partial()
   .passthrough()
@@ -1100,7 +1195,7 @@ const PatchedPurchaseOrderUpdate = z
     expected_delivery: z.string().nullable(),
     status: z.string().max(50),
     lines_to_delete: z.array(z.string().uuid()),
-    lines: z.array(PurchaseOrderLineCreate),
+    lines: z.array(PurchaseOrderLineUpdate),
   })
   .partial()
   .passthrough()
@@ -1111,7 +1206,7 @@ const PurchaseOrderUpdate = z
     expected_delivery: z.string().nullable(),
     status: z.string().max(50),
     lines_to_delete: z.array(z.string().uuid()),
-    lines: z.array(PurchaseOrderLineCreate),
+    lines: z.array(PurchaseOrderLineUpdate),
   })
   .partial()
   .passthrough()
@@ -1138,8 +1233,8 @@ const StockList = z
     quantity: z.number(),
     unit_cost: z.number(),
     metal_type: z.string(),
-    alloy: z.string(),
-    specifics: z.string(),
+    alloy: z.string().nullable(),
+    specifics: z.string().nullable(),
     location: z.string(),
     source: z.string(),
     date: z.string().datetime({ offset: true }).nullable(),
@@ -1162,6 +1257,16 @@ const StockCreate = z
   .passthrough()
 const StockConsumeRequest = z
   .object({ job_id: z.string().uuid(), quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/) })
+  .passthrough()
+const StockConsumeResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    remaining_quantity: z
+      .string()
+      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
+      .optional(),
+  })
   .passthrough()
 const XeroItem = z
   .object({
@@ -1378,6 +1483,7 @@ export const schemas = {
   ClientContactCreateRequest,
   ClientContactCreateResponse,
   ClientCreateRequest,
+  ClientCreateResponse,
   ClientSearchResult,
   ClientSearchResponse,
   JobFileStatusEnum,
@@ -1390,6 +1496,7 @@ export const schemas = {
   CompleteJob,
   PaginatedCompleteJobList,
   ArchiveJobsRequest,
+  ArchiveJobsResponse,
   JobQuoteChatHistoryResponse,
   RoleEnum,
   JobQuoteChat,
@@ -1425,6 +1532,10 @@ export const schemas = {
   CostLine,
   CostSet,
   QuoteImportStatusResponse,
+  QuoteRevisionRequestSerializer,
+  QuoteRevisionResponseSerializer,
+  QuoteAcceptResponse,
+  QuoteRevisionsListResponse,
   DraftLine,
   QuoteChanges,
   ApplyQuoteResponse,
@@ -1437,6 +1548,7 @@ export const schemas = {
   MonthEndStockHistory,
   MonthEndStockJob,
   MonthEndGetResponse,
+  MonthEndPostRequest,
   MonthEndPostResponse,
   TimesheetCostLine,
   ModernTimesheetStaff,
@@ -1448,6 +1560,7 @@ export const schemas = {
   DeliveryReceiptAllocation,
   DeliveryReceiptLine,
   DeliveryReceiptRequest,
+  DeliveryReceiptResponse,
   PurchaseOrderEmailRequest,
   PurchaseOrderPDFResponse,
   StatusE5cEnum,
@@ -1456,6 +1569,7 @@ export const schemas = {
   PurchasingJobsResponse,
   PurchaseOrderList,
   PurchaseOrderLineCreate,
+  PurchaseOrderLineUpdate,
   PurchaseOrderCreate,
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
@@ -1471,6 +1585,7 @@ export const schemas = {
   StockList,
   StockCreate,
   StockConsumeRequest,
+  StockConsumeResponse,
   XeroItem,
   XeroItemListResponse,
   DjangoJobExecutionStatusEnum,
@@ -1499,6 +1614,18 @@ const endpoints = makeApi([
     alias: 'accounting_api_reports_calendar_retrieve',
     description: `API Endpoint to provide KPI data for calendar display`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'year',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'month',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+    ],
     response: KPICalendarData,
   },
   {
@@ -1994,7 +2121,7 @@ Expected JSON:
         schema: ClientCreateRequest,
       },
     ],
-    response: ClientCreateRequest,
+    response: ClientCreateResponse,
   },
   {
     method: 'get',
@@ -2335,7 +2462,7 @@ Expected JSON:
         schema: ArchiveJobsRequest,
       },
     ],
-    response: ArchiveJobsRequest,
+    response: ArchiveJobsResponse,
   },
   {
     method: 'get',
@@ -2632,7 +2759,7 @@ assistant&#x27;s reply.`,
         schema: z.number().int(),
       },
     ],
-    response: CostLineCreateUpdate,
+    response: CostLine,
   },
   {
     method: 'delete',
@@ -2702,6 +2829,67 @@ Returns:
     response: CostSet,
   },
   {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/cost_sets/quote/revise/',
+    alias: 'job_rest_jobs_cost_sets_quote_revise_retrieve',
+    description: `Get the list of archived quote revisions for the specified job.
+
+Returns a list of all quote revisions that have been archived in the
+CostSet summary, including revision numbers, timestamps, and full data.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: QuoteRevisionsListResponse,
+  },
+  {
+    method: 'post',
+    path: '/job/rest/jobs/:job_id/cost_sets/quote/revise/',
+    alias: 'job_rest_jobs_cost_sets_quote_revise_create',
+    description: `Create a new quote revision by archiving current quote data and clearing cost lines.
+
+This endpoint:
+1. Archives current quote cost lines and summary in the existing CostSet summary
+2. Clears all current cost lines from the quote CostSet
+3. Uses quote_revision numbering for tracking
+4. Allows starting fresh quote while preserving historical data
+
+Only works with kind='quote' CostSets.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: QuoteRevisionRequestSerializer,
+      },
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: QuoteRevisionResponseSerializer,
+  },
+  {
+    method: 'post',
+    path: '/job/rest/jobs/:job_id/quote/accept/',
+    alias: 'job_rest_jobs_quote_accept_create',
+    description: 'Accept a quote for the job by setting quote_acceptance_date',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: QuoteAcceptResponse,
+  },
+  {
     method: 'post',
     path: '/job/rest/jobs/:id/quote/apply/',
     alias: 'job_rest_jobs_quote_apply_create',
@@ -2725,7 +2913,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/apply/`,
   },
   {
     method: 'post',
-    path: '/job/rest/jobs/:id/quote/link/',
+    path: '/job/rest/jobs/:pk/quote/link/',
     alias: 'job_rest_jobs_quote_link_create',
     description: `Link a job to a Google Sheets quote template.
 
@@ -2738,7 +2926,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/link/`,
         schema: z.object({ template_url: z.string().url() }).partial().passthrough(),
       },
       {
-        name: 'id',
+        name: 'pk',
         type: 'Path',
         schema: z.string().uuid(),
       },
@@ -2840,7 +3028,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.string(),
       },
     ],
-    response: CostLineCreateUpdate,
+    response: CostLine,
   },
   {
     method: 'post',
@@ -2860,7 +3048,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.string().uuid(),
       },
     ],
-    response: CostLineCreateUpdate,
+    response: CostLine,
   },
   {
     method: 'post',
@@ -2915,7 +3103,7 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: WorkshopPDFResponse,
+    response: z.instanceof(Blob),
   },
   {
     method: 'get',
@@ -3237,7 +3425,7 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       {
         name: 'body',
         type: 'Body',
-        schema: MonthEndPostResponse,
+        schema: MonthEndPostRequest,
       },
     ],
     response: MonthEndPostResponse,
@@ -3329,7 +3517,7 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
         schema: DeliveryReceiptRequest,
       },
     ],
-    response: DeliveryReceiptRequest,
+    response: DeliveryReceiptResponse,
   },
   {
     method: 'post',
@@ -3405,7 +3593,7 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
         schema: DeliveryReceiptRequest,
       },
     ],
-    response: DeliveryReceiptRequest,
+    response: DeliveryReceiptResponse,
   },
   {
     method: 'get',
@@ -3494,7 +3682,7 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
     alias: 'purchasing_rest_stock_retrieve',
     description: `Get list of all active stock items.`,
     requestFormat: 'json',
-    response: StockList,
+    response: z.array(StockList),
   },
   {
     method: 'post',
@@ -3548,7 +3736,7 @@ POST: Records stock consumption for a specific job, reducing available quantity`
         schema: z.string().uuid(),
       },
     ],
-    response: StockConsumeRequest,
+    response: StockConsumeResponse,
   },
   {
     method: 'get',

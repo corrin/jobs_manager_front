@@ -151,7 +151,7 @@ const deleteReceipt = (id: string) => {
 onMounted(async () => {
   try {
     isLoading.value = true
-    const response = await api.purchasing_rest_purchase_orders_list({
+    const response = await api.listPurchaseOrders({
       queries: { status: 'submitted,partially_received' },
     })
     receipts.value = response || []

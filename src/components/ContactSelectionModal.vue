@@ -124,6 +124,9 @@
                     class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span class="ml-2 text-sm text-gray-700">Set as primary contact</span>
+                  <span v-if="contacts.length === 0" class="ml-1 text-xs text-gray-500"
+                    >(Default for first contact)</span
+                  >
                 </label>
               </div>
             </div>
@@ -168,7 +171,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
+} from '../components/ui/dialog'
 
 // Type aliases for schema-based types (replacing deprecated interface)
 type ClientContact = z.infer<typeof schemas.ClientContactResult>
@@ -199,6 +202,21 @@ watch(
   (val) => {
     localContactForm.value = { ...val }
   },
+  { deep: true, immediate: true },
+)
+
+// Sync changes back to parent
+watch(
+  localContactForm,
+  (val) => {
+    // Update the parent's form data
+    Object.keys(val).forEach((key) => {
+      if (key in props.newContactForm) {
+        ;(props.newContactForm as Record<string, unknown>)[key] = val[key as keyof typeof val]
+      }
+    })
+  },
+  { deep: true },
 )
 
 const handleSave = () => {
