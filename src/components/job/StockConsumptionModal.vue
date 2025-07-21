@@ -15,10 +15,7 @@
             <div class="relative dropdown-container">
               <input
                 v-model="searchTerm"
-                @focus="
-                  debugLog('Input focus event. isSelectingFromDropdown:', isSelectingFromDropdown)
-                  !isSelectingFromDropdown && (showDropdown = true)
-                "
+                @focus="handleInputFocus"
                 @input="filterStock"
                 @keydown.enter.prevent=""
                 class="input"
@@ -195,6 +192,13 @@ function filterStock() {
     )
   }
   showDropdown.value = true
+}
+
+function handleInputFocus() {
+  debugLog('Input focus event. isSelectingFromDropdown:', isSelectingFromDropdown.value)
+  if (!isSelectingFromDropdown.value) {
+    showDropdown.value = true
+  }
 }
 
 const stockSearchInput = ref<HTMLInputElement | null>(null)
