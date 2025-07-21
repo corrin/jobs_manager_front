@@ -27,14 +27,15 @@
 
     <div class="flex justify-between items-center mb-1">
       <span class="text-xs font-semibold text-blue-600">#{{ job.job_number }}</span>
-      
+
       <!-- Staff avatars moved next to job number -->
       <div
         ref="jobStaffContainerRef"
         class="flex gap-1 items-center min-h-[20px] p-1 rounded transition-colors"
         :class="{
           'bg-blue-50 border border-blue-300': isStaffDragTarget,
-          'bg-gray-50 border border-dashed border-gray-300': (!job.people || job.people.length === 0) && !isStaffDragTarget,
+          'bg-gray-50 border border-dashed border-gray-300':
+            (!job.people || job.people.length === 0) && !isStaffDragTarget,
         }"
       >
         <StaffAvatar
@@ -45,10 +46,7 @@
           :title="staff.display_name"
           :data-staff-id="staff.id"
         />
-        <div
-          v-if="!job.people || job.people.length === 0"
-          class="text-[10px] text-gray-400 px-1"
-        >
+        <div v-if="!job.people || job.people.length === 0" class="text-[10px] text-gray-400 px-1">
           +
         </div>
       </div>
@@ -127,7 +125,7 @@ const handleDragLeave = (event: DragEvent): void => {
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
   const x = event.clientX
   const y = event.clientY
-  
+
   if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
     isStaffDragOver.value = false
   }
@@ -137,20 +135,23 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
   event.preventDefault()
   event.stopPropagation()
   isStaffDragOver.value = false
-  
+
   const staffId = event.dataTransfer?.getData('text/plain')
-  
+
   if (staffId && props.job.id) {
     try {
-      await api.job_api_job_assignment_create({
-        job_id: props.job.id,
-        staff_id: staffId
-      }, {
-        params: {
-          job_id: props.job.id
-        }
-      })
-      
+      await api.job_api_job_assignment_create(
+        {
+          job_id: props.job.id,
+          staff_id: staffId,
+        },
+        {
+          params: {
+            job_id: props.job.id,
+          },
+        },
+      )
+
       emit('staff-assigned', { staffId, jobId: props.job.id })
     } catch (error) {
       console.error('Error assigning staff to job:', error)
@@ -176,7 +177,7 @@ onMounted(() => {
       element: jobStaffContainerRef.value,
     })
   }
-  
+
   // Emitir evento para o sistema de drag and drop do card inteiro
   if (jobCardRef.value) {
     emit('card-ready', {
