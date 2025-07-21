@@ -32,12 +32,12 @@ export function useClientLookup() {
     }
 
     isLoading.value = true
-    
+
     try {
-      const response = await api.clients_search_retrieve({ 
-        queries: { q: query } 
+      const response = await api.clients_search_retrieve({
+        queries: { q: query },
       })
-      
+
       suggestions.value = response.results
       showSuggestions.value = true
     } catch (error) {
@@ -61,8 +61,8 @@ export function useClientLookup() {
 
   const loadClientContacts = async (clientId: string) => {
     try {
-      const response = await api.clients_contacts_retrieve({ 
-        params: { client_id: clientId } 
+      const response = await api.clients_contacts_retrieve({
+        params: { client_id: clientId },
       })
       contacts.value = response.results
     } catch (error) {
