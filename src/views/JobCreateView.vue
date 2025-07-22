@@ -11,7 +11,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
               <div class="space-y-6">
                 <div>
-                  <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    for="name"
+                    class="block text-sm font-medium mb-2"
+                    :class="formData.name.trim() ? 'text-gray-700' : 'text-red-600'"
+                  >
                     Job Name *
                   </label>
                   <input
@@ -19,8 +23,14 @@
                     v-model="formData.name"
                     type="text"
                     required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    :class="{ 'border-red-500': errors.name }"
+                    class="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    :class="[
+                      errors.name
+                        ? 'border-red-500'
+                        : formData.name.trim()
+                          ? 'border-gray-300'
+                          : 'border-red-300 bg-red-50',
+                    ]"
                     placeholder="Enter job name"
                   />
                   <p v-if="errors.name" class="mt-1 text-sm text-red-600">
@@ -59,9 +69,14 @@
                   <div>
                     <label
                       for="estimatedMaterials"
-                      class="block text-sm font-medium text-gray-700 mb-2"
+                      class="block text-sm font-medium mb-2"
+                      :class="
+                        formData.estimatedMaterials !== null && formData.estimatedMaterials >= 0
+                          ? 'text-gray-700'
+                          : 'text-red-600'
+                      "
                     >
-                      Estimated materials ($)
+                      Estimated materials ($) *
                     </label>
                     <input
                       id="estimatedMaterials"
@@ -69,17 +84,31 @@
                       step="0.01"
                       min="0"
                       v-model.number="formData.estimatedMaterials"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      :class="{ 'border-red-500': errors.estimatedMaterials }"
-                      placeholder="0.00"
+                      class="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      :class="[
+                        errors.estimatedMaterials
+                          ? 'border-red-500'
+                          : formData.estimatedMaterials !== null && formData.estimatedMaterials >= 0
+                            ? 'border-gray-300'
+                            : 'border-red-300 bg-red-50',
+                      ]"
+                      placeholder="Enter materials cost"
                     />
                     <p v-if="errors.estimatedMaterials" class="mt-1 text-sm text-red-600">
                       {{ errors.estimatedMaterials }}
                     </p>
                   </div>
                   <div>
-                    <label for="estimatedTime" class="block text-sm font-medium text-gray-700 mb-2">
-                      Estimated time (hours)
+                    <label
+                      for="estimatedTime"
+                      class="block text-sm font-medium mb-2"
+                      :class="
+                        formData.estimatedTime !== null && formData.estimatedTime >= 0
+                          ? 'text-gray-700'
+                          : 'text-red-600'
+                      "
+                    >
+                      Estimated time (hours) *
                     </label>
                     <input
                       id="estimatedTime"
@@ -87,9 +116,15 @@
                       step="0.01"
                       min="0.01"
                       v-model.number="formData.estimatedTime"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      :class="{ 'border-red-500': errors.estimatedTime }"
-                      placeholder="0.00"
+                      class="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      :class="[
+                        errors.estimatedTime
+                          ? 'border-red-500'
+                          : formData.estimatedTime !== null && formData.estimatedTime >= 0
+                            ? 'border-gray-300'
+                            : 'border-red-300 bg-red-50',
+                      ]"
+                      placeholder="Enter estimated hours"
                     />
                     <p v-if="errors.estimatedTime" class="mt-1 text-sm text-red-600">
                       {{ errors.estimatedTime }}
@@ -202,7 +237,9 @@ import { toast } from 'vue-sonner'
 const router = useRouter()
 const companyDefaultsStore = useCompanyDefaultsStore()
 
-const formData = ref<JobCreateData & { estimatedMaterials: number; estimatedTime: number }>({
+const formData = ref<
+  JobCreateData & { estimatedMaterials: number | null; estimatedTime: number | null }
+>({
   name: '',
   client_id: '',
   client_name: '',
@@ -210,8 +247,8 @@ const formData = ref<JobCreateData & { estimatedMaterials: number; estimatedTime
   order_number: '',
   notes: '',
   contact_person: '',
-  estimatedMaterials: 0,
-  estimatedTime: 0,
+  estimatedMaterials: null,
+  estimatedTime: null,
 })
 
 const selectedClient = ref<ClientSearchResult | null>(null)
@@ -230,12 +267,25 @@ const handleClientSelection = (client: ClientSearchResult | null) => {
   }
 }
 
+// Requirements validation computed properties
+const hasValidXeroClient = computed(() => {
+  return formData.value.client_id !== '' && selectedClient.value?.xero_id
+})
+
+const hasValidTimeEstimate = computed(() => {
+  return formData.value.estimatedTime !== null && formData.value.estimatedTime >= 0
+})
+
+const hasValidMaterialsEstimate = computed(() => {
+  return formData.value.estimatedMaterials !== null && formData.value.estimatedMaterials >= 0
+})
+
 const canSubmit = computed(() => {
   return (
     formData.value.name.trim() !== '' &&
-    formData.value.client_id !== '' &&
-    formData.value.estimatedMaterials >= 0 &&
-    formData.value.estimatedTime > 0
+    hasValidXeroClient.value &&
+    hasValidTimeEstimate.value &&
+    hasValidMaterialsEstimate.value
   )
 })
 
@@ -256,13 +306,18 @@ const validateForm = (): boolean => {
     return false
   }
 
-  if (formData.value.estimatedMaterials < 0) {
-    errors.value.estimatedMaterials = 'Estimated materials must be 0 or greater'
+  if (!selectedClient.value?.xero_id) {
+    errors.value.client_id = 'Client must have a valid Xero ID - maybe add them'
     return false
   }
 
-  if (formData.value.estimatedTime < 0.01) {
-    errors.value.estimatedTime = 'Estimated time must be at least 0.01 hours'
+  if (formData.value.estimatedMaterials === null || formData.value.estimatedMaterials < 0) {
+    errors.value.estimatedMaterials = 'Estimated materials must be provided and be 0 or greater'
+    return false
+  }
+
+  if (formData.value.estimatedTime === null || formData.value.estimatedTime < 0) {
+    errors.value.estimatedTime = 'Estimated time must be provided and be 0 or greater'
     return false
   }
 
@@ -323,7 +378,7 @@ const handleSubmit = async () => {
 
 onMounted(() => {
   Object.keys(formData.value).forEach((key) => {
-    formData.value[key] = key === 'estimatedMaterials' ? 0 : key === 'estimatedTime' ? 0 : ''
+    formData.value[key] = key === 'estimatedMaterials' ? null : key === 'estimatedTime' ? null : ''
   })
 })
 </script>

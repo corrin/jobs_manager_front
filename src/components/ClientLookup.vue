@@ -60,7 +60,6 @@
 
       <div class="flex items-end">
         <div
-          v-if="selectedClient"
           :class="[
             'px-3 py-2 rounded-md text-xs font-medium flex items-center space-x-1',
             hasValidXeroId
