@@ -1,14 +1,14 @@
 <template>
   <AppLayout>
-    <div class="flex flex-col h-screen max-h-screen overflow-hidden">
+    <div class="flex flex-col min-h-screen">
       <div class="flex-shrink-0 p-4 border-b border-gray-200">
         <h1 class="text-xl font-bold text-gray-900">Create New Job</h1>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-2xl mx-auto">
+      <div class="flex-1 p-6">
+        <div class="max-w-6xl mx-auto">
           <form @submit.prevent="handleSubmit" class="space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
               <div class="space-y-6">
                 <div>
                   <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
@@ -55,7 +55,7 @@
                   />
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label
                       for="estimatedMaterials"
@@ -125,7 +125,7 @@
                   />
                 </div>
 
-                <div>
+                <div class="flex-1">
                   <RichTextEditor
                     v-model="formData.notes"
                     label="Job Notes"
