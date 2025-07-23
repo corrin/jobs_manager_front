@@ -214,7 +214,11 @@ const validateForm = (): boolean => {
     const plainFormData = toRaw(formData.value)
     console.log('🔧 Plain object for validation:', plainFormData)
 
-    schemas.ClientCreateRequest.parse(plainFormData)
+    // Clean optional fields before validation
+    const cleanedData = cleanOptionalFields(plainFormData)
+    console.log('🧹 Cleaned data for validation:', cleanedData)
+
+    schemas.ClientCreateRequest.parse(cleanedData)
     console.log('✅ Schema validation passed')
     return true
   } catch (error: unknown) {
@@ -256,11 +260,15 @@ const handleSubmit = async () => {
     const plainFormData = toRaw(formData.value)
     console.log('🌐 About to call API with body:', formData.value)
     console.log('🔧 Plain object for API:', plainFormData)
-    console.log('🔧 JSON stringified:', JSON.stringify(plainFormData))
 
-    // Validate the data manually first
+    // Clean optional fields before API call
+    const cleanedData = cleanOptionalFields(plainFormData)
+    console.log('🧹 Cleaned data for API call:', cleanedData)
+    console.log('🔧 JSON stringified:', JSON.stringify(cleanedData))
+
+    // Validate the cleaned data manually first
     try {
-      schemas.ClientCreateRequest.parse(plainFormData)
+      schemas.ClientCreateRequest.parse(cleanedData)
       console.log('✅ Manual validation passed')
     } catch (validationError) {
       console.log('❌ Manual validation failed:', validationError)
@@ -268,7 +276,7 @@ const handleSubmit = async () => {
     }
 
     // Use Zodios API to create client - try direct approach
-    const result: ClientCreateResponse = await api.clients_create_create(plainFormData)
+    const result: ClientCreateResponse = await api.clients_create_create(cleanedData)
 
     console.log('📡 API response:', result)
 
@@ -315,6 +323,15 @@ const handleAddOther = () => {
 
 const handleCancel = () => {
   emit('update:isOpen', false)
+}
+
+const cleanOptionalFields = (data: ClientCreateRequest): ClientCreateRequest => {
+  return {
+    ...data,
+    email: data.email?.trim() || undefined,
+    phone: data.phone?.trim() || undefined,
+    address: data.address?.trim() || undefined,
+  }
 }
 
 const resetForm = () => {

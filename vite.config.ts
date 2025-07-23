@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
 
   const allowedHosts = [
     'localhost',
+    'msm-corrin-frontend.loca.lt',
     ...(env.VITE_ALLOWED_HOSTS ? env.VITE_ALLOWED_HOSTS.split(',').map((host) => host.trim()) : []),
   ]
 

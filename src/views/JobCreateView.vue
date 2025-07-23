@@ -269,7 +269,11 @@ const handleClientSelection = (client: ClientSearchResult | null) => {
 
 // Requirements validation computed properties
 const hasValidXeroClient = computed(() => {
-  return formData.value.client_id !== '' && selectedClient.value?.xero_id
+  return (
+    formData.value.client_id !== '' &&
+    selectedClient.value?.xero_contact_id != null &&
+    selectedClient.value.xero_contact_id !== ''
+  )
 })
 
 const hasValidTimeEstimate = computed(() => {
@@ -281,12 +285,25 @@ const hasValidMaterialsEstimate = computed(() => {
 })
 
 const canSubmit = computed(() => {
-  return (
-    formData.value.name.trim() !== '' &&
-    hasValidXeroClient.value &&
-    hasValidTimeEstimate.value &&
-    hasValidMaterialsEstimate.value
-  )
+  const nameCheck = formData.value.name.trim() !== ''
+  const xeroCheck = hasValidXeroClient.value
+  const timeCheck = hasValidTimeEstimate.value
+  const materialsCheck = hasValidMaterialsEstimate.value
+
+  console.log('canSubmit validation:', {
+    nameCheck,
+    xeroCheck,
+    timeCheck,
+    materialsCheck,
+    name: formData.value.name,
+    clientId: formData.value.client_id,
+    selectedClient: selectedClient.value,
+    xeroContactId: selectedClient.value?.xero_contact_id,
+    estimatedTime: formData.value.estimatedTime,
+    estimatedMaterials: formData.value.estimatedMaterials,
+  })
+
+  return nameCheck && xeroCheck && timeCheck && materialsCheck
 })
 
 const navigateBack = () => {
