@@ -68,6 +68,9 @@ export const useAuthStore = defineStore('auth', () => {
         }),
       )
 
+      debugLog('Login credentials being sent:', plainCredentials)
+      debugLog('Original credentials object:', credentials)
+
       // Try different approaches to call the API
       try {
         await api.accounts_api_token_create(plainCredentials)

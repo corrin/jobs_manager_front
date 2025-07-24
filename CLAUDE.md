@@ -196,7 +196,7 @@ npm run dev  # Starts dev server on http://localhost:5173
 
 ### Environment Variables
 
-- `VITE_API_BASE_URL` - API endpoint (defaults to http://localhost:8001)
+- `VITE_API_BASE_URL` - API endpoint (defaults to http://localhost:8000)
 
 ### Build Commands
 
