@@ -6,7 +6,7 @@
           <button
             v-for="tab in tabs"
             :key="tab.key"
-            @click="handleTabChange(tab.key as TabKey)"
+            @click="handleTabChange(tab.key as JobTabKey)"
             :class="[
               'flex-1 py-3 px-2 text-sm font-medium text-center border-b-2 transition-colors',
               activeTab === tab.key
@@ -23,7 +23,7 @@
           <button
             v-for="tab in tabs"
             :key="tab.key"
-            @click="handleTabChange(tab.key as TabKey)"
+            @click="handleTabChange(tab.key as JobTabKey)"
             :class="[
               'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
               activeTab === tab.key
@@ -79,17 +79,89 @@
       <div v-if="activeTab === 'costAnalysis'" class="h-full p-4 md:p-6">
         <JobCostAnalysisTab v-if="jobData" :job-id="jobData.id" :job-data="analysisData" />
       </div>
-      <div v-if="activeTab === 'settings'" class="h-full p-4 md:p-6">
-        <JobSettingsTab
-          v-if="jobData"
-          :job-data="jobData"
-          @open-settings="$emit('open-settings')"
-          @open-workflow="$emit('open-workflow')"
-          @open-history="$emit('open-history')"
-          @open-attachments="$emit('open-attachments')"
-          @open-pdf="$emit('open-pdf')"
-          @delete-job="$emit('delete-job')"
-        />
+      <div v-if="activeTab === 'jobSettings'" class="h-full p-4 md:p-6">
+        <div class="h-full flex items-center justify-center">
+          <div class="text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Job Settings</h3>
+            <p class="text-gray-500">Configure job details and properties.</p>
+            <button
+              @click="$emit('open-settings')"
+              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Open Settings
+            </button>
+          </div>
+        </div>
+      </div>
+      <div v-if="activeTab === 'workflow'" class="h-full p-4 md:p-6">
+        <div class="h-full flex items-center justify-center">
+          <div class="text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Workflow</h3>
+            <p class="text-gray-500">Manage job status and workflow.</p>
+            <button
+              @click="$emit('open-workflow')"
+              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Open Workflow
+            </button>
+          </div>
+        </div>
+      </div>
+      <div v-if="activeTab === 'history'" class="h-full p-4 md:p-6">
+        <div class="h-full flex items-center justify-center">
+          <div class="text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">History</h3>
+            <p class="text-gray-500">View job event logs and history.</p>
+            <button
+              @click="$emit('open-history')"
+              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Open History
+            </button>
+          </div>
+        </div>
+      </div>
+      <div v-if="activeTab === 'attachments'" class="h-full p-4 md:p-6">
+        <div class="h-full flex items-center justify-center">
+          <div class="text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Attachments</h3>
+            <p class="text-gray-500">Manage job files and attachments.</p>
+            <button
+              @click="$emit('open-attachments')"
+              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Open Attachments
+            </button>
+          </div>
+        </div>
+      </div>
+      <div v-if="activeTab === 'printJob'" class="h-full p-4 md:p-6">
+        <div class="h-full flex items-center justify-center">
+          <div class="text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Print Job</h3>
+            <p class="text-gray-500">Generate and print job sheets.</p>
+            <button
+              @click="$emit('open-pdf')"
+              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Print Job Sheet
+            </button>
+          </div>
+        </div>
+      </div>
+      <div v-if="activeTab === 'quotingChat'" class="h-full p-4 md:p-6">
+        <div class="h-full flex items-center justify-center">
+          <div class="text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Quoting Chat</h3>
+            <p class="text-gray-500">AI assistant for quoting help.</p>
+            <button
+              @click="openQuotingChat"
+              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Open Quoting Chat
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -102,19 +174,17 @@ import JobQuoteTab from './JobQuoteTab.vue'
 import JobActualTab from './JobActualTab.vue'
 import JobFinancialTab from './JobFinancialTab.vue'
 import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
-import JobSettingsTab from './JobSettingsTab.vue'
 import { watch, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
+import type { JobTabKey } from '@/api/local/schemas'
 
 // Use generated Job type from Zodios API
 type Job = z.infer<typeof schemas.Job>
 
-// Tab key type - frontend specific UI type
-type TabKey = 'estimate' | 'quote' | 'actual' | 'financial' | 'costAnalysis'
-
 const emit = defineEmits<{
-  (e: 'change-tab', tab: TabKey): void
+  (e: 'change-tab', tab: JobTabKey): void
   (e: 'open-settings'): void
   (e: 'open-workflow'): void
   (e: 'open-history'): void
@@ -134,7 +204,12 @@ const allTabs = [
   { key: 'actual', label: 'Actual' },
   { key: 'financial', label: 'Financial' },
   { key: 'costAnalysis', label: 'Cost Analysis' },
-  { key: 'settings', label: 'Settings' },
+  { key: 'jobSettings', label: 'Job Settings' },
+  { key: 'workflow', label: 'Workflow' },
+  { key: 'history', label: 'History' },
+  { key: 'attachments', label: 'Attachments' },
+  { key: 'printJob', label: 'Print Job' },
+  { key: 'quotingChat', label: 'Quoting Chat' },
 ] as const
 
 const tabs = computed(() => {
@@ -145,12 +220,27 @@ const tabs = computed(() => {
   return allTabs
 })
 
-function handleTabChange(tab: TabKey) {
+function handleTabChange(tab: JobTabKey) {
   emit('change-tab', tab)
 }
 
+const router = useRouter()
+
+function openQuotingChat() {
+  if (!props.jobData) return
+  router.push({
+    name: 'QuotingChatView',
+    query: {
+      jobId: props.jobData.id,
+      jobName: props.jobData.name,
+      jobNumber: props.jobData.job_number.toString(),
+      clientName: props.jobData.client_name,
+    },
+  })
+}
+
 const props = defineProps<{
-  activeTab: TabKey
+  activeTab: JobTabKey
   jobData: Job | null
   companyDefaults: Record<string, unknown> | null
   latestPricings: Record<string, unknown> | null

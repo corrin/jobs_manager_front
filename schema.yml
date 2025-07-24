@@ -5300,32 +5300,29 @@ components:
         job_id:
           type: string
         job_number:
+          type: integer
+        job_display_name:
           type: string
-        job_name:
-          type: string
-        client_name:
-          type: string
-        billable_hours:
+        labour_profit:
           type: number
           format: double
-        revenue:
+        material_profit:
           type: number
           format: double
-        cost:
+        adjustment_profit:
           type: number
           format: double
-        profit:
+        total_profit:
           type: number
           format: double
       required:
-        - billable_hours
-        - client_name
-        - cost
         - job_id
-        - job_name
         - job_number
-        - profit
-        - revenue
+        - job_display_name
+        - labour_profit
+        - material_profit
+        - adjustment_profit
+        - total_profit
     KPIMonthlyTotals:
       type: object
       description: Serializer for monthly totals in KPI calendar
