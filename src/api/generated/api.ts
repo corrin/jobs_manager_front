@@ -19,13 +19,12 @@ const KPIProfitBreakdown = z
 const KPIJobBreakdown = z
   .object({
     job_id: z.string(),
-    job_number: z.string(),
-    job_name: z.string(),
-    client_name: z.string(),
-    billable_hours: z.number(),
-    revenue: z.number(),
-    cost: z.number(),
-    profit: z.number(),
+    job_number: z.number().int(),
+    job_display_name: z.string(),
+    labour_profit: z.number(),
+    material_profit: z.number(),
+    adjustment_profit: z.number(),
+    total_profit: z.number(),
   })
   .passthrough()
 const KPIDetails = z

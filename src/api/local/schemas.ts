@@ -788,7 +788,19 @@ export type JobCardStatusConfig = z.infer<typeof JobCardStatusConfigSchema>
 
 // Job Tab Schema - For useJobTabs composable tab management
 // REASON: Tab key enumeration for job tab navigation functionality
-export const JobTabKeySchema = z.enum(['estimate', 'quote', 'actual', 'financial', 'costAnalysis'])
+export const JobTabKeySchema = z.enum([
+  'estimate',
+  'quote',
+  'actual',
+  'financial',
+  'costAnalysis',
+  'workflow',
+  'history',
+  'attachments',
+  'printJob',
+  'quotingChat',
+  'jobSettings',
+])
 
 export type JobTabKey = z.infer<typeof JobTabKeySchema>
 
