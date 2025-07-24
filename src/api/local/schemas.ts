@@ -75,7 +75,7 @@ export type DiffPreview = z.infer<typeof DiffPreviewSchema>
 // REASON: The API returns quantity/unit_cost/unit_rev as strings for decimal precision,
 // but UI components need number types for calculations and display
 export const UICostLineSchema = z.object({
-  id: z.number(),
+  id: z.string().nullable(),
   kind: z.enum(['time', 'material', 'adjust']),
   desc: z.string(),
   quantity: z.number(),
@@ -91,7 +91,7 @@ export type UICostLine = z.infer<typeof UICostLineSchema>
 
 // UI-specific CostSet with converted cost lines
 export const UICostSetSchema = z.object({
-  id: z.number(),
+  id: z.string(),
   kind: z.enum(['estimate', 'quote', 'actual']),
   rev: z.number(),
   created: z.string(),

@@ -60,7 +60,7 @@ export const RATE_TYPES = [
 
 export interface Job {
   id: string
-  job_number: number
+  job_number: string
   name: string
   client_name: string
   status: string
@@ -129,7 +129,7 @@ export interface TimesheetEntryStaffMember {
 }
 
 export interface TimesheetEntryGridRow {
-  id: number | null
+  id: string | null
   jobNumber: string
   client: string
   jobName: string
