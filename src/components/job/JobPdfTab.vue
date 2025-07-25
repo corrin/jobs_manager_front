@@ -1,41 +1,95 @@
 <template>
-  <div class="h-full overflow-y-auto">
-    <div class="max-w-4xl">
-      <div class="mb-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-2">Print Job</h2>
-        <p class="text-sm text-gray-600">Generate and print job sheets.</p>
-      </div>
-
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-        <div class="text-center">
-          <div class="mb-4">
-            <svg
-              class="w-12 h-12 text-gray-400 mx-auto"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+  <div class="h-full flex flex-col">
+    <div class="flex-shrink-0 mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 mb-2">Job #{{ jobNumber }} Print Sheet</h2>
+          <p class="text-sm text-gray-600">Preview and print the job sheet PDF.</p>
+        </div>
+        <div class="flex space-x-2">
+          <Button v-if="blobUrl" variant="outline" size="sm" asChild>
+            <a
+              :href="blobUrl"
+              :download="`workshop_job_${jobNumber}.pdf`"
+              class="inline-flex items-center"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-              ></path>
-            </svg>
-          </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">Job #{{ jobNumber }} Print Options</h3>
-          <p class="text-gray-500 mb-4">Print job sheet functionality coming soon...</p>
+              <Download class="w-4 h-4 mr-1" />
+              Download
+            </a>
+          </Button>
+          <Button v-if="blobUrl" @click="printPdf" size="sm">
+            <Printer class="w-4 h-4 mr-1" />
+            Print
+          </Button>
+          <Button v-if="blobUrl" @click="attachPdf" :disabled="attaching || attached" size="sm">
+            {{ attached ? 'Attached ✅' : attaching ? 'Attaching...' : 'Attach to Job' }}
+          </Button>
         </div>
       </div>
+    </div>
+    <div class="flex-1 bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <WorkshopPdfViewer :job-id="jobId" @pdf-ready="handlePdfReady" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { debugLog } from '@/utils/debug'
+import { ref } from 'vue'
+import { Button } from '@/components/ui/button'
+import WorkshopPdfViewer from './WorkshopPdfViewer.vue'
+import { jobService } from '@/services/job.service'
+import { Download, Printer } from 'lucide-vue-next'
+
 interface Props {
   jobId: string
   jobNumber: number
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+
+const blobUrl = ref<string | null>(null)
+const attaching = ref(false)
+const attached = ref(false)
+
+const handlePdfReady = (url: string) => {
+  blobUrl.value = url
+}
+
+const printPdf = () => {
+  if (blobUrl.value) {
+    const printWindow = window.open(blobUrl.value)
+    if (printWindow) {
+      printWindow.addEventListener('load', () => {
+        printWindow.print()
+      })
+    }
+  }
+}
+
+const attachPdf = async () => {
+  if (!blobUrl.value || !props.jobNumber) {
+    debugLog('Missing blob URL or job number for PDF attachment')
+    return
+  }
+
+  attaching.value = true
+  try {
+    const response = await fetch(blobUrl.value)
+    const blob = await response.blob()
+    const file = new File([blob], `workshop_job_${props.jobNumber}.pdf`, {
+      type: 'application/pdf',
+    })
+
+    const uploaded = await jobService.uploadJobFiles(String(props.jobNumber), [file])
+    if (uploaded.length > 0) {
+      attached.value = true
+      debugLog('PDF attached to job successfully')
+    }
+  } catch (err) {
+    debugLog('Error attaching PDF to job:', err)
+  } finally {
+    attaching.value = false
+  }
+}
 </script>
