@@ -71,10 +71,33 @@ src/
 
 #### No Fallbacks in Our Own Code
 
-**Do not use fallback patterns when accessing our own API or component data.** Use the correct field names directly.
+**Do not use fallback patterns when accessing our own API, component data, or environment variables.** Use the correct field names and values directly.
 
+**API/Component Data:**
 ❌ `job.job_number || job.number || job.jobNumber`
 ✅ `job.job_number`
+
+**Environment Variables:**
+❌ `import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'`
+✅ `import.meta.env.VITE_API_BASE_URL`
+
+**Configuration Values:**
+❌ `config.retryAttempts || 3`
+✅ `config.retryAttempts`
+
+**Why no fallbacks:**
+
+- Fallbacks mask configuration and data issues
+- They make debugging harder by hiding the root cause
+- They can lead to silent failures in production
+- Our codebase should have consistent, predictable data structures
+
+**Instead of fallbacks:**
+
+- Fix the source code that provides the data
+- Ensure environment variables are properly configured
+- Use TypeScript to catch missing fields at compile time
+- Add proper error handling and validation
 
 If fields are missing or inconsistent, fix the source code, don't mask with fallbacks.
 
