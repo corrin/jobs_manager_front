@@ -80,74 +80,33 @@
         <JobCostAnalysisTab v-if="jobData" :job-id="jobData.id" :job-data="analysisData" />
       </div>
       <div v-if="activeTab === 'jobSettings'" class="h-full p-4 md:p-6">
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Job Settings</h3>
-            <p class="text-gray-500">Configure job details and properties.</p>
-            <button
-              @click="$emit('open-settings')"
-              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Open Settings
-            </button>
-          </div>
-        </div>
+        <JobSettingsTab
+          v-if="jobData"
+          :job-data="jobData"
+          @job-updated="$emit('job-updated', $event)"
+        />
       </div>
       <div v-if="activeTab === 'workflow'" class="h-full p-4 md:p-6">
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Workflow</h3>
-            <p class="text-gray-500">Manage job status and workflow.</p>
-            <button
-              @click="$emit('open-workflow')"
-              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Open Workflow
-            </button>
-          </div>
-        </div>
+        <JobWorkflowTab v-if="jobData" :job-data="jobData" />
       </div>
       <div v-if="activeTab === 'history'" class="h-full p-4 md:p-6">
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">History</h3>
-            <p class="text-gray-500">View job event logs and history.</p>
-            <button
-              @click="$emit('open-history')"
-              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Open History
-            </button>
-          </div>
-        </div>
+        <JobHistoryTab
+          v-if="jobData"
+          :job-id="jobData.id"
+          @event-added="$emit('event-added', $event)"
+        />
       </div>
       <div v-if="activeTab === 'attachments'" class="h-full p-4 md:p-6">
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Attachments</h3>
-            <p class="text-gray-500">Manage job files and attachments.</p>
-            <button
-              @click="$emit('open-attachments')"
-              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Open Attachments
-            </button>
-          </div>
-        </div>
+        <JobAttachmentsTab
+          v-if="jobData"
+          :job-id="jobData.id"
+          :job-number="jobData.job_number"
+          @file-uploaded="$emit('file-uploaded')"
+          @file-deleted="$emit('file-deleted')"
+        />
       </div>
       <div v-if="activeTab === 'printJob'" class="h-full p-4 md:p-6">
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Print Job</h3>
-            <p class="text-gray-500">Generate and print job sheets.</p>
-            <button
-              @click="$emit('open-pdf')"
-              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Print Job Sheet
-            </button>
-          </div>
-        </div>
+        <JobPdfTab v-if="jobData" :job-id="jobData.id" :job-number="jobData.job_number" />
       </div>
       <div v-if="activeTab === 'quotingChat'" class="h-full p-4 md:p-6">
         <div class="h-full flex items-center justify-center">
@@ -174,6 +133,11 @@ import JobQuoteTab from './JobQuoteTab.vue'
 import JobActualTab from './JobActualTab.vue'
 import JobFinancialTab from './JobFinancialTab.vue'
 import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
+import JobSettingsTab from './JobSettingsTab.vue'
+import JobWorkflowTab from './JobWorkflowTab.vue'
+import JobHistoryTab from './JobHistoryTab.vue'
+import JobAttachmentsTab from './JobAttachmentsTab.vue'
+import JobPdfTab from './JobPdfTab.vue'
 import { watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { z } from 'zod'
@@ -196,6 +160,10 @@ const emit = defineEmits<{
   (e: 'invoice-created'): void
   (e: 'delete-job'): void
   (e: 'reload-job'): void
+  (e: 'job-updated', job: unknown): void
+  (e: 'event-added', event: unknown): void
+  (e: 'file-uploaded'): void
+  (e: 'file-deleted'): void
 }>()
 
 const allTabs = [
@@ -247,7 +215,7 @@ const props = defineProps<{
 }>()
 
 const analysisData = computed(() => {
-  if (!props.jobData) return null
+  if (!props.jobData) return undefined
 
   const hasValidQuote =
     props.jobData.latest_quote &&
