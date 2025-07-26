@@ -12,24 +12,26 @@ import type { z } from 'zod'
 type DeliveryReceiptLine = z.infer<typeof schemas.DeliveryReceiptLine>
 type DeliveryReceiptRequest = z.infer<typeof schemas.DeliveryReceiptRequest>
 
-// Frontend UI types for delivery receipt management
-export interface DeliveryAllocationUI {
-  id?: string
-  job_id: string
-  job_name: string
-  quantity: number
-  unit_cost: number
-  retail_rate: number
-  notes?: string
-}
+// Use generated API types only
+type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocation>
+// SCheduled for deletion but kept for reference
+
+// export interface DeliveryAllocationUI {
+//   id?: string
+//   job_id: string
+//   job_name: string
+//   quantity: number
+//   unit_cost: number
+//   retail_rate: number
+//   notes?: string
+// }
 
 /**
  * Transform frontend UI allocations data to backend API format
  */
 export function transformDeliveryReceiptForAPI(
   purchaseOrderId: string,
-  uiAllocations: Record<string, DeliveryAllocationUI[]>,
-  defaultRetailRate: number,
+  uiAllocations: Record<string, DeliveryAllocation[]>,
 ): DeliveryReceiptRequest {
   const apiAllocations: Record<string, DeliveryReceiptLine> = {}
 
@@ -39,9 +41,9 @@ export function transformDeliveryReceiptForAPI(
         allocations: allocations.map((allocation) => ({
           job_id: allocation.job_id,
           quantity: allocation.quantity,
-          unit_cost: allocation.unit_cost,
-          retail_rate: allocation.retail_rate || defaultRetailRate,
-          notes: allocation.notes || '',
+          // NOTE: Generated schema only has job_id and quantity
+          // Backend needs to expand DeliveryReceiptAllocation schema
+          // to include unit_cost, retail_rate, notes fields
         })),
       }
     }
@@ -58,8 +60,8 @@ export function transformDeliveryReceiptForAPI(
  */
 export function initializeEmptyAllocations(
   lineIds: string[],
-): Record<string, DeliveryAllocationUI[]> {
-  const allocations: Record<string, DeliveryAllocationUI[]> = {}
+): Record<string, DeliveryAllocation[]> {
+  const allocations: Record<string, DeliveryAllocation[]> = {}
   lineIds.forEach((lineId) => {
     allocations[lineId] = []
   })

@@ -6,6 +6,8 @@ Fix 32 files importing from the deleted `@/api/local/schemas` directory by apply
 
 ## 🚨 CRITICAL ARCHITECTURAL PRINCIPLES 🚨
 
+Always commit and push after every task
+
 ### NEVER COMMENT OUT OR DISABLE BROKEN IMPORTS
 
 - Build failures from missing backend schemas are **ARCHITECTURALLY CORRECT**

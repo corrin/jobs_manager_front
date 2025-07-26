@@ -1,8 +1,10 @@
 import { ref, computed } from 'vue'
-import { api } from '../api/generated/api'
+import { api, schemas } from '@/api/generated/api'
+import { z } from 'zod'
 import type { ClientContact } from '@/composables/useClientLookup'
 import { debugLog } from '@/utils/debug'
-import { type NewContactData } from '@/api/local/schemas'
+
+type NewContactData = z.infer<typeof schemas.ClientContactCreateRequest>
 
 export function useContactManagement() {
   const isModalOpen = ref(false)

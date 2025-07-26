@@ -37,7 +37,13 @@
 This is the absolute, foolproof test for determining if a type should be created locally:
 
 - **Database data** (jobs, staff, purchase orders, deliveries, timesheets, etc.) → ❌ PROHIBITED
-- **Pure UI structures** (form schemas, dropdown options, tab names, filter structures) → ✅ ALLOWED
+- **Form data for database entities** (contact forms, job forms, staff forms, etc.) → ❌ PROHIBITED
+- **API request/response types** (create requests, update requests, API responses) → ❌ PROHIBITED
+- **Pure UI structures ONLY** (dropdown options, tab names, filter structures, search forms) → ✅ ALLOWED
+
+**CLARIFICATION: Form data for database entities is DATABASE DATA**
+
+If a form creates, updates, or represents data that will be stored in the database, it is DATABASE DATA and must use backend schemas. The only frontend forms allowed are pure UI constructs like search filters or display preferences that are never persisted.
 
 🚨 **WHEN UNCERTAIN - DO NOT TOUCH THE CODE** 🚨
 \*\*If there is ANY ambiguity about whether a type represents database data, DO NOT WRITE ANY CODE. DO NOT EDIT ANYTHING. STOP AND LEARN. NEVER ATTEMPT TO FIND A WAY AROUND THIS RESTRICTION.
