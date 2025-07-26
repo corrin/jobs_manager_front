@@ -31,6 +31,34 @@
 **NEVER create local TypeScript interfaces, types, or schemas that duplicate API functionality**
 **ALL API-related types MUST come from the auto-generated API schemas only**
 
+🚨 **ULTIMATE RULE: DATABASE DATA PROHIBITION** 🚨
+**If this data is stored in the database, it is prohibited to model it in the frontend**
+
+This is the absolute, foolproof test for determining if a type should be created locally:
+
+- **Database data** (jobs, staff, purchase orders, deliveries, timesheets, etc.) → ❌ PROHIBITED
+- **Pure UI structures** (form schemas, dropdown options, tab names, filter structures) → ✅ ALLOWED
+
+🚨 **WHEN UNCERTAIN - DO NOT TOUCH THE CODE** 🚨
+\*\*If there is ANY ambiguity about whether a type represents database data, DO NOT WRITE ANY CODE. DO NOT EDIT ANYTHING. STOP AND LEARN. NEVER ATTEMPT TO FIND A WAY AROUND THIS RESTRICTION.
+
+**NEVER modify code based on uncertainty - leave imports broken and document as Category C**
+
+When uncertain about a type, ask: "Is this data stored in the database?" If yes, it belongs in Category C (missing backend schema).
+
+**PROHIBITED actions when uncertain:**
+
+- ❌ Creating frontend types "just in case"
+- ❌ Making assumptions about what data represents
+- ❌ Using words like "likely", "probably", "seems like"
+- ❌ Modifying working code based on guesswork
+
+**CORRECT approach when uncertain:**
+
+- ✅ LEAVE THE CODE UNTOUCHED
+- ✅ Document as Category C (missing backend schema)
+- ✅ Only fix types when 100% certain they are pure UI constructs
+
 🚨 **NEVER COMMENT OUT OR DISABLE BROKEN IMPORTS** 🚨
 **DO NOT create temporary workarounds, placeholder types, or disable imports to "unblock" builds**
 **If an import is broken due to missing backend schemas, LEAVE IT BROKEN and document the requirement**
@@ -50,16 +78,117 @@
 - ✅ Leave import broken to maintain pressure for proper fix
 - ✅ Focus on files that can be legitimately fixed
 
+**If generated schema is wrong:** Coordinate with backend to add proper `@extend_schema_field` annotations, then regenerate with `npm run update-schema`
+
 ## Project Overview
 
 This is a Vue 3 + TypeScript frontend for a job management system built for Morris Sheet Metal. It provides a Kanban-style job board, timesheet management, and comprehensive job workflow tracking. The application communicates with a Django REST API backend.
 
-## Backend
+## Backend Coordination
 
 The backend is in /home/corrin/src/jobs_manager
-It's a standard Django app.
 
-**IMPORTANT: This Claude instance is NOT permitted to read or modify the backend directory or source code.** If you need information about the backend API, models, or validation logic, you must ask the user to coordinate with the Claude instance managing the backend code.
+### Backend Architecture (Provided by Backend Claude)
+
+**System Architecture:**
+
+- Django REST Framework with MySQL-compatible MariaDB
+- UUID primary keys throughout for security
+- Modern CostSet/CostLine architecture (NOT legacy JobPricing models)
+- SimpleHistory for audit trails on critical models
+- drf_spectacular for OpenAPI schema generation
+- Defensive programming philosophy - fail early, no fallbacks, mandatory error persistence
+
+**Core Django Apps:**
+
+- workflow - Base functionality, Xero integration, authentication
+- job - Job lifecycle with modern costing (CostSet/CostLine)
+- accounts - Staff management with custom user model
+- client - Customer relationship management
+- timesheet - Time tracking via CostLine architecture
+- purchasing - Purchase orders with Xero integration
+- accounting - Financial reporting and KPIs
+- quoting - Quote generation and supplier pricing
+
+### Mandatory Coordination Rules
+
+**🚨 This Claude instance is NOT permitted to read or modify the backend directory or source code.**
+
+**ALWAYS coordinate with the backend Claude through the user for:**
+
+**Data Ownership Questions:**
+
+- "Is this database data or UI constant?"
+- "Does this data come from the database or is it a UI constant?"
+- "Should job status choices come from backend API?" (Answer: No - static constants)
+- "Does user profile data need backend serializer?" (Answer: Yes - dynamic data)
+
+**API Contract Questions:**
+
+- "What fields does the [specific] API actually return?"
+- "Does [ModelName] have a '[field]' field?"
+- "What's the actual API response structure for this endpoint?"
+
+**Business Logic Questions:**
+
+- "Is this business logic (backend) or presentation logic (frontend)?"
+- "Should frontend calculate [specific calculation]?"
+- "Are there business rules I need to know about this data?"
+
+**Schema Generation Issues:**
+
+- "Frontend needs schema for [specific type] - should this exist?"
+- "Does the backend already have a serializer for this data?"
+
+### Coordination Process
+
+**Frontend Claude Workflow:**
+
+1. **Before assuming data source:** Ask "Is this database data or UI constant?"
+2. **Before creating types:** Ask "Does backend already serialize this?"
+3. **Before implementing logic:** Ask "Is this business logic or presentation logic?"
+4. **When schemas missing:** Provide specific use case, not generic type requests
+
+**Emergency Prevention - MUST coordinate before:**
+
+- Creating any schema/type that might represent backend data
+- Implementing calculations that might be business logic
+- Making assumptions about API response structures
+- Hardcoding values that might be dynamic in backend
+
+### Data Architecture Decision Examples
+
+**Frontend Claude Should Coordinate:**
+
+```typescript
+// ❓ COORDINATE - Dynamic data from models?
+interface UserProfile {
+  wage_rate?: number // Changes based on staff record
+  permissions: string[] // Role-based, stored in database
+}
+
+// ❓ COORDINATE - Calculated business data?
+interface JobSummary {
+  profitMargin: number // Business calculation
+  totalCost: number // Aggregated from CostLines
+}
+```
+
+**Frontend Claude Should Handle Locally:**
+
+```typescript
+// ✅ UI CONSTANTS - Frontend owns these
+const JOB_STATUS_CHOICES = [{ key: 'draft', label: 'Draft' }]
+
+// ✅ PRESENTATION LOGIC - Frontend owns these
+interface TableColumn {
+  field: string
+  header: string
+  sortable: boolean
+}
+```
+
+**The backend Claude has complete context about database models, API design, and data architecture that the frontend Claude lacks.**
 
 ## Deployment Architecture
 
@@ -144,40 +273,6 @@ src/
 **Configuration Values:**
 ❌ `config.retryAttempts || 3`
 ✅ `config.retryAttempts`
-
-#### CRITICAL: No Schema Workarounds
-
-**NEVER create local schema overrides to work around incorrect auto-generated API schemas.** This completely violates the single source of truth principle.
-
-**Schema Workarounds (STRICTLY PROHIBITED):**
-❌ Creating `/api/local/schemas.ts` to override generated schemas
-❌ Manual validation like `CostSetSchema.parse(response)` to "fix" API responses  
-❌ Dual-schema patterns where generated and local schemas coexist
-❌ Type overrides like `import { type CostSet } from '@/api/local/schemas'`
-
-**Correct Approach:**
-✅ Fix the backend OpenAPI schema generation at the source
-✅ Use only the auto-generated API client and schemas
-✅ Coordinate with backend developers to add proper `@extend_schema_field` annotations
-✅ Regenerate frontend API when backend schema is corrected
-
-**Why schema workarounds are forbidden:**
-
-- **Breaks contract**: Auto-generated APIs are meant to be the single source of truth
-- **Dual maintenance**: Now you maintain both generated AND local schemas
-- **Drift risk**: Local schemas can become stale and incorrect
-- **Masks real issues**: Backend schema problems should be fixed, not worked around
-- **Technical debt**: Creates permanent workarounds that become hard to remove
-
-**If the generated schema is wrong:**
-
-1. **Stop immediately** - Do not create local schema overrides
-2. **Identify root cause** - Usually missing OpenAPI annotations in backend
-3. **Coordinate with backend** - Get proper `@extend_schema_field` annotations added
-4. **Regenerate schema** - Use `npm run update-schema` after backend fix
-5. **Verify fix** - Ensure generated types match actual API responses
-
-**Schema integrity is non-negotiable.** Local schema workarounds are a serious architectural violation.
 
 ### Component Architecture
 

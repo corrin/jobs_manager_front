@@ -75,6 +75,36 @@ This log tracks the systematic fixing of 28 broken imports from the deleted `@/a
 - **Replacement strategy:** Created `src/constants/pricing-section.ts` with UI pricing form structure
 - **Notes:** PricingSectionSchema is UI-only pricing section structure, correctly moved to frontend constants.
 
+#### File: `src/components/purchasing/PoLinesTable.vue`
+
+- **Status:** ✅ Fixed - Mixed approach after backend coordination
+- **Broken imports:** `PoLineUISchema`, `DataTableRowContextSchema` from `@/api/local/schemas`
+- **Replacement strategy:**
+  - `PoLineUISchema` → `schemas.PurchaseOrderLine` (Category B - existing generated schema)
+  - `DataTableRowContextSchema` → `src/utils/data-table-types.ts` (Category A - frontend UI type)
+- **Notes:** Backend coordination confirmed PoLineUISchema maps to PurchaseOrderLine database data, while DataTableRowContextSchema is pure UI state. Proper architectural separation maintained.
+
+#### File: `src/components/timesheet/PaidAbsenceModal.vue`
+
+- **Status:** ✅ Fixed - Frontend utilities
+- **Broken imports:** `StaffMemberUI`, `AbsenceForm`, `AbsenceSummary` from `@/api/local/schemas`
+- **Replacement strategy:** Created `src/utils/timesheet-types.ts` with frontend form and UI types
+- **Notes:** These are frontend-specific types for absence forms and UI display, correctly moved to frontend utilities.
+
+#### File: `src/components/timesheet/StaffWeekRow.vue`
+
+- **Status:** ✅ Fixed - Frontend utilities
+- **Broken imports:** `WeeklyStaffData`, `WeeklyDayData` from `@/api/local/schemas`
+- **Replacement strategy:** Added types to `src/utils/timesheet-types.ts`
+- **Notes:** These are frontend timesheet display types, correctly moved to frontend utilities.
+
+#### File: `src/composables/useTimesheetEntryGrid.ts`
+
+- **Status:** ✅ Fixed - Frontend utilities
+- **Broken imports:** `TimesheetEntryJobSelectionItem`, `TimesheetEntryStaffMember` from `@/api/local/schemas`
+- **Replacement strategy:** Added types to `src/utils/timesheet-types.ts`
+- **Notes:** These are frontend grid selection types, correctly moved to frontend utilities.
+
 ---
 
 _Log tracks systematic fixing of broken imports from deleted @/api/local/schemas directory_

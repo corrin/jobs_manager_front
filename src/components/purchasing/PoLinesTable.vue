@@ -14,16 +14,15 @@ import { metalTypeOptions } from '@/utils/metalType'
 import ItemSelect from '@/views/purchasing/ItemSelect.vue'
 import JobSelect from './JobSelect.vue'
 import { schemas } from '@/api/generated/api'
-import { DataTableRowContextSchema, PoLineUISchema } from '@/api/local/schemas'
+import type { DataTableRowContext } from '@/utils/data-table-types'
 import { z } from 'zod'
 
-type PoLineUI = z.infer<typeof PoLineUISchema>
-type DataTableRowContext = z.infer<typeof DataTableRowContextSchema>
+type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
 type JobForPurchasing = z.infer<typeof schemas.JobForPurchasing>
 type XeroItem = z.infer<typeof schemas.XeroItem>
 
 type Props = {
-  lines: PoLineUI[]
+  lines: PurchaseOrderLine[]
   items: XeroItem[]
   jobs: JobForPurchasing[]
   readOnly?: boolean
@@ -31,7 +30,7 @@ type Props = {
 }
 
 type Emits = {
-  (e: 'update:lines', lines: PoLineUI[]): void
+  (e: 'update:lines', lines: PurchaseOrderLine[]): void
   (e: 'add-line'): void
   (e: 'delete-line', id: string | number): void
 }

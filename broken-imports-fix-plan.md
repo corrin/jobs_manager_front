@@ -25,10 +25,23 @@ For each file, determine if the import is:
 
 **Category A: Frontend Constants/Utilities** ✅ CAN FIX
 
-- Static UI dropdowns, labels, configuration
-- Data transformation functions
-- Presentation-only types
+🚨 **ULTIMATE TEST: If this data is stored in the database, it is PROHIBITED to model in the frontend** 🚨
+
+- Static UI dropdowns, labels, configuration (NOT stored in database)
+- Data transformation functions (NOT stored in database)
+- Pure UI form structures (NOT stored in database)
 - **Action:** Create proper frontend constants/utilities
+
+**Examples of ALLOWED Category A types:**
+
+- Tab names, dropdown options, filter schemas
+- Form validation structures
+- UI state enums, display constants
+
+**Examples of PROHIBITED (Category C) types:**
+
+- Job data, staff data, purchase orders, deliveries
+- Any type with database IDs, business fields, or API data
 
 **Category B: Existing Generated Schemas** ✅ CAN FIX
 
@@ -75,14 +88,19 @@ import { JobEvent } from '@/api/local/schemas' // ❌ BROKEN - Backend team must
 
 ### Step 3: File Categorization (32 total)
 
-#### ✅ CATEGORY A: Frontend Constants/Utilities (CAN FIX)
+#### ✅ CATEGORY A: Frontend Constants/Utilities (CAN FIX) - ONLY PURE UI CONSTRUCTS
 
-- [x] `src/components/job/JobViewTabs.vue` - `JobTabKey` (UI-only tab names)
-- [x] `src/components/job/JobWorkflowModal.vue` - `StatusChoice` (UI dropdown values)
-- [x] `src/views/purchasing/DeliveryReceiptFormView.vue` - `DeliveryAllocationUI, transformDeliveryReceiptForAPI` (UI types & data transformation)
-- [ ] `src/components/AdvancedSearchDialog.vue` - `AdvancedFiltersSchema` (UI filter structure)
-- [ ] `src/components/admin/errors/ErrorFilter.vue` - `DateRangeSchema` (UI date picker)
-- [ ] `src/components/job/JobPricingGrids.vue` - `PricingSectionSchema` (UI form structure)
+- [x] `src/components/job/JobViewTabs.vue` - `JobTabKey` (literal tab names like "details", "attachments")
+- [x] `src/views/purchasing/DeliveryReceiptFormView.vue` - `transformDeliveryReceiptForAPI` (data transformation function only)
+- [x] `src/components/AdvancedSearchDialog.vue` - `AdvancedFiltersSchema` (search form structure only)
+- [x] `src/components/admin/errors/ErrorFilter.vue` - `DateRangeSchema` (date picker form structure only)
+- [x] `src/components/job/JobPricingGrids.vue` - `PricingSectionSchema` (pricing form structure only)
+
+#### 🔄 MOVED TO CATEGORY C (CONSERVATIVE APPROACH)
+
+- [ ] `src/components/job/JobWorkflowModal.vue` - `StatusChoice` (status values likely stored in database)
+- [ ] `src/components/timesheet/PaidAbsenceModal.vue` - `AbsenceForm, AbsenceSummary` (absence data likely stored in database)
+- [ ] `src/components/timesheet/StaffWeekRow.vue` - `WeeklyStaffData, WeeklyDayData` (timesheet data stored in database)
 
 #### ✅ CATEGORY B: Existing Generated Schemas (CAN FIX)
 
