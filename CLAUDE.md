@@ -1,15 +1,210 @@
 # Jobs Manager Frontend - Claude Development Guide
 
+## 🚨 CRITICAL ARCHITECTURAL RULES 🚨
+
+### MAINTAIN ABSOLUTELY STRICT SEPARATION OF CONCERNS BETWEEN FRONTEND AND BACKEND
+
+**NEVER PUT FRONTEND LOGIC IN THE BACKEND. NEVER PUT BACKEND LOGIC IN THE FRONTEND.**
+
+**Frontend responsibilities ONLY:**
+
+- User interface and presentation logic
+- User interactions and form handling
+- Client-side validation for UX (never security)
+- Routing and navigation
+- **STATIC CONSTANTS AND CONFIGURATION**
+- Display formatting and styling
+
+**NEVER request backend schemas for:**
+
+- ❌ Static dropdown choices (status values, categories, etc.)
+- ❌ UI constants that never change
+- ❌ Configuration data that should be hardcoded in frontend
+- ❌ Enums or choice fields that are purely presentational
+- ❌ Display labels, tooltips, or UI text
+
+**Rule**: If it's a constant that never changes and has no business logic, it belongs in YOUR codebase as a TypeScript constant. DO NOT request it from the backend.
+
+### SCHEMA IMPORT RULES
+
+🚨 **ABSOLUTELY NO LOCAL SCHEMAS FOR API DATA** 🚨
+**NEVER create local TypeScript interfaces, types, or schemas that duplicate API functionality**
+**ALL API-related types MUST come from the auto-generated API schemas only**
+
+🚨 **ULTIMATE RULE: DATABASE DATA PROHIBITION** 🚨
+**If this data is stored in the database, it is prohibited to model it in the frontend**
+
+This is the absolute, foolproof test for determining if a type should be created locally:
+
+- **Database data** (jobs, staff, purchase orders, deliveries, timesheets, etc.) → ❌ PROHIBITED
+- **Form data for database entities** (contact forms, job forms, staff forms, etc.) → ❌ PROHIBITED
+- **API request/response types** (create requests, update requests, API responses) → ❌ PROHIBITED
+- **Pure UI structures ONLY** (dropdown options, tab names, filter structures, search forms) → ✅ ALLOWED
+
+**CLARIFICATION: Form data for database entities is DATABASE DATA**
+
+If a form creates, updates, or represents data that will be stored in the database, it is DATABASE DATA and must use backend schemas. The only frontend forms allowed are pure UI constructs like search filters or display preferences that are never persisted.
+
+🚨 **WHEN UNCERTAIN - DO NOT TOUCH THE CODE** 🚨
+\*\*If there is ANY ambiguity about whether a type represents database data, DO NOT WRITE ANY CODE. DO NOT EDIT ANYTHING. STOP AND LEARN. NEVER ATTEMPT TO FIND A WAY AROUND THIS RESTRICTION.
+
+**NEVER modify code based on uncertainty - leave imports broken and document as Category C**
+
+When uncertain about a type, ask: "Is this data stored in the database?" If yes, it belongs in Category C (missing backend schema).
+
+**PROHIBITED actions when uncertain:**
+
+- ❌ Creating frontend types "just in case"
+- ❌ Making assumptions about what data represents
+- ❌ Using words like "likely", "probably", "seems like"
+- ❌ Modifying working code based on guesswork
+
+**CORRECT approach when uncertain:**
+
+- ✅ LEAVE THE CODE UNTOUCHED
+- ✅ Document as Category C (missing backend schema)
+- ✅ Only fix types when 100% certain they are pure UI constructs
+
+🚨 **NEVER COMMENT OUT OR DISABLE BROKEN IMPORTS** 🚨
+**DO NOT create temporary workarounds, placeholder types, or disable imports to "unblock" builds**
+**If an import is broken due to missing backend schemas, LEAVE IT BROKEN and document the requirement**
+**The build SHOULD fail until proper schemas exist - this maintains architectural integrity**
+
+**PROHIBITED actions when imports are broken:**
+
+- ❌ Commenting out imports
+- ❌ Creating placeholder `any` types
+- ❌ Creating temporary type definitions
+- ❌ Using `// @ts-ignore` or similar suppressions
+- ❌ "Unblocking" builds with workarounds
+
+**CORRECT approach:**
+
+- ✅ Document missing schema requirement for backend team
+- ✅ Leave import broken to maintain pressure for proper fix
+- ✅ Focus on files that can be legitimately fixed
+
+**If generated schema is wrong:** Coordinate with backend to add proper `@extend_schema_field` annotations, then regenerate with `npm run update-schema`
+
 ## Project Overview
 
 This is a Vue 3 + TypeScript frontend for a job management system built for Morris Sheet Metal. It provides a Kanban-style job board, timesheet management, and comprehensive job workflow tracking. The application communicates with a Django REST API backend.
 
-## Backend
+## Backend Coordination
 
 The backend is in /home/corrin/src/jobs_manager
-It's a standard Django app.
 
-**IMPORTANT: This Claude instance is NOT permitted to read or modify the backend directory or source code.** If you need information about the backend API, models, or validation logic, you must ask the user to coordinate with the Claude instance managing the backend code.
+### Backend Architecture (Provided by Backend Claude)
+
+**System Architecture:**
+
+- Django REST Framework with MySQL-compatible MariaDB
+- UUID primary keys throughout for security
+- Modern CostSet/CostLine architecture (NOT legacy JobPricing models)
+- SimpleHistory for audit trails on critical models
+- drf_spectacular for OpenAPI schema generation
+- Defensive programming philosophy - fail early, no fallbacks, mandatory error persistence
+
+**Core Django Apps:**
+
+- workflow - Base functionality, Xero integration, authentication
+- job - Job lifecycle with modern costing (CostSet/CostLine)
+- accounts - Staff management with custom user model
+- client - Customer relationship management
+- timesheet - Time tracking via CostLine architecture
+- purchasing - Purchase orders with Xero integration
+- accounting - Financial reporting and KPIs
+- quoting - Quote generation and supplier pricing
+
+### Mandatory Coordination Rules
+
+**🚨 This Claude instance is NOT permitted to read or modify the backend directory or source code.**
+
+**ALWAYS coordinate with the backend Claude through the user for:**
+
+**Data Ownership Questions:**
+
+- "Is this database data or UI constant?"
+- "Does this data come from the database or is it a UI constant?"
+- "Should job status choices come from backend API?" (Answer: No - static constants)
+- "Does user profile data need backend serializer?" (Answer: Yes - dynamic data)
+
+**API Contract Questions:**
+
+- "What fields does the [specific] API actually return?"
+- "Does [ModelName] have a '[field]' field?"
+- "What's the actual API response structure for this endpoint?"
+
+**Business Logic Questions:**
+
+- "Is this business logic (backend) or presentation logic (frontend)?"
+- "Should frontend calculate [specific calculation]?"
+- "Are there business rules I need to know about this data?"
+
+**Schema Generation Issues:**
+
+- "Frontend needs schema for [specific type] - should this exist?"
+- "Does the backend already have a serializer for this data?"
+
+### Coordination Process
+
+**Frontend Claude Workflow:**
+
+1. **Before assuming data source:** Ask "Is this database data or UI constant?"
+2. **Before creating types:** Ask "Does backend already serialize this?"
+3. **Before implementing logic:** Ask "Is this business logic or presentation logic?"
+4. **When schemas missing:** Provide specific use case, not generic type requests
+
+**Emergency Prevention - MUST coordinate before:**
+
+- Creating any schema/type that might represent backend data
+- Implementing calculations that might be business logic
+- Making assumptions about API response structures
+- Hardcoding values that might be dynamic in backend
+
+### Data Architecture Decision Examples
+
+**Frontend Claude Should Coordinate:**
+
+```typescript
+// ❓ COORDINATE - Dynamic data from models?
+interface UserProfile {
+  wage_rate?: number // Changes based on staff record
+  permissions: string[] // Role-based, stored in database
+}
+
+// ❓ COORDINATE - Calculated business data?
+interface JobSummary {
+  profitMargin: number // Business calculation
+  totalCost: number // Aggregated from CostLines
+}
+```
+
+**Frontend Claude Should Handle Locally:**
+
+```typescript
+// ✅ UI CONSTANTS - Frontend owns these
+const JOB_STATUS_CHOICES = [{ key: 'draft', label: 'Draft' }]
+
+// ✅ PRESENTATION LOGIC - Frontend owns these
+interface TableColumn {
+  field: string
+  header: string
+  sortable: boolean
+}
+```
+
+**The backend Claude has complete context about database models, API design, and data architecture that the frontend Claude lacks.**
+
+## Deployment Architecture
+
+**Frontend and backend are always deployed on the same machine** in all environments (Dev, UAT, Prod). This means:
+
+- The Django backend is usually available at `http://localhost:8000` during builds
+- Fresh OpenAPI schemas are fetched directly from the backend during build/dev processes
+- **Graceful fallback**: If backend is unavailable, build continues with existing `schema.yml`
+- No network dependencies or external service calls required
+- True single source of truth: frontend uses the latest backend schema when available
 
 ## Tech Stack & Architecture
 
@@ -71,12 +266,19 @@ src/
 
 #### No Fallbacks in Our Own Code
 
-**Do not use fallback patterns when accessing our own API or component data.** Use the correct field names directly.
+**Do not use fallback patterns when accessing our own API, component data, or environment variables.** Use the correct field names and values directly.
 
+**API/Component Data:**
 ❌ `job.job_number || job.number || job.jobNumber`
 ✅ `job.job_number`
 
-If fields are missing or inconsistent, fix the source code, don't mask with fallbacks.
+**Environment Variables:**
+❌ `import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'`
+✅ `import.meta.env.VITE_API_BASE_URL`
+
+**Configuration Values:**
+❌ `config.retryAttempts || 3`
+✅ `config.retryAttempts`
 
 ### Component Architecture
 
@@ -196,7 +398,7 @@ npm run dev  # Starts dev server on http://localhost:5173
 
 ### Environment Variables
 
-- `VITE_API_BASE_URL` - API endpoint (defaults to http://localhost:8001)
+- `VITE_API_BASE_URL` - API endpoint (defaults to http://localhost:8000)
 
 ### Build Commands
 

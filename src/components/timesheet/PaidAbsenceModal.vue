@@ -151,7 +151,12 @@ import { debugLog } from '@/utils/debug'
 
 import { ref, computed, watch } from 'vue'
 import { X } from 'lucide-vue-next'
-import type { StaffMemberUI, AbsenceForm, AbsenceSummary } from '@/api/local/schemas'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
+// import type { AbsenceForm, AbsenceSummary } from '@/api/local/schemas' // ❌ BROKEN - Backend needs absence schemas
+
+type StaffMemberUI = z.infer<typeof schemas.Staff>
+// AbsenceForm and AbsenceSummary are missing backend schemas - leaving broken to maintain architectural pressure
 
 defineProps<{
   isOpen: boolean

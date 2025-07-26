@@ -72,7 +72,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     const defaultChargeOutRate = companyDefaults.value?.charge_out_rate || 105.0
 
     return {
-      id: 0, // Will be set by backend
+      id: null, // Will be set by backend
       kind: 'time' as const,
       desc: '',
       quantity: '0',
@@ -188,7 +188,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     const metaObj = costLine.meta && typeof costLine.meta === 'object' ? costLine.meta : {}
 
     return {
-      id: costLine.id || 0,
+      id: costLine.id || null,
       kind: 'time' as const,
       desc: costLine.desc || '',
       quantity: costLine.quantity || '0',

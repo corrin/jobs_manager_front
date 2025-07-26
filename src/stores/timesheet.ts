@@ -377,7 +377,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
       if (updates.isBillable !== undefined || updates.rateMultiplier !== undefined) {
         // Need to preserve existing meta and update specific fields
-        const existingLine = lines.value.find((line) => line.id === parseInt(entryId))
+        const existingLine = lines.value.find((line) => line.id === entryId)
         updatePayload.meta = {
           ...existingLine?.meta,
           ...(updates.isBillable !== undefined && { is_billable: updates.isBillable }),
@@ -392,7 +392,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
       if (updatedCostLine) {
         // Update in local state
-        const index = lines.value.findIndex((line) => line.id === parseInt(entryId))
+        const index = lines.value.findIndex((line) => line.id === entryId)
         if (index !== -1) {
           lines.value[index] = updatedCostLine
         }

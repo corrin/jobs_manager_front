@@ -1,6 +1,11 @@
-import { type MetalTypeOption } from '@/api/local/schemas'
+import { z } from 'zod'
+import { schemas } from '@/api/generated/api'
 
-export const metalTypeOptions: MetalTypeOption[] = [
+/* FIXME: NEVER EVER FUCKING EVER CREATE LOCAL APIS */
+
+type MetalType = z.infer<typeof schemas.MetalTypeEnum>
+
+export const metalTypeOptions: Array<{ value: MetalType; label: string }> = [
   { value: 'stainless_steel', label: 'Stainless Steel' },
   { value: 'mild_steel', label: 'Mild Steel' },
   { value: 'aluminum', label: 'Aluminum' },

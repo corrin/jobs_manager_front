@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { type ErrorRecord } from '@/api/local/schemas'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
+
+type ErrorRecord = z.infer<typeof schemas.AppError> & {
+  entity?: string // Custom field for UI display
+  stack?: string // Custom field for UI display
+}
 
 const props = defineProps<{ error: ErrorRecord | null }>()
 const emit = defineEmits(['close'])

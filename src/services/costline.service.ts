@@ -62,26 +62,20 @@ export const createCostLine = async (
 }
 
 export const updateCostLine = async (
-  id: number,
+  id: string,
   payload: CostLineUpdatePayload,
 ): Promise<CostLineCreateUpdate> => {
-  // Ensure id is a number
-  const numericId = typeof id === 'string' ? parseInt(id, 10) : id
-
   return await api.job_rest_cost_lines_partial_update(payload as CostLineCreateUpdate, {
-    params: { cost_line_id: numericId },
+    params: { cost_line_id: id },
   })
 }
 
-export const deleteCostLine = async (id: number): Promise<void> => {
+export const deleteCostLine = async (id: string): Promise<void> => {
   debugLog('🚀 SERVICE: Starting DELETE request for cost line ID:', id)
 
   try {
-    // Ensure id is a number
-    const numericId = typeof id === 'string' ? parseInt(id, 10) : id
-
     await api.job_rest_cost_lines_delete_destroy(undefined, {
-      params: { cost_line_id: numericId },
+      params: { cost_line_id: id },
     })
     debugLog('✅ SERVICE: DELETE request completed successfully')
   } catch (error) {

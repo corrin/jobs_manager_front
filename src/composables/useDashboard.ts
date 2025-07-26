@@ -1,11 +1,10 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import type { DashboardStats } from '@/api/local/schemas'
 
 export function useDashboard() {
   const authStore = useAuthStore()
 
-  const userStats = computed((): DashboardStats | null => {
+  const userStats = computed(() => {
     if (!authStore.user) {
       return null
     }

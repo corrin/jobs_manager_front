@@ -4,7 +4,7 @@ export interface StaffPerformanceReportParams {
 }
 
 export interface StaffPerformanceData {
-  id: number
+  id: string
   name: string
   total_hours: number
   billable_hours: number

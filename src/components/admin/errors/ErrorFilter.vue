@@ -2,10 +2,7 @@
 import Input from '@/components/ui/input/Input.vue'
 import { CustomDatePicker } from '@/components/ui/custom-date-picker'
 import { ref, watch } from 'vue'
-import { DateRangeSchema } from '@/api/local/schemas'
-import { z } from 'zod'
-
-type DateRange = z.infer<typeof DateRangeSchema>
+import { type DateRange } from '@/constants/date-range'
 
 const props = defineProps<{ search: string; range: DateRange }>()
 const emit = defineEmits(['update:search', 'update:range'])

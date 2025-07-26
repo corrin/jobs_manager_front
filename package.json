@@ -4,15 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "dev": "npm run update-schema && vite",
+    "build": "npm run update-schema && run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
     "prepare": "simple-git-hooks",
-    "gen:api": "openapi-zod-client schema.yml -o src/api/generated/api.ts --export-schemas"
+    "gen:api": "openapi-zod-client schema.yml -o src/api/generated/api.ts --export-schemas",
+    "update-schema": "(curl -f -o schema.yml http://localhost:8000/api/schema/ 2>/dev/null || echo 'Backend not available, using existing schema.yml') && npm run gen:api"
   },
   "dependencies": {
     "@internationalized/date": "^3.8.2",

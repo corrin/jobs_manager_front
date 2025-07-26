@@ -32,16 +32,15 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { StaffAvatarSchema, StaffAvatarSizeSchema } from '@/api/local/schemas'
+import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 
-type StaffAvatar = z.infer<typeof StaffAvatarSchema>
-type StaffAvatarSize = z.infer<typeof StaffAvatarSizeSchema>
+type Staff = z.infer<typeof schemas.Staff>
 
 const props = withDefaults(
   defineProps<{
-    staff: StaffAvatar
-    size?: StaffAvatarSize
+    staff: Staff
+    size?: 'normal' | 'small' | 'large'
     isActive?: boolean
     isDragging?: boolean
   }>(),

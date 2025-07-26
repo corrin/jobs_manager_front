@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api } from '@/api/generated/api'
+import { api, schemas } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
-import { type XeroItemUI } from '@/api/local/schemas'
+import type { z } from 'zod'
+
+type XeroItem = z.infer<typeof schemas.XeroItem>
 
 export const useXeroItemStore = defineStore('xeroItems', () => {
-  const items = ref<XeroItemUI[]>([])
+  const items = ref<XeroItem[]>([])
   const loading = ref(false)
 
   async function fetchItems() {

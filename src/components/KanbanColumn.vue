@@ -150,11 +150,10 @@ import { debugLog } from '@/utils/debug'
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import JobCard from '@/components/JobCard.vue'
 import { schemas } from '@/api/generated/api'
-import { StatusChoiceSchema } from '@/api/local/schemas'
 import { z } from 'zod'
 
 type Job = z.infer<typeof schemas.Job>
-type StatusChoice = z.infer<typeof StatusChoiceSchema>
+type StatusChoice = z.infer<typeof schemas.Status7b9Enum>
 
 interface KanbanColumnProps {
   status: StatusChoice
