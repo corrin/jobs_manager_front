@@ -5,9 +5,9 @@ This log tracks the systematic fixing of 28 broken imports from the deleted `@/a
 ## Progress Summary
 
 - **Total files to fix:** 28
-- **Files completed:** 5
-- **Files remaining:** 23
-- **Frontend constants created:** 1
+- **Files completed:** 8
+- **Files remaining:** 20
+- **Frontend constants created:** 4
 - **Frontend utilities created:** 1
 
 ## Changes Made
@@ -54,6 +54,27 @@ This log tracks the systematic fixing of 28 broken imports from the deleted `@/a
 - **Replacement strategy:** Replaced `XeroItemUI` with `z.infer<typeof schemas.XeroItem>`
 - **Notes:** Partial fix - only fixed the existing generated schema part, other imports need investigation.
 
+#### File: `src/components/AdvancedSearchDialog.vue`
+
+- **Status:** ✅ Fixed - Frontend constants
+- **Broken imports:** `AdvancedFiltersSchema` from `@/api/local/schemas`
+- **Replacement strategy:** Created `src/constants/advanced-filters.ts` with UI filter structure
+- **Notes:** AdvancedFiltersSchema is UI-only search form structure, correctly moved to frontend constants.
+
+#### File: `src/components/admin/errors/ErrorFilter.vue`
+
+- **Status:** ✅ Fixed - Frontend constants
+- **Broken imports:** `DateRangeSchema` from `@/api/local/schemas`
+- **Replacement strategy:** Created `src/constants/date-range.ts` with UI date picker structure
+- **Notes:** DateRangeSchema is UI-only date picker structure, correctly moved to frontend constants.
+
+#### File: `src/components/job/JobPricingGrids.vue`
+
+- **Status:** ✅ Fixed - Frontend constants
+- **Broken imports:** `PricingSectionSchema` from `@/api/local/schemas`
+- **Replacement strategy:** Created `src/constants/pricing-section.ts` with UI pricing form structure
+- **Notes:** PricingSectionSchema is UI-only pricing section structure, correctly moved to frontend constants.
+
 ---
 
-_Log initialized - ready to track systematic import fixes_
+_Log tracks systematic fixing of broken imports from deleted @/api/local/schemas directory_
