@@ -1,7 +1,10 @@
 import { ref, computed, nextTick, type Ref } from 'vue'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-import type { TimesheetEntryJobSelectionItem, TimesheetEntryStaffMember } from '@/api/local/schemas'
+import type {
+  TimesheetEntryJobSelectionItem,
+  TimesheetEntryStaffMember,
+} from '@/utils/timesheet-types'
 import type {
   GridApi,
   ColDef,

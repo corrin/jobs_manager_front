@@ -103,7 +103,7 @@
 import StatusBadge from './StatusBadge.vue'
 import BillablePercentageBadge from './BillablePercentageBadge.vue'
 import { formatHours } from '@/services/weekly-timesheet.service'
-import type { WeeklyStaffData, WeeklyDayData } from '@/api/local/schemas'
+import type { WeeklyStaffData, WeeklyDayData } from '@/utils/timesheet-types'
 
 interface Props {
   staff: WeeklyStaffData
