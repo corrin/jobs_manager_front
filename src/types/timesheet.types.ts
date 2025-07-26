@@ -53,23 +53,6 @@ export interface StaffMember {
 // - Need enhanced Staff schema (existing one lacks firstName, lastName, wageRate fields)
 // - TimesheetEntry should use existing schemas.TimesheetCostLine
 
-export interface KeyboardShortcut {
-  key: string
-  description: string
-  action: string
-}
-
-export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
-  { key: 'Tab', description: 'Move to next cell', action: 'navigate' },
-  { key: 'Shift+Tab', description: 'Move to previous cell', action: 'navigate' },
-  { key: 'Enter', description: 'Save cell and move down', action: 'save-move' },
-  { key: 'Escape', description: 'Cancel editing', action: 'cancel' },
-  { key: 'F2', description: 'Enter edit mode', action: 'edit' },
-  { key: 'Ctrl+S', description: 'Save all changes', action: 'save-all' },
-  { key: 'Ctrl+N', description: 'Add new row', action: 'add-row' },
-  { key: 'Delete', description: 'Delete selected row', action: 'delete' },
-]
-
 // Rate multiplier calculation based on backend enum values
 // Uses existing /api/enums/RateType/ endpoint
 export const getRateMultiplier = (rateValue: string): number => {

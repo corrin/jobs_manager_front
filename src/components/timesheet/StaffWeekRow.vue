@@ -103,7 +103,9 @@
 import StatusBadge from './StatusBadge.vue'
 import BillablePercentageBadge from './BillablePercentageBadge.vue'
 import { formatHours } from '@/services/weekly-timesheet.service'
-import type { WeeklyStaffData, WeeklyDayData } from '@/utils/timesheet-types'
+// ❌ BROKEN IMPORTS - Backend needs these schemas for weekly timesheet views:
+// import type { WeeklyStaffData, WeeklyDayData } from '@/utils/timesheet-types'
+// These represent complex aggregated database data that should come from backend schemas
 
 interface Props {
   staff: WeeklyStaffData
