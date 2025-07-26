@@ -4,7 +4,9 @@ import { jobService } from '../services/job.service'
 import { useJobsStore } from '../stores/jobs'
 import { KanbanCategorizationService } from '../services/kanban-categorization.service'
 import { schemas } from '../api/generated/api'
-import type { StatusChoice, AdvancedFilters } from '../api/local/schemas'
+import type { AdvancedFilters } from '../constants/advanced-filters'
+import { DEFAULT_ADVANCED_FILTERS } from '../constants/advanced-filters'
+import type { StatusChoice } from '../constants/job-status'
 import { debugLog } from '../utils/debug'
 import type { z } from 'zod'
 
@@ -37,19 +39,7 @@ export function useKanban(onJobsLoaded?: () => void) {
 
   const activeStaffFilters = ref<string[]>([])
 
-  const advancedFilters = ref<AdvancedFilters>({
-    job_number: '',
-    name: '',
-    description: '',
-    client_name: '',
-    contact_person: '',
-    created_by: '',
-    status: [],
-    created_after: '',
-    created_before: '',
-    paid: '',
-    xero_invoice_params: '',
-  })
+  const advancedFilters = ref<AdvancedFilters>({ ...DEFAULT_ADVANCED_FILTERS })
 
   const jobs = computed(() =>
     jobsStore.allKanbanJobs.filter((job) => job.status_key !== 'archived'),
@@ -251,18 +241,7 @@ export function useKanban(onJobsLoaded?: () => void) {
   }
 
   const clearFilters = (): void => {
-    advancedFilters.value = {
-      job_number: '',
-      name: '',
-      description: '',
-      client_name: '',
-      contact_person: '',
-      created_by: '',
-      status: [],
-      created_after: '',
-      created_before: '',
-      paid: '',
-    }
+    advancedFilters.value = { ...DEFAULT_ADVANCED_FILTERS }
   }
 
   const toggleAdvancedSearch = (): void => {

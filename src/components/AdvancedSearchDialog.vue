@@ -149,10 +149,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { AdvancedFiltersSchema } from '@/api/local/schemas'
-import { z } from 'zod'
-
-type AdvancedFilters = z.infer<typeof AdvancedFiltersSchema>
+import { type AdvancedFilters, DEFAULT_ADVANCED_FILTERS } from '@/constants/advanced-filters'
 
 interface Props {
   isOpen: boolean
@@ -186,20 +183,7 @@ const handleSearch = () => {
 }
 
 const clearFilters = () => {
-  localFilters.value = {
-    job_number: '',
-    name: '',
-    description: '',
-    client_name: '',
-    contact_person: '',
-    created_by: '',
-    status: [],
-    created_after: '',
-    created_before: '',
-    paid: '',
-    xero_invoice_params: '',
-  }
-
+  localFilters.value = { ...DEFAULT_ADVANCED_FILTERS }
   emit('clear-filters')
 }
 </script>
