@@ -229,7 +229,7 @@ const loadingJob = computed(() => jobsStore.isLoadingJob)
 onMounted(async () => {
   jobsStore.setCurrentJobId(jobId.value)
   await jobsStore.fetchJob(jobId.value)
-  await companyDefaultsStore.fetchCompanyDefaults()
+  await companyDefaultsStore.loadCompanyDefaults()
 })
 
 const { jobEvents, addEvent, loading: jobEventsLoading } = useJobEvents(jobId)

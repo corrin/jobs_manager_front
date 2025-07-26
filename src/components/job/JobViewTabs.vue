@@ -142,7 +142,19 @@ import { watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
-import type { JobTabKey } from '@/api/local/schemas'
+// Define JobTabKey type locally as it's UI-specific
+type JobTabKey =
+  | 'estimate'
+  | 'quote'
+  | 'actual'
+  | 'financial'
+  | 'costAnalysis'
+  | 'jobSettings'
+  | 'workflow'
+  | 'history'
+  | 'attachments'
+  | 'printJob'
+  | 'quotingChat'
 
 // Use generated Job type from Zodios API
 type Job = z.infer<typeof schemas.Job>

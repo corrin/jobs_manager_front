@@ -1,17 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { schemas } from '@/api/generated/api'
-import {
-  JobDetailResponseWithFinancialDataSchema,
-  KanbanJobUISchema,
-  JobEventSchema,
-} from '@/api/local/schemas'
 import { debugLog } from '@/utils/debug'
 import type { z } from 'zod'
 
-type JobDetail = z.infer<typeof JobDetailResponseWithFinancialDataSchema>['data']
-type JobEvent = z.infer<typeof JobEventSchema>
-type KanbanJobUI = z.infer<typeof KanbanJobUISchema>
+type JobDetail = z.infer<typeof schemas.JobDetailResponse>['data']
+type JobEvent = z.infer<typeof schemas.JobEvent>
+type KanbanJobUI = z.infer<typeof schemas.KanbanJob>
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 
 export const useJobsStore = defineStore('jobs', () => {

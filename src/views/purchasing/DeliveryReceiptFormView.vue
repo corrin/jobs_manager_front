@@ -232,8 +232,7 @@ import {
 } from 'lucide-vue-next'
 import { useDeliveryReceiptStore } from '@/stores/deliveryReceiptStore'
 import { schemas } from '@/api/generated/api'
-import type { DeliveryAllocationUI } from '@/api/local/schemas.ts'
-import { transformDeliveryReceiptForAPI } from '@/api/local/schemas.ts'
+import { transformDeliveryReceiptForAPI, type DeliveryAllocationUI } from '@/utils/delivery-receipt'
 import type { z } from 'zod'
 
 // Import types from generated API schemas

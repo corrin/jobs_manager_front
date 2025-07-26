@@ -1,12 +1,10 @@
-import { type ApiError } from '@/api/local/schemas'
-
 export function extractErrorMessage(error: unknown, fallbackMessage = 'An error occurred'): string {
   if (!error) {
     return fallbackMessage
   }
 
   if (typeof error === 'object' && 'response' in error) {
-    const apiError = error as ApiError
+    const apiError = error as { response?: { data?: unknown } }
     const responseData = apiError.response?.data
 
     if (responseData) {

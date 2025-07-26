@@ -1,5 +1,55 @@
 # Jobs Manager Frontend - Claude Development Guide
 
+## 🚨 CRITICAL ARCHITECTURAL RULES 🚨
+
+### MAINTAIN ABSOLUTELY STRICT SEPARATION OF CONCERNS BETWEEN FRONTEND AND BACKEND
+
+**NEVER PUT FRONTEND LOGIC IN THE BACKEND. NEVER PUT BACKEND LOGIC IN THE FRONTEND.**
+
+**Frontend responsibilities ONLY:**
+
+- User interface and presentation logic
+- User interactions and form handling
+- Client-side validation for UX (never security)
+- Routing and navigation
+- **STATIC CONSTANTS AND CONFIGURATION**
+- Display formatting and styling
+
+**NEVER request backend schemas for:**
+
+- ❌ Static dropdown choices (status values, categories, etc.)
+- ❌ UI constants that never change
+- ❌ Configuration data that should be hardcoded in frontend
+- ❌ Enums or choice fields that are purely presentational
+- ❌ Display labels, tooltips, or UI text
+
+**Rule**: If it's a constant that never changes and has no business logic, it belongs in YOUR codebase as a TypeScript constant. DO NOT request it from the backend.
+
+### SCHEMA IMPORT RULES
+
+🚨 **ABSOLUTELY NO LOCAL SCHEMAS FOR API DATA** 🚨
+**NEVER create local TypeScript interfaces, types, or schemas that duplicate API functionality**
+**ALL API-related types MUST come from the auto-generated API schemas only**
+
+🚨 **NEVER COMMENT OUT OR DISABLE BROKEN IMPORTS** 🚨
+**DO NOT create temporary workarounds, placeholder types, or disable imports to "unblock" builds**
+**If an import is broken due to missing backend schemas, LEAVE IT BROKEN and document the requirement**
+**The build SHOULD fail until proper schemas exist - this maintains architectural integrity**
+
+**PROHIBITED actions when imports are broken:**
+
+- ❌ Commenting out imports
+- ❌ Creating placeholder `any` types
+- ❌ Creating temporary type definitions
+- ❌ Using `// @ts-ignore` or similar suppressions
+- ❌ "Unblocking" builds with workarounds
+
+**CORRECT approach:**
+
+- ✅ Document missing schema requirement for backend team
+- ✅ Leave import broken to maintain pressure for proper fix
+- ✅ Focus on files that can be legitimately fixed
+
 ## Project Overview
 
 This is a Vue 3 + TypeScript frontend for a job management system built for Morris Sheet Metal. It provides a Kanban-style job board, timesheet management, and comprehensive job workflow tracking. The application communicates with a Django REST API backend.
@@ -10,6 +60,16 @@ The backend is in /home/corrin/src/jobs_manager
 It's a standard Django app.
 
 **IMPORTANT: This Claude instance is NOT permitted to read or modify the backend directory or source code.** If you need information about the backend API, models, or validation logic, you must ask the user to coordinate with the Claude instance managing the backend code.
+
+## Deployment Architecture
+
+**Frontend and backend are always deployed on the same machine** in all environments (Dev, UAT, Prod). This means:
+
+- The Django backend is usually available at `http://localhost:8000` during builds
+- Fresh OpenAPI schemas are fetched directly from the backend during build/dev processes
+- **Graceful fallback**: If backend is unavailable, build continues with existing `schema.yml`
+- No network dependencies or external service calls required
+- True single source of truth: frontend uses the latest backend schema when available
 
 ## Tech Stack & Architecture
 
@@ -85,21 +145,39 @@ src/
 ❌ `config.retryAttempts || 3`
 ✅ `config.retryAttempts`
 
-**Why no fallbacks:**
+#### CRITICAL: No Schema Workarounds
 
-- Fallbacks mask configuration and data issues
-- They make debugging harder by hiding the root cause
-- They can lead to silent failures in production
-- Our codebase should have consistent, predictable data structures
+**NEVER create local schema overrides to work around incorrect auto-generated API schemas.** This completely violates the single source of truth principle.
 
-**Instead of fallbacks:**
+**Schema Workarounds (STRICTLY PROHIBITED):**
+❌ Creating `/api/local/schemas.ts` to override generated schemas
+❌ Manual validation like `CostSetSchema.parse(response)` to "fix" API responses  
+❌ Dual-schema patterns where generated and local schemas coexist
+❌ Type overrides like `import { type CostSet } from '@/api/local/schemas'`
 
-- Fix the source code that provides the data
-- Ensure environment variables are properly configured
-- Use TypeScript to catch missing fields at compile time
-- Add proper error handling and validation
+**Correct Approach:**
+✅ Fix the backend OpenAPI schema generation at the source
+✅ Use only the auto-generated API client and schemas
+✅ Coordinate with backend developers to add proper `@extend_schema_field` annotations
+✅ Regenerate frontend API when backend schema is corrected
 
-If fields are missing or inconsistent, fix the source code, don't mask with fallbacks.
+**Why schema workarounds are forbidden:**
+
+- **Breaks contract**: Auto-generated APIs are meant to be the single source of truth
+- **Dual maintenance**: Now you maintain both generated AND local schemas
+- **Drift risk**: Local schemas can become stale and incorrect
+- **Masks real issues**: Backend schema problems should be fixed, not worked around
+- **Technical debt**: Creates permanent workarounds that become hard to remove
+
+**If the generated schema is wrong:**
+
+1. **Stop immediately** - Do not create local schema overrides
+2. **Identify root cause** - Usually missing OpenAPI annotations in backend
+3. **Coordinate with backend** - Get proper `@extend_schema_field` annotations added
+4. **Regenerate schema** - Use `npm run update-schema` after backend fix
+5. **Verify fix** - Ensure generated types match actual API responses
+
+**Schema integrity is non-negotiable.** Local schema workarounds are a serious architectural violation.
 
 ### Component Architecture
 
