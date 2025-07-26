@@ -1,10 +1,23 @@
-import type { CostLine } from './costing.types'
+// ❌ COMMENTED OUT - THESE ARE DATABASE DATA TYPES (ARCHITECTURAL VIOLATIONS)
+// Backend needs to create proper schemas for these instead of frontend modeling them
 
-// Use CostLine directly for timesheet entries
-export type TimesheetEntry = CostLine
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
 
-// Job and Staff interfaces unified
+// Use generated schema for timesheet entries
+export type TimesheetEntry = z.infer<typeof schemas.TimesheetCostLine>
 
+// Job selection - use generated schema
+export type JobSelectionItem = z.infer<typeof schemas.Job>
+
+// Staff member - use generated schema
+export type StaffMember = z.infer<typeof schemas.Staff>
+
+// Company defaults - use generated schema
+export type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
+
+/*
+// COMMENTED OUT - using generated schemas above
 export interface JobSelectionItem {
   id: string
   job_number: string
@@ -33,6 +46,12 @@ export interface StaffMember {
   wageRate: number
   fullName: string
 }
+*/
+
+// BACKEND REQUIREMENTS:
+// - Need JobSelectionItem schema for timesheet job selection
+// - Need enhanced Staff schema (existing one lacks firstName, lastName, wageRate fields)
+// - TimesheetEntry should use existing schemas.TimesheetCostLine
 
 export interface KeyboardShortcut {
   key: string
@@ -51,13 +70,23 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
   { key: 'Delete', description: 'Delete selected row', action: 'delete' },
 ]
 
-export const RATE_TYPES = [
-  { value: 'Ord', label: 'Ordinary (1.0x)', multiplier: 1.0 },
-  { value: '1.5', label: 'Time & Half (1.5x)', multiplier: 1.5 },
-  { value: '2.0', label: 'Double Time (2.0x)', multiplier: 2.0 },
-  { value: 'Unpaid', label: 'Unpaid (0x)', multiplier: 0.0 },
-]
+// Rate multiplier calculation based on backend enum values
+// Uses existing /api/enums/RateType/ endpoint
+export const getRateMultiplier = (rateValue: string): number => {
+  // Special cases
+  if (rateValue === 'Ord') return 1.0
+  if (rateValue === 'Unpaid') return 0.0
 
+  // For numeric values (1.5, 2.0, 3.0, etc.), parse directly
+  const parsed = parseFloat(rateValue)
+  return isNaN(parsed) ? 1.0 : parsed
+}
+
+// Use /api/enums/RateType/ endpoint for rate type choices
+// Returns: {"choices": [{"value": "Ord", "display_name": "Ordinary Time"}, ...]}
+
+// ❌ COMMENTED OUT - MORE DATABASE DATA TYPES
+/*
 export interface Job {
   id: string
   job_number: string
@@ -155,3 +184,17 @@ export interface CompanyDefaults {
   charge_out_rate: number
   wage_rate: number
 }
+*/
+
+// All the above types represent database data and violate CLAUDE.md architecture rules
+
+// COMPREHENSIVE BACKEND REQUIREMENTS:
+// The following schemas need to be created in the backend for proper architecture:
+// - JobSelectionItem schema for timesheet job selection dropdown
+// - Enhanced Staff schema (existing one lacks firstName, lastName, wageRate fields)
+// - RateTypeConfiguration schema with rate values and multipliers
+// - WeeklyOverviewData, WeeklyStaffData, DayData schemas for weekly timesheet views
+// - TimesheetEntryJobSelectionItem, TimesheetEntryStaffMember schemas for grid components
+// - TimesheetEntryGridRow schema for timesheet entry display
+// - CompanyDefaults schema for business configuration data
+// - Use existing schemas.TimesheetCostLine for TimesheetEntry
