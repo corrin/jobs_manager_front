@@ -7,7 +7,8 @@ import type {
   LinkQuoteSheetRequest,
   QuoteImportStatusResponse,
 } from '@/api/generated/api'
-import type { QuoteImportPreviewResponse, QuoteImportResponse } from '@/api/local/schemas'
+// QuoteImportPreviewResponse -> PreviewQuoteResponse (new quote sync system)
+// QuoteImportResponse -> ApplyQuoteResponse (new quote sync system)
 
 class QuoteService {
   async linkQuote(jobId: string, templateUrl?: string): Promise<QuoteSpreadsheet> {
@@ -56,7 +57,7 @@ class QuoteService {
   }
 
   // File upload endpoints (not available in Zodios API yet)
-  async previewQuoteImport(jobId: string, file: File): Promise<QuoteImportPreviewResponse> {
+  async previewQuoteImport(jobId: string, file: File): Promise<PreviewQuoteResponse> {
     const formData = new FormData()
     formData.append('file', file)
 
@@ -77,7 +78,7 @@ class QuoteService {
     jobId: string,
     file: File,
     skipValidation: boolean = false,
-  ): Promise<QuoteImportResponse> {
+  ): Promise<ApplyQuoteResponse> {
     const formData = new FormData()
     formData.append('file', file)
     if (skipValidation) {

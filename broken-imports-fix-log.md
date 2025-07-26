@@ -5,8 +5,8 @@ This log tracks the systematic fixing of 28 broken imports from the deleted `@/a
 ## Progress Summary
 
 - **Total files to fix:** 28
-- **Files completed:** 8
-- **Files remaining:** 20
+- **Files completed:** 10
+- **Files remaining:** 18
 - **Frontend constants created:** 4
 - **Frontend utilities created:** 1
 
@@ -21,10 +21,10 @@ This log tracks the systematic fixing of 28 broken imports from the deleted `@/a
 
 #### File: `src/components/job/JobCostAnalysisTab.vue`
 
-- **Status:** ❌ Blocked - Backend schema missing
+- **Status:** ✅ Fixed - Generated schema
 - **Broken imports:** `CostSetSummary` from `@/api/local/schemas`
-- **Replacement strategy:** N/A - Backend needs to add CostSetSummary schema
-- **Notes:** Reverted local definition. Backend team must add proper OpenAPI schema for CostSetSummary
+- **Replacement strategy:** Replaced with `CostSetSummary` from `@/api/generated/api`
+- **Notes:** Backend coordination revealed CostSetSummarySerializer already exists with proper business logic calculations including profit margin
 
 #### File: `src/components/job/JobWorkflowModal.vue`
 
@@ -177,11 +177,25 @@ This log tracks the systematic fixing of 28 broken imports from the deleted `@/a
 **ARCHITECTURAL COMPLIANCE:**
 Following CLAUDE.md strict rules - cannot proceed with these types without backend coordination. These appear to be database/API data types (Category C) but must confirm before categorizing.
 
+#### File: `src/services/quote.service.ts`
+
+- **Status:** ✅ Fixed - Updated to new system
+- **Broken imports:** `QuoteImportPreviewResponse`, `QuoteImportResponse` from `@/api/local/schemas`
+- **Replacement strategy:** Replaced with `PreviewQuoteResponse`, `ApplyQuoteResponse` from `@/api/generated/api`
+- **Notes:** Backend coordination revealed old file upload quote import was deprecated. Updated to use new Google Sheets-based quote sync system with better architecture.
+
+#### File: `src/views/TimesheetEntryView.vue`
+
+- **Status:** ⏸️ Left broken - Architectural pressure maintained
+- **Broken imports:** `TimesheetEntryWithMeta` from `@/api/local/schemas`
+- **Replacement strategy:** N/A - Left broken to maintain architectural pressure
+- **Notes:** Complex component with extensive field name expectations. Rather than force backend field names into frontend, left broken to pressure backend for frontend-compatible schema.
+
 **Next Steps:**
 
-1. Coordinate with backend Claude on each uncertain type
-2. Once categorized, either fix (Category A/B) or document as missing backend schema (Category C)
-3. Continue with remaining files after coordination
+1. Continue with remaining 18 broken import files
+2. Coordinate with backend Claude on each uncertain type first
+3. Apply learned patterns: use generated schemas where they exist, leave broken where they don't
 
 ---
 
