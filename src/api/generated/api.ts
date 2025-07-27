@@ -1,17 +1,5 @@
 import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
 import { z } from 'zod'
-import axios from 'axios'
-
-// Import configured axios instance
-import '@/plugins/axios'
-
-// Get API base URL without importing plugins to avoid circular dependency
-function getApiBaseUrl() {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL
-  }
-  return 'http://localhost:8001'
-}
 
 const KPIProfitBreakdown = z
   .object({ labor_profit: z.number(), material_profit: z.number(), adjustment_profit: z.number() })
@@ -19,12 +7,13 @@ const KPIProfitBreakdown = z
 const KPIJobBreakdown = z
   .object({
     job_id: z.string(),
-    job_number: z.number().int(),
-    job_display_name: z.string(),
-    labour_profit: z.number(),
-    material_profit: z.number(),
-    adjustment_profit: z.number(),
-    total_profit: z.number(),
+    job_number: z.string(),
+    job_name: z.string(),
+    client_name: z.string(),
+    billable_hours: z.number(),
+    revenue: z.number(),
+    cost: z.number(),
+    profit: z.number(),
   })
   .passthrough()
 const KPIDetails = z
@@ -131,7 +120,7 @@ const JobAgingTimingData = z
 const JobAgingJobData = z
   .object({
     id: z.string(),
-    job_number: z.string(),
+    job_number: z.number().int(),
     name: z.string(),
     client_name: z.string(),
     status: z.string(),
@@ -237,9 +226,7 @@ const KanbanStaff = z
     display_name: z.string(),
   })
   .passthrough()
-const CustomTokenObtainPair = z
-  .object({ username: z.string().nullish(), password: z.string().nullish() })
-  .passthrough()
+const CustomTokenObtainPair = z.object({ username: z.string(), password: z.string() }).passthrough()
 const TokenRefresh = z.object({ access: z.string(), refresh: z.string() }).passthrough()
 const TokenVerify = z.object({ token: z.string() }).passthrough()
 const UserProfile = z
@@ -249,7 +236,7 @@ const UserProfile = z
     email: z.string().email(),
     first_name: z.string(),
     last_name: z.string(),
-    preferred_name: z.string().nullable(),
+    preferred_name: z.string(),
     fullName: z.string(),
     is_active: z.boolean(),
     is_staff: z.boolean(),
@@ -389,6 +376,31 @@ const PatchedAIProviderCreateUpdate = z
   })
   .partial()
   .passthrough()
+const AppError = z
+  .object({
+    id: z.string().uuid(),
+    timestamp: z.string().datetime({ offset: true }),
+    message: z.string(),
+    data: z.unknown().nullish(),
+    app: z.string().max(50).nullish(),
+    file: z.string().max(200).nullish(),
+    function: z.string().max(100).nullish(),
+    severity: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+    job_id: z.string().uuid().nullish(),
+    user_id: z.string().uuid().nullish(),
+    resolved: z.boolean().optional(),
+    resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
+    resolved_by: z.string().uuid().nullish(),
+  })
+  .passthrough()
+const PaginatedAppErrorList = z
+  .object({
+    count: z.number().int(),
+    next: z.string().url().nullish(),
+    previous: z.string().url().nullish(),
+    results: z.array(AppError),
+  })
+  .passthrough()
 const ClientContactResult = z
   .object({
     id: z.string(),
@@ -410,21 +422,6 @@ const ClientContactCreateRequest = z
     position: z.string().max(255).optional(),
     is_primary: z.boolean().optional().default(false),
     notes: z.string().optional(),
-  })
-  .passthrough()
-const ClientContactCreateResponse = z
-  .object({
-    success: z.boolean(),
-    contact: z.object({
-      id: z.string().uuid(),
-      name: z.string(),
-      email: z.string().optional(),
-      phone: z.string().optional(),
-      position: z.string().optional(),
-      is_primary: z.boolean(),
-      notes: z.string().optional(),
-    }),
-    message: z.string(),
   })
   .passthrough()
 const ClientCreateRequest = z
@@ -451,13 +448,6 @@ const ClientSearchResult = z
   })
   .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
-const ClientCreateResponse = z
-  .object({
-    success: z.boolean(),
-    client: ClientSearchResult,
-    message: z.string(),
-  })
-  .passthrough()
 const JobFileStatusEnum = z.enum(['active', 'deleted'])
 const JobFile = z
   .object({
@@ -494,10 +484,7 @@ const JobFileUpdateSuccessResponse = z
     print_on_jobsheet: z.boolean(),
   })
   .passthrough()
-const AssignJobResponse = z
-  .object({ success: z.boolean(), message: z.string().optional(), error: z.string().optional() })
-  .passthrough()
-const AssignJobRequest = z.object({ job_id: z.string(), staff_id: z.string() }).passthrough()
+const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
   .object({
     id: z.string().uuid(),
@@ -517,7 +504,6 @@ const PaginatedCompleteJobList = z
   })
   .passthrough()
 const ArchiveJobsRequest = z.object({ ids: z.array(z.string()) }).passthrough()
-const ArchiveJobsResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const JobQuoteChatHistoryResponse = z
   .object({ success: z.boolean(), data: z.object({}).partial().passthrough() })
   .passthrough()
@@ -557,16 +543,17 @@ const KanbanJob = z
     id: z.string().uuid(),
     name: z.string(),
     description: z.string().nullable(),
-    job_number: z.union([z.string(), z.number()]).transform((val) => String(val)),
+    job_number: z.number().int(),
     client_name: z.string(),
     contact_person: z.string(),
     people: z.array(KanbanJobPerson),
     status: z.string(),
     status_key: z.string(),
+    rejected_flag: z.boolean(),
     paid: z.boolean(),
     created_by_id: z.string().uuid().nullable(),
     created_at: z.string().nullable(),
-    priority: z.union([z.number().int(), z.number()]).transform((val) => Math.round(val)),
+    priority: z.number(),
   })
   .passthrough()
 const AdvancedSearchResponse = z
@@ -591,9 +578,9 @@ const FetchAllJobsResponse = z
 const KanbanColumnJob = z
   .object({
     id: z.string(),
-    job_number: z.string(),
+    job_number: z.number().int(),
     name: z.string(),
-    description: z.string(),
+    description: z.string().nullable(),
     client_name: z.string(),
     contact_person: z.string(),
     people: z.array(z.object({}).partial().passthrough()),
@@ -602,7 +589,7 @@ const KanbanColumnJob = z
     paid: z.boolean(),
     created_by_id: z.string().nullable(),
     created_at: z.string().nullable(),
-    priority: z.number().int(),
+    priority: z.number(),
     badge_label: z.string(),
     badge_color: z.string(),
   })
@@ -683,97 +670,13 @@ const JobCreateRequest = z
     contact_id: z.string().uuid().nullish(),
   })
   .passthrough()
-const JobCreateResponse = z
-  .object({
-    success: z.boolean(),
-    job_id: z.string().uuid(),
-    job_number: z.string(),
-    message: z.string(),
-  })
-  .passthrough()
-const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
-const QuoteSpreadsheet = z
-  .object({
-    id: z.string().uuid(),
-    sheet_id: z.string().max(100),
-    sheet_url: z.string().max(500).url().nullish(),
-    tab: z.string().max(100).nullish(),
-    job_id: z.string(),
-    job_number: z.string(),
-    job_name: z.string(),
-  })
-  .passthrough()
-const Job = z
-  .object({
-    id: z.string().uuid(),
-    name: z.string().max(100),
-    client_id: z.string().uuid(),
-    client_name: z.string(),
-    contact_id: z.string().uuid().nullish(),
-    contact_name: z.string().nullish(),
-    job_number: z.number().int().gte(-2147483648).lte(2147483647),
-    notes: z.string().nullish(),
-    order_number: z.string().max(100).nullish(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    description: z.string().nullish(),
-    latest_estimate: z.object({}).partial().passthrough().nullable(),
-    latest_quote: z.object({}).partial().passthrough().nullable(),
-    latest_actual: z.object({}).partial().passthrough().nullable(),
-    job_status: z.string(),
-    delivery_date: z.string().nullish(),
-    paid: z.boolean().optional(),
-    quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
-    job_is_valid: z.boolean().optional(),
-    job_files: z.array(JobFile).optional(),
-    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    pricing_methodology: PricingMethodologyEnum.optional(),
-    quote_sheet: QuoteSpreadsheet.nullable(),
-    quoted: z.boolean(),
-    invoiced: z.boolean(),
-    quote: z.object({}).partial().passthrough().nullable(),
-    invoice: z.object({}).partial().passthrough().nullable(),
-  })
-  .passthrough()
-const JobUpdateRequest = z
-  .object({
-    name: z.string().max(100).optional(),
-    client_id: z.string().uuid().optional(),
-    contact_id: z.string().uuid().nullish(),
-    notes: z.string().nullish(),
-    order_number: z.string().max(100).nullish(),
-    description: z.string().nullish(),
-    job_status: z.string().optional(),
-    delivery_date: z.string().nullish(),
-    paid: z.boolean().optional(),
-    charge_out_rate: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .optional(),
-    pricing_methodology: PricingMethodologyEnum.optional(),
-  })
-  .passthrough()
-const JobDetailResponse = z
-  .object({
-    success: z.boolean().optional().default(true),
-    data: z.object({ job: Job }).passthrough(),
-  })
-  .passthrough()
-const JobDeleteResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string(),
-  })
-  .passthrough()
-const JobRestErrorResponse = z.object({ error: z.string() }).passthrough()
-const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
-const JobEventCreateResponse = z
-  .object({ success: z.boolean(), event: z.object({}).passthrough() })
-  .passthrough()
 const CostSetKindEnum = z.enum(['estimate', 'quote', 'actual'])
+const CostSetSummary = z
+  .object({ cost: z.number(), rev: z.number(), hours: z.number(), profitMargin: z.number() })
+  .passthrough()
 const CostLine = z
   .object({
-    id: z.number().int(),
+    id: z.string().uuid(),
     kind: Kind332Enum,
     desc: z.string().max(255),
     quantity: z
@@ -796,14 +699,63 @@ const CostLine = z
   .passthrough()
 const CostSet = z
   .object({
-    id: z.number().int(),
+    id: z.string(),
     kind: CostSetKindEnum,
     rev: z.number().int(),
-    summary: z.unknown(),
+    summary: CostSetSummary,
     created: z.string().datetime({ offset: true }),
     cost_lines: z.array(CostLine),
   })
   .passthrough()
+const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
+const QuoteSpreadsheet = z
+  .object({
+    id: z.string().uuid(),
+    sheet_id: z.string().max(100),
+    sheet_url: z.string().max(500).url().nullish(),
+    tab: z.string().max(100).nullish(),
+    job_id: z.string(),
+    job_number: z.string(),
+    job_name: z.string(),
+  })
+  .passthrough()
+const Job = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string().max(100),
+    client_id: z.string().uuid(),
+    client_name: z.string(),
+    contact_id: z.string().uuid().nullish(),
+    contact_name: z.string(),
+    job_number: z.number().int().gte(-2147483648).lte(2147483647),
+    notes: z.string().nullish(),
+    order_number: z.string().max(100).nullish(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+    description: z.string().nullish(),
+    latest_estimate: CostSet,
+    latest_quote: CostSet,
+    latest_actual: CostSet,
+    job_status: z.string(),
+    delivery_date: z.string().nullish(),
+    paid: z.boolean().optional(),
+    quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
+    job_is_valid: z.boolean().optional(),
+    job_files: z.array(JobFile).optional(),
+    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    pricing_methodology: PricingMethodologyEnum.optional(),
+    quote_sheet: QuoteSpreadsheet,
+    quoted: z.boolean(),
+    invoiced: z.boolean(),
+    quote: z.object({}).partial().passthrough().nullable(),
+    invoice: z.object({}).partial().passthrough().nullable(),
+    shop_job: z.boolean(),
+  })
+  .passthrough()
+const JobDetailResponse = z
+  .object({ success: z.boolean().optional().default(true), data: Job })
+  .passthrough()
+const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
 const QuoteImportStatusResponse = z
   .object({
     job_id: z.string(),
@@ -813,62 +765,6 @@ const QuoteImportStatusResponse = z
     revision: z.number().int().optional(),
     created: z.string().datetime({ offset: true }).optional(),
     summary: z.unknown().optional(),
-  })
-  .passthrough()
-const QuoteRevisionRequestSerializer = z
-  .object({
-    reason: z.string().max(500).optional(),
-  })
-  .passthrough()
-const QuoteRevisionResponseSerializer = z
-  .object({
-    success: z.boolean(),
-    message: z.string(),
-    quote_revision: z.number().int(),
-    archived_cost_lines_count: z.number().int(),
-    job_id: z.string(),
-  })
-  .passthrough()
-const QuoteAcceptResponse = z
-  .object({
-    success: z.boolean(),
-    job_id: z.string(),
-    quote_acceptance_date: z.string(),
-    message: z.string(),
-  })
-  .passthrough()
-const QuoteRevisionsListResponse = z
-  .object({
-    job_id: z.string(),
-    job_number: z.string(),
-    current_cost_set_rev: z.number().int(),
-    total_revisions: z.number().int(),
-    revisions: z.array(
-      z.object({
-        quote_revision: z.number().int(),
-        archived_at: z.string(),
-        reason: z.string().nullable(),
-        summary: z.object({
-          cost: z.number(),
-          rev: z.number(),
-          hours: z.number(),
-        }),
-        cost_lines: z.array(
-          z.object({
-            id: z.string(),
-            kind: z.string(),
-            desc: z.string(),
-            quantity: z.number(),
-            unit_cost: z.number(),
-            unit_rev: z.number(),
-            total_cost: z.number(),
-            total_rev: z.number(),
-            ext_refs: z.object({}).passthrough(),
-            meta: z.object({}).passthrough(),
-          }),
-        ),
-      }),
-    ),
   })
   .passthrough()
 const DraftLine = z
@@ -946,29 +842,8 @@ const MonthEndStockJob = z
 const MonthEndGetResponse = z
   .object({ jobs: z.array(MonthEndJob), stock_job: MonthEndStockJob })
   .passthrough()
-const MonthEndPostRequest = z.object({ job_ids: z.array(z.string().uuid()) }).passthrough()
 const MonthEndPostResponse = z
   .object({ processed: z.array(z.string().uuid()), errors: z.array(z.string()) })
-  .passthrough()
-const TimesheetCostLine = z
-  .object({
-    id: z.number().int(),
-    kind: Kind332Enum,
-    desc: z.string(),
-    quantity: z.string().regex(/^-?\d{0,7}(?:\.\d{0,3})?$/),
-    unit_cost: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    unit_rev: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    total_cost: z.number(),
-    total_rev: z.number(),
-    ext_refs: z.unknown(),
-    meta: z.unknown(),
-    job_id: z.string(),
-    job_number: z.string(),
-    job_name: z.string(),
-    client_name: z.string(),
-    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    wage_rate: z.number(),
-  })
   .passthrough()
 const ModernTimesheetStaff = z
   .object({ id: z.string().uuid(), name: z.string(), firstName: z.string(), lastName: z.string() })
@@ -985,7 +860,7 @@ const ModernTimesheetSummary = z
   .passthrough()
 const ModernTimesheetEntryGetResponse = z
   .object({
-    cost_lines: z.array(TimesheetCostLine),
+    cost_lines: z.array(z.object({}).partial().passthrough()),
     staff: ModernTimesheetStaff,
     date: z.string(),
     summary: ModernTimesheetSummary,
@@ -1000,6 +875,26 @@ const ModernTimesheetEntryPostResponse = z
   .passthrough()
 const ModernTimesheetJobGetResponse = z
   .object({ jobs: z.array(Job), total_count: z.number().int() })
+  .passthrough()
+const TimesheetCostLine = z
+  .object({
+    id: z.string().uuid(),
+    kind: Kind332Enum,
+    desc: z.string(),
+    quantity: z.string().regex(/^-?\d{0,7}(?:\.\d{0,3})?$/),
+    unit_cost: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    unit_rev: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_cost: z.number(),
+    total_rev: z.number(),
+    ext_refs: z.unknown(),
+    meta: z.unknown(),
+    job_id: z.string(),
+    job_number: z.string(),
+    job_name: z.string(),
+    client_name: z.string(),
+    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    wage_rate: z.number(),
+  })
   .passthrough()
 const ModernTimesheetDayGetResponse = z
   .object({
@@ -1020,9 +915,6 @@ const DeliveryReceiptLine = z
 const DeliveryReceiptRequest = z
   .object({ purchase_order_id: z.string().uuid(), allocations: z.record(DeliveryReceiptLine) })
   .passthrough()
-const DeliveryReceiptResponse = z
-  .object({ success: z.boolean(), error: z.string().optional() })
-  .passthrough()
 const PurchaseOrderEmailRequest = z
   .object({ recipient_email: z.string().email(), message: z.string().max(1000) })
   .partial()
@@ -1031,7 +923,7 @@ const PurchaseOrderPDFResponse = z
   .object({ success: z.boolean(), message: z.string() })
   .partial()
   .passthrough()
-const StatusE5cEnum = z.enum([
+const Status7b9Enum = z.enum([
   'draft',
   'awaiting_approval',
   'approved',
@@ -1047,7 +939,7 @@ const JobForPurchasing = z
     job_number: z.number().int().gte(-2147483648).lte(2147483647),
     name: z.string().max(100),
     client_name: z.string(),
-    status: StatusE5cEnum.optional(),
+    status: Status7b9Enum.optional(),
     is_stock_holding: z.boolean(),
     job_display_name: z.string(),
   })
@@ -1074,29 +966,6 @@ const PurchaseOrderList = z
   .passthrough()
 const PurchaseOrderLineCreate = z
   .object({
-    job_id: z.string().uuid().nullable(),
-    description: z.string().max(255),
-    quantity: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .default('0.00'),
-    unit_cost: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .nullable(),
-    price_tbc: z.boolean().default(false),
-    item_code: z.string().max(100),
-    metal_type: z.string().max(100),
-    alloy: z.string().max(100),
-    specifics: z.string().max(255),
-    location: z.string().max(255),
-    dimensions: z.string().max(255),
-  })
-  .partial()
-  .passthrough()
-const PurchaseOrderLineUpdate = z
-  .object({
-    id: z.string().uuid().nullable(),
     job_id: z.string().uuid().nullable(),
     description: z.string().max(255),
     quantity: z
@@ -1187,6 +1056,29 @@ const PurchaseOrderDetail = z
     xero_id: z.string().uuid().nullish(),
   })
   .passthrough()
+const PurchaseOrderLineUpdate = z
+  .object({
+    id: z.string().uuid().nullable(),
+    job_id: z.string().uuid().nullable(),
+    description: z.string().max(255),
+    quantity: z
+      .string()
+      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
+      .default('0.00'),
+    unit_cost: z
+      .string()
+      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
+      .nullable(),
+    price_tbc: z.boolean().default(false),
+    item_code: z.string().max(100),
+    metal_type: z.string().max(100),
+    alloy: z.string().max(100),
+    specifics: z.string().max(255),
+    location: z.string().max(255),
+    dimensions: z.string().max(255),
+  })
+  .partial()
+  .passthrough()
 const PatchedPurchaseOrderUpdate = z
   .object({
     supplier_id: z.string().uuid().nullable(),
@@ -1232,8 +1124,8 @@ const StockList = z
     quantity: z.number(),
     unit_cost: z.number(),
     metal_type: z.string(),
-    alloy: z.string().nullable(),
-    specifics: z.string().nullable(),
+    alloy: z.string(),
+    specifics: z.string(),
     location: z.string(),
     source: z.string(),
     date: z.string().datetime({ offset: true }).nullable(),
@@ -1252,20 +1144,11 @@ const StockCreate = z
     alloy: z.string().max(100).optional(),
     specifics: z.string().max(255).optional(),
     location: z.string().max(255).optional(),
+    dimensions: z.string().max(255).optional(),
   })
   .passthrough()
 const StockConsumeRequest = z
   .object({ job_id: z.string().uuid(), quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/) })
-  .passthrough()
-const StockConsumeResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string().optional(),
-    remaining_quantity: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .optional(),
-  })
   .passthrough()
 const XeroItem = z
   .object({
@@ -1378,8 +1261,8 @@ const ModernTimesheetJob = z
     id: z.string().uuid(),
     job_number: z.number().int().gte(-2147483648).lte(2147483647),
     name: z.string().max(100),
-    client_name: z.string().optional(),
-    status: StatusE5cEnum.optional(),
+    client_name: z.string(),
+    status: Status7b9Enum.optional(),
     charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
     has_actual_costset: z.boolean(),
   })
@@ -1395,7 +1278,7 @@ const ModernStaff = z
     lastName: z.string(),
     email: z.string(),
     avatarUrl: z.string().nullable(),
-    wageRate: z.number().optional(),
+    wageRate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
   })
   .passthrough()
 const StaffListResponse = z
@@ -1421,9 +1304,18 @@ const XeroError = z
     timestamp: z.string().datetime({ offset: true }),
     message: z.string(),
     data: z.unknown().nullish(),
+    app: z.string().max(50).nullish(),
+    file: z.string().max(200).nullish(),
+    function: z.string().max(100).nullish(),
+    severity: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+    job_id: z.string().uuid().nullish(),
+    user_id: z.string().uuid().nullish(),
+    resolved: z.boolean().optional(),
+    resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
     entity: z.string().max(100),
     reference_id: z.string().max(255),
     kind: z.string().max(50),
+    resolved_by: z.string().uuid().nullish(),
   })
   .passthrough()
 const PaginatedXeroErrorList = z
@@ -1434,22 +1326,6 @@ const PaginatedXeroErrorList = z
     results: z.array(XeroError),
   })
   .passthrough()
-
-const WeeklyMetrics = z.array(
-  z
-    .object({
-      job_id: z.string().uuid(),
-      name: z.string(),
-      client: z.string().nullable(),
-      description: z.string().nullable(),
-      status: z.string(),
-      people: z.array(z.object({}).passthrough()),
-      estimated_hours: z.number(),
-      actual_hours: z.number(),
-      profit: z.number(),
-    })
-    .passthrough(),
-)
 
 export const schemas = {
   KPIProfitBreakdown,
@@ -1476,13 +1352,13 @@ export const schemas = {
   PatchedCompanyDefaults,
   AIProviderCreateUpdate,
   PatchedAIProviderCreateUpdate,
+  AppError,
+  PaginatedAppErrorList,
   ClientContactResult,
   ClientContactsResponse,
   ClientListResponse,
   ClientContactCreateRequest,
-  ClientContactCreateResponse,
   ClientCreateRequest,
-  ClientCreateResponse,
   ClientSearchResult,
   ClientSearchResponse,
   JobFileStatusEnum,
@@ -1491,11 +1367,9 @@ export const schemas = {
   JobFileUploadSuccessResponse,
   JobFileUpdateSuccessResponse,
   AssignJobResponse,
-  AssignJobRequest,
   CompleteJob,
   PaginatedCompleteJobList,
   ArchiveJobsRequest,
-  ArchiveJobsResponse,
   JobQuoteChatHistoryResponse,
   RoleEnum,
   JobQuoteChat,
@@ -1517,24 +1391,16 @@ export const schemas = {
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
   JobCreateRequest,
-  JobCreateResponse,
+  CostSetKindEnum,
+  CostSetSummary,
+  CostLine,
+  CostSet,
   PricingMethodologyEnum,
   QuoteSpreadsheet,
   Job,
-  JobUpdateRequest,
   JobDetailResponse,
-  JobDeleteResponse,
-  JobRestErrorResponse,
   JobEventCreateRequest,
-  JobEventCreateResponse,
-  CostSetKindEnum,
-  CostLine,
-  CostSet,
   QuoteImportStatusResponse,
-  QuoteRevisionRequestSerializer,
-  QuoteRevisionResponseSerializer,
-  QuoteAcceptResponse,
-  QuoteRevisionsListResponse,
   DraftLine,
   QuoteChanges,
   ApplyQuoteResponse,
@@ -1547,28 +1413,25 @@ export const schemas = {
   MonthEndStockHistory,
   MonthEndStockJob,
   MonthEndGetResponse,
-  MonthEndPostRequest,
   MonthEndPostResponse,
-  TimesheetCostLine,
   ModernTimesheetStaff,
   ModernTimesheetSummary,
   ModernTimesheetEntryGetResponse,
   ModernTimesheetEntryPostResponse,
   ModernTimesheetJobGetResponse,
+  TimesheetCostLine,
   ModernTimesheetDayGetResponse,
   DeliveryReceiptAllocation,
   DeliveryReceiptLine,
   DeliveryReceiptRequest,
-  DeliveryReceiptResponse,
   PurchaseOrderEmailRequest,
   PurchaseOrderPDFResponse,
-  StatusE5cEnum,
+  Status7b9Enum,
   JobForPurchasing,
   AllJobsResponse,
   PurchasingJobsResponse,
   PurchaseOrderList,
   PurchaseOrderLineCreate,
-  PurchaseOrderLineUpdate,
   PurchaseOrderCreate,
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
@@ -1576,6 +1439,7 @@ export const schemas = {
   NullEnum,
   PurchaseOrderLine,
   PurchaseOrderDetail,
+  PurchaseOrderLineUpdate,
   PatchedPurchaseOrderUpdate,
   PurchaseOrderUpdate,
   TypeEnum,
@@ -1584,7 +1448,6 @@ export const schemas = {
   StockList,
   StockCreate,
   StockConsumeRequest,
-  StockConsumeResponse,
   XeroItem,
   XeroItemListResponse,
   DjangoJobExecutionStatusEnum,
@@ -1603,7 +1466,6 @@ export const schemas = {
   WeeklyTimesheetData,
   XeroError,
   PaginatedXeroErrorList,
-  WeeklyMetrics,
 }
 
 const endpoints = makeApi([
@@ -1613,18 +1475,6 @@ const endpoints = makeApi([
     alias: 'accounting_api_reports_calendar_retrieve',
     description: `API Endpoint to provide KPI data for calendar display`,
     requestFormat: 'json',
-    parameters: [
-      {
-        name: 'year',
-        type: 'Query',
-        schema: z.number().int().optional(),
-      },
-      {
-        name: 'month',
-        type: 'Query',
-        schema: z.number().int().optional(),
-      },
-    ],
     response: KPICalendarData,
   },
   {
@@ -1634,12 +1484,36 @@ const endpoints = makeApi([
     description: `Get job aging data.
 
 Query Parameters:
-    include_archived (bool): Whether to include archived jobs. Defaults to False.
+    include_archived (bool): Whether to include archived jobs.
+        Defaults to False.
 
 Returns:
     JSON response with job aging data structure`,
     requestFormat: 'json',
     response: JobAgingResponse,
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/staff-performance-summary/',
+    alias: 'accounting_api_reports_staff_performance_summary_retrieve',
+    description: `API endpoint for staff performance summary (all staff)`,
+    requestFormat: 'json',
+    response: z.void(),
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/staff-performance/:staff_id/',
+    alias: 'accounting_api_reports_staff_performance_retrieve',
+    description: `API endpoint for individual staff performance detail`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'staff_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
   },
   {
     method: 'get',
@@ -1767,13 +1641,6 @@ and handles multipart/form data for file uploads.`,
 Supports filtering to return only actual users (excluding system/test accounts)
 based on the &#x27;actual_users&#x27; query parameter.`,
     requestFormat: 'json',
-    parameters: [
-      {
-        name: 'actual_users',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-    ],
     response: z.array(KanbanStaff),
   },
   {
@@ -1844,6 +1711,38 @@ information about a token&#x27;s fitness for a particular use.`,
     description: `Get current authenticated user information via JWT from httpOnly cookie`,
     requestFormat: 'json',
     response: UserProfile,
+  },
+  {
+    method: 'post',
+    path: '/api/aws/instance/reboot/',
+    alias: 'api_aws_instance_reboot_create',
+    description: `Reboot the UAT instance`,
+    requestFormat: 'json',
+    response: z.void(),
+  },
+  {
+    method: 'post',
+    path: '/api/aws/instance/start/',
+    alias: 'api_aws_instance_start_create',
+    description: `Start the UAT instance`,
+    requestFormat: 'json',
+    response: z.void(),
+  },
+  {
+    method: 'get',
+    path: '/api/aws/instance/status/',
+    alias: 'api_aws_instance_status_retrieve',
+    description: `Get current status of the UAT instance`,
+    requestFormat: 'json',
+    response: z.void(),
+  },
+  {
+    method: 'post',
+    path: '/api/aws/instance/stop/',
+    alias: 'api_aws_instance_stop_create',
+    description: `Stop the UAT instance`,
+    requestFormat: 'json',
+    response: z.void(),
   },
   {
     method: 'get',
@@ -2060,6 +1959,246 @@ for the same company.`,
   },
   {
     method: 'get',
+    path: '/api/workflow/app-errors/',
+    alias: 'api_workflow_app_errors_list',
+    description: `ViewSet for AppError with filtering capabilities and resolution actions.
+
+Provides list, retrieve, and resolution management for application errors.
+Includes comprehensive filtering and search capabilities for error analysis.
+
+Endpoints:
+- GET /api/app-errors/
+- GET /api/app-errors/&lt;id&gt;/
+- POST /api/app-errors/&lt;id&gt;/mark_resolved/
+- POST /api/app-errors/&lt;id&gt;/mark_unresolved/`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'app',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'app__icontains',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'file',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'file__icontains',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'function',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'function__icontains',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'job_id',
+        type: 'Query',
+        schema: z.string().uuid().optional(),
+      },
+      {
+        name: 'ordering',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'page',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'resolved',
+        type: 'Query',
+        schema: z.boolean().optional(),
+      },
+      {
+        name: 'search',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'severity',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'severity__gte',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'severity__lte',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'timestamp__gte',
+        type: 'Query',
+        schema: z.string().datetime({ offset: true }).optional(),
+      },
+      {
+        name: 'timestamp__lte',
+        type: 'Query',
+        schema: z.string().datetime({ offset: true }).optional(),
+      },
+      {
+        name: 'user_id',
+        type: 'Query',
+        schema: z.string().uuid().optional(),
+      },
+    ],
+    response: PaginatedAppErrorList,
+  },
+  {
+    method: 'get',
+    path: '/api/workflow/app-errors/:id/',
+    alias: 'api_workflow_app_errors_retrieve',
+    description: `ViewSet for AppError with filtering capabilities and resolution actions.
+
+Provides list, retrieve, and resolution management for application errors.
+Includes comprehensive filtering and search capabilities for error analysis.
+
+Endpoints:
+- GET /api/app-errors/
+- GET /api/app-errors/&lt;id&gt;/
+- POST /api/app-errors/&lt;id&gt;/mark_resolved/
+- POST /api/app-errors/&lt;id&gt;/mark_unresolved/`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: AppError,
+  },
+  {
+    method: 'post',
+    path: '/api/workflow/app-errors/:id/mark_resolved/',
+    alias: 'api_workflow_app_errors_mark_resolved_create',
+    description: `Mark an error as resolved.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: AppError,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: AppError,
+  },
+  {
+    method: 'post',
+    path: '/api/workflow/app-errors/:id/mark_unresolved/',
+    alias: 'api_workflow_app_errors_mark_unresolved_create',
+    description: `Mark an error as unresolved.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: AppError,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: AppError,
+  },
+  {
+    method: 'get',
+    path: '/app-errors/',
+    alias: 'app_errors_list',
+    description: `API view for listing application errors.
+
+Returns a paginated list of all AppError records ordered by timestamp
+(most recent first). Includes filtering capabilities for debugging and
+monitoring application issues.
+
+Endpoint: /api/app-errors/`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'app',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'job_id',
+        type: 'Query',
+        schema: z.string().uuid().optional(),
+      },
+      {
+        name: 'page',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'resolved',
+        type: 'Query',
+        schema: z.boolean().optional(),
+      },
+      {
+        name: 'search',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'severity',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'user_id',
+        type: 'Query',
+        schema: z.string().uuid().optional(),
+      },
+    ],
+    response: PaginatedAppErrorList,
+  },
+  {
+    method: 'get',
+    path: '/app-errors/:id/',
+    alias: 'app_errors_retrieve',
+    description: `API view for retrieving a single application error.
+
+Returns detailed information about a specific AppError record
+including error message, context, location, and resolution status.
+Used for investigating specific application failures.
+
+Endpoint: /api/app-errors/&lt;id&gt;/`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: AppError,
+  },
+  {
+    method: 'get',
     path: '/clients/:client_id/contacts/',
     alias: 'clients_contacts_retrieve',
     description: `Fetches contacts for a specific client.`,
@@ -2105,7 +2244,7 @@ Expected JSON:
         schema: ClientContactCreateRequest,
       },
     ],
-    response: ClientContactCreateResponse,
+    response: ClientContactCreateRequest,
   },
   {
     method: 'post',
@@ -2120,7 +2259,7 @@ Expected JSON:
         schema: ClientCreateRequest,
       },
     ],
-    response: ClientCreateResponse,
+    response: ClientCreateRequest,
   },
   {
     method: 'get',
@@ -2128,13 +2267,6 @@ Expected JSON:
     alias: 'clients_search_retrieve',
     description: `Searches clients by name following early return pattern.`,
     requestFormat: 'json',
-    parameters: [
-      {
-        name: 'q',
-        type: 'Query',
-        schema: z.string(),
-      },
-    ],
     response: ClientSearchResponse,
   },
   {
@@ -2319,7 +2451,7 @@ Expected JSON:
         schema: z.number().int(),
       },
     ],
-    response: z.array(JobFile),
+    response: JobFile,
   },
   {
     method: 'post',
@@ -2403,7 +2535,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: AssignJobRequest,
+        schema: AssignJobResponse,
       },
       {
         name: 'job_id',
@@ -2461,7 +2593,7 @@ Expected JSON:
         schema: ArchiveJobsRequest,
       },
     ],
-    response: ArchiveJobsResponse,
+    response: ArchiveJobsRequest,
   },
   {
     method: 'get',
@@ -2625,58 +2757,6 @@ assistant&#x27;s reply.`,
     alias: 'job_api_jobs_advanced_search_retrieve',
     description: `Endpoint for advanced job search - API endpoint.`,
     requestFormat: 'json',
-    parameters: [
-      {
-        name: 'job_number',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'name',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'description',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'client_name',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'contact_person',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'created_by',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'status',
-        type: 'Query',
-        schema: z.array(z.string()).optional(),
-      },
-      {
-        name: 'created_after',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'created_before',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'paid',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-    ],
     response: AdvancedSearchResponse,
   },
   {
@@ -2758,7 +2838,7 @@ assistant&#x27;s reply.`,
         schema: z.number().int(),
       },
     ],
-    response: CostLine,
+    response: CostLineCreateUpdate,
   },
   {
     method: 'delete',
@@ -2798,7 +2878,7 @@ Expected JSON:
         schema: JobCreateRequest,
       },
     ],
-    response: JobCreateResponse,
+    response: JobCreateRequest,
   },
   {
     method: 'get',
@@ -2828,67 +2908,6 @@ Returns:
     response: CostSet,
   },
   {
-    method: 'get',
-    path: '/job/rest/jobs/:job_id/cost_sets/quote/revise/',
-    alias: 'job_rest_jobs_cost_sets_quote_revise_retrieve',
-    description: `Get the list of archived quote revisions for the specified job.
-
-Returns a list of all quote revisions that have been archived in the
-CostSet summary, including revision numbers, timestamps, and full data.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'job_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: QuoteRevisionsListResponse,
-  },
-  {
-    method: 'post',
-    path: '/job/rest/jobs/:job_id/cost_sets/quote/revise/',
-    alias: 'job_rest_jobs_cost_sets_quote_revise_create',
-    description: `Create a new quote revision by archiving current quote data and clearing cost lines.
-
-This endpoint:
-1. Archives current quote cost lines and summary in the existing CostSet summary
-2. Clears all current cost lines from the quote CostSet
-3. Uses quote_revision numbering for tracking
-4. Allows starting fresh quote while preserving historical data
-
-Only works with kind='quote' CostSets.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: QuoteRevisionRequestSerializer,
-      },
-      {
-        name: 'job_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: QuoteRevisionResponseSerializer,
-  },
-  {
-    method: 'post',
-    path: '/job/rest/jobs/:job_id/quote/accept/',
-    alias: 'job_rest_jobs_quote_accept_create',
-    description: 'Accept a quote for the job by setting quote_acceptance_date',
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'job_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: QuoteAcceptResponse,
-  },
-  {
     method: 'post',
     path: '/job/rest/jobs/:id/quote/apply/',
     alias: 'job_rest_jobs_quote_apply_create',
@@ -2912,7 +2931,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/apply/`,
   },
   {
     method: 'post',
-    path: '/job/rest/jobs/:pk/quote/link/',
+    path: '/job/rest/jobs/:id/quote/link/',
     alias: 'job_rest_jobs_quote_link_create',
     description: `Link a job to a Google Sheets quote template.
 
@@ -2925,7 +2944,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/link/`,
         schema: z.object({ template_url: z.string().url() }).partial().passthrough(),
       },
       {
-        name: 'pk',
+        name: 'id',
         type: 'Path',
         schema: z.string().uuid(),
       },
@@ -2979,7 +2998,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobUpdateRequest,
+        schema: JobDetailResponse,
       },
       {
         name: 'job_id',
@@ -3002,7 +3021,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.string().uuid(),
       },
     ],
-    response: JobDeleteResponse,
+    response: z.void(),
   },
   {
     method: 'post',
@@ -3027,7 +3046,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.string(),
       },
     ],
-    response: CostLine,
+    response: CostLineCreateUpdate,
   },
   {
     method: 'post',
@@ -3047,7 +3066,52 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.string().uuid(),
       },
     ],
-    response: CostLine,
+    response: CostLineCreateUpdate,
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/cost_sets/quote/revise/',
+    alias: 'job_rest_jobs_cost_sets_quote_revise_retrieve',
+    description: `Get the list of archived quote revisions for the specified job.
+
+Args:
+    job_id: Job primary key (UUID)
+
+Returns:
+    Response: List of archived quote revisions or empty list`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
+  },
+  {
+    method: 'post',
+    path: '/job/rest/jobs/:job_id/cost_sets/quote/revise/',
+    alias: 'job_rest_jobs_cost_sets_quote_revise_create',
+    description: `Create a new quote revision for the specified job.
+
+Args:
+    job_id: Job primary key (UUID)
+
+Request Body:
+    reason (optional): String reason for the revision
+
+Returns:
+    Response: Success/error details and revision information`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
   },
   {
     method: 'post',
@@ -3072,7 +3136,23 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: z.object({ success: z.boolean(), event: z.object({}).passthrough() }).passthrough(),
+    response: z.object({ description: z.string().max(500) }).passthrough(),
+  },
+  {
+    method: 'post',
+    path: '/job/rest/jobs/:job_id/quote/accept/',
+    alias: 'job_rest_jobs_quote_accept_create',
+    description: `Accept a quote for the job.
+Sets the quote_acceptance_date to current datetime.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
   },
   {
     method: 'get',
@@ -3102,7 +3182,7 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: z.instanceof(Blob),
+    response: WorkshopPDFResponse,
   },
   {
     method: 'get',
@@ -3308,7 +3388,7 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
         schema: z.number().int(),
       },
     ],
-    response: z.array(JobFile),
+    response: JobFile,
   },
   {
     method: 'post',
@@ -3402,6 +3482,14 @@ and creates JobFile database records with proper file metadata.`,
   },
   {
     method: 'get',
+    path: '/job/rest/jobs/weekly-metrics/',
+    alias: 'job_rest_jobs_weekly_metrics_retrieve',
+    description: `Fetch weekly metrics data.`,
+    requestFormat: 'json',
+    response: z.void(),
+  },
+  {
+    method: 'get',
     path: '/job/rest/month-end/',
     alias: 'job_rest_month_end_retrieve',
     description: `REST API view for month-end processing of special jobs and stock data.
@@ -3424,7 +3512,7 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       {
         name: 'body',
         type: 'Body',
-        schema: MonthEndPostRequest,
+        schema: MonthEndPostResponse,
       },
     ],
     response: MonthEndPostResponse,
@@ -3488,20 +3576,6 @@ POST: Processes selected jobs for month-end archiving and status updates`,
     response: ModernTimesheetDayGetResponse,
   },
   {
-    method: 'get',
-    path: '/job/rest/jobs/weekly-metrics/',
-    alias: 'getWeeklyMetrics',
-    description: 'Get weekly metrics for jobs',
-    parameters: [
-      {
-        name: 'week',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-    ],
-    response: WeeklyMetrics,
-  },
-  {
     method: 'post',
     path: '/purchasing/api/delivery-receipts/process/',
     alias: 'purchasing_api_delivery_receipts_process_create',
@@ -3516,7 +3590,7 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
         schema: DeliveryReceiptRequest,
       },
     ],
-    response: DeliveryReceiptResponse,
+    response: DeliveryReceiptRequest,
   },
   {
     method: 'post',
@@ -3592,7 +3666,7 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
         schema: DeliveryReceiptRequest,
       },
     ],
-    response: DeliveryReceiptResponse,
+    response: DeliveryReceiptRequest,
   },
   {
     method: 'get',
@@ -3608,7 +3682,7 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
     alias: 'listPurchaseOrders',
     description: `Get list of purchase orders with optional status filtering.`,
     requestFormat: 'json',
-    response: z.array(PurchaseOrderList),
+    response: PurchaseOrderList,
   },
   {
     method: 'post',
@@ -3681,7 +3755,7 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
     alias: 'purchasing_rest_stock_retrieve',
     description: `Get list of all active stock items.`,
     requestFormat: 'json',
-    response: z.array(StockList),
+    response: StockList,
   },
   {
     method: 'post',
@@ -3735,7 +3809,7 @@ POST: Records stock consumption for a specific job, reducing available quantity`
         schema: z.string().uuid(),
       },
     ],
-    response: StockConsumeResponse,
+    response: StockConsumeRequest,
   },
   {
     method: 'get',
@@ -4055,18 +4129,7 @@ Endpoint: /api/xero/errors/&lt;id&gt;/`,
   },
 ])
 
-// Create API instance lazily to avoid circular dependency issues
-let _api: Zodios<typeof endpoints> | null = null
-
-export function getApi(): Zodios<typeof endpoints> {
-  if (!_api) {
-    _api = new Zodios(getApiBaseUrl(), endpoints, { axiosInstance: axios })
-  }
-  return _api
-}
-
-// For backward compatibility, export api as getter
-export const api = getApi()
+export const api = new Zodios(endpoints)
 
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
   return new Zodios(baseUrl, endpoints, options)

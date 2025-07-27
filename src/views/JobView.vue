@@ -66,6 +66,10 @@
         <span class="text-gray-500 text-lg font-medium">Loading...</span>
       </div>
       <template v-else>
+        <!-- Debug: Check what's failing - keep for now in case we need to debug further -->
+        <!-- <div v-if="!jobDataWithPaid" class="p-4 text-red-600">DEBUG: jobDataWithPaid is falsy</div>
+        <div v-if="!companyDefaults" class="p-4 text-red-600">DEBUG: companyDefaults is falsy</div>
+        <div v-if="!activeTab" class="p-4 text-red-600">DEBUG: activeTab is falsy</div> -->
         <JobViewTabs
           v-if="jobDataWithPaid && companyDefaults && activeTab"
           :active-tab="activeTab"
@@ -78,6 +82,10 @@
           @open-history="openHistoryModal"
           @open-attachments="openAttachmentsModal"
           @open-pdf="openPdfDialog"
+          @job-updated="handleJobUpdated"
+          @event-added="handleEventAdded"
+          @file-uploaded="handleFileUploaded"
+          @file-deleted="handleFileDeleted"
           @quote-imported="handleQuoteImported"
           @quote-created="handleQuoteCreated"
           @quote-accepted="handleQuoteAccepted"
@@ -221,6 +229,7 @@ const loadingJob = computed(() => jobsStore.isLoadingJob)
 onMounted(async () => {
   jobsStore.setCurrentJobId(jobId.value)
   await jobsStore.fetchJob(jobId.value)
+  await companyDefaultsStore.loadCompanyDefaults()
 })
 
 const { jobEvents, addEvent, loading: jobEventsLoading } = useJobEvents(jobId)

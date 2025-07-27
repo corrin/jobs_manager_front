@@ -1,4 +1,13 @@
-import { type WeekRange, type DateRange } from '@/api/local/schemas'
+type WeekRange = {
+  startDate: string
+  endDate: string
+  weekDays: string[]
+}
+
+type DateRange = {
+  startDate: string
+  endDate: string
+}
 
 export { type WeekRange, type DateRange }
 

@@ -8,8 +8,11 @@ import type {
   ValueFormatterParams,
 } from 'ag-grid-community'
 import { customTheme } from '@/plugins/ag-grid'
-import type { PurchaseOrderLineUI } from '@/api/local/schemas'
-import { PoLineJobCellEditor } from '@/components/purchasing/PoLineJobCellEditor'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
+import { PurchaseOrderJobCellEditor } from '@/components/purchasing/PurchaseOrderJobCellEditor'
+
+type PurchaseOrderLineUI = z.infer<typeof schemas.PurchaseOrderLine>
 
 export function usePurchaseOrderGrid(lines: Ref<PurchaseOrderLineUI[]>) {
   const gridApi = ref<GridApi | null>(null)
@@ -20,7 +23,7 @@ export function usePurchaseOrderGrid(lines: Ref<PurchaseOrderLineUI[]>) {
       field: 'job_number',
       width: 120,
       editable: true,
-      cellEditor: PoLineJobCellEditor,
+      cellEditor: PurchaseOrderJobCellEditor,
       cellEditorPopup: true,
       cellRenderer: (params: ICellRendererParams) => {
         const { job_number, client_name } = params.data as PurchaseOrderLineUI

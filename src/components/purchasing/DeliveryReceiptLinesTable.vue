@@ -16,7 +16,10 @@ import { useDeliveryReceiptStore } from '@/stores/deliveryReceiptStore'
 import { formatMetalType } from '@/utils/metalType'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-import type { DeliveryAllocation, DeliveryDataTableRowContext } from '@/api/local/schemas'
+import type { DeliveryAllocation } from '@/utils/delivery-receipt'
+import type { DataTableRowContext } from '@/utils/data-table-types'
+
+type DeliveryDataTableRowContext = DataTableRowContext
 
 // Use generated API types
 type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>

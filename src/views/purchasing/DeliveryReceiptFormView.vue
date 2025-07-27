@@ -232,13 +232,13 @@ import {
 } from 'lucide-vue-next'
 import { useDeliveryReceiptStore } from '@/stores/deliveryReceiptStore'
 import { schemas } from '@/api/generated/api'
-import type { DeliveryAllocationUI } from '@/api/local/schemas.ts'
-import { transformDeliveryReceiptForAPI } from '@/api/local/schemas.ts'
+import { transformDeliveryReceiptForAPI, type DeliveryAllocation } from '@/utils/delivery-receipt'
 import type { z } from 'zod'
 
 // Import types from generated API schemas
 type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
 type ExistingAllocation = z.infer<typeof schemas.DeliveryReceiptLine>
+type AllocationsRecord = Record<string, DeliveryAllocation[]>
 
 const route = useRoute()
 const router = useRouter()
@@ -248,7 +248,7 @@ const isLoading = ref(true)
 const isSaving = ref(false)
 const error = ref<string | null>(null)
 const purchaseOrder = ref<PurchaseOrder | null>(null)
-const allocations = ref<Record<string, DeliveryAllocationUI[]>>({})
+const allocations = ref<AllocationsRecord>({})
 const existingAllocations = ref<Record<string, ExistingAllocation[]>>({})
 const showPreviousAllocationsModal = ref(false)
 
@@ -387,7 +387,6 @@ async function saveChanges() {
     const deliveryReceiptData = transformDeliveryReceiptForAPI(
       purchaseOrder.value.id,
       allocations.value,
-      deliveryReceiptStore.getDefaultRetailRate(),
     )
 
     await deliveryReceiptStore.submitDeliveryReceipt(
@@ -398,7 +397,7 @@ async function saveChanges() {
 
     await loadData()
 
-    const clearedAllocations: Record<string, DeliveryAllocationUI[]> = {}
+    const clearedAllocations: Record<string, DeliveryAllocation[]> = {}
     purchaseOrder.value.lines.forEach((line) => {
       clearedAllocations[line.id] = []
     })
@@ -443,7 +442,7 @@ async function loadData() {
     purchaseOrder.value = po
     existingAllocations.value = existingAllocationsData.allocations || {}
 
-    const initialAllocations: Record<string, DeliveryAllocationUI[]> = {}
+    const initialAllocations: Record<string, DeliveryAllocation[]> = {}
     po.lines.forEach((line) => {
       initialAllocations[line.id] = []
     })

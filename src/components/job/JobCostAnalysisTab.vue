@@ -153,7 +153,7 @@ import { Smile, Frown, ArrowUp, ArrowDown } from 'lucide-vue-next'
 import { useCostingStore } from '../../stores/costing'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-import type { CostSetSummary } from '@/api/local/schemas'
+import type { CostSetSummary } from '@/api/generated/api'
 
 type CostSet = z.infer<typeof schemas.CostSet>
 

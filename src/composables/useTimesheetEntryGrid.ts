@@ -1,7 +1,15 @@
 import { ref, computed, nextTick, type Ref } from 'vue'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-import type { TimesheetEntryJobSelectionItem, TimesheetEntryStaffMember } from '@/api/local/schemas'
+// ❌ BROKEN IMPORTS - Backend needs these schemas:
+// import type {
+//   TimesheetEntryJobSelectionItem,
+//   TimesheetEntryStaffMember,
+// } from '@/utils/timesheet-types'
+
+// Using generated schemas where possible
+type TimesheetEntryJobSelectionItem = z.infer<typeof schemas.Job>
+type TimesheetEntryStaffMember = z.infer<typeof schemas.Staff>
 import type {
   GridApi,
   ColDef,

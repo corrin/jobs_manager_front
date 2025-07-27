@@ -15,21 +15,18 @@
             v-model="localJobData.job_status"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
           >
-            <option v-if="isLoadingStatuses" value="">Loading statuses...</option>
-            <template v-else>
-              <option
-                v-if="
-                  localJobData.job_status &&
-                  !statusChoices.find((s) => s.key === localJobData.job_status)
-                "
-                :value="localJobData.job_status"
-              >
-                {{ currentStatusLabel }} (Current)
-              </option>
-              <option v-for="status in statusChoices" :key="status.key" :value="status.key">
-                {{ status.label }}
-              </option>
-            </template>
+            <option
+              v-if="
+                localJobData.job_status &&
+                !statusChoices.find((s) => s.key === localJobData.job_status)
+              "
+              :value="localJobData.job_status"
+            >
+              {{ currentStatusLabel }} (Current)
+            </option>
+            <option v-for="status in statusChoices" :key="status.key" :value="status.key">
+              {{ status.label }}
+            </option>
           </select>
         </div>
 
@@ -143,12 +140,13 @@
 <script setup lang="ts">
 import { debugLog } from '@/utils/debug'
 
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import type { JobDetailResponse, JobCreateRequest } from '@/api/generated/api'
-import { jobService } from '@/services/job.service'
+// jobService removed - no longer loading status choices from API
+// TEMPORARY: Return to pulling status choices from constants
 import { useJobsStore } from '@/stores/jobs'
 import { toast } from 'vue-sonner'
-import type { StatusChoice } from '@/api/local/schemas'
+import { JOB_STATUS_CHOICES, getStatusLabel } from '@/constants/job-status'
 import {
   Dialog,
   DialogContent,
@@ -172,17 +170,17 @@ const emit = defineEmits<{
 const jobsStore = useJobsStore()
 
 const localJobData = ref<Partial<JobDetailResponse>>({})
-const statusChoices = ref<StatusChoice[]>([])
-const isLoadingStatuses = ref(false)
 const isLoading = ref(false)
+
+// Use static status choices from constants
+// TODO: DELETE THIS AND REPLACE WITH JOB STATE
+const statusChoices = JOB_STATUS_CHOICES
 
 const currentStatusLabel = computed(() => {
   if (!localJobData.value.job_status) {
     return ''
   }
-
-  const statusChoice = statusChoices.value.find((s) => s.key === localJobData.value.job_status)
-  return statusChoice ? statusChoice.label : localJobData.value.job_status
+  return getStatusLabel(localJobData.value.job_status as string)
 })
 
 const initializeLocalJobData = (jobData: JobDetailResponse) => {
@@ -211,46 +209,7 @@ watch(
   { immediate: true },
 )
 
-onMounted(async () => {
-  await loadStatusChoices()
-})
-
-const loadStatusChoices = async () => {
-  isLoadingStatuses.value = true
-  try {
-    const statusMap = await jobService.getStatusChoices()
-    statusChoices.value = Object.entries(statusMap).map(([key, label]) => ({ key, label }))
-    preserveCurrentJobStatus()
-  } catch {
-    statusChoices.value = [
-      { key: 'quoting', label: 'Quoting' },
-      { key: 'accepted_quote', label: 'Accepted Quote' },
-      { key: 'awaiting_materials', label: 'Awaiting Materials' },
-      { key: 'awaiting_staff', label: 'Awaiting Staff' },
-      { key: 'awaiting_site_availability', label: 'Awaiting Site Availability' },
-      { key: 'in_progress', label: 'In Progress' },
-      { key: 'on_hold', label: 'On Hold' },
-      { key: 'special', label: 'Special' },
-      { key: 'recently_completed', label: 'Recently Completed' },
-      { key: 'completed', label: 'Completed' },
-      { key: 'rejected', label: 'Rejected' },
-      { key: 'archived', label: 'Archived' },
-    ]
-    preserveCurrentJobStatus()
-  } finally {
-    isLoadingStatuses.value = false
-  }
-}
-
-const preserveCurrentJobStatus = () => {
-  if (!props.jobData?.job_status) {
-    return
-  }
-
-  if (!localJobData.value.job_status) {
-    localJobData.value.job_status = props.jobData.job_status
-  }
-}
+// No need to load status choices - they're static constants now
 
 const closeModal = () => {
   emit('close')
