@@ -243,7 +243,7 @@ import { debugLog } from '../../utils/debug'
 import { computed, ref, watch } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
-import { XeroSyncResponseSchema, type JobWithFinancialData } from '../../api/local/schemas'
+// import { XeroSyncResponseSchema, type JobWithFinancialData } from '../../api/local/schemas' // ❌ BROKEN - Backend needs these schemas
 import { api } from '../../api/generated/api'
 
 interface Props {

@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import type { JobTabKey } from '../api/local/schemas'
+import type { JobTabKey } from '@/constants/job-tabs'
 
 export function useJobTabs(initialTab: JobTabKey = 'estimate') {
   const activeTab = ref<JobTabKey>(initialTab)

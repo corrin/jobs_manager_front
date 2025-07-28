@@ -1,13 +1,13 @@
 # Broken Imports Fix Log
 
-This log tracks the systematic fixing of 28 broken imports from the deleted `@/api/local/schemas` directory.
+This log tracks the systematic fixing of 23 broken imports from the deleted `@/api/local/schemas` directory.
 
 ## Progress Summary
 
-- **Total files to fix:** 28
-- **Files completed:** 10
-- **Files remaining:** 18
-- **Frontend constants created:** 4
+- **Total files to fix:** 23
+- **Files completed:** 7
+- **Files remaining:** 12
+- **Frontend constants created:** 6
 - **Frontend utilities created:** 1
 
 ## Changes Made
@@ -133,6 +133,61 @@ This log tracks the systematic fixing of 28 broken imports from the deleted `@/a
 - **Replacement strategy:** Used `DeliveryAllocationUI` from `@/utils/delivery-receipt` and `DataTableRowContext` from `@/utils/data-table-types`
 - **Notes:** These are frontend UI types for data table display and allocation management, correctly moved to frontend utilities.
 
+#### File: `src/components/purchasing/PurchaseOrderJobCellEditor.ts`
+
+- **Status:** ✅ Fixed – Generated schema
+- **Broken import:** `POJobSelectionItem` from `@/api/local/schemas`
+- **Replacement strategy:** `Pick<schemas.Job, 'id' | 'job_number' | 'name' | 'status' | 'client_name' | 'charge_out_rate'>`
+- **Notes:** All fields exist in Job serializer, so wrapper no longer needed.
+
+#### File: `src/components/quote/QuoteSummaryCard.vue`
+
+- **Status:** ✅ Fixed – Generated schema
+- **Broken import replaced:** `QuoteDataSchema`
+- **Replacement:** `type QuoteData = z.infer<typeof schemas.CostSet>`
+- **Notes:** Numeric string fields are converted using `+value` in calculations.
+
+#### File: `src/composables/useAppLayout.ts`
+
+- **Status:** ✅ Fixed – Frontend constants
+- **Broken imports removed:** `NavigationItem, UserInfo` from `@/api/local/schemas`
+- **Replacement:**
+  - `NavigationItem` defined locally (UI-only).
+  - `userInfo` is derived from `schemas.Staff`; `displayName` and `fullName` are computed in the composable.
+
+#### File: `src/composables/useJobCache.ts`
+
+- **Status:** ✅ Fixed – Frontend constants
+- **Broken import replaced:** `JobCacheEntry`
+- **Replacement strategy:** Imported `JobCacheEntry` and `JobCacheEntrySchema` from `src/constants/job-cache.ts`, which defines the cache entry shape using Zod and generated API types.
+- **Notes:** Ensures cache structure is validated and consistent with `JobDetailResponse` from generated schemas.
+
+#### File: `src/composables/useJobCard.ts`
+
+- **Status:** ✅ Fixed – Frontend constant
+- **Broken import replaced:** `JobCardStatusConfig`
+- **Replacement strategy:** Created `src/constants/job-card-status-config.ts` defining `JobCardStatusConfig` as a Zod schema and type, and imported it for type safety and UI configuration.
+- **Notes:** All status config is now defined in a single frontend constant using Zod for validation and type inference.
+
+#### File: `src/composables/useJobTabs.ts`
+
+- **Status:** ✅ Fixed – Frontend constant
+- **Broken import replaced:** `JobTabKey`
+- **Replacement strategy:** Imported `JobTabKey` from new `src/constants/job-tabs.ts`, which defines the allowed tab keys as a Zod enum and type.
+- **Notes:** Ensures type safety and centralizes tab key definitions for UI navigation.
+
+#### File: `src/composables/useSimpleDragAndDrop.ts`
+
+- **Status:** ✅ Fixed – Frontend constants
+- **Broken imports replaced:** `DragEventData`, `JobCardElement`, `SortableOptions`
+- **Replacement strategy:** Created constants since these are strictly UI data and SortableJS configuration (Category A).
+
+#### File: `src/composables/useTimesheetEntryCalculations.ts`
+
+- **Status:** ✅ Fixed – Frontend constants + using existing schemas
+- **Broken imports replaced:** `TimesheetEntryWithMeta`, `TimesheetEntryJobSelectionItem`, `TimesheetEntryStaffMember`
+- **Replacement strategy:** Created `src/constants/timesheet-calculations.ts` with UI constant; composable now imports from there.
+
 #### Analysis: Files Requiring Backend Coordination
 
 **Status:** ✅ COORDINATION COMPLETE - All uncertain types categorized
@@ -190,6 +245,23 @@ Following CLAUDE.md strict rules - cannot proceed with these types without backe
 - **Broken imports:** `TimesheetEntryWithMeta` from `@/api/local/schemas`
 - **Replacement strategy:** N/A - Left broken to maintain architectural pressure
 - **Notes:** Complex component with extensive field name expectations. Rather than force backend field names into frontend, left broken to pressure backend for frontend-compatible schema.
+
+#### File: QuoteImportDialog.vue / useQuoteImport.ts
+
+- **Status:** ⏸️ Partially fixed – waiting backend to expose `can_proceed`, `validation_report`, `diff_preview` in generated schema/serializer.
+- **Backend action:** Extend PreviewQuoteResponseSerializer (see backend-schema-requirements.md)
+
+#### File: `src/components/job/JobFinancialTab.vue`
+
+- **Status:** ⏸️ Left broken – backend schemas missing
+- **Broken imports:** `JobWithFinancialData`, `XeroSyncResponseSchema`
+- **Backend action:** See backend-schema-requirements.md
+
+#### File: `src/components/timesheet/WeeklyMetricsModal.vue`
+
+- **Status:** ⏸️ Left broken – backend schemas missing
+- **Broken imports:** `TypedWeeklyTimesheetData`, `IMSWeeklyData`
+- **Backend action:** See backend-schema-requirements.md (WeeklyTimesheetData, IMSWeeklyData)
 
 **Next Steps:**
 

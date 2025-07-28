@@ -795,6 +795,7 @@ const ApplyQuoteResponse = z
   })
   .passthrough()
 const LinkQuoteSheetRequest = z.object({ template_url: z.string().url() }).partial().passthrough()
+// This might return other fields as per quote_sync_serializer and quote_sync_service. Perhaps add the fields here as optional/nullable?
 const PreviewQuoteResponse = z
   .object({
     success: z.boolean(),

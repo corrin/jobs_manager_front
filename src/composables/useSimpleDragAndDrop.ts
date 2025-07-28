@@ -1,7 +1,7 @@
 import { ref, nextTick } from 'vue'
 import Sortable from 'sortablejs'
 import { debugLog } from '@/utils/debug'
-import type { DragEventData, JobCardElement, SortableOptions } from '../api/local/schemas'
+import type { DragEventData, JobCardElement, SortableOptions } from '@/constants/drag-and-drop'
 
 const SORTABLE_CONFIG = {
   GROUP: 'jobs',

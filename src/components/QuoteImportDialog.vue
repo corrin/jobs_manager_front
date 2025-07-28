@@ -323,14 +323,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useQuoteImport } from '@/composables/useQuoteImport'
-import type { QuoteImportResponse } from '@/api/local/schemas'
+import { z } from 'zod'
+import { schemas } from '@/api/generated/schemas'
+
+type ApplyQuoteResponse = z.infer<typeof schemas.ApplyQuoteResponse>
 
 const props = defineProps<{
   jobId: string
 }>()
 
 const emit = defineEmits<{
-  (e: 'success', result: QuoteImportResponse): void
+  (e: 'success', result: ApplyQuoteResponse): void
   (e: 'cancel'): void
 }>()
 

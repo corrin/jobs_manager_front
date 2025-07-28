@@ -347,11 +347,10 @@ import type { QuotePreview, QuoteApplyResult } from '@/services/quote.service'
 import type { QuoteSheet } from '@/schemas/job.schemas'
 import { extractQuoteErrorMessage, logError } from '@/utils/error-handler'
 import { schemas } from '@/api/generated/api'
-import { QuoteDataSchema } from '@/api/local/schemas'
 import { z } from 'zod'
 
 type Job = z.infer<typeof schemas.Job>
-type QuoteData = z.infer<typeof QuoteDataSchema>
+type QuoteData = z.infer<typeof schemas.CostSet> // kind == 'quote'
 
 const props = withDefaults(
   defineProps<{
@@ -402,8 +401,9 @@ const breakdown = computed(() => {
     .reduce(
       (acc, line) => ({
         count: acc.count + 1,
-        cost: acc.cost + line.quantity * line.unit_cost,
-        revenue: acc.revenue + line.quantity * line.unit_rev,
+        // Using the unary plus operator to ensure numeric conversion, since the API returns strings
+        cost: acc.cost + +line.quantity * +line.unit_cost,
+        revenue: acc.revenue + +line.quantity * +line.unit_rev,
       }),
       { count: 0, cost: 0, revenue: 0 },
     )
@@ -413,8 +413,9 @@ const breakdown = computed(() => {
     .reduce(
       (acc, line) => ({
         count: acc.count + 1,
-        cost: acc.cost + line.quantity * line.unit_cost,
-        revenue: acc.revenue + line.quantity * line.unit_rev,
+        // Using the unary plus operator here too, for the same reason
+        cost: acc.cost + +line.quantity * +line.unit_cost,
+        revenue: acc.revenue + +line.quantity * +line.unit_rev,
       }),
       { count: 0, cost: 0, revenue: 0 },
     )

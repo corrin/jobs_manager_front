@@ -2,22 +2,24 @@
 
 ## Task Overview
 
-Fix 32 files importing from the deleted `@/api/local/schemas` directory by applying **STRICT ARCHITECTURAL SEPARATION OF CONCERNS**.
+Fix 23 files importing from the deleted `@/api/local/schemas` directory by applying **STRICT ARCHITECTURAL SEPARATION OF CONCERNS**.
 
 ## 🚨 CRITICAL ARCHITECTURAL PRINCIPLES 🚨
 
-Always commit and push after every task
+Always commit and push after every task.
 
 ### NEVER COMMENT OUT OR DISABLE BROKEN IMPORTS
 
-- Build failures from missing backend schemas are **ARCHITECTURALLY CORRECT**
-- Broken imports maintain pressure for proper backend fixes
-- NO temporary workarounds, placeholders, or suppressions
+- Build failures from missing backend schemas are **ARCHITECTURALLY CORRECT**.
+- Broken imports maintain pressure for proper backend fixes.
+- NO temporary workarounds, placeholders, or suppressions.
 
 ### STRICT SEPARATION OF CONCERNS
 
-**Frontend owns:** UI constants, data transformation, presentation logic
-**Backend owns:** Business data, API schemas, database models
+**Frontend owns:** UI constants, data transformation, presentation logic.  
+**Backend owns:** Business data, API schemas, database models.
+
+---
 
 ## Systematic Approach
 
@@ -25,133 +27,143 @@ Always commit and push after every task
 
 For each file, determine if the import is:
 
-**Category A: Frontend Constants/Utilities** ✅ CAN FIX
-
-🚨 **ULTIMATE TEST: If this data is stored in the database, it is PROHIBITED to model in the frontend** 🚨
-
-- Static UI dropdowns, labels, configuration (NOT stored in database)
-- Data transformation functions (NOT stored in database)
-- Pure UI form structures (NOT stored in database)
-- **Action:** Create proper frontend constants/utilities
-
-**Examples of ALLOWED Category A types:**
-
-- Tab names, dropdown options, filter schemas
-- Form validation structures
-- UI state enums, display constants
-
-**Examples of PROHIBITED (Category C) types:**
-
-- Job data, staff data, purchase orders, deliveries
-- Any type with database IDs, business fields, or API data
-
-**Category B: Existing Generated Schemas** ✅ CAN FIX
-
-- Types that exist in `@/api/generated/api`
-- **Action:** Replace with generated schema import
-
-**Category C: Missing Backend Schemas** ❌ LEAVE BROKEN
-
-- Legitimate API data types not in generated schemas
-- **Action:** Document requirement, leave import broken
+- **Category A: Frontend Constants/Utilities** ✅ CAN FIX
+- **Category B: Existing Generated Schemas** ✅ CAN FIX
+- **Category C: Missing Backend Schemas** ❌ LEAVE BROKEN
 
 ### Step 2: Fix Patterns
 
-**Frontend Constants:**
+- **Frontend Constants** → create local constants/utilities
+- **Generated Schemas** → replace with `z.infer<typeof schemas.X>`
+- **Missing Backend Schemas** → leave broken and document in `backend-schema-requirements.md`
 
-```typescript
-// BEFORE (broken)
-import { StatusChoice } from '@/api/local/schemas'
+---
 
-// AFTER (fixed)
-import { JOB_STATUS_CHOICES, type StatusChoice } from '@/constants/job-status'
-```
+## Step 3: File Categorization (23 total)
 
-**Generated Schemas:**
+#### ✅ CATEGORY A: Frontend Constants/Utilities (CAN FIX)
 
-```typescript
-// BEFORE (broken)
-import { SomeType } from '@/api/local/schemas'
-
-// AFTER (fixed)
-import { schemas } from '@/api/generated/api'
-type SomeType = z.infer<typeof schemas.SomeType>
-```
-
-**Missing Backend Schemas:**
-
-```typescript
-// BEFORE (broken)
-import { JobEvent } from '@/api/local/schemas'
-
-// AFTER (leave broken - maintains architectural pressure)
-import { JobEvent } from '@/api/local/schemas' // ❌ BROKEN - Backend team must add JobEvent schema
-```
-
-### Step 3: File Categorization (32 total)
-
-#### ✅ CATEGORY A: Frontend Constants/Utilities (CAN FIX) - ONLY PURE UI CONSTRUCTS
-
-- [x] `src/components/job/JobViewTabs.vue` - `JobTabKey` (literal tab names like "details", "attachments")
-- [x] `src/views/purchasing/DeliveryReceiptFormView.vue` - `transformDeliveryReceiptForAPI` (data transformation function only)
-- [x] `src/components/AdvancedSearchDialog.vue` - `AdvancedFiltersSchema` (search form structure only)
-- [x] `src/components/admin/errors/ErrorFilter.vue` - `DateRangeSchema` (date picker form structure only)
-- [x] `src/components/job/JobPricingGrids.vue` - `PricingSectionSchema` (pricing form structure only)
-
-#### 🔄 MOVED TO CATEGORY C (CONSERVATIVE APPROACH)
-
-- [ ] `src/components/job/JobWorkflowModal.vue` - `StatusChoice` (status values likely stored in database)
-- [ ] `src/components/timesheet/PaidAbsenceModal.vue` - `AbsenceForm, AbsenceSummary` (absence data likely stored in database)
-- [ ] `src/components/timesheet/StaffWeekRow.vue` - `WeeklyStaffData, WeeklyDayData` (timesheet data stored in database)
+- [x] `src/components/job/JobViewTabs.vue` — `JobTabKey`
+- [x] `src/views/purchasing/DeliveryReceiptFormView.vue` — `transformDeliveryReceiptForAPI`
+- [x] `src/components/AdvancedSearchDialog.vue` — `AdvancedFiltersSchema`
+- [x] `src/components/admin/errors/ErrorFilter.vue` — `DateRangeSchema`
+- [x] `src/components/job/JobPricingGrids.vue` — `PricingSectionSchema`
+- [x] `src/components/job/JobWorkflowModal.vue` — `StatusChoice`  
+      _(moved from C → A)_
+- [x] `src/components/purchasing/DeliveryReceiptLinesTable.vue` —  
+      `DeliveryAllocation`, `DeliveryDataTableRowContext`
+- [x] `src/composables/useTimesheetEntryGrid.ts` —  
+      `TimesheetEntryJobSelectionItem`, `TimesheetEntryStaffMember`  
+      _(both moved from C → A)_
+- [x] `src/composables/useAppLayout` — `NavigationItem` → `import type { NavigationItem } from '@/constants/navigation-item'`, `UserInfo` → `schemas.Staff`
+- [x] `src/composables/useJobCache.ts` — `JobCacheEntry`→ `import type { JobCacheEntry } from '@/constants/job-cache'`
+- [x] `src/composables/useTimesheetEntryCalculations.ts` —  
+      `TimesheetEntryWithMeta`, `TimesheetEntryJobSelectionItem` →  
+      `import type { TimesheetEntryWithMeta } from '@/constants/timesheet-calculations'`  
+      and  
+      `type TimesheetEntryJobSelectionItem = Pick<z.infer<typeof schemas.Job>, 'id' | 'job_number' | 'name' | 'client_name' | 'status' | 'charge_out_rate'>`
 
 #### ✅ CATEGORY B: Existing Generated Schemas (CAN FIX)
 
-- [x] `src/components/KanbanColumn.vue` - `StatusChoiceSchema` → `schemas.Status7b9Enum`
-- [x] `src/components/StaffAvatar.vue` - `StaffAvatarSchema` → `schemas.Staff`
-- [x] `src/utils/metalType.ts` - `MetalTypeOption` → `schemas.MetalTypeEnum`
-- [ ] `src/stores/xeroItemStore.ts` - `XeroItemUI` → `schemas.XeroItem`
-- [ ] `src/components/purchasing/PoLinesTable.vue` - `XeroItemUI` → `schemas.XeroItem`
+- [x] `src/stores/xeroItemStore.ts` — `XeroItemUI` → `schemas.XeroItem`
+- [x] `src/components/purchasing/PoLinesTable.vue` —  
+      `XeroItemUI`, `PoLineUISchema` → generated schemas
+- [x] `src/services/quote.service.ts` — quote-import response types → generated schemas
+- [x] `src/composables/useContactManagement.ts` — `NewContactData` → `schemas.ClientContactCreateRequest`
+- [x] `src/composables/usePurchaseOrderGrid.ts` — `PurchaseOrderLineUI` → `schemas.PurchaseOrderLine`
+- [x] `src/components/admin/errors/ErrorDialog.vue` — `ErrorRecord` → `schemas.AppError`
+- [x] `src/components/purchasing/PurchaseOrderJobCellEditor.ts` — `POJobSelectionItem` → `Pick<schemas.Job, 'id' | 'job_number' | 'name' | 'status' | 'client_name' | 'charge_out_rate'>`
+- [x] `src/components/quote/QuoteSummaryCard.vue` — `QuoteData` → `schemas.CostSet` (kept the QuoteData type name to help with legibility)
+- [ ] `src/components/KanbanColumn.vue` — `StatusChoiceSchema` → `schemas.Status7b9Enum`
+- [ ] `src/components/StaffAvatar.vue` — `StaffAvatarSchema` → `schemas.Staff`
+- [ ] `src/utils/metalType.ts` — `MetalTypeOption` → `schemas.MetalTypeEnum`
 
 #### ❌ CATEGORY C: Missing Backend Schemas (LEAVE BROKEN)
 
-- [ ] `src/components/job/JobCostAnalysisTab.vue` - `CostSetSummary` (API computation result)
-- [ ] `src/components/job/JobHistoryModal.vue` - `JobEvent` (API job history data)
-- [ ] `src/views/TimesheetEntryView.vue` - `TimesheetEntryWithMeta` (API response with metadata)
-- [ ] `src/views/purchasing/PurchaseOrderFormView.vue` - `XeroSyncResponse` (API integration response)
-- [ ] `src/services/quote.service.ts` - `QuoteImportPreviewResponse, QuoteImportResponse` (API responses)
-- [ ] `src/components/QuoteImportDialog.vue` - `QuoteImportResponse` (API import result)
-- [ ] All other legitimate API data types missing from generated schemas
+- [ ] `src/components/timesheet/JobMetricsModal.vue` — `JobMetrics`
+- [ ] `src/components/job/JobHistoryModal.vue` — `JobEvent`
+- [ ] `src/views/TimesheetEntryView.vue` — `TimesheetEntryWithMeta`
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue` — `XeroSyncResponse`
+- [ ] `src/components/QuoteImportDialog.vue` — `QuoteImportResponse`
+- [ ] `src/components/quote/QuoteImportPreview.vue` — `QuoteImportPreviewResponse`
+- [ ] `src/components/job/JobCostAnalysisTab.vue` — `CostSetSummary`
+- [ ] `src/services/quote-chat.service.ts` — `VueChatMessage`
+- [ ] `src/composables/useQuoteImport.ts` — quote-related types
+- [ ] `src/components/job/JobFinancialTab` — `JobWithFinancialData`, `XeroSyncResponseSchema`
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue` – `TypedWeeklyTimesheetData`, `IMSWeeklyData`
 
-#### 🔍 NEEDS INVESTIGATION: Unclear Category
+---
 
-Files requiring analysis to determine if frontend utility or backend schema:
+## Step 4: Implementation Strategy
 
-- [ ] `src/components/timesheet/JobMetricsModal.vue` - `JobMetrics`
-- [ ] `src/components/timesheet/PaidAbsenceModal.vue` - `StaffMemberUI, AbsenceForm, AbsenceSummary`
-- [ ] `src/components/timesheet/StaffWeekRow.vue` - `WeeklyStaffData, WeeklyDayData`
-- [ ] `src/composables/useTimesheetEntryGrid.ts` - `TimesheetEntryJobSelectionItem, TimesheetEntryStaffMember`
-- [ ] `src/components/purchasing/DeliveryReceiptLinesTable.vue` - `DeliveryAllocation, DeliveryDataTableRowContext`
-- [ ] `src/components/purchasing/PurchaseOrderJobCellEditor.ts` - `POJobSelectionItem`
-- [ ] `src/services/quote-chat.service.ts` - `VueChatMessage`
-- [ ] `src/composables/useContactManagement.ts` - `NewContactData`
-- [ ] `src/composables/usePurchaseOrderGrid.ts` - `PurchaseOrderLineUI`
-- [ ] `src/composables/useQuoteImport.ts` - Multiple quote-related types
-- [ ] `src/components/admin/errors/ErrorDialog.vue` - `ErrorRecord`
+1. **Fix Category A & B files immediately**
+2. **Document Category C requirements**
+3. **Investigate unclear files**
+4. **Let build fail appropriately**
 
-### Step 4: Implementation Strategy
+---
 
-1. **Fix Category A & B files immediately** - Create frontend constants/utilities or use generated schemas
-2. **Document Category C requirements** - Update backend-schema-requirements.md
-3. **Investigate unclear files** - Determine proper category through code analysis
-4. **Let build fail appropriately** - Maintain architectural pressure for backend fixes
-
-### Step 5: Success Criteria
+## Step 5: Success Criteria
 
 - ✅ All fixable imports resolved with proper frontend constants/utilities or generated schemas
 - ✅ All legitimate backend schema requirements documented
 - ❌ Build may still fail due to missing backend schemas (THIS IS CORRECT)
 - ✅ No temporary workarounds or disabled imports
 
+---
+
 ## ARCHITECTURAL CORRECTNESS OVER BUILD SUCCESS
 
 **A failing build due to missing backend schemas is better than architectural violations.**
+
+--
+
+## RAW LIST:
+
+#### ✅ CATEGORY A: Frontend Constants/Utilities (CAN FIX)
+
+- `src/components/job/JobViewTabs.vue`
+- `src/views/purchasing/DeliveryReceiptFormView.vue`
+- `src/components/AdvancedSearchDialog.vue`
+- `src/components/admin/errors/ErrorFilter.vue`
+- `src/components/job/JobPricingGrids.vue`
+- `src/components/job/JobWorkflowModal.vue`
+- `src/components/purchasing/DeliveryReceiptLinesTable.vue`
+- `src/composables/useTimesheetEntryGrid.ts`
+
+#### ✅ CATEGORY B: Existing Generated Schemas (CAN FIX)
+
+- `src/stores/xeroItemStore.ts`
+- `src/components/purchasing/PoLinesTable.vue`
+- `src/services/quote.service.ts`
+- `src/composables/useContactManagement.ts`
+- `src/composables/usePurchaseOrderGrid.ts`
+- `src/components/admin/errors/ErrorDialog.vue`
+- `src/components/kanban/KanbanColumn.vue`
+- `src/components/StaffAvatar.vue`
+- `src/utils/metalType.ts`
+
+#### ❌ CATEGORY C: Missing Backend Schemas (LEAVE BROKEN)
+
+- `src/components/quote/QuoteImportDialog.vue`
+- `src/components/quote/QuoteSummaryCard.vue`
+- `src/components/job/JobFinancialTab.vue`
+- `src/components/job/JobHistoryModal.vue`
+- `src/components/purchasing/PurchaseOrderJobCellEditor.ts`
+- `src/components/timesheet/JobMetricsModal.vue`
+- `src/components/timesheet/PaidAbsenceModal.vue`
+- `src/composables/useAppLayout.ts`
+- `src/composables/useJobCache.ts`
+- `src/composables/useJobCard.ts`
+- `src/composables/useJobTabs.ts`
+- `src/composables/useQuoteImport.ts`
+- `src/composables/useSimpleDragAndDrop.ts`
+- `src/composables/useTimesheetEntryCalculations.ts`
+- `src/composables/useXeroAuth.ts`
+- `src/services/clientService.ts`
+- `src/services/job.service.ts`
+- `src/services/kanban-categorization-service.ts`
+- `src/services/quote-chat-service.ts`
+- `src/views/kanban/KanbanView.vue`
+- `src/views/timesheet/TimesheetEntryView.vue`
+- `src/views/purchasing/PurchaseOrderFormView.vue`

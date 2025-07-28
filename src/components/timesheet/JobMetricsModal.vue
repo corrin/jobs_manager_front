@@ -117,7 +117,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { BarChart3, Briefcase, Clock, TrendingUp, DollarSign, Users } from 'lucide-vue-next'
-import type { JobMetrics } from '@/api/local/schemas'
+// import type { JobMetrics } from '@/api/local/schemas' // ❌ BROKEN - Backend needs this schema for weekly timesheet views
 import { formatHours, formatPercentage } from '@/services/weekly-timesheet.service'
 
 const props = defineProps<{
