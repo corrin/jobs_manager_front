@@ -1,7 +1,7 @@
 import { api, schemas } from '../api/generated/api'
 import axios from '@/plugins/axios'
 import { z } from 'zod'
-import type { AdvancedFilters, JobStatusUpdate, JobReorderPayload } from '../api/local/schemas'
+import type { AdvancedFilters } from '@/constants/advanced-filters'
 
 type KanbanJob = z.infer<typeof schemas.KanbanJob>
 type JobCreateRequest = z.infer<typeof schemas.JobCreateRequest>
@@ -15,6 +15,8 @@ type FetchStatusValuesResponse = z.infer<typeof schemas.FetchStatusValuesRespons
 type AdvancedSearchResponse = z.infer<typeof schemas.AdvancedSearchResponse>
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 type PaginatedCompleteJobList = z.infer<typeof schemas.PaginatedCompleteJobList>
+type JobStatusUpdate = z.infer<typeof schemas.JobStatusUpdateRequest>
+type JobReorderPayload = z.infer<typeof schemas.JobReorderRequest>
 
 /**
  * Clean job service using ONLY Zodios API

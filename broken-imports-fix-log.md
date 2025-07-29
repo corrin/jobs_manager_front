@@ -2,14 +2,6 @@
 
 This log tracks the systematic fixing of 23 broken imports from the deleted `@/api/local/schemas` directory.
 
-## Progress Summary
-
-- **Total files to fix:** 23
-- **Files completed:** 7
-- **Files remaining:** 12
-- **Frontend constants created:** 6
-- **Frontend utilities created:** 1
-
 ## Changes Made
 
 #### File: `src/components/job/JobViewTabs.vue`
@@ -188,6 +180,43 @@ This log tracks the systematic fixing of 23 broken imports from the deleted `@/a
 - **Broken imports replaced:** `TimesheetEntryWithMeta`, `TimesheetEntryJobSelectionItem`, `TimesheetEntryStaffMember`
 - **Replacement strategy:** Created `src/constants/timesheet-calculations.ts` with UI constant; composable now imports from there.
 
+#### File: `src/services/clientService.ts`
+
+- **Status:** ✅ Fixed – Frontend utility
+- **Broken import:** `CreateClientResponse` from `@/api/local/schemas`
+- **Replacement:** Declared `CreateClientResponse` schema locally as a constant; uses generated `ClientSearchResult` for `client` field.
+- **Notes:** Wrapper is an UI convenience, does not belong in the backend.
+
+#### File: `src/services/job.service.ts`
+
+- **Status:** ✅ Fixed
+- **Broken imports replaced:**
+  - `AdvancedFilters` → `src/constants/advanced-filters.ts` (UI constant)
+  - `JobStatusUpdate` → `z.infer<typeof schemas.JobStatusUpdateRequest>`
+  - `JobReorderPayload` → `z.infer<typeof schemas.JobReorderRequest>`
+- **Notes:** All three imports now resolve without local-schema duplication; nothing remains broken.
+
+#### File: `src/services/kanban-categorization-service.ts`
+
+- **Status:** ✅ Fixed
+- **Broken imports:** `KanbanColumn` from `@/api/local/schemas`
+- **Replacement strategy:** Inlined `KanbanColumnSchema` and `export type KanbanColumn = z.infer<typeof KanbanColumnSchema>` on a new constant (Category A)
+- **Notes:** Fully related to UI (columnId, columnTitle etc.) so constant created accordingly.
+
+#### File: `src/services/quote-chat.service.ts`
+
+- **Status:** ✅ Fixed
+- **Broken imports:** `VueChatMessage` from `@/api/local/schemas`
+- **Replacement strategy:** Inlined `VueChatMessageSchema` and `export type VueChatMessage = z.infer<typeof VueChatMessageSchema>` as a new constant (Category A)
+- **Notes:** This message format is specific to the vue-advanced-chat component and is not part of the backend domain model.
+
+#### File: `src/views/TimesheetEntryView.vue`
+
+- **Status:** ✅ Fixed – Frontend constant
+- **Broken imports:** `TimesheetEntryWithMeta` from `@/api/local/schemas`
+- **Replacement strategy:** Imported `TimesheetEntryWithMeta` from new `src/constants/timesheet-calculations.ts`
+- **Notes:** UI-specific timesheet entry type now defined as a frontend constant, not a backend schema. All usages updated to import from the new constant.
+
 #### Analysis: Files Requiring Backend Coordination
 
 **Status:** ✅ COORDINATION COMPLETE - All uncertain types categorized
@@ -239,13 +268,6 @@ Following CLAUDE.md strict rules - cannot proceed with these types without backe
 - **Replacement strategy:** Replaced with `PreviewQuoteResponse`, `ApplyQuoteResponse` from `@/api/generated/api`
 - **Notes:** Backend coordination revealed old file upload quote import was deprecated. Updated to use new Google Sheets-based quote sync system with better architecture.
 
-#### File: `src/views/TimesheetEntryView.vue`
-
-- **Status:** ⏸️ Left broken - Architectural pressure maintained
-- **Broken imports:** `TimesheetEntryWithMeta` from `@/api/local/schemas`
-- **Replacement strategy:** N/A - Left broken to maintain architectural pressure
-- **Notes:** Complex component with extensive field name expectations. Rather than force backend field names into frontend, left broken to pressure backend for frontend-compatible schema.
-
 #### File: QuoteImportDialog.vue / useQuoteImport.ts
 
 - **Status:** ⏸️ Partially fixed – waiting backend to expose `can_proceed`, `validation_report`, `diff_preview` in generated schema/serializer.
@@ -262,6 +284,12 @@ Following CLAUDE.md strict rules - cannot proceed with these types without backe
 - **Status:** ⏸️ Left broken – backend schemas missing
 - **Broken imports:** `TypedWeeklyTimesheetData`, `IMSWeeklyData`
 - **Backend action:** See backend-schema-requirements.md (WeeklyTimesheetData, IMSWeeklyData)
+
+#### File: `src/composables/useXeroAuth.ts`
+
+- **Status:** ⏸️ Left broken – backend schema missing
+- **Broken import:** `XeroSseEvent`
+- **Backend action:** See backend-schema-requirements.md (require XeroSseEvent serializer)
 
 **Next Steps:**
 

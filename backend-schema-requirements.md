@@ -209,6 +209,31 @@ interface WeeklyTimesheetData {
 
 **Backend action needed:** Create `IMSWeeklyDataSerializer` and expose it in the OpenAPI schema.
 
+### XeroSseEvent
+
+**Required by:** `src/composables/useXeroAuth.ts`  
+**Justification:** Payload for Xero sync SSE (Server-Sent Events) stream
+
+**Properties needed:**
+
+```typescript
+interface XeroSseEvent {
+  datetime: string
+  message: string
+  severity?: 'info' | 'warning' | 'error'
+  entity?: string | null
+  overall_progress?: number
+  entity_progress?: number
+  records_updated?: number | null
+  status?: string | null
+  sync_status?: 'success' | 'error' | 'running'
+  error_messages?: string[]
+  missing_fields?: string[]
+}
+```
+
+**Backend action needed:** Expose serializer/TypedDict in the OpenAPI schema and in the SSE Stream.
+
 ## ❌ REMOVED - These are Frontend Constants (ARCHITECTURAL VIOLATION)
 
 The following were inappropriately requested as backend schemas when they should be frontend constants:

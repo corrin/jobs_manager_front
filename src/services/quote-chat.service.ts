@@ -4,7 +4,7 @@ import type {
   JobQuoteChatHistoryResponse,
   JobQuoteChatInteractionRequest,
 } from '@/api/generated/api'
-import type { VueChatMessage } from '@/api/local/schemas'
+import type { VueChatMessage } from '@/constants/vue-chat-message'
 import { debugLog } from '@/utils/debug'
 
 export class QuoteChatService {

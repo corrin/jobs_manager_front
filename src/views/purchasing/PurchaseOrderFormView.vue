@@ -146,7 +146,7 @@ import axios from 'axios'
 import type { PurchaseOrderLine, PurchaseOrderDetail, JobForPurchasing } from '@/api/generated/api'
 
 // Import UI-specific types from local schemas
-import type { XeroSyncResponse } from '@/api/local/schemas'
+// import type { XeroSyncResponse } from '@/api/local/schemas' // ❌ BROKEN - Backend needs this schema
 
 // Use the generated interface instead of local type
 type PurchaseOrder = PurchaseOrderDetail
