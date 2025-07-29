@@ -4,17 +4,12 @@ import { debugLog } from '../utils/debug'
 import type { z } from 'zod'
 import { jobService } from '@/services/job.service'
 import { useJobsStore } from '../stores/jobs'
-import type { TimesheetEntryWithMeta } from '@/constants/timesheet-calculations'
+import type { TimesheetEntryWithMeta, TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
 
 // Use the generated schemas
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 type CostLine = z.infer<typeof schemas.CostLine>
 type Staff = z.infer<typeof schemas.Staff>
-
-type TimesheetEntryJobSelectionItem = Pick<
-  z.infer<typeof schemas.Job>,
-  'id' | 'job_number' | 'name' | 'client_name' | 'status' | 'charge_out_rate'
->
 
 export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaults | null>) {
   const getRateMultiplier = (rateType: string): number => {

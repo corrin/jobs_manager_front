@@ -241,9 +241,8 @@
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
 import { computed, ref, watch } from 'vue'
-import axios from 'axios'
 import { toast } from 'vue-sonner'
-import { api, XeroOperationResponse, type Job } from '@/api/generated/api'
+import { api, type Job } from '@/api/generated/api'
 
 interface Props {
   jobData: Job | null
@@ -356,17 +355,14 @@ const createQuote = async () => {
 
   isCreatingQuote.value = true
   try {
-    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
-    // Xero integration endpoints are not yet available in the generated API
-    const response = await axios.post<XeroOperationResponse>(
-      `/api/xero/create_quote/${props.jobData.id}`,
-    )
-    if (!response.data.success) {
-      debugLog(response.data.error || 'Failed to create quote')
+    const response = await api.api_xero_create_quote_create(undefined, {
+      params: { job_id: props.jobData.id },
+    })
+    if (!response.success) {
+      debugLog(response.error || 'Failed to create quote')
       return
     }
     toast.success('Quote created successfully!')
-    // Reset quote deletion state since we created a new quote
     isQuoteDeleted.value = false
     emit('quote-created')
   } catch (err) {
@@ -405,17 +401,14 @@ const createInvoice = async () => {
 
   isCreatingInvoice.value = true
   try {
-    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
-    // Xero integration endpoints are not yet available in the generated API
-    const response = await axios.post<XeroOperationResponse>(
-      `/api/xero/create_invoice/${props.jobData.id}`,
-    )
-    if (!response.data.success) {
-      debugLog(response.data.error || 'Failed to create invoice')
+    const response = await api.api_xero_create_invoice_create(undefined, {
+      params: { job_id: props.jobData.id },
+    })
+    if (!response.success) {
+      debugLog(response.error || 'Failed to create invoice')
       return
     }
     toast.success('Invoice created successfully!')
-    // Reset invoice deletion state since we created a new invoice
     isInvoiceDeleted.value = false
     emit('invoice-created')
   } catch (err) {
@@ -437,19 +430,14 @@ const deleteQuoteOnXero = async () => {
 
   isDeletingQuote.value = true
   try {
-    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
-    // Xero integration endpoints are not yet available in the generated API
-    const response = await axios.delete<XeroOperationResponse>(
-      `/api/xero/delete_quote/${props.jobData.id}`,
-    )
-    if (!response.data.success) {
-      debugLog(response.data.error || 'Failed to delete quote')
+    const response = await api.api_xero_delete_quote_destroy(undefined, {
+      params: { job_id: props.jobData.id },
+    })
+    if (!response.success) {
+      debugLog(response.error || 'Failed to delete quote')
       return
     }
-
-    // Set local reactive state to immediately hide quote data
     isQuoteDeleted.value = true
-
     toast.success('Quote deleted successfully!')
     emit('quote-deleted')
   } catch (err) {
@@ -471,19 +459,14 @@ const deleteInvoiceOnXero = async () => {
 
   isDeletingInvoice.value = true
   try {
-    // TODO: This endpoint needs to be added to the OpenAPI spec to use Zodios
-    // Xero integration endpoints are not yet available in the generated API
-    const response = await axios.delete<XeroOperationResponse>(
-      `/api/xero/delete_invoice/${props.jobData.id}`,
-    )
-    if (!response.data.success) {
-      debugLog(response.data.error || 'Failed to delete invoice')
+    const response = await api.api_xero_delete_invoice_destroy(undefined, {
+      params: { job_id: props.jobData.id },
+    })
+    if (!response.success) {
+      debugLog(response.error || 'Failed to delete invoice')
       return
     }
-
-    // Set local reactive state to immediately hide invoice data
     isInvoiceDeleted.value = true
-
     toast.success('Invoice deleted successfully!')
     emit('invoice-deleted')
   } catch (err) {

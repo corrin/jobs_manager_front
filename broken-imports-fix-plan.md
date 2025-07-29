@@ -87,18 +87,17 @@ For each file, determine if the import is:
 
 #### ❌ CATEGORY C: Missing Backend Schemas (LEAVE BROKEN)
 
-- [ ] `src/components/timesheet/JobMetricsModal.vue` — `JobMetrics`
-- [ ] `src/components/job/JobHistoryModal.vue` — `JobEvent`
-- [ ] `src/views/TimesheetEntryView.vue` — `TimesheetEntryWithMeta`
-- [ ] `src/views/purchasing/PurchaseOrderFormView.vue` — `XeroSyncResponse`
-- [ ] `src/components/QuoteImportDialog.vue` — `QuoteImportResponse`
-- [ ] `src/components/quote/QuoteImportPreview.vue` — `QuoteImportPreviewResponse`
+- [x]] `src/components/timesheet/JobMetricsModal.vue` — `JobMetrics`
+- [x]] `src/components/job/JobHistoryModal.vue` — `JobEvent`
+- [x] `src/views/TimesheetEntryView.vue` — `TimesheetEntryWithMeta`
+- [x] `src/views/purchasing/PurchaseOrderFormView.vue` — `XeroSyncResponse`
+- [x] `src/components/QuoteImportDialog.vue` — `QuoteImportResponse`
 - [ ] `src/components/job/JobCostAnalysisTab.vue` — `CostSetSummary`
-- [ ] `src/services/quote-chat.service.ts` — `VueChatMessage`
-- [ ] `src/composables/useQuoteImport.ts` — quote-related types
-- [ ] `src/components/job/JobFinancialTab` — `JobWithFinancialData`, `XeroSyncResponseSchema`
-- [ ] `src/components/timesheet/WeeklyMetricsModal.vue` – `TypedWeeklyTimesheetData`, `IMSWeeklyData`
-- [ ] `src/composables/useXeroAuth.ts` — `XeroSseEvent`
+- [x] `src/services/quote-chat.service.ts` — `VueChatMessage`
+- [x] `src/composables/useQuoteImport.ts` — quote-related types
+- [x] `src/components/job/JobFinancialTab` — `JobWithFinancialData`, `XeroSyncResponseSchema`
+- [x] `src/components/timesheet/WeeklyMetricsModal.vue` – `TypedWeeklyTimesheetData`, `IMSWeeklyData`
+- [x] `src/composables/useXeroAuth.ts` — `XeroSseEvent`
 
 ---
 

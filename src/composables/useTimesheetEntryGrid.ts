@@ -1,14 +1,8 @@
 import { ref, computed, nextTick, type Ref } from 'vue'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-// ❌ BROKEN IMPORTS - Backend needs these schemas:
-// import type {
-//   TimesheetEntryJobSelectionItem,
-//   TimesheetEntryStaffMember,
-// } from '@/utils/timesheet-types'
 
 // Using generated schemas where possible
-type TimesheetEntryJobSelectionItem = z.infer<typeof schemas.Job>
 type TimesheetEntryStaffMember = z.infer<typeof schemas.Staff>
 import type {
   GridApi,
@@ -23,6 +17,7 @@ import type {
 import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
+import { TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
 
 type TimesheetEntryGridRowWithSaving = z.infer<typeof schemas.TimesheetCostLine> & {
   isSaving?: boolean

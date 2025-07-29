@@ -15,7 +15,6 @@ export function useQuoteImport() {
   const currentQuote = ref<QuoteImportStatusResponse | null>(null)
   const error = ref<string | null>(null)
 
-  // TODO: The can_proceed flag is not yet part of the generated schema, so we MUST adapt the serializer to include it. This comes from quote_sync_serializer.py, specifically the PreviewQuoteResponseSerializer.
   const canProceed = computed(() => {
     return previewData.value?.preview?.can_proceed === true
   })
