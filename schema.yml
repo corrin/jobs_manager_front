@@ -949,6 +949,210 @@ paths:
               schema:
                 $ref: '#/components/schemas/AppError'
           description: ''
+  /api/xero/create_invoice/{job_id}:
+    post:
+      operationId: api_xero_create_invoice_create
+      description: Creates an invoice in Xero for the specified job
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+  /api/xero/create_purchase_order/{purchase_order_id}:
+    post:
+      operationId: api_xero_create_purchase_order_create
+      description: Creates a purchase order in Xero for the specified purchase order
+      parameters:
+        - in: path
+          name: purchase_order_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+  /api/xero/create_quote/{job_id}:
+    post:
+      operationId: api_xero_create_quote_create
+      description: Creates a quote in Xero for the specified job
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+  /api/xero/delete_invoice/{job_id}:
+    delete:
+      operationId: api_xero_delete_invoice_destroy
+      description: Deletes an invoice in Xero for the specified job
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+  /api/xero/delete_purchase_order/{purchase_order_id}:
+    delete:
+      operationId: api_xero_delete_purchase_order_destroy
+      description: Deletes a purchase order in Xero for the specified purchase order
+      parameters:
+        - in: path
+          name: purchase_order_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+  /api/xero/delete_quote/{job_id}:
+    delete:
+      operationId: api_xero_delete_quote_destroy
+      description: Deletes a quote in Xero for the specified job
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroOperationResponse'
+          description: ''
   /app-errors/:
     get:
       operationId: app_errors_list
@@ -2102,7 +2306,7 @@ paths:
   /job/rest/jobs/{job_id}/:
     get:
       operationId: job_rest_jobs_retrieve
-      description: Fetch complete Job data for editing.
+      description: Fetch complete job data including financial information
       parameters:
         - in: path
           name: job_id
@@ -7965,6 +8169,20 @@ components:
           type: integer
       required:
         - items
+    XeroOperationResponse:
+      type: object
+      description: Serializer for Xero operation responses (create/delete).
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+        messages:
+          type: array
+          items:
+            type: string
+      required:
+        - success
   securitySchemes:
     cookieAuth:
       type: apiKey

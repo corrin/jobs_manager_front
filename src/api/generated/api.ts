@@ -401,6 +401,13 @@ const PaginatedAppErrorList = z
     results: z.array(AppError),
   })
   .passthrough()
+const XeroOperationResponse = z
+  .object({
+    success: z.boolean(),
+    error: z.string().optional(),
+    messages: z.array(z.string()).optional(),
+  })
+  .passthrough()
 const ClientContactResult = z
   .object({
     id: z.string(),
@@ -1354,6 +1361,7 @@ export const schemas = {
   PatchedAIProviderCreateUpdate,
   AppError,
   PaginatedAppErrorList,
+  XeroOperationResponse,
   ClientContactResult,
   ClientContactsResponse,
   ClientListResponse,
@@ -2124,6 +2132,156 @@ Endpoints:
       },
     ],
     response: AppError,
+  },
+  {
+    method: 'post',
+    path: '/api/xero/create_invoice/:job_id',
+    alias: 'api_xero_create_invoice_create',
+    description: `Creates an invoice in Xero for the specified job`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: XeroOperationResponse,
+    errors: [
+      {
+        status: 404,
+        schema: XeroOperationResponse,
+      },
+      {
+        status: 500,
+        schema: XeroOperationResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/api/xero/create_purchase_order/:purchase_order_id',
+    alias: 'api_xero_create_purchase_order_create',
+    description: `Creates a purchase order in Xero for the specified purchase order`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'purchase_order_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: XeroOperationResponse,
+    errors: [
+      {
+        status: 404,
+        schema: XeroOperationResponse,
+      },
+      {
+        status: 500,
+        schema: XeroOperationResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/api/xero/create_quote/:job_id',
+    alias: 'api_xero_create_quote_create',
+    description: `Creates a quote in Xero for the specified job`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: XeroOperationResponse,
+    errors: [
+      {
+        status: 404,
+        schema: XeroOperationResponse,
+      },
+      {
+        status: 500,
+        schema: XeroOperationResponse,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/api/xero/delete_invoice/:job_id',
+    alias: 'api_xero_delete_invoice_destroy',
+    description: `Deletes an invoice in Xero for the specified job`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: XeroOperationResponse,
+    errors: [
+      {
+        status: 404,
+        schema: XeroOperationResponse,
+      },
+      {
+        status: 500,
+        schema: XeroOperationResponse,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/api/xero/delete_purchase_order/:purchase_order_id',
+    alias: 'api_xero_delete_purchase_order_destroy',
+    description: `Deletes a purchase order in Xero for the specified purchase order`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'purchase_order_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: XeroOperationResponse,
+    errors: [
+      {
+        status: 404,
+        schema: XeroOperationResponse,
+      },
+      {
+        status: 500,
+        schema: XeroOperationResponse,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/api/xero/delete_quote/:job_id',
+    alias: 'api_xero_delete_quote_destroy',
+    description: `Deletes a quote in Xero for the specified job`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: XeroOperationResponse,
+    errors: [
+      {
+        status: 404,
+        schema: XeroOperationResponse,
+      },
+      {
+        status: 500,
+        schema: XeroOperationResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -2977,7 +3135,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/:job_id/',
     alias: 'job_rest_jobs_retrieve',
-    description: `Fetch complete Job data for editing.`,
+    description: `Fetch complete job data including financial information`,
     requestFormat: 'json',
     parameters: [
       {
