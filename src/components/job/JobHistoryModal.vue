@@ -94,7 +94,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-// import type { JobEvent } from '@/api/local/schemas' // ❌ BROKEN - Backend needs this schema
+import { z } from 'zod'
+import { schemas } from '@/api/generated/api'
+
+type JobEvent = z.infer<typeof schemas.JobEvent>
 
 interface Props {
   jobId: string

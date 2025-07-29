@@ -5359,6 +5359,28 @@ components:
         - quoted
         - shop_job
         - updated_at
+    JobEvent:
+      type: object
+      description: Serializer for job event data
+      properties:
+        id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        event_type:
+          type: string
+        description:
+          type: string
+        staff:
+          type: string
+        required:
+          - id
+          - timestamp
+          - event_type
+          - description
+          - staff
     JobAgingFinancialData:
       type: object
       description: Serialiser for job aging financial data
@@ -5508,9 +5530,44 @@ components:
           type: boolean
           default: true
         data:
-          $ref: '#/components/schemas/Job'
+          $ref: '#/components/schemas/JobData'
       required:
         - data
+    JobData:
+      type: object
+      description: Wrapper serializer for full job data (JobSerializer, JobEventSerializer and company defaults combined)
+      properties:
+      job:
+        $ref: '#/components/schemas/Job'
+      events:
+        type: array
+        items:
+        $ref: '#/components/schemas/JobEvent'
+      company_defaults:
+        type: object
+        description: Company default settings for jobs
+        properties:
+        materials_markup:
+          type: number
+          format: float
+          description: Default materials markup percentage
+        time_markup:
+          type: number
+          format: float
+          description: Default time markup percentage
+        charge_out_rate:
+          type: number
+          format: float
+          description: Default charge out rate
+        wage_rate:
+          type: number
+          format: float
+          description: Default wage rate
+        required:
+          - materials_markup
+          - time_markup
+          - charge_out_rate
+          - wage_rate
     JobEventCreateRequest:
       type: object
       description: Serializer for job event creation request

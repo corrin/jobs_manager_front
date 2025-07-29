@@ -759,8 +759,31 @@ const Job = z
     shop_job: z.boolean(),
   })
   .passthrough()
+const JobEvent = z
+  .object({
+    id: z.string().uuid(),
+    timestamp: z.string().datetime({ offset: true }),
+    event_type: z.string(),
+    description: z.string(),
+    staff: z.string(),
+  })
+  .passthrough()
+
+const JobData = z
+  .object({
+    job: Job,
+    events: z.array(JobEvent),
+    company_defaults: z.object({
+      materials_markup: z.number(),
+      time_markup: z.number(),
+      charge_out_rate: z.number(),
+      wage_rate: z.number(),
+    }),
+  })
+  .passthrough()
+
 const JobDetailResponse = z
-  .object({ success: z.boolean().optional().default(true), data: Job })
+  .object({ success: z.boolean().optional().default(true), data: JobData })
   .passthrough()
 const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
 const QuoteImportStatusResponse = z
@@ -1407,6 +1430,8 @@ export const schemas = {
   PricingMethodologyEnum,
   QuoteSpreadsheet,
   Job,
+  JobEvent,
+  JobData,
   JobDetailResponse,
   JobEventCreateRequest,
   QuoteImportStatusResponse,

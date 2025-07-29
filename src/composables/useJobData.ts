@@ -2,12 +2,17 @@ import { ref, computed } from 'vue'
 import type { Ref } from 'vue'
 import { useJobsStore } from '../stores/jobs'
 import { debugLog } from '../utils/debug'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
+
+type JobEvent = z.infer<typeof schemas.JobEvent>
+type JobData = z.infer<typeof schemas.JobData>
 
 export function useJobData(jobId: string | Ref<string | null>) {
   const jobsStore = useJobsStore()
   const loading = ref(false)
   const error = ref<string | null>(null)
-  const jobEvents = ref<Record<string, unknown>[]>([])
+  const jobEvents = ref<JobEvent[]>([])
 
   const jobData = computed(() => {
     const id = typeof jobId === 'string' ? jobId : jobId.value
@@ -23,10 +28,7 @@ export function useJobData(jobId: string | Ref<string | null>) {
         throw new Error('Job ID is required')
       }
 
-      const data = (await jobsStore.fetchJob(id)) as {
-        job?: unknown
-        events?: Record<string, unknown>[]
-      }
+      const data = (await jobsStore.fetchJob(id)) as JobData
       debugLog('[useJobData] fetchJob result:', data)
 
       if (data && data.job) {
