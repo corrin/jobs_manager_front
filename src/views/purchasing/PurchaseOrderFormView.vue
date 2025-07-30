@@ -140,13 +140,9 @@ import { useXeroItemStore } from '@/stores/xeroItemStore'
 import { extractErrorMessage, createErrorToast } from '@/utils/errorHandler'
 import { toast } from 'vue-sonner'
 import { api } from '@/api/generated/api'
-import axios from 'axios'
 
 // Import types from generated API schemas
 import type { PurchaseOrderLine, PurchaseOrderDetail, JobForPurchasing } from '@/api/generated/api'
-
-// Import UI-specific types from local schemas
-// import type { XeroSyncResponse } from '@/api/local/schemas' // ❌ BROKEN - Backend needs this schema
 
 // Use the generated interface instead of local type
 type PurchaseOrder = PurchaseOrderDetail
@@ -623,27 +619,28 @@ async function syncWithXero() {
   toast.info('Syncing with Xero…', { id: 'po-sync-loading' })
 
   try {
-    // TODO: Replace with Zodios endpoint when available in schema
-    // This endpoint is not yet in the generated schema
-    const { data } = await axios.post<XeroSyncResponse>(
-      `/api/xero/create_purchase_order/${orderId}`,
-    )
+    const data = await api.api_xero_create_purchase_order_create({
+      params: { purchase_order_id: orderId },
+    })
 
     switch (true) {
       case data.success:
         if (data.online_url) po.value.online_url = data.online_url
         if (data.xero_id) po.value.xero_id = data.xero_id
         toast.dismiss('po-sync-loading')
-        toast.success('Synced with Xero successfully!')
+        toast.success('Purchase Order synced with Xero successfully')
+        debugLog('✅ Xero sync successful:', data)
         break
-      case 'is_incomplete_po' in data &&
-        (data as XeroSyncResponse & { is_incomplete_po?: boolean }).is_incomplete_po:
+      case data.error:
         toast.dismiss('po-sync-loading')
-        toast.warning(data.error || 'Purchase order incomplete - missing required fields')
+        const errorMessage = extractErrorMessage(data.error, 'Xero sync failed')
+        toast.error(`Xero sync failed: ${errorMessage}`, createErrorToast())
+        debugLog('❌ Xero sync error:', data.error)
         break
       default:
         toast.dismiss('po-sync-loading')
-        throw new Error(data.error || 'Unknown sync error')
+        toast.error('Xero sync failed: Unknown response format', createErrorToast())
+        debugLog('❓ Xero sync unexpected response:', data)
     }
   } catch (err: unknown) {
     toast.dismiss('po-sync-loading')

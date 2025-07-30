@@ -4110,16 +4110,29 @@ paths:
             - Weekly totals and metrics
             - Job statistics
             - Summary statistics
+      parameters:
+        - in: query
+          name: export_to_ims
+          schema:
+            type: boolean
+          description: Export data in IMS format for integration with IMS systems. Defaults
+            to false.
       tags:
         - timesheets
       security:
         - cookieAuth: []
       responses:
-        '200':
+        application/json:
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/WeeklyTimesheetData'
+          description: ''
+        application/json; ?export_to_ims=true:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IMSWeeklyTimesheetData'
           description: ''
     post:
       operationId: timesheets_api_weekly_create
@@ -5045,6 +5058,28 @@ components:
       required:
         - allocations
         - purchase_order_id
+    DiffPreview:
+      type: object
+      description: Serializer for a summary of changes in a quote sync.
+      properties:
+        additions_count:
+          type: integer
+        updates_count:
+          type: integer
+        deletions_count:
+          type: integer
+        total_changes:
+          type: integer
+        next_revision:
+          type: integer
+        current_revision:
+          type: integer
+          nullable: true
+      required:
+        - additions_count
+        - deletions_count
+        - total_changes
+        - updates_count
     DjangoJob:
       type: object
       properties:
@@ -5226,6 +5261,170 @@ components:
             type: string
         error:
           type: string
+    IMSWeeklyStaffData:
+      type: object
+      description: Serializer for staff data in IMS weekly timesheet context
+      properties:
+        staff_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        weekly_hours:
+          type: array
+          items:
+            $ref: '#/components/schemas/IMSWeeklyStaffDataWeeklyHours'
+        total_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total_billable_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        billable_percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        status:
+          type: string
+        total_standard_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total_time_and_half_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total_double_time_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total_overtime:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+      required:
+        - billable_percentage
+        - name
+        - staff_id
+        - status
+        - total_billable_hours
+        - total_double_time_hours
+        - total_hours
+        - total_overtime
+        - total_standard_hours
+        - total_time_and_half_hours
+        - weekly_hours
+    IMSWeeklyStaffDataWeeklyHours:
+      type: object
+      description: Serializer for weekly hours data of staff in IMS context
+      properties:
+        day:
+          type: string
+        hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        billable_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        scheduled_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        status:
+          type: string
+        leave_type:
+          type: string
+        has_leave:
+          type: boolean
+          default: false
+        standard_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        time_and_half_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        double_time_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        unpaid_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        overtime:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        leave_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+      required:
+        - billable_hours
+        - day
+        - double_time_hours
+        - hours
+        - leave_hours
+        - overtime
+        - scheduled_hours
+        - standard_hours
+        - status
+        - time_and_half_hours
+        - unpaid_hours
+    IMSWeeklyTimesheetData:
+      type: object
+      description: |-
+        Same structure of WeeklyTimesheetDataSerializer but for IMS context
+        (substitutes staff_data for the IMS-specific serializer above)
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        week_days:
+          type: array
+          items:
+            type: string
+            format: date
+        week_start:
+          type: string
+        staff_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/IMSWeeklyStaffData'
+        weekly_summary:
+          $ref: '#/components/schemas/WeeklySummary'
+        job_metrics:
+          $ref: '#/components/schemas/JobMetrics'
+        summary_stats:
+          type: object
+          additionalProperties: {}
+        export_mode:
+          type: string
+        is_current_week:
+          type: boolean
+        navigation:
+          type: object
+          additionalProperties: {}
+      required:
+        - end_date
+        - export_mode
+        - is_current_week
+        - job_metrics
+        - staff_data
+        - start_date
+        - summary_stats
+        - week_days
+        - week_start
+        - weekly_summary
     Job:
       type: object
       properties:
@@ -5359,6 +5558,28 @@ components:
         - quoted
         - shop_job
         - updated_at
+    JobEvent:
+      type: object
+      description: Serializer for job event data
+      properties:
+        id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        event_type:
+          type: string
+        description:
+          type: string
+        staff:
+          type: string
+        required:
+          - id
+          - timestamp
+          - event_type
+          - description
+          - staff
     JobAgingFinancialData:
       type: object
       description: Serialiser for job aging financial data
@@ -5508,9 +5729,44 @@ components:
           type: boolean
           default: true
         data:
-          $ref: '#/components/schemas/Job'
+          $ref: '#/components/schemas/JobData'
       required:
         - data
+    JobData:
+      type: object
+      description: Wrapper serializer for full job data (JobSerializer, JobEventSerializer and company defaults combined)
+      properties:
+      job:
+        $ref: '#/components/schemas/Job'
+      events:
+        type: array
+        items:
+        $ref: '#/components/schemas/JobEvent'
+      company_defaults:
+        type: object
+        description: Company default settings for jobs
+        properties:
+        materials_markup:
+          type: number
+          format: float
+          description: Default materials markup percentage
+        time_markup:
+          type: number
+          format: float
+          description: Default time markup percentage
+        charge_out_rate:
+          type: number
+          format: float
+          description: Default charge out rate
+        wage_rate:
+          type: number
+          format: float
+          description: Default wage rate
+        required:
+          - materials_markup
+          - time_markup
+          - charge_out_rate
+          - wage_rate
     JobEventCreateRequest:
       type: object
       description: Serializer for job event creation request
@@ -5658,6 +5914,26 @@ components:
         - job_display_name
         - job_number
         - name
+    JobMetrics:
+      type: object
+      description: Serializer for job metrics in weekly timesheet context
+      properties:
+        total_estimated_profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total_actual_profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total_profit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+      required:
+        - total_actual_profit
+        - total_estimated_profit
+        - total_profit
     JobQuoteChat:
       type: object
       description: |-
@@ -7027,6 +7303,17 @@ components:
           $ref: '#/components/schemas/QuoteChanges'
         message:
           type: string
+        can_proceed:
+          type: boolean
+          default: false
+        validation_report:
+          allOf:
+            - $ref: '#/components/schemas/ValidationReport'
+          nullable: true
+        diff_preview:
+          allOf:
+            - $ref: '#/components/schemas/DiffPreview'
+          nullable: true
     PricingMethodologyEnum:
       enum:
         - time_materials
@@ -7487,6 +7774,16 @@ components:
       description: |-
         * `user` - User
         * `assistant` - Assistant
+    SeverityEnum:
+      enum:
+        - info
+        - warning
+        - error
+      type: string
+      description: |-
+        * `info` - info
+        * `warning` - warning
+        * `error` - error
     Staff:
       type: object
       properties:
@@ -8014,6 +8311,67 @@ components:
         - last_name
         - preferred_name
         - username
+    ValidationReport:
+      type: object
+      description: Serializer for validation report data.
+      properties:
+        warnings:
+          type: array
+          items:
+            type: string
+        errors:
+          type: array
+          items:
+            type: string
+    WeeklyStaffData:
+      type: object
+      description: Serializer for staff data in weekly timesheet context
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        weekly_hours:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeeklyStaffDataWeeklyHours'
+      required:
+        - id
+        - name
+        - weekly_hours
+    WeeklyStaffDataWeeklyHours:
+      type: object
+      description: Serializer for weekly hours data of staff
+      properties:
+        date:
+          type: string
+          format: date
+        hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+      required:
+        - date
+        - hours
+    WeeklySummary:
+      type: object
+      description: Serializer for weekly summary data
+      properties:
+        total_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        staff_count:
+          type: integer
+        billable_percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+      required:
+        - staff_count
+        - total_hours
     WeeklyTimesheetData:
       type: object
       description: Serializer for comprehensive weekly timesheet data
@@ -8029,15 +8387,16 @@ components:
           items:
             type: string
             format: date
+        week_start:
+          type: string
         staff_data:
           type: array
-          items: {}
+          items:
+            $ref: '#/components/schemas/WeeklyStaffData'
         weekly_summary:
-          type: object
-          additionalProperties: {}
+          $ref: '#/components/schemas/WeeklySummary'
         job_metrics:
-          type: object
-          additionalProperties: {}
+          $ref: '#/components/schemas/JobMetrics'
         summary_stats:
           type: object
           additionalProperties: {}
@@ -8057,6 +8416,7 @@ components:
         - start_date
         - summary_stats
         - week_days
+        - week_start
         - weekly_summary
     WorkshopPDFResponse:
       type: object
@@ -8181,8 +8541,65 @@ components:
           type: array
           items:
             type: string
+        online_url:
+          type: string
+          format: uri
+        xero_id:
+          type: string
+          format: uuid
       required:
         - success
+    XeroSseEvent:
+      type: object
+      description: Serializer for Xero SSE event data.
+      properties:
+        datetime:
+          type: string
+          format: date-time
+        message:
+          type: string
+        severity:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/SeverityEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        entity:
+          type: string
+          nullable: true
+        progress:
+          type: number
+          format: double
+          nullable: true
+        overall_progress:
+          type: number
+          format: double
+          nullable: true
+        entity_progress:
+          type: number
+          format: double
+          nullable: true
+        records_updated:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        sync_status:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/SyncStatusEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        error_messages:
+          type: array
+          items:
+            type: string
+        missing_fields:
+          type: array
+          items:
+            type: string
+      required:
+        - datetime
+        - message
   securitySchemes:
     cookieAuth:
       type: apiKey

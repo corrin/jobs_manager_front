@@ -1,10 +1,12 @@
 import { ref, computed, watch } from 'vue'
 import { useJobsStore } from '@/stores/jobs'
-import type { JobEvent } from '@/schemas/job.schemas'
 import { useJobData } from '@/composables/useJobData'
 import type { Ref } from 'vue'
 import { debugLog } from '@/utils/debug'
-import { api } from '../api/generated/api'
+import { api, schemas } from '../api/generated/api'
+import { z } from 'zod'
+
+type JobEvent = z.infer<typeof schemas.JobEvent>
 
 export function useJobEvents(jobId: string | Ref<string | null>) {
   const jobsStore = useJobsStore()
@@ -31,7 +33,6 @@ export function useJobEvents(jobId: string | Ref<string | null>) {
     }
   }
 
-  // Função para inicializar carregamento dos eventos
   async function initializeEvents() {
     const id = getJobId()
     if (id && (!dataEvents.value || dataEvents.value.length === 0)) {
@@ -49,7 +50,6 @@ export function useJobEvents(jobId: string | Ref<string | null>) {
     { immediate: true, deep: true },
   )
 
-  // Inicializar eventos na primeira execução
   watch(
     () => getJobId(),
     async (id) => {
@@ -83,7 +83,6 @@ export function useJobEvents(jobId: string | Ref<string | null>) {
       )
       debugLog('[useJobEvents] API response:', response)
       if (response.success) {
-        // Recarregar os dados do job para obter os eventos atualizados
         await loadJob()
         debugLog('[useJobEvents] Event added and job data reloaded.')
       } else {

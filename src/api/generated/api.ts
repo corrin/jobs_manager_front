@@ -406,6 +406,8 @@ const XeroOperationResponse = z
     success: z.boolean(),
     error: z.string().optional(),
     messages: z.array(z.string()).optional(),
+    online_url: z.string().url().optional(),
+    xero_id: z.string().uuid().optional(),
   })
   .passthrough()
 const ClientContactResult = z
@@ -759,8 +761,31 @@ const Job = z
     shop_job: z.boolean(),
   })
   .passthrough()
+const JobEvent = z
+  .object({
+    id: z.string().uuid(),
+    timestamp: z.string().datetime({ offset: true }),
+    event_type: z.string(),
+    description: z.string(),
+    staff: z.string(),
+  })
+  .passthrough()
+
+const JobData = z
+  .object({
+    job: Job,
+    events: z.array(JobEvent),
+    company_defaults: z.object({
+      materials_markup: z.number(),
+      time_markup: z.number(),
+      charge_out_rate: z.number(),
+      wage_rate: z.number(),
+    }),
+  })
+  .passthrough()
+
 const JobDetailResponse = z
-  .object({ success: z.boolean().optional().default(true), data: Job })
+  .object({ success: z.boolean().optional().default(true), data: JobData })
   .passthrough()
 const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
 const QuoteImportStatusResponse = z
@@ -802,13 +827,31 @@ const ApplyQuoteResponse = z
   })
   .passthrough()
 const LinkQuoteSheetRequest = z.object({ template_url: z.string().url() }).partial().passthrough()
-// This might return other fields as per quote_sync_serializer and quote_sync_service. Perhaps add the fields here as optional/nullable?
+const ValidationReport = z
+  .object({
+    warnings: z.array(z.string()).optional(),
+    errors: z.array(z.string()).optional(),
+  })
+  .passthrough()
+const DiffPreview = z
+  .object({
+    additions_count: z.number().int(),
+    updates_count: z.number().int(),
+    deletions_count: z.number().int(),
+    total_changes: z.number().int(),
+    next_revision: z.number().int(),
+    current_revision: z.number().int(),
+  })
+  .passthrough()
 const PreviewQuoteResponse = z
   .object({
     success: z.boolean(),
     draft_lines: z.array(DraftLine),
     changes: QuoteChanges,
     message: z.string(),
+    can_proceed: z.boolean().optional(),
+    validation_report: ValidationReport.optional().nullable(),
+    diff_preview: DiffPreview.optional().nullable(),
   })
   .partial()
   .passthrough()
@@ -1292,14 +1335,92 @@ const ModernStaff = z
 const StaffListResponse = z
   .object({ staff: z.array(ModernStaff), total_count: z.number().int() })
   .passthrough()
+const WeeklyStaffDataWeeklyHours = z.object({
+  date: z.date(),
+  hours: z.number(),
+})
+const WeeklyStaffData = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
+})
+const WeeklySummary = z.object({
+  total_hours: z.number(),
+  staff_count: z.number().int(),
+  billable_percentage: z.number(),
+})
+const JobMetrics = z.object({
+  total_estimated_profit: z.number(),
+  total_actual_profit: z.number(),
+  total_profit: z.number(),
+})
 const WeeklyTimesheetData = z
   .object({
     start_date: z.string(),
     end_date: z.string(),
     week_days: z.array(z.string()),
-    staff_data: z.array(z.unknown()),
-    weekly_summary: z.object({}).partial().passthrough(),
-    job_metrics: z.object({}).partial().passthrough(),
+    staff_data: z.array(WeeklyStaffData),
+    week_start: z.string(),
+    weekly_summary: WeeklySummary,
+    job_metrics: JobMetrics,
+    summary_stats: z.object({}).partial().passthrough(),
+    export_mode: z.string(),
+    is_current_week: z.boolean(),
+    navigation: z.object({}).partial().passthrough().optional(),
+  })
+  .passthrough()
+const WeeklyMetrics = z.array(
+  z
+    .object({
+      job_id: z.string().uuid(),
+      name: z.string(),
+      client: z.string().nullable(),
+      description: z.string().nullable(),
+      status: z.string(),
+      people: z.array(z.object({}).passthrough()),
+      estimated_hours: z.number(),
+      actual_hours: z.number(),
+      profit: z.number(),
+    })
+    .passthrough(),
+)
+const IMSWeeklyStaffDataWeeklyHours = z.object({
+  day: z.string(),
+  hours: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
+  billable_hours: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
+  scheduled_hours: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
+  status: z.string(),
+  leave_type: z.string().optional(),
+  has_leave: z.boolean().optional(),
+  standard_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+  time_and_half_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+  double_time_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+  unpaid_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+  overtime: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+  leave_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+})
+const IMSWeeklyStaffData = z.object({
+  staff_id: z.string().uuid(),
+  name: z.string(),
+  weekly_hours: z.array(IMSWeeklyStaffDataWeeklyHours),
+  total_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+  total_billable_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+  billable_percentage: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
+  status: z.string(),
+  total_standard_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+  total_time_and_half_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+  total_double_time_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+  total_overtime: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
+})
+const IMSWeeklyTimesheetData = z
+  .object({
+    start_date: z.string(),
+    end_date: z.string(),
+    week_days: z.array(z.string()),
+    staff_data: z.array(IMSWeeklyStaffData),
+    week_start: z.string(),
+    weekly_summary: WeeklySummary,
+    job_metrics: JobMetrics,
     summary_stats: z.object({}).partial().passthrough(),
     export_mode: z.string(),
     is_current_week: z.boolean(),
@@ -1332,6 +1453,25 @@ const PaginatedXeroErrorList = z
     next: z.string().url().nullish(),
     previous: z.string().url().nullish(),
     results: z.array(XeroError),
+  })
+  .passthrough()
+const SeverityEnum = z.enum(['info', 'warning', 'error'])
+const SyncStatusEnum = z.enum(['success', 'error', 'running'])
+
+const XeroSseEvent = z
+  .object({
+    datetime: z.string().datetime({ offset: true }),
+    message: z.string(),
+    severity: SeverityEnum.optional().nullable(),
+    entity: z.string().optional().nullable(),
+    progress: z.number().optional().nullable(),
+    overall_progress: z.number().optional().nullable(),
+    entity_progress: z.number().optional().nullable(),
+    records_updated: z.number().int().optional().nullable(),
+    status: z.string().optional().nullable(),
+    sync_status: SyncStatusEnum.optional().nullable(),
+    error_messages: z.array(z.string()).optional(),
+    missing_fields: z.array(z.string()).optional(),
   })
   .passthrough()
 
@@ -1407,6 +1547,8 @@ export const schemas = {
   PricingMethodologyEnum,
   QuoteSpreadsheet,
   Job,
+  JobEvent,
+  JobData,
   JobDetailResponse,
   JobEventCreateRequest,
   QuoteImportStatusResponse,
@@ -1473,8 +1615,13 @@ export const schemas = {
   ModernStaff,
   StaffListResponse,
   WeeklyTimesheetData,
+  WeeklyMetrics,
+  IMSWeeklyStaffDataWeeklyHours,
+  IMSWeeklyStaffData,
+  IMSWeeklyTimesheetData,
   XeroError,
   PaginatedXeroErrorList,
+  XeroSseEvent,
 }
 
 const endpoints = makeApi([
@@ -3645,7 +3792,7 @@ and creates JobFile database records with proper file metadata.`,
     alias: 'job_rest_jobs_weekly_metrics_retrieve',
     description: `Fetch weekly metrics data.`,
     requestFormat: 'json',
-    response: z.void(),
+    response: WeeklyMetrics,
   },
   {
     method: 'get',
@@ -4217,7 +4364,43 @@ Returns:
     - Job statistics
     - Summary statistics`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'start_date',
+        type: 'Query',
+        schema: z.string().optional(),
+        description: 'Start date of the week in YYYY-MM-DD format. Defaults to the current week.',
+      },
+      {
+        name: 'export_to_ims',
+        type: 'Query',
+        schema: z.boolean().optional(),
+        description:
+          'Export data in IMS format for integration with IMS systems. Defaults to false.',
+      },
+    ],
     response: WeeklyTimesheetData,
+  },
+  {
+    method: 'get',
+    path: '/timesheets/api/weekly/',
+    alias: 'timesheets_api_weekly_retrieve',
+    response: IMSWeeklyTimesheetData,
+    parameters: [
+      {
+        name: 'start_date',
+        type: 'Query',
+        schema: z.string().optional(),
+        description: 'Start date of the week in YYYY-MM-DD format. Defaults to the current week.',
+      },
+      {
+        name: 'export_to_ims',
+        type: 'Query',
+        schema: z.boolean().optional(),
+        description:
+          'Export data in IMS format for integration with IMS systems. Defaults to false.',
+      },
+    ],
   },
   {
     method: 'post',

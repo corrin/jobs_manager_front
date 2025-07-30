@@ -379,15 +379,16 @@ import Dialog from '../ui/dialog/Dialog.vue'
 import DialogContent from '../ui/dialog/DialogContent.vue'
 import DialogHeader from '../ui/dialog/DialogHeader.vue'
 import DialogTitle from '../ui/dialog/DialogTitle.vue'
-// import type { TypedWeeklyTimesheetData, IMSWeeklyData } from '../../api/local/schemas' // ❌ BROKEN - Backend needs these schemas
 import { api, schemas } from '../../api/generated/api'
 import { z } from 'zod'
 
 type WeeklyJobs = z.infer<typeof schemas.WeeklyMetrics>
+type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
+type IMSWeeklyTimesheetData = z.infer<typeof schemas.IMSWeeklyTimesheetData>
 
 interface Props {
   isOpen: boolean
-  weeklyData: TypedWeeklyTimesheetData | IMSWeeklyData | null
+  weeklyData: WeeklyTimesheetData | IMSWeeklyTimesheetData | null
   weekDate?: string // Week date in YYYY-MM-DD format
 }
 

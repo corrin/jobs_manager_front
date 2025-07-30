@@ -18,3 +18,8 @@ export const TimesheetEntryWithMetaSchema = schemas.TimesheetCostLine.extend({
 })
 
 export type TimesheetEntryWithMeta = z.infer<typeof TimesheetEntryWithMetaSchema>
+
+export type TimesheetEntryJobSelectionItem = Pick<
+  z.infer<typeof schemas.Job>,
+  'id' | 'job_number' | 'name' | 'client_name' | 'status' | 'charge_out_rate'
+>
