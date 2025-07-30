@@ -1,8 +1,12 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import type { NavigationItem, UserInfo } from '../api/local/schemas'
 import { debugLog } from '../utils/debug'
+import { NavigationItem } from '@/constants/navigation-item'
+import { z } from 'zod'
+import { schemas } from '../api/generated/api'
+
+type Staff = z.infer<typeof schemas.Staff>
 
 export function useAppLayout() {
   const router = useRouter()
@@ -21,8 +25,8 @@ export function useAppLayout() {
     },
   ]
 
-  const userInfo = computed((): UserInfo => {
-    const user = authStore.user
+  const userInfo = computed(() => {
+    const user = authStore.user as Staff | null
     if (!user) {
       return {
         displayName: 'Guest',

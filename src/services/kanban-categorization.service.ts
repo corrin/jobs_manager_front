@@ -18,7 +18,7 @@
 
 import { z } from 'zod'
 import { schemas } from '../api/generated/api'
-import type { KanbanColumn } from '../api/local/schemas'
+import type { KanbanColumn } from '@/constants/kanban-column'
 
 // Use generated Job type from Zodios API
 type Job = z.infer<typeof schemas.Job>

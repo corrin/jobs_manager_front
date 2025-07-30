@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import { schemas } from '../api/generated/api'
-import type { JobCardStatusConfig } from '../api/local/schemas'
+import type { JobCardStatusConfig } from '@/constants/job-card-status-config'
 import type { z } from 'zod'
 
 // Use KanbanJob for job card display

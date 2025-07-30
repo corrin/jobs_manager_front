@@ -243,7 +243,7 @@ import { debugLog } from '../../utils/debug'
 import { computed, ref, watch } from 'vue'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
-import { api, XeroOperationResponse, type Job } from '../../api/generated/api'
+import { api, XeroOperationResponse, type Job } from '@/api/generated/api'
 
 interface Props {
   jobData: Job | null

@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import type { JobDetailResponse } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
-import type { JobCacheEntry } from '../api/local/schemas'
+import type { JobCacheEntry } from '@/constants/job-cache'
 
 export function useJobCache() {
   const cache = ref<Map<string, JobCacheEntry>>(new Map())

@@ -1,6 +1,18 @@
 import type { ICellEditor, ICellEditorParams } from 'ag-grid-community'
 import { debugLog } from '@/utils/debug'
-import { type POJobSelectionItem } from '@/api/local/schemas'
+import { z } from 'zod'
+import { schemas } from '@/api/generated/schemas'
+
+/**
+ * This type represents a job selection item in the purchase order context.
+ * It includes essential job details required for the purchase order process, and only that, by using `Pick`.
+ * This ensures that we only include the fields necessary for the purchase order selection.
+ * It is FULLY based on the generated schema, so it will always be in sync with the backend.
+ */
+type POJobSelectionItem = Pick<
+  z.infer<typeof schemas.Job>,
+  'id' | 'job_number' | 'name' | 'client_name' | 'status' | 'charge_out_rate'
+>
 
 export class PurchaseOrderJobCellEditor implements ICellEditor {
   private value: string = ''

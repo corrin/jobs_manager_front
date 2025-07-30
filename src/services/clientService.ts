@@ -6,7 +6,7 @@ import { z } from 'zod'
 // Use generated schemas
 export type Client = z.infer<typeof schemas.ClientSearchResult>
 export type CreateClientData = z.infer<typeof schemas.ClientCreateRequest>
-import type { CreateClientResponse } from '../api/local/schemas'
+import type { CreateClientResponse } from '@/constants/client-wrapper'
 
 export class ClientService {
   private static instance: ClientService

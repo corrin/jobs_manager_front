@@ -379,7 +379,7 @@ import Dialog from '../ui/dialog/Dialog.vue'
 import DialogContent from '../ui/dialog/DialogContent.vue'
 import DialogHeader from '../ui/dialog/DialogHeader.vue'
 import DialogTitle from '../ui/dialog/DialogTitle.vue'
-import type { TypedWeeklyTimesheetData, IMSWeeklyData } from '../../api/local/schemas'
+// import type { TypedWeeklyTimesheetData, IMSWeeklyData } from '../../api/local/schemas' // ❌ BROKEN - Backend needs these schemas
 import { api, schemas } from '../../api/generated/api'
 import { z } from 'zod'
 

@@ -4,7 +4,7 @@ import axios from 'axios'
 import { getApiBaseUrl } from '../plugins/axios'
 import { toast } from 'vue-sonner'
 import { debugLog } from '../utils/debug'
-import { type XeroSseEvent } from '../api/local/schemas'
+// import { type XeroSseEvent } from '../api/local/schemas' // ❌ BROKEN - Backend schema missing
 
 export function useXeroAuth() {
   const router = useRouter()

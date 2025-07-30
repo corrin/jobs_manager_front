@@ -175,7 +175,7 @@ import { useKanban } from '@/composables/useKanban'
 import { useDragAndDrop } from '@/composables/useDragAndDrop'
 import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
-import type { AdvancedFilters } from '../api/local/schemas'
+import type { AdvancedFilters } from '@/constants/advanced-filters'
 
 const jobsStore = useJobsStore()
 

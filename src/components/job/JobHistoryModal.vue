@@ -94,7 +94,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import type { JobEvent } from '@/api/local/schemas'
+// import type { JobEvent } from '@/api/local/schemas' // ❌ BROKEN - Backend needs this schema
 
 interface Props {
   jobId: string

@@ -1,19 +1,21 @@
 import { ref, computed } from 'vue'
 import { quoteService } from '@/services/quote.service'
-import type {
-  QuoteImportPreviewResponse,
-  QuoteImportResponse,
-  QuoteStatusResponse,
-} from '@/api/local/schemas'
 import { debugLog } from '@/utils/debug'
+import { z } from 'zod'
+import { schemas } from '@/api/generated/schemas'
+
+type PreviewQuoteResponse = z.infer<typeof schemas.PreviewQuoteResponse>
+type ApplyQuoteResponse = z.infer<typeof schemas.ApplyQuoteResponse>
+type QuoteImportStatusResponse = z.infer<typeof schemas.QuoteImportStatusResponse>
 
 export function useQuoteImport() {
   const isLoading = ref(false)
-  const previewData = ref<QuoteImportPreviewResponse | null>(null)
-  const importResult = ref<QuoteImportResponse | null>(null)
-  const currentQuote = ref<QuoteStatusResponse | null>(null)
+  const previewData = ref<PreviewQuoteResponse | null>(null)
+  const importResult = ref<ApplyQuoteResponse | null>(null)
+  const currentQuote = ref<QuoteImportStatusResponse | null>(null)
   const error = ref<string | null>(null)
 
+  // TODO: The can_proceed flag is not yet part of the generated schema, so we MUST adapt the serializer to include it. This comes from quote_sync_serializer.py, specifically the PreviewQuoteResponseSerializer.
   const canProceed = computed(() => {
     return previewData.value?.preview?.can_proceed === true
   })

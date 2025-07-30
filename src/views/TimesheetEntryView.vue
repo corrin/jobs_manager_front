@@ -476,8 +476,7 @@ import * as costlineService from '@/services/costline.service'
 
 // Import types from generated API schemas
 import type { Job, Staff, TimesheetCostLine, CostLine } from '@/api/generated/api'
-// Import UI-specific types from local schemas
-import type { TimesheetEntryWithMeta } from '@/api/local/schemas'
+import type { TimesheetEntryWithMeta } from '@/constants/timesheet-calculations'
 
 const router = useRouter()
 const route = useRoute()

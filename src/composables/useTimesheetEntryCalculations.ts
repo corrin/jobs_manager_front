@@ -1,18 +1,20 @@
 import { type Ref } from 'vue'
 import { schemas } from '../api/generated/api'
-import type {
-  TimesheetEntryWithMeta,
-  TimesheetEntryJobSelectionItem,
-  TimesheetEntryStaffMember,
-} from '../api/local/schemas'
 import { debugLog } from '../utils/debug'
 import type { z } from 'zod'
 import { jobService } from '@/services/job.service'
 import { useJobsStore } from '../stores/jobs'
+import type { TimesheetEntryWithMeta } from '@/constants/timesheet-calculations'
 
 // Use the generated schemas
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 type CostLine = z.infer<typeof schemas.CostLine>
+type Staff = z.infer<typeof schemas.Staff>
+
+type TimesheetEntryJobSelectionItem = Pick<
+  z.infer<typeof schemas.Job>,
+  'id' | 'job_number' | 'name' | 'client_name' | 'status' | 'charge_out_rate'
+>
 
 export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaults | null>) {
   const getRateMultiplier = (rateType: string): number => {
@@ -54,20 +56,17 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     const result = {
       ...entry,
       job_id: job.id,
-      job_number: job.jobNumber,
-      client_name: job.client,
-      job_name: job.jobName,
-      charge_out_rate: job.chargeOutRate.toString(),
+      job_number: job.job_number,
+      client_name: job.client_name,
+      job_name: job.name,
+      charge_out_rate: job.charge_out_rate.toString(),
     }
 
     debugLog('✨ Populated job fields result:', result)
     return result
   }
 
-  const createNewRow = (
-    staffMember: TimesheetEntryStaffMember,
-    date: string,
-  ): TimesheetEntryWithMeta => {
+  const createNewRow = (staffMember: Staff, date: string): TimesheetEntryWithMeta => {
     const defaultWageRate = companyDefaults.value?.wage_rate || 32.0
     const defaultChargeOutRate = companyDefaults.value?.charge_out_rate || 105.0
 
