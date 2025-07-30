@@ -1,5 +1,15 @@
 import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
 import { z } from 'zod'
+import axios from 'axios'
+
+import '@/plugins/axios'
+
+function getApiBaseUrl() {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
+  }
+  return 'http://localhost:8000'
+}
 
 const KPIProfitBreakdown = z
   .object({ labor_profit: z.number(), material_profit: z.number(), adjustment_profit: z.number() })
@@ -236,7 +246,7 @@ const UserProfile = z
     email: z.string().email(),
     first_name: z.string(),
     last_name: z.string(),
-    preferred_name: z.string(),
+    preferred_name: z.string().nullish(),
     fullName: z.string(),
     is_active: z.boolean(),
     is_staff: z.boolean(),
@@ -420,9 +430,14 @@ const ClientContactResult = z
     is_primary: z.boolean(),
   })
   .passthrough()
-const ClientContactsResponse = z.object({ results: z.array(ClientContactResult) }).passthrough()
+const ClientContactsCreateResponse = z.object({
+  success: z.boolean(),
+  contact: ClientContactResult,
+  message: z.string(),
+}).passthrough()
+const ClientContactsResponse = z.object({ results: z.array(ClientContactResult) })
 const ClientListResponse = z.object({ id: z.string(), name: z.string() }).passthrough()
-const ClientContactCreateRequest = z
+const ClientContactsCreateRequest = z
   .object({
     client_id: z.string().uuid(),
     name: z.string().max(255),
@@ -679,6 +694,25 @@ const JobCreateRequest = z
     contact_id: z.string().uuid().nullish(),
   })
   .passthrough()
+const JobCreateResponse = z
+  .object({
+    success: z.boolean(),
+    job_id: z.string().uuid(),
+    job_number: z.string(),
+    message: z.string(),
+  })
+  .passthrough()
+const JobData = z.object({}).partial().passthrough()
+const JobDetailResponse = z
+  .object({ success: z.boolean().optional().default(true), data: JobData })
+  .passthrough()
+const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
+const JobDeleteResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string(),
+  })
+  .passthrough()
 const CostSetKindEnum = z.enum(['estimate', 'quote', 'actual'])
 const CostSetSummary = z
   .object({ cost: z.number(), rev: z.number(), hours: z.number(), profitMargin: z.number() })
@@ -716,78 +750,6 @@ const CostSet = z
     cost_lines: z.array(CostLine),
   })
   .passthrough()
-const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
-const QuoteSpreadsheet = z
-  .object({
-    id: z.string().uuid(),
-    sheet_id: z.string().max(100),
-    sheet_url: z.string().max(500).url().nullish(),
-    tab: z.string().max(100).nullish(),
-    job_id: z.string(),
-    job_number: z.string(),
-    job_name: z.string(),
-  })
-  .passthrough()
-const Job = z
-  .object({
-    id: z.string().uuid(),
-    name: z.string().max(100),
-    client_id: z.string().uuid(),
-    client_name: z.string(),
-    contact_id: z.string().uuid().nullish(),
-    contact_name: z.string(),
-    job_number: z.number().int().gte(-2147483648).lte(2147483647),
-    notes: z.string().nullish(),
-    order_number: z.string().max(100).nullish(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    description: z.string().nullish(),
-    latest_estimate: CostSet,
-    latest_quote: CostSet,
-    latest_actual: CostSet,
-    job_status: z.string(),
-    delivery_date: z.string().nullish(),
-    paid: z.boolean().optional(),
-    quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
-    job_is_valid: z.boolean().optional(),
-    job_files: z.array(JobFile).optional(),
-    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    pricing_methodology: PricingMethodologyEnum.optional(),
-    quote_sheet: QuoteSpreadsheet,
-    quoted: z.boolean(),
-    invoiced: z.boolean(),
-    quote: z.object({}).partial().passthrough().nullable(),
-    invoice: z.object({}).partial().passthrough().nullable(),
-    shop_job: z.boolean(),
-  })
-  .passthrough()
-const JobEvent = z
-  .object({
-    id: z.string().uuid(),
-    timestamp: z.string().datetime({ offset: true }),
-    event_type: z.string(),
-    description: z.string(),
-    staff: z.string(),
-  })
-  .passthrough()
-
-const JobData = z
-  .object({
-    job: Job,
-    events: z.array(JobEvent),
-    company_defaults: z.object({
-      materials_markup: z.number(),
-      time_markup: z.number(),
-      charge_out_rate: z.number(),
-      wage_rate: z.number(),
-    }),
-  })
-  .passthrough()
-
-const JobDetailResponse = z
-  .object({ success: z.boolean().optional().default(true), data: JobData })
-  .passthrough()
-const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
 const QuoteImportStatusResponse = z
   .object({
     job_id: z.string(),
@@ -828,10 +790,8 @@ const ApplyQuoteResponse = z
   .passthrough()
 const LinkQuoteSheetRequest = z.object({ template_url: z.string().url() }).partial().passthrough()
 const ValidationReport = z
-  .object({
-    warnings: z.array(z.string()).optional(),
-    errors: z.array(z.string()).optional(),
-  })
+  .object({ warnings: z.array(z.string()), errors: z.array(z.string()) })
+  .partial()
   .passthrough()
 const DiffPreview = z
   .object({
@@ -839,8 +799,8 @@ const DiffPreview = z
     updates_count: z.number().int(),
     deletions_count: z.number().int(),
     total_changes: z.number().int(),
-    next_revision: z.number().int(),
-    current_revision: z.number().int(),
+    next_revision: z.number().int().optional(),
+    current_revision: z.number().int().nullish(),
   })
   .passthrough()
 const PreviewQuoteResponse = z
@@ -849,9 +809,9 @@ const PreviewQuoteResponse = z
     draft_lines: z.array(DraftLine),
     changes: QuoteChanges,
     message: z.string(),
-    can_proceed: z.boolean().optional(),
-    validation_report: ValidationReport.optional().nullable(),
-    diff_preview: DiffPreview.optional().nullable(),
+    can_proceed: z.boolean().default(false),
+    validation_report: ValidationReport.nullable(),
+    diff_preview: DiffPreview.nullable(),
   })
   .partial()
   .passthrough()
@@ -922,6 +882,51 @@ const ModernTimesheetEntryPostResponse = z
     success: z.boolean(),
     cost_line_id: z.string().uuid().optional(),
     message: z.string().optional(),
+  })
+  .passthrough()
+const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
+const QuoteSpreadsheet = z
+  .object({
+    id: z.string().uuid(),
+    sheet_id: z.string().max(100),
+    sheet_url: z.string().max(500).url().nullish(),
+    tab: z.string().max(100).nullish(),
+    job_id: z.string(),
+    job_number: z.string(),
+    job_name: z.string(),
+  })
+  .passthrough()
+const Job = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string().max(100),
+    client_id: z.string().uuid(),
+    client_name: z.string(),
+    contact_id: z.string().uuid().nullish(),
+    contact_name: z.string(),
+    job_number: z.number().int().gte(-2147483648).lte(2147483647),
+    notes: z.string().nullish(),
+    order_number: z.string().max(100).nullish(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+    description: z.string().nullish(),
+    latest_estimate: CostSet,
+    latest_quote: CostSet,
+    latest_actual: CostSet,
+    job_status: z.string(),
+    delivery_date: z.string().nullish(),
+    paid: z.boolean().optional(),
+    quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
+    job_is_valid: z.boolean().optional(),
+    job_files: z.array(JobFile).optional(),
+    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    pricing_methodology: PricingMethodologyEnum.optional(),
+    quote_sheet: QuoteSpreadsheet,
+    quoted: z.boolean(),
+    invoiced: z.boolean(),
+    quote: z.object({}).partial().passthrough().nullable(),
+    invoice: z.object({}).partial().passthrough().nullable(),
+    shop_job: z.boolean(),
   })
   .passthrough()
 const ModernTimesheetJobGetResponse = z
@@ -1335,32 +1340,40 @@ const ModernStaff = z
 const StaffListResponse = z
   .object({ staff: z.array(ModernStaff), total_count: z.number().int() })
   .passthrough()
-const WeeklyStaffDataWeeklyHours = z.object({
-  date: z.date(),
-  hours: z.number(),
-})
-const WeeklyStaffData = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
-})
-const WeeklySummary = z.object({
-  total_hours: z.number(),
-  staff_count: z.number().int(),
-  billable_percentage: z.number(),
-})
-const JobMetrics = z.object({
-  total_estimated_profit: z.number(),
-  total_actual_profit: z.number(),
-  total_profit: z.number(),
-})
+const WeeklyStaffDataWeeklyHours = z
+  .object({ date: z.string(), hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/) })
+  .passthrough()
+const WeeklyStaffData = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
+  })
+  .passthrough()
+const WeeklySummary = z
+  .object({
+    total_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    staff_count: z.number().int(),
+    billable_percentage: z
+      .string()
+      .regex(/^-?\d{0,3}(?:\.\d{0,2})?$/)
+      .nullish(),
+  })
+  .passthrough()
+const JobMetrics = z
+  .object({
+    total_estimated_profit: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_actual_profit: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_profit: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
+  .passthrough()
 const WeeklyTimesheetData = z
   .object({
     start_date: z.string(),
     end_date: z.string(),
     week_days: z.array(z.string()),
-    staff_data: z.array(WeeklyStaffData),
     week_start: z.string(),
+    staff_data: z.array(WeeklyStaffData),
     weekly_summary: WeeklySummary,
     job_metrics: JobMetrics,
     summary_stats: z.object({}).partial().passthrough(),
@@ -1417,8 +1430,8 @@ const IMSWeeklyTimesheetData = z
     start_date: z.string(),
     end_date: z.string(),
     week_days: z.array(z.string()),
-    staff_data: z.array(IMSWeeklyStaffData),
     week_start: z.string(),
+    staff_data: z.array(IMSWeeklyStaffData),
     weekly_summary: WeeklySummary,
     job_metrics: JobMetrics,
     summary_stats: z.object({}).partial().passthrough(),
@@ -1455,21 +1468,31 @@ const PaginatedXeroErrorList = z
     results: z.array(XeroError),
   })
   .passthrough()
+const JobEvent = z
+  .object({
+    id: z.string().uuid(),
+    timestamp: z.string().datetime({ offset: true }),
+    event_type: z.string(),
+    description: z.string(),
+    staff: z.string(),
+    required: z.unknown(),
+  })
+  .partial()
+  .passthrough()
 const SeverityEnum = z.enum(['info', 'warning', 'error'])
 const SyncStatusEnum = z.enum(['success', 'error', 'running'])
-
 const XeroSseEvent = z
   .object({
     datetime: z.string().datetime({ offset: true }),
     message: z.string(),
-    severity: SeverityEnum.optional().nullable(),
-    entity: z.string().optional().nullable(),
-    progress: z.number().optional().nullable(),
-    overall_progress: z.number().optional().nullable(),
-    entity_progress: z.number().optional().nullable(),
-    records_updated: z.number().int().optional().nullable(),
-    status: z.string().optional().nullable(),
-    sync_status: SyncStatusEnum.optional().nullable(),
+    severity: z.union([SeverityEnum, NullEnum]).nullish(),
+    entity: z.string().nullish(),
+    progress: z.number().nullish(),
+    overall_progress: z.number().nullish(),
+    entity_progress: z.number().nullish(),
+    records_updated: z.number().int().nullish(),
+    status: z.string().nullish(),
+    sync_status: z.union([SyncStatusEnum, NullEnum]).nullish(),
     error_messages: z.array(z.string()).optional(),
     missing_fields: z.array(z.string()).optional(),
   })
@@ -1506,7 +1529,7 @@ export const schemas = {
   ClientContactResult,
   ClientContactsResponse,
   ClientListResponse,
-  ClientContactCreateRequest,
+  ClientContactsCreateRequest,
   ClientCreateRequest,
   ClientSearchResult,
   ClientSearchResponse,
@@ -1540,22 +1563,20 @@ export const schemas = {
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
   JobCreateRequest,
+  JobData,
+  JobDetailResponse,
+  JobEventCreateRequest,
   CostSetKindEnum,
   CostSetSummary,
   CostLine,
   CostSet,
-  PricingMethodologyEnum,
-  QuoteSpreadsheet,
-  Job,
-  JobEvent,
-  JobData,
-  JobDetailResponse,
-  JobEventCreateRequest,
   QuoteImportStatusResponse,
   DraftLine,
   QuoteChanges,
   ApplyQuoteResponse,
   LinkQuoteSheetRequest,
+  ValidationReport,
+  DiffPreview,
   PreviewQuoteResponse,
   JobFileThumbnailErrorResponse,
   JobFileUploadViewResponse,
@@ -1569,6 +1590,9 @@ export const schemas = {
   ModernTimesheetSummary,
   ModernTimesheetEntryGetResponse,
   ModernTimesheetEntryPostResponse,
+  PricingMethodologyEnum,
+  QuoteSpreadsheet,
+  Job,
   ModernTimesheetJobGetResponse,
   TimesheetCostLine,
   ModernTimesheetDayGetResponse,
@@ -1614,13 +1638,19 @@ export const schemas = {
   JobsListResponse,
   ModernStaff,
   StaffListResponse,
+  WeeklyStaffDataWeeklyHours,
+  WeeklyStaffData,
+  WeeklySummary,
+  JobMetrics,
   WeeklyTimesheetData,
-  WeeklyMetrics,
   IMSWeeklyStaffDataWeeklyHours,
   IMSWeeklyStaffData,
   IMSWeeklyTimesheetData,
   XeroError,
   PaginatedXeroErrorList,
+  JobEvent,
+  SeverityEnum,
+  SyncStatusEnum,
   XeroSseEvent,
 }
 
@@ -1813,7 +1843,11 @@ and sets JWT tokens as httpOnly cookies`,
         schema: CustomTokenObtainPair,
       },
     ],
-    response: CustomTokenObtainPair,
+    /**
+     * WARNING: the autogenerated schema defines CustomTokenObtainPair as the response schema,
+     * but this is incorrect. The response is actually an empty object.
+     */
+    response: z.object({}),
   },
   {
     method: 'post',
@@ -2547,10 +2581,10 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: ClientContactCreateRequest,
+        schema: ClientContactsCreateRequest,
       },
     ],
-    response: ClientContactCreateRequest,
+    response: ClientContactsCreateResponse,
   },
   {
     method: 'post',
@@ -2565,7 +2599,7 @@ Expected JSON:
         schema: ClientCreateRequest,
       },
     ],
-    response: ClientCreateRequest,
+    response: ClientContactsCreateResponse,
   },
   {
     method: 'get',
@@ -3184,7 +3218,7 @@ Expected JSON:
         schema: JobCreateRequest,
       },
     ],
-    response: JobCreateRequest,
+    response: JobCreateResponse,
   },
   {
     method: 'get',
@@ -3327,7 +3361,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: JobDeleteResponse,
   },
   {
     method: 'post',
@@ -4379,53 +4413,8 @@ Returns:
           'Export data in IMS format for integration with IMS systems. Defaults to false.',
       },
     ],
-    response: WeeklyTimesheetData,
-  },
-  {
-    method: 'get',
-    path: '/timesheets/api/weekly/',
-    alias: 'timesheets_api_weekly_retrieve',
-    response: IMSWeeklyTimesheetData,
-    parameters: [
-      {
-        name: 'start_date',
-        type: 'Query',
-        schema: z.string().optional(),
-        description: 'Start date of the week in YYYY-MM-DD format. Defaults to the current week.',
-      },
-      {
-        name: 'export_to_ims',
-        type: 'Query',
-        schema: z.boolean().optional(),
-        description:
-          'Export data in IMS format for integration with IMS systems. Defaults to false.',
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/timesheets/api/weekly/',
-    alias: 'timesheets_api_weekly_create',
-    description: `Submit paid absence request.
-
-Expected payload:
-{
-    &quot;staff_id&quot;: &quot;uuid&quot;,
-    &quot;start_date&quot;: &quot;YYYY-MM-DD&quot;,
-    &quot;end_date&quot;: &quot;YYYY-MM-DD&quot;,
-    &quot;leave_type&quot;: &quot;annual|sick|other&quot;,
-    &quot;hours_per_day&quot;: 8.0,
-    &quot;description&quot;: &quot;Optional description&quot;
-}`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: WeeklyTimesheetData,
-      },
-    ],
-    response: WeeklyTimesheetData,
+    // Accept both WeeklyTimesheetData and IMSWeeklyTimesheetData as possible responses
+    response: z.union([WeeklyTimesheetData, IMSWeeklyTimesheetData]),
   },
   {
     method: 'get',
@@ -4471,7 +4460,21 @@ Endpoint: /api/xero/errors/&lt;id&gt;/`,
   },
 ])
 
-export const api = new Zodios(endpoints)
+/**
+ * ATENTION: manual changes that need to persist in order to the client to work properly
+ * We need to create the Axios API instance that'll be used by Zodios locally (mainly to avoid circular dependency issues)
+ */
+
+let _api: InstanceType<typeof Zodios> | null = null
+
+export function getApi(): InstanceType<typeof Zodios> {
+  if (!_api) {
+    _api = new Zodios(getApiBaseUrl(), endpoints, { axiosInstance: axios })
+  }
+  return _api
+}
+
+export const api = getApi()
 
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
   return new Zodios(baseUrl, endpoints, options)

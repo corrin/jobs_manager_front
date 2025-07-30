@@ -323,7 +323,7 @@ const validateForm = (): boolean => {
     return false
   }
 
-  if (!selectedClient.value?.xero_id) {
+  if (!selectedClient.value?.xero_contact_id) {
     errors.value.client_id = 'Client must have a valid Xero ID - maybe add them'
     return false
   }
@@ -343,6 +343,7 @@ const validateForm = (): boolean => {
 
 const handleSubmit = async () => {
   if (!validateForm()) {
+    console.log('Validation errors:', errors.value)
     return
   }
 
@@ -367,17 +368,19 @@ const handleSubmit = async () => {
         })
       } catch (error: unknown) {
         toast.error((error as Error).message)
+        console.error('Failed to create material cost line:', error)
       }
       try {
         await costlineService.createCostLine(job_id, 'estimate', {
           kind: 'time',
           desc: 'Estimated time',
           quantity: formData.value.estimatedTime.toFixed(2),
-          unit_cost: (companyDefaultsStore.companyDefaults?.wage_rate ?? 0).toFixed(2),
-          unit_rev: (companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0).toFixed(2),
+          unit_cost: Number(companyDefaultsStore.companyDefaults?.wage_rate ?? 0).toFixed(2),
+          unit_rev: Number(companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0).toFixed(2),
         })
       } catch (error: unknown) {
         toast.error((error as Error).message)
+        console.error('Failed to create time cost line:', error)
       }
       toast.success('Job created!')
       toast.dismiss('create-job')
@@ -387,6 +390,7 @@ const handleSubmit = async () => {
     }
   } catch (error: unknown) {
     toast.error('Failed to create job: ' + ((error as Error).message || error))
+    console.error('Job creation error:', error)
     toast.dismiss('create-job')
   } finally {
     isSubmitting.value = false

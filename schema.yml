@@ -8125,6 +8125,16 @@ components:
         - missing_staff
         - partial_staff
         - total_staff
+    SyncStatusEnum:
+      enum:
+        - success
+        - error
+        - running
+      type: string
+      description: |-
+        * `success` - success
+        * `error` - error
+        * `running` - running
     TimesheetCostLine:
       type: object
       description: |-
