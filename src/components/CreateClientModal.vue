@@ -158,7 +158,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { api, schemas } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import { api } from '@/api/client'
 import { z } from 'zod'
 import type { Client } from '@/composables/useClientLookup'
 

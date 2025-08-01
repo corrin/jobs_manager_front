@@ -3,7 +3,8 @@ import { useJobsStore } from '@/stores/jobs'
 import { useJobData } from '@/composables/useJobData'
 import type { Ref } from 'vue'
 import { debugLog } from '@/utils/debug'
-import { api, schemas } from '../api/generated/api'
+import { schemas } from '../api/generated/api'
+import { api } from '@/api/client'
 import { z } from 'zod'
 
 type JobEvent = z.infer<typeof schemas.JobEvent>

@@ -379,7 +379,8 @@ import Dialog from '../ui/dialog/Dialog.vue'
 import DialogContent from '../ui/dialog/DialogContent.vue'
 import DialogHeader from '../ui/dialog/DialogHeader.vue'
 import DialogTitle from '../ui/dialog/DialogTitle.vue'
-import { api, schemas } from '../../api/generated/api'
+import { schemas } from '../../api/generated/api'
+import { api } from '../../api/client'
 import { z } from 'zod'
 
 type WeeklyJobs = z.infer<typeof schemas.WeeklyMetrics>

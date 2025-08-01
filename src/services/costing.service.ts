@@ -1,4 +1,5 @@
-import { api, schemas } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import { api } from '@/api/client'
 import type { z } from 'zod'
 
 type CostSet = z.infer<typeof schemas.CostSet>

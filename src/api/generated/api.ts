@@ -1,18 +1,12 @@
 import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
 import { z } from 'zod'
-import axios from 'axios'
-
-import '@/plugins/axios'
-
-function getApiBaseUrl() {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL
-  }
-  return 'http://localhost:8000'
-}
 
 const KPIProfitBreakdown = z
-  .object({ labor_profit: z.number(), material_profit: z.number(), adjustment_profit: z.number() })
+  .object({
+    labor_profit: z.number(),
+    material_profit: z.number(),
+    adjustment_profit: z.number(),
+  })
   .passthrough()
 const KPIJobBreakdown = z
   .object({
@@ -114,7 +108,11 @@ const KPICalendarData = z
   })
   .passthrough()
 const JobAgingFinancialData = z
-  .object({ estimate_total: z.number(), quote_total: z.number(), actual_total: z.number() })
+  .object({
+    estimate_total: z.number(),
+    quote_total: z.number(),
+    actual_total: z.number(),
+  })
   .passthrough()
 const JobAgingTimingData = z
   .object({
@@ -246,7 +244,7 @@ const UserProfile = z
     email: z.string().email(),
     first_name: z.string(),
     last_name: z.string(),
-    preferred_name: z.string().nullish(),
+    preferred_name: z.string(),
     fullName: z.string(),
     is_active: z.boolean(),
     is_staff: z.boolean(),
@@ -417,7 +415,26 @@ const XeroOperationResponse = z
     error: z.string().optional(),
     messages: z.array(z.string()).optional(),
     online_url: z.string().url().optional(),
-    xero_id: z.string().uuid().optional(),
+    xero_id: z.string().uuid(),
+  })
+  .passthrough()
+const SeverityEnum = z.enum(['info', 'warning', 'error'])
+const NullEnum = z.unknown()
+const SyncStatusEnum = z.enum(['success', 'error', 'running'])
+const XeroSseEvent = z
+  .object({
+    datetime: z.string().datetime({ offset: true }),
+    message: z.string(),
+    severity: z.union([SeverityEnum, NullEnum]).nullish(),
+    entity: z.string().nullish(),
+    progress: z.number().nullish(),
+    overall_progress: z.number().nullish(),
+    entity_progress: z.number().nullish(),
+    records_updated: z.number().int().nullish(),
+    status: z.string().nullish(),
+    sync_status: z.union([SyncStatusEnum, NullEnum]).nullish(),
+    error_messages: z.array(z.string()).optional(),
+    missing_fields: z.array(z.string()).optional(),
   })
   .passthrough()
 const ClientContactResult = z
@@ -430,14 +447,9 @@ const ClientContactResult = z
     is_primary: z.boolean(),
   })
   .passthrough()
-const ClientContactsCreateResponse = z.object({
-  success: z.boolean(),
-  contact: ClientContactResult,
-  message: z.string(),
-}).passthrough()
-const ClientContactsResponse = z.object({ results: z.array(ClientContactResult) })
+const ClientContactResponse = z.object({ results: z.array(ClientContactResult) }).passthrough()
 const ClientListResponse = z.object({ id: z.string(), name: z.string() }).passthrough()
-const ClientContactsCreateRequest = z
+const ClientContactCreateRequest = z
   .object({
     client_id: z.string().uuid(),
     name: z.string().max(255),
@@ -446,6 +458,20 @@ const ClientContactsCreateRequest = z
     position: z.string().max(255).optional(),
     is_primary: z.boolean().optional().default(false),
     notes: z.string().optional(),
+  })
+  .passthrough()
+const ClientContactCreateResponse = z
+  .object({
+    success: z.boolean(),
+    contact: ClientContactResult,
+    message: z.string(),
+  })
+  .passthrough()
+const ClientErrorResponse = z
+  .object({
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    details: z.string().optional(),
   })
   .passthrough()
 const ClientCreateRequest = z
@@ -560,7 +586,11 @@ const JobReorderRequest = z
   .passthrough()
 const JobStatusUpdateRequest = z.object({ status: z.string() }).passthrough()
 const KanbanJobPerson = z
-  .object({ id: z.string().uuid(), display_name: z.string(), icon: z.string().url().nullable() })
+  .object({
+    id: z.string().uuid(),
+    display_name: z.string(),
+    icon: z.string().url().nullable(),
+  })
   .passthrough()
 const KanbanJob = z
   .object({
@@ -696,26 +726,21 @@ const JobCreateRequest = z
   .passthrough()
 const JobCreateResponse = z
   .object({
-    success: z.boolean(),
-    job_id: z.string().uuid(),
+    success: z.boolean().optional().default(true),
+    job_id: z.string(),
     job_number: z.string(),
     message: z.string(),
   })
   .passthrough()
-const JobData = z.object({}).partial().passthrough()
-const JobDetailResponse = z
-  .object({ success: z.boolean().optional().default(true), data: JobData })
-  .passthrough()
-const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
-const JobDeleteResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string(),
-  })
-  .passthrough()
+const JobRestErrorResponse = z.object({ error: z.string() }).passthrough()
 const CostSetKindEnum = z.enum(['estimate', 'quote', 'actual'])
 const CostSetSummary = z
-  .object({ cost: z.number(), rev: z.number(), hours: z.number(), profitMargin: z.number() })
+  .object({
+    cost: z.number(),
+    rev: z.number(),
+    hours: z.number(),
+    profitMargin: z.number(),
+  })
   .passthrough()
 const CostLine = z
   .object({
@@ -750,6 +775,108 @@ const CostSet = z
     cost_lines: z.array(CostLine),
   })
   .passthrough()
+const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
+const QuoteSpreadsheet = z
+  .object({
+    id: z.string().uuid(),
+    sheet_id: z.string().max(100),
+    sheet_url: z.string().max(500).url().nullish(),
+    tab: z.string().max(100).nullish(),
+    job_id: z.string(),
+    job_number: z.string(),
+    job_name: z.string(),
+  })
+  .passthrough()
+const Job = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string().max(100),
+    client_id: z.string().uuid(),
+    client_name: z.string(),
+    contact_id: z.string().uuid().nullish(),
+    contact_name: z.string(),
+    job_number: z.number().int().gte(-2147483648).lte(2147483647),
+    notes: z.string().nullish(),
+    order_number: z.string().max(100).nullish(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+    description: z.string().nullish(),
+    latest_estimate: CostSet,
+    latest_quote: CostSet,
+    latest_actual: CostSet,
+    job_status: z.string(),
+    delivery_date: z.string().nullish(),
+    paid: z.boolean().optional(),
+    quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
+    job_is_valid: z.boolean().optional(),
+    job_files: z.array(JobFile).optional(),
+    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    pricing_methodology: PricingMethodologyEnum.optional(),
+    quote_sheet: QuoteSpreadsheet,
+    quoted: z.boolean(),
+    invoiced: z.boolean(),
+    quote: z.object({}).partial().passthrough().nullable(),
+    invoice: z.object({}).partial().passthrough().nullable(),
+    shop_job: z.boolean(),
+  })
+  .passthrough()
+const JobEvent = z
+  .object({
+    id: z.string().uuid(),
+    timestamp: z.string().datetime({ offset: true }).optional(),
+    event_type: z.string().max(100).optional(),
+    description: z.string(),
+    staff: z.string(),
+  })
+  .passthrough()
+const CompanyDefaultsJobDetail = z
+  .object({
+    materials_markup: z.number(),
+    time_markup: z.number(),
+    charge_out_rate: z.number(),
+    wage_rate: z.number(),
+  })
+  .passthrough()
+const JobData = z
+  .object({
+    job: Job,
+    events: z.array(JobEvent),
+    company_defaults: CompanyDefaultsJobDetail,
+  })
+  .passthrough()
+const JobDetailResponse = z
+  .object({ success: z.boolean().optional().default(true), data: JobData })
+  .passthrough()
+const JobDeleteResponse = z
+  .object({
+    success: z.boolean().optional().default(true),
+    message: z.string(),
+  })
+  .passthrough()
+const QuoteRevisionsList = z
+  .object({
+    job_id: z.string(),
+    job_number: z.string(),
+    current_cost_set_rev: z.number().int(),
+    total_revisions: z.number().int(),
+    revisions: z.array(z.object({}).partial().passthrough()),
+  })
+  .passthrough()
+const QuoteRevisionRequest = z
+  .object({ reason: z.string().max(500) })
+  .partial()
+  .passthrough()
+const QuoteRevisionResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string(),
+    quote_revision: z.number().int(),
+    archived_cost_lines_count: z.number().int(),
+    job_id: z.string(),
+    error: z.string().optional(),
+  })
+  .passthrough()
+const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
 const QuoteImportStatusResponse = z
   .object({
     job_id: z.string(),
@@ -816,7 +943,10 @@ const PreviewQuoteResponse = z
   .partial()
   .passthrough()
 const JobFileThumbnailErrorResponse = z
-  .object({ status: z.string().optional().default('error'), message: z.string() })
+  .object({
+    status: z.string().optional().default('error'),
+    message: z.string(),
+  })
   .passthrough()
 const JobFileUploadViewResponse = z
   .object({
@@ -825,8 +955,26 @@ const JobFileUploadViewResponse = z
     message: z.string(),
   })
   .passthrough()
+const WeeklyMetrics = z
+  .object({
+    job_id: z.string().uuid(),
+    job_number: z.number().int(),
+    name: z.string(),
+    client: z.string(),
+    description: z.string(),
+    status: z.string(),
+    people: z.array(z.object({}).partial().passthrough()),
+    estimated_hours: z.number(),
+    actual_hours: z.number(),
+    profit: z.number(),
+  })
+  .passthrough()
 const MonthEndJobHistory = z
-  .object({ date: z.string(), total_hours: z.number(), total_dollars: z.number() })
+  .object({
+    date: z.string(),
+    total_hours: z.number(),
+    total_dollars: z.number(),
+  })
   .passthrough()
 const MonthEndJob = z
   .object({
@@ -840,7 +988,11 @@ const MonthEndJob = z
   })
   .passthrough()
 const MonthEndStockHistory = z
-  .object({ date: z.string(), material_line_count: z.number().int(), material_cost: z.number() })
+  .object({
+    date: z.string(),
+    material_line_count: z.number().int(),
+    material_cost: z.number(),
+  })
   .passthrough()
 const MonthEndStockJob = z
   .object({
@@ -854,83 +1006,10 @@ const MonthEndGetResponse = z
   .object({ jobs: z.array(MonthEndJob), stock_job: MonthEndStockJob })
   .passthrough()
 const MonthEndPostResponse = z
-  .object({ processed: z.array(z.string().uuid()), errors: z.array(z.string()) })
-  .passthrough()
-const ModernTimesheetStaff = z
-  .object({ id: z.string().uuid(), name: z.string(), firstName: z.string(), lastName: z.string() })
-  .passthrough()
-const ModernTimesheetSummary = z
   .object({
-    total_hours: z.number(),
-    billable_hours: z.number(),
-    non_billable_hours: z.number(),
-    total_cost: z.number(),
-    total_revenue: z.number(),
-    entry_count: z.number().int(),
+    processed: z.array(z.string().uuid()),
+    errors: z.array(z.string()),
   })
-  .passthrough()
-const ModernTimesheetEntryGetResponse = z
-  .object({
-    cost_lines: z.array(z.object({}).partial().passthrough()),
-    staff: ModernTimesheetStaff,
-    date: z.string(),
-    summary: ModernTimesheetSummary,
-  })
-  .passthrough()
-const ModernTimesheetEntryPostResponse = z
-  .object({
-    success: z.boolean(),
-    cost_line_id: z.string().uuid().optional(),
-    message: z.string().optional(),
-  })
-  .passthrough()
-const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
-const QuoteSpreadsheet = z
-  .object({
-    id: z.string().uuid(),
-    sheet_id: z.string().max(100),
-    sheet_url: z.string().max(500).url().nullish(),
-    tab: z.string().max(100).nullish(),
-    job_id: z.string(),
-    job_number: z.string(),
-    job_name: z.string(),
-  })
-  .passthrough()
-const Job = z
-  .object({
-    id: z.string().uuid(),
-    name: z.string().max(100),
-    client_id: z.string().uuid(),
-    client_name: z.string(),
-    contact_id: z.string().uuid().nullish(),
-    contact_name: z.string(),
-    job_number: z.number().int().gte(-2147483648).lte(2147483647),
-    notes: z.string().nullish(),
-    order_number: z.string().max(100).nullish(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    description: z.string().nullish(),
-    latest_estimate: CostSet,
-    latest_quote: CostSet,
-    latest_actual: CostSet,
-    job_status: z.string(),
-    delivery_date: z.string().nullish(),
-    paid: z.boolean().optional(),
-    quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
-    job_is_valid: z.boolean().optional(),
-    job_files: z.array(JobFile).optional(),
-    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    pricing_methodology: PricingMethodologyEnum.optional(),
-    quote_sheet: QuoteSpreadsheet,
-    quoted: z.boolean(),
-    invoiced: z.boolean(),
-    quote: z.object({}).partial().passthrough().nullable(),
-    invoice: z.object({}).partial().passthrough().nullable(),
-    shop_job: z.boolean(),
-  })
-  .passthrough()
-const ModernTimesheetJobGetResponse = z
-  .object({ jobs: z.array(Job), total_count: z.number().int() })
   .passthrough()
 const TimesheetCostLine = z
   .object({
@@ -952,6 +1031,54 @@ const TimesheetCostLine = z
     wage_rate: z.number(),
   })
   .passthrough()
+const ModernTimesheetStaff = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+  })
+  .passthrough()
+const ModernTimesheetSummary = z
+  .object({
+    total_hours: z.number(),
+    billable_hours: z.number(),
+    non_billable_hours: z.number(),
+    total_cost: z.number(),
+    total_revenue: z.number(),
+    entry_count: z.number().int(),
+  })
+  .passthrough()
+const ModernTimesheetEntryGetResponse = z
+  .object({
+    cost_lines: z.array(TimesheetCostLine),
+    staff: ModernTimesheetStaff,
+    date: z.string(),
+    summary: ModernTimesheetSummary,
+  })
+  .passthrough()
+const ModernTimesheetErrorResponse = z.object({ error: z.string() }).passthrough()
+const ModernTimesheetEntryPostRequest = z
+  .object({
+    job_id: z.string().uuid(),
+    staff_id: z.string().uuid(),
+    date: z.string(),
+    hours: z.number().gte(0),
+    description: z.string().max(500),
+    is_billable: z.boolean().optional().default(true),
+    hourly_rate: z.number().gte(0).optional(),
+  })
+  .passthrough()
+const ModernTimesheetEntryPostResponse = z
+  .object({
+    success: z.boolean(),
+    cost_line_id: z.string().uuid().optional(),
+    message: z.string().optional(),
+  })
+  .passthrough()
+const ModernTimesheetJobGetResponse = z
+  .object({ jobs: z.array(Job), total_count: z.number().int() })
+  .passthrough()
 const ModernTimesheetDayGetResponse = z
   .object({
     entries: z.array(TimesheetCostLine),
@@ -960,7 +1087,10 @@ const ModernTimesheetDayGetResponse = z
   })
   .passthrough()
 const DeliveryReceiptAllocation = z
-  .object({ job_id: z.string().uuid(), quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/) })
+  .object({
+    job_id: z.string().uuid(),
+    quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
   .passthrough()
 const DeliveryReceiptLine = z
   .object({
@@ -969,10 +1099,16 @@ const DeliveryReceiptLine = z
   })
   .passthrough()
 const DeliveryReceiptRequest = z
-  .object({ purchase_order_id: z.string().uuid(), allocations: z.record(DeliveryReceiptLine) })
+  .object({
+    purchase_order_id: z.string().uuid(),
+    allocations: z.record(DeliveryReceiptLine),
+  })
   .passthrough()
 const PurchaseOrderEmailRequest = z
-  .object({ recipient_email: z.string().email(), message: z.string().max(1000) })
+  .object({
+    recipient_email: z.string().email(),
+    message: z.string().max(1000),
+  })
   .partial()
   .passthrough()
 const PurchaseOrderPDFResponse = z
@@ -1072,7 +1208,6 @@ const MetalTypeEnum = z.enum([
   'other',
 ])
 const BlankEnum = z.unknown()
-const NullEnum = z.unknown()
 const PurchaseOrderLine = z
   .object({
     id: z.string().uuid(),
@@ -1171,7 +1306,10 @@ const AllocationItem = z
   })
   .passthrough()
 const PurchaseOrderAllocationsResponse = z
-  .object({ po_id: z.string().uuid(), allocations: z.record(z.array(AllocationItem)) })
+  .object({
+    po_id: z.string().uuid(),
+    allocations: z.record(z.array(AllocationItem)),
+  })
   .passthrough()
 const StockList = z
   .object({
@@ -1204,7 +1342,10 @@ const StockCreate = z
   })
   .passthrough()
 const StockConsumeRequest = z
-  .object({ job_id: z.string().uuid(), quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/) })
+  .object({
+    job_id: z.string().uuid(),
+    quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
   .passthrough()
 const XeroItem = z
   .object({
@@ -1216,7 +1357,10 @@ const XeroItem = z
   })
   .passthrough()
 const XeroItemListResponse = z
-  .object({ items: z.array(XeroItem), total_count: z.number().int().optional() })
+  .object({
+    items: z.array(XeroItem),
+    total_count: z.number().int().optional(),
+  })
   .passthrough()
 const DjangoJobExecutionStatusEnum = z.enum(['Started execution', 'Error!', 'Executed'])
 const DjangoJobExecution = z
@@ -1341,7 +1485,10 @@ const StaffListResponse = z
   .object({ staff: z.array(ModernStaff), total_count: z.number().int() })
   .passthrough()
 const WeeklyStaffDataWeeklyHours = z
-  .object({ date: z.string(), hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/) })
+  .object({
+    date: z.string(),
+    hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+  })
   .passthrough()
 const WeeklyStaffData = z
   .object({
@@ -1382,49 +1529,38 @@ const WeeklyTimesheetData = z
     navigation: z.object({}).partial().passthrough().optional(),
   })
   .passthrough()
-const WeeklyMetrics = z.array(
-  z
-    .object({
-      job_id: z.string().uuid(),
-      name: z.string(),
-      client: z.string().nullable(),
-      description: z.string().nullable(),
-      status: z.string(),
-      people: z.array(z.object({}).passthrough()),
-      estimated_hours: z.number(),
-      actual_hours: z.number(),
-      profit: z.number(),
-    })
-    .passthrough(),
-)
-const IMSWeeklyStaffDataWeeklyHours = z.object({
-  day: z.string(),
-  hours: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
-  billable_hours: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
-  scheduled_hours: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
-  status: z.string(),
-  leave_type: z.string().optional(),
-  has_leave: z.boolean().optional(),
-  standard_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  time_and_half_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  double_time_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  unpaid_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  overtime: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  leave_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-})
-const IMSWeeklyStaffData = z.object({
-  staff_id: z.string().uuid(),
-  name: z.string(),
-  weekly_hours: z.array(IMSWeeklyStaffDataWeeklyHours),
-  total_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  total_billable_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  billable_percentage: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
-  status: z.string(),
-  total_standard_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  total_time_and_half_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  total_double_time_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  total_overtime: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-})
+const IMSWeeklyStaffDataWeeklyHours = z
+  .object({
+    day: z.string(),
+    hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    billable_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    scheduled_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    status: z.string(),
+    leave_type: z.string().optional(),
+    has_leave: z.boolean().optional().default(false),
+    standard_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    time_and_half_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    double_time_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    unpaid_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    overtime: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    leave_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
+  .passthrough()
+const IMSWeeklyStaffData = z
+  .object({
+    staff_id: z.string().uuid(),
+    name: z.string(),
+    weekly_hours: z.array(IMSWeeklyStaffDataWeeklyHours),
+    total_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_billable_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    billable_percentage: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    status: z.string(),
+    total_standard_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_time_and_half_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_double_time_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_overtime: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
+  .passthrough()
 const IMSWeeklyTimesheetData = z
   .object({
     start_date: z.string(),
@@ -1468,35 +1604,6 @@ const PaginatedXeroErrorList = z
     results: z.array(XeroError),
   })
   .passthrough()
-const JobEvent = z
-  .object({
-    id: z.string().uuid(),
-    timestamp: z.string().datetime({ offset: true }),
-    event_type: z.string(),
-    description: z.string(),
-    staff: z.string(),
-    required: z.unknown(),
-  })
-  .partial()
-  .passthrough()
-const SeverityEnum = z.enum(['info', 'warning', 'error'])
-const SyncStatusEnum = z.enum(['success', 'error', 'running'])
-const XeroSseEvent = z
-  .object({
-    datetime: z.string().datetime({ offset: true }),
-    message: z.string(),
-    severity: z.union([SeverityEnum, NullEnum]).nullish(),
-    entity: z.string().nullish(),
-    progress: z.number().nullish(),
-    overall_progress: z.number().nullish(),
-    entity_progress: z.number().nullish(),
-    records_updated: z.number().int().nullish(),
-    status: z.string().nullish(),
-    sync_status: z.union([SyncStatusEnum, NullEnum]).nullish(),
-    error_messages: z.array(z.string()).optional(),
-    missing_fields: z.array(z.string()).optional(),
-  })
-  .passthrough()
 
 export const schemas = {
   KPIProfitBreakdown,
@@ -1526,10 +1633,16 @@ export const schemas = {
   AppError,
   PaginatedAppErrorList,
   XeroOperationResponse,
+  SeverityEnum,
+  NullEnum,
+  SyncStatusEnum,
+  XeroSseEvent,
   ClientContactResult,
-  ClientContactsResponse,
+  ClientContactResponse,
   ClientListResponse,
-  ClientContactsCreateRequest,
+  ClientContactCreateRequest,
+  ClientContactCreateResponse,
+  ClientErrorResponse,
   ClientCreateRequest,
   ClientSearchResult,
   ClientSearchResponse,
@@ -1563,13 +1676,24 @@ export const schemas = {
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
   JobCreateRequest,
-  JobData,
-  JobDetailResponse,
-  JobEventCreateRequest,
+  JobCreateResponse,
+  JobRestErrorResponse,
   CostSetKindEnum,
   CostSetSummary,
   CostLine,
   CostSet,
+  PricingMethodologyEnum,
+  QuoteSpreadsheet,
+  Job,
+  JobEvent,
+  CompanyDefaultsJobDetail,
+  JobData,
+  JobDetailResponse,
+  JobDeleteResponse,
+  QuoteRevisionsList,
+  QuoteRevisionRequest,
+  QuoteRevisionResponse,
+  JobEventCreateRequest,
   QuoteImportStatusResponse,
   DraftLine,
   QuoteChanges,
@@ -1580,21 +1704,21 @@ export const schemas = {
   PreviewQuoteResponse,
   JobFileThumbnailErrorResponse,
   JobFileUploadViewResponse,
+  WeeklyMetrics,
   MonthEndJobHistory,
   MonthEndJob,
   MonthEndStockHistory,
   MonthEndStockJob,
   MonthEndGetResponse,
   MonthEndPostResponse,
+  TimesheetCostLine,
   ModernTimesheetStaff,
   ModernTimesheetSummary,
   ModernTimesheetEntryGetResponse,
+  ModernTimesheetErrorResponse,
+  ModernTimesheetEntryPostRequest,
   ModernTimesheetEntryPostResponse,
-  PricingMethodologyEnum,
-  QuoteSpreadsheet,
-  Job,
   ModernTimesheetJobGetResponse,
-  TimesheetCostLine,
   ModernTimesheetDayGetResponse,
   DeliveryReceiptAllocation,
   DeliveryReceiptLine,
@@ -1611,7 +1735,6 @@ export const schemas = {
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
   BlankEnum,
-  NullEnum,
   PurchaseOrderLine,
   PurchaseOrderDetail,
   PurchaseOrderLineUpdate,
@@ -1648,17 +1771,12 @@ export const schemas = {
   IMSWeeklyTimesheetData,
   XeroError,
   PaginatedXeroErrorList,
-  JobEvent,
-  SeverityEnum,
-  SyncStatusEnum,
-  XeroSseEvent,
 }
 
 const endpoints = makeApi([
   {
     method: 'get',
     path: '/accounting/api/reports/calendar/',
-    alias: 'accounting_api_reports_calendar_retrieve',
     description: `API Endpoint to provide KPI data for calendar display`,
     requestFormat: 'json',
     response: KPICalendarData,
@@ -1666,7 +1784,6 @@ const endpoints = makeApi([
   {
     method: 'get',
     path: '/accounting/api/reports/job-aging/',
-    alias: 'accounting_api_reports_job_aging_retrieve',
     description: `Get job aging data.
 
 Query Parameters:
@@ -1681,7 +1798,6 @@ Returns:
   {
     method: 'get',
     path: '/accounting/api/reports/staff-performance-summary/',
-    alias: 'accounting_api_reports_staff_performance_summary_retrieve',
     description: `API endpoint for staff performance summary (all staff)`,
     requestFormat: 'json',
     response: z.void(),
@@ -1689,7 +1805,6 @@ Returns:
   {
     method: 'get',
     path: '/accounting/api/reports/staff-performance/:staff_id/',
-    alias: 'accounting_api_reports_staff_performance_retrieve',
     description: `API endpoint for individual staff performance detail`,
     requestFormat: 'json',
     parameters: [
@@ -1704,7 +1819,6 @@ Returns:
   {
     method: 'get',
     path: '/accounts/api/staff/',
-    alias: 'accounts_api_staff_list',
     description: `API endpoint for listing and creating staff members.
 
 Supports both GET (list all staff) and POST (create new staff) operations.
@@ -1716,7 +1830,6 @@ for file uploads (e.g., profile pictures).`,
   {
     method: 'post',
     path: '/accounts/api/staff/',
-    alias: 'accounts_api_staff_create',
     description: `API endpoint for listing and creating staff members.
 
 Supports both GET (list all staff) and POST (create new staff) operations.
@@ -1735,7 +1848,6 @@ for file uploads (e.g., profile pictures).`,
   {
     method: 'get',
     path: '/accounts/api/staff/:id/',
-    alias: 'accounts_api_staff_retrieve',
     description: `API endpoint for retrieving, updating, and deleting individual staff members.
 
 Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
@@ -1754,7 +1866,6 @@ and handles multipart/form data for file uploads.`,
   {
     method: 'put',
     path: '/accounts/api/staff/:id/',
-    alias: 'accounts_api_staff_update',
     description: `API endpoint for retrieving, updating, and deleting individual staff members.
 
 Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
@@ -1778,7 +1889,6 @@ and handles multipart/form data for file uploads.`,
   {
     method: 'patch',
     path: '/accounts/api/staff/:id/',
-    alias: 'accounts_api_staff_partial_update',
     description: `API endpoint for retrieving, updating, and deleting individual staff members.
 
 Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
@@ -1802,7 +1912,6 @@ and handles multipart/form data for file uploads.`,
   {
     method: 'delete',
     path: '/accounts/api/staff/:id/',
-    alias: 'accounts_api_staff_destroy',
     description: `API endpoint for retrieving, updating, and deleting individual staff members.
 
 Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
@@ -1821,7 +1930,6 @@ and handles multipart/form data for file uploads.`,
   {
     method: 'get',
     path: '/accounts/api/staff/all/',
-    alias: 'accounts_api_staff_all_list',
     description: `API endpoint for retrieving list of staff members for Kanban board.
 
 Supports filtering to return only actual users (excluding system/test accounts)
@@ -1832,7 +1940,6 @@ based on the &#x27;actual_users&#x27; query parameter.`,
   {
     method: 'post',
     path: '/accounts/api/token/',
-    alias: 'accounts_api_token_create',
     description: `Customized token obtain view that handles password reset requirement
 and sets JWT tokens as httpOnly cookies`,
     requestFormat: 'json',
@@ -1843,16 +1950,11 @@ and sets JWT tokens as httpOnly cookies`,
         schema: CustomTokenObtainPair,
       },
     ],
-    /**
-     * WARNING: the autogenerated schema defines CustomTokenObtainPair as the response schema,
-     * but this is incorrect. The response is actually an empty object.
-     */
-    response: z.object({}),
+    response: CustomTokenObtainPair,
   },
   {
     method: 'post',
     path: '/accounts/api/token/refresh/',
-    alias: 'accounts_api_token_refresh_create',
     description: `Customized token refresh view that uses httpOnly cookies`,
     requestFormat: 'json',
     parameters: [
@@ -1867,7 +1969,6 @@ and sets JWT tokens as httpOnly cookies`,
   {
     method: 'post',
     path: '/accounts/api/token/verify/',
-    alias: 'accounts_api_token_verify_create',
     description: `Takes a token and indicates if it is valid.  This view provides no
 information about a token&#x27;s fitness for a particular use.`,
     requestFormat: 'json',
@@ -1883,7 +1984,6 @@ information about a token&#x27;s fitness for a particular use.`,
   {
     method: 'post',
     path: '/accounts/logout/',
-    alias: 'accounts_logout_create',
     description: `Custom logout view that clears JWT httpOnly cookies`,
     requestFormat: 'json',
     response: z.object({}).partial().passthrough(),
@@ -1897,7 +1997,6 @@ information about a token&#x27;s fitness for a particular use.`,
   {
     method: 'get',
     path: '/accounts/me/',
-    alias: 'accounts_me_retrieve',
     description: `Get current authenticated user information via JWT from httpOnly cookie`,
     requestFormat: 'json',
     response: UserProfile,
@@ -1905,7 +2004,6 @@ information about a token&#x27;s fitness for a particular use.`,
   {
     method: 'post',
     path: '/api/aws/instance/reboot/',
-    alias: 'api_aws_instance_reboot_create',
     description: `Reboot the UAT instance`,
     requestFormat: 'json',
     response: z.void(),
@@ -1913,7 +2011,6 @@ information about a token&#x27;s fitness for a particular use.`,
   {
     method: 'post',
     path: '/api/aws/instance/start/',
-    alias: 'api_aws_instance_start_create',
     description: `Start the UAT instance`,
     requestFormat: 'json',
     response: z.void(),
@@ -1921,7 +2018,6 @@ information about a token&#x27;s fitness for a particular use.`,
   {
     method: 'get',
     path: '/api/aws/instance/status/',
-    alias: 'api_aws_instance_status_retrieve',
     description: `Get current status of the UAT instance`,
     requestFormat: 'json',
     response: z.void(),
@@ -1929,7 +2025,6 @@ information about a token&#x27;s fitness for a particular use.`,
   {
     method: 'post',
     path: '/api/aws/instance/stop/',
-    alias: 'api_aws_instance_stop_create',
     description: `Stop the UAT instance`,
     requestFormat: 'json',
     response: z.void(),
@@ -1937,7 +2032,6 @@ information about a token&#x27;s fitness for a particular use.`,
   {
     method: 'get',
     path: '/api/company-defaults/',
-    alias: 'api_company_defaults_retrieve',
     description: `API view for managing company default settings.
 
 This view provides endpoints to retrieve and update the company&#x27;s default
@@ -1959,7 +2053,6 @@ Returns:
   {
     method: 'put',
     path: '/api/company-defaults/',
-    alias: 'api_company_defaults_update',
     description: `API view for managing company default settings.
 
 This view provides endpoints to retrieve and update the company&#x27;s default
@@ -1988,7 +2081,6 @@ Returns:
   {
     method: 'patch',
     path: '/api/company-defaults/',
-    alias: 'api_company_defaults_partial_update',
     description: `API view for managing company default settings.
 
 This view provides endpoints to retrieve and update the company&#x27;s default
@@ -2017,7 +2109,6 @@ Returns:
   {
     method: 'get',
     path: '/api/workflow/ai-providers/',
-    alias: 'api_workflow_ai_providers_list',
     description: `API endpoint that allows AI Providers to be viewed or edited.
 
 Provides standard CRUD operations and a custom action to set a
@@ -2028,7 +2119,6 @@ provider as the default for the company.`,
   {
     method: 'post',
     path: '/api/workflow/ai-providers/',
-    alias: 'api_workflow_ai_providers_create',
     description: `API endpoint that allows AI Providers to be viewed or edited.
 
 Provides standard CRUD operations and a custom action to set a
@@ -2046,7 +2136,6 @@ provider as the default for the company.`,
   {
     method: 'get',
     path: '/api/workflow/ai-providers/:id/',
-    alias: 'api_workflow_ai_providers_retrieve',
     description: `API endpoint that allows AI Providers to be viewed or edited.
 
 Provides standard CRUD operations and a custom action to set a
@@ -2064,7 +2153,6 @@ provider as the default for the company.`,
   {
     method: 'put',
     path: '/api/workflow/ai-providers/:id/',
-    alias: 'api_workflow_ai_providers_update',
     description: `API endpoint that allows AI Providers to be viewed or edited.
 
 Provides standard CRUD operations and a custom action to set a
@@ -2087,7 +2175,6 @@ provider as the default for the company.`,
   {
     method: 'patch',
     path: '/api/workflow/ai-providers/:id/',
-    alias: 'api_workflow_ai_providers_partial_update',
     description: `API endpoint that allows AI Providers to be viewed or edited.
 
 Provides standard CRUD operations and a custom action to set a
@@ -2110,7 +2197,6 @@ provider as the default for the company.`,
   {
     method: 'delete',
     path: '/api/workflow/ai-providers/:id/',
-    alias: 'api_workflow_ai_providers_destroy',
     description: `API endpoint that allows AI Providers to be viewed or edited.
 
 Provides standard CRUD operations and a custom action to set a
@@ -2128,7 +2214,6 @@ provider as the default for the company.`,
   {
     method: 'post',
     path: '/api/workflow/ai-providers/:id/set-default/',
-    alias: 'api_workflow_ai_providers_set_default_create',
     description: `Set this provider as the default for the company.
 This will atomically unset any other provider that is currently the default
 for the same company.`,
@@ -2150,7 +2235,6 @@ for the same company.`,
   {
     method: 'get',
     path: '/api/workflow/app-errors/',
-    alias: 'api_workflow_app_errors_list',
     description: `ViewSet for AppError with filtering capabilities and resolution actions.
 
 Provides list, retrieve, and resolution management for application errors.
@@ -2254,7 +2338,6 @@ Endpoints:
   {
     method: 'get',
     path: '/api/workflow/app-errors/:id/',
-    alias: 'api_workflow_app_errors_retrieve',
     description: `ViewSet for AppError with filtering capabilities and resolution actions.
 
 Provides list, retrieve, and resolution management for application errors.
@@ -2278,7 +2361,6 @@ Endpoints:
   {
     method: 'post',
     path: '/api/workflow/app-errors/:id/mark_resolved/',
-    alias: 'api_workflow_app_errors_mark_resolved_create',
     description: `Mark an error as resolved.`,
     requestFormat: 'json',
     parameters: [
@@ -2298,7 +2380,6 @@ Endpoints:
   {
     method: 'post',
     path: '/api/workflow/app-errors/:id/mark_unresolved/',
-    alias: 'api_workflow_app_errors_mark_unresolved_create',
     description: `Mark an error as unresolved.`,
     requestFormat: 'json',
     parameters: [
@@ -2318,7 +2399,6 @@ Endpoints:
   {
     method: 'post',
     path: '/api/xero/create_invoice/:job_id',
-    alias: 'api_xero_create_invoice_create',
     description: `Creates an invoice in Xero for the specified job`,
     requestFormat: 'json',
     parameters: [
@@ -2343,7 +2423,6 @@ Endpoints:
   {
     method: 'post',
     path: '/api/xero/create_purchase_order/:purchase_order_id',
-    alias: 'api_xero_create_purchase_order_create',
     description: `Creates a purchase order in Xero for the specified purchase order`,
     requestFormat: 'json',
     parameters: [
@@ -2368,7 +2447,6 @@ Endpoints:
   {
     method: 'post',
     path: '/api/xero/create_quote/:job_id',
-    alias: 'api_xero_create_quote_create',
     description: `Creates a quote in Xero for the specified job`,
     requestFormat: 'json',
     parameters: [
@@ -2393,7 +2471,6 @@ Endpoints:
   {
     method: 'delete',
     path: '/api/xero/delete_invoice/:job_id',
-    alias: 'api_xero_delete_invoice_destroy',
     description: `Deletes an invoice in Xero for the specified job`,
     requestFormat: 'json',
     parameters: [
@@ -2418,7 +2495,6 @@ Endpoints:
   {
     method: 'delete',
     path: '/api/xero/delete_purchase_order/:purchase_order_id',
-    alias: 'api_xero_delete_purchase_order_destroy',
     description: `Deletes a purchase order in Xero for the specified purchase order`,
     requestFormat: 'json',
     parameters: [
@@ -2443,7 +2519,6 @@ Endpoints:
   {
     method: 'delete',
     path: '/api/xero/delete_quote/:job_id',
-    alias: 'api_xero_delete_quote_destroy',
     description: `Deletes a quote in Xero for the specified job`,
     requestFormat: 'json',
     parameters: [
@@ -2467,8 +2542,14 @@ Endpoints:
   },
   {
     method: 'get',
+    path: '/api/xero/sync-stream/',
+    description: `Xero Sync Event Stream`,
+    requestFormat: 'json',
+    response: z.array(XeroSseEvent),
+  },
+  {
+    method: 'get',
     path: '/app-errors/',
-    alias: 'app_errors_list',
     description: `API view for listing application errors.
 
 Returns a paginated list of all AppError records ordered by timestamp
@@ -2519,7 +2600,6 @@ Endpoint: /api/app-errors/`,
   {
     method: 'get',
     path: '/app-errors/:id/',
-    alias: 'app_errors_retrieve',
     description: `API view for retrieving a single application error.
 
 Returns detailed information about a specific AppError record
@@ -2540,7 +2620,6 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
   {
     method: 'get',
     path: '/clients/:client_id/contacts/',
-    alias: 'clients_contacts_retrieve',
     description: `Fetches contacts for a specific client.`,
     requestFormat: 'json',
     parameters: [
@@ -2550,12 +2629,11 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
         schema: z.string().uuid(),
       },
     ],
-    response: ClientContactsResponse,
+    response: ClientContactResponse,
   },
   {
     method: 'get',
     path: '/clients/all/',
-    alias: 'clients_all_retrieve',
     description: `Lists all clients (only id and name) for fast dropdowns.`,
     requestFormat: 'json',
     response: ClientListResponse,
@@ -2563,7 +2641,6 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
   {
     method: 'post',
     path: '/clients/contacts/',
-    alias: 'clients_contacts_create',
     description: `Create a new client contact.
 
 Expected JSON:
@@ -2581,15 +2658,24 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: ClientContactsCreateRequest,
+        schema: ClientContactCreateRequest,
       },
     ],
-    response: ClientContactsCreateResponse,
+    response: ClientContactCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
     path: '/clients/create/',
-    alias: 'clients_create_create',
     description: `Create a new client, first in Xero, then sync locally.`,
     requestFormat: 'json',
     parameters: [
@@ -2599,12 +2685,11 @@ Expected JSON:
         schema: ClientCreateRequest,
       },
     ],
-    response: ClientContactsCreateResponse,
+    response: ClientCreateRequest,
   },
   {
     method: 'get',
     path: '/clients/search/',
-    alias: 'clients_search_retrieve',
     description: `Searches clients by name following early return pattern.`,
     requestFormat: 'json',
     response: ClientSearchResponse,
@@ -2612,7 +2697,6 @@ Expected JSON:
   {
     method: 'get',
     path: '/job/api/job-files/',
-    alias: 'retrieveJobFilesApi',
     description: `Based on the request, serve a file for download or return the file list of the job.`,
     requestFormat: 'json',
     parameters: [
@@ -2627,7 +2711,6 @@ Expected JSON:
   {
     method: 'post',
     path: '/job/api/job-files/',
-    alias: 'uploadJobFilesApi',
     description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
     requestFormat: 'json',
     parameters: [
@@ -2647,7 +2730,6 @@ Expected JSON:
   {
     method: 'put',
     path: '/job/api/job-files/',
-    alias: 'updateJobFilesApi',
     description: `Update an existing job file:
 - If a new file is provided (files[] in request), replace the file on disk.
 - If no file_obj is provided, only update print_on_jobsheet.`,
@@ -2669,7 +2751,6 @@ Expected JSON:
   {
     method: 'delete',
     path: '/job/api/job-files/',
-    alias: 'deleteJobFilesApi',
     description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
     requestFormat: 'json',
     parameters: [
@@ -2684,7 +2765,6 @@ Expected JSON:
   {
     method: 'get',
     path: '/job/api/job-files/:file_path',
-    alias: 'retrieveJobFilesApi_2',
     description: `Based on the request, serve a file for download or return the file list of the job.`,
     requestFormat: 'json',
     parameters: [
@@ -2704,7 +2784,6 @@ Expected JSON:
   {
     method: 'post',
     path: '/job/api/job-files/:file_path',
-    alias: 'uploadJobFilesApi_2',
     description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
     requestFormat: 'json',
     parameters: [
@@ -2729,7 +2808,6 @@ Expected JSON:
   {
     method: 'put',
     path: '/job/api/job-files/:file_path',
-    alias: 'updateJobFilesApi_2',
     description: `Update an existing job file:
 - If a new file is provided (files[] in request), replace the file on disk.
 - If no file_obj is provided, only update print_on_jobsheet.`,
@@ -2756,7 +2834,6 @@ Expected JSON:
   {
     method: 'delete',
     path: '/job/api/job-files/:file_path',
-    alias: 'deleteJobFilesApi_2',
     description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
     requestFormat: 'json',
     parameters: [
@@ -2776,7 +2853,6 @@ Expected JSON:
   {
     method: 'get',
     path: '/job/api/job-files/:job_number',
-    alias: 'retrieveJobFilesApi_3',
     description: `Based on the request, serve a file for download or return the file list of the job.`,
     requestFormat: 'json',
     parameters: [
@@ -2796,7 +2872,6 @@ Expected JSON:
   {
     method: 'post',
     path: '/job/api/job-files/:job_number',
-    alias: 'uploadJobFilesApi_3',
     description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
     requestFormat: 'json',
     parameters: [
@@ -2821,7 +2896,6 @@ Expected JSON:
   {
     method: 'put',
     path: '/job/api/job-files/:job_number',
-    alias: 'updateJobFilesApi_3',
     description: `Update an existing job file:
 - If a new file is provided (files[] in request), replace the file on disk.
 - If no file_obj is provided, only update print_on_jobsheet.`,
@@ -2848,7 +2922,6 @@ Expected JSON:
   {
     method: 'delete',
     path: '/job/api/job-files/:job_number',
-    alias: 'deleteJobFilesApi_3',
     description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
     requestFormat: 'json',
     parameters: [
@@ -2868,7 +2941,6 @@ Expected JSON:
   {
     method: 'post',
     path: '/job/api/job/:job_id/assignment',
-    alias: 'job_api_job_assignment_create',
     description: `API Endpoint for activities related to job assignment`,
     requestFormat: 'json',
     parameters: [
@@ -2888,7 +2960,6 @@ Expected JSON:
   {
     method: 'delete',
     path: '/job/api/job/:job_id/assignment',
-    alias: 'job_api_job_assignment_destroy',
     description: `API Endpoint for activities related to job assignment`,
     requestFormat: 'json',
     parameters: [
@@ -2903,7 +2974,6 @@ Expected JSON:
   {
     method: 'get',
     path: '/job/api/job/completed/',
-    alias: 'job_api_job_completed_list',
     description: `API Endpoint to provide Job data for archiving display`,
     requestFormat: 'json',
     parameters: [
@@ -2923,7 +2993,6 @@ Expected JSON:
   {
     method: 'post',
     path: '/job/api/job/completed/archive',
-    alias: 'job_api_job_completed_archive_create',
     description: `API Endpoint to set &#x27;paid&#x27; flag as True in the received jobs`,
     requestFormat: 'json',
     parameters: [
@@ -2938,7 +3007,6 @@ Expected JSON:
   {
     method: 'get',
     path: '/job/api/jobs/:job_id/quote-chat/',
-    alias: 'job_api_jobs_quote_chat_retrieve',
     description: `Load all chat messages for a specific job.
 
 Response format matches job_quote_chat_plan.md specification.`,
@@ -2955,7 +3023,6 @@ Response format matches job_quote_chat_plan.md specification.`,
   {
     method: 'post',
     path: '/job/api/jobs/:job_id/quote-chat/',
-    alias: 'job_api_jobs_quote_chat_create',
     description: `Save a new chat message (user or assistant).
 
 Expected JSON:
@@ -2983,7 +3050,6 @@ Expected JSON:
   {
     method: 'delete',
     path: '/job/api/jobs/:job_id/quote-chat/',
-    alias: 'job_api_jobs_quote_chat_destroy',
     description: `Delete all chat messages for a job (start fresh).`,
     requestFormat: 'json',
     parameters: [
@@ -2998,7 +3064,6 @@ Expected JSON:
   {
     method: 'patch',
     path: '/job/api/jobs/:job_id/quote-chat/:message_id/',
-    alias: 'job_api_jobs_quote_chat_partial_update',
     description: `Update an existing message (useful for streaming responses).
 
 Expected JSON:
@@ -3029,7 +3094,6 @@ Expected JSON:
   {
     method: 'post',
     path: '/job/api/jobs/:job_id/quote-chat/interaction/',
-    alias: 'job_api_jobs_quote_chat_interaction_create',
     description: `Receives a user message, sends it to the MCPChatService for processing,
 and returns the AI&#x27;s final response.
 
@@ -3054,7 +3118,6 @@ assistant&#x27;s reply.`,
   {
     method: 'post',
     path: '/job/api/jobs/:job_id/reorder/',
-    alias: 'job_api_jobs_reorder_create',
     description: `Reorder job within or between columns - API endpoint.`,
     requestFormat: 'json',
     parameters: [
@@ -3074,7 +3137,6 @@ assistant&#x27;s reply.`,
   {
     method: 'post',
     path: '/job/api/jobs/:job_id/update-status/',
-    alias: 'job_api_jobs_update_status_create',
     description: `Update job status - API endpoint.`,
     requestFormat: 'json',
     parameters: [
@@ -3094,7 +3156,6 @@ assistant&#x27;s reply.`,
   {
     method: 'get',
     path: '/job/api/jobs/advanced-search/',
-    alias: 'job_api_jobs_advanced_search_retrieve',
     description: `Endpoint for advanced job search - API endpoint.`,
     requestFormat: 'json',
     response: AdvancedSearchResponse,
@@ -3102,7 +3163,6 @@ assistant&#x27;s reply.`,
   {
     method: 'get',
     path: '/job/api/jobs/fetch-all/',
-    alias: 'job_api_jobs_fetch_all_retrieve',
     description: `Fetch all jobs for Kanban board - API endpoint.`,
     requestFormat: 'json',
     response: FetchAllJobsResponse,
@@ -3110,7 +3170,6 @@ assistant&#x27;s reply.`,
   {
     method: 'get',
     path: '/job/api/jobs/fetch-by-column/:column_id/',
-    alias: 'job_api_jobs_fetch_by_column_retrieve',
     description: `Fetch jobs by kanban column using new categorization system.`,
     requestFormat: 'json',
     parameters: [
@@ -3125,7 +3184,6 @@ assistant&#x27;s reply.`,
   {
     method: 'get',
     path: '/job/api/jobs/fetch/:status/',
-    alias: 'job_api_jobs_fetch_retrieve',
     description: `Fetch jobs by status with optional search - API endpoint.`,
     requestFormat: 'json',
     parameters: [
@@ -3140,7 +3198,6 @@ assistant&#x27;s reply.`,
   {
     method: 'get',
     path: '/job/api/jobs/status-values/',
-    alias: 'job_api_jobs_status_values_retrieve',
     description: `Return available status values for Kanban - API endpoint.`,
     requestFormat: 'json',
     response: FetchStatusValuesResponse,
@@ -3148,7 +3205,6 @@ assistant&#x27;s reply.`,
   {
     method: 'get',
     path: '/job/job/:job_id/workshop-pdf/',
-    alias: 'job_job_workshop_pdf_retrieve',
     description: `Generate and return a workshop PDF for printing.`,
     requestFormat: 'json',
     parameters: [
@@ -3163,7 +3219,6 @@ assistant&#x27;s reply.`,
   {
     method: 'patch',
     path: '/job/rest/cost_lines/:cost_line_id/',
-    alias: 'job_rest_cost_lines_partial_update',
     description: `Update a cost line`,
     requestFormat: 'json',
     parameters: [
@@ -3183,7 +3238,6 @@ assistant&#x27;s reply.`,
   {
     method: 'delete',
     path: '/job/rest/cost_lines/:cost_line_id/delete/',
-    alias: 'job_rest_cost_lines_delete_destroy',
     description: `Delete a cost line`,
     requestFormat: 'json',
     parameters: [
@@ -3198,18 +3252,7 @@ assistant&#x27;s reply.`,
   {
     method: 'post',
     path: '/job/rest/jobs/',
-    alias: 'job_rest_jobs_create',
-    description: `Create a new Job.
-
-Expected JSON:
-{
-    &quot;name&quot;: &quot;Job Name&quot;,
-    &quot;client_id&quot;: &quot;client-uuid&quot;,
-    &quot;description&quot;: &quot;Optional description&quot;,
-    &quot;order_number&quot;: &quot;Optional order number&quot;,
-    &quot;notes&quot;: &quot;Optional notes&quot;,
-    &quot;contact_id&quot;: &quot;optional-contact-uuid&quot;
-}`,
+    description: `Create a new Job.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3219,11 +3262,16 @@ Expected JSON:
       },
     ],
     response: JobCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
     path: '/job/rest/jobs/:id/cost_sets/:kind/',
-    alias: 'job_rest_jobs_cost_sets_retrieve',
     description: `Get the latest CostSet for a job by kind.
 
 Args:
@@ -3250,7 +3298,6 @@ Returns:
   {
     method: 'post',
     path: '/job/rest/jobs/:id/quote/apply/',
-    alias: 'job_rest_jobs_quote_apply_create',
     description: `Apply quote import from linked Google Sheet.
 
 POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/apply/`,
@@ -3272,7 +3319,6 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/apply/`,
   {
     method: 'post',
     path: '/job/rest/jobs/:id/quote/link/',
-    alias: 'job_rest_jobs_quote_link_create',
     description: `Link a job to a Google Sheets quote template.
 
 POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/link/`,
@@ -3294,7 +3340,6 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/link/`,
   {
     method: 'post',
     path: '/job/rest/jobs/:id/quote/preview/',
-    alias: 'job_rest_jobs_quote_preview_create',
     description: `Preview quote import from linked Google Sheet.
 
 POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
@@ -3316,7 +3361,6 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   {
     method: 'get',
     path: '/job/rest/jobs/:job_id/',
-    alias: 'job_rest_jobs_retrieve',
     description: `Fetch complete job data including financial information`,
     requestFormat: 'json',
     parameters: [
@@ -3331,7 +3375,6 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   {
     method: 'put',
     path: '/job/rest/jobs/:job_id/',
-    alias: 'job_rest_jobs_update',
     description: `Update Job data (autosave).`,
     requestFormat: 'json',
     parameters: [
@@ -3347,11 +3390,16 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
     ],
     response: JobDetailResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'delete',
     path: '/job/rest/jobs/:job_id/',
-    alias: 'job_rest_jobs_destroy',
     description: `Delete a Job if permitted.`,
     requestFormat: 'json',
     parameters: [
@@ -3362,11 +3410,16 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
     ],
     response: JobDeleteResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'post',
     path: '/job/rest/jobs/:job_id/cost_sets/:kind/cost_lines/',
-    alias: 'job_rest_jobs_cost_sets_cost_lines_create',
     description: `Create a new cost line`,
     requestFormat: 'json',
     parameters: [
@@ -3391,7 +3444,6 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   {
     method: 'post',
     path: '/job/rest/jobs/:job_id/cost_sets/actual/cost_lines/',
-    alias: 'job_rest_jobs_cost_sets_actual_cost_lines_create',
     description: `Create a new cost line`,
     requestFormat: 'json',
     parameters: [
@@ -3411,14 +3463,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   {
     method: 'get',
     path: '/job/rest/jobs/:job_id/cost_sets/quote/revise/',
-    alias: 'job_rest_jobs_cost_sets_quote_revise_retrieve',
-    description: `Get the list of archived quote revisions for the specified job.
-
-Args:
-    job_id: Job primary key (UUID)
-
-Returns:
-    Response: List of archived quote revisions or empty list`,
+    description: `Returns a list of archived quote revisions for the specified job. Each revision contains summary and cost line data as archived at the time of revision.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3427,36 +3472,33 @@ Returns:
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: QuoteRevisionsList,
   },
   {
     method: 'post',
     path: '/job/rest/jobs/:job_id/cost_sets/quote/revise/',
-    alias: 'job_rest_jobs_cost_sets_quote_revise_create',
-    description: `Create a new quote revision for the specified job.
-
-Args:
-    job_id: Job primary key (UUID)
-
-Request Body:
-    reason (optional): String reason for the revision
-
-Returns:
-    Response: Success/error details and revision information`,
+    description: `Archives the current quote cost lines and summary for the specified job, clears all current cost lines from the quote CostSet, and starts a new quote revision. Returns details of the archived revision and status.`,
     requestFormat: 'json',
     parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z
+          .object({ reason: z.string().max(500) })
+          .partial()
+          .passthrough(),
+      },
       {
         name: 'job_id',
         type: 'Path',
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: QuoteRevisionResponse,
   },
   {
     method: 'post',
     path: '/job/rest/jobs/:job_id/events/',
-    alias: 'job_rest_jobs_events_create',
     description: `Add a manual event to the Job.
 
 Expected JSON:
@@ -3481,7 +3523,6 @@ Expected JSON:
   {
     method: 'post',
     path: '/job/rest/jobs/:job_id/quote/accept/',
-    alias: 'job_rest_jobs_quote_accept_create',
     description: `Accept a quote for the job.
 Sets the quote_acceptance_date to current datetime.`,
     requestFormat: 'json',
@@ -3497,7 +3538,6 @@ Sets the quote_acceptance_date to current datetime.`,
   {
     method: 'get',
     path: '/job/rest/jobs/:job_id/quote/status/',
-    alias: 'job_rest_jobs_quote_status_retrieve',
     description: `Get quote status for job`,
     requestFormat: 'json',
     parameters: [
@@ -3512,7 +3552,6 @@ Sets the quote_acceptance_date to current datetime.`,
   {
     method: 'get',
     path: '/job/rest/jobs/:job_id/workshop-pdf/',
-    alias: 'job_rest_jobs_workshop_pdf_retrieve',
     description: `Generate and return a workshop PDF for printing.`,
     requestFormat: 'json',
     parameters: [
@@ -3527,7 +3566,6 @@ Sets the quote_acceptance_date to current datetime.`,
   {
     method: 'get',
     path: '/job/rest/jobs/files/',
-    alias: 'retrieveJobFilesApi_4',
     description: `Based on the request, serve a file for download or return the file list of the job.`,
     requestFormat: 'json',
     parameters: [
@@ -3542,7 +3580,6 @@ Sets the quote_acceptance_date to current datetime.`,
   {
     method: 'post',
     path: '/job/rest/jobs/files/',
-    alias: 'uploadJobFilesApi_4',
     description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
     requestFormat: 'json',
     parameters: [
@@ -3562,7 +3599,6 @@ Sets the quote_acceptance_date to current datetime.`,
   {
     method: 'put',
     path: '/job/rest/jobs/files/',
-    alias: 'updateJobFilesApi_4',
     description: `Update an existing job file:
 - If a new file is provided (files[] in request), replace the file on disk.
 - If no file_obj is provided, only update print_on_jobsheet.`,
@@ -3584,7 +3620,6 @@ Sets the quote_acceptance_date to current datetime.`,
   {
     method: 'delete',
     path: '/job/rest/jobs/files/',
-    alias: 'deleteJobFilesApi_4',
     description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
     requestFormat: 'json',
     parameters: [
@@ -3599,7 +3634,6 @@ Sets the quote_acceptance_date to current datetime.`,
   {
     method: 'get',
     path: '/job/rest/jobs/files/:file_id/thumbnail/',
-    alias: 'getJobFileThumbnail',
     description: `API view for serving JPEG thumbnails of job files.
 
 This view generates and serves thumbnail images for job files that
@@ -3621,7 +3655,6 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
   {
     method: 'get',
     path: '/job/rest/jobs/files/:file_path/',
-    alias: 'retrieveJobFilesApi_5',
     description: `Based on the request, serve a file for download or return the file list of the job.`,
     requestFormat: 'json',
     parameters: [
@@ -3641,7 +3674,6 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
   {
     method: 'post',
     path: '/job/rest/jobs/files/:file_path/',
-    alias: 'uploadJobFilesApi_5',
     description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
     requestFormat: 'json',
     parameters: [
@@ -3666,7 +3698,6 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
   {
     method: 'put',
     path: '/job/rest/jobs/files/:file_path/',
-    alias: 'updateJobFilesApi_5',
     description: `Update an existing job file:
 - If a new file is provided (files[] in request), replace the file on disk.
 - If no file_obj is provided, only update print_on_jobsheet.`,
@@ -3693,7 +3724,6 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
   {
     method: 'delete',
     path: '/job/rest/jobs/files/:file_path/',
-    alias: 'deleteJobFilesApi_5',
     description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
     requestFormat: 'json',
     parameters: [
@@ -3713,7 +3743,6 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
   {
     method: 'get',
     path: '/job/rest/jobs/files/:job_number/',
-    alias: 'retrieveJobFilesApi_6',
     description: `Based on the request, serve a file for download or return the file list of the job.`,
     requestFormat: 'json',
     parameters: [
@@ -3733,7 +3762,6 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
   {
     method: 'post',
     path: '/job/rest/jobs/files/:job_number/',
-    alias: 'uploadJobFilesApi_6',
     description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
     requestFormat: 'json',
     parameters: [
@@ -3758,7 +3786,6 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
   {
     method: 'put',
     path: '/job/rest/jobs/files/:job_number/',
-    alias: 'updateJobFilesApi_6',
     description: `Update an existing job file:
 - If a new file is provided (files[] in request), replace the file on disk.
 - If no file_obj is provided, only update print_on_jobsheet.`,
@@ -3785,7 +3812,6 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
   {
     method: 'delete',
     path: '/job/rest/jobs/files/:job_number/',
-    alias: 'deleteJobFilesApi_6',
     description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
     requestFormat: 'json',
     parameters: [
@@ -3805,7 +3831,6 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
   {
     method: 'post',
     path: '/job/rest/jobs/files/upload/',
-    alias: 'uploadJobFilesRest',
     description: `REST API view for uploading files to jobs.
 
 Handles multipart file uploads, saves files to the Dropbox workflow folder,
@@ -3823,15 +3848,13 @@ and creates JobFile database records with proper file metadata.`,
   {
     method: 'get',
     path: '/job/rest/jobs/weekly-metrics/',
-    alias: 'job_rest_jobs_weekly_metrics_retrieve',
     description: `Fetch weekly metrics data.`,
     requestFormat: 'json',
-    response: WeeklyMetrics,
+    response: z.array(WeeklyMetrics),
   },
   {
     method: 'get',
     path: '/job/rest/month-end/',
-    alias: 'job_rest_month_end_retrieve',
     description: `REST API view for month-end processing of special jobs and stock data.
 
 GET: Returns special jobs data and stock job information for month-end review
@@ -3842,7 +3865,6 @@ POST: Processes selected jobs for month-end archiving and status updates`,
   {
     method: 'post',
     path: '/job/rest/month-end/',
-    alias: 'job_rest_month_end_create',
     description: `REST API view for month-end processing of special jobs and stock data.
 
 GET: Returns special jobs data and stock job information for month-end review
@@ -3860,30 +3882,55 @@ POST: Processes selected jobs for month-end archiving and status updates`,
   {
     method: 'get',
     path: '/job/rest/timesheet/entries/',
-    alias: 'job_rest_timesheet_entries_retrieve',
-    description: `Get timesheet entries (CostLines) for a specific staff member and date`,
+    description: `Fetches all timesheet entries (CostLines) for a specific staff member and date.`,
     requestFormat: 'json',
     response: ModernTimesheetEntryGetResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'post',
     path: '/job/rest/timesheet/entries/',
-    alias: 'job_rest_timesheet_entries_create',
-    description: `Create a timesheet entry as a CostLine in the actual CostSet`,
+    description: `Creates a new timesheet entry for a staff member on a specific date.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: ModernTimesheetEntryPostResponse,
+        schema: ModernTimesheetEntryPostRequest,
       },
     ],
     response: ModernTimesheetEntryPostResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
     path: '/job/rest/timesheet/jobs/:job_id/',
-    alias: 'job_rest_timesheet_jobs_retrieve',
     description: `Get all timesheet cost lines for a job`,
     requestFormat: 'json',
     parameters: [
@@ -3898,7 +3945,6 @@ POST: Processes selected jobs for month-end archiving and status updates`,
   {
     method: 'get',
     path: '/job/rest/timesheet/staff/:staff_id/date/:entry_date/',
-    alias: 'job_rest_timesheet_staff_date_retrieve',
     description: `Get all cost lines for a staff member on a specific date`,
     requestFormat: 'json',
     parameters: [
@@ -3918,7 +3964,6 @@ POST: Processes selected jobs for month-end archiving and status updates`,
   {
     method: 'post',
     path: '/purchasing/api/delivery-receipts/process/',
-    alias: 'purchasing_api_delivery_receipts_process_create',
     description: `REST API view for processing delivery receipts.
 
 POST: Processes delivery receipt for a purchase order with stock allocations`,
@@ -3935,7 +3980,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
   {
     method: 'post',
     path: '/purchasing/api/purchase-orders/:purchase_order_id/email/',
-    alias: 'purchasing_api_purchase_orders_email_create',
     description: `Generate and return email details for the specified purchase order.
 
 Args:
@@ -3963,7 +4007,6 @@ Returns:
   {
     method: 'get',
     path: '/purchasing/api/purchase-orders/:purchase_order_id/pdf/',
-    alias: 'purchasing_api_purchase_orders_pdf_retrieve',
     description: `Generate and return a PDF for the specified purchase order.
 
 Args:
@@ -3986,7 +4029,6 @@ Returns:
   {
     method: 'get',
     path: '/purchasing/rest/all-jobs/',
-    alias: 'purchasing_rest_all_jobs_retrieve',
     description: `Get all jobs with stock holding job flag.`,
     requestFormat: 'json',
     response: AllJobsResponse,
@@ -3994,7 +4036,6 @@ Returns:
   {
     method: 'post',
     path: '/purchasing/rest/delivery-receipts/',
-    alias: 'purchasing_rest_delivery_receipts_create',
     description: `REST API view for processing delivery receipts.
 
 POST: Processes delivery receipt for a purchase order with stock allocations`,
@@ -4011,7 +4052,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
   {
     method: 'get',
     path: '/purchasing/rest/jobs/',
-    alias: 'purchasing_rest_jobs_retrieve',
     description: `Get list of jobs suitable for purchasing operations.`,
     requestFormat: 'json',
     response: PurchasingJobsResponse,
@@ -4019,7 +4059,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
   {
     method: 'get',
     path: '/purchasing/rest/purchase-orders/',
-    alias: 'listPurchaseOrders',
     description: `Get list of purchase orders with optional status filtering.`,
     requestFormat: 'json',
     response: PurchaseOrderList,
@@ -4027,7 +4066,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
   {
     method: 'post',
     path: '/purchasing/rest/purchase-orders/',
-    alias: 'purchasing_rest_purchase_orders_create',
     description: `Create new purchase order.`,
     requestFormat: 'json',
     parameters: [
@@ -4042,7 +4080,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
   {
     method: 'get',
     path: '/purchasing/rest/purchase-orders/:id/',
-    alias: 'retrievePurchaseOrder',
     description: `Get purchase order details including lines.`,
     requestFormat: 'json',
     parameters: [
@@ -4057,7 +4094,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
   {
     method: 'patch',
     path: '/purchasing/rest/purchase-orders/:id/',
-    alias: 'purchasing_rest_purchase_orders_partial_update',
     description: `Update purchase order.`,
     requestFormat: 'json',
     parameters: [
@@ -4077,7 +4113,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
   {
     method: 'get',
     path: '/purchasing/rest/purchase-orders/:po_id/allocations/',
-    alias: 'purchasing_rest_purchase_orders_allocations_retrieve',
     description: `Get existing allocations for a purchase order.`,
     requestFormat: 'json',
     parameters: [
@@ -4092,7 +4127,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
   {
     method: 'get',
     path: '/purchasing/rest/stock/',
-    alias: 'purchasing_rest_stock_retrieve',
     description: `Get list of all active stock items.`,
     requestFormat: 'json',
     response: StockList,
@@ -4100,7 +4134,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
   {
     method: 'post',
     path: '/purchasing/rest/stock/',
-    alias: 'purchasing_rest_stock_create',
     description: `Create new stock item.`,
     requestFormat: 'json',
     parameters: [
@@ -4115,7 +4148,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
   {
     method: 'delete',
     path: '/purchasing/rest/stock/:stock_id/',
-    alias: 'purchasing_rest_stock_destroy',
     description: `REST API view for deactivating stock items.
 
 DELETE: Marks a stock item as inactive instead of deleting it`,
@@ -4132,7 +4164,6 @@ DELETE: Marks a stock item as inactive instead of deleting it`,
   {
     method: 'post',
     path: '/purchasing/rest/stock/:stock_id/consume/',
-    alias: 'purchasing_rest_stock_consume_create',
     description: `REST API view for consuming stock items for jobs.
 
 POST: Records stock consumption for a specific job, reducing available quantity`,
@@ -4154,7 +4185,6 @@ POST: Records stock consumption for a specific job, reducing available quantity`
   {
     method: 'get',
     path: '/purchasing/rest/xero-items/',
-    alias: 'purchasing_rest_xero_items_retrieve',
     description: `Return list of items from Xero.`,
     requestFormat: 'json',
     response: XeroItemListResponse,
@@ -4162,7 +4192,6 @@ POST: Records stock consumption for a specific job, reducing available quantity`
   {
     method: 'get',
     path: '/quoting/api/django-job-executions/',
-    alias: 'quoting_api_django_job_executions_list',
     requestFormat: 'json',
     parameters: [
       {
@@ -4176,7 +4205,6 @@ POST: Records stock consumption for a specific job, reducing available quantity`
   {
     method: 'get',
     path: '/quoting/api/django-job-executions/:id/',
-    alias: 'quoting_api_django_job_executions_retrieve',
     requestFormat: 'json',
     parameters: [
       {
@@ -4190,7 +4218,6 @@ POST: Records stock consumption for a specific job, reducing available quantity`
   {
     method: 'get',
     path: '/quoting/api/django-jobs/',
-    alias: 'quoting_api_django_jobs_list',
     requestFormat: 'json',
     parameters: [
       {
@@ -4204,7 +4231,6 @@ POST: Records stock consumption for a specific job, reducing available quantity`
   {
     method: 'post',
     path: '/quoting/api/django-jobs/',
-    alias: 'quoting_api_django_jobs_create',
     requestFormat: 'json',
     parameters: [
       {
@@ -4218,7 +4244,6 @@ POST: Records stock consumption for a specific job, reducing available quantity`
   {
     method: 'get',
     path: '/quoting/api/django-jobs/:id/',
-    alias: 'quoting_api_django_jobs_retrieve',
     requestFormat: 'json',
     parameters: [
       {
@@ -4232,7 +4257,6 @@ POST: Records stock consumption for a specific job, reducing available quantity`
   {
     method: 'put',
     path: '/quoting/api/django-jobs/:id/',
-    alias: 'quoting_api_django_jobs_update',
     requestFormat: 'json',
     parameters: [
       {
@@ -4251,7 +4275,6 @@ POST: Records stock consumption for a specific job, reducing available quantity`
   {
     method: 'patch',
     path: '/quoting/api/django-jobs/:id/',
-    alias: 'quoting_api_django_jobs_partial_update',
     requestFormat: 'json',
     parameters: [
       {
@@ -4270,7 +4293,6 @@ POST: Records stock consumption for a specific job, reducing available quantity`
   {
     method: 'delete',
     path: '/quoting/api/django-jobs/:id/',
-    alias: 'quoting_api_django_jobs_destroy',
     requestFormat: 'json',
     parameters: [
       {
@@ -4284,7 +4306,6 @@ POST: Records stock consumption for a specific job, reducing available quantity`
   {
     method: 'get',
     path: '/timesheets/api/daily/',
-    alias: 'getDailyTimesheetSummaryByDate',
     description: `Get daily timesheet summary for all staff
 
 Args:
@@ -4298,7 +4319,6 @@ Returns:
   {
     method: 'get',
     path: '/timesheets/api/daily/:target_date/',
-    alias: 'getDailyTimesheetSummaryByDate_2',
     description: `Get daily timesheet summary for all staff
 
 Args:
@@ -4319,7 +4339,6 @@ Returns:
   {
     method: 'get',
     path: '/timesheets/api/jobs/',
-    alias: 'timesheets_api_jobs_retrieve',
     description: `Get list of active jobs for timesheet entries using CostSet system.`,
     requestFormat: 'json',
     response: JobsListResponse,
@@ -4327,7 +4346,6 @@ Returns:
   {
     method: 'get',
     path: '/timesheets/api/staff/',
-    alias: 'timesheets_api_staff_retrieve',
     description: `Get filtered list of staff members.`,
     requestFormat: 'json',
     response: StaffListResponse,
@@ -4335,7 +4353,6 @@ Returns:
   {
     method: 'get',
     path: '/timesheets/api/staff/:staff_id/daily/',
-    alias: 'getStaffDailyTimesheetDetailByDate',
     description: `Get detailed timesheet data for a specific staff member
 
 Args:
@@ -4357,7 +4374,6 @@ Returns:
   {
     method: 'get',
     path: '/timesheets/api/staff/:staff_id/daily/:target_date/',
-    alias: 'getStaffDailyTimesheetDetailByDate_2',
     description: `Get detailed timesheet data for a specific staff member
 
 Args:
@@ -4384,42 +4400,88 @@ Returns:
   {
     method: 'get',
     path: '/timesheets/api/weekly/',
-    alias: 'timesheets_api_weekly_retrieve',
-    description: `Get comprehensive weekly timesheet data.
-
-Query Parameters:
-    start_date (optional): Monday of target week in YYYY-MM-DD format
-    export_to_ims (optional): Boolean to include IMS-specific data
-
-Returns:
-    Comprehensive weekly timesheet data including:
-    - Staff data with daily breakdowns
-    - Weekly totals and metrics
-    - Job statistics
-    - Summary statistics`,
+    description: `Return Monday-to-Friday weekly timesheet data.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'start_date',
         type: 'Query',
         schema: z.string().optional(),
-        description: 'Start date of the week in YYYY-MM-DD format. Defaults to the current week.',
-      },
-      {
-        name: 'export_to_ims',
-        type: 'Query',
-        schema: z.boolean().optional(),
-        description:
-          'Export data in IMS format for integration with IMS systems. Defaults to false.',
       },
     ],
-    // Accept both WeeklyTimesheetData and IMSWeeklyTimesheetData as possible responses
-    response: z.union([WeeklyTimesheetData, IMSWeeklyTimesheetData]),
+    response: WeeklyTimesheetData,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/timesheets/api/weekly/',
+    description: `Submit paid absence request.
+
+Expected payload:
+{
+    &quot;staff_id&quot;: &quot;uuid&quot;,
+    &quot;start_date&quot;: &quot;YYYY-MM-DD&quot;,
+    &quot;end_date&quot;: &quot;YYYY-MM-DD&quot;,
+    &quot;leave_type&quot;: &quot;annual|sick|other&quot;,
+    &quot;hours_per_day&quot;: 8.0,
+    &quot;description&quot;: &quot;Optional description&quot;
+}`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+    response: z.object({}).partial().passthrough(),
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/timesheets/api/weekly/ims/',
+    description: `Return IMS-formatted weekly timesheet data.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'start_date',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
+    response: IMSWeeklyTimesheetData,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
     path: '/xero-errors/',
-    alias: 'xero_errors_list',
     description: `API view for listing Xero synchronization errors.
 
 Returns a paginated list of all XeroError records ordered by timestamp
@@ -4440,7 +4502,6 @@ Endpoint: /api/xero/errors/`,
   {
     method: 'get',
     path: '/xero-errors/:id/',
-    alias: 'xero_errors_retrieve',
     description: `API view for retrieving a single Xero synchronization error.
 
 Returns detailed information about a specific XeroError record
@@ -4460,22 +4521,10 @@ Endpoint: /api/xero/errors/&lt;id&gt;/`,
   },
 ])
 
-/**
- * ATENTION: manual changes that need to persist in order to the client to work properly
- * We need to create the Axios API instance that'll be used by Zodios locally (mainly to avoid circular dependency issues)
- */
-
-let _api: InstanceType<typeof Zodios> | null = null
-
-export function getApi(): InstanceType<typeof Zodios> {
-  if (!_api) {
-    _api = new Zodios(getApiBaseUrl(), endpoints, { axiosInstance: axios })
-  }
-  return _api
-}
-
-export const api = getApi()
+export const api = new Zodios(endpoints)
 
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
   return new Zodios(baseUrl, endpoints, options)
 }
+
+export { endpoints }

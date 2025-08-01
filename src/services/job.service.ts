@@ -1,4 +1,5 @@
-import { api, schemas } from '../api/generated/api'
+import { schemas } from '../api/generated/api'
+import { api } from '@/api/client'
 import axios from '@/plugins/axios'
 import { z } from 'zod'
 import type { AdvancedFilters } from '@/constants/advanced-filters'

@@ -215,7 +215,7 @@ import { useJobTabs } from '@/composables/useJobTabs'
 import { useJobNotifications } from '@/composables/useJobNotifications'
 import { useJobEvents } from '@/composables/useJobEvents'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
-import { api } from '../api/generated/api'
+import { api } from '../api/client'
 import { ArrowLeft, Printer, Trash2, X } from 'lucide-vue-next'
 import DraggableButton from '@/components/job/DraggableButton.vue'
 

@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
-import { api, schemas } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import { api } from '@/api/client'
 import { z } from 'zod'
 import type { ClientContact } from '@/composables/useClientLookup'
 import { debugLog } from '@/utils/debug'

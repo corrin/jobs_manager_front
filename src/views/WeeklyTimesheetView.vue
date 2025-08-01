@@ -210,12 +210,8 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
-
-import { ref, onMounted, computed, nextTick } from 'vue'
-import AppLayout from '@/components/AppLayout.vue'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import {
   Calendar,
   CalendarDays,
@@ -227,27 +223,25 @@ import {
   BarChart3,
 } from 'lucide-vue-next'
 
+import AppLayout from '@/components/AppLayout.vue'
+import Button from '@/components/ui/button/Button.vue'
+import Label from '@/components/ui/label/Label.vue'
 import StaffWeekRow from '@/components/timesheet/StaffWeekRow.vue'
 import WeeklyMetricsModal from '@/components/timesheet/WeeklyMetricsModal.vue'
 import WeekPickerModal from '@/components/timesheet/WeekPickerModal.vue'
 
 import {
-  getWeeklyTimesheetOverview,
-  type WeeklyTimesheetData,
-  type IMSWeeklyData,
-} from '@/services/weekly-timesheet.service'
-import {
   dateService,
   createLocalDate,
   formatToLocalString,
-  getCurrentWeekStart,
   navigateWeek as navigateWeekDate,
 } from '@/services/date.service'
-import { useRouter, useRoute } from 'vue-router'
+import { fetchWeeklyOverview, fetchIMSOverview } from '@/services/weekly-timesheet.service'
+import type { WeeklyTimesheetData, IMSWeeklyTimesheetData } from '@/api/generated/api'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
-const weeklyData = ref<WeeklyTimesheetData | IMSWeeklyData | null>(null)
+const weeklyData = ref<WeeklyTimesheetData | IMSWeeklyTimesheetData | null>(null)
 
 const router = useRouter()
 const route = useRoute()
@@ -256,125 +250,93 @@ const initialWeekStart = route.query.week ? createLocalDate(route.query.week as 
 const selectedWeekStart = ref(initialWeekStart)
 
 const imsMode = ref(false)
-
 const showWeeklyMetricsModal = ref(false)
 const showWeekPicker = ref(false)
 
-debugLog('🔗 WeeklyTimesheetView URL params:', { week: route.query.week })
-debugLog('📊 Using initial week start:', formatToLocalString(selectedWeekStart.value))
-
+// Compute which days to render based on mode
 const displayDays = computed(() => {
   if (!weeklyData.value) return []
-
-  const days = weeklyData.value.week_days || []
-
+  const days = weeklyData.value.week_days
   if (!imsMode.value) {
-    debugLog('displayDays raw:', days)
     return days
-      .map((dateStr) => {
-        return {
-          date: dateStr,
-          name: dateService.getDayName(dateStr, true),
-          short: dateService.getDayNumber(dateStr),
-          dayOfWeek: createLocalDate(dateStr).getDay(),
-        }
-      })
-      .filter((day) => day.dayOfWeek >= 1 && day.dayOfWeek <= 5)
-  } else {
-    return days.map((dateStr) => {
-      return {
-        date: dateStr,
-        name: dateService.getDayName(dateStr, true),
-        short: dateService.getDayNumber(dateStr),
-      }
-    })
+      .map((d) => ({
+        date: d,
+        name: dateService.getDayName(d, true),
+        short: dateService.getDayNumber(d),
+        dow: createLocalDate(d).getDay(),
+      }))
+      .filter((d) => d.dow >= 1 && d.dow <= 5)
   }
+  return days.map((d) => ({
+    date: d,
+    name: dateService.getDayName(d, true),
+    short: dateService.getDayNumber(d),
+  }))
 })
 
-const formatDisplayDateRange = (): string => {
+// Format the header's date range
+function formatDisplayDateRange(): string {
   if (!weeklyData.value) return ''
   return dateService.formatDateRange(weeklyData.value.start_date, weeklyData.value.end_date)
 }
 
-const loadData = async (): Promise<void> => {
+// Core data loader
+async function loadData(): Promise<void> {
+  loading.value = true
+  error.value = null
   try {
-    loading.value = true
-    error.value = null
-
-    const weekRange = dateService.getWeekRange(selectedWeekStart.value)
-    debugLog('Loading weekly timesheet data for:', weekRange.startDate, 'IMS Mode:', imsMode.value)
-
-    weeklyData.value = await getWeeklyTimesheetOverview(weekRange.startDate, imsMode.value)
-
-    debugLog('Loaded weekly data:', weeklyData.value)
-  } catch (err) {
-    debugLog('Error loading weekly timesheet data:', err)
-    error.value = 'Failed to load weekly timesheet data. Please try again.'
+    const { startDate } = dateService.getWeekRange(selectedWeekStart.value)
+    if (imsMode.value) {
+      weeklyData.value = await fetchIMSOverview(startDate)
+    } else {
+      weeklyData.value = await fetchWeeklyOverview(startDate)
+    }
+  } catch (err: unknown) {
+    error.value =
+      'Failed to load weekly timesheet data. Please try again. ' +
+      (err instanceof Error ? err.message : 'Unknown error')
   } finally {
     loading.value = false
   }
 }
 
-const refreshData = (): void => {
+// Helpers
+function refreshData() {
   loadData()
 }
-
-const navigateWeek = (direction: number): void => {
-  const newWeekStart = navigateWeekDate(formatToLocalString(selectedWeekStart.value), direction)
-  selectedWeekStart.value = createLocalDate(newWeekStart)
-  updateRoute()
+function navigateWeek(direction: number) {
+  const newDate = navigateWeekDate(formatToLocalString(selectedWeekStart.value), direction)
+  selectedWeekStart.value = createLocalDate(newDate)
+  router.push({ query: { week: formatToLocalString(selectedWeekStart.value) } })
   loadData()
 }
-
-const goToCurrentWeek = (): void => {
-  const currentWeekStart = getCurrentWeekStart()
-  selectedWeekStart.value = createLocalDate(currentWeekStart)
-  updateRoute()
+function goToCurrentWeek() {
+  selectedWeekStart.value = createLocalDate(dateService.getCurrentWeekStart())
+  router.push({ query: { week: formatToLocalString(selectedWeekStart.value) } })
   loadData()
 }
-
-const updateRoute = () => {
-  router.push({
-    query: {
-      week: formatToLocalString(selectedWeekStart.value),
-    },
-  })
-}
-
-const toggleIMSMode = async (checked: boolean): Promise<void> => {
-  debugLog('🔄 IMS Mode toggled:', checked)
+async function toggleIMSMode(checked: boolean) {
   imsMode.value = checked
-  debugLog('🔄 IMS Mode state updated to:', imsMode.value)
-
-  await nextTick()
-  debugLog('🔄 About to reload data in IMS mode:', imsMode.value)
   await loadData()
 }
-
-const goToDailyViewHeader = (date: string) => {
-  debugLog('🔗 Navigating to daily view for date:', date)
+function goToDailyViewHeader(date: string) {
   router.push({ name: 'timesheet-daily', query: { date } })
 }
-
-const openWeeklyMetricsModal = (): void => {
+function openWeeklyMetricsModal() {
   showWeeklyMetricsModal.value = true
 }
-
-const closeWeeklyMetricsModal = (): void => {
+function closeWeeklyMetricsModal() {
   showWeeklyMetricsModal.value = false
 }
-
-const openWeekPicker = (): void => {
+function openWeekPicker() {
   showWeekPicker.value = true
 }
-
-const closeWeekPicker = (): void => {
+function closeWeekPicker() {
   showWeekPicker.value = false
 }
-
-const handleWeekSelect = (date: string): void => {
+function handleWeekSelect(date: string) {
   selectedWeekStart.value = createLocalDate(date)
-  updateRoute()
+  router.push({ query: { week: formatToLocalString(selectedWeekStart.value) } })
   loadData()
   closeWeekPicker()
 }
@@ -441,7 +403,6 @@ tbody tr:hover {
   color: #ea580c;
 }
 
-/* Backgrounds para seções */
 .bg-gray-50 {
   background-color: #f9fafb;
 }

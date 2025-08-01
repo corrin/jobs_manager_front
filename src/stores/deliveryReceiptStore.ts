@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api, schemas } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import { api } from '@/api/client'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import { debugLog } from '@/utils/debug'
 import type { z } from 'zod'
