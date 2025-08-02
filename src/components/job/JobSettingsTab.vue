@@ -57,7 +57,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea
-                v-model="localJobData.description as string"
+                v-model="localJobData.description"
                 rows="4"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
                 placeholder="Describe the job requirements and scope..."
@@ -185,7 +185,7 @@
 
             <div class="flex-grow">
               <RichTextEditor
-                v-model="jobNotesComputed as string"
+                v-model="jobNotesComputed"
                 label="Internal Notes"
                 placeholder="Add internal notes about this job..."
                 :required="false"
@@ -209,11 +209,8 @@ import ClientLookup from '../ClientLookup.vue'
 import ContactSelector from '../ContactSelector.vue'
 import { Loader2 } from 'lucide-vue-next'
 import type { Client } from '../../composables/useClientLookup'
-
-// Simple debug function
-const debugLog = (message: string, data?: unknown) => {
-  console.log(`[JobSettingsTab] ${message}`, data)
-}
+import { debugLog } from '../../utils/debug'
+import { toast } from 'vue-sonner'
 
 // Simple Card components (placeholder)
 const Card = {
@@ -262,23 +259,13 @@ onMounted(async () => {
       }))
     }
   } catch {
-    jobStatusChoices.value = [
-      { value: 'quoting', label: 'Quoting' },
-      { value: 'accepted_quote', label: 'Accepted Quote' },
-      { value: 'awaiting_materials', label: 'Awaiting Materials' },
-      { value: 'awaiting_staff', label: 'Awaiting Staff' },
-      { value: 'awaiting_site_availability', label: 'Awaiting Site Availability' },
-      { value: 'in_progress', label: 'In Progress' },
-      { value: 'on_hold', label: 'On Hold' },
-      { value: 'special', label: 'Special' },
-      { value: 'recently_completed', label: 'Recently Completed' },
-      { value: 'completed', label: 'Completed' },
-      { value: 'rejected', label: 'Rejected' },
-      { value: 'archived', label: 'Archived' },
-    ]
+    debugLog('Failed to load job status choices')
+    toast.error('Failed to load job status choices - please contact Corrin.')
+    jobStatusChoices.value = []
   }
 })
 
+// Simple data sanitization to prevent errors when sending to API - just to enforce really, Zodios already does this
 const currentClientId = computed(() => {
   const clientId =
     isChangingClient.value && newClientId.value
@@ -337,20 +324,20 @@ watch(
     // Initialize local data with proper structure
     localJobData.value = {
       id: newJobData.id,
-      name: newJobData.name || '',
-      description: newJobData.description || null,
-      client_id: newJobData.client_id || '',
-      client_name: newJobData.client_name || '',
-      contact_id: newJobData.contact_id || null,
-      contact_name: newJobData.contact_name || null,
-      order_number: newJobData.order_number || null,
-      notes: newJobData.notes || null,
-      pricing_methodology: newJobData.pricing_methodology || 'time_materials',
-      job_status: newJobData.job_status || '',
-      delivery_date: newJobData.delivery_date || null,
-      paid: newJobData.paid || false,
-      quoted: newJobData.quoted || false,
-      invoiced: newJobData.invoiced || false,
+      name: newJobData.name,
+      description: newJobData.description,
+      client_id: newJobData.client_id,
+      client_name: newJobData.client_name,
+      contact_id: newJobData.contact_id,
+      contact_name: newJobData.contact_name,
+      order_number: newJobData.order_number,
+      notes: newJobData.notes,
+      pricing_methodology: newJobData.pricing_methodology,
+      job_status: newJobData.job_status,
+      delivery_date: newJobData.delivery_date,
+      paid: newJobData.paid,
+      quoted: newJobData.quoted,
+      invoiced: newJobData.invoiced,
     }
 
     contactDisplayValue.value = String(newJobData.contact_name || '')
@@ -367,6 +354,7 @@ const sanitizeJobData = (data: Record<string, unknown>): Partial<JobCreateReques
 
   const nullableFields = ['description', 'notes', 'contact_id', 'contact_name', 'order_number']
 
+  // Map to match Zodios schema definition
   nullableFields.forEach((field) => {
     if (sanitized[field] === null) {
       sanitized[field] = undefined
@@ -378,7 +366,12 @@ const sanitizeJobData = (data: Record<string, unknown>): Partial<JobCreateReques
     (sanitized.pricing_methodology !== 'fixed_price' &&
       sanitized.pricing_methodology !== 'time_materials')
   ) {
-    sanitized.pricing_methodology = 'time_materials'
+    sanitized.pricing_methodology = ''
+    debugLog(
+      'sanitizeJobData - Invalid pricing_methodology, resetting to empty string',
+      sanitized.pricing_methodology,
+    )
+    toast.error('Invalid pricing methodology selected. Please contact Corrin.')
   }
 
   return sanitized as Partial<JobCreateRequest>

@@ -2,7 +2,6 @@ import { schemas } from '../api/generated/api'
 import { api } from '../api/client'
 import axios from '../plugins/axios'
 import { z } from 'zod'
-import type { AdvancedFilters } from '../constants/advanced-filters'
 
 type KanbanJob = z.infer<typeof schemas.KanbanJob>
 export type JobCreateData = z.infer<typeof schemas.JobCreateRequest>
@@ -17,7 +16,6 @@ type FetchAllJobsResponse = z.infer<typeof schemas.FetchAllJobsResponse>
 type FetchJobsResponse = z.infer<typeof schemas.FetchJobsResponse>
 type FetchJobsByColumnResponse = z.infer<typeof schemas.FetchJobsByColumnResponse>
 type FetchStatusValuesResponse = z.infer<typeof schemas.FetchStatusValuesResponse>
-type AdvancedSearchResponse = z.infer<typeof schemas.AdvancedSearchResponse>
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 type PaginatedCompleteJobList = z.infer<typeof schemas.PaginatedCompleteJobList>
 type JobReorderPayload = z.infer<typeof schemas.JobReorderRequest>
@@ -138,13 +136,6 @@ export const jobService = {
         String(job.job_number).toLowerCase().includes(searchTerm) ||
         job.description?.toLowerCase().includes(searchTerm),
     )
-  },
-
-  // Advanced search with filters
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async performAdvancedSearch(_filters: AdvancedFilters): Promise<AdvancedSearchResponse> {
-    const response = await api.job_api_jobs_advanced_search_retrieve()
-    return response
   },
 
   // Update job status

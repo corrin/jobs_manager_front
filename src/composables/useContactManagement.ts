@@ -39,13 +39,13 @@ export function useContactManagement() {
       // Expecting format: "name - phone - email"
       const [name, phone, email] = val.split(' - ')
       if (selectedContact.value) {
-        selectedContact.value.name = name || ''
+        selectedContact.value.name = name
         selectedContact.value.phone = phone || ''
         selectedContact.value.email = email || ''
       } else {
-        // If no contact is selected, create a new one
+        // If no contact is selected, create a new empty one
         selectedContact.value = {
-          name: name || '',
+          name: name,
           phone: phone || '',
           email: email || '',
           position: '',

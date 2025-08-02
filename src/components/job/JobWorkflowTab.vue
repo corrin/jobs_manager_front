@@ -185,16 +185,15 @@ const initializeLocalJobData = (jobData: Job) => {
 
   localJobData.value = {
     id: jobData.id,
-    job_status: jobData.job_status || '',
-    delivery_date: jobData.delivery_date || null,
-    quote_acceptance_date: jobData.quote_acceptance_date || null,
+    job_status: jobData.job_status,
+    delivery_date: jobData.delivery_date,
+    quote_acceptance_date: jobData.quote_acceptance_date,
     quoted: !!jobData.quoted,
     invoiced: !!jobData.invoiced,
     paid: !!jobData.paid,
-    // Include other necessary fields
-    name: jobData.name || '',
-    client_id: jobData.client_id || '',
-    client_name: jobData.client_name || '',
+    name: jobData.name,
+    client_id: jobData.client_id,
+    client_name: jobData.client_name,
   }
 
   debugLog('JobWorkflowTab - Local job data initialized:', localJobData.value)
@@ -282,8 +281,6 @@ const saveWorkflow = async () => {
     isLoading.value = false
   }
 }
-
-// This function is no longer needed as we construct the full response in saveWorkflow
 
 const handleSuccessfulUpdate = (updatedJobData: JobDetailResponse) => {
   debugLog(
