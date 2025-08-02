@@ -1,6 +1,5 @@
 import { Zodios } from '@zodios/core'
 import axios from 'axios'
-import '@/plugins/axios'
 import { endpoints } from './generated/api'
 
 function getApiBaseUrl() {

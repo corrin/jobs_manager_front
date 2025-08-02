@@ -137,11 +137,7 @@ import { schemas } from '../../api/generated/api'
 import { z } from 'zod'
 import { Loader2 } from 'lucide-vue-next'
 import { jobService } from '../../services/job.service'
-
-// Simple debug function
-const debugLog = (message: string, data?: unknown) => {
-  console.log(`[JobWorkflowTab] ${message}`, data)
-}
+import { debugLog } from '../../utils/debug'
 
 // Simple Card components (placeholder)
 const Card = {

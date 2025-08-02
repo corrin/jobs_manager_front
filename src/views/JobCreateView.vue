@@ -236,6 +236,7 @@ import { costlineService } from '../services/costline.service'
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
+import { debugLog } from '../utils/debug'
 
 type ClientSearchResult = z.infer<typeof schemas.ClientSearchResult>
 type ClientContact = z.infer<typeof schemas.ClientContactResult>
@@ -389,7 +390,7 @@ const canSubmit = computed(() => {
   const timeCheck = hasValidTimeEstimate.value
   const materialsCheck = hasValidMaterialsEstimate.value
 
-  console.log('canSubmit validation:', {
+  debugLog('canSubmit validation:', {
     nameCheck,
     xeroCheck,
     timeCheck,
@@ -442,7 +443,7 @@ const validateForm = (): boolean => {
 
 const handleSubmit = async () => {
   if (!validateForm()) {
-    console.log('Validation errors:', errors.value)
+    debugLog('Validation errors:', errors.value)
     return
   }
 
@@ -467,7 +468,7 @@ const handleSubmit = async () => {
         })
       } catch (error: unknown) {
         toast.error((error as Error).message)
-        console.error('Failed to create material cost line:', error)
+        debugLog('Failed to create material cost line:', error)
       }
       try {
         await costlineService.createCostLine(String(job_id), 'estimate', {
@@ -479,7 +480,7 @@ const handleSubmit = async () => {
         })
       } catch (error: unknown) {
         toast.error((error as Error).message)
-        console.error('Failed to create time cost line:', error)
+        debugLog('Failed to create time cost line:', error)
       }
       toast.success('Job created!')
       toast.dismiss('create-job')
@@ -489,7 +490,7 @@ const handleSubmit = async () => {
     }
   } catch (error: unknown) {
     toast.error('Failed to create job: ' + ((error as Error).message || error))
-    console.error('Job creation error:', error)
+    debugLog('Job creation error:', error)
     toast.dismiss('create-job')
   } finally {
     isSubmitting.value = false

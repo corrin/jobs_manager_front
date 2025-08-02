@@ -63,11 +63,6 @@ export const jobService = {
     // return api.job_api_jobs_status_values_retrieve()
   },
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  searchJobs(_filters: AdvancedFilters): Promise<AdvancedSearchResponse> {
-    return api.job_api_jobs_advanced_search_retrieve()
-  },
-
   // Job CRUD
   createJob(jobData: JobCreateData): Promise<JobCreateResponse> {
     return api.job_rest_jobs_create(jobData)

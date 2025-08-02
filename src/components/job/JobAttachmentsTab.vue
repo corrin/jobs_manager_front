@@ -423,8 +423,7 @@ const compressImage = (
               return
             }
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const compressedFile = new (window as any).File([blob], file.name, {
+            const compressedFile = new File([blob], file.name, {
               type: 'image/jpeg',
               lastModified: Date.now(),
             })
