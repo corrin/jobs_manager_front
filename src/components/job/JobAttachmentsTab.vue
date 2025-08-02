@@ -241,6 +241,7 @@ import { jobService } from '@/services/job.service'
 import { schemas } from '@/api/generated/api'
 import { formatFileSize, formatDate } from '@/utils/string-formatting'
 import type { z } from 'zod'
+import { debugLog } from '@/utils/debug'
 
 type JobFile = z.infer<typeof schemas.JobFile>
 
@@ -252,7 +253,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  'file-uploaded': [file: JobFile]
+  'file-uploaded': []
   'file-deleted': [fileId: string]
 }>()
 
@@ -277,9 +278,9 @@ async function loadFiles() {
   try {
     const response = await jobService.listJobFiles(String(props.jobNumber))
     files.value = Array.isArray(response) ? response : []
-    console.log('✅ Files loaded successfully:', files.value.length, 'files')
+    debugLog('✅ Files loaded successfully:', files.value.length, 'files')
   } catch (error) {
-    console.error('❌ Failed to load files:', error)
+    debugLog('❌ Failed to load files:', error)
     toast.error('Failed to load attachments')
     files.value = []
   } finally {
@@ -340,7 +341,7 @@ const handleFiles = async (fileList: File[]) => {
 
   const validFiles = fileList.filter((file) => {
     if (file.size === 0) {
-      console.warn(`File ${file.name} has 0 bytes and will be ignored`)
+      debugLog(`File ${file.name} has 0 bytes and will be ignored`)
       return false
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -363,13 +364,13 @@ const processAndUploadFile = async (file: File) => {
     let fileToUpload = file
 
     if (isImageFile(file)) {
-      console.log(`🖼️ Compressing image before upload: ${file.name}`)
+      debugLog(`🖼️ Compressing image before upload: ${file.name}`)
       fileToUpload = await compressImage(file)
     }
 
     await uploadFile(fileToUpload)
   } catch (error) {
-    console.error(`❌ Error processing file ${file.name}:`, error)
+    debugLog(`❌ Error processing file ${file.name}:`, error)
     toast.error(`Failed to upload ${file.name}`)
   }
 }
@@ -428,7 +429,7 @@ const compressImage = (
               lastModified: Date.now(),
             })
 
-            console.log(`📦 Image compressed: ${file.name}
+            debugLog(`📦 Image compressed: ${file.name}
               Original: ${formatFileSize(file.size)}
               Compressed: ${formatFileSize(compressedFile.size)}`)
 
@@ -455,7 +456,7 @@ const uploadFile = async (file: File) => {
   isUploading.value = true
 
   try {
-    console.log('📤 Uploading file:', file.name)
+    debugLog('📤 Uploading file:', file.name)
 
     // Simulate upload progress for better UX
     const progressInterval = setInterval(() => {
@@ -469,10 +470,10 @@ const uploadFile = async (file: File) => {
     clearInterval(progressInterval)
     uploadProgress.value = 100
 
-    console.log('✅ File uploaded successfully:', response)
+    debugLog('✅ File uploaded successfully:', response)
     toast.success(`File "${file.name}" uploaded successfully`)
 
-    emit('file-uploaded', response as JobFile)
+    emit('file-uploaded')
     await loadFiles()
 
     // Reset progress after a short delay
@@ -480,7 +481,7 @@ const uploadFile = async (file: File) => {
       uploadProgress.value = 0
     }, 1000)
   } catch (error) {
-    console.error('❌ Error uploading file:', error)
+    debugLog('❌ Error uploading file:', error)
     toast.error(`Failed to upload ${file.name}`)
     throw error
   } finally {
@@ -497,6 +498,8 @@ async function downloadFile(file: JobFile) {
 
   try {
     // Fetch the file as a blob to force download
+
+    // NOTE: the use of fetch here is to ensure we can handle large files and avoid CORS issues, justified for the simple download.
     const response = await fetch(file.download_url)
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
@@ -530,9 +533,9 @@ async function downloadFile(file: JobFile) {
       window.URL.revokeObjectURL(url)
     }, 1000)
 
-    console.log('📥 File opened for printing and download initiated:', file.filename)
+    debugLog('📥 File opened for printing and download initiated:', file.filename)
   } catch (error) {
-    console.error('❌ Error downloading file:', error)
+    debugLog('❌ Error downloading file:', error)
     toast.error('Failed to download file')
   }
 }
@@ -550,7 +553,7 @@ async function deleteFile(id: string) {
   files.value = files.value.filter((f) => f.id !== id)
 
   try {
-    console.log('🗑️ Deleting file:', file.filename)
+    debugLog('🗑️ Deleting file:', file.filename)
 
     const result = await jobService.deleteJobFile(id)
 
@@ -561,7 +564,7 @@ async function deleteFile(id: string) {
     toast.success(`File "${file.filename}" deleted successfully`)
     emit('file-deleted', id)
   } catch (error) {
-    console.error('❌ Error deleting file:', error)
+    debugLog('❌ Error deleting file:', error)
     toast.error('Failed to delete file')
 
     // Rollback optimistic update
@@ -574,7 +577,7 @@ async function updatePrintSetting(file: JobFile) {
   const originalValue = file.print_on_jobsheet
 
   try {
-    console.log('🖨️ Updating print setting for file:', {
+    debugLog('🖨️ Updating print setting for file:', {
       filename: file.filename,
       print_on_jobsheet: file.print_on_jobsheet,
       job_number: props.jobNumber,
@@ -592,7 +595,7 @@ async function updatePrintSetting(file: JobFile) {
 
     toast.success(`Print setting updated for "${file.filename}"`)
   } catch (error) {
-    console.error('❌ Error updating print setting:', error)
+    debugLog('❌ Error updating print setting:', error)
     toast.error('Failed to update print setting')
 
     // Revert the change
@@ -611,7 +614,7 @@ const closeCameraModal = () => {
 
 const handlePhotoCaptured = async (photo: File) => {
   try {
-    console.log('📸 Photo captured:', {
+    debugLog('📸 Photo captured:', {
       name: photo.name,
       size: formatFileSize(photo.size),
       type: photo.type,
@@ -620,7 +623,7 @@ const handlePhotoCaptured = async (photo: File) => {
     await processAndUploadFile(photo)
     toast.success('Photo uploaded successfully!')
   } catch (error) {
-    console.error('❌ Error uploading captured photo:', error)
+    debugLog('❌ Error uploading captured photo:', error)
     toast.error('Failed to upload photo')
   }
 }
@@ -639,7 +642,7 @@ const closeImagePreview = () => {
 const onImageError = (event: Event) => {
   const img = event.target as HTMLImageElement
   img.style.display = 'none'
-  console.warn('Failed to load image thumbnail')
+  debugLog('Failed to load image thumbnail')
 }
 
 // Helper functions
