@@ -60,7 +60,7 @@
                     v-model="contactDisplayName"
                     :client-id="formData.client_id as string"
                     :client-name="String(formData.client_name || '')"
-                    label="Contact (Optional)"
+                    label="Contact"
                     placeholder="Search or add contact person"
                     :optional="true"
                     @update:selected-contact="updateSelectedContact"
