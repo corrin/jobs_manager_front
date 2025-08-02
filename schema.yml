@@ -262,9 +262,11 @@ paths:
   /accounts/api/token/:
     post:
       operationId: accounts_api_token_create
-      description: |-
-        Customized token obtain view that handles password reset requirement
-        and sets JWT tokens as httpOnly cookies
+      description: 'Obtains JWT tokens for authentication. When ENABLE_JWT_AUTH=True,
+        tokens are set as httpOnly cookies, and the response body will be an empty
+        object (schema: EmptySerializer). Otherwise, the response body will contain
+        the tokens (schema: TokenObtainPairResponseSerializer). Also checks if the
+        user needs to reset their password.'
       tags:
         - accounts
       requestBody:
@@ -284,12 +286,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomTokenObtainPair'
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                description: Authentication failed due to invalid credentials
           description: ''
   /accounts/api/token/refresh/:
     post:
       operationId: accounts_api_token_refresh_create
-      description: Customized token refresh view that uses httpOnly cookies
+      description: 'Refreshes the JWT access token using a refresh token. When ENABLE_JWT_AUTH=True,
+        the new access token is set as an httpOnly cookie and removed from the JSON
+        response (schema: EmptySerializer). Otherwise, the response contains the new
+        access token (schema: TokenRefreshResponseSerializer).'
       tags:
         - accounts
       requestBody:
@@ -309,7 +322,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenRefresh'
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                description: Authentication failed due to invalid refresh token
           description: ''
   /accounts/api/token/verify/:
     post:
@@ -1409,10 +1430,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi
@@ -1443,7 +1486,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -1451,6 +1494,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi
@@ -1492,6 +1553,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -1510,6 +1598,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/api/job-files/{file_path}:
     get:
       operationId: retrieveJobFilesApi_2
@@ -1537,10 +1643,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi_2
@@ -1576,7 +1704,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -1584,6 +1712,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi_2
@@ -1630,6 +1776,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi_2
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -1653,6 +1826,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/api/job-files/{job_number}:
     get:
       operationId: retrieveJobFilesApi_3
@@ -1680,10 +1871,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi_3
@@ -1719,7 +1932,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -1727,6 +1940,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi_3
@@ -1773,6 +2004,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi_3
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -1796,6 +2054,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/api/job/{job_id}/assignment:
     post:
       operationId: job_api_job_assignment_create
@@ -2819,10 +3095,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi_4
@@ -2853,7 +3151,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -2861,6 +3159,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi_4
@@ -2902,6 +3218,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi_4
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -2920,6 +3263,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/rest/jobs/files/{file_id}/thumbnail/:
     get:
       operationId: getJobFileThumbnail
@@ -2977,10 +3338,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi_5
@@ -3016,7 +3399,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -3024,6 +3407,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi_5
@@ -3070,6 +3471,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi_5
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -3093,6 +3521,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/rest/jobs/files/{job_number}/:
     get:
       operationId: retrieveJobFilesApi_6
@@ -3120,10 +3566,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi_6
@@ -3159,7 +3627,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -3167,6 +3635,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi_6
@@ -3213,6 +3699,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi_6
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -3236,6 +3749,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/rest/jobs/files/upload/:
     post:
       operationId: uploadJobFilesRest
@@ -5642,6 +6173,7 @@ components:
         contact_name:
           type: string
           readOnly: true
+          nullable: true
         job_number:
           type: integer
           maximum: 2147483647
@@ -5712,6 +6244,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/QuoteSpreadsheet'
           readOnly: true
+          nullable: true
         quoted:
           type: boolean
           readOnly: true
@@ -6021,6 +6554,17 @@ components:
         - size
         - thumbnail_url
         - uploaded_at
+    JobFileErrorResponse:
+      type: object
+      description: Serializer for error responses.
+      properties:
+        status:
+          type: string
+          default: error
+        message:
+          type: string
+      required:
+        - message
     JobFileStatusEnum:
       enum:
         - active
@@ -6054,6 +6598,24 @@ components:
       required:
         - message
         - print_on_jobsheet
+    JobFileUploadPartialResponse:
+      type: object
+      description: Serializer for partial success file upload response.
+      properties:
+        status:
+          type: string
+        uploaded:
+          type: array
+          items:
+            $ref: '#/components/schemas/UploadedFile'
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - errors
+        - status
+        - uploaded
     JobFileUploadSuccessResponse:
       type: object
       description: Serializer for successful file upload response.
@@ -8610,6 +9172,8 @@ components:
         preferred_name:
           type: string
           readOnly: true
+          nullable: true
+          description: Preferred name (may be null)
         fullName:
           type: string
           readOnly: true

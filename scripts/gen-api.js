@@ -26,6 +26,7 @@ async function main() {
     options: {
       exportSchemas: true, // same as --export-schemas
       apiClientName: 'api', // generates `export const api = new Zodios(...)`
+      withAlias: true,
     },
   })
 

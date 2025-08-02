@@ -41,7 +41,7 @@
                 <div>
                   <ClientLookup
                     id="client"
-                    v-model="formData.client_name"
+                    v-model="formData.client_name as string"
                     @update:selected-id="formData.client_id = $event"
                     @update:selected-client="handleClientSelection"
                     label="Client"
@@ -55,13 +55,15 @@
 
                 <div>
                   <ContactSelector
+                    ref="contactSelectorRef"
                     id="contact"
-                    v-model="formData.contact_person"
-                    :client-id="formData.client_id"
-                    :client-name="formData.client_name || ''"
+                    v-model="contactDisplayName"
+                    :client-id="formData.client_id as string"
+                    :client-name="String(formData.client_name || '')"
                     label="Contact (Optional)"
                     placeholder="Search or add contact person"
                     :optional="true"
+                    @update:selected-contact="updateSelectedContact"
                   />
                 </div>
 
@@ -93,6 +95,8 @@
                             : 'border-red-300 bg-red-50',
                       ]"
                       placeholder="Enter materials cost"
+                      @keydown="filterNumericInput"
+                      @change="sanitizeMaterialsInput"
                     />
                     <p v-if="errors.estimatedMaterials" class="mt-1 text-sm text-red-600">
                       {{ errors.estimatedMaterials }}
@@ -125,6 +129,8 @@
                             : 'border-red-300 bg-red-50',
                       ]"
                       placeholder="Enter estimated hours"
+                      @keydown="filterNumericInput"
+                      @change="sanitizeTimeInput"
                     />
                     <p v-if="errors.estimatedTime" class="mt-1 text-sm text-red-600">
                       {{ errors.estimatedTime }}
@@ -219,20 +225,79 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import AppLayout from '@/components/AppLayout.vue'
-import ClientLookup from '@/components/ClientLookup.vue'
-import ContactSelector from '@/components/ContactSelector.vue'
-import RichTextEditor from '@/components/RichTextEditor.vue'
-import { jobService, type JobCreateData } from '@/services/job.service'
-import { costlineService } from '@/services/costline.service'
-import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
-import { schemas } from '@/api/generated/api'
+import AppLayout from '../components/AppLayout.vue'
+import ClientLookup from '../components/ClientLookup.vue'
+import ContactSelector from '../components/ContactSelector.vue'
+import RichTextEditor from '../components/RichTextEditor.vue'
+import { jobService, type JobCreateData } from '../services/job.service'
+import { costlineService } from '../services/costline.service'
+import { useCompanyDefaultsStore } from '../stores/companyDefaults'
+import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 
 type ClientSearchResult = z.infer<typeof schemas.ClientSearchResult>
+type ClientContact = z.infer<typeof schemas.ClientContactResult>
 import { toast } from 'vue-sonner'
+
+const contactSelectorRef = ref<InstanceType<typeof ContactSelector> | null>(null)
+
+const filterNumericInput = (event: KeyboardEvent) => {
+  // Allow control keys, arrow keys, and numeric keys on numpad
+  if (
+    [
+      'Backspace',
+      'Delete',
+      'Tab',
+      'Escape',
+      'Enter',
+      'ArrowLeft',
+      'ArrowRight',
+      'ArrowUp',
+      'ArrowDown',
+    ].includes(event.key) ||
+    event.ctrlKey ||
+    event.metaKey // Allow Ctrl/Cmd shortcuts
+  ) {
+    return
+  }
+
+  const inputElement = event.target as HTMLInputElement
+
+  // Allow a single decimal point
+  if (event.key === '.' && !inputElement.value.includes('.')) {
+    return
+  }
+
+  // Allow digits
+  if (/\d/.test(event.key)) {
+    return
+  }
+
+  // Prevent all other characters
+  event.preventDefault()
+}
+
+const sanitizeMaterialsInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const sanitizedValue = parseFloat(target.value)
+  if (isNaN(sanitizedValue) || sanitizedValue < 0) {
+    formData.value.estimatedMaterials = null
+  } else {
+    formData.value.estimatedMaterials = sanitizedValue
+  }
+}
+
+const sanitizeTimeInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const sanitizedValue = parseFloat(target.value)
+  if (isNaN(sanitizedValue) || sanitizedValue < 0) {
+    formData.value.estimatedTime = null
+  } else {
+    formData.value.estimatedTime = sanitizedValue
+  }
+}
 
 const router = useRouter()
 const companyDefaultsStore = useCompanyDefaultsStore()
@@ -246,24 +311,58 @@ const formData = ref<
   description: '',
   order_number: '',
   notes: '',
-  contact_person: '',
+  contact_id: null,
   estimatedMaterials: null,
   estimatedTime: null,
 })
 
 const selectedClient = ref<ClientSearchResult | null>(null)
+const selectedContact = ref<ClientContact | null>(null)
+const contactDisplayName = ref('')
 
 const errors = ref<Record<string, string>>({})
 const isSubmitting = ref(false)
 
-const handleClientSelection = (client: ClientSearchResult | null) => {
+const handleClientSelection = async (client: ClientSearchResult | null) => {
   selectedClient.value = client
+
+  // Clear contact person when client changes
+  formData.value.contact_id = null
+  selectedContact.value = null
+  contactDisplayName.value = ''
+  if (contactSelectorRef.value) {
+    contactSelectorRef.value.clearSelection()
+  }
+
   if (client) {
     formData.value.client_name = client.name
     formData.value.client_id = client.id
+
+    // Wait for the next DOM update cycle to ensure the ref is ready
+    // and the new client ID has propagated to the ContactSelector.
+    await nextTick()
+
+    if (contactSelectorRef.value) {
+      // The `selectPrimaryContact` method within the composable
+      // will handle loading contacts and finding the primary.
+      await contactSelectorRef.value.selectPrimaryContact()
+    }
   } else {
+    // Clear client fields if client is deselected
     formData.value.client_name = ''
     formData.value.client_id = ''
+  }
+}
+
+const updateSelectedContact = (contact: ClientContact | null) => {
+  selectedContact.value = contact
+  if (contact) {
+    // Save the contact ID for the API and display name for the UI
+    formData.value.contact_id = contact.id
+    contactDisplayName.value = contact.name
+  } else {
+    formData.value.contact_id = null
+    contactDisplayName.value = ''
   }
 }
 
@@ -356,13 +455,13 @@ const handleSubmit = async () => {
     if (result.success && result.job_id) {
       const job_id = result.job_id
       try {
-        await costlineService.createCostLine(job_id, 'estimate', {
+        await costlineService.createCostLine(String(job_id), 'estimate', {
           kind: 'material',
           desc: 'Estimated materials',
           quantity: '1',
-          unit_cost: formData.value.estimatedMaterials.toFixed(2),
+          unit_cost: formData.value.estimatedMaterials!.toFixed(2),
           unit_rev: (
-            formData.value.estimatedMaterials *
+            formData.value.estimatedMaterials! *
             (1 + (companyDefaultsStore.companyDefaults?.materials_markup ?? 0))
           ).toFixed(2),
         })
@@ -371,10 +470,10 @@ const handleSubmit = async () => {
         console.error('Failed to create material cost line:', error)
       }
       try {
-        await costlineService.createCostLine(job_id, 'estimate', {
+        await costlineService.createCostLine(String(job_id), 'estimate', {
           kind: 'time',
           desc: 'Estimated time',
-          quantity: formData.value.estimatedTime.toFixed(2),
+          quantity: formData.value.estimatedTime!.toFixed(2),
           unit_cost: Number(companyDefaultsStore.companyDefaults?.wage_rate ?? 0).toFixed(2),
           unit_rev: Number(companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0).toFixed(2),
         })
@@ -384,9 +483,9 @@ const handleSubmit = async () => {
       }
       toast.success('Job created!')
       toast.dismiss('create-job')
-      router.push({ name: 'job-edit', params: { id: job_id } })
+      router.push({ name: 'job-edit', params: { id: String(job_id) } })
     } else {
-      throw new Error(result.error || 'Failed to create job')
+      throw new Error(String(result.error) || 'Failed to create job')
     }
   } catch (error: unknown) {
     toast.error('Failed to create job: ' + ((error as Error).message || error))
@@ -398,8 +497,14 @@ const handleSubmit = async () => {
 }
 
 onMounted(() => {
-  Object.keys(formData.value).forEach((key) => {
-    formData.value[key] = key === 'estimatedMaterials' ? null : key === 'estimatedTime' ? null : ''
-  })
+  formData.value.name = ''
+  formData.value.client_id = ''
+  formData.value.client_name = ''
+  formData.value.description = ''
+  formData.value.order_number = ''
+  formData.value.notes = ''
+  formData.value.contact_id = null
+  formData.value.estimatedMaterials = null
+  formData.value.estimatedTime = null
 })
 </script>

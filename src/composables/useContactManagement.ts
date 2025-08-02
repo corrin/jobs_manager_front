@@ -26,17 +26,35 @@ export function useContactManagement() {
 
   const hasContacts = computed(() => contacts.value.length > 0)
 
-  const displayValue = computed(() => {
-    if (!selectedContact.value) return ''
-
-    const contact = selectedContact.value
-    const parts = [contact.name]
-
-    if (contact.phone) parts.push(contact.phone)
-    if (contact.email) parts.push(contact.email)
-
-    return parts.join(' - ')
-  })
+  const displayValue = {
+    get() {
+      if (!selectedContact.value) return ''
+      const contact = selectedContact.value
+      const parts = [contact.name]
+      if (contact.phone) parts.push(contact.phone)
+      if (contact.email) parts.push(contact.email)
+      return parts.join(' - ')
+    },
+    set(val: string) {
+      // Expecting format: "name - phone - email"
+      const [name, phone, email] = val.split(' - ')
+      if (selectedContact.value) {
+        selectedContact.value.name = name || ''
+        selectedContact.value.phone = phone || ''
+        selectedContact.value.email = email || ''
+      } else {
+        // If no contact is selected, create a new one
+        selectedContact.value = {
+          name: name || '',
+          phone: phone || '',
+          email: email || '',
+          position: '',
+          notes: '',
+          is_primary: false,
+        }
+      }
+    },
+  }
 
   const openModal = async (clientId: string, clientName: string) => {
     if (!clientId) {
