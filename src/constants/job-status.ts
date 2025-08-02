@@ -8,18 +8,29 @@
 
 export const JOB_STATUS_CHOICES = [
   { key: 'draft', label: 'Draft', tooltip: 'Initial job creation - quote being prepared' },
-  { key: 'quote_sent', label: 'Quote Sent', tooltip: 'Quote has been sent to client' },
-  { key: 'quote_accepted', label: 'Quote Accepted', tooltip: 'Client has accepted the quote' },
+  {
+    key: 'awaiting_approval',
+    label: 'Awaiting Approval',
+    tooltip: 'Quote submitted and waiting for customer approval',
+  },
+  { key: 'approved', label: 'Approved', tooltip: 'Quote approved and ready to start work' },
   { key: 'in_progress', label: 'In Progress', tooltip: 'Work has started on this job' },
   {
-    key: 'ready_for_delivery',
-    label: 'Ready for Delivery',
-    tooltip: 'Job is complete and ready for delivery',
+    key: 'unusual',
+    label: 'Unusual',
+    tooltip: 'Jobs requiring special attention - on hold, waiting for materials/staff/site',
   },
-  { key: 'delivered', label: 'Delivered', tooltip: 'Job has been delivered to client' },
-  { key: 'completed', label: 'Completed', tooltip: 'Job is fully complete and paid' },
-  { key: 'cancelled', label: 'Cancelled', tooltip: 'Job was cancelled' },
-  { key: 'on_hold', label: 'On Hold', tooltip: 'Job is temporarily paused' },
+  {
+    key: 'recently_completed',
+    label: 'Recently Completed',
+    tooltip: 'Work has just finished on this job (including rejected jobs)',
+  },
+  {
+    key: 'special',
+    label: 'Special',
+    tooltip: 'Shop jobs, upcoming shutdowns, etc. (not visible on kanban without advanced search)',
+  },
+  { key: 'archived', label: 'Archived', tooltip: 'The job has been paid for and picked up' },
 ] as const
 
 export type JobStatusKey = (typeof JOB_STATUS_CHOICES)[number]['key']

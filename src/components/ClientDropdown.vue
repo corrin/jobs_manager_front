@@ -32,7 +32,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
-import { api, schemas } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import { api } from '@/api/client'
 import { z } from 'zod'
 
 // Use generated types from Zodios API

@@ -1,4 +1,4 @@
-import { api } from '@/api/generated/api'
+import { api } from '@/api/client'
 import type { DjangoJob, DjangoJobExecution } from '@/api/generated/api'
 
 export async function getDjangoJobs(): Promise<DjangoJob[]> {

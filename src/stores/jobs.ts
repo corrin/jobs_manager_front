@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { schemas } from '@/api/generated/api'
-import { debugLog } from '@/utils/debug'
+import { schemas } from '../api/generated/api'
+import { debugLog } from '../utils/debug'
 import type { z } from 'zod'
 
 type JobDetail = z.infer<typeof schemas.JobDetailResponse>['data']
 type JobEvent = z.infer<typeof schemas.JobEvent>
 type KanbanJobUI = z.infer<typeof schemas.KanbanJob>
-type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
+type CompanyDefaultsJobDetail = z.infer<typeof schemas.CompanyDefaultsJobDetail>
 
 export const useJobsStore = defineStore('jobs', () => {
   const detailedJobs = ref<Record<string, JobDetail>>({})
@@ -38,42 +38,50 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   })
 
-  const setDetailedJob = (job: JobDetail): void => {
-    if (!job) {
-      debugLog('🚨 Store - setDetailedJob called with null/undefined job')
-      console.trace('Stack trace for undefined job call')
+  const setDetailedJob = (jobDetail: JobDetail): void => {
+    if (!jobDetail) {
+      debugLog('🚨 Store - setDetailedJob called with null/undefined jobDetail')
       return
     }
 
-    if (!job.id || typeof job.id !== 'string') {
-      debugLog('🚨 Store - setDetailedJob called with invalid job.id:', job.id, 'Full job:', job)
-      console.trace('Stack trace for invalid job.id call')
+    // JobDetail has structure: {job: {...}, events: [...], company_defaults: {...}}
+    if (!jobDetail.job || !jobDetail.job.id || typeof jobDetail.job.id !== 'string') {
+      debugLog('🚨 Store - setDetailedJob called with invalid jobDetail structure:', {
+        hasJob: !!jobDetail.job,
+        jobId: jobDetail.job?.id,
+        jobIdType: typeof jobDetail.job?.id,
+      })
       return
     }
 
-    const existingJob = detailedJobs.value[job.id]
-    if (existingJob && JSON.stringify(existingJob) === JSON.stringify(job)) {
-      debugLog('🔄 Store - Job data identical, skipping update to prevent loop:', job.id)
+    const jobId = jobDetail.job.id
+    const existingJob = detailedJobs.value[jobId]
+    if (existingJob && JSON.stringify(existingJob) === JSON.stringify(jobDetail)) {
+      debugLog('🔄 Store - JobDetail data identical, skipping update to prevent loop:', jobId)
       return
     }
 
-    debugLog('🏪 Store - setDetailedJob called with job:', job.id, 'job_status:', job.job_status)
-    debugLog(
-      '🏪 Store - Before update, current job in store:',
-      detailedJobs.value[job.id]?.job_status || 'NOT_FOUND',
-    )
+    debugLog('🏪 Store - setDetailedJob called:', {
+      jobId,
+      jobStatus: jobDetail.job.job_status,
+      hasEvents: Array.isArray(jobDetail.events),
+      eventsCount: jobDetail.events?.length || 0,
+    })
 
-    const newJob = { ...job }
+    const newJobDetail = { ...jobDetail }
     detailedJobs.value = {
       ...detailedJobs.value,
-      [job.id]: newJob,
+      [jobId]: newJobDetail,
     }
 
-    debugLog('🏪 Store - After update, job in store:', detailedJobs.value[job.id]?.job_status)
+    debugLog('🏪 Store - Job updated successfully:', {
+      jobId,
+      newStatus: detailedJobs.value[jobId]?.job?.job_status,
+    })
 
-    if (kanbanJobs.value[job.id]) {
+    if (kanbanJobs.value[jobId]) {
       debugLog('🏪 Store - Also updating kanban job')
-      updateKanbanJobFromDetailed(newJob)
+      updateKanbanJobFromDetailed(newJobDetail)
     }
   }
 
@@ -119,15 +127,16 @@ export const useJobsStore = defineStore('jobs', () => {
   }
 
   const updateKanbanJobFromDetailed = (detailedJob: JobDetail): void => {
-    const kanbanJob = kanbanJobs.value[detailedJob.id]
+    const jobId = detailedJob.job.id
+    const kanbanJob = kanbanJobs.value[jobId]
     if (kanbanJob) {
-      kanbanJobs.value[detailedJob.id] = {
+      kanbanJobs.value[jobId] = {
         ...kanbanJob,
-        name: detailedJob.name,
-        job_status: detailedJob.job_status,
-        client_name: detailedJob.client_name,
-        contact_person: detailedJob.contact_name || kanbanJob.contact_person,
-        paid: detailedJob.paid || false,
+        name: detailedJob.job.name,
+        job_status: detailedJob.job.job_status,
+        client_name: detailedJob.job.client_name,
+        contact_person: detailedJob.job.contact_name || kanbanJob.contact_person,
+        paid: detailedJob.job.paid || false,
       }
     }
   }
@@ -184,17 +193,20 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
-  const updateJobCompanyDefaults = (jobId: string, companyDefaults: CompanyDefaults): void => {
-    const job = detailedJobs.value[jobId]
-    if (job) {
-      detailedJobs.value[jobId] = { ...job, company_defaults: companyDefaults }
+  const updateJobCompanyDefaults = (
+    jobId: string,
+    companyDefaults: CompanyDefaultsJobDetail,
+  ): void => {
+    const jobDetail = detailedJobs.value[jobId]
+    if (jobDetail) {
+      detailedJobs.value[jobId] = { ...jobDetail, company_defaults: companyDefaults }
     }
   }
 
   const updateJobPartialData = (jobId: string, partialData: Partial<JobDetail>): void => {
-    const job = detailedJobs.value[jobId]
-    if (job) {
-      detailedJobs.value[jobId] = { ...job, ...partialData }
+    const jobDetail = detailedJobs.value[jobId]
+    if (jobDetail) {
+      detailedJobs.value[jobId] = { ...jobDetail, ...partialData }
 
       if (kanbanJobs.value[jobId]) {
         updateKanbanJobFromDetailed(detailedJobs.value[jobId])
@@ -206,20 +218,15 @@ export const useJobsStore = defineStore('jobs', () => {
     if (!jobId) return undefined
 
     try {
-      const { jobService } = await import('@/services/job.service')
+      const { jobService } = await import('../services/job.service')
       const response = await jobService.getJob(jobId)
 
-      if (response.success && response.data?.job) {
-        setDetailedJob(response.data.job)
+      if (response.success && response.data) {
+        setDetailedJob(response.data)
         return { job: response.data.job, events: response.data.events || [] }
       }
 
-      if (response.job) {
-        setDetailedJob(response.job)
-        return { job: response.job, events: response.events || [] }
-      }
-
-      throw new Error('Job not found')
+      throw new Error('Job not found or invalid response format')
     } catch (error) {
       debugLog('❌ Store - fetchJob error:', error)
       throw error

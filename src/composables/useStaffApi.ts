@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { z } from 'zod'
-import { api, schemas } from '../api/generated/api'
+import { schemas } from '../api/generated/api'
+import { api } from '@/api/client'
 
 type Staff = z.infer<typeof schemas.Staff>
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>

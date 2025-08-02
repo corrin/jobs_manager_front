@@ -139,7 +139,7 @@ import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { useXeroItemStore } from '@/stores/xeroItemStore'
 import { extractErrorMessage, createErrorToast } from '@/utils/errorHandler'
 import { toast } from 'vue-sonner'
-import { api } from '@/api/generated/api'
+import { api } from '@/api/client'
 
 // Import types from generated API schemas
 import type { PurchaseOrderLine, PurchaseOrderDetail, JobForPurchasing } from '@/api/generated/api'

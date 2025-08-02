@@ -86,7 +86,7 @@ import { Button } from '@/components/ui/button'
 import { onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Pagination from '@/components/ui/pagination/Pagination.vue'
-import { api } from '../../api/generated/api'
+import { api } from '../../api/client'
 
 // Import types from generated API schemas
 import type { PurchaseOrderList } from '@/api/generated/api'

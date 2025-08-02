@@ -150,7 +150,7 @@ export function useJobNotifications() {
 
   const notifyDeleteSuccess = (itemType: string) => {
     toast.success(`${itemType} deleted!`, {
-      description: 'Item was permanently removed',
+      description: `${itemType} was permanently removed`,
       id: 'delete-item',
     })
   }

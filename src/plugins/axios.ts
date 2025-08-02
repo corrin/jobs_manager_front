@@ -1,3 +1,7 @@
+/**
+ * HELPER FOR AXIOS SETUP - used for manual requests when the generated client is not suitable or is missing some endpoint. It should be slowly replaced by the generated client.
+ */
+
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'

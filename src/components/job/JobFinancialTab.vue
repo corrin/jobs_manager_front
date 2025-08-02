@@ -242,7 +242,11 @@
 import { debugLog } from '../../utils/debug'
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { api, type Job } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
+import { api } from '@/api/client'
+
+type Job = z.infer<typeof schemas.Job>
 
 interface Props {
   jobData: Job | null

@@ -63,19 +63,11 @@ import { Archive, ArrowRight, Save } from 'lucide-vue-next'
 import { jobColumns as columns } from './jobColumns'
 import JobTable from './JobTable.vue'
 import { toast } from 'vue-sonner'
-import { api } from '../api/generated/api'
+import { api } from '../api/client'
+import { schemas } from '../api/generated/api'
+import { z } from 'zod'
 
-// Create a local Job type for archive functionality
-type JobArchive = {
-  id: string
-  job_number: number
-  name: string
-  client_name: string
-  updated_at: string
-  job_status?: string
-}
-
-type Job = JobArchive
+type Job = z.infer<typeof schemas.Job>
 
 const jobs = ref<Job[]>([])
 const toArchive = ref<Job[]>([])

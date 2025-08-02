@@ -2,7 +2,11 @@ import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
 import { z } from 'zod'
 
 const KPIProfitBreakdown = z
-  .object({ labor_profit: z.number(), material_profit: z.number(), adjustment_profit: z.number() })
+  .object({
+    labor_profit: z.number(),
+    material_profit: z.number(),
+    adjustment_profit: z.number(),
+  })
   .passthrough()
 const KPIJobBreakdown = z
   .object({
@@ -104,7 +108,11 @@ const KPICalendarData = z
   })
   .passthrough()
 const JobAgingFinancialData = z
-  .object({ estimate_total: z.number(), quote_total: z.number(), actual_total: z.number() })
+  .object({
+    estimate_total: z.number(),
+    quote_total: z.number(),
+    actual_total: z.number(),
+  })
   .passthrough()
 const JobAgingTimingData = z
   .object({
@@ -236,7 +244,7 @@ const UserProfile = z
     email: z.string().email(),
     first_name: z.string(),
     last_name: z.string(),
-    preferred_name: z.string(),
+    preferred_name: z.string().nullable(),
     fullName: z.string(),
     is_active: z.boolean(),
     is_staff: z.boolean(),
@@ -407,7 +415,26 @@ const XeroOperationResponse = z
     error: z.string().optional(),
     messages: z.array(z.string()).optional(),
     online_url: z.string().url().optional(),
-    xero_id: z.string().uuid().optional(),
+    xero_id: z.string().uuid(),
+  })
+  .passthrough()
+const SeverityEnum = z.enum(['info', 'warning', 'error'])
+const NullEnum = z.unknown()
+const SyncStatusEnum = z.enum(['success', 'error', 'running'])
+const XeroSseEvent = z
+  .object({
+    datetime: z.string().datetime({ offset: true }),
+    message: z.string(),
+    severity: z.union([SeverityEnum, NullEnum]).nullish(),
+    entity: z.string().nullish(),
+    progress: z.number().nullish(),
+    overall_progress: z.number().nullish(),
+    entity_progress: z.number().nullish(),
+    records_updated: z.number().int().nullish(),
+    status: z.string().nullish(),
+    sync_status: z.union([SyncStatusEnum, NullEnum]).nullish(),
+    error_messages: z.array(z.string()).optional(),
+    missing_fields: z.array(z.string()).optional(),
   })
   .passthrough()
 const ClientContactResult = z
@@ -420,7 +447,7 @@ const ClientContactResult = z
     is_primary: z.boolean(),
   })
   .passthrough()
-const ClientContactsResponse = z.object({ results: z.array(ClientContactResult) }).passthrough()
+const ClientContactResponse = z.object({ results: z.array(ClientContactResult) }).passthrough()
 const ClientListResponse = z.object({ id: z.string(), name: z.string() }).passthrough()
 const ClientContactCreateRequest = z
   .object({
@@ -431,6 +458,20 @@ const ClientContactCreateRequest = z
     position: z.string().max(255).optional(),
     is_primary: z.boolean().optional().default(false),
     notes: z.string().optional(),
+  })
+  .passthrough()
+const ClientContactCreateResponse = z
+  .object({
+    success: z.boolean(),
+    contact: ClientContactResult,
+    message: z.string(),
+  })
+  .passthrough()
+const ClientErrorResponse = z
+  .object({
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    details: z.string().optional(),
   })
   .passthrough()
 const ClientCreateRequest = z
@@ -471,6 +512,12 @@ const JobFile = z
     status: JobFileStatusEnum.optional(),
   })
   .passthrough()
+const JobFileErrorResponse = z
+  .object({
+    status: z.string().optional().default('error'),
+    message: z.string(),
+  })
+  .passthrough()
 const UploadedFile = z
   .object({
     id: z.string(),
@@ -484,6 +531,13 @@ const JobFileUploadSuccessResponse = z
     status: z.string().optional().default('success'),
     uploaded: z.array(UploadedFile),
     message: z.string(),
+  })
+  .passthrough()
+const JobFileUploadPartialResponse = z
+  .object({
+    status: z.string(),
+    uploaded: z.array(UploadedFile),
+    errors: z.array(z.string()),
   })
   .passthrough()
 const JobFileUpdateSuccessResponse = z
@@ -545,7 +599,11 @@ const JobReorderRequest = z
   .passthrough()
 const JobStatusUpdateRequest = z.object({ status: z.string() }).passthrough()
 const KanbanJobPerson = z
-  .object({ id: z.string().uuid(), display_name: z.string(), icon: z.string().url().nullable() })
+  .object({
+    id: z.string().uuid(),
+    display_name: z.string(),
+    icon: z.string().url().nullable(),
+  })
   .passthrough()
 const KanbanJob = z
   .object({
@@ -679,9 +737,23 @@ const JobCreateRequest = z
     contact_id: z.string().uuid().nullish(),
   })
   .passthrough()
+const JobCreateResponse = z
+  .object({
+    success: z.boolean().optional().default(true),
+    job_id: z.string(),
+    job_number: z.string(),
+    message: z.string(),
+  })
+  .passthrough()
+const JobRestErrorResponse = z.object({ error: z.string() }).passthrough()
 const CostSetKindEnum = z.enum(['estimate', 'quote', 'actual'])
 const CostSetSummary = z
-  .object({ cost: z.number(), rev: z.number(), hours: z.number(), profitMargin: z.number() })
+  .object({
+    cost: z.number(),
+    rev: z.number(),
+    hours: z.number(),
+    profitMargin: z.number(),
+  })
   .passthrough()
 const CostLine = z
   .object({
@@ -735,7 +807,7 @@ const Job = z
     client_id: z.string().uuid(),
     client_name: z.string(),
     contact_id: z.string().uuid().nullish(),
-    contact_name: z.string(),
+    contact_name: z.string().nullable(),
     job_number: z.number().int().gte(-2147483648).lte(2147483647),
     notes: z.string().nullish(),
     order_number: z.string().max(100).nullish(),
@@ -753,7 +825,7 @@ const Job = z
     job_files: z.array(JobFile).optional(),
     charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
     pricing_methodology: PricingMethodologyEnum.optional(),
-    quote_sheet: QuoteSpreadsheet,
+    quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
     invoiced: z.boolean(),
     quote: z.object({}).partial().passthrough().nullable(),
@@ -764,28 +836,58 @@ const Job = z
 const JobEvent = z
   .object({
     id: z.string().uuid(),
-    timestamp: z.string().datetime({ offset: true }),
-    event_type: z.string(),
+    timestamp: z.string().datetime({ offset: true }).optional(),
+    event_type: z.string().max(100).optional(),
     description: z.string(),
     staff: z.string(),
   })
   .passthrough()
-
+const CompanyDefaultsJobDetail = z
+  .object({
+    materials_markup: z.number(),
+    time_markup: z.number(),
+    charge_out_rate: z.number(),
+    wage_rate: z.number(),
+  })
+  .passthrough()
 const JobData = z
   .object({
     job: Job,
     events: z.array(JobEvent),
-    company_defaults: z.object({
-      materials_markup: z.number(),
-      time_markup: z.number(),
-      charge_out_rate: z.number(),
-      wage_rate: z.number(),
-    }),
+    company_defaults: CompanyDefaultsJobDetail,
   })
   .passthrough()
-
 const JobDetailResponse = z
   .object({ success: z.boolean().optional().default(true), data: JobData })
+  .passthrough()
+const JobDeleteResponse = z
+  .object({
+    success: z.boolean().optional().default(true),
+    message: z.string(),
+  })
+  .passthrough()
+const QuoteRevisionsList = z
+  .object({
+    job_id: z.string(),
+    job_number: z.string(),
+    current_cost_set_rev: z.number().int(),
+    total_revisions: z.number().int(),
+    revisions: z.array(z.object({}).partial().passthrough()),
+  })
+  .passthrough()
+const QuoteRevisionRequest = z
+  .object({ reason: z.string().max(500) })
+  .partial()
+  .passthrough()
+const QuoteRevisionResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string(),
+    quote_revision: z.number().int(),
+    archived_cost_lines_count: z.number().int(),
+    job_id: z.string(),
+    error: z.string().optional(),
+  })
   .passthrough()
 const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
 const QuoteImportStatusResponse = z
@@ -828,10 +930,8 @@ const ApplyQuoteResponse = z
   .passthrough()
 const LinkQuoteSheetRequest = z.object({ template_url: z.string().url() }).partial().passthrough()
 const ValidationReport = z
-  .object({
-    warnings: z.array(z.string()).optional(),
-    errors: z.array(z.string()).optional(),
-  })
+  .object({ warnings: z.array(z.string()), errors: z.array(z.string()) })
+  .partial()
   .passthrough()
 const DiffPreview = z
   .object({
@@ -839,8 +939,8 @@ const DiffPreview = z
     updates_count: z.number().int(),
     deletions_count: z.number().int(),
     total_changes: z.number().int(),
-    next_revision: z.number().int(),
-    current_revision: z.number().int(),
+    next_revision: z.number().int().optional(),
+    current_revision: z.number().int().nullish(),
   })
   .passthrough()
 const PreviewQuoteResponse = z
@@ -849,14 +949,17 @@ const PreviewQuoteResponse = z
     draft_lines: z.array(DraftLine),
     changes: QuoteChanges,
     message: z.string(),
-    can_proceed: z.boolean().optional(),
-    validation_report: ValidationReport.optional().nullable(),
-    diff_preview: DiffPreview.optional().nullable(),
+    can_proceed: z.boolean().default(false),
+    validation_report: ValidationReport.nullable(),
+    diff_preview: DiffPreview.nullable(),
   })
   .partial()
   .passthrough()
 const JobFileThumbnailErrorResponse = z
-  .object({ status: z.string().optional().default('error'), message: z.string() })
+  .object({
+    status: z.string().optional().default('error'),
+    message: z.string(),
+  })
   .passthrough()
 const JobFileUploadViewResponse = z
   .object({
@@ -865,8 +968,26 @@ const JobFileUploadViewResponse = z
     message: z.string(),
   })
   .passthrough()
+const WeeklyMetrics = z
+  .object({
+    job_id: z.string().uuid(),
+    job_number: z.number().int(),
+    name: z.string(),
+    client: z.string(),
+    description: z.string(),
+    status: z.string(),
+    people: z.array(z.object({}).partial().passthrough()),
+    estimated_hours: z.number(),
+    actual_hours: z.number(),
+    profit: z.number(),
+  })
+  .passthrough()
 const MonthEndJobHistory = z
-  .object({ date: z.string(), total_hours: z.number(), total_dollars: z.number() })
+  .object({
+    date: z.string(),
+    total_hours: z.number(),
+    total_dollars: z.number(),
+  })
   .passthrough()
 const MonthEndJob = z
   .object({
@@ -880,7 +1001,11 @@ const MonthEndJob = z
   })
   .passthrough()
 const MonthEndStockHistory = z
-  .object({ date: z.string(), material_line_count: z.number().int(), material_cost: z.number() })
+  .object({
+    date: z.string(),
+    material_line_count: z.number().int(),
+    material_cost: z.number(),
+  })
   .passthrough()
 const MonthEndStockJob = z
   .object({
@@ -894,38 +1019,10 @@ const MonthEndGetResponse = z
   .object({ jobs: z.array(MonthEndJob), stock_job: MonthEndStockJob })
   .passthrough()
 const MonthEndPostResponse = z
-  .object({ processed: z.array(z.string().uuid()), errors: z.array(z.string()) })
-  .passthrough()
-const ModernTimesheetStaff = z
-  .object({ id: z.string().uuid(), name: z.string(), firstName: z.string(), lastName: z.string() })
-  .passthrough()
-const ModernTimesheetSummary = z
   .object({
-    total_hours: z.number(),
-    billable_hours: z.number(),
-    non_billable_hours: z.number(),
-    total_cost: z.number(),
-    total_revenue: z.number(),
-    entry_count: z.number().int(),
+    processed: z.array(z.string().uuid()),
+    errors: z.array(z.string()),
   })
-  .passthrough()
-const ModernTimesheetEntryGetResponse = z
-  .object({
-    cost_lines: z.array(z.object({}).partial().passthrough()),
-    staff: ModernTimesheetStaff,
-    date: z.string(),
-    summary: ModernTimesheetSummary,
-  })
-  .passthrough()
-const ModernTimesheetEntryPostResponse = z
-  .object({
-    success: z.boolean(),
-    cost_line_id: z.string().uuid().optional(),
-    message: z.string().optional(),
-  })
-  .passthrough()
-const ModernTimesheetJobGetResponse = z
-  .object({ jobs: z.array(Job), total_count: z.number().int() })
   .passthrough()
 const TimesheetCostLine = z
   .object({
@@ -947,6 +1044,54 @@ const TimesheetCostLine = z
     wage_rate: z.number(),
   })
   .passthrough()
+const ModernTimesheetStaff = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
+  })
+  .passthrough()
+const ModernTimesheetSummary = z
+  .object({
+    total_hours: z.number(),
+    billable_hours: z.number(),
+    non_billable_hours: z.number(),
+    total_cost: z.number(),
+    total_revenue: z.number(),
+    entry_count: z.number().int(),
+  })
+  .passthrough()
+const ModernTimesheetEntryGetResponse = z
+  .object({
+    cost_lines: z.array(TimesheetCostLine),
+    staff: ModernTimesheetStaff,
+    date: z.string(),
+    summary: ModernTimesheetSummary,
+  })
+  .passthrough()
+const ModernTimesheetErrorResponse = z.object({ error: z.string() }).passthrough()
+const ModernTimesheetEntryPostRequest = z
+  .object({
+    job_id: z.string().uuid(),
+    staff_id: z.string().uuid(),
+    date: z.string(),
+    hours: z.number().gte(0),
+    description: z.string().max(500),
+    is_billable: z.boolean().optional().default(true),
+    hourly_rate: z.number().gte(0).optional(),
+  })
+  .passthrough()
+const ModernTimesheetEntryPostResponse = z
+  .object({
+    success: z.boolean(),
+    cost_line_id: z.string().uuid().optional(),
+    message: z.string().optional(),
+  })
+  .passthrough()
+const ModernTimesheetJobGetResponse = z
+  .object({ jobs: z.array(Job), total_count: z.number().int() })
+  .passthrough()
 const ModernTimesheetDayGetResponse = z
   .object({
     entries: z.array(TimesheetCostLine),
@@ -955,7 +1100,10 @@ const ModernTimesheetDayGetResponse = z
   })
   .passthrough()
 const DeliveryReceiptAllocation = z
-  .object({ job_id: z.string().uuid(), quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/) })
+  .object({
+    job_id: z.string().uuid(),
+    quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
   .passthrough()
 const DeliveryReceiptLine = z
   .object({
@@ -964,10 +1112,16 @@ const DeliveryReceiptLine = z
   })
   .passthrough()
 const DeliveryReceiptRequest = z
-  .object({ purchase_order_id: z.string().uuid(), allocations: z.record(DeliveryReceiptLine) })
+  .object({
+    purchase_order_id: z.string().uuid(),
+    allocations: z.record(DeliveryReceiptLine),
+  })
   .passthrough()
 const PurchaseOrderEmailRequest = z
-  .object({ recipient_email: z.string().email(), message: z.string().max(1000) })
+  .object({
+    recipient_email: z.string().email(),
+    message: z.string().max(1000),
+  })
   .partial()
   .passthrough()
 const PurchaseOrderPDFResponse = z
@@ -1067,7 +1221,6 @@ const MetalTypeEnum = z.enum([
   'other',
 ])
 const BlankEnum = z.unknown()
-const NullEnum = z.unknown()
 const PurchaseOrderLine = z
   .object({
     id: z.string().uuid(),
@@ -1166,7 +1319,10 @@ const AllocationItem = z
   })
   .passthrough()
 const PurchaseOrderAllocationsResponse = z
-  .object({ po_id: z.string().uuid(), allocations: z.record(z.array(AllocationItem)) })
+  .object({
+    po_id: z.string().uuid(),
+    allocations: z.record(z.array(AllocationItem)),
+  })
   .passthrough()
 const StockList = z
   .object({
@@ -1199,7 +1355,10 @@ const StockCreate = z
   })
   .passthrough()
 const StockConsumeRequest = z
-  .object({ job_id: z.string().uuid(), quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/) })
+  .object({
+    job_id: z.string().uuid(),
+    quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
   .passthrough()
 const XeroItem = z
   .object({
@@ -1211,7 +1370,10 @@ const XeroItem = z
   })
   .passthrough()
 const XeroItemListResponse = z
-  .object({ items: z.array(XeroItem), total_count: z.number().int().optional() })
+  .object({
+    items: z.array(XeroItem),
+    total_count: z.number().int().optional(),
+  })
   .passthrough()
 const DjangoJobExecutionStatusEnum = z.enum(['Started execution', 'Error!', 'Executed'])
 const DjangoJobExecution = z
@@ -1335,32 +1497,43 @@ const ModernStaff = z
 const StaffListResponse = z
   .object({ staff: z.array(ModernStaff), total_count: z.number().int() })
   .passthrough()
-const WeeklyStaffDataWeeklyHours = z.object({
-  date: z.date(),
-  hours: z.number(),
-})
-const WeeklyStaffData = z.object({
-  id: z.string().uuid(),
-  name: z.string(),
-  weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
-})
-const WeeklySummary = z.object({
-  total_hours: z.number(),
-  staff_count: z.number().int(),
-  billable_percentage: z.number(),
-})
-const JobMetrics = z.object({
-  total_estimated_profit: z.number(),
-  total_actual_profit: z.number(),
-  total_profit: z.number(),
-})
+const WeeklyStaffDataWeeklyHours = z
+  .object({
+    date: z.string(),
+    hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+  })
+  .passthrough()
+const WeeklyStaffData = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
+  })
+  .passthrough()
+const WeeklySummary = z
+  .object({
+    total_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    staff_count: z.number().int(),
+    billable_percentage: z
+      .string()
+      .regex(/^-?\d{0,3}(?:\.\d{0,2})?$/)
+      .nullish(),
+  })
+  .passthrough()
+const JobMetrics = z
+  .object({
+    total_estimated_profit: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_actual_profit: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_profit: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
+  .passthrough()
 const WeeklyTimesheetData = z
   .object({
     start_date: z.string(),
     end_date: z.string(),
     week_days: z.array(z.string()),
-    staff_data: z.array(WeeklyStaffData),
     week_start: z.string(),
+    staff_data: z.array(WeeklyStaffData),
     weekly_summary: WeeklySummary,
     job_metrics: JobMetrics,
     summary_stats: z.object({}).partial().passthrough(),
@@ -1369,56 +1542,45 @@ const WeeklyTimesheetData = z
     navigation: z.object({}).partial().passthrough().optional(),
   })
   .passthrough()
-const WeeklyMetrics = z.array(
-  z
-    .object({
-      job_id: z.string().uuid(),
-      name: z.string(),
-      client: z.string().nullable(),
-      description: z.string().nullable(),
-      status: z.string(),
-      people: z.array(z.object({}).passthrough()),
-      estimated_hours: z.number(),
-      actual_hours: z.number(),
-      profit: z.number(),
-    })
-    .passthrough(),
-)
-const IMSWeeklyStaffDataWeeklyHours = z.object({
-  day: z.string(),
-  hours: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
-  billable_hours: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
-  scheduled_hours: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
-  status: z.string(),
-  leave_type: z.string().optional(),
-  has_leave: z.boolean().optional(),
-  standard_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  time_and_half_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  double_time_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  unpaid_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  overtime: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  leave_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-})
-const IMSWeeklyStaffData = z.object({
-  staff_id: z.string().uuid(),
-  name: z.string(),
-  weekly_hours: z.array(IMSWeeklyStaffDataWeeklyHours),
-  total_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  total_billable_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  billable_percentage: z.string().regex(/^-?\d{0,5}(?:\.\d{0,2})?$/),
-  status: z.string(),
-  total_standard_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  total_time_and_half_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  total_double_time_hours: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-  total_overtime: z.string().regex(/^-?\d{0,10}(?:\.\d{0,2})?$/),
-})
+const IMSWeeklyStaffDataWeeklyHours = z
+  .object({
+    day: z.string(),
+    hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    billable_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    scheduled_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    status: z.string(),
+    leave_type: z.string().optional(),
+    has_leave: z.boolean().optional().default(false),
+    standard_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    time_and_half_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    double_time_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    unpaid_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    overtime: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    leave_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
+  .passthrough()
+const IMSWeeklyStaffData = z
+  .object({
+    staff_id: z.string().uuid(),
+    name: z.string(),
+    weekly_hours: z.array(IMSWeeklyStaffDataWeeklyHours),
+    total_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_billable_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    billable_percentage: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    status: z.string(),
+    total_standard_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_time_and_half_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_double_time_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_overtime: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
+  .passthrough()
 const IMSWeeklyTimesheetData = z
   .object({
     start_date: z.string(),
     end_date: z.string(),
     week_days: z.array(z.string()),
-    staff_data: z.array(IMSWeeklyStaffData),
     week_start: z.string(),
+    staff_data: z.array(IMSWeeklyStaffData),
     weekly_summary: WeeklySummary,
     job_metrics: JobMetrics,
     summary_stats: z.object({}).partial().passthrough(),
@@ -1455,25 +1617,6 @@ const PaginatedXeroErrorList = z
     results: z.array(XeroError),
   })
   .passthrough()
-const SeverityEnum = z.enum(['info', 'warning', 'error'])
-const SyncStatusEnum = z.enum(['success', 'error', 'running'])
-
-const XeroSseEvent = z
-  .object({
-    datetime: z.string().datetime({ offset: true }),
-    message: z.string(),
-    severity: SeverityEnum.optional().nullable(),
-    entity: z.string().optional().nullable(),
-    progress: z.number().optional().nullable(),
-    overall_progress: z.number().optional().nullable(),
-    entity_progress: z.number().optional().nullable(),
-    records_updated: z.number().int().optional().nullable(),
-    status: z.string().optional().nullable(),
-    sync_status: SyncStatusEnum.optional().nullable(),
-    error_messages: z.array(z.string()).optional(),
-    missing_fields: z.array(z.string()).optional(),
-  })
-  .passthrough()
 
 export const schemas = {
   KPIProfitBreakdown,
@@ -1503,17 +1646,25 @@ export const schemas = {
   AppError,
   PaginatedAppErrorList,
   XeroOperationResponse,
+  SeverityEnum,
+  NullEnum,
+  SyncStatusEnum,
+  XeroSseEvent,
   ClientContactResult,
-  ClientContactsResponse,
+  ClientContactResponse,
   ClientListResponse,
   ClientContactCreateRequest,
+  ClientContactCreateResponse,
+  ClientErrorResponse,
   ClientCreateRequest,
   ClientSearchResult,
   ClientSearchResponse,
   JobFileStatusEnum,
   JobFile,
+  JobFileErrorResponse,
   UploadedFile,
   JobFileUploadSuccessResponse,
+  JobFileUploadPartialResponse,
   JobFileUpdateSuccessResponse,
   AssignJobResponse,
   CompleteJob,
@@ -1540,6 +1691,8 @@ export const schemas = {
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
   JobCreateRequest,
+  JobCreateResponse,
+  JobRestErrorResponse,
   CostSetKindEnum,
   CostSetSummary,
   CostLine,
@@ -1548,29 +1701,39 @@ export const schemas = {
   QuoteSpreadsheet,
   Job,
   JobEvent,
+  CompanyDefaultsJobDetail,
   JobData,
   JobDetailResponse,
+  JobDeleteResponse,
+  QuoteRevisionsList,
+  QuoteRevisionRequest,
+  QuoteRevisionResponse,
   JobEventCreateRequest,
   QuoteImportStatusResponse,
   DraftLine,
   QuoteChanges,
   ApplyQuoteResponse,
   LinkQuoteSheetRequest,
+  ValidationReport,
+  DiffPreview,
   PreviewQuoteResponse,
   JobFileThumbnailErrorResponse,
   JobFileUploadViewResponse,
+  WeeklyMetrics,
   MonthEndJobHistory,
   MonthEndJob,
   MonthEndStockHistory,
   MonthEndStockJob,
   MonthEndGetResponse,
   MonthEndPostResponse,
+  TimesheetCostLine,
   ModernTimesheetStaff,
   ModernTimesheetSummary,
   ModernTimesheetEntryGetResponse,
+  ModernTimesheetErrorResponse,
+  ModernTimesheetEntryPostRequest,
   ModernTimesheetEntryPostResponse,
   ModernTimesheetJobGetResponse,
-  TimesheetCostLine,
   ModernTimesheetDayGetResponse,
   DeliveryReceiptAllocation,
   DeliveryReceiptLine,
@@ -1587,7 +1750,6 @@ export const schemas = {
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
   BlankEnum,
-  NullEnum,
   PurchaseOrderLine,
   PurchaseOrderDetail,
   PurchaseOrderLineUpdate,
@@ -1614,14 +1776,16 @@ export const schemas = {
   JobsListResponse,
   ModernStaff,
   StaffListResponse,
+  WeeklyStaffDataWeeklyHours,
+  WeeklyStaffData,
+  WeeklySummary,
+  JobMetrics,
   WeeklyTimesheetData,
-  WeeklyMetrics,
   IMSWeeklyStaffDataWeeklyHours,
   IMSWeeklyStaffData,
   IMSWeeklyTimesheetData,
   XeroError,
   PaginatedXeroErrorList,
-  XeroSseEvent,
 }
 
 const endpoints = makeApi([
@@ -1803,8 +1967,7 @@ based on the &#x27;actual_users&#x27; query parameter.`,
     method: 'post',
     path: '/accounts/api/token/',
     alias: 'accounts_api_token_create',
-    description: `Customized token obtain view that handles password reset requirement
-and sets JWT tokens as httpOnly cookies`,
+    description: `Obtains JWT tokens for authentication. When ENABLE_JWT_AUTH&#x3D;True, tokens are set as httpOnly cookies, and the response body will be an empty object (schema: EmptySerializer). Otherwise, the response body will contain the tokens (schema: TokenObtainPairResponseSerializer). Also checks if the user needs to reset their password.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -1813,13 +1976,19 @@ and sets JWT tokens as httpOnly cookies`,
         schema: CustomTokenObtainPair,
       },
     ],
-    response: CustomTokenObtainPair,
+    response: z.object({}).partial().passthrough(),
+    errors: [
+      {
+        status: 401,
+        schema: z.unknown(),
+      },
+    ],
   },
   {
     method: 'post',
     path: '/accounts/api/token/refresh/',
     alias: 'accounts_api_token_refresh_create',
-    description: `Customized token refresh view that uses httpOnly cookies`,
+    description: `Refreshes the JWT access token using a refresh token. When ENABLE_JWT_AUTH&#x3D;True, the new access token is set as an httpOnly cookie and removed from the JSON response (schema: EmptySerializer). Otherwise, the response contains the new access token (schema: TokenRefreshResponseSerializer).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -1828,7 +1997,13 @@ and sets JWT tokens as httpOnly cookies`,
         schema: TokenRefresh,
       },
     ],
-    response: TokenRefresh,
+    response: z.object({}).partial().passthrough(),
+    errors: [
+      {
+        status: 401,
+        schema: z.unknown(),
+      },
+    ],
   },
   {
     method: 'post',
@@ -2433,6 +2608,14 @@ Endpoints:
   },
   {
     method: 'get',
+    path: '/api/xero/sync-stream/',
+    alias: 'api_xero_sync_stream_list',
+    description: `Xero Sync Event Stream`,
+    requestFormat: 'json',
+    response: z.array(XeroSseEvent),
+  },
+  {
+    method: 'get',
     path: '/app-errors/',
     alias: 'app_errors_list',
     description: `API view for listing application errors.
@@ -2516,7 +2699,7 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
         schema: z.string().uuid(),
       },
     ],
-    response: ClientContactsResponse,
+    response: ClientContactResponse,
   },
   {
     method: 'get',
@@ -2550,7 +2733,17 @@ Expected JSON:
         schema: ClientContactCreateRequest,
       },
     ],
-    response: ClientContactCreateRequest,
+    response: ClientContactCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -2588,7 +2781,17 @@ Expected JSON:
         schema: z.enum(['file', 'json']).optional(),
       },
     ],
-    response: JobFile,
+    response: z.array(JobFile),
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -2609,6 +2812,12 @@ Expected JSON:
       },
     ],
     response: JobFileUploadSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'put',
@@ -2631,6 +2840,20 @@ Expected JSON:
       },
     ],
     response: JobFileUpdateSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'delete',
@@ -2646,6 +2869,16 @@ Expected JSON:
       },
     ],
     response: z.void(),
+    errors: [
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -2665,7 +2898,17 @@ Expected JSON:
         schema: z.enum(['file', 'json']).optional(),
       },
     ],
-    response: JobFile,
+    response: z.array(JobFile),
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -2691,6 +2934,12 @@ Expected JSON:
       },
     ],
     response: JobFileUploadSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'put',
@@ -2718,6 +2967,20 @@ Expected JSON:
       },
     ],
     response: JobFileUpdateSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'delete',
@@ -2738,6 +3001,16 @@ Expected JSON:
       },
     ],
     response: z.void(),
+    errors: [
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -2757,7 +3030,17 @@ Expected JSON:
         schema: z.number().int(),
       },
     ],
-    response: JobFile,
+    response: z.array(JobFile),
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -2783,6 +3066,12 @@ Expected JSON:
       },
     ],
     response: JobFileUploadSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'put',
@@ -2810,6 +3099,20 @@ Expected JSON:
       },
     ],
     response: JobFileUpdateSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'delete',
@@ -2830,6 +3133,16 @@ Expected JSON:
       },
     ],
     response: z.void(),
+    errors: [
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -3165,17 +3478,7 @@ assistant&#x27;s reply.`,
     method: 'post',
     path: '/job/rest/jobs/',
     alias: 'job_rest_jobs_create',
-    description: `Create a new Job.
-
-Expected JSON:
-{
-    &quot;name&quot;: &quot;Job Name&quot;,
-    &quot;client_id&quot;: &quot;client-uuid&quot;,
-    &quot;description&quot;: &quot;Optional description&quot;,
-    &quot;order_number&quot;: &quot;Optional order number&quot;,
-    &quot;notes&quot;: &quot;Optional notes&quot;,
-    &quot;contact_id&quot;: &quot;optional-contact-uuid&quot;
-}`,
+    description: `Create a new Job.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3184,7 +3487,13 @@ Expected JSON:
         schema: JobCreateRequest,
       },
     ],
-    response: JobCreateRequest,
+    response: JobCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
@@ -3313,6 +3622,12 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
     ],
     response: JobDetailResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'delete',
@@ -3327,7 +3642,13 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: JobDeleteResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'post',
@@ -3378,13 +3699,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/:job_id/cost_sets/quote/revise/',
     alias: 'job_rest_jobs_cost_sets_quote_revise_retrieve',
-    description: `Get the list of archived quote revisions for the specified job.
-
-Args:
-    job_id: Job primary key (UUID)
-
-Returns:
-    Response: List of archived quote revisions or empty list`,
+    description: `Returns a list of archived quote revisions for the specified job. Each revision contains summary and cost line data as archived at the time of revision.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3393,31 +3708,30 @@ Returns:
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: QuoteRevisionsList,
   },
   {
     method: 'post',
     path: '/job/rest/jobs/:job_id/cost_sets/quote/revise/',
     alias: 'job_rest_jobs_cost_sets_quote_revise_create',
-    description: `Create a new quote revision for the specified job.
-
-Args:
-    job_id: Job primary key (UUID)
-
-Request Body:
-    reason (optional): String reason for the revision
-
-Returns:
-    Response: Success/error details and revision information`,
+    description: `Archives the current quote cost lines and summary for the specified job, clears all current cost lines from the quote CostSet, and starts a new quote revision. Returns details of the archived revision and status.`,
     requestFormat: 'json',
     parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z
+          .object({ reason: z.string().max(500) })
+          .partial()
+          .passthrough(),
+      },
       {
         name: 'job_id',
         type: 'Path',
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: QuoteRevisionResponse,
   },
   {
     method: 'post',
@@ -3503,7 +3817,17 @@ Sets the quote_acceptance_date to current datetime.`,
         schema: z.enum(['file', 'json']).optional(),
       },
     ],
-    response: JobFile,
+    response: z.array(JobFile),
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -3524,6 +3848,12 @@ Sets the quote_acceptance_date to current datetime.`,
       },
     ],
     response: JobFileUploadSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'put',
@@ -3546,6 +3876,20 @@ Sets the quote_acceptance_date to current datetime.`,
       },
     ],
     response: JobFileUpdateSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'delete',
@@ -3561,6 +3905,16 @@ Sets the quote_acceptance_date to current datetime.`,
       },
     ],
     response: z.void(),
+    errors: [
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -3602,7 +3956,17 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
         schema: z.enum(['file', 'json']).optional(),
       },
     ],
-    response: JobFile,
+    response: z.array(JobFile),
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -3628,6 +3992,12 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
       },
     ],
     response: JobFileUploadSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'put',
@@ -3655,6 +4025,20 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
       },
     ],
     response: JobFileUpdateSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'delete',
@@ -3675,6 +4059,16 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
       },
     ],
     response: z.void(),
+    errors: [
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -3694,7 +4088,17 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
         schema: z.number().int(),
       },
     ],
-    response: JobFile,
+    response: z.array(JobFile),
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -3720,6 +4124,12 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
       },
     ],
     response: JobFileUploadSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'put',
@@ -3747,6 +4157,20 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
       },
     ],
     response: JobFileUpdateSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'delete',
@@ -3767,6 +4191,16 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
       },
     ],
     response: z.void(),
+    errors: [
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -3789,10 +4223,10 @@ and creates JobFile database records with proper file metadata.`,
   {
     method: 'get',
     path: '/job/rest/jobs/weekly-metrics/',
-    alias: 'job_rest_jobs_weekly_metrics_retrieve',
+    alias: 'job_rest_jobs_weekly_metrics_list',
     description: `Fetch weekly metrics data.`,
     requestFormat: 'json',
-    response: WeeklyMetrics,
+    response: z.array(WeeklyMetrics),
   },
   {
     method: 'get',
@@ -3827,24 +4261,52 @@ POST: Processes selected jobs for month-end archiving and status updates`,
     method: 'get',
     path: '/job/rest/timesheet/entries/',
     alias: 'job_rest_timesheet_entries_retrieve',
-    description: `Get timesheet entries (CostLines) for a specific staff member and date`,
+    description: `Fetches all timesheet entries (CostLines) for a specific staff member and date.`,
     requestFormat: 'json',
     response: ModernTimesheetEntryGetResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'post',
     path: '/job/rest/timesheet/entries/',
     alias: 'job_rest_timesheet_entries_create',
-    description: `Create a timesheet entry as a CostLine in the actual CostSet`,
+    description: `Creates a new timesheet entry for a staff member on a specific date.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: ModernTimesheetEntryPostResponse,
+        schema: ModernTimesheetEntryPostRequest,
       },
     ],
     response: ModernTimesheetEntryPostResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
@@ -4351,54 +4813,24 @@ Returns:
     method: 'get',
     path: '/timesheets/api/weekly/',
     alias: 'timesheets_api_weekly_retrieve',
-    description: `Get comprehensive weekly timesheet data.
-
-Query Parameters:
-    start_date (optional): Monday of target week in YYYY-MM-DD format
-    export_to_ims (optional): Boolean to include IMS-specific data
-
-Returns:
-    Comprehensive weekly timesheet data including:
-    - Staff data with daily breakdowns
-    - Weekly totals and metrics
-    - Job statistics
-    - Summary statistics`,
+    description: `Return Monday-to-Friday weekly timesheet data.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'start_date',
         type: 'Query',
         schema: z.string().optional(),
-        description: 'Start date of the week in YYYY-MM-DD format. Defaults to the current week.',
-      },
-      {
-        name: 'export_to_ims',
-        type: 'Query',
-        schema: z.boolean().optional(),
-        description:
-          'Export data in IMS format for integration with IMS systems. Defaults to false.',
       },
     ],
     response: WeeklyTimesheetData,
-  },
-  {
-    method: 'get',
-    path: '/timesheets/api/weekly/',
-    alias: 'timesheets_api_weekly_retrieve',
-    response: IMSWeeklyTimesheetData,
-    parameters: [
+    errors: [
       {
-        name: 'start_date',
-        type: 'Query',
-        schema: z.string().optional(),
-        description: 'Start date of the week in YYYY-MM-DD format. Defaults to the current week.',
+        status: 400,
+        schema: ClientErrorResponse,
       },
       {
-        name: 'export_to_ims',
-        type: 'Query',
-        schema: z.boolean().optional(),
-        description:
-          'Export data in IMS format for integration with IMS systems. Defaults to false.',
+        status: 500,
+        schema: ClientErrorResponse,
       },
     ],
   },
@@ -4422,10 +4854,45 @@ Expected payload:
       {
         name: 'body',
         type: 'Body',
-        schema: WeeklyTimesheetData,
+        schema: z.object({}).partial().passthrough(),
       },
     ],
-    response: WeeklyTimesheetData,
+    response: z.object({}).partial().passthrough(),
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/timesheets/api/weekly/ims/',
+    alias: 'timesheets_api_weekly_ims_retrieve',
+    description: `Return IMS-formatted weekly timesheet data.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'start_date',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
+    response: IMSWeeklyTimesheetData,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -4476,3 +4943,5 @@ export const api = new Zodios(endpoints)
 export function createApiClient(baseUrl: string, options?: ZodiosOptions) {
   return new Zodios(baseUrl, endpoints, options)
 }
+
+export { endpoints }

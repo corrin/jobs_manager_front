@@ -77,8 +77,6 @@
           :job-data="jobDataWithPaid"
           :company-defaults="companyDefaults"
           :latest-pricings="latestPricings"
-          @open-settings="openSettingsModal"
-          @open-workflow="openWorkflowModal"
           @open-history="openHistoryModal"
           @open-attachments="openAttachmentsModal"
           @open-pdf="openPdfDialog"
@@ -95,7 +93,7 @@
           @reload-job="handleReloadJob"
         />
       </template>
-      <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-4">
+      <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-0.5">
         <div class="md:hidden space-y-3">
           <div class="flex space-x-3">
             <DraggableButton
@@ -156,19 +154,6 @@
           </div>
         </div>
       </div>
-      <JobSettingsModal
-        v-if="showSettingsModal && jobDataWithPaid"
-        :job-data="jobDataWithPaid"
-        :is-open="showSettingsModal"
-        @close="showSettingsModal = false"
-        @job-updated="handleJobUpdated"
-      />
-      <JobWorkflowModal
-        v-if="showWorkflowModal && jobDataWithPaid"
-        :job-data="jobDataWithPaid"
-        :is-open="showWorkflowModal"
-        @close="showWorkflowModal = false"
-      />
       <JobHistoryModal
         v-if="showHistoryModal && jobDataWithPaid"
         :job-id="jobId"
@@ -199,31 +184,33 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
+import { debugLog } from '../utils/debug'
 
 import { ref, computed, onMounted, watch } from 'vue'
-import AppLayout from '@/components/AppLayout.vue'
-import JobViewTabs from '@/components/job/JobViewTabs.vue'
-import JobSettingsModal from '@/components/job/JobSettingsModal.vue'
-import JobWorkflowModal from '@/components/job/JobWorkflowModal.vue'
-import JobHistoryModal from '@/components/job/JobHistoryModal.vue'
-import JobAttachmentsModal from '@/components/job/JobAttachmentsModal.vue'
-import JobPdfDialog from '@/components/job/JobPdfDialog.vue'
+import AppLayout from '../components/AppLayout.vue'
+import JobViewTabs from '../components/job/JobViewTabs.vue'
+import JobHistoryModal from '../components/job/JobHistoryModal.vue'
+import JobAttachmentsModal from '../components/job/JobAttachmentsModal.vue'
+import JobPdfDialog from '../components/job/JobPdfDialog.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useJobsStore } from '../stores/jobs'
-import { useJobTabs } from '@/composables/useJobTabs'
-import { useJobNotifications } from '@/composables/useJobNotifications'
-import { useJobEvents } from '@/composables/useJobEvents'
-import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
-import { api } from '../api/generated/api'
+import { useJobTabs } from '../composables/useJobTabs'
+import { useJobNotifications } from '../composables/useJobNotifications'
+import { useJobEvents } from '../composables/useJobEvents'
+import { useCompanyDefaultsStore } from '../stores/companyDefaults'
+import { api } from '../api/client'
 import { ArrowLeft, Printer, Trash2, X } from 'lucide-vue-next'
-import DraggableButton from '@/components/job/DraggableButton.vue'
+import DraggableButton from '../components/job/DraggableButton.vue'
 
 const route = useRoute()
 const router = useRouter()
 const jobsStore = useJobsStore()
 const jobId = computed(() => route.params.id as string)
-const jobData = computed(() => jobsStore.getJobById(jobId.value))
+const jobData = computed(() => {
+  const jobDetail = jobsStore.getJobById(jobId.value)
+  // Extract the job object from JobDetail structure if needed
+  return jobDetail?.job || jobDetail
+})
 const loadingJob = computed(() => jobsStore.isLoadingJob)
 
 onMounted(async () => {
@@ -242,9 +229,17 @@ const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
 const latestPricings = computed(() => jobData.value?.latestPricings || {})
 const jobDataWithPaid = computed(() => {
   if (!jobData.value) return undefined
+
+  // Ensure we have a proper Job object structure
+  const job = jobData.value
+  if (!job.id) {
+    debugLog('🚨 JobView - jobDataWithPaid: Invalid job data structure:', job)
+    return undefined
+  }
+
   return {
-    ...jobData.value,
-    paid: Boolean(jobData.value.paid),
+    ...job,
+    paid: Boolean(job.paid),
   }
 })
 const jobError = computed(() => !loadingJob.value && !jobData.value)
@@ -275,8 +270,6 @@ const formatDate = (dateString: string) => {
   })
 }
 
-const showSettingsModal = ref(false)
-const showWorkflowModal = ref(false)
 const showHistoryModal = ref(false)
 const showAttachmentsModal = ref(false)
 const showPdfDialog = ref(false)
@@ -309,12 +302,6 @@ watch(
   { immediate: true },
 )
 
-function openSettingsModal() {
-  showSettingsModal.value = true
-}
-function openWorkflowModal() {
-  showWorkflowModal.value = true
-}
 function openHistoryModal() {
   showHistoryModal.value = true
 }
@@ -326,8 +313,20 @@ function openPdfDialog() {
 }
 
 function handleJobUpdated(updatedJob) {
-  jobsStore.setDetailedJob(updatedJob)
-  notifications.notifyJobUpdated(updatedJob?.name || 'Job')
+  // Extract JobDetail from the API response wrapper if needed
+  if (updatedJob?.data) {
+    // This is a JobDetailResponse wrapper, extract the data
+    jobsStore.setDetailedJob(updatedJob.data)
+    notifications.notifyJobUpdated(updatedJob.data?.job?.name || 'Job')
+  } else if (updatedJob?.job) {
+    // This is already a JobDetail structure
+    jobsStore.setDetailedJob(updatedJob)
+    notifications.notifyJobUpdated(updatedJob.job?.name || 'Job')
+  } else {
+    // This might be a direct job object
+    jobsStore.setDetailedJob(updatedJob)
+    notifications.notifyJobUpdated(updatedJob?.name || 'Job')
+  }
 }
 
 async function handleEventAdded(event) {
@@ -352,7 +351,7 @@ async function deleteJob() {
   const jobName = jobData.value?.name || `Job #${jobData.value?.job_number}` || 'job'
   try {
     notifications.notifyDeleteStart(jobName)
-    const { jobService } = await import('@/services/job.service')
+    const { jobService } = await import('../services/job.service')
     const result = await jobService.deleteJob(jobId.value)
     if (result.success) {
       notifications.notifyDeleteSuccess(jobName)
@@ -426,19 +425,24 @@ watch(jobData, (val) => {
 .h-screen {
   height: 100vh;
 }
+
 .max-h-screen {
   max-height: 100vh;
 }
+
 ::-webkit-scrollbar {
   width: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #c1c1c1;
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }

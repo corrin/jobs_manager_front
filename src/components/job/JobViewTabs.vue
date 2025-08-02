@@ -105,7 +105,7 @@
           @file-deleted="$emit('file-deleted')"
         />
       </div>
-      <div v-if="activeTab === 'printJob'" class="h-full p-4 md:p-6">
+      <div v-if="activeTab === 'printJob'" class="h-full overflow-y-auto p-4 md:p-6">
         <JobPdfTab v-if="jobData" :job-id="jobData.id" :job-number="jobData.job_number" />
       </div>
       <div v-if="activeTab === 'quotingChat'" class="h-full p-4 md:p-6">

@@ -75,7 +75,8 @@ import StaffAvatar from '@/components/StaffAvatar.vue'
 import StatusBadge from '@/components/kanban/StatusBadge.vue'
 import { useJobCard } from '@/composables/useJobCard'
 import { statusNameMap } from '@/utils/statusMappings'
-import { api, schemas } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import { api } from '@/api/client'
 import { z } from 'zod'
 
 type KanbanJob = z.infer<typeof schemas.KanbanJob>

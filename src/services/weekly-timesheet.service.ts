@@ -1,85 +1,96 @@
-import { api } from '@/api/generated/api'
-import type { WeeklyTimesheetData } from '@/api/generated/api'
+// src/services/weekly-timesheet.service.ts
+
+import { api } from '@/api/client'
+import type { WeeklyTimesheetData, IMSWeeklyTimesheetData } from '@/api/generated/api'
 import { dateService } from '@/services/date.service'
 
-export const getWeeklyTimesheetOverview = async (
-  startDate?: string,
-  exportToIMS: boolean = false,
-): Promise<WeeklyTimesheetData> => {
-  const queryParams: Record<string, string> = {}
-
+/**
+ * Fetch standard Mon–Fri overview.
+ */
+export async function fetchWeeklyOverview(startDate?: string): Promise<WeeklyTimesheetData> {
+  const queries: Record<string, string> = {}
   if (startDate) {
-    queryParams.start_date = startDate
+    queries.start_date = startDate
   }
-
-  if (exportToIMS) {
-    queryParams.export_to_ims = 'true'
-  }
-
-  return await api.timesheets_api_weekly_retrieve({ queries: queryParams })
+  const response = await api.timesheets_api_weekly_retrieve({ queries })
+  return response as WeeklyTimesheetData
 }
 
-export const exportToIMS = async (startDate: string): Promise<WeeklyTimesheetData> => {
-  const queryParams = {
-    start_date: startDate,
-    export_to_ims: 'true' as const,
+/**
+ * Fetch IMS overview (Tue–Fri + next Mon).
+ */
+export async function fetchIMSOverview(startDate?: string): Promise<IMSWeeklyTimesheetData> {
+  const queries: Record<string, string> = {}
+  if (startDate) {
+    queries.start_date = startDate
   }
-
-  return await api.timesheets_api_weekly_retrieve({ queries: queryParams })
+  const response = await api.timesheets_api_weekly_ims_retrieve({ queries })
+  return response as IMSWeeklyTimesheetData
 }
 
-export const submitPaidAbsence = async (data: {
+/**
+ * Submit a paid absence.
+ */
+export async function submitPaidAbsence(params: {
   staff_id: string
   start_date: string
   end_date: string
   leave_type: 'annual' | 'sick' | 'other'
   hours_per_day?: number
   notes?: string
-}): Promise<{ success: boolean; messages?: string[] }> => {
+}): Promise<{ success: boolean; messages?: string[] }> {
   const payload = {
-    staff_id: data.staff_id,
-    start_date: data.start_date,
-    end_date: data.end_date,
-    leave_type: data.leave_type,
-    hours_per_day: data.hours_per_day || 8,
-    description: data.notes || '',
+    staff_id: params.staff_id,
+    start_date: params.start_date,
+    end_date: params.end_date,
+    leave_type: params.leave_type,
+    hours_per_day: params.hours_per_day ?? 8,
+    description: params.notes ?? '',
   }
-
   const response = await api.timesheets_api_weekly_create({ body: payload })
   return response as { success: boolean; messages?: string[] }
 }
 
-export const getCurrentWeekRange = (): { startDate: string; endDate: string } => {
-  const weekRange = dateService.getCurrentWeekRange()
-  return {
-    startDate: weekRange.startDate,
-    endDate: weekRange.endDate,
-  }
+/**
+ * Get the current week’s start/end dates.
+ */
+export function getCurrentWeekRange(): { startDate: string; endDate: string } {
+  const { startDate, endDate } = dateService.getCurrentWeekRange()
+  return { startDate, endDate }
 }
 
-export const getWeekRange = (date: Date): { startDate: string; endDate: string } => {
-  const weekRange = dateService.getWeekRange(date)
-  return {
-    startDate: weekRange.startDate,
-    endDate: weekRange.endDate,
-  }
+/**
+ * Get the week’s start/end dates for an arbitrary date.
+ */
+export function getWeekRange(date: Date): { startDate: string; endDate: string } {
+  const { startDate, endDate } = dateService.getWeekRange(date)
+  return { startDate, endDate }
 }
 
-export const formatDateRange = (startDate: string, endDate: string): string => {
+/**
+ * Format a date range as a human-readable string.
+ */
+export function formatDateRange(startDate: string, endDate: string): string {
   return dateService.formatDateRange(startDate, endDate)
 }
 
-export const formatHours = (hours: number): string => {
+/**
+ * Format hours with one decimal.
+ */
+export function formatHours(hours: number): string {
   return hours.toFixed(1)
 }
 
-export const formatPercentage = (percentage: number): string => {
+/**
+ * Format a percentage with one decimal.
+ */
+export function formatPercentage(percentage: number): string {
   return `${percentage.toFixed(1)}%`
 }
 
 export default {
-  getWeeklyTimesheetOverview,
-  exportToIMS,
+  fetchWeeklyOverview,
+  fetchIMSOverview,
   submitPaidAbsence,
   getCurrentWeekRange,
   getWeekRange,

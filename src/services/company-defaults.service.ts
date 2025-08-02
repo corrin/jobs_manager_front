@@ -1,4 +1,4 @@
-import { api } from '@/api/generated/api'
+import { api } from '@/api/client'
 import type { CompanyDefaults } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
 
