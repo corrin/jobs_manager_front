@@ -1,4 +1,4 @@
-import { api } from '../api/generated/api'
+import { api } from '@/api/client'
 import type {
   MonthEndJob,
   MonthEndStockJob,

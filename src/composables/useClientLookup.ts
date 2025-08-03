@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { z } from 'zod'
-import { api, schemas } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import { api } from '@/api/client'
 
 // Use generated schemas
 export type Client = z.infer<typeof schemas.ClientSearchResult>

@@ -262,9 +262,11 @@ paths:
   /accounts/api/token/:
     post:
       operationId: accounts_api_token_create
-      description: |-
-        Customized token obtain view that handles password reset requirement
-        and sets JWT tokens as httpOnly cookies
+      description: 'Obtains JWT tokens for authentication. When ENABLE_JWT_AUTH=True,
+        tokens are set as httpOnly cookies, and the response body will be an empty
+        object (schema: EmptySerializer). Otherwise, the response body will contain
+        the tokens (schema: TokenObtainPairResponseSerializer). Also checks if the
+        user needs to reset their password.'
       tags:
         - accounts
       requestBody:
@@ -284,12 +286,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CustomTokenObtainPair'
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                description: Authentication failed due to invalid credentials
           description: ''
   /accounts/api/token/refresh/:
     post:
       operationId: accounts_api_token_refresh_create
-      description: Customized token refresh view that uses httpOnly cookies
+      description: 'Refreshes the JWT access token using a refresh token. When ENABLE_JWT_AUTH=True,
+        the new access token is set as an httpOnly cookie and removed from the JSON
+        response (schema: EmptySerializer). Otherwise, the response contains the new
+        access token (schema: TokenRefreshResponseSerializer).'
       tags:
         - accounts
       requestBody:
@@ -309,7 +322,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenRefresh'
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                description: Authentication failed due to invalid refresh token
           description: ''
   /accounts/api/token/verify/:
     post:
@@ -1153,6 +1174,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/XeroOperationResponse'
           description: ''
+  /api/xero/sync-stream/:
+    get:
+      operationId: api_xero_sync_stream_list
+      description: Xero Sync Event Stream
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/XeroSseEvent'
+          description: ''
   /app-errors/:
     get:
       operationId: app_errors_list
@@ -1259,7 +1297,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClientContactsResponse'
+                $ref: '#/components/schemas/ClientContactResponse'
           description: ''
   /clients/all/:
     get:
@@ -1292,6 +1330,7 @@ paths:
             "is_primary": false,
             "notes": "Additional notes"
         }
+      summary: Create a new client contact
       tags:
         - clients
       requestBody:
@@ -1309,11 +1348,23 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClientContactCreateRequest'
+                $ref: '#/components/schemas/ClientContactCreateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
   /clients/create/:
     post:
@@ -1379,10 +1430,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi
@@ -1413,7 +1486,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -1421,6 +1494,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi
@@ -1462,6 +1553,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -1480,6 +1598,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/api/job-files/{file_path}:
     get:
       operationId: retrieveJobFilesApi_2
@@ -1507,10 +1643,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi_2
@@ -1546,7 +1704,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -1554,6 +1712,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi_2
@@ -1600,6 +1776,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi_2
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -1623,6 +1826,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/api/job-files/{job_number}:
     get:
       operationId: retrieveJobFilesApi_3
@@ -1650,10 +1871,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi_3
@@ -1689,7 +1932,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -1697,6 +1940,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi_3
@@ -1743,6 +2004,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi_3
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -1766,6 +2054,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/api/job/{job_id}/assignment:
     post:
       operationId: job_api_job_assignment_create
@@ -2268,20 +2574,9 @@ paths:
   /job/rest/jobs/:
     post:
       operationId: job_rest_jobs_create
-      description: |-
-        Create a new Job.
-
-        Expected JSON:
-        {
-            "name": "Job Name",
-            "client_id": "client-uuid",
-            "description": "Optional description",
-            "order_number": "Optional order number",
-            "notes": "Optional notes",
-            "contact_id": "optional-contact-uuid"
-        }
+      description: Create a new Job.
       tags:
-        - job
+        - Jobs
       requestBody:
         content:
           application/json:
@@ -2297,11 +2592,17 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobCreateRequest'
+                $ref: '#/components/schemas/JobCreateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
           description: ''
   /job/rest/jobs/{job_id}/:
     get:
@@ -2315,7 +2616,7 @@ paths:
             format: uuid
           required: true
       tags:
-        - job
+        - Jobs
       security:
         - cookieAuth: []
       responses:
@@ -2336,7 +2637,7 @@ paths:
             format: uuid
           required: true
       tags:
-        - job
+        - Jobs
       requestBody:
         content:
           application/json:
@@ -2358,6 +2659,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobDetailResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
     delete:
       operationId: job_rest_jobs_destroy
       description: Delete a Job if permitted.
@@ -2369,12 +2676,22 @@ paths:
             format: uuid
           required: true
       tags:
-        - job
+        - Jobs
       security:
         - cookieAuth: []
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobDeleteResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
   /job/rest/jobs/{job_id}/cost_sets/{kind}/cost_lines/:
     post:
       operationId: job_rest_jobs_cost_sets_cost_lines_create
@@ -2451,14 +2768,10 @@ paths:
   /job/rest/jobs/{job_id}/cost_sets/quote/revise/:
     get:
       operationId: job_rest_jobs_cost_sets_quote_revise_retrieve
-      description: |-
-        Get the list of archived quote revisions for the specified job.
-
-        Args:
-            job_id: Job primary key (UUID)
-
-        Returns:
-            Response: List of archived quote revisions or empty list
+      description: Returns a list of archived quote revisions for the specified job.
+        Each revision contains summary and cost line data as archived at the time
+        of revision.
+      summary: List archived quote revisions
       parameters:
         - in: path
           name: job_id
@@ -2472,20 +2785,17 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteRevisionsList'
+          description: ''
     post:
       operationId: job_rest_jobs_cost_sets_quote_revise_create
-      description: |-
-        Create a new quote revision for the specified job.
-
-        Args:
-            job_id: Job primary key (UUID)
-
-        Request Body:
-            reason (optional): String reason for the revision
-
-        Returns:
-            Response: Success/error details and revision information
+      description: Archives the current quote cost lines and summary for the specified
+        job, clears all current cost lines from the quote CostSet, and starts a new
+        quote revision. Returns details of the archived revision and status.
+      summary: Create a new quote revision
       parameters:
         - in: path
           name: job_id
@@ -2495,11 +2805,26 @@ paths:
           required: true
       tags:
         - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRevisionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/QuoteRevisionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuoteRevisionRequest'
       security:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteRevisionResponse'
+          description: ''
   /job/rest/jobs/{job_id}/events/:
     post:
       operationId: job_rest_jobs_events_create
@@ -2770,10 +3095,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi_4
@@ -2804,7 +3151,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -2812,6 +3159,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi_4
@@ -2853,6 +3218,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi_4
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -2871,6 +3263,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/rest/jobs/files/{file_id}/thumbnail/:
     get:
       operationId: getJobFileThumbnail
@@ -2928,10 +3338,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi_5
@@ -2967,7 +3399,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -2975,6 +3407,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi_5
@@ -3021,6 +3471,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi_5
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -3044,6 +3521,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/rest/jobs/files/{job_number}/:
     get:
       operationId: retrieveJobFilesApi_6
@@ -3071,10 +3566,32 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
             '*/*':
               schema:
-                $ref: '#/components/schemas/JobFile'
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     post:
       operationId: uploadJobFilesApi_6
@@ -3110,7 +3627,7 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
@@ -3118,6 +3635,24 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
     put:
       operationId: updateJobFilesApi_6
@@ -3164,6 +3699,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
     delete:
       operationId: deleteJobFilesApi_6
       description: Delete a job file by its ID. (file_path param is actually the job_file.id)
@@ -3187,6 +3749,24 @@ paths:
       responses:
         '204':
           description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
   /job/rest/jobs/files/upload/:
     post:
       operationId: uploadJobFilesRest
@@ -3217,15 +3797,21 @@ paths:
           description: ''
   /job/rest/jobs/weekly-metrics/:
     get:
-      operationId: job_rest_jobs_weekly_metrics_retrieve
+      operationId: job_rest_jobs_weekly_metrics_list
       description: Fetch weekly metrics data.
       tags:
-        - job
+        - Jobs
       security:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WeeklyMetrics'
+          description: ''
   /job/rest/month-end/:
     get:
       operationId: job_rest_month_end_retrieve
@@ -3278,8 +3864,9 @@ paths:
   /job/rest/timesheet/entries/:
     get:
       operationId: job_rest_timesheet_entries_retrieve
-      description: Get timesheet entries (CostLines) for a specific staff member and
-        date
+      description: Fetches all timesheet entries (CostLines) for a specific staff
+        member and date.
+      summary: Get timesheet entries for a staff member on a specific date
       tags:
         - job
       security:
@@ -3291,31 +3878,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/ModernTimesheetEntryGetResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModernTimesheetErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModernTimesheetErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModernTimesheetErrorResponse'
+          description: ''
     post:
       operationId: job_rest_timesheet_entries_create
-      description: Create a timesheet entry as a CostLine in the actual CostSet
+      description: Creates a new timesheet entry for a staff member on a specific
+        date.
+      summary: Create a timesheet entry as a CostLine
       tags:
         - job
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ModernTimesheetEntryPostResponse'
+              $ref: '#/components/schemas/ModernTimesheetEntryPostRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ModernTimesheetEntryPostResponse'
+              $ref: '#/components/schemas/ModernTimesheetEntryPostRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ModernTimesheetEntryPostResponse'
+              $ref: '#/components/schemas/ModernTimesheetEntryPostRequest'
         required: true
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ModernTimesheetEntryPostResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModernTimesheetErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModernTimesheetErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModernTimesheetErrorResponse'
           description: ''
   /job/rest/timesheet/jobs/{job_id}/:
     get:
@@ -4097,42 +4722,38 @@ paths:
   /timesheets/api/weekly/:
     get:
       operationId: timesheets_api_weekly_retrieve
-      description: |-
-        Get comprehensive weekly timesheet data.
-
-        Query Parameters:
-            start_date (optional): Monday of target week in YYYY-MM-DD format
-            export_to_ims (optional): Boolean to include IMS-specific data
-
-        Returns:
-            Comprehensive weekly timesheet data including:
-            - Staff data with daily breakdowns
-            - Weekly totals and metrics
-            - Job statistics
-            - Summary statistics
+      description: Return Monday-to-Friday weekly timesheet data.
+      summary: Standard weekly overview (Mon–Fri)
       parameters:
         - in: query
-          name: export_to_ims
+          name: start_date
           schema:
-            type: boolean
-          description: Export data in IMS format for integration with IMS systems. Defaults
-            to false.
+            type: string
+            format: date
+          description: Monday of target week in YYYY-MM-DD format. Defaults to current
+            week.
       tags:
         - timesheets
       security:
         - cookieAuth: []
       responses:
-        application/json:
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/WeeklyTimesheetData'
           description: ''
-        application/json; ?export_to_ims=true:
+        '400':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/IMSWeeklyTimesheetData'
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
     post:
       operationId: timesheets_api_weekly_create
@@ -4148,20 +4769,60 @@ paths:
             "hours_per_day": 8.0,
             "description": "Optional description"
         }
+      summary: Submit paid absence
       tags:
         - timesheets
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WeeklyTimesheetData'
+              type: object
+              additionalProperties: {}
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/WeeklyTimesheetData'
+              type: object
+              additionalProperties: {}
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/WeeklyTimesheetData'
-        required: true
+              type: object
+              additionalProperties: {}
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+  /timesheets/api/weekly/ims/:
+    get:
+      operationId: timesheets_api_weekly_ims_retrieve
+      description: Return IMS-formatted weekly timesheet data.
+      summary: IMS weekly overview (Tue–Fri + next Mon)
+      parameters:
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+          description: Monday of target week in YYYY-MM-DD format. Defaults to current
+            week.
+      tags:
+        - timesheets
       security:
         - cookieAuth: []
       responses:
@@ -4169,7 +4830,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WeeklyTimesheetData'
+                $ref: '#/components/schemas/IMSWeeklyTimesheetData'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
   /xero-errors/:
     get:
@@ -4497,6 +5170,30 @@ components:
       required:
         - client_id
         - name
+    ClientContactCreateResponse:
+      type: object
+      description: Serializer for client contact creation response
+      properties:
+        success:
+          type: boolean
+        contact:
+          $ref: '#/components/schemas/ClientContactResult'
+        message:
+          type: string
+      required:
+        - contact
+        - message
+        - success
+    ClientContactResponse:
+      type: object
+      description: Serializer for client contacts response
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClientContactResult'
+      required:
+        - results
     ClientContactResult:
       type: object
       description: Serializer for individual client contact result
@@ -4520,16 +5217,6 @@ components:
         - name
         - phone
         - position
-    ClientContactsResponse:
-      type: object
-      description: Serializer for client contacts response
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/ClientContactResult'
-      required:
-        - results
     ClientCreateRequest:
       type: object
       description: Serializer for client creation request
@@ -4550,6 +5237,19 @@ components:
           default: true
       required:
         - name
+    ClientErrorResponse:
+      type: object
+      description: Serializer for client error responses
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: string
+        details:
+          type: string
+      required:
+        - error
     ClientListResponse:
       type: object
       description: Serializer for client list response
@@ -4760,6 +5460,31 @@ components:
         - company_name
         - created_at
         - updated_at
+    CompanyDefaultsJobDetail:
+      type: object
+      description: Serializer for company defaults in job detail response
+      properties:
+        materials_markup:
+          type: number
+          format: double
+          description: Default markup percentage for materials
+        time_markup:
+          type: number
+          format: double
+          description: Default markup percentage for time
+        charge_out_rate:
+          type: number
+          format: double
+          description: Default charge-out rate for staff
+        wage_rate:
+          type: number
+          format: double
+          description: Default wage rate for staff
+      required:
+        - charge_out_rate
+        - materials_markup
+        - time_markup
+        - wage_rate
     CompleteJob:
       type: object
       properties:
@@ -5448,6 +6173,7 @@ components:
         contact_name:
           type: string
           readOnly: true
+          nullable: true
         job_number:
           type: integer
           maximum: 2147483647
@@ -5518,6 +6244,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/QuoteSpreadsheet'
           readOnly: true
+          nullable: true
         quoted:
           type: boolean
           readOnly: true
@@ -5558,28 +6285,6 @@ components:
         - quoted
         - shop_job
         - updated_at
-    JobEvent:
-      type: object
-      description: Serializer for job event data
-      properties:
-        id:
-          type: string
-          format: uuid
-        timestamp:
-          type: string
-          format: date-time
-        event_type:
-          type: string
-        description:
-          type: string
-        staff:
-          type: string
-        required:
-          - id
-          - timestamp
-          - event_type
-          - description
-          - staff
     JobAgingFinancialData:
       type: object
       description: Serialiser for job aging financial data
@@ -5721,6 +6426,52 @@ components:
       required:
         - client_id
         - name
+    JobCreateResponse:
+      type: object
+      description: Serializer for job creation response.
+      properties:
+        success:
+          type: boolean
+          default: true
+        job_id:
+          type: string
+        job_number:
+          type: string
+        message:
+          type: string
+      required:
+        - job_id
+        - job_number
+        - message
+    JobData:
+      type: object
+      properties:
+        job:
+          $ref: '#/components/schemas/Job'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobEvent'
+          readOnly: true
+        company_defaults:
+          allOf:
+            - $ref: '#/components/schemas/CompanyDefaultsJobDetail'
+          readOnly: true
+      required:
+        - company_defaults
+        - events
+        - job
+    JobDeleteResponse:
+      type: object
+      description: Serializer for job deletion response.
+      properties:
+        success:
+          type: boolean
+          default: true
+        message:
+          type: string
+      required:
+        - message
     JobDetailResponse:
       type: object
       description: Serializer for job detail response.
@@ -5732,41 +6483,28 @@ components:
           $ref: '#/components/schemas/JobData'
       required:
         - data
-    JobData:
+    JobEvent:
       type: object
-      description: Wrapper serializer for full job data (JobSerializer, JobEventSerializer and company defaults combined)
       properties:
-      job:
-        $ref: '#/components/schemas/Job'
-      events:
-        type: array
-        items:
-        $ref: '#/components/schemas/JobEvent'
-      company_defaults:
-        type: object
-        description: Company default settings for jobs
-        properties:
-        materials_markup:
-          type: number
-          format: float
-          description: Default materials markup percentage
-        time_markup:
-          type: number
-          format: float
-          description: Default time markup percentage
-        charge_out_rate:
-          type: number
-          format: float
-          description: Default charge out rate
-        wage_rate:
-          type: number
-          format: float
-          description: Default wage rate
-        required:
-          - materials_markup
-          - time_markup
-          - charge_out_rate
-          - wage_rate
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        timestamp:
+          type: string
+          format: date-time
+        event_type:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        staff:
+          type: string
+          readOnly: true
+      required:
+        - description
+        - id
+        - staff
     JobEventCreateRequest:
       type: object
       description: Serializer for job event creation request
@@ -5816,6 +6554,17 @@ components:
         - size
         - thumbnail_url
         - uploaded_at
+    JobFileErrorResponse:
+      type: object
+      description: Serializer for error responses.
+      properties:
+        status:
+          type: string
+          default: error
+        message:
+          type: string
+      required:
+        - message
     JobFileStatusEnum:
       enum:
         - active
@@ -5849,6 +6598,24 @@ components:
       required:
         - message
         - print_on_jobsheet
+    JobFileUploadPartialResponse:
+      type: object
+      description: Serializer for partial success file upload response.
+      properties:
+        status:
+          type: string
+        uploaded:
+          type: array
+          items:
+            $ref: '#/components/schemas/UploadedFile'
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - errors
+        - status
+        - uploaded
     JobFileUploadSuccessResponse:
       type: object
       description: Serializer for successful file upload response.
@@ -6009,6 +6776,14 @@ components:
           type: string
           nullable: true
           description: New status if moving between columns
+    JobRestErrorResponse:
+      type: object
+      description: Serializer for job REST error responses.
+      properties:
+        error:
+          type: string
+      required:
+        - error
     JobStatusUpdateRequest:
       type: object
       description: Serializer for job status update request data.
@@ -6603,8 +7378,7 @@ components:
         cost_lines:
           type: array
           items:
-            type: object
-            additionalProperties: {}
+            $ref: '#/components/schemas/TimesheetCostLine'
         staff:
           $ref: '#/components/schemas/ModernTimesheetStaff'
         date:
@@ -6617,6 +7391,39 @@ components:
         - date
         - staff
         - summary
+    ModernTimesheetEntryPostRequest:
+      type: object
+      description: Serializer for timesheet entry POST request
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        staff_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        hours:
+          type: number
+          format: double
+          minimum: 0
+        description:
+          type: string
+          maxLength: 500
+        is_billable:
+          type: boolean
+          default: true
+        hourly_rate:
+          type: number
+          format: double
+          minimum: 0
+      required:
+        - date
+        - description
+        - hours
+        - job_id
+        - staff_id
     ModernTimesheetEntryPostResponse:
       type: object
       description: Serializer for timesheet entry POST response
@@ -6630,6 +7437,15 @@ components:
           type: string
       required:
         - success
+    ModernTimesheetErrorResponse:
+      type: object
+      description: Serializer for timesheet error responses
+      properties:
+        error:
+          type: string
+          description: Error message
+      required:
+        - error
     ModernTimesheetJob:
       type: object
       description: Serializer for jobs in timesheet context using modern CostSet system
@@ -7726,6 +8542,60 @@ components:
         - has_quote
         - job_id
         - job_name
+    QuoteRevisionRequest:
+      type: object
+      description: Serializer for quote revision request - validates input data
+      properties:
+        reason:
+          type: string
+          description: Optional reason for creating a new quote revision
+          maxLength: 500
+    QuoteRevisionResponse:
+      type: object
+      description: Serializer for quote revision response
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        quote_revision:
+          type: integer
+        archived_cost_lines_count:
+          type: integer
+        job_id:
+          type: string
+        error:
+          type: string
+      required:
+        - archived_cost_lines_count
+        - job_id
+        - message
+        - quote_revision
+        - success
+    QuoteRevisionsList:
+      type: object
+      description: Serializer for listing quote revisions
+      properties:
+        job_id:
+          type: string
+        job_number:
+          type: string
+        current_cost_set_rev:
+          type: integer
+        total_revisions:
+          type: integer
+        revisions:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: List of archived quote revisions with their data
+      required:
+        - current_cost_set_rev
+        - job_id
+        - job_number
+        - revisions
+        - total_revisions
     QuoteSpreadsheet:
       type: object
       description: |-
@@ -8125,6 +8995,16 @@ components:
         - missing_staff
         - partial_staff
         - total_staff
+    SyncStatusEnum:
+      enum:
+        - success
+        - error
+        - running
+      type: string
+      description: |-
+        * `success` - success
+        * `error` - error
+        * `running` - running
     TimesheetCostLine:
       type: object
       description: |-
@@ -8292,6 +9172,8 @@ components:
         preferred_name:
           type: string
           readOnly: true
+          nullable: true
+          description: Preferred name (may be null)
         fullName:
           type: string
           readOnly: true
@@ -8323,6 +9205,48 @@ components:
           type: array
           items:
             type: string
+    WeeklyMetrics:
+      type: object
+      description: Serializer for weekly metrics data
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        job_number:
+          type: integer
+        name:
+          type: string
+        client:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        people:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        estimated_hours:
+          type: number
+          format: double
+        actual_hours:
+          type: number
+          format: double
+        profit:
+          type: number
+          format: double
+      required:
+        - actual_hours
+        - client
+        - description
+        - estimated_hours
+        - job_id
+        - job_number
+        - name
+        - people
+        - profit
+        - status
     WeeklyStaffData:
       type: object
       description: Serializer for staff data in weekly timesheet context
@@ -8549,6 +9473,7 @@ components:
           format: uuid
       required:
         - success
+        - xero_id
     XeroSseEvent:
       type: object
       description: Serializer for Xero SSE event data.

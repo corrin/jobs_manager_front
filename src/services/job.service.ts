@@ -1,22 +1,25 @@
-import { api, schemas } from '../api/generated/api'
-import axios from '@/plugins/axios'
+import { schemas } from '../api/generated/api'
+import { api } from '../api/client'
+import axios from '../plugins/axios'
 import { z } from 'zod'
-import type { AdvancedFilters } from '@/constants/advanced-filters'
 
 type KanbanJob = z.infer<typeof schemas.KanbanJob>
-type JobCreateRequest = z.infer<typeof schemas.JobCreateRequest>
+export type JobCreateData = z.infer<typeof schemas.JobCreateRequest>
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
-type JobUpdateRequest = z.infer<typeof schemas.JobUpdateRequest>
+type JobCreateResponse = z.infer<typeof schemas.JobCreateResponse>
+type JobDeleteResponse = z.infer<typeof schemas.JobDeleteResponse>
+type QuoteImportStatusResponse = z.infer<typeof schemas.QuoteImportStatusResponse>
+type JobStatusUpdate = z.infer<typeof schemas.JobStatusUpdateRequest>
+type ArchiveJobsRequest = z.infer<typeof schemas.ArchiveJobsRequest>
 type JobFile = z.infer<typeof schemas.JobFile>
 type FetchAllJobsResponse = z.infer<typeof schemas.FetchAllJobsResponse>
 type FetchJobsResponse = z.infer<typeof schemas.FetchJobsResponse>
 type FetchJobsByColumnResponse = z.infer<typeof schemas.FetchJobsByColumnResponse>
 type FetchStatusValuesResponse = z.infer<typeof schemas.FetchStatusValuesResponse>
-type AdvancedSearchResponse = z.infer<typeof schemas.AdvancedSearchResponse>
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 type PaginatedCompleteJobList = z.infer<typeof schemas.PaginatedCompleteJobList>
-type JobStatusUpdate = z.infer<typeof schemas.JobStatusUpdateRequest>
 type JobReorderPayload = z.infer<typeof schemas.JobReorderRequest>
+type JobReorderRequest = z.infer<typeof schemas.JobReorderRequest>
 
 /**
  * Clean job service using ONLY Zodios API
@@ -58,12 +61,8 @@ export const jobService = {
     // return api.job_api_jobs_status_values_retrieve()
   },
 
-  searchJobs(): Promise<AdvancedSearchResponse> {
-    return api.job_api_jobs_advanced_search_retrieve()
-  },
-
   // Job CRUD
-  createJob(jobData: JobCreateRequest): Promise<Job> {
+  createJob(jobData: JobCreateData): Promise<JobCreateResponse> {
     return api.job_rest_jobs_create(jobData)
   },
 
@@ -74,11 +73,11 @@ export const jobService = {
   deleteJob(jobId: string): Promise<{ success: boolean; error?: string; message?: string }> {
     return api
       .job_rest_jobs_destroy(undefined, { params: { job_id: jobId } })
-      .then((response) => ({
+      .then((response: JobDeleteResponse) => ({
         success: response.success,
         message: response.message,
       }))
-      .catch((error) => ({
+      .catch((error: Error) => ({
         success: false,
         error: error.message || 'Failed to delete job',
       }))
@@ -89,7 +88,7 @@ export const jobService = {
     return api.job_api_job_completed_list()
   },
 
-  archiveJobs(jobIds: string[]): Promise<{ message: string }> {
+  archiveJobs(jobIds: string[]): Promise<ArchiveJobsRequest> {
     return api.job_api_job_completed_archive_create({ ids: jobIds })
   },
 
@@ -99,7 +98,7 @@ export const jobService = {
       params: { job_number: parseInt(jobNumber) },
       queries: { format: 'json' },
     })
-    return result.then((r) => (Array.isArray(r) ? r : [r]))
+    return result.then((r: JobFile | JobFile[]) => (Array.isArray(r) ? r : [r]))
   },
 
   // PDF
@@ -121,7 +120,7 @@ export const jobService = {
   },
 
   // Quote
-  getQuoteStatus(jobId: string): Promise<{ status: string }> {
+  getQuoteStatus(jobId: string): Promise<QuoteImportStatusResponse> {
     return api.job_rest_jobs_quote_status_retrieve({ params: { job_id: jobId } })
   },
 
@@ -134,29 +133,9 @@ export const jobService = {
       (job) =>
         job.name?.toLowerCase().includes(searchTerm) ||
         job.client_name?.toLowerCase().includes(searchTerm) ||
-        job.job_number?.toLowerCase().includes(searchTerm) ||
+        String(job.job_number).toLowerCase().includes(searchTerm) ||
         job.description?.toLowerCase().includes(searchTerm),
     )
-  },
-
-  // Advanced search with filters
-  async performAdvancedSearch(filters: AdvancedFilters): Promise<AdvancedSearchResponse> {
-    const response = await api.job_api_jobs_advanced_search_retrieve({
-      queries: {
-        job_number: filters.job_number || undefined,
-        name: filters.name || undefined,
-        description: filters.description || undefined,
-        client_name: filters.client_name || undefined,
-        contact_person: filters.contact_person || undefined,
-        created_by: filters.created_by || undefined,
-        status: filters.status.length > 0 ? filters.status : undefined,
-        created_after: filters.created_after || undefined,
-        created_before: filters.created_before || undefined,
-        paid: filters.paid || undefined,
-        xero_invoice_params: filters.xero_invoice_params || undefined, // Xero Invoice Number or ID
-      },
-    })
-    return response
   },
 
   // Update job status
@@ -170,13 +149,32 @@ export const jobService = {
   // Update job data
   async updateJob(
     jobId: string,
-    jobData: JobUpdateRequest,
+    jobDetailResponse: JobDetailResponse,
   ): Promise<{ success: boolean; data?: JobDetailResponse; error?: string }> {
     try {
-      const response = await api.job_rest_jobs_update(jobData, { params: { job_id: jobId } })
+      // Sanitize data to ensure undefined values become null for nullable fields
+      const sanitizedData = {
+        ...jobDetailResponse,
+        data: {
+          ...jobDetailResponse.data,
+          job: {
+            ...jobDetailResponse.data.job,
+            // Convert undefined to null for nullable fields that don't accept undefined
+            contact_name: jobDetailResponse.data.job.contact_name ?? null,
+            notes: jobDetailResponse.data.job.notes ?? null,
+            order_number: jobDetailResponse.data.job.order_number ?? null,
+            description: jobDetailResponse.data.job.description ?? null,
+            delivery_date: jobDetailResponse.data.job.delivery_date ?? null,
+          },
+        },
+      }
+
+      const response = await api.job_rest_jobs_update(sanitizedData, {
+        params: { job_id: jobId },
+      })
       return {
-        success: response.success || true,
-        data: response.data || response,
+        success: true,
+        data: response,
       }
     } catch (error) {
       console.error('Error updating job:', error)
@@ -188,7 +186,12 @@ export const jobService = {
   },
 
   // Reorder job
-  reorderJob(jobId: string, beforeId?: string, afterId?: string, status?: string): Promise<Job> {
+  reorderJob(
+    jobId: string,
+    beforeId?: string,
+    afterId?: string,
+    status?: string,
+  ): Promise<JobReorderRequest> {
     const payload: JobReorderPayload = {}
     if (beforeId) payload.before_id = beforeId
     if (afterId) payload.after_id = afterId
@@ -232,11 +235,58 @@ export const jobService = {
       return response.data
     } catch (error) {
       console.error('Error uploading job files:', error)
-      if (error.response) {
+      if (axios.isAxiosError(error) && error.response) {
         console.error('Response data:', error.response.data)
         console.error('Response status:', error.response.status)
       }
       throw error
+    }
+  },
+
+  // Delete job file
+  async deleteJobFile(fileId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      await api.deleteJobFilesApi_2(undefined, {
+        params: { file_path: fileId },
+        queries: { format: 'json' },
+      })
+      return { success: true }
+    } catch (error) {
+      console.error('Error deleting job file:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete file',
+      }
+    }
+  },
+
+  // Update job file print setting
+  async updateJobFilePrintSetting(
+    jobNumber: string,
+    filename: string,
+    printOnJobsheet: boolean,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const formData = new FormData()
+      formData.append('filename', filename)
+      formData.append('print_on_jobsheet', printOnJobsheet.toString())
+
+      await axios.put(`/job/api/job-files/${jobNumber}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        params: {
+          format: 'json',
+        },
+      })
+
+      return { success: true }
+    } catch (error) {
+      console.error('Error updating job file print setting:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update print setting',
+      }
     }
   },
 }

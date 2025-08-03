@@ -10,7 +10,7 @@
       <div class="flex-1">
         <input
           :id="id"
-          v-model="displayValue"
+          :value="displayValue.get()"
           type="text"
           :placeholder="placeholder"
           readonly
@@ -57,14 +57,14 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
+import { debugLog } from '../utils/debug'
 import { toast } from 'vue-sonner'
 
 import { watch } from 'vue'
 import { Users, X } from 'lucide-vue-next'
-import { useContactManagement } from '@/composables/useContactManagement'
+import { useContactManagement } from '../composables/useContactManagement'
 import ContactSelectionModal from './ContactSelectionModal.vue'
-import { schemas } from '@/api/generated/api'
+import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 
 type ClientContact = z.infer<typeof schemas.ClientContactResult>
@@ -219,14 +219,15 @@ const selectPrimaryContact = async () => {
 // Expose the method for parent components
 defineExpose({
   selectPrimaryContact,
+  clearSelection,
 })
 
 const emitUpdates = () => {
   debugLog('ContactSelector - emitUpdates', {
-    displayValue: displayValue.value,
+    displayValue: displayValue.get(),
     selectedContact: selectedContact.value,
   })
-  emit('update:modelValue', displayValue.value)
+  emit('update:modelValue', displayValue.get())
   emit('update:selectedContact', selectedContact.value)
 }
 
@@ -237,10 +238,29 @@ watch(selectedContact, () => {
 
 watch(
   () => props.clientId,
-  (newClientId, oldClientId) => {
-    if (newClientId !== oldClientId) {
-      debugLog('ContactSelector - clientId changed:', { newClientId, oldClientId })
-      clearSelection()
+  async (newClientId, oldClientId) => {
+    if (newClientId === oldClientId) return
+
+    debugLog('ContactSelector - clientId changed:', { newClientId, oldClientId })
+    // Explicitly clear displayValue and selectedContact immediately
+    displayValue.set('')
+    selectedContact.value = null
+    clearFromComposable() // Ensure composable's internal state is also cleared
+    emitUpdates() // Emit updates to parent to reflect cleared state
+
+    if (!newClientId) {
+      debugLog('Client ID cleared, keeping contact selector empty.')
+      return
+    }
+
+    // Load contacts for the new client and attempt to select primary
+    await loadContactsOnly(newClientId)
+    const primaryContact = findPrimaryContact()
+    if (primaryContact) {
+      selectFromComposable(primaryContact)
+      // emitUpdates will be called by the selectedContact watcher
+    } else {
+      debugLog('No primary contact found for new client, keeping cleared state.')
     }
   },
 )
