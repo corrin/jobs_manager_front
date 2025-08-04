@@ -804,8 +804,8 @@ const Job = z
   .object({
     id: z.string().uuid(),
     name: z.string().max(100),
-    client_id: z.string().uuid(),
-    client_name: z.string(),
+    client_id: z.string().uuid().nullish(),
+    client_name: z.string().nullable(),
     contact_id: z.string().uuid().nullish(),
     contact_name: z.string().nullable(),
     job_number: z.number().int().gte(-2147483648).lte(2147483647),
@@ -3376,6 +3376,63 @@ assistant&#x27;s reply.`,
     alias: 'job_api_jobs_advanced_search_retrieve',
     description: `Endpoint for advanced job search - API endpoint.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'client_name',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'contact_person',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'created_after',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'created_before',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'created_by',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'description',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'job_number',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'name',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'paid',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'status',
+        type: 'Query',
+        schema: z.array(z.string()).optional(),
+      },
+      {
+        name: 'xero_invoice_params',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
     response: AdvancedSearchResponse,
   },
   {

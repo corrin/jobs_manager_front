@@ -2,7 +2,9 @@ import { schemas } from '../api/generated/api'
 import { api } from '../api/client'
 import axios from '../plugins/axios'
 import { z } from 'zod'
+import { AdvancedFilters } from '../constants/advanced-filters'
 
+type AdvancedSearchResponse = z.infer<typeof schemas.AdvancedSearchResponse>
 type KanbanJob = z.infer<typeof schemas.KanbanJob>
 export type JobCreateData = z.infer<typeof schemas.JobCreateRequest>
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
@@ -136,6 +138,10 @@ export const jobService = {
         String(job.job_number).toLowerCase().includes(searchTerm) ||
         job.description?.toLowerCase().includes(searchTerm),
     )
+  },
+
+  performAdvancedSearch(filters: AdvancedFilters): Promise<AdvancedSearchResponse> {
+    return api.job_api_jobs_advanced_search_retrieve({ queries: filters })
   },
 
   // Update job status

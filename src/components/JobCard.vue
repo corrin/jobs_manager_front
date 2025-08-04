@@ -59,6 +59,9 @@
     <p class="text-xs text-gray-600 mb-1 line-clamp-1 leading-tight">{{ job.description }}</p>
 
     <div class="text-xs text-gray-500 mb-2 truncate font-medium">{{ job.client_name }}</div>
+    <div v-if="job.contact_person" class="text-xs text-gray-500 mb-2 truncate font-medium">
+      Cntc: {{ job.contact_person }}
+    </div>
 
     <StatusBadge
       :label="friendlyStatusName"
@@ -301,9 +304,11 @@ onMounted(() => {
   opacity: 0.8 !important;
   transform: scale(1.02) !important;
 }
+
 :global(.job-card.sortable-drag) {
   opacity: 0.6 !important;
 }
+
 :global(.job-card.sortable-ghost) {
   opacity: 0.3 !important;
   background: #e3f2fd !important;

@@ -28,12 +28,14 @@
             @click="toggleAll"
             class="text-sm text-blue-600 hover:text-blue-800 font-medium"
           >
-            {{ selectedStatuses.length === statusOptions.length ? 'Deselect All' : 'Select All' }}
+            {{
+              selectedStatuses.length === JOB_STATUS_CHOICES.length ? 'Deselect All' : 'Select All'
+            }}
           </button>
         </div>
 
         <div
-          v-for="status in statusOptions"
+          v-for="status in JOB_STATUS_CHOICES"
           :key="status.value"
           class="px-3 py-2 hover:bg-gray-50 cursor-pointer"
           @click="toggleStatus(status.value)"
@@ -73,11 +75,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ChevronDown, X } from 'lucide-vue-next'
-
-interface StatusOption {
-  value: string
-  label: string
-}
+import { JOB_STATUS_CHOICES } from '../constants/job-status'
 
 interface Props {
   modelValue: string[]
@@ -95,21 +93,6 @@ const emit = defineEmits<{
 const isOpen = ref(false)
 const selectedStatuses = ref<string[]>([...props.modelValue])
 
-const statusOptions: StatusOption[] = [
-  { value: 'quoting', label: 'Quoting' },
-  { value: 'accepted_quote', label: 'Accepted Quote' },
-  { value: 'awaiting_materials', label: 'Awaiting Materials' },
-  { value: 'awaiting_staff', label: 'Awaiting Staff' },
-  { value: 'awaiting_site_availability', label: 'Awaiting Site Availability' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'on_hold', label: 'On Hold' },
-  { value: 'special', label: 'Special' },
-  { value: 'recently_completed', label: 'Recently Completed' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'rejected', label: 'Rejected' },
-  { value: 'archived', label: 'Archived' },
-]
-
 const displayText = computed(() => {
   const count = selectedStatuses.value.length
 
@@ -126,7 +109,7 @@ const displayText = computed(() => {
 })
 
 const getStatusLabel = (value: string): string => {
-  const option = statusOptions.find((opt) => opt.value === value)
+  const option = JOB_STATUS_CHOICES.find((opt) => opt.label === value)
   return option?.label || value
 }
 
@@ -157,12 +140,12 @@ const removeStatus = (status: string) => {
 }
 
 const toggleAll = () => {
-  switch (selectedStatuses.value.length === statusOptions.length) {
+  switch (selectedStatuses.value.length === JOB_STATUS_CHOICES.length) {
     case true:
       selectedStatuses.value = []
       break
     case false:
-      selectedStatuses.value = statusOptions.map((opt) => opt.value)
+      selectedStatuses.value = JOB_STATUS_CHOICES.map((opt) => opt.label)
       break
   }
 

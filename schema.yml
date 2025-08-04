@@ -2417,6 +2417,64 @@ paths:
     get:
       operationId: job_api_jobs_advanced_search_retrieve
       description: Endpoint for advanced job search - API endpoint.
+      parameters:
+        - in: query
+          name: client_name
+          schema:
+            type: string
+          description: Filter by client name
+        - in: query
+          name: contact_person
+          schema:
+            type: string
+          description: Filter by contact person
+        - in: query
+          name: created_after
+          schema:
+            type: string
+          description: Filter jobs created after this date (YYYY-MM-DD)
+        - in: query
+          name: created_before
+          schema:
+            type: string
+          description: Filter jobs created before this date (YYYY-MM-DD)
+        - in: query
+          name: created_by
+          schema:
+            type: string
+          description: Filter by creator
+        - in: query
+          name: description
+          schema:
+            type: string
+          description: Filter by job description
+        - in: query
+          name: job_number
+          schema:
+            type: string
+          description: Filter by job number
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Filter by job name
+        - in: query
+          name: paid
+          schema:
+            type: string
+          description: Filter by paid status
+        - in: query
+          name: status
+          schema:
+            type: array
+            items:
+              type: string
+          description: Filter by job status (can be multiple)
+        - in: query
+          name: xero_invoice_params
+          schema:
+            type: string
+          description: Filter by Xero invoice parameters
       tags:
         - job
       security:
@@ -6163,9 +6221,11 @@ components:
         client_id:
           type: string
           format: uuid
+          nullable: true
         client_name:
           type: string
           readOnly: true
+          nullable: true
         contact_id:
           type: string
           format: uuid
@@ -6267,7 +6327,6 @@ components:
           readOnly: true
       required:
         - charge_out_rate
-        - client_id
         - client_name
         - contact_name
         - created_at
@@ -6520,7 +6579,6 @@ components:
         id:
           type: string
           format: uuid
-          readOnly: true
         filename:
           type: string
           maxLength: 255
