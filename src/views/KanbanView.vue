@@ -346,10 +346,10 @@ const {
   })
 })
 
-// Handler para atribuição de staff
+// Staff assignment handler
 const handleStaffAssigned = async (payload: { staffId: string; jobId: string }) => {
   try {
-    // Recarregar os jobs para atualizar a reatividade
+    // Reload jobs to refresh reactivity
     await loadJobs()
     console.log(`✅ Staff ${payload.staffId} assigned to job ${payload.jobId}`)
   } catch (error) {
@@ -360,7 +360,7 @@ const handleStaffAssigned = async (payload: { staffId: string; jobId: string }) 
 // Handler para desatribuição de staff
 const handleStaffUnassigned = async (payload: { staffId: string; jobId: string }) => {
   try {
-    // Recarregar os jobs para atualizar a reatividade
+    // Reload jobs to refresh reactivity
     await loadJobs()
     console.log(`✅ Staff ${payload.staffId} unassigned from job ${payload.jobId}`)
   } catch (error) {
