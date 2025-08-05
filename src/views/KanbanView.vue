@@ -357,7 +357,7 @@ const handleStaffAssigned = async (payload: { staffId: string; jobId: string }) 
   }
 }
 
-// Handler para desatribuição de staff
+// Staff unassignment handler
 const handleStaffUnassigned = async (payload: { staffId: string; jobId: string }) => {
   try {
     // Reload jobs to refresh reactivity
