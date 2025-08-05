@@ -36,14 +36,14 @@
 
         <div
           v-for="status in JOB_STATUS_CHOICES"
-          :key="status.value"
+          :key="status.key"
           class="px-3 py-2 hover:bg-gray-50 cursor-pointer"
-          @click="toggleStatus(status.value)"
+          @click="toggleStatus(status.key)"
         >
           <div class="flex items-center">
             <input
               type="checkbox"
-              :checked="selectedStatuses.includes(status.value)"
+              :checked="selectedStatuses.includes(status.key)"
               class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               @click.stop
             />
@@ -109,7 +109,7 @@ const displayText = computed(() => {
 })
 
 const getStatusLabel = (value: string): string => {
-  const option = JOB_STATUS_CHOICES.find((opt) => opt.label === value)
+  const option = JOB_STATUS_CHOICES.find((opt) => opt.key === value)
   return option?.label || value
 }
 
@@ -145,7 +145,7 @@ const toggleAll = () => {
       selectedStatuses.value = []
       break
     case false:
-      selectedStatuses.value = JOB_STATUS_CHOICES.map((opt) => opt.label)
+      selectedStatuses.value = JOB_STATUS_CHOICES.map((opt) => opt.key)
       break
   }
 

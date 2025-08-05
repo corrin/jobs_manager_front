@@ -67,6 +67,7 @@
               : 'bg-red-100 text-red-800 border border-red-200',
           ]"
           :title="hasValidXeroId ? 'Client has Xero ID' : 'Client missing Xero ID'"
+          v-if="!searchMode"
         >
           <component :is="hasValidXeroId ? CheckCircle : XCircle" class="w-3 h-3" />
           <span>Xero</span>
@@ -91,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { Plus, CheckCircle, XCircle } from 'lucide-vue-next'
 import { useClientLookup } from '@/composables/useClientLookup'
 import CreateClientModal from '@/components/CreateClientModal.vue'
@@ -105,6 +106,7 @@ const props = withDefaults(
     required?: boolean
     modelValue?: string
     supplierLookup?: boolean
+    searchMode?: boolean
   }>(),
   {
     placeholder: 'Search for a client...',
@@ -130,6 +132,7 @@ const {
   handleInputChange,
   selectClient: selectClientFromComposable,
   hideSuggestions,
+  preserveSelectedClient,
 } = useClientLookup()
 
 const showCreateModal = ref(false)
@@ -186,6 +189,8 @@ watch(
   (newValue) => {
     if (newValue !== searchQuery.value) {
       searchQuery.value = newValue
+      // Preserve selected client when dialog reopens
+      preserveSelectedClient()
     }
   },
 )
@@ -198,5 +203,10 @@ watch(selectedClient, (newClient) => {
     emit('update:selectedClient', null)
     emit('update:selectedId', '')
   }
+})
+
+// Preserve client selection when component mounts
+onMounted(() => {
+  preserveSelectedClient()
 })
 </script>

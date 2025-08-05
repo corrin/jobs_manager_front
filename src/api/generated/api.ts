@@ -902,6 +902,14 @@ const QuoteRevisionResponse = z
   .passthrough()
 const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
 const JobEventCreateResponse = z.object({ success: z.boolean(), event: JobEvent }).passthrough()
+const JobQuoteAcceptance = z
+  .object({
+    success: z.boolean(),
+    job_id: z.string().uuid(),
+    quote_acceptance_date: z.string(),
+    message: z.string(),
+  })
+  .passthrough()
 const QuoteImportStatusResponse = z
   .object({
     job_id: z.string(),
@@ -1336,21 +1344,25 @@ const PurchaseOrderAllocationsResponse = z
     allocations: z.record(z.array(AllocationItem)),
   })
   .passthrough()
-const StockList = z
+const StockItem = z
   .object({
-    id: z.string().uuid(),
-    description: z.string(),
-    quantity: z.number(),
-    unit_cost: z.number(),
-    metal_type: z.string(),
-    alloy: z.string(),
-    specifics: z.string(),
-    location: z.string(),
-    source: z.string(),
+    id: z.string().uuid().nullable(),
+    description: z.string().nullable(),
+    quantity: z.number().nullable(),
+    unit_cost: z.number().nullable(),
+    metal_type: z.string().nullable(),
+    alloy: z.string().nullable(),
+    specifics: z.string().nullable(),
+    location: z.string().nullable(),
+    source: z.string().nullable(),
     date: z.string().datetime({ offset: true }).nullable(),
     job_id: z.string().uuid().nullable(),
-    notes: z.string(),
+    notes: z.string().nullable(),
   })
+  .partial()
+  .passthrough()
+const StockList = z
+  .object({ items: z.array(StockItem), total_count: z.number().int() })
   .passthrough()
 const StockCreate = z
   .object({
@@ -1370,6 +1382,16 @@ const StockConsumeRequest = z
   .object({
     job_id: z.string().uuid(),
     quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
+  .passthrough()
+const StockConsumeResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    remaining_quantity: z
+      .string()
+      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
+      .optional(),
   })
   .passthrough()
 const XeroItem = z
@@ -1726,6 +1748,7 @@ export const schemas = {
   QuoteRevisionResponse,
   JobEventCreateRequest,
   JobEventCreateResponse,
+  JobQuoteAcceptance,
   QuoteImportStatusResponse,
   DraftLine,
   QuoteChanges,
@@ -1775,9 +1798,11 @@ export const schemas = {
   TypeEnum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
+  StockItem,
   StockList,
   StockCreate,
   StockConsumeRequest,
+  StockConsumeResponse,
   XeroItem,
   XeroItemListResponse,
   DjangoJobExecutionStatusEnum,
@@ -3470,7 +3495,7 @@ assistant&#x27;s reply.`,
       {
         name: 'status',
         type: 'Query',
-        schema: z.array(z.string()).optional(),
+        schema: z.string().optional(),
       },
       {
         name: 'xero_invoice_params',
@@ -3883,8 +3908,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'post',
     path: '/job/rest/jobs/:job_id/quote/accept/',
     alias: 'job_rest_jobs_quote_accept_create',
-    description: `Accept a quote for the job.
-Sets the quote_acceptance_date to current datetime.`,
+    description: `Accept a quote for the job. Sets the quote_acceptance_date to current datetime.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3893,7 +3917,13 @@ Sets the quote_acceptance_date to current datetime.`,
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: JobQuoteAcceptance,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
@@ -4681,10 +4711,8 @@ DELETE: Marks a stock item as inactive instead of deleting it`,
   {
     method: 'post',
     path: '/purchasing/rest/stock/:stock_id/consume/',
-    alias: 'purchasing_rest_stock_consume_create',
-    description: `REST API view for consuming stock items for jobs.
-
-POST: Records stock consumption for a specific job, reducing available quantity`,
+    alias: 'consumeStock',
+    description: `Consume stock for a job, reducing available quantity.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4698,7 +4726,7 @@ POST: Records stock consumption for a specific job, reducing available quantity`
         schema: z.string().uuid(),
       },
     ],
-    response: StockConsumeRequest,
+    response: StockConsumeResponse,
   },
   {
     method: 'get',

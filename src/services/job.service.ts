@@ -141,7 +141,18 @@ export const jobService = {
   },
 
   performAdvancedSearch(filters: AdvancedFilters): Promise<AdvancedSearchResponse> {
-    return api.job_api_jobs_advanced_search_retrieve({ queries: filters })
+    // Process filters to ensure status array is properly formatted
+    const processedFilters = {
+      ...filters,
+      // Convert status array to comma-separated string if it's an array
+      status:
+        Array.isArray(filters.status) && filters.status.length > 0
+          ? filters.status.join(',')
+          : filters.status,
+    }
+
+    console.log('🔍 Advanced search filters:', processedFilters)
+    return api.job_api_jobs_advanced_search_retrieve({ queries: processedFilters })
   },
 
   // Update job status

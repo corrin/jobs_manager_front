@@ -175,8 +175,9 @@ function formatCurrency(value: number): string {
 async function loadStockItems() {
   isLoading.value = true
   try {
-    stockItems.value = await api.purchasing_rest_stock_retrieve()
-    filteredStock.value = stockItems.value
+    const response = await api.purchasing_rest_stock_retrieve()
+    stockItems.value = response.items
+    filteredStock.value = response.items
   } catch (error) {
     debugLog('Failed to load stock items:', error)
   } finally {
@@ -239,7 +240,7 @@ function selectStockItem(item: StockItem) {
   // Auto-calculate unit revenue with markup
   const markup = Number(companyDefaultsStore.companyDefaults?.materials_markup || 0)
   const calculatedRev = unitCostValue * (1 + markup)
-  formData.value.unit_rev = calculatedRev.toFixed
+  formData.value.unit_rev = calculatedRev.toFixed(2)
 
   debugLog(
     'selectStockItem - unit_cost:',

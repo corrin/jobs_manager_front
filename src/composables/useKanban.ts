@@ -55,16 +55,41 @@ export function useKanban(onJobsLoaded?: () => void) {
       return true
     }
 
+    // Debug logging to track filtering logic
+    debugLog('[STAFF FILTER DEBUG] Checking job:', {
+      job_number: job.job_number,
+      job_id: job.id,
+      assigned_staff: job.people?.map((p) => ({ id: p.id, name: p.display_name })) || [],
+      created_by_id: job.created_by_id,
+      active_filters: activeStaffFilters.value,
+    })
+
+    // Convert all IDs to strings for consistent comparison
+    const activeFilterIds = activeStaffFilters.value.map((id) => id.toString())
+
+    // Check assigned staff - ensure both sides are strings
     const assignedStaffIds = job.people?.map((staff: KanbanJobPerson) => staff.id.toString()) || []
     const isAssignedToActiveStaff = assignedStaffIds.some((staffId: string) =>
-      activeStaffFilters.value.includes(staffId),
+      activeFilterIds.includes(staffId),
     )
 
-    const isCreatedByActiveStaff = job.created_by_id
-      ? activeStaffFilters.value.includes(job.created_by_id.toString())
-      : false
+    // Check created by staff - ensure both sides are strings
+    const createdById = job.created_by_id ? job.created_by_id.toString() : null
+    const isCreatedByActiveStaff = createdById ? activeFilterIds.includes(createdById) : false
 
-    return isAssignedToActiveStaff || isCreatedByActiveStaff
+    const matches = isAssignedToActiveStaff || isCreatedByActiveStaff
+
+    debugLog('[STAFF FILTER DEBUG] Job match result:', {
+      job_number: job.job_number,
+      assignedStaffIds,
+      createdById,
+      activeFilterIds,
+      isAssignedToActiveStaff,
+      isCreatedByActiveStaff,
+      matches,
+    })
+
+    return matches
   }
 
   const getJobsByStatus = computed(() => (columnId: string) => {
@@ -138,6 +163,7 @@ export function useKanban(onJobsLoaded?: () => void) {
           created_by_id: job.created_by_id,
           created_at: job.created_at,
           priority: job.priority,
+          rejected_flag: job.rejected_flag || false,
         }
       })
 
@@ -226,15 +252,19 @@ export function useKanban(onJobsLoaded?: () => void) {
 
   const handleAdvancedSearch = async (): Promise<void> => {
     try {
+      // Ensure loading state is set immediately
       isLoading.value = true
+      showSearchResults.value = true
+      filteredJobs.value = [] // Clear previous results
+
       const response: AdvancedSearchResponse = await jobService.performAdvancedSearch(
         advancedFilters.value,
       )
       filteredJobs.value = response.jobs || []
-      showSearchResults.value = true
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to perform advanced search'
       debugLog('Error performing advanced search:', err)
+      filteredJobs.value = []
     } finally {
       isLoading.value = false
     }
