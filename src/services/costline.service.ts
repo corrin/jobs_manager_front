@@ -1,26 +1,10 @@
 import { api } from '@/api/client'
-import type { CostLineCreateUpdate, ModernTimesheetEntryGetResponse } from '@/api/generated/api'
+import type {
+  CostLineCreateUpdate,
+  PatchedCostLineCreateUpdate,
+  ModernTimesheetEntryGetResponse,
+} from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
-
-// Local types for create/update payloads (simplified interfaces for UI)
-export interface CostLineCreatePayload {
-  kind: 'time' | 'material' | 'adjust'
-  desc: string
-  quantity: string
-  unit_cost: string
-  unit_rev: string
-  ext_refs?: Record<string, unknown>
-  meta?: Record<string, unknown>
-}
-
-export interface CostLineUpdatePayload {
-  desc?: string
-  quantity?: string
-  unit_cost?: string
-  unit_rev?: string
-  ext_refs?: Record<string, unknown>
-  meta?: Record<string, unknown>
-}
 
 // Use generated response type for timesheet entries
 export type TimesheetEntriesResponse = ModernTimesheetEntryGetResponse
@@ -45,17 +29,14 @@ export const getTimesheetEntries = async (
 export const createCostLine = async (
   jobId: string | number,
   kind: 'estimate' | 'quote' | 'actual',
-  payload: CostLineCreatePayload,
+  payload: CostLineCreateUpdate,
 ): Promise<CostLineCreateUpdate> => {
   if (kind === 'actual') {
-    return await api.job_rest_jobs_cost_sets_actual_cost_lines_create(
-      payload as CostLineCreateUpdate,
-      {
-        params: { job_id: String(jobId) },
-      },
-    )
+    return await api.job_rest_jobs_cost_sets_actual_cost_lines_create(payload, {
+      params: { job_id: String(jobId) },
+    })
   } else {
-    return await api.job_rest_jobs_cost_sets_cost_lines_create(payload as CostLineCreateUpdate, {
+    return await api.job_rest_jobs_cost_sets_cost_lines_create(payload, {
       params: { job_id: String(jobId), kind },
     })
   }
@@ -63,9 +44,9 @@ export const createCostLine = async (
 
 export const updateCostLine = async (
   id: string,
-  payload: CostLineUpdatePayload,
+  payload: PatchedCostLineCreateUpdate,
 ): Promise<CostLineCreateUpdate> => {
-  return await api.job_rest_cost_lines_partial_update(payload as CostLineCreateUpdate, {
+  return await api.job_rest_cost_lines_partial_update(payload, {
     params: { cost_line_id: id },
   })
 }

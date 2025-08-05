@@ -2089,13 +2089,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssignJobResponse'
+              $ref: '#/components/schemas/AssignJobRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/AssignJobResponse'
+              $ref: '#/components/schemas/AssignJobRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AssignJobResponse'
+              $ref: '#/components/schemas/AssignJobRequest'
         required: true
       security:
         - cookieAuth: []
@@ -2121,8 +2121,12 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignJobResponse'
+          description: ''
   /job/api/job/completed/:
     get:
       operationId: job_api_job_completed_list
@@ -2350,7 +2354,7 @@ paths:
   /job/api/jobs/{job_id}/reorder/:
     post:
       operationId: job_api_jobs_reorder_create
-      description: Reorder job within or between columns - API endpoint.
+      description: Reorder a job within or between kanban columns.
       parameters:
         - in: path
           name: job_id
@@ -2378,12 +2382,30 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobReorderRequest'
+                $ref: '#/components/schemas/KanbanSuccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
           description: ''
   /job/api/jobs/{job_id}/update-status/:
     post:
       operationId: job_api_jobs_update_status_create
-      description: Update job status - API endpoint.
+      description: Update the status of a job on the Kanban board.
       parameters:
         - in: path
           name: job_id
@@ -2411,7 +2433,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobStatusUpdateRequest'
+                $ref: '#/components/schemas/KanbanSuccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
           description: ''
   /job/api/jobs/advanced-search/:
     get:
@@ -2588,7 +2628,8 @@ paths:
         - in: path
           name: cost_line_id
           schema:
-            type: integer
+            type: string
+          description: ID of the CostLine to update
           required: true
       tags:
         - job
@@ -2615,12 +2656,13 @@ paths:
   /job/rest/cost_lines/{cost_line_id}/delete/:
     delete:
       operationId: job_rest_cost_lines_delete_destroy
-      description: Delete a cost line
+      description: Delete an existing CostLine by ID
       parameters:
         - in: path
           name: cost_line_id
           schema:
-            type: integer
+            type: string
+          description: ID of the CostLine to delete
           required: true
       tags:
         - job
@@ -2629,6 +2671,18 @@ paths:
       responses:
         '204':
           description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
   /job/rest/jobs/:
     post:
       operationId: job_rest_jobs_create
@@ -2886,13 +2940,7 @@ paths:
   /job/rest/jobs/{job_id}/events/:
     post:
       operationId: job_rest_jobs_events_create
-      description: |-
-        Add a manual event to the Job.
-
-        Expected JSON:
-        {
-            "description": "Event description"
-        }
+      description: Add a manual event to the Job with duplicate prevention.
       parameters:
         - in: path
           name: job_id
@@ -2901,7 +2949,7 @@ paths:
             format: uuid
           required: true
       tags:
-        - job
+        - Jobs
       requestBody:
         content:
           application/json:
@@ -2917,11 +2965,29 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobEventCreateRequest'
+                $ref: '#/components/schemas/JobEventCreateResponse'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
           description: ''
   /job/rest/jobs/{job_id}/quote/accept/:
     post:
@@ -4702,7 +4768,7 @@ paths:
   /timesheets/api/staff/:
     get:
       operationId: timesheets_api_staff_retrieve
-      description: Get filtered list of staff members.
+      description: Get filtered list of staff members for a specific date.
       tags:
         - timesheets
       security:
@@ -5187,6 +5253,19 @@ components:
           description: List of job IDs to archive
       required:
         - ids
+    AssignJobRequest:
+      type: object
+      description: Serialiser for job assignment request
+      properties:
+        job_id:
+          type: string
+          description: Job ID
+        staff_id:
+          type: string
+          description: Staff ID
+      required:
+        - job_id
+        - staff_id
     AssignJobResponse:
       type: object
       description: Serialiser for job assignment response
@@ -5648,6 +5727,14 @@ components:
       required:
         - desc
         - kind
+    CostLineErrorResponse:
+      type: object
+      description: Serializer for cost line error responses.
+      properties:
+        error:
+          type: string
+      required:
+        - error
     CostSet:
       type: object
       description: Serializer for CostSet model - includes nested cost lines
@@ -6544,26 +6631,36 @@ components:
         - data
     JobEvent:
       type: object
+      description: |-
+        Serializer for JobEvent model - read-only for frontend consumption
+
+        Merged from duplicate definition - uses get_display_full_name for better
+        staff display (respects preferred names vs just first_name)
       properties:
         id:
           type: string
           format: uuid
           readOnly: true
+        description:
+          type: string
+          readOnly: true
         timestamp:
           type: string
           format: date-time
-        event_type:
-          type: string
-          maxLength: 100
-        description:
-          type: string
+          readOnly: true
         staff:
+          type: string
+          readOnly: true
+          nullable: true
+        event_type:
           type: string
           readOnly: true
       required:
         - description
+        - event_type
         - id
         - staff
+        - timestamp
     JobEventCreateRequest:
       type: object
       description: Serializer for job event creation request
@@ -6573,6 +6670,17 @@ components:
           maxLength: 500
       required:
         - description
+    JobEventCreateResponse:
+      type: object
+      description: Serializer for job event creation response
+      properties:
+        success:
+          type: boolean
+        event:
+          $ref: '#/components/schemas/JobEvent'
+      required:
+        - event
+        - success
     JobFile:
       type: object
       properties:
@@ -7242,6 +7350,17 @@ components:
         - priority
         - status
         - status_key
+    KanbanErrorResponse:
+      type: object
+      description: Serializer for error kanban operation response.
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: string
+      required:
+        - error
     KanbanJob:
       type: object
       description: |-
@@ -7342,6 +7461,17 @@ components:
         - icon
         - id
         - last_name
+    KanbanSuccessResponse:
+      type: object
+      description: Serializer for successful kanban operation response.
+      properties:
+        success:
+          type: boolean
+          default: true
+        message:
+          type: string
+      required:
+        - message
     Kind332Enum:
       enum:
         - time
@@ -8103,8 +8233,11 @@ components:
           maxLength: 100
         raw_ims_data:
           nullable: true
-        is_active:
-          type: boolean
+        date_left:
+          type: string
+          format: date
+          nullable: true
+          description: Date staff member left employment (null for current employees)
         is_staff:
           type: boolean
         date_joined:
@@ -8761,8 +8894,11 @@ components:
           maxLength: 100
         raw_ims_data:
           nullable: true
-        is_active:
-          type: boolean
+        date_left:
+          type: string
+          format: date
+          nullable: true
+          description: Date staff member left employment (null for current employees)
         is_staff:
           type: boolean
         date_joined:

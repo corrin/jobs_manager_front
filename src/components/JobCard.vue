@@ -10,6 +10,8 @@
       'cursor-pointer': isMovementModeActive,
       'cursor-grab': !isDragging && !isMovementModeActive,
       'staff-drop-target': isStaffDragOver,
+      'staff-operation-loading': isAssigningStaff || isUnassigningStaff,
+      'staff-operation-success': operationSuccess,
     }"
     :data-id="job.id || ''"
     :data-job-id="job.id || ''"
@@ -25,6 +27,53 @@
       :class="isJobSelectedForMovement ? 'bg-blue-500' : 'bg-blue-300 opacity-60'"
     ></div>
 
+    <!-- Loading/Success indicator for staff operations -->
+    <div
+      v-if="isAssigningStaff || isUnassigningStaff || operationSuccess"
+      class="absolute top-1 left-1 flex items-center justify-center w-5 h-5 rounded-full transition-all duration-300"
+      :class="{
+        'bg-blue-500': isAssigningStaff || isUnassigningStaff,
+        'bg-green-500': operationSuccess,
+      }"
+    >
+      <!-- Loading spinner -->
+      <svg
+        v-if="isAssigningStaff || isUnassigningStaff"
+        class="w-3 h-3 text-white animate-spin"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+      <!-- Success checkmark -->
+      <svg
+        v-if="operationSuccess"
+        class="w-3 h-3 text-white"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="3"
+          d="M5 13l4 4L19 7"
+        ></path>
+      </svg>
+    </div>
+
     <div class="flex justify-between items-center mb-1">
       <span class="text-xs font-semibold text-blue-600">#{{ job.job_number }}</span>
 
@@ -38,14 +87,51 @@
             (!job.people || job.people.length === 0) && !isStaffDragTarget,
         }"
       >
-        <StaffAvatar
+        <div
           v-for="staff in job.people || []"
           :key="staff.id"
-          :staff="staff"
-          size="sm"
-          :title="staff.display_name"
-          :data-staff-id="staff.id"
-        />
+          class="relative staff-avatar-container"
+          @mouseenter="hoveredStaffId = staff.id"
+          @mouseleave="hoveredStaffId = null"
+        >
+          <StaffAvatar
+            :staff="staff"
+            size="sm"
+            :title="staff.display_name"
+            :data-staff-id="staff.id"
+            class="cursor-pointer transition-all duration-200"
+            :class="{
+              'opacity-75 scale-95': hoveredStaffId === staff.id,
+            }"
+          />
+          <!-- X indicator on hover -->
+          <div
+            v-if="hoveredStaffId === staff.id"
+            @click="(event) => handleStaffClick(staff, event)"
+            @mousedown.stop.prevent
+            @mouseup.stop.prevent
+            @dragstart.stop.prevent
+            @drag.stop.prevent
+            class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md z-10"
+            :title="`Remove ${staff.display_name} from job`"
+            style="pointer-events: auto; user-select: none"
+          >
+            <svg
+              class="w-2.5 h-2.5 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="3"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </div>
+        </div>
         <div v-if="!job.people || job.people.length === 0" class="text-[10px] text-gray-400 px-1">
           +
         </div>
@@ -83,6 +169,8 @@ import { api } from '@/api/client'
 import { z } from 'zod'
 
 type KanbanJob = z.infer<typeof schemas.KanbanJob>
+type KanbanJobPerson = z.infer<typeof schemas.KanbanJobPerson>
+type AssignJobRequest = z.infer<typeof schemas.AssignJobRequest>
 
 const props = withDefaults(
   defineProps<{
@@ -106,11 +194,16 @@ const emit = defineEmits<{
   'job-selected-for-movement': [job: KanbanJob]
   'card-ready': [payload: { jobId: string; element: HTMLElement }]
   'staff-assigned': [payload: { staffId: string; jobId: string }]
+  'staff-unassigned': [payload: { staffId: string; jobId: string }]
 }>()
 
 const jobStaffContainerRef = ref<HTMLElement>()
 const jobCardRef = ref<HTMLElement>()
 const isStaffDragOver = ref(false)
+const hoveredStaffId = ref<string | null>(null)
+const isAssigningStaff = ref(false)
+const isUnassigningStaff = ref(false)
+const operationSuccess = ref(false)
 
 // Staff drag and drop handlers
 const handleDragOver = (event: DragEvent): void => {
@@ -142,23 +235,71 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
 
   const staffId = event.dataTransfer?.getData('text/plain')
 
+  const payload: AssignJobRequest = {
+    job_id: props.job.id,
+    staff_id: staffId,
+  }
+
   if (staffId && props.job.id) {
+    isAssigningStaff.value = true
+    operationSuccess.value = false
+
     try {
-      await api.job_api_job_assignment_create(
-        {
+      await api.job_api_job_assignment_create(payload, {
+        params: {
           job_id: props.job.id,
-          staff_id: staffId,
         },
-        {
-          params: {
-            job_id: props.job.id,
-          },
-        },
-      )
+      })
+
+      // Show success indicator
+      isAssigningStaff.value = false
+      operationSuccess.value = true
+
+      // Hide success indicator after 1.5 seconds
+      setTimeout(() => {
+        operationSuccess.value = false
+      }, 1500)
 
       emit('staff-assigned', { staffId, jobId: props.job.id })
     } catch (error) {
+      isAssigningStaff.value = false
       console.error('Error assigning staff to job:', error)
+    }
+  }
+}
+
+const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<void> => {
+  // Prevent any drag or click events from propagating
+  event?.stopPropagation()
+  event?.stopImmediatePropagation()
+  event?.preventDefault()
+
+  if (confirm(`Remove ${staff.display_name} from this job?`)) {
+    isUnassigningStaff.value = true
+    operationSuccess.value = false
+
+    try {
+      const payload: AssignJobRequest = {
+        job_id: props.job.id,
+        staff_id: staff.id,
+      }
+      await api.job_api_job_assignment_destroy(payload, {
+        params: { job_id: props.job.id },
+      })
+
+      // Show success indicator
+      isUnassigningStaff.value = false
+      operationSuccess.value = true
+
+      // Hide success indicator after 1.5 seconds
+      setTimeout(() => {
+        operationSuccess.value = false
+      }, 1500)
+
+      emit('staff-unassigned', { staffId: staff.id, jobId: props.job.id })
+    } catch (error) {
+      isUnassigningStaff.value = false
+      console.error('Error unassigning staff from job:', error)
     }
   }
 }
@@ -174,7 +315,6 @@ const truncatedJobName = computed(() => {
 })
 
 onMounted(() => {
-  // Emitir evento para o sistema de drag and drop do job (staff container)
   if (jobStaffContainerRef.value) {
     emit('job-ready', {
       jobId: props.job.id.toString(),
@@ -182,7 +322,6 @@ onMounted(() => {
     })
   }
 
-  // Emitir evento para o sistema de drag and drop do card inteiro
   if (jobCardRef.value) {
     emit('card-ready', {
       jobId: props.job.id.toString(),
@@ -323,5 +462,102 @@ onMounted(() => {
 
 .job-card:active {
   cursor: grabbing !important;
+}
+
+/* Staff avatar container styles */
+.staff-avatar-container {
+  position: relative;
+  display: inline-block;
+}
+
+.staff-avatar-container:hover {
+  z-index: 10;
+}
+
+/* X indicator styles */
+.staff-avatar-container .absolute {
+  animation: fadeInScale 0.15s ease-out;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Ensure X button is always on top */
+.staff-avatar-container .absolute {
+  z-index: 20;
+  pointer-events: auto !important;
+}
+
+/* Prevent drag events on X button */
+.staff-avatar-container .absolute * {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+}
+
+/* Override any sortable drag styles on the X button */
+.staff-avatar-container .absolute:hover {
+  cursor: pointer !important;
+}
+
+.staff-avatar-container .absolute:active {
+  cursor: pointer !important;
+}
+
+/* Staff operation visual indicators */
+.staff-operation-loading {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.staff-operation-success {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Success indicator fade in */
+.staff-operation-success .absolute {
+  animation: successPulse 0.3s ease-out;
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

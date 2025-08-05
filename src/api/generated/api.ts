@@ -156,7 +156,7 @@ const Staff = z
       .optional(),
     ims_payroll_id: z.string().max(100).nullish(),
     raw_ims_data: z.unknown().nullish(),
-    is_active: z.boolean().optional(),
+    date_left: z.string().nullish(),
     is_staff: z.boolean().optional(),
     date_joined: z.string().datetime({ offset: true }).optional(),
     created_at: z.string().datetime({ offset: true }).optional(),
@@ -208,7 +208,7 @@ const PatchedStaff = z
     wage_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
     ims_payroll_id: z.string().max(100).nullable(),
     raw_ims_data: z.unknown().nullable(),
-    is_active: z.boolean(),
+    date_left: z.string().nullable(),
     is_staff: z.boolean(),
     date_joined: z.string().datetime({ offset: true }),
     created_at: z.string().datetime({ offset: true }),
@@ -547,6 +547,7 @@ const JobFileUpdateSuccessResponse = z
     print_on_jobsheet: z.boolean(),
   })
   .passthrough()
+const AssignJobRequest = z.object({ job_id: z.string(), staff_id: z.string() }).passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
   .object({
@@ -596,6 +597,15 @@ const JobReorderRequest = z
     status: z.string().nullable(),
   })
   .partial()
+  .passthrough()
+const KanbanSuccessResponse = z
+  .object({
+    success: z.boolean().optional().default(true),
+    message: z.string(),
+  })
+  .passthrough()
+const KanbanErrorResponse = z
+  .object({ success: z.boolean().optional().default(false), error: z.string() })
   .passthrough()
 const JobStatusUpdateRequest = z.object({ status: z.string() }).passthrough()
 const KanbanJobPerson = z
@@ -727,6 +737,7 @@ const CostLineCreateUpdate = z
     meta: z.unknown().optional(),
   })
   .passthrough()
+const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
 const JobCreateRequest = z
   .object({
     name: z.string().max(255),
@@ -836,10 +847,10 @@ const Job = z
 const JobEvent = z
   .object({
     id: z.string().uuid(),
-    timestamp: z.string().datetime({ offset: true }).optional(),
-    event_type: z.string().max(100).optional(),
     description: z.string(),
-    staff: z.string(),
+    timestamp: z.string().datetime({ offset: true }),
+    staff: z.string().nullable(),
+    event_type: z.string(),
   })
   .passthrough()
 const CompanyDefaultsJobDetail = z
@@ -890,6 +901,7 @@ const QuoteRevisionResponse = z
   })
   .passthrough()
 const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
+const JobEventCreateResponse = z.object({ success: z.boolean(), event: JobEvent }).passthrough()
 const QuoteImportStatusResponse = z
   .object({
     job_id: z.string(),
@@ -1666,6 +1678,7 @@ export const schemas = {
   JobFileUploadSuccessResponse,
   JobFileUploadPartialResponse,
   JobFileUpdateSuccessResponse,
+  AssignJobRequest,
   AssignJobResponse,
   CompleteJob,
   PaginatedCompleteJobList,
@@ -1677,6 +1690,8 @@ export const schemas = {
   JobQuoteChatUpdate,
   JobQuoteChatInteractionRequest,
   JobReorderRequest,
+  KanbanSuccessResponse,
+  KanbanErrorResponse,
   JobStatusUpdateRequest,
   KanbanJobPerson,
   KanbanJob,
@@ -1690,6 +1705,7 @@ export const schemas = {
   Kind332Enum,
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
+  CostLineErrorResponse,
   JobCreateRequest,
   JobCreateResponse,
   JobRestErrorResponse,
@@ -1709,6 +1725,7 @@ export const schemas = {
   QuoteRevisionRequest,
   QuoteRevisionResponse,
   JobEventCreateRequest,
+  JobEventCreateResponse,
   QuoteImportStatusResponse,
   DraftLine,
   QuoteChanges,
@@ -3154,7 +3171,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: AssignJobResponse,
+        schema: AssignJobRequest,
       },
       {
         name: 'job_id',
@@ -3177,7 +3194,7 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: AssignJobResponse,
   },
   {
     method: 'get',
@@ -3334,7 +3351,7 @@ assistant&#x27;s reply.`,
     method: 'post',
     path: '/job/api/jobs/:job_id/reorder/',
     alias: 'job_api_jobs_reorder_create',
-    description: `Reorder job within or between columns - API endpoint.`,
+    description: `Reorder a job within or between kanban columns.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3348,13 +3365,27 @@ assistant&#x27;s reply.`,
         schema: z.string().uuid(),
       },
     ],
-    response: JobReorderRequest,
+    response: KanbanSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: KanbanErrorResponse,
+      },
+      {
+        status: 404,
+        schema: KanbanErrorResponse,
+      },
+      {
+        status: 500,
+        schema: KanbanErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
     path: '/job/api/jobs/:job_id/update-status/',
     alias: 'job_api_jobs_update_status_create',
-    description: `Update job status - API endpoint.`,
+    description: `Update the status of a job on the Kanban board.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3368,7 +3399,21 @@ assistant&#x27;s reply.`,
         schema: z.string(),
       },
     ],
-    response: z.object({ status: z.string() }).passthrough(),
+    response: KanbanSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: KanbanErrorResponse,
+      },
+      {
+        status: 404,
+        schema: KanbanErrorResponse,
+      },
+      {
+        status: 500,
+        schema: KanbanErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -3511,7 +3556,7 @@ assistant&#x27;s reply.`,
       {
         name: 'cost_line_id',
         type: 'Path',
-        schema: z.number().int(),
+        schema: z.string(),
       },
     ],
     response: CostLineCreateUpdate,
@@ -3520,16 +3565,26 @@ assistant&#x27;s reply.`,
     method: 'delete',
     path: '/job/rest/cost_lines/:cost_line_id/delete/',
     alias: 'job_rest_cost_lines_delete_destroy',
-    description: `Delete a cost line`,
+    description: `Delete an existing CostLine by ID`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'cost_line_id',
         type: 'Path',
-        schema: z.number().int(),
+        schema: z.string(),
       },
     ],
     response: z.void(),
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'post',
@@ -3794,12 +3849,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'post',
     path: '/job/rest/jobs/:job_id/events/',
     alias: 'job_rest_jobs_events_create',
-    description: `Add a manual event to the Job.
-
-Expected JSON:
-{
-    &quot;description&quot;: &quot;Event description&quot;
-}`,
+    description: `Add a manual event to the Job with duplicate prevention.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3813,7 +3863,21 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: z.object({ description: z.string().max(500) }).passthrough(),
+    response: JobEventCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 409,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 429,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'post',
@@ -4813,7 +4877,7 @@ Returns:
     method: 'get',
     path: '/timesheets/api/staff/',
     alias: 'timesheets_api_staff_retrieve',
-    description: `Get filtered list of staff members.`,
+    description: `Get filtered list of staff members for a specific date.`,
     requestFormat: 'json',
     response: StaffListResponse,
   },

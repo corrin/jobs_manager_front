@@ -1,11 +1,13 @@
 import { ref, computed, watch } from 'vue'
 import { useJobsStore } from '@/stores/jobs'
 import { useJobData } from '@/composables/useJobData'
+import { jobService } from '@/services/job.service'
 import type { Ref } from 'vue'
 import { debugLog } from '@/utils/debug'
 import { schemas } from '../api/generated/api'
 import { api } from '@/api/client'
 import { z } from 'zod'
+import { toast } from 'vue-sonner'
 
 type JobEvent = z.infer<typeof schemas.JobEvent>
 
@@ -18,9 +20,24 @@ export function useJobEvents(jobId: string | Ref<string | null>) {
 
   const getJobId = () => (typeof jobId === 'string' ? jobId : jobId.value)
 
-  function loadEvents() {
+  async function loadEvents(refresh: boolean = false) {
     const id = getJobId()
     debugLog('[useJobEvents] loadEvents called. jobId:', id)
+
+    if (refresh) {
+      debugLog('[useJobEvents] Refreshing events for jobId:', id)
+      const response = await jobService.getJob(id)
+      if (!response.success) {
+        error.value = response.error || 'Failed to load job events'
+        debugLog('[useJobEvents] Error loading events:', error.value)
+        toast.error('Failed to reload job events')
+        return
+      }
+      jobEvents.value = response.data.events || []
+      debugLog('[useJobEvents] Events refreshed from API:', jobEvents.value)
+      return
+    }
+
     if (dataEvents.value && Array.isArray(dataEvents.value)) {
       jobEvents.value = [...dataEvents.value]
       debugLog('[useJobEvents] Loaded events from useJobData:', jobEvents.value)
@@ -97,6 +114,7 @@ export function useJobEvents(jobId: string | Ref<string | null>) {
     } finally {
       loading.value = false
       debugLog('[useJobEvents] addEvent finished. loading:', loading.value)
+      await loadEvents(true)
     }
   }
 

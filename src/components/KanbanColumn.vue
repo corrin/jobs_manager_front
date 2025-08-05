@@ -45,6 +45,7 @@
           @card-ready="$emit('card-ready', $event)"
           @job-selected-for-movement="$emit('job-selected-for-movement', $event)"
           @staff-assigned="$emit('staff-assigned', $event)"
+          @staff-unassigned="$emit('staff-unassigned', $event)"
         />
 
         <div
@@ -174,6 +175,7 @@ interface KanbanColumnEmits {
   (e: 'card-ready', payload: { jobId: string; element: HTMLElement }): void
   (e: 'job-selected-for-movement', job: Job): void
   (e: 'staff-assigned', payload: { staffId: string; jobId: string }): void
+  (e: 'staff-unassigned', payload: { staffId: string; jobId: string }): void
 }
 
 const props = withDefaults(defineProps<KanbanColumnProps>(), {

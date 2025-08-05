@@ -90,6 +90,8 @@
                   @job-click="viewJob"
                   @load-more="loadMoreJobs(selectedMobileStatus)"
                   @sortable-ready="handleSortableReady"
+                  @staff-assigned="handleStaffAssigned"
+                  @staff-unassigned="handleStaffUnassigned"
                   class="kanban-column w-full max-w-md mx-auto"
                 />
               </div>
@@ -119,6 +121,8 @@
                       @job-click="viewJob"
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
+                      @staff-assigned="handleStaffAssigned"
+                      @staff-unassigned="handleStaffUnassigned"
                       class="kanban-column-responsive"
                     />
                   </div>
@@ -141,6 +145,8 @@
                       @job-click="viewJob"
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
+                      @staff-assigned="handleStaffAssigned"
+                      @staff-unassigned="handleStaffUnassigned"
                       class="w-full"
                     />
                   </div>
@@ -218,6 +224,28 @@ const {
     initialiseSortableForAllColumns()
   })
 })
+
+// Handler para atribuição de staff
+const handleStaffAssigned = async (payload: { staffId: string; jobId: string }) => {
+  try {
+    // Recarregar os jobs para atualizar a reatividade
+    await loadJobs()
+    console.log(`✅ Staff ${payload.staffId} assigned to job ${payload.jobId}`)
+  } catch (error) {
+    console.error('Error handling staff assignment:', error)
+  }
+}
+
+// Handler para desatribuição de staff
+const handleStaffUnassigned = async (payload: { staffId: string; jobId: string }) => {
+  try {
+    // Recarregar os jobs para atualizar a reatividade
+    await loadJobs()
+    console.log(`✅ Staff ${payload.staffId} unassigned from job ${payload.jobId}`)
+  } catch (error) {
+    console.error('Error handling staff unassignment:', error)
+  }
+}
 
 const showAdvancedSearchDialog = ref(false)
 
