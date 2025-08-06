@@ -370,10 +370,14 @@ export function useTimesheetEntryGrid(
     const rateMultiplier = calculations.getRateMultiplier(rate)
     const billable = rowData.billable ?? true
 
-    const calculatedWage =
-      hours > 0 && wageRate > 0 ? Math.round(hours * rateMultiplier * wageRate * 100) / 100 : 0
-    const calculatedBill =
-      billable && hours > 0 && chargeOutRate > 0 ? Math.round(hours * chargeOutRate * 100) / 100 : 0
+    let calculatedWage = 0
+    if (hours > 0 && wageRate > 0)
+      calculatedWage = Math.round(hours * rateMultiplier * wageRate * 100) / 100
+
+    let calculatedBill = 0
+    if (billable && hours > 0 && chargeOutRate > 0) {
+      calculatedBill = Math.round(hours * chargeOutRate * 100) / 100
+    }
 
     console.log('🧮 Grid wage calculation:', {
       hours,
