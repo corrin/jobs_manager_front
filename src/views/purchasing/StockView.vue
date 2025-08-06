@@ -204,6 +204,39 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Insufficient Stock Confirmation Modal -->
+    <Dialog
+      :open="showInsufficientStockConfirm"
+      @update:open="showInsufficientStockConfirm = $event"
+    >
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Insufficient Stock Warning</DialogTitle>
+        </DialogHeader>
+        <p class="mb-4">
+          You are trying to consume
+          <span class="font-semibold">{{ allocateForm.qtyToUse }}</span>
+          units of <span class="font-semibold">{{ allocateForm.description }}</span
+          >, but only <span class="font-semibold">{{ allocateForm.availableQty }}</span>
+          units are available.
+        </p>
+        <p class="mb-4 text-amber-600">
+          This will put the stock level to
+          <span class="font-semibold">{{ allocateForm.availableQty - allocateForm.qtyToUse }}</span>
+          units (negative stock).
+        </p>
+        <p class="mb-4">Do you want to continue anyway?</p>
+        <DialogFooter>
+          <Button variant="outline" @click="showInsufficientStockConfirm = false">
+            <X class="w-4 h-4 mr-2" /> Cancel
+          </Button>
+          <Button variant="destructive" @click="performStockAllocation">
+            <Check class="w-4 h-4 mr-2" /> Continue Anyway
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </AppLayout>
 </template>
 <script setup lang="ts">
@@ -277,6 +310,7 @@ watch(
 const showAllocate = ref(false)
 const showAdd = ref(false)
 const showDelete = ref(false)
+const showInsufficientStockConfirm = ref(false)
 const activeId = ref<string>('')
 
 const allocateForm = ref({
@@ -361,13 +395,25 @@ async function submitAllocate() {
     return
   }
 
+  console.log('Stock allocation check:', {
+    qtyToUse: allocateForm.value.qtyToUse,
+    availableQty: allocateForm.value.availableQty,
+    qtyToUseType: typeof allocateForm.value.qtyToUse,
+    availableQtyType: typeof allocateForm.value.availableQty,
+    comparison: allocateForm.value.qtyToUse > allocateForm.value.availableQty,
+  })
+
   if (allocateForm.value.qtyToUse > allocateForm.value.availableQty) {
-    const newStockLevel = allocateForm.value.availableQty - allocateForm.value.qtyToUse
-    toast.warning(
-      `Warning: This will put ${allocateForm.value.description} stock level to ${newStockLevel}`,
-    )
+    // Show confirmation dialog for insufficient stock
+    console.log('Should show insufficient stock dialog')
+    showInsufficientStockConfirm.value = true
+    return
   }
 
+  await performStockAllocation()
+}
+
+async function performStockAllocation() {
   try {
     await stockStore.consumeStock(activeId.value, {
       job_id: allocateForm.value.jobId,
@@ -375,6 +421,7 @@ async function submitAllocate() {
     })
     toast.success('Stock allocated successfully')
     showAllocate.value = false
+    showInsufficientStockConfirm.value = false
     await stockStore.fetchStock()
   } catch (error) {
     toast.error('Failed to allocate stock')
