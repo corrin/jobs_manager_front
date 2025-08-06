@@ -1031,6 +1031,7 @@ const saveChanges = async () => {
   }
 
   hasUnsavedChanges.value = false
+  reloadData()
 }
 
 const reloadData = () => {
