@@ -44,7 +44,30 @@
           <div v-if="showSearchResults" class="mb-2 md:mb-3">
             <div class="flex items-centre justify-between mb-4">
               <h2 class="text-lg font-semibold text-grey-900">
-                Search Results ({{ filteredJobs.length }} jobs found)
+                <span v-if="!isLoading">Search Results ({{ filteredJobs.length }} jobs found)</span>
+                <span v-else class="flex items-center">
+                  <svg
+                    class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Searching...
+                </span>
               </h2>
               <button
                 @click="backToKanban"
@@ -54,8 +77,106 @@
                 Back to Kanban
               </button>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              <JobCard v-for="job in filteredJobs" :key="job.id" :job="job" @click="viewJob(job)" />
+
+            <!-- Loading state for search results -->
+            <div v-if="isLoading" class="flex justify-center items-center py-12">
+              <div class="text-center">
+                <svg
+                  class="animate-spin mx-auto h-12 w-12 text-blue-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <p class="mt-4 text-gray-600">Searching jobs...</p>
+              </div>
+            </div>
+
+            <!-- Search results with vertical scrolling -->
+            <div v-else class="relative">
+              <!-- Scroll progress indicator -->
+              <div
+                class="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-gray-200 mb-4"
+              >
+                <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-blue-500 transition-all duration-300 ease-out"
+                    :style="{ width: scrollProgress + '%' }"
+                  ></div>
+                </div>
+                <div class="text-xs text-gray-500 text-center py-1">
+                  Showing {{ Math.min(visibleJobsCount, filteredJobs.length) }} of
+                  {{ filteredJobs.length }} jobs
+                </div>
+              </div>
+
+              <!-- Vertical scrolling container -->
+              <div
+                ref="scrollContainer"
+                class="max-h-[70vh] overflow-y-auto scroll-smooth"
+                style="scrollbar-width: thin; scrollbar-color: #3b82f6 #e5e7eb"
+                @scroll="handleScroll"
+              >
+                <div
+                  class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 p-2"
+                >
+                  <div
+                    v-for="(job, index) in filteredJobs"
+                    :key="job.id"
+                    class="transform transition-all duration-300 ease-out"
+                    :class="{
+                      'opacity-0 translate-y-4': !isJobVisible(index),
+                      'opacity-100 translate-y-0': isJobVisible(index),
+                    }"
+                  >
+                    <JobCard
+                      :job="job"
+                      @click="viewJob(job)"
+                      class="h-full hover:shadow-lg transition-shadow duration-200"
+                    />
+                  </div>
+                </div>
+
+                <!-- Load more indicator -->
+                <div v-if="hasMoreJobs" class="text-center py-4">
+                  <div class="inline-flex items-center text-sm text-gray-500">
+                    <svg
+                      class="animate-spin -ml-1 mr-2 h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Loading more jobs...
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -90,6 +211,8 @@
                   @job-click="viewJob"
                   @load-more="loadMoreJobs(selectedMobileStatus)"
                   @sortable-ready="handleSortableReady"
+                  @staff-assigned="handleStaffAssigned"
+                  @staff-unassigned="handleStaffUnassigned"
                   class="kanban-column w-full max-w-md mx-auto"
                 />
               </div>
@@ -119,6 +242,8 @@
                       @job-click="viewJob"
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
+                      @staff-assigned="handleStaffAssigned"
+                      @staff-unassigned="handleStaffUnassigned"
                       class="kanban-column-responsive"
                     />
                   </div>
@@ -141,6 +266,8 @@
                       @job-click="viewJob"
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
+                      @staff-assigned="handleStaffAssigned"
+                      @staff-unassigned="handleStaffUnassigned"
                       class="w-full"
                     />
                   </div>
@@ -164,7 +291,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted, nextTick } from 'vue'
+import { ref, onUnmounted, onMounted, nextTick, computed } from 'vue'
 import { Search, LayoutGrid } from 'lucide-vue-next'
 import JobCard from '@/components/JobCard.vue'
 import KanbanColumn from '@/components/KanbanColumn.vue'
@@ -219,12 +346,82 @@ const {
   })
 })
 
+// Staff assignment handler
+const handleStaffAssigned = async (payload: { staffId: string; jobId: string }) => {
+  try {
+    // Reload jobs to refresh reactivity
+    await loadJobs()
+    console.log(`✅ Staff ${payload.staffId} assigned to job ${payload.jobId}`)
+  } catch (error) {
+    console.error('Error handling staff assignment:', error)
+  }
+}
+
+// Staff unassignment handler
+const handleStaffUnassigned = async (payload: { staffId: string; jobId: string }) => {
+  try {
+    // Reload jobs to refresh reactivity
+    await loadJobs()
+    console.log(`✅ Staff ${payload.staffId} unassigned from job ${payload.jobId}`)
+  } catch (error) {
+    console.error('Error handling staff unassignment:', error)
+  }
+}
+
 const showAdvancedSearchDialog = ref(false)
+
+// Vertical scrolling variables
+const scrollContainer = ref<HTMLElement | null>(null)
+const scrollProgress = ref(0)
+const visibleJobsCount = ref(20) // Initial visible jobs
+const JOBS_PER_BATCH = 20
+
+// Computed properties for scroll functionality
+const hasMoreJobs = computed(() => visibleJobsCount.value < filteredJobs.value.length)
+
+const isJobVisible = (index: number) => {
+  return index < visibleJobsCount.value
+}
+
+// Scroll handling functions
+const handleScroll = (event: Event) => {
+  const target = event.target as HTMLElement
+  const scrollTop = target.scrollTop
+  const scrollHeight = target.scrollHeight
+  const clientHeight = target.clientHeight
+
+  // Update scroll progress
+  scrollProgress.value = (scrollTop / (scrollHeight - clientHeight)) * 100
+
+  // Load more jobs when near bottom
+  if (scrollTop + clientHeight >= scrollHeight - 100) {
+    loadMoreVisibleJobs()
+  }
+}
+
+const loadMoreVisibleJobs = () => {
+  if (hasMoreJobs.value) {
+    visibleJobsCount.value = Math.min(
+      visibleJobsCount.value + JOBS_PER_BATCH,
+      filteredJobs.value.length,
+    )
+  }
+}
+
+// Reset visible jobs when search results change
+const resetVisibleJobs = () => {
+  visibleJobsCount.value = Math.min(JOBS_PER_BATCH, filteredJobs.value.length)
+  scrollProgress.value = 0
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollTop = 0
+  }
+}
 
 const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
   try {
     Object.assign(advancedFilters.value, filters)
     await handleAdvancedSearch()
+    resetVisibleJobs()
   } catch (error) {
     console.error('Error performing advanced search from dialog:', error)
   }
@@ -400,5 +597,89 @@ onUnmounted(() => {
 .drag-handle:hover {
   transform: scale(1.1);
   background-color: #2563eb !important;
+}
+
+/* Vertical scrolling styles */
+.scroll-smooth {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+}
+
+/* Custom scrollbar styling */
+.scroll-smooth::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-smooth::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.scroll-smooth::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.scroll-smooth::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
+}
+
+/* Firefox scrollbar */
+.scroll-smooth {
+  scrollbar-width: thin;
+  scrollbar-color: #3b82f6 #f1f5f9;
+}
+
+/* Touch-friendly scroll indicators */
+@media (hover: none) and (pointer: coarse) {
+  .scroll-smooth {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .scroll-smooth::-webkit-scrollbar {
+    width: 12px;
+  }
+}
+
+/* Smooth animations for job cards */
+.job-card-enter-active,
+.job-card-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.job-card-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.job-card-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* Progress bar animation */
+.progress-bar {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 640px) {
+  .scroll-smooth {
+    max-height: 60vh;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .scroll-smooth {
+    max-height: 65vh;
+  }
+}
+
+@media (min-width: 1025px) {
+  .scroll-smooth {
+    max-height: 70vh;
+  }
 }
 </style>

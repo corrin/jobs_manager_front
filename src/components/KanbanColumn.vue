@@ -45,6 +45,7 @@
           @card-ready="$emit('card-ready', $event)"
           @job-selected-for-movement="$emit('job-selected-for-movement', $event)"
           @staff-assigned="$emit('staff-assigned', $event)"
+          @staff-unassigned="$emit('staff-unassigned', $event)"
         />
 
         <div
@@ -119,7 +120,7 @@
           <p class="text-xs text-gray-500 mb-2">{{ job.description }}</p>
           <div class="text-xs text-gray-400">
             <p>{{ job.client_name }}</p>
-            <p>{{ job.contact_person }}</p>
+            <p>{{ job.contact_name }}</p>
           </div>
         </div>
 
@@ -149,7 +150,7 @@ import { debugLog } from '@/utils/debug'
 
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import JobCard from '@/components/JobCard.vue'
-import { schemas } from '@/api/generated/api'
+import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 
 type Job = z.infer<typeof schemas.Job>
@@ -174,6 +175,7 @@ interface KanbanColumnEmits {
   (e: 'card-ready', payload: { jobId: string; element: HTMLElement }): void
   (e: 'job-selected-for-movement', job: Job): void
   (e: 'staff-assigned', payload: { staffId: string; jobId: string }): void
+  (e: 'staff-unassigned', payload: { staffId: string; jobId: string }): void
 }
 
 const props = withDefaults(defineProps<KanbanColumnProps>(), {

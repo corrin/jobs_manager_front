@@ -242,25 +242,39 @@ watch(
     if (newClientId === oldClientId) return
 
     debugLog('ContactSelector - clientId changed:', { newClientId, oldClientId })
-    // Explicitly clear displayValue and selectedContact immediately
+
+    // Always clear the current selection first when client changes
     displayValue.set('')
     selectedContact.value = null
     clearFromComposable() // Ensure composable's internal state is also cleared
-    emitUpdates() // Emit updates to parent to reflect cleared state
+
+    // Clear contacts array to prevent showing old client's contacts
+    contacts.value = []
+
+    // Emit cleared state immediately to parent
+    emitUpdates()
 
     if (!newClientId) {
       debugLog('Client ID cleared, keeping contact selector empty.')
       return
     }
 
-    // Load contacts for the new client and attempt to select primary
+    // Load contacts for the new client
+    debugLog('Loading contacts for new client:', newClientId)
     await loadContactsOnly(newClientId)
-    const primaryContact = findPrimaryContact()
-    if (primaryContact) {
-      selectFromComposable(primaryContact)
-      // emitUpdates will be called by the selectedContact watcher
+
+    // Only attempt to select primary contact if we found contacts
+    if (contacts.value.length > 0) {
+      const primaryContact = findPrimaryContact()
+      if (primaryContact) {
+        debugLog('Found primary contact for new client:', primaryContact)
+        selectFromComposable(primaryContact)
+        // emitUpdates will be called by the selectedContact watcher
+      } else {
+        debugLog('No primary contact found for new client, keeping cleared state.')
+      }
     } else {
-      debugLog('No primary contact found for new client, keeping cleared state.')
+      debugLog('No contacts found for new client, keeping cleared state.')
     }
   },
 )

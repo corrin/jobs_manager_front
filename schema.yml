@@ -2089,13 +2089,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssignJobResponse'
+              $ref: '#/components/schemas/AssignJobRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/AssignJobResponse'
+              $ref: '#/components/schemas/AssignJobRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AssignJobResponse'
+              $ref: '#/components/schemas/AssignJobRequest'
         required: true
       security:
         - cookieAuth: []
@@ -2121,8 +2121,12 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '204':
-          description: No response body
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignJobResponse'
+          description: ''
   /job/api/job/completed/:
     get:
       operationId: job_api_job_completed_list
@@ -2350,7 +2354,7 @@ paths:
   /job/api/jobs/{job_id}/reorder/:
     post:
       operationId: job_api_jobs_reorder_create
-      description: Reorder job within or between columns - API endpoint.
+      description: Reorder a job within or between kanban columns.
       parameters:
         - in: path
           name: job_id
@@ -2378,12 +2382,30 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobReorderRequest'
+                $ref: '#/components/schemas/KanbanSuccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
           description: ''
   /job/api/jobs/{job_id}/update-status/:
     post:
       operationId: job_api_jobs_update_status_create
-      description: Update job status - API endpoint.
+      description: Update the status of a job on the Kanban board.
       parameters:
         - in: path
           name: job_id
@@ -2411,12 +2433,86 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobStatusUpdateRequest'
+                $ref: '#/components/schemas/KanbanSuccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KanbanErrorResponse'
           description: ''
   /job/api/jobs/advanced-search/:
     get:
       operationId: job_api_jobs_advanced_search_retrieve
       description: Endpoint for advanced job search - API endpoint.
+      parameters:
+        - in: query
+          name: client_name
+          schema:
+            type: string
+          description: Filter by client name
+        - in: query
+          name: contact_person
+          schema:
+            type: string
+          description: Filter by contact person
+        - in: query
+          name: created_after
+          schema:
+            type: string
+          description: Filter jobs created after this date (YYYY-MM-DD)
+        - in: query
+          name: created_before
+          schema:
+            type: string
+          description: Filter jobs created before this date (YYYY-MM-DD)
+        - in: query
+          name: created_by
+          schema:
+            type: string
+          description: Filter by creator
+        - in: query
+          name: description
+          schema:
+            type: string
+          description: Filter by job description
+        - in: query
+          name: job_number
+          schema:
+            type: string
+          description: Filter by job number
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Filter by job name
+        - in: query
+          name: paid
+          schema:
+            type: string
+          description: Filter by paid status
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by job status (can be multiple)
+        - in: query
+          name: xero_invoice_params
+          schema:
+            type: string
+          description: Filter by Xero invoice parameters
       tags:
         - job
       security:
@@ -2530,7 +2626,8 @@ paths:
         - in: path
           name: cost_line_id
           schema:
-            type: integer
+            type: string
+          description: ID of the CostLine to update
           required: true
       tags:
         - job
@@ -2557,12 +2654,13 @@ paths:
   /job/rest/cost_lines/{cost_line_id}/delete/:
     delete:
       operationId: job_rest_cost_lines_delete_destroy
-      description: Delete a cost line
+      description: Delete an existing CostLine by ID
       parameters:
         - in: path
           name: cost_line_id
           schema:
-            type: integer
+            type: string
+          description: ID of the CostLine to delete
           required: true
       tags:
         - job
@@ -2571,6 +2669,18 @@ paths:
       responses:
         '204':
           description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
   /job/rest/jobs/:
     post:
       operationId: job_rest_jobs_create
@@ -2828,13 +2938,7 @@ paths:
   /job/rest/jobs/{job_id}/events/:
     post:
       operationId: job_rest_jobs_events_create
-      description: |-
-        Add a manual event to the Job.
-
-        Expected JSON:
-        {
-            "description": "Event description"
-        }
+      description: Add a manual event to the Job with duplicate prevention.
       parameters:
         - in: path
           name: job_id
@@ -2843,7 +2947,7 @@ paths:
             format: uuid
           required: true
       tags:
-        - job
+        - Jobs
       requestBody:
         content:
           application/json:
@@ -2859,18 +2963,35 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobEventCreateRequest'
+                $ref: '#/components/schemas/JobEventCreateResponse'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
           description: ''
   /job/rest/jobs/{job_id}/quote/accept/:
     post:
       operationId: job_rest_jobs_quote_accept_create
-      description: |-
-        Accept a quote for the job.
-        Sets the quote_acceptance_date to current datetime.
+      description: Accept a quote for the job. Sets the quote_acceptance_date to current
+        datetime.
       parameters:
         - in: path
           name: job_id
@@ -2879,12 +3000,22 @@ paths:
             format: uuid
           required: true
       tags:
-        - job
+        - Jobs
       security:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobQuoteAcceptance'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
   /job/rest/jobs/{job_id}/quote/status/:
     get:
       operationId: job_rest_jobs_quote_status_retrieve
@@ -4334,11 +4465,8 @@ paths:
           description: No response body
   /purchasing/rest/stock/{stock_id}/consume/:
     post:
-      operationId: purchasing_rest_stock_consume_create
-      description: |-
-        REST API view for consuming stock items for jobs.
-
-        POST: Records stock consumption for a specific job, reducing available quantity
+      operationId: consumeStock
+      description: Consume stock for a job, reducing available quantity.
       parameters:
         - in: path
           name: stock_id
@@ -4367,7 +4495,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockConsumeRequest'
+                $ref: '#/components/schemas/StockConsumeResponse'
           description: ''
   /purchasing/rest/xero-items/:
     get:
@@ -4644,7 +4772,7 @@ paths:
   /timesheets/api/staff/:
     get:
       operationId: timesheets_api_staff_retrieve
-      description: Get filtered list of staff members.
+      description: Get filtered list of staff members for a specific date.
       tags:
         - timesheets
       security:
@@ -5129,6 +5257,19 @@ components:
           description: List of job IDs to archive
       required:
         - ids
+    AssignJobRequest:
+      type: object
+      description: Serialiser for job assignment request
+      properties:
+        job_id:
+          type: string
+          description: Job ID
+        staff_id:
+          type: string
+          description: Staff ID
+      required:
+        - job_id
+        - staff_id
     AssignJobResponse:
       type: object
       description: Serialiser for job assignment response
@@ -5590,6 +5731,14 @@ components:
       required:
         - desc
         - kind
+    CostLineErrorResponse:
+      type: object
+      description: Serializer for cost line error responses.
+      properties:
+        error:
+          type: string
+      required:
+        - error
     CostSet:
       type: object
       description: Serializer for CostSet model - includes nested cost lines
@@ -6163,9 +6312,11 @@ components:
         client_id:
           type: string
           format: uuid
+          nullable: true
         client_name:
           type: string
           readOnly: true
+          nullable: true
         contact_id:
           type: string
           format: uuid
@@ -6267,7 +6418,6 @@ components:
           readOnly: true
       required:
         - charge_out_rate
-        - client_id
         - client_name
         - contact_name
         - created_at
@@ -6485,26 +6635,36 @@ components:
         - data
     JobEvent:
       type: object
+      description: |-
+        Serializer for JobEvent model - read-only for frontend consumption
+
+        Merged from duplicate definition - uses get_display_full_name for better
+        staff display (respects preferred names vs just first_name)
       properties:
         id:
           type: string
           format: uuid
           readOnly: true
+        description:
+          type: string
+          readOnly: true
         timestamp:
           type: string
           format: date-time
-        event_type:
-          type: string
-          maxLength: 100
-        description:
-          type: string
+          readOnly: true
         staff:
+          type: string
+          readOnly: true
+          nullable: true
+        event_type:
           type: string
           readOnly: true
       required:
         - description
+        - event_type
         - id
         - staff
+        - timestamp
     JobEventCreateRequest:
       type: object
       description: Serializer for job event creation request
@@ -6514,13 +6674,23 @@ components:
           maxLength: 500
       required:
         - description
+    JobEventCreateResponse:
+      type: object
+      description: Serializer for job event creation response
+      properties:
+        success:
+          type: boolean
+        event:
+          $ref: '#/components/schemas/JobEvent'
+      required:
+        - event
+        - success
     JobFile:
       type: object
       properties:
         id:
           type: string
           format: uuid
-          readOnly: true
         filename:
           type: string
           maxLength: 255
@@ -6701,6 +6871,24 @@ components:
         - total_actual_profit
         - total_estimated_profit
         - total_profit
+    JobQuoteAcceptance:
+      type: object
+      description: Serializer for job quote acceptance data.
+      properties:
+        success:
+          type: boolean
+        job_id:
+          type: string
+          format: uuid
+        quote_acceptance_date:
+          type: string
+        message:
+          type: string
+      required:
+        - job_id
+        - message
+        - quote_acceptance_date
+        - success
     JobQuoteChat:
       type: object
       description: |-
@@ -7184,6 +7372,17 @@ components:
         - priority
         - status
         - status_key
+    KanbanErrorResponse:
+      type: object
+      description: Serializer for error kanban operation response.
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: string
+      required:
+        - error
     KanbanJob:
       type: object
       description: |-
@@ -7284,6 +7483,17 @@ components:
         - icon
         - id
         - last_name
+    KanbanSuccessResponse:
+      type: object
+      description: Serializer for successful kanban operation response.
+      properties:
+        success:
+          type: boolean
+          default: true
+        message:
+          type: string
+      required:
+        - message
     Kind332Enum:
       enum:
         - time
@@ -8045,8 +8255,11 @@ components:
           maxLength: 100
         raw_ims_data:
           nullable: true
-        is_active:
-          type: boolean
+        date_left:
+          type: string
+          format: date
+          nullable: true
+          description: Date staff member left employment (null for current employees)
         is_staff:
           type: boolean
         date_joined:
@@ -8703,8 +8916,11 @@ components:
           maxLength: 100
         raw_ims_data:
           nullable: true
-        is_active:
-          type: boolean
+        date_left:
+          type: string
+          format: date
+          nullable: true
+          description: Date staff member left employment (null for current employees)
         is_staff:
           type: boolean
         date_joined:
@@ -8885,6 +9101,20 @@ components:
       required:
         - job_id
         - quantity
+    StockConsumeResponse:
+      type: object
+      description: Serializer for stock consumption response
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        remaining_quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+      required:
+        - success
     StockCreate:
       type: object
       description: Serializer for creating stock items.
@@ -8926,31 +9156,40 @@ components:
         - quantity
         - source
         - unit_cost
-    StockList:
+    StockItem:
       type: object
-      description: Serializer for listing stock items from service data.
+      description: Serializer for individual stock items.
       properties:
         id:
           type: string
           format: uuid
+          nullable: true
         description:
           type: string
+          nullable: true
         quantity:
           type: number
           format: double
+          nullable: true
         unit_cost:
           type: number
           format: double
+          nullable: true
         metal_type:
           type: string
+          nullable: true
         alloy:
           type: string
+          nullable: true
         specifics:
           type: string
+          nullable: true
         location:
           type: string
+          nullable: true
         source:
           type: string
+          nullable: true
         date:
           type: string
           format: date-time
@@ -8961,19 +9200,20 @@ components:
           nullable: true
         notes:
           type: string
+          nullable: true
+    StockList:
+      type: object
+      description: Serializer for listing stock items from service data.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockItem'
+        total_count:
+          type: integer
       required:
-        - alloy
-        - date
-        - description
-        - id
-        - job_id
-        - location
-        - metal_type
-        - notes
-        - quantity
-        - source
-        - specifics
-        - unit_cost
+        - items
+        - total_count
     SummaryStats:
       type: object
       description: Serializer for summary statistics

@@ -325,12 +325,20 @@ const errors = ref<Record<string, string>>({})
 const isSubmitting = ref(false)
 
 const handleClientSelection = async (client: ClientSearchResult | null) => {
+  debugLog('JobCreateView - handleClientSelection:', {
+    client,
+    previousClientId: formData.value.client_id,
+    previousContactId: formData.value.contact_id,
+  })
+
   selectedClient.value = client
 
-  // Clear contact person when client changes
+  // Always clear contact person when client changes (even if same client selected)
   formData.value.contact_id = null
   selectedContact.value = null
   contactDisplayName.value = ''
+
+  // Clear the ContactSelector's internal state first
   if (contactSelectorRef.value) {
     contactSelectorRef.value.clearSelection()
   }
@@ -339,11 +347,17 @@ const handleClientSelection = async (client: ClientSearchResult | null) => {
     formData.value.client_name = client.name
     formData.value.client_id = client.id
 
+    debugLog('JobCreateView - Client selected, waiting for ContactSelector to update')
+
     // Wait for the next DOM update cycle to ensure the ref is ready
     // and the new client ID has propagated to the ContactSelector.
     await nextTick()
 
+    // Give the ContactSelector's watcher time to process the clientId change
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
     if (contactSelectorRef.value) {
+      debugLog('JobCreateView - Calling selectPrimaryContact')
       // The `selectPrimaryContact` method within the composable
       // will handle loading contacts and finding the primary.
       await contactSelectorRef.value.selectPrimaryContact()
@@ -352,6 +366,7 @@ const handleClientSelection = async (client: ClientSearchResult | null) => {
     // Clear client fields if client is deselected
     formData.value.client_name = ''
     formData.value.client_id = ''
+    debugLog('JobCreateView - Client cleared')
   }
 }
 

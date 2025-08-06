@@ -34,6 +34,7 @@
               label="Client"
               v-model="localFilters.client_name"
               placeholder="Search for a client..."
+              :search-mode="true"
             />
           </div>
 

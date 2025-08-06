@@ -265,7 +265,8 @@ import { toast } from 'vue-sonner'
 import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
 import { fetchCostSet } from '@/services/costing.service'
 import { costlineService } from '@/services/costline.service'
-import { schemas, api } from '../../api/generated/api'
+import { schemas } from '../../api/generated/api'
+import { api } from '../../api/client'
 import { z } from 'zod'
 import ActualCostDropdown from './ActualCostDropdown.vue'
 import StockConsumptionModal from './StockConsumptionModal.vue'
@@ -464,7 +465,7 @@ function closeAdjustmentModal() {
 }
 
 async function submitStockConsumption(payload: {
-  stockItem: { id: number; description: string }
+  stockItem: { id: string; description: string }
   quantity: number
   unit_cost: number
   unit_rev: number
@@ -478,7 +479,7 @@ async function submitStockConsumption(payload: {
       quantity: payload.quantity.toString(),
     }
 
-    await api.purchasing_rest_stock_consume_create(consumeRequest, {
+    await api.consumeStock(consumeRequest, {
       params: { stock_id: payload.stockItem.id },
     })
 

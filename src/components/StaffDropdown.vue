@@ -33,7 +33,7 @@ import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 
 // Use generated types from Zodios API
-type Staff = z.infer<typeof schemas.Staff>
+type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
 
 interface Props {
   id: string
@@ -52,19 +52,19 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-const staffOptions = ref<Staff[]>([])
+const staffOptions = ref<KanbanStaff[]>([])
 const selectedValue = ref<string | number>(props.modelValue || '')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
 // Use Zodios API composable
-const { listStaff } = useStaffApi()
+const { listStaffForKanban } = useStaffApi()
 
 const loadStaffOptions = async (): Promise<void> => {
   try {
     isLoading.value = true
     error.value = null
-    const data = await listStaff()
+    const data = await listStaffForKanban()
     staffOptions.value = data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load staff options'
@@ -78,7 +78,7 @@ const handleChange = (): void => {
   emit('update:modelValue', selectedValue.value)
 }
 
-const getDisplayName = (staff: Staff): string => {
+const getDisplayName = (staff: KanbanStaff): string => {
   // If preferred_name exists, use it, otherwise construct from first_name + last_name
   if (staff.preferred_name && staff.preferred_name.trim()) {
     return staff.preferred_name.trim()

@@ -156,7 +156,7 @@ const Staff = z
       .optional(),
     ims_payroll_id: z.string().max(100).nullish(),
     raw_ims_data: z.unknown().nullish(),
-    is_active: z.boolean().optional(),
+    date_left: z.string().nullish(),
     is_staff: z.boolean().optional(),
     date_joined: z.string().datetime({ offset: true }).optional(),
     created_at: z.string().datetime({ offset: true }).optional(),
@@ -208,7 +208,7 @@ const PatchedStaff = z
     wage_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
     ims_payroll_id: z.string().max(100).nullable(),
     raw_ims_data: z.unknown().nullable(),
-    is_active: z.boolean(),
+    date_left: z.string().nullable(),
     is_staff: z.boolean(),
     date_joined: z.string().datetime({ offset: true }),
     created_at: z.string().datetime({ offset: true }),
@@ -547,6 +547,7 @@ const JobFileUpdateSuccessResponse = z
     print_on_jobsheet: z.boolean(),
   })
   .passthrough()
+const AssignJobRequest = z.object({ job_id: z.string(), staff_id: z.string() }).passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
   .object({
@@ -596,6 +597,15 @@ const JobReorderRequest = z
     status: z.string().nullable(),
   })
   .partial()
+  .passthrough()
+const KanbanSuccessResponse = z
+  .object({
+    success: z.boolean().optional().default(true),
+    message: z.string(),
+  })
+  .passthrough()
+const KanbanErrorResponse = z
+  .object({ success: z.boolean().optional().default(false), error: z.string() })
   .passthrough()
 const JobStatusUpdateRequest = z.object({ status: z.string() }).passthrough()
 const KanbanJobPerson = z
@@ -727,6 +737,7 @@ const CostLineCreateUpdate = z
     meta: z.unknown().optional(),
   })
   .passthrough()
+const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
 const JobCreateRequest = z
   .object({
     name: z.string().max(255),
@@ -804,8 +815,8 @@ const Job = z
   .object({
     id: z.string().uuid(),
     name: z.string().max(100),
-    client_id: z.string().uuid(),
-    client_name: z.string(),
+    client_id: z.string().uuid().nullish(),
+    client_name: z.string().nullable(),
     contact_id: z.string().uuid().nullish(),
     contact_name: z.string().nullable(),
     job_number: z.number().int().gte(-2147483648).lte(2147483647),
@@ -836,10 +847,10 @@ const Job = z
 const JobEvent = z
   .object({
     id: z.string().uuid(),
-    timestamp: z.string().datetime({ offset: true }).optional(),
-    event_type: z.string().max(100).optional(),
     description: z.string(),
-    staff: z.string(),
+    timestamp: z.string().datetime({ offset: true }),
+    staff: z.string().nullable(),
+    event_type: z.string(),
   })
   .passthrough()
 const CompanyDefaultsJobDetail = z
@@ -890,6 +901,15 @@ const QuoteRevisionResponse = z
   })
   .passthrough()
 const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
+const JobEventCreateResponse = z.object({ success: z.boolean(), event: JobEvent }).passthrough()
+const JobQuoteAcceptance = z
+  .object({
+    success: z.boolean(),
+    job_id: z.string().uuid(),
+    quote_acceptance_date: z.string(),
+    message: z.string(),
+  })
+  .passthrough()
 const QuoteImportStatusResponse = z
   .object({
     job_id: z.string(),
@@ -1324,21 +1344,25 @@ const PurchaseOrderAllocationsResponse = z
     allocations: z.record(z.array(AllocationItem)),
   })
   .passthrough()
-const StockList = z
+const StockItem = z
   .object({
-    id: z.string().uuid(),
-    description: z.string(),
-    quantity: z.number(),
-    unit_cost: z.number(),
-    metal_type: z.string(),
-    alloy: z.string(),
-    specifics: z.string(),
-    location: z.string(),
-    source: z.string(),
+    id: z.string().uuid().nullable(),
+    description: z.string().nullable(),
+    quantity: z.number().nullable(),
+    unit_cost: z.number().nullable(),
+    metal_type: z.string().nullable(),
+    alloy: z.string().nullable(),
+    specifics: z.string().nullable(),
+    location: z.string().nullable(),
+    source: z.string().nullable(),
     date: z.string().datetime({ offset: true }).nullable(),
     job_id: z.string().uuid().nullable(),
-    notes: z.string(),
+    notes: z.string().nullable(),
   })
+  .partial()
+  .passthrough()
+const StockList = z
+  .object({ items: z.array(StockItem), total_count: z.number().int() })
   .passthrough()
 const StockCreate = z
   .object({
@@ -1358,6 +1382,16 @@ const StockConsumeRequest = z
   .object({
     job_id: z.string().uuid(),
     quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+  })
+  .passthrough()
+const StockConsumeResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    remaining_quantity: z
+      .string()
+      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
+      .optional(),
   })
   .passthrough()
 const XeroItem = z
@@ -1666,6 +1700,7 @@ export const schemas = {
   JobFileUploadSuccessResponse,
   JobFileUploadPartialResponse,
   JobFileUpdateSuccessResponse,
+  AssignJobRequest,
   AssignJobResponse,
   CompleteJob,
   PaginatedCompleteJobList,
@@ -1677,6 +1712,8 @@ export const schemas = {
   JobQuoteChatUpdate,
   JobQuoteChatInteractionRequest,
   JobReorderRequest,
+  KanbanSuccessResponse,
+  KanbanErrorResponse,
   JobStatusUpdateRequest,
   KanbanJobPerson,
   KanbanJob,
@@ -1690,6 +1727,7 @@ export const schemas = {
   Kind332Enum,
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
+  CostLineErrorResponse,
   JobCreateRequest,
   JobCreateResponse,
   JobRestErrorResponse,
@@ -1709,6 +1747,8 @@ export const schemas = {
   QuoteRevisionRequest,
   QuoteRevisionResponse,
   JobEventCreateRequest,
+  JobEventCreateResponse,
+  JobQuoteAcceptance,
   QuoteImportStatusResponse,
   DraftLine,
   QuoteChanges,
@@ -1758,9 +1798,11 @@ export const schemas = {
   TypeEnum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
+  StockItem,
   StockList,
   StockCreate,
   StockConsumeRequest,
+  StockConsumeResponse,
   XeroItem,
   XeroItemListResponse,
   DjangoJobExecutionStatusEnum,
@@ -3154,7 +3196,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: AssignJobResponse,
+        schema: AssignJobRequest,
       },
       {
         name: 'job_id',
@@ -3177,7 +3219,7 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: AssignJobResponse,
   },
   {
     method: 'get',
@@ -3334,7 +3376,7 @@ assistant&#x27;s reply.`,
     method: 'post',
     path: '/job/api/jobs/:job_id/reorder/',
     alias: 'job_api_jobs_reorder_create',
-    description: `Reorder job within or between columns - API endpoint.`,
+    description: `Reorder a job within or between kanban columns.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3348,13 +3390,27 @@ assistant&#x27;s reply.`,
         schema: z.string().uuid(),
       },
     ],
-    response: JobReorderRequest,
+    response: KanbanSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: KanbanErrorResponse,
+      },
+      {
+        status: 404,
+        schema: KanbanErrorResponse,
+      },
+      {
+        status: 500,
+        schema: KanbanErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
     path: '/job/api/jobs/:job_id/update-status/',
     alias: 'job_api_jobs_update_status_create',
-    description: `Update job status - API endpoint.`,
+    description: `Update the status of a job on the Kanban board.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3368,7 +3424,21 @@ assistant&#x27;s reply.`,
         schema: z.string(),
       },
     ],
-    response: z.object({ status: z.string() }).passthrough(),
+    response: KanbanSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: KanbanErrorResponse,
+      },
+      {
+        status: 404,
+        schema: KanbanErrorResponse,
+      },
+      {
+        status: 500,
+        schema: KanbanErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -3376,6 +3446,63 @@ assistant&#x27;s reply.`,
     alias: 'job_api_jobs_advanced_search_retrieve',
     description: `Endpoint for advanced job search - API endpoint.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'client_name',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'contact_person',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'created_after',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'created_before',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'created_by',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'description',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'job_number',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'name',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'paid',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'status',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'xero_invoice_params',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
     response: AdvancedSearchResponse,
   },
   {
@@ -3454,7 +3581,7 @@ assistant&#x27;s reply.`,
       {
         name: 'cost_line_id',
         type: 'Path',
-        schema: z.number().int(),
+        schema: z.string(),
       },
     ],
     response: CostLineCreateUpdate,
@@ -3463,16 +3590,26 @@ assistant&#x27;s reply.`,
     method: 'delete',
     path: '/job/rest/cost_lines/:cost_line_id/delete/',
     alias: 'job_rest_cost_lines_delete_destroy',
-    description: `Delete a cost line`,
+    description: `Delete an existing CostLine by ID`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'cost_line_id',
         type: 'Path',
-        schema: z.number().int(),
+        schema: z.string(),
       },
     ],
     response: z.void(),
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'post',
@@ -3737,12 +3874,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'post',
     path: '/job/rest/jobs/:job_id/events/',
     alias: 'job_rest_jobs_events_create',
-    description: `Add a manual event to the Job.
-
-Expected JSON:
-{
-    &quot;description&quot;: &quot;Event description&quot;
-}`,
+    description: `Add a manual event to the Job with duplicate prevention.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3756,14 +3888,27 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: z.object({ description: z.string().max(500) }).passthrough(),
+    response: JobEventCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 409,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 429,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'post',
     path: '/job/rest/jobs/:job_id/quote/accept/',
     alias: 'job_rest_jobs_quote_accept_create',
-    description: `Accept a quote for the job.
-Sets the quote_acceptance_date to current datetime.`,
+    description: `Accept a quote for the job. Sets the quote_acceptance_date to current datetime.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3772,7 +3917,13 @@ Sets the quote_acceptance_date to current datetime.`,
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: JobQuoteAcceptance,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
@@ -4560,10 +4711,8 @@ DELETE: Marks a stock item as inactive instead of deleting it`,
   {
     method: 'post',
     path: '/purchasing/rest/stock/:stock_id/consume/',
-    alias: 'purchasing_rest_stock_consume_create',
-    description: `REST API view for consuming stock items for jobs.
-
-POST: Records stock consumption for a specific job, reducing available quantity`,
+    alias: 'consumeStock',
+    description: `Consume stock for a job, reducing available quantity.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4577,7 +4726,7 @@ POST: Records stock consumption for a specific job, reducing available quantity`
         schema: z.string().uuid(),
       },
     ],
-    response: StockConsumeRequest,
+    response: StockConsumeResponse,
   },
   {
     method: 'get',
@@ -4756,7 +4905,7 @@ Returns:
     method: 'get',
     path: '/timesheets/api/staff/',
     alias: 'timesheets_api_staff_retrieve',
-    description: `Get filtered list of staff members.`,
+    description: `Get filtered list of staff members for a specific date.`,
     requestFormat: 'json',
     response: StaffListResponse,
   },

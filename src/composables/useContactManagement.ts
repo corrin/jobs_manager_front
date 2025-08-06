@@ -7,6 +7,14 @@ import { debugLog } from '@/utils/debug'
 
 type NewContactData = z.infer<typeof schemas.ClientContactCreateRequest>
 
+/**
+ * Composable for managing client contacts
+ *
+ * Provides functionality for loading, creating, selecting, and managing client contacts.
+ * Handles modal state, form validation, and API interactions for contact management.
+ *
+ * @returns Object containing reactive state and methods for contact management
+ */
 export function useContactManagement() {
   const isModalOpen = ref(false)
   const contacts = ref<ClientContact[]>([])
@@ -56,6 +64,12 @@ export function useContactManagement() {
     },
   }
 
+  /**
+   * Opens the contact selection modal for a specific client
+   *
+   * @param clientId - The ID of the client to load contacts for
+   * @param clientName - The name of the client (for display purposes)
+   */
   const openModal = async (clientId: string, clientName: string) => {
     if (!clientId) {
       debugLog('Cannot open contact modal without client ID')
@@ -71,11 +85,19 @@ export function useContactManagement() {
     await loadContacts(clientId)
   }
 
+  /**
+   * Closes the contact selection modal and resets the form
+   */
   const closeModal = () => {
     isModalOpen.value = false
     resetNewContactForm()
   }
 
+  /**
+   * Loads contacts for a specific client from the API
+   *
+   * @param clientId - The ID of the client to load contacts for
+   */
   const loadContacts = async (clientId: string) => {
     if (!clientId) {
       contacts.value = []
@@ -101,15 +123,33 @@ export function useContactManagement() {
     }
   }
 
+  /**
+   * Loads contacts for a client without opening the modal
+   *
+   * @param clientId - The ID of the client to load contacts for
+   */
   const loadContactsOnly = async (clientId: string) => {
     await loadContacts(clientId)
   }
 
+  /**
+   * Selects an existing contact and closes the modal
+   *
+   * @param contact - The contact to select
+   */
   const selectExistingContact = (contact: ClientContact) => {
     selectedContact.value = contact
     closeModal()
   }
 
+  /**
+   * Creates a new contact for the current client
+   *
+   * Automatically sets the contact as primary if it's the first contact for the client.
+   * After creation, reloads the contacts list and selects the newly created contact.
+   *
+   * @returns Promise<boolean> - True if contact was created successfully, false otherwise
+   */
   const createNewContact = async (): Promise<boolean> => {
     if (!currentClientId.value) {
       debugLog('Cannot create contact without client ID')
@@ -124,6 +164,9 @@ export function useContactManagement() {
     isLoading.value = true
 
     try {
+      // If this is the first contact for the client, automatically make it primary
+      const shouldBePrimary = newContactForm.value.is_primary || contacts.value.length === 0
+
       const contactData = {
         client_id: currentClientId.value,
         name: newContactForm.value.name.trim(),
@@ -131,8 +174,10 @@ export function useContactManagement() {
         email: newContactForm.value.email?.trim() || '',
         phone: newContactForm.value.phone?.trim() || '',
         notes: newContactForm.value.notes?.trim() || '',
-        is_primary: newContactForm.value.is_primary,
+        is_primary: shouldBePrimary,
       }
+
+      debugLog('Creating new contact:', contactData)
 
       const response = await api.clients_contacts_create(contactData)
 
@@ -143,9 +188,21 @@ export function useContactManagement() {
       // The response should be the created contact itself
       const newContact: ClientContact = response as ClientContact
 
-      selectedContact.value = newContact
+      debugLog('Contact created successfully:', newContact)
 
+      // Reload contacts first to get the updated list
       await loadContacts(currentClientId.value)
+
+      // Then find and select the newly created contact
+      const createdContact = contacts.value.find((contact) => contact.id === newContact.id)
+      if (createdContact) {
+        selectedContact.value = createdContact
+        debugLog('New contact selected:', createdContact)
+      } else {
+        // Fallback: use the response directly
+        selectedContact.value = newContact
+        debugLog('Using response contact as fallback:', newContact)
+      }
 
       closeModal()
       return true
@@ -157,6 +214,9 @@ export function useContactManagement() {
     }
   }
 
+  /**
+   * Resets the new contact form to its initial empty state
+   */
   const resetNewContactForm = () => {
     newContactForm.value = {
       name: '',
@@ -168,6 +228,14 @@ export function useContactManagement() {
     }
   }
 
+  /**
+   * Saves the contact based on current form state
+   *
+   * If new contact data is provided, creates a new contact.
+   * If an existing contact is selected, closes the modal.
+   *
+   * @returns Promise<boolean> - True if save operation was successful, false otherwise
+   */
   const saveContact = async (): Promise<boolean> => {
     const hasNewContactData = newContactForm.value.name.trim().length > 0
 
@@ -185,14 +253,27 @@ export function useContactManagement() {
     }
   }
 
+  /**
+   * Clears the currently selected contact
+   */
   const clearSelection = () => {
     selectedContact.value = null
   }
 
+  /**
+   * Updates the contacts list with new data
+   *
+   * @param newContacts - Array of contacts to replace the current list
+   */
   const updateContactsList = (newContacts: ClientContact[]) => {
     contacts.value = newContacts
   }
 
+  /**
+   * Finds the primary contact from the current contacts list
+   *
+   * @returns ClientContact | null - The primary contact if found, null otherwise
+   */
   const findPrimaryContact = (): ClientContact | null => {
     if (contacts.value.length === 0) {
       return null

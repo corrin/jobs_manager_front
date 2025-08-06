@@ -426,7 +426,7 @@ type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
 type Job = z.infer<typeof schemas.Job>
 type CostSet = z.infer<typeof schemas.CostSet>
 type PreviewQuoteResponse = z.infer<typeof schemas.PreviewQuoteResponse>
-type QuoteRevisionsListResponse = z.infer<typeof schemas.QuoteRevisionsListResponse>
+type QuoteRevisionsListResponse = z.infer<typeof schemas.QuoteRevisionsList>
 
 const props = defineProps<{
   jobId: string
@@ -780,7 +780,7 @@ async function submitEditCostLine(payload: CostLine) {
       ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
       meta: (payload.meta as Record<string, unknown>) || {},
     }
-    const updated = await costlineService.updateCostLine(Number(payload.id), updatePayload)
+    const updated = await costlineService.updateCostLine(payload.id, updatePayload)
     costLines.value = costLines.value.map((l) => (l.id === updated.id ? { ...updated } : l))
     toast.success('Cost line updated!')
     closeEditModal()

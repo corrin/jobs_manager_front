@@ -208,8 +208,7 @@ const jobsStore = useJobsStore()
 const jobId = computed(() => route.params.id as string)
 const jobData = computed(() => {
   const jobDetail = jobsStore.getJobById(jobId.value)
-  // Extract the job object from JobDetail structure if needed
-  return jobDetail?.job || jobDetail
+  return jobDetail?.job
 })
 const loadingJob = computed(() => jobsStore.isLoadingJob)
 

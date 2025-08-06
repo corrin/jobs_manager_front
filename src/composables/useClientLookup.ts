@@ -90,6 +90,23 @@ export function useClientLookup() {
     contacts.value = []
   }
 
+  const resetToInitialState = () => {
+    // Only clear if no client is actually selected
+    if (!selectedClient.value) {
+      searchQuery.value = ''
+      suggestions.value = []
+      showSuggestions.value = false
+      contacts.value = []
+    }
+  }
+
+  const preserveSelectedClient = () => {
+    // Preserve the selected client when dialog reopens
+    if (selectedClient.value && !searchQuery.value) {
+      searchQuery.value = selectedClient.value.name
+    }
+  }
+
   const handleInputChange = (value: string) => {
     searchQuery.value = value
 
@@ -133,5 +150,7 @@ export function useClientLookup() {
     handleInputChange,
     createNewClient,
     hideSuggestions,
+    resetToInitialState,
+    preserveSelectedClient,
   }
 }
