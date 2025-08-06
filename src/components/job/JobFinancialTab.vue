@@ -245,6 +245,7 @@ import { toast } from 'vue-sonner'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 import { api } from '@/api/client'
+import { AxiosError } from 'axios'
 
 type Job = z.infer<typeof schemas.Job>
 
@@ -415,9 +416,14 @@ const createInvoice = async () => {
     toast.success('Invoice created successfully!')
     isInvoiceDeleted.value = false
     emit('invoice-created')
-  } catch (err) {
+  } catch (err: unknown) {
+    let msg = 'Unexpected error while trying to create invoice.'
     debugLog('Error creating invoice:', err)
-    toast.error('Failed to create invoice.')
+    if ((err as AxiosError).isAxiosError) {
+      const axiosErr = err as AxiosError<{ message: string }>
+      msg = axiosErr.response?.data?.message ?? msg
+    }
+    toast.error(`Failed to create invoice: ${msg}`)
   } finally {
     isCreatingInvoice.value = false
   }

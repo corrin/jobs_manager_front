@@ -233,13 +233,24 @@ export function useTimesheetEntryGrid(
   function isDuplicateEntry(entry: TimesheetEntry, ignoreIndex?: number): boolean {
     return (gridData.value as TimesheetEntryGridRowWithSaving[]).some((row, idx) => {
       if (ignoreIndex !== undefined && idx === ignoreIndex) return false
+
+      // If both entries have IDs and they're the same, it's the same entry (not a duplicate)
+      if (row.id && entry.id && row.id === entry.id) return false
+
+      // ✅ FIXED: Only consider it a duplicate if it's a truly NEW entry without ID
+      // Existing entries with IDs should never be considered duplicates, even if data matches
+      if (entry.id) {
+        return false // Existing entries with IDs are never duplicates
+      }
+
+      // Only check for duplicates on truly new entries (no ID)
       return (
         row.jobNumber === entry.jobNumber &&
         row.date === entry.date &&
         row.staffId === entry.staffId &&
         row.description.trim() === entry.description.trim() &&
         !row.isSaving &&
-        (!row.id || !entry.id || row.id !== entry.id)
+        row.id // Only compare against existing entries that have IDs
       )
     })
   }
@@ -247,49 +258,52 @@ export function useTimesheetEntryGrid(
   async function handleCellValueChanged(event: CellValueChangedEvent): Promise<void> {
     const { data, colDef, newValue, oldValue } = event
     if (newValue === oldValue) return
+
     try {
       loading.value = true
+
+      // Always recalculate when key fields change
       if (
         colDef.field &&
-        [
-          'hours',
-          'rate',
-          'billable',
-          'jobNumber',
-          'jobId',
-          'chargeOutRate',
-          'wage',
-          'bill',
-        ].includes(colDef.field)
+        ['hours', 'rate', 'billable', 'jobNumber', 'jobId', 'chargeOutRate', 'wageRate'].includes(
+          colDef.field,
+        )
       ) {
+        // Create entry from current row data and recalculate
         const entry = createEntryFromRowData(data)
-        const recalculated = calculations.recalculateEntry(entry)
+
+        // Update the row data with recalculated values
         if (typeof event.node.rowIndex === 'number') {
-          updateRowData(event.node.rowIndex, recalculated)
+          updateRowData(event.node.rowIndex, entry)
         }
       }
+
+      // Get the updated entry after recalculation
       const updatedEntry = createEntryFromRowData(data)
+
+      // Skip if already saving
       if ((data as TimesheetEntryGridRowWithSaving).isSaving) return
+
+      // ✅ DISABLED AUTOSAVE - Only mark as modified, don't save automatically
+      // This prevents duplicate saves when user clicks "Save All"
+
+      // Handle existing row updates - ONLY mark as modified
       if (!data.isNewRow && updatedEntry.id && !isRowEmpty(updatedEntry)) {
-        if (
-          typeof event.node.rowIndex === 'number' &&
-          isDuplicateEntry(updatedEntry, event.node.rowIndex)
-        ) {
-          return
-        }
-        ;(data as TimesheetEntryGridRowWithSaving).isSaving = true
-        await onSaveEntry(updatedEntry)
-        ;(data as TimesheetEntryGridRowWithSaving).isSaving = false
+        data.isModified = true
+        console.log('🔄 Existing row marked as modified (no autosave):', updatedEntry.id)
       }
-      if (data.isNewRow && isRowComplete(updatedEntry) && typeof event.node.rowIndex === 'number') {
+
+      // Handle new row completion - ONLY mark as modified
+      if (data.isNewRow && isRowComplete(updatedEntry)) {
         if (isDuplicateEntry(updatedEntry)) {
           return
         }
-        ;(data as TimesheetEntryGridRowWithSaving).isSaving = true
-        await saveNewRow(event.node.rowIndex, updatedEntry)
-        ;(data as TimesheetEntryGridRowWithSaving).isSaving = false
+        data.isModified = true
+        data.isNewRow = false // Convert to regular row but don't save yet
+        console.log('✏️ New row marked as modified (no autosave):', updatedEntry.description)
       }
-    } catch {
+    } catch (error) {
+      console.error('Error in handleCellValueChanged:', error)
       event.api.refreshCells({ rowNodes: [event.node], force: true })
     } finally {
       loading.value = false
@@ -342,27 +356,51 @@ export function useTimesheetEntryGrid(
   }
 
   function createEntryFromRowData(rowData: TimesheetEntryGridRow): TimesheetEntry {
+    const hours =
+      typeof rowData.hours === 'string' ? parseFloat(rowData.hours) || 0 : rowData.hours || 0
+    const wageRate =
+      typeof rowData.wageRate === 'string'
+        ? parseFloat(rowData.wageRate) || 0
+        : rowData.wageRate || 0
+    const chargeOutRate =
+      typeof rowData.chargeOutRate === 'string'
+        ? parseFloat(rowData.chargeOutRate) || 0
+        : rowData.chargeOutRate || 0
+    const rate = rowData.rate || 'Ord'
+    const rateMultiplier = calculations.getRateMultiplier(rate)
+    const billable = rowData.billable ?? true
+
+    // ✅ CORRECT WAGE CALCULATION: hours × rate_multiplier × staff_wage_rate
+    const calculatedWage =
+      hours > 0 && wageRate > 0 ? Math.round(hours * rateMultiplier * wageRate * 100) / 100 : 0
+    const calculatedBill =
+      billable && hours > 0 && chargeOutRate > 0 ? Math.round(hours * chargeOutRate * 100) / 100 : 0
+
+    console.log('🧮 Grid wage calculation:', {
+      hours,
+      rateMultiplier,
+      wageRate,
+      calculatedWage,
+      formula: `${hours} × ${rateMultiplier} × ${wageRate} = ${calculatedWage}`,
+    })
+
     return {
       id: rowData.id,
       jobId: rowData.jobId || '',
       jobNumber: rowData.jobNumber || '',
       client: rowData.client || '',
       jobName: rowData.jobName || '',
-      hours: typeof rowData.hours === 'string' ? parseFloat(rowData.hours) : rowData.hours || 0,
-      billable: rowData.billable ?? true,
+      hours,
+      billable,
       description: rowData.description || '',
-      rate: rowData.rate || 'Ord',
-      wage: typeof rowData.wage === 'string' ? parseFloat(rowData.wage) : rowData.wage || 0,
-      bill: typeof rowData.bill === 'string' ? parseFloat(rowData.bill) : rowData.bill || 0,
+      rate,
+      wage: calculatedWage,
+      bill: calculatedBill,
       staffId: rowData.staffId || '',
       date: rowData.date || '',
-      wageRate:
-        typeof rowData.wageRate === 'string' ? parseFloat(rowData.wageRate) : rowData.wageRate || 0,
-      chargeOutRate:
-        typeof rowData.chargeOutRate === 'string'
-          ? parseFloat(rowData.chargeOutRate)
-          : rowData.chargeOutRate || 0,
-      rateMultiplier: calculations.getRateMultiplier(rowData.rate || 'Ord'),
+      wageRate,
+      chargeOutRate,
+      rateMultiplier,
       isNewRow: rowData.isNewRow,
     }
   }
@@ -388,21 +426,8 @@ export function useTimesheetEntryGrid(
     )
   }
 
-  async function saveNewRow(rowIndex: number, entry: TimesheetEntry): Promise<void> {
-    if (isDuplicateEntry(entry)) return
-    try {
-      const entryToSave = { ...entry, isNewRow: false, isSaving: true }
-      const entryToSaveClean = { ...entryToSave } as Partial<TimesheetEntryGridRowWithSaving>
-      delete entryToSaveClean.isSaving
-      updateRowData(rowIndex, entryToSaveClean as TimesheetEntry)
-      await onSaveEntry(entryToSaveClean as TimesheetEntry)
-      updateRowData(rowIndex, { ...entryToSaveClean } as TimesheetEntry)
-      addNewRow()
-    } catch {
-      updateRowData(rowIndex, entry)
-      throw new Error('Failed to save new row')
-    }
-  }
+  // ✅ REMOVED: saveNewRow function no longer needed since we disabled autosave
+  // All saving is now handled by the parent component's "Save All" functionality
 
   async function deleteRow(rowIndex: number): Promise<void> {
     if (!gridApi.value) return
@@ -438,13 +463,26 @@ export function useTimesheetEntryGrid(
     }
   }
 
-  function clearRow(rowIndex: number, staffId?: string): void {
+  function clearRow(
+    rowIndex: number,
+    staffId?: string,
+    staffData?: TimesheetEntryStaffMember,
+  ): void {
     if (!gridApi.value || gridApi.value.isDestroyed?.()) return
     const rowNode = gridApi.value.getRowNode(rowIndex.toString())
     if (rowNode) {
       const currentStaffId = staffId || rowNode.data.staffId || ''
       const date = rowNode.data.date || new Date().toISOString().split('T')[0]
-      const staffMember = { id: currentStaffId } as TimesheetEntryStaffMember
+
+      // Use actual staff data if provided, otherwise create minimal staff member
+      const staffMember =
+        staffData ||
+        ({
+          id: currentStaffId,
+          name: rowNode.data.staffName || '',
+          wageRate: rowNode.data.wageRate || 0, // Preserve existing wage rate if available
+        } as TimesheetEntryStaffMember)
+
       const newRow = calculations.createNewRow(staffMember, date)
       Object.assign(rowNode.data, newRow)
       gridApi.value.refreshCells({ rowNodes: [rowNode], force: true })
@@ -455,8 +493,20 @@ export function useTimesheetEntryGrid(
     gridApi.value = api
   }
 
-  function loadData(entries: TimesheetEntry[], staffId?: string): void {
-    const rows: TimesheetEntryGridRow[] = entries.map((entry) => ({ ...entry }))
+  function loadData(
+    entries: TimesheetEntry[],
+    staffId?: string,
+    staffData?: TimesheetEntryStaffMember,
+  ): void {
+    // Ensure all loaded entries include the staff wage rate for consistent calculations
+    const rows: TimesheetEntryGridRow[] = entries.map((entry) => ({
+      ...entry,
+      // Include staff wage rate in all loaded entries
+      wageRate: staffData?.wageRate || entry.wageRate || 0,
+      staffId: staffData?.id || entry.staffId || staffId || '',
+      staffName: staffData?.name || entry.staffName || '',
+    }))
+
     gridData.value = rows
     if (gridApi.value && !gridApi.value.isDestroyed()) {
       // Clear existing data and set new data
@@ -470,15 +520,20 @@ export function useTimesheetEntryGrid(
       }
     }
     if (gridData.value.length === 0) {
-      addNewRow(staffId)
+      addNewRow(staffId, undefined, staffData)
     }
   }
 
-  function addNewRow(staffId?: string, date?: string): void {
-    const currentStaffId = staffId || ''
+  function addNewRow(staffId?: string, date?: string, staffData?: TimesheetEntryStaffMember): void {
     const currentDate = date || new Date().toISOString().split('T')[0]
-    const staffMember = { id: currentStaffId } as TimesheetEntryStaffMember
-    const newRow = calculations.createNewRow(staffMember, currentDate)
+
+    // MUST use actual staff data - NO FALLBACKS
+    if (!staffData) {
+      console.error('❌ addNewRow called without staffData - this will cause wage rate issues')
+      return
+    }
+
+    const newRow = calculations.createNewRow(staffData, currentDate)
     gridData.value.push(newRow)
     if (gridApi.value && !gridApi.value.isDestroyed()) {
       gridApi.value.applyTransaction({ add: [newRow] })
@@ -497,11 +552,20 @@ export function useTimesheetEntryGrid(
     return rowNode ? createEntryFromRowData(rowNode.data) : null
   }
 
-  function handleKeyboardShortcut(event: KeyboardEvent, staffId?: string): boolean {
+  function handleKeyboardShortcut(
+    event: KeyboardEvent,
+    staffId?: string,
+    staffData?: TimesheetEntryStaffMember,
+  ): boolean {
     if (!gridApi.value) return false
     if (event.shiftKey && event.key === 'N') {
       event.preventDefault()
-      addNewRow(staffId)
+      // ✅ FIXED: Only add new row if we have staffData
+      if (staffData) {
+        addNewRow(staffId, undefined, staffData)
+      } else {
+        console.error('❌ Cannot add new row without staffData')
+      }
       return true
     }
     if (event.ctrlKey && event.key === 's') {
@@ -537,7 +601,11 @@ export function useTimesheetEntryGrid(
     addNewRow,
     getSelectedEntry,
     getGridData,
-    handleKeyboardShortcut,
+    handleKeyboardShortcut: (
+      event: KeyboardEvent,
+      staffId?: string,
+      staffData?: TimesheetEntryStaffMember,
+    ) => handleKeyboardShortcut(event, staffId, staffData),
     handleJobSelection,
     handleCellValueChanged,
     hasData: computed(() => gridData.value.length > 0),

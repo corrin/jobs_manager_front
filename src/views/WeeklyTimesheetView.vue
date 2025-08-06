@@ -238,6 +238,7 @@ import {
 } from '@/services/date.service'
 import { fetchWeeklyOverview, fetchIMSOverview } from '@/services/weekly-timesheet.service'
 import type { WeeklyTimesheetData, IMSWeeklyTimesheetData } from '@/api/generated/api'
+import { debugLog } from '../utils/debug'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -295,6 +296,7 @@ async function loadData(): Promise<void> {
     error.value =
       'Failed to load weekly timesheet data. Please try again. ' +
       (err instanceof Error ? err.message : 'Unknown error')
+    debugLog('Error while loading weekly timsheet data: ', err)
   } finally {
     loading.value = false
   }

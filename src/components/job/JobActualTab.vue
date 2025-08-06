@@ -275,6 +275,8 @@ import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostSet = z.infer<typeof schemas.CostSet>
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
+type StockItem = z.infer<typeof schemas.StockItem>
+type StockConsumeRequest = z.infer<typeof schemas.StockConsumeRequest>
 
 // Type guard functions to safely access meta and ext_refs
 function isDeliveryReceiptMeta(meta: unknown): meta is { source: string; po_number?: string } {
@@ -437,11 +439,11 @@ function navigateToDeliveryReceipt(purchaseOrderId: string) {
 function navigateToTimesheet(staffId: string, date?: string) {
   const routeParams = {
     name: 'timesheet-entry',
-    params: { staffId },
-  } as { name: string; params: { staffId: string }; query?: { date: string } }
+    query: { staffId },
+  } as { name: string; query: { staffId: string; date?: string } }
 
   if (date) {
-    routeParams.query = { date }
+    routeParams.query.date = date
   }
 
   router.push(routeParams)
@@ -465,50 +467,38 @@ function closeAdjustmentModal() {
 }
 
 async function submitStockConsumption(payload: {
-  stockItem: { id: string; description: string }
+  stockItem: StockItem
   quantity: number
   unit_cost: number
   unit_rev: number
 }) {
   isLoading.value = true
-  toast.info('Consuming stock and adding cost line...', { id: 'add-stock' })
+  toast.info('Consuming stock...', { id: 'add-stock' })
   try {
-    // First, consume the stock using the stock consumption endpoint
-    const consumeRequest = {
+    // The consumeStock endpoint automatically:
+    // 1. Reduces stock quantity
+    // 2. Creates "Consumed: " stock record with source = "stock"
+    // 3. Creates cost line for the job
+    const consumeRequest: StockConsumeRequest = {
       job_id: props.jobId,
       quantity: payload.quantity.toString(),
+      unit_cost: payload.unit_cost.toString(),
+      unit_rev: payload.unit_rev.toString(),
     }
 
     await api.consumeStock(consumeRequest, {
       params: { stock_id: payload.stockItem.id },
     })
 
-    // Then create the cost line
-    const createPayload = {
-      kind: 'material' as const,
-      desc: `${payload.stockItem.description} (Stock)`,
-      quantity: payload.quantity.toString(),
-      unit_cost: payload.unit_cost.toString(),
-      unit_rev: payload.unit_rev.toString(),
-      ext_refs: {
-        stock_item_id: payload.stockItem.id,
-        source: 'stock_consumption',
-      },
-      meta: {
-        source: 'stock_consumption',
-        stock_item_id: payload.stockItem.id,
-        stock_description: payload.stockItem.description,
-      },
-    }
+    // Reload cost lines to show the automatically created cost line
+    await loadActualCosts()
 
-    const created = await costlineService.createCostLine(props.jobId, 'actual', createPayload)
-    costLines.value = [...costLines.value, created]
-    toast.success('Stock consumption added!')
+    toast.success('Stock consumed successfully!')
     emit('cost-line-changed')
     closeStockModal()
   } catch (error) {
-    toast.error('Failed to add stock consumption.')
-    debugLog('Failed to add stock consumption:', error)
+    toast.error('Failed to consume stock.')
+    debugLog('Failed to consume stock:', error)
   } finally {
     isLoading.value = false
     toast.dismiss('add-stock')

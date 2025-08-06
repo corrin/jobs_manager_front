@@ -356,6 +356,7 @@ async function deleteJob() {
       notifications.notifyDeleteSuccess(jobName)
       navigateBack()
     } else {
+      debugLog('Detected error in response: ', result)
       throw new Error(result.error || 'Failed to delete job')
     }
   } catch (err: unknown) {

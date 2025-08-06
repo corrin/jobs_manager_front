@@ -433,15 +433,21 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         }
       }
 
-      const currentStaff = (window as unknown as { currentStaff?: { wageRate?: number } })
-        .currentStaff
-      const companyDefaults = (window as unknown as { companyDefaults?: { wage_rate?: number } })
-        .companyDefaults
-      const wageRate = currentStaff?.wageRate || companyDefaults?.wage_rate || 32
+      const wageRate =
+        typeof rowData.wageRate === 'string' ? parseFloat(rowData.wageRate) : rowData.wageRate || 0
       const multiplier = getRateMultiplier(rate)
-      rowData.wage = hours > 0 ? Math.round(hours * wageRate * multiplier * 100) / 100 : 0
 
-      debugLog('💰 Using wage rate:', wageRate, 'for', hours, 'hours with multiplier', multiplier)
+      // If no wageRate in rowData, DO NOT calculate wage - let the grid composable handle it
+      if (wageRate > 0) {
+        rowData.wage = hours > 0 ? Math.round(hours * wageRate * multiplier * 100) / 100 : 0
+        debugLog('💰 Using wage rate:', wageRate, 'for', hours, 'hours with multiplier', multiplier)
+      } else {
+        // Do not set wage to 0 - leave it undefined so grid composable can calculate it
+        debugLog(
+          '⚠️ No wageRate in rowData - leaving wage calculation to grid composable. RowData wageRate:',
+          rowData.wageRate,
+        )
+      }
 
       const chargeOutRateNum = parseFloat(chargeOutRate) || 0
       rowData.bill =

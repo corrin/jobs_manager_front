@@ -4773,6 +4773,13 @@ paths:
     get:
       operationId: timesheets_api_staff_retrieve
       description: Get filtered list of staff members for a specific date.
+      summary: Returns staff members excluding system and users for a specific date
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+          description: Date parameter in format YYYY-MM-DD
       tags:
         - timesheets
       security:
@@ -6212,6 +6219,7 @@ components:
           type: string
         leave_type:
           type: string
+          nullable: true
         has_leave:
           type: boolean
           default: false
@@ -6268,8 +6276,6 @@ components:
           items:
             type: string
             format: date
-        week_start:
-          type: string
         staff_data:
           type: array
           items:
@@ -6297,7 +6303,6 @@ components:
         - start_date
         - summary_stats
         - week_days
-        - week_start
         - weekly_summary
     Job:
       type: object
@@ -7674,6 +7679,7 @@ components:
         client_name:
           type: string
           readOnly: true
+          nullable: true
         status:
           $ref: '#/components/schemas/Status7b9Enum'
         charge_out_rate:
@@ -9098,6 +9104,16 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        unit_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        unit_rev:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
       required:
         - job_id
         - quantity
@@ -9458,8 +9474,10 @@ components:
           type: string
         client:
           type: string
+          nullable: true
         description:
           type: string
+          nullable: true
         status:
           type: string
         people:
@@ -9478,8 +9496,6 @@ components:
           format: double
       required:
         - actual_hours
-        - client
-        - description
         - estimated_hours
         - job_id
         - job_number
@@ -9491,7 +9507,7 @@ components:
       type: object
       description: Serializer for staff data in weekly timesheet context
       properties:
-        id:
+        staff_id:
           type: string
           format: uuid
         name:
@@ -9500,24 +9516,61 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WeeklyStaffDataWeeklyHours'
+        total_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        total_billable_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        billable_percentage:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        status:
+          type: string
       required:
-        - id
+        - billable_percentage
         - name
+        - staff_id
+        - status
+        - total_billable_hours
+        - total_hours
         - weekly_hours
     WeeklyStaffDataWeeklyHours:
       type: object
       description: Serializer for weekly hours data of staff
       properties:
-        date:
+        day:
           type: string
           format: date
         hours:
           type: string
           format: decimal
           pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        billable_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        scheduled_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        status:
+          type: string
+        leave_type:
+          type: string
+          nullable: true
+        has_leave:
+          type: boolean
       required:
-        - date
+        - billable_hours
+        - day
+        - has_leave
         - hours
+        - scheduled_hours
+        - status
     WeeklySummary:
       type: object
       description: Serializer for weekly summary data
@@ -9551,8 +9604,6 @@ components:
           items:
             type: string
             format: date
-        week_start:
-          type: string
         staff_data:
           type: array
           items:
@@ -9580,7 +9631,6 @@ components:
         - start_date
         - summary_stats
         - week_days
-        - week_start
         - weekly_summary
     WorkshopPDFResponse:
       type: object

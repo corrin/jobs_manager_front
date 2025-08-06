@@ -478,7 +478,7 @@ const handleSubmit = async () => {
           unit_cost: formData.value.estimatedMaterials!.toFixed(2),
           unit_rev: (
             formData.value.estimatedMaterials! *
-            (1 + (companyDefaultsStore.companyDefaults?.materials_markup ?? 0))
+            (1 + Number(companyDefaultsStore.companyDefaults?.materials_markup ?? 0))
           ).toFixed(2),
         })
       } catch (error: unknown) {

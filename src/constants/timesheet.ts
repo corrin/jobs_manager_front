@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod'
-import { schemas } from '@/api/generated/schemas'
+import { schemas } from '@/api/generated/api'
 
 /**
  * Schema for timesheet entry metadata (UI-specific extension of backend schema).
@@ -20,6 +20,6 @@ export const TimesheetEntryWithMetaSchema = schemas.TimesheetCostLine.extend({
 export type TimesheetEntryWithMeta = z.infer<typeof TimesheetEntryWithMetaSchema>
 
 export type TimesheetEntryJobSelectionItem = Pick<
-  z.infer<typeof schemas.Job>,
+  z.infer<typeof schemas.ModernTimesheetJob>,
   'id' | 'job_number' | 'name' | 'client_name' | 'status' | 'charge_out_rate'
 >

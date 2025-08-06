@@ -11,7 +11,9 @@ type CostLine = z.infer<typeof schemas.CostLine>
 export class TimesheetService {
   static async getStaff(): Promise<Staff[]> {
     try {
-      const staff = await api.timesheets_api_staff_retrieve()
+      // Mount date parameter to send to API in format YYYY-MM-DD
+      const date_param = new Date().toISOString().substring(0, 10)
+      const staff = await api.timesheets_api_staff_retrieve({ queries: date_param })
 
       // Get company defaults for fallback wage rate
       let defaultWageRate = 32
