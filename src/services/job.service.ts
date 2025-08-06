@@ -3,6 +3,7 @@ import { api } from '../api/client'
 import axios from '../plugins/axios'
 import { z } from 'zod'
 import { AdvancedFilters } from '../constants/advanced-filters'
+import { AxiosError } from 'axios'
 
 type AdvancedSearchResponse = z.infer<typeof schemas.AdvancedSearchResponse>
 type KanbanJob = z.infer<typeof schemas.KanbanJob>
@@ -79,10 +80,21 @@ export const jobService = {
         success: response.success,
         message: response.message,
       }))
-      .catch((error: Error) => ({
-        success: false,
-        error: error.message || 'Failed to delete job',
-      }))
+      .catch((error: unknown) => {
+        console.error('[deleteJob] erro ao deletar job', error)
+
+        let msg = 'Failed to delete job'
+
+        if ((error as AxiosError).isAxiosError) {
+          const axiosErr = error as AxiosError<{ error: string }>
+          msg = axiosErr.response?.data?.error ?? msg
+        }
+
+        return {
+          success: false,
+          error: msg,
+        }
+      })
   },
 
   // Archive

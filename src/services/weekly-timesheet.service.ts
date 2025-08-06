@@ -76,16 +76,34 @@ export function formatDateRange(startDate: string, endDate: string): string {
 
 /**
  * Format hours with one decimal.
+ * Handles both number and string inputs from the API.
  */
-export function formatHours(hours: number): string {
-  return hours.toFixed(1)
+export function formatHours(hours: number | string): string {
+  const numericHours = typeof hours === 'string' ? parseFloat(hours) : hours
+
+  // Handle invalid values
+  if (isNaN(numericHours)) {
+    console.warn('formatHours received invalid value:', hours)
+    return '0.0'
+  }
+
+  return numericHours.toFixed(1)
 }
 
 /**
  * Format a percentage with one decimal.
+ * Handles both number and string inputs from the API.
  */
-export function formatPercentage(percentage: number): string {
-  return `${percentage.toFixed(1)}%`
+export function formatPercentage(percentage: number | string): string {
+  const numericPercentage = typeof percentage === 'string' ? parseFloat(percentage) : percentage
+
+  // Handle invalid values
+  if (isNaN(numericPercentage)) {
+    console.warn('formatPercentage received invalid value:', percentage)
+    return '0.0%'
+  }
+
+  return `${numericPercentage.toFixed(1)}%`
 }
 
 export default {

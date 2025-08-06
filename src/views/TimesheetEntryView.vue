@@ -442,6 +442,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
 import type { GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community'
 import { v4 as uuidv4 } from 'uuid'
+import { debounce } from 'lodash-es'
 
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
@@ -500,6 +501,7 @@ debugLog('📊 Using initial values:', { date: initialDate, staffId: initialStaf
 const currentDate = ref<string>(initialDate)
 const selectedStaffId = ref<string>(initialStaffId)
 const isInitializing = ref(true)
+const isLoadingData = ref(false) // ✅ Add loading flag to prevent duplicate calls
 
 const timeEntries = ref<TimesheetEntryWithMeta[]>([])
 
@@ -524,6 +526,8 @@ const todayStats = computed(() => {
   }
 })
 
+const companyDefaultsRef = computed(() => companyDefaultsStore.companyDefaults)
+
 const {
   gridData,
   columnDefs,
@@ -535,7 +539,7 @@ const {
   handleKeyboardShortcut,
   handleCellValueChanged: gridHandleCellValueChanged,
 } = useTimesheetEntryGrid(
-  companyDefaultsStore.companyDefaults,
+  companyDefaultsRef,
   timesheetStore.jobs, // Pass jobs from timesheet store
   handleSaveEntry,
   handleDeleteEntry,
@@ -677,6 +681,7 @@ function syncGridState() {
       hours: d.hours,
       isEmptyRow: d.isEmptyRow,
       isNewRow: d.isNewRow,
+      isModified: d.isModified, // ✅ Include modification status
     })),
   )
 
@@ -686,6 +691,7 @@ function syncGridState() {
       jobId: d?.jobId,
       jobNumber: d?.jobNumber,
       isEmptyRow: d?.isEmptyRow,
+      isModified: d?.isModified, // ✅ Log modification status
       hasJob,
     })
     return hasJob
@@ -701,8 +707,8 @@ function syncGridState() {
 
     return {
       ...gridEntry,
-      isModified: existingEntry?.isModified || gridEntry.isModified || false,
-      isNewRow: existingEntry?.isNewRow || gridEntry.isNewRow || false,
+      isModified: gridEntry.isModified || existingEntry?.isModified || false, // ✅ Prioritize grid state
+      isNewRow: gridEntry.isNewRow || existingEntry?.isNewRow || false,
     } as CostLine
   })
 
@@ -718,6 +724,7 @@ function syncGridState() {
       client: e.client,
       jobName: e.jobName,
       hours: e.hours,
+      isModified: e.isModified, // ✅ Log modification status
     })),
   )
 }
@@ -797,9 +804,12 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
     }
 
     let savedLine
-    if (entry.id && typeof entry.id === 'number') {
+    // ✅ FIXED: Always check for existing ID first, including string IDs
+    if (entry.id && (typeof entry.id === 'number' || typeof entry.id === 'string')) {
+      debugLog('🔄 UPDATING existing entry:', entry.id)
       savedLine = await costlineService.updateCostLine(entry.id, costLinePayload)
     } else {
+      debugLog('➕ CREATING new entry')
       const job = timesheetStore.jobs.find((j: Job) => j.id === targetJobId)
       if (!job) throw new Error('Job not found')
       savedLine = await costlineService.createCostLine(job.id, 'actual', costLinePayload)
@@ -875,8 +885,21 @@ function onFirstDataRendered() {
 const addNewEntry = () => {
   debugLog('➕ Adding new entry for staff:', selectedStaffId.value)
 
+  const staffData = timesheetStore.staff.find((s) => s.id === selectedStaffId.value)
+
+  debugLog('👤 Staff data for new entry:', {
+    staffId: selectedStaffId.value,
+    staffData: staffData
+      ? {
+          id: staffData.id,
+          name: `${staffData.firstName} ${staffData.lastName}`,
+          wageRate: staffData.wageRate,
+        }
+      : null,
+  })
+
   // Use the composable's addNewRow function which properly handles ag-Grid
-  addNewRow(selectedStaffId.value, currentDate.value)
+  addNewRow(selectedStaffId.value, currentDate.value, staffData)
 
   hasUnsavedChanges.value = true
 
@@ -891,7 +914,7 @@ const saveChanges = async () => {
   syncGridState()
 
   const changedEntries = timeEntries.value.filter(
-    (entry: CostLine) => entry.isNewRow || entry.isModified,
+    (entry: CostLine) => entry.isModified || entry.isNewRow,
   )
 
   debugLog('📊 Found', changedEntries.length, 'changed entries to save')
@@ -935,21 +958,83 @@ const saveChanges = async () => {
     return
   }
 
-  for (const entry of changedEntries) {
-    debugLog('🔄 Saving entry:', {
+  const recalculatedEntries = changedEntries.map((entry) => {
+    const hours = typeof entry.hours === 'string' ? parseFloat(entry.hours) || 0 : entry.hours || 0
+    const wageRate =
+      typeof entry.wageRate === 'string' ? parseFloat(entry.wageRate) || 0 : entry.wageRate || 0
+    const chargeOutRate =
+      typeof entry.chargeOutRate === 'string'
+        ? parseFloat(entry.chargeOutRate) || 0
+        : entry.chargeOutRate || 0
+    const rate = entry.rate || 'Ord'
+    const billable = entry.billable ?? true
+
+    let rateMultiplier = 1.0
+    switch (rate) {
+      case '1.5':
+        rateMultiplier = 1.5
+        break
+      case '2.0':
+        rateMultiplier = 2.0
+        break
+      case 'Unpaid':
+        rateMultiplier = 0.0
+        break
+      default:
+        rateMultiplier = 1.0
+    }
+
+    let calculatedWage = 0
+    if (hours > 0 && wageRate > 0)
+      calculatedWage = Math.round(hours * rateMultiplier * wageRate * 100) / 100
+
+    let calculatedBill = 0
+    if (billable && hours > 0 && chargeOutRate > 0) {
+      calculatedBill = Math.round(hours * chargeOutRate * 100) / 100
+    }
+
+    debugLog('🧮 Recalculated entry with correct formula:', {
+      id: entry.id,
+      hours,
+      wageRate,
+      chargeOutRate,
+      rate,
+      rateMultiplier,
+      billable,
+      calculatedWage,
+      calculatedBill,
+      formula: `${hours} × ${rateMultiplier} × ${wageRate} = ${calculatedWage}`,
+    })
+
+    return {
+      ...entry,
+      hours,
+      wageRate,
+      chargeOutRate,
+      rateMultiplier,
+      wage: calculatedWage,
+      bill: calculatedBill,
+    }
+  })
+
+  for (const entry of recalculatedEntries) {
+    debugLog('🔄 Saving recalculated entry:', {
       id: entry.id,
       isNewRow: entry.isNewRow,
       isModified: entry.isModified,
       description: entry.description,
+      wage: entry.wage,
+      bill: entry.bill,
     })
-    debugLog('Call-stack: ', new Error().stack)
-    debugLog('Timestamp:', new Date().toISOString())
     await handleSaveEntry(entry)
 
+    // ✅ Mark as saved and update grid state
     entry.isModified = false
+    entry.isNewRow = false
   }
 
   hasUnsavedChanges.value = false
+  reloadData()
 }
 
 const reloadData = () => {
@@ -977,7 +1062,8 @@ const handleStaffChange = async (staffId: string | null) => {
   selectedStaffId.value = staffId
   updateRoute()
 
-  await loadTimesheetData()
+  // ✅ Use debounced version and don't await to prevent blocking UI
+  debouncedLoadTimesheetData()
 }
 
 const loadTimesheetData = async () => {
@@ -985,10 +1071,17 @@ const loadTimesheetData = async () => {
     staffId: selectedStaffId.value,
     date: currentDate.value,
     isInitializing: isInitializing.value,
+    isLoadingData: isLoadingData.value,
   })
 
   debugLog('Call-stack: ', new Error().stack)
   debugLog('Timestamp:', new Date().toISOString())
+
+  // ✅ Prevent duplicate calls
+  if (isLoadingData.value) {
+    debugLog('⏭️ Skipping data load - already loading')
+    return
+  }
 
   if (!selectedStaffId.value) {
     debugLog('⏭️ Skipping data load - no staff selected')
@@ -1002,6 +1095,7 @@ const loadTimesheetData = async () => {
 
   try {
     loading.value = true
+    isLoadingData.value = true // ✅ Set loading flag
     error.value = null
 
     debugLog('📊 Loading timesheet data for:', {
@@ -1018,31 +1112,52 @@ const loadTimesheetData = async () => {
     debugLog('📄 Cost lines from API:', response.cost_lines)
     debugLog('📊 Number of cost lines:', response.cost_lines?.length || 0)
 
-    timeEntries.value = response.cost_lines.map((line: TimesheetCostLine) => ({
-      id: line.id,
-      jobId: line.job_id || '',
-      jobNumber: line.job_number || '',
-      client: line.client_name || '',
-      jobName: line.job_name || '',
-      hours: parseFloat(line.quantity),
-      billable: typeof line.meta?.is_billable === 'boolean' ? line.meta.is_billable : true,
-      description: line.desc,
-      rate: getRateTypeFromMultiplier(
-        typeof line.meta?.rate_multiplier === 'number' ? line.meta.rate_multiplier : 1.0,
-      ),
-      wage: line.wage_rate || parseFloat(line.unit_cost), // Wage per hour (staff cost)
-      bill: line.total_rev,
-      staffId: selectedStaffId.value,
-      date: currentDate.value,
-      wageRate: line.wage_rate || parseFloat(line.unit_cost),
-      chargeOutRate: parseFloat(line.charge_out_rate),
-      rateMultiplier:
-        typeof line.meta?.rate_multiplier === 'number' ? line.meta.rate_multiplier : 1.0,
-      isNewRow: false,
-      isModified: false,
-    }))
+    timeEntries.value = response.cost_lines.map((line: TimesheetCostLine) => {
+      const hours = parseFloat(line.quantity)
+      const staffWageRate = line.wage_rate || parseFloat(line.unit_cost)
+      const rateMultiplier =
+        typeof line.meta?.rate_multiplier === 'number' ? line.meta.rate_multiplier : 1.0
 
-    loadData(timeEntries.value, selectedStaffId.value)
+      // ✅ ALWAYS CALCULATE WAGE WITH CORRECT FORMULA: hours × rate_multiplier × staff_wage_rate
+      const calculatedWage =
+        hours > 0 && staffWageRate > 0
+          ? Math.round(hours * rateMultiplier * staffWageRate * 100) / 100
+          : 0
+
+      debugLog('📊 Loading entry with correct wage calculation:', {
+        id: line.id,
+        hours,
+        staffWageRate,
+        rateMultiplier,
+        calculatedWage,
+        backendWage: line.total_cost,
+        formula: `${hours} × ${rateMultiplier} × ${staffWageRate} = ${calculatedWage}`,
+      })
+
+      return {
+        id: line.id,
+        jobId: line.job_id || '',
+        jobNumber: line.job_number || '',
+        client: line.client_name || '',
+        jobName: line.job_name || '',
+        hours,
+        billable: typeof line.meta?.is_billable === 'boolean' ? line.meta.is_billable : true,
+        description: line.desc,
+        rate: getRateTypeFromMultiplier(rateMultiplier),
+        wage: calculatedWage, // ✅ ALWAYS use calculated wage
+        bill: line.total_rev,
+        staffId: selectedStaffId.value,
+        date: currentDate.value,
+        wageRate: staffWageRate,
+        chargeOutRate: parseFloat(line.charge_out_rate),
+        rateMultiplier,
+        isNewRow: false,
+        isModified: false,
+      }
+    })
+
+    const staffData = timesheetStore.staff.find((s) => s.id === selectedStaffId.value)
+    loadData(timeEntries.value, selectedStaffId.value, staffData)
 
     debugLog(`✅ Loaded ${timeEntries.value.length} timesheet entries`)
   } catch (err) {
@@ -1050,8 +1165,12 @@ const loadTimesheetData = async () => {
     error.value = 'Failed to load timesheet data'
   } finally {
     loading.value = false
+    isLoadingData.value = false // ✅ Clear loading flag
   }
 }
+
+// ✅ Create debounced version to prevent rapid successive calls
+const debouncedLoadTimesheetData = debounce(loadTimesheetData, 300)
 
 const getRateTypeFromMultiplier = (multiplier: number): string => {
   switch (multiplier) {
@@ -1074,7 +1193,8 @@ const handleKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  if (handleKeyboardShortcut(event, selectedStaffId.value)) {
+  const staffData = timesheetStore.staff.find((s) => s.id === selectedStaffId.value)
+  if (handleKeyboardShortcut(event, selectedStaffId.value, staffData)) {
     return
   }
 
@@ -1111,6 +1231,7 @@ onMounted(async () => {
     await timesheetStore.loadStaff()
     await timesheetStore.loadJobs()
     await companyDefaultsStore.loadCompanyDefaults()
+    debugLog('Company Defaults store value: ', companyDefaultsStore.companyDefaults)
 
     let validStaffId = selectedStaffId.value
 
@@ -1183,7 +1304,8 @@ watch(
       oldStaffId,
       oldDate,
     })
-    await loadTimesheetData()
+    // ✅ Use debounced version to prevent rapid calls
+    debouncedLoadTimesheetData()
   },
   { immediate: false },
 )
@@ -1219,7 +1341,8 @@ watch(
 
     if (hasChanges) {
       debugLog('🔄 Reloading data due to URL changes')
-      loadTimesheetData()
+      // ✅ Use debounced version to prevent rapid calls
+      debouncedLoadTimesheetData()
     }
   },
   { immediate: false },

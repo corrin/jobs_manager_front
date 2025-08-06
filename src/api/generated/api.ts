@@ -993,8 +993,8 @@ const WeeklyMetrics = z
     job_id: z.string().uuid(),
     job_number: z.number().int(),
     name: z.string(),
-    client: z.string(),
-    description: z.string(),
+    client: z.string().nullish(),
+    description: z.string().nullish(),
     status: z.string(),
     people: z.array(z.object({}).partial().passthrough()),
     estimated_hours: z.number(),
@@ -1382,6 +1382,14 @@ const StockConsumeRequest = z
   .object({
     job_id: z.string().uuid(),
     quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    unit_cost: z
+      .string()
+      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
+      .nullish(),
+    unit_rev: z
+      .string()
+      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
+      .nullish(),
   })
   .passthrough()
 const StockConsumeResponse = z
@@ -1508,7 +1516,7 @@ const ModernTimesheetJob = z
     id: z.string().uuid(),
     job_number: z.number().int().gte(-2147483648).lte(2147483647),
     name: z.string().max(100),
-    client_name: z.string(),
+    client_name: z.string().nullable(),
     status: Status7b9Enum.optional(),
     charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
     has_actual_costset: z.boolean(),
@@ -1533,15 +1541,24 @@ const StaffListResponse = z
   .passthrough()
 const WeeklyStaffDataWeeklyHours = z
   .object({
-    date: z.string(),
+    day: z.string(),
     hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    billable_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    scheduled_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    status: z.string(),
+    leave_type: z.string().nullish(),
+    has_leave: z.boolean(),
   })
   .passthrough()
 const WeeklyStaffData = z
   .object({
-    id: z.string().uuid(),
+    staff_id: z.string().uuid(),
     name: z.string(),
     weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
+    total_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_billable_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    billable_percentage: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    status: z.string(),
   })
   .passthrough()
 const WeeklySummary = z
@@ -1566,7 +1583,6 @@ const WeeklyTimesheetData = z
     start_date: z.string(),
     end_date: z.string(),
     week_days: z.array(z.string()),
-    week_start: z.string(),
     staff_data: z.array(WeeklyStaffData),
     weekly_summary: WeeklySummary,
     job_metrics: JobMetrics,
@@ -1583,7 +1599,7 @@ const IMSWeeklyStaffDataWeeklyHours = z
     billable_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
     scheduled_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
     status: z.string(),
-    leave_type: z.string().optional(),
+    leave_type: z.string().nullish(),
     has_leave: z.boolean().optional().default(false),
     standard_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
     time_and_half_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
@@ -1613,7 +1629,6 @@ const IMSWeeklyTimesheetData = z
     start_date: z.string(),
     end_date: z.string(),
     week_days: z.array(z.string()),
-    week_start: z.string(),
     staff_data: z.array(IMSWeeklyStaffData),
     weekly_summary: WeeklySummary,
     job_metrics: JobMetrics,
@@ -4907,6 +4922,13 @@ Returns:
     alias: 'timesheets_api_staff_retrieve',
     description: `Get filtered list of staff members for a specific date.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'date',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
     response: StaffListResponse,
   },
   {

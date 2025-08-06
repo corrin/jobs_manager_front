@@ -57,10 +57,33 @@
             type="number"
             step="0.001"
             min="0.001"
+            :max="
+              selectedStock
+                ? typeof selectedStock.quantity === 'string'
+                  ? parseFloat(selectedStock.quantity)
+                  : selectedStock.quantity
+                : undefined
+            "
             class="input"
             placeholder="0.000"
             required
           />
+          <div
+            v-if="
+              selectedStock &&
+              formData.quantity >
+                (typeof selectedStock.quantity === 'string'
+                  ? parseFloat(selectedStock.quantity)
+                  : selectedStock.quantity)
+            "
+            class="mt-1 text-sm text-red-600"
+          >
+            Quantity cannot exceed available stock ({{
+              typeof selectedStock.quantity === 'string'
+                ? parseFloat(selectedStock.quantity)
+                : selectedStock.quantity
+            }})
+          </div>
         </label>
 
         <!-- Unit Cost and Revenue -->
@@ -157,9 +180,17 @@ const formData = ref({
 })
 
 const canSubmit = computed(() => {
+  if (!selectedStock.value) return false
+
+  const availableQuantity =
+    typeof selectedStock.value.quantity === 'string'
+      ? parseFloat(selectedStock.value.quantity)
+      : selectedStock.value.quantity
+
   return (
     selectedStock.value &&
     formData.value.quantity > 0 &&
+    formData.value.quantity <= availableQuantity &&
     formData.value.unit_cost >= 0 &&
     formData.value.unit_rev >= 0
   )
@@ -186,13 +217,21 @@ async function loadStockItems() {
 }
 
 function filterStock() {
-  if (!searchTerm.value.trim()) {
-    filteredStock.value = stockItems.value
-  } else {
-    filteredStock.value = stockItems.value.filter((item) =>
+  let items = stockItems.value
+
+  // Filter by search term
+  if (searchTerm.value.trim()) {
+    items = items.filter((item) =>
       item.description?.toLowerCase().includes(searchTerm.value.toLowerCase()),
     )
   }
+
+  // Filter out items with zero or negative quantity
+  filteredStock.value = items.filter((item) => {
+    const quantity = typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity
+    return quantity > 0
+  })
+
   showDropdown.value = true
 }
 
@@ -288,6 +327,19 @@ watch(
 
 function handleSubmit() {
   if (!canSubmit.value || !selectedStock.value) return
+
+  const availableQuantity =
+    typeof selectedStock.value.quantity === 'string'
+      ? parseFloat(selectedStock.value.quantity)
+      : selectedStock.value.quantity
+
+  if (formData.value.quantity > availableQuantity) {
+    debugLog('Cannot consume more than available quantity:', {
+      requested: formData.value.quantity,
+      available: availableQuantity,
+    })
+    return
+  }
 
   emit('submit', {
     stockItem: selectedStock.value,
