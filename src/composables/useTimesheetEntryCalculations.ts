@@ -5,6 +5,7 @@ import type { z } from 'zod'
 import { jobService } from '@/services/job.service'
 import { useJobsStore } from '../stores/jobs'
 import type { TimesheetEntryWithMeta, TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
+import { toast } from 'vue-sonner'
 
 // Use the generated schemas
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
@@ -29,7 +30,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     if (hours <= 0 || wageRate <= 0) return 0
 
     const multiplier = getRateMultiplier(rateType)
-    // ✅ CORRECT FORMULA: hours × rate_multiplier × staff_wage_rate
+
     const calculatedWage = Math.round(hours * multiplier * wageRate * 100) / 100
 
     debugLog('💰 Calculating wage:', {
@@ -74,20 +75,32 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
   }
 
   const createNewRow = (staffMember: Staff, date: string): TimesheetEntryWithMeta => {
-    // NO FALLBACKS - Use only actual staff wage rate
-    const staffWageRate =
-      typeof staffMember.wageRate === 'string'
-        ? parseFloat(staffMember.wageRate)
-        : staffMember.wageRate || 0
-    const defaultChargeOutRate = companyDefaults.value?.charge_out_rate || 0
+    if (
+      companyDefaults.value?.charge_out_rate == undefined ||
+      parseFloat(companyDefaults.value?.charge_out_rate || '0') <= 0
+    ) {
+      debugLog(
+        'Invalid Company Defaults value when trying to create new row: ',
+        companyDefaults.value,
+      )
+      toast.error('Invalid data detected when creating new row! Please contact Corrin.')
+      return
+    }
+
+    if (staffMember.wageRate == undefined || parseFloat(staffMember.wageRate || '0') <= 0) {
+      debugLog('Invalid Staff Data value when trying to create new row: ', staffMember)
+      toast.error('Invalid data detected when creating new row! Please contact Corrin.')
+      return
+    }
+
+    const staffWageRate = parseFloat(staffMember.wageRate)
+    const defaultChargeOutRate = companyDefaults.value?.charge_out_rate
     const hours = 0
     const rateMultiplier = 1.0 // Default 'Ord' rate
 
-    // ✅ CORRECT WAGE CALCULATION: hours × rate_multiplier × staff_wage_rate
-    const calculatedWage =
-      hours > 0 && staffWageRate > 0
-        ? Math.round(hours * rateMultiplier * staffWageRate * 100) / 100
-        : 0
+    let calculatedWage = 0
+    if (hours > 0 && staffWageRate > 0)
+      calculatedWage = Math.round(hours * rateMultiplier * staffWageRate * 100) / 100
 
     debugLog('🏗️ Creating new row with correct wage calculation:', {
       staffId: staffMember.id,
@@ -107,7 +120,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       quantity: hours.toString(),
       unit_cost: staffWageRate.toString(), // This is the hourly rate, not the total wage
       unit_rev: defaultChargeOutRate.toString(),
-      total_cost: calculatedWage, // ✅ CORRECT: hours × rate_multiplier × staff_wage_rate
+      total_cost: calculatedWage,
       total_rev: 0,
       ext_refs: {},
       meta: {
@@ -135,7 +148,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       hours,
       description: '',
       rate: 'Ord',
-      wage: calculatedWage, // ✅ CORRECT: Calculated wage using proper formula
+      wage: calculatedWage,
       bill: 0,
       billable: true,
       chargeOutRate: defaultChargeOutRate,

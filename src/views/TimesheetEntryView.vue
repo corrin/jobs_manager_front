@@ -984,7 +984,6 @@ const saveChanges = async () => {
         rateMultiplier = 1.0
     }
 
-    // ✅ CORRECT WAGE CALCULATION: hours × rate_multiplier × staff_wage_rate
     const calculatedWage =
       hours > 0 && wageRate > 0 ? Math.round(hours * rateMultiplier * wageRate * 100) / 100 : 0
     const calculatedBill =
