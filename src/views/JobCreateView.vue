@@ -118,7 +118,7 @@
                       id="estimatedTime"
                       type="number"
                       step="0.01"
-                      min="0.01"
+                      min="0"
                       v-model.number="formData.estimatedTime"
                       class="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       :class="[
