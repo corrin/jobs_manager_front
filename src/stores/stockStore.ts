@@ -55,14 +55,30 @@ export const useStockStore = defineStore('stock', () => {
     id: string,
     payload: { job_id: string; quantity: number },
   ): Promise<StockConsumeResponse> {
-    // Convert quantity to string as required by the backend schema
-    const consumePayload: StockConsumeRequest = {
-      job_id: payload.job_id,
-      quantity: payload.quantity.toString(),
+    try {
+      // Convert quantity to string as required by the backend schema (DecimalField)
+      const consumePayload: StockConsumeRequest = {
+        job_id: payload.job_id,
+        quantity: payload.quantity.toString(),
+      }
+      console.log('Stock consumption request payload:', consumePayload)
+      console.log('Stock consumption request params:', { stock_id: id })
+
+      return await api.consumeStock(consumePayload, {
+        params: { stock_id: id },
+      })
+    } catch (error: unknown) {
+      console.log('Stock consumption error:', error)
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as {
+          response?: { data?: unknown; status?: number; headers?: unknown }
+        }
+        console.log('Stock consumption error response data:', axiosError.response?.data)
+        console.log('Stock consumption error status:', axiosError.response?.status)
+        console.log('Stock consumption error headers:', axiosError.response?.headers)
+      }
+      throw error
     }
-    return await api.purchasing_rest_stock_consume_create(consumePayload, {
-      params: { stock_id: id },
-    })
   }
 
   async function create(payload: StockCreate) {
