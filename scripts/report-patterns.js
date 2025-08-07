@@ -5,7 +5,6 @@
  * Walks through an OpenAPI/YAML file and lists all regex patterns found,
  * also showing the field name (when possible) and the path to it.
  */
-import fs from 'fs/promises'
 import path from 'path'
 import SwaggerParser from '@apidevtools/swagger-parser'
 
@@ -52,7 +51,7 @@ async function main() {
   walk(openapi, [], results)
 
   if (!results.length) {
-    console.log('No fields with pattern found.')
+    if (log) console.log('No fields with pattern found.')
     return
   }
 
@@ -68,18 +67,6 @@ async function main() {
   // Additionally, show unique regex patterns
   const uniques = [...new Set(results.map((r) => r.pattern))]
   console.log('\nUnique regex patterns found:\n', uniques.join('\n'))
-
-  // Write file with found patterns to import on gen-api.js
-  const outPath = path.resolve(path.dirname(specPath), 'scripts', 'decimalPatterns.js')
-
-  const fileContent =
-    '// GENERATED AUTOMATICALLY BY scripts/report-patterns.js - DO NOT EDIT MANUALLY\n' +
-    'export const decimalPatterns = [\n' +
-    uniques.map((r) => ` '${r.replace(/'/g, "\\'")}',`).join('\n') +
-    '\n]\n'
-
-  await fs.writeFile(outPath, fileContent, 'utf8')
-  console.log(`✅ Exported patterns in ${outPath}`)
 }
 
 main().catch((err) => {
