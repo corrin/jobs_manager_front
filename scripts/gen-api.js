@@ -10,6 +10,7 @@ import SwaggerParser from '@apidevtools/swagger-parser'
 import { generateZodClientFromOpenAPI } from 'openapi-zod-client'
 import fs from 'fs/promises'
 import path from 'path'
+import { decimalPatterns } from './decimalPatterns'
 
 async function main() {
   // 1. Resolve paths
@@ -27,6 +28,16 @@ async function main() {
       exportSchemas: true, // same as --export-schemas
       apiClientName: 'api', // generates `export const api = new Zodios(...)`
       withAlias: true,
+
+      /** The following configuration is to ensure OpenAPI automatically converts decimal numbers (mapped as strings by DRF-Spectacular) to JS numeric data type */
+      transformSchema: (schema, { zod }) => {
+        if (
+          schema.type === 'string' &&
+          decimalPatterns.some((re) => re.test(schema.pattern ?? ''))
+        ) {
+          return zod.z.coerce.number()
+        }
+      },
     },
   })
 
