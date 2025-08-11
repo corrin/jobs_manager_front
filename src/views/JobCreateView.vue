@@ -471,27 +471,26 @@ const handleSubmit = async () => {
     if (result.success && result.job_id) {
       const job_id = result.job_id
       try {
-        await costlineService.createCostLine(String(job_id), 'estimate', {
+        await costlineService.createCostLine(job_id, 'estimate', {
           kind: 'material',
           desc: 'Estimated materials',
           quantity: '1',
-          unit_cost: formData.value.estimatedMaterials!.toFixed(2),
-          unit_rev: (
+          unit_cost: formData.value.estimatedMaterials!,
+          unit_rev:
             formData.value.estimatedMaterials! *
-            (1 + Number(companyDefaultsStore.companyDefaults?.materials_markup ?? 0))
-          ).toFixed(2),
+            (1 + (companyDefaultsStore.companyDefaults?.materials_markup || 0)),
         })
       } catch (error: unknown) {
         toast.error((error as Error).message)
         debugLog('Failed to create material cost line:', error)
       }
       try {
-        await costlineService.createCostLine(String(job_id), 'estimate', {
+        await costlineService.createCostLine(job_id, 'estimate', {
           kind: 'time',
           desc: 'Estimated time',
-          quantity: formData.value.estimatedTime!.toFixed(2),
-          unit_cost: Number(companyDefaultsStore.companyDefaults?.wage_rate ?? 0).toFixed(2),
-          unit_rev: Number(companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0).toFixed(2),
+          quantity: formData.value.estimatedTime!,
+          unit_cost: companyDefaultsStore.companyDefaults?.wage_rate || 0,
+          unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate || 0,
         })
       } catch (error: unknown) {
         toast.error((error as Error).message)
@@ -499,7 +498,7 @@ const handleSubmit = async () => {
       }
       toast.success('Job created!')
       toast.dismiss('create-job')
-      router.push({ name: 'job-edit', params: { id: String(job_id) } })
+      router.push({ name: 'job-edit', params: { id: job_id } })
     } else {
       throw new Error(String(result.error) || 'Failed to create job')
     }

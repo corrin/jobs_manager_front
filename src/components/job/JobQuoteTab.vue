@@ -475,15 +475,15 @@ const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
 const wageRate = computed(() => {
   const rate = companyDefaults.value?.wage_rate
-  return rate ? parseFloat(rate) : 0
+  return rate || 0
 })
 const chargeOutRate = computed(() => {
   const rate = companyDefaults.value?.charge_out_rate
-  return rate ? parseFloat(rate) : 0
+  return rate || 0
 })
 const materialsMarkup = computed(() => {
   const markup = companyDefaults.value?.materials_markup
-  return markup ? parseFloat(markup) : 0
+  return markup || 0
 })
 
 const quoteCostLines = computed(() => {
@@ -679,18 +679,18 @@ async function handleAddMaterial(payload: CostLine) {
   if (!payload || payload.kind !== 'material') return
   isLoading.value = true
   toast.info('Adding material cost line...')
+
   try {
     const createPayload = {
       kind: 'material' as const,
       desc: payload.desc,
-      quantity: String(payload.quantity || 0),
-      unit_cost: String(payload.unit_cost || 0),
-      unit_rev: String(payload.unit_rev || 0),
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
       ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
       meta: (payload.meta as Record<string, unknown>) || {},
     }
     const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
-    // Accept the response exactly as returned by API - NO CONVERSIONS
     costLines.value = [...costLines.value, created]
     toast.success('Material cost line added!')
     emit('cost-line-changed')
@@ -710,9 +710,9 @@ async function handleAddTime(payload: CostLine) {
     const createPayload = {
       kind: 'time' as const,
       desc: payload.desc,
-      quantity: String(payload.quantity || 0),
-      unit_cost: String(payload.unit_cost || 0),
-      unit_rev: String(payload.unit_rev || 0),
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
       ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
       meta: (payload.meta as Record<string, unknown>) || {},
     }
@@ -737,9 +737,9 @@ async function handleAddAdjustment(payload: CostLine) {
     const createPayload = {
       kind: 'adjust' as const,
       desc: payload.desc,
-      quantity: String(payload.quantity || 0),
-      unit_cost: String(payload.unit_cost || 0),
-      unit_rev: String(payload.unit_rev || 0),
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
       ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
       meta: (payload.meta as Record<string, unknown>) || {},
     }
@@ -774,9 +774,9 @@ async function submitEditCostLine(payload: CostLine) {
     // Convert payload to ensure proper types for API
     const updatePayload = {
       ...payload,
-      quantity: String(payload.quantity || 0),
-      unit_cost: String(payload.unit_cost || 0),
-      unit_rev: String(payload.unit_rev || 0),
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
       ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
       meta: (payload.meta as Record<string, unknown>) || {},
     }

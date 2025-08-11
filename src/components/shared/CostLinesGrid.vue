@@ -212,28 +212,25 @@ function onDelete(line: CostLine) {
   emit('delete', line)
 }
 
-function formatNumber(value: string | number | undefined): string {
-  const num = typeof value === 'string' ? parseFloat(value) || 0 : value || 0
+function formatNumber(value: number | undefined): string {
+  const num = value || 0
   return new Intl.NumberFormat('en-NZ', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(num)
 }
 
-function formatCurrency(value: string | number | undefined): string {
-  const num = typeof value === 'string' ? parseFloat(value) || 0 : value || 0
+function formatCurrency(value: number | undefined): string {
+  const num = value || 0
   return new Intl.NumberFormat('en-NZ', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(num)
 }
 
-function calculateTotal(
-  quantity: string | number | undefined,
-  price: string | number | undefined,
-): number {
-  const qty = typeof quantity === 'string' ? parseFloat(quantity) || 0 : quantity || 0
-  const prc = typeof price === 'string' ? parseFloat(price) || 0 : price || 0
+function calculateTotal(quantity: number | undefined, price: number | undefined): number {
+  const qty = quantity || 0
+  const prc = price || 0
   return qty * prc
 }
 

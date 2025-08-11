@@ -163,14 +163,14 @@ const companyDefaultsStore = useCompanyDefaultsStore()
 debugLog('[MaterialModal] Store companyDefaults:', companyDefaultsStore.companyDefaults)
 
 const calculatedUnitRevenue = computed(() => {
-  const cost = Number(form.value.unitCost) || 0
+  const cost = form.value.unitCost || 0
   const markup = typeof props.materialsMarkup === 'number' ? props.materialsMarkup : 0
 
   debugLog('[MaterialModal] Calculating unitRevenue', {
     unitCost: cost,
     materialsMarkup: markup,
   })
-  return Number((cost * (1 + markup)).toFixed(2))
+  return cost * (1 + markup)
 })
 
 const unitRevenue = computed(() => {
@@ -189,7 +189,7 @@ watch(calculatedUnitRevenue, (newValue) => {
 
 function handleUnitCostInput(e: Event) {
   const input = (e.target as HTMLInputElement).value.replace(',', '.')
-  form.value.unitCost = Number(input)
+  form.value.unitCost = parseFloat(input)
 
   // If not manually overridden, update the revenue automatically
   if (!form.value.manualRevenueOverride) {
@@ -199,7 +199,7 @@ function handleUnitCostInput(e: Event) {
 
 function handleUnitRevenueInput(e: Event) {
   const input = (e.target as HTMLInputElement).value.replace(',', '.')
-  form.value.unitRevenue = Number(input)
+  form.value.unitRevenue = parseFloat(input)
   form.value.manualRevenueOverride = true
 }
 
@@ -213,9 +213,9 @@ function submit() {
   if (descError.value) return
   emit('submit', {
     desc: form.value.desc,
-    unit_cost: String(form.value.unitCost),
-    quantity: String(form.value.quantity),
-    unit_rev: String(unitRevenue.value),
+    unit_cost: form.value.unitCost,
+    quantity: form.value.quantity,
+    unit_rev: unitRevenue.value,
     total_rev: totalRevenue.value,
     total_cost: totalCost.value,
     kind: 'material',

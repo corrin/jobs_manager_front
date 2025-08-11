@@ -138,15 +138,13 @@
                   <td class="px-4 py-4 whitespace-nowrap text-right text-sm text-gray-900">
                     ${{
                       formatCurrency(
-                        line.total_cost || Number(line.quantity) * Number(line.unit_cost),
+                        line.total_cost || (line.quantity || 0) * (line.unit_cost || 0),
                       )
                     }}
                   </td>
                   <td class="px-4 py-4 whitespace-nowrap text-right text-sm text-gray-900">
                     ${{
-                      formatCurrency(
-                        line.total_rev || Number(line.quantity) * Number(line.unit_rev),
-                      )
+                      formatCurrency(line.total_rev || (line.quantity || 0) * (line.unit_rev || 0))
                     }}
                   </td>
                   <td class="px-4 py-4 whitespace-nowrap text-center">
@@ -273,6 +271,7 @@ import StockConsumptionModal from './StockConsumptionModal.vue'
 import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
 
 type CostLine = z.infer<typeof schemas.CostLine>
+type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
 type CostSet = z.infer<typeof schemas.CostSet>
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
 type StockItem = z.infer<typeof schemas.StockItem>
@@ -326,12 +325,12 @@ const showStockModal = ref(false)
 const showAdjustmentModal = ref(false)
 
 function formatCurrency(value: number | string | undefined): string {
-  const num = typeof value === 'string' ? parseFloat(value) : value || 0
+  const num = typeof value === 'string' ? +value : value || 0
   return num.toFixed(2)
 }
 
 function formatNumber(value: number | string | undefined): string {
-  const num = typeof value === 'string' ? parseFloat(value) : value || 0
+  const num = typeof value === 'string' ? +value : value || 0
   return num.toFixed(3)
 }
 
@@ -405,9 +404,9 @@ const actualSummary = computed(() => {
   let hours = 0
 
   for (const line of costLines.value) {
-    const quantity = Number(line.quantity || 0)
-    const unitCost = Number(line.unit_cost || 0)
-    const unitRev = Number(line.unit_rev || 0)
+    const quantity = line.quantity || 0
+    const unitCost = line.unit_cost || 0
+    const unitRev = line.unit_rev || 0
 
     cost += quantity * unitCost
     rev += quantity * unitRev
@@ -481,9 +480,9 @@ async function submitStockConsumption(payload: {
     // 3. Creates cost line for the job
     const consumeRequest: StockConsumeRequest = {
       job_id: props.jobId,
-      quantity: payload.quantity.toString(),
-      unit_cost: payload.unit_cost.toString(),
-      unit_rev: payload.unit_rev.toString(),
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
     }
 
     await api.consumeStock(consumeRequest, {
@@ -505,7 +504,7 @@ async function submitStockConsumption(payload: {
   }
 }
 
-async function submitAdjustment(payload: CostLine) {
+async function submitAdjustment(payload: CostLine | CostLineCreateUpdate): Promise<void> {
   if (!payload || payload.kind !== 'adjust') return
   isLoading.value = true
   toast.info('Adding adjustment...', { id: 'add-adjustment' })
@@ -513,9 +512,9 @@ async function submitAdjustment(payload: CostLine) {
     const createPayload = {
       kind: 'adjust' as const,
       desc: payload.desc,
-      quantity: payload.quantity.toString(),
-      unit_cost: payload.unit_cost?.toString() || '0',
-      unit_rev: payload.unit_rev?.toString() || '0',
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
       ext_refs: {
         source: 'manual_adjustment',
       },

@@ -194,23 +194,19 @@ const breakdown = computed(() => {
     }
   }
 
-  const parseNumber = (value: string | number | undefined): number => {
-    return typeof value === 'string' ? parseFloat(value) || 0 : value || 0
-  }
-
   console.log('[CostSetSummaryCard] Processing costLines count:', props.costLines.length)
 
   const labour = props.costLines
     .filter((line) => line.kind === 'time')
     .reduce(
       (acc, line) => {
-        const quantity = parseNumber(line.quantity)
-        const unitCost = parseNumber(line.unit_cost)
-        const unitRev = parseNumber(line.unit_rev)
+        const quantity = line.quantity
+        const unitCost = line.unit_cost
+        const unitRev = line.unit_rev
         return {
           count: acc.count + 1,
-          cost: acc.cost + quantity * unitCost,
-          revenue: acc.revenue + quantity * unitRev,
+          cost: acc.cost + (quantity || 0) * (unitCost || 0),
+          revenue: acc.revenue + (quantity || 0) * (unitRev || 0),
         }
       },
       { count: 0, cost: 0, revenue: 0 },
@@ -219,13 +215,13 @@ const breakdown = computed(() => {
     .filter((line) => line.kind === 'material')
     .reduce(
       (acc, line) => {
-        const quantity = parseNumber(line.quantity)
-        const unitCost = parseNumber(line.unit_cost)
-        const unitRev = parseNumber(line.unit_rev)
+        const quantity = line.quantity
+        const unitCost = line.unit_cost
+        const unitRev = line.unit_rev
         return {
           count: acc.count + 1,
-          cost: acc.cost + quantity * unitCost,
-          revenue: acc.revenue + quantity * unitRev,
+          cost: acc.cost + (quantity || 0) * (unitCost || 0),
+          revenue: acc.revenue + (quantity || 0) * (unitRev || 0),
         }
       },
       { count: 0, cost: 0, revenue: 0 },
@@ -234,13 +230,13 @@ const breakdown = computed(() => {
     .filter((line) => line.kind !== 'time' && line.kind !== 'material')
     .reduce(
       (acc, line) => {
-        const quantity = parseNumber(line.quantity)
-        const unitCost = parseNumber(line.unit_cost)
-        const unitRev = parseNumber(line.unit_rev)
+        const quantity = line.quantity
+        const unitCost = line.unit_cost
+        const unitRev = line.unit_rev
         return {
           count: acc.count + 1,
-          cost: acc.cost + quantity * unitCost,
-          revenue: acc.revenue + quantity * unitRev,
+          cost: acc.cost + (quantity || 0) * (unitCost || 0),
+          revenue: acc.revenue + (quantity || 0) * (unitRev || 0),
         }
       },
       { count: 0, cost: 0, revenue: 0 },
