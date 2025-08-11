@@ -51,7 +51,7 @@ async function main() {
   walk(openapi, [], results)
 
   if (!results.length) {
-    if (log) console.log('No fields with pattern found.')
+    console.log('No fields with pattern found.')
     return
   }
 
