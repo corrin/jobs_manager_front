@@ -79,7 +79,7 @@ export function formatDateRange(startDate: string, endDate: string): string {
  * Handles both number and string inputs from the API.
  */
 export function formatHours(hours: number | string): string {
-  const numericHours = typeof hours === 'string' ? parseFloat(hours) : hours
+  const numericHours = typeof hours === 'string' ? Number(hours) : hours
 
   // Handle invalid values
   if (isNaN(numericHours)) {
@@ -95,7 +95,7 @@ export function formatHours(hours: number | string): string {
  * Handles both number and string inputs from the API.
  */
 export function formatPercentage(percentage: number | string): string {
-  const numericPercentage = typeof percentage === 'string' ? parseFloat(percentage) : percentage
+  const numericPercentage = typeof percentage === 'string' ? Number(percentage) : percentage
 
   // Handle invalid values
   if (isNaN(numericPercentage)) {

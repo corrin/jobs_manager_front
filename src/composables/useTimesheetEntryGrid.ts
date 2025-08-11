@@ -141,8 +141,7 @@ export function useTimesheetEntryGrid(
       field: 'wage',
       width: 100,
       editable: false,
-      valueFormatter: (params: ValueFormatterParams) =>
-        `$${(Number(params.value) || 0).toFixed(2)}`,
+      valueFormatter: (params: ValueFormatterParams) => `$${(params.value || 0).toFixed(2)}`,
       cellClass: 'text-right',
       cellStyle: { color: '#059669', fontWeight: '600' },
     },
@@ -151,8 +150,7 @@ export function useTimesheetEntryGrid(
       field: 'bill',
       width: 100,
       editable: false,
-      valueFormatter: (params: ValueFormatterParams) =>
-        `$${(Number(params.value) || 0).toFixed(2)}`,
+      valueFormatter: (params: ValueFormatterParams) => `$${(params.value || 0).toFixed(2)}`,
       cellClass: 'text-right',
       cellStyle: { color: '#2563EB', fontWeight: '600' },
     },
@@ -356,16 +354,9 @@ export function useTimesheetEntryGrid(
   }
 
   function createEntryFromRowData(rowData: TimesheetEntryGridRow): TimesheetEntry {
-    const hours =
-      typeof rowData.hours === 'string' ? parseFloat(rowData.hours) || 0 : rowData.hours || 0
-    const wageRate =
-      typeof rowData.wageRate === 'string'
-        ? parseFloat(rowData.wageRate) || 0
-        : rowData.wageRate || 0
-    const chargeOutRate =
-      typeof rowData.chargeOutRate === 'string'
-        ? parseFloat(rowData.chargeOutRate) || 0
-        : rowData.chargeOutRate || 0
+    const hours = rowData.hours || 0
+    const wageRate = rowData.wageRate || 0
+    const chargeOutRate = rowData.chargeOutRate || 0
     const rate = rowData.rate || 'Ord'
     const rateMultiplier = calculations.getRateMultiplier(rate)
     const billable = rowData.billable ?? true
@@ -410,7 +401,7 @@ export function useTimesheetEntryGrid(
 
   function updateRowData(rowIndex: number, entry: TimesheetEntry): void {
     if (!gridApi.value || gridApi.value.isDestroyed?.()) return
-    const rowNode = gridApi.value.getRowNode(rowIndex.toString())
+    const rowNode = gridApi.value.getRowNode(String(rowIndex))
     if (rowNode) {
       Object.assign(rowNode.data, entry)
       gridApi.value.refreshCells({ rowNodes: [rowNode], force: true })
@@ -472,7 +463,7 @@ export function useTimesheetEntryGrid(
     staffData?: TimesheetEntryStaffMember,
   ): void {
     if (!gridApi.value || gridApi.value.isDestroyed?.()) return
-    const rowNode = gridApi.value.getRowNode(rowIndex.toString())
+    const rowNode = gridApi.value.getRowNode(String(rowIndex))
     if (rowNode) {
       const currentStaffId = staffId || rowNode.data.staffId || ''
       const date = rowNode.data.date || new Date().toISOString().split('T')[0]
@@ -551,7 +542,7 @@ export function useTimesheetEntryGrid(
 
   function getSelectedEntry(): TimesheetEntry | null {
     if (!gridApi.value || gridApi.value.isDestroyed?.() || selectedRowIndex.value < 0) return null
-    const rowNode = gridApi.value.getRowNode(selectedRowIndex.value.toString())
+    const rowNode = gridApi.value.getRowNode(String(selectedRowIndex.value))
     return rowNode ? createEntryFromRowData(rowNode.data) : null
   }
 

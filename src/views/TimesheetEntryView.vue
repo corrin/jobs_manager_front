@@ -569,9 +569,9 @@ const navigateStaff = (direction: number) => {
 
 const navigateDate = (direction: number) => {
   const parts = currentDate.value.split('-')
-  const year = parseInt(parts[0])
-  const month = parseInt(parts[1]) - 1
-  const day = parseInt(parts[2])
+  const year = parseInt(parts[0], 10)
+  const month = parseInt(parts[1], 10) - 1
+  const day = parseInt(parts[2], 10)
 
   const date = new Date(year, month, day)
 
@@ -580,8 +580,8 @@ const navigateDate = (direction: number) => {
   } while (date.getDay() === 0 || date.getDay() === 6)
 
   const newYear = date.getFullYear()
-  const newMonth = (date.getMonth() + 1).toString().padStart(2, '0')
-  const newDay = date.getDate().toString().padStart(2, '0')
+  const newMonth = String(date.getMonth() + 1).padStart(2, '0')
+  const newDay = String(date.getDate()).padStart(2, '0')
 
   currentDate.value = `${newYear}-${newMonth}-${newDay}`
   debugLog('📅 Navigated to:', currentDate.value, 'Day of week:', date.getDay())
@@ -598,8 +598,8 @@ const goToToday = () => {
   }
 
   const year = today.getFullYear()
-  const month = (today.getMonth() + 1).toString().padStart(2, '0')
-  const day = today.getDate().toString().padStart(2, '0')
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
 
   currentDate.value = `${year}-${month}-${day}`
   debugLog('📅 Going to today (or next workday):', currentDate.value)
@@ -633,9 +633,9 @@ const getStaffInitials = (staff: Staff | null): string => {
 
 const formatDisplayDate = (date: string): string => {
   const parts = date.split('-')
-  const year = parseInt(parts[0])
-  const month = parseInt(parts[1]) - 1
-  const day = parseInt(parts[2])
+  const year = parseInt(parts[0], 10)
+  const month = parseInt(parts[1], 10) - 1
+  const day = parseInt(parts[2], 10)
 
   const d = new Date(year, month, day)
 
@@ -651,9 +651,9 @@ const formatDisplayDate = (date: string): string => {
 
 const formatShortDate = (date: string): string => {
   const parts = date.split('-')
-  const year = parseInt(parts[0])
-  const month = parseInt(parts[1]) - 1
-  const day = parseInt(parts[2])
+  const year = parseInt(parts[0], 10)
+  const month = parseInt(parts[1], 10) - 1
+  const day = parseInt(parts[2], 10)
 
   const d = new Date(year, month, day)
 
@@ -777,23 +777,23 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
 
     let targetJobId = entry.jobId
     if (!targetJobId && entry.jobNumber) {
-      const jobNumber = parseInt(entry.jobNumber, 10)
+      const jobNumber = entry.jobNumber
       const jobByNumber = timesheetStore.jobs.find((j: Job) => j.job_number === jobNumber)
       if (jobByNumber) {
         targetJobId = jobByNumber.id
         entry.jobId = targetJobId
         entry.client = jobByNumber.client_name || ''
         entry.jobName = jobByNumber.name || ''
-        entry.chargeOutRate = parseFloat(jobByNumber.charge_out_rate) || 0
+        entry.chargeOutRate = jobByNumber.charge_out_rate || 0
       }
     }
 
     const costLinePayload = {
       kind: 'time' as const,
       desc: entry.description,
-      quantity: entry.hours.toString(),
-      unit_cost: entry.wageRate.toString(),
-      unit_rev: entry.chargeOutRate.toString(),
+      quantity: entry.hours,
+      unit_cost: entry.wageRate,
+      unit_rev: entry.chargeOutRate,
       meta: {
         staff_id: staffId,
         date: date,
@@ -959,13 +959,9 @@ const saveChanges = async () => {
   }
 
   const recalculatedEntries = changedEntries.map((entry) => {
-    const hours = typeof entry.hours === 'string' ? parseFloat(entry.hours) || 0 : entry.hours || 0
-    const wageRate =
-      typeof entry.wageRate === 'string' ? parseFloat(entry.wageRate) || 0 : entry.wageRate || 0
-    const chargeOutRate =
-      typeof entry.chargeOutRate === 'string'
-        ? parseFloat(entry.chargeOutRate) || 0
-        : entry.chargeOutRate || 0
+    const hours = entry.hours || 0
+    const wageRate = entry.wageRate || 0
+    const chargeOutRate = entry.chargeOutRate || 0
     const rate = entry.rate || 'Ord'
     const billable = entry.billable ?? true
 
@@ -1113,8 +1109,8 @@ const loadTimesheetData = async () => {
     debugLog('📊 Number of cost lines:', response.cost_lines?.length || 0)
 
     timeEntries.value = response.cost_lines.map((line: TimesheetCostLine) => {
-      const hours = parseFloat(line.quantity)
-      const staffWageRate = line.wage_rate || parseFloat(line.unit_cost)
+      const hours = line.quantity
+      const staffWageRate = line.wage_rate || line.unit_cost
       const rateMultiplier =
         typeof line.meta?.rate_multiplier === 'number' ? line.meta.rate_multiplier : 1.0
 
@@ -1149,7 +1145,7 @@ const loadTimesheetData = async () => {
         staffId: selectedStaffId.value,
         date: currentDate.value,
         wageRate: staffWageRate,
-        chargeOutRate: parseFloat(line.charge_out_rate),
+        chargeOutRate: line.charge_out_rate,
         rateMultiplier,
         isNewRow: false,
         isModified: false,

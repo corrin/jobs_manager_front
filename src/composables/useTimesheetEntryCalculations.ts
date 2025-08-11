@@ -204,10 +204,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
   const toCostLinePayload = (entry: TimesheetEntryWithMeta, jobId: string) => {
     // Type guard for meta object
     const metaObj = entry.meta && typeof entry.meta === 'object' ? entry.meta : {}
-    const jobs = jobService.searchJobsLocal(
-      useJobsStore().allKanbanJobs,
-      entry.job_number.toString(),
-    )
+    const jobs = jobService.searchJobsLocal(useJobsStore().allKanbanJobs, String(entry.job_number))
     const job = Array.isArray(jobs) ? jobs[0] : undefined
     const billable = (() => {
       // Shop jobs are never billable
