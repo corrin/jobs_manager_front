@@ -4500,11 +4500,7 @@ paths:
   /purchasing/rest/supplier-price-status/:
     get:
       operationId: getSupplierPriceStatus
-      description: |-
-        Return latest price upload status per supplier.
-
-        Minimal-impact: read-only query over existing Client and SupplierPriceList
-        models. No migrations required.
+      description: Return latest price upload status per supplier.
       tags:
         - purchasing
       security:
@@ -9282,6 +9278,7 @@ components:
         last_uploaded_at:
           type: string
           format: date-time
+          description: ISO 8601 date-time with timezone offset (e.g., 2025-08-12T10:15:30+12:00)
           nullable: true
         file_name:
           type: string
