@@ -305,25 +305,19 @@ const addForm = ref({
   location: '',
 })
 
-function formatQuantity(value: number | string): string {
-  const numValue = typeof value === 'string' ? parseFloat(value) : value
-  return isNaN(numValue) ? '0.00' : numValue.toFixed(2)
+function formatQuantity(value: number): string {
+  return isNaN(value) ? '0.00' : value.toFixed(2)
 }
 
-function formatCurrency(value: number | string): string {
-  const numValue = typeof value === 'string' ? parseFloat(value) : value
-  return isNaN(numValue) ? '0.00' : numValue.toFixed(2)
+function formatCurrency(value: number): string {
+  return isNaN(value) ? '0.00' : value.toFixed(2)
 }
 
 function openAllocate(item: StockItem) {
-  const availableQuantity =
-    typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity
-  const unitCost = typeof item.unit_cost === 'string' ? parseFloat(item.unit_cost) : item.unit_cost
-
   allocateForm.value = {
     description: item.description,
-    availableQty: availableQuantity || 0,
-    unitCost: unitCost || 0,
+    availableQty: item.quantity || 0,
+    unitCost: item.unit_cost || 0,
     jobId: '',
     qtyToUse: 0,
   }

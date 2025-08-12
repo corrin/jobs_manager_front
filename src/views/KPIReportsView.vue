@@ -433,8 +433,8 @@ const materialPercentage = computed(() => {
 const profitPercentage = computed(() => {
   if (!kpiData.value) return 0
   const netProfit = kpiData.value.monthly_totals.net_profit
-  if (netProfit >= 0) return '+' + Math.round(netProfit).toString()
-  return Math.round(netProfit).toString()
+  if (netProfit >= 0) return `+${Math.round(netProfit)}`
+  return `${Math.round(netProfit)}`
 })
 
 const profitTrend = computed(() => {

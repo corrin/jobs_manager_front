@@ -34,7 +34,7 @@ const emit = defineEmits<{
   update: [value: number]
 }>()
 
-const inputValue = ref(props.value.toString())
+const inputValue = ref(String(props.value))
 
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement
@@ -45,7 +45,7 @@ const handleBlur = () => {
   const numericValue = parseFloat(inputValue.value)
 
   if (isNaN(numericValue) || numericValue < 0) {
-    inputValue.value = props.value.toString()
+    inputValue.value = String(props.value)
     return
   }
 
@@ -57,7 +57,7 @@ import { watch } from 'vue'
 watch(
   () => props.value,
   (newValue) => {
-    inputValue.value = newValue.toString()
+    inputValue.value = String(newValue)
   },
 )
 </script>

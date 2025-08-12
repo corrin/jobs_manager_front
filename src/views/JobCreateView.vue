@@ -474,7 +474,7 @@ const handleSubmit = async () => {
         await costlineService.createCostLine(job_id, 'estimate', {
           kind: 'material',
           desc: 'Estimated materials',
-          quantity: '1',
+          quantity: 1,
           unit_cost: formData.value.estimatedMaterials!,
           unit_rev:
             formData.value.estimatedMaterials! *

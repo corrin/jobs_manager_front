@@ -324,13 +324,13 @@ const revision = ref(0)
 const showStockModal = ref(false)
 const showAdjustmentModal = ref(false)
 
-function formatCurrency(value: number | string | undefined): string {
-  const num = typeof value === 'string' ? +value : value || 0
+function formatCurrency(value: number | undefined): string {
+  const num = value || 0
   return num.toFixed(2)
 }
 
-function formatNumber(value: number | string | undefined): string {
-  const num = typeof value === 'string' ? +value : value || 0
+function formatNumber(value: number | undefined): string {
+  const num = value || 0
   return num.toFixed(3)
 }
 

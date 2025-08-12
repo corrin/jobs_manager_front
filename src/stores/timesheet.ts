@@ -52,7 +52,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       (totals, [date, dayLines]) => {
         totals[date] = {
           hours: dayLines.reduce((sum, line) => {
-            return line.kind === 'time' ? sum + Number(line.quantity || 0) : sum
+            return line.kind === 'time' ? sum + line.quantity || 0 : sum
           }, 0),
           cost: dayLines.reduce((sum, line) => sum + line.total_cost, 0),
           revenue: dayLines.reduce((sum, line) => sum + line.total_rev, 0),
@@ -75,7 +75,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
   const totalHoursForDate = computed(() =>
     timeLinesForSelectedDate.value.reduce(
-      (sum: number, line: CostLine) => sum + Number(line.quantity || 0),
+      (sum: number, line: CostLine) => sum + line.quantity || 0,
       0,
     ),
   )
@@ -83,7 +83,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   const billableHoursForDate = computed(() =>
     timeLinesForSelectedDate.value
       .filter((line: CostLine) => line.meta?.is_billable)
-      .reduce((sum: number, line: CostLine) => sum + Number(line.quantity || 0), 0),
+      .reduce((sum: number, line: CostLine) => sum + line.quantity || 0, 0),
   )
 
   async function load(targetJobId: string, targetKind: 'estimate' | 'quote' | 'actual' = 'actual') {
@@ -144,13 +144,13 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  async function updateLine(id: number, payload: PatchedCostLineCreateUpdate) {
+  async function updateLine(id: string, payload: PatchedCostLineCreateUpdate) {
     loading.value = true
     error.value = null
 
     try {
       const updatedLine = await api.job_rest_cost_lines_partial_update({
-        cost_line_id: id.toString(),
+        cost_line_id: id,
         body: payload,
       })
 
@@ -174,12 +174,12 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     }
   }
 
-  async function deleteLine(id: number) {
+  async function deleteLine(id: string) {
     loading.value = true
     error.value = null
 
     try {
-      await api.job_rest_cost_lines_delete_destroy({ cost_line_id: id.toString() })
+      await api.job_rest_cost_lines_delete_destroy({ cost_line_id: id })
 
       lines.value = lines.value.filter((line) => line.id !== id)
 
@@ -310,9 +310,9 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       const costLineData = {
         kind: 'time' as const,
         desc: entryData.description,
-        quantity: entryData.hours.toString(),
-        unit_cost: (entryData.wageRate || 32.0).toString(),
-        unit_rev: (entryData.chargeOutRate || 105.0).toString(),
+        quantity: entryData.hours,
+        unit_cost: entryData.wageRate,
+        unit_rev: entryData.chargeOutRate,
         meta: {
           staff_id: selectedStaffId.value,
           date: selectedDate.value,
@@ -371,10 +371,9 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       const updatePayload: PatchedCostLineCreateUpdate = {}
 
       if (updates.description !== undefined) updatePayload.desc = updates.description
-      if (updates.hours !== undefined) updatePayload.quantity = updates.hours.toString()
-      if (updates.wageRate !== undefined) updatePayload.unit_cost = updates.wageRate.toString()
-      if (updates.chargeOutRate !== undefined)
-        updatePayload.unit_rev = updates.chargeOutRate.toString()
+      if (updates.hours !== undefined) updatePayload.quantity = updates.hours
+      if (updates.wageRate !== undefined) updatePayload.unit_cost = updates.wageRate
+      if (updates.chargeOutRate !== undefined) updatePayload.unit_rev = updates.chargeOutRate
 
       if (updates.isBillable !== undefined || updates.rateMultiplier !== undefined) {
         // Need to preserve existing meta and update specific fields

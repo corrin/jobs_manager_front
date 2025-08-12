@@ -15,18 +15,18 @@
           class="staff-item flex flex-col items-center transition-transform hover:scale-105 active:scale-95 relative"
           :class="{
             'scale-105 ring-2 ring-blue-400 ring-offset-1 rounded-lg': activeFilters.includes(
-              staff.id.toString(),
+              staff.id,
             ),
           }"
           :data-staff-id="staff.id"
           draggable="true"
-          @dragstart="handleDragStart(staff.id.toString(), $event)"
+          @dragstart="handleDragStart(staff.id, $event)"
           @dragend="handleDragEnd"
           @click="toggleStaffFilter(staff.id)"
         >
           <StaffAvatar
             :staff="staff"
-            :is-active="activeFilters.includes(staff.id.toString())"
+            :is-active="activeFilters.includes(staff.id)"
             class="mb-1 pointer-events-none"
           />
           <span
@@ -96,11 +96,10 @@ const loadStaffMembers = async (): Promise<void> => {
 }
 
 const toggleStaffFilter = (staffId: string): void => {
-  const staffIdString = staffId.toString()
-  const index = activeFilters.value.indexOf(staffIdString)
+  const index = activeFilters.value.indexOf(staffId)
 
   debugLog('[STAFF PANEL DEBUG] Toggle staff filter:', {
-    staffId: staffIdString,
+    staffId,
     currentFilters: activeFilters.value,
     index,
     action: index !== -1 ? 'remove' : 'add',
@@ -109,7 +108,7 @@ const toggleStaffFilter = (staffId: string): void => {
   if (index !== -1) {
     activeFilters.value.splice(index, 1)
   } else {
-    activeFilters.value.push(staffIdString)
+    activeFilters.value.push(staffId)
   }
 
   debugLog('[STAFF PANEL DEBUG] After toggle:', {

@@ -55,10 +55,9 @@ export const useStockStore = defineStore('stock', () => {
     id: string,
     payload: { job_id: string; quantity: number },
   ): Promise<StockConsumeResponse> {
-    // Convert quantity to string as required by the backend schema
     const consumePayload: StockConsumeRequest = {
       job_id: payload.job_id,
-      quantity: payload.quantity.toString(),
+      quantity: payload.quantity,
     }
     return await api.purchasing_rest_stock_consume_create(consumePayload, {
       params: { stock_id: id },

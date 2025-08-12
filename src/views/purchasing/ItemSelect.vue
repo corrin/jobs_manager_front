@@ -42,7 +42,7 @@ const displayLabel = computed(() => {
         emit('update:modelValue', val)
         const found = store.items.find((i) => i.id === val)
         emit('update:description', found ? found.name : '')
-        emit('update:unit_cost', found && found.unit_cost != null ? Number(found.unit_cost) : null)
+        emit('update:unit_cost', found && found.unit_cost != null ? found.unit_cost : null)
       }
     "
   >
