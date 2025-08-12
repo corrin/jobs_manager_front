@@ -4497,6 +4497,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/StockConsumeResponse'
           description: ''
+  /purchasing/rest/supplier-price-status/:
+    get:
+      operationId: getSupplierPriceStatus
+      description: Return latest price upload status per supplier.
+      tags:
+        - purchasing
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPriceStatusResponse'
+          description: ''
   /purchasing/rest/xero-items/:
     get:
       operationId: purchasing_rest_xero_items_retrieve
@@ -9251,6 +9266,41 @@ components:
         - missing_staff
         - partial_staff
         - total_staff
+    SupplierPriceStatusItem:
+      type: object
+      description: Single supplier price status row.
+      properties:
+        supplier_id:
+          type: string
+          format: uuid
+        supplier_name:
+          type: string
+        last_uploaded_at:
+          type: string
+          format: date-time
+          description: ISO 8601 date-time with timezone offset (e.g., 2025-08-12T10:15:30+12:00)
+          nullable: true
+        file_name:
+          type: string
+          nullable: true
+      required:
+        - file_name
+        - last_uploaded_at
+        - supplier_id
+        - supplier_name
+    SupplierPriceStatusResponse:
+      type: object
+      description: Response containing list of supplier price statuses.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplierPriceStatusItem'
+        total_count:
+          type: integer
+      required:
+        - items
+        - total_count
     SyncStatusEnum:
       enum:
         - success
