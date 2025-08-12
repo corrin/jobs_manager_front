@@ -252,13 +252,13 @@ function selectStockItem(item: StockItem) {
   })
 
   // Auto-populate unit cost from stock - ensure it's a number
-  const unitCostValue = item.unit_cost || 0
+  const unitCostValue: number = (item.unit_cost as number) || 0
   formData.value.unit_cost = unitCostValue
 
   // Auto-calculate unit revenue with markup
   const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
   const calculatedRev = unitCostValue * (1 + markup)
-  formData.value.unit_rev = calculatedRev.toFixed(2)
+  formData.value.unit_rev = calculatedRev
 
   debugLog(
     'selectStockItem - unit_cost:',

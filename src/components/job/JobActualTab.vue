@@ -172,6 +172,14 @@
                           : 'Delivery Receipt'
                       }}
                     </button>
+                    <button
+                      v-if="line.kind === 'material' && isStockExtRefs(line.ext_refs)"
+                      @click="navigateToStock(/*line.ext_refs.stock_id**/)"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-md text-sm font-medium transition-colors"
+                    >
+                      <Package class="w-4 h-4" />
+                      Stock
+                    </button>
 
                     <!-- Time from Timesheet -->
                     <button
@@ -269,6 +277,7 @@ import { z } from 'zod'
 import ActualCostDropdown from './ActualCostDropdown.vue'
 import StockConsumptionModal from './StockConsumptionModal.vue'
 import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
+import { Package } from 'lucide-vue-next'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
@@ -303,6 +312,15 @@ function isDeliveryReceiptExtRefs(extRefs: unknown): extRefs is { purchase_order
     extRefs !== null &&
     'purchase_order_id' in extRefs &&
     typeof (extRefs as Record<string, unknown>).purchase_order_id === 'string'
+  )
+}
+
+function isStockExtRefs(extRefs: unknown): extRefs is { stock_id: string } {
+  return (
+    typeof extRefs === 'object' &&
+    extRefs !== null &&
+    'stock_id' in extRefs &&
+    typeof (extRefs as Record<string, unknown>).stock_id === 'string'
   )
 }
 
@@ -446,6 +464,14 @@ function navigateToTimesheet(staffId: string, date?: string) {
   }
 
   router.push(routeParams)
+}
+
+// TODO: add better navigation flow with front-end path parameter to prepopulate the search bar with the stock name
+function navigateToStock(/*stockId: string*/) {
+  router.push({
+    name: 'stock',
+    // params: { stockId },
+  })
 }
 
 // Modal handlers

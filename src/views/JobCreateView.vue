@@ -225,7 +225,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppLayout from '../components/AppLayout.vue'
 import ClientLookup from '../components/ClientLookup.vue'
@@ -457,6 +457,16 @@ const validateForm = (): boolean => {
 }
 
 const handleSubmit = async () => {
+  if (
+    !companyDefaultsStore.companyDefaults ||
+    !companyDefaultsStore.companyDefaults.wage_rate ||
+    !companyDefaultsStore.companyDefaults.materials_markup ||
+    !companyDefaultsStore.companyDefaults.charge_out_rate
+  ) {
+    debugLog('Invalid CompanyDefaults value - cannot proceed')
+    toast.error('Invalid CompanyDefaults value detected - contact Corrin')
+  }
+
   if (!validateForm()) {
     debugLog('Validation errors:', errors.value)
     return
@@ -464,6 +474,7 @@ const handleSubmit = async () => {
 
   isSubmitting.value = true
   toast.info('Creating job…', { id: 'create-job' })
+  debugLog('FormData: ', formData.value)
 
   try {
     const result = await jobService.createJob(formData.value)
@@ -478,7 +489,7 @@ const handleSubmit = async () => {
           unit_cost: formData.value.estimatedMaterials!,
           unit_rev:
             formData.value.estimatedMaterials! *
-            (1 + (companyDefaultsStore.companyDefaults?.materials_markup || 0)),
+            (1 + companyDefaultsStore.companyDefaults?.materials_markup),
         })
       } catch (error: unknown) {
         toast.error((error as Error).message)
@@ -489,8 +500,8 @@ const handleSubmit = async () => {
           kind: 'time',
           desc: 'Estimated time',
           quantity: formData.value.estimatedTime!,
-          unit_cost: companyDefaultsStore.companyDefaults?.wage_rate || 0,
-          unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate || 0,
+          unit_cost: companyDefaultsStore.companyDefaults?.wage_rate,
+          unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate,
         })
       } catch (error: unknown) {
         toast.error((error as Error).message)
@@ -510,6 +521,10 @@ const handleSubmit = async () => {
     isSubmitting.value = false
   }
 }
+
+watch(formData.value, () => {
+  debugLog('FormData changed:', formData.value)
+})
 
 onMounted(() => {
   formData.value.name = ''
