@@ -4763,10 +4763,7 @@ DELETE: Marks a stock item as inactive instead of deleting it`,
     method: 'get',
     path: '/purchasing/rest/supplier-price-status/',
     alias: 'getSupplierPriceStatus',
-    description: `Return latest price upload status per supplier.
-
-Minimal-impact: read-only query over existing Client and SupplierPriceList
-models. No migrations required.`,
+    description: `Return latest price upload status per supplier.`,
     requestFormat: 'json',
     response: SupplierPriceStatusResponse,
   },
