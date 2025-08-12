@@ -39,7 +39,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       const timesheetStore = useTimesheetStore()
       if (timesheetStore.jobs && Array.isArray(timesheetStore.jobs)) {
         this.jobs = timesheetStore.jobs as JobSelectionItem[]
-        debugLog('📋 Jobs loaded from timesheet store (fallback):', {
+        debugLog('📋 Jobs loaded from timesheet store:', {
           count: this.jobs.length,
           sample: this.jobs[0]
             ? {

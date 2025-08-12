@@ -87,13 +87,13 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       throw new Error('Invalid data detected when creating new row! Please contact Corrin.')
     }
 
-    if (staffMember.wage_rate == undefined || staffMember.wage_rate <= 0) {
+    if (staffMember.wageRate == undefined || (staffMember.wageRate as number) <= 0) {
       debugLog('Invalid Staff Data value when trying to create new row: ', staffMember)
       toast.error('Invalid data detected when creating new row! Please contact Corrin.')
       throw new Error('Invalid data detected when creating new row! Please contact Corrin.')
     }
 
-    const staffWageRate = staffMember.wage_rate
+    const staffWageRate = staffMember.wageRate as number
     const defaultChargeOutRate = companyDefaults.value.charge_out_rate as number
     const hours = 0
     const rateMultiplier = 1.0 // Default 'Ord' rate
@@ -115,7 +115,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
 
     return {
       // Provide a dummy UUID to satisfy schema; real id will come from backend
-      id: '00000000-0000-0000-0000-000000000000',
+      id: null,
       kind: 'time' as const,
       desc: '',
       quantity: hours,

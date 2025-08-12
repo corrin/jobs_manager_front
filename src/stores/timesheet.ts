@@ -4,6 +4,7 @@ import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { debugLog } from '@/utils/debug'
 import type { z } from 'zod'
+import { toast } from 'vue-sonner'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type Staff = z.infer<typeof schemas.ModernStaff>
@@ -235,6 +236,8 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     } catch (err) {
       error.value = 'Failed to load jobs'
       debugLog('Error loading jobs:', err)
+      jobs.value = []
+      toast.error('Error loading jobs: ', err)
     } finally {
       loading.value = false
     }

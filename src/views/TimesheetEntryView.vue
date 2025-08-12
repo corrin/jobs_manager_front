@@ -254,6 +254,15 @@
             </div>
 
             <Button
+              @click="showSummary"
+              size="sm"
+              variant="ghost"
+              class="text-gray-600 hover:bg-gray-100"
+            >
+              <ChartColumn />
+            </Button>
+
+            <Button
               @click="addNewEntry"
               size="sm"
               variant="default"
@@ -429,6 +438,15 @@
             </div>
           </DialogContent>
         </Dialog>
+
+        <!-- Summary Drawer -->
+        <SummaryDrawer
+          v-model:open="showSummaryDrawer"
+          :time-entries="adaptedTimeEntries"
+          :jobs="availableJobs"
+          :loading="loading"
+          :error="error"
+        />
       </div>
     </div>
   </AppLayout>
@@ -455,6 +473,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import SummaryDrawer from '@/components/timesheet/SummaryDrawer.vue'
 
 import {
   ChevronLeft,
@@ -468,6 +487,7 @@ import {
   DollarSign,
   TrendingUp,
   AlertCircle,
+  ChartColumn,
 } from 'lucide-vue-next'
 
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
@@ -476,8 +496,14 @@ import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import * as costlineService from '@/services/costline.service'
 
 // Import types from generated API schemas
-import type { Job, Staff, TimesheetCostLine, CostLine } from '@/api/generated/api'
-import type { TimesheetEntryWithMeta } from '@/constants/timesheet-calculations'
+import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
+import { schemas } from '../api/generated/api'
+import { z } from 'zod'
+
+type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
+type Staff = z.infer<typeof schemas.Staff>
+type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
+type CostLine = z.infer<typeof schemas.CostLine>
 
 const router = useRouter()
 const route = useRoute()
@@ -487,6 +513,7 @@ const companyDefaultsStore = useCompanyDefaultsStore()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const showHelpModal = ref(false)
+const showSummaryDrawer = ref(false)
 const agGridRef = ref()
 
 const todayDate = new Date().toISOString().split('T')[0]
@@ -505,9 +532,48 @@ const isLoadingData = ref(false) // ✅ Add loading flag to prevent duplicate ca
 
 const timeEntries = ref<TimesheetEntryWithMeta[]>([])
 
-const currentStaff = computed(
-  () => timesheetStore.staff.find((s) => s.id === selectedStaffId.value) || null,
-)
+// Adapter to convert TimesheetEntryView data format to TimesheetCostLine format
+const adaptedTimeEntries = computed(() => {
+  return timeEntries.value.map((entry) => ({
+    id: entry.id,
+    job_id: entry.jobId,
+    job_number: entry.jobNumber,
+    job_name: entry.jobName,
+    client_name: entry.client,
+    desc: entry.description,
+    quantity: entry.hours,
+    unit_cost: entry.wageRate,
+    unit_rev: entry.chargeOutRate,
+    total_cost: entry.wage,
+    total_rev: entry.bill,
+    charge_out_rate: entry.chargeOutRate,
+    wage_rate: entry.wageRate,
+    meta: {
+      staff_id: entry.staffId,
+      date: entry.date,
+      is_billable: entry.billable,
+      rate_multiplier: entry.rateMultiplier,
+      created_from_timesheet: true,
+    },
+    // Include UI metadata
+    tempId: entry.tempId,
+    _isSaving: entry._isSaving,
+    isNewRow: entry.isNewRow,
+    isModified: entry.isModified,
+  }))
+})
+
+// Computed property to ensure jobs are always available
+const availableJobs = computed(() => {
+  debugLog('🔍 availableJobs computed - jobs count:', timesheetStore.jobs.length)
+  return timesheetStore.jobs || []
+})
+
+const currentStaff = computed(() => {
+  const staff = timesheetStore.staff.find((s) => s.id === selectedStaffId.value) || null
+  setCurrentStaff(staff)
+  return staff
+})
 
 const hasUnsavedChanges = ref(false)
 
@@ -538,11 +604,13 @@ const {
   getGridData,
   handleKeyboardShortcut,
   handleCellValueChanged: gridHandleCellValueChanged,
+  setCurrentStaff,
 } = useTimesheetEntryGrid(
   companyDefaultsRef,
   timesheetStore.jobs, // Pass jobs from timesheet store
   handleSaveEntry,
   handleDeleteEntry,
+  { resolveStaffById: (id: string) => timesheetStore.staff.find((s) => s.id === id) },
 )
 
 const canNavigateStaff = (direction: number): boolean => {
@@ -778,7 +846,9 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
     let targetJobId = entry.jobId
     if (!targetJobId && entry.jobNumber) {
       const jobNumber = entry.jobNumber
-      const jobByNumber = timesheetStore.jobs.find((j: Job) => j.job_number === jobNumber)
+      const jobByNumber = timesheetStore.jobs.find(
+        (j: ModernTimesheetJob) => j.job_number === jobNumber,
+      )
       if (jobByNumber) {
         targetJobId = jobByNumber.id
         entry.jobId = targetJobId
@@ -810,7 +880,7 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
       savedLine = await costlineService.updateCostLine(entry.id, costLinePayload)
     } else {
       debugLog('➕ CREATING new entry')
-      const job = timesheetStore.jobs.find((j: Job) => j.id === targetJobId)
+      const job = timesheetStore.jobs.find((j: ModernTimesheetJob) => j.id === targetJobId)
       if (!job) throw new Error('Job not found')
       savedLine = await costlineService.createCostLine(job.id, 'actual', costLinePayload)
       entry.id = savedLine.id
@@ -1217,6 +1287,44 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 }
 
+const showSummary = async () => {
+  debugLog('🔍 Opening Summary Drawer - checking data availability...')
+
+  // Ensure jobs are loaded
+  if (timesheetStore.jobs.length === 0) {
+    debugLog('⚠️ Jobs not loaded, loading now...')
+    try {
+      loading.value = true
+      await timesheetStore.loadJobs()
+      debugLog('✅ Jobs loaded successfully:', timesheetStore.jobs.length)
+    } catch (error) {
+      debugLog('❌ Failed to load jobs:', error)
+      error.value = 'Failed to load jobs for summary'
+      return
+    } finally {
+      loading.value = false
+    }
+  }
+
+  debugLog('🔍 Summary Drawer data before opening:', {
+    jobsCount: timesheetStore.jobs.length,
+    timeEntriesCount: timeEntries.value.length,
+    adaptedTimeEntriesCount: adaptedTimeEntries.value.length,
+    availableJobsCount: availableJobs.value.length,
+    jobs: timesheetStore.jobs
+      .slice(0, 3)
+      .map((j) => ({ id: j.id, job_number: j.job_number, name: j.name, job_status: j.job_status })),
+    timeEntries: timeEntries.value
+      .slice(0, 3)
+      .map((e) => ({ id: e.id, jobId: e.jobId, hours: e.hours })),
+    adaptedEntries: adaptedTimeEntries.value
+      .slice(0, 3)
+      .map((e) => ({ id: e.id, job_id: e.job_id, quantity: e.quantity })),
+  })
+
+  showSummaryDrawer.value = true
+}
+
 onMounted(async () => {
   try {
     loading.value = true
@@ -1293,6 +1401,12 @@ watch(
       debugLog('⏭️ Skipping watcher - initial setup detected')
       return
     }
+
+    selectedStaffId.value = newStaffId
+    updateRoute()
+
+    const staffData = timesheetStore.staff.find((s) => s.id === selectedStaffId.value) || null
+    setCurrentStaff(staffData)
 
     debugLog('📊 Loading data due to staff/date change:', {
       newStaffId,
