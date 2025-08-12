@@ -6,7 +6,7 @@
         <CardHeader class="border-b">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <UploadCloud class="w-6 h-6 text-indigo-600" />
+              <CircleDollarSign class="w-6 h-6 text-indigo-600" />
               <h2 class="text-lg font-semibold">Current Supplier Price Status</h2>
             </div>
             <button
@@ -91,7 +91,7 @@ import { debugLog } from '@/utils/debug'
 
 import AppLayout from '@/components/AppLayout.vue'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { UploadCloud } from 'lucide-vue-next'
+import { CircleDollarSign, UploadCloud } from 'lucide-vue-next'
 import DragAndDropUploader from '@/components/purchasing/DragAndDropUploader.vue'
 
 interface StatusRow {
