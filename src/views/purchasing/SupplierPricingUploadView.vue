@@ -107,12 +107,10 @@ const rows = ref<StatusRow[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
+import { formatInNZT } from '@/utils/formatDate'
+
 function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleString()
-  } catch {
-    return iso
-  }
+  return formatInNZT(iso)
 }
 
 async function refresh() {
