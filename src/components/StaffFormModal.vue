@@ -281,6 +281,8 @@ import { toast } from 'vue-sonner'
 
 type Staff = z.infer<typeof schemas.Staff>
 
+const staffSchema = schemas.Staff
+
 const tabs = [
   { key: 'personal', label: 'Personal Info', icon: UserIcon },
   { key: 'working', label: 'Working Hours', icon: ClockIcon },
@@ -334,29 +336,6 @@ const initials = computed(() => {
   return (first + last).toUpperCase() || 'U'
 })
 
-const staffSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email'),
-  wage_rate: z.number().min(0, 'Wage rate must be positive').optional(),
-  preferred_name: z.string().optional(),
-  ims_payroll_id: z.string().optional(),
-  hours_mon: z.number().min(0).max(24),
-  hours_tue: z.number().min(0).max(24),
-  hours_wed: z.number().min(0).max(24),
-  hours_thu: z.number().min(0).max(24),
-  hours_fri: z.number().min(0).max(24),
-  hours_sat: z.number().min(0).max(24),
-  hours_sun: z.number().min(0).max(24),
-  is_staff: z.boolean(),
-  is_active: z.boolean(),
-  is_superuser: z.boolean(),
-  groups: z.string().optional(),
-  user_permissions: z.string().optional(),
-  last_login: z.string().optional(),
-  date_joined: z.string().optional(),
-})
-
 watch(
   () => props.staff,
   (staff) => {
@@ -372,18 +351,17 @@ watch(
         last_name: staff.last_name,
         preferred_name: staff.preferred_name || '',
         email: staff.email,
-        wage_rate: staff.wage_rate ? parseFloat(staff.wage_rate) : 0,
+        wage_rate: staff.wage_rate || 0,
         ims_payroll_id: staff.ims_payroll_id || '',
         icon: null,
-        hours_mon: staff.hours_mon ? parseFloat(staff.hours_mon) : 0,
-        hours_tue: staff.hours_tue ? parseFloat(staff.hours_tue) : 0,
-        hours_wed: staff.hours_wed ? parseFloat(staff.hours_wed) : 0,
-        hours_thu: staff.hours_thu ? parseFloat(staff.hours_thu) : 0,
-        hours_fri: staff.hours_fri ? parseFloat(staff.hours_fri) : 0,
-        hours_sat: staff.hours_sat ? parseFloat(staff.hours_sat) : 0,
-        hours_sun: staff.hours_sun ? parseFloat(staff.hours_sun) : 0,
+        hours_mon: staff.hours_mon || 0,
+        hours_tue: staff.hours_tue || 0,
+        hours_wed: staff.hours_wed || 0,
+        hours_thu: staff.hours_thu || 0,
+        hours_fri: staff.hours_fri || 0,
+        hours_sat: staff.hours_sat || 0,
+        hours_sun: staff.hours_sun || 0,
         is_staff: staff.is_staff || false,
-        is_active: staff.is_active ?? true,
         is_superuser: staff.is_superuser || false,
         // Convert arrays of numbers to comma-separated strings for form fields
         groups:
@@ -453,14 +431,14 @@ async function submitForm() {
 
   const parsed = staffSchema.safeParse({
     ...form.value,
-    wage_rate: Number(form.value.wage_rate),
-    hours_mon: Number(form.value.hours_mon),
-    hours_tue: Number(form.value.hours_tue),
-    hours_wed: Number(form.value.hours_wed),
-    hours_thu: Number(form.value.hours_thu),
-    hours_fri: Number(form.value.hours_fri),
-    hours_sat: Number(form.value.hours_sat),
-    hours_sun: Number(form.value.hours_sun),
+    wage_rate: form.value.wage_rate,
+    hours_mon: form.value.hours_mon,
+    hours_tue: form.value.hours_tue,
+    hours_wed: form.value.hours_wed,
+    hours_thu: form.value.hours_thu,
+    hours_fri: form.value.hours_fri,
+    hours_sat: form.value.hours_sat,
+    hours_sun: form.value.hours_sun,
   })
 
   console.log('StaffFormModal - Schema validation result:', parsed)
@@ -479,31 +457,31 @@ async function submitForm() {
       last_name: form.value.last_name,
       preferred_name: form.value.preferred_name || null,
       email: form.value.email,
-      wage_rate: form.value.wage_rate ? form.value.wage_rate.toString() : '',
+      wage_rate: form.value.wage_rate,
       ims_payroll_id: form.value.ims_payroll_id || null,
       is_active: form.value.is_active,
       is_staff: form.value.is_staff,
       is_superuser: form.value.is_superuser,
-      hours_mon: form.value.hours_mon ? form.value.hours_mon.toString() : '',
-      hours_tue: form.value.hours_tue ? form.value.hours_tue.toString() : '',
-      hours_wed: form.value.hours_wed ? form.value.hours_wed.toString() : '',
-      hours_thu: form.value.hours_thu ? form.value.hours_thu.toString() : '',
-      hours_fri: form.value.hours_fri ? form.value.hours_fri.toString() : '',
-      hours_sat: form.value.hours_sat ? form.value.hours_sat.toString() : '',
-      hours_sun: form.value.hours_sun ? form.value.hours_sun.toString() : '',
+      hours_mon: form.value.hours_mon,
+      hours_tue: form.value.hours_tue,
+      hours_wed: form.value.hours_wed,
+      hours_thu: form.value.hours_thu,
+      hours_fri: form.value.hours_fri,
+      hours_sat: form.value.hours_sat,
+      hours_sun: form.value.hours_sun,
       // Convert groups and user_permissions from strings to arrays of numbers
       groups:
         form.value.groups && form.value.groups.trim()
           ? form.value.groups
               .split(',')
-              .map((g) => parseInt(g.trim()))
+              .map((g) => Number(g.trim()))
               .filter((g) => !isNaN(g))
           : [],
       user_permissions:
         form.value.user_permissions && form.value.user_permissions.trim()
           ? form.value.user_permissions
               .split(',')
-              .map((p) => parseInt(p.trim()))
+              .map((p) => Number(p.trim()))
               .filter((p) => !isNaN(p))
           : [],
       // Handle datetime fields properly - omit if empty, include if valid

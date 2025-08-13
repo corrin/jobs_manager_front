@@ -199,14 +199,11 @@ const columns = computed(() => [
             if (num < 0) {
               toast.warning(`Warning: Job allocation cannot be negative. Setting to 0.`)
               emit('update:line', row.original.id, 'job_allocation', 0)
-              const stockAllocation = parseFloat(row.original.total_received) - 0
+              const stockAllocation = row.original.total_received - 0
               emit('update:line', row.original.id, 'stock_allocation', stockAllocation)
             } else {
               emit('update:line', row.original.id, 'job_allocation', num)
-              const totalReceived =
-                typeof row.original.total_received === 'string'
-                  ? parseFloat(row.original.total_received)
-                  : row.original.total_received
+              const totalReceived = row.original.total_received
               const stockAllocation = totalReceived - num
               emit('update:line', row.original.id, 'stock_allocation', stockAllocation)
 

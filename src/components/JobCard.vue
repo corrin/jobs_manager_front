@@ -317,14 +317,14 @@ const truncatedJobName = computed(() => {
 onMounted(() => {
   if (jobStaffContainerRef.value) {
     emit('job-ready', {
-      jobId: props.job.id.toString(),
+      jobId: props.job.id,
       element: jobStaffContainerRef.value,
     })
   }
 
   if (jobCardRef.value) {
     emit('card-ready', {
-      jobId: props.job.id.toString(),
+      jobId: props.job.id,
       element: jobCardRef.value,
     })
   }

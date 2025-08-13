@@ -35,9 +35,7 @@
                 >
                   <div class="font-medium text-sm">{{ item.description }}</div>
                   <div class="text-xs text-gray-500">
-                    Stock: {{ item.quantity }} | Unit Cost: ${{
-                      formatCurrency(Number(item.unit_cost))
-                    }}
+                    Stock: {{ item.quantity }} | Unit Cost: ${{ formatCurrency(item.unit_cost) }}
                   </div>
                 </div>
               </div>
@@ -57,32 +55,16 @@
             type="number"
             step="0.001"
             min="0.001"
-            :max="
-              selectedStock
-                ? typeof selectedStock.quantity === 'string'
-                  ? parseFloat(selectedStock.quantity)
-                  : selectedStock.quantity
-                : undefined
-            "
+            :max="selectedStock ? selectedStock.quantity : undefined"
             class="input"
             placeholder="0.000"
             required
           />
           <div
-            v-if="
-              selectedStock &&
-              formData.quantity >
-                (typeof selectedStock.quantity === 'string'
-                  ? parseFloat(selectedStock.quantity)
-                  : selectedStock.quantity)
-            "
+            v-if="selectedStock && formData.quantity > selectedStock.quantity"
             class="mt-1 text-sm text-red-600"
           >
-            Quantity cannot exceed available stock ({{
-              typeof selectedStock.quantity === 'string'
-                ? parseFloat(selectedStock.quantity)
-                : selectedStock.quantity
-            }})
+            Quantity cannot exceed available stock ({{ selectedStock.quantity }})
           </div>
         </label>
 
@@ -182,10 +164,7 @@ const formData = ref({
 const canSubmit = computed(() => {
   if (!selectedStock.value) return false
 
-  const availableQuantity =
-    typeof selectedStock.value.quantity === 'string'
-      ? parseFloat(selectedStock.value.quantity)
-      : selectedStock.value.quantity
+  const availableQuantity = selectedStock.value.quantity
 
   return (
     selectedStock.value &&
@@ -228,7 +207,7 @@ function filterStock() {
 
   // Filter out items with zero or negative quantity
   filteredStock.value = items.filter((item) => {
-    const quantity = typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity
+    const quantity = item.quantity
     return quantity > 0
   })
 
@@ -273,13 +252,13 @@ function selectStockItem(item: StockItem) {
   })
 
   // Auto-populate unit cost from stock - ensure it's a number
-  const unitCostValue = Number(item.unit_cost) || 0
+  const unitCostValue: number = (item.unit_cost as number) || 0
   formData.value.unit_cost = unitCostValue
 
   // Auto-calculate unit revenue with markup
-  const markup = Number(companyDefaultsStore.companyDefaults?.materials_markup || 0)
+  const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
   const calculatedRev = unitCostValue * (1 + markup)
-  formData.value.unit_rev = calculatedRev.toFixed(2)
+  formData.value.unit_rev = calculatedRev
 
   debugLog(
     'selectStockItem - unit_cost:',
@@ -306,8 +285,8 @@ watch(
     if (isSelectingItem.value) return
 
     // Ensure newCost is a valid number
-    const cost = Number(newCost) || 0
-    const markup = Number(companyDefaultsStore.companyDefaults?.materials_markup || 0)
+    const cost = newCost || 0
+    const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
     const calculatedRev = cost * (1 + markup)
     formData.value.unit_rev = calculatedRev
     debugLog(
@@ -328,10 +307,7 @@ watch(
 function handleSubmit() {
   if (!canSubmit.value || !selectedStock.value) return
 
-  const availableQuantity =
-    typeof selectedStock.value.quantity === 'string'
-      ? parseFloat(selectedStock.value.quantity)
-      : selectedStock.value.quantity
+  const availableQuantity = selectedStock.value.quantity
 
   if (formData.value.quantity > availableQuantity) {
     debugLog('Cannot consume more than available quantity:', {

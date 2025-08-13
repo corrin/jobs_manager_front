@@ -39,7 +39,7 @@
           :job="job"
           :is-dragging="isDragging"
           :is-movement-mode-active="isMovementModeActive"
-          :is-job-selected-for-movement="isJobSelectedForMovement?.(job.id.toString()) ?? false"
+          :is-job-selected-for-movement="isJobSelectedForMovement?.(job.id) ?? false"
           @click="$emit('job-click', job)"
           @job-ready="$emit('job-ready', $event)"
           @card-ready="$emit('card-ready', $event)"

@@ -2,9 +2,9 @@ import { type Ref } from 'vue'
 import { schemas } from '../api/generated/api'
 import { debugLog } from '../utils/debug'
 import type { z } from 'zod'
-import { jobService } from '@/services/job.service'
+import { jobService } from '../services/job.service'
 import { useJobsStore } from '../stores/jobs'
-import type { TimesheetEntryWithMeta, TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
+import type { TimesheetEntryWithMeta, TimesheetEntryJobSelectionItem } from '../constants/timesheet'
 import { toast } from 'vue-sonner'
 
 // Use the generated schemas
@@ -65,9 +65,9 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       ...entry,
       job_id: job.id,
       job_number: job.job_number,
-      client_name: job.client_name,
+      client_name: job.client_name ?? '',
       job_name: job.name,
-      charge_out_rate: job.charge_out_rate.toString(),
+      charge_out_rate: job.charge_out_rate,
     }
 
     debugLog('✨ Populated job fields result:', result)
@@ -76,25 +76,25 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
 
   const createNewRow = (staffMember: Staff, date: string): TimesheetEntryWithMeta => {
     if (
-      companyDefaults.value?.charge_out_rate == undefined ||
-      parseFloat(companyDefaults.value?.charge_out_rate || '0') <= 0
+      companyDefaults.value?.charge_out_rate == null ||
+      companyDefaults.value.charge_out_rate <= 0
     ) {
       debugLog(
         'Invalid Company Defaults value when trying to create new row: ',
         companyDefaults.value,
       )
       toast.error('Invalid data detected when creating new row! Please contact Corrin.')
-      return
+      throw new Error('Invalid data detected when creating new row! Please contact Corrin.')
     }
 
-    if (staffMember.wageRate == undefined || parseFloat(staffMember.wageRate || '0') <= 0) {
+    if (staffMember.wageRate == undefined || (staffMember.wageRate as number) <= 0) {
       debugLog('Invalid Staff Data value when trying to create new row: ', staffMember)
       toast.error('Invalid data detected when creating new row! Please contact Corrin.')
-      return
+      throw new Error('Invalid data detected when creating new row! Please contact Corrin.')
     }
 
-    const staffWageRate = parseFloat(staffMember.wageRate)
-    const defaultChargeOutRate = companyDefaults.value?.charge_out_rate
+    const staffWageRate = staffMember.wageRate as number
+    const defaultChargeOutRate = companyDefaults.value.charge_out_rate as number
     const hours = 0
     const rateMultiplier = 1.0 // Default 'Ord' rate
 
@@ -114,12 +114,14 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     })
 
     return {
-      id: null, // Will be set by backend
+      // Provide a dummy UUID to satisfy schema; real id will come from backend
+      id: null,
       kind: 'time' as const,
       desc: '',
-      quantity: hours.toString(),
-      unit_cost: staffWageRate.toString(), // This is the hourly rate, not the total wage
-      unit_rev: defaultChargeOutRate.toString(),
+      quantity: hours,
+      // This is the hourly rate, not the total wage
+      unit_cost: staffWageRate,
+      unit_rev: defaultChargeOutRate,
       total_cost: calculatedWage,
       total_rev: 0,
       ext_refs: {},
@@ -131,17 +133,17 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
         is_billable: true,
       },
       job_id: '',
-      job_number: '',
+      job_number: 0,
       job_name: '',
       client_name: '',
-      charge_out_rate: defaultChargeOutRate.toString(),
+      charge_out_rate: defaultChargeOutRate,
       // Add UI-specific metadata fields
       tempId: `temp_${Date.now()}`,
       _isSaving: false,
       isNewRow: true,
       isModified: false,
       // Include staff wage rate for grid calculations
-      wageRate: staffWageRate,
+      wage_rate: staffWageRate,
       staffId: staffMember.id,
       staffName: staffMember.name || '',
       date,
@@ -158,9 +160,9 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
 
   const recalculateEntry = (entry: TimesheetEntryWithMeta): TimesheetEntryWithMeta => {
     const updatedEntry = { ...entry }
-    const hours = parseFloat(entry.quantity)
-    const wageRate = parseFloat(entry.unit_cost)
-    const chargeOutRate = parseFloat(entry.charge_out_rate)
+    const hours = entry.quantity
+    const wageRate = entry.unit_cost
+    const chargeOutRate = entry.charge_out_rate
 
     // Type-safe access to meta properties
     const meta = entry.meta as Record<string, unknown> | undefined
@@ -175,9 +177,9 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
 
   const validateEntry = (entry: TimesheetEntryWithMeta): { isValid: boolean; errors: string[] } => {
     const errors: string[] = []
-    const hours = parseFloat(entry.quantity)
+    const hours = entry.quantity
 
-    if (!entry.job_number.trim()) {
+    if (!entry.job_number) {
       errors.push('Job is required')
     }
 
@@ -202,22 +204,22 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
   const toCostLinePayload = (entry: TimesheetEntryWithMeta, jobId: string) => {
     // Type guard for meta object
     const metaObj = entry.meta && typeof entry.meta === 'object' ? entry.meta : {}
-    const job = jobService.serachJobsLocal(useJobsStore().allKanbanJobs, entry.job_number)
+    const jobs = jobService.searchJobsLocal(useJobsStore().allKanbanJobs, String(entry.job_number))
+    const job = Array.isArray(jobs) ? jobs[0] : undefined
     const billable = (() => {
       // Shop jobs are never billable
-      if (job.shop_job) {
+      if (job && job.shop_job) {
         return false
       }
-
       // Special status jobs are also not billable
-      if (job.status === 'special') {
+      if (job && job.status === 'special') {
         return false
       }
-
       return true
     })()
-    if ((metaObj as Record<string, unknown>).is_billable) {
-      ;(metaObj as Record<string, unknown>).is_billable = billable
+    const metaRec = metaObj as Record<string, unknown>
+    if ('is_billable' in metaRec) {
+      metaRec['is_billable'] = billable
     }
 
     return {
@@ -227,7 +229,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       unit_cost: entry.unit_cost,
       unit_rev: entry.unit_rev,
       meta: {
-        ...metaObj,
+        ...metaRec,
         job_id: jobId,
         client_name: entry.client_name,
         job_name: entry.job_name,
@@ -246,24 +248,16 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
 
     // Type guard for meta object
     const metaObj = costLine.meta && typeof costLine.meta === 'object' ? costLine.meta : {}
+    const metaRec = metaObj as Record<string, unknown>
 
     // Extract wage rate from unit_cost (which should be the staff wage rate)
-    const wageRate =
-      typeof costLine.unit_cost === 'string'
-        ? parseFloat(costLine.unit_cost)
-        : costLine.unit_cost || 0
-    const staffWageRate = staffData?.wageRate
-      ? typeof staffData.wageRate === 'string'
-        ? parseFloat(staffData.wageRate)
-        : staffData.wageRate
-      : wageRate
+    const wageRate = costLine.unit_cost ?? 0
+    const staffWageRate = staffData?.wage_rate ?? wageRate
 
     // Get rate multiplier from backend data (rate_multiplier in meta)
     const backendRateMultiplier =
-      metaObj && 'rate_multiplier' in metaObj && typeof metaObj.rate_multiplier === 'number'
-        ? metaObj.rate_multiplier
-        : 1.0
-    const hours = parseFloat(costLine.quantity || '0')
+      typeof metaRec['rate_multiplier'] === 'number' ? (metaRec['rate_multiplier'] as number) : 1.0
+    const hours = costLine.quantity ?? 0
 
     // ✅ ALWAYS USE CORRECT FORMULA: hours × rate_multiplier × staff_wage_rate
     const calculatedWage =
@@ -296,12 +290,13 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     })()
 
     return {
-      id: costLine.id || null,
+      id: costLine.id,
       kind: 'time' as const,
       desc: costLine.desc || '',
-      quantity: costLine.quantity || '0',
-      unit_cost: costLine.unit_cost || '0',
-      unit_rev: costLine.unit_rev || '0',
+      // Use native numeric values
+      quantity: costLine.quantity ?? 0,
+      unit_cost: costLine.unit_cost ?? 0,
+      unit_rev: costLine.unit_rev ?? 0,
       total_cost: calculatedWage, // ✅ ALWAYS use calculated wage
       total_rev: costLine.total_rev || 0,
       ext_refs: costLine.ext_refs || {},
@@ -310,38 +305,30 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
         staff_id: staffId,
         rate_multiplier: backendRateMultiplier,
       },
-      job_id:
-        metaObj && 'job_id' in metaObj && typeof metaObj.job_id === 'string' ? metaObj.job_id : '',
-      job_number:
-        metaObj && 'job_number' in metaObj && typeof metaObj.job_number === 'string'
-          ? metaObj.job_number
-          : '',
-      job_name:
-        metaObj && 'job_name' in metaObj && typeof metaObj.job_name === 'string'
-          ? metaObj.job_name
-          : '',
+      job_id: typeof metaRec['job_id'] === 'string' ? (metaRec['job_id'] as string) : '',
+      job_number: typeof metaRec['job_number'] === 'number' ? (metaRec['job_number'] as number) : 0,
+      job_name: typeof metaRec['job_name'] === 'string' ? (metaRec['job_name'] as string) : '',
       client_name:
-        metaObj && 'client_name' in metaObj && typeof metaObj.client_name === 'string'
-          ? metaObj.client_name
-          : '',
-      charge_out_rate: costLine.unit_rev || '0',
+        typeof metaRec['client_name'] === 'string' ? (metaRec['client_name'] as string) : '',
+      charge_out_rate: costLine.unit_rev ?? 0,
       // Add UI-specific metadata fields
       tempId: undefined,
       _isSaving: false,
       isNewRow: false,
       isModified: false,
       // Include staff wage rate for consistent grid calculations
-      wageRate: staffWageRate,
+      wage_rate: staffWageRate,
       staffId: staffId,
       staffName: staffData?.name || '',
-      date: metaObj && 'date' in metaObj && typeof metaObj.date === 'string' ? metaObj.date : '',
+      date: typeof metaRec['date'] === 'string' ? (metaRec['date'] as string) : '',
       hours: hours,
       description: costLine.desc || '',
       rate: rateType,
-      wage: calculatedWage, // ✅ ALWAYS use calculated wage
+      wage: calculatedWage,
       bill: costLine.total_rev || 0,
-      billable: metaObj && 'is_billable' in metaObj ? Boolean(metaObj.is_billable) : true,
-      chargeOutRate: parseFloat(costLine.unit_rev || '0'),
+      billable:
+        typeof metaRec['is_billable'] === 'boolean' ? (metaRec['is_billable'] as boolean) : true,
+      chargeOutRate: costLine.unit_rev ?? 0,
       rateMultiplier: backendRateMultiplier,
     }
   }

@@ -28,11 +28,16 @@ type TimesheetEntry = z.infer<typeof schemas.TimesheetCostLine>
 type TimesheetEntryGridRow = z.infer<typeof schemas.TimesheetCostLine>
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 
+type ResolveStaffById = (id: string) => TimesheetEntryStaffMember | undefined
+
 export function useTimesheetEntryGrid(
   companyDefaults: Ref<CompanyDefaults | null>,
-  jobs: Ref<Record<string, unknown>[]>, // Add jobs parameter
+  jobs: Ref<Record<string, unknown>[]>,
   onSaveEntry: (entry: TimesheetEntry) => Promise<void>,
   onDeleteEntry: (id: number) => Promise<void>,
+  options?: {
+    resolveStaffById?: ResolveStaffById
+  },
 ) {
   const gridApi = ref<GridApi | null>(null)
   const gridData = ref<TimesheetEntryGridRow[]>([])
@@ -141,8 +146,7 @@ export function useTimesheetEntryGrid(
       field: 'wage',
       width: 100,
       editable: false,
-      valueFormatter: (params: ValueFormatterParams) =>
-        `$${(Number(params.value) || 0).toFixed(2)}`,
+      valueFormatter: (params: ValueFormatterParams) => `$${(params.value || 0).toFixed(2)}`,
       cellClass: 'text-right',
       cellStyle: { color: '#059669', fontWeight: '600' },
     },
@@ -151,8 +155,7 @@ export function useTimesheetEntryGrid(
       field: 'bill',
       width: 100,
       editable: false,
-      valueFormatter: (params: ValueFormatterParams) =>
-        `$${(Number(params.value) || 0).toFixed(2)}`,
+      valueFormatter: (params: ValueFormatterParams) => `$${(params.value || 0).toFixed(2)}`,
       cellClass: 'text-right',
       cellStyle: { color: '#2563EB', fontWeight: '600' },
     },
@@ -355,17 +358,24 @@ export function useTimesheetEntryGrid(
     }
   }
 
+  function effectiveWageRateForRow(rowData: TimesheetEntryGridRow): number {
+    const candidate = rowData.wageRate ?? 0
+    if (candidate > 0) return candidate
+    const byRowStaff = rowData.staffId ? resolveStaffById?.(rowData.staffId) : undefined
+
+    if (byRowStaff?.wageRate && byRowStaff.wageRate > 0) return byRowStaff.wageRate
+
+    if (currentStaffRef.value?.wageRate && currentStaffRef.value.wageRate > 0) {
+      return currentStaffRef.value.wageRate
+    }
+
+    return 0
+  }
+
   function createEntryFromRowData(rowData: TimesheetEntryGridRow): TimesheetEntry {
-    const hours =
-      typeof rowData.hours === 'string' ? parseFloat(rowData.hours) || 0 : rowData.hours || 0
-    const wageRate =
-      typeof rowData.wageRate === 'string'
-        ? parseFloat(rowData.wageRate) || 0
-        : rowData.wageRate || 0
-    const chargeOutRate =
-      typeof rowData.chargeOutRate === 'string'
-        ? parseFloat(rowData.chargeOutRate) || 0
-        : rowData.chargeOutRate || 0
+    const hours = rowData.hours || 0
+    const wageRate = effectiveWageRateForRow(rowData)
+    const chargeOutRate = rowData.chargeOutRate || 0
     const rate = rowData.rate || 'Ord'
     const rateMultiplier = calculations.getRateMultiplier(rate)
     const billable = rowData.billable ?? true
@@ -410,7 +420,7 @@ export function useTimesheetEntryGrid(
 
   function updateRowData(rowIndex: number, entry: TimesheetEntry): void {
     if (!gridApi.value || gridApi.value.isDestroyed?.()) return
-    const rowNode = gridApi.value.getRowNode(rowIndex.toString())
+    const rowNode = gridApi.value.getRowNode(String(rowIndex))
     if (rowNode) {
       Object.assign(rowNode.data, entry)
       gridApi.value.refreshCells({ rowNodes: [rowNode], force: true })
@@ -472,7 +482,7 @@ export function useTimesheetEntryGrid(
     staffData?: TimesheetEntryStaffMember,
   ): void {
     if (!gridApi.value || gridApi.value.isDestroyed?.()) return
-    const rowNode = gridApi.value.getRowNode(rowIndex.toString())
+    const rowNode = gridApi.value.getRowNode(String(rowIndex))
     if (rowNode) {
       const currentStaffId = staffId || rowNode.data.staffId || ''
       const date = rowNode.data.date || new Date().toISOString().split('T')[0]
@@ -502,13 +512,16 @@ export function useTimesheetEntryGrid(
     staffData?: TimesheetEntryStaffMember,
   ): void {
     // Ensure all loaded entries include the staff wage rate for consistent calculations
-    const rows: TimesheetEntryGridRow[] = entries.map((entry) => ({
-      ...entry,
-      // Include staff wage rate in all loaded entries
-      wageRate: staffData?.wageRate || entry.wageRate || 0,
-      staffId: staffData?.id || entry.staffId || staffId || '',
-      staffName: staffData?.name || entry.staffName || '',
-    }))
+    const rows: TimesheetEntryGridRow[] = entries.map((entry) => {
+      const resolved = entry.staffId ? resolveStaffById?.(entry.staffId) : undefined
+      const wage = (staffData?.wageRate ?? entry.wageRate ?? resolved?.wageRate ?? 0) || 0
+      return {
+        ...entry,
+        wageRate: wage,
+        staffId: staffData?.id || entry.staffId || staffId,
+        staffName: staffData?.name || entry.staffName,
+      }
+    })
 
     gridData.value = rows
     if (gridApi.value && !gridApi.value.isDestroyed()) {
@@ -551,7 +564,7 @@ export function useTimesheetEntryGrid(
 
   function getSelectedEntry(): TimesheetEntry | null {
     if (!gridApi.value || gridApi.value.isDestroyed?.() || selectedRowIndex.value < 0) return null
-    const rowNode = gridApi.value.getRowNode(selectedRowIndex.value.toString())
+    const rowNode = gridApi.value.getRowNode(String(selectedRowIndex.value))
     return rowNode ? createEntryFromRowData(rowNode.data) : null
   }
 
@@ -594,6 +607,13 @@ export function useTimesheetEntryGrid(
     return data
   }
 
+  const resolveStaffById = options?.resolveStaffById
+  const currentStaffRef = ref<TimesheetEntryStaffMember | null>(null)
+
+  function setCurrentStaff(staff?: TimesheetEntryStaffMember | null) {
+    currentStaffRef.value = staff ?? null
+  }
+
   return {
     gridData,
     loading,
@@ -612,5 +632,6 @@ export function useTimesheetEntryGrid(
     handleJobSelection,
     handleCellValueChanged,
     hasData: computed(() => gridData.value.length > 0),
+    setCurrentStaff,
   }
 }

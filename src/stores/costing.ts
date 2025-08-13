@@ -57,7 +57,7 @@ export const useCostingStore = defineStore('costing', () => {
 
       const data = await api.job_rest_jobs_cost_sets_retrieve({
         params: {
-          id: jobId.toString(),
+          id: jobId,
           kind: targetKind,
         },
       })
@@ -163,7 +163,7 @@ export const useCostingStore = defineStore('costing', () => {
           return cl.meta.labour_minutes / 60
         }
 
-        return Number(cl.quantity) || 0
+        return cl.quantity || 0
       }
       return 0
     })

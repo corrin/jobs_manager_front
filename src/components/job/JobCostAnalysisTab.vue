@@ -222,9 +222,9 @@ function summarise(costSet: CostSet | undefined): CostSetSummary {
     hours = 0
 
   for (const line of costSet.cost_lines) {
-    const quantity = typeof line.quantity === 'string' ? Number(line.quantity) : line.quantity
-    const lineCost = quantity * Number(line.unit_cost)
-    const lineRev = quantity * Number(line.unit_rev)
+    const quantity = line.quantity
+    const lineCost = quantity * line.unit_cost
+    const lineRev = quantity * line.unit_rev
 
     cost += lineCost
     rev += lineRev

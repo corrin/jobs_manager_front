@@ -65,16 +65,16 @@ export function useKanban(onJobsLoaded?: () => void) {
     })
 
     // Convert all IDs to strings for consistent comparison
-    const activeFilterIds = activeStaffFilters.value.map((id) => id.toString())
+    const activeFilterIds = activeStaffFilters.value.map((id) => id)
 
     // Check assigned staff - ensure both sides are strings
-    const assignedStaffIds = job.people?.map((staff: KanbanJobPerson) => staff.id.toString()) || []
+    const assignedStaffIds = job.people?.map((staff: KanbanJobPerson) => staff.id) || []
     const isAssignedToActiveStaff = assignedStaffIds.some((staffId: string) =>
       activeFilterIds.includes(staffId),
     )
 
     // Check created by staff - ensure both sides are strings
-    const createdById = job.created_by_id ? job.created_by_id.toString() : null
+    const createdById = job.created_by_id ? job.created_by_id : null
     const isCreatedByActiveStaff = createdById ? activeFilterIds.includes(createdById) : false
 
     const matches = isAssignedToActiveStaff || isCreatedByActiveStaff

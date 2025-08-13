@@ -334,8 +334,7 @@ const invoiceUrl = computed(() => {
 })
 
 const formatCurrency = (amount: number | undefined | null): string => {
-  const numericAmount = Number(amount)
-  if (isNaN(numericAmount) || amount === null || amount === undefined) {
+  if (amount === null || amount === undefined) {
     return new Intl.NumberFormat('en-AU', {
       style: 'currency',
       currency: 'AUD',
@@ -344,7 +343,7 @@ const formatCurrency = (amount: number | undefined | null): string => {
   return new Intl.NumberFormat('en-AU', {
     style: 'currency',
     currency: 'AUD',
-  }).format(numericAmount)
+  }).format(amount)
 }
 
 const formatDate = (dateString: string) => {

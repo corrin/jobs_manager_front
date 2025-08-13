@@ -138,15 +138,13 @@
                   <td class="px-4 py-4 whitespace-nowrap text-right text-sm text-gray-900">
                     ${{
                       formatCurrency(
-                        line.total_cost || Number(line.quantity) * Number(line.unit_cost),
+                        line.total_cost || (line.quantity || 0) * (line.unit_cost || 0),
                       )
                     }}
                   </td>
                   <td class="px-4 py-4 whitespace-nowrap text-right text-sm text-gray-900">
                     ${{
-                      formatCurrency(
-                        line.total_rev || Number(line.quantity) * Number(line.unit_rev),
-                      )
+                      formatCurrency(line.total_rev || (line.quantity || 0) * (line.unit_rev || 0))
                     }}
                   </td>
                   <td class="px-4 py-4 whitespace-nowrap text-center">
@@ -173,6 +171,14 @@
                           ? line.meta.po_number || 'Delivery Receipt'
                           : 'Delivery Receipt'
                       }}
+                    </button>
+                    <button
+                      v-if="line.kind === 'material' && isStockExtRefs(line.ext_refs)"
+                      @click="navigateToStock(/*line.ext_refs.stock_id**/)"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-md text-sm font-medium transition-colors"
+                    >
+                      <Package class="w-4 h-4" />
+                      Stock
                     </button>
 
                     <!-- Time from Timesheet -->
@@ -271,8 +277,10 @@ import { z } from 'zod'
 import ActualCostDropdown from './ActualCostDropdown.vue'
 import StockConsumptionModal from './StockConsumptionModal.vue'
 import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
+import { Package } from 'lucide-vue-next'
 
 type CostLine = z.infer<typeof schemas.CostLine>
+type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
 type CostSet = z.infer<typeof schemas.CostSet>
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
 type StockItem = z.infer<typeof schemas.StockItem>
@@ -307,6 +315,15 @@ function isDeliveryReceiptExtRefs(extRefs: unknown): extRefs is { purchase_order
   )
 }
 
+function isStockExtRefs(extRefs: unknown): extRefs is { stock_id: string } {
+  return (
+    typeof extRefs === 'object' &&
+    extRefs !== null &&
+    'stock_id' in extRefs &&
+    typeof (extRefs as Record<string, unknown>).stock_id === 'string'
+  )
+}
+
 const props = defineProps<{
   jobId: string
   actualSummaryFromBackend?: { cost: number; rev: number; hours: number; created?: string }
@@ -325,13 +342,13 @@ const revision = ref(0)
 const showStockModal = ref(false)
 const showAdjustmentModal = ref(false)
 
-function formatCurrency(value: number | string | undefined): string {
-  const num = typeof value === 'string' ? parseFloat(value) : value || 0
+function formatCurrency(value: number | undefined): string {
+  const num = value || 0
   return num.toFixed(2)
 }
 
-function formatNumber(value: number | string | undefined): string {
-  const num = typeof value === 'string' ? parseFloat(value) : value || 0
+function formatNumber(value: number | undefined): string {
+  const num = value || 0
   return num.toFixed(3)
 }
 
@@ -405,9 +422,9 @@ const actualSummary = computed(() => {
   let hours = 0
 
   for (const line of costLines.value) {
-    const quantity = Number(line.quantity || 0)
-    const unitCost = Number(line.unit_cost || 0)
-    const unitRev = Number(line.unit_rev || 0)
+    const quantity = line.quantity || 0
+    const unitCost = line.unit_cost || 0
+    const unitRev = line.unit_rev || 0
 
     cost += quantity * unitCost
     rev += quantity * unitRev
@@ -449,6 +466,14 @@ function navigateToTimesheet(staffId: string, date?: string) {
   router.push(routeParams)
 }
 
+// TODO: add better navigation flow with front-end path parameter to prepopulate the search bar with the stock name
+function navigateToStock(/*stockId: string*/) {
+  router.push({
+    name: 'stock',
+    // params: { stockId },
+  })
+}
+
 // Modal handlers
 function handleAddMaterial() {
   showStockModal.value = true
@@ -481,9 +506,9 @@ async function submitStockConsumption(payload: {
     // 3. Creates cost line for the job
     const consumeRequest: StockConsumeRequest = {
       job_id: props.jobId,
-      quantity: payload.quantity.toString(),
-      unit_cost: payload.unit_cost.toString(),
-      unit_rev: payload.unit_rev.toString(),
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
     }
 
     await api.consumeStock(consumeRequest, {
@@ -505,7 +530,7 @@ async function submitStockConsumption(payload: {
   }
 }
 
-async function submitAdjustment(payload: CostLine) {
+async function submitAdjustment(payload: CostLine | CostLineCreateUpdate): Promise<void> {
   if (!payload || payload.kind !== 'adjust') return
   isLoading.value = true
   toast.info('Adding adjustment...', { id: 'add-adjustment' })
@@ -513,9 +538,9 @@ async function submitAdjustment(payload: CostLine) {
     const createPayload = {
       kind: 'adjust' as const,
       desc: payload.desc,
-      quantity: payload.quantity.toString(),
-      unit_cost: payload.unit_cost?.toString() || '0',
-      unit_rev: payload.unit_rev?.toString() || '0',
+      quantity: payload.quantity,
+      unit_cost: payload.unit_cost,
+      unit_rev: payload.unit_rev,
       ext_refs: {
         source: 'manual_adjustment',
       },

@@ -351,15 +351,12 @@ function getStatusClass(status: string): string {
 
 function getTotalOrdered(): number {
   if (!purchaseOrder.value) return 0
-  return purchaseOrder.value.lines.reduce((sum, line) => sum + (Number(line.quantity) || 0), 0)
+  return purchaseOrder.value.lines.reduce((sum, line) => sum + line.quantity || 0, 0)
 }
 
 function getTotalReceived(): number {
   if (!purchaseOrder.value) return 0
-  return purchaseOrder.value.lines.reduce(
-    (sum, line) => sum + (Number(line.received_quantity) || 0),
-    0,
-  )
+  return purchaseOrder.value.lines.reduce((sum, line) => sum + (line.received_quantity || 0), 0)
 }
 
 function goBack() {

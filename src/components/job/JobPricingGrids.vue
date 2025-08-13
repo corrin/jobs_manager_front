@@ -169,11 +169,10 @@ const emitDataChanged = () => {
 }
 
 const formatCurrency = (amount: number | undefined | null): string => {
-  const numericAmount = Number(amount)
-  if (isNaN(numericAmount) || amount === null || amount === undefined) {
+  if (amount === null || amount === undefined || isNaN(amount)) {
     return '0.00'
   }
-  return numericAmount.toFixed(2)
+  return amount.toFixed(2)
 }
 
 watch(
@@ -219,23 +218,30 @@ const calculateSectionTotal = (entries: unknown[]): number => {
   return entries.reduce((total: number, entry) => {
     const typedEntry = entry as Record<string, unknown>
 
+    // Convert API string/number values to numbers
+    const parseApiValue = (value: unknown): number => {
+      if (typeof value === 'number') return value
+      if (typeof value === 'string') throw new Error('Number expected but got string')
+      return 0
+    }
+
     if (typedEntry.total_minutes !== undefined) {
-      return total + (parseFloat(String(typedEntry.revenue)) || 0)
+      return total + parseApiValue(typedEntry.revenue)
     }
 
     if (typedEntry.quantity !== undefined && typedEntry.unit_revenue !== undefined) {
-      return total + Number(typedEntry.quantity) * Number(typedEntry.unit_revenue)
+      return total + parseApiValue(typedEntry.quantity) * parseApiValue(typedEntry.unit_revenue)
     }
 
     if (typedEntry.price_adjustment !== undefined) {
-      return total + parseFloat(String(typedEntry.price_adjustment) || '0')
+      return total + parseApiValue(typedEntry.price_adjustment)
     }
 
     if (typedEntry.retail_price !== undefined) {
-      return total + parseFloat(String(typedEntry.retail_price) || '0')
+      return total + parseApiValue(typedEntry.retail_price)
     }
     if (typedEntry.value_of_time !== undefined) {
-      return total + parseFloat(String(typedEntry.value_of_time) || '0')
+      return total + parseApiValue(typedEntry.value_of_time)
     }
     return total
   }, 0)
