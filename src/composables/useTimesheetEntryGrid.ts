@@ -631,6 +631,9 @@ export function useTimesheetEntryGrid(
     ) => handleKeyboardShortcut(event, staffId, staffData),
     handleJobSelection,
     handleCellValueChanged,
+    // Expondo utilitários para integração com orquestrador de autosave
+    isDuplicateEntry,
+    isRowComplete,
     hasData: computed(() => gridData.value.length > 0),
     setCurrentStaff,
   }

@@ -123,16 +123,6 @@
               </Button>
 
               <Button
-                @click="saveChanges"
-                size="sm"
-                variant="default"
-                :disabled="!hasUnsavedChanges || loading"
-                class="h-7 text-xs px-2 bg-green-600 hover:bg-green-700 text-white border-green-500"
-              >
-                <Save class="h-3 w-3" />
-              </Button>
-
-              <Button
                 @click="refreshData"
                 variant="ghost"
                 size="sm"
@@ -273,17 +263,6 @@
             </Button>
 
             <Button
-              @click="saveChanges"
-              size="sm"
-              variant="default"
-              :disabled="!hasUnsavedChanges || loading"
-              class="bg-green-600 hover:bg-green-700 text-white border-green-500"
-            >
-              <Save class="h-4 w-4 mr-1" />
-              {{ loading ? 'Saving...' : 'Save All' }}
-            </Button>
-
-            <Button
               @click="refreshData"
               variant="ghost"
               size="sm"
@@ -373,11 +352,6 @@
                   </span>
                 </div>
               </div>
-
-              <div v-if="hasUnsavedChanges" class="flex items-center space-x-1 text-amber-600">
-                <AlertCircle class="h-3 w-3" />
-                <span class="font-medium">Unsaved</span>
-              </div>
             </div>
           </div>
 
@@ -405,10 +379,6 @@
                   Entries: {{ todayStats.entryCount }}
                 </span>
               </div>
-            </div>
-            <div v-if="hasUnsavedChanges" class="flex items-center space-x-2 text-amber-600">
-              <AlertCircle class="h-4 w-4" />
-              <span class="text-sm font-medium">Unsaved changes</span>
             </div>
           </div>
         </div>
@@ -458,7 +428,7 @@ import { debugLog } from '@/utils/debug'
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
-import type { GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community'
+import type { GridReadyEvent, CellValueChangedEvent, RowNode } from 'ag-grid-community'
 import { v4 as uuidv4 } from 'uuid'
 import { debounce } from 'lodash-es'
 
@@ -479,16 +449,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  Save,
   HelpCircle,
   AlertTriangle,
   RefreshCw,
   Clock,
   DollarSign,
   TrendingUp,
-  AlertCircle,
   ChartColumn,
 } from 'lucide-vue-next'
+import { useTimesheetAutosave } from '@/composables/useTimesheetAutosave'
+import { toast } from 'vue-sonner'
 
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
 import { useTimesheetStore } from '@/stores/timesheet'
@@ -601,7 +571,6 @@ const {
   setGridApi,
   loadData,
   addNewRow,
-  getGridData,
   handleKeyboardShortcut,
   handleCellValueChanged: gridHandleCellValueChanged,
   setCurrentStaff,
@@ -612,6 +581,48 @@ const {
   handleDeleteEntry,
   { resolveStaffById: (id: string) => timesheetStore.staff.find((s) => s.id === id) },
 )
+
+const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
+  getRowKey: (entry) => {
+    const id = entry.id
+    if (id !== null && id !== undefined && String(id) !== '') return String(id)
+    return entry.tempId
+  },
+  getEntry: (rowKey) => {
+    const rows = gridData.value as unknown as TimesheetEntryWithMeta[]
+    const byId = rows.find(
+      (r) => r.id !== null && r.id !== undefined && String(r.id) === String(rowKey),
+    )
+    if (byId) return byId
+    const byTemp = rows.find((r) => r.tempId && String(r.tempId) === String(rowKey))
+    return byTemp || null
+  },
+  isRowComplete: (e) => {
+    const hasJob = !!(e.jobId || e.jobNumber)
+    const hasDesc = !!String(e.description || '').trim()
+    const hasHours = Number(e.hours) > 0
+    return hasJob && hasDesc && hasHours
+  },
+  // Duplicidade para novas linhas (sem id), comparando com linhas já persistidas
+  isDuplicate: (e) => {
+    if (e.id) return false
+    const rows = gridData.value as unknown as TimesheetEntryWithMeta[]
+    return rows.some(
+      (row) =>
+        !!row.id &&
+        row.jobNumber === e.jobNumber &&
+        row.date === e.date &&
+        row.staffId === e.staffId &&
+        String(row.description || '').trim() === String(e.description || '').trim(),
+    )
+  },
+  save: async (e) => {
+    await handleSaveEntry(e)
+  },
+  softRefresh: async (e) => {
+    await softRefreshRow(e)
+  },
+})
 
 const canNavigateStaff = (direction: number): boolean => {
   if (!timesheetStore.staff.length) return false
@@ -733,70 +744,6 @@ const formatShortDate = (date: string): string => {
   return formatted
 }
 
-function syncGridState() {
-  debugLog('🔄 Starting syncGridState...')
-
-  const gridData = getGridData()
-
-  debugLog('📋 Got grid data from composable:', gridData.length, 'entries')
-  debugLog(
-    '🔍 Raw grid data:',
-    gridData.map((d) => ({
-      jobId: d.jobId,
-      jobNumber: d.jobNumber,
-      client: d.client,
-      jobName: d.jobName,
-      hours: d.hours,
-      isEmptyRow: d.isEmptyRow,
-      isNewRow: d.isNewRow,
-      isModified: d.isModified, // ✅ Include modification status
-    })),
-  )
-
-  const filteredData = gridData.filter((d) => {
-    const hasJob = d && !d.isEmptyRow && (d.jobId || d.jobNumber)
-    debugLog('🔍 Filtering entry:', {
-      jobId: d?.jobId,
-      jobNumber: d?.jobNumber,
-      isEmptyRow: d?.isEmptyRow,
-      isModified: d?.isModified, // ✅ Log modification status
-      hasJob,
-    })
-    return hasJob
-  })
-
-  // Preserve modification flags when syncing
-  const syncedEntries = filteredData.map((gridEntry) => {
-    const existingEntry = timeEntries.value.find(
-      (e: CostLine) =>
-        e.id === gridEntry.id ||
-        (e.jobId === gridEntry.jobId && e.description === gridEntry.description),
-    )
-
-    return {
-      ...gridEntry,
-      isModified: gridEntry.isModified || existingEntry?.isModified || false, // ✅ Prioritize grid state
-      isNewRow: gridEntry.isNewRow || existingEntry?.isNewRow || false,
-    } as CostLine
-  })
-
-  timeEntries.value = syncedEntries
-
-  debugLog('✅ Synced grid state with timeEntries:', timeEntries.value.length, 'entries')
-  debugLog(
-    '📊 Synced entries detail:',
-    timeEntries.value.map((e: CostLine) => ({
-      id: e.id,
-      jobId: e.jobId,
-      jobNumber: e.jobNumber,
-      client: e.client,
-      jobName: e.jobName,
-      hours: e.hours,
-      isModified: e.isModified, // ✅ Log modification status
-    })),
-  )
-}
-
 async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
   const hasJob = entry.jobId || entry.jobNumber
   const hasDescription = entry.description && entry.description.trim().length > 0
@@ -906,6 +853,98 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
   }
 }
 
+/**
+ * Soft refresh de uma linha específica após salvar, sem bloquear a grade.
+ * - Busca entradas atuais no backend para (staffId, date)
+ * - Localiza a linha salva por id e aplica merge autoritativo nos dados da grid e timeEntries
+ */
+async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
+  try {
+    const resp = await costlineService.getTimesheetEntries(selectedStaffId.value, currentDate.value)
+    const line = resp.cost_lines.find((l: TimesheetCostLine) => String(l.id) === String(entry.id))
+    if (!line) return
+
+    const hours = line.quantity
+    const staffWageRate = line.wage_rate || line.unit_cost
+    const rateMultiplier =
+      typeof line.meta?.rate_multiplier === 'number' ? line.meta.rate_multiplier : 1.0
+
+    const calculatedWage =
+      hours > 0 && staffWageRate > 0
+        ? Math.round(hours * rateMultiplier * staffWageRate * 100) / 100
+        : 0
+
+    const merged: TimesheetEntryWithMeta = {
+      id: line.id,
+      jobId: line.job_id || '',
+      jobNumber: line.job_number || '',
+      client: line.client_name || '',
+      jobName: line.job_name || '',
+      hours,
+      billable: typeof line.meta?.is_billable === 'boolean' ? line.meta.is_billable : true,
+      description: line.desc,
+      rate: getRateTypeFromMultiplier(rateMultiplier),
+      wage: calculatedWage,
+      bill: line.total_rev,
+      staffId: selectedStaffId.value,
+      date: currentDate.value,
+      wageRate: staffWageRate,
+      chargeOutRate: line.charge_out_rate,
+      rateMultiplier,
+      isNewRow: false,
+      isModified: false,
+    }
+
+    // Atualiza gridData e AG Grid
+    const rows = gridData.value as unknown as TimesheetEntryWithMeta[]
+    const idx = rows.findIndex(
+      (r) =>
+        (merged.id && String(r.id) === String(merged.id)) ||
+        (r.tempId && entry.tempId && String(r.tempId) === String(entry.tempId)),
+    )
+    if (idx !== -1) {
+      const prev = rows[idx]
+      rows[idx] = {
+        ...prev,
+        ...merged,
+        tempId: merged.id ? undefined : prev.tempId,
+        _isSaving: false,
+        isModified: false,
+        isNewRow: false,
+      }
+
+      const api = agGridRef.value?.api
+      if (api) {
+        let targetNode: RowNode | null = null
+        api.forEachNode((node: RowNode) => {
+          const data = (node as unknown as { data?: TimesheetEntryWithMeta }).data
+          if (data && String(data.id) === String(merged.id)) targetNode = node
+        })
+        if (targetNode) {
+          ;(targetNode as unknown as { setData: (d: unknown) => void }).setData(
+            rows[idx] as unknown,
+          )
+          api.refreshCells({ rowNodes: [targetNode], force: true })
+        } else {
+          api.refreshCells({ force: true })
+        }
+      }
+    }
+
+    // Atualiza timeEntries para refletir stats
+    const tRows = timeEntries.value as TimesheetEntryWithMeta[]
+    const tIdx = tRows.findIndex((r) => r?.id && String(r.id) === String(merged.id))
+    if (tIdx !== -1) {
+      const prevTE = tRows[tIdx]
+      tRows[tIdx] = { ...prevTE, ...merged }
+    } else {
+      tRows.push(merged)
+    }
+  } catch (err) {
+    debugLog('❌ Soft refresh failed:', err)
+  }
+}
+
 async function handleDeleteEntry(id: number): Promise<void> {
   try {
     loading.value = true
@@ -935,6 +974,8 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
 
   if (event.data && typeof event.data === 'object') {
     event.data.isModified = true
+    // Agenda autosave para a linha editada
+    autosave.scheduleEntry(event.data as unknown as TimesheetEntryWithMeta)
   }
 
   hasUnsavedChanges.value = true
@@ -976,132 +1017,7 @@ const addNewEntry = () => {
   debugLog('✅ Added new entry via composable')
 }
 
-const saveChanges = async () => {
-  debugLog('💾 Starting saveChanges...')
-  debugLog('🔍 agGridRef.value:', !!agGridRef.value)
-  debugLog('🔍 agGridRef.value?.api:', !!agGridRef.value?.api)
-
-  syncGridState()
-
-  const changedEntries = timeEntries.value.filter(
-    (entry: CostLine) => entry.isModified || entry.isNewRow,
-  )
-
-  debugLog('📊 Found', changedEntries.length, 'changed entries to save')
-  debugLog(
-    '🔍 Changed entries details:',
-    changedEntries.map((e) => ({
-      id: e.id,
-      isNewRow: e.isNewRow,
-      isModified: e.isModified,
-      description: e.description,
-      hours: e.hours,
-    })),
-  )
-
-  if (changedEntries.length === 0) {
-    debugLog('⚠️ No entries to save')
-    return
-  }
-
-  const invalidEntries = changedEntries.filter((entry) => {
-    const hasJob = entry.jobId || entry.jobNumber
-    const hasDescription = entry.description && entry.description.trim().length > 0
-    const hasHours = entry.hours > 0
-
-    return !hasJob || !hasDescription || !hasHours
-  })
-
-  if (invalidEntries.length > 0) {
-    debugLog('❌ Found invalid entries:', invalidEntries)
-    const missingFields = invalidEntries
-      .map((entry) => {
-        const missing: string[] = []
-        if (!entry.jobId && !entry.jobNumber) missing.push('Job')
-        if (!entry.description || !entry.description.trim()) missing.push('Description')
-        if (entry.hours <= 0) missing.push('Hours')
-        return `Entry ${entry.id || 'new'}: Missing ${missing.join(', ')}`
-      })
-      .join('\n')
-
-    error.value = `Cannot save entries with missing required fields:\n${missingFields}`
-    return
-  }
-
-  const recalculatedEntries = changedEntries.map((entry) => {
-    const hours = entry.hours || 0
-    const wageRate = entry.wageRate || 0
-    const chargeOutRate = entry.chargeOutRate || 0
-    const rate = entry.rate || 'Ord'
-    const billable = entry.billable ?? true
-
-    let rateMultiplier = 1.0
-    switch (rate) {
-      case '1.5':
-        rateMultiplier = 1.5
-        break
-      case '2.0':
-        rateMultiplier = 2.0
-        break
-      case 'Unpaid':
-        rateMultiplier = 0.0
-        break
-      default:
-        rateMultiplier = 1.0
-    }
-
-    let calculatedWage = 0
-    if (hours > 0 && wageRate > 0)
-      calculatedWage = Math.round(hours * rateMultiplier * wageRate * 100) / 100
-
-    let calculatedBill = 0
-    if (billable && hours > 0 && chargeOutRate > 0) {
-      calculatedBill = Math.round(hours * chargeOutRate * 100) / 100
-    }
-
-    debugLog('🧮 Recalculated entry with correct formula:', {
-      id: entry.id,
-      hours,
-      wageRate,
-      chargeOutRate,
-      rate,
-      rateMultiplier,
-      billable,
-      calculatedWage,
-      calculatedBill,
-      formula: `${hours} × ${rateMultiplier} × ${wageRate} = ${calculatedWage}`,
-    })
-
-    return {
-      ...entry,
-      hours,
-      wageRate,
-      chargeOutRate,
-      rateMultiplier,
-      wage: calculatedWage,
-      bill: calculatedBill,
-    }
-  })
-
-  for (const entry of recalculatedEntries) {
-    debugLog('🔄 Saving recalculated entry:', {
-      id: entry.id,
-      isNewRow: entry.isNewRow,
-      isModified: entry.isModified,
-      description: entry.description,
-      wage: entry.wage,
-      bill: entry.bill,
-    })
-    await handleSaveEntry(entry)
-
-    // ✅ Mark as saved and update grid state
-    entry.isModified = false
-    entry.isNewRow = false
-  }
-
-  hasUnsavedChanges.value = false
-  reloadData()
-}
+/* Save All flow removed - autosave is now the only path */
 
 const reloadData = () => {
   error.value = null
@@ -1272,8 +1188,10 @@ const handleKeydown = (event: KeyboardEvent) => {
         break
       case 's':
         event.preventDefault()
-        if (hasUnsavedChanges.value) {
-          saveChanges()
+        if (autosave.isIdle()) {
+          toast.success('All changes saved')
+        } else {
+          toast.info('Saving entries...')
         }
         break
     }
