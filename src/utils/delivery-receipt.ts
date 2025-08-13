@@ -16,16 +16,6 @@ type DeliveryReceiptRequest = z.infer<typeof schemas.DeliveryReceiptRequest>
 type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocation>
 // SCheduled for deletion but kept for reference
 
-// export interface DeliveryAllocationUI {
-//   id?: string
-//   job_id: string
-//   job_name: string
-//   quantity: number
-//   unit_cost: number
-//   retail_rate: number
-//   notes?: string
-// }
-
 /**
  * Transform frontend UI allocations data to backend API format
  */
@@ -37,7 +27,13 @@ export function transformDeliveryReceiptForAPI(
 
   for (const [lineId, allocations] of Object.entries(uiAllocations)) {
     if (allocations.length > 0) {
+      const total_received = allocations.reduce((sum, a) => {
+        const q = typeof a.quantity === 'number' ? a.quantity : 0
+        return sum + q
+      }, 0)
+
       apiAllocations[lineId] = {
+        total_received,
         allocations: allocations.map((allocation) => ({
           job_id: allocation.job_id,
           quantity: allocation.quantity,
