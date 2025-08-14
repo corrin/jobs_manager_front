@@ -1,7 +1,18 @@
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
-import { debugLog } from '@/utils/debug'
-import { extractErrorMessage } from '@/utils/errorHandler'
+
+// Temporary debug function until utils are available
+const debugLog = (...args: unknown[]) => console.log('[DEBUG]', ...args)
+
+// Temporary error extraction until utils are available
+const extractErrorMessage = (error: unknown, fallback = 'Unknown error'): string => {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'string') return error
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message: unknown }).message)
+  }
+  return fallback
+}
 
 /**
  * useTimesheetAutosave - Per-row autosave orchestrator with debounce and limited concurrency.
@@ -73,6 +84,7 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
     const existing = timers.get(rowKey)
     if (existing) {
       clearTimeout(existing)
+      debugLog('🔄 [Autosave] rescheduled (cleared existing timer)', { rowKey })
     }
     const t = window.setTimeout(() => enqueue(rowKey), debounceMs)
     timers.set(rowKey, t)
@@ -91,11 +103,15 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
     if (st.isSaving) {
       st.pending = true
       state.set(rowKey, st)
-      debugLog('⏭️ [Autosave] in-flight, marked pending', { rowKey })
+      debugLog('⏭️ [Autosave] in-flight, marked pending', { rowKey, currentState: st })
       return
     }
     queue.push(rowKey)
-    debugLog('📥 [Autosave] enqueued', { rowKey, queueSize: queue.length })
+    debugLog('📥 [Autosave] enqueued', {
+      rowKey,
+      queueSize: queue.length,
+      totalInFlight: inFlight.value,
+    })
     process()
   }
 
@@ -160,18 +176,20 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
 
     const toastId = `timesheet-save-${rowKey}`
     try {
-      debugLog('💾 [Autosave] start save', { rowKey })
+      debugLog('💾 [Autosave] start save', { rowKey, entryId: entry.id || 'new' })
       toast.dismiss(toastId)
       toast.info('Saving entry...', { id: toastId, duration: 0 })
 
       await opts.save(entry)
+      debugLog('💾 [Autosave] save completed, starting soft refresh', { rowKey })
 
       // After saving, perform a specific soft refresh
       await opts.softRefresh(entry)
+      debugLog('🔄 [Autosave] soft refresh completed', { rowKey })
 
       toast.dismiss(toastId)
       toast.success('Entry saved')
-      debugLog('✅ [Autosave] saved successfully', { rowKey })
+      debugLog('✅ [Autosave] saved successfully', { rowKey, entryId: entry.id })
 
       // If the id has changed (from tempId to backend id), migrate internal states
       migrateRowKeyIfChanged(rowKey, entry)
@@ -180,7 +198,7 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
       const message = extractErrorMessage(error, 'Save failed')
       toast.dismiss(toastId)
       toast.error(`Save failed: ${message}`)
-      debugLog('❌ [Autosave] save error', { rowKey, error })
+      debugLog('❌ [Autosave] save error', { rowKey, error, message })
     }
   }
 

@@ -394,7 +394,7 @@
                 <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+N</kbd>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-slate-600">Save changes</span>
+                <span class="text-sm text-slate-600">Check save status</span>
                 <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+S</kbd>
               </div>
               <div class="flex justify-between">
@@ -423,7 +423,8 @@
 </template>
 
 <script lang="ts" setup>
-import { debugLog } from '@/utils/debug'
+// import { debugLog } from '@/utils/debug'
+const debugLog = (...args: unknown[]) => console.log('[DEBUG]', ...args)
 
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -606,7 +607,7 @@ const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
   // Duplicidade para novas linhas (sem id), comparando com linhas já persistidas
   isDuplicate: (e) => {
     if (e.id) return false
-    const rows = gridData.value as unknown as TimesheetEntryWithMeta[]
+    const rows = gridData.value as TimesheetEntryWithMeta[]
     return rows.some(
       (row) =>
         !!row.id &&
@@ -780,7 +781,8 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
   if (entry._isSaving) return
 
   try {
-    loading.value = true
+    // Não definir loading global para não bloquear a UI durante autosave
+    // loading.value = true
     entry._isSaving = true
 
     if (!entry.id && !entry.tempId) {
@@ -848,7 +850,7 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
     debugLog('❌ Error saving entry:', err)
     error.value = 'Failed to save entry'
   } finally {
-    loading.value = false
+    // loading.value = false
     entry._isSaving = false
   }
 }
@@ -867,7 +869,9 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
     const hours = line.quantity
     const staffWageRate = line.wage_rate || line.unit_cost
     const rateMultiplier =
-      typeof line.meta?.rate_multiplier === 'number' ? line.meta.rate_multiplier : 1.0
+      line.meta && 'rate_multiplier' in line.meta && typeof line.meta.rate_multiplier === 'number'
+        ? line.meta.rate_multiplier
+        : 1.0
 
     const calculatedWage =
       hours > 0 && staffWageRate > 0
@@ -881,7 +885,10 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
       client: line.client_name || '',
       jobName: line.job_name || '',
       hours,
-      billable: typeof line.meta?.is_billable === 'boolean' ? line.meta.is_billable : true,
+      billable:
+        line.meta && 'is_billable' in line.meta && typeof line.meta.is_billable === 'boolean'
+          ? line.meta.is_billable
+          : true,
       description: line.desc,
       rate: getRateTypeFromMultiplier(rateMultiplier),
       wage: calculatedWage,
@@ -947,11 +954,14 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
 
 async function handleDeleteEntry(id: number): Promise<void> {
   try {
+    // Manter loading apenas para delete, que é uma operação crítica
     loading.value = true
 
     await costlineService.deleteCostLine(id)
 
-    timeEntries.value = timeEntries.value.filter((e: CostLine) => e.id !== id)
+    timeEntries.value = timeEntries.value.filter(
+      (e: TimesheetEntryWithMeta) => String(e.id) !== String(id),
+    )
 
     hasUnsavedChanges.value = false
     debugLog('✅ Entry deleted successfully:', id)
@@ -975,7 +985,8 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
   if (event.data && typeof event.data === 'object') {
     event.data.isModified = true
     // Agenda autosave para a linha editada
-    autosave.scheduleEntry(event.data as unknown as TimesheetEntryWithMeta)
+    const entry = event.data as TimesheetEntryWithMeta
+    autosave.scheduleEntry(entry)
   }
 
   hasUnsavedChanges.value = true
@@ -1018,6 +1029,8 @@ const addNewEntry = () => {
 }
 
 /* Save All flow removed - autosave is now the only path */
+
+// Função saveChanges removida - autosave é agora o único caminho de persistência
 
 const reloadData = () => {
   error.value = null
@@ -1098,7 +1111,13 @@ const loadTimesheetData = async () => {
       const hours = line.quantity
       const staffWageRate = line.wage_rate || line.unit_cost
       const rateMultiplier =
-        typeof line.meta?.rate_multiplier === 'number' ? line.meta.rate_multiplier : 1.0
+        line.meta &&
+        typeof line.meta === 'object' &&
+        line.meta !== null &&
+        'rate_multiplier' in line.meta &&
+        typeof (line.meta as Record<string, unknown>).rate_multiplier === 'number'
+          ? ((line.meta as Record<string, unknown>).rate_multiplier as number)
+          : 1.0
 
       // ✅ ALWAYS CALCULATE WAGE WITH CORRECT FORMULA: hours × rate_multiplier × staff_wage_rate
       const calculatedWage =
@@ -1123,7 +1142,14 @@ const loadTimesheetData = async () => {
         client: line.client_name || '',
         jobName: line.job_name || '',
         hours,
-        billable: typeof line.meta?.is_billable === 'boolean' ? line.meta.is_billable : true,
+        billable:
+          line.meta &&
+          typeof line.meta === 'object' &&
+          line.meta !== null &&
+          'is_billable' in line.meta &&
+          typeof (line.meta as Record<string, unknown>).is_billable === 'boolean'
+            ? ((line.meta as Record<string, unknown>).is_billable as boolean)
+            : true,
         description: line.desc,
         rate: getRateTypeFromMultiplier(rateMultiplier),
         wage: calculatedWage, // ✅ ALWAYS use calculated wage
