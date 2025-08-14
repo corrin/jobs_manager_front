@@ -9,6 +9,7 @@ import type { z } from 'zod'
 type Job = z.infer<typeof schemas.JobForPurchasing>
 type PurchaseOrderDetail = z.infer<typeof schemas.PurchaseOrderDetail>
 type DeliveryReceiptRequest = z.infer<typeof schemas.DeliveryReceiptRequest>
+type DeliveryReceiptLine = z.infer<typeof schemas.DeliveryReceiptLine>
 type AllJobsResponse = z.infer<typeof schemas.AllJobsResponse>
 type PurchaseOrderAllocationsResponse = z.infer<typeof schemas.PurchaseOrderAllocationsResponse>
 
@@ -94,7 +95,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
 
   async function submitDeliveryReceipt(
     purchaseOrderId: string,
-    receiptData: DeliveryReceiptRequest['allocations'],
+    receiptData: DeliveryReceiptLine,
   ): Promise<void> {
     if (!purchaseOrderId) {
       throw new Error('Purchase order ID is required')
@@ -107,6 +108,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     loading.value = true
     error.value = null
 
+    debugLog(`Submitting delivery receipt for PO: ${purchaseOrderId}`, receiptData)
     try {
       const payload: DeliveryReceiptRequest = {
         purchase_order_id: purchaseOrderId,

@@ -499,6 +499,10 @@ async function submitStockConsumption(payload: {
 }) {
   isLoading.value = true
   toast.info('Consuming stock...', { id: 'add-stock' })
+
+  // Check if consuming more than available stock
+  const isOverConsumption = payload.quantity > payload.stockItem.quantity
+
   try {
     // The consumeStock endpoint automatically:
     // 1. Reduces stock quantity
@@ -518,7 +522,15 @@ async function submitStockConsumption(payload: {
     // Reload cost lines to show the automatically created cost line
     await loadActualCosts()
 
-    toast.success('Stock consumed successfully!')
+    // Show appropriate success message based on stock consumption
+    if (isOverConsumption) {
+      toast.success('Stock consumed successfully! Note: This resulted in negative inventory.', {
+        duration: 6000,
+      })
+    } else {
+      toast.success('Stock consumed successfully!')
+    }
+
     emit('cost-line-changed')
     closeStockModal()
   } catch (error) {

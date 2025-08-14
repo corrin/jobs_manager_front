@@ -19,7 +19,7 @@ export const useStockStore = defineStore('stock', () => {
     loading.value = true
     try {
       const response = await api.purchasing_rest_stock_retrieve()
-      items.value = Array.isArray(response) ? response : [response]
+      items.value = response.items
     } catch (error: unknown) {
       // Handle zodios validation error and extract the actual data
       if (
@@ -59,7 +59,7 @@ export const useStockStore = defineStore('stock', () => {
       job_id: payload.job_id,
       quantity: payload.quantity,
     }
-    return await api.purchasing_rest_stock_consume_create(consumePayload, {
+    return await api.consumeStock(consumePayload, {
       params: { stock_id: id },
     })
   }

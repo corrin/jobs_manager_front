@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
+import { debugLog } from '@/utils/debug'
 
 // Use generated schemas
 export type Client = z.infer<typeof schemas.ClientSearchResult>
@@ -16,6 +17,7 @@ export function useClientLookup() {
   const contacts = ref<ClientContact[]>([])
 
   const hasValidXeroId = computed(() => {
+    debugLog('Selected client value: ', selectedClient.value)
     return (
       selectedClient.value?.xero_contact_id != null && selectedClient.value.xero_contact_id !== ''
     )

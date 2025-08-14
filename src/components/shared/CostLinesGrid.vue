@@ -184,7 +184,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineEmits, withDefaults } from 'vue'
 import { schemas } from '../../api/generated/api'
 import { z } from 'zod'
 

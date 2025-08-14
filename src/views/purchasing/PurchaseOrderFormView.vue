@@ -611,9 +611,12 @@ async function syncWithXero() {
   toast.info('Syncing with Xero…', { id: 'po-sync-loading' })
 
   try {
-    const data = await api.api_xero_create_purchase_order_create({
-      params: { purchase_order_id: orderId },
-    })
+    const data = await api.api_xero_create_purchase_order_create(
+      {},
+      {
+        params: { purchase_order_id: orderId },
+      },
+    )
 
     switch (true) {
       case data.success:
