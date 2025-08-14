@@ -1,8 +1,6 @@
 import { ref } from 'vue'
 import { toast } from 'vue-sonner'
-
-// Temporary debug function until utils are available
-const debugLog = (...args: unknown[]) => console.log('[DEBUG]', ...args)
+import { debugLog } from '@/utils/debug'
 
 // Temporary error extraction until utils are available
 const extractErrorMessage = (error: unknown, fallback = 'Unknown error'): string => {

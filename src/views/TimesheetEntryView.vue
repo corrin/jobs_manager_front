@@ -423,9 +423,7 @@
 </template>
 
 <script lang="ts" setup>
-// import { debugLog } from '@/utils/debug'
-const debugLog = (...args: unknown[]) => console.log('[DEBUG]', ...args)
-
+import { debugLog } from '@/utils/debug'
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
@@ -604,7 +602,6 @@ const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
     const hasHours = Number(e.hours) > 0
     return hasJob && hasDesc && hasHours
   },
-  // Duplicidade para novas linhas (sem id), comparando com linhas já persistidas
   isDuplicate: (e) => {
     if (e.id) return false
     const rows = gridData.value as TimesheetEntryWithMeta[]
@@ -781,8 +778,6 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
   if (entry._isSaving) return
 
   try {
-    // Não definir loading global para não bloquear a UI durante autosave
-    // loading.value = true
     entry._isSaving = true
 
     if (!entry.id && !entry.tempId) {
@@ -850,15 +845,14 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
     debugLog('❌ Error saving entry:', err)
     error.value = 'Failed to save entry'
   } finally {
-    // loading.value = false
     entry._isSaving = false
   }
 }
 
 /**
- * Soft refresh de uma linha específica após salvar, sem bloquear a grade.
- * - Busca entradas atuais no backend para (staffId, date)
- * - Localiza a linha salva por id e aplica merge autoritativo nos dados da grid e timeEntries
+ * Soft refresh of a specific row after saving, without blocking the grid.
+ * - Searches for current entries in the backend for (staffId, date)
+ * - Locates the saved row by ID and applies an authoritative merge to the grid data and timeEntries
  */
 async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
   try {
@@ -902,7 +896,7 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
       isModified: false,
     }
 
-    // Atualiza gridData e AG Grid
+    // Update the grid
     const rows = gridData.value as unknown as TimesheetEntryWithMeta[]
     const idx = rows.findIndex(
       (r) =>
@@ -938,7 +932,7 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
       }
     }
 
-    // Atualiza timeEntries para refletir stats
+    // Update entries to reflect state
     const tRows = timeEntries.value as TimesheetEntryWithMeta[]
     const tIdx = tRows.findIndex((r) => r?.id && String(r.id) === String(merged.id))
     if (tIdx !== -1) {
@@ -954,7 +948,7 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
 
 async function handleDeleteEntry(id: number): Promise<void> {
   try {
-    // Manter loading apenas para delete, que é uma operação crítica
+    // Keep loading for deletion since it's a critical operation
     loading.value = true
 
     await costlineService.deleteCostLine(id)
@@ -984,7 +978,6 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
 
   if (event.data && typeof event.data === 'object') {
     event.data.isModified = true
-    // Agenda autosave para a linha editada
     const entry = event.data as TimesheetEntryWithMeta
     autosave.scheduleEntry(entry)
   }
@@ -1027,10 +1020,6 @@ const addNewEntry = () => {
 
   debugLog('✅ Added new entry via composable')
 }
-
-/* Save All flow removed - autosave is now the only path */
-
-// Função saveChanges removida - autosave é agora o único caminho de persistência
 
 const reloadData = () => {
   error.value = null
