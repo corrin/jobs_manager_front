@@ -23,11 +23,12 @@ import {
 import ClientLookup from '@/components/ClientLookup.vue'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
+import { reactive } from 'vue'
 
 type Status = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
 type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
 
-defineProps<{
+const props = defineProps<{
   po: PurchaseOrder
   isCreateMode?: boolean
   showActions?: boolean
@@ -47,6 +48,11 @@ const emit = defineEmits<{
   print: []
   email: []
 }>()
+
+const supplierLookup = reactive({
+  has_xero_id: props.po.supplier_has_xero_id,
+  value: true,
+})
 
 function onExpectedDeliveryUpdate(value: string) {
   emit('update:expected_delivery', value)
@@ -89,7 +95,7 @@ const statusOptions: { value: Status; label: string }[] = [
       <div class="flex flex-col gap-1">
         <template v-if="po.status === 'draft'">
           <ClientLookup
-            :supplier-lookup="true"
+            :supplier-lookup="supplierLookup"
             id="supplier"
             :model-value="po.supplier"
             required

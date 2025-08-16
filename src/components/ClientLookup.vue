@@ -62,14 +62,21 @@
         <div
           :class="[
             'px-3 py-2 rounded-md text-xs font-medium flex items-center space-x-1',
-            hasValidXeroId
+            hasValidXeroId || (props.supplierLookup.value && props.supplierLookup.has_xero_id)
               ? 'bg-green-100 text-green-800 border border-green-200'
               : 'bg-red-100 text-red-800 border border-red-200',
           ]"
           :title="hasValidXeroId ? 'Client has Xero ID' : 'Client missing Xero ID'"
           v-if="!searchMode"
         >
-          <component :is="hasValidXeroId ? CheckCircle : XCircle" class="w-3 h-3" />
+          <component
+            :is="
+              hasValidXeroId || (props.supplierLookup.value && props.supplierLookup.has_xero_id)
+                ? CheckCircle
+                : XCircle
+            "
+            class="w-3 h-3"
+          />
           <span>Xero</span>
         </div>
       </div>
@@ -97,6 +104,7 @@ import { Plus, CheckCircle, XCircle } from 'lucide-vue-next'
 import { useClientLookup } from '@/composables/useClientLookup'
 import CreateClientModal from '@/components/CreateClientModal.vue'
 import type { Client } from '@/composables/useClientLookup'
+import { debugLog } from '../utils/debug'
 
 const props = withDefaults(
   defineProps<{
@@ -105,14 +113,15 @@ const props = withDefaults(
     placeholder?: string
     required?: boolean
     modelValue?: string
-    supplierLookup?: boolean
+    supplierLookup?: { has_xero_id?: boolean; value: boolean }
     searchMode?: boolean
   }>(),
   {
     placeholder: 'Search for a client...',
     required: false,
     modelValue: '',
-    supplierLookup: false,
+    supplierLookup: () => ({ has_xero_id: false, value: false }),
+    searchMode: false,
   },
 )
 
@@ -207,6 +216,7 @@ watch(selectedClient, (newClient) => {
 
 // Preserve client selection when component mounts
 onMounted(() => {
+  debugLog('Props value: ', props)
   preserveSelectedClient()
 })
 </script>
