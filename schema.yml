@@ -1198,23 +1198,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/XeroOperationResponse'
           description: ''
-  /api/xero/sync-stream/:
-    get:
-      operationId: api_xero_sync_stream_list
-      description: Xero Sync Event Stream
-      tags:
-        - api
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/XeroSseEvent'
-          description: ''
   /app-errors/:
     get:
       operationId: app_errors_list
@@ -1304,7 +1287,8 @@ paths:
   /clients/{client_id}/contacts/:
     get:
       operationId: clients_contacts_retrieve
-      description: Fetches contacts for a specific client.
+      description: Retrieve all contacts for a specific client.
+      summary: Get client contacts
       parameters:
         - in: path
           name: client_id
@@ -1313,7 +1297,7 @@ paths:
             format: uuid
           required: true
       tags:
-        - clients
+        - Clients
       security:
         - cookieAuth: []
       responses:
@@ -1323,12 +1307,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientContactResponse'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
   /clients/all/:
     get:
-      operationId: clients_all_retrieve
-      description: Lists all clients (only id and name) for fast dropdowns.
+      operationId: clients_all_list
+      description: Returns a list of all clients with basic information (id and name)
+        for dropdowns and search.
+      summary: List all clients
       tags:
-        - clients
+        - Clients
       security:
         - cookieAuth: []
       responses:
@@ -1336,7 +1340,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClientListResponse'
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientNameOnly'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
   /clients/contacts/:
     post:
@@ -1393,9 +1405,11 @@ paths:
   /clients/create/:
     post:
       operationId: clients_create_create
-      description: Create a new client, first in Xero, then sync locally.
+      description: Creates a new client in Xero first, then syncs locally. Requires
+        valid Xero authentication.
+      summary: Create a new client
       tags:
-        - clients
+        - Clients
       requestBody:
         content:
           application/json:
@@ -1411,18 +1425,44 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClientCreateRequest'
+                $ref: '#/components/schemas/ClientCreateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientDuplicateErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
   /clients/search/:
     get:
       operationId: clients_search_retrieve
-      description: Searches clients by name following early return pattern.
+      description: Search clients by name. Requires minimum 3 characters. Returns
+        up to 10 results.
+      summary: Search clients
       tags:
-        - clients
+        - Clients
       security:
         - cookieAuth: []
       responses:
@@ -1431,6 +1471,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClientSearchResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
   /job/api/job-files/:
     get:
@@ -4447,6 +4493,94 @@ paths:
               schema:
                 $ref: '#/components/schemas/PurchaseOrderAllocationsResponse'
           description: ''
+  /purchasing/rest/purchase-orders/{po_id}/allocations/{allocation_type}/{allocation_id}/details/:
+    get:
+      operationId: getAllocationDetails
+      description: Get details about a specific allocation before deletion.
+      parameters:
+        - in: path
+          name: allocation_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: allocation_type
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - purchasing
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationDetailsResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+  /purchasing/rest/purchase-orders/{po_id}/lines/{line_id}/allocations/delete/:
+    post:
+      operationId: deleteAllocation
+      description: Delete a specific allocation (Stock item or CostLine) from a purchase
+        order line.
+      parameters:
+        - in: path
+          name: line_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - purchasing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocationDeleteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AllocationDeleteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AllocationDeleteRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationDeleteResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllocationDeleteResponse'
+          description: ''
   /purchasing/rest/stock/:
     get:
       operationId: purchasing_rest_stock_retrieve
@@ -5191,12 +5325,87 @@ components:
         - jobs
         - stock_holding_job_id
         - success
+    AllocationDeleteRequest:
+      type: object
+      description: Serializer for allocation deletion request
+      properties:
+        allocation_type:
+          allOf:
+            - $ref: '#/components/schemas/AllocationTypeEnum'
+          description: |-
+            Type of allocation to delete
+
+            * `stock` - Stock
+            * `job` - Job
+        allocation_id:
+          type: string
+          format: uuid
+          description: ID of the Stock item or CostLine to delete
+      required:
+        - allocation_id
+        - allocation_type
+    AllocationDeleteResponse:
+      type: object
+      description: Serializer for allocation deletion response
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        deleted_quantity:
+          type: number
+          format: double
+        description:
+          type: string
+        job_name:
+          type: string
+        updated_received_quantity:
+          type: number
+          format: double
+      required:
+        - message
+        - success
+    AllocationDetailsResponse:
+      type: object
+      description: Serializer for allocation details response
+      properties:
+        type:
+          $ref: '#/components/schemas/TypeC98Enum'
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        quantity:
+          type: number
+          format: double
+        job_name:
+          type: string
+        can_delete:
+          type: boolean
+        consumed_by_jobs:
+          type: integer
+        location:
+          type: string
+        unit_cost:
+          type: number
+          format: double
+        unit_revenue:
+          type: number
+          format: double
+      required:
+        - can_delete
+        - description
+        - id
+        - job_name
+        - quantity
+        - type
     AllocationItem:
       type: object
       description: Serializer for individual allocation items (job or stock).
       properties:
         type:
-          $ref: '#/components/schemas/TypeEnum'
+          $ref: '#/components/schemas/AllocationItemTypeEnum'
         job_id:
           type: string
           format: uuid
@@ -5218,6 +5427,19 @@ components:
         stock_location:
           type: string
           nullable: true
+        metal_type:
+          type: string
+          nullable: true
+        alloy:
+          type: string
+          nullable: true
+        specifics:
+          type: string
+          nullable: true
+        allocation_id:
+          type: string
+          format: uuid
+          nullable: true
       required:
         - allocation_date
         - description
@@ -5225,6 +5447,22 @@ components:
         - job_name
         - quantity
         - type
+    AllocationItemTypeEnum:
+      enum:
+        - job
+        - stock
+      type: string
+      description: |-
+        * `job` - Job
+        * `stock` - Stock
+    AllocationTypeEnum:
+      enum:
+        - stock
+        - job
+      type: string
+      description: |-
+        * `stock` - Stock
+        * `job` - Job
     AppError:
       type: object
       description: Basic serializer for AppError instances.
@@ -5431,6 +5669,35 @@ components:
           default: true
       required:
         - name
+    ClientCreateResponse:
+      type: object
+      description: Serializer for client creation response
+      properties:
+        success:
+          type: boolean
+        client:
+          $ref: '#/components/schemas/ClientSearchResult'
+        message:
+          type: string
+      required:
+        - client
+        - message
+        - success
+    ClientDuplicateErrorResponse:
+      type: object
+      description: Serializer for client duplicate error response
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: string
+        existing_client:
+          type: object
+          additionalProperties: {}
+      required:
+        - error
+        - existing_client
     ClientErrorResponse:
       type: object
       description: Serializer for client error responses
@@ -5444,14 +5711,16 @@ components:
           type: string
       required:
         - error
-    ClientListResponse:
+    ClientNameOnly:
       type: object
-      description: Serializer for client list response
       properties:
         id:
           type: string
+          format: uuid
+          readOnly: true
         name:
           type: string
+          readOnly: true
       required:
         - id
         - name
@@ -5996,6 +6265,19 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        retail_rate:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Custom retail rate percentage (e.g., 20.00 for 20%)
+        metadata:
+          type: object
+          additionalProperties: {}
+          description: Additional metadata including location, metal_type, alloy,
+            specifics
       required:
         - job_id
         - quantity
@@ -9129,16 +9411,6 @@ components:
       description: |-
         * `user` - User
         * `assistant` - Assistant
-    SeverityEnum:
-      enum:
-        - info
-        - warning
-        - error
-      type: string
-      description: |-
-        * `info` - info
-        * `warning` - warning
-        * `error` - error
     Staff:
       type: object
       properties:
@@ -9567,16 +9839,6 @@ components:
         - missing_staff
         - partial_staff
         - total_staff
-    SyncStatusEnum:
-      enum:
-        - success
-        - error
-        - running
-      type: string
-      description: |-
-        * `success` - success
-        * `error` - error
-        * `running` - running
     TimesheetCostLine:
       type: object
       description: |-
@@ -9707,14 +9969,14 @@ components:
           writeOnly: true
       required:
         - token
-    TypeEnum:
+    TypeC98Enum:
       enum:
-        - job
         - stock
+        - job
       type: string
       description: |-
-        * `job` - Job
         * `stock` - Stock
+        * `job` - Job
     UploadedFile:
       type: object
       description: Serializer for file upload response.
@@ -10116,57 +10378,6 @@ components:
       required:
         - success
         - xero_id
-    XeroSseEvent:
-      type: object
-      description: Serializer for Xero SSE event data.
-      properties:
-        datetime:
-          type: string
-          format: date-time
-        message:
-          type: string
-        severity:
-          nullable: true
-          oneOf:
-            - $ref: '#/components/schemas/SeverityEnum'
-            - $ref: '#/components/schemas/NullEnum'
-        entity:
-          type: string
-          nullable: true
-        progress:
-          type: number
-          format: double
-          nullable: true
-        overall_progress:
-          type: number
-          format: double
-          nullable: true
-        entity_progress:
-          type: number
-          format: double
-          nullable: true
-        records_updated:
-          type: integer
-          nullable: true
-        status:
-          type: string
-          nullable: true
-        sync_status:
-          nullable: true
-          oneOf:
-            - $ref: '#/components/schemas/SyncStatusEnum'
-            - $ref: '#/components/schemas/NullEnum'
-        error_messages:
-          type: array
-          items:
-            type: string
-        missing_fields:
-          type: array
-          items:
-            type: string
-      required:
-        - datetime
-        - message
   securitySchemes:
     cookieAuth:
       type: apiKey

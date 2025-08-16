@@ -371,25 +371,6 @@ const XeroOperationResponse = z
     xero_id: z.string().uuid(),
   })
   .passthrough()
-const SeverityEnum = z.enum(['info', 'warning', 'error'])
-const NullEnum = z.unknown()
-const SyncStatusEnum = z.enum(['success', 'error', 'running'])
-const XeroSseEvent = z
-  .object({
-    datetime: z.string().datetime({ offset: true }),
-    message: z.string(),
-    severity: z.union([SeverityEnum, NullEnum]).nullish(),
-    entity: z.string().nullish(),
-    progress: z.number().nullish(),
-    overall_progress: z.number().nullish(),
-    entity_progress: z.number().nullish(),
-    records_updated: z.number().int().nullish(),
-    status: z.string().nullish(),
-    sync_status: z.union([SyncStatusEnum, NullEnum]).nullish(),
-    error_messages: z.array(z.string()).optional(),
-    missing_fields: z.array(z.string()).optional(),
-  })
-  .passthrough()
 const ClientContactResult = z
   .object({
     id: z.string(),
@@ -401,7 +382,14 @@ const ClientContactResult = z
   })
   .passthrough()
 const ClientContactResponse = z.object({ results: z.array(ClientContactResult) }).passthrough()
-const ClientListResponse = z.object({ id: z.string(), name: z.string() }).passthrough()
+const ClientErrorResponse = z
+  .object({
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    details: z.string().optional(),
+  })
+  .passthrough()
+const ClientNameOnly = z.object({ id: z.string().uuid(), name: z.string() }).passthrough()
 const ClientContactCreateRequest = z
   .object({
     client_id: z.string().uuid(),
@@ -418,13 +406,6 @@ const ClientContactCreateResponse = z
     success: z.boolean(),
     contact: ClientContactResult,
     message: z.string(),
-  })
-  .passthrough()
-const ClientErrorResponse = z
-  .object({
-    success: z.boolean().optional().default(false),
-    error: z.string(),
-    details: z.string().optional(),
   })
   .passthrough()
 const ClientCreateRequest = z
@@ -448,6 +429,20 @@ const ClientSearchResult = z
     last_invoice_date: z.string(),
     total_spend: z.string(),
     raw_json: z.unknown().optional(),
+  })
+  .passthrough()
+const ClientCreateResponse = z
+  .object({
+    success: z.boolean(),
+    client: ClientSearchResult,
+    message: z.string(),
+  })
+  .passthrough()
+const ClientDuplicateErrorResponse = z
+  .object({
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    existing_client: z.object({}).partial().passthrough(),
   })
   .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
@@ -1058,6 +1053,8 @@ const DeliveryReceiptAllocation = z
   .object({
     job_id: z.string().uuid(),
     quantity: z.number().gt(-100000000).lt(100000000),
+    retail_rate: z.number().gt(-1000).lt(1000).optional(),
+    metadata: z.object({}).partial().passthrough().optional(),
   })
   .passthrough()
 const DeliveryReceiptLine = z
@@ -1173,6 +1170,7 @@ const MetalTypeEnum = z.enum([
   'other',
 ])
 const BlankEnum = z.unknown()
+const NullEnum = z.unknown()
 const PurchaseOrderLine = z
   .object({
     id: z.string().uuid(),
@@ -1245,10 +1243,10 @@ const PurchaseOrderUpdate = z
   })
   .partial()
   .passthrough()
-const TypeEnum = z.enum(['job', 'stock'])
+const AllocationItemTypeEnum = z.enum(['job', 'stock'])
 const AllocationItem = z
   .object({
-    type: TypeEnum,
+    type: AllocationItemTypeEnum,
     job_id: z.string().uuid(),
     job_name: z.string(),
     quantity: z.number(),
@@ -1256,12 +1254,48 @@ const AllocationItem = z
     allocation_date: z.string().datetime({ offset: true }).nullable(),
     description: z.string(),
     stock_location: z.string().nullish(),
+    metal_type: z.string().nullish(),
+    alloy: z.string().nullish(),
+    specifics: z.string().nullish(),
+    allocation_id: z.string().uuid().nullish(),
   })
   .passthrough()
 const PurchaseOrderAllocationsResponse = z
   .object({
     po_id: z.string().uuid(),
     allocations: z.record(z.array(AllocationItem)),
+  })
+  .passthrough()
+const TypeC98Enum = z.enum(['stock', 'job'])
+const AllocationDetailsResponse = z
+  .object({
+    type: TypeC98Enum,
+    id: z.string().uuid(),
+    description: z.string(),
+    quantity: z.number(),
+    job_name: z.string(),
+    can_delete: z.boolean(),
+    consumed_by_jobs: z.number().int().optional(),
+    location: z.string().optional(),
+    unit_cost: z.number().optional(),
+    unit_revenue: z.number().optional(),
+  })
+  .passthrough()
+const AllocationTypeEnum = z.enum(['stock', 'job'])
+const AllocationDeleteRequest = z
+  .object({
+    allocation_type: AllocationTypeEnum,
+    allocation_id: z.string().uuid(),
+  })
+  .passthrough()
+const AllocationDeleteResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string(),
+    deleted_quantity: z.number().optional(),
+    description: z.string().optional(),
+    job_name: z.string().optional(),
+    updated_received_quantity: z.number().optional(),
   })
   .passthrough()
 const StockItem = z
@@ -1601,18 +1635,16 @@ export const schemas = {
   AppError,
   PaginatedAppErrorList,
   XeroOperationResponse,
-  SeverityEnum,
-  NullEnum,
-  SyncStatusEnum,
-  XeroSseEvent,
   ClientContactResult,
   ClientContactResponse,
-  ClientListResponse,
+  ClientErrorResponse,
+  ClientNameOnly,
   ClientContactCreateRequest,
   ClientContactCreateResponse,
-  ClientErrorResponse,
   ClientCreateRequest,
   ClientSearchResult,
+  ClientCreateResponse,
+  ClientDuplicateErrorResponse,
   ClientSearchResponse,
   JobFileStatusEnum,
   JobFile,
@@ -1712,14 +1744,20 @@ export const schemas = {
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
   BlankEnum,
+  NullEnum,
   PurchaseOrderLine,
   PurchaseOrderDetail,
   PurchaseOrderLineUpdate,
   PatchedPurchaseOrderUpdate,
   PurchaseOrderUpdate,
-  TypeEnum,
+  AllocationItemTypeEnum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
+  TypeC98Enum,
+  AllocationDetailsResponse,
+  AllocationTypeEnum,
+  AllocationDeleteRequest,
+  AllocationDeleteResponse,
   StockItem,
   StockList,
   StockCreate,
@@ -2594,14 +2632,6 @@ Endpoints:
   },
   {
     method: 'get',
-    path: '/api/xero/sync-stream/',
-    alias: 'api_xero_sync_stream_list',
-    description: `Xero Sync Event Stream`,
-    requestFormat: 'json',
-    response: z.array(XeroSseEvent),
-  },
-  {
-    method: 'get',
     path: '/app-errors/',
     alias: 'app_errors_list',
     description: `API view for listing application errors.
@@ -2676,7 +2706,7 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
     method: 'get',
     path: '/clients/:client_id/contacts/',
     alias: 'clients_contacts_retrieve',
-    description: `Fetches contacts for a specific client.`,
+    description: `Retrieve all contacts for a specific client.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2686,14 +2716,34 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
       },
     ],
     response: ClientContactResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 404,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
     path: '/clients/all/',
-    alias: 'clients_all_retrieve',
-    description: `Lists all clients (only id and name) for fast dropdowns.`,
+    alias: 'clients_all_list',
+    description: `Returns a list of all clients with basic information (id and name) for dropdowns and search.`,
     requestFormat: 'json',
-    response: ClientListResponse,
+    response: z.array(ClientNameOnly),
+    errors: [
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -2735,7 +2785,7 @@ Expected JSON:
     method: 'post',
     path: '/clients/create/',
     alias: 'clients_create_create',
-    description: `Create a new client, first in Xero, then sync locally.`,
+    description: `Creates a new client in Xero first, then syncs locally. Requires valid Xero authentication.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2744,15 +2794,39 @@ Expected JSON:
         schema: ClientCreateRequest,
       },
     ],
-    response: ClientCreateRequest,
+    response: ClientCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 401,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 409,
+        schema: ClientDuplicateErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
     path: '/clients/search/',
     alias: 'clients_search_retrieve',
-    description: `Searches clients by name following early return pattern.`,
+    description: `Search clients by name. Requires minimum 3 characters. Returns up to 10 results.`,
     requestFormat: 'json',
     response: ClientSearchResponse,
+    errors: [
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -4629,6 +4703,68 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
       },
     ],
     response: PurchaseOrderAllocationsResponse,
+  },
+  {
+    method: 'get',
+    path: '/purchasing/rest/purchase-orders/:po_id/allocations/:allocation_type/:allocation_id/details/',
+    alias: 'getAllocationDetails',
+    description: `Get details about a specific allocation before deletion.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'allocation_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'allocation_type',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: AllocationDetailsResponse,
+    errors: [
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/purchasing/rest/purchase-orders/:po_id/lines/:line_id/allocations/delete/',
+    alias: 'deleteAllocation',
+    description: `Delete a specific allocation (Stock item or CostLine) from a purchase order line.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: AllocationDeleteRequest,
+      },
+      {
+        name: 'line_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: AllocationDeleteResponse,
+    errors: [
+      {
+        status: 400,
+        schema: AllocationDeleteResponse,
+      },
+    ],
   },
   {
     method: 'get',

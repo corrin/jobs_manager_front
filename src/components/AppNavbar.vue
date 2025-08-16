@@ -100,12 +100,6 @@
                 <FileText class="w-4 h-4 mr-2" /> Purchase Orders
               </RouterLink>
               <RouterLink
-                to="/purchasing/receipts"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-              >
-                <Package class="w-4 h-4 mr-2" /> Delivery Receipts
-              </RouterLink>
-              <RouterLink
                 to="/purchasing/stock"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
               >
@@ -355,12 +349,6 @@
                         >Purchase Orders</RouterLink
                       >
                       <RouterLink
-                        to="/purchasing/receipts"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
-                        >Delivery Receipts</RouterLink
-                      >
-                      <RouterLink
                         to="/purchasing/stock"
                         class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
@@ -525,7 +513,6 @@ import {
   FilePlus,
   ShoppingCart,
   FileText,
-  Package,
   Box,
   UploadCloud,
   Link2,
