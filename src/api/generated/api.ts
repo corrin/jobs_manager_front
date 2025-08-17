@@ -814,6 +814,29 @@ const QuoteSpreadsheet = z
     job_name: z.string(),
   })
   .passthrough()
+const XeroQuoteStatusEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
+const XeroQuote = z
+  .object({
+    status: XeroQuoteStatusEnum,
+    online_url: z.string().max(200).url().nullable(),
+  })
+  .partial()
+  .passthrough()
+const XeroInvoiceStatusEnum = z.enum([
+  'DRAFT',
+  'SUBMITTED',
+  'AUTHORISED',
+  'DELETED',
+  'VOIDED',
+  'PAID',
+])
+const XeroInvoice = z
+  .object({
+    number: z.string().max(255),
+    status: XeroInvoiceStatusEnum.optional(),
+    online_url: z.string().max(200).url().nullish(),
+  })
+  .passthrough()
 const Job = z
   .object({
     id: z.string().uuid(),
@@ -841,9 +864,11 @@ const Job = z
     pricing_methodology: PricingMethodologyEnum.optional(),
     quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
-    invoiced: z.boolean(),
+    fully_invoiced: z.boolean(),
     quote: z.object({}).partial().passthrough().nullable(),
     invoice: z.object({}).partial().passthrough().nullable(),
+    xero_quote: XeroQuote,
+    xero_invoices: z.array(XeroInvoice),
     shop_job: z.boolean(),
   })
   .passthrough()
@@ -1732,6 +1757,10 @@ export const schemas = {
   CostSet,
   PricingMethodologyEnum,
   QuoteSpreadsheet,
+  XeroQuoteStatusEnum,
+  XeroQuote,
+  XeroInvoiceStatusEnum,
+  XeroInvoice,
   Job,
   JobEvent,
   CompanyDefaultsJobDetail,

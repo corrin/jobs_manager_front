@@ -6629,7 +6629,7 @@ components:
         quoted:
           type: boolean
           readOnly: true
-        invoiced:
+        fully_invoiced:
           type: boolean
           readOnly: true
         quote:
@@ -6642,6 +6642,15 @@ components:
           additionalProperties: {}
           nullable: true
           readOnly: true
+        xero_quote:
+          allOf:
+            - $ref: '#/components/schemas/XeroQuote'
+          readOnly: true
+        xero_invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/XeroInvoice'
+          readOnly: true
         shop_job:
           type: boolean
           description: Indicates if this is a shop job (no client).
@@ -6651,9 +6660,9 @@ components:
         - client_name
         - contact_name
         - created_at
+        - fully_invoiced
         - id
         - invoice
-        - invoiced
         - job_number
         - job_status
         - latest_actual
@@ -6665,6 +6674,8 @@ components:
         - quoted
         - shop_job
         - updated_at
+        - xero_invoices
+        - xero_quote
     JobAgingFinancialData:
       type: object
       description: Serialiser for job aging financial data
@@ -10291,6 +10302,38 @@ components:
         - message
         - reference_id
         - timestamp
+    XeroInvoice:
+      type: object
+      description: Simplified Invoice serializer for xero_invoices field
+      properties:
+        number:
+          type: string
+          maxLength: 255
+        status:
+          $ref: '#/components/schemas/XeroInvoiceStatusEnum'
+        online_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+      required:
+        - number
+    XeroInvoiceStatusEnum:
+      enum:
+        - DRAFT
+        - SUBMITTED
+        - AUTHORISED
+        - DELETED
+        - VOIDED
+        - PAID
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `SUBMITTED` - Submitted
+        * `AUTHORISED` - Authorised
+        * `DELETED` - Deleted
+        * `VOIDED` - Voided
+        * `PAID` - Paid
     XeroItem:
       type: object
       description: Serializer for Xero item data
@@ -10343,6 +10386,33 @@ components:
       required:
         - success
         - xero_id
+    XeroQuote:
+      type: object
+      description: Simplified Quote serializer for xero_quote field
+      properties:
+        status:
+          $ref: '#/components/schemas/XeroQuoteStatusEnum'
+        online_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+    XeroQuoteStatusEnum:
+      enum:
+        - DRAFT
+        - SENT
+        - DECLINED
+        - ACCEPTED
+        - INVOICED
+        - DELETED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `SENT` - Sent
+        * `DECLINED` - Declined
+        * `ACCEPTED` - Accepted
+        * `INVOICED` - Invoiced
+        * `DELETED` - Deleted
     XeroSseEvent:
       type: object
       description: Serializer for Xero SSE event data.
