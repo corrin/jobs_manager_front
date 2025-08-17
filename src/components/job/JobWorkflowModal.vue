@@ -69,15 +69,15 @@
 
           <div class="flex items-start">
             <input
-              v-model="localJobData.invoiced"
+              v-model="localJobData.fully_invoiced"
               type="checkbox"
               :disabled="true"
               class="mt-1 rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200/50 disabled:opacity-50"
             />
             <div class="ml-2">
-              <label class="text-sm text-gray-700"> Already Invoiced? </label>
+              <label class="text-sm text-gray-700"> Fully Invoiced? </label>
               <div class="text-xs text-gray-500">
-                Indicator of whether the job was already invoiced in Xero (read-only)
+                Indicator of whether the job is fully invoiced (read-only)
               </div>
             </div>
           </div>
@@ -190,7 +190,7 @@ const initializeLocalJobData = (jobData: JobDetailResponse) => {
     job_status: localJobData.value.job_status || jobData.job_status,
 
     quoted: !!jobData.quoted,
-    invoiced: !!jobData.invoiced,
+    fully_invoiced: !!jobData.fully_invoiced,
     paid: !!jobData.paid,
   }
 }

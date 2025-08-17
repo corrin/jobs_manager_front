@@ -152,7 +152,7 @@
       <div class="bg-white rounded-lg border border-gray-200 p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Invoices</h3>
 
-        <div v-if="!jobData?.invoiced || isInvoiceDeleted" class="text-center py-8">
+        <div v-if="!jobData?.fully_invoiced || isInvoiceDeleted" class="text-center py-8">
           <div class="text-gray-500 mb-4">No invoices for this project</div>
           <button
             @click="createInvoice"
@@ -511,10 +511,10 @@ watch(
 
 // Watch for invoice status changes to reset invoice deletion state
 watch(
-  () => props.jobData?.invoiced,
-  (isInvoiced) => {
-    if (isInvoiced && isInvoiceDeleted.value) {
-      // If job becomes invoiced again, reset the local deletion state
+  () => props.jobData?.fully_invoiced,
+  (isFullyInvoiced) => {
+    if (isFullyInvoiced && isInvoiceDeleted.value) {
+      // If job becomes fully invoiced again, reset the local deletion state
       isInvoiceDeleted.value = false
     }
   },
