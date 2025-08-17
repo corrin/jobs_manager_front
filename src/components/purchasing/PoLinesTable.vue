@@ -18,15 +18,13 @@ import { schemas } from '@/api/generated/api'
 import type { DataTableRowContext } from '@/utils/data-table-types'
 import { z } from 'zod'
 import { debugLog } from '../../utils/debug'
+import { useStockStore } from '@/stores/stockStore'
 
 type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
 type JobForPurchasing = z.infer<typeof schemas.JobForPurchasing>
-type XeroItem = z.infer<typeof schemas.XeroItem>
 type AllocationItem = z.infer<typeof schemas.AllocationItem>
-
 type Props = {
   lines: PurchaseOrderLine[]
-  items: XeroItem[]
   jobs: JobForPurchasing[]
   readOnly?: boolean
   jobsReadOnly?: boolean
@@ -59,6 +57,8 @@ interface LineEditorState {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+const stockStore = useStockStore()
 
 const showAdditionalFieldsModal = ref(false)
 const editingLineIndex = ref<number>(-1)
@@ -149,23 +149,35 @@ const columns = computed(() =>
       cell: ({ row }: DataTableRowContext) =>
         h(ItemSelect, {
           modelValue: row.original.item_code,
-          items: props.items,
-          clearable: true,
           disabled: isColumnDisabled.value,
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
-            : (val: string) => {
-                const found = props.items.find((i) => i.id === val)
+            : (val: string | null) => {
+                console.log('🔄 PoLinesTable: Received modelValue update:', val)
+                console.log('📦 PoLinesTable: Available stock items:', stockStore.items.length)
+
+                const found = stockStore.items.find((i) => i.id === val)
+                console.log('🎯 PoLinesTable: Found stock item:', found)
+
                 const updated = props.lines.map((l, idx) =>
                   idx === row.index
                     ? {
                         ...l,
-                        item_code: found ? found.code : val,
-                        description: found ? found.name : l.description,
-                        unit_cost: found && found.unit_cost != null ? found.unit_cost : l.unit_cost,
+                        item_code: val || undefined,
+                        // Auto-populate all fields from stock item when selected
+                        ...(found && {
+                          description: found.description || l.description,
+                          unit_cost: found.unit_cost || l.unit_cost,
+                          metal_type: found.metal_type || l.metal_type,
+                          alloy: found.alloy || l.alloy,
+                          specifics: found.specifics || l.specifics,
+                          location: found.location || l.location,
+                        }),
                       }
                     : l,
                 )
+
+                console.log('📝 PoLinesTable: Updated line:', updated[row.index])
                 emit('update:lines', updated)
               },
         }),
@@ -203,7 +215,7 @@ const columns = computed(() =>
           'onUpdate:modelValue':
             (props.jobsReadOnly ?? isColumnDisabled.value)
               ? undefined
-              : (val: string) => {
+              : (val: string | null) => {
                   const updated = props.lines.map((l, idx) =>
                     idx === row.index ? { ...l, job_id: val || undefined } : l,
                   )
@@ -212,14 +224,14 @@ const columns = computed(() =>
           onJobSelected:
             (props.jobsReadOnly ?? isColumnDisabled.value)
               ? undefined
-              : (job: { id: string; job_number: string; name: string; client_name: string }) => {
+              : (job: JobForPurchasing | null) => {
                   if (job) {
                     const updated = props.lines.map((l, idx) =>
                       idx === row.index
                         ? {
                             ...l,
                             job_id: job.id,
-                            job_number: job.job_number,
+                            job_number: job.job_number?.toString(),
                             job_name: job.name,
                             client_name: job.client_name,
                           }

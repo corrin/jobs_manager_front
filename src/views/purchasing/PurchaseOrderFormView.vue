@@ -49,7 +49,6 @@ s
           <CardContent class="flex-1 flex flex-col">
             <PoLinesTable
               :lines="po.lines"
-              :items="xeroItemStore.items"
               :jobs="jobs"
               :read-only="!canEditLineItems"
               :jobs-read-only="!canEditJobs"
