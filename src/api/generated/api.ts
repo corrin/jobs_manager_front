@@ -867,7 +867,7 @@ const Job = z
     fully_invoiced: z.boolean(),
     quote: z.object({}).partial().passthrough().nullable(),
     invoice: z.object({}).partial().passthrough().nullable(),
-    xero_quote: XeroQuote,
+    xero_quote: XeroQuote.nullable(),
     xero_invoices: z.array(XeroInvoice),
     shop_job: z.boolean(),
   })

@@ -6645,6 +6645,7 @@ components:
         xero_quote:
           allOf:
             - $ref: '#/components/schemas/XeroQuote'
+          nullable: true
           readOnly: true
         xero_invoices:
           type: array
