@@ -163,7 +163,6 @@ const columns = computed(() =>
                   idx === row.index
                     ? {
                         ...l,
-                        item_code: val || undefined,
                         // Auto-populate all fields from stock item when selected
                         ...(found && {
                           description: found.description || l.description,
@@ -172,6 +171,7 @@ const columns = computed(() =>
                           alloy: found.alloy || l.alloy,
                           specifics: found.specifics || l.specifics,
                           location: found.location || l.location,
+                          item_code: found.item_code || null,
                         }),
                       }
                     : l,

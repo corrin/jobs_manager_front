@@ -7804,8 +7804,7 @@ components:
         people:
           type: array
           items:
-            type: object
-            additionalProperties: {}
+            $ref: '#/components/schemas/KanbanJobPerson'
         status:
           type: string
         status_key:
@@ -9803,6 +9802,9 @@ components:
           format: uuid
           nullable: true
         notes:
+          type: string
+          nullable: true
+        item_code:
           type: string
           nullable: true
     StockList:

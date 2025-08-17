@@ -608,7 +608,7 @@ const KanbanColumnJob = z
     description: z.string().nullable(),
     client_name: z.string(),
     contact_person: z.string(),
-    people: z.array(z.object({}).partial().passthrough()),
+    people: z.array(KanbanJobPerson),
     status: z.string(),
     status_key: z.string(),
     paid: z.boolean(),
@@ -1312,6 +1312,7 @@ const StockItem = z
     date: z.string().datetime({ offset: true }).nullable(),
     job_id: z.string().uuid().nullable(),
     notes: z.string().nullable(),
+    item_code: z.string().nullable(),
   })
   .partial()
   .passthrough()
