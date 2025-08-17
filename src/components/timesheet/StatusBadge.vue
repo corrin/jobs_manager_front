@@ -91,7 +91,8 @@ const getLeaveTooltip = (leaveType?: string): string => {
 }
 
 const getStatusDisplay = (status: string): string => {
-  if (status === 'Of') return '-'
+  if (status === 'Off') return 'Off'
+  if (status === 'Of') return 'Off' // Handle legacy "Of" as "Off"
   if (!status || status === '-') return '-'
   return status.slice(0, 2)
 }
