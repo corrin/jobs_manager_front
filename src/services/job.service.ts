@@ -107,9 +107,9 @@ export const jobService = {
   },
 
   // Files
-  listJobFiles(jobNumber: string): Promise<JobFile[]> {
+  listJobFiles(jobNumber: number): Promise<JobFile[]> {
     const result = api.retrieveJobFilesApi_6({
-      params: { job_number: parseInt(jobNumber) },
+      params: { job_number: jobNumber },
       queries: { format: 'json' },
     })
     return result.then((r: JobFile | JobFile[]) => (Array.isArray(r) ? r : [r]))
@@ -298,7 +298,7 @@ export const jobService = {
     try {
       const formData = new FormData()
       formData.append('filename', filename)
-      formData.append('print_on_jobsheet', printOnJobsheet.toString())
+      formData.append('print_on_jobsheet', String(printOnJobsheet))
 
       await axios.put(`/job/api/job-files/${jobNumber}`, formData, {
         headers: {

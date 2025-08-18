@@ -313,7 +313,7 @@ async function loadFiles() {
 
   isLoading.value = true
   try {
-    const list = await jobService.listJobFiles(String(props.jobNumber))
+    const list = await jobService.listJobFiles(props.jobNumber)
     files.value = list
   } catch (err) {
     debugLog('Failed to load files:', err)
@@ -552,7 +552,7 @@ const formatFileSize = (bytes: number) => {
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i]
 }
 
 const formatDate = (dateString: string) => {

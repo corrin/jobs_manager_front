@@ -98,7 +98,7 @@ class KPIService {
     const totalDays = daysGreen + daysAmber + daysRed
     if (totalDays === 0) return '0'
     const greenPercentage = (daysGreen / totalDays) * 100
-    return Math.round(greenPercentage).toString()
+    return `${Math.round(greenPercentage)}`
   }
 
   getMonthName(month: number): string {

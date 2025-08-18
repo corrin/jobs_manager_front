@@ -7,6 +7,14 @@ export default defineConfigWithVueTs(
   {
     name: 'app/files-to-lint',
     files: ['**/*.{ts,mts,tsx,vue}'],
+    settings: {
+      'import/resolver': {
+        alias: {
+          map: [['@', './src']],
+          extensions: ['.ts', '.vue', '.js'],
+        },
+      },
+    },
   },
 
   globalIgnores(['**/dist/**', '**/dist-ssr/**', '**/coverage/**']),

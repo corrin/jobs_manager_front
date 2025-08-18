@@ -128,7 +128,7 @@ const totalRevenue = computed(() => unitRevenue.value * form.value.hours)
 
 function handleHoursInput(e: Event) {
   const input = (e.target as HTMLInputElement).value.replace(',', '.')
-  form.value.hours = Number(input)
+  form.value.hours = parseFloat(input)
 }
 
 function submit() {
@@ -136,9 +136,9 @@ function submit() {
   if (descError.value) return
   emit('submit', {
     desc: form.value.desc,
-    quantity: String(form.value.hours),
-    unit_cost: String(unitCost.value),
-    unit_rev: String(unitRevenue.value),
+    quantity: form.value.hours,
+    unit_cost: unitCost.value,
+    unit_rev: unitRevenue.value,
     total_cost: totalCost.value,
     total_rev: totalRevenue.value,
     kind: 'time',

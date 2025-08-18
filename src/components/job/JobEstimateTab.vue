@@ -105,15 +105,15 @@ const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
 const chargeOutRate = computed(() => {
   const rate = companyDefaults.value?.charge_out_rate
-  return rate ? parseFloat(rate) : 0
+  return rate || 0
 })
 const wageRate = computed(() => {
   const rate = companyDefaults.value?.wage_rate
-  return rate ? parseFloat(rate) : 0
+  return rate || 0
 })
 const materialsMarkup = computed(() => {
   const markup = companyDefaults.value?.materials_markup
-  return markup ? parseFloat(markup) : 0
+  return markup || 0
 })
 
 const costLines = ref<CostLine[]>([])
@@ -126,9 +126,9 @@ async function loadEstimate() {
     const costSet: CostSet = await fetchCostSet(props.jobId, 'estimate')
     costLines.value = costSet.cost_lines.map((line) => ({
       ...line,
-      quantity: typeof line.quantity === 'string' ? Number(line.quantity) : line.quantity,
-      unit_cost: typeof line.unit_cost === 'string' ? Number(line.unit_cost) : line.unit_cost,
-      unit_rev: typeof line.unit_rev === 'string' ? Number(line.unit_rev) : line.unit_rev,
+      quantity: line.quantity,
+      unit_cost: line.unit_cost,
+      unit_rev: line.unit_rev,
     }))
     revision.value = costSet.rev || 0
   } catch (error) {
@@ -150,17 +150,17 @@ const estimateSummary = computed(() => {
   let rev = 0
   let hours = 0
   for (const line of costLines.value) {
-    const quantity = typeof line.quantity === 'string' ? Number(line.quantity) : line.quantity
+    const quantity = line.quantity
     if (line.kind === 'time') {
-      cost += quantity * Number(line.unit_cost)
-      rev += quantity * Number(line.unit_rev)
+      cost += quantity * line.unit_cost
+      rev += quantity * line.unit_rev
       hours += quantity
     } else if (line.kind === 'material') {
-      cost += quantity * Number(line.unit_cost)
-      rev += quantity * Number(line.unit_rev)
+      cost += quantity * line.unit_cost
+      rev += quantity * line.unit_rev
     } else if (line.kind === 'adjust') {
-      cost += quantity * Number(line.unit_cost)
-      rev += quantity * Number(line.unit_rev)
+      cost += quantity * line.unit_cost
+      rev += quantity * line.unit_rev
     }
   }
   return {
@@ -244,12 +244,9 @@ async function handleAddMaterial(payload: CostLine) {
       ...costLines.value,
       {
         ...created,
-        quantity:
-          typeof created.quantity === 'string' ? Number(created.quantity) : created.quantity,
-        unit_cost:
-          typeof created.unit_cost === 'string' ? Number(created.unit_cost) : created.unit_cost,
-        unit_rev:
-          typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
+        quantity: created.quantity,
+        unit_cost: created.unit_cost,
+        unit_rev: created.unit_rev,
       },
     ]
     toast.success('Material cost line added!')
@@ -286,12 +283,9 @@ async function handleAddTime(payload: CostLine) {
       ...costLines.value,
       {
         ...created,
-        quantity:
-          typeof created.quantity === 'string' ? Number(created.quantity) : created.quantity,
-        unit_cost:
-          typeof created.unit_cost === 'string' ? Number(created.unit_cost) : created.unit_cost,
-        unit_rev:
-          typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
+        quantity: created.quantity,
+        unit_cost: created.unit_cost,
+        unit_rev: created.unit_rev,
       },
     ]
     toast.success('Time cost line added!')
@@ -328,12 +322,9 @@ async function handleAddAdjustment(payload: CostLine) {
       ...costLines.value,
       {
         ...created,
-        quantity:
-          typeof created.quantity === 'string' ? Number(created.quantity) : created.quantity,
-        unit_cost:
-          typeof created.unit_cost === 'string' ? Number(created.unit_cost) : created.unit_cost,
-        unit_rev:
-          typeof created.unit_rev === 'string' ? Number(created.unit_rev) : created.unit_rev,
+        quantity: created.quantity,
+        unit_cost: created.unit_cost,
+        unit_rev: created.unit_rev,
       },
     ]
     toast.success('Adjustment cost line added!')

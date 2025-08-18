@@ -179,14 +179,14 @@ const canSubmit = computed(() => {
 
 // For adjustments, use materials markup like stock consumption
 const calculatedUnitRevenue = computed(() => {
-  const cost = Number(formData.value.unit_cost) || 0
-  const markup = Number(companyDefaultsStore.companyDefaults?.materials_markup || 0)
+  const cost = formData.value.unit_cost || 0
+  const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
 
   debugLog('[AdjustmentModal] Calculating unitRevenue', {
     unitCost: cost,
     materialsMarkup: markup,
   })
-  return Number((cost * (1 + markup)).toFixed(2))
+  return cost * (1 + markup)
 })
 
 const unitRevenue = computed(() => {
@@ -204,7 +204,7 @@ function formatCurrency(value: number): string {
 
 function handleUnitCostInput(e: Event) {
   const input = (e.target as HTMLInputElement).value.replace(',', '.')
-  formData.value.unit_cost = Number(input)
+  formData.value.unit_cost = parseFloat(input)
 
   // If not manually overridden, update the revenue automatically with markup
   if (!formData.value.manualRevenueOverride) {
@@ -214,7 +214,7 @@ function handleUnitCostInput(e: Event) {
 
 function handleUnitRevenueInput(e: Event) {
   const input = (e.target as HTMLInputElement).value.replace(',', '.')
-  formData.value.unit_rev = Number(input)
+  formData.value.unit_rev = parseFloat(input)
   formData.value.manualRevenueOverride = true
 }
 
@@ -251,9 +251,9 @@ function handleSubmit() {
       id: props.initial.id,
       kind: 'adjust',
       desc: formData.value.desc,
-      quantity: formData.value.quantity.toString(),
-      unit_cost: formData.value.unit_cost.toString(),
-      unit_rev: unitRevenue.value.toString(),
+      quantity: formData.value.quantity,
+      unit_cost: formData.value.unit_cost,
+      unit_rev: unitRevenue.value,
       total_cost: totalCost.value,
       total_rev: totalRevenue.value,
       ext_refs: props.initial.ext_refs || {},
@@ -265,9 +265,9 @@ function handleSubmit() {
     const payload: CostLineCreateUpdate = {
       kind: 'adjust',
       desc: formData.value.desc,
-      quantity: formData.value.quantity.toString(),
-      unit_cost: formData.value.unit_cost.toString(),
-      unit_rev: unitRevenue.value.toString(),
+      quantity: formData.value.quantity,
+      unit_cost: formData.value.unit_cost,
+      unit_rev: unitRevenue.value,
       ext_refs: {},
       meta: {},
     }
@@ -279,9 +279,9 @@ onMounted(() => {
   if (props.initial && props.mode === 'edit') {
     formData.value = {
       desc: props.initial.desc || '',
-      quantity: Number(props.initial.quantity) || 1,
-      unit_cost: Number(props.initial.unit_cost) || 0,
-      unit_rev: Number(props.initial.unit_rev) || 0,
+      quantity: props.initial.quantity || 1,
+      unit_cost: props.initial.unit_cost || 0,
+      unit_rev: props.initial.unit_rev || 0,
       manualRevenueOverride: props.initial.unit_rev ? true : false,
     }
   }

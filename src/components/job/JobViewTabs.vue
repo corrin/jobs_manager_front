@@ -213,7 +213,7 @@ function openQuotingChat() {
     query: {
       jobId: props.jobData.id,
       jobName: props.jobData.name,
-      jobNumber: props.jobData.job_number.toString(),
+      jobNumber: props.jobData.job_number,
       clientName: props.jobData.client_name,
     },
   })

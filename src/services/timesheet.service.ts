@@ -19,7 +19,7 @@ export class TimesheetService {
       let defaultWageRate = 32
       try {
         const defaults = await api.api_company_defaults_retrieve()
-        defaultWageRate = parseFloat(defaults.wage_rate || '32') || 32
+        defaultWageRate = defaults.wage_rate
       } catch {
         debugLog('Could not fetch company defaults, using fallback wage rate:', defaultWageRate)
       }
@@ -32,8 +32,8 @@ export class TimesheetService {
           first_name?: string
           lastName?: string
           last_name?: string
-          wageRate?: string | number
-          wage_rate?: string | number
+          wageRate?: number
+          wage_rate?: number
           fullName?: string
           full_name?: string
           name?: string
@@ -43,9 +43,7 @@ export class TimesheetService {
           id: staff.id,
           firstName: staff.firstName || staff.first_name || 'Unknown',
           lastName: staff.lastName || staff.last_name || '',
-          wageRate:
-            parseFloat(String(staff.wageRate || staff.wage_rate || defaultWageRate)) ||
-            defaultWageRate,
+          wageRate: staff.wageRate || staff.wage_rate || defaultWageRate,
           fullName:
             staff.fullName ||
             staff.full_name ||

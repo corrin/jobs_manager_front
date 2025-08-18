@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod'
-import { schemas } from '@/api/generated/api'
+import { schemas } from '../api/generated/api'
 
 /**
  * Schema for timesheet entry metadata (UI-specific extension of backend schema).

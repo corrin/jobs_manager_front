@@ -123,16 +123,6 @@
               </Button>
 
               <Button
-                @click="saveChanges"
-                size="sm"
-                variant="default"
-                :disabled="!hasUnsavedChanges || loading"
-                class="h-7 text-xs px-2 bg-green-600 hover:bg-green-700 text-white border-green-500"
-              >
-                <Save class="h-3 w-3" />
-              </Button>
-
-              <Button
                 @click="refreshData"
                 variant="ghost"
                 size="sm"
@@ -254,6 +244,15 @@
             </div>
 
             <Button
+              @click="showSummary"
+              size="sm"
+              variant="ghost"
+              class="text-gray-600 hover:bg-gray-100"
+            >
+              <ChartColumn />
+            </Button>
+
+            <Button
               @click="addNewEntry"
               size="sm"
               variant="default"
@@ -261,17 +260,6 @@
             >
               <Plus class="h-4 w-4 mr-1" />
               Add Entry
-            </Button>
-
-            <Button
-              @click="saveChanges"
-              size="sm"
-              variant="default"
-              :disabled="!hasUnsavedChanges || loading"
-              class="bg-green-600 hover:bg-green-700 text-white border-green-500"
-            >
-              <Save class="h-4 w-4 mr-1" />
-              {{ loading ? 'Saving...' : 'Save All' }}
             </Button>
 
             <Button
@@ -364,11 +352,6 @@
                   </span>
                 </div>
               </div>
-
-              <div v-if="hasUnsavedChanges" class="flex items-center space-x-1 text-amber-600">
-                <AlertCircle class="h-3 w-3" />
-                <span class="font-medium">Unsaved</span>
-              </div>
             </div>
           </div>
 
@@ -397,10 +380,6 @@
                 </span>
               </div>
             </div>
-            <div v-if="hasUnsavedChanges" class="flex items-center space-x-2 text-amber-600">
-              <AlertCircle class="h-4 w-4" />
-              <span class="text-sm font-medium">Unsaved changes</span>
-            </div>
           </div>
         </div>
 
@@ -415,7 +394,7 @@
                 <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+N</kbd>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-slate-600">Save changes</span>
+                <span class="text-sm text-slate-600">Check save status</span>
                 <kbd class="px-2 py-1 bg-slate-100 rounded text-xs">Ctrl+S</kbd>
               </div>
               <div class="flex justify-between">
@@ -429,6 +408,15 @@
             </div>
           </DialogContent>
         </Dialog>
+
+        <!-- Summary Drawer -->
+        <SummaryDrawer
+          v-model:open="showSummaryDrawer"
+          :time-entries="adaptedTimeEntries"
+          :jobs="availableJobs"
+          :loading="loading"
+          :error="error"
+        />
       </div>
     </div>
   </AppLayout>
@@ -436,11 +424,10 @@
 
 <script lang="ts" setup>
 import { debugLog } from '@/utils/debug'
-
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
-import type { GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community'
+import type { GridReadyEvent, CellValueChangedEvent, RowNode } from 'ag-grid-community'
 import { v4 as uuidv4 } from 'uuid'
 import { debounce } from 'lodash-es'
 
@@ -455,20 +442,22 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import SummaryDrawer from '@/components/timesheet/SummaryDrawer.vue'
 
 import {
   ChevronLeft,
   ChevronRight,
   Plus,
-  Save,
   HelpCircle,
   AlertTriangle,
   RefreshCw,
   Clock,
   DollarSign,
   TrendingUp,
-  AlertCircle,
+  ChartColumn,
 } from 'lucide-vue-next'
+import { useTimesheetAutosave } from '@/composables/useTimesheetAutosave'
+import { toast } from 'vue-sonner'
 
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
 import { useTimesheetStore } from '@/stores/timesheet'
@@ -476,8 +465,14 @@ import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import * as costlineService from '@/services/costline.service'
 
 // Import types from generated API schemas
-import type { Job, Staff, TimesheetCostLine, CostLine } from '@/api/generated/api'
-import type { TimesheetEntryWithMeta } from '@/constants/timesheet-calculations'
+import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
+import { schemas } from '../api/generated/api'
+import { z } from 'zod'
+
+type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
+type Staff = z.infer<typeof schemas.Staff>
+type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
+type CostLine = z.infer<typeof schemas.CostLine>
 
 const router = useRouter()
 const route = useRoute()
@@ -487,6 +482,7 @@ const companyDefaultsStore = useCompanyDefaultsStore()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const showHelpModal = ref(false)
+const showSummaryDrawer = ref(false)
 const agGridRef = ref()
 
 const todayDate = new Date().toISOString().split('T')[0]
@@ -505,9 +501,48 @@ const isLoadingData = ref(false) // ✅ Add loading flag to prevent duplicate ca
 
 const timeEntries = ref<TimesheetEntryWithMeta[]>([])
 
-const currentStaff = computed(
-  () => timesheetStore.staff.find((s) => s.id === selectedStaffId.value) || null,
-)
+// Adapter to convert TimesheetEntryView data format to TimesheetCostLine format
+const adaptedTimeEntries = computed(() => {
+  return timeEntries.value.map((entry) => ({
+    id: entry.id,
+    job_id: entry.jobId,
+    job_number: entry.jobNumber,
+    job_name: entry.jobName,
+    client_name: entry.client,
+    desc: entry.description,
+    quantity: entry.hours,
+    unit_cost: entry.wageRate,
+    unit_rev: entry.chargeOutRate,
+    total_cost: entry.wage,
+    total_rev: entry.bill,
+    charge_out_rate: entry.chargeOutRate,
+    wage_rate: entry.wageRate,
+    meta: {
+      staff_id: entry.staffId,
+      date: entry.date,
+      is_billable: entry.billable,
+      rate_multiplier: entry.rateMultiplier,
+      created_from_timesheet: true,
+    },
+    // Include UI metadata
+    tempId: entry.tempId,
+    _isSaving: entry._isSaving,
+    isNewRow: entry.isNewRow,
+    isModified: entry.isModified,
+  }))
+})
+
+// Computed property to ensure jobs are always available
+const availableJobs = computed(() => {
+  debugLog('🔍 availableJobs computed - jobs count:', timesheetStore.jobs.length)
+  return timesheetStore.jobs || []
+})
+
+const currentStaff = computed(() => {
+  const staff = timesheetStore.staff.find((s) => s.id === selectedStaffId.value) || null
+  setCurrentStaff(staff)
+  return staff
+})
 
 const hasUnsavedChanges = ref(false)
 
@@ -535,15 +570,57 @@ const {
   setGridApi,
   loadData,
   addNewRow,
-  getGridData,
   handleKeyboardShortcut,
   handleCellValueChanged: gridHandleCellValueChanged,
+  setCurrentStaff,
 } = useTimesheetEntryGrid(
   companyDefaultsRef,
   timesheetStore.jobs, // Pass jobs from timesheet store
   handleSaveEntry,
   handleDeleteEntry,
+  { resolveStaffById: (id: string) => timesheetStore.staff.find((s) => s.id === id) },
 )
+
+const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
+  getRowKey: (entry) => {
+    const id = entry.id
+    if (id !== null && id !== undefined && String(id) !== '') return String(id)
+    return entry.tempId
+  },
+  getEntry: (rowKey) => {
+    const rows = gridData.value as unknown as TimesheetEntryWithMeta[]
+    const byId = rows.find(
+      (r) => r.id !== null && r.id !== undefined && String(r.id) === String(rowKey),
+    )
+    if (byId) return byId
+    const byTemp = rows.find((r) => r.tempId && String(r.tempId) === String(rowKey))
+    return byTemp || null
+  },
+  isRowComplete: (e) => {
+    const hasJob = !!(e.jobId || e.jobNumber)
+    const hasDesc = !!String(e.description || '').trim()
+    const hasHours = Number(e.hours) > 0
+    return hasJob && hasDesc && hasHours
+  },
+  isDuplicate: (e) => {
+    if (e.id) return false
+    const rows = gridData.value as TimesheetEntryWithMeta[]
+    return rows.some(
+      (row) =>
+        !!row.id &&
+        row.jobNumber === e.jobNumber &&
+        row.date === e.date &&
+        row.staffId === e.staffId &&
+        String(row.description || '').trim() === String(e.description || '').trim(),
+    )
+  },
+  save: async (e) => {
+    await handleSaveEntry(e)
+  },
+  softRefresh: async (e) => {
+    await softRefreshRow(e)
+  },
+})
 
 const canNavigateStaff = (direction: number): boolean => {
   if (!timesheetStore.staff.length) return false
@@ -569,9 +646,9 @@ const navigateStaff = (direction: number) => {
 
 const navigateDate = (direction: number) => {
   const parts = currentDate.value.split('-')
-  const year = parseInt(parts[0])
-  const month = parseInt(parts[1]) - 1
-  const day = parseInt(parts[2])
+  const year = parseInt(parts[0], 10)
+  const month = parseInt(parts[1], 10) - 1
+  const day = parseInt(parts[2], 10)
 
   const date = new Date(year, month, day)
 
@@ -580,8 +657,8 @@ const navigateDate = (direction: number) => {
   } while (date.getDay() === 0 || date.getDay() === 6)
 
   const newYear = date.getFullYear()
-  const newMonth = (date.getMonth() + 1).toString().padStart(2, '0')
-  const newDay = date.getDate().toString().padStart(2, '0')
+  const newMonth = String(date.getMonth() + 1).padStart(2, '0')
+  const newDay = String(date.getDate()).padStart(2, '0')
 
   currentDate.value = `${newYear}-${newMonth}-${newDay}`
   debugLog('📅 Navigated to:', currentDate.value, 'Day of week:', date.getDay())
@@ -598,8 +675,8 @@ const goToToday = () => {
   }
 
   const year = today.getFullYear()
-  const month = (today.getMonth() + 1).toString().padStart(2, '0')
-  const day = today.getDate().toString().padStart(2, '0')
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
 
   currentDate.value = `${year}-${month}-${day}`
   debugLog('📅 Going to today (or next workday):', currentDate.value)
@@ -633,9 +710,9 @@ const getStaffInitials = (staff: Staff | null): string => {
 
 const formatDisplayDate = (date: string): string => {
   const parts = date.split('-')
-  const year = parseInt(parts[0])
-  const month = parseInt(parts[1]) - 1
-  const day = parseInt(parts[2])
+  const year = parseInt(parts[0], 10)
+  const month = parseInt(parts[1], 10) - 1
+  const day = parseInt(parts[2], 10)
 
   const d = new Date(year, month, day)
 
@@ -651,9 +728,9 @@ const formatDisplayDate = (date: string): string => {
 
 const formatShortDate = (date: string): string => {
   const parts = date.split('-')
-  const year = parseInt(parts[0])
-  const month = parseInt(parts[1]) - 1
-  const day = parseInt(parts[2])
+  const year = parseInt(parts[0], 10)
+  const month = parseInt(parts[1], 10) - 1
+  const day = parseInt(parts[2], 10)
 
   const d = new Date(year, month, day)
 
@@ -663,70 +740,6 @@ const formatShortDate = (date: string): string => {
   })
 
   return formatted
-}
-
-function syncGridState() {
-  debugLog('🔄 Starting syncGridState...')
-
-  const gridData = getGridData()
-
-  debugLog('📋 Got grid data from composable:', gridData.length, 'entries')
-  debugLog(
-    '🔍 Raw grid data:',
-    gridData.map((d) => ({
-      jobId: d.jobId,
-      jobNumber: d.jobNumber,
-      client: d.client,
-      jobName: d.jobName,
-      hours: d.hours,
-      isEmptyRow: d.isEmptyRow,
-      isNewRow: d.isNewRow,
-      isModified: d.isModified, // ✅ Include modification status
-    })),
-  )
-
-  const filteredData = gridData.filter((d) => {
-    const hasJob = d && !d.isEmptyRow && (d.jobId || d.jobNumber)
-    debugLog('🔍 Filtering entry:', {
-      jobId: d?.jobId,
-      jobNumber: d?.jobNumber,
-      isEmptyRow: d?.isEmptyRow,
-      isModified: d?.isModified, // ✅ Log modification status
-      hasJob,
-    })
-    return hasJob
-  })
-
-  // Preserve modification flags when syncing
-  const syncedEntries = filteredData.map((gridEntry) => {
-    const existingEntry = timeEntries.value.find(
-      (e: CostLine) =>
-        e.id === gridEntry.id ||
-        (e.jobId === gridEntry.jobId && e.description === gridEntry.description),
-    )
-
-    return {
-      ...gridEntry,
-      isModified: gridEntry.isModified || existingEntry?.isModified || false, // ✅ Prioritize grid state
-      isNewRow: gridEntry.isNewRow || existingEntry?.isNewRow || false,
-    } as CostLine
-  })
-
-  timeEntries.value = syncedEntries
-
-  debugLog('✅ Synced grid state with timeEntries:', timeEntries.value.length, 'entries')
-  debugLog(
-    '📊 Synced entries detail:',
-    timeEntries.value.map((e: CostLine) => ({
-      id: e.id,
-      jobId: e.jobId,
-      jobNumber: e.jobNumber,
-      client: e.client,
-      jobName: e.jobName,
-      hours: e.hours,
-      isModified: e.isModified, // ✅ Log modification status
-    })),
-  )
 }
 
 async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
@@ -765,7 +778,6 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
   if (entry._isSaving) return
 
   try {
-    loading.value = true
     entry._isSaving = true
 
     if (!entry.id && !entry.tempId) {
@@ -777,23 +789,25 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
 
     let targetJobId = entry.jobId
     if (!targetJobId && entry.jobNumber) {
-      const jobNumber = parseInt(entry.jobNumber, 10)
-      const jobByNumber = timesheetStore.jobs.find((j: Job) => j.job_number === jobNumber)
+      const jobNumber = entry.jobNumber
+      const jobByNumber = timesheetStore.jobs.find(
+        (j: ModernTimesheetJob) => j.job_number === jobNumber,
+      )
       if (jobByNumber) {
         targetJobId = jobByNumber.id
         entry.jobId = targetJobId
         entry.client = jobByNumber.client_name || ''
         entry.jobName = jobByNumber.name || ''
-        entry.chargeOutRate = parseFloat(jobByNumber.charge_out_rate) || 0
+        entry.chargeOutRate = jobByNumber.charge_out_rate || 0
       }
     }
 
     const costLinePayload = {
       kind: 'time' as const,
       desc: entry.description,
-      quantity: entry.hours.toString(),
-      unit_cost: entry.wageRate.toString(),
-      unit_rev: entry.chargeOutRate.toString(),
+      quantity: entry.hours,
+      unit_cost: entry.wageRate,
+      unit_rev: entry.chargeOutRate,
       meta: {
         staff_id: staffId,
         date: date,
@@ -810,7 +824,7 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
       savedLine = await costlineService.updateCostLine(entry.id, costLinePayload)
     } else {
       debugLog('➕ CREATING new entry')
-      const job = timesheetStore.jobs.find((j: Job) => j.id === targetJobId)
+      const job = timesheetStore.jobs.find((j: ModernTimesheetJob) => j.id === targetJobId)
       if (!job) throw new Error('Job not found')
       savedLine = await costlineService.createCostLine(job.id, 'actual', costLinePayload)
       entry.id = savedLine.id
@@ -831,18 +845,117 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
     debugLog('❌ Error saving entry:', err)
     error.value = 'Failed to save entry'
   } finally {
-    loading.value = false
     entry._isSaving = false
+  }
+}
+
+/**
+ * Soft refresh of a specific row after saving, without blocking the grid.
+ * - Searches for current entries in the backend for (staffId, date)
+ * - Locates the saved row by ID and applies an authoritative merge to the grid data and timeEntries
+ */
+async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
+  try {
+    const resp = await costlineService.getTimesheetEntries(selectedStaffId.value, currentDate.value)
+    const line = resp.cost_lines.find((l: TimesheetCostLine) => String(l.id) === String(entry.id))
+    if (!line) return
+
+    const hours = line.quantity
+    const staffWageRate = line.wage_rate || line.unit_cost
+    const rateMultiplier =
+      line.meta && 'rate_multiplier' in line.meta && typeof line.meta.rate_multiplier === 'number'
+        ? line.meta.rate_multiplier
+        : 1.0
+
+    const calculatedWage =
+      hours > 0 && staffWageRate > 0
+        ? Math.round(hours * rateMultiplier * staffWageRate * 100) / 100
+        : 0
+
+    const merged: TimesheetEntryWithMeta = {
+      id: line.id,
+      jobId: line.job_id || '',
+      jobNumber: line.job_number || '',
+      client: line.client_name || '',
+      jobName: line.job_name || '',
+      hours,
+      billable:
+        line.meta && 'is_billable' in line.meta && typeof line.meta.is_billable === 'boolean'
+          ? line.meta.is_billable
+          : true,
+      description: line.desc,
+      rate: getRateTypeFromMultiplier(rateMultiplier),
+      wage: calculatedWage,
+      bill: line.total_rev,
+      staffId: selectedStaffId.value,
+      date: currentDate.value,
+      wageRate: staffWageRate,
+      chargeOutRate: line.charge_out_rate,
+      rateMultiplier,
+      isNewRow: false,
+      isModified: false,
+    }
+
+    // Update the grid
+    const rows = gridData.value as unknown as TimesheetEntryWithMeta[]
+    const idx = rows.findIndex(
+      (r) =>
+        (merged.id && String(r.id) === String(merged.id)) ||
+        (r.tempId && entry.tempId && String(r.tempId) === String(entry.tempId)),
+    )
+    if (idx !== -1) {
+      const prev = rows[idx]
+      rows[idx] = {
+        ...prev,
+        ...merged,
+        tempId: merged.id ? undefined : prev.tempId,
+        _isSaving: false,
+        isModified: false,
+        isNewRow: false,
+      }
+
+      const api = agGridRef.value?.api
+      if (api) {
+        let targetNode: RowNode | null = null
+        api.forEachNode((node: RowNode) => {
+          const data = (node as unknown as { data?: TimesheetEntryWithMeta }).data
+          if (data && String(data.id) === String(merged.id)) targetNode = node
+        })
+        if (targetNode) {
+          ;(targetNode as unknown as { setData: (d: unknown) => void }).setData(
+            rows[idx] as unknown,
+          )
+          api.refreshCells({ rowNodes: [targetNode], force: true })
+        } else {
+          api.refreshCells({ force: true })
+        }
+      }
+    }
+
+    // Update entries to reflect state
+    const tRows = timeEntries.value as TimesheetEntryWithMeta[]
+    const tIdx = tRows.findIndex((r) => r?.id && String(r.id) === String(merged.id))
+    if (tIdx !== -1) {
+      const prevTE = tRows[tIdx]
+      tRows[tIdx] = { ...prevTE, ...merged }
+    } else {
+      tRows.push(merged)
+    }
+  } catch (err) {
+    debugLog('❌ Soft refresh failed:', err)
   }
 }
 
 async function handleDeleteEntry(id: number): Promise<void> {
   try {
+    // Keep loading for deletion since it's a critical operation
     loading.value = true
 
     await costlineService.deleteCostLine(id)
 
-    timeEntries.value = timeEntries.value.filter((e: CostLine) => e.id !== id)
+    timeEntries.value = timeEntries.value.filter(
+      (e: TimesheetEntryWithMeta) => String(e.id) !== String(id),
+    )
 
     hasUnsavedChanges.value = false
     debugLog('✅ Entry deleted successfully:', id)
@@ -865,6 +978,8 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
 
   if (event.data && typeof event.data === 'object') {
     event.data.isModified = true
+    const entry = event.data as TimesheetEntryWithMeta
+    autosave.scheduleEntry(entry)
   }
 
   hasUnsavedChanges.value = true
@@ -904,137 +1019,6 @@ const addNewEntry = () => {
   hasUnsavedChanges.value = true
 
   debugLog('✅ Added new entry via composable')
-}
-
-const saveChanges = async () => {
-  debugLog('💾 Starting saveChanges...')
-  debugLog('🔍 agGridRef.value:', !!agGridRef.value)
-  debugLog('🔍 agGridRef.value?.api:', !!agGridRef.value?.api)
-
-  syncGridState()
-
-  const changedEntries = timeEntries.value.filter(
-    (entry: CostLine) => entry.isModified || entry.isNewRow,
-  )
-
-  debugLog('📊 Found', changedEntries.length, 'changed entries to save')
-  debugLog(
-    '🔍 Changed entries details:',
-    changedEntries.map((e) => ({
-      id: e.id,
-      isNewRow: e.isNewRow,
-      isModified: e.isModified,
-      description: e.description,
-      hours: e.hours,
-    })),
-  )
-
-  if (changedEntries.length === 0) {
-    debugLog('⚠️ No entries to save')
-    return
-  }
-
-  const invalidEntries = changedEntries.filter((entry) => {
-    const hasJob = entry.jobId || entry.jobNumber
-    const hasDescription = entry.description && entry.description.trim().length > 0
-    const hasHours = entry.hours > 0
-
-    return !hasJob || !hasDescription || !hasHours
-  })
-
-  if (invalidEntries.length > 0) {
-    debugLog('❌ Found invalid entries:', invalidEntries)
-    const missingFields = invalidEntries
-      .map((entry) => {
-        const missing: string[] = []
-        if (!entry.jobId && !entry.jobNumber) missing.push('Job')
-        if (!entry.description || !entry.description.trim()) missing.push('Description')
-        if (entry.hours <= 0) missing.push('Hours')
-        return `Entry ${entry.id || 'new'}: Missing ${missing.join(', ')}`
-      })
-      .join('\n')
-
-    error.value = `Cannot save entries with missing required fields:\n${missingFields}`
-    return
-  }
-
-  const recalculatedEntries = changedEntries.map((entry) => {
-    const hours = typeof entry.hours === 'string' ? parseFloat(entry.hours) || 0 : entry.hours || 0
-    const wageRate =
-      typeof entry.wageRate === 'string' ? parseFloat(entry.wageRate) || 0 : entry.wageRate || 0
-    const chargeOutRate =
-      typeof entry.chargeOutRate === 'string'
-        ? parseFloat(entry.chargeOutRate) || 0
-        : entry.chargeOutRate || 0
-    const rate = entry.rate || 'Ord'
-    const billable = entry.billable ?? true
-
-    let rateMultiplier = 1.0
-    switch (rate) {
-      case '1.5':
-        rateMultiplier = 1.5
-        break
-      case '2.0':
-        rateMultiplier = 2.0
-        break
-      case 'Unpaid':
-        rateMultiplier = 0.0
-        break
-      default:
-        rateMultiplier = 1.0
-    }
-
-    let calculatedWage = 0
-    if (hours > 0 && wageRate > 0)
-      calculatedWage = Math.round(hours * rateMultiplier * wageRate * 100) / 100
-
-    let calculatedBill = 0
-    if (billable && hours > 0 && chargeOutRate > 0) {
-      calculatedBill = Math.round(hours * chargeOutRate * 100) / 100
-    }
-
-    debugLog('🧮 Recalculated entry with correct formula:', {
-      id: entry.id,
-      hours,
-      wageRate,
-      chargeOutRate,
-      rate,
-      rateMultiplier,
-      billable,
-      calculatedWage,
-      calculatedBill,
-      formula: `${hours} × ${rateMultiplier} × ${wageRate} = ${calculatedWage}`,
-    })
-
-    return {
-      ...entry,
-      hours,
-      wageRate,
-      chargeOutRate,
-      rateMultiplier,
-      wage: calculatedWage,
-      bill: calculatedBill,
-    }
-  })
-
-  for (const entry of recalculatedEntries) {
-    debugLog('🔄 Saving recalculated entry:', {
-      id: entry.id,
-      isNewRow: entry.isNewRow,
-      isModified: entry.isModified,
-      description: entry.description,
-      wage: entry.wage,
-      bill: entry.bill,
-    })
-    await handleSaveEntry(entry)
-
-    // ✅ Mark as saved and update grid state
-    entry.isModified = false
-    entry.isNewRow = false
-  }
-
-  hasUnsavedChanges.value = false
-  reloadData()
 }
 
 const reloadData = () => {
@@ -1113,10 +1097,16 @@ const loadTimesheetData = async () => {
     debugLog('📊 Number of cost lines:', response.cost_lines?.length || 0)
 
     timeEntries.value = response.cost_lines.map((line: TimesheetCostLine) => {
-      const hours = parseFloat(line.quantity)
-      const staffWageRate = line.wage_rate || parseFloat(line.unit_cost)
+      const hours = line.quantity
+      const staffWageRate = line.wage_rate || line.unit_cost
       const rateMultiplier =
-        typeof line.meta?.rate_multiplier === 'number' ? line.meta.rate_multiplier : 1.0
+        line.meta &&
+        typeof line.meta === 'object' &&
+        line.meta !== null &&
+        'rate_multiplier' in line.meta &&
+        typeof (line.meta as Record<string, unknown>).rate_multiplier === 'number'
+          ? ((line.meta as Record<string, unknown>).rate_multiplier as number)
+          : 1.0
 
       // ✅ ALWAYS CALCULATE WAGE WITH CORRECT FORMULA: hours × rate_multiplier × staff_wage_rate
       const calculatedWage =
@@ -1141,7 +1131,14 @@ const loadTimesheetData = async () => {
         client: line.client_name || '',
         jobName: line.job_name || '',
         hours,
-        billable: typeof line.meta?.is_billable === 'boolean' ? line.meta.is_billable : true,
+        billable:
+          line.meta &&
+          typeof line.meta === 'object' &&
+          line.meta !== null &&
+          'is_billable' in line.meta &&
+          typeof (line.meta as Record<string, unknown>).is_billable === 'boolean'
+            ? ((line.meta as Record<string, unknown>).is_billable as boolean)
+            : true,
         description: line.desc,
         rate: getRateTypeFromMultiplier(rateMultiplier),
         wage: calculatedWage, // ✅ ALWAYS use calculated wage
@@ -1149,7 +1146,7 @@ const loadTimesheetData = async () => {
         staffId: selectedStaffId.value,
         date: currentDate.value,
         wageRate: staffWageRate,
-        chargeOutRate: parseFloat(line.charge_out_rate),
+        chargeOutRate: line.charge_out_rate,
         rateMultiplier,
         isNewRow: false,
         isModified: false,
@@ -1206,8 +1203,10 @@ const handleKeydown = (event: KeyboardEvent) => {
         break
       case 's':
         event.preventDefault()
-        if (hasUnsavedChanges.value) {
-          saveChanges()
+        if (autosave.isIdle()) {
+          toast.success('All changes saved')
+        } else {
+          toast.info('Saving entries...')
         }
         break
     }
@@ -1219,6 +1218,44 @@ const handleKeydown = (event: KeyboardEvent) => {
     debugLog('🎯 Shift+N pressed - adding new entry')
     addNewEntry()
   }
+}
+
+const showSummary = async () => {
+  debugLog('🔍 Opening Summary Drawer - checking data availability...')
+
+  // Ensure jobs are loaded
+  if (timesheetStore.jobs.length === 0) {
+    debugLog('⚠️ Jobs not loaded, loading now...')
+    try {
+      loading.value = true
+      await timesheetStore.loadJobs()
+      debugLog('✅ Jobs loaded successfully:', timesheetStore.jobs.length)
+    } catch (error) {
+      debugLog('❌ Failed to load jobs:', error)
+      error.value = 'Failed to load jobs for summary'
+      return
+    } finally {
+      loading.value = false
+    }
+  }
+
+  debugLog('🔍 Summary Drawer data before opening:', {
+    jobsCount: timesheetStore.jobs.length,
+    timeEntriesCount: timeEntries.value.length,
+    adaptedTimeEntriesCount: adaptedTimeEntries.value.length,
+    availableJobsCount: availableJobs.value.length,
+    jobs: timesheetStore.jobs
+      .slice(0, 3)
+      .map((j) => ({ id: j.id, job_number: j.job_number, name: j.name, job_status: j.job_status })),
+    timeEntries: timeEntries.value
+      .slice(0, 3)
+      .map((e) => ({ id: e.id, jobId: e.jobId, hours: e.hours })),
+    adaptedEntries: adaptedTimeEntries.value
+      .slice(0, 3)
+      .map((e) => ({ id: e.id, job_id: e.job_id, quantity: e.quantity })),
+  })
+
+  showSummaryDrawer.value = true
 }
 
 onMounted(async () => {
@@ -1297,6 +1334,12 @@ watch(
       debugLog('⏭️ Skipping watcher - initial setup detected')
       return
     }
+
+    selectedStaffId.value = newStaffId
+    updateRoute()
+
+    const staffData = timesheetStore.staff.find((s) => s.id === selectedStaffId.value) || null
+    setCurrentStaff(staffData)
 
     debugLog('📊 Loading data due to staff/date change:', {
       newStaffId,

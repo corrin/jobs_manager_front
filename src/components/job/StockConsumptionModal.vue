@@ -35,9 +35,7 @@
                 >
                   <div class="font-medium text-sm">{{ item.description }}</div>
                   <div class="text-xs text-gray-500">
-                    Stock: {{ item.quantity }} | Unit Cost: ${{
-                      formatCurrency(Number(item.unit_cost))
-                    }}
+                    Stock: {{ item.quantity }} | Unit Cost: ${{ formatCurrency(item.unit_cost) }}
                   </div>
                 </div>
               </div>
@@ -57,32 +55,37 @@
             type="number"
             step="0.001"
             min="0.001"
-            :max="
-              selectedStock
-                ? typeof selectedStock.quantity === 'string'
-                  ? parseFloat(selectedStock.quantity)
-                  : selectedStock.quantity
-                : undefined
-            "
             class="input"
+            :class="{ 'border-amber-300 bg-amber-50': hasStockWarning }"
             placeholder="0.000"
             required
           />
+          <!-- Stock Warning (Non-blocking) -->
           <div
-            v-if="
-              selectedStock &&
-              formData.quantity >
-                (typeof selectedStock.quantity === 'string'
-                  ? parseFloat(selectedStock.quantity)
-                  : selectedStock.quantity)
-            "
-            class="mt-1 text-sm text-red-600"
+            v-if="hasStockWarning"
+            class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2"
           >
-            Quantity cannot exceed available stock ({{
-              typeof selectedStock.quantity === 'string'
-                ? parseFloat(selectedStock.quantity)
-                : selectedStock.quantity
-            }})
+            <svg
+              class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+            <div class="flex-1">
+              <div class="text-sm font-medium text-amber-800">Stock Warning</div>
+              <div class="text-sm text-amber-700 mt-1">
+                Requested quantity ({{ formData.quantity }}) exceeds available stock ({{
+                  selectedStock?.quantity || 0
+                }}). This will result in negative inventory. You can still proceed if needed.
+              </div>
+            </div>
           </div>
         </label>
 
@@ -135,8 +138,14 @@
 
         <DialogFooter class="flex gap-2 justify-end mt-2">
           <Button type="button" variant="outline" @click="$emit('close')"> Cancel </Button>
-          <Button type="submit" variant="default" :disabled="!canSubmit">
-            <Plus class="w-4 h-4 mr-1" /> Add Material
+          <Button
+            type="submit"
+            :variant="hasStockWarning ? 'destructive' : 'default'"
+            :disabled="!canSubmit"
+            :class="{ 'bg-amber-600 hover:bg-amber-700 border-amber-600': hasStockWarning }"
+          >
+            <Plus class="w-4 h-4 mr-1" />
+            {{ hasStockWarning ? 'Add Material (Warning)' : 'Add Material' }}
           </Button>
         </DialogFooter>
       </form>
@@ -179,18 +188,17 @@ const formData = ref({
   unit_rev: 0,
 })
 
+// New computed for stock warning detection
+const hasStockWarning = computed(() => {
+  return selectedStock.value && formData.value.quantity > selectedStock.value.quantity
+})
+
 const canSubmit = computed(() => {
   if (!selectedStock.value) return false
-
-  const availableQuantity =
-    typeof selectedStock.value.quantity === 'string'
-      ? parseFloat(selectedStock.value.quantity)
-      : selectedStock.value.quantity
 
   return (
     selectedStock.value &&
     formData.value.quantity > 0 &&
-    formData.value.quantity <= availableQuantity &&
     formData.value.unit_cost >= 0 &&
     formData.value.unit_rev >= 0
   )
@@ -228,7 +236,7 @@ function filterStock() {
 
   // Filter out items with zero or negative quantity
   filteredStock.value = items.filter((item) => {
-    const quantity = typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity
+    const quantity = item.quantity
     return quantity > 0
   })
 
@@ -273,13 +281,13 @@ function selectStockItem(item: StockItem) {
   })
 
   // Auto-populate unit cost from stock - ensure it's a number
-  const unitCostValue = Number(item.unit_cost) || 0
+  const unitCostValue: number = (item.unit_cost as number) || 0
   formData.value.unit_cost = unitCostValue
 
   // Auto-calculate unit revenue with markup
-  const markup = Number(companyDefaultsStore.companyDefaults?.materials_markup || 0)
+  const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
   const calculatedRev = unitCostValue * (1 + markup)
-  formData.value.unit_rev = calculatedRev.toFixed(2)
+  formData.value.unit_rev = calculatedRev
 
   debugLog(
     'selectStockItem - unit_cost:',
@@ -306,8 +314,8 @@ watch(
     if (isSelectingItem.value) return
 
     // Ensure newCost is a valid number
-    const cost = Number(newCost) || 0
-    const markup = Number(companyDefaultsStore.companyDefaults?.materials_markup || 0)
+    const cost = newCost || 0
+    const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
     const calculatedRev = cost * (1 + markup)
     formData.value.unit_rev = calculatedRev
     debugLog(
@@ -328,17 +336,12 @@ watch(
 function handleSubmit() {
   if (!canSubmit.value || !selectedStock.value) return
 
-  const availableQuantity =
-    typeof selectedStock.value.quantity === 'string'
-      ? parseFloat(selectedStock.value.quantity)
-      : selectedStock.value.quantity
-
-  if (formData.value.quantity > availableQuantity) {
-    debugLog('Cannot consume more than available quantity:', {
+  // Log warning but don't block submission
+  if (hasStockWarning.value) {
+    debugLog('Warning: Consuming more than available quantity:', {
       requested: formData.value.quantity,
-      available: availableQuantity,
+      available: selectedStock.value.quantity,
     })
-    return
   }
 
   emit('submit', {

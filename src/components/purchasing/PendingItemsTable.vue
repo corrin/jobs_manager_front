@@ -87,8 +87,8 @@ const columns = computed(() => [
     id: 'remaining_quantity',
     header: 'Remaining',
     cell: ({ row }: DataTableRowContext) => {
-      const quantity = parseFloat(row.original.quantity) || 0
-      const receivedQuantity = parseFloat(row.original.received_quantity || '0') || 0
+      const quantity = row.original.quantity || 0
+      const receivedQuantity = row.original.received_quantity || 0
       const remaining = quantity - receivedQuantity
       return remaining.toFixed(2)
     },
@@ -97,7 +97,7 @@ const columns = computed(() => [
     id: 'unit_cost',
     header: 'Unit Cost',
     cell: ({ row }: DataTableRowContext) => {
-      const unitCost = row.original.unit_cost ? parseFloat(row.original.unit_cost) : null
+      const unitCost = row.original.unit_cost
       return unitCost ? `$${unitCost.toFixed(2)}` : 'N/A'
     },
   },

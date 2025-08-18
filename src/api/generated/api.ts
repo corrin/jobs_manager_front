@@ -107,6 +107,7 @@ const KPICalendarData = z
     month: z.number().int(),
   })
   .passthrough()
+const StandardError = z.object({ error: z.string(), details: z.unknown().optional() }).passthrough()
 const JobAgingFinancialData = z
   .object({
     estimate_total: z.number(),
@@ -138,6 +139,64 @@ const JobAgingJobData = z
   })
   .passthrough()
 const JobAgingResponse = z.object({ jobs: z.array(JobAgingJobData) }).passthrough()
+const StaffPerformanceTeamAverages = z
+  .object({
+    billable_percentage: z.number(),
+    revenue_per_hour: z.number(),
+    profit_per_hour: z.number(),
+    jobs_per_person: z.number(),
+    total_hours: z.number(),
+    billable_hours: z.number(),
+    total_revenue: z.number(),
+    total_profit: z.number(),
+  })
+  .passthrough()
+const StaffPerformanceJobBreakdown = z
+  .object({
+    job_id: z.string(),
+    job_number: z.number().int(),
+    job_name: z.string(),
+    client_name: z.string(),
+    billable_hours: z.number(),
+    non_billable_hours: z.number(),
+    total_hours: z.number(),
+    revenue: z.number(),
+    cost: z.number(),
+    profit: z.number(),
+    revenue_per_hour: z.number(),
+  })
+  .passthrough()
+const StaffPerformanceStaffData = z
+  .object({
+    staff_id: z.string(),
+    name: z.string(),
+    total_hours: z.number(),
+    billable_hours: z.number(),
+    billable_percentage: z.number(),
+    total_revenue: z.number(),
+    total_cost: z.number(),
+    profit: z.number(),
+    revenue_per_hour: z.number(),
+    profit_per_hour: z.number(),
+    jobs_worked: z.number().int(),
+    job_breakdown: z.array(StaffPerformanceJobBreakdown).optional(),
+  })
+  .passthrough()
+const StaffPerformancePeriodSummary = z
+  .object({
+    start_date: z.string(),
+    end_date: z.string(),
+    total_staff: z.number().int(),
+    period_description: z.string(),
+  })
+  .passthrough()
+const StaffPerformanceResponse = z
+  .object({
+    team_averages: StaffPerformanceTeamAverages,
+    staff: z.array(StaffPerformanceStaffData),
+    period_summary: StaffPerformancePeriodSummary,
+  })
+  .passthrough()
 const Staff = z
   .object({
     id: z.string().uuid(),
@@ -150,45 +209,22 @@ const Staff = z
     first_name: z.string().max(30),
     last_name: z.string().max(30),
     preferred_name: z.string().max(30).nullish(),
-    wage_rate: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .optional(),
+    wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     ims_payroll_id: z.string().max(100).nullish(),
     raw_ims_data: z.unknown().nullish(),
+    xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_staff: z.boolean().optional(),
     date_joined: z.string().datetime({ offset: true }).optional(),
     created_at: z.string().datetime({ offset: true }).optional(),
     updated_at: z.string().datetime({ offset: true }),
-    hours_mon: z
-      .string()
-      .regex(/^-?\d{0,2}(?:\.\d{0,2})?$/)
-      .optional(),
-    hours_tue: z
-      .string()
-      .regex(/^-?\d{0,2}(?:\.\d{0,2})?$/)
-      .optional(),
-    hours_wed: z
-      .string()
-      .regex(/^-?\d{0,2}(?:\.\d{0,2})?$/)
-      .optional(),
-    hours_thu: z
-      .string()
-      .regex(/^-?\d{0,2}(?:\.\d{0,2})?$/)
-      .optional(),
-    hours_fri: z
-      .string()
-      .regex(/^-?\d{0,2}(?:\.\d{0,2})?$/)
-      .optional(),
-    hours_sat: z
-      .string()
-      .regex(/^-?\d{0,2}(?:\.\d{0,2})?$/)
-      .optional(),
-    hours_sun: z
-      .string()
-      .regex(/^-?\d{0,2}(?:\.\d{0,2})?$/)
-      .optional(),
+    hours_mon: z.number().gt(-100).lt(100).optional(),
+    hours_tue: z.number().gt(-100).lt(100).optional(),
+    hours_wed: z.number().gt(-100).lt(100).optional(),
+    hours_thu: z.number().gt(-100).lt(100).optional(),
+    hours_fri: z.number().gt(-100).lt(100).optional(),
+    hours_sat: z.number().gt(-100).lt(100).optional(),
+    hours_sun: z.number().gt(-100).lt(100).optional(),
     groups: z.array(z.number().int()).optional(),
     user_permissions: z.array(z.number().int()).optional(),
   })
@@ -205,21 +241,22 @@ const PatchedStaff = z
     first_name: z.string().max(30),
     last_name: z.string().max(30),
     preferred_name: z.string().max(30).nullable(),
-    wage_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    wage_rate: z.number().gt(-100000000).lt(100000000),
     ims_payroll_id: z.string().max(100).nullable(),
     raw_ims_data: z.unknown().nullable(),
+    xero_user_id: z.string().max(255).nullable(),
     date_left: z.string().nullable(),
     is_staff: z.boolean(),
     date_joined: z.string().datetime({ offset: true }),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
-    hours_mon: z.string().regex(/^-?\d{0,2}(?:\.\d{0,2})?$/),
-    hours_tue: z.string().regex(/^-?\d{0,2}(?:\.\d{0,2})?$/),
-    hours_wed: z.string().regex(/^-?\d{0,2}(?:\.\d{0,2})?$/),
-    hours_thu: z.string().regex(/^-?\d{0,2}(?:\.\d{0,2})?$/),
-    hours_fri: z.string().regex(/^-?\d{0,2}(?:\.\d{0,2})?$/),
-    hours_sat: z.string().regex(/^-?\d{0,2}(?:\.\d{0,2})?$/),
-    hours_sun: z.string().regex(/^-?\d{0,2}(?:\.\d{0,2})?$/),
+    hours_mon: z.number().gt(-100).lt(100),
+    hours_tue: z.number().gt(-100).lt(100),
+    hours_wed: z.number().gt(-100).lt(100),
+    hours_thu: z.number().gt(-100).lt(100),
+    hours_fri: z.number().gt(-100).lt(100),
+    hours_sat: z.number().gt(-100).lt(100),
+    hours_sun: z.number().gt(-100).lt(100),
     groups: z.array(z.number().int()),
     user_permissions: z.array(z.number().int()),
   })
@@ -250,6 +287,14 @@ const UserProfile = z
     is_staff: z.boolean(),
   })
   .passthrough()
+const AWSInstanceStatusResponse = z
+  .object({
+    success: z.boolean(),
+    status: z.string().optional(),
+    error: z.string().optional(),
+    details: z.string().optional(),
+  })
+  .passthrough()
 const ProviderTypeEnum = z.enum(['Claude', 'Gemini', 'Mistral'])
 const AIProvider = z
   .object({
@@ -265,22 +310,10 @@ const CompanyDefaults = z
     company_name: z.string().max(255),
     ai_providers: z.array(AIProvider),
     is_primary: z.boolean().optional(),
-    time_markup: z
-      .string()
-      .regex(/^-?\d{0,3}(?:\.\d{0,2})?$/)
-      .optional(),
-    materials_markup: z
-      .string()
-      .regex(/^-?\d{0,3}(?:\.\d{0,2})?$/)
-      .optional(),
-    charge_out_rate: z
-      .string()
-      .regex(/^-?\d{0,4}(?:\.\d{0,2})?$/)
-      .optional(),
-    wage_rate: z
-      .string()
-      .regex(/^-?\d{0,4}(?:\.\d{0,2})?$/)
-      .optional(),
+    time_markup: z.number().gt(-1000).lt(1000).optional(),
+    materials_markup: z.number().gt(-1000).lt(1000).optional(),
+    charge_out_rate: z.number().gt(-10000).lt(10000).optional(),
+    wage_rate: z.number().gt(-10000).lt(10000).optional(),
     starting_job_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
     starting_po_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
     po_prefix: z.string().max(10).optional(),
@@ -304,22 +337,10 @@ const CompanyDefaults = z
     last_xero_sync: z.string().datetime({ offset: true }).nullish(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
     shop_client_name: z.string().max(255).nullish(),
-    billable_threshold_green: z
-      .string()
-      .regex(/^-?\d{0,3}(?:\.\d{0,2})?$/)
-      .optional(),
-    billable_threshold_amber: z
-      .string()
-      .regex(/^-?\d{0,3}(?:\.\d{0,2})?$/)
-      .optional(),
-    daily_gp_target: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .optional(),
-    shop_hours_target_percentage: z
-      .string()
-      .regex(/^-?\d{0,3}(?:\.\d{0,2})?$/)
-      .optional(),
+    billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
+    billable_threshold_amber: z.number().gt(-1000).lt(1000).optional(),
+    daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
+    shop_hours_target_percentage: z.number().gt(-1000).lt(1000).optional(),
   })
   .passthrough()
 const PatchedCompanyDefaults = z
@@ -327,10 +348,10 @@ const PatchedCompanyDefaults = z
     company_name: z.string().max(255),
     ai_providers: z.array(AIProvider),
     is_primary: z.boolean(),
-    time_markup: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
-    materials_markup: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
-    charge_out_rate: z.string().regex(/^-?\d{0,4}(?:\.\d{0,2})?$/),
-    wage_rate: z.string().regex(/^-?\d{0,4}(?:\.\d{0,2})?$/),
+    time_markup: z.number().gt(-1000).lt(1000),
+    materials_markup: z.number().gt(-1000).lt(1000),
+    charge_out_rate: z.number().gt(-10000).lt(10000),
+    wage_rate: z.number().gt(-10000).lt(10000),
     starting_job_number: z.number().int().gte(-2147483648).lte(2147483647),
     starting_po_number: z.number().int().gte(-2147483648).lte(2147483647),
     po_prefix: z.string().max(10),
@@ -354,10 +375,10 @@ const PatchedCompanyDefaults = z
     last_xero_sync: z.string().datetime({ offset: true }).nullable(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
     shop_client_name: z.string().max(255).nullable(),
-    billable_threshold_green: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
-    billable_threshold_amber: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
-    daily_gp_target: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    shop_hours_target_percentage: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    billable_threshold_green: z.number().gt(-1000).lt(1000),
+    billable_threshold_amber: z.number().gt(-1000).lt(1000),
+    daily_gp_target: z.number().gt(-100000000).lt(100000000),
+    shop_hours_target_percentage: z.number().gt(-1000).lt(1000),
   })
   .partial()
   .passthrough()
@@ -709,9 +730,9 @@ const PatchedCostLineCreateUpdate = z
   .object({
     kind: Kind332Enum,
     desc: z.string().max(255),
-    quantity: z.string().regex(/^-?\d{0,7}(?:\.\d{0,3})?$/),
-    unit_cost: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    unit_rev: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    quantity: z.number().gt(-10000000).lt(10000000),
+    unit_cost: z.number().gt(-100000000).lt(100000000),
+    unit_rev: z.number().gt(-100000000).lt(100000000),
     ext_refs: z.unknown(),
     meta: z.unknown(),
   })
@@ -721,18 +742,9 @@ const CostLineCreateUpdate = z
   .object({
     kind: Kind332Enum,
     desc: z.string().max(255),
-    quantity: z
-      .string()
-      .regex(/^-?\d{0,7}(?:\.\d{0,3})?$/)
-      .optional(),
-    unit_cost: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .optional(),
-    unit_rev: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .optional(),
+    quantity: z.number().gt(-10000000).lt(10000000).optional(),
+    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
+    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
     ext_refs: z.unknown().optional(),
     meta: z.unknown().optional(),
   })
@@ -752,7 +764,7 @@ const JobCreateResponse = z
   .object({
     success: z.boolean().optional().default(true),
     job_id: z.string(),
-    job_number: z.string(),
+    job_number: z.number().int(),
     message: z.string(),
   })
   .passthrough()
@@ -771,18 +783,9 @@ const CostLine = z
     id: z.string().uuid(),
     kind: Kind332Enum,
     desc: z.string().max(255),
-    quantity: z
-      .string()
-      .regex(/^-?\d{0,7}(?:\.\d{0,3})?$/)
-      .optional(),
-    unit_cost: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .optional(),
-    unit_rev: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .optional(),
+    quantity: z.number().gt(-10000000).lt(10000000).optional(),
+    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
+    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
     total_cost: z.number(),
     total_rev: z.number(),
     ext_refs: z.unknown().optional(),
@@ -807,8 +810,31 @@ const QuoteSpreadsheet = z
     sheet_url: z.string().max(500).url().nullish(),
     tab: z.string().max(100).nullish(),
     job_id: z.string(),
-    job_number: z.string(),
+    job_number: z.number().int(),
     job_name: z.string(),
+  })
+  .passthrough()
+const XeroQuoteStatusEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
+const XeroQuote = z
+  .object({
+    status: XeroQuoteStatusEnum,
+    online_url: z.string().max(200).url().nullable(),
+  })
+  .partial()
+  .passthrough()
+const XeroInvoiceStatusEnum = z.enum([
+  'DRAFT',
+  'SUBMITTED',
+  'AUTHORISED',
+  'DELETED',
+  'VOIDED',
+  'PAID',
+])
+const XeroInvoice = z
+  .object({
+    number: z.string().max(255),
+    status: XeroInvoiceStatusEnum.optional(),
+    online_url: z.string().max(200).url().nullish(),
   })
   .passthrough()
 const Job = z
@@ -834,13 +860,15 @@ const Job = z
     quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
     job_is_valid: z.boolean().optional(),
     job_files: z.array(JobFile).optional(),
-    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    charge_out_rate: z.number().gt(-100000000).lt(100000000),
     pricing_methodology: PricingMethodologyEnum.optional(),
     quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
-    invoiced: z.boolean(),
+    fully_invoiced: z.boolean(),
     quote: z.object({}).partial().passthrough().nullable(),
     invoice: z.object({}).partial().passthrough().nullable(),
+    xero_quote: XeroQuote.nullable(),
+    xero_invoices: z.array(XeroInvoice),
     shop_job: z.boolean(),
   })
   .passthrough()
@@ -880,7 +908,7 @@ const JobDeleteResponse = z
 const QuoteRevisionsList = z
   .object({
     job_id: z.string(),
-    job_number: z.string(),
+    job_number: z.number().int(),
     current_cost_set_rev: z.number().int(),
     total_revisions: z.number().int(),
     revisions: z.array(z.object({}).partial().passthrough()),
@@ -925,11 +953,11 @@ const DraftLine = z
   .object({
     kind: z.string(),
     desc: z.string(),
-    quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    unit_cost: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    unit_rev: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    total_cost: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    total_rev: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    quantity: z.number().gt(-100000000).lt(100000000),
+    unit_cost: z.number().gt(-100000000).lt(100000000),
+    unit_rev: z.number().gt(-100000000).lt(100000000),
+    total_cost: z.number().gt(-100000000).lt(100000000),
+    total_rev: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const QuoteChanges = z
@@ -1012,7 +1040,7 @@ const MonthEndJobHistory = z
 const MonthEndJob = z
   .object({
     job_id: z.string().uuid(),
-    job_number: z.string(),
+    job_number: z.number().int(),
     job_name: z.string(),
     client_name: z.string(),
     history: z.array(MonthEndJobHistory),
@@ -1030,7 +1058,7 @@ const MonthEndStockHistory = z
 const MonthEndStockJob = z
   .object({
     job_id: z.string().uuid(),
-    job_number: z.string(),
+    job_number: z.number().int(),
     job_name: z.string(),
     history: z.array(MonthEndStockHistory),
   })
@@ -1049,18 +1077,18 @@ const TimesheetCostLine = z
     id: z.string().uuid(),
     kind: Kind332Enum,
     desc: z.string(),
-    quantity: z.string().regex(/^-?\d{0,7}(?:\.\d{0,3})?$/),
-    unit_cost: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    unit_rev: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    quantity: z.number().gt(-10000000).lt(10000000),
+    unit_cost: z.number().gt(-100000000).lt(100000000),
+    unit_rev: z.number().gt(-100000000).lt(100000000),
     total_cost: z.number(),
     total_rev: z.number(),
     ext_refs: z.unknown(),
     meta: z.unknown(),
     job_id: z.string(),
-    job_number: z.string(),
+    job_number: z.number().int(),
     job_name: z.string(),
     client_name: z.string(),
-    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    charge_out_rate: z.number().gt(-100000000).lt(100000000),
     wage_rate: z.number(),
   })
   .passthrough()
@@ -1122,12 +1150,12 @@ const ModernTimesheetDayGetResponse = z
 const DeliveryReceiptAllocation = z
   .object({
     job_id: z.string().uuid(),
-    quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    quantity: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const DeliveryReceiptLine = z
   .object({
-    total_received: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_received: z.number().gt(-100000000).lt(100000000),
     allocations: z.array(DeliveryReceiptAllocation),
   })
   .passthrough()
@@ -1136,6 +1164,9 @@ const DeliveryReceiptRequest = z
     purchase_order_id: z.string().uuid(),
     allocations: z.record(DeliveryReceiptLine),
   })
+  .passthrough()
+const DeliveryReceiptResponse = z
+  .object({ success: z.boolean(), error: z.string().optional() })
   .passthrough()
 const PurchaseOrderEmailRequest = z
   .object({
@@ -1193,14 +1224,8 @@ const PurchaseOrderLineCreate = z
   .object({
     job_id: z.string().uuid().nullable(),
     description: z.string().max(255),
-    quantity: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .default('0.00'),
-    unit_cost: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .nullable(),
+    quantity: z.number().gt(-100000000).lt(100000000).default(0),
+    unit_cost: z.number().gt(-100000000).lt(100000000).nullable(),
     price_tbc: z.boolean().default(false),
     item_code: z.string().max(100),
     metal_type: z.string().max(100),
@@ -1246,15 +1271,9 @@ const PurchaseOrderLine = z
     id: z.string().uuid(),
     item_code: z.string().max(50).nullish(),
     description: z.string().max(200),
-    quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    received_quantity: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .optional(),
-    unit_cost: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .nullish(),
+    quantity: z.number().gt(-100000000).lt(100000000),
+    received_quantity: z.number().gt(-100000000).lt(100000000).optional(),
+    unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
     price_tbc: z.boolean().optional(),
     metal_type: z.union([MetalTypeEnum, BlankEnum, NullEnum]).nullish(),
     alloy: z.string().max(50).nullish(),
@@ -1285,14 +1304,8 @@ const PurchaseOrderLineUpdate = z
     id: z.string().uuid().nullable(),
     job_id: z.string().uuid().nullable(),
     description: z.string().max(255),
-    quantity: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .default('0.00'),
-    unit_cost: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .nullable(),
+    quantity: z.number().gt(-100000000).lt(100000000).default(0),
+    unit_cost: z.number().gt(-100000000).lt(100000000).nullable(),
     price_tbc: z.boolean().default(false),
     item_code: z.string().max(100),
     metal_type: z.string().max(100),
@@ -1367,8 +1380,8 @@ const StockList = z
 const StockCreate = z
   .object({
     description: z.string().max(255),
-    quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    unit_cost: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    quantity: z.number().gt(-100000000).lt(100000000),
+    unit_cost: z.number().gt(-100000000).lt(100000000),
     source: z.string().max(100),
     notes: z.string().max(500).optional(),
     metal_type: z.string().max(100).optional(),
@@ -1381,25 +1394,16 @@ const StockCreate = z
 const StockConsumeRequest = z
   .object({
     job_id: z.string().uuid(),
-    quantity: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    unit_cost: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .nullish(),
-    unit_rev: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .nullish(),
+    quantity: z.number().gte(0).lt(100000000),
+    unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
+    unit_rev: z.number().gt(-100000000).lt(100000000).nullish(),
   })
   .passthrough()
 const StockConsumeResponse = z
   .object({
     success: z.boolean(),
     message: z.string().optional(),
-    remaining_quantity: z
-      .string()
-      .regex(/^-?\d{0,8}(?:\.\d{0,2})?$/)
-      .optional(),
+    remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
   })
   .passthrough()
 const SupplierPriceStatusItem = z
@@ -1438,10 +1442,7 @@ const DjangoJobExecution = z
     job_id: z.string(),
     status: DjangoJobExecutionStatusEnum,
     run_time: z.string().datetime({ offset: true }),
-    duration: z
-      .string()
-      .regex(/^-?\d{0,13}(?:\.\d{0,2})?$/)
-      .nullish(),
+    duration: z.number().gt(-10000000000000).lt(10000000000000).nullish(),
     exception: z.string().max(1000).nullish(),
     traceback: z.string().nullish(),
   })
@@ -1464,7 +1465,7 @@ const PatchedDjangoJob = z
 const JobBreakdown = z
   .object({
     job_id: z.string(),
-    job_number: z.string(),
+    job_number: z.number().int(),
     job_name: z.string(),
     client: z.string(),
     hours: z.number(),
@@ -1532,7 +1533,7 @@ const ModernTimesheetJob = z
     name: z.string().max(100),
     client_name: z.string().nullable(),
     status: Status7b9Enum.optional(),
-    charge_out_rate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    charge_out_rate: z.number().gt(-100000000).lt(100000000),
     has_actual_costset: z.boolean(),
   })
   .passthrough()
@@ -1547,7 +1548,7 @@ const ModernStaff = z
     lastName: z.string(),
     email: z.string(),
     avatarUrl: z.string().nullable(),
-    wageRate: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    wageRate: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const StaffListResponse = z
@@ -1556,9 +1557,9 @@ const StaffListResponse = z
 const WeeklyStaffDataWeeklyHours = z
   .object({
     day: z.string(),
-    hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
-    billable_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
-    scheduled_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    hours: z.number().gt(-1000).lt(1000),
+    billable_hours: z.number().gt(-1000).lt(1000),
+    scheduled_hours: z.number().gt(-1000).lt(1000),
     status: z.string(),
     leave_type: z.string().nullish(),
     has_leave: z.boolean(),
@@ -1569,27 +1570,24 @@ const WeeklyStaffData = z
     staff_id: z.string().uuid(),
     name: z.string(),
     weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
-    total_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    total_billable_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    billable_percentage: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    total_hours: z.number().gt(-100000000).lt(100000000),
+    total_billable_hours: z.number().gt(-100000000).lt(100000000),
+    billable_percentage: z.number().gt(-1000).lt(1000),
     status: z.string(),
   })
   .passthrough()
 const WeeklySummary = z
   .object({
-    total_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_hours: z.number().gt(-100000000).lt(100000000),
     staff_count: z.number().int(),
-    billable_percentage: z
-      .string()
-      .regex(/^-?\d{0,3}(?:\.\d{0,2})?$/)
-      .nullish(),
+    billable_percentage: z.number().gt(-1000).lt(1000).nullish(),
   })
   .passthrough()
 const JobMetrics = z
   .object({
-    total_estimated_profit: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    total_actual_profit: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    total_profit: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_estimated_profit: z.number().gt(-100000000).lt(100000000),
+    total_actual_profit: z.number().gt(-100000000).lt(100000000),
+    total_profit: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklyTimesheetData = z
@@ -1609,18 +1607,18 @@ const WeeklyTimesheetData = z
 const IMSWeeklyStaffDataWeeklyHours = z
   .object({
     day: z.string(),
-    hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
-    billable_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
-    scheduled_hours: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    hours: z.number().gt(-1000).lt(1000),
+    billable_hours: z.number().gt(-1000).lt(1000),
+    scheduled_hours: z.number().gt(-1000).lt(1000),
     status: z.string(),
     leave_type: z.string().nullish(),
     has_leave: z.boolean().optional().default(false),
-    standard_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    time_and_half_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    double_time_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    unpaid_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    overtime: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    leave_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    standard_hours: z.number().gt(-100000000).lt(100000000),
+    time_and_half_hours: z.number().gt(-100000000).lt(100000000),
+    double_time_hours: z.number().gt(-100000000).lt(100000000),
+    unpaid_hours: z.number().gt(-100000000).lt(100000000),
+    overtime: z.number().gt(-100000000).lt(100000000),
+    leave_hours: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const IMSWeeklyStaffData = z
@@ -1628,14 +1626,14 @@ const IMSWeeklyStaffData = z
     staff_id: z.string().uuid(),
     name: z.string(),
     weekly_hours: z.array(IMSWeeklyStaffDataWeeklyHours),
-    total_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    total_billable_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    billable_percentage: z.string().regex(/^-?\d{0,3}(?:\.\d{0,2})?$/),
+    total_hours: z.number().gt(-100000000).lt(100000000),
+    total_billable_hours: z.number().gt(-100000000).lt(100000000),
+    billable_percentage: z.number().gt(-1000).lt(1000),
     status: z.string(),
-    total_standard_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    total_time_and_half_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    total_double_time_hours: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
-    total_overtime: z.string().regex(/^-?\d{0,8}(?:\.\d{0,2})?$/),
+    total_standard_hours: z.number().gt(-100000000).lt(100000000),
+    total_time_and_half_hours: z.number().gt(-100000000).lt(100000000),
+    total_double_time_hours: z.number().gt(-100000000).lt(100000000),
+    total_overtime: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const IMSWeeklyTimesheetData = z
@@ -1689,10 +1687,16 @@ export const schemas = {
   KPIMonthlyTotals,
   KPIThresholds,
   KPICalendarData,
+  StandardError,
   JobAgingFinancialData,
   JobAgingTimingData,
   JobAgingJobData,
   JobAgingResponse,
+  StaffPerformanceTeamAverages,
+  StaffPerformanceJobBreakdown,
+  StaffPerformanceStaffData,
+  StaffPerformancePeriodSummary,
+  StaffPerformanceResponse,
   Staff,
   PatchedStaff,
   KanbanStaff,
@@ -1700,6 +1704,7 @@ export const schemas = {
   TokenRefresh,
   TokenVerify,
   UserProfile,
+  AWSInstanceStatusResponse,
   ProviderTypeEnum,
   AIProvider,
   CompanyDefaults,
@@ -1766,6 +1771,10 @@ export const schemas = {
   CostSet,
   PricingMethodologyEnum,
   QuoteSpreadsheet,
+  XeroQuoteStatusEnum,
+  XeroQuote,
+  XeroInvoiceStatusEnum,
+  XeroInvoice,
   Job,
   JobEvent,
   CompanyDefaultsJobDetail,
@@ -1807,6 +1816,7 @@ export const schemas = {
   DeliveryReceiptAllocation,
   DeliveryReceiptLine,
   DeliveryReceiptRequest,
+  DeliveryReceiptResponse,
   PurchaseOrderEmailRequest,
   PurchaseOrderPDFResponse,
   Status7b9Enum,
@@ -1866,9 +1876,31 @@ const endpoints = makeApi([
     method: 'get',
     path: '/accounting/api/reports/calendar/',
     alias: 'accounting_api_reports_calendar_retrieve',
-    description: `API Endpoint to provide KPI data for calendar display`,
+    description: `Returns aggregated KPIs for display in calendar`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'month',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'year',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+    ],
     response: KPICalendarData,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string(), details: z.unknown().optional() }).passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string(), details: z.unknown().optional() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
@@ -1891,7 +1923,7 @@ Returns:
     alias: 'accounting_api_reports_staff_performance_summary_retrieve',
     description: `API endpoint for staff performance summary (all staff)`,
     requestFormat: 'json',
-    response: z.void(),
+    response: StaffPerformanceResponse,
   },
   {
     method: 'get',
@@ -1906,7 +1938,7 @@ Returns:
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: StaffPerformanceResponse,
   },
   {
     method: 'get',
@@ -2122,7 +2154,7 @@ information about a token&#x27;s fitness for a particular use.`,
     alias: 'api_aws_instance_reboot_create',
     description: `Reboot the UAT instance`,
     requestFormat: 'json',
-    response: z.void(),
+    response: AWSInstanceStatusResponse,
   },
   {
     method: 'post',
@@ -2130,7 +2162,7 @@ information about a token&#x27;s fitness for a particular use.`,
     alias: 'api_aws_instance_start_create',
     description: `Start the UAT instance`,
     requestFormat: 'json',
-    response: z.void(),
+    response: AWSInstanceStatusResponse,
   },
   {
     method: 'get',
@@ -2138,7 +2170,7 @@ information about a token&#x27;s fitness for a particular use.`,
     alias: 'api_aws_instance_status_retrieve',
     description: `Get current status of the UAT instance`,
     requestFormat: 'json',
-    response: z.void(),
+    response: AWSInstanceStatusResponse,
   },
   {
     method: 'post',
@@ -2146,7 +2178,7 @@ information about a token&#x27;s fitness for a particular use.`,
     alias: 'api_aws_instance_stop_create',
     description: `Stop the UAT instance`,
     requestFormat: 'json',
-    response: z.void(),
+    response: AWSInstanceStatusResponse,
   },
   {
     method: 'get',
@@ -2557,7 +2589,7 @@ Endpoints:
   {
     method: 'post',
     path: '/api/xero/create_purchase_order/:purchase_order_id',
-    alias: 'api_xero_create_purchase_order_create',
+    alias: 'create_xero_purchase_order',
     description: `Creates a purchase order in Xero for the specified purchase order`,
     requestFormat: 'json',
     parameters: [
@@ -3943,6 +3975,11 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     requestFormat: 'json',
     parameters: [
       {
+        name: 'body',
+        type: 'Body',
+        schema: JobQuoteAcceptance,
+      },
+      {
         name: 'job_id',
         type: 'Path',
         schema: z.string().uuid(),
@@ -4540,7 +4577,13 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
         schema: DeliveryReceiptRequest,
       },
     ],
-    response: DeliveryReceiptRequest,
+    response: DeliveryReceiptResponse,
+    errors: [
+      {
+        status: 400,
+        schema: DeliveryReceiptResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -4616,7 +4659,13 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
         schema: DeliveryReceiptRequest,
       },
     ],
-    response: DeliveryReceiptRequest,
+    response: DeliveryReceiptResponse,
+    errors: [
+      {
+        status: 400,
+        schema: DeliveryReceiptResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -4632,7 +4681,13 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
     alias: 'listPurchaseOrders',
     description: `Get list of purchase orders with optional status filtering.`,
     requestFormat: 'json',
-    response: PurchaseOrderList,
+    response: z.array(PurchaseOrderList),
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
   },
   {
     method: 'post',

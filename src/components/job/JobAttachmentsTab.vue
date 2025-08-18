@@ -276,7 +276,7 @@ async function loadFiles() {
 
   isLoading.value = true
   try {
-    const response = await jobService.listJobFiles(String(props.jobNumber))
+    const response = await jobService.listJobFiles(props.jobNumber)
     files.value = Array.isArray(response) ? response : []
     debugLog('✅ Files loaded successfully:', files.value.length, 'files')
   } catch (error) {

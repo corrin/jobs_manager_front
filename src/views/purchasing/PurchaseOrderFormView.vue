@@ -408,7 +408,7 @@ function hasAnyContent(line: PurchaseOrderLine) {
   return (
     (line.item_code && line.item_code.trim() !== '') ||
     (line.description && line.description.trim() !== '') ||
-    (line.unit_cost != null && Number(line.unit_cost) > 0) ||
+    (line.unit_cost != null && line.unit_cost > 0) ||
     line.price_tbc === true ||
     line.quantity > 0 ||
     (line.job_id && line.job_id.trim() !== '')
@@ -430,8 +430,8 @@ function lineChanged(line: PurchaseOrderLine) {
   return (
     orig.item_code !== line.item_code ||
     orig.description !== line.description ||
-    +orig.quantity !== +line.quantity ||
-    +(orig.unit_cost ?? 0) !== +(line.unit_cost ?? 0) ||
+    orig.quantity !== line.quantity ||
+    (orig.unit_cost ?? 0) !== (line.unit_cost ?? 0) ||
     orig.price_tbc !== line.price_tbc ||
     orig.job_id !== line.job_id ||
     orig.metal_type !== line.metal_type ||
@@ -451,7 +451,7 @@ function isValidLine(line: PurchaseOrderLine) {
     return false
   }
 
-  const hasPrice = (line.unit_cost != null && Number(line.unit_cost) > 0) || line.price_tbc === true
+  const hasPrice = (line.unit_cost != null && line.unit_cost > 0) || line.price_tbc === true
 
   return hasPrice
 }
@@ -490,7 +490,7 @@ async function saveLines() {
 
     if (incompleteLines.length > 0) {
       const missingPrices = incompleteLines.filter(
-        (line) => (!line.unit_cost || Number(line.unit_cost) <= 0) && !line.price_tbc,
+        (line) => (!line.unit_cost || line.unit_cost <= 0) && !line.price_tbc,
       )
 
       if (missingPrices.length > 0) {
@@ -545,16 +545,8 @@ async function saveLines() {
       id: line.id, // Explicitly preserve the ID
       job_id: line.job_id && line.job_id.trim() !== '' ? line.job_id : null,
       description: line.description,
-      quantity:
-        typeof line.quantity === 'number'
-          ? line.quantity.toFixed(2)
-          : String(line.quantity || '0.00'),
-      unit_cost:
-        line.unit_cost != null
-          ? typeof line.unit_cost === 'number'
-            ? line.unit_cost.toFixed(2)
-            : String(line.unit_cost)
-          : null,
+      quantity: line.quantity,
+      unit_cost: line.unit_cost,
       price_tbc: line.price_tbc,
       item_code: line.item_code || '',
       metal_type: line.metal_type || '',
@@ -619,9 +611,12 @@ async function syncWithXero() {
   toast.info('Syncing with Xero…', { id: 'po-sync-loading' })
 
   try {
-    const data = await api.api_xero_create_purchase_order_create({
-      params: { purchase_order_id: orderId },
-    })
+    const data = await api.api_xero_create_purchase_order_create(
+      {},
+      {
+        params: { purchase_order_id: orderId },
+      },
+    )
 
     switch (true) {
       case data.success:

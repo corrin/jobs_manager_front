@@ -410,7 +410,7 @@ const filteredJobs = computed(() => {
 
   const query = searchQuery.value.toLowerCase()
   return jobs.value.filter(
-    (job) =>
+    (job: Job) =>
       job.name.toLowerCase().includes(query) ||
       (job.client && job.client.toLowerCase().includes(query)) ||
       (job as Record<string, number>).job_number.toString().toLowerCase().includes(query) ||

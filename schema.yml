@@ -6,7 +6,19 @@ paths:
   /accounting/api/reports/calendar/:
     get:
       operationId: accounting_api_reports_calendar_retrieve
-      description: API Endpoint to provide KPI data for calendar display
+      description: Returns aggregated KPIs for display in calendar
+      summary: Get KPI calendar data
+      parameters:
+        - in: query
+          name: month
+          schema:
+            type: integer
+          description: Month (1-12). Defaults to current month.
+        - in: query
+          name: year
+          schema:
+            type: integer
+          description: Year (YYYY). Defaults to current year.
       tags:
         - accounting
       security:
@@ -17,6 +29,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/KPICalendarData'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardError'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardError'
           description: ''
   /accounting/api/reports/job-aging/:
     get:
@@ -51,7 +75,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffPerformanceResponse'
+          description: ''
   /accounting/api/reports/staff-performance/{staff_id}/:
     get:
       operationId: accounting_api_reports_staff_performance_retrieve
@@ -69,7 +97,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffPerformanceResponse'
+          description: ''
   /accounts/api/staff/:
     get:
       operationId: accounts_api_staff_list
@@ -410,7 +442,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AWSInstanceStatusResponse'
+          description: ''
   /api/aws/instance/start/:
     post:
       operationId: api_aws_instance_start_create
@@ -421,7 +457,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AWSInstanceStatusResponse'
+          description: ''
   /api/aws/instance/status/:
     get:
       operationId: api_aws_instance_status_retrieve
@@ -432,7 +472,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AWSInstanceStatusResponse'
+          description: ''
   /api/aws/instance/stop/:
     post:
       operationId: api_aws_instance_stop_create
@@ -443,7 +487,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AWSInstanceStatusResponse'
+          description: ''
   /api/company-defaults/:
     get:
       operationId: api_company_defaults_retrieve
@@ -1006,7 +1054,7 @@ paths:
           description: ''
   /api/xero/create_purchase_order/{purchase_order_id}:
     post:
-      operationId: api_xero_create_purchase_order_create
+      operationId: create_xero_purchase_order
       description: Creates a purchase order in Xero for the specified purchase order
       parameters:
         - in: path
@@ -1014,9 +1062,11 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The UUID of the purchase order to create in Xero
           required: true
       tags:
-        - api
+        - Xero
+        - Purchase Orders
       security:
         - cookieAuth: []
       responses:
@@ -3001,6 +3051,18 @@ paths:
           required: true
       tags:
         - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobQuoteAcceptance'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobQuoteAcceptance'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JobQuoteAcceptance'
+        required: true
       security:
         - cookieAuth: []
       responses:
@@ -4150,7 +4212,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeliveryReceiptRequest'
+                $ref: '#/components/schemas/DeliveryReceiptResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryReceiptResponse'
           description: ''
   /purchasing/api/purchase-orders/{purchase_order_id}/email/:
     post:
@@ -4268,7 +4336,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeliveryReceiptRequest'
+                $ref: '#/components/schemas/DeliveryReceiptResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeliveryReceiptResponse'
           description: ''
   /purchasing/rest/jobs/:
     get:
@@ -4298,7 +4372,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PurchaseOrderList'
+                type: array
+                items:
+                  $ref: '#/components/schemas/PurchaseOrderList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
           description: ''
     post:
       operationId: purchasing_rest_purchase_orders_create
@@ -5129,6 +5213,20 @@ components:
         - id
         - name
         - provider_type
+    AWSInstanceStatusResponse:
+      type: object
+      description: Serializer for AWS instance status responses.
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        error:
+          type: string
+        details:
+          type: string
+      required:
+        - success
     AdvancedSearchResponse:
       type: object
       description: Serializer for advanced_search response.
@@ -5481,21 +5579,33 @@ components:
         is_primary:
           type: boolean
         time_markup:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         materials_markup:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         charge_out_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 10000
+          minimum: -10000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         wage_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 10000
+          minimum: -10000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         starting_job_number:
           type: integer
           maximum: 2147483647
@@ -5594,28 +5704,40 @@ components:
             'MSM (Shop)')
           maxLength: 255
         billable_threshold_green:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           title: Green Threshold of Billable Hours
           description: Daily billable hours above this threshold are marked in green
         billable_threshold_amber:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           title: Amber Threshold of Billable Hours
           description: Daily billable hours between this threshold and the green threshold
             are marked in amber
         daily_gp_target:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           title: Daily Goal of Gross Profit
           description: Daily gross profit goal in dolars
         shop_hours_target_percentage:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
       required:
@@ -5693,17 +5815,26 @@ components:
           description: Description of this cost line
           maxLength: 255
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: number
+          format: double
+          maximum: 10000000
+          minimum: -10000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         unit_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         unit_rev:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_cost:
           type: number
           format: double
@@ -5735,17 +5866,26 @@ components:
           description: Description of this cost line
           maxLength: 255
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: number
+          format: double
+          maximum: 10000000
+          minimum: -10000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         unit_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         unit_rev:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         ext_refs:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
@@ -5917,9 +6057,12 @@ components:
           type: string
           format: uuid
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - job_id
         - quantity
@@ -5928,9 +6071,12 @@ components:
       description: Serializer for delivery receipt line allocation data.
       properties:
         total_received:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         allocations:
           type: array
           items:
@@ -5954,6 +6100,16 @@ components:
       required:
         - allocations
         - purchase_order_id
+    DeliveryReceiptResponse:
+      type: object
+      description: Serializer for delivery receipt response data.
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+      required:
+        - success
     DiffPreview:
       type: object
       description: Serializer for a summary of changes in a quote sync.
@@ -6020,9 +6176,12 @@ components:
           format: date-time
           description: Date and time at which this job was executed.
         duration:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 10000000000000
+          minimum: -10000000000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           nullable: true
           description: Total run time of this job (in seconds).
         exception:
@@ -6060,25 +6219,40 @@ components:
         desc:
           type: string
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         unit_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         unit_rev:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_rev:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - desc
         - kind
@@ -6171,35 +6345,56 @@ components:
           items:
             $ref: '#/components/schemas/IMSWeeklyStaffDataWeeklyHours'
         total_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_billable_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         billable_percentage:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         status:
           type: string
         total_standard_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_time_and_half_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_double_time_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_overtime:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - billable_percentage
         - name
@@ -6219,17 +6414,26 @@ components:
         day:
           type: string
         hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         billable_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         scheduled_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         status:
           type: string
         leave_type:
@@ -6239,29 +6443,47 @@ components:
           type: boolean
           default: false
         standard_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         time_and_half_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         double_time_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         unpaid_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         overtime:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         leave_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - billable_hours
         - day
@@ -6400,9 +6622,12 @@ components:
           items:
             $ref: '#/components/schemas/JobFile'
         charge_out_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         pricing_methodology:
           allOf:
             - $ref: '#/components/schemas/PricingMethodologyEnum'
@@ -6419,7 +6644,7 @@ components:
         quoted:
           type: boolean
           readOnly: true
-        invoiced:
+        fully_invoiced:
           type: boolean
           readOnly: true
         quote:
@@ -6432,6 +6657,16 @@ components:
           additionalProperties: {}
           nullable: true
           readOnly: true
+        xero_quote:
+          allOf:
+            - $ref: '#/components/schemas/XeroQuote'
+          nullable: true
+          readOnly: true
+        xero_invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/XeroInvoice'
+          readOnly: true
         shop_job:
           type: boolean
           description: Indicates if this is a shop job (no client).
@@ -6441,9 +6676,9 @@ components:
         - client_name
         - contact_name
         - created_at
+        - fully_invoiced
         - id
         - invoice
-        - invoiced
         - job_number
         - job_status
         - latest_actual
@@ -6455,6 +6690,8 @@ components:
         - quoted
         - shop_job
         - updated_at
+        - xero_invoices
+        - xero_quote
     JobAgingFinancialData:
       type: object
       description: Serialiser for job aging financial data
@@ -6548,7 +6785,7 @@ components:
         job_id:
           type: string
         job_number:
-          type: string
+          type: integer
         job_name:
           type: string
         client:
@@ -6606,7 +6843,7 @@ components:
         job_id:
           type: string
         job_number:
-          type: string
+          type: integer
         message:
           type: string
       required:
@@ -6876,17 +7113,26 @@ components:
       description: Serializer for job metrics in weekly timesheet context
       properties:
         total_estimated_profit:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_actual_profit:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_profit:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - total_actual_profit
         - total_estimated_profit
@@ -7573,9 +7819,12 @@ components:
           type: string
           nullable: true
         wageRate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - avatarUrl
         - email
@@ -7698,9 +7947,12 @@ components:
         status:
           $ref: '#/components/schemas/Status7b9Enum'
         charge_out_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         has_actual_costset:
           type: boolean
           description: Check if job has an actual cost set
@@ -7792,7 +8044,7 @@ components:
           type: string
           format: uuid
         job_number:
-          type: string
+          type: integer
         job_name:
           type: string
         client_name:
@@ -7874,7 +8126,7 @@ components:
           type: string
           format: uuid
         job_number:
-          type: string
+          type: integer
         job_name:
           type: string
         history:
@@ -8009,21 +8261,33 @@ components:
         is_primary:
           type: boolean
         time_markup:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         materials_markup:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         charge_out_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 10000
+          minimum: -10000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         wage_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 10000
+          minimum: -10000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         starting_job_number:
           type: integer
           maximum: 2147483647
@@ -8122,28 +8386,40 @@ components:
             'MSM (Shop)')
           maxLength: 255
         billable_threshold_green:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           title: Green Threshold of Billable Hours
           description: Daily billable hours above this threshold are marked in green
         billable_threshold_amber:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           title: Amber Threshold of Billable Hours
           description: Daily billable hours between this threshold and the green threshold
             are marked in amber
         daily_gp_target:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           title: Daily Goal of Gross Profit
           description: Daily gross profit goal in dolars
         shop_hours_target_percentage:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
     PatchedCostLineCreateUpdate:
@@ -8157,17 +8433,26 @@ components:
           description: Description of this cost line
           maxLength: 255
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: number
+          format: double
+          maximum: 10000000
+          minimum: -10000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         unit_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         unit_rev:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         ext_refs:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
@@ -8267,15 +8552,22 @@ components:
           nullable: true
           maxLength: 30
         wage_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         ims_payroll_id:
           type: string
           nullable: true
           maxLength: 100
         raw_ims_data:
           nullable: true
+        xero_user_id:
+          type: string
+          nullable: true
+          maxLength: 255
         date_left:
           type: string
           format: date
@@ -8294,39 +8586,60 @@ components:
           format: date-time
           readOnly: true
         hours_mon:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Monday, 0 for non-working day
         hours_tue:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Tuesday, 0 for non-working day
         hours_wed:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Wednesday, 0 for non-working day
         hours_thu:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Thursday, 0 for non-working day
         hours_fri:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Friday, 0 for non-working day
         hours_sat:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Saturday, 0 for non-working day
         hours_sun:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Sunday, 0 for non-working day
         groups:
           type: array
@@ -8519,18 +8832,27 @@ components:
           type: string
           maxLength: 200
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         received_quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Total quantity received against this line
         unit_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           nullable: true
         price_tbc:
           type: boolean
@@ -8582,14 +8904,20 @@ components:
           type: string
           maxLength: 255
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          default: '0.00'
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          default: 0.00
         unit_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           nullable: true
         price_tbc:
           type: boolean
@@ -8628,14 +8956,20 @@ components:
           type: string
           maxLength: 255
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          default: '0.00'
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          default: 0.00
         unit_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           nullable: true
         price_tbc:
           type: boolean
@@ -8813,7 +9147,7 @@ components:
         job_id:
           type: string
         job_number:
-          type: string
+          type: integer
         current_cost_set_rev:
           type: integer
         total_revisions:
@@ -8859,7 +9193,7 @@ components:
           type: string
           readOnly: true
         job_number:
-          type: string
+          type: integer
           readOnly: true
         job_name:
           type: string
@@ -8928,15 +9262,22 @@ components:
           nullable: true
           maxLength: 30
         wage_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         ims_payroll_id:
           type: string
           nullable: true
           maxLength: 100
         raw_ims_data:
           nullable: true
+        xero_user_id:
+          type: string
+          nullable: true
+          maxLength: 255
         date_left:
           type: string
           format: date
@@ -8955,39 +9296,60 @@ components:
           format: date-time
           readOnly: true
         hours_mon:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Monday, 0 for non-working day
         hours_tue:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Tuesday, 0 for non-working day
         hours_wed:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Wednesday, 0 for non-working day
         hours_thu:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Thursday, 0 for non-working day
         hours_fri:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Friday, 0 for non-working day
         hours_sat:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Saturday, 0 for non-working day
         hours_sun:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           description: Standard hours for Sunday, 0 for non-working day
         groups:
           type: array
@@ -9088,6 +9450,182 @@ components:
       required:
         - staff
         - total_count
+    StaffPerformanceJobBreakdown:
+      type: object
+      description: Serializer for job breakdown data in staff performance
+      properties:
+        job_id:
+          type: string
+        job_number:
+          type: integer
+        job_name:
+          type: string
+        client_name:
+          type: string
+        billable_hours:
+          type: number
+          format: double
+        non_billable_hours:
+          type: number
+          format: double
+        total_hours:
+          type: number
+          format: double
+        revenue:
+          type: number
+          format: double
+        cost:
+          type: number
+          format: double
+        profit:
+          type: number
+          format: double
+        revenue_per_hour:
+          type: number
+          format: double
+      required:
+        - billable_hours
+        - client_name
+        - cost
+        - job_id
+        - job_name
+        - job_number
+        - non_billable_hours
+        - profit
+        - revenue
+        - revenue_per_hour
+        - total_hours
+    StaffPerformancePeriodSummary:
+      type: object
+      description: Serializer for period summary in staff performance report
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        total_staff:
+          type: integer
+        period_description:
+          type: string
+      required:
+        - end_date
+        - period_description
+        - start_date
+        - total_staff
+    StaffPerformanceResponse:
+      type: object
+      description: Unified serializer for staff performance report responses
+      properties:
+        team_averages:
+          $ref: '#/components/schemas/StaffPerformanceTeamAverages'
+        staff:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffPerformanceStaffData'
+        period_summary:
+          $ref: '#/components/schemas/StaffPerformancePeriodSummary'
+      required:
+        - period_summary
+        - staff
+        - team_averages
+    StaffPerformanceStaffData:
+      type: object
+      description: Serializer for individual staff performance data
+      properties:
+        staff_id:
+          type: string
+        name:
+          type: string
+        total_hours:
+          type: number
+          format: double
+        billable_hours:
+          type: number
+          format: double
+        billable_percentage:
+          type: number
+          format: double
+        total_revenue:
+          type: number
+          format: double
+        total_cost:
+          type: number
+          format: double
+        profit:
+          type: number
+          format: double
+        revenue_per_hour:
+          type: number
+          format: double
+        profit_per_hour:
+          type: number
+          format: double
+        jobs_worked:
+          type: integer
+        job_breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffPerformanceJobBreakdown'
+      required:
+        - billable_hours
+        - billable_percentage
+        - jobs_worked
+        - name
+        - profit
+        - profit_per_hour
+        - revenue_per_hour
+        - staff_id
+        - total_cost
+        - total_hours
+        - total_revenue
+    StaffPerformanceTeamAverages:
+      type: object
+      description: Serializer for team average metrics
+      properties:
+        billable_percentage:
+          type: number
+          format: double
+        revenue_per_hour:
+          type: number
+          format: double
+        profit_per_hour:
+          type: number
+          format: double
+        jobs_per_person:
+          type: number
+          format: double
+        total_hours:
+          type: number
+          format: double
+        billable_hours:
+          type: number
+          format: double
+        total_revenue:
+          type: number
+          format: double
+        total_profit:
+          type: number
+          format: double
+      required:
+        - billable_hours
+        - billable_percentage
+        - jobs_per_person
+        - profit_per_hour
+        - revenue_per_hour
+        - total_hours
+        - total_profit
+        - total_revenue
+    StandardError:
+      type: object
+      description: Standard serialiser for error responses
+      properties:
+        error:
+          type: string
+        details: {}
+      required:
+        - error
     Status7b9Enum:
       enum:
         - draft
@@ -9116,18 +9654,26 @@ components:
           type: string
           format: uuid
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: 0
+          exclusiveMaximum: true
         unit_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           nullable: true
         unit_rev:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           nullable: true
       required:
         - job_id
@@ -9141,9 +9687,12 @@ components:
         message:
           type: string
         remaining_quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - success
     StockCreate:
@@ -9154,13 +9703,19 @@ components:
           type: string
           maxLength: 255
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         unit_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         source:
           type: string
           maxLength: 100
@@ -9339,19 +9894,28 @@ components:
           readOnly: true
           description: Description of this cost line
         quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,7}(?:\.\d{0,3})?$
+          type: number
+          format: double
+          maximum: 10000000
+          minimum: -10000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           readOnly: true
         unit_cost:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           readOnly: true
         unit_rev:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           readOnly: true
         total_cost:
           type: number
@@ -9373,7 +9937,7 @@ components:
           type: string
           readOnly: true
         job_number:
-          type: string
+          type: integer
           readOnly: true
         job_name:
           type: string
@@ -9383,9 +9947,12 @@ components:
           description: Get client name with safe null handling
           readOnly: true
         charge_out_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           readOnly: true
         wage_rate:
           type: number
@@ -9567,17 +10134,26 @@ components:
           items:
             $ref: '#/components/schemas/WeeklyStaffDataWeeklyHours'
         total_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_billable_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         billable_percentage:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         status:
           type: string
       required:
@@ -9596,17 +10172,26 @@ components:
           type: string
           format: date
         hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         billable_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         scheduled_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         status:
           type: string
         leave_type:
@@ -9626,15 +10211,21 @@ components:
       description: Serializer for weekly summary data
       properties:
         total_hours:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         staff_count:
           type: integer
         billable_percentage:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
           nullable: true
       required:
         - staff_count
@@ -9762,6 +10353,38 @@ components:
         - message
         - reference_id
         - timestamp
+    XeroInvoice:
+      type: object
+      description: Simplified Invoice serializer for xero_invoices field
+      properties:
+        number:
+          type: string
+          maxLength: 255
+        status:
+          $ref: '#/components/schemas/XeroInvoiceStatusEnum'
+        online_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+      required:
+        - number
+    XeroInvoiceStatusEnum:
+      enum:
+        - DRAFT
+        - SUBMITTED
+        - AUTHORISED
+        - DELETED
+        - VOIDED
+        - PAID
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `SUBMITTED` - Submitted
+        * `AUTHORISED` - Authorised
+        * `DELETED` - Deleted
+        * `VOIDED` - Voided
+        * `PAID` - Paid
     XeroItem:
       type: object
       description: Serializer for Xero item data
@@ -9814,6 +10437,33 @@ components:
       required:
         - success
         - xero_id
+    XeroQuote:
+      type: object
+      description: Simplified Quote serializer for xero_quote field
+      properties:
+        status:
+          $ref: '#/components/schemas/XeroQuoteStatusEnum'
+        online_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+    XeroQuoteStatusEnum:
+      enum:
+        - DRAFT
+        - SENT
+        - DECLINED
+        - ACCEPTED
+        - INVOICED
+        - DELETED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `SENT` - Sent
+        * `DECLINED` - Declined
+        * `ACCEPTED` - Accepted
+        * `INVOICED` - Invoiced
+        * `DELETED` - Deleted
     XeroSseEvent:
       type: object
       description: Serializer for Xero SSE event data.
