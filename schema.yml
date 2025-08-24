@@ -75,7 +75,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffPerformanceResponse'
+          description: ''
   /accounting/api/reports/staff-performance/{staff_id}/:
     get:
       operationId: accounting_api_reports_staff_performance_retrieve
@@ -93,7 +97,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffPerformanceResponse'
+          description: ''
   /accounts/api/staff/:
     get:
       operationId: accounts_api_staff_list
@@ -434,7 +442,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AWSInstanceStatusResponse'
+          description: ''
   /api/aws/instance/start/:
     post:
       operationId: api_aws_instance_start_create
@@ -445,7 +457,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AWSInstanceStatusResponse'
+          description: ''
   /api/aws/instance/status/:
     get:
       operationId: api_aws_instance_status_retrieve
@@ -456,7 +472,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AWSInstanceStatusResponse'
+          description: ''
   /api/aws/instance/stop/:
     post:
       operationId: api_aws_instance_stop_create
@@ -467,7 +487,11 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AWSInstanceStatusResponse'
+          description: ''
   /api/company-defaults/:
     get:
       operationId: api_company_defaults_retrieve
@@ -1030,7 +1054,7 @@ paths:
           description: ''
   /api/xero/create_purchase_order/{purchase_order_id}:
     post:
-      operationId: api_xero_create_purchase_order_create
+      operationId: create_xero_purchase_order
       description: Creates a purchase order in Xero for the specified purchase order
       parameters:
         - in: path
@@ -1038,9 +1062,11 @@ paths:
           schema:
             type: string
             format: uuid
+          description: The UUID of the purchase order to create in Xero
           required: true
       tags:
-        - api
+        - Xero
+        - Purchase Orders
       security:
         - cookieAuth: []
       responses:
@@ -3071,6 +3097,18 @@ paths:
           required: true
       tags:
         - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobQuoteAcceptance'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobQuoteAcceptance'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JobQuoteAcceptance'
+        required: true
       security:
         - cookieAuth: []
       responses:
@@ -5294,6 +5332,20 @@ components:
         - id
         - name
         - provider_type
+    AWSInstanceStatusResponse:
+      type: object
+      description: Serializer for AWS instance status responses.
+      properties:
+        success:
+          type: boolean
+        status:
+          type: string
+        error:
+          type: string
+        details:
+          type: string
+      required:
+        - success
     AdvancedSearchResponse:
       type: object
       description: Serializer for advanced_search response.
@@ -6859,7 +6911,7 @@ components:
         quoted:
           type: boolean
           readOnly: true
-        invoiced:
+        fully_invoiced:
           type: boolean
           readOnly: true
         quote:
@@ -6872,6 +6924,16 @@ components:
           additionalProperties: {}
           nullable: true
           readOnly: true
+        xero_quote:
+          allOf:
+            - $ref: '#/components/schemas/XeroQuote'
+          nullable: true
+          readOnly: true
+        xero_invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/XeroInvoice'
+          readOnly: true
         shop_job:
           type: boolean
           description: Indicates if this is a shop job (no client).
@@ -6881,9 +6943,9 @@ components:
         - client_name
         - contact_name
         - created_at
+        - fully_invoiced
         - id
         - invoice
-        - invoiced
         - job_number
         - job_status
         - latest_actual
@@ -6895,6 +6957,8 @@ components:
         - quoted
         - shop_job
         - updated_at
+        - xero_invoices
+        - xero_quote
     JobAgingFinancialData:
       type: object
       description: Serialiser for job aging financial data
@@ -8766,6 +8830,10 @@ components:
           maxLength: 100
         raw_ims_data:
           nullable: true
+        xero_user_id:
+          type: string
+          nullable: true
+          maxLength: 255
         date_left:
           type: string
           format: date
@@ -9462,6 +9530,10 @@ components:
           maxLength: 100
         raw_ims_data:
           nullable: true
+        xero_user_id:
+          type: string
+          nullable: true
+          maxLength: 255
         date_left:
           type: string
           format: date
@@ -9634,6 +9706,173 @@ components:
       required:
         - staff
         - total_count
+    StaffPerformanceJobBreakdown:
+      type: object
+      description: Serializer for job breakdown data in staff performance
+      properties:
+        job_id:
+          type: string
+        job_number:
+          type: integer
+        job_name:
+          type: string
+        client_name:
+          type: string
+        billable_hours:
+          type: number
+          format: double
+        non_billable_hours:
+          type: number
+          format: double
+        total_hours:
+          type: number
+          format: double
+        revenue:
+          type: number
+          format: double
+        cost:
+          type: number
+          format: double
+        profit:
+          type: number
+          format: double
+        revenue_per_hour:
+          type: number
+          format: double
+      required:
+        - billable_hours
+        - client_name
+        - cost
+        - job_id
+        - job_name
+        - job_number
+        - non_billable_hours
+        - profit
+        - revenue
+        - revenue_per_hour
+        - total_hours
+    StaffPerformancePeriodSummary:
+      type: object
+      description: Serializer for period summary in staff performance report
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        total_staff:
+          type: integer
+        period_description:
+          type: string
+      required:
+        - end_date
+        - period_description
+        - start_date
+        - total_staff
+    StaffPerformanceResponse:
+      type: object
+      description: Unified serializer for staff performance report responses
+      properties:
+        team_averages:
+          $ref: '#/components/schemas/StaffPerformanceTeamAverages'
+        staff:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffPerformanceStaffData'
+        period_summary:
+          $ref: '#/components/schemas/StaffPerformancePeriodSummary'
+      required:
+        - period_summary
+        - staff
+        - team_averages
+    StaffPerformanceStaffData:
+      type: object
+      description: Serializer for individual staff performance data
+      properties:
+        staff_id:
+          type: string
+        name:
+          type: string
+        total_hours:
+          type: number
+          format: double
+        billable_hours:
+          type: number
+          format: double
+        billable_percentage:
+          type: number
+          format: double
+        total_revenue:
+          type: number
+          format: double
+        total_cost:
+          type: number
+          format: double
+        profit:
+          type: number
+          format: double
+        revenue_per_hour:
+          type: number
+          format: double
+        profit_per_hour:
+          type: number
+          format: double
+        jobs_worked:
+          type: integer
+        job_breakdown:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffPerformanceJobBreakdown'
+      required:
+        - billable_hours
+        - billable_percentage
+        - jobs_worked
+        - name
+        - profit
+        - profit_per_hour
+        - revenue_per_hour
+        - staff_id
+        - total_cost
+        - total_hours
+        - total_revenue
+    StaffPerformanceTeamAverages:
+      type: object
+      description: Serializer for team average metrics
+      properties:
+        billable_percentage:
+          type: number
+          format: double
+        revenue_per_hour:
+          type: number
+          format: double
+        profit_per_hour:
+          type: number
+          format: double
+        jobs_per_person:
+          type: number
+          format: double
+        total_hours:
+          type: number
+          format: double
+        billable_hours:
+          type: number
+          format: double
+        total_revenue:
+          type: number
+          format: double
+        total_profit:
+          type: number
+          format: double
+      required:
+        - billable_hours
+        - billable_percentage
+        - jobs_per_person
+        - profit_per_hour
+        - revenue_per_hour
+        - total_hours
+        - total_profit
+        - total_revenue
     StandardError:
       type: object
       description: Standard serialiser for error responses
@@ -10328,6 +10567,38 @@ components:
         - message
         - reference_id
         - timestamp
+    XeroInvoice:
+      type: object
+      description: Simplified Invoice serializer for xero_invoices field
+      properties:
+        number:
+          type: string
+          maxLength: 255
+        status:
+          $ref: '#/components/schemas/XeroInvoiceStatusEnum'
+        online_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+      required:
+        - number
+    XeroInvoiceStatusEnum:
+      enum:
+        - DRAFT
+        - SUBMITTED
+        - AUTHORISED
+        - DELETED
+        - VOIDED
+        - PAID
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `SUBMITTED` - Submitted
+        * `AUTHORISED` - Authorised
+        * `DELETED` - Deleted
+        * `VOIDED` - Voided
+        * `PAID` - Paid
     XeroItem:
       type: object
       description: Serializer for Xero item data
@@ -10380,6 +10651,84 @@ components:
       required:
         - success
         - xero_id
+    XeroQuote:
+      type: object
+      description: Simplified Quote serializer for xero_quote field
+      properties:
+        status:
+          $ref: '#/components/schemas/XeroQuoteStatusEnum'
+        online_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+    XeroQuoteStatusEnum:
+      enum:
+        - DRAFT
+        - SENT
+        - DECLINED
+        - ACCEPTED
+        - INVOICED
+        - DELETED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `SENT` - Sent
+        * `DECLINED` - Declined
+        * `ACCEPTED` - Accepted
+        * `INVOICED` - Invoiced
+        * `DELETED` - Deleted
+    XeroSseEvent:
+      type: object
+      description: Serializer for Xero SSE event data.
+      properties:
+        datetime:
+          type: string
+          format: date-time
+        message:
+          type: string
+        severity:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/SeverityEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        entity:
+          type: string
+          nullable: true
+        progress:
+          type: number
+          format: double
+          nullable: true
+        overall_progress:
+          type: number
+          format: double
+          nullable: true
+        entity_progress:
+          type: number
+          format: double
+          nullable: true
+        records_updated:
+          type: integer
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        sync_status:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/SyncStatusEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        error_messages:
+          type: array
+          items:
+            type: string
+        missing_fields:
+          type: array
+          items:
+            type: string
+      required:
+        - datetime
+        - message
   securitySchemes:
     cookieAuth:
       type: apiKey

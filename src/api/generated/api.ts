@@ -139,6 +139,64 @@ const JobAgingJobData = z
   })
   .passthrough()
 const JobAgingResponse = z.object({ jobs: z.array(JobAgingJobData) }).passthrough()
+const StaffPerformanceTeamAverages = z
+  .object({
+    billable_percentage: z.number(),
+    revenue_per_hour: z.number(),
+    profit_per_hour: z.number(),
+    jobs_per_person: z.number(),
+    total_hours: z.number(),
+    billable_hours: z.number(),
+    total_revenue: z.number(),
+    total_profit: z.number(),
+  })
+  .passthrough()
+const StaffPerformanceJobBreakdown = z
+  .object({
+    job_id: z.string(),
+    job_number: z.number().int(),
+    job_name: z.string(),
+    client_name: z.string(),
+    billable_hours: z.number(),
+    non_billable_hours: z.number(),
+    total_hours: z.number(),
+    revenue: z.number(),
+    cost: z.number(),
+    profit: z.number(),
+    revenue_per_hour: z.number(),
+  })
+  .passthrough()
+const StaffPerformanceStaffData = z
+  .object({
+    staff_id: z.string(),
+    name: z.string(),
+    total_hours: z.number(),
+    billable_hours: z.number(),
+    billable_percentage: z.number(),
+    total_revenue: z.number(),
+    total_cost: z.number(),
+    profit: z.number(),
+    revenue_per_hour: z.number(),
+    profit_per_hour: z.number(),
+    jobs_worked: z.number().int(),
+    job_breakdown: z.array(StaffPerformanceJobBreakdown).optional(),
+  })
+  .passthrough()
+const StaffPerformancePeriodSummary = z
+  .object({
+    start_date: z.string(),
+    end_date: z.string(),
+    total_staff: z.number().int(),
+    period_description: z.string(),
+  })
+  .passthrough()
+const StaffPerformanceResponse = z
+  .object({
+    team_averages: StaffPerformanceTeamAverages,
+    staff: z.array(StaffPerformanceStaffData),
+    period_summary: StaffPerformancePeriodSummary,
+  })
+  .passthrough()
 const Staff = z
   .object({
     id: z.string().uuid(),
@@ -154,6 +212,7 @@ const Staff = z
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     ims_payroll_id: z.string().max(100).nullish(),
     raw_ims_data: z.unknown().nullish(),
+    xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_staff: z.boolean().optional(),
     date_joined: z.string().datetime({ offset: true }).optional(),
@@ -185,6 +244,7 @@ const PatchedStaff = z
     wage_rate: z.number().gt(-100000000).lt(100000000),
     ims_payroll_id: z.string().max(100).nullable(),
     raw_ims_data: z.unknown().nullable(),
+    xero_user_id: z.string().max(255).nullable(),
     date_left: z.string().nullable(),
     is_staff: z.boolean(),
     date_joined: z.string().datetime({ offset: true }),
@@ -225,6 +285,14 @@ const UserProfile = z
     fullName: z.string(),
     is_active: z.boolean(),
     is_staff: z.boolean(),
+  })
+  .passthrough()
+const AWSInstanceStatusResponse = z
+  .object({
+    success: z.boolean(),
+    status: z.string().optional(),
+    error: z.string().optional(),
+    details: z.string().optional(),
   })
   .passthrough()
 const ProviderTypeEnum = z.enum(['Claude', 'Gemini', 'Mistral'])
@@ -741,6 +809,29 @@ const QuoteSpreadsheet = z
     job_name: z.string(),
   })
   .passthrough()
+const XeroQuoteStatusEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
+const XeroQuote = z
+  .object({
+    status: XeroQuoteStatusEnum,
+    online_url: z.string().max(200).url().nullable(),
+  })
+  .partial()
+  .passthrough()
+const XeroInvoiceStatusEnum = z.enum([
+  'DRAFT',
+  'SUBMITTED',
+  'AUTHORISED',
+  'DELETED',
+  'VOIDED',
+  'PAID',
+])
+const XeroInvoice = z
+  .object({
+    number: z.string().max(255),
+    status: XeroInvoiceStatusEnum.optional(),
+    online_url: z.string().max(200).url().nullish(),
+  })
+  .passthrough()
 const Job = z
   .object({
     id: z.string().uuid(),
@@ -768,9 +859,11 @@ const Job = z
     pricing_methodology: PricingMethodologyEnum.optional(),
     quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
-    invoiced: z.boolean(),
+    fully_invoiced: z.boolean(),
     quote: z.object({}).partial().passthrough().nullable(),
     invoice: z.object({}).partial().passthrough().nullable(),
+    xero_quote: XeroQuote.nullable(),
+    xero_invoices: z.array(XeroInvoice),
     shop_job: z.boolean(),
   })
   .passthrough()
@@ -1620,6 +1713,11 @@ export const schemas = {
   JobAgingTimingData,
   JobAgingJobData,
   JobAgingResponse,
+  StaffPerformanceTeamAverages,
+  StaffPerformanceJobBreakdown,
+  StaffPerformanceStaffData,
+  StaffPerformancePeriodSummary,
+  StaffPerformanceResponse,
   Staff,
   PatchedStaff,
   KanbanStaff,
@@ -1627,6 +1725,7 @@ export const schemas = {
   TokenRefresh,
   TokenVerify,
   UserProfile,
+  AWSInstanceStatusResponse,
   ProviderTypeEnum,
   AIProvider,
   CompanyDefaults,
@@ -1691,6 +1790,10 @@ export const schemas = {
   CostSet,
   PricingMethodologyEnum,
   QuoteSpreadsheet,
+  XeroQuoteStatusEnum,
+  XeroQuote,
+  XeroInvoiceStatusEnum,
+  XeroInvoice,
   Job,
   JobEvent,
   CompanyDefaultsJobDetail,
@@ -1843,7 +1946,7 @@ Returns:
     alias: 'accounting_api_reports_staff_performance_summary_retrieve',
     description: `API endpoint for staff performance summary (all staff)`,
     requestFormat: 'json',
-    response: z.void(),
+    response: StaffPerformanceResponse,
   },
   {
     method: 'get',
@@ -1858,7 +1961,7 @@ Returns:
         schema: z.string().uuid(),
       },
     ],
-    response: z.void(),
+    response: StaffPerformanceResponse,
   },
   {
     method: 'get',
@@ -2074,7 +2177,7 @@ information about a token&#x27;s fitness for a particular use.`,
     alias: 'api_aws_instance_reboot_create',
     description: `Reboot the UAT instance`,
     requestFormat: 'json',
-    response: z.void(),
+    response: AWSInstanceStatusResponse,
   },
   {
     method: 'post',
@@ -2082,7 +2185,7 @@ information about a token&#x27;s fitness for a particular use.`,
     alias: 'api_aws_instance_start_create',
     description: `Start the UAT instance`,
     requestFormat: 'json',
-    response: z.void(),
+    response: AWSInstanceStatusResponse,
   },
   {
     method: 'get',
@@ -2090,7 +2193,7 @@ information about a token&#x27;s fitness for a particular use.`,
     alias: 'api_aws_instance_status_retrieve',
     description: `Get current status of the UAT instance`,
     requestFormat: 'json',
-    response: z.void(),
+    response: AWSInstanceStatusResponse,
   },
   {
     method: 'post',
@@ -2098,7 +2201,7 @@ information about a token&#x27;s fitness for a particular use.`,
     alias: 'api_aws_instance_stop_create',
     description: `Stop the UAT instance`,
     requestFormat: 'json',
-    response: z.void(),
+    response: AWSInstanceStatusResponse,
   },
   {
     method: 'get',
@@ -2509,7 +2612,7 @@ Endpoints:
   {
     method: 'post',
     path: '/api/xero/create_purchase_order/:purchase_order_id',
-    alias: 'api_xero_create_purchase_order_create',
+    alias: 'create_xero_purchase_order',
     description: `Creates a purchase order in Xero for the specified purchase order`,
     requestFormat: 'json',
     parameters: [
@@ -3930,6 +4033,11 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     description: `Accept a quote for the job. Sets the quote_acceptance_date to current datetime.`,
     requestFormat: 'json',
     parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: JobQuoteAcceptance,
+      },
       {
         name: 'job_id',
         type: 'Path',

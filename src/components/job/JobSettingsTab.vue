@@ -338,7 +338,7 @@ watch(
       delivery_date: newJobData.delivery_date,
       paid: newJobData.paid,
       quoted: newJobData.quoted,
-      invoiced: newJobData.invoiced,
+      fully_invoiced: newJobData.fully_invoiced,
     }
 
     localJobData.value = { ...jobDataSnapshot }
