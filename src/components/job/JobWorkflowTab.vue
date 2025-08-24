@@ -9,15 +9,17 @@
             Configure job status, delivery dates, and workflow tracking
           </p>
         </div>
-        <button
-          @click="saveWorkflow"
-          type="button"
-          :disabled="isLoading"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <Loader2 v-if="isLoading" class="animate-spin h-4 w-4" />
-          <span>{{ isLoading ? 'Saving...' : 'Save Changes' }}</span>
-        </button>
+        <div class="flex items-center gap-3">
+          <span v-if="saveStatusText" class="text-xs text-gray-500">{{ saveStatusText }}</span>
+          <button
+            v-if="saveHasError"
+            type="button"
+            class="text-xs text-red-600 hover:text-red-700 underline"
+            @click="retrySave"
+          >
+            Retry
+          </button>
+        </div>
       </div>
 
       <!-- Cards Grid -->
@@ -33,6 +35,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Job Status</label>
               <select
                 v-model="localJobData.job_status"
+                @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
                 <option
@@ -55,6 +58,7 @@
               <input
                 v-model="localJobData.delivery_date"
                 type="date"
+                @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>
@@ -129,15 +133,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { useJobsStore } from '../../stores/jobs'
-import { toast } from 'vue-sonner'
 import { JOB_STATUS_CHOICES, JobStatusKey, getStatusLabel } from '../../constants/job-status'
 import { schemas } from '../../api/generated/api'
 import { z } from 'zod'
-import { Loader2 } from 'lucide-vue-next'
 import { jobService } from '../../services/job.service'
 import { debugLog } from '../../utils/debug'
+import { createJobAutosave } from '../../composables/useJobAutosave'
+import { toast } from 'vue-sonner'
 
 // Simple Card components (placeholder)
 const Card = {
@@ -164,9 +169,10 @@ defineEmits<{
 const jobsStore = useJobsStore()
 
 const localJobData = ref<Partial<Job>>({})
-const isLoading = ref(false)
+const originalJobData = ref<Partial<Job>>({}) // Snapshot dos dados originais
 
 const statusChoices = JOB_STATUS_CHOICES
+const isInitializing = ref(true)
 
 const currentStatusLabel = computed(() => {
   if (!localJobData.value.job_status) {
@@ -183,7 +189,7 @@ const initializeLocalJobData = (jobData: Job) => {
 
   debugLog('🔄 JobWorkflowTab - initializeLocalJobData: Initializing with job:', jobData.id)
 
-  localJobData.value = {
+  const jobDataSnapshot = {
     id: jobData.id,
     job_status: jobData.job_status,
     delivery_date: jobData.delivery_date,
@@ -196,12 +202,15 @@ const initializeLocalJobData = (jobData: Job) => {
     client_name: jobData.client_name,
   }
 
+  localJobData.value = { ...jobDataSnapshot }
+  originalJobData.value = { ...jobDataSnapshot } // Mantém snapshot original
+
   debugLog('JobWorkflowTab - Local job data initialized:', localJobData.value)
 }
 
 watch(
   () => props.jobData,
-  (newJobData) => {
+  async (newJobData) => {
     if (!newJobData || !newJobData.id) {
       debugLog(
         '🚫 JobWorkflowTab - Received null/undefined/invalid jobData, skipping initialization',
@@ -210,111 +219,162 @@ watch(
     }
 
     debugLog('✅ JobWorkflowTab - Received valid jobData, initializing:', newJobData.id)
+    isInitializing.value = true
     initializeLocalJobData(newJobData)
+    await nextTick()
+    isInitializing.value = false
   },
   { immediate: true, deep: true },
 )
 
-const saveWorkflow = async () => {
-  if (!props.jobData?.id) {
-    toast.error('Error', {
-      description: 'Job data not found',
+/* ------------------------------
+   Autosave integration (instance, watchers, bindings, status)
+------------------------------ */
+
+const router = useRouter()
+
+let unbindRouteGuard: () => void = () => {}
+
+/** Instance */
+const autosave = createJobAutosave({
+  jobId: props.jobData?.id || '',
+  getSnapshot: () => {
+    // Retorna snapshot dos dados ORIGINAIS, não dos dados atuais
+    const data = originalJobData.value || {}
+    return {
+      id: data.id,
+      job_status: data.job_status,
+      delivery_date: data.delivery_date,
+      quote_acceptance_date: data.quote_acceptance_date,
+      quoted: data.quoted,
+      invoiced: data.invoiced,
+      paid: data.paid,
+      name: data.name,
+      client_id: data.client_id,
+      client_name: data.client_name,
+    }
+  },
+  applyOptimistic: (patch) => {
+    Object.entries(patch).forEach(([k, v]) => {
+      ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
     })
-    return
-  }
-
-  if (!localJobData.value) {
-    toast.error('Error', {
-      description: 'Local data not initialised',
+  },
+  rollbackOptimistic: (previous) => {
+    Object.entries(previous).forEach(([k, v]) => {
+      ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
     })
-    return
-  }
+  },
+  saveAdapter: async (patch) => {
+    try {
+      if (!props.jobData?.id) {
+        return { success: false, error: 'Missing job id' }
+      }
 
-  isLoading.value = true
+      const mergedJob = {
+        ...(props.jobData as Job),
+        ...(patch as Partial<Job>),
+      } as Job
 
-  try {
-    debugLog(
-      'JobWorkflowTab - saveWorkflow - Collecting form data:',
-      JSON.parse(JSON.stringify(localJobData.value)),
-    )
-
-    // Construct the complete JobDetailResponse structure
-    const jobDetailResponse: JobDetailResponse = {
-      success: true,
-      data: {
-        job: {
-          ...props.jobData,
-          ...localJobData.value,
+      const jobDetailResponse: JobDetailResponse = {
+        success: true,
+        data: {
+          job: mergedJob,
+          events: [],
+          company_defaults: {
+            wage_rate: 0,
+            time_markup: 0,
+            materials_markup: 0,
+            charge_out_rate: 0,
+          },
         },
-        events: [], // We don't have events in this context
-        company_defaults: {
-          wage_rate: 0,
-          time_markup: 0,
-          materials_markup: 0,
-          charge_out_rate: 0,
-        },
-      },
+      }
+
+      const result = await jobService.updateJob(props.jobData.id, jobDetailResponse)
+      if (result.success) {
+        if (result.data?.data) {
+          jobsStore.setDetailedJob(result.data.data)
+
+          // Atualiza snapshot original com os dados salvos
+          const savedJob = result.data.data.job
+          originalJobData.value = {
+            id: savedJob.id,
+            job_status: savedJob.job_status,
+            delivery_date: savedJob.delivery_date,
+            quote_acceptance_date: savedJob.quote_acceptance_date,
+            quoted: !!savedJob.quoted,
+            invoiced: !!savedJob.invoiced,
+            paid: !!savedJob.paid,
+            name: savedJob.name,
+            client_id: savedJob.client_id,
+            client_name: savedJob.client_name,
+          }
+        }
+        // Notifica sucesso
+        toast.success('Job updated successfully')
+        return { success: true, serverData: result.data }
+      }
+
+      return { success: false, error: result.error || 'Update failed' }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      return { success: false, error: msg }
     }
+  },
+  devLogging: true,
+})
 
-    debugLog(
-      'JobWorkflowTab - saveWorkflow - Prepared jobDetailResponse:',
-      JSON.parse(JSON.stringify(jobDetailResponse)),
-    )
+/** Bindings de ciclo de vida */
+onMounted(() => {
+  autosave.onBeforeUnloadBind()
+  autosave.onVisibilityBind()
+  unbindRouteGuard = autosave.onRouteLeaveBind({
+    beforeEach: router.beforeEach.bind(router),
+  })
+})
 
-    // Call the real job update API
-    const result = await jobService.updateJob(props.jobData.id, jobDetailResponse)
+onUnmounted(() => {
+  autosave.onBeforeUnloadUnbind()
+  autosave.onVisibilityUnbind()
+  unbindRouteGuard()
+})
 
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to update workflow - request failed')
-    }
-
-    if (result.data) {
-      handleSuccessfulUpdate(result.data)
-    } else {
-      debugLog('⚠️ JobWorkflowTab - API returned success but no data, refreshing from server')
-      const refreshedJob = await jobService.getJob(props.jobData.id)
-      handleSuccessfulUpdate(refreshedJob)
-    }
-  } catch (error) {
-    handleUpdateError(error)
-  } finally {
-    isLoading.value = false
+/** Watchers granulares */
+const enqueueIfNotInitializing = (key: string, value: unknown) => {
+  if (!isInitializing.value) {
+    autosave.queueChange(key, value)
   }
 }
 
-const handleSuccessfulUpdate = (updatedJobData: JobDetailResponse) => {
-  debugLog(
-    'JobWorkflowTab - handleSuccessfulUpdate - About to update store with:',
-    JSON.parse(JSON.stringify(updatedJobData)),
-  )
+watch(
+  () => localJobData.value.job_status,
+  (v) => enqueueIfNotInitializing('job_status', v),
+)
+watch(
+  () => localJobData.value.delivery_date,
+  (v) => enqueueIfNotInitializing('delivery_date', v),
+)
 
-  if (!updatedJobData?.data?.job?.id) {
-    debugLog('🚨 JobWorkflowTab - handleSuccessfulUpdate called with invalid data')
-    throw new Error('Invalid job data received - missing job ID')
+/** UI helpers */
+const handleBlurFlush = () => {
+  void autosave.flush('blur')
+}
+const retrySave = () => {
+  void autosave.flush('retry-click')
+}
+
+const saveHasError = computed(() => !!autosave.error.value)
+const saveStatusText = computed(() => {
+  if (autosave.isSaving.value) return 'Saving...'
+  if (autosave.error.value) return 'Save failed'
+  if (autosave.lastSavedAt.value) {
+    try {
+      return `Saved at ${autosave.lastSavedAt.value.toLocaleTimeString()}`
+    } catch {
+      return 'Saved'
+    }
   }
-
-  debugLog('🎯 JobWorkflowTab - Processing valid job data:', updatedJobData.data.job.id)
-  debugLog('🔍 JobWorkflowTab - Updated job_status:', updatedJobData.data.job.job_status)
-
-  toast.success('Workflow updated', {
-    description: `Status and settings for ${updatedJobData.data.job.name} have been saved`,
-  })
-
-  debugLog('📝 JobWorkflowTab - Calling jobsStore.setDetailedJob')
-  // Extract the JobDetail (data) from the API response wrapper before passing to store
-  jobsStore.setDetailedJob(updatedJobData.data)
-
-  debugLog('✅ JobWorkflowTab - Store updated successfully')
-}
-
-const handleUpdateError = (error: unknown) => {
-  debugLog('Error saving workflow:', error)
-
-  const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-  toast.error('Failed to save workflow', {
-    description: `Error: ${errorMessage}. Please try again.`,
-  })
-}
+  return ''
+})
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()

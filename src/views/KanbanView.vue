@@ -105,42 +105,33 @@
               </div>
             </div>
 
-            <!-- Search results with vertical scrolling -->
+            <!-- Search results with simple pagination -->
             <div v-else class="relative">
-              <!-- Scroll progress indicator -->
-              <div
-                class="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-gray-200 mb-4"
-              >
-                <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    class="h-full bg-blue-500 transition-all duration-300 ease-out"
-                    :style="{ width: scrollProgress + '%' }"
-                  ></div>
-                </div>
-                <div class="text-xs text-gray-500 text-center py-1">
+              <!-- Results header -->
+              <div class="mb-4 flex items-center justify-between">
+                <div class="text-sm text-gray-600">
                   Showing {{ Math.min(visibleJobsCount, filteredJobs.length) }} of
                   {{ filteredJobs.length }} jobs
                 </div>
+                <div v-if="hasMoreJobs" class="flex items-center space-x-2">
+                  <button
+                    @click="loadMoreVisibleJobs"
+                    class="px-3 py-1 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
+                  >
+                    Load More
+                  </button>
+                </div>
               </div>
 
-              <!-- Vertical scrolling container -->
-              <div
-                ref="scrollContainer"
-                class="max-h-[70vh] overflow-y-auto scroll-smooth"
-                style="scrollbar-width: thin; scrollbar-color: #3b82f6 #e5e7eb"
-                @scroll="handleScroll"
-              >
+              <!-- Simple grid with only visible jobs -->
+              <div class="max-h-[70vh] overflow-y-auto scroll-smooth">
                 <div
                   class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 p-2"
                 >
                   <div
-                    v-for="(job, index) in filteredJobs"
+                    v-for="job in visibleJobs"
                     :key="job.id"
-                    class="transform transition-all duration-300 ease-out"
-                    :class="{
-                      'opacity-0 translate-y-4': !isJobVisible(index),
-                      'opacity-100 translate-y-0': isJobVisible(index),
-                    }"
+                    class="transform transition-all duration-300 ease-out opacity-100 translate-y-0"
                   >
                     <JobCard
                       :job="job"
@@ -150,14 +141,18 @@
                   </div>
                 </div>
 
-                <!-- Load more indicator -->
-                <div v-if="hasMoreJobs" class="text-center py-4">
-                  <div class="inline-flex items-center text-sm text-gray-500">
+                <!-- Load more at bottom -->
+                <div v-if="hasMoreJobs" class="text-center py-6">
+                  <button
+                    @click="loadMoreVisibleJobs"
+                    class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors flex items-center mx-auto"
+                  >
                     <svg
                       class="animate-spin -ml-1 mr-2 h-4 w-4"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
+                      v-if="false"
                     >
                       <circle
                         class="opacity-25"
@@ -173,8 +168,8 @@
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    Loading more jobs...
-                  </div>
+                    Load More Jobs ({{ filteredJobs.length - visibleJobsCount }} remaining)
+                  </button>
                 </div>
               </div>
             </div>
@@ -298,8 +293,8 @@ import KanbanColumn from '@/components/KanbanColumn.vue'
 import AppLayout from '@/components/AppLayout.vue'
 import StaffPanel from '@/components/StaffPanel.vue'
 import AdvancedSearchDialog from '@/components/AdvancedSearchDialog.vue'
-import { useKanban } from '@/composables/useKanban'
-import { useDragAndDrop } from '@/composables/useDragAndDrop'
+import { useOptimizedKanban } from '@/composables/useOptimizedKanban'
+import { useOptimizedDragAndDrop } from '../composables/useOptimizedDragAndDrop'
 import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { AdvancedFilters } from '@/constants/advanced-filters'
@@ -317,7 +312,6 @@ onUnmounted(() => {
 })
 
 const {
-  jobs,
   filteredJobs,
   isLoading,
   searchQuery,
@@ -340,28 +334,55 @@ const {
   updateJobStatus,
   reorderJob,
   handleStaffFilterChanged,
-} = useKanban(() => {
+  revalidateColumns,
+} = useOptimizedKanban(() => {
   nextTick(() => {
     initialiseSortableForAllColumns()
   })
 })
 
-// Staff assignment handler
+// Staff assignment handler with granular revalidation
 const handleStaffAssigned = async (payload: { staffId: string; jobId: string }) => {
   try {
-    // Reload jobs to refresh reactivity
-    await loadJobs()
+    // Find which column contains this job for revalidation
+    let jobColumn: string | null = null
+    for (const status of visibleStatusChoices.value) {
+      const jobs = getJobsByStatus.value(status.key)
+      if (jobs.some((job) => job.id === payload.jobId)) {
+        jobColumn = status.key
+        break
+      }
+    }
+
+    if (jobColumn) {
+      // Revalidate only the affected column
+      await revalidateColumns([jobColumn])
+    }
+
     console.log(`✅ Staff ${payload.staffId} assigned to job ${payload.jobId}`)
   } catch (error) {
     console.error('Error handling staff assignment:', error)
   }
 }
 
-// Staff unassignment handler
+// Staff unassignment handler with granular revalidation
 const handleStaffUnassigned = async (payload: { staffId: string; jobId: string }) => {
   try {
-    // Reload jobs to refresh reactivity
-    await loadJobs()
+    // Find which column contains this job for revalidation
+    let jobColumn: string | null = null
+    for (const status of visibleStatusChoices.value) {
+      const jobs = getJobsByStatus.value(status.key)
+      if (jobs.some((job) => job.id === payload.jobId)) {
+        jobColumn = status.key
+        break
+      }
+    }
+
+    if (jobColumn) {
+      // Revalidate only the affected column
+      await revalidateColumns([jobColumn])
+    }
+
     console.log(`✅ Staff ${payload.staffId} unassigned from job ${payload.jobId}`)
   } catch (error) {
     console.error('Error handling staff unassignment:', error)
@@ -370,34 +391,16 @@ const handleStaffUnassigned = async (payload: { staffId: string; jobId: string }
 
 const showAdvancedSearchDialog = ref(false)
 
-// Vertical scrolling variables
-const scrollContainer = ref<HTMLElement | null>(null)
-const scrollProgress = ref(0)
+// Simple pagination variables
 const visibleJobsCount = ref(20) // Initial visible jobs
 const JOBS_PER_BATCH = 20
 
-// Computed properties for scroll functionality
+// Computed properties for pagination
 const hasMoreJobs = computed(() => visibleJobsCount.value < filteredJobs.value.length)
 
-const isJobVisible = (index: number) => {
-  return index < visibleJobsCount.value
-}
-
-// Scroll handling functions
-const handleScroll = (event: Event) => {
-  const target = event.target as HTMLElement
-  const scrollTop = target.scrollTop
-  const scrollHeight = target.scrollHeight
-  const clientHeight = target.clientHeight
-
-  // Update scroll progress
-  scrollProgress.value = (scrollTop / (scrollHeight - clientHeight)) * 100
-
-  // Load more jobs when near bottom
-  if (scrollTop + clientHeight >= scrollHeight - 100) {
-    loadMoreVisibleJobs()
-  }
-}
+const visibleJobs = computed(() => {
+  return filteredJobs.value.slice(0, visibleJobsCount.value)
+})
 
 const loadMoreVisibleJobs = () => {
   if (hasMoreJobs.value) {
@@ -411,10 +414,6 @@ const loadMoreVisibleJobs = () => {
 // Reset visible jobs when search results change
 const resetVisibleJobs = () => {
   visibleJobsCount.value = Math.min(JOBS_PER_BATCH, filteredJobs.value.length)
-  scrollProgress.value = 0
-  if (scrollContainer.value) {
-    scrollContainer.value.scrollTop = 0
-  }
 }
 
 const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
@@ -427,17 +426,20 @@ const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
   }
 }
 
-const { isDragging, initializeSortable, destroyAllSortables } = useDragAndDrop((event, payload) => {
-  if (event === 'job-moved') {
-    const { jobId, fromStatus, toStatus, beforeId, afterId } = payload
-    if (fromStatus !== toStatus) {
-      const actualStatus = KanbanCategorizationService.getDefaultStatusForColumn(toStatus)
-      updateJobStatus(jobId, actualStatus)
-    } else {
-      reorderJob(jobId, beforeId, afterId, toStatus)
+const { isDragging, initializeSortable, destroyAllSortables } = useOptimizedDragAndDrop(
+  (event, payload) => {
+    if (event === 'job-moved') {
+      const { jobId, fromStatus, toStatus, beforeId, afterId } = payload
+      if (fromStatus !== toStatus) {
+        const actualStatus = KanbanCategorizationService.getDefaultStatusForColumn(toStatus)
+        updateJobStatus(jobId, actualStatus)
+      } else {
+        reorderJob(jobId, beforeId, afterId, toStatus)
+      }
     }
-  }
-})
+  },
+  revalidateColumns,
+)
 
 const sortableInitialized = ref<Set<string>>(new Set())
 const columnsReadyForSortable = ref<Map<string, HTMLElement>>(new Map())
@@ -445,7 +447,8 @@ const columnsReadyForSortable = ref<Map<string, HTMLElement>>(new Map())
 const handleSortableReady = (element: HTMLElement, status: string) => {
   columnsReadyForSortable.value.set(status, element)
 
-  if (jobs.value.length > 0 && !sortableInitialized.value.has(status)) {
+  const columnJobs = getJobsByStatus.value(status)
+  if (columnJobs.length > 0 && !sortableInitialized.value.has(status)) {
     initializeSortableForColumn(status, element)
   }
 }
@@ -599,10 +602,10 @@ onUnmounted(() => {
   background-color: #2563eb !important;
 }
 
-/* Vertical scrolling styles */
+/* Simple scrolling styles */
 .scroll-smooth {
   scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Custom scrollbar styling */
@@ -629,57 +632,5 @@ onUnmounted(() => {
 .scroll-smooth {
   scrollbar-width: thin;
   scrollbar-color: #3b82f6 #f1f5f9;
-}
-
-/* Touch-friendly scroll indicators */
-@media (hover: none) and (pointer: coarse) {
-  .scroll-smooth {
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-  }
-
-  .scroll-smooth::-webkit-scrollbar {
-    width: 12px;
-  }
-}
-
-/* Smooth animations for job cards */
-.job-card-enter-active,
-.job-card-leave-active {
-  transition: all 0.3s ease-out;
-}
-
-.job-card-enter-from {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.job-card-leave-to {
-  opacity: 0;
-  transform: translateY(-20px);
-}
-
-/* Progress bar animation */
-.progress-bar {
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Responsive grid adjustments */
-@media (max-width: 640px) {
-  .scroll-smooth {
-    max-height: 60vh;
-  }
-}
-
-@media (min-width: 641px) and (max-width: 1024px) {
-  .scroll-smooth {
-    max-height: 65vh;
-  }
-}
-
-@media (min-width: 1025px) {
-  .scroll-smooth {
-    max-height: 70vh;
-  }
 }
 </style>

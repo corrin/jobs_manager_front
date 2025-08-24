@@ -4,7 +4,7 @@ import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { z } from 'zod'
 
-type StockItem = z.infer<typeof schemas.StockList>
+type StockItem = z.infer<typeof schemas.StockItem>
 type StockConsumeRequest = z.infer<typeof schemas.StockConsumeRequest>
 type StockConsumeResponse = z.infer<typeof schemas.StockConsumeResponse>
 type StockCreate = z.infer<typeof schemas.StockCreate>
@@ -19,7 +19,7 @@ export const useStockStore = defineStore('stock', () => {
     loading.value = true
     try {
       const response = await api.purchasing_rest_stock_retrieve()
-      items.value = response.items
+      items.value = response.items || []
     } catch (error: unknown) {
       // Handle zodios validation error and extract the actual data
       if (
@@ -33,10 +33,10 @@ export const useStockStore = defineStore('stock', () => {
         try {
           // The zodios error contains the actual response data in cause.received
           const receivedData = (error.cause as { received?: unknown }).received
-          if (Array.isArray(receivedData)) {
-            // Validate each item in the array individually
-            const validatedItems = receivedData.map((item) => schemas.StockList.parse(item))
-            items.value = validatedItems
+          if (receivedData && typeof receivedData === 'object' && 'items' in receivedData) {
+            // Parse the StockList response and extract items
+            const stockList = schemas.StockList.parse(receivedData)
+            items.value = stockList.items || []
             return
           }
         } catch (parseError) {

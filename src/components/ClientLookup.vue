@@ -82,7 +82,7 @@
       </div>
     </div>
 
-    <div v-if="selectedClient" class="mt-2 p-2 bg-blue-50 rounded border">
+    <div v-if="selectedClient && !editMode" class="mt-2 p-2 bg-blue-50 rounded border">
       <div class="text-sm font-medium text-blue-900">{{ selectedClient.name }}</div>
       <div v-if="selectedClient.email" class="text-xs text-blue-700">
         {{ selectedClient.email }}
@@ -115,6 +115,7 @@ const props = withDefaults(
     modelValue?: string
     supplierLookup?: { has_xero_id?: boolean; value: boolean }
     searchMode?: boolean
+    editMode?: boolean
   }>(),
   {
     placeholder: 'Search for a client...',

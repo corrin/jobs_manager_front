@@ -148,22 +148,13 @@
     <div v-if="job.contact_person" class="text-xs text-gray-500 mb-2 truncate font-medium">
       Cntc: {{ job.contact_person }}
     </div>
-
-    <StatusBadge
-      :label="friendlyStatusName"
-      :status="job.status_key || ''"
-      size="xs"
-      class="mb-2 text-[10px]"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import StaffAvatar from '@/components/StaffAvatar.vue'
-import StatusBadge from '@/components/kanban/StatusBadge.vue'
 import { useJobCard } from '@/composables/useJobCard'
-import { statusNameMap } from '@/utils/statusMappings'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { z } from 'zod'
@@ -305,10 +296,6 @@ const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<
 }
 
 const { handleClick } = useJobCard(props.job, emit)
-
-const friendlyStatusName = computed(() => {
-  return statusNameMap[props.job.status_key || ''] || props.job.status_key || ''
-})
 
 const truncatedJobName = computed(() => {
   return props.job.name.length > 12 ? props.job.name.substring(0, 12) + '...' : props.job.name

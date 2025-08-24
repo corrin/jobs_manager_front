@@ -137,53 +137,52 @@
 
         <div v-else-if="weeklyData" class="space-y-4">
           <div
-            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-18rem)] lg:h-[calc(100vh-10rem)]"
+            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-16rem)] lg:h-[calc(100vh-10rem)]"
           >
             <div class="flex-1 overflow-y-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50 sticky top-0">
+              <table class="min-w-full divide-y divide-gray-200 table-fixed">
+                <thead class="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th
-                      class="px-1 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      class="w-48 px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Staff Member
                     </th>
                     <th
                       v-for="day in displayDays"
                       :key="day.date"
-                      class="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider"
+                      class="w-20 px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider"
                     >
                       <button
                         @click="goToDailyViewHeader(day.date)"
-                        class="transition text-gray-700 hover:text-white hover:bg-gray-600 px-1 py-1 rounded focus:outline-none focus:ring-2 focus:ring-gray-400 text-xs"
-                        style="min-width: 36px"
+                        class="transition text-gray-700 hover:text-white hover:bg-gray-600 px-1 py-1 rounded focus:outline-none focus:ring-2 focus:ring-gray-400 text-xs w-full"
                       >
                         <div class="flex flex-col items-center">
-                          <span>{{ day.name }}</span>
+                          <span class="font-semibold">{{ day.name }}</span>
                           <span class="text-xs text-gray-400 normal-case">{{ day.short }}</span>
                         </div>
                       </button>
                     </th>
                     <th
-                      class="px-1 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      class="w-24 px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       {{ imsMode ? 'Weekly Total' : 'Total' }}
                     </th>
                     <th
-                      class="px-1 py-1 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      class="w-28 px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       {{ imsMode ? 'Billable Hours' : 'Billable %' }}
                     </th>
                   </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-white divide-y divide-gray-100">
                   <StaffWeekRow
                     v-for="staff in weeklyData.staff_data"
                     :key="staff.staff_id"
                     :staff="staff"
                     :ims-mode="imsMode"
                     :week-days="displayDays"
-                    class="hover:bg-gray-50 transition-colors duration-150"
+                    class="hover:bg-blue-50/50 transition-colors duration-150 border-b border-gray-100"
                   />
                 </tbody>
               </table>
@@ -364,6 +363,7 @@ tbody tr:hover {
     opacity: 1;
     box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.7);
   }
+
   50% {
     opacity: 0.5;
     box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
