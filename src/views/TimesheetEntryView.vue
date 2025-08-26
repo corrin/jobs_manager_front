@@ -535,7 +535,6 @@
 </template>
 
 <script lang="ts" setup>
-import { debugLog } from '@/utils/debug'
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
@@ -583,6 +582,8 @@ import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 
+import { debugLog } from '@/utils/debug'
+
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type Staff = z.infer<typeof schemas.Staff>
 type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
@@ -616,9 +617,9 @@ const timeEntries = ref<TimesheetEntryWithMeta[]>([])
 
 // Adapter to convert TimesheetEntryView data format to TimesheetCostLine format
 const adaptedTimeEntries = computed(() => {
-  return timeEntries.value.map((entry) => ({
+  const adapted = timeEntries.value.map((entry) => ({
     id: entry.id,
-    job_id: entry.jobId,
+    job_id: entry.jobId, // ✅ Mapeia jobId para job_id
     job_number: entry.jobNumber,
     job_name: entry.jobName,
     client_name: entry.client,
@@ -643,6 +644,25 @@ const adaptedTimeEntries = computed(() => {
     isNewRow: entry.isNewRow,
     isModified: entry.isModified,
   }))
+
+  // 🐛 DEBUG: Log para verificar o mapeamento
+  console.log('[DEBUG] adaptedTimeEntries:', {
+    originalCount: timeEntries.value.length,
+    adaptedCount: adapted.length,
+    originalSample: timeEntries.value.slice(0, 2).map((e) => ({
+      id: e.id,
+      jobId: e.jobId,
+      jobNumber: e.jobNumber,
+    })),
+    adaptedSample: adapted.slice(0, 2).map((e) => ({
+      id: e.id,
+      job_id: e.job_id,
+      job_number: e.job_number,
+    })),
+    uniqueJobIds: [...new Set(adapted.map((e) => e.job_id))],
+  })
+
+  return adapted
 })
 
 // Computed property to ensure jobs are always available
@@ -679,7 +699,6 @@ const companyDefaultsRef = computed(() => companyDefaultsStore.companyDefaults)
 // Summary logic
 const {
   getActiveJobs,
-  getJobHours,
   getJobBill,
   getCompletionPercentage,
   isJobOverBudget,
@@ -692,6 +711,39 @@ const {
   getStatusLabel,
   getEstimatedHours,
 } = useTimesheetSummary()
+
+// ✅ CORREÇÃO: Função local para calcular horas do job com fallback
+const getJobHours = (jobId: string, timeEntries: Record<string, unknown>[]) => {
+  const jobEntries = timeEntries.filter((entry) => {
+    // Tenta múltiplas formas de identificar o job
+    return entry.job_id === jobId || entry.jobId === jobId
+  })
+
+  const hours = jobEntries.reduce((sum, entry) => {
+    // Tenta múltiplas formas de obter as horas
+    const entryHours = (entry.quantity as number) || (entry.hours as number) || 0
+    return sum + entryHours
+  }, 0)
+
+  // 🐛 DEBUG: Log detalhado
+  console.log(`[DEBUG] getJobHours (local) for jobId ${jobId}:`, {
+    jobId,
+    totalEntries: timeEntries.length,
+    matchingEntries: jobEntries.length,
+    allJobIds: timeEntries.map((e) => e.job_id || e.jobId),
+    matchingJobIds: jobEntries.map((e) => e.job_id || e.jobId),
+    hours,
+    entriesDetails: jobEntries.map((e) => ({
+      id: e.id,
+      job_id: e.job_id,
+      jobId: e.jobId,
+      quantity: e.quantity,
+      hours: e.hours,
+    })),
+  })
+
+  return hours
+}
 
 // Enhanced jobs state for job details with full data
 const enhancedJobs = ref<Map<string, ModernTimesheetJob>>(new Map())
@@ -738,42 +790,70 @@ const consolidatedSummary = computed(() => ({
 }))
 
 const activeJobsWithData = computed(() => {
-  const jobsWithData = activeJobs.value
-    .map((job) => {
-      const actualHours = getJobHours(job.id, adaptedTimeEntries.value)
+  const uniqueJobIds = [
+    ...new Set(adaptedTimeEntries.value.map((entry) => entry.job_id).filter(Boolean)),
+  ]
 
-      // Skip jobs without timesheet entries
-      if (actualHours === 0) return null
+  debugLog('🔍 DEBUG activeJobsWithData:', {
+    adaptedEntriesCount: adaptedTimeEntries.value.length,
+    uniqueJobIdsFromEntries: uniqueJobIds,
+    activeJobsCount: activeJobs.value.length,
+    activeJobIds: activeJobs.value.map((job) => job.id),
+    mismatch: uniqueJobIds.some((id) => !activeJobs.value.find((job) => job.id === id)),
+  })
+
+  const jobsWithData = uniqueJobIds
+    .map((jobId) => {
+      const actualHours = getJobHours(jobId, adaptedTimeEntries.value)
+
+      // Skip jobs without timesheet entries (shouldn't happen since we're filtering by entries)
+      if (actualHours === 0) {
+        debugLog(`⚠️ Job ${jobId} has 0 hours despite being in entries`)
+        return null
+      }
+
+      // Try to find job in activeJobs first, then in all jobs
+      let job =
+        activeJobs.value.find((j) => j.id === jobId) ||
+        timesheetStore.jobs.find((j) => j.id === jobId)
+
+      if (!job) {
+        // Create a minimal job object from timesheet entry data
+        const entryWithJobData = adaptedTimeEntries.value.find((entry) => entry.job_id === jobId)
+        if (entryWithJobData) {
+          job = {
+            id: jobId,
+            job_number: entryWithJobData.job_number || 'Unknown',
+            name: entryWithJobData.job_name || 'Unknown Job',
+            client_name: entryWithJobData.client_name || 'Unknown Client',
+            status: 'active', // Default status
+            job_status: 'active',
+            estimated_hours: 0,
+            estimated_labour_hours: 0,
+            labour_hours: 0,
+            charge_out_rate: entryWithJobData.charge_out_rate || 0,
+          } as ModernTimesheetJob
+
+          debugLog(`🔧 Created minimal job object for ${jobId}:`, job)
+        } else {
+          debugLog(`❌ Could not find or create job data for ${jobId}`)
+          return null
+        }
+      }
 
       // Use enhanced job data if available, otherwise use basic job data
-      const enhancedJob = enhancedJobs.value.get(job.id)
+      const enhancedJob = enhancedJobs.value.get(jobId)
       const jobForCalculations = enhancedJob || job
 
       const estimatedHours = getEstimatedHours(jobForCalculations)
-      const totalBill = getJobBill(job.id, adaptedTimeEntries.value)
+      const totalBill = getJobBill(jobId, adaptedTimeEntries.value)
       const completionPercentage = getCompletionPercentage(actualHours, estimatedHours)
       const isOverBudget = isJobOverBudget(actualHours, estimatedHours)
 
-      // 🐛 DEBUG: Log estimated hours calculation
-      debugLog('🔍 Job estimated hours debug:', {
-        jobId: job.id,
-        jobNumber: job.job_number,
-        basicJob: {
-          estimated_hours: job.estimated_hours,
-          estimated_labour_hours: job.estimated_labour_hours,
-          labour_hours: job.labour_hours,
-        },
-        enhancedJob: enhancedJob
-          ? {
-              latest_estimate: enhancedJob.latest_estimate?.summary,
-              latest_quote: enhancedJob.latest_quote?.summary,
-              estimated_hours: enhancedJob.estimated_hours,
-              estimated_labour_hours: enhancedJob.estimated_labour_hours,
-              labour_hours: enhancedJob.labour_hours,
-            }
-          : null,
-        calculatedEstimatedHours: estimatedHours,
+      debugLog(`✅ Job ${job.job_number} (${jobId}):`, {
         actualHours,
+        estimatedHours,
+        totalBill,
         completionPercentage,
         isOverBudget,
       })
@@ -790,7 +870,7 @@ const activeJobsWithData = computed(() => {
     .filter((jobData) => jobData !== null) // Remove null entries
     .sort((a, b) => b.actualHours - a.actualHours) // Sort by hours worked (descending)
 
-  debugLog('🔍 Active jobs with data:', jobsWithData.length, jobsWithData)
+  debugLog('🔍 Active jobs with data (FIXED):', jobsWithData.length, jobsWithData)
   return jobsWithData
 })
 

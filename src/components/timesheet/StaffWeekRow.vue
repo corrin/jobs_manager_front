@@ -181,10 +181,9 @@ const getDayBackgroundClass = (day: WeeklyDayData): string => {
   }
 
   // Normal working hours (green background)
-  if (day.hours >= 7) {
+  // I'm basing myself in the minimum hour quantity recorded for a day (for a specific staff)
+  if (day.hours >= 6) {
     return `${baseClass} bg-green-50 border border-green-200`
-  } else if (day.hours >= 4) {
-    return `${baseClass} bg-yellow-50 border border-yellow-200`
   } else if (day.hours > 0) {
     return `${baseClass} bg-red-50 border border-red-200`
   }

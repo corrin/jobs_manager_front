@@ -20,6 +20,17 @@ export function useTimesheetSummary() {
 
   const getJobHours = (jobId: string, timeEntries: TimesheetEntryWithMeta[]) => {
     const jobEntries = timeEntries.filter((entry) => entry.job_id === jobId)
+
+    // 🐛 DEBUG: Log para investigar o problema
+    console.log(`[DEBUG] getJobHours for jobId ${jobId}:`, {
+      jobId,
+      totalEntries: timeEntries.length,
+      matchingEntries: jobEntries.length,
+      allJobIds: timeEntries.map((e) => e.job_id),
+      matchingJobIds: jobEntries.map((e) => e.job_id),
+      hours: jobEntries.reduce((sum, entry) => sum + (entry.quantity || 0), 0),
+    })
+
     return jobEntries.reduce((sum, entry) => sum + (entry.quantity || 0), 0)
   }
 

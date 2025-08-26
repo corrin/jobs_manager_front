@@ -430,13 +430,25 @@ const PaginatedAppErrorList = z
     results: z.array(AppError),
   })
   .passthrough()
-const XeroOperationResponse = z
+const XeroDocumentSuccessResponse = z
   .object({
-    success: z.boolean(),
-    error: z.string().optional(),
-    messages: z.array(z.string()).optional(),
-    online_url: z.string().url().optional(),
+    success: z.boolean().optional().default(true),
     xero_id: z.string().uuid(),
+    online_url: z.string().url().optional(),
+    messages: z.array(z.string()).optional(),
+    client: z.string().optional(),
+    total_excl_tax: z.number().gt(-10000000000).lt(10000000000).optional(),
+    total_incl_tax: z.number().gt(-10000000000).lt(10000000000).optional(),
+    action: z.string().optional(),
+  })
+  .passthrough()
+const XeroDocumentErrorResponse = z
+  .object({
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    messages: z.array(z.string()).optional(),
+    error_type: z.string().optional(),
+    redirect_to_auth: z.boolean().optional(),
   })
   .passthrough()
 const ClientContactResult = z
@@ -496,7 +508,6 @@ const ClientSearchResult = z
     xero_contact_id: z.string(),
     last_invoice_date: z.string(),
     total_spend: z.string(),
-    raw_json: z.unknown().optional(),
   })
   .passthrough()
 const ClientCreateResponse = z
@@ -809,26 +820,45 @@ const QuoteSpreadsheet = z
     job_name: z.string(),
   })
   .passthrough()
-const XeroQuoteStatusEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
+const Status7aeEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
+const Quote = z
+  .object({
+    id: z.string().uuid(),
+    xero_id: z.string().uuid(),
+    status: Status7aeEnum.optional(),
+    date: z.string(),
+    total_excl_tax: z.number(),
+    total_incl_tax: z.number(),
+    online_url: z.string().max(200).url().nullish(),
+  })
+  .passthrough()
+const Status1beEnum = z.enum(['DRAFT', 'SUBMITTED', 'AUTHORISED', 'DELETED', 'VOIDED', 'PAID'])
+const Invoice = z
+  .object({
+    id: z.string().uuid(),
+    xero_id: z.string().uuid(),
+    number: z.string().max(255),
+    status: Status1beEnum.optional(),
+    date: z.string(),
+    due_date: z.string().nullish(),
+    total_excl_tax: z.number(),
+    total_incl_tax: z.number(),
+    amount_due: z.number(),
+    tax: z.number().optional(),
+    online_url: z.string().max(200).url().nullish(),
+  })
+  .passthrough()
 const XeroQuote = z
   .object({
-    status: XeroQuoteStatusEnum,
+    status: Status7aeEnum,
     online_url: z.string().max(200).url().nullable(),
   })
   .partial()
   .passthrough()
-const XeroInvoiceStatusEnum = z.enum([
-  'DRAFT',
-  'SUBMITTED',
-  'AUTHORISED',
-  'DELETED',
-  'VOIDED',
-  'PAID',
-])
 const XeroInvoice = z
   .object({
     number: z.string().max(255),
-    status: XeroInvoiceStatusEnum.optional(),
+    status: Status1beEnum.optional(),
     online_url: z.string().max(200).url().nullish(),
   })
   .passthrough()
@@ -860,8 +890,8 @@ const Job = z
     quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
     fully_invoiced: z.boolean(),
-    quote: z.object({}).partial().passthrough().nullable(),
-    invoice: z.object({}).partial().passthrough().nullable(),
+    quote: Quote.nullable(),
+    invoices: z.array(Invoice),
     xero_quote: XeroQuote.nullable(),
     xero_invoices: z.array(XeroInvoice),
     shop_job: z.boolean(),
@@ -1734,7 +1764,8 @@ export const schemas = {
   PatchedAIProviderCreateUpdate,
   AppError,
   PaginatedAppErrorList,
-  XeroOperationResponse,
+  XeroDocumentSuccessResponse,
+  XeroDocumentErrorResponse,
   ClientContactResult,
   ClientContactResponse,
   ClientErrorResponse,
@@ -1790,9 +1821,11 @@ export const schemas = {
   CostSet,
   PricingMethodologyEnum,
   QuoteSpreadsheet,
-  XeroQuoteStatusEnum,
+  Status7aeEnum,
+  Quote,
+  Status1beEnum,
+  Invoice,
   XeroQuote,
-  XeroInvoiceStatusEnum,
   XeroInvoice,
   Job,
   JobEvent,
@@ -2597,23 +2630,27 @@ Endpoints:
         schema: z.string().uuid(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
+        status: 400,
+        schema: XeroDocumentErrorResponse,
+      },
+      {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
   {
     method: 'post',
     path: '/api/xero/create_purchase_order/:purchase_order_id',
-    alias: 'create_xero_purchase_order',
-    description: `Creates a purchase order in Xero for the specified purchase order`,
+    alias: 'api_xero_create_purchase_order_create',
+    description: `Creates or updates a Purchase Order in Xero.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2622,15 +2659,19 @@ Endpoints:
         schema: z.string().uuid(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
+        status: 400,
+        schema: XeroDocumentErrorResponse,
+      },
+      {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
@@ -2647,15 +2688,15 @@ Endpoints:
         schema: z.string().uuid(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
@@ -2663,24 +2704,33 @@ Endpoints:
     method: 'delete',
     path: '/api/xero/delete_invoice/:job_id',
     alias: 'api_xero_delete_invoice_destroy',
-    description: `Deletes an invoice in Xero for the specified job`,
+    description: `Deletes a specific invoice in Xero for a given job, identified by its Xero ID.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'job_id',
         type: 'Path',
-        schema: z.string().uuid(),
+        schema: z.string(),
+      },
+      {
+        name: 'xero_invoice_id',
+        type: 'Query',
+        schema: z.string(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
+        status: 400,
+        schema: XeroDocumentErrorResponse,
+      },
+      {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
@@ -2697,15 +2747,15 @@ Endpoints:
         schema: z.string().uuid(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
@@ -2722,15 +2772,15 @@ Endpoints:
         schema: z.string().uuid(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
@@ -2922,8 +2972,20 @@ Expected JSON:
     method: 'get',
     path: '/clients/search/',
     alias: 'clients_search_retrieve',
-    description: `Search clients by name. Requires minimum 3 characters. Returns up to 10 results.`,
+    description: `Searches clients by name following early return pattern.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'q',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
     response: ClientSearchResponse,
     errors: [
       {
@@ -4502,8 +4564,15 @@ and creates JobFile database records with proper file metadata.`,
     method: 'get',
     path: '/job/rest/jobs/weekly-metrics/',
     alias: 'job_rest_jobs_weekly_metrics_list',
-    description: `Fetch weekly metrics data.`,
+    description: `Fetch weekly metrics data for jobs with time entries in the specified week.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'week',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
     response: z.array(WeeklyMetrics),
   },
   {

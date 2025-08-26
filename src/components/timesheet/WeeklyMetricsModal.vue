@@ -400,8 +400,10 @@ const formatCurrency = (amount: number): string => {
 const loadJobs = async () => {
   isLoading.value = true
   try {
-    const params = props.weekDate ? { week: props.weekDate } : undefined
-    const response = await api.job_rest_jobs_weekly_metrics_list(params)
+    console.log('Props - WEEKLY METRICS MODAL: ', props)
+    const response = props.weekDate
+      ? await api.job_rest_jobs_weekly_metrics_list({ queries: { week: props.weekDate } })
+      : await api.job_rest_jobs_weekly_metrics_list()
     jobs.value = response || []
     console.log(`📊 Loaded ${jobs.value.length} jobs for week: ${props.weekDate || 'current'}`)
   } catch (error) {
