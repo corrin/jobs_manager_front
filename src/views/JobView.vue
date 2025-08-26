@@ -167,67 +167,6 @@
           @reload-job="handleReloadJob"
         />
       </template>
-      <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-0.5">
-        <div class="md:hidden space-y-3">
-          <div class="flex space-x-3">
-            <DraggableButton
-              variant="primary"
-              @click="openPdfDialog"
-              class="bg-blue-600 hover:bg-blue-700 flex-1"
-              size="sm"
-            >
-              <Printer class="w-4 h-4 mr-2" />
-              Print
-            </DraggableButton>
-            <DraggableButton
-              variant="destructive"
-              @click="confirmDeleteJob"
-              class="bg-red-600 hover:bg-red-700 flex-1"
-              size="sm"
-            >
-              <Trash2 class="w-4 h-4 mr-2" />
-              Delete
-            </DraggableButton>
-            <DraggableButton
-              variant="secondary"
-              @click="navigateBack"
-              class="bg-gray-600 hover:bg-gray-700 w-full"
-              size="sm"
-            >
-              <X class="w-4 h-4 mr-2" />
-              Close
-            </DraggableButton>
-          </div>
-        </div>
-        <div class="hidden md:block">
-          <div class="flex items-center justify-center space-x-3 mb-2">
-            <DraggableButton
-              variant="primary"
-              @click="openPdfDialog"
-              class="bg-blue-600 hover:bg-blue-700"
-            >
-              <Printer class="w-4 h-4 mr-2" />
-              Print Job Sheet
-            </DraggableButton>
-            <DraggableButton
-              variant="destructive"
-              @click="confirmDeleteJob"
-              class="bg-red-600 hover:bg-red-700"
-            >
-              <Trash2 class="w-4 h-4 mr-2" />
-              Delete Job
-            </DraggableButton>
-            <DraggableButton
-              variant="secondary"
-              @click="navigateBack"
-              class="bg-gray-600 hover:bg-gray-700"
-            >
-              <X class="w-4 h-4 mr-2" />
-              Close
-            </DraggableButton>
-          </div>
-        </div>
-      </div>
       <JobHistoryModal
         v-if="showHistoryModal && jobDataWithPaid"
         :job-id="jobId"
@@ -277,8 +216,7 @@ import { useJobEvents } from '../composables/useJobEvents'
 import { useJobHeaderAutosave } from '../composables/useJobHeaderAutosave'
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { api } from '../api/client'
-import { ArrowLeft, Printer, Trash2, X } from 'lucide-vue-next'
-import DraggableButton from '../components/job/DraggableButton.vue'
+import { ArrowLeft } from 'lucide-vue-next'
 import { JOB_STATUS_CHOICES } from '../constants/job-status'
 
 const route = useRoute()
@@ -500,34 +438,6 @@ async function handleEventAdded(event) {
 
 function navigateBack() {
   router.push({ name: 'kanban' })
-}
-function confirmDeleteJob() {
-  if (confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
-    deleteJob()
-  }
-}
-
-async function deleteJob() {
-  if (!jobId.value) return
-  const jobName = jobData.value?.name || `Job #${jobData.value?.job_number}` || 'job'
-  try {
-    notifications.notifyDeleteStart(jobName)
-    const { jobService } = await import('../services/job.service')
-    const result = await jobService.deleteJob(jobId.value)
-    if (result.success) {
-      notifications.notifyDeleteSuccess(jobName)
-      navigateBack()
-    } else {
-      debugLog('Detected error in response: ', result)
-      throw new Error(result.error || 'Failed to delete job')
-    }
-  } catch (err: unknown) {
-    notifications.notifyDeleteError(
-      (err as Error)?.message || 'Unexpected error when trying to delete job ',
-      jobName,
-    )
-    debugLog('JobView - Error deleting job:', err)
-  }
 }
 
 function handleQuoteImported() {
