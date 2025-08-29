@@ -262,7 +262,6 @@ import { schemas } from '@/api/generated/api'
 import { AxiosError } from 'axios'
 import { debugLog } from '../../utils/debug'
 
-// ShadCN component imports (assuming this is your setup)
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {

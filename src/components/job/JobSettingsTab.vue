@@ -214,15 +214,7 @@ import ContactSelector from '../ContactSelector.vue'
 import type { Client } from '../../composables/useClientLookup'
 import { debugLog } from '../../utils/debug'
 import { toast } from 'vue-sonner'
-
-// Simple Card components (placeholder)
-const Card = {
-  template: '<div class="bg-white rounded-lg border border-gray-200 shadow-sm"><slot /></div>',
-}
-const CardHeader = { template: '<div class="px-6 py-4 border-b border-gray-200"><slot /></div>' }
-const CardTitle = { template: '<h3 class="text-lg font-semibold text-gray-900"><slot /></h3>' }
-const CardDescription = { template: '<p class="text-sm text-gray-600 mt-1"><slot /></p>' }
-const CardContent = { template: '<div class="px-6 py-4"><slot /></div>' }
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card'
 
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
 type ClientContact = z.infer<typeof schemas.ClientContactResult>
@@ -235,7 +227,7 @@ const props = defineProps<{
 const jobsStore = useJobsStore()
 
 const localJobData = ref<Partial<Job>>({})
-const originalJobData = ref<Partial<Job>>({}) // Snapshot dos dados originais
+const originalJobData = ref<Partial<Job>>({}) // Original data snapshot
 const errorMessages = ref<string[]>([])
 
 const isChangingClient = ref(false)
@@ -264,7 +256,6 @@ onMounted(async () => {
   }
 })
 
-// Simple data sanitization to prevent errors when sending to API - just to enforce really, Zodios already does this
 const currentClientId = computed(() => {
   const clientId =
     isChangingClient.value && newClientId.value
@@ -342,7 +333,7 @@ watch(
     }
 
     localJobData.value = { ...jobDataSnapshot }
-    originalJobData.value = { ...jobDataSnapshot } // Mantém snapshot original
+    originalJobData.value = { ...jobDataSnapshot } // Keep original snapshot
 
     contactDisplayValue.value = String(newJobData.contact_name || '')
 
@@ -389,7 +380,7 @@ const confirmClientChange = () => {
 
   resetClientChangeState()
 
-  // Enfileira alteração atômica de cliente + limpeza de contato e força flush
+  // Enqueues atomic client change + cleans contact and forces flush
   autosave.queueChanges({
     client_id: localJobData.value.client_id || '',
     client_name: localJobData.value.client_name || '',
@@ -420,7 +411,6 @@ const handleContactSelected = (contact: ClientContact | null) => {
     contactDisplayValue.value = ''
   }
 
-  // Enfileira mudança de contato e força flush (respeitando dependência de client_id)
   autosave.queueChanges({
     contact_id: localJobData.value.contact_id ?? null,
     contact_name: localJobData.value.contact_name ?? null,
@@ -440,7 +430,7 @@ let unbindRouteGuard: () => void = () => {}
 const autosave = createJobAutosave({
   jobId: props.jobData?.id || '',
   getSnapshot: () => {
-    // Retorna snapshot dos dados ORIGINAIS, não dos dados atuais
+    // Returns original snapshot, not current data
     const data = originalJobData.value || {}
     return {
       id: data.id,
@@ -476,7 +466,7 @@ const autosave = createJobAutosave({
         return { success: false, error: 'Missing job id' }
       }
 
-      // Monta wrapper compatível com o serviço atual
+      // Mounts compatible wrapper with current service
       const mergedJob = {
         ...(props.jobData as Job),
         ...(patch as Partial<Job>),
@@ -500,9 +490,10 @@ const autosave = createJobAutosave({
       if (result.success) {
         if (result.data?.data) {
           // Atualiza store como as abas já fazem
+          // Update store like tabs already do
           jobsStore.setDetailedJob(result.data.data)
 
-          // Atualiza snapshot original com os dados salvos
+          // Updates original snapshot based on saved data
           const savedJob = result.data.data.job
           originalJobData.value = {
             id: savedJob.id,
@@ -522,7 +513,7 @@ const autosave = createJobAutosave({
             invoiced: savedJob.invoiced,
           }
         }
-        // Notifica sucesso
+        // Notifies success
         toast.success('Job updated successfully')
         return { success: true, serverData: result.data }
       }
@@ -533,11 +524,10 @@ const autosave = createJobAutosave({
       return { success: false, error: msg }
     }
   },
-  // Logging em DEV controlado pelo call site (por ora, true)
   devLogging: true,
 })
 
-/** Bindings de ciclo de vida */
+/** Life-cycle bindings */
 onMounted(() => {
   autosave.onBeforeUnloadBind()
   autosave.onVisibilityBind()
@@ -552,7 +542,7 @@ onUnmounted(() => {
   unbindRouteGuard()
 })
 
-/** Watchers granulares (evitar ruído reativo) */
+/** Granular watchers to avoid reactive noise */
 const enqueueIfNotInitializing = (key: string, value: unknown) => {
   if (!isInitializing.value) {
     autosave.queueChange(key, value)

@@ -644,7 +644,6 @@ const onImageError = (file: JobFile, type: 'thumbnail' | 'download') => {
     file.downloadError = true
   }
   debugLog(`Failed to load image ${type} for file:`, file.filename)
-  // Não mostrar toast para cada erro de imagem - apenas log para debug
 }
 
 // Helper functions

@@ -619,7 +619,7 @@ const timeEntries = ref<TimesheetEntryWithMeta[]>([])
 const adaptedTimeEntries = computed(() => {
   const adapted = timeEntries.value.map((entry) => ({
     id: entry.id,
-    job_id: entry.jobId, // ✅ Mapeia jobId para job_id
+    job_id: entry.jobId,
     job_number: entry.jobNumber,
     job_name: entry.jobName,
     client_name: entry.client,
@@ -645,7 +645,6 @@ const adaptedTimeEntries = computed(() => {
     isModified: entry.isModified,
   }))
 
-  // 🐛 DEBUG: Log para verificar o mapeamento
   console.log('[DEBUG] adaptedTimeEntries:', {
     originalCount: timeEntries.value.length,
     adaptedCount: adapted.length,
@@ -712,20 +711,18 @@ const {
   getEstimatedHours,
 } = useTimesheetSummary()
 
-// ✅ CORREÇÃO: Função local para calcular horas do job com fallback
 const getJobHours = (jobId: string, timeEntries: Record<string, unknown>[]) => {
   const jobEntries = timeEntries.filter((entry) => {
-    // Tenta múltiplas formas de identificar o job
+    // Try multiple ways to identify the job
     return entry.job_id === jobId || entry.jobId === jobId
   })
 
   const hours = jobEntries.reduce((sum, entry) => {
-    // Tenta múltiplas formas de obter as horas
+    // Try multiple ways to get the hours
     const entryHours = (entry.quantity as number) || (entry.hours as number) || 0
     return sum + entryHours
   }, 0)
 
-  // 🐛 DEBUG: Log detalhado
   console.log(`[DEBUG] getJobHours (local) for jobId ${jobId}:`, {
     jobId,
     totalEntries: timeEntries.length,

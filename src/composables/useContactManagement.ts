@@ -199,9 +199,8 @@ export function useContactManagement() {
         selectedContact.value = createdContact
         debugLog('New contact selected:', createdContact)
       } else {
-        // Fallback: use the response directly
         selectedContact.value = newContact
-        debugLog('Using response contact as fallback:', newContact)
+        debugLog('Using response contact:', newContact)
       }
 
       closeModal()

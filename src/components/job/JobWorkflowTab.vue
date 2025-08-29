@@ -143,15 +143,7 @@ import { jobService } from '../../services/job.service'
 import { debugLog } from '../../utils/debug'
 import { createJobAutosave } from '../../composables/useJobAutosave'
 import { toast } from 'vue-sonner'
-
-// Simple Card components (placeholder)
-const Card = {
-  template: '<div class="bg-white rounded-lg border border-gray-200 shadow-sm"><slot /></div>',
-}
-const CardHeader = { template: '<div class="px-6 py-4 border-b border-gray-200"><slot /></div>' }
-const CardTitle = { template: '<h3 class="text-lg font-semibold text-gray-900"><slot /></h3>' }
-const CardDescription = { template: '<p class="text-sm text-gray-600 mt-1"><slot /></p>' }
-const CardContent = { template: '<div class="px-6 py-4"><slot /></div>' }
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card'
 
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
 type Job = z.infer<typeof schemas.Job>
@@ -169,7 +161,7 @@ defineEmits<{
 const jobsStore = useJobsStore()
 
 const localJobData = ref<Partial<Job>>({})
-const originalJobData = ref<Partial<Job>>({}) // Snapshot dos dados originais
+const originalJobData = ref<Partial<Job>>({})
 
 const statusChoices = JOB_STATUS_CHOICES
 const isInitializing = ref(true)
@@ -203,7 +195,7 @@ const initializeLocalJobData = (jobData: Job) => {
   }
 
   localJobData.value = { ...jobDataSnapshot }
-  originalJobData.value = { ...jobDataSnapshot } // Mantém snapshot original
+  originalJobData.value = { ...jobDataSnapshot }
 
   debugLog('JobWorkflowTab - Local job data initialized:', localJobData.value)
 }
@@ -239,7 +231,6 @@ let unbindRouteGuard: () => void = () => {}
 const autosave = createJobAutosave({
   jobId: props.jobData?.id || '',
   getSnapshot: () => {
-    // Retorna snapshot dos dados ORIGINAIS, não dos dados atuais
     const data = originalJobData.value || {}
     return {
       id: data.id,
@@ -294,7 +285,6 @@ const autosave = createJobAutosave({
         if (result.data?.data) {
           jobsStore.setDetailedJob(result.data.data)
 
-          // Atualiza snapshot original com os dados salvos
           const savedJob = result.data.data.job
           originalJobData.value = {
             id: savedJob.id,
@@ -309,7 +299,6 @@ const autosave = createJobAutosave({
             client_name: savedJob.client_name,
           }
         }
-        // Notifica sucesso
         toast.success('Job updated successfully')
         return { success: true, serverData: result.data }
       }
@@ -323,7 +312,7 @@ const autosave = createJobAutosave({
   devLogging: true,
 })
 
-/** Bindings de ciclo de vida */
+/** Life-cycle hooks */
 onMounted(() => {
   autosave.onBeforeUnloadBind()
   autosave.onVisibilityBind()
@@ -338,7 +327,7 @@ onUnmounted(() => {
   unbindRouteGuard()
 })
 
-/** Watchers granulares */
+/** Granular watchers */
 const enqueueIfNotInitializing = (key: string, value: unknown) => {
   if (!isInitializing.value) {
     autosave.queueChange(key, value)

@@ -59,17 +59,17 @@ export type JobAutosaveApi = {
 }
 
 /**
- * createJobAutosave - Autosave orquestrador por entidade Job
+ * createJobAutosave - Autosave orchestrator for the Job entity
  *
- * Recursos:
- * - Debounce único por Job (default 500ms)
- * - Buffer por campo e coalescência de mudanças rápidas
- * - Single-flight com marcação de pending para rodar novamente
- * - Retry in-memory com backoff exponencial e jitter
- * - Flush em blur/visibility hidden/route leave/beforeunload
- * - No-op guard com comparação normalizada
- * - Atualização otimista com rollback em falha
- * - Correlação de respostas via token do voo em andamento
+ * Features:
+ * - Single debounce per Job (default 500ms)
+ * - Per-field buffer and coalescing of rapid changes
+ * - Single-flight logic with a flag to re-run if new changes occur
+ * - In-memory retry with exponential backoff and jitter
+ * - Flushes on blur, visibility hidden, route leave, and beforeunload events
+ * - No-op guard using normalised comparison
+ * - Optimistic updates with rollback on failure
+ * - Response correlation via an in-flight request token
  */
 export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
   // Defaults
@@ -87,19 +87,21 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
     ((key: string, value: unknown) => {
       if (value == null) return value
       if (typeof value === 'string') {
-        // trim + collapse internal whitespace
+        // trim and collapse internal whitespace
         const collapsed = value.trim().replace(/\s+/g, ' ')
-        // enums usuais: pricing/status
+
+        // common enums: pricing/status
         if (key === 'pricing_methodology' || key === 'job_status') {
           return collapsed.toLowerCase()
         }
         return collapsed
       }
-      // Datas "delivery_date" normalizadas para YYYY-MM-DD
+
+      // "delivery_date" dates normalised to YYYY-MM-DD
       if (key === 'delivery_date') {
         try {
           if (typeof value === 'string' && value) {
-            // já vem como yyyy-mm-dd em inputs type=date
+            // already comes as yyyy-mm-dd from inputs with type="date"
             return value
           }
           if (value instanceof Date) {
@@ -120,14 +122,15 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
     ((a: unknown, b: unknown, key: string) => {
       const na = normalize(key, a)
       const nb = normalize(key, b)
-      // For *_id keys, undefined !== null (we need the "clear" to pass)
+
+      // For *_id keys, undefined !== null (we need the "clear" action to be saved)
       if (/_id$/.test(key)) {
         return na === nb
       }
       return JSON.stringify(na) === JSON.stringify(nb)
     })
 
-  // Estado interno
+  // Internal state
   const changeBuffer = new Map<string, unknown>()
   const pendingKeys = ref(new Set<string>())
   const isSaving = ref(false)
@@ -173,29 +176,29 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
   }
 
   async function attemptFlush(reason?: string) {
-    // Se houver timer pendente, cancela (vamos flushear agora)
+    // If there's a pending timer, cancel it (we're flushing now)
     if (debounceTimer) {
       clearTimeout(debounceTimer)
       debounceTimer = null
     }
 
-    // Se já estamos salvando, marca para rodar depois
+    // If a save is already in progress, flag it to run again afterwards
     if (isSaving.value) {
       pendingAfterFlight = true
       log('⏭️ in-flight, marked pendingAfterFlight', { reason })
       return
     }
 
-    // IMPORTANTE: Captura snapshot ANTES de qualquer modificação
+    // IMPORTANT: Capture the snapshot BEFORE any modifications
     const originalSnapshot = opts.getSnapshot() ?? {}
 
-    // Monta patch efetivo (no-op aware)
+    // Build the effective patch (no-op aware)
     const rawPatch: Record<string, unknown> = {}
     for (const [k, v] of changeBuffer.entries()) {
       rawPatch[k] = v
     }
 
-    // Dependência: alteração de client_id implica zerar contato no mesmo payload
+    // Dependency: changing client_id implies clearing the contact in the same payload
     if ('client_id' in rawPatch) {
       rawPatch['contact_id'] = null
       rawPatch['contact_name'] = null
@@ -203,7 +206,7 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       pendingKeys.value.add('contact_name')
     }
 
-    // Remove no-ops comparando com snapshot ORIGINAL (antes de otimismo)
+    // Remove no-ops by comparing with the ORIGINAL snapshot (before optimistic updates)
     const effectivePatch: Record<string, unknown> = {}
     Object.entries(rawPatch).forEach(([k, v]) => {
       if (!isEqual(originalSnapshot[k as keyof typeof originalSnapshot], v, k)) {
@@ -212,9 +215,10 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
     })
 
     if (Object.keys(effectivePatch).length === 0) {
-      // Nada mudou de fato
+      // Nothing has actually changed
       log('🚫 no-op patch, aborting', { reason })
-      // Limpa buffer dessas keys
+
+      // Clear the buffer of these keys
       changeBuffer.clear()
       pendingKeys.value.clear()
       return
@@ -229,7 +233,7 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       }
     }
 
-    // Gate de completude
+    // Completeness gate
     const virtualSnapshot = { ...originalSnapshot, ...effectivePatch }
     if (
       ('contact_id' in effectivePatch || 'contact_name' in effectivePatch) &&
@@ -239,18 +243,18 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       return
     }
 
-    // Preparar envio
+    // Prepare for dispatch
     isSaving.value = true
     error.value = null
     pendingAfterFlight = false
     const token = ++inFlightToken.value
 
-    // Copia patch e limpa buffer (tudo que chegou até aqui será enviado)
+    // Copy the patch and clear the buffer (everything queued up to this point will be sent)
     const sendingPatch = { ...effectivePatch }
     changeBuffer.clear()
     pendingKeys.value.clear()
 
-    // Otimismo: guardar valores anteriores para rollback (do snapshot original)
+    // Optimistic update: store previous values for rollback (from the original snapshot)
     const previousValues: Record<string, unknown> = {}
     Object.keys(sendingPatch).forEach(
       (k) => (previousValues[k] = (originalSnapshot as Record<string, unknown>)[k]),
@@ -263,8 +267,7 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
     }
 
     try {
-      const res = await saveWithRetry(sendingPatch, retry)
-      // Ignorar respostas antigas
+      const res = await saveWithRetry(sendingPatch, retry) // Ignore stale responses
       if (token !== inFlightToken.value) {
         log('🕒 stale response ignored', { token, current: inFlightToken.value })
         return
@@ -289,12 +292,10 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       error.value = msg
       log('❌ save error', { msg })
     } finally {
-      isSaving.value = false
-      // Se houve novas alterações durante o voo, roda novamente
+      isSaving.value = false // If new changes occurred during the in-flight request, run again
       if (pendingAfterFlight || changeBuffer.size > 0) {
         log('🔁 pending detected, attempting next flush')
-        pendingAfterFlight = false
-        // Evita loop imediato: agenda no próximo microtask
+        pendingAfterFlight = false // Avoid an immediate loop: schedule for the next microtask
         queueMicrotask(() => {
           void attemptFlush('post-flight-pending')
         })
@@ -310,21 +311,20 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
     let delay = policy.baseDelayMs
     while (attempt < policy.attempts) {
       try {
-        // Offline: falha imediata conforme política acordada
+        // Offline: fail immediately as per the agreed policy
         if (typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine) {
           throw new Error('Offline')
         }
 
         const res = await opts.saveAdapter(patch)
         if (!res.success) {
-          // Heurística simples: 400/422 ou conflict não devem retentar (o adapter pode sinalizar via flags)
+          // Simple heuristic: 400/422 or conflicts should not be retried (the adapter can signal this via flags)
           const nonTransient =
             res.conflict === true ||
             (res.error && /\b(400|422|validation|invalid)\b/i.test(String(res.error)))
           if (nonTransient) {
             return res
-          }
-          // transient → vai ao catch abaixo pra retentar
+          } // transient -> will fall through to the catch block below to be retried
           throw new Error(res.error || 'Transient save error')
         }
         return res
@@ -362,15 +362,13 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
 
   async function flush(reason?: string) {
     await attemptFlush(reason ?? 'manual-flush')
-  }
+  } // Bindings
 
-  // Bindings
   const beforeUnloadHandler = () => {
-    // Chamada best-effort; não garante envio síncrono
+    // Best-effort call; does not guarantee synchronous dispatch
     if (changeBuffer.size > 0 || isSaving.value) {
       log('🚪 beforeunload flush')
-    }
-    // Não bloquear a saída; apenas tentar flush
+    } // Do not block exit; just attempt to flush
     void attemptFlush('beforeunload')
   }
 
@@ -404,7 +402,7 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
     ) => unknown
   }) {
     const remove = router.beforeEach((_to, _from, next) => {
-      // Best-effort: não bloquear navegação; apenas dispara flush
+      // Best-effort: do not block navigation; just trigger a flush
       log('🛣️ route leave flush')
       void attemptFlush('route-leave')
       next()

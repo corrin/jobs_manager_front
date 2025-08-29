@@ -96,9 +96,9 @@ function openEditor() {
   if (props.disabled || !isReceiptVisible.value) return
 
   if (!rows.value.length) {
-    // Default row - prefer selected job from PO line, fallback to stock
+    // Default row - prefer selected job from PO line
     const selectedJob = props.jobs.find((j) => j.id === props.line.job_id)
-    const defaultJobId = selectedJob?.id || props.stockHoldingJobId || props.jobs[0]?.id
+    const defaultJobId = selectedJob?.id || props.stockHoldingJobId
 
     if (defaultJobId) {
       rows.value.push({

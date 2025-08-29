@@ -48,7 +48,7 @@
 
           <!-- Status/Leave Icon -->
           <div class="flex-shrink-0">
-            <StatusBadge :status="day.status || ''" :leave-type="day.leave_type" />
+            <StatusBadge :status="day.status || ''" :leave-type="day.leave_type as string" />
           </div>
         </div>
 
@@ -96,10 +96,10 @@
           {{ formatHours(staff.total_hours) }}
         </span>
         <div
-          v-if="imsMode && staff.total_leave_hours && staff.total_leave_hours > 0"
+          v-if="imsMode && staff.total_leave_hours && staff.weekly_hours.leave_hours > 0"
           class="text-xs text-blue-600"
         >
-          Leave: {{ formatHours(staff.total_leave_hours) }}
+          Leave: {{ formatHours(staff.weekly_hours.leave_hours) }}
         </div>
       </div>
     </td>
@@ -114,29 +114,12 @@
 <script setup lang="ts">
 import StatusBadge from './StatusBadge.vue'
 import BillablePercentageBadge from './BillablePercentageBadge.vue'
+import { formatHours } from '../../services/weekly-timesheet.service'
+import { z } from 'zod'
+import { schemas } from '../../api/generated/api'
 
-// Define types based on the expected data structure
-interface WeeklyDayData {
-  hours: number
-  status?: string
-  leave_type?: string
-  overtime?: number
-  leave_hours?: number
-  standard_hours?: number
-  time_and_half_hours?: number
-  double_time_hours?: number
-  unpaid_hours?: number
-}
-
-interface WeeklyStaffData {
-  name: string
-  staff_id: string
-  total_hours: number
-  total_overtime?: number
-  total_leave_hours?: number
-  billable_percentage?: number
-  weekly_hours: WeeklyDayData[]
-}
+type WeeklyStaffData = z.infer<typeof schemas.IMSWeeklyStaffData>
+type WeeklyDayData = z.infer<typeof schemas.IMSWeeklyStaffDataWeeklyHours>
 
 interface Props {
   staff: WeeklyStaffData
@@ -145,13 +128,6 @@ interface Props {
 }
 
 defineProps<Props>()
-
-const formatHours = (hours: number): string => {
-  if (isNaN(hours)) {
-    return '0.0'
-  }
-  return hours.toFixed(1)
-}
 
 const getInitials = (name: string): string => {
   return name

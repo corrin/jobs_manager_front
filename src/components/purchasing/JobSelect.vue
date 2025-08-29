@@ -45,7 +45,7 @@
         >
           <div class="font-medium text-gray-900">
             <span v-if="job.isStockHolding" class="mr-1">📦</span>
-            {{ job.displayName || job.number || job.job_number }}
+            {{ job.job_number }}
           </div>
           <div class="text-sm text-gray-600 truncate">
             {{ job.description || job.name }}
@@ -86,18 +86,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { z } from 'zod'
+import { schemas } from '../../api/generated/api'
 
-interface Job {
-  id: string
-  number?: string
-  job_number?: string
-  name?: string
-  description?: string
-  client_name?: string
-  status?: string
-  isStockHolding?: boolean
-  displayName?: string
-}
+type Job = z.infer<typeof schemas.KanbanJob & { isStockHolding: boolean }>
 
 const props = defineProps<{
   modelValue?: string | number | null
@@ -134,13 +126,12 @@ const filteredJobs = computed(() => {
   const term = searchTerm.value.toLowerCase()
 
   const filtered = availableJobs.filter((job: Job) => {
-    const numberMatch = job.number?.toString().toLowerCase().includes(term)
     const jobNumberMatch = job.job_number?.toString().toLowerCase().includes(term)
     const descriptionMatch = job.description?.toLowerCase().includes(term)
     const nameMatch = job.name?.toLowerCase().includes(term)
     const clientMatch = job.client_name?.toLowerCase().includes(term)
 
-    return numberMatch || jobNumberMatch || descriptionMatch || nameMatch || clientMatch
+    return jobNumberMatch || descriptionMatch || nameMatch || clientMatch
   })
 
   return filtered
@@ -150,7 +141,7 @@ const updateSearchTermFromModelValue = (modelValue: string | number | null) => {
   if (modelValue) {
     const selectedJob = (props.jobs || []).find((job: Job) => job.id === modelValue)
     if (selectedJob) {
-      const jobNumber = selectedJob.number || selectedJob.job_number
+      const jobNumber = selectedJob.job_number
       const jobDescription = selectedJob.description || selectedJob.name
       searchTerm.value = `${jobNumber} - ${jobDescription}`
     }
@@ -238,7 +229,7 @@ const onKeydown = (event: KeyboardEvent) => {
 const selectJob = (job: Job) => {
   if (props.disabled) return
 
-  const jobNumber = job.number || job.job_number
+  const jobNumber = job.job_number
   const jobDescription = job.description || job.name
   searchTerm.value = `${jobNumber} - ${jobDescription}`
   showDropdown.value = false
