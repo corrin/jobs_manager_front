@@ -430,32 +430,25 @@ const PaginatedAppErrorList = z
     results: z.array(AppError),
   })
   .passthrough()
-const XeroOperationResponse = z
+const XeroDocumentSuccessResponse = z
   .object({
-    success: z.boolean(),
-    error: z.string().optional(),
-    messages: z.array(z.string()).optional(),
-    online_url: z.string().url().optional(),
+    success: z.boolean().optional().default(true),
     xero_id: z.string().uuid(),
+    online_url: z.string().url().optional(),
+    messages: z.array(z.string()).optional(),
+    client: z.string().optional(),
+    total_excl_tax: z.number().gt(-10000000000).lt(10000000000).optional(),
+    total_incl_tax: z.number().gt(-10000000000).lt(10000000000).optional(),
+    action: z.string().optional(),
   })
   .passthrough()
-const SeverityEnum = z.enum(['info', 'warning', 'error'])
-const NullEnum = z.unknown()
-const SyncStatusEnum = z.enum(['success', 'error', 'running'])
-const XeroSseEvent = z
+const XeroDocumentErrorResponse = z
   .object({
-    datetime: z.string().datetime({ offset: true }),
-    message: z.string(),
-    severity: z.union([SeverityEnum, NullEnum]).nullish(),
-    entity: z.string().nullish(),
-    progress: z.number().nullish(),
-    overall_progress: z.number().nullish(),
-    entity_progress: z.number().nullish(),
-    records_updated: z.number().int().nullish(),
-    status: z.string().nullish(),
-    sync_status: z.union([SyncStatusEnum, NullEnum]).nullish(),
-    error_messages: z.array(z.string()).optional(),
-    missing_fields: z.array(z.string()).optional(),
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    messages: z.array(z.string()).optional(),
+    error_type: z.string().optional(),
+    redirect_to_auth: z.boolean().optional(),
   })
   .passthrough()
 const ClientContactResult = z
@@ -469,7 +462,14 @@ const ClientContactResult = z
   })
   .passthrough()
 const ClientContactResponse = z.object({ results: z.array(ClientContactResult) }).passthrough()
-const ClientListResponse = z.object({ id: z.string(), name: z.string() }).passthrough()
+const ClientErrorResponse = z
+  .object({
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    details: z.string().optional(),
+  })
+  .passthrough()
+const ClientNameOnly = z.object({ id: z.string().uuid(), name: z.string() }).passthrough()
 const ClientContactCreateRequest = z
   .object({
     client_id: z.string().uuid(),
@@ -486,13 +486,6 @@ const ClientContactCreateResponse = z
     success: z.boolean(),
     contact: ClientContactResult,
     message: z.string(),
-  })
-  .passthrough()
-const ClientErrorResponse = z
-  .object({
-    success: z.boolean().optional().default(false),
-    error: z.string(),
-    details: z.string().optional(),
   })
   .passthrough()
 const ClientCreateRequest = z
@@ -515,7 +508,20 @@ const ClientSearchResult = z
     xero_contact_id: z.string(),
     last_invoice_date: z.string(),
     total_spend: z.string(),
-    raw_json: z.unknown().optional(),
+  })
+  .passthrough()
+const ClientCreateResponse = z
+  .object({
+    success: z.boolean(),
+    client: ClientSearchResult,
+    message: z.string(),
+  })
+  .passthrough()
+const ClientDuplicateErrorResponse = z
+  .object({
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    existing_client: z.object({}).partial().passthrough(),
   })
   .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
@@ -681,7 +687,7 @@ const KanbanColumnJob = z
     description: z.string().nullable(),
     client_name: z.string(),
     contact_person: z.string(),
-    people: z.array(z.object({}).partial().passthrough()),
+    people: z.array(KanbanJobPerson),
     status: z.string(),
     status_key: z.string(),
     paid: z.boolean(),
@@ -814,26 +820,45 @@ const QuoteSpreadsheet = z
     job_name: z.string(),
   })
   .passthrough()
-const XeroQuoteStatusEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
+const Status7aeEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
+const Quote = z
+  .object({
+    id: z.string().uuid(),
+    xero_id: z.string().uuid(),
+    status: Status7aeEnum.optional(),
+    date: z.string(),
+    total_excl_tax: z.number(),
+    total_incl_tax: z.number(),
+    online_url: z.string().max(200).url().nullish(),
+  })
+  .passthrough()
+const Status1beEnum = z.enum(['DRAFT', 'SUBMITTED', 'AUTHORISED', 'DELETED', 'VOIDED', 'PAID'])
+const Invoice = z
+  .object({
+    id: z.string().uuid(),
+    xero_id: z.string().uuid(),
+    number: z.string().max(255),
+    status: Status1beEnum.optional(),
+    date: z.string(),
+    due_date: z.string().nullish(),
+    total_excl_tax: z.number(),
+    total_incl_tax: z.number(),
+    amount_due: z.number(),
+    tax: z.number().optional(),
+    online_url: z.string().max(200).url().nullish(),
+  })
+  .passthrough()
 const XeroQuote = z
   .object({
-    status: XeroQuoteStatusEnum,
+    status: Status7aeEnum,
     online_url: z.string().max(200).url().nullable(),
   })
   .partial()
   .passthrough()
-const XeroInvoiceStatusEnum = z.enum([
-  'DRAFT',
-  'SUBMITTED',
-  'AUTHORISED',
-  'DELETED',
-  'VOIDED',
-  'PAID',
-])
 const XeroInvoice = z
   .object({
     number: z.string().max(255),
-    status: XeroInvoiceStatusEnum.optional(),
+    status: Status1beEnum.optional(),
     online_url: z.string().max(200).url().nullish(),
   })
   .passthrough()
@@ -865,8 +890,8 @@ const Job = z
     quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
     fully_invoiced: z.boolean(),
-    quote: z.object({}).partial().passthrough().nullable(),
-    invoice: z.object({}).partial().passthrough().nullable(),
+    quote: Quote.nullable(),
+    invoices: z.array(Invoice),
     xero_quote: XeroQuote.nullable(),
     xero_invoices: z.array(XeroInvoice),
     shop_job: z.boolean(),
@@ -1151,6 +1176,8 @@ const DeliveryReceiptAllocation = z
   .object({
     job_id: z.string().uuid(),
     quantity: z.number().gt(-100000000).lt(100000000),
+    retail_rate: z.number().gt(-1000).lt(1000).optional(),
+    metadata: z.object({}).partial().passthrough().optional(),
   })
   .passthrough()
 const DeliveryReceiptLine = z
@@ -1266,6 +1293,7 @@ const MetalTypeEnum = z.enum([
   'other',
 ])
 const BlankEnum = z.unknown()
+const NullEnum = z.unknown()
 const PurchaseOrderLine = z
   .object({
     id: z.string().uuid(),
@@ -1338,10 +1366,10 @@ const PurchaseOrderUpdate = z
   })
   .partial()
   .passthrough()
-const TypeEnum = z.enum(['job', 'stock'])
+const AllocationItemTypeEnum = z.enum(['job', 'stock'])
 const AllocationItem = z
   .object({
-    type: TypeEnum,
+    type: AllocationItemTypeEnum,
     job_id: z.string().uuid(),
     job_name: z.string(),
     quantity: z.number(),
@@ -1349,12 +1377,48 @@ const AllocationItem = z
     allocation_date: z.string().datetime({ offset: true }).nullable(),
     description: z.string(),
     stock_location: z.string().nullish(),
+    metal_type: z.string().nullish(),
+    alloy: z.string().nullish(),
+    specifics: z.string().nullish(),
+    allocation_id: z.string().uuid().nullish(),
   })
   .passthrough()
 const PurchaseOrderAllocationsResponse = z
   .object({
     po_id: z.string().uuid(),
     allocations: z.record(z.array(AllocationItem)),
+  })
+  .passthrough()
+const TypeC98Enum = z.enum(['stock', 'job'])
+const AllocationDetailsResponse = z
+  .object({
+    type: TypeC98Enum,
+    id: z.string().uuid(),
+    description: z.string(),
+    quantity: z.number(),
+    job_name: z.string(),
+    can_delete: z.boolean(),
+    consumed_by_jobs: z.number().int().optional(),
+    location: z.string().optional(),
+    unit_cost: z.number().optional(),
+    unit_revenue: z.number().optional(),
+  })
+  .passthrough()
+const AllocationTypeEnum = z.enum(['stock', 'job'])
+const AllocationDeleteRequest = z
+  .object({
+    allocation_type: AllocationTypeEnum,
+    allocation_id: z.string().uuid(),
+  })
+  .passthrough()
+const AllocationDeleteResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string(),
+    deleted_quantity: z.number().optional(),
+    description: z.string().optional(),
+    job_name: z.string().optional(),
+    updated_received_quantity: z.number().optional(),
   })
   .passthrough()
 const StockItem = z
@@ -1371,6 +1435,7 @@ const StockItem = z
     date: z.string().datetime({ offset: true }).nullable(),
     job_id: z.string().uuid().nullable(),
     notes: z.string().nullable(),
+    item_code: z.string().nullable(),
   })
   .partial()
   .passthrough()
@@ -1699,19 +1764,18 @@ export const schemas = {
   PatchedAIProviderCreateUpdate,
   AppError,
   PaginatedAppErrorList,
-  XeroOperationResponse,
-  SeverityEnum,
-  NullEnum,
-  SyncStatusEnum,
-  XeroSseEvent,
+  XeroDocumentSuccessResponse,
+  XeroDocumentErrorResponse,
   ClientContactResult,
   ClientContactResponse,
-  ClientListResponse,
+  ClientErrorResponse,
+  ClientNameOnly,
   ClientContactCreateRequest,
   ClientContactCreateResponse,
-  ClientErrorResponse,
   ClientCreateRequest,
   ClientSearchResult,
+  ClientCreateResponse,
+  ClientDuplicateErrorResponse,
   ClientSearchResponse,
   JobFileStatusEnum,
   JobFile,
@@ -1757,9 +1821,11 @@ export const schemas = {
   CostSet,
   PricingMethodologyEnum,
   QuoteSpreadsheet,
-  XeroQuoteStatusEnum,
+  Status7aeEnum,
+  Quote,
+  Status1beEnum,
+  Invoice,
   XeroQuote,
-  XeroInvoiceStatusEnum,
   XeroInvoice,
   Job,
   JobEvent,
@@ -1815,14 +1881,20 @@ export const schemas = {
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
   BlankEnum,
+  NullEnum,
   PurchaseOrderLine,
   PurchaseOrderDetail,
   PurchaseOrderLineUpdate,
   PatchedPurchaseOrderUpdate,
   PurchaseOrderUpdate,
-  TypeEnum,
+  AllocationItemTypeEnum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
+  TypeC98Enum,
+  AllocationDetailsResponse,
+  AllocationTypeEnum,
+  AllocationDeleteRequest,
+  AllocationDeleteResponse,
   StockItem,
   StockList,
   StockCreate,
@@ -2558,23 +2630,27 @@ Endpoints:
         schema: z.string().uuid(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
+        status: 400,
+        schema: XeroDocumentErrorResponse,
+      },
+      {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
   {
     method: 'post',
     path: '/api/xero/create_purchase_order/:purchase_order_id',
-    alias: 'create_xero_purchase_order',
-    description: `Creates a purchase order in Xero for the specified purchase order`,
+    alias: 'api_xero_create_purchase_order_create',
+    description: `Creates or updates a Purchase Order in Xero.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2583,15 +2659,19 @@ Endpoints:
         schema: z.string().uuid(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
+        status: 400,
+        schema: XeroDocumentErrorResponse,
+      },
+      {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
@@ -2608,15 +2688,15 @@ Endpoints:
         schema: z.string().uuid(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
@@ -2624,24 +2704,33 @@ Endpoints:
     method: 'delete',
     path: '/api/xero/delete_invoice/:job_id',
     alias: 'api_xero_delete_invoice_destroy',
-    description: `Deletes an invoice in Xero for the specified job`,
+    description: `Deletes a specific invoice in Xero for a given job, identified by its Xero ID.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'job_id',
         type: 'Path',
-        schema: z.string().uuid(),
+        schema: z.string(),
+      },
+      {
+        name: 'xero_invoice_id',
+        type: 'Query',
+        schema: z.string(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
+        status: 400,
+        schema: XeroDocumentErrorResponse,
+      },
+      {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
@@ -2658,15 +2747,15 @@ Endpoints:
         schema: z.string().uuid(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
   },
@@ -2683,25 +2772,17 @@ Endpoints:
         schema: z.string().uuid(),
       },
     ],
-    response: XeroOperationResponse,
+    response: XeroDocumentSuccessResponse,
     errors: [
       {
         status: 404,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
       {
         status: 500,
-        schema: XeroOperationResponse,
+        schema: XeroDocumentErrorResponse,
       },
     ],
-  },
-  {
-    method: 'get',
-    path: '/api/xero/sync-stream/',
-    alias: 'api_xero_sync_stream_list',
-    description: `Xero Sync Event Stream`,
-    requestFormat: 'json',
-    response: z.array(XeroSseEvent),
   },
   {
     method: 'get',
@@ -2779,7 +2860,7 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
     method: 'get',
     path: '/clients/:client_id/contacts/',
     alias: 'clients_contacts_retrieve',
-    description: `Fetches contacts for a specific client.`,
+    description: `Retrieve all contacts for a specific client.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2789,14 +2870,34 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
       },
     ],
     response: ClientContactResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 404,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
     path: '/clients/all/',
-    alias: 'clients_all_retrieve',
-    description: `Lists all clients (only id and name) for fast dropdowns.`,
+    alias: 'clients_all_list',
+    description: `Returns a list of all clients with basic information (id and name) for dropdowns and search.`,
     requestFormat: 'json',
-    response: ClientListResponse,
+    response: z.array(ClientNameOnly),
+    errors: [
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -2838,7 +2939,7 @@ Expected JSON:
     method: 'post',
     path: '/clients/create/',
     alias: 'clients_create_create',
-    description: `Create a new client, first in Xero, then sync locally.`,
+    description: `Creates a new client in Xero first, then syncs locally. Requires valid Xero authentication.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2847,7 +2948,25 @@ Expected JSON:
         schema: ClientCreateRequest,
       },
     ],
-    response: ClientCreateRequest,
+    response: ClientCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 401,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 409,
+        schema: ClientDuplicateErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -2855,7 +2974,25 @@ Expected JSON:
     alias: 'clients_search_retrieve',
     description: `Searches clients by name following early return pattern.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'q',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
     response: ClientSearchResponse,
+    errors: [
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -4427,8 +4564,15 @@ and creates JobFile database records with proper file metadata.`,
     method: 'get',
     path: '/job/rest/jobs/weekly-metrics/',
     alias: 'job_rest_jobs_weekly_metrics_list',
-    description: `Fetch weekly metrics data.`,
+    description: `Fetch weekly metrics data for jobs with time entries in the specified week.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'week',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
     response: z.array(WeeklyMetrics),
   },
   {
@@ -4737,6 +4881,68 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
       },
     ],
     response: PurchaseOrderAllocationsResponse,
+  },
+  {
+    method: 'get',
+    path: '/purchasing/rest/purchase-orders/:po_id/allocations/:allocation_type/:allocation_id/details/',
+    alias: 'getAllocationDetails',
+    description: `Get details about a specific allocation before deletion.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'allocation_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'allocation_type',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: AllocationDetailsResponse,
+    errors: [
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/purchasing/rest/purchase-orders/:po_id/lines/:line_id/allocations/delete/',
+    alias: 'deleteAllocation',
+    description: `Delete a specific allocation (Stock item or CostLine) from a purchase order line.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: AllocationDeleteRequest,
+      },
+      {
+        name: 'line_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: AllocationDeleteResponse,
+    errors: [
+      {
+        status: 400,
+        schema: AllocationDeleteResponse,
+      },
+    ],
   },
   {
     method: 'get',

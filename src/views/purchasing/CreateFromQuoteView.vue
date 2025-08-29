@@ -76,7 +76,11 @@
                 >
                   <Sparkles v-if="!isUploading" class="w-4 h-4" />
                   <Loader2 v-else class="w-4 h-4 animate-spin" />
-                  {{ isUploading ? 'Processing...' : 'Extract & Create PO' }}
+                  {{
+                    isUploading
+                      ? 'Processing with AI (this may take up to 5 minutes)...'
+                      : 'Extract & Create PO'
+                  }}
                 </Button>
               </div>
             </form>
@@ -189,11 +193,12 @@ const handleSubmit = async () => {
     const formData = new FormData()
     formData.append('quote_file', selectedFile.value)
 
-    // Call the extract endpoint
+    // Call the extract endpoint with extended timeout for AI processing
     const response = await api.post('/purchasing/api/supplier-quotes/extract/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 300000, // 5 minutes timeout for AI processing
     })
 
     // Handle JSON response
@@ -214,7 +219,7 @@ const handleSubmit = async () => {
 
     let errorMessage = 'Failed to process the quote. Please try again.'
 
-    // Type-safe error handling without any usage
+    // Type-safe error handling
     if (error instanceof Error) {
       errorMessage = error.message
     } else if (typeof error === 'object' && error !== null && 'response' in error) {

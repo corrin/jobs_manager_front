@@ -6,30 +6,30 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select'
-import { useXeroItemStore } from '@/stores/xeroItemStore'
+import { useStockStore } from '@/stores/stockStore'
 import { onMounted, computed } from 'vue'
 
 const props = defineProps<{
   modelValue: string | null
 }>()
 const emit = defineEmits<{
-  'update:modelValue': [string]
+  'update:modelValue': [string | null]
   'update:description': [string]
   'update:unit_cost': [number | null]
 }>()
 
-const store = useXeroItemStore()
+const store = useStockStore()
 
 onMounted(async () => {
   if (store.items.length === 0 && !store.loading) {
-    await store.fetchItems()
+    await store.fetchStock()
   }
 })
 
 const displayLabel = computed(() => {
   if (!props.modelValue) return 'Select'
   const found = store.items.find((i) => i.id === props.modelValue)
-  return found ? found.code : 'Select'
+  return found ? found.description || 'Stock Item' : 'Select'
 })
 </script>
 
@@ -41,8 +41,14 @@ const displayLabel = computed(() => {
       (val) => {
         emit('update:modelValue', val)
         const found = store.items.find((i) => i.id === val)
-        emit('update:description', found ? found.name : '')
-        emit('update:unit_cost', found && found.unit_cost != null ? found.unit_cost : null)
+
+        if (found) {
+          emit('update:description', found.description || '')
+          emit('update:unit_cost', found.unit_cost || null)
+        } else {
+          emit('update:description', '')
+          emit('update:unit_cost', null)
+        }
       }
     "
   >
@@ -53,7 +59,9 @@ const displayLabel = computed(() => {
     </SelectTrigger>
 
     <SelectContent>
-      <SelectItem v-for="i in store.items" :key="i.id" :value="i.id">{{ i.code }}</SelectItem>
+      <SelectItem v-for="i in store.items" :key="i.id || 'unknown'" :value="i.id || ''">
+        {{ i.description || 'Stock Item' }}
+      </SelectItem>
     </SelectContent>
   </Select>
 </template>

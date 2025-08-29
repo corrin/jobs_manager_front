@@ -20,6 +20,16 @@ export function useTimesheetSummary() {
 
   const getJobHours = (jobId: string, timeEntries: TimesheetEntryWithMeta[]) => {
     const jobEntries = timeEntries.filter((entry) => entry.job_id === jobId)
+
+    console.log(`[DEBUG] getJobHours for jobId ${jobId}:`, {
+      jobId,
+      totalEntries: timeEntries.length,
+      matchingEntries: jobEntries.length,
+      allJobIds: timeEntries.map((e) => e.job_id),
+      matchingJobIds: jobEntries.map((e) => e.job_id),
+      hours: jobEntries.reduce((sum, entry) => sum + (entry.quantity || 0), 0),
+    })
+
     return jobEntries.reduce((sum, entry) => sum + (entry.quantity || 0), 0)
   }
 
@@ -90,16 +100,12 @@ export function useTimesheetSummary() {
     }
   }
 
-  const getEstimatedHours = (job: ModernTimesheetJob | FullJob) => {
+  const getEstimatedHours = (job: FullJob) => {
     // If it's a FullJob with CostSets, use them
     if ('latest_estimate' in job && job.latest_estimate?.summary?.hours) {
       return job.latest_estimate.summary.hours
     }
-    if ('latest_quote' in job && job.latest_quote?.summary?.hours) {
-      return job.latest_quote.summary.hours
-    }
-    // For ModernTimesheetJob, we don't have estimated hours - return 0 as fallback
-    return 0
+    return job.latest_estimate.cost_lines.reduce((sum, line) => sum + (line.quantity || 0), 0)
   }
 
   return {

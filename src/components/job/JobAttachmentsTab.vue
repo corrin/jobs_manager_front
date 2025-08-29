@@ -111,20 +111,20 @@
                     <!-- File Thumbnail/Icon -->
                     <div class="flex-shrink-0">
                       <img
-                        v-if="file.thumbnail_url"
+                        v-if="file.thumbnail_url && !file.thumbnailError"
                         :src="file.thumbnail_url"
                         :alt="file.filename"
                         class="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity duration-200"
                         @click="openImagePreview(file)"
-                        @error="onImageError"
+                        @error="() => onImageError(file, 'thumbnail')"
                       />
                       <img
-                        v-else-if="isImageJobFile(file) && file.download_url"
+                        v-else-if="isImageJobFile(file) && file.download_url && !file.downloadError"
                         :src="file.download_url"
                         :alt="file.filename"
                         class="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity duration-200"
                         @click="openImagePreview(file)"
-                        @error="onImageError"
+                        @error="() => onImageError(file, 'download')"
                       />
                       <div
                         v-else
@@ -187,15 +187,10 @@
 
   <!-- Image Preview Modal -->
   <Dialog :open="isImagePreviewOpen" @update:open="closeImagePreview">
-    <DialogContent
-      class="max-w-4xl max-h-[90vh] overflow-auto"
-      aria-describedby="image-preview-description"
-    >
+    <DialogContent class="max-w-4xl max-h-[90vh] overflow-auto">
       <DialogHeader>
         <DialogTitle>{{ previewImage?.filename }}</DialogTitle>
-        <DialogDescription id="image-preview-description">
-          Preview of attached image file
-        </DialogDescription>
+        <DialogDescription> Preview of attached image file </DialogDescription>
       </DialogHeader>
       <div class="flex justify-center items-center p-4">
         <img
@@ -243,7 +238,10 @@ import { formatFileSize, formatDate } from '@/utils/string-formatting'
 import type { z } from 'zod'
 import { debugLog } from '@/utils/debug'
 
-type JobFile = z.infer<typeof schemas.JobFile>
+type JobFile = z.infer<typeof schemas.JobFile> & {
+  thumbnailError?: boolean
+  downloadError?: boolean
+}
 
 interface Props {
   jobId: string
@@ -639,10 +637,13 @@ const closeImagePreview = () => {
   isImagePreviewOpen.value = false
 }
 
-const onImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement
-  img.style.display = 'none'
-  debugLog('Failed to load image thumbnail')
+const onImageError = (file: JobFile, type: 'thumbnail' | 'download') => {
+  if (type === 'thumbnail') {
+    file.thumbnailError = true
+  } else {
+    file.downloadError = true
+  }
+  debugLog(`Failed to load image ${type} for file:`, file.filename)
 }
 
 // Helper functions

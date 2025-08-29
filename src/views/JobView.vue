@@ -13,9 +13,16 @@
           </div>
           <div class="mb-3">
             <div class="flex items-center gap-2 mb-1">
-              <h1 class="text-lg font-bold text-gray-900 leading-tight">
-                {{ jobData?.name || 'Loading...' }}
-              </h1>
+              <div class="group">
+                <InlineEditText
+                  v-if="jobDataWithPaid"
+                  :value="localJobName"
+                  @update:value="handleNameUpdate"
+                  placeholder="Job name"
+                  class="text-lg font-bold text-gray-900"
+                  display-class="text-lg font-bold text-gray-900"
+                />
+              </div>
               <span
                 v-if="shouldShowQuoteWarning"
                 class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200"
@@ -24,9 +31,39 @@
                 Quote Accepted
               </span>
             </div>
-            <p class="text-sm text-gray-500">
-              Job #{{ jobData?.job_number }} • {{ jobData?.client_name }}
-            </p>
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+              <span>Job #{{ jobData?.job_number }}</span>
+              <span>•</span>
+              <div class="group">
+                <InlineEditClient
+                  v-if="jobDataWithPaid"
+                  :client-name="localClientName"
+                  :client-id="localClientId"
+                  @update:client="handleClientUpdate"
+                  placeholder="Select client"
+                />
+              </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-gray-400 mt-1">
+              <div class="group">
+                <InlineEditSelect
+                  v-if="jobDataWithPaid"
+                  :value="localJobStatus"
+                  :options="JOB_STATUS_CHOICES"
+                  @update:value="handleStatusUpdate"
+                  placeholder="Status"
+                />
+              </div>
+              <span>•</span>
+              <div class="group">
+                <InlineEditSelect
+                  v-if="jobDataWithPaid"
+                  :value="localPricingMethodology"
+                  :options="pricingMethodologyOptions"
+                  @update:value="handlePricingMethodologyUpdate"
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div class="hidden md:flex items-center justify-between h-12">
@@ -40,9 +77,16 @@
             </button>
             <div class="flex flex-col justify-center h-full">
               <div class="flex items-center gap-2">
-                <h1 class="text-lg font-bold text-gray-900 leading-tight">
-                  {{ jobData?.name || 'Loading...' }}
-                </h1>
+                <div class="group">
+                  <InlineEditText
+                    v-if="jobDataWithPaid"
+                    :value="localJobName"
+                    @update:value="handleNameUpdate"
+                    placeholder="Job name"
+                    class="text-lg font-bold text-gray-900"
+                    display-class="text-lg font-bold text-gray-900"
+                  />
+                </div>
                 <span
                   v-if="shouldShowQuoteWarning"
                   class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200"
@@ -51,9 +95,39 @@
                   Quote Accepted
                 </span>
               </div>
-              <p class="text-xs text-gray-500">
-                Job #{{ jobData?.job_number }} • {{ jobData?.client_name }}
-              </p>
+              <div class="flex items-center gap-2 text-xs text-gray-500">
+                <span>Job #{{ jobData?.job_number }}</span>
+                <span>•</span>
+                <div class="group">
+                  <InlineEditClient
+                    v-if="jobDataWithPaid"
+                    :client-name="localClientName"
+                    :client-id="localClientId"
+                    @update:client="handleClientUpdate"
+                    placeholder="Select client"
+                  />
+                </div>
+                <span>•</span>
+                <div class="group">
+                  <InlineEditSelect
+                    v-if="jobDataWithPaid"
+                    :value="localJobStatus"
+                    :options="JOB_STATUS_CHOICES"
+                    @update:value="handleStatusUpdate"
+                    placeholder="Select Status"
+                  />
+                </div>
+                <span>•</span>
+                <div class="group">
+                  <InlineEditSelect
+                    v-if="jobDataWithPaid"
+                    :value="localPricingMethodology"
+                    :options="pricingMethodologyOptions"
+                    @update:value="handlePricingMethodologyUpdate"
+                    placeholder="Select methodology"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -93,67 +167,6 @@
           @reload-job="handleReloadJob"
         />
       </template>
-      <div class="flex-shrink-0 bg-gray-50 border-t border-gray-200 px-4 py-3 md:px-6 md:py-0.5">
-        <div class="md:hidden space-y-3">
-          <div class="flex space-x-3">
-            <DraggableButton
-              variant="primary"
-              @click="openPdfDialog"
-              class="bg-blue-600 hover:bg-blue-700 flex-1"
-              size="sm"
-            >
-              <Printer class="w-4 h-4 mr-2" />
-              Print
-            </DraggableButton>
-            <DraggableButton
-              variant="destructive"
-              @click="confirmDeleteJob"
-              class="bg-red-600 hover:bg-red-700 flex-1"
-              size="sm"
-            >
-              <Trash2 class="w-4 h-4 mr-2" />
-              Delete
-            </DraggableButton>
-            <DraggableButton
-              variant="secondary"
-              @click="navigateBack"
-              class="bg-gray-600 hover:bg-gray-700 w-full"
-              size="sm"
-            >
-              <X class="w-4 h-4 mr-2" />
-              Close
-            </DraggableButton>
-          </div>
-        </div>
-        <div class="hidden md:block">
-          <div class="flex items-center justify-center space-x-3 mb-2">
-            <DraggableButton
-              variant="primary"
-              @click="openPdfDialog"
-              class="bg-blue-600 hover:bg-blue-700"
-            >
-              <Printer class="w-4 h-4 mr-2" />
-              Print Job Sheet
-            </DraggableButton>
-            <DraggableButton
-              variant="destructive"
-              @click="confirmDeleteJob"
-              class="bg-red-600 hover:bg-red-700"
-            >
-              <Trash2 class="w-4 h-4 mr-2" />
-              Delete Job
-            </DraggableButton>
-            <DraggableButton
-              variant="secondary"
-              @click="navigateBack"
-              class="bg-gray-600 hover:bg-gray-700"
-            >
-              <X class="w-4 h-4 mr-2" />
-              Close
-            </DraggableButton>
-          </div>
-        </div>
-      </div>
       <JobHistoryModal
         v-if="showHistoryModal && jobDataWithPaid"
         :job-id="jobId"
@@ -192,15 +205,19 @@ import JobViewTabs from '../components/job/JobViewTabs.vue'
 import JobHistoryModal from '../components/job/JobHistoryModal.vue'
 import JobAttachmentsModal from '../components/job/JobAttachmentsModal.vue'
 import JobPdfDialog from '../components/job/JobPdfDialog.vue'
+import InlineEditText from '../components/shared/InlineEditText.vue'
+import InlineEditClient from '../components/shared/InlineEditClient.vue'
+import InlineEditSelect from '../components/shared/InlineEditSelect.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useJobsStore } from '../stores/jobs'
 import { useJobTabs } from '../composables/useJobTabs'
 import { useJobNotifications } from '../composables/useJobNotifications'
 import { useJobEvents } from '../composables/useJobEvents'
+import { useJobHeaderAutosave } from '../composables/useJobHeaderAutosave'
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { api } from '../api/client'
-import { ArrowLeft, Printer, Trash2, X } from 'lucide-vue-next'
-import DraggableButton from '../components/job/DraggableButton.vue'
+import { ArrowLeft } from 'lucide-vue-next'
+import { JOB_STATUS_CHOICES } from '../constants/job-status'
 
 const route = useRoute()
 const router = useRouter()
@@ -222,6 +239,67 @@ const { jobEvents, addEvent, loading: jobEventsLoading } = useJobEvents(jobId)
 const { activeTab, setTab } = useJobTabs('actual')
 const notifications = useJobNotifications()
 
+// Local reactive data for header fields
+const localJobName = ref('')
+const localClientName = ref('')
+const localClientId = ref('')
+const localJobStatus = ref('')
+const localPricingMethodology = ref('')
+
+// Pricing methodology options
+const pricingMethodologyOptions = [
+  { key: 'time_materials', label: 'Time & Materials' },
+  { key: 'fixed_price', label: 'Fixed Price' },
+]
+
+// Header autosave integration - will be initialized when job data is available
+let headerAutosave: ReturnType<typeof useJobHeaderAutosave> | null = null
+
+// Handler functions
+const handleNameUpdate = (newName: string) => {
+  localJobName.value = newName
+  if (headerAutosave) {
+    headerAutosave.handleNameUpdate(newName)
+  } else {
+    debugLog('JobView - headerAutosave not initialized yet for name update')
+  }
+}
+
+const handleClientUpdate = (client: { id: string; name: string }) => {
+  localClientName.value = client.name
+  localClientId.value = client.id
+  if (headerAutosave) {
+    headerAutosave.handleClientUpdate(client)
+  } else {
+    debugLog('JobView - headerAutosave not initialized yet for client update')
+  }
+}
+
+const handleStatusUpdate = (newStatus: string) => {
+  debugLog('JobView - Status update:', newStatus, 'headerAutosave exists:', !!headerAutosave)
+  localJobStatus.value = newStatus
+  if (headerAutosave) {
+    headerAutosave.handleStatusUpdate(newStatus)
+  } else {
+    debugLog('JobView - headerAutosave not initialized yet for status update')
+  }
+}
+
+const handlePricingMethodologyUpdate = (newMethod: string) => {
+  debugLog(
+    'JobView - Pricing methodology update:',
+    newMethod,
+    'headerAutosave exists:',
+    !!headerAutosave,
+  )
+  localPricingMethodology.value = newMethod
+  if (headerAutosave) {
+    headerAutosave.handlePricingMethodologyUpdate(newMethod)
+  } else {
+    debugLog('JobView - headerAutosave not initialized yet for pricing methodology update')
+  }
+}
+
 const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
 
@@ -241,6 +319,28 @@ const jobDataWithPaid = computed(() => {
     paid: Boolean(job.paid),
   }
 })
+
+// Initialize header autosave and local values when job data changes
+watch(
+  jobDataWithPaid,
+  (newJobData) => {
+    if (newJobData) {
+      // Initialize headerAutosave only once
+      if (!headerAutosave) {
+        headerAutosave = useJobHeaderAutosave(newJobData)
+        debugLog('JobView - headerAutosave initialized')
+      }
+
+      // Update local values
+      localJobName.value = newJobData.name || ''
+      localClientName.value = newJobData.client_name || ''
+      localClientId.value = newJobData.client_id || ''
+      localJobStatus.value = newJobData.job_status || ''
+      localPricingMethodology.value = newJobData.pricing_methodology || ''
+    }
+  },
+  { immediate: true },
+)
 const jobError = computed(() => !loadingJob.value && !jobData.value)
 
 // Quote status computed properties
@@ -338,34 +438,6 @@ async function handleEventAdded(event) {
 
 function navigateBack() {
   router.push({ name: 'kanban' })
-}
-function confirmDeleteJob() {
-  if (confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
-    deleteJob()
-  }
-}
-
-async function deleteJob() {
-  if (!jobId.value) return
-  const jobName = jobData.value?.name || `Job #${jobData.value?.job_number}` || 'job'
-  try {
-    notifications.notifyDeleteStart(jobName)
-    const { jobService } = await import('../services/job.service')
-    const result = await jobService.deleteJob(jobId.value)
-    if (result.success) {
-      notifications.notifyDeleteSuccess(jobName)
-      navigateBack()
-    } else {
-      debugLog('Detected error in response: ', result)
-      throw new Error(result.error || 'Failed to delete job')
-    }
-  } catch (err: unknown) {
-    notifications.notifyDeleteError(
-      (err as Error)?.message || 'Unexpected error when trying to delete job ',
-      jobName,
-    )
-    debugLog('JobView - Error deleting job:', err)
-  }
 }
 
 function handleQuoteImported() {

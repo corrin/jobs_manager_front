@@ -37,8 +37,11 @@ export const jobService = {
     return api.job_api_jobs_fetch_retrieve({ params: { status } })
   },
 
-  getJobsByColumn(columnId: string): Promise<FetchJobsByColumnResponse> {
-    return api.job_api_jobs_fetch_by_column_retrieve({ params: { column_id: columnId } })
+  getJobsByColumn(columnId: string, maxJobs: number = 50): Promise<FetchJobsByColumnResponse> {
+    return api.job_api_jobs_fetch_by_column_retrieve({
+      params: { column_id: columnId },
+      queries: { max_jobs: maxJobs },
+    })
   },
 
   getStatusChoices(): Promise<FetchStatusValuesResponse> {

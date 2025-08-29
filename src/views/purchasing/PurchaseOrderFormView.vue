@@ -1,3 +1,4 @@
+s
 <template>
   <AppLayout>
     <div class="p-4 md:p-8 flex flex-col gap-4">
@@ -48,13 +49,19 @@
           <CardContent class="flex-1 flex flex-col">
             <PoLinesTable
               :lines="po.lines"
-              :items="xeroItemStore.items"
               :jobs="jobs"
               :read-only="!canEditLineItems"
               :jobs-read-only="!canEditJobs"
+              :existing-allocations="existingAllocations"
+              :default-retail-rate="defaultRetailRate"
+              :stock-holding-job-id="stockHoldingJobId || undefined"
+              :po-status="po.status"
+              :po-id="po.id"
               @update:lines="canEditLineItems || canEditJobs ? (po.lines = $event) : null"
               @add-line="handleAddLineEvent"
               @delete-line="deleteLine"
+              @receipt:save="handleReceiptSave"
+              @allocation-deleted="handleAllocationDeleted"
             />
           </CardContent>
         </Card>
@@ -137,9 +144,13 @@ import PoPdfDialog from '@/components/purchasing/PoPdfDialog.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { useXeroItemStore } from '@/stores/xeroItemStore'
+import { useDeliveryReceiptStore } from '@/stores/deliveryReceiptStore'
 import { extractErrorMessage, createErrorToast } from '@/utils/errorHandler'
 import { toast } from 'vue-sonner'
 import { api } from '@/api/client'
+import { transformDeliveryReceiptForAPI } from '@/utils/delivery-receipt'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 
 // Import types from generated API schemas
 import type { PurchaseOrderLine, PurchaseOrderDetail, JobForPurchasing } from '@/api/generated/api'
@@ -147,12 +158,15 @@ import type { PurchaseOrderLine, PurchaseOrderDetail, JobForPurchasing } from '@
 // Use the generated interface instead of local type
 type PurchaseOrder = PurchaseOrderDetail
 type Job = JobForPurchasing
+type AllocationItem = z.infer<typeof schemas.AllocationItem>
+type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocation>
 
 const route = useRoute()
 const router = useRouter()
 const orderId = route.params.id as string
 const store = usePurchaseOrderStore()
 const xeroItemStore = useXeroItemStore()
+const receiptStore = useDeliveryReceiptStore()
 const originalLines = ref<PurchaseOrderLine[]>([])
 const isSyncing = ref(false)
 const showPdfDialog = ref(false)
@@ -160,6 +174,8 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const jobs = ref<Job[]>([])
 const isLoadingJobs = ref(false)
+const existingAllocations = ref<Record<string, AllocationItem[]>>({})
+const stockHoldingJobId = ref<string | null>(null)
 
 const po = ref<PurchaseOrder>({
   po_number: '',
@@ -185,6 +201,7 @@ const canEditLineItems = computed(() => !isPoDeleted.value && !isPoSubmitted.val
 const canEditJobs = computed(() => !isPoDeleted.value) // Jobs can be edited even when submitted
 const canEditStatus = computed(() => !isPoDeleted.value) // Status can be changed even when submitted
 const canShowActions = computed(() => !isPoDeleted.value) // Actions available except when deleted
+const defaultRetailRate = computed(() => receiptStore.getDefaultRetailRate())
 
 async function fetchJobs() {
   if (isLoadingJobs.value) return
@@ -220,6 +237,30 @@ async function fetchJobs() {
     jobs.value = []
   } finally {
     isLoadingJobs.value = false
+  }
+}
+
+async function loadExistingAllocations() {
+  if (!orderId) return
+
+  try {
+    const response = await receiptStore
+      .fetchExistingAllocations(orderId)
+      .catch(() => ({ allocations: {} }))
+    existingAllocations.value = response.allocations || {}
+  } catch (err) {
+    debugLog('Error loading existing allocations:', err)
+    existingAllocations.value = {}
+  }
+}
+
+async function loadJobsForReceipt() {
+  try {
+    const { stockHolding } = await receiptStore.fetchJobs()
+    stockHoldingJobId.value = stockHolding?.id || null
+  } catch (err) {
+    debugLog('Error loading jobs for receipt:', err)
+    stockHoldingJobId.value = null
   }
 }
 
@@ -770,9 +811,138 @@ const isReloading = ref(false)
 const isDeletingLine = ref(false)
 const isEditingAdditionalFields = ref(false)
 
+const handleReceiptSave = async (payload: {
+  lineId: string
+  editorState: {
+    rows: {
+      target: 'job' | 'stock'
+      job_id?: string
+      quantity: number
+      retail_rate?: number
+      stock_location?: string
+    }[]
+  }
+}) => {
+  if (!po.value) return
+
+  // Only allow receipt creation when PO is in appropriate status
+  const allowedStatuses = [
+    'submitted',
+    'submitted_to_supplier',
+    'partially_received',
+    'fully_received',
+  ]
+  if (!allowedStatuses.includes(po.value.status)) {
+    toast.error('Purchase order must be submitted to supplier before creating receipts')
+    return
+  }
+
+  const lineId = payload.lineId
+  const rows = payload.editorState.rows
+
+  // Validate lineId
+  if (!lineId || lineId === 'undefined') {
+    debugLog('❌ Invalid lineId:', lineId)
+    return
+  }
+
+  // Validate rows have valid data
+  const validRows = rows.filter((r) => {
+    const quantity = Number(r.quantity) || 0
+    const hasValidJobId = r.target === 'stock' ? !!stockHoldingJobId.value : !!r.job_id
+    return quantity > 0 && hasValidJobId
+  })
+
+  if (!validRows.length) {
+    debugLog('❌ No valid rows to save')
+    return
+  }
+
+  // Map editor rows to API allocations: job_id + quantity only
+  const apiAllocations: DeliveryAllocation[] = validRows.map((r) => {
+    const isStock = r.target === 'stock'
+    return {
+      job_id: isStock ? (stockHoldingJobId.value as string) : (r.job_id as string),
+      quantity: Number(r.quantity) || 0,
+    }
+  })
+
+  // Build single-line map using helper
+  const map: Record<string, DeliveryAllocation[]> = { [lineId]: apiAllocations }
+  const request = transformDeliveryReceiptForAPI(po.value.id, map)
+
+  try {
+    debugLog('💾 Saving receipt for line:', lineId, 'with allocations:', apiAllocations)
+    await receiptStore.submitDeliveryReceipt(po.value.id, request.allocations)
+    toast.success('Receipt saved')
+
+    // Reload data to get updated state
+    await Promise.all([load(), loadExistingAllocations()])
+
+    // After successful receipt creation, update PO status based on completion
+    await updatePoStatusAfterReceipt()
+  } catch (err) {
+    // Only show toast for non-validation errors
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    if (!errorMessage.includes('not a valid UUID') && !errorMessage.includes('validation')) {
+      toast.error('Failed to save receipt')
+    }
+    debugLog('Error saving receipt:', err)
+  }
+}
+
+const updatePoStatusAfterReceipt = async () => {
+  if (!po.value) return
+
+  try {
+    // Calculate if PO is fully or partially received
+    let totalOrdered = 0
+    let totalReceived = 0
+
+    for (const line of po.value.lines) {
+      totalOrdered += line.quantity || 0
+      totalReceived += line.received_quantity || 0
+    }
+
+    // Determine new status
+    let newStatus = po.value.status
+    if (totalReceived >= totalOrdered) {
+      newStatus = 'fully_received'
+    } else if (totalReceived > 0) {
+      newStatus = 'partially_received'
+    }
+
+    // Update status if it changed
+    if (newStatus !== po.value.status) {
+      await store.patch(orderId, { status: newStatus })
+      po.value.status = newStatus
+      toast.success(`Purchase order status updated to ${newStatus.replace('_', ' ')}`)
+    }
+  } catch (err) {
+    debugLog('Error updating PO status after receipt:', err)
+    // Don't show error toast for this as the receipt was successful
+  }
+}
+
+const handleAllocationDeleted = async (data: { allocationId: string; allocationType: string }) => {
+  debugLog('Allocation deleted:', data)
+
+  // Reload allocations and PO data to reflect changes
+  await Promise.all([load(), loadExistingAllocations()])
+
+  // Show success message
+  toast.success('Allocation deleted successfully')
+}
+
 onMounted(async () => {
   try {
-    await Promise.all([xeroItemStore.fetchItems(), fetchJobs(), load()])
+    await Promise.all([
+      xeroItemStore.fetchItems(),
+      fetchJobs(),
+      load(),
+      loadJobsForReceipt(),
+      loadExistingAllocations(),
+    ])
   } catch (err) {
     debugLog('Error during component initialization:', err)
   }

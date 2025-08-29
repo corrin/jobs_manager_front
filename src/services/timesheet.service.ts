@@ -15,13 +15,13 @@ export class TimesheetService {
       const date_param = new Date().toISOString().substring(0, 10)
       const staff = await api.timesheets_api_staff_retrieve({ queries: date_param })
 
-      // Get company defaults for fallback wage rate
-      let defaultWageRate = 32
+      let defaultWageRate = 0
       try {
         const defaults = await api.api_company_defaults_retrieve()
         defaultWageRate = defaults.wage_rate
       } catch {
-        debugLog('Could not fetch company defaults, using fallback wage rate:', defaultWageRate)
+        debugLog('Could not fetch company defaults')
+        throw Error('Could not fetch company defaults')
       }
 
       // Normalize staff data to ensure consistent field names
