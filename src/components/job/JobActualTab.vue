@@ -395,7 +395,7 @@ async function submitStockConsumption(payload: {
   toast.info('Consuming stock...', { id: 'add-stock' })
 
   // Check if consuming more than available stock
-  const isOverConsumption = Number(payload.quantity) > Number(payload.stockItem?.quantity ?? 0)
+  const isOverConsumption = payload.quantity > (payload.stockItem.quantity as number) // I'm asserting the type here because when comparing the quantity will never be null or undefined
 
   try {
     // The consumeStock endpoint automatically:

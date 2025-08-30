@@ -154,7 +154,6 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-// ✅ IMPORT NEW ICONS
 import { ArrowUp, ArrowDown, CheckCircle, AlertTriangle, XCircle } from 'lucide-vue-next'
 import { useCostingStore } from '../../stores/costing'
 import { schemas } from '@/api/generated/api'
@@ -302,7 +301,6 @@ const hoursIcon = computed(() =>
   hoursDiff.value < 0 ? ArrowDown : hoursDiff.value > 0 ? ArrowUp : null,
 )
 
-// ✅ REFACTORED QUOTE ACCURACY LOGIC
 const quotePerformance = computed(() => {
   if (!showQuoteColumn.value || !hasValidQuoteData.value || quote.value.cost === 0) {
     return { status: 'nodata' as const, deviation: 0 }

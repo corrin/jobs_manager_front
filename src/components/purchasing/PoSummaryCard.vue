@@ -68,10 +68,16 @@ function scheduleSave() {
 }
 
 watch(
-  () => props.po,
-  (newValue, oldValue) => {
+  () => [
+    props.po.supplier,
+    props.po.supplier_id,
+    props.po.reference,
+    props.po.expected_delivery,
+    props.po.status,
+  ],
+  (newValues, oldValues) => {
     // Trigger autosave only on changes after the initial load, and not in create mode
-    if (oldValue && !props.isCreateMode) {
+    if (oldValues && !props.isCreateMode) {
       scheduleSave()
     }
   },

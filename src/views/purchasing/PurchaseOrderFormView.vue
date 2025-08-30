@@ -176,6 +176,7 @@ const jobs = ref<Job[]>([])
 const isLoadingJobs = ref(false)
 const existingAllocations = ref<Record<string, AllocationItem[]>>({})
 const stockHoldingJobId = ref<string | null>(null)
+const isSavingReceipt = ref(false)
 
 const po = ref<PurchaseOrder>({
   po_number: '',
@@ -825,7 +826,6 @@ const handleReceiptSave = async (payload: {
 }) => {
   if (!po.value) return
 
-  // Only allow receipt creation when PO is in appropriate status
   const allowedStatuses = [
     'submitted',
     'submitted_to_supplier',
@@ -833,33 +833,33 @@ const handleReceiptSave = async (payload: {
     'fully_received',
   ]
   if (!allowedStatuses.includes(po.value.status)) {
-    toast.error('Purchase order must be submitted to supplier before creating receipts')
+    toast.error('The purchase order must be sent to the supplier before creating receipts')
     return
   }
 
   const lineId = payload.lineId
-  const rows = payload.editorState.rows
+  const newRows = payload.editorState.rows
 
-  // Validate lineId
   if (!lineId || lineId === 'undefined') {
     debugLog('❌ Invalid lineId:', lineId)
     return
   }
 
-  // Validate rows have valid data
-  const validRows = rows.filter((r) => {
+  const validNewRows = newRows.filter((r) => {
     const quantity = Number(r.quantity) || 0
     const hasValidJobId = r.target === 'stock' ? !!stockHoldingJobId.value : !!r.job_id
     return quantity > 0 && hasValidJobId
   })
 
-  if (!validRows.length) {
-    debugLog('❌ No valid rows to save')
-    return
-  }
+  // 1. Get the allocations that ALREADY EXIST for this row from the component state.
+  // We map to the simple format the API expects (job_id and quantity).
+  const existingAllocs = (existingAllocations.value[lineId] || []).map((alloc) => ({
+    job_id: alloc.job_id,
+    quantity: alloc.quantity,
+  }))
 
-  // Map editor rows to API allocations: job_id + quantity only
-  const apiAllocations: DeliveryAllocation[] = validRows.map((r) => {
+  // 2. Maps NEW allocations received from the publisher to the API format.
+  const newApiAllocations: DeliveryAllocation[] = validNewRows.map((r) => {
     const isStock = r.target === 'stock'
     return {
       job_id: isStock ? (stockHoldingJobId.value as string) : (r.job_id as string),
@@ -867,22 +867,30 @@ const handleReceiptSave = async (payload: {
     }
   })
 
-  // Build single-line map using helper
-  const map: Record<string, DeliveryAllocation[]> = { [lineId]: apiAllocations }
+  // 3. Combine the existing allocations with the new ones that were just created.
+  const combinedAllocations = [...existingAllocs, ...newApiAllocations]
+
+  if (combinedAllocations.length === 0) {
+    debugLog('❌ No valid allocations to save after combining existing and new.')
+    return
+  }
+
+  const map: Record<string, DeliveryAllocation[]> = { [lineId]: combinedAllocations }
   const request = transformDeliveryReceiptForAPI(po.value.id, map)
 
   try {
-    debugLog('💾 Saving receipt for line:', lineId, 'with allocations:', apiAllocations)
+    debugLog(
+      '💾 Saving receipt for line:',
+      lineId,
+      'with combined allocations:',
+      combinedAllocations,
+    )
     await receiptStore.submitDeliveryReceipt(po.value.id, request.allocations)
     toast.success('Receipt saved')
 
-    // Reload data to get updated state
     await Promise.all([load(), loadExistingAllocations()])
-
-    // After successful receipt creation, update PO status based on completion
     await updatePoStatusAfterReceipt()
   } catch (err) {
-    // Only show toast for non-validation errors
     const errorMessage = err instanceof Error ? err.message : String(err)
     if (!errorMessage.includes('not a valid UUID') && !errorMessage.includes('validation')) {
       toast.error('Failed to save receipt')
@@ -950,7 +958,12 @@ onMounted(async () => {
   watch(
     () => po.value.lines,
     (newLines, oldLines) => {
-      if (isReloading.value || isDeletingLine.value || isEditingAdditionalFields.value) {
+      if (
+        isReloading.value ||
+        isDeletingLine.value ||
+        isEditingAdditionalFields.value ||
+        isSavingReceipt.value
+      ) {
         debugLog(
           '⏸️ Skipping autosave - reloading:',
           isReloading.value,
