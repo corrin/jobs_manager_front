@@ -4,20 +4,12 @@
       <div class="p-3 border-b border-gray-200">
         <div class="flex items-center justify-between">
           <h3 class="font-semibold text-gray-900 text-sm">
-            {{ friendlyStatusLabel }} ({{ jobs.length }})
+            {{ status.label }}
           </h3>
-          <div v-if="status.tooltip" class="group relative" :title="status.tooltip">
-            <svg
-              class="w-4 h-4 text-gray-400 hover:text-gray-600"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                clip-rule="evenodd"
-              ></path>
-            </svg>
+          <div class="group relative" :title="status.tooltip">
+            <span class="w-4 h-4 text-gray-400 hover:text-gray-600 font-bold text-sm">
+              ({{ jobs.length }})
+            </span>
           </div>
         </div>
       </div>
@@ -148,7 +140,7 @@
 <script setup lang="ts">
 import { debugLog } from '@/utils/debug'
 
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import JobCard from '@/components/JobCard.vue'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
@@ -190,20 +182,6 @@ const props = withDefaults(defineProps<KanbanColumnProps>(), {
 const emit = defineEmits<KanbanColumnEmits>()
 
 const jobListRef = ref<HTMLElement>()
-
-const friendlyStatusLabel = computed(() => {
-  if (!props.status || !props.status.label) {
-    return ''
-  }
-  const originalLabel = props.status.label
-  const formattedLabel = originalLabel
-    .replace(/_/g, ' ')
-    .split(' ')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
-  debugLog(`Original status label: ${originalLabel}, Formatted label: ${formattedLabel}`)
-  return formattedLabel
-})
 
 const handleArchivedJobDrop = (event: CustomEvent) => {
   debugLog('KanbanColumn received archived job drop:', event.detail)

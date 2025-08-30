@@ -144,9 +144,9 @@
 
     <p class="text-xs text-gray-600 mb-1 line-clamp-1 leading-tight">{{ job.description }}</p>
 
-    <div class="text-xs text-gray-500 mb-2 truncate font-medium">{{ job.client_name }}</div>
+    <div class="text-xs text-gray-500 mb-2 truncate font-medium">Client: {{ job.client_name }}</div>
     <div v-if="job.contact_person" class="text-xs text-gray-500 mb-2 truncate font-medium">
-      Cntc: {{ job.contact_person }}
+      Contact: {{ job.contact_person }}
     </div>
   </div>
 </template>

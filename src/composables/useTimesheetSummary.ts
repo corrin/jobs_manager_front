@@ -101,10 +101,8 @@ export function useTimesheetSummary() {
   }
 
   const getEstimatedHours = (job: FullJob) => {
-    // If it's a FullJob with CostSets, use them
-    if ('latest_estimate' in job && job.latest_estimate?.summary?.hours) {
-      return job.latest_estimate.summary.hours
-    }
+    console.log('Received job: ', job)
+    if (!job) return 0
     return job.latest_estimate.cost_lines.reduce((sum, line) => sum + (line.quantity || 0), 0)
   }
 

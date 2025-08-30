@@ -20,7 +20,7 @@
     </div>
 
     <div class="flex-1 flex gap-6 min-h-0">
-      <!-- Left side: Cost Lines Grid -->
+      <!-- Cost Lines Grid -->
       <div class="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col">
         <div class="flex-shrink-0 p-4 border-b border-gray-200">
           <h3 class="text-lg font-semibold text-gray-900">Actual Details</h3>
@@ -67,182 +67,52 @@
               <p class="text-gray-500">No actual costs recorded yet</p>
             </div>
           </div>
-          <div v-else class="h-full overflow-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50 sticky top-0">
-                <tr>
-                  <th
-                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Kind
-                  </th>
-                  <th
-                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Description
-                  </th>
-                  <th
-                    class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Quantity
-                  </th>
-                  <th
-                    class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Unit Cost
-                  </th>
-                  <th
-                    class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Unit Rev
-                  </th>
-                  <th
-                    class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Total Cost
-                  </th>
-                  <th
-                    class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Total Rev
-                  </th>
-                  <th
-                    class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Source
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="line in costLines" :key="line.id" class="hover:bg-gray-50">
-                  <td class="px-4 py-4 whitespace-nowrap">
-                    <span
-                      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                      :class="getKindClasses(line.kind)"
-                    >
-                      {{ getKindDisplayName(line.kind) }}
-                    </span>
-                  </td>
-                  <td class="px-4 py-4">
-                    <div class="text-sm font-medium text-gray-900">{{ line.desc }}</div>
-                  </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    {{ formatNumber(line.quantity) }}
-                  </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    ${{ formatCurrency(line.unit_cost) }}
-                  </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    ${{ formatCurrency(line.unit_rev) }}
-                  </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    ${{
-                      formatCurrency(
-                        line.total_cost || (line.quantity || 0) * (line.unit_cost || 0),
-                      )
-                    }}
-                  </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-right text-sm text-gray-900">
-                    ${{
-                      formatCurrency(line.total_rev || (line.quantity || 0) * (line.unit_rev || 0))
-                    }}
-                  </td>
-                  <td class="px-4 py-4 whitespace-nowrap text-center">
-                    <!-- Material from Delivery Receipt -->
-                    <button
-                      v-if="
-                        line.kind === 'material' &&
-                        isDeliveryReceiptMeta(line.meta) &&
-                        isDeliveryReceiptExtRefs(line.ext_refs)
-                      "
-                      @click="navigateToDeliveryReceipt(line.ext_refs.purchase_order_id)"
-                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-md text-sm font-medium transition-colors"
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                      {{
-                        isDeliveryReceiptMeta(line.meta)
-                          ? line.meta.po_number || 'Delivery Receipt'
-                          : 'Delivery Receipt'
-                      }}
-                    </button>
-                    <button
-                      v-if="line.kind === 'material' && isStockExtRefs(line.ext_refs)"
-                      @click="navigateToStock(/*line.ext_refs.stock_id**/)"
-                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-md text-sm font-medium transition-colors"
-                    >
-                      <Package class="w-4 h-4" />
-                      Stock
-                    </button>
-
-                    <!-- Time from Timesheet -->
-                    <button
-                      v-else-if="line.kind === 'time' && isTimesheetMeta(line.meta)"
-                      @click="navigateToTimesheet(line.meta.staff_id, line.meta.date)"
-                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-md text-sm font-medium transition-colors"
-                      :title="
-                        isTimesheetMeta(line.meta)
-                          ? `Staff: ${staffMap[line.meta.staff_id]?.display_name || 'Unknown'} - Date: ${line.meta.date || 'Unknown'}`
-                          : 'Timesheet Entry'
-                      "
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      {{
-                        isTimesheetMeta(line.meta)
-                          ? staffMap[line.meta.staff_id]?.display_name || 'Timesheet'
-                          : 'Timesheet'
-                      }}
-                    </button>
-
-                    <!-- Adjustment Entry -->
-                    <span
-                      v-else-if="line.kind === 'adjust'"
-                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink-100 text-pink-800 rounded-md text-sm font-medium"
-                    >
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M13 10V3L4 14h7v7l9-11h-7z"
-                        />
-                      </svg>
-                      Adjustment
-                    </span>
-
-                    <!-- No source info -->
-                    <span v-else class="text-gray-400 text-sm">-</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div v-else>
+            <SmartCostLinesTable
+              :lines="costLines"
+              tabKind="actual"
+              :readOnly="true"
+              :showItemColumn="false"
+              :showSourceColumn="true"
+              :sourceResolver="resolveSource"
+            ></SmartCostLinesTable>
           </div>
         </div>
       </div>
 
-      <div class="flex-1">
-        <CostSetSummaryCard
+      <div class="w-64 flex-shrink-0">
+        <CompactSummaryCard
           title="Actual Summary"
           :summary="props.actualSummaryFromBackend || actualSummary"
           :costLines="costLines"
           :isLoading="isLoading"
           :revision="revision"
+          @expand="showDetailedSummary = true"
         />
       </div>
     </div>
+
+    <!-- Detailed Summary Dialog -->
+    <Dialog :open="showDetailedSummary" @update:open="showDetailedSummary = $event">
+      <DialogContent class="sm:max-w-4xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>Detailed Actual Summary</DialogTitle>
+          <DialogDescription>Complete breakdown of actual costs and revenue</DialogDescription>
+        </DialogHeader>
+        <div class="max-h-[60vh] overflow-y-auto">
+          <CostSetSummaryCard
+            title="Actual Summary"
+            :summary="props.actualSummaryFromBackend || actualSummary"
+            :costLines="costLines"
+            :isLoading="isLoading"
+            :revision="revision"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showDetailedSummary = false">Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
 
     <!-- Stock Consumption Modal -->
     <StockConsumptionModal
@@ -263,21 +133,31 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
+import { debugLog } from '../../utils/debug'
 
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
-import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
-import { fetchCostSet } from '@/services/costing.service'
-import { costlineService } from '@/services/costline.service'
+import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
+import CompactSummaryCard from '../shared/CompactSummaryCard.vue'
+import { fetchCostSet } from '../../services/costing.service'
+import { costlineService } from '../../services/costline.service'
 import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
 import { z } from 'zod'
 import ActualCostDropdown from './ActualCostDropdown.vue'
 import StockConsumptionModal from './StockConsumptionModal.vue'
 import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
-import { Package } from 'lucide-vue-next'
+import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../ui/dialog'
+import { Button } from '../ui/button'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
@@ -341,42 +221,7 @@ const isLoading = ref(false)
 const revision = ref(0)
 const showStockModal = ref(false)
 const showAdjustmentModal = ref(false)
-
-function formatCurrency(value: number | undefined): string {
-  const num = value || 0
-  return num.toFixed(2)
-}
-
-function formatNumber(value: number | undefined): string {
-  const num = value || 0
-  return num.toFixed(3)
-}
-
-function getKindDisplayName(kind: string): string {
-  switch (kind) {
-    case 'time':
-      return 'Labour'
-    case 'material':
-      return 'Material'
-    case 'adjust':
-      return 'Adjustment'
-    default:
-      return kind.charAt(0).toUpperCase() + kind.slice(1)
-  }
-}
-
-function getKindClasses(kind: string): string {
-  switch (kind) {
-    case 'time':
-      return 'bg-blue-100 text-blue-800'
-    case 'material':
-      return 'bg-green-100 text-green-800'
-    case 'adjust':
-      return 'bg-pink-100 text-pink-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
-}
+const showDetailedSummary = ref(false)
 
 async function loadStaff() {
   try {
@@ -474,6 +319,53 @@ function navigateToStock(/*stockId: string*/) {
   })
 }
 
+// Resolver for Source column used by SmartCostLinesTable
+function resolveSource(
+  line: CostLine,
+): { visible: boolean; label: string; onClick?: () => void } | null {
+  // Material from Delivery Receipt
+  if (
+    String(line.kind) === 'material' &&
+    isDeliveryReceiptMeta(line.meta) &&
+    isDeliveryReceiptExtRefs(line.ext_refs)
+  ) {
+    const label = line.meta.po_number || 'Delivery Receipt'
+    return {
+      visible: true,
+      label,
+      onClick: () => navigateToDeliveryReceipt(line.ext_refs.purchase_order_id),
+    }
+  }
+
+  // Material from Stock
+  if (String(line.kind) === 'material' && isStockExtRefs(line.ext_refs)) {
+    return {
+      visible: true,
+      label: 'Stock',
+      onClick: () => navigateToStock(/* line.ext_refs.stock_id as string */),
+    }
+  }
+
+  // Time from Timesheet
+  if (String(line.kind) === 'time' && isTimesheetMeta(line.meta)) {
+    const staffName = staffMap.value[line.meta.staff_id]?.display_name || 'Timesheet'
+    const date = line.meta.date
+    return {
+      visible: true,
+      label: staffName,
+      onClick: () => navigateToTimesheet(line.meta.staff_id, date),
+    }
+  }
+
+  // Adjustment entry
+  if (String(line.kind) === 'adjust') {
+    return { visible: true, label: 'Adjustment' }
+  }
+
+  // No source info
+  return null
+}
+
 // Modal handlers
 function handleAddMaterial() {
   showStockModal.value = true
@@ -501,7 +393,7 @@ async function submitStockConsumption(payload: {
   toast.info('Consuming stock...', { id: 'add-stock' })
 
   // Check if consuming more than available stock
-  const isOverConsumption = payload.quantity > payload.stockItem.quantity
+  const isOverConsumption = Number(payload.quantity) > Number(payload.stockItem?.quantity ?? 0)
 
   try {
     // The consumeStock endpoint automatically:
@@ -516,7 +408,7 @@ async function submitStockConsumption(payload: {
     }
 
     await api.consumeStock(consumeRequest, {
-      params: { stock_id: payload.stockItem.id },
+      params: { stock_id: payload.stockItem.id as string },
     })
 
     // Reload cost lines to show the automatically created cost line

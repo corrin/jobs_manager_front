@@ -257,13 +257,13 @@
 import { computed, ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { z } from 'zod'
-import { api } from '@/api/client'
-import { schemas } from '@/api/generated/api'
+import { api } from '../../api/client'
+import { schemas } from '../../api/generated/api'
 import { AxiosError } from 'axios'
 import { debugLog } from '../../utils/debug'
 
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Button } from '../../components/ui/button'
+import { Badge } from '../../components/ui/badge'
 import {
   Card,
   CardContent,
@@ -271,7 +271,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '../../components/ui/card'
 import {
   Table,
   TableBody,
@@ -279,7 +279,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
+} from '../../components/ui/table'
 import { ExternalLink, Trash2 } from 'lucide-vue-next'
 
 type Job = z.infer<typeof schemas.Job>
