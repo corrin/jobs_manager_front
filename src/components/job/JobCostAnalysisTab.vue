@@ -113,19 +113,24 @@
           </tr>
         </tbody>
       </table>
+
       <div v-if="showQuoteColumn" class="mt-6 flex flex-col md:flex-row gap-4">
         <div
-          v-if="hasValidQuoteData && (quote.rev > 0 || actual.rev > 0)"
+          v-if="quotePerformance.status !== 'nodata'"
           class="flex-1 bg-white rounded-lg border border-gray-200 p-4 flex items-center gap-3"
         >
-          <Smile v-if="happyFace" class="w-8 h-8 text-green-500" />
-          <Frown v-else class="w-8 h-8 text-red-500" />
+          <component
+            :is="quoteAccuracyIcon"
+            v-if="quoteAccuracyIcon"
+            class="w-8 h-8"
+            :class="quoteAccuracyClass"
+          />
           <div>
             <div class="font-semibold text-gray-900">Quote Accuracy</div>
-            <div class="text-lg font-bold" :class="happyFace ? 'text-green-600' : 'text-red-600'">
-              {{ formatPercent(quoteAccuracy) }}
+            <div class="text-lg font-bold" :class="quoteAccuracyClass">
+              {{ formatPercent(quoteAccuracyDisplayValue) }}
             </div>
-            <div class="text-xs text-gray-500">How close the quote was to the actual result</div>
+            <div class="text-xs text-gray-500">Deviation of actual cost from quoted cost</div>
           </div>
         </div>
         <div
@@ -138,7 +143,7 @@
           <div>
             <div class="font-semibold text-gray-500">Quote Accuracy</div>
             <div class="text-sm text-gray-500">
-              {{ !quote.rev ? 'No quote data available' : 'No actual data available' }}
+              {{ !quote.cost ? 'No quote data available' : 'No actual data available' }}
             </div>
           </div>
         </div>
@@ -149,7 +154,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import { Smile, Frown, ArrowUp, ArrowDown } from 'lucide-vue-next'
+import { ArrowUp, ArrowDown, CheckCircle, AlertTriangle, XCircle } from 'lucide-vue-next'
 import { useCostingStore } from '../../stores/costing'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
@@ -296,41 +301,53 @@ const hoursIcon = computed(() =>
   hoursDiff.value < 0 ? ArrowDown : hoursDiff.value > 0 ? ArrowUp : null,
 )
 
-const happyFace = computed(() => {
-  console.log('[JobCostAnalysisTab] happyFace check:', {
-    showQuoteColumn: showQuoteColumn.value,
-    hasValidQuoteData: hasValidQuoteData.value,
-    quoteRev: quote.value.rev,
-    actualRev: actual.value.rev,
-    quoteCost: quote.value.cost,
-    actualCost: actual.value.cost,
-  })
+const quotePerformance = computed(() => {
+  if (!showQuoteColumn.value || !hasValidQuoteData.value || quote.value.cost === 0) {
+    return { status: 'nodata' as const, deviation: 0 }
+  }
 
-  if (!showQuoteColumn.value || !hasValidQuoteData.value) return false
-  if (!quote.value.rev && !actual.value.rev) return false
+  // Calculate absolute deviation of actual cost from quoted cost
+  const deviation = Math.abs(percentDiff(actual.value.cost, quote.value.cost))
 
-  return actual.value.rev >= quote.value.rev && actual.value.cost <= quote.value.cost
+  if (deviation <= 20) {
+    return { status: 'good' as const, deviation } // Within 20%
+  } else if (deviation <= 40) {
+    return { status: 'amber' as const, deviation } // Within 40%
+  } else {
+    return { status: 'red' as const, deviation } // Outside 40%
+  }
 })
 
-const quoteAccuracy = computed(() => {
-  console.log('[JobCostAnalysisTab] quoteAccuracy check:', {
-    showQuoteColumn: showQuoteColumn.value,
-    hasValidQuoteData: hasValidQuoteData.value,
-    quoteRev: quote.value.rev,
-    actualRev: actual.value.rev,
-  })
+const quoteAccuracyIcon = computed(() => {
+  switch (quotePerformance.value.status) {
+    case 'good':
+      return CheckCircle
+    case 'amber':
+      return AlertTriangle
+    case 'red':
+      return XCircle
+    default:
+      return null
+  }
+})
 
-  if (!showQuoteColumn.value || !hasValidQuoteData.value) return 0
-  if (!quote.value.rev && !actual.value.rev) return 0
+const quoteAccuracyClass = computed(() => {
+  switch (quotePerformance.value.status) {
+    case 'good':
+      return 'text-green-600'
+    case 'amber':
+      return 'text-yellow-600'
+    case 'red':
+      return 'text-red-600'
+    default:
+      return 'text-gray-500'
+  }
+})
 
-  // If one is zero but not both, accuracy is very low
-  if ((quote.value.rev === 0) !== (actual.value.rev === 0)) return 0
-
-  const diff = Math.abs(percentDiff(actual.value.rev, quote.value.rev))
-  const accuracy = Math.max(0, 100 - Math.min(diff, 100))
-
-  console.log('[JobCostAnalysisTab] calculated accuracy:', { diff, accuracy })
-  return accuracy
+const quoteAccuracyDisplayValue = computed(() => {
+  if (quotePerformance.value.status === 'nodata') return 0
+  // Return the actual signed difference to show if it was over or under
+  return percentDiff(actual.value.cost, quote.value.cost)
 })
 
 function formatCurrency(value: number): string {
@@ -356,10 +373,12 @@ table {
   border-collapse: separate;
   border-spacing: 0;
 }
+
 th,
 td {
   border-bottom: 1px solid #e5e7eb;
 }
+
 th:last-child,
 td:last-child {
   border-right: none;

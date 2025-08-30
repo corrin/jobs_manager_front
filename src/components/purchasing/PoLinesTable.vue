@@ -358,7 +358,6 @@ const columns = computed(() =>
           existing,
           defaultRetailRate: props.defaultRetailRate,
           stockHoldingJobId: props.stockHoldingJobId,
-          disabled: props.readOnly,
           poStatus: props.poStatus,
           poId: props.poId,
           onSave: (editorState: LineEditorState) => emit('receipt:save', { lineId, editorState }),

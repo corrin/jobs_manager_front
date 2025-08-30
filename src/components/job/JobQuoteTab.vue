@@ -11,6 +11,15 @@
         </div>
         <div v-if="currentQuote?.has_quote" class="flex items-center gap-2">
           <button
+            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style="min-width: 0"
+            @click="onCopyFromEstimate"
+            :disabled="isLoading || !hasEstimateData"
+            :title="'Copy from Estimate'"
+          >
+            <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
+          </button>
+          <button
             class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-black text-white border border-gray-800 text-sm font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             style="min-width: 0"
             @click="onShowQuoteRevisions"
@@ -73,23 +82,29 @@
             <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
           </div>
           <div class="flex-1 overflow-hidden">
-            <CostLinesGrid
-              :costLines="costLines"
-              :showActions="!areEditsBlocked"
-              @edit="openEditModal"
-              @delete="handleDeleteCostLine"
+            <SmartCostLinesTable
+              :lines="costLines"
+              tabKind="quote"
+              :readOnly="isLoading || areEditsBlocked"
+              :showItemColumn="true"
+              :showSourceColumn="false"
+              @delete-line="handleSmartDelete"
+              @add-line="handleAddEmptyLine"
+              @duplicate-line="(line) => handleAddMaterial(line)"
+              @move-line="(index, direction) => {}"
+              @create-line="handleCreateFromEmpty"
             />
           </div>
         </div>
-        <div class="flex-1 flex flex-col min-h-0">
-          <CostSetSummaryCard
-            :key="`quote-summary-${quoteKey}`"
-            class="h-full min-h-0 flex-1"
+        <div class="w-64 flex-shrink-0">
+          <CompactSummaryCard
+            :key="`quote-summary-compact-${quoteKey}`"
             title="Quote Summary"
             :summary="currentQuote.quote?.summary"
             :costLines="quoteCostLines"
             :isLoading="isLoading"
             :revision="currentQuote.quote?.rev"
+            @expand="showDetailedSummary = true"
           />
         </div>
       </template>
@@ -102,7 +117,17 @@
         :chargeOutRate="chargeOutRate"
         :materialsMarkup="materialsMarkup"
       />
-      <CostLinesGrid :costLines="quoteCostLines" :showActions="true" />
+      <SmartCostLinesTable
+        :lines="quoteCostLines"
+        tabKind="quote"
+        :readOnly="true"
+        :showItemColumn="false"
+        :showSourceColumn="false"
+        @delete-line="() => {}"
+        @add-line="() => {}"
+        @duplicate-line="() => {}"
+        @move-line="() => {}"
+      />
       <CostSetSummaryCard
         :key="`quote-summary-alt-${quoteKey}`"
         title="Quote Summary"
@@ -358,6 +383,29 @@
       </DialogContent>
     </Dialog>
 
+    <!-- Detailed Summary Dialog -->
+    <Dialog :open="showDetailedSummary" @update:open="showDetailedSummary = $event">
+      <DialogContent class="sm:max-w-4xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>Detailed Quote Summary</DialogTitle>
+          <DialogDescription>Complete breakdown of quote costs and revenue</DialogDescription>
+        </DialogHeader>
+        <div class="max-h-[60vh] overflow-y-auto">
+          <CostSetSummaryCard
+            :key="`quote-summary-detailed-${quoteKey}`"
+            title="Quote Summary"
+            :summary="currentQuote.quote?.summary"
+            :costLines="quoteCostLines"
+            :isLoading="isLoading"
+            :revision="currentQuote.quote?.rev"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showDetailedSummary = false">Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <CostLineMaterialModal
       v-if="showEditModal && editingCostLine && editingCostLine.kind === 'material'"
       :materialsMarkup="materialsMarkup"
@@ -397,20 +445,22 @@ import {
   PlusCircle,
   RotateCcw,
   FileX,
+  Copy,
 } from 'lucide-vue-next'
 import CostLineDropdown from './CostLineDropdown.vue'
-import CostLinesGrid from '../shared/CostLinesGrid.vue'
+import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import { quoteService } from '../../services/quote.service'
 import { toast } from 'vue-sonner'
 import { schemas } from '../../api/generated/api'
-import { api } from '@/api/client'
+import { api } from '../../api/client'
 import { z } from 'zod'
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import { costlineService } from '../../services/costline.service'
 import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
 import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
+import CompactSummaryCard from '../shared/CompactSummaryCard.vue'
 import { useJobsStore } from '../../stores/jobs'
 import {
   Dialog,
@@ -470,6 +520,7 @@ const editingCostLine = ref<CostLine | null>(null)
 const showEditModal = ref(false)
 const costLines = ref<CostLine[]>([])
 const quoteKey = ref(0) // Force reactivity key
+const showDetailedSummary = ref(false)
 
 const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
@@ -489,6 +540,11 @@ const materialsMarkup = computed(() => {
 const quoteCostLines = computed(() => {
   const lines = currentQuote.value?.quote?.cost_lines || []
   return lines
+})
+
+// Check if estimate data is available for copying
+const hasEstimateData = computed(() => {
+  return !!props.jobData?.latest_estimate?.cost_lines?.length
 })
 
 // Check if quote is accepted and edits should be blocked
@@ -756,11 +812,6 @@ async function handleAddAdjustment(payload: CostLine) {
   }
 }
 
-function openEditModal(line: CostLine) {
-  editingCostLine.value = line
-  showEditModal.value = true
-}
-
 function closeEditModal() {
   showEditModal.value = false
   editingCostLine.value = null
@@ -808,6 +859,18 @@ async function handleDeleteCostLine(line: CostLine) {
   }
 }
 
+// Bridge for SmartCostLinesTable delete event (id or index)
+function handleSmartDelete(idOrIndex: string | number) {
+  const line =
+    typeof idOrIndex === 'string'
+      ? (costLines.value.find((l) => l.id === idOrIndex) ?? null)
+      : (costLines.value[idOrIndex] ?? null)
+
+  if (line) {
+    void handleDeleteCostLine(line as CostLine)
+  }
+}
+
 // Helper functions for formatting
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -831,5 +894,109 @@ function formatDate(dateString: string): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+// Add empty line to the grid (UI-only, not persisted until user fills baseline data)
+function handleAddEmptyLine() {
+  const newLine: CostLine = {
+    id: '', // empty ID indicates unsaved line
+    kind: 'material',
+    desc: '',
+    quantity: 1,
+    unit_cost: 0,
+    unit_rev: 0,
+    total_cost: 0,
+    total_rev: 0,
+    ext_refs: {},
+    meta: {},
+  }
+  costLines.value = [...costLines.value, newLine]
+}
+
+// Handle creating a new line from an empty line that meets baseline criteria
+async function handleCreateFromEmpty(line: CostLine) {
+  console.log('Creating cost line from empty line:', line)
+
+  try {
+    const createPayload = {
+      kind: line.kind as 'material' | 'time' | 'adjust',
+      desc: line.desc || '',
+      quantity: line.quantity || 1,
+      unit_cost: line.unit_cost ?? 0,
+      unit_rev: line.unit_rev ?? 0,
+      ext_refs: (line.ext_refs as Record<string, unknown>) || {},
+      meta: (line.meta as Record<string, unknown>) || {},
+    }
+
+    const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
+
+    // Replace the empty line with the created one
+    const index = costLines.value.findIndex((l) => l === line)
+    if (index !== -1) {
+      costLines.value[index] = created
+    }
+
+    emit('cost-line-changed')
+    toast.success('Cost line created!')
+    console.log('✅ Successfully created cost line:', created)
+  } catch (error) {
+    toast.error('Failed to create cost line.')
+    console.error('❌ Failed to create cost line:', error)
+  }
+}
+
+// Copy all cost lines from estimate to quote
+async function onCopyFromEstimate() {
+  if (!props.jobData?.latest_estimate?.cost_lines?.length) {
+    toast.error('No estimate data available to copy')
+    return
+  }
+
+  const estimateLines = props.jobData.latest_estimate.cost_lines
+  isLoading.value = true
+  toast.info('Copying from estimate...', { id: 'copy-estimate' })
+
+  try {
+    // Clear existing quote lines first
+    if (costLines.value.length > 0) {
+      for (const line of costLines.value) {
+        if (line.id) {
+          await costlineService.deleteCostLine(line.id)
+        }
+      }
+    }
+
+    // Copy each estimate line to quote
+    const createdLines: CostLine[] = []
+    for (const estimateLine of estimateLines) {
+      const createPayload = {
+        kind: estimateLine.kind as 'material' | 'time' | 'adjust',
+        desc: estimateLine.desc || '',
+        quantity: estimateLine.quantity || 0,
+        unit_cost: estimateLine.unit_cost ?? 0,
+        unit_rev: estimateLine.unit_rev ?? 0,
+        ext_refs: (estimateLine.ext_refs as Record<string, unknown>) || {},
+        meta: (estimateLine.meta as Record<string, unknown>) || {},
+      }
+
+      const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
+      createdLines.push(created)
+    }
+
+    // Update local state
+    costLines.value = createdLines
+
+    // Refresh quote data to get updated summary
+    await refreshQuoteData()
+
+    toast.success(`Copied ${createdLines.length} lines from estimate!`)
+    emit('cost-line-changed')
+  } catch (error) {
+    toast.error('Failed to copy from estimate.')
+    debugLog('Failed to copy from estimate:', error)
+  } finally {
+    isLoading.value = false
+    toast.dismiss('copy-estimate')
+  }
 }
 </script>
