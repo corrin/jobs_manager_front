@@ -69,7 +69,7 @@
           >
             <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-medium text-gray-700">Uploading files...</span>
-              <span class="text-sm text-gray-500">{{ uploadProgress }}%</span>
+              <span class="text-sm text-gray-500">{{ uploadProgress.toFixed(2) }}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2">
               <div
