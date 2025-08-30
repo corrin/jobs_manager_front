@@ -588,6 +588,7 @@ type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type Staff = z.infer<typeof schemas.Staff>
 type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
 type CostLine = z.infer<typeof schemas.CostLine>
+type Job = z.infer<typeof schemas.Job>
 
 const router = useRouter()
 const route = useRoute()
@@ -743,7 +744,7 @@ const getJobHours = (jobId: string, timeEntries: Record<string, unknown>[]) => {
 }
 
 // Enhanced jobs state for job details with full data
-const enhancedJobs = ref<Map<string, ModernTimesheetJob>>(new Map())
+const enhancedJobs = ref<Map<string, Job>>(new Map())
 
 // Function to load enhanced job data ONLY for jobs with timesheet entries
 const loadEnhancedJobData = async (jobIds: string[]) => {
@@ -801,7 +802,7 @@ const activeJobsWithData = computed(() => {
 
   const jobsWithData = uniqueJobIds
     .map((jobId) => {
-      const actualHours = getJobHours(jobId, adaptedTimeEntries.value)
+      const actualHours = getJobHours(jobId as string, adaptedTimeEntries.value)
 
       // Skip jobs without timesheet entries (shouldn't happen since we're filtering by entries)
       if (actualHours === 0) {
@@ -822,9 +823,9 @@ const activeJobsWithData = computed(() => {
             id: jobId,
             job_number: entryWithJobData.job_number || 'Unknown',
             name: entryWithJobData.job_name || 'Unknown Job',
+            has_actual_costset: entryWithJobData.has_actual_costset || true,
             client_name: entryWithJobData.client_name || 'Unknown Client',
-            status: 'active', // Default status
-            job_status: 'active',
+            status: 'draft',
             estimated_hours: 0,
             estimated_labour_hours: 0,
             labour_hours: 0,
@@ -839,8 +840,8 @@ const activeJobsWithData = computed(() => {
       }
 
       // Use enhanced job data if available, otherwise use basic job data
-      const enhancedJob = enhancedJobs.value.get(jobId)
-      const jobForCalculations = enhancedJob || job
+      const enhancedJob = enhancedJobs.value.get(jobId as string)
+      const jobForCalculations = enhancedJob
 
       const estimatedHours = getEstimatedHours(jobForCalculations)
       const totalBill = getJobBill(jobId, adaptedTimeEntries.value)

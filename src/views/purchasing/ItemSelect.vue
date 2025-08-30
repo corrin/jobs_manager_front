@@ -5,13 +5,21 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
-} from '@/components/ui/select'
-import { useStockStore } from '@/stores/stockStore'
-import { onMounted, computed } from 'vue'
+} from '../../components/ui/select'
+import { Input } from '../../components/ui/input'
+import { useStockStore } from '../../stores/stockStore'
+import { onMounted, computed, ref } from 'vue'
 
-const props = defineProps<{
-  modelValue: string | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    modelValue: string | null
+    disabled?: boolean
+  }>(),
+  {
+    disabled: false,
+  },
+)
+
 const emit = defineEmits<{
   'update:modelValue': [string | null]
   'update:description': [string]
@@ -19,6 +27,7 @@ const emit = defineEmits<{
 }>()
 
 const store = useStockStore()
+const searchTerm = ref('')
 
 onMounted(async () => {
   if (store.items.length === 0 && !store.loading) {
@@ -26,17 +35,25 @@ onMounted(async () => {
   }
 })
 
+const filteredItems = computed(() => {
+  if (!searchTerm.value) return store.items
+  return store.items.filter((item) =>
+    (item.description || '').toLowerCase().includes(searchTerm.value.toLowerCase()),
+  )
+})
+
 const displayLabel = computed(() => {
-  if (!props.modelValue) return 'Select'
+  if (!props.modelValue) return 'Select Item'
   const found = store.items.find((i) => i.id === props.modelValue)
-  return found ? found.description || 'Stock Item' : 'Select'
+  return found ? found.description || 'Stock Item' : 'Select Item'
 })
 </script>
 
 <template>
   <Select
     :model-value="props.modelValue"
-    class="w-32"
+    :disabled="props.disabled"
+    class="w-40"
     @update:model-value="
       (val) => {
         emit('update:modelValue', val)
@@ -53,14 +70,34 @@ const displayLabel = computed(() => {
     "
   >
     <SelectTrigger>
-      <SelectValue :placeholder="'Select'">
+      <SelectValue :placeholder="'Select Item'">
         {{ displayLabel }}
       </SelectValue>
     </SelectTrigger>
 
-    <SelectContent>
-      <SelectItem v-for="i in store.items" :key="i.id || 'unknown'" :value="i.id || ''">
-        {{ i.description || 'Stock Item' }}
+    <SelectContent class="max-h-60">
+      <!-- Search input -->
+      <div class="p-2 border-b">
+        <Input v-model="searchTerm" placeholder="Search items..." class="h-8 text-sm" @click.stop />
+      </div>
+
+      <!-- Items list -->
+      <div v-if="filteredItems.length === 0" class="p-2 text-sm text-gray-500">
+        {{ searchTerm ? 'No items found' : 'No items available' }}
+      </div>
+
+      <SelectItem
+        v-for="i in filteredItems"
+        :key="i.id || 'unknown'"
+        :value="i.id || ''"
+        class="cursor-pointer"
+      >
+        <div class="flex flex-col">
+          <span class="font-medium">{{ i.description || 'Stock Item' }}</span>
+          <span v-if="i.unit_cost" class="text-xs text-gray-500">
+            ${{ Number(i.unit_cost).toFixed(2) }}
+          </span>
+        </div>
       </SelectItem>
     </SelectContent>
   </Select>

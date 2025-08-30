@@ -128,7 +128,9 @@
                       />
                       <div
                         v-else
-                        class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center"
+                        class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center transition-colors duration-200"
+                        :class="{ 'cursor-pointer hover:bg-gray-300': isPdfFile(file) }"
+                        @click="openPdfPreview(file)"
                       >
                         <FileText v-if="isPdfFile(file)" class="w-6 h-6 text-red-600" />
                         <FileIcon v-else class="w-6 h-6 text-gray-600" />
@@ -653,6 +655,12 @@ const isImageJobFile = (file: JobFile): boolean => {
 
 const isPdfFile = (file: JobFile): boolean => {
   return file.mime_type === 'application/pdf'
+}
+
+const openPdfPreview = (file: JobFile) => {
+  if (isPdfFile(file) && file.download_url) {
+    window.open(file.download_url, '_blank', 'noopener,noreferrer')
+  }
 }
 
 // Lifecycle

@@ -218,6 +218,7 @@ const router = createRouter({
       name: 'purchase-order-form',
       component: () => import('@/views/purchasing/PurchaseOrderFormView.vue'),
       meta: { requiresAuth: true, title: 'Purchase Order - Jobs Manager' },
+      props: true,
     },
     {
       path: '/purchasing/stock',
