@@ -292,9 +292,10 @@ const actualSummary = computed(() => {
 })
 
 function navigateToDeliveryReceipt(purchaseOrderId: string) {
+  console.log('Received po id: ', purchaseOrderId)
   router.push({
-    name: 'delivery-receipt-form',
-    params: { poId: purchaseOrderId },
+    name: 'purchase-order-form',
+    params: { id: purchaseOrderId },
   })
 }
 
@@ -330,6 +331,7 @@ function resolveSource(
     isDeliveryReceiptExtRefs(line.ext_refs)
   ) {
     const label = line.meta.po_number || 'Delivery Receipt'
+    console.log('Line data: ', line)
     return {
       visible: true,
       label,
