@@ -11,6 +11,15 @@
         </div>
         <div v-if="currentQuote?.has_quote" class="flex items-center gap-2">
           <button
+            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style="min-width: 0"
+            @click="onCopyFromEstimate"
+            :disabled="isLoading || !hasEstimateData"
+            :title="'Copy from Estimate'"
+          >
+            <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
+          </button>
+          <button
             class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-black text-white border border-gray-800 text-sm font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             style="min-width: 0"
             @click="onShowQuoteRevisions"
@@ -436,6 +445,7 @@ import {
   PlusCircle,
   RotateCcw,
   FileX,
+  Copy,
 } from 'lucide-vue-next'
 import CostLineDropdown from './CostLineDropdown.vue'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
@@ -530,6 +540,11 @@ const materialsMarkup = computed(() => {
 const quoteCostLines = computed(() => {
   const lines = currentQuote.value?.quote?.cost_lines || []
   return lines
+})
+
+// Check if estimate data is available for copying
+const hasEstimateData = computed(() => {
+  return !!props.jobData?.latest_estimate?.cost_lines?.length
 })
 
 // Check if quote is accepted and edits should be blocked
@@ -927,6 +942,61 @@ async function handleCreateFromEmpty(line: CostLine) {
   } catch (error) {
     toast.error('Failed to create cost line.')
     console.error('❌ Failed to create cost line:', error)
+  }
+}
+
+// Copy all cost lines from estimate to quote
+async function onCopyFromEstimate() {
+  if (!props.jobData?.latest_estimate?.cost_lines?.length) {
+    toast.error('No estimate data available to copy')
+    return
+  }
+
+  const estimateLines = props.jobData.latest_estimate.cost_lines
+  isLoading.value = true
+  toast.info('Copying from estimate...', { id: 'copy-estimate' })
+
+  try {
+    // Clear existing quote lines first
+    if (costLines.value.length > 0) {
+      for (const line of costLines.value) {
+        if (line.id) {
+          await costlineService.deleteCostLine(line.id)
+        }
+      }
+    }
+
+    // Copy each estimate line to quote
+    const createdLines: CostLine[] = []
+    for (const estimateLine of estimateLines) {
+      const createPayload = {
+        kind: estimateLine.kind as 'material' | 'time' | 'adjust',
+        desc: estimateLine.desc || '',
+        quantity: estimateLine.quantity || 0,
+        unit_cost: estimateLine.unit_cost ?? 0,
+        unit_rev: estimateLine.unit_rev ?? 0,
+        ext_refs: (estimateLine.ext_refs as Record<string, unknown>) || {},
+        meta: (estimateLine.meta as Record<string, unknown>) || {},
+      }
+
+      const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
+      createdLines.push(created)
+    }
+
+    // Update local state
+    costLines.value = createdLines
+
+    // Refresh quote data to get updated summary
+    await refreshQuoteData()
+
+    toast.success(`Copied ${createdLines.length} lines from estimate!`)
+    emit('cost-line-changed')
+  } catch (error) {
+    toast.error('Failed to copy from estimate.')
+    debugLog('Failed to copy from estimate:', error)
+  } finally {
+    isLoading.value = false
+    toast.dismiss('copy-estimate')
   }
 }
 </script>
