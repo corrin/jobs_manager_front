@@ -80,48 +80,24 @@ export const useAuthStore = defineStore('auth', () => {
       return true
     } catch (err: unknown) {
       user.value = null
-      let errorMessage = 'Login error. Check if the server is running.'
+      let errorMessage = 'An unexpected login error occurred.'
 
-      // Handle AxiosError specifically
-      if (typeof err === 'object' && err !== null) {
-        // Check if it's an AxiosError with response
-        if ('response' in err) {
-          const axiosError = err as { response?: AxiosErrorResponse }
-          const response = axiosError.response
+      if (typeof err === 'object' && err !== null && 'response' in err) {
+        const axiosError = err as { response?: AxiosErrorResponse }
+        const response = axiosError.response
+        const responseData = response?.data || {}
+        const detailMessage = responseData.detail || responseData.non_field_errors?.[0]
 
-          if (response?.status && response.status >= 400 && response.status < 500) {
-            // Extract error message from various possible fields in response data
-            const responseData = response.data || {}
-            const originalError =
-              responseData.detail ||
-              responseData.message ||
-              responseData.error ||
-              responseData.non_field_errors?.[0] ||
-              ''
-
-            debugLog('Server error response:', originalError)
-
-            // Replace authentication errors with user-friendly message
-            if (
-              originalError === 'Invalid credentials' ||
-              originalError === 'Authentication credentials not provided' ||
-              originalError.toLowerCase().includes('invalid') ||
-              originalError.toLowerCase().includes('authentication') ||
-              originalError.toLowerCase().includes('credentials') ||
-              originalError.toLowerCase().includes('password') ||
-              originalError.toLowerCase().includes('email')
-            ) {
-              errorMessage = 'Wrong e-mail or password, please try again'
-            } else if (originalError) {
-              errorMessage = originalError
-            } else {
-              errorMessage = 'Wrong e-mail or password, please try again'
-            }
-          } else {
-            // Server error (5xx) or no status
-            errorMessage = 'Login error. Check if the server is running.'
-          }
-        } else if ('code' in err && (err.code === 'NETWORK_ERROR' || err.code === 'ERR_NETWORK')) {
+        if (response?.status === 401 && detailMessage) {
+          errorMessage = 'Wrong e-mail or password, please try again.'
+        } else if (response?.status && response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.'
+        } else if (detailMessage) {
+          errorMessage = detailMessage
+        }
+      } else if (typeof err === 'object' && err !== null && 'code' in err) {
+        const networkError = err as { code?: string }
+        if (networkError.code === 'NETWORK_ERROR' || networkError.code === 'ERR_NETWORK') {
           errorMessage = 'Network error. Please check your internet connection.'
         }
       }
