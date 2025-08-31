@@ -150,17 +150,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Eye, EyeOff } from 'lucide-vue-next'
 import { useLogin } from '@/composables/useLogin'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 const { credentials, hasError, isFormValid, isLoading, error, handleLogin } = useLogin()
+
+const authStore = useAuthStore()
+const router = useRouter()
 
 const showPassword = ref(false)
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
+
+onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    await router.push({ name: 'kanban' })
+  }
+})
 </script>
 
 <style scoped>
@@ -170,6 +181,7 @@ const togglePasswordVisibility = () => {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -181,6 +193,7 @@ const togglePasswordVisibility = () => {
     opacity: 0;
     transform: translateY(50px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -192,10 +205,12 @@ const togglePasswordVisibility = () => {
     opacity: 0;
     transform: scale(0.5) rotate(-180deg);
   }
+
   50% {
     opacity: 0.8;
     transform: scale(1.1) rotate(-90deg);
   }
+
   100% {
     opacity: 1;
     transform: scale(1) rotate(0deg);
@@ -207,6 +222,7 @@ const togglePasswordVisibility = () => {
   100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-20px);
   }
@@ -217,6 +233,7 @@ const togglePasswordVisibility = () => {
   100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-15px);
   }
@@ -227,6 +244,7 @@ const togglePasswordVisibility = () => {
   100% {
     opacity: 0.5;
   }
+
   50% {
     opacity: 0.8;
   }
@@ -237,6 +255,7 @@ const togglePasswordVisibility = () => {
   100% {
     transform: translateX(0);
   }
+
   10%,
   30%,
   50%,
@@ -244,6 +263,7 @@ const togglePasswordVisibility = () => {
   90% {
     transform: translateX(-5px);
   }
+
   20%,
   40%,
   60%,
@@ -257,6 +277,7 @@ const togglePasswordVisibility = () => {
   100% {
     opacity: 0.3;
   }
+
   50% {
     opacity: 0.6;
   }

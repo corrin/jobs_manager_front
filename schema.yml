@@ -23,6 +23,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -58,6 +59,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -73,6 +75,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -95,6 +98,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -400,6 +404,7 @@ paths:
         - accounts
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -908,6 +913,7 @@ paths:
         - api
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -941,6 +947,7 @@ paths:
         - api
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -976,6 +983,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1011,6 +1019,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1033,6 +1042,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1073,6 +1083,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1113,6 +1124,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1152,6 +1164,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1192,6 +1205,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1226,6 +1240,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1295,6 +1310,7 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1324,6 +1340,7 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1538,8 +1555,7 @@ paths:
   /job/api/job-files/:
     get:
       operationId: retrieveJobFilesApi
-      description: Based on the request, serve a file for download or return the file
-        list of the job.
+      description: Route the request to serve a file or list files for a job.
       parameters:
         - in: query
           name: format
@@ -1552,6 +1568,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1586,8 +1603,7 @@ paths:
           description: ''
     post:
       operationId: uploadJobFilesApi
-      description: Handle file uploads. Creates new files or updates existing ones
-        with POST.
+      description: Handle file uploads for a job.
       parameters:
         - in: query
           name: format
@@ -1602,16 +1618,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1642,10 +1659,7 @@ paths:
           description: ''
     put:
       operationId: updateJobFilesApi
-      description: |-
-        Update an existing job file:
-        - If a new file is provided (files[] in request), replace the file on disk.
-        - If no file_obj is provided, only update print_on_jobsheet.
+      description: Update an existing job file's content or its metadata.
       parameters:
         - in: query
           name: format
@@ -1660,16 +1674,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1698,18 +1713,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
     delete:
       operationId: deleteJobFilesApi
-      description: Delete a job file by its ID. (file_path param is actually the job_file.id)
+      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
       parameters:
         - in: query
           name: format
@@ -1722,6 +1728,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -1746,8 +1753,7 @@ paths:
   /job/api/job-files/{file_path}:
     get:
       operationId: retrieveJobFilesApi_2
-      description: Based on the request, serve a file for download or return the file
-        list of the job.
+      description: Route the request to serve a file or list files for a job.
       parameters:
         - in: path
           name: file_path
@@ -1765,6 +1771,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1799,8 +1806,7 @@ paths:
           description: ''
     post:
       operationId: uploadJobFilesApi_2
-      description: Handle file uploads. Creates new files or updates existing ones
-        with POST.
+      description: Handle file uploads for a job.
       parameters:
         - in: path
           name: file_path
@@ -1820,16 +1826,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1860,10 +1867,7 @@ paths:
           description: ''
     put:
       operationId: updateJobFilesApi_2
-      description: |-
-        Update an existing job file:
-        - If a new file is provided (files[] in request), replace the file on disk.
-        - If no file_obj is provided, only update print_on_jobsheet.
+      description: Update an existing job file's content or its metadata.
       parameters:
         - in: path
           name: file_path
@@ -1883,16 +1887,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1921,18 +1926,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
     delete:
       operationId: deleteJobFilesApi_2
-      description: Delete a job file by its ID. (file_path param is actually the job_file.id)
+      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
       parameters:
         - in: path
           name: file_path
@@ -1950,6 +1946,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -1974,8 +1971,7 @@ paths:
   /job/api/job-files/{job_number}:
     get:
       operationId: retrieveJobFilesApi_3
-      description: Based on the request, serve a file for download or return the file
-        list of the job.
+      description: Route the request to serve a file or list files for a job.
       parameters:
         - in: query
           name: format
@@ -1993,6 +1989,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2027,8 +2024,7 @@ paths:
           description: ''
     post:
       operationId: uploadJobFilesApi_3
-      description: Handle file uploads. Creates new files or updates existing ones
-        with POST.
+      description: Handle file uploads for a job.
       parameters:
         - in: query
           name: format
@@ -2048,16 +2044,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -2088,10 +2085,7 @@ paths:
           description: ''
     put:
       operationId: updateJobFilesApi_3
-      description: |-
-        Update an existing job file:
-        - If a new file is provided (files[] in request), replace the file on disk.
-        - If no file_obj is provided, only update print_on_jobsheet.
+      description: Update an existing job file's content or its metadata.
       parameters:
         - in: query
           name: format
@@ -2111,16 +2105,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2149,18 +2144,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
     delete:
       operationId: deleteJobFilesApi_3
-      description: Delete a job file by its ID. (file_path param is actually the job_file.id)
+      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
       parameters:
         - in: query
           name: format
@@ -2178,6 +2164,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -2327,6 +2314,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2369,6 +2357,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2390,6 +2379,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -2431,6 +2421,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdate'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2471,6 +2462,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2738,6 +2730,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2828,6 +2821,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -2856,6 +2850,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2889,6 +2884,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2916,6 +2912,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3020,6 +3017,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3055,6 +3053,7 @@ paths:
               $ref: '#/components/schemas/QuoteRevisionRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3089,6 +3088,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3142,6 +3142,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3192,6 +3193,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3227,6 +3229,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3346,8 +3349,7 @@ paths:
   /job/rest/jobs/files/:
     get:
       operationId: retrieveJobFilesApi_4
-      description: Based on the request, serve a file for download or return the file
-        list of the job.
+      description: Route the request to serve a file or list files for a job.
       parameters:
         - in: query
           name: format
@@ -3360,6 +3362,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3394,8 +3397,7 @@ paths:
           description: ''
     post:
       operationId: uploadJobFilesApi_4
-      description: Handle file uploads. Creates new files or updates existing ones
-        with POST.
+      description: Handle file uploads for a job.
       parameters:
         - in: query
           name: format
@@ -3410,16 +3412,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3450,10 +3453,7 @@ paths:
           description: ''
     put:
       operationId: updateJobFilesApi_4
-      description: |-
-        Update an existing job file:
-        - If a new file is provided (files[] in request), replace the file on disk.
-        - If no file_obj is provided, only update print_on_jobsheet.
+      description: Update an existing job file's content or its metadata.
       parameters:
         - in: query
           name: format
@@ -3468,16 +3468,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3506,18 +3507,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
     delete:
       operationId: deleteJobFilesApi_4
-      description: Delete a job file by its ID. (file_path param is actually the job_file.id)
+      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
       parameters:
         - in: query
           name: format
@@ -3530,6 +3522,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -3554,15 +3547,7 @@ paths:
   /job/rest/jobs/files/{file_id}/thumbnail/:
     get:
       operationId: getJobFileThumbnail
-      description: |-
-        API view for serving JPEG thumbnails of job files.
-
-        This view generates and serves thumbnail images for job files that
-        support thumbnail generation (typically image files). Thumbnails are
-        cached on disk and served via file response for efficient delivery.
-
-        GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
-             the thumbnail doesn't exist or cannot be generated.
+      description: API view for serving JPEG thumbnails of job files.
       parameters:
         - in: path
           name: file_id
@@ -3574,6 +3559,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3584,8 +3570,7 @@ paths:
   /job/rest/jobs/files/{file_path}/:
     get:
       operationId: retrieveJobFilesApi_5
-      description: Based on the request, serve a file for download or return the file
-        list of the job.
+      description: Route the request to serve a file or list files for a job.
       parameters:
         - in: path
           name: file_path
@@ -3603,6 +3588,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3637,8 +3623,7 @@ paths:
           description: ''
     post:
       operationId: uploadJobFilesApi_5
-      description: Handle file uploads. Creates new files or updates existing ones
-        with POST.
+      description: Handle file uploads for a job.
       parameters:
         - in: path
           name: file_path
@@ -3658,16 +3643,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3698,10 +3684,7 @@ paths:
           description: ''
     put:
       operationId: updateJobFilesApi_5
-      description: |-
-        Update an existing job file:
-        - If a new file is provided (files[] in request), replace the file on disk.
-        - If no file_obj is provided, only update print_on_jobsheet.
+      description: Update an existing job file's content or its metadata.
       parameters:
         - in: path
           name: file_path
@@ -3721,16 +3704,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3759,18 +3743,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
     delete:
       operationId: deleteJobFilesApi_5
-      description: Delete a job file by its ID. (file_path param is actually the job_file.id)
+      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
       parameters:
         - in: path
           name: file_path
@@ -3788,6 +3763,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -3812,8 +3788,7 @@ paths:
   /job/rest/jobs/files/{job_number}/:
     get:
       operationId: retrieveJobFilesApi_6
-      description: Based on the request, serve a file for download or return the file
-        list of the job.
+      description: Route the request to serve a file or list files for a job.
       parameters:
         - in: query
           name: format
@@ -3831,6 +3806,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3865,8 +3841,7 @@ paths:
           description: ''
     post:
       operationId: uploadJobFilesApi_6
-      description: Handle file uploads. Creates new files or updates existing ones
-        with POST.
+      description: Handle file uploads for a job.
       parameters:
         - in: query
           name: format
@@ -3886,16 +3861,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3926,10 +3902,7 @@ paths:
           description: ''
     put:
       operationId: updateJobFilesApi_6
-      description: |-
-        Update an existing job file:
-        - If a new file is provided (files[] in request), replace the file on disk.
-        - If no file_obj is provided, only update print_on_jobsheet.
+      description: Update an existing job file's content or its metadata.
       parameters:
         - in: query
           name: format
@@ -3949,16 +3922,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+              $ref: '#/components/schemas/JobFile'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3987,18 +3961,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobFileErrorResponse'
           description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
     delete:
       operationId: deleteJobFilesApi_6
-      description: Delete a job file by its ID. (file_path param is actually the job_file.id)
+      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
       parameters:
         - in: query
           name: format
@@ -4016,6 +3981,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -4058,6 +4024,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4080,6 +4047,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4101,6 +4069,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4115,22 +4084,24 @@ paths:
 
         GET: Returns special jobs data and stock job information for month-end review
         POST: Processes selected jobs for month-end archiving and status updates
+      summary: Runs month-end operation based on given processed ids
       tags:
         - job
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MonthEndPostResponse'
+              $ref: '#/components/schemas/MonthEndPostRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/MonthEndPostResponse'
+              $ref: '#/components/schemas/MonthEndPostRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/MonthEndPostResponse'
+              $ref: '#/components/schemas/MonthEndPostRequest'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4291,6 +4262,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4385,6 +4357,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4415,6 +4388,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4436,6 +4410,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4451,6 +4426,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4486,6 +4462,7 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderCreate'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4508,6 +4485,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4540,6 +4518,7 @@ paths:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdate'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4562,6 +4541,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4595,6 +4575,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4644,6 +4625,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4665,6 +4647,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4691,6 +4674,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4716,6 +4700,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -4746,6 +4731,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4761,6 +4747,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4782,6 +4769,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4805,6 +4793,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4826,6 +4815,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4853,6 +4843,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -4874,6 +4865,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4906,6 +4898,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4937,6 +4930,7 @@ paths:
               $ref: '#/components/schemas/PatchedDjangoJob'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4957,6 +4951,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -5257,6 +5252,7 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5286,6 +5282,7 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -8434,6 +8431,18 @@ components:
         - date
         - total_dollars
         - total_hours
+    MonthEndPostRequest:
+      type: object
+      description: Serializer for month-end POST request
+      properties:
+        job_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of job IDs to process for month-end
+      required:
+        - job_ids
     MonthEndPostResponse:
       type: object
       description: Serializer for month-end POST response
