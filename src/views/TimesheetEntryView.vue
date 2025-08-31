@@ -244,15 +244,6 @@
             </div>
 
             <Button
-              @click="showSummary"
-              size="sm"
-              variant="ghost"
-              class="text-gray-600 hover:bg-gray-100"
-            >
-              <ChartColumn />
-            </Button>
-
-            <Button
               @click="addNewEntry"
               size="sm"
               variant="default"
@@ -327,60 +318,6 @@
               />
             </div>
           </div>
-
-          <div class="bg-white border-t border-gray-200 p-2 lg:hidden">
-            <div class="flex items-center justify-between text-xs">
-              <div class="flex items-center space-x-3">
-                <div class="flex items-center space-x-1">
-                  <Clock class="h-3 w-3 text-gray-500" />
-                  <span class="font-medium text-gray-700">
-                    {{ todayStats.totalHours.toFixed(1) }}h
-                  </span>
-                </div>
-
-                <div class="flex items-center space-x-1">
-                  <DollarSign class="h-3 w-3 text-green-600" />
-                  <span class="font-medium text-gray-700">
-                    ${{ todayStats.totalBill.toFixed(0) }}
-                  </span>
-                </div>
-
-                <div class="flex items-center space-x-1">
-                  <TrendingUp class="h-3 w-3 text-gray-600" />
-                  <span class="font-medium text-gray-700">
-                    {{ todayStats.entryCount }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="hidden lg:flex h-16 bg-white border-t border-gray-200 items-center justify-between px-6"
-          >
-            <div class="flex items-center space-x-6">
-              <div class="flex items-center space-x-2">
-                <Clock class="h-4 w-4 text-gray-500" />
-                <span class="text-sm font-medium text-gray-700">
-                  Total: {{ todayStats.totalHours.toFixed(1) }}h
-                </span>
-              </div>
-
-              <div class="flex items-center space-x-2">
-                <DollarSign class="h-4 w-4 text-green-600" />
-                <span class="text-sm font-medium text-gray-700">
-                  Bill: ${{ todayStats.totalBill.toFixed(2) }}
-                </span>
-              </div>
-
-              <div class="flex items-center space-x-2">
-                <TrendingUp class="h-4 w-4 text-gray-600" />
-                <span class="text-sm font-medium text-gray-700">
-                  Entries: {{ todayStats.entryCount }}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
 
         <Dialog v-model:open="showHelpModal">
@@ -409,21 +346,195 @@
           </DialogContent>
         </Dialog>
 
-        <!-- Summary Drawer -->
-        <SummaryDrawer
-          v-model:open="showSummaryDrawer"
-          :time-entries="adaptedTimeEntries"
-          :jobs="availableJobs"
-          :loading="loading"
-          :error="error"
-        />
+        <!-- Bottom Summary Section -->
+        <div class="bg-white border-t border-gray-200 mt-4 h-80">
+          <div class="flex flex-col lg:flex-row h-full">
+            <!-- Current Jobs Section - Left Side (70%) -->
+            <div
+              class="flex-1 lg:w-[70%] border-b lg:border-b-0 lg:border-r border-gray-100 overflow-hidden"
+            >
+              <div class="h-full flex flex-col">
+                <div class="p-3 border-b border-gray-100 bg-gray-50">
+                  <h3 class="text-base font-semibold">Current Jobs</h3>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-3">
+                  <div v-if="activeJobsWithData.length === 0" class="text-center py-8">
+                    <p class="text-gray-500 text-sm">No active jobs with timesheet entries found</p>
+                  </div>
+
+                  <div
+                    v-else
+                    class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3"
+                  >
+                    <div
+                      v-for="jobData in activeJobsWithData"
+                      :key="jobData.job.id"
+                      class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
+                      @click="navigateToJob(jobData.job.id)"
+                    >
+                      <!-- Job Header -->
+                      <div class="flex items-start justify-between mb-2">
+                        <div class="flex-1 min-w-0">
+                          <h4
+                            class="font-medium text-blue-600 hover:text-blue-800 transition-colors text-sm truncate"
+                          >
+                            {{ jobData.job.job_number }}
+                          </h4>
+                          <p class="text-xs text-gray-600 truncate">{{ jobData.job.name }}</p>
+                          <p class="text-xs text-gray-500 truncate">
+                            {{ jobData.job.client_name }}
+                          </p>
+                        </div>
+                        <Badge
+                          :variant="getStatusVariant(jobData.job.job_status || jobData.job.status)"
+                          class="text-xs"
+                        >
+                          {{ getStatusLabel(jobData.job.job_status || jobData.job.status) }}
+                        </Badge>
+                      </div>
+
+                      <!-- Hours Progress -->
+                      <div class="space-y-2 mb-3">
+                        <div class="flex justify-between text-xs">
+                          <span class="text-gray-600">Progress</span>
+                          <span class="font-medium">
+                            {{ jobData.actualHours.toFixed(1) }}h
+                            <span v-if="jobData.estimatedHours > 0">
+                              / {{ jobData.estimatedHours.toFixed(1) }}h
+                            </span>
+                          </span>
+                        </div>
+
+                        <!-- Always show progress bar -->
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            class="h-2 rounded-full transition-all duration-300"
+                            :class="
+                              jobData.isOverBudget
+                                ? 'bg-red-500'
+                                : jobData.estimatedHours > 0
+                                  ? 'bg-blue-500'
+                                  : 'bg-gray-400'
+                            "
+                            :style="{
+                              width:
+                                jobData.estimatedHours > 0
+                                  ? `${Math.min(jobData.completionPercentage, 100)}%`
+                                  : `${Math.min((jobData.actualHours / 8) * 100, 100)}%`,
+                            }"
+                          ></div>
+                        </div>
+
+                        <div class="flex justify-between text-xs">
+                          <span :class="jobData.isOverBudget ? 'text-red-600' : 'text-gray-600'">
+                            <span v-if="jobData.estimatedHours > 0">
+                              {{ jobData.completionPercentage.toFixed(1) }}% complete
+                            </span>
+                            <span v-else> {{ jobData.actualHours.toFixed(1) }}h logged </span>
+                          </span>
+                          <span v-if="jobData.isOverBudget" class="text-red-600 font-medium">
+                            Over Budget
+                          </span>
+                          <span
+                            v-else-if="jobData.estimatedHours <= 0"
+                            class="text-gray-500 text-xs"
+                          >
+                            No estimate
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Financial Info -->
+                      <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+                        <div class="text-xs">
+                          <span class="text-gray-600">Bill:</span>
+                          <span class="font-semibold ml-1"
+                            >${{ jobData.totalBill.toFixed(2) }}</span
+                          >
+                        </div>
+                        <ExternalLink class="h-3 w-3 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Daily Breakdown Section - Right Side (30%) -->
+            <div class="w-full lg:w-[30%] overflow-hidden">
+              <div class="h-full flex flex-col">
+                <div class="p-3 border-b border-gray-100 bg-gray-50">
+                  <h3 class="text-base font-semibold">Daily Breakdown</h3>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-3">
+                  <div class="grid grid-cols-2 gap-4">
+                    <!-- Hours & Bill Column -->
+                    <div class="space-y-3">
+                      <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-3">
+                          <Clock class="h-5 w-5 text-blue-600 flex-shrink-0" />
+                          <div class="min-w-0">
+                            <p class="text-sm text-gray-600">Total Hours</p>
+                            <p class="text-lg font-semibold">
+                              {{ consolidatedSummary.totalHours.toFixed(1) }}h
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-3">
+                          <DollarSign class="h-5 w-5 text-green-600 flex-shrink-0" />
+                          <div class="min-w-0">
+                            <p class="text-sm text-gray-600">Total Bill</p>
+                            <p class="text-lg font-semibold">
+                              ${{ consolidatedSummary.totalBill.toFixed(2) }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Billable & Non-Billable Column -->
+                    <div class="space-y-3">
+                      <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-3">
+                          <CheckCircle class="h-5 w-5 text-green-600 flex-shrink-0" />
+                          <div class="min-w-0">
+                            <p class="text-sm text-gray-600">Billable</p>
+                            <p class="text-lg font-semibold">
+                              {{ consolidatedSummary.billableEntries }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center space-x-3">
+                          <XCircle class="h-5 w-5 text-gray-600 flex-shrink-0" />
+                          <div class="min-w-0">
+                            <p class="text-sm text-gray-600">Non-Billable</p>
+                            <p class="text-lg font-semibold">
+                              {{ consolidatedSummary.nonBillableEntries }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </AppLayout>
 </template>
 
 <script lang="ts" setup>
-import { debugLog } from '@/utils/debug'
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
@@ -442,7 +553,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import SummaryDrawer from '@/components/timesheet/SummaryDrawer.vue'
 
 import {
   ChevronLeft,
@@ -453,26 +563,32 @@ import {
   RefreshCw,
   Clock,
   DollarSign,
-  TrendingUp,
-  ChartColumn,
+  CheckCircle,
+  XCircle,
+  ExternalLink,
 } from 'lucide-vue-next'
 import { useTimesheetAutosave } from '@/composables/useTimesheetAutosave'
+import { useTimesheetSummary } from '@/composables/useTimesheetSummary'
 import { toast } from 'vue-sonner'
 
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
 import { useTimesheetStore } from '@/stores/timesheet'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import * as costlineService from '@/services/costline.service'
+import { jobService } from '@/services/job.service'
 
 // Import types from generated API schemas
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 
+import { debugLog } from '@/utils/debug'
+
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type Staff = z.infer<typeof schemas.Staff>
 type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
 type CostLine = z.infer<typeof schemas.CostLine>
+type Job = z.infer<typeof schemas.Job>
 
 const router = useRouter()
 const route = useRoute()
@@ -482,7 +598,6 @@ const companyDefaultsStore = useCompanyDefaultsStore()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const showHelpModal = ref(false)
-const showSummaryDrawer = ref(false)
 const agGridRef = ref()
 
 const todayDate = new Date().toISOString().split('T')[0]
@@ -503,7 +618,7 @@ const timeEntries = ref<TimesheetEntryWithMeta[]>([])
 
 // Adapter to convert TimesheetEntryView data format to TimesheetCostLine format
 const adaptedTimeEntries = computed(() => {
-  return timeEntries.value.map((entry) => ({
+  const adapted = timeEntries.value.map((entry) => ({
     id: entry.id,
     job_id: entry.jobId,
     job_number: entry.jobNumber,
@@ -530,6 +645,24 @@ const adaptedTimeEntries = computed(() => {
     isNewRow: entry.isNewRow,
     isModified: entry.isModified,
   }))
+
+  console.log('[DEBUG] adaptedTimeEntries:', {
+    originalCount: timeEntries.value.length,
+    adaptedCount: adapted.length,
+    originalSample: timeEntries.value.slice(0, 2).map((e) => ({
+      id: e.id,
+      jobId: e.jobId,
+      jobNumber: e.jobNumber,
+    })),
+    adaptedSample: adapted.slice(0, 2).map((e) => ({
+      id: e.id,
+      job_id: e.job_id,
+      job_number: e.job_number,
+    })),
+    uniqueJobIds: [...new Set(adapted.map((e) => e.job_id))],
+  })
+
+  return adapted
 })
 
 // Computed property to ensure jobs are always available
@@ -562,6 +695,198 @@ const todayStats = computed(() => {
 })
 
 const companyDefaultsRef = computed(() => companyDefaultsStore.companyDefaults)
+
+// Summary logic
+const {
+  getActiveJobs,
+  getJobBill,
+  getCompletionPercentage,
+  isJobOverBudget,
+  getTotalHours,
+  getTotalBill,
+  getBillableEntries,
+  getNonBillableEntries,
+  navigateToJob,
+  getStatusVariant,
+  getStatusLabel,
+  getEstimatedHours,
+} = useTimesheetSummary()
+
+const getJobHours = (jobId: string, timeEntries: Record<string, unknown>[]) => {
+  const jobEntries = timeEntries.filter((entry) => {
+    // Try multiple ways to identify the job
+    return entry.job_id === jobId || entry.jobId === jobId
+  })
+
+  const hours = jobEntries.reduce((sum, entry) => {
+    // Try multiple ways to get the hours
+    const entryHours = (entry.quantity as number) || (entry.hours as number) || 0
+    return sum + entryHours
+  }, 0)
+
+  console.log(`[DEBUG] getJobHours (local) for jobId ${jobId}:`, {
+    jobId,
+    totalEntries: timeEntries.length,
+    matchingEntries: jobEntries.length,
+    allJobIds: timeEntries.map((e) => e.job_id || e.jobId),
+    matchingJobIds: jobEntries.map((e) => e.job_id || e.jobId),
+    hours,
+    entriesDetails: jobEntries.map((e) => ({
+      id: e.id,
+      job_id: e.job_id,
+      jobId: e.jobId,
+      quantity: e.quantity,
+      hours: e.hours,
+    })),
+  })
+
+  return hours
+}
+
+// Enhanced jobs state for job details with full data
+const enhancedJobs = ref<Map<string, Job>>(new Map())
+
+// Function to load enhanced job data ONLY for jobs with timesheet entries
+const loadEnhancedJobData = async (jobIds: string[]) => {
+  try {
+    debugLog('🔍 Loading enhanced job data for jobs with timesheet entries:', jobIds.length, 'jobs')
+
+    for (const jobId of jobIds) {
+      if (!enhancedJobs.value.has(jobId)) {
+        try {
+          const fullJobResponse = await jobService.getJob(jobId)
+          const fullJob = fullJobResponse.data.job
+          enhancedJobs.value.set(jobId, fullJob)
+          debugLog('✅ Loaded enhanced job data:', {
+            jobId,
+            jobNumber: fullJob.job_number,
+            latest_estimate: fullJobResponse.data.latest_estimate?.summary,
+            latest_quote: fullJobResponse.data.latest_quote?.summary,
+            estimated_hours: fullJob.estimated_hours,
+          })
+        } catch (err) {
+          debugLog('❌ Failed to load enhanced job data for:', jobId, err)
+        }
+      }
+    }
+  } catch (err) {
+    debugLog('❌ Error loading enhanced job data:', err)
+  }
+}
+
+// Computed properties for summary
+const activeJobs = computed(() => {
+  return getActiveJobs(availableJobs.value)
+})
+
+const consolidatedSummary = computed(() => ({
+  totalHours: getTotalHours(adaptedTimeEntries.value),
+  totalBill: getTotalBill(adaptedTimeEntries.value),
+  billableEntries: getBillableEntries(adaptedTimeEntries.value),
+  nonBillableEntries: getNonBillableEntries(adaptedTimeEntries.value),
+  activeJobs: activeJobs.value.length,
+}))
+
+const activeJobsWithData = computed(() => {
+  const uniqueJobIds = [
+    ...new Set(adaptedTimeEntries.value.map((entry) => entry.job_id).filter(Boolean)),
+  ]
+
+  debugLog('🔍 DEBUG activeJobsWithData:', {
+    adaptedEntriesCount: adaptedTimeEntries.value.length,
+    uniqueJobIdsFromEntries: uniqueJobIds,
+    activeJobsCount: activeJobs.value.length,
+    activeJobIds: activeJobs.value.map((job) => job.id),
+    mismatch: uniqueJobIds.some((id) => !activeJobs.value.find((job) => job.id === id)),
+  })
+
+  const jobsWithData = uniqueJobIds
+    .map((jobId) => {
+      const actualHours = getJobHours(jobId as string, adaptedTimeEntries.value)
+
+      // Skip jobs without timesheet entries (shouldn't happen since we're filtering by entries)
+      if (actualHours === 0) {
+        debugLog(`⚠️ Job ${jobId} has 0 hours despite being in entries`)
+        return null
+      }
+
+      // Try to find job in activeJobs first, then in all jobs
+      let job =
+        activeJobs.value.find((j) => j.id === jobId) ||
+        timesheetStore.jobs.find((j) => j.id === jobId)
+
+      if (!job) {
+        // Create a minimal job object from timesheet entry data
+        const entryWithJobData = adaptedTimeEntries.value.find((entry) => entry.job_id === jobId)
+        if (entryWithJobData) {
+          job = {
+            id: jobId,
+            job_number: entryWithJobData.job_number || 'Unknown',
+            name: entryWithJobData.job_name || 'Unknown Job',
+            has_actual_costset: entryWithJobData.has_actual_costset || true,
+            client_name: entryWithJobData.client_name || 'Unknown Client',
+            status: 'draft',
+            estimated_hours: 0,
+            estimated_labour_hours: 0,
+            labour_hours: 0,
+            charge_out_rate: entryWithJobData.charge_out_rate || 0,
+          } as ModernTimesheetJob
+
+          debugLog(`🔧 Created minimal job object for ${jobId}:`, job)
+        } else {
+          debugLog(`❌ Could not find or create job data for ${jobId}`)
+          return null
+        }
+      }
+
+      // Use enhanced job data if available, otherwise use basic job data
+      const enhancedJob = enhancedJobs.value.get(jobId as string)
+      const jobForCalculations = enhancedJob
+
+      const estimatedHours = getEstimatedHours(jobForCalculations)
+      const totalBill = getJobBill(jobId, adaptedTimeEntries.value)
+      const completionPercentage = getCompletionPercentage(actualHours, estimatedHours)
+      const isOverBudget = isJobOverBudget(actualHours, estimatedHours)
+
+      debugLog(`✅ Job ${job.job_number} (${jobId}):`, {
+        actualHours,
+        estimatedHours,
+        totalBill,
+        completionPercentage,
+        isOverBudget,
+      })
+
+      return {
+        job: enhancedJob || job, // Use enhanced job if available
+        actualHours,
+        estimatedHours,
+        totalBill,
+        completionPercentage,
+        isOverBudget,
+      }
+    })
+    .filter((jobData) => jobData !== null) // Remove null entries
+    .sort((a, b) => b.actualHours - a.actualHours) // Sort by hours worked (descending)
+
+  debugLog('🔍 Active jobs with data (FIXED):', jobsWithData.length, jobsWithData)
+  return jobsWithData
+})
+
+// Watch for changes in jobs WITH timesheet entries and load enhanced data
+watch(
+  () => activeJobsWithData.value.map((jobData) => jobData.job.id),
+  async (newJobIds) => {
+    if (newJobIds.length > 0) {
+      debugLog(
+        '🔍 Jobs with timesheet entries changed, loading enhanced data for:',
+        newJobIds.length,
+        'jobs',
+      )
+      await loadEnhancedJobData(newJobIds)
+    }
+  },
+  { immediate: false }, // Don't run immediately to avoid circular dependency
+)
 
 const {
   gridData,
@@ -1220,44 +1545,6 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const showSummary = async () => {
-  debugLog('🔍 Opening Summary Drawer - checking data availability...')
-
-  // Ensure jobs are loaded
-  if (timesheetStore.jobs.length === 0) {
-    debugLog('⚠️ Jobs not loaded, loading now...')
-    try {
-      loading.value = true
-      await timesheetStore.loadJobs()
-      debugLog('✅ Jobs loaded successfully:', timesheetStore.jobs.length)
-    } catch (error) {
-      debugLog('❌ Failed to load jobs:', error)
-      error.value = 'Failed to load jobs for summary'
-      return
-    } finally {
-      loading.value = false
-    }
-  }
-
-  debugLog('🔍 Summary Drawer data before opening:', {
-    jobsCount: timesheetStore.jobs.length,
-    timeEntriesCount: timeEntries.value.length,
-    adaptedTimeEntriesCount: adaptedTimeEntries.value.length,
-    availableJobsCount: availableJobs.value.length,
-    jobs: timesheetStore.jobs
-      .slice(0, 3)
-      .map((j) => ({ id: j.id, job_number: j.job_number, name: j.name, job_status: j.job_status })),
-    timeEntries: timeEntries.value
-      .slice(0, 3)
-      .map((e) => ({ id: e.id, jobId: e.jobId, hours: e.hours })),
-    adaptedEntries: adaptedTimeEntries.value
-      .slice(0, 3)
-      .map((e) => ({ id: e.id, job_id: e.job_id, quantity: e.quantity })),
-  })
-
-  showSummaryDrawer.value = true
-}
-
 onMounted(async () => {
   try {
     loading.value = true
@@ -1302,6 +1589,14 @@ onMounted(async () => {
 
     debugLog('📊 Starting initial data load...')
     await loadTimesheetData()
+
+    // Load enhanced job data for jobs with timesheet entries
+    const jobsWithEntries = activeJobs.value.filter(
+      (job) => getJobHours(job.id, adaptedTimeEntries.value) > 0,
+    )
+    if (jobsWithEntries.length > 0) {
+      await loadEnhancedJobData(jobsWithEntries.map((job) => job.id))
+    }
 
     window.addEventListener('keydown', handleKeydown)
 

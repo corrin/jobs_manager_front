@@ -23,7 +23,7 @@ import {
 import ClientLookup from '@/components/ClientLookup.vue'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue' // ✅ 1. Import watch
 
 type Status = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
 type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
@@ -53,6 +53,36 @@ const supplierLookup = reactive({
   has_xero_id: props.po.supplier_has_xero_id,
   value: true,
 })
+
+// ✅ 2. Add autosave logic
+let autosaveTimer: number | undefined = undefined
+
+function scheduleSave() {
+  // Clear any existing timer to reset the debounce period
+  clearTimeout(autosaveTimer)
+
+  // Set a new timer to emit the save event after 750ms of inactivity
+  autosaveTimer = window.setTimeout(() => {
+    emit('save')
+  }, 750)
+}
+
+watch(
+  () => [
+    props.po.supplier,
+    props.po.supplier_id,
+    props.po.reference,
+    props.po.expected_delivery,
+    props.po.status,
+  ],
+  (newValues, oldValues) => {
+    // Trigger autosave only on changes after the initial load, and not in create mode
+    if (oldValues && !props.isCreateMode) {
+      scheduleSave()
+    }
+  },
+  { deep: true }, // 'deep' ensures we watch for changes inside the 'po' object
+)
 
 function onExpectedDeliveryUpdate(value: string) {
   emit('update:expected_delivery', value)
@@ -160,28 +190,24 @@ const statusOptions: { value: Status; label: string }[] = [
       </div>
 
       <div class="flex flex-col gap-2 mt-4" v-if="!isCreateMode">
-        <Label for="status">Status</Label>
-        <Select id="status" :modelValue="po.status" @update:modelValue="onStatusUpdate">
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem v-for="option in statusOptions" :key="option.value" :value="option.value">
-              {{ option.label }}
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <div class="flex flex-col items-center gap-1">
+          <Label for="status">Status</Label>
+          <Select id="status" :modelValue="po.status" @update:modelValue="onStatusUpdate">
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="option in statusOptions" :key="option.value" :value="option.value">
+                {{ option.label }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </CardContent>
 
-    <CardFooter v-if="!isCreateMode" class="flex flex-col gap-2">
-      <!-- First row: Save changes -->
+    <CardFooter v-if="!isCreateMode && showActions" class="flex flex-col gap-2">
       <div class="flex justify-center">
-        <Button @click="$emit('save')" type="button">Save changes</Button>
-      </div>
-
-      <!-- Second row: Sync with Xero (only if showActions is true) -->
-      <div v-if="showActions" class="flex justify-start">
         <Button
           variant="default"
           :disabled="!syncEnabled"
@@ -192,27 +218,22 @@ const statusOptions: { value: Status; label: string }[] = [
         </Button>
       </div>
 
-      <!-- Third row: View, Print, Email (only show if View in Xero is available and showActions is true) -->
-      <div v-if="showActions && po.online_url" class="flex flex-wrap gap-2">
+      <div v-if="po.online_url" class="flex flex-wrap gap-2">
         <Button variant="outline" @click="$emit('view-xero')" aria-label="View in Xero">
           <ExternalLink class="mr-2 h-4 w-4" /> View in Xero
         </Button>
-
         <Button variant="outline" aria-label="Print" @click="$emit('print')">
           <Printer class="mr-2 h-4 w-4" /> Print
         </Button>
-
         <Button variant="outline" aria-label="E-mail" @click="$emit('email')">
           <Mail class="mr-2 h-4 w-4" /> E-mail
         </Button>
       </div>
 
-      <!-- Fallback: Print and Email only (when no Xero URL but showActions is true) -->
-      <div v-else-if="showActions" class="flex flex-wrap gap-2">
+      <div v-else class="flex flex-wrap gap-2">
         <Button variant="outline" aria-label="Print" @click="$emit('print')">
           <Printer class="mr-2 h-4 w-4" /> Print
         </Button>
-
         <Button variant="outline" aria-label="E-mail" @click="$emit('email')">
           <Mail class="mr-2 h-4 w-4" /> E-mail
         </Button>

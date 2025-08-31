@@ -6,9 +6,9 @@
       <DialogHeader>
         <DialogTitle class="flex items-center space-x-3">
           <div
-            class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center"
+            class="h-12 w-12 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center"
           >
-            <span class="text-white font-bold">
+            <span class="text-gray-700 font-bold">
               {{ staff.staff_initials || getInitials(staff.staff_name) }}
             </span>
           </div>
@@ -23,59 +23,78 @@
         <div
           class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4"
         >
-          <div class="bg-blue-50 p-3 md:p-4 rounded-lg">
-            <div class="text-xl md:text-2xl font-bold text-blue-600">
+          <!-- Total Hours -->
+          <div class="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div class="text-xl md:text-2xl font-bold text-gray-900">
               {{ formatHours(staff.actual_hours) }}
             </div>
-            <div class="text-xs md:text-sm text-blue-800">Total Hours</div>
-            <div class="text-xs text-gray-600">
+            <div class="text-xs md:text-sm font-medium text-gray-600">Total Hours</div>
+            <div class="text-xs text-gray-500">
               of {{ formatHours(staff.scheduled_hours) }} scheduled
             </div>
           </div>
 
-          <div class="bg-green-50 p-3 md:p-4 rounded-lg">
-            <div class="text-xl md:text-2xl font-bold text-green-600">
+          <!-- Billable Hours -->
+          <div class="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div class="text-xl md:text-2xl font-bold text-gray-900">
               {{ formatHours(staff.billable_hours) }}
             </div>
-            <div class="text-xs md:text-sm text-green-800">Billable Hours</div>
-            <div class="text-xs text-gray-600">
+            <div class="text-xs md:text-sm font-medium text-gray-600">Billable Hours</div>
+            <div class="text-xs text-gray-500">
               {{ formatPercentage(staff.billable_percentage) }} of total
             </div>
           </div>
 
-          <div class="bg-emerald-50 p-3 md:p-4 rounded-lg">
-            <div class="text-xl md:text-2xl font-bold text-emerald-600">
+          <!-- Revenue -->
+          <div class="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div class="text-xl md:text-2xl font-bold text-gray-900">
               {{ formatCurrency(staff.total_revenue) }}
             </div>
-            <div class="text-xs md:text-sm text-emerald-800">Revenue</div>
-            <div class="text-xs text-gray-600">Cost: {{ formatCurrency(staff.total_cost) }}</div>
+            <div class="text-xs md:text-sm font-medium text-gray-600">Revenue</div>
+            <div class="text-xs text-gray-500">Cost: {{ formatCurrency(staff.total_cost) }}</div>
           </div>
 
-          <div class="bg-purple-50 p-3 md:p-4 rounded-lg">
-            <div class="text-xl md:text-2xl font-bold text-purple-600">
+          <!-- Entries -->
+          <div class="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div class="text-xl md:text-2xl font-bold text-gray-900">
               {{ staff.entry_count }}
             </div>
-            <div class="text-xs md:text-sm text-purple-800">Entries</div>
-            <div class="text-xs text-gray-600">
+            <div class="text-xs md:text-sm font-medium text-gray-600">Entries</div>
+            <div class="text-xs text-gray-500">
               {{ formatPercentage(staff.completion_percentage) }} complete
             </div>
           </div>
 
-          <!-- Adicional: Métricas extras em telas maiores -->
-          <div class="bg-orange-50 p-3 md:p-4 rounded-lg hidden lg:block">
-            <div class="text-xl md:text-2xl font-bold text-orange-600">
+          <!-- Billable Rate -->
+          <div
+            class="bg-white p-3 md:p-4 rounded-lg border border-gray-200 shadow-sm hidden lg:block"
+          >
+            <div class="text-xl md:text-2xl font-bold text-gray-900">
               {{ formatPercentage(staff.billable_percentage) }}
             </div>
-            <div class="text-xs md:text-sm text-orange-800">Billable Rate</div>
-            <div class="text-xs text-gray-600">Target efficiency</div>
+            <div class="text-xs md:text-sm font-medium text-gray-600">Billable Rate</div>
+            <div class="text-xs text-gray-500">Target efficiency</div>
           </div>
 
-          <div class="bg-indigo-50 p-3 md:p-4 rounded-lg hidden xl:block">
-            <div class="text-xl md:text-2xl font-bold text-indigo-600">
+          <!-- Profit - Use color for semantic meaning -->
+          <div
+            class="p-3 md:p-4 rounded-lg border shadow-sm hidden xl:block"
+            :class="
+              staff.total_revenue - staff.total_cost >= 0
+                ? 'bg-green-50 border-green-200'
+                : 'bg-red-50 border-red-200'
+            "
+          >
+            <div
+              class="text-xl md:text-2xl font-bold"
+              :class="
+                staff.total_revenue - staff.total_cost >= 0 ? 'text-green-800' : 'text-red-800'
+              "
+            >
               {{ formatCurrency(staff.total_revenue - staff.total_cost) }}
             </div>
-            <div class="text-xs md:text-sm text-indigo-800">Profit</div>
-            <div class="text-xs text-gray-600">Revenue - Cost</div>
+            <div class="text-xs md:text-sm font-medium text-gray-600">Profit</div>
+            <div class="text-xs text-gray-500">Revenue - Cost</div>
           </div>
         </div>
 
@@ -206,7 +225,7 @@
           <Button @click="$emit('close')" variant="outline" class="w-full sm:w-auto">
             Close
           </Button>
-          <Button @click="openTimesheet" class="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+          <Button @click="openTimesheet" class="w-full sm:w-auto">
             <Edit class="h-4 w-4 mr-2" />
             Edit Timesheet
           </Button>
@@ -218,12 +237,15 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { AlertTriangle, Edit } from 'lucide-vue-next'
-import { formatHours, formatCurrency } from '@/services/daily-timesheet.service'
+import Dialog from '../ui/dialog/Dialog.vue'
+import DialogContent from '../ui/dialog/DialogContent.vue'
+import DialogHeader from '../ui/dialog/DialogHeader.vue'
+import DialogTitle from '../ui/dialog/DialogTitle.vue'
+import { Button } from '../ui/button'
+import { formatHours, formatCurrency } from '../../services/daily-timesheet.service'
 import { z } from 'zod'
-import { schemas } from '@/api/generated/api'
+import { schemas } from '../../api/generated/api'
 
 // Use generated type from Zodios API
 type StaffDailyData = z.infer<typeof schemas.StaffDailyData>

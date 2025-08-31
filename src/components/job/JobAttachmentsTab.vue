@@ -69,7 +69,7 @@
           >
             <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-medium text-gray-700">Uploading files...</span>
-              <span class="text-sm text-gray-500">{{ uploadProgress }}%</span>
+              <span class="text-sm text-gray-500">{{ uploadProgress.toFixed(2) }}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2">
               <div
@@ -111,24 +111,26 @@
                     <!-- File Thumbnail/Icon -->
                     <div class="flex-shrink-0">
                       <img
-                        v-if="file.thumbnail_url"
+                        v-if="file.thumbnail_url && !file.thumbnailError"
                         :src="file.thumbnail_url"
                         :alt="file.filename"
                         class="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity duration-200"
                         @click="openImagePreview(file)"
-                        @error="onImageError"
+                        @error="() => onImageError(file, 'thumbnail')"
                       />
                       <img
-                        v-else-if="isImageJobFile(file) && file.download_url"
+                        v-else-if="isImageJobFile(file) && file.download_url && !file.downloadError"
                         :src="file.download_url"
                         :alt="file.filename"
                         class="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity duration-200"
                         @click="openImagePreview(file)"
-                        @error="onImageError"
+                        @error="() => onImageError(file, 'download')"
                       />
                       <div
                         v-else
-                        class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center"
+                        class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center transition-colors duration-200"
+                        :class="{ 'cursor-pointer hover:bg-gray-300': isPdfFile(file) }"
+                        @click="openPdfPreview(file)"
                       >
                         <FileText v-if="isPdfFile(file)" class="w-6 h-6 text-red-600" />
                         <FileIcon v-else class="w-6 h-6 text-gray-600" />
@@ -187,15 +189,10 @@
 
   <!-- Image Preview Modal -->
   <Dialog :open="isImagePreviewOpen" @update:open="closeImagePreview">
-    <DialogContent
-      class="max-w-4xl max-h-[90vh] overflow-auto"
-      aria-describedby="image-preview-description"
-    >
+    <DialogContent class="max-w-4xl max-h-[90vh] overflow-auto">
       <DialogHeader>
         <DialogTitle>{{ previewImage?.filename }}</DialogTitle>
-        <DialogDescription id="image-preview-description">
-          Preview of attached image file
-        </DialogDescription>
+        <DialogDescription> Preview of attached image file </DialogDescription>
       </DialogHeader>
       <div class="flex justify-center items-center p-4">
         <img
@@ -243,7 +240,10 @@ import { formatFileSize, formatDate } from '@/utils/string-formatting'
 import type { z } from 'zod'
 import { debugLog } from '@/utils/debug'
 
-type JobFile = z.infer<typeof schemas.JobFile>
+type JobFile = z.infer<typeof schemas.JobFile> & {
+  thumbnailError?: boolean
+  downloadError?: boolean
+}
 
 interface Props {
   jobId: string
@@ -639,10 +639,13 @@ const closeImagePreview = () => {
   isImagePreviewOpen.value = false
 }
 
-const onImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement
-  img.style.display = 'none'
-  debugLog('Failed to load image thumbnail')
+const onImageError = (file: JobFile, type: 'thumbnail' | 'download') => {
+  if (type === 'thumbnail') {
+    file.thumbnailError = true
+  } else {
+    file.downloadError = true
+  }
+  debugLog(`Failed to load image ${type} for file:`, file.filename)
 }
 
 // Helper functions
@@ -652,6 +655,12 @@ const isImageJobFile = (file: JobFile): boolean => {
 
 const isPdfFile = (file: JobFile): boolean => {
   return file.mime_type === 'application/pdf'
+}
+
+const openPdfPreview = (file: JobFile) => {
+  if (isPdfFile(file) && file.download_url) {
+    window.open(file.download_url, '_blank', 'noopener,noreferrer')
+  }
 }
 
 // Lifecycle

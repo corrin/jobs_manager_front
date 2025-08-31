@@ -44,13 +44,17 @@
           @mouseenter="highlightedIndex = index"
         >
           <div class="font-medium text-gray-900">
-            {{ job.number || job.job_number }}
+            <span v-if="job.isStockHolding" class="mr-1">📦</span>
+            {{ job.job_number }}
           </div>
           <div class="text-sm text-gray-600 truncate">
             {{ job.description || job.name }}
           </div>
-          <div v-if="job.client_name" class="text-xs text-gray-500 truncate">
+          <div v-if="job.client_name && !job.isStockHolding" class="text-xs text-gray-500 truncate">
             Client: {{ job.client_name }}
+          </div>
+          <div v-if="job.isStockHolding" class="text-xs text-orange-600 truncate">
+            Stock Holding Job
           </div>
         </div>
 
@@ -82,51 +86,37 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { z } from 'zod'
+import { schemas } from '../../api/generated/api'
 
-const props = defineProps({
-  modelValue: {
-    type: [String, Number],
-    default: null,
-  },
-  jobs: {
-    type: Array,
-    default: () => [],
-  },
-  placeholder: {
-    type: String,
-    default: 'Select a job (optional)...',
-  },
-  hasError: {
-    type: Boolean,
-    default: false,
-  },
-  errorMessage: {
-    type: String,
-    default: '',
-  },
-  isLoading: {
-    type: Boolean,
-    default: false,
-  },
-  disabled: {
-    type: Boolean,
-    default: false,
-  },
-})
+type Job = z.infer<typeof schemas.KanbanJob & { isStockHolding: boolean }>
 
-const emit = defineEmits(['update:modelValue', 'jobSelected'])
+const props = defineProps<{
+  modelValue?: string | number | null
+  jobs?: Job[]
+  placeholder?: string
+  hasError?: boolean
+  errorMessage?: string
+  isLoading?: boolean
+  disabled?: boolean
+}>()
 
-const inputRef = ref(null)
-const dropdownRef = ref(null)
+const emit = defineEmits<{
+  'update:modelValue': [value: string | null]
+  jobSelected: [job: Job | null]
+}>()
+
+const inputRef = ref<HTMLInputElement | null>(null)
+const dropdownRef = ref<HTMLDivElement | null>(null)
 const searchTerm = ref('')
 const showDropdown = ref(false)
 const highlightedIndex = ref(-1)
 const dropdownStyle = ref({})
 
 const filteredJobs = computed(() => {
-  const excludedStatuses = ['rejected', 'archived', 'completed', 'special']
-  const availableJobs = props.jobs.filter(
-    (job) => !excludedStatuses.includes(job.status?.toLowerCase()),
+  const excludedStatuses = ['rejected', 'archived', 'completed']
+  const availableJobs = (props.jobs || []).filter(
+    (job: Job) => !excludedStatuses.includes(job.status?.toLowerCase() || ''),
   )
 
   if (!searchTerm.value.trim()) {
@@ -135,24 +125,23 @@ const filteredJobs = computed(() => {
 
   const term = searchTerm.value.toLowerCase()
 
-  const filtered = availableJobs.filter((job) => {
-    const numberMatch = job.number?.toString().toLowerCase().includes(term)
+  const filtered = availableJobs.filter((job: Job) => {
     const jobNumberMatch = job.job_number?.toString().toLowerCase().includes(term)
     const descriptionMatch = job.description?.toLowerCase().includes(term)
     const nameMatch = job.name?.toLowerCase().includes(term)
     const clientMatch = job.client_name?.toLowerCase().includes(term)
 
-    return numberMatch || jobNumberMatch || descriptionMatch || nameMatch || clientMatch
+    return jobNumberMatch || descriptionMatch || nameMatch || clientMatch
   })
 
   return filtered
 })
 
-const updateSearchTermFromModelValue = (modelValue) => {
+const updateSearchTermFromModelValue = (modelValue: string | number | null) => {
   if (modelValue) {
-    const selectedJob = props.jobs.find((job) => job.id === modelValue)
+    const selectedJob = (props.jobs || []).find((job: Job) => job.id === modelValue)
     if (selectedJob) {
-      const jobNumber = selectedJob.number || selectedJob.job_number
+      const jobNumber = selectedJob.job_number
       const jobDescription = selectedJob.description || selectedJob.name
       searchTerm.value = `${jobNumber} - ${jobDescription}`
     }
@@ -164,7 +153,7 @@ const updateSearchTermFromModelValue = (modelValue) => {
 watch(
   () => props.modelValue,
   (newValue) => {
-    updateSearchTermFromModelValue(newValue)
+    updateSearchTermFromModelValue(newValue || null)
   },
   { immediate: true },
 )
@@ -172,7 +161,7 @@ watch(
 watch(
   () => props.jobs,
   (newJobs) => {
-    if (props.modelValue && newJobs.length > 0) {
+    if (props.modelValue && (newJobs || []).length > 0) {
       updateSearchTermFromModelValue(props.modelValue)
     }
   },
@@ -188,10 +177,10 @@ const onFocus = () => {
   calculateDropdownPosition()
 }
 
-const onBlur = (event) => {
+const onBlur = (event: FocusEvent) => {
   if (props.disabled) return
   setTimeout(() => {
-    if (!dropdownRef.value?.contains(event.relatedTarget)) {
+    if (!dropdownRef.value?.contains(event.relatedTarget as Node)) {
       showDropdown.value = false
       highlightedIndex.value = -1
     }
@@ -210,7 +199,7 @@ const onInput = () => {
   }
 }
 
-const onKeydown = (event) => {
+const onKeydown = (event: KeyboardEvent) => {
   if (props.disabled || !showDropdown.value || filteredJobs.value.length === 0) return
 
   switch (event.key) {
@@ -237,10 +226,10 @@ const onKeydown = (event) => {
   }
 }
 
-const selectJob = (job) => {
+const selectJob = (job: Job) => {
   if (props.disabled) return
 
-  const jobNumber = job.number || job.job_number
+  const jobNumber = job.job_number
   const jobDescription = job.description || job.name
   searchTerm.value = `${jobNumber} - ${jobDescription}`
   showDropdown.value = false
@@ -284,12 +273,12 @@ const calculateDropdownPosition = async () => {
   }
 }
 
-const handleClickOutside = (event) => {
+const handleClickOutside = (event: MouseEvent) => {
   if (
     inputRef.value &&
-    !inputRef.value.contains(event.target) &&
+    !inputRef.value.contains(event.target as Node) &&
     dropdownRef.value &&
-    !dropdownRef.value.contains(event.target)
+    !dropdownRef.value.contains(event.target as Node)
   ) {
     showDropdown.value = false
     highlightedIndex.value = -1

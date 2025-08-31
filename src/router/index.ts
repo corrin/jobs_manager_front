@@ -218,24 +218,13 @@ const router = createRouter({
       name: 'purchase-order-form',
       component: () => import('@/views/purchasing/PurchaseOrderFormView.vue'),
       meta: { requiresAuth: true, title: 'Purchase Order - Jobs Manager' },
+      props: true,
     },
     {
       path: '/purchasing/stock',
       name: 'stock',
       component: () => import('@/views/purchasing/StockView.vue'),
       meta: { requiresAuth: true, title: 'Stock - Jobs Manager' },
-    },
-    {
-      path: '/purchasing/receipts',
-      name: 'delivery-receipts',
-      component: () => import('@/views/purchasing/DeliveryReceiptListView.vue'),
-      meta: { requiresAuth: true, title: 'Delivery Receipts - Jobs Manager' },
-    },
-    {
-      path: '/purchasing/receipt/:poId',
-      name: 'delivery-receipt-form',
-      component: () => import('@/views/purchasing/DeliveryReceiptFormView.vue'),
-      meta: { requiresAuth: true, title: 'Delivery Receipt - Jobs Manager' },
     },
     {
       path: '/purchasing/mappings',

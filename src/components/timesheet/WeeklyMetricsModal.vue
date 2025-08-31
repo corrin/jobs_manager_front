@@ -7,14 +7,13 @@
       <DialogHeader class="mb-6">
         <div class="flex items-center justify-between pr-16">
           <div class="flex items-center space-x-3">
-            <BarChart3 class="h-6 w-6 text-gray-600" />
             <DialogTitle class="text-xl font-bold text-gray-900">Weekly Metrics</DialogTitle>
           </div>
 
           <div class="flex items-center space-x-8">
             <!-- Detailed Mode Switch -->
             <div class="flex items-center space-x-3">
-              <span class="text-sm font-medium text-gray-600">Detailed Mode</span>
+              <span class="text-sm font-medium text-gray-600">Detailed View</span>
               <button
                 :disabled="isLoading"
                 @click="toggleDetailedMode"
@@ -46,143 +45,110 @@
       </div>
 
       <div v-else-if="!isLoading">
-        <!-- Default View: Weekly Summary -->
+        <!-- Simple View: Clean Summary -->
         <div v-if="!detailedMode" class="space-y-6">
           <!-- Weekly Summary Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <!-- Total Hours -->
-            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-blue-600">Total Hours</p>
-                  <p class="text-2xl font-bold text-blue-900">
-                    {{ weeklyData?.weekly_summary?.total_hours || 0 }}
-                  </p>
-                </div>
-                <Clock class="h-8 w-8 text-blue-500" />
-              </div>
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <p class="text-sm font-medium text-gray-600 mb-1">Total Hours</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ weeklyData?.weekly_summary?.total_hours || 0 }}
+              </p>
             </div>
 
             <!-- Total Staff -->
-            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-green-600">Total Staff</p>
-                  <p class="text-2xl font-bold text-green-900">
-                    {{ weeklyData?.weekly_summary?.staff_count || 0 }}
-                  </p>
-                </div>
-                <Users class="h-8 w-8 text-green-500" />
-              </div>
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <p class="text-sm font-medium text-gray-600 mb-1">Staff Count</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ weeklyData?.weekly_summary?.staff_count || 0 }}
+              </p>
             </div>
 
             <!-- Billable Percentage -->
-            <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-purple-600">Billable %</p>
-                  <p class="text-2xl font-bold text-purple-900">
-                    {{ Math.round(weeklyData?.weekly_summary?.billable_percentage || 0) }}%
-                  </p>
-                </div>
-                <TrendingUp class="h-8 w-8 text-purple-500" />
-              </div>
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <p class="text-sm font-medium text-gray-600 mb-1">Billable %</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ Math.round(weeklyData?.weekly_summary?.billable_percentage || 0) }}%
+              </p>
             </div>
 
             <!-- Active Jobs -->
-            <div class="bg-orange-50 p-4 rounded-lg border border-orange-200">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-orange-600">Active Jobs</p>
-                  <p class="text-2xl font-bold text-orange-900">{{ activeJobsCount }}</p>
-                </div>
-                <Briefcase class="h-8 w-8 text-orange-500" />
-              </div>
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <p class="text-sm font-medium text-gray-600 mb-1">Active Jobs</p>
+              <p class="text-2xl font-bold text-gray-900">{{ activeJobsCount }}</p>
             </div>
           </div>
 
-          <!-- Job Metrics Row -->
+          <!-- Financial Summary -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <!-- Total Estimated Profit -->
-            <div class="bg-amber-50 p-4 rounded-lg border border-amber-200">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-amber-600">Estimated Profit (for this week)</p>
-                  <p class="text-2xl font-bold text-amber-900">
-                    ${{ formatCurrency(totalEstimatedProfit) }}
-                  </p>
-                </div>
-                <Target class="h-8 w-8 text-amber-500" />
-              </div>
+            <!-- Estimated Profit -->
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <p class="text-sm font-medium text-gray-600 mb-1">Estimated Profit</p>
+              <p class="text-xl font-bold text-gray-900">
+                ${{ formatCurrency(totalEstimatedProfit) }}
+              </p>
+              <p class="text-xs text-gray-500 mt-1">For this week</p>
             </div>
 
-            <!-- Total Actual Profit -->
-            <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-indigo-600">Actual Profit (for this week)</p>
-                  <p class="text-2xl font-bold text-indigo-900">
-                    ${{ formatCurrency(totalActualProfit) }}
-                  </p>
-                </div>
-                <Activity class="h-8 w-8 text-indigo-500" />
-              </div>
+            <!-- Actual Profit -->
+            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <p class="text-sm font-medium text-gray-600 mb-1">Actual Profit</p>
+              <p class="text-xl font-bold text-gray-900">
+                ${{ formatCurrency(totalActualProfit) }}
+              </p>
+              <p class="text-xs text-gray-500 mt-1">For this week</p>
             </div>
 
             <!-- Total Profit -->
-            <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-emerald-600">Total Profit (for this week)</p>
-                  <p class="text-2xl font-bold text-emerald-900">
-                    ${{ formatCurrency(totalProfit) }}
-                  </p>
-                </div>
-                <DollarSign class="h-8 w-8 text-emerald-500" />
-              </div>
+            <div class="p-4 rounded-lg border shadow-sm" :class="getProfitComparisonClass()">
+              <p class="text-sm font-medium text-gray-600 mb-1">Total Profit</p>
+              <p class="text-xl font-bold text-gray-900">${{ formatCurrency(totalProfit) }}</p>
+              <p class="text-xs text-gray-500 mt-1">
+                {{ totalProfit >= totalEstimatedProfit ? 'Above' : 'Below' }} estimated
+              </p>
             </div>
           </div>
 
           <!-- Staff Completion Status -->
-          <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h4 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-              <UserCheck class="h-5 w-5 mr-2 text-gray-600" />
-              Staff Completion Status
-            </h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="text-center">
-                <p class="text-2xl font-bold text-green-600">{{ staffCompletionStats.complete }}</p>
-                <p class="text-sm text-gray-600">Complete</p>
+          <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <h4 class="text-lg font-semibold text-gray-900 mb-4">Staff Completion Status</h4>
+            <div class="grid grid-cols-3 gap-6">
+              <div class="text-center p-3 rounded-lg bg-green-50 border border-green-200">
+                <p class="text-2xl font-bold text-green-800 mb-1">
+                  {{ staffCompletionStats.complete }}
+                </p>
+                <p class="text-sm text-green-600">Complete (≥40h)</p>
               </div>
-              <div class="text-center">
-                <p class="text-2xl font-bold text-yellow-600">{{ staffCompletionStats.partial }}</p>
-                <p class="text-sm text-gray-600">Partial</p>
+              <div class="text-center p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                <p class="text-2xl font-bold text-yellow-800 mb-1">
+                  {{ staffCompletionStats.partial }}
+                </p>
+                <p class="text-sm text-yellow-600">Partial (&lt;40h)</p>
               </div>
-              <div class="text-center">
-                <p class="text-2xl font-bold text-red-600">{{ staffCompletionStats.missing }}</p>
-                <p class="text-sm text-gray-600">Missing</p>
+              <div class="text-center p-3 rounded-lg bg-red-50 border border-red-200">
+                <p class="text-2xl font-bold text-red-800 mb-1">
+                  {{ staffCompletionStats.missing }}
+                </p>
+                <p class="text-sm text-red-600">No Hours</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Detailed View: Job Progress Analysis -->
+        <!-- Detailed View: Compact Job Analysis -->
         <div v-else class="space-y-6">
           <!-- Legend -->
           <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h4 class="text-sm font-semibold text-gray-900 mb-3">Visual Indicators</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div class="flex items-center space-x-2">
-                <div class="w-4 h-4 rounded border border-red-300 bg-red-50"></div>
-                <span class="text-gray-700">Critical: No profit + over hours</span>
+            <h4 class="text-sm font-semibold text-gray-900 mb-3">Job Status Legend</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div class="flex items-center space-x-3">
+                <div class="w-6 h-4 rounded bg-green-50 border border-green-200"></div>
+                <span class="text-gray-700">Healthy: Profitable with hours on track</span>
               </div>
-              <div class="flex items-center space-x-2">
-                <div class="w-4 h-4 rounded border border-orange-300 bg-orange-50"></div>
-                <span class="text-gray-700">Warning: No profit</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <div class="w-4 h-4 rounded border border-yellow-300 bg-yellow-50"></div>
-                <span class="text-gray-700">Caution: Over estimated hours</span>
+              <div class="flex items-center space-x-3">
+                <div class="w-6 h-4 rounded bg-red-50 border border-red-200"></div>
+                <span class="text-gray-700">Issues: No profit or over estimated hours</span>
               </div>
             </div>
           </div>
@@ -204,111 +170,61 @@
           </div>
 
           <div v-else-if="filteredJobs.length === 0" class="text-center py-8">
-            <FileX class="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p class="text-gray-500">No jobs found matching your search.</p>
           </div>
 
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div
               v-for="job in filteredJobs"
               :key="job.job_id"
-              :class="[
-                'bg-white border rounded-lg shadow-sm hover:shadow-md transition-all p-4 relative',
-                getJobStatusClass(job),
-              ]"
+              class="border rounded-lg shadow-sm hover:shadow-md transition-shadow p-3 relative"
+              :class="getJobCardClass(job)"
             >
-              <!-- Warning Indicators -->
-              <div
-                v-if="getJobWarnings(job).length > 0"
-                class="absolute top-2 right-2 flex space-x-1"
-              >
-                <div
-                  v-for="warning in getJobWarnings(job)"
-                  :key="warning"
-                  :title="warning"
-                  class="w-2 h-2 rounded-full"
-                  :class="{
-                    'bg-red-500': warning.includes('profit') || warning.includes('loss'),
-                    'bg-yellow-500': warning.includes('hours'),
-                  }"
-                ></div>
-              </div>
-
               <!-- Job Header -->
-              <div class="mb-4 pr-6">
-                <div class="flex items-start justify-between mb-2">
-                  <h4 class="text-lg font-semibold text-gray-900 truncate">{{ job.name }}</h4>
-                  <span class="text-xs font-medium px-2 py-1 rounded bg-blue-100 text-blue-800">
+              <div class="mb-3">
+                <div class="flex items-start justify-between mb-1">
+                  <h4 class="text-sm font-semibold text-gray-900 truncate pr-4">{{ job.name }}</h4>
+                  <span
+                    class="text-xs font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-700 flex-shrink-0"
+                  >
                     #{{ job.job_number }}
                   </span>
                 </div>
-                <p class="text-sm text-gray-600 mb-1">{{ job.client || 'No client assigned' }}</p>
-                <p class="text-xs text-gray-500 line-clamp-2">
-                  {{ job.description || 'No description available' }}
-                </p>
+                <p class="text-xs text-gray-600 mb-1 truncate">{{ job.client || 'No client' }}</p>
 
-                <!-- Warnings Text -->
-                <div v-if="getJobWarnings(job).length > 0" class="mt-2">
-                  <div
-                    v-for="warning in getJobWarnings(job)"
-                    :key="warning"
-                    class="text-xs px-2 py-1 rounded text-red-700 bg-red-100 mb-1 inline-block mr-1"
-                  >
-                    ⚠️ {{ warning }}
-                  </div>
+                <!-- Issues Warning -->
+                <div v-if="hasJobIssues(job)" class="mt-2">
+                  <p class="text-xs text-red-600 font-medium">{{ getJobIssuesText(job) }}</p>
                 </div>
               </div>
 
-              <!-- Metrics Cards -->
-              <div class="grid grid-cols-3 gap-2 mb-4">
+              <!-- Metrics Grid -->
+              <div class="grid grid-cols-3 gap-2 mb-3">
                 <!-- Estimated Hours -->
-                <div class="bg-amber-50 p-3 rounded text-center border border-amber-200">
-                  <Target class="h-4 w-4 text-amber-500 mx-auto mb-1" />
-                  <p class="text-xs text-amber-600 font-medium">Estimated</p>
-                  <p class="text-sm font-bold text-amber-900">{{ job.estimated_hours }}h</p>
+                <div class="text-center">
+                  <p class="text-xs text-gray-500 mb-0.5">Est.</p>
+                  <p class="text-sm font-semibold text-gray-900">{{ job.estimated_hours }}h</p>
                 </div>
 
                 <!-- Actual Hours -->
-                <div
-                  :class="[
-                    'p-3 rounded text-center border transition-colors',
-                    getHoursStatusClass(job),
-                  ]"
-                >
-                  <Activity
-                    class="h-4 w-4 mx-auto mb-1"
-                    :class="
-                      job.actual_hours > job.estimated_hours ? 'text-red-500' : 'text-blue-500'
-                    "
-                  />
-                  <p :class="['text-xs font-medium', getHoursTextClass(job)]">Actual</p>
+                <div class="text-center">
+                  <p class="text-xs text-gray-500 mb-0.5">Actual</p>
                   <p
-                    :class="[
-                      'text-sm font-bold',
-                      job.actual_hours > job.estimated_hours ? 'text-red-900' : 'text-blue-900',
-                    ]"
+                    class="text-sm font-semibold"
+                    :class="
+                      job.actual_hours > job.estimated_hours ? 'text-red-600' : 'text-gray-900'
+                    "
                   >
                     {{ job.actual_hours }}h
                   </p>
                 </div>
 
-                <!-- Total Profitability -->
-                <div
-                  :class="[
-                    'p-3 rounded text-center border transition-colors',
-                    getProfitStatusClass(job),
-                  ]"
-                >
-                  <DollarSign
-                    class="h-4 w-4 mx-auto mb-1"
-                    :class="job.profit <= 0 ? 'text-red-500' : 'text-green-500'"
-                  />
-                  <p :class="['text-xs font-medium', getProfitTextClass(job)]">Profit</p>
+                <!-- Profit -->
+                <div class="text-center">
+                  <p class="text-xs text-gray-500 mb-0.5">Profit</p>
                   <p
-                    :class="[
-                      'text-sm font-bold',
-                      job.profit <= 0 ? 'text-red-900' : 'text-green-900',
-                    ]"
+                    class="text-sm font-semibold"
+                    :class="job.profit <= 0 ? 'text-red-600' : 'text-gray-900'"
                   >
                     ${{ formatCurrency(job.profit) }}
                   </p>
@@ -316,45 +232,24 @@
               </div>
 
               <!-- Assigned Staff -->
-              <div v-if="job.people && job.people.length > 0">
-                <p class="text-xs text-gray-500 mb-2">Assigned Staff:</p>
+              <div v-if="job.people && job.people.length > 0" class="border-t border-gray-100 pt-2">
+                <p class="text-xs text-gray-500 mb-1">Staff:</p>
                 <div class="flex flex-wrap gap-1">
                   <span
                     v-for="person in job.people"
                     :key="(person as Record<string, string>).id"
-                    class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full"
+                    class="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded"
                   >
                     {{ person.name }}
                   </span>
                 </div>
               </div>
-              <div v-else class="text-xs text-gray-400">No staff assigned</div>
+              <div v-else class="border-t border-gray-100 pt-2">
+                <p class="text-xs text-gray-400">No staff assigned</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div v-else class="flex flex-col items-center justify-center py-8">
-        <svg
-          class="animate-spin h-8 w-8 text-blue-500 mb-3"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-          ></path>
-        </svg>
-        <div class="text-gray-500">Loading weekly metrics...</div>
       </div>
     </DialogContent>
   </Dialog>
@@ -362,19 +257,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import {
-  BarChart3,
-  Clock,
-  Users,
-  TrendingUp,
-  Briefcase,
-  Target,
-  Activity,
-  DollarSign,
-  UserCheck,
-  Search,
-  FileX,
-} from 'lucide-vue-next'
+import { Search } from 'lucide-vue-next'
 import Dialog from '../ui/dialog/Dialog.vue'
 import DialogContent from '../ui/dialog/DialogContent.vue'
 import DialogHeader from '../ui/dialog/DialogHeader.vue'
@@ -422,55 +305,36 @@ const filteredJobs = computed(() => {
 const activeJobsCount = computed(() => jobs.value.length)
 
 // Helper functions for job status analysis
-const getJobStatusClass = (job: WeeklyJobs[0]) => {
+const hasJobIssues = (job: WeeklyJobs[0]) => {
+  return job.profit <= 0 || job.actual_hours > job.estimated_hours
+}
+
+const getJobCardClass = (job: WeeklyJobs[0]) => {
   const hasNegativeProfit = job.profit <= 0
   const isOverEstimate = job.actual_hours > job.estimated_hours
 
-  if (hasNegativeProfit && isOverEstimate) {
-    return 'border-red-300 bg-red-50'
-  } else if (hasNegativeProfit) {
-    return 'border-orange-300 bg-orange-50'
-  } else if (isOverEstimate) {
-    return 'border-yellow-300 bg-yellow-50'
-  }
-  return 'border-gray-200'
-}
-
-const getHoursStatusClass = (job: WeeklyJobs[0]) => {
-  const isOverEstimate = job.actual_hours > job.estimated_hours
-  if (isOverEstimate) {
+  if (hasNegativeProfit || isOverEstimate) {
     return 'bg-red-50 border-red-200'
   }
-  return 'bg-blue-50'
+  return 'bg-green-50 border-green-200'
 }
 
-const getProfitStatusClass = (job: WeeklyJobs[0]) => {
-  const hasNegativeProfit = job.profit <= 0
-  if (hasNegativeProfit) {
-    return 'bg-red-50 border-red-200'
-  }
-  return 'bg-green-50'
-}
-
-const getProfitTextClass = (job: WeeklyJobs[0]) => {
-  const hasNegativeProfit = job.profit <= 0
-  return hasNegativeProfit ? 'text-red-600' : 'text-green-600'
-}
-
-const getHoursTextClass = (job: WeeklyJobs[0]) => {
-  const isOverEstimate = job.actual_hours > job.estimated_hours
-  return isOverEstimate ? 'text-red-600' : 'text-blue-600'
-}
-
-const getJobWarnings = (job: WeeklyJobs[0]) => {
-  const warnings = []
+const getJobIssuesText = (job: WeeklyJobs[0]) => {
+  const issues = []
   if (job.profit <= 0) {
-    warnings.push('No profit or loss')
+    issues.push('No profit')
   }
   if (job.actual_hours > job.estimated_hours) {
-    warnings.push('Over estimated hours')
+    issues.push('Over hours')
   }
-  return warnings
+  return issues.join(', ')
+}
+
+const getProfitComparisonClass = () => {
+  if (totalProfit.value >= totalEstimatedProfit.value) {
+    return 'bg-green-50 border-green-200'
+  }
+  return 'bg-red-50 border-red-200'
 }
 
 const totalEstimatedProfit = computed(() => {
@@ -536,8 +400,10 @@ const formatCurrency = (amount: number): string => {
 const loadJobs = async () => {
   isLoading.value = true
   try {
-    const params = props.weekDate ? { week: props.weekDate } : undefined
-    const response = await api.job_rest_jobs_weekly_metrics_list(params)
+    console.log('Props - WEEKLY METRICS MODAL: ', props)
+    const response = props.weekDate
+      ? await api.job_rest_jobs_weekly_metrics_list({ queries: { week: props.weekDate } })
+      : await api.job_rest_jobs_weekly_metrics_list()
     jobs.value = response || []
     console.log(`📊 Loaded ${jobs.value.length} jobs for week: ${props.weekDate || 'current'}`)
   } catch (error) {

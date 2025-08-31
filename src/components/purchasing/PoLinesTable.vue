@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h, ref } from 'vue'
+import { computed, h, onMounted, ref } from 'vue'
 import DataTable from '@/components/DataTable.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,30 +13,52 @@ import { Trash2, Settings2 } from 'lucide-vue-next'
 import { metalTypeOptions } from '@/utils/metalType'
 import ItemSelect from '@/views/purchasing/ItemSelect.vue'
 import JobSelect from './JobSelect.vue'
+import AllocationCellEditor from '@/components/purchasing/AllocationCellEditor.vue'
 import { schemas } from '@/api/generated/api'
 import type { DataTableRowContext } from '@/utils/data-table-types'
 import { z } from 'zod'
+import { debugLog } from '../../utils/debug'
+import { useStockStore } from '@/stores/stockStore'
 
 type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
 type JobForPurchasing = z.infer<typeof schemas.JobForPurchasing>
-type XeroItem = z.infer<typeof schemas.XeroItem>
-
+type AllocationItem = z.infer<typeof schemas.AllocationItem>
 type Props = {
   lines: PurchaseOrderLine[]
-  items: XeroItem[]
   jobs: JobForPurchasing[]
   readOnly?: boolean
   jobsReadOnly?: boolean
+  // New props for receipt functionality
+  existingAllocations?: Record<string, AllocationItem[]>
+  defaultRetailRate?: number
+  stockHoldingJobId?: string
+  poStatus?: string
+  poId: string
 }
 
 type Emits = {
   (e: 'update:lines', lines: PurchaseOrderLine[]): void
   (e: 'add-line'): void
   (e: 'delete-line', id: string | number): void
+  (e: 'receipt:save', payload: { lineId: string; editorState: LineEditorState }): void
+  (e: 'allocation-deleted', data: { allocationId: string; allocationType: string }): void
+}
+
+interface LineEditorState {
+  rows: {
+    target: 'job' | 'stock'
+    job_id?: string
+    quantity: number
+    retail_rate?: number // UI-only today
+    stock_location?: string // UI-only today
+    po_id: string
+  }[]
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+const stockStore = useStockStore()
 
 const showAdditionalFieldsModal = ref(false)
 const editingLineIndex = ref<number>(-1)
@@ -105,213 +127,282 @@ const handleAddLine = () => {
   emit('add-line')
 }
 
-const columns = computed(() => [
-  {
-    id: 'item_code',
-    header: 'Item',
-    cell: ({ row }: DataTableRowContext) =>
-      h(ItemSelect, {
-        modelValue: row.original.item_code,
-        items: props.items,
-        clearable: true,
-        disabled: props.readOnly,
-        'onUpdate:modelValue': props.readOnly
-          ? undefined
-          : (val: string) => {
-              const found = props.items.find((i) => i.id === val)
-              const updated = props.lines.map((l, idx) =>
-                idx === row.index
-                  ? {
-                      ...l,
-                      item_code: found ? found.code : val,
-                      description: found ? found.name : l.description,
-                      unit_cost: found && found.unit_cost != null ? found.unit_cost : l.unit_cost,
-                    }
-                  : l,
-              )
-              emit('update:lines', updated)
-            },
-      }),
-    meta: { editable: !props.readOnly },
-  },
-  {
-    id: 'description',
-    header: 'Description',
-    cell: ({ row }: DataTableRowContext) =>
-      h(Input, {
-        modelValue: row.original.description,
-        disabled: props.readOnly,
-        class: 'w-full',
-        onClick: (e: Event) => e.stopPropagation(),
-        'onUpdate:modelValue': props.readOnly
-          ? undefined
-          : (val: string) => {
-              const updated = props.lines.map((l, idx) =>
-                idx === row.index ? { ...l, description: val } : l,
-              )
-              emit('update:lines', updated)
-            },
-      }),
-  },
-  {
-    id: 'job_id',
-    header: 'Job',
-    cell: ({ row }: DataTableRowContext) =>
-      h(JobSelect, {
-        modelValue: row.original.job_id || '',
-        required: false,
-        placeholder: 'Select Job (Optional)',
-        jobs: props.jobs,
-        disabled: props.jobsReadOnly ?? props.readOnly,
-        'onUpdate:modelValue':
-          (props.jobsReadOnly ?? props.readOnly)
+const isPoSubmitted = computed(() => props.poStatus === 'submitted_to_supplier')
+const isColumnDisabled = computed(() => props.readOnly || isPoSubmitted.value)
+
+// Check if Receipt column should be visible based on PO status
+const isReceiptColumnVisible = computed(() => {
+  const validStatuses = [
+    'submitted',
+    'submitted_to_supplier',
+    'partially_received',
+    'fully_received',
+  ]
+  return validStatuses.includes(props.poStatus || '')
+})
+
+const columns = computed(() =>
+  [
+    {
+      id: 'item_code',
+      header: 'Item',
+      cell: ({ row }: DataTableRowContext) =>
+        h(ItemSelect, {
+          modelValue: row.original.item_code,
+          disabled: isColumnDisabled.value,
+          'onUpdate:modelValue': isColumnDisabled.value
+            ? undefined
+            : (val: string | null) => {
+                console.log('🔄 PoLinesTable: Received modelValue update:', val)
+                console.log('📦 PoLinesTable: Available stock items:', stockStore.items.length)
+
+                const found = stockStore.items.find((i) => i.id === val)
+                console.log('🎯 PoLinesTable: Found stock item:', found)
+
+                const updated = props.lines.map((l, idx) =>
+                  idx === row.index
+                    ? {
+                        ...l,
+                        // Auto-populate all fields from stock item when selected
+                        ...(found && {
+                          description: found.description || l.description,
+                          unit_cost: found.unit_cost || l.unit_cost,
+                          metal_type: found.metal_type || l.metal_type,
+                          alloy: found.alloy || l.alloy,
+                          specifics: found.specifics || l.specifics,
+                          location: found.location || l.location,
+                          item_code: found.item_code || null,
+                        }),
+                      }
+                    : l,
+                )
+
+                console.log('📝 PoLinesTable: Updated line:', updated[row.index])
+                emit('update:lines', updated)
+              },
+        }),
+      meta: { editable: !isColumnDisabled.value },
+    },
+    {
+      id: 'description',
+      header: 'Description',
+      cell: ({ row }: DataTableRowContext) =>
+        h(Input, {
+          modelValue: row.original.description,
+          disabled: isColumnDisabled.value,
+          class: 'w-full',
+          onClick: (e: Event) => e.stopPropagation(),
+          'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
             : (val: string) => {
                 const updated = props.lines.map((l, idx) =>
-                  idx === row.index ? { ...l, job_id: val || undefined } : l,
+                  idx === row.index ? { ...l, description: val } : l,
                 )
                 emit('update:lines', updated)
               },
-        onJobSelected:
-          (props.jobsReadOnly ?? props.readOnly)
-            ? undefined
-            : (job: { id: string; job_number: string; name: string; client_name: string }) => {
-                if (job) {
+        }),
+    },
+    {
+      id: 'job_id',
+      header: 'Job',
+      cell: ({ row }: DataTableRowContext) =>
+        h(JobSelect, {
+          modelValue: row.original.job_id || '',
+          required: false,
+          placeholder: 'Select Job (Optional)',
+          jobs: props.jobs,
+          disabled: props.jobsReadOnly ?? isColumnDisabled.value,
+          'onUpdate:modelValue':
+            (props.jobsReadOnly ?? isColumnDisabled.value)
+              ? undefined
+              : (val: string | null) => {
                   const updated = props.lines.map((l, idx) =>
-                    idx === row.index
-                      ? {
-                          ...l,
-                          job_id: job.id,
-                          job_number: job.job_number,
-                          job_name: job.name,
-                          client_name: job.client_name,
-                        }
-                      : l,
+                    idx === row.index ? { ...l, job_id: val || undefined } : l,
+                  )
+                  emit('update:lines', updated)
+                },
+          onJobSelected:
+            (props.jobsReadOnly ?? isColumnDisabled.value)
+              ? undefined
+              : (job: JobForPurchasing | null) => {
+                  if (job) {
+                    const updated = props.lines.map((l, idx) =>
+                      idx === row.index
+                        ? {
+                            ...l,
+                            job_id: job.id,
+                            job_number: job.job_number?.toString(),
+                            job_name: job.name,
+                            client_name: job.client_name,
+                          }
+                        : l,
+                    )
+                    emit('update:lines', updated)
+                  }
+                },
+        }),
+      meta: { editable: !(props.jobsReadOnly ?? isColumnDisabled.value) },
+    },
+    {
+      id: 'quantity',
+      header: 'Qty',
+      cell: ({ row }: DataTableRowContext) =>
+        h(Input, {
+          type: 'number',
+          step: '1',
+          min: '0',
+          modelValue: row.original.quantity,
+          disabled: isColumnDisabled.value,
+          class: 'w-20 text-right',
+          onClick: (e: Event) => e.stopPropagation(),
+          'onUpdate:modelValue': isColumnDisabled.value
+            ? undefined
+            : (val: string | number) => {
+                const num = Number(val)
+                if (!Number.isNaN(num)) {
+                  const updated = props.lines.map((l, idx) =>
+                    idx === row.index ? { ...l, quantity: num } : l,
                   )
                   emit('update:lines', updated)
                 }
               },
-      }),
-    meta: { editable: !(props.jobsReadOnly ?? props.readOnly) },
-  },
-  {
-    id: 'quantity',
-    header: 'Qty',
-    cell: ({ row }: DataTableRowContext) =>
-      h(Input, {
-        type: 'number',
-        step: '1',
-        min: '0',
-        modelValue: row.original.quantity,
-        disabled: props.readOnly,
-        class: 'w-20 text-right',
-        onClick: (e: Event) => e.stopPropagation(),
-        'onUpdate:modelValue': props.readOnly
-          ? undefined
-          : (val: string | number) => {
-              const num = Number(val)
-              if (!Number.isNaN(num)) {
+        }),
+    },
+    {
+      id: 'unit_cost',
+      header: 'Unit Cost',
+      cell: ({ row }: DataTableRowContext) =>
+        h(Input, {
+          type: 'number',
+          step: '0.01',
+          min: '0',
+          modelValue: row.original.unit_cost ?? '',
+          disabled: !!row.original.item_code || row.original.price_tbc || isColumnDisabled.value,
+          class: 'w-24 text-right',
+          onClick: (e: Event) => e.stopPropagation(),
+          'onUpdate:modelValue': isColumnDisabled.value
+            ? undefined
+            : (val: string | number) => {
+                const cost = val === '' ? null : Number(val)
                 const updated = props.lines.map((l, idx) =>
-                  idx === row.index ? { ...l, quantity: num } : l,
+                  idx === row.index ? { ...l, unit_cost: cost } : l,
                 )
                 emit('update:lines', updated)
-              }
-            },
-      }),
-  },
-  {
-    id: 'unit_cost',
-    header: 'Unit Cost',
-    cell: ({ row }: DataTableRowContext) =>
-      h(Input, {
-        type: 'number',
-        step: '0.01',
-        min: '0',
-        modelValue: row.original.unit_cost ?? '',
-        disabled: !!row.original.item_code || row.original.price_tbc || props.readOnly,
-        class: 'w-24 text-right',
-        onClick: (e: Event) => e.stopPropagation(),
-        'onUpdate:modelValue': props.readOnly
-          ? undefined
-          : (val: string | number) => {
-              const cost = val === '' ? null : Number(val)
-              const updated = props.lines.map((l, idx) =>
-                idx === row.index ? { ...l, unit_cost: cost } : l,
-              )
-              emit('update:lines', updated)
-            },
-      }),
-  },
-  {
-    id: 'price_tbc',
-    header: 'Price TBC',
-    cell: ({ row }: DataTableRowContext) =>
-      h(Checkbox, {
-        modelValue: row.original.price_tbc,
-        disabled:
-          (row.original.unit_cost !== null && Number(row.original.unit_cost) > 0) || props.readOnly,
-        'onUpdate:modelValue': props.readOnly
-          ? undefined
-          : (checked: boolean) => {
-              const updated = props.lines.map((l, idx) =>
-                idx === row.index ? { ...l, price_tbc: checked } : l,
-              )
-              emit('update:lines', updated)
-            },
-        class: 'mx-auto',
-      }),
-    meta: { editable: !props.readOnly },
-  },
-  {
-    id: 'additional_fields',
-    header: 'Additional Fields',
-    cell: ({ row }: DataTableRowContext) => {
-      const hasAdditionalData = !!(
-        row.original.metal_type ||
-        row.original.alloy ||
-        row.original.specifics ||
-        row.original.location ||
-        row.original.dimensions
-      )
-
-      return h(
-        Button,
-        {
-          variant: hasAdditionalData ? 'default' : 'outline',
-          size: 'sm',
-          disabled: props.readOnly,
-          onClick: props.readOnly ? undefined : () => openAdditionalFieldsModal(row.index),
-        },
-        () => [h(Settings2, { class: 'w-4 h-4 mr-1' }), hasAdditionalData ? 'Edit' : 'Add'],
-      )
-    },
-    meta: { editable: !props.readOnly },
-  },
-  {
-    id: 'actions',
-    header: 'Actions',
-    cell: ({ row }: DataTableRowContext) =>
-      h(
-        Button,
-        {
-          variant: 'destructive',
-          size: 'icon',
-          disabled: props.readOnly,
-          onClick: props.readOnly
-            ? undefined
-            : () => {
-                if (row.original.id) {
-                  emit('delete-line', row.original.id)
-                } else {
-                  emit('delete-line', row.index)
-                }
               },
-        },
-        () => h(Trash2, { class: 'w-4 h-4' }),
-      ),
-    meta: { editable: !props.readOnly },
-  },
-])
+        }),
+    },
+    {
+      id: 'price_tbc',
+      header: 'Price TBC',
+      cell: ({ row }: DataTableRowContext) =>
+        h(Checkbox, {
+          modelValue: row.original.price_tbc,
+          disabled:
+            (row.original.unit_cost !== null && Number(row.original.unit_cost) > 0) ||
+            isColumnDisabled.value,
+          'onUpdate:modelValue': isColumnDisabled.value
+            ? undefined
+            : (checked: boolean) => {
+                const updated = props.lines.map((l, idx) =>
+                  idx === row.index ? { ...l, price_tbc: checked } : l,
+                )
+                emit('update:lines', updated)
+              },
+          class: 'mx-auto',
+        }),
+      meta: { editable: !isColumnDisabled.value },
+    },
+    {
+      id: 'additional_fields',
+      header: 'Additional Fields',
+      cell: ({ row }: DataTableRowContext) => {
+        const hasAdditionalData = !!(
+          row.original.metal_type ||
+          row.original.alloy ||
+          row.original.specifics ||
+          row.original.location ||
+          row.original.dimensions
+        )
+
+        return h(
+          Button,
+          {
+            variant: hasAdditionalData ? 'default' : 'outline',
+            size: 'sm',
+            disabled: isColumnDisabled.value,
+            onClick: isColumnDisabled.value
+              ? undefined
+              : () => openAdditionalFieldsModal(row.index),
+          },
+          () => [h(Settings2, { class: 'w-4 h-4 mr-1' }), hasAdditionalData ? 'Edit' : 'Add'],
+        )
+      },
+      meta: { editable: !isColumnDisabled.value },
+    },
+    {
+      id: 'receipt',
+      header: 'Receipt',
+      cell: ({ row }: DataTableRowContext) => {
+        const line = row.original
+        const lineId = line.id as string
+
+        // Only show receipt editor for lines that have been saved (have an ID)
+        if (!lineId) {
+          return h('div', { class: 'text-xs text-gray-500 text-center p-2' }, 'Save line first')
+        }
+
+        const existing = props.existingAllocations?.[lineId] || []
+        return h(AllocationCellEditor, {
+          line,
+          jobs: props.jobs,
+          existing,
+          defaultRetailRate: props.defaultRetailRate,
+          stockHoldingJobId: props.stockHoldingJobId,
+          poStatus: props.poStatus,
+          poId: props.poId,
+          onSave: (editorState: LineEditorState) => emit('receipt:save', { lineId, editorState }),
+          'onAllocation-deleted': (data: { allocationId: string; allocationType: string }) =>
+            emit('allocation-deleted', data),
+        })
+      },
+      meta: { editable: !props.readOnly },
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }: DataTableRowContext) =>
+        h(
+          Button,
+          {
+            variant: 'destructive',
+            size: 'icon',
+            disabled: isColumnDisabled.value,
+            onClick: isColumnDisabled.value
+              ? undefined
+              : () => {
+                  if (row.original.id) {
+                    emit('delete-line', row.original.id)
+                  } else {
+                    emit('delete-line', row.index)
+                  }
+                },
+          },
+          () => h(Trash2, { class: 'w-4 h-4' }),
+        ),
+      meta: { editable: !isColumnDisabled.value },
+    },
+  ].filter((column) => {
+    // Hide Receipt column when PO status doesn't allow receipts
+    if (column.id === 'receipt' && !isReceiptColumnVisible.value) {
+      return false
+    }
+    return true
+  }),
+)
+
+onMounted(() => {
+  debugLog('Props ', props)
+})
 </script>
 
 <template>
@@ -326,7 +417,9 @@ const columns = computed(() => [
       />
     </div>
     <div class="sticky bottom-0 bg-white z-10 p-2 border-t">
-      <Button class="w-full" :disabled="readOnly" @click="handleAddLine"> ＋ Add line </Button>
+      <Button class="w-full" :disabled="isColumnDisabled" @click="handleAddLine">
+        ＋ Add line
+      </Button>
     </div>
 
     <!-- Additional Fields Modal using Dialog component -->

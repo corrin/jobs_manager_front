@@ -23,24 +23,53 @@
           <h3 class="text-lg font-semibold text-gray-900">Estimate Details</h3>
         </div>
         <div class="flex-1 overflow-hidden">
-          <CostLinesGrid
-            :costLines="costLines"
-            :showActions="true"
-            @edit="handleEditCostLine"
-            @delete="handleDeleteCostLine"
+          <SmartCostLinesTable
+            :lines="costLines"
+            tabKind="estimate"
+            :readOnly="isLoading"
+            :showItemColumn="true"
+            :showSourceColumn="false"
+            @delete-line="handleSmartDelete"
+            @add-line="handleAddEmptyLine"
+            @duplicate-line="(line) => handleAddMaterial(line)"
+            @move-line="(index, direction) => {}"
+            @create-line="handleCreateFromEmpty"
           />
         </div>
       </div>
-      <div class="flex-1">
-        <CostSetSummaryCard
+      <div class="w-64 flex-shrink-0">
+        <CompactSummaryCard
           title="Estimate Summary"
           :summary="props.estimateSummaryFromBackend || estimateSummary"
           :costLines="costLines"
           :isLoading="isLoading"
           :revision="revision"
+          @expand="showDetailedSummary = true"
         />
       </div>
     </div>
+
+    <!-- Detailed Summary Dialog -->
+    <Dialog :open="showDetailedSummary" @update:open="showDetailedSummary = $event">
+      <DialogContent class="sm:max-w-4xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>Detailed Estimate Summary</DialogTitle>
+          <DialogDescription>Complete breakdown of estimate costs and revenue</DialogDescription>
+        </DialogHeader>
+        <div class="max-h-[60vh] overflow-y-auto">
+          <CostSetSummaryCard
+            title="Estimate Summary"
+            :summary="props.estimateSummaryFromBackend || estimateSummary"
+            :costLines="costLines"
+            :isLoading="isLoading"
+            :revision="revision"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" @click="showDetailedSummary = false">Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <CostLineMaterialModal
       v-if="showEditModal && editingCostLine && editingCostLine.kind === 'material'"
       :materialsMarkup="materialsMarkup"
@@ -69,21 +98,31 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
+import { debugLog } from '../../utils/debug'
 
 import { onMounted, ref, computed } from 'vue'
-import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
+import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import CostLineDropdown from './CostLineDropdown.vue'
-import CostLinesGrid from '@/components/shared/CostLinesGrid.vue'
-import CostSetSummaryCard from '@/components/shared/CostSetSummaryCard.vue'
-import { costlineService } from '@/services/costline.service'
-import { fetchCostSet } from '@/services/costing.service'
-import { schemas } from '@/api/generated/api'
+import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
+import CostSetSummaryCard from '../../components/shared/CostSetSummaryCard.vue'
+import CompactSummaryCard from '../shared/CompactSummaryCard.vue'
+import { costlineService } from '../../services/costline.service'
+import { fetchCostSet } from '../../services/costing.service'
+import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
 import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../ui/dialog'
+import { Button } from '../ui/button'
 
 // Use generated API types
 type CostLine = z.infer<typeof schemas.CostLine>
@@ -119,6 +158,7 @@ const materialsMarkup = computed(() => {
 const costLines = ref<CostLine[]>([])
 const isLoading = ref(false)
 const revision = ref(0)
+const showDetailedSummary = ref(false)
 
 async function loadEstimate() {
   isLoading.value = true
@@ -144,40 +184,42 @@ onMounted(async () => {
 
 const estimateSummary = computed(() => {
   if (props.estimateSummaryFromBackend) {
-    return props.estimateSummaryFromBackend
+    return {
+      ...props.estimateSummaryFromBackend,
+      profitMargin: props.estimateSummaryFromBackend.rev - props.estimateSummaryFromBackend.cost,
+    }
   }
   let cost = 0
   let rev = 0
   let hours = 0
   for (const line of costLines.value) {
-    const quantity = line.quantity
+    const quantity = line.quantity || 0
+    const unitCost = line.unit_cost || 0
+    const unitRev = line.unit_rev || 0
+
     if (line.kind === 'time') {
-      cost += quantity * line.unit_cost
-      rev += quantity * line.unit_rev
+      cost += quantity * unitCost
+      rev += quantity * unitRev
       hours += quantity
     } else if (line.kind === 'material') {
-      cost += quantity * line.unit_cost
-      rev += quantity * line.unit_rev
+      cost += quantity * unitCost
+      rev += quantity * unitRev
     } else if (line.kind === 'adjust') {
-      cost += quantity * line.unit_cost
-      rev += quantity * line.unit_rev
+      cost += quantity * unitCost
+      rev += quantity * unitRev
     }
   }
   return {
     cost,
     rev,
     hours,
+    profitMargin: rev - cost,
     created: undefined,
   }
 })
 
 const editingCostLine = ref<CostLine | null>(null)
 const showEditModal = ref(false)
-
-function handleEditCostLine(line: CostLine) {
-  editingCostLine.value = line
-  showEditModal.value = true
-}
 
 function closeEditModal() {
   showEditModal.value = false
@@ -218,6 +260,18 @@ async function handleDeleteCostLine(line: CostLine) {
   } finally {
     isLoading.value = false
     toast.dismiss('delete-cost-line')
+  }
+}
+
+// Bridge for SmartCostLinesTable delete event (id or index)
+function handleSmartDelete(idOrIndex: string | number) {
+  const line =
+    typeof idOrIndex === 'string'
+      ? (costLines.value.find((l) => l.id === idOrIndex) ?? null)
+      : (costLines.value[idOrIndex] ?? null)
+
+  if (line) {
+    void handleDeleteCostLine(line as CostLine)
   }
 }
 
@@ -342,6 +396,60 @@ async function handleAddAdjustment(payload: CostLine) {
 const isCompanyDefaultsReady = computed(
   () => !!companyDefaults.value && companyDefaultsStore.isLoaded,
 )
+
+// Add empty line to the grid (UI-only, not persisted until user fills baseline data)
+function handleAddEmptyLine() {
+  const newLine: CostLine = {
+    id: '', // empty ID indicates unsaved line
+    kind: 'material',
+    desc: '',
+    quantity: 1,
+    unit_cost: 0,
+    unit_rev: 0,
+    total_cost: 0,
+    total_rev: 0,
+    ext_refs: {},
+    meta: {},
+  }
+  costLines.value = [...costLines.value, newLine]
+}
+
+// Handle creating a new line from an empty line that meets baseline criteria
+async function handleCreateFromEmpty(line: CostLine) {
+  if (!isCompanyDefaultsReady.value) {
+    toast.error('Company defaults not loaded yet.')
+    return
+  }
+
+  console.log('Creating cost line from empty line:', line)
+
+  try {
+    const createPayload: CostLineCreateUpdate = {
+      kind: line.kind as 'material' | 'time' | 'adjust',
+      desc: line.desc || '',
+      quantity: line.quantity || 1,
+      unit_cost: line.unit_cost ?? 0,
+      unit_rev: line.unit_rev ?? 0,
+      ext_refs: line.ext_refs || {},
+      meta: line.meta || {},
+    }
+
+    const created = await costlineService.createCostLine(props.jobId, 'estimate', createPayload)
+
+    // Replace the empty line with the created one
+    const index = costLines.value.findIndex((l) => l === line)
+    if (index !== -1) {
+      costLines.value[index] = created
+    }
+
+    emit('cost-line-changed')
+    toast.success('Cost line created!')
+    console.log('✅ Successfully created cost line:', created)
+  } catch (error) {
+    toast.error('Failed to create cost line.')
+    console.error('❌ Failed to create cost line:', error)
+  }
+}
 </script>
 
 <style scoped>

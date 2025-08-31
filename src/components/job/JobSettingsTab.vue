@@ -3,19 +3,17 @@
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-6 flex justify-between items-center">
-        <div>
-          <h2 class="text-xl font-semibold text-gray-900 mb-2">Job Settings</h2>
-          <p class="text-sm text-gray-600">Configure job details and preferences</p>
+        <div class="flex items-center gap-3">
+          <span v-if="saveStatusText" class="text-xs text-gray-500">{{ saveStatusText }}</span>
+          <button
+            v-if="saveHasError"
+            type="button"
+            class="text-xs text-red-600 hover:text-red-700 underline"
+            @click="retrySave"
+          >
+            Retry
+          </button>
         </div>
-        <button
-          @click="saveSettings"
-          type="button"
-          :disabled="isLoading"
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <Loader2 v-if="isLoading" class="animate-spin h-4 w-4" />
-          <span>{{ isLoading ? 'Saving...' : 'Save Changes' }}</span>
-        </button>
       </div>
 
       <!-- Error Messages -->
@@ -49,6 +47,7 @@
               <input
                 v-model="localJobData.name"
                 type="text"
+                @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Enter job name"
               />
@@ -59,6 +58,7 @@
               <textarea
                 v-model="localJobData.description"
                 rows="4"
+                @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
                 placeholder="Describe the job requirements and scope..."
               ></textarea>
@@ -176,6 +176,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Pricing Method</label>
               <select
                 v-model="localJobData.pricing_methodology"
+                @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
                 <option value="time_materials">Time & Materials</option>
@@ -189,6 +190,7 @@
                 label="Internal Notes"
                 placeholder="Add internal notes about this job..."
                 :required="false"
+                @blur="handleBlurFlush"
               />
             </div>
           </CardContent>
@@ -199,30 +201,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { z } from 'zod'
 import { schemas } from '../../api/generated/api'
 import { jobService } from '../../services/job.service'
 import { useJobsStore } from '../../stores/jobs'
+import { createJobAutosave } from '../../composables/useJobAutosave'
 import RichTextEditor from '../RichTextEditor.vue'
 import ClientLookup from '../ClientLookup.vue'
 import ContactSelector from '../ContactSelector.vue'
-import { Loader2 } from 'lucide-vue-next'
 import type { Client } from '../../composables/useClientLookup'
 import { debugLog } from '../../utils/debug'
 import { toast } from 'vue-sonner'
-
-// Simple Card components (placeholder)
-const Card = {
-  template: '<div class="bg-white rounded-lg border border-gray-200 shadow-sm"><slot /></div>',
-}
-const CardHeader = { template: '<div class="px-6 py-4 border-b border-gray-200"><slot /></div>' }
-const CardTitle = { template: '<h3 class="text-lg font-semibold text-gray-900"><slot /></h3>' }
-const CardDescription = { template: '<p class="text-sm text-gray-600 mt-1"><slot /></p>' }
-const CardContent = { template: '<div class="px-6 py-4"><slot /></div>' }
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card'
 
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
-type JobCreateRequest = z.infer<typeof schemas.JobCreateRequest>
 type ClientContact = z.infer<typeof schemas.ClientContactResult>
 type Job = z.infer<typeof schemas.Job>
 
@@ -230,14 +224,10 @@ const props = defineProps<{
   jobData: Job
 }>()
 
-const emit = defineEmits<{
-  'job-updated': [job: JobDetailResponse]
-}>()
-
 const jobsStore = useJobsStore()
 
 const localJobData = ref<Partial<Job>>({})
-const isLoading = ref(false)
+const originalJobData = ref<Partial<Job>>({}) // Original data snapshot
 const errorMessages = ref<string[]>([])
 
 const isChangingClient = ref(false)
@@ -248,6 +238,7 @@ const selectedNewClient = ref<Client | null>(null)
 const contactDisplayValue = ref('')
 
 const jobStatusChoices = ref<{ value: string; label: string }[]>([])
+const isInitializing = ref(true)
 
 onMounted(async () => {
   try {
@@ -265,7 +256,6 @@ onMounted(async () => {
   }
 })
 
-// Simple data sanitization to prevent errors when sending to API - just to enforce really, Zodios already does this
 const currentClientId = computed(() => {
   const clientId =
     isChangingClient.value && newClientId.value
@@ -308,7 +298,7 @@ const resetClientChangeState = () => {
 
 watch(
   () => props.jobData,
-  (newJobData) => {
+  async (newJobData) => {
     debugLog('JobSettingsTab - jobData watcher triggered. New jobData:', newJobData)
     if (!newJobData || !newJobData.id) {
       debugLog(
@@ -321,8 +311,10 @@ watch(
       newJobData.id,
     )
 
+    isInitializing.value = true
+
     // Initialize local data with proper structure
-    localJobData.value = {
+    const jobDataSnapshot = {
       id: newJobData.id,
       name: newJobData.name,
       description: newJobData.description,
@@ -340,42 +332,18 @@ watch(
       fully_invoiced: newJobData.fully_invoiced,
     }
 
+    localJobData.value = { ...jobDataSnapshot }
+    originalJobData.value = { ...jobDataSnapshot } // Keep original snapshot
+
     contactDisplayValue.value = String(newJobData.contact_name || '')
 
     debugLog('JobSettingsTab - Local job data initialized:', localJobData.value)
+
+    await nextTick()
+    isInitializing.value = false
   },
   { immediate: true, deep: true },
 )
-
-const sanitizeJobData = (data: Record<string, unknown>): Partial<JobCreateRequest> => {
-  if (!data) return {}
-
-  const sanitized: Record<string, unknown> = { ...data }
-
-  const nullableFields = ['description', 'notes', 'contact_id', 'contact_name', 'order_number']
-
-  // Map to match Zodios schema definition
-  nullableFields.forEach((field) => {
-    if (sanitized[field] === null) {
-      sanitized[field] = undefined
-    }
-  })
-
-  if (
-    !sanitized.pricing_methodology ||
-    (sanitized.pricing_methodology !== 'fixed_price' &&
-      sanitized.pricing_methodology !== 'time_materials')
-  ) {
-    sanitized.pricing_methodology = ''
-    debugLog(
-      'sanitizeJobData - Invalid pricing_methodology, resetting to empty string',
-      sanitized.pricing_methodology,
-    )
-    toast.error('Invalid pricing methodology selected. Please contact Corrin.')
-  }
-
-  return sanitized as Partial<JobCreateRequest>
-}
 
 const startClientChange = () => {
   isChangingClient.value = true
@@ -411,6 +379,15 @@ const confirmClientChange = () => {
   contactDisplayValue.value = ''
 
   resetClientChangeState()
+
+  // Enqueues atomic client change + cleans contact and forces flush
+  autosave.queueChanges({
+    client_id: localJobData.value.client_id || '',
+    client_name: localJobData.value.client_name || '',
+    contact_id: null,
+    contact_name: null,
+  })
+  void autosave.flush('client-change')
 }
 
 const editCurrentClient = () => {
@@ -433,98 +410,199 @@ const handleContactSelected = (contact: ClientContact | null) => {
     localJobData.value.contact_name = undefined
     contactDisplayValue.value = ''
   }
+
+  autosave.queueChanges({
+    contact_id: localJobData.value.contact_id ?? null,
+    contact_name: localJobData.value.contact_name ?? null,
+  })
+  void autosave.flush('contact-change')
 }
 
-const saveSettings = async () => {
-  if (!props.jobData || !props.jobData.id) {
-    debugLog('JobSettingsTab - saveSettings - Error: props.jobData or job ID is missing.')
-    errorMessages.value = ['Job data is missing, cannot save.']
-    return
-  }
-  isLoading.value = true
-  errorMessages.value = []
-  try {
-    debugLog(
-      'JobSettingsTab - saveSettings - Collecting form data:',
-      JSON.parse(JSON.stringify(localJobData.value)),
-    )
-    const sanitizedData = sanitizeJobData(localJobData.value)
+/* ------------------------------
+   Autosave integration (instance, watchers, bindings, status)
+------------------------------ */
 
-    debugLog(
-      `JobSettingsTab - saveSettings - Sanitized data for job ID: ${props.jobData.id}:`,
-      JSON.parse(JSON.stringify(sanitizedData)),
-    )
+const router = useRouter()
 
-    // Construct the complete JobDetailResponse structure
-    const jobDetailResponse: JobDetailResponse = {
-      success: true,
-      data: {
-        job: {
-          ...props.jobData,
-          ...sanitizedData,
-        },
-        events: [], // We don't have events in this context
-        company_defaults: {
-          wage_rate: 0,
-          time_markup: 0,
-          materials_markup: 0,
-          charge_out_rate: 0,
-        },
-      },
+let unbindRouteGuard: () => void = () => {}
+
+/** Instance */
+const autosave = createJobAutosave({
+  jobId: props.jobData?.id || '',
+  getSnapshot: () => {
+    // Returns original snapshot, not current data
+    const data = originalJobData.value || {}
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      client_id: data.client_id,
+      client_name: data.client_name,
+      contact_id: data.contact_id,
+      contact_name: data.contact_name,
+      order_number: data.order_number,
+      notes: data.notes,
+      pricing_methodology: data.pricing_methodology,
+      job_status: data.job_status,
+      delivery_date: data.delivery_date,
+      paid: data.paid,
+      quoted: data.quoted,
+      invoiced: data.invoiced,
     }
-
-    const result = await jobService.updateJob(props.jobData.id, jobDetailResponse)
-
-    debugLog('JobSettingsTab - saveSettings - API call result:', JSON.parse(JSON.stringify(result)))
-
-    if (result.success) {
-      debugLog(
-        'JobSettingsTab - saveSettings - API call successful. result.data:',
-        JSON.parse(JSON.stringify(result.data)),
-      )
-      if (result.data !== null && result.data !== undefined) {
-        handleSuccessfulSettingsUpdate(result.data)
-      } else {
-        debugLog(
-          'JobSettingsTab - saveSettings - API call successful but result.data is null or undefined. Calling handleFallbackSettingsUpdate.',
-        )
-        const refreshedJob = await jobService.getJob(props.jobData.id)
-        handleSuccessfulSettingsUpdate(refreshedJob)
+  },
+  applyOptimistic: (patch) => {
+    Object.entries(patch).forEach(([k, v]) => {
+      ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
+    })
+  },
+  rollbackOptimistic: (previous) => {
+    Object.entries(previous).forEach(([k, v]) => {
+      ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
+    })
+  },
+  saveAdapter: async (patch) => {
+    try {
+      if (!props.jobData?.id) {
+        return { success: false, error: 'Missing job id' }
       }
-    } else {
-      debugLog('JobSettingsTab - saveSettings - API call failed:', result.error)
-      errorMessages.value.push(result.error || 'Failed to update job settings.')
+
+      // Mounts compatible wrapper with current service
+      const mergedJob = {
+        ...(props.jobData as Job),
+        ...(patch as Partial<Job>),
+      } as Job
+
+      const jobDetailResponse: JobDetailResponse = {
+        success: true,
+        data: {
+          job: mergedJob,
+          events: [],
+          company_defaults: {
+            wage_rate: 0,
+            time_markup: 0,
+            materials_markup: 0,
+            charge_out_rate: 0,
+          },
+        },
+      }
+
+      const result = await jobService.updateJob(props.jobData.id, jobDetailResponse)
+      if (result.success) {
+        if (result.data?.data) {
+          // Atualiza store como as abas já fazem
+          // Update store like tabs already do
+          jobsStore.setDetailedJob(result.data.data)
+
+          // Updates original snapshot based on saved data
+          const savedJob = result.data.data.job
+          originalJobData.value = {
+            id: savedJob.id,
+            name: savedJob.name,
+            description: savedJob.description,
+            client_id: savedJob.client_id,
+            client_name: savedJob.client_name,
+            contact_id: savedJob.contact_id,
+            contact_name: savedJob.contact_name,
+            order_number: savedJob.order_number,
+            notes: savedJob.notes,
+            pricing_methodology: savedJob.pricing_methodology,
+            job_status: savedJob.job_status,
+            delivery_date: savedJob.delivery_date,
+            paid: savedJob.paid,
+            quoted: savedJob.quoted,
+            invoiced: savedJob.invoiced,
+          }
+        }
+        // Notifies success
+        toast.success('Job updated successfully')
+        return { success: true, serverData: result.data }
+      }
+
+      return { success: false, error: result.error || 'Update failed' }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      return { success: false, error: msg }
     }
-  } catch (e: unknown) {
-    debugLog('JobSettingsTab - saveSettings - Unexpected error during save:', e)
-    const errorMessage =
-      e instanceof Error ? e.message : 'An unexpected error occurred while saving.'
-    errorMessages.value.push(errorMessage)
-  } finally {
-    isLoading.value = false
+  },
+  devLogging: true,
+})
+
+/** Life-cycle bindings */
+onMounted(() => {
+  autosave.onBeforeUnloadBind()
+  autosave.onVisibilityBind()
+  unbindRouteGuard = autosave.onRouteLeaveBind({
+    beforeEach: router.beforeEach.bind(router),
+  })
+})
+
+onUnmounted(() => {
+  autosave.onBeforeUnloadUnbind()
+  autosave.onVisibilityUnbind()
+  unbindRouteGuard()
+})
+
+/** Granular watchers to avoid reactive noise */
+const enqueueIfNotInitializing = (key: string, value: unknown) => {
+  if (!isInitializing.value) {
+    autosave.queueChange(key, value)
   }
 }
 
-const handleSuccessfulSettingsUpdate = (apiData: JobDetailResponse) => {
-  debugLog(
-    'JobSettingsTab - handleSuccessfulSettingsUpdate - About to update store with:',
-    JSON.parse(JSON.stringify(apiData)),
-  )
-  updateJobInStore(apiData)
+watch(
+  () => localJobData.value.name,
+  (v) => enqueueIfNotInitializing('name', v),
+)
+watch(
+  () => localJobData.value.description,
+  (v) => enqueueIfNotInitializing('description', v),
+)
+watch(
+  () => localJobData.value.pricing_methodology,
+  (v) => enqueueIfNotInitializing('pricing_methodology', v),
+)
+watch(
+  () => localJobData.value.client_id,
+  (v) => enqueueIfNotInitializing('client_id', v),
+)
+watch(
+  () => localJobData.value.client_name,
+  (v) => enqueueIfNotInitializing('client_name', v),
+)
+watch(
+  () => localJobData.value.contact_id,
+  (v) => enqueueIfNotInitializing('contact_id', v),
+)
+watch(
+  () => localJobData.value.contact_name,
+  (v) => enqueueIfNotInitializing('contact_name', v),
+)
+// notes via computed proxy
+watch(jobNotesComputed, (v) => enqueueIfNotInitializing('notes', v))
+watch(
+  () => localJobData.value.order_number,
+  (v) => enqueueIfNotInitializing('order_number', v),
+)
+
+/** UI helpers */
+const handleBlurFlush = () => {
+  void autosave.flush('blur')
+}
+const retrySave = () => {
+  void autosave.flush('retry-click')
 }
 
-const updateJobInStore = (jobDataToStore: JobDetailResponse) => {
-  // Extract the JobDetail (data) from the API response wrapper before passing to store
-  if (jobDataToStore.data) {
-    jobsStore.setDetailedJob(jobDataToStore.data)
-    debugLog(
-      `JobSettingsTab - Called jobsStore.setDetailedJob with job ID: ${jobDataToStore.data.job?.id}`,
-    )
-  } else {
-    debugLog('🚨 JobSettingsTab - Invalid job data structure, cannot update store')
+const saveHasError = computed(() => !!autosave.error.value)
+const saveStatusText = computed(() => {
+  if (autosave.isSaving.value) return 'Saving...'
+  if (autosave.error.value) return 'Save failed'
+  if (autosave.lastSavedAt.value) {
+    try {
+      return `Saved at ${autosave.lastSavedAt.value.toLocaleTimeString()}`
+    } catch {
+      return 'Saved'
+    }
   }
-
-  emit('job-updated', jobDataToStore)
-  debugLog('JobSettingsTab - Settings saved, store updated, event emitted.')
-}
+  return ''
+})
 </script>
