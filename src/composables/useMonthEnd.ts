@@ -20,8 +20,7 @@ export async function runMonthEnd(
 ): Promise<{ processed: string[]; errors: string[] }> {
   // Using proper request body format for month-end processing
   const response: MonthEndPostResponse = await api.job_rest_month_end_create({
-    processed: jobIds,
-    errors: [],
+    job_ids: jobIds,
   })
   return { processed: response.processed, errors: response.errors }
 }

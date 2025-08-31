@@ -1091,6 +1091,7 @@ const MonthEndStockJob = z
 const MonthEndGetResponse = z
   .object({ jobs: z.array(MonthEndJob), stock_job: MonthEndStockJob })
   .passthrough()
+const MonthEndPostRequest = z.object({ job_ids: z.array(z.string().uuid()) }).passthrough()
 const MonthEndPostResponse = z
   .object({
     processed: z.array(z.string().uuid()),
@@ -1855,6 +1856,7 @@ export const schemas = {
   MonthEndStockHistory,
   MonthEndStockJob,
   MonthEndGetResponse,
+  MonthEndPostRequest,
   MonthEndPostResponse,
   TimesheetCostLine,
   ModernTimesheetStaff,
@@ -2998,7 +3000,7 @@ Expected JSON:
     method: 'get',
     path: '/job/api/job-files/',
     alias: 'retrieveJobFilesApi',
-    description: `Based on the request, serve a file for download or return the file list of the job.`,
+    description: `Route the request to serve a file or list files for a job.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3023,13 +3025,13 @@ Expected JSON:
     method: 'post',
     path: '/job/api/job-files/',
     alias: 'uploadJobFilesApi',
-    description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
+    description: `Handle file uploads for a job.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUploadSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'format',
@@ -3049,15 +3051,13 @@ Expected JSON:
     method: 'put',
     path: '/job/api/job-files/',
     alias: 'updateJobFilesApi',
-    description: `Update an existing job file:
-- If a new file is provided (files[] in request), replace the file on disk.
-- If no file_obj is provided, only update print_on_jobsheet.`,
+    description: `Update an existing job file&#x27;s content or its metadata.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUpdateSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'format',
@@ -3075,17 +3075,13 @@ Expected JSON:
         status: 404,
         schema: JobFileErrorResponse,
       },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
     ],
   },
   {
     method: 'delete',
     path: '/job/api/job-files/',
     alias: 'deleteJobFilesApi',
-    description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
+    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3110,7 +3106,7 @@ Expected JSON:
     method: 'get',
     path: '/job/api/job-files/:file_path',
     alias: 'retrieveJobFilesApi_2',
-    description: `Based on the request, serve a file for download or return the file list of the job.`,
+    description: `Route the request to serve a file or list files for a job.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3140,13 +3136,13 @@ Expected JSON:
     method: 'post',
     path: '/job/api/job-files/:file_path',
     alias: 'uploadJobFilesApi_2',
-    description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
+    description: `Handle file uploads for a job.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUploadSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'file_path',
@@ -3171,15 +3167,13 @@ Expected JSON:
     method: 'put',
     path: '/job/api/job-files/:file_path',
     alias: 'updateJobFilesApi_2',
-    description: `Update an existing job file:
-- If a new file is provided (files[] in request), replace the file on disk.
-- If no file_obj is provided, only update print_on_jobsheet.`,
+    description: `Update an existing job file&#x27;s content or its metadata.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUpdateSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'file_path',
@@ -3202,17 +3196,13 @@ Expected JSON:
         status: 404,
         schema: JobFileErrorResponse,
       },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
     ],
   },
   {
     method: 'delete',
     path: '/job/api/job-files/:file_path',
     alias: 'deleteJobFilesApi_2',
-    description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
+    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3242,7 +3232,7 @@ Expected JSON:
     method: 'get',
     path: '/job/api/job-files/:job_number',
     alias: 'retrieveJobFilesApi_3',
-    description: `Based on the request, serve a file for download or return the file list of the job.`,
+    description: `Route the request to serve a file or list files for a job.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3272,13 +3262,13 @@ Expected JSON:
     method: 'post',
     path: '/job/api/job-files/:job_number',
     alias: 'uploadJobFilesApi_3',
-    description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
+    description: `Handle file uploads for a job.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUploadSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'format',
@@ -3303,15 +3293,13 @@ Expected JSON:
     method: 'put',
     path: '/job/api/job-files/:job_number',
     alias: 'updateJobFilesApi_3',
-    description: `Update an existing job file:
-- If a new file is provided (files[] in request), replace the file on disk.
-- If no file_obj is provided, only update print_on_jobsheet.`,
+    description: `Update an existing job file&#x27;s content or its metadata.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUpdateSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'format',
@@ -3334,17 +3322,13 @@ Expected JSON:
         status: 404,
         schema: JobFileErrorResponse,
       },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
     ],
   },
   {
     method: 'delete',
     path: '/job/api/job-files/:job_number',
     alias: 'deleteJobFilesApi_3',
-    description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
+    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4148,7 +4132,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/files/',
     alias: 'retrieveJobFilesApi_4',
-    description: `Based on the request, serve a file for download or return the file list of the job.`,
+    description: `Route the request to serve a file or list files for a job.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4173,13 +4157,13 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'post',
     path: '/job/rest/jobs/files/',
     alias: 'uploadJobFilesApi_4',
-    description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
+    description: `Handle file uploads for a job.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUploadSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'format',
@@ -4199,15 +4183,13 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'put',
     path: '/job/rest/jobs/files/',
     alias: 'updateJobFilesApi_4',
-    description: `Update an existing job file:
-- If a new file is provided (files[] in request), replace the file on disk.
-- If no file_obj is provided, only update print_on_jobsheet.`,
+    description: `Update an existing job file&#x27;s content or its metadata.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUpdateSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'format',
@@ -4225,17 +4207,13 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         status: 404,
         schema: JobFileErrorResponse,
       },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
     ],
   },
   {
     method: 'delete',
     path: '/job/rest/jobs/files/',
     alias: 'deleteJobFilesApi_4',
-    description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
+    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4260,14 +4238,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/files/:file_id/thumbnail/',
     alias: 'getJobFileThumbnail',
-    description: `API view for serving JPEG thumbnails of job files.
-
-This view generates and serves thumbnail images for job files that
-support thumbnail generation (typically image files). Thumbnails are
-cached on disk and served via file response for efficient delivery.
-
-GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
-     the thumbnail doesn&#x27;t exist or cannot be generated.`,
+    description: `API view for serving JPEG thumbnails of job files.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4282,7 +4253,7 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
     method: 'get',
     path: '/job/rest/jobs/files/:file_path/',
     alias: 'retrieveJobFilesApi_5',
-    description: `Based on the request, serve a file for download or return the file list of the job.`,
+    description: `Route the request to serve a file or list files for a job.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4312,13 +4283,13 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
     method: 'post',
     path: '/job/rest/jobs/files/:file_path/',
     alias: 'uploadJobFilesApi_5',
-    description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
+    description: `Handle file uploads for a job.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUploadSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'file_path',
@@ -4343,15 +4314,13 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
     method: 'put',
     path: '/job/rest/jobs/files/:file_path/',
     alias: 'updateJobFilesApi_5',
-    description: `Update an existing job file:
-- If a new file is provided (files[] in request), replace the file on disk.
-- If no file_obj is provided, only update print_on_jobsheet.`,
+    description: `Update an existing job file&#x27;s content or its metadata.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUpdateSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'file_path',
@@ -4374,17 +4343,13 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
         status: 404,
         schema: JobFileErrorResponse,
       },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
     ],
   },
   {
     method: 'delete',
     path: '/job/rest/jobs/files/:file_path/',
     alias: 'deleteJobFilesApi_5',
-    description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
+    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4414,7 +4379,7 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
     method: 'get',
     path: '/job/rest/jobs/files/:job_number/',
     alias: 'retrieveJobFilesApi_6',
-    description: `Based on the request, serve a file for download or return the file list of the job.`,
+    description: `Route the request to serve a file or list files for a job.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4444,13 +4409,13 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
     method: 'post',
     path: '/job/rest/jobs/files/:job_number/',
     alias: 'uploadJobFilesApi_6',
-    description: `Handle file uploads. Creates new files or updates existing ones with POST.`,
+    description: `Handle file uploads for a job.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUploadSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'format',
@@ -4475,15 +4440,13 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
     method: 'put',
     path: '/job/rest/jobs/files/:job_number/',
     alias: 'updateJobFilesApi_6',
-    description: `Update an existing job file:
-- If a new file is provided (files[] in request), replace the file on disk.
-- If no file_obj is provided, only update print_on_jobsheet.`,
+    description: `Update an existing job file&#x27;s content or its metadata.`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUpdateSuccessResponse,
+        schema: JobFile,
       },
       {
         name: 'format',
@@ -4506,17 +4469,13 @@ GET: Returns a JPEG thumbnail for the specified file ID, or 404 if
         status: 404,
         schema: JobFileErrorResponse,
       },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
     ],
   },
   {
     method: 'delete',
     path: '/job/rest/jobs/files/:job_number/',
     alias: 'deleteJobFilesApi_6',
-    description: `Delete a job file by its ID. (file_path param is actually the job_file.id)`,
+    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4599,7 +4558,7 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       {
         name: 'body',
         type: 'Body',
-        schema: MonthEndPostResponse,
+        schema: MonthEndPostRequest,
       },
     ],
     response: MonthEndPostResponse,

@@ -1,16 +1,19 @@
 <template>
   <AppLayout>
     <div
-      class="w-full min-h-screen bg-white max-w-none mx-0 py-8 px-4 flex flex-col gap-6 overflow-y-hidden"
+      class="w-full h-full min-h-0 bg-white max-w-none mx-0 px-4 flex flex-col gap-4 overflow-hidden"
     >
-      <Tabs v-model="activeTab" class="w-full max-w-2xl mx-auto sticky top-0 z-10 bg-white pb-4">
-        <TabsList class="justify-center w-full">
+      <!-- Tabs grows and may shrink -->
+      <Tabs v-model="activeTab" class="w-full max-w-4xl mx-auto flex flex-col flex-1 min-h-0 pt-8">
+        <TabsList class="justify-center w-full flex-shrink-0">
           <TabsTrigger value="current">Current Month-End</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="custom">Select Month</TabsTrigger>
         </TabsList>
-        <TabsContent value="history">
-          <Tabs v-model="activeMonthTab">
+
+        <!-- HISTORY -->
+        <TabsContent value="history" class="flex flex-col flex-1 min-h-0">
+          <Tabs v-model="activeMonthTab" class="flex flex-col flex-1 min-h-0">
             <TabsList class="justify-center">
               <TabsTrigger
                 v-for="month in lastSixMonths"
@@ -21,9 +24,16 @@
                 {{ month.label }}
               </TabsTrigger>
             </TabsList>
-            <TabsContent v-for="month in lastSixMonths" :key="month.key" :value="month.key">
+
+            <TabsContent
+              v-for="month in lastSixMonths"
+              :key="month.key"
+              :value="month.key"
+              class="flex-1 min-h-0"
+            >
               <MonthEndSummary
                 v-if="monthData[month.key]"
+                class="h-full"
                 :jobs="monthData[month.key].jobs"
                 :stockSummary="monthData[month.key].stockSummary"
                 :monthKey="month.key"
@@ -34,21 +44,26 @@
             </TabsContent>
           </Tabs>
         </TabsContent>
-        <TabsContent value="custom">
+
+        <!-- CUSTOM -->
+        <TabsContent value="custom" class="flex flex-col flex-1 min-h-0">
           <div class="flex items-end gap-3 mb-4 justify-center">
             <input type="month" v-model="selectedMonth" class="border rounded px-2 py-1" />
             <Button variant="default" @click="loadCustomMonth">Load</Button>
           </div>
+
           <div
             v-if="!customMonthLoaded"
             class="flex flex-col items-center justify-center min-h-[200px] text-gray-400"
           >
             <span>Load data to see previous months data here</span>
           </div>
-          <div v-else>
+
+          <div v-else class="flex-1 min-h-0">
             <MonthEndSummary
-              :jobs="customMonthData.jobs"
-              :stockSummary="customMonthData.stockSummary"
+              class="h-full"
+              :jobs="customMonthData!.jobs"
+              :stockSummary="customMonthData!.stockSummary"
               :monthKey="selectedMonth"
               :selectedIds="selectedIds"
               @selectJob="onSelectJob"
@@ -59,8 +74,11 @@
             </div>
           </div>
         </TabsContent>
-        <TabsContent value="current">
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+        <!-- CURRENT -->
+        <TabsContent value="current" class="flex flex-col flex-1 min-h-0 overflow-hidden mt-4 pb-8">
+          <!-- Cards -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
             <Card>
               <CardHeader>
                 <CardTitle>Jobs</CardTitle>
@@ -93,9 +111,13 @@
               </CardContent>
             </Card>
           </div>
-          <div class="mt-6 overflow-x-auto border rounded">
+
+          <!-- Table (scrollable) -->
+          <div
+            class="mt-6 flex-1 min-h-0 overflow-y-auto border rounded max-h-[calc(100dvh-18rem)]"
+          >
             <Table>
-              <TableHeader>
+              <TableHeader class="sticky top-0 bg-white z-10">
                 <TableRow>
                   <TableHead class="w-10">
                     <input type="checkbox" @change="toggleAll" :checked="allSelected" />
@@ -109,9 +131,9 @@
               </TableHeader>
               <TableBody>
                 <TableRow v-for="job in jobs" :key="job.job_id">
-                  <TableCell>
-                    <input type="checkbox" :value="job.job_id" v-model="selectedIds" />
-                  </TableCell>
+                  <TableCell
+                    ><input type="checkbox" :value="job.job_id" v-model="selectedIds"
+                  /></TableCell>
                   <TableCell>{{ job.job_number }}</TableCell>
                   <TableCell>{{ job.job_name }}</TableCell>
                   <TableCell>{{ job.total_hours.toFixed(2) }}</TableCell>
@@ -127,9 +149,11 @@
                     </svg>
                   </TableCell>
                 </TableRow>
+
                 <TableRow v-if="jobs.length === 0 && !isLoading">
                   <TableCell colspan="6" class="text-center py-4">No jobs</TableCell>
                 </TableRow>
+
                 <TableRow v-if="jobs.length === 0 && isLoading">
                   <TableCell colspan="6" class="text-center py-4">
                     <div class="flex items-center justify-center gap-2">
@@ -143,39 +167,50 @@
               </TableBody>
             </Table>
           </div>
-          <div class="flex justify-center mt-8">
-            <Button variant="destructive" :disabled="!selectedIds.length" @click="showDialog = true"
-              >Run Month-End</Button
+
+          <!-- Fixed button -->
+          <div class="flex justify-center mt-4 pt-4 border-t flex-shrink-0">
+            <Button
+              variant="destructive"
+              :disabled="!selectedIds.length"
+              @click="showDialog = true"
             >
+              Run Month-End
+            </Button>
           </div>
         </TabsContent>
       </Tabs>
+
+      <!-- Dialogue -->
       <Dialog v-model:open="showDialog">
         <DialogContent class="max-w-md">
           <DialogHeader>
             <DialogTitle>Confirm Month-End</DialogTitle>
           </DialogHeader>
-          <div class="space-y-2">
+
+          <div class="space-y-2 max-h-64 overflow-y-auto">
             <div
               v-for="id in selectedIds"
               :key="id"
               class="flex items-center justify-between px-2 py-1 border rounded bg-muted"
             >
               <span class="font-mono text-sm">{{ jobNumber(id) }}</span>
-              <span class="text-xs text-gray-500">
+              <span class="text-xs text-gray-500 truncate">
                 {{ (getCurrentJobs().find((j) => j.job_id === id)?.job_name || '').slice(0, 32) }}
               </span>
-              <span class="ml-2 text-xs text-blue-700">
+              <span class="ml-2 text-xs text-blue-700 whitespace-nowrap">
                 ${{
                   (getCurrentJobs().find((j) => j.job_id === id)?.total_dollars ?? 0).toFixed(2)
                 }}
               </span>
             </div>
           </div>
+
           <DialogFooter class="flex gap-2 justify-end mt-4">
             <Button variant="destructive" @click="confirmRun">Run</Button>
             <Button variant="outline" @click="showDialog = false">Cancel</Button>
           </DialogFooter>
+
           <Progress v-if="loading" class="mt-4" :model-value="progress" />
         </DialogContent>
       </Dialog>
@@ -209,6 +244,7 @@ import type { MonthEndJob, MonthEndStockJob } from '@/api/generated/api'
 import { toast } from 'vue-sonner'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import MonthEndSummary from '@/components/admin/MonthEndSummary.vue'
+import { debugLog } from '../utils/debug'
 
 interface MonthTab {
   key: string
@@ -217,24 +253,30 @@ interface MonthTab {
 
 const activeTab = ref<'current' | 'history' | 'custom'>('current')
 const activeMonthTab = ref<string>('')
+
 const selectedMonth = ref(new Date().toISOString().slice(0, 7))
 const selectedIds = ref<string[]>([])
+const showDialog = ref(false)
+
 const loading = ref(false)
+const progress = ref(0)
+
 const jobs = ref<MonthEndJob[]>([])
 const stockJob = ref<MonthEndStockJob | null>(null)
 const isLoading = computed(() => loading.value)
+
 const totalHours = computed(() => jobs.value.reduce((a, j) => a + j.total_hours, 0))
 const totalDollars = computed(() => jobs.value.reduce((a, j) => a + j.total_dollars, 0))
 const allSelected = computed(
   () => jobs.value.length > 0 && selectedIds.value.length === jobs.value.length,
 )
-const showDialog = ref(false)
-const progress = ref(0)
+
 const customMonthLoaded = ref(false)
 const customMonthData = ref<{
   jobs: MonthEndJob[]
   stockSummary: { material_line_count: number; material_cost: number }
 } | null>(null)
+
 const stockSummary = computed(() => {
   if (!stockJob.value) return { material_line_count: 0, material_cost: 0 }
   return {
@@ -245,15 +287,15 @@ const stockSummary = computed(() => {
 
 function sparklinePoints(values: number[]): string {
   if (!Array.isArray(values) || values.length < 2) return ''
-  const validValues = values.filter((v) => typeof v === 'number' && !isNaN(v))
-  if (validValues.length < 2) return ''
-  const max = Math.max(...validValues)
-  const min = Math.min(...validValues)
-  const width = 60
-  const height = 20
-  return validValues
+  const valid = values.filter((v) => typeof v === 'number' && !isNaN(v))
+  if (valid.length < 2) return ''
+  const max = Math.max(...valid),
+    min = Math.min(...valid)
+  const width = 60,
+    height = 20
+  return valid
     .map((v, i) => {
-      const x = (i / (validValues.length - 1)) * width
+      const x = (i / (valid.length - 1)) * width
       const y = height - (max === min ? height / 2 : ((v - min) / (max - min)) * height)
       return `${x},${y}`
     })
@@ -283,9 +325,7 @@ async function fetchMonthEndData() {
     toast.error('Failed to load month-end data')
   } finally {
     loading.value = false
-    setTimeout(() => {
-      toast.dismiss('month-end-loading')
-    }, 2000)
+    setTimeout(() => toast.dismiss('month-end-loading'), 2000)
   }
 }
 
@@ -295,10 +335,7 @@ const lastSixMonths = computed<MonthTab[]>(() => {
   for (let i = 0; i < 6; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    months.push({
-      key,
-      label: d.toLocaleString('default', { month: 'short', year: 'numeric' }),
-    })
+    months.push({ key, label: d.toLocaleString('default', { month: 'short', year: 'numeric' }) })
   }
   return months
 })
@@ -330,9 +367,7 @@ function loadMonthData(month: MonthTab) {
       }
       toast.success('Month-End data loaded successfully')
     })
-    .catch(() => {
-      toast.error('Failed to load month-end data')
-    })
+    .catch(() => toast.error('Failed to load month-end data'))
     .finally(() => {
       loading.value = false
       toast.dismiss(`month-end-${month.key}`)
@@ -360,9 +395,7 @@ function loadCustomMonth() {
       activeTab.value = 'custom'
       toast.success('Month-End data loaded successfully')
     })
-    .catch(() => {
-      toast.error('Failed to load month-end data')
-    })
+    .catch(() => toast.error('Failed to load month-end data'))
     .finally(() => {
       loading.value = false
       toast.dismiss('month-end-custom')
@@ -394,18 +427,17 @@ async function confirmRun() {
   try {
     const res = await runMonthEnd(selectedIds.value)
     progress.value = 100
-    if (!res.errors.length) {
-      toast.success('Month-End completed')
-    } else {
-      toast.error('Some jobs failed')
-    }
+    if (!res.errors.length) toast.success('Month-End completed')
+    else toast.error('Some jobs failed')
+
     showDialog.value = false
-    if (activeTab.value === 'custom') {
-      loadCustomMonth()
-    } else if (activeTab.value === 'history') {
-      loadMonthData(lastSixMonths.value.find((m) => m.key === activeMonthTab.value)!)
+    if (activeTab.value === 'custom') loadCustomMonth()
+    else if (activeTab.value === 'history') {
+      const tab = lastSixMonths.value.find((m) => m.key === activeMonthTab.value)!
+      loadMonthData(tab)
     }
-  } catch {
+  } catch (err) {
+    debugLog('Error trying to run month-end: ', err)
     toast.error('Failed to run Month-End')
   } finally {
     loading.value = false

@@ -1,29 +1,30 @@
 <template>
-  <div class="space-y-6">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+  <div class="flex flex-col h-full min-h-0 gap-4">
+    <!-- 1) Cards (fixed) -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 flex-shrink-0">
       <Card>
         <CardHeader>
           <CardTitle>Jobs</CardTitle>
         </CardHeader>
-        <CardContent class="text-2xl font-bold text-center">{{
-          jobsWithTotals.length
-        }}</CardContent>
+        <CardContent class="text-2xl font-bold text-center">
+          {{ jobsWithTotals.length }}
+        </CardContent>
       </Card>
       <Card>
         <CardHeader>
           <CardTitle>Total Hours</CardTitle>
         </CardHeader>
-        <CardContent class="text-2xl font-bold text-center">{{
-          historyTotalHours.toFixed(2)
-        }}</CardContent>
+        <CardContent class="text-2xl font-bold text-center">
+          {{ historyTotalHours.toFixed(2) }}
+        </CardContent>
       </Card>
       <Card>
         <CardHeader>
           <CardTitle>Total Dollars</CardTitle>
         </CardHeader>
-        <CardContent class="text-2xl font-bold text-center">{{
-          historyTotalDollars.toFixed(2)
-        }}</CardContent>
+        <CardContent class="text-2xl font-bold text-center">
+          {{ historyTotalDollars.toFixed(2) }}
+        </CardContent>
       </Card>
       <Card>
         <CardHeader>
@@ -35,9 +36,11 @@
         </CardContent>
       </Card>
     </div>
-    <div class="overflow-x-auto border rounded">
+
+    <!-- 2) Table (scrollable inside) -->
+    <div class="flex-1 min-h-0 overflow-y-auto border rounded max-h-[calc(100dvh-18rem)]">
       <Table>
-        <TableHeader>
+        <TableHeader class="sticky top-0 bg-white z-10">
           <TableRow>
             <TableHead class="w-10">
               <input type="checkbox" @change="toggleAll" :checked="allSelected" />
@@ -69,9 +72,13 @@
               </svg>
             </TableCell>
           </TableRow>
+
           <TableRow v-if="jobsWithTotals.length === 0 && !isLoading">
-            <TableCell colspan="6" class="text-center py-4">No jobs found for this month</TableCell>
+            <TableCell colspan="6" class="text-center py-4">
+              No jobs found for this month
+            </TableCell>
           </TableRow>
+
           <TableRow v-if="jobsWithTotals.length === 0 && isLoading">
             <TableCell colspan="6" class="text-center py-4">
               <div class="flex items-center justify-center gap-2">
@@ -83,11 +90,23 @@
         </TableBody>
       </Table>
     </div>
+
+    <!-- 3) Button (fixed) -->
+    <div class="flex justify-center pt-4 border-t flex-shrink-0">
+      <Button
+        variant="destructive"
+        :disabled="!selectedIdsProxy.length"
+        @click="emit('runMonthEnd')"
+      >
+        Run Month-End for {{ monthKey }}
+      </Button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -100,7 +119,6 @@ import {
 import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
 
-// Use generated types from Zodios API
 type MonthEndJobHistory = z.infer<typeof schemas.MonthEndJobHistory>
 type MonthEndJob = z.infer<typeof schemas.MonthEndJob>
 type MonthEndStockJob = z.infer<typeof schemas.MonthEndStockJob>
@@ -112,13 +130,13 @@ const props = defineProps<{
   selectedIds: string[]
   isLoading?: boolean
 }>()
+
 const emit = defineEmits(['selectJob', 'runMonthEnd'])
 
 const selectedIdsProxy = ref<string[]>([])
-
 watch(
   () => selectedIdsProxy.value,
-  (val) => emit('selectJob', val),
+  (v) => emit('selectJob', v),
   { immediate: true },
 )
 
@@ -126,8 +144,8 @@ function entriesInMonth(history: MonthEndJobHistory[], monthKey: string) {
   return Array.isArray(history)
     ? history.filter((h) => {
         const d = new Date(h.date)
-        const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-        return yearMonth === monthKey
+        const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        return ym === monthKey
       })
     : []
 }
@@ -135,25 +153,22 @@ function entriesInMonth(history: MonthEndJobHistory[], monthKey: string) {
 const jobsWithTotals = computed(() =>
   props.jobs.map((job) => {
     const entries = entriesInMonth(job.history, props.monthKey)
-    const monthHours = entries.reduce((sum, e) => sum + (e.total_hours || 0), 0)
-    const monthDollars = entries.reduce((sum, e) => sum + (e.total_dollars || 0), 0)
+    const monthHours = entries.reduce((s, e) => s + (e.total_hours || 0), 0)
+    const monthDollars = entries.reduce((s, e) => s + (e.total_dollars || 0), 0)
     return { ...job, monthHours, monthDollars, history: entries }
   }),
 )
 
-const historyTotalHours = computed(() =>
-  jobsWithTotals.value.reduce((sum, j) => sum + j.monthHours, 0),
-)
+const historyTotalHours = computed(() => jobsWithTotals.value.reduce((s, j) => s + j.monthHours, 0))
 const historyTotalDollars = computed(() =>
-  jobsWithTotals.value.reduce((sum, j) => sum + j.monthDollars, 0),
+  jobsWithTotals.value.reduce((s, j) => s + j.monthDollars, 0),
 )
 
-// Extract stock summary data from MonthEndStockJob
 const stockSummaryData = computed(() => {
-  const latestEntry = props.stockSummary.history?.[props.stockSummary.history.length - 1]
+  const latest = props.stockSummary.history?.[props.stockSummary.history.length - 1]
   return {
-    material_line_count: latestEntry?.material_line_count || 0,
-    material_cost: latestEntry?.material_cost || 0,
+    material_line_count: latest?.material_line_count || 0,
+    material_cost: latest?.material_cost || 0,
   }
 })
 
