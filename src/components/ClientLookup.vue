@@ -9,6 +9,7 @@
       <div class="flex-1 relative">
         <input
           :id="id"
+          ref="inputEl"
           v-model="searchQuery"
           type="text"
           :placeholder="placeholder"
@@ -146,11 +147,28 @@ const {
 } = useClientLookup()
 
 const showCreateModal = ref(false)
+const inputEl = ref<HTMLInputElement | null>(null) // Template ref for the input element
 
 const blurTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
 if (props.modelValue) {
   searchQuery.value = props.modelValue
+}
+
+const suppressFocusUntil = ref(0)
+
+function closeLookup() {
+  if (blurTimeout.value) {
+    clearTimeout(blurTimeout.value)
+    blurTimeout.value = null
+  }
+
+  suppressFocusUntil.value = Date.now() + 500
+
+  showSuggestions.value = false
+  showCreateModal.value = false
+
+  inputEl.value?.blur()
 }
 
 const handleInput = (event: Event) => {
@@ -162,9 +180,9 @@ const handleInput = (event: Event) => {
 }
 
 const handleFocus = () => {
-  if (blurTimeout.value) {
-    clearTimeout(blurTimeout.value)
-  }
+  if (blurTimeout.value) clearTimeout(blurTimeout.value)
+
+  if (Date.now() < suppressFocusUntil.value) return
 
   if (searchQuery.value.length >= 3) {
     showSuggestions.value = true
@@ -183,6 +201,8 @@ const selectClient = (client: Client) => {
   emit('update:modelValue', client.name)
   emit('update:selectedClient', client)
   emit('update:selectedId', client.id)
+
+  showSuggestions.value = false
 }
 
 const handleCreateNew = () => {
@@ -192,6 +212,11 @@ const handleCreateNew = () => {
 
 const handleClientCreated = (client: Client) => {
   selectClient(client)
+
+  searchQuery.value = client.name
+  emit('update:modelValue', client.name)
+
+  closeLookup()
 }
 
 watch(
