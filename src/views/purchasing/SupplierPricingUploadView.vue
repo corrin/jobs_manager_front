@@ -20,6 +20,7 @@
         </CardHeader>
         <CardContent>
           <div v-if="error" class="text-red-600 text-sm mb-2">{{ error }}</div>
+          <div v-if="successMessage" class="text-green-600 text-sm mb-2">{{ successMessage }}</div>
           <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
               <thead>
@@ -76,8 +77,50 @@
           </div>
         </CardHeader>
         <CardContent>
-          <DragAndDropUploader @files="upload">
-            <p class="text-sm text-gray-600">Drop price file here</p>
+          <!-- Processing Progress -->
+          <div v-if="isProcessing" class="mb-6">
+            <ProcessingProgress
+              :stage="processingStage"
+              :error="processingError"
+              :warnings="processingWarnings"
+              :statistics="processingStatistics"
+            />
+          </div>
+
+          <!-- Success Message -->
+          <div
+            v-if="successMessage && !isProcessing"
+            class="text-green-600 text-sm mb-4 p-3 bg-green-50 rounded-lg border border-green-200"
+          >
+            {{ successMessage }}
+          </div>
+
+          <!-- Error Message (when not processing) -->
+          <div
+            v-if="error && !isProcessing"
+            class="text-red-600 text-sm mb-4 p-3 bg-red-50 rounded-lg border border-red-200"
+          >
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <p class="font-medium mb-1">Upload Failed</p>
+                <p>{{ error }}</p>
+              </div>
+              <button
+                v-if="canRetry && lastUploadFile"
+                @click="retryUpload"
+                class="ml-3 text-red-600 hover:text-red-800 underline text-sm font-medium"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+
+          <!-- Upload Area -->
+          <DragAndDropUploader @files="upload" :disabled="isProcessing">
+            <p class="text-sm text-gray-600">
+              {{ isProcessing ? 'Processing...' : 'Drop price file here or click to upload' }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">PDF files only, max 10MB</p>
           </DragAndDropUploader>
         </CardContent>
       </Card>
@@ -88,11 +131,13 @@
 import { onMounted, ref } from 'vue'
 import axios from '@/plugins/axios'
 import { debugLog } from '@/utils/debug'
+import { getCsrfToken } from '@/utils/csrf'
 
 import AppLayout from '@/components/AppLayout.vue'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { CircleDollarSign, UploadCloud } from 'lucide-vue-next'
 import DragAndDropUploader from '@/components/purchasing/DragAndDropUploader.vue'
+import ProcessingProgress from '@/components/purchasing/ProcessingProgress.vue'
 
 interface StatusRow {
   supplier_id: string
@@ -103,9 +148,48 @@ interface StatusRow {
   changes_last_update?: number | null
 }
 
+interface ProcessingResult {
+  success: boolean
+  message?: string
+  supplier?: {
+    name: string
+    id: string
+    created: boolean
+  }
+  price_list?: {
+    id: string
+    filename: string
+    uploaded_at: string
+  }
+  statistics?: {
+    total_extracted: number
+    total_valid: number
+    imported: number
+    updated: number
+    skipped: number
+    failed: number
+  }
+  validation?: {
+    warnings: string[]
+    warning_count: number
+  }
+  error?: string
+  stage?: string
+  validation_errors?: string[]
+  validation_warnings?: string[]
+}
+
 const rows = ref<StatusRow[]>([])
 const loading = ref(false)
+const processingStage = ref<string>('uploading')
+const processingError = ref<string | null>(null)
+const processingWarnings = ref<string[]>([])
+const processingStatistics = ref<ProcessingResult['statistics'] | null>(null)
+const isProcessing = ref(false)
 const error = ref<string | null>(null)
+const successMessage = ref<string | null>(null)
+const canRetry = ref(false)
+const lastUploadFile = ref<File | null>(null)
 
 import { formatInNZT } from '@/utils/formatDate'
 
@@ -116,6 +200,7 @@ function formatDate(iso: string) {
 async function refresh() {
   loading.value = true
   error.value = null
+
   try {
     const res = await axios.get('/purchasing/rest/supplier-price-status/')
     rows.value = (res.data?.items || []) as StatusRow[]
@@ -131,7 +216,179 @@ onMounted(() => {
   refresh()
 })
 
-function upload(files: FileList) {
+async function upload(files: FileList) {
   debugLog('upload', files)
+
+  if (!files || files.length === 0) {
+    error.value = 'No files selected for upload.'
+    return
+  }
+
+  const file = files[0]
+
+  // Validate file type
+  if (file.type !== 'application/pdf') {
+    error.value = 'Please select a PDF file.'
+    return
+  }
+
+  // Validate file size (e.g., max 10MB)
+  const maxSize = 10 * 1024 * 1024 // 10MB
+  if (file.size > maxSize) {
+    error.value = 'File size must be less than 10MB.'
+    return
+  }
+
+  // Reset state
+  resetProcessingState()
+  isProcessing.value = true
+  error.value = null
+  successMessage.value = null
+  canRetry.value = false
+  lastUploadFile.value = file
+
+  try {
+    // Stage 1: Uploading
+    processingStage.value = 'uploading'
+
+    const formData = new FormData()
+    formData.append('price_list_file', file)
+
+    const csrfToken = getCsrfToken()
+
+    // Stage 2: Extracting (simulate stage change before request)
+    setTimeout(() => {
+      if (isProcessing.value && processingStage.value === 'uploading') {
+        processingStage.value = 'extracting'
+      }
+    }, 1000)
+
+    const response = await axios.post('/quoting/api/extract-supplier-price-list/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...(csrfToken && { 'X-CSRFToken': csrfToken }),
+      },
+      timeout: 180000, // 60 seconds for PDF processing with AI
+    })
+
+    const result = response.data as ProcessingResult
+
+    if (result.success) {
+      // Progress through final stages quickly
+      processingStage.value = 'validating'
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      processingStage.value = 'importing'
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      processingStage.value = 'complete'
+
+      // Set final results
+      processingStatistics.value = result.statistics || null
+      processingWarnings.value = result.validation?.warnings || []
+
+      // Create detailed success message
+      const stats = result.statistics
+      let message = `Successfully processed "${file.name}"`
+      if (stats) {
+        message += ` - Imported ${stats.imported} products`
+        if (stats.updated > 0) message += `, updated ${stats.updated}`
+        if (stats.skipped > 0) message += `, skipped ${stats.skipped}`
+      }
+
+      successMessage.value = message
+
+      // Refresh the status table
+      await refresh()
+      debugLog('Processing successful', result)
+    } else {
+      handleProcessingError(result)
+    }
+  } catch (e: unknown) {
+    debugLog('Upload error', e)
+
+    const error = e as any // eslint-disable-line @typescript-eslint/no-explicit-any
+    const errorData = error.response?.data as ProcessingResult
+    if (errorData?.error) {
+      handleProcessingError(errorData)
+    } else if (error.response?.status === 413) {
+      processingError.value = 'File is too large. Please select a smaller file.'
+      canRetry.value = false // File size issue can't be retried
+    } else if (error.response?.status >= 500) {
+      processingError.value = 'Server error occurred. Please try again later.'
+      canRetry.value = true
+    } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+      processingError.value = 'Network error. Please check your connection and try again.'
+      canRetry.value = true
+    } else {
+      processingError.value = 'Upload failed. Please try again.'
+      canRetry.value = true
+    }
+  } finally {
+    // Keep processing state for a bit to show results
+    setTimeout(() => {
+      if (processingStage.value === 'complete' || processingError.value) {
+        isProcessing.value = false
+      }
+    }, 3000)
+  }
+}
+
+function resetProcessingState() {
+  processingStage.value = 'uploading'
+  processingError.value = null
+  processingWarnings.value = []
+  processingStatistics.value = null
+}
+
+function handleProcessingError(result: ProcessingResult) {
+  processingError.value = result.error || 'Processing failed'
+
+  // Set warnings if available
+  if (result.validation_warnings) {
+    processingWarnings.value = result.validation_warnings
+  }
+
+  // Add validation errors to warnings for display
+  if (result.validation_errors) {
+    processingWarnings.value = [...processingWarnings.value, ...result.validation_errors]
+  }
+
+  // Determine if this error is retryable
+  const stage = result.stage || 'unknown'
+  if (stage === 'extraction' || stage === 'processing') {
+    canRetry.value = true // AI extraction errors might be temporary
+  } else if (stage === 'validation' && result.validation_errors) {
+    canRetry.value = false // Validation errors indicate bad data
+  } else {
+    canRetry.value = true // Default to retryable
+  }
+}
+
+async function retryUpload() {
+  if (!lastUploadFile.value) return
+
+  debugLog('Retrying upload', lastUploadFile.value.name)
+
+  // Create a new FileList-like object for retry
+  const fileList = {
+    0: lastUploadFile.value,
+    length: 1,
+    item: (index: number) => (index === 0 ? lastUploadFile.value : null),
+    [Symbol.iterator]: function* () {
+      if (lastUploadFile.value) yield lastUploadFile.value
+    },
+  } as FileList
+
+  await upload(fileList)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function clearMessages() {
+  error.value = null
+  successMessage.value = null
+  processingError.value = null
+  processingWarnings.value = []
+  canRetry.value = false
 }
 </script>
