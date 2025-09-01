@@ -338,6 +338,10 @@ const {
 } = useOptimizedKanban(() => {
   nextTick(() => {
     initialiseSortableForAllColumns()
+    // Ensure draft column is always initialized
+    setTimeout(() => {
+      ensureDraftColumnInitialized()
+    }, 100)
   })
 })
 
@@ -448,7 +452,25 @@ const handleSortableReady = (element: HTMLElement, status: string) => {
   columnsReadyForSortable.value.set(status, element)
 
   const columnJobs = getJobsByStatus.value(status)
-  if (columnJobs.length > 0 && !sortableInitialized.value.has(status)) {
+
+  if (status === 'draft') {
+    console.log(`🎯 DRAFT COLUMN: handleSortableReady called`, {
+      status,
+      element,
+      jobsCount: columnJobs.length,
+      alreadyInitialized: sortableInitialized.value.has(status),
+      elementConnected: element.isConnected,
+      elementDataStatus: element.dataset.status,
+    })
+  }
+
+  // Special case for draft column - always initialize even without jobs
+  if (status === 'draft') {
+    if (!sortableInitialized.value.has(status)) {
+      console.log(`🎯 DRAFT COLUMN: Initializing draft column regardless of job count`)
+      initializeSortableForColumn(status, element)
+    }
+  } else if (columnJobs.length > 0 && !sortableInitialized.value.has(status)) {
     initializeSortableForColumn(status, element)
   }
 }
@@ -458,9 +480,34 @@ const initializeSortableForColumn = (status: string, element: HTMLElement) => {
     return
   }
 
+  if (status === 'draft') {
+    console.log(`🎯 DRAFT COLUMN: initializeSortableForColumn called`, {
+      status,
+      element,
+      elementConnected: element.isConnected,
+      elementDataStatus: element.dataset.status,
+      hasChildren: element.children.length > 0,
+    })
+  }
+
   nextTick(() => {
+    // Special handling for draft column - ensure it's always initialized
+    if (status === 'draft') {
+      console.log(`🎯 DRAFT COLUMN: About to initialize sortable in nextTick`)
+
+      // Force re-initialization for draft column if needed
+      if (!element.isConnected) {
+        console.warn(`🎯 DRAFT COLUMN: Element not connected, skipping initialization`)
+        return
+      }
+    }
+
     initializeSortable(element, status)
     sortableInitialized.value.add(status)
+
+    if (status === 'draft') {
+      console.log(`🎯 DRAFT COLUMN: Sortable initialized successfully`)
+    }
   })
 }
 
@@ -470,6 +517,30 @@ const initialiseSortableForAllColumns = () => {
       initializeSortableForColumn(status, element)
     }
   })
+
+  // Special handling for draft column - force initialization even if no jobs
+  const draftElement = columnsReadyForSortable.value.get('draft')
+  if (draftElement && !sortableInitialized.value.has('draft')) {
+    console.log(`🎯 DRAFT COLUMN: Force initializing draft column even without jobs`)
+    initializeSortableForColumn('draft', draftElement)
+  }
+}
+
+// New function to specifically handle draft column initialization issues
+const ensureDraftColumnInitialized = () => {
+  const draftElement = columnsReadyForSortable.value.get('draft')
+  if (draftElement) {
+    console.log(`🎯 DRAFT COLUMN: Ensuring draft column is initialized`, {
+      element: draftElement,
+      isInitialized: sortableInitialized.value.has('draft'),
+      isConnected: draftElement.isConnected,
+      dataStatus: draftElement.dataset.status,
+    })
+
+    if (!sortableInitialized.value.has('draft')) {
+      initializeSortableForColumn('draft', draftElement)
+    }
+  }
 }
 
 function getSortedJobsByStatus(statusKey: string) {
@@ -632,5 +703,46 @@ onUnmounted(() => {
 .scroll-smooth {
   scrollbar-width: thin;
   scrollbar-color: #3b82f6 #f1f5f9;
+}
+
+/* Special styles for draft column drag and drop */
+.sortable-ghost-draft {
+  opacity: 0.4 !important;
+  background: #fef3c7 !important;
+  border: 2px dashed #f59e0b !important;
+  transform: rotate(2deg) !important;
+}
+
+.sortable-chosen-draft {
+  opacity: 0.9 !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3) !important;
+  border-color: #f59e0b !important;
+}
+
+.sortable-drag-draft {
+  opacity: 0.7 !important;
+  transform: rotate(-2deg) scale(1.02) !important;
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Ensure draft column drop zones are always active */
+[data-status='draft'] {
+  min-height: 200px !important;
+}
+
+[data-status='draft']:empty::after {
+  content: 'Drop jobs here to set as Draft';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  color: #9ca3af;
+  font-size: 14px;
+  text-align: center;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  margin: 8px;
+  background: #f9fafb;
 }
 </style>

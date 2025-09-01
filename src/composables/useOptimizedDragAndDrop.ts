@@ -27,37 +27,80 @@ export function useOptimizedDragAndDrop(
     }
     if (!element || !element.isConnected) return
 
-    debugLog(`🔧 Creating Optimized Sortable for ${status}:`, {
-      element,
-      dataStatus: element.dataset.status,
-      children: element.children.length,
-    })
+    // Special debug logging for draft column
+    if (status === 'draft') {
+      debugLog(`🎯 DRAFT COLUMN: Creating Optimized Sortable for ${status}:`, {
+        element,
+        dataStatus: element.dataset.status,
+        children: element.children.length,
+        elementConnected: element.isConnected,
+        elementParent: element.parentElement?.tagName,
+        elementId: element.id,
+        elementClasses: element.className,
+      })
+    } else {
+      debugLog(`🔧 Creating Optimized Sortable for ${status}:`, {
+        element,
+        dataStatus: element.dataset.status,
+        children: element.children.length,
+      })
+    }
 
-    const sortable = Sortable.create(element, {
+    // Special configuration for draft column to ensure it works properly
+    const sortableConfig = {
       group: 'kanban-jobs',
       animation: 150,
       draggable: '.job-card',
       sort: true,
-      emptyInsertThreshold: 100,
+      emptyInsertThreshold: status === 'draft' ? 50 : 100, // Lower threshold for draft
       forceFallback: false,
       fallbackOnBody: true,
       swapThreshold: 0.65,
+      // Special handling for draft column
+      ...(status === 'draft' && {
+        ghostClass: 'sortable-ghost-draft',
+        chosenClass: 'sortable-chosen-draft',
+        dragClass: 'sortable-drag-draft',
+      }),
       onStart: () => {
-        debugLog(`🎯 Optimistic drag started from: ${status}`)
+        if (status === 'draft') {
+          debugLog(`🎯 DRAFT COLUMN: Optimistic drag started from: ${status}`)
+        } else {
+          debugLog(`🎯 Optimistic drag started from: ${status}`)
+        }
         isDragging.value = true
         document.body.classList.add('is-dragging')
       },
       onMove: (evt) => {
         const toColumn = (evt.to.closest('[data-status]') as HTMLElement)?.dataset.status
-        debugLog(`🎯 Optimistic drag moving to: ${toColumn}`)
+        if (status === 'draft' || toColumn === 'draft') {
+          debugLog(`🎯 DRAFT COLUMN: Optimistic drag moving from ${status} to: ${toColumn}`)
+        } else {
+          debugLog(`🎯 Optimistic drag moving to: ${toColumn}`)
+        }
         return true
       },
       onEnd: async (evt) => {
-        debugLog(`🎯 Optimistic drag ended:`, {
-          from: evt.from.dataset.status,
-          to: evt.to.dataset.status,
-          item: evt.item.dataset.jobId,
-        })
+        const dragFromStatus = evt.from.dataset.status
+        const dragToStatus = evt.to.dataset.status
+
+        if (dragFromStatus === 'draft' || dragToStatus === 'draft') {
+          debugLog(`🎯 DRAFT COLUMN: Optimistic drag ended:`, {
+            from: dragFromStatus,
+            to: dragToStatus,
+            item: evt.item.dataset.jobId,
+            fromElement: evt.from,
+            toElement: evt.to,
+            newIndex: evt.newIndex,
+            oldIndex: evt.oldIndex,
+          })
+        } else {
+          debugLog(`🎯 Optimistic drag ended:`, {
+            from: dragFromStatus,
+            to: dragToStatus,
+            item: evt.item.dataset.jobId,
+          })
+        }
 
         isDragging.value = false
         document.body.classList.remove('is-dragging')
@@ -95,7 +138,9 @@ export function useOptimizedDragAndDrop(
           }
         }
       },
-    })
+    }
+
+    const sortable = Sortable.create(element, sortableConfig)
 
     sortableInstances.value.set(status, sortable)
   }

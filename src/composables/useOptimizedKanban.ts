@@ -234,7 +234,11 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
   // Optimistic job status update
   const updateJobStatusOptimistic = async (jobId: string, newStatus: string): Promise<void> => {
-    debugLog(`🎯 Optimistic update: Job ${jobId} -> ${newStatus}`)
+    if (newStatus === 'draft') {
+      debugLog(`🎯 DRAFT COLUMN: Optimistic update: Job ${jobId} -> ${newStatus}`)
+    } else {
+      debugLog(`🎯 Optimistic update: Job ${jobId} -> ${newStatus}`)
+    }
 
     // Find the job in current columns
     let sourceColumnId: string | null = null
@@ -247,17 +251,31 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
         job = columnState.jobs[jobIndex]
         // Remove from source column
         columnState.jobs.splice(jobIndex, 1)
+
+        if (columnId === 'draft' || newStatus === 'draft') {
+          debugLog(
+            `🎯 DRAFT COLUMN: Found job ${jobId} in column ${columnId}, moving to ${newStatus}`,
+          )
+        }
         break
       }
     }
 
     if (!job || !sourceColumnId) {
-      debugLog(`❌ Job ${jobId} not found for optimistic update`)
+      if (newStatus === 'draft') {
+        debugLog(`❌ DRAFT COLUMN: Job ${jobId} not found for optimistic update`)
+      } else {
+        debugLog(`❌ Job ${jobId} not found for optimistic update`)
+      }
       return
     }
 
     // Determine target column
     const targetColumnId = KanbanCategorizationService.getColumnForStatus(newStatus)
+
+    if (sourceColumnId === 'draft' || targetColumnId === 'draft') {
+      debugLog(`🎯 DRAFT COLUMN: Target column for status ${newStatus} is ${targetColumnId}`)
+    }
 
     // Update job status
     const updatedJob = {
