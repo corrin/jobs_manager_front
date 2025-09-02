@@ -46,7 +46,7 @@
           >
             <div class="flex items-center">
               <Plus class="w-4 h-4 mr-2" />
-              Add new {{ supplierLookup ? 'supplier' : 'client' }} "{{ searchQuery }}"
+              Add new client "{{ searchQuery }}"
             </div>
           </div>
 
