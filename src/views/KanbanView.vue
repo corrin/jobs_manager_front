@@ -436,13 +436,19 @@ const { isDragging, initializeSortable, destroyAllSortables } = useOptimizedDrag
       const { jobId, fromStatus, toStatus, beforeId, afterId } = payload
       if (fromStatus !== toStatus) {
         const actualStatus = KanbanCategorizationService.getDefaultStatusForColumn(toStatus)
+        // First update the status
         updateJobStatus(jobId, actualStatus)
+        // Then reorder to the correct position if we have positioning info
+        if (beforeId || afterId) {
+          setTimeout(() => {
+            reorderJob(jobId, beforeId, afterId, toStatus)
+          }, 500) // Wait for status update to complete
+        }
       } else {
         reorderJob(jobId, beforeId, afterId, toStatus)
       }
     }
   },
-  revalidateColumns,
 )
 
 const sortableInitialized = ref<Set<string>>(new Set())

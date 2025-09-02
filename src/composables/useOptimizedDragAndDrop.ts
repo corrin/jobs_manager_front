@@ -12,10 +12,7 @@ export interface OptimizedDragEventPayload {
 
 export type OptimizedDragEventHandler = (event: string, payload: OptimizedDragEventPayload) => void
 
-export function useOptimizedDragAndDrop(
-  onDragEvent?: OptimizedDragEventHandler,
-  revalidateColumns?: (columnIds: string[]) => Promise<void>,
-) {
+export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler) {
   const isDragging = ref(false)
   const sortableInstances = ref<Map<string, Sortable>>(new Map())
 
@@ -46,27 +43,18 @@ export function useOptimizedDragAndDrop(
       })
     }
 
-    // Special configuration for draft column to ensure it works properly
     const sortableConfig = {
       group: 'kanban-jobs',
       animation: 150,
       draggable: '.job-card',
       sort: true,
-      emptyInsertThreshold: status === 'draft' ? 50 : 100, // Lower threshold for draft
+      emptyInsertThreshold: 100,
       forceFallback: false,
       fallbackOnBody: true,
       swapThreshold: 0.65,
-      // Special handling for draft column
-      ...(status === 'draft' && {
-        ghostClass: 'sortable-ghost-draft',
-        chosenClass: 'sortable-chosen-draft',
-        dragClass: 'sortable-drag-draft',
-      }),
       onStart: () => {
         if (status === 'draft') {
-          debugLog(`🎯 DRAFT COLUMN: Optimistic drag started from: ${status}`)
-        } else {
-          debugLog(`🎯 Optimistic drag started from: ${status}`)
+          debugLog(`🎯 DRAFT COLUMN: Drag started from: ${status}`)
         }
         isDragging.value = true
         document.body.classList.add('is-dragging')
@@ -74,9 +62,7 @@ export function useOptimizedDragAndDrop(
       onMove: (evt) => {
         const toColumn = (evt.to.closest('[data-status]') as HTMLElement)?.dataset.status
         if (status === 'draft' || toColumn === 'draft') {
-          debugLog(`🎯 DRAFT COLUMN: Optimistic drag moving from ${status} to: ${toColumn}`)
-        } else {
-          debugLog(`🎯 Optimistic drag moving to: ${toColumn}`)
+          debugLog(`🎯 DRAFT COLUMN: Moving from ${status} to: ${toColumn}`)
         }
         return true
       },
@@ -85,21 +71,7 @@ export function useOptimizedDragAndDrop(
         const dragToStatus = evt.to.dataset.status
 
         if (dragFromStatus === 'draft' || dragToStatus === 'draft') {
-          debugLog(`🎯 DRAFT COLUMN: Optimistic drag ended:`, {
-            from: dragFromStatus,
-            to: dragToStatus,
-            item: evt.item.dataset.jobId,
-            fromElement: evt.from,
-            toElement: evt.to,
-            newIndex: evt.newIndex,
-            oldIndex: evt.oldIndex,
-          })
-        } else {
-          debugLog(`🎯 Optimistic drag ended:`, {
-            from: dragFromStatus,
-            to: dragToStatus,
-            item: evt.item.dataset.jobId,
-          })
+          debugLog(`🎯 DRAFT COLUMN: Drag ended - ${dragFromStatus} → ${dragToStatus}`)
         }
 
         isDragging.value = false
@@ -116,27 +88,40 @@ export function useOptimizedDragAndDrop(
         if (!fromStatus || !toStatus) return
 
         const newIndex = evt.newIndex ?? 0
-        const beforeId =
-          newIndex > 0 ? (evt.to.children[newIndex - 1] as HTMLElement)?.dataset.jobId : undefined
+
+        // Get all job IDs from the target column's DOM elements (current state)
+        const targetColumnJobs: string[] = []
+        for (let i = 0; i < evt.to.children.length; i++) {
+          const child = evt.to.children[i] as HTMLElement
+          const childJobId = child.dataset.jobId
+          if (childJobId) {
+            targetColumnJobs.push(childJobId)
+          }
+        }
+
+        // Calculate beforeId and afterId based on the new position in the array
+        const beforeId = newIndex > 0 ? targetColumnJobs[newIndex - 1] : undefined
         const afterId =
-          newIndex < evt.to.children.length - 1
-            ? (evt.to.children[newIndex + 1] as HTMLElement)?.dataset.jobId
-            : undefined
+          newIndex < targetColumnJobs.length - 1 ? targetColumnJobs[newIndex + 1] : undefined
+
+        // Debug positioning for ALL columns to see what's happening
+        debugLog(`🎯 DRAG POSITIONING: ${fromStatus} → ${toStatus}`, {
+          jobId,
+          newIndex,
+          beforeId,
+          afterId,
+          totalChildren: evt.to.children.length,
+          targetColumnJobs,
+          draggedJobInArray: targetColumnJobs[newIndex],
+        })
 
         // Call the drag event handler (which should handle optimistic updates)
         if (onDragEvent) {
           onDragEvent('job-moved', { jobId, fromStatus, toStatus, beforeId, afterId })
         }
 
-        // If we have revalidateColumns function, revalidate affected columns
-        if (revalidateColumns && fromStatus !== toStatus) {
-          try {
-            debugLog(`🔄 Revalidating columns after drag: ${fromStatus}, ${toStatus}`)
-            await revalidateColumns([fromStatus, toStatus])
-          } catch (error) {
-            debugLog(`❌ Error revalidating columns after drag:`, error)
-          }
-        }
+        // Revalidation is handled by the onDragEvent handler (useOptimizedKanban)
+        // Removing duplicate revalidation to prevent conflicts and duplications
       },
     }
 

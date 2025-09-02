@@ -220,11 +220,21 @@ const handleDragLeave = (event: DragEvent): void => {
 }
 
 const handleDrop = async (event: DragEvent): Promise<void> => {
+  // Check if this is a staff drag operation by looking at the drag data
+  const dragData = event.dataTransfer?.getData('text/plain')
+  const dragType = event.dataTransfer?.getData('application/x-drag-type')
+
+  // Only handle staff drops, let job drops pass through to SortableJS
+  if (dragType !== 'staff' && !dragData?.startsWith('staff-')) {
+    // This is likely a job drag, don't intercept it
+    return
+  }
+
   event.preventDefault()
   event.stopPropagation()
   isStaffDragOver.value = false
 
-  const staffId = event.dataTransfer?.getData('text/plain')
+  const staffId = dragData
 
   const payload: AssignJobRequest = {
     job_id: props.job.id,
