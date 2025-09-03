@@ -19,6 +19,7 @@
                     label="Client"
                     :required="true"
                     placeholder="Search for a client..."
+                    :supplier-lookup="{ value: false }"
                   />
                   <p v-if="errors.client_id" class="mt-1 text-sm text-red-600">
                     {{ errors.client_id }}

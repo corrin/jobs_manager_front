@@ -18,10 +18,14 @@
           @input="handleInput"
           @focus="handleFocus"
           @blur="handleBlur"
+          @keydown="handleKeydown"
           autocomplete="off"
         />
 
-        <div v-if="isLoading" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+        <div
+          v-if="isLoading || isCreatingQuickClient"
+          class="absolute right-3 top-1/2 transform -translate-y-1/2"
+        >
           <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
 
@@ -44,9 +48,12 @@
             class="px-4 py-2 hover:bg-green-50 cursor-pointer border-t border-gray-200 text-green-700 font-medium"
             @mousedown.prevent="handleCreateNew"
           >
-            <div class="flex items-center">
-              <Plus class="w-4 h-4 mr-2" />
-              Add new client "{{ searchQuery }}"
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <Plus class="w-4 h-4 mr-2" />
+                Add new {{ supplierLookup.value ? 'supplier' : 'client' }} "{{ searchQuery }}"
+              </div>
+              <div class="text-xs text-gray-500">or press Ctrl+Enter</div>
             </div>
           </div>
 
@@ -105,6 +112,8 @@ import { Plus, CheckCircle, XCircle } from 'lucide-vue-next'
 import { useClientLookup } from '@/composables/useClientLookup'
 import CreateClientModal from '@/components/CreateClientModal.vue'
 import type { Client } from '@/composables/useClientLookup'
+import { api } from '@/api/client'
+import { toast } from 'vue-sonner'
 import { debugLog } from '../utils/debug'
 
 const props = withDefaults(
@@ -148,6 +157,7 @@ const {
 
 const showCreateModal = ref(false)
 const inputEl = ref<HTMLInputElement | null>(null) // Template ref for the input element
+const isCreatingQuickClient = ref(false)
 
 const blurTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
@@ -208,6 +218,64 @@ const selectClient = (client: Client) => {
 const handleCreateNew = () => {
   showCreateModal.value = true
   hideSuggestions()
+}
+
+const handleKeydown = async (event: KeyboardEvent) => {
+  // CTRL + ENTER para criação rápida de cliente
+  if (event.ctrlKey && event.key === 'Enter') {
+    event.preventDefault()
+
+    const clientName = searchQuery.value.trim()
+    if (clientName.length >= 3) {
+      await createQuickClient(clientName)
+    }
+  }
+}
+
+const createQuickClient = async (clientName: string) => {
+  if (isCreatingQuickClient.value) return
+
+  isCreatingQuickClient.value = true
+
+  try {
+    const clientData = {
+      name: clientName,
+      email: null,
+      phone: '',
+      address: '',
+      is_account_customer: false,
+    }
+
+    const result = await api.clients_create_create(clientData)
+
+    if (result.success && result.client) {
+      if (!result.client.xero_contact_id) {
+        throw new Error('Client was created but does not have a Xero ID')
+      }
+
+      const newClient: Client = {
+        id: result.client.id,
+        name: result.client.name,
+        email: result.client.email || '',
+        phone: result.client.phone || '',
+        address: result.client.address || '',
+        xero_contact_id: result.client.xero_contact_id || '',
+      }
+
+      selectClient(newClient)
+      searchQuery.value = newClient.name
+      emit('update:modelValue', newClient.name)
+
+      toast.success(`Client "${clientName}" created successfully!`)
+    } else {
+      throw new Error(result.error || 'Failed to create client')
+    }
+  } catch (error) {
+    toast.error(`Failed to create client: ${error instanceof Error ? error.message : error}`)
+    debugLog('Quick client creation error:', error)
+  } finally {
+    isCreatingQuickClient.value = false
+  }
 }
 
 const handleClientCreated = (client: Client) => {

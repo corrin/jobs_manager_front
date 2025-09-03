@@ -197,6 +197,16 @@
         </Card>
       </div>
     </div>
+
+    <!-- Client Edit Modal -->
+    <CreateClientModal
+      :is-open="showEditClientModal"
+      :edit-mode="true"
+      :client-id="props.jobData?.client_id || ''"
+      :client-data="currentClientData"
+      @update:is-open="showEditClientModal = $event"
+      @client-created="handleClientUpdated"
+    />
   </div>
 </template>
 
@@ -211,10 +221,12 @@ import { createJobAutosave } from '../../composables/useJobAutosave'
 import RichTextEditor from '../RichTextEditor.vue'
 import ClientLookup from '../ClientLookup.vue'
 import ContactSelector from '../ContactSelector.vue'
+import CreateClientModal from '../CreateClientModal.vue'
 import type { Client } from '../../composables/useClientLookup'
 import { debugLog } from '../../utils/debug'
 import { toast } from 'vue-sonner'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card'
+import { api } from '../../api/client'
 
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
 type ClientContact = z.infer<typeof schemas.ClientContactResult>
@@ -236,6 +248,7 @@ const newClientName = ref('')
 const selectedNewClient = ref<Client | null>(null)
 
 const contactDisplayValue = ref('')
+const showEditClientModal = ref(false)
 
 const jobStatusChoices = ref<{ value: string; label: string }[]>([])
 const isInitializing = ref(true)
@@ -287,6 +300,14 @@ const jobNotesComputed = computed({
   set: (value: string) => {
     localJobData.value.notes = value || null
   },
+})
+
+const currentClientData = ref({
+  name: '',
+  email: '',
+  phone: '',
+  address: '',
+  is_account_customer: true,
 })
 
 const resetClientChangeState = () => {
@@ -390,14 +411,43 @@ const confirmClientChange = () => {
   void autosave.flush('client-change')
 }
 
-const editCurrentClient = () => {
+const editCurrentClient = async () => {
   if (!props.jobData?.client_id) {
     debugLog('No current client to edit')
     return
   }
 
-  const url = `/clients/${props.jobData.client_id}/edit`
-  window.open(url, '_blank')
+  try {
+    // Fetch current client data from API
+    const clientDetail = await api.clients_retrieve({
+      params: { client_id: props.jobData.client_id },
+    })
+
+    // Update currentClientData with fetched data
+    currentClientData.value = {
+      name: clientDetail.name,
+      email: clientDetail.email,
+      phone: clientDetail.phone,
+      address: clientDetail.address,
+      is_account_customer: clientDetail.is_account_customer,
+    }
+
+    showEditClientModal.value = true
+  } catch (error) {
+    debugLog('Error fetching client data:', error)
+    toast.error('Failed to load client data for editing')
+  }
+}
+
+const handleClientUpdated = (updatedClient: Client) => {
+  // Update local job data with new client information
+  localJobData.value.client_name = updatedClient.name
+
+  // Queue the change for autosave
+  autosave.queueChange('client_name', updatedClient.name)
+  void autosave.flush('client-updated')
+
+  toast.success('Client updated successfully')
 }
 
 const handleContactSelected = (contact: ClientContact | null) => {

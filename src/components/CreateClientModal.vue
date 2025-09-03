@@ -2,9 +2,13 @@
   <Dialog :open="isOpen" @update:open="handleDialogChange">
     <DialogContent class="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>Add New Client</DialogTitle>
+        <DialogTitle>{{ editMode ? 'Edit Client' : 'Add New Client' }}</DialogTitle>
         <DialogDescription>
-          Create a new client. All fields except name are optional.
+          {{
+            editMode
+              ? 'Update client information. All fields except name are optional.'
+              : 'Create a new client. All fields except name are optional.'
+          }}
         </DialogDescription>
       </DialogHeader>
 
@@ -123,7 +127,15 @@
             :disabled="!isFormValid || isLoading"
             class="bg-blue-600 hover:bg-blue-700"
           >
-            {{ isLoading ? 'Creating...' : 'Create Client' }}
+            {{
+              isLoading
+                ? editMode
+                  ? 'Updating...'
+                  : 'Creating...'
+                : editMode
+                  ? 'Update Client'
+                  : 'Create Client'
+            }}
           </Button>
         </DialogFooter>
       </form>
@@ -166,14 +178,33 @@ import type { Client } from '@/composables/useClientLookup'
 // Use generated types from Zodios API
 type ClientCreateRequest = z.infer<typeof schemas.ClientCreateRequest>
 type ClientCreateResponse = z.infer<typeof schemas.ClientCreateResponse>
+type ClientUpdateResponse = z.infer<typeof schemas.ClientUpdateResponse>
 
 interface Props {
   isOpen: boolean
   initialName?: string
+  editMode?: boolean
+  clientId?: string
+  clientData?: {
+    name: string
+    email: string
+    phone: string
+    address: string
+    is_account_customer: boolean
+  }
 }
 
 const props = withDefaults(defineProps<Props>(), {
   initialName: '',
+  editMode: false,
+  clientId: '',
+  clientData: () => ({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    is_account_customer: false,
+  }),
 })
 
 const emit = defineEmits<{
@@ -276,8 +307,17 @@ const handleSubmit = async () => {
       throw validationError
     }
 
-    // Use Zodios API to create client - try direct approach
-    const result: ClientCreateResponse = await api.clients_create_create(cleanedData)
+    let result: ClientCreateResponse | ClientUpdateResponse
+
+    if (props.editMode && props.clientId) {
+      // Update existing client
+      result = await api.clients_update_update(cleanedData, {
+        params: { client_id: props.clientId },
+      })
+    } else {
+      // Create new client
+      result = await api.clients_create_create(cleanedData)
+    }
 
     console.log('📡 API response:', result)
 
@@ -287,17 +327,19 @@ const handleSubmit = async () => {
         errorMessage.value = result.error || 'Client already exists in Xero.'
         return
       }
-      throw new Error(result.error || 'Failed to create client')
+      throw new Error(result.error || `Failed to ${props.editMode ? 'update' : 'create'} client`)
     }
 
     if (result.client) {
-      if (!result.client.xero_contact_id) {
+      // In edit mode, we don't need to check for Xero ID since client already exists
+      if (!props.editMode && !result.client.xero_contact_id) {
         blockedNoXeroId.value = true
         errorMessage.value =
           'Client was created but does not have a Xero ID. Please try again or contact support.'
         return
       }
-      const newClient: Client = {
+
+      const clientData: Client = {
         id: result.client.id,
         name: result.client.name,
         email: result.client.email || '',
@@ -305,7 +347,7 @@ const handleSubmit = async () => {
         address: result.client.address || '',
         xero_contact_id: result.client.xero_contact_id || '',
       }
-      emit('client-created', newClient)
+      emit('client-created', clientData)
       emit('update:isOpen', false)
     }
   } catch (error) {
@@ -358,14 +400,28 @@ watch(
   (isOpen) => {
     console.log('👁️ Modal isOpen changed:', isOpen)
     console.log('🏷️ props.initialName:', props.initialName)
+    console.log('🔧 props.editMode:', props.editMode)
+    console.log('📋 props.clientData:', props.clientData)
 
     if (isOpen) {
       console.log('🔄 Resetting form...')
-      // Reset form first, then set initial name
+      // Reset form first
       resetForm()
       console.log('📋 Form after reset:', formData.value)
 
-      if (props.initialName) {
+      if (props.editMode && props.clientData) {
+        // Pre-populate with existing client data
+        console.log('✏️ Edit mode: Pre-populating with client data')
+        formData.value = {
+          name: props.clientData.name,
+          email: props.clientData.email,
+          phone: props.clientData.phone,
+          address: props.clientData.address,
+          is_account_customer: props.clientData.is_account_customer,
+        }
+        console.log('📋 Form after pre-population:', formData.value)
+      } else if (props.initialName) {
+        // Create mode with initial name
         console.log('🏷️ Setting initial name:', props.initialName)
         formData.value.name = props.initialName
         console.log('📋 Form after setting name:', formData.value)
