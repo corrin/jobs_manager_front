@@ -331,7 +331,6 @@ const handleSubmit = async () => {
     }
 
     if (result.client) {
-      // In edit mode, we don't need to check for Xero ID since client already exists
       if (!props.editMode && !result.client.xero_contact_id) {
         blockedNoXeroId.value = true
         errorMessage.value =

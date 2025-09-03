@@ -221,7 +221,6 @@ const handleCreateNew = () => {
 }
 
 const handleKeydown = async (event: KeyboardEvent) => {
-  // CTRL + ENTER para criação rápida de cliente
   if (event.ctrlKey && event.key === 'Enter') {
     event.preventDefault()
 
