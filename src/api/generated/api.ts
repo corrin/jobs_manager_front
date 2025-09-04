@@ -451,6 +451,39 @@ const XeroDocumentErrorResponse = z
     redirect_to_auth: z.boolean().optional(),
   })
   .passthrough()
+const ClientDetailResponse = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string(),
+    phone: z.string(),
+    address: z.string(),
+    is_account_customer: z.boolean(),
+    is_supplier: z.boolean(),
+    xero_contact_id: z.string(),
+    xero_tenant_id: z.string(),
+    primary_contact_name: z.string(),
+    primary_contact_email: z.string(),
+    additional_contact_persons: z.array(z.unknown()).optional(),
+    all_phones: z.array(z.unknown()).optional(),
+    xero_last_modified: z.string().nullable(),
+    xero_last_synced: z.string().nullable(),
+    xero_archived: z.boolean(),
+    xero_merged_into_id: z.string(),
+    merged_into: z.string().nullable(),
+    django_created_at: z.string(),
+    django_updated_at: z.string(),
+    last_invoice_date: z.string(),
+    total_spend: z.string(),
+  })
+  .passthrough()
+const ClientErrorResponse = z
+  .object({
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    details: z.string().optional(),
+  })
+  .passthrough()
 const ClientContactResult = z
   .object({
     id: z.string(),
@@ -462,12 +495,32 @@ const ClientContactResult = z
   })
   .passthrough()
 const ClientContactResponse = z.object({ results: z.array(ClientContactResult) }).passthrough()
-const ClientErrorResponse = z
+const ClientUpdateRequest = z
   .object({
-    success: z.boolean().optional().default(false),
-    error: z.string(),
-    details: z.string().optional(),
+    name: z.string().max(255),
+    email: z.string().email(),
+    phone: z.string().max(50),
+    address: z.string(),
+    is_account_customer: z.boolean(),
   })
+  .partial()
+  .passthrough()
+const ClientUpdateResponse = z
+  .object({
+    success: z.boolean(),
+    client: ClientDetailResponse,
+    message: z.string(),
+  })
+  .passthrough()
+const PatchedClientUpdateRequest = z
+  .object({
+    name: z.string().max(255),
+    email: z.string().email(),
+    phone: z.string().max(50),
+    address: z.string(),
+    is_account_customer: z.boolean(),
+  })
+  .partial()
   .passthrough()
 const ClientNameOnly = z.object({ id: z.string().uuid(), name: z.string() }).passthrough()
 const ClientContactCreateRequest = z
@@ -491,9 +544,9 @@ const ClientContactCreateResponse = z
 const ClientCreateRequest = z
   .object({
     name: z.string().max(255),
-    email: z.string().email().optional(),
-    phone: z.string().max(50).optional(),
-    address: z.string().optional(),
+    email: z.string().email().nullish(),
+    phone: z.string().max(50).nullish(),
+    address: z.string().nullish(),
     is_account_customer: z.boolean().optional().default(true),
   })
   .passthrough()
@@ -1767,9 +1820,13 @@ export const schemas = {
   PaginatedAppErrorList,
   XeroDocumentSuccessResponse,
   XeroDocumentErrorResponse,
+  ClientDetailResponse,
+  ClientErrorResponse,
   ClientContactResult,
   ClientContactResponse,
-  ClientErrorResponse,
+  ClientUpdateRequest,
+  ClientUpdateResponse,
+  PatchedClientUpdateRequest,
   ClientNameOnly,
   ClientContactCreateRequest,
   ClientContactCreateResponse,
@@ -2860,6 +2917,31 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
   },
   {
     method: 'get',
+    path: '/clients/:client_id/',
+    alias: 'clients_retrieve',
+    description: `Retrieve detailed information for a specific client.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'client_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ClientDetailResponse,
+    errors: [
+      {
+        status: 404,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/clients/:client_id/contacts/',
     alias: 'clients_contacts_retrieve',
     description: `Retrieve all contacts for a specific client.`,
@@ -2872,6 +2954,74 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
       },
     ],
     response: ClientContactResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 404,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/clients/:client_id/update/',
+    alias: 'clients_update_update',
+    description: `Update an existing client&#x27;s information.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ClientUpdateRequest,
+      },
+      {
+        name: 'client_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ClientUpdateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 404,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/clients/:client_id/update/',
+    alias: 'clients_update_partial_update',
+    description: `Partially update an existing client&#x27;s information.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedClientUpdateRequest,
+      },
+      {
+        name: 'client_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ClientUpdateResponse,
     errors: [
       {
         status: 400,

@@ -11,6 +11,22 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
               <div class="space-y-6">
                 <div>
+                  <ClientLookup
+                    id="client"
+                    v-model="formData.client_name as string"
+                    @update:selected-id="formData.client_id = $event"
+                    @update:selected-client="handleClientSelection"
+                    label="Client"
+                    :required="true"
+                    placeholder="Search for a client..."
+                    :supplier-lookup="{ value: false }"
+                  />
+                  <p v-if="errors.client_id" class="mt-1 text-sm text-red-600">
+                    {{ errors.client_id }}
+                  </p>
+                </div>
+
+                <div>
                   <label
                     for="name"
                     class="block text-sm font-medium mb-2"
@@ -35,21 +51,6 @@
                   />
                   <p v-if="errors.name" class="mt-1 text-sm text-red-600">
                     {{ errors.name }}
-                  </p>
-                </div>
-
-                <div>
-                  <ClientLookup
-                    id="client"
-                    v-model="formData.client_name as string"
-                    @update:selected-id="formData.client_id = $event"
-                    @update:selected-client="handleClientSelection"
-                    label="Client"
-                    :required="true"
-                    placeholder="Search for a client..."
-                  />
-                  <p v-if="errors.client_id" class="mt-1 text-sm text-red-600">
-                    {{ errors.client_id }}
                   </p>
                 </div>
 

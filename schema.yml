@@ -1348,6 +1348,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/AppError'
           description: ''
+  /clients/{client_id}/:
+    get:
+      operationId: clients_retrieve
+      description: Retrieve detailed information for a specific client.
+      summary: Get client details
+      parameters:
+        - in: path
+          name: client_id
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the client
+          required: true
+      tags:
+        - Clients
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientDetailResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
   /clients/{client_id}/contacts/:
     get:
       operationId: clients_contacts_retrieve
@@ -1359,6 +1395,7 @@ paths:
           schema:
             type: string
             format: uuid
+          description: UUID of the client
           required: true
       tags:
         - Clients
@@ -1370,6 +1407,111 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClientContactResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+  /clients/{client_id}/update/:
+    put:
+      operationId: clients_update_update
+      description: Update an existing client's information.
+      summary: Update client
+      parameters:
+        - in: path
+          name: client_id
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the client
+          required: true
+      tags:
+        - Clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClientUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClientUpdateRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientUpdateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+    patch:
+      operationId: clients_update_partial_update
+      description: Partially update an existing client's information.
+      summary: Partially update client
+      parameters:
+        - in: path
+          name: client_id
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the client
+          required: true
+      tags:
+        - Clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClientUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClientUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClientUpdateRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientUpdateResponse'
           description: ''
         '400':
           content:
@@ -5746,11 +5888,14 @@ components:
         email:
           type: string
           format: email
+          nullable: true
         phone:
           type: string
+          nullable: true
           maxLength: 50
         address:
           type: string
+          nullable: true
         is_account_customer:
           type: boolean
           default: true
@@ -5770,6 +5915,80 @@ components:
         - client
         - message
         - success
+    ClientDetailResponse:
+      type: object
+      description: Serializer for client detail response
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        is_account_customer:
+          type: boolean
+        is_supplier:
+          type: boolean
+        xero_contact_id:
+          type: string
+        xero_tenant_id:
+          type: string
+        primary_contact_name:
+          type: string
+        primary_contact_email:
+          type: string
+        additional_contact_persons:
+          type: array
+          items: {}
+        all_phones:
+          type: array
+          items: {}
+        xero_last_modified:
+          type: string
+          nullable: true
+        xero_last_synced:
+          type: string
+          nullable: true
+        xero_archived:
+          type: boolean
+        xero_merged_into_id:
+          type: string
+        merged_into:
+          type: string
+          nullable: true
+        django_created_at:
+          type: string
+        django_updated_at:
+          type: string
+        last_invoice_date:
+          type: string
+        total_spend:
+          type: string
+      required:
+        - address
+        - django_created_at
+        - django_updated_at
+        - email
+        - id
+        - is_account_customer
+        - is_supplier
+        - last_invoice_date
+        - merged_into
+        - name
+        - phone
+        - primary_contact_email
+        - primary_contact_name
+        - total_spend
+        - xero_archived
+        - xero_contact_id
+        - xero_last_modified
+        - xero_last_synced
+        - xero_merged_into_id
+        - xero_tenant_id
     ClientDuplicateErrorResponse:
       type: object
       description: Serializer for client duplicate error response
@@ -5853,6 +6072,37 @@ components:
         - phone
         - total_spend
         - xero_contact_id
+    ClientUpdateRequest:
+      type: object
+      description: Serializer for client update request
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 50
+        address:
+          type: string
+        is_account_customer:
+          type: boolean
+    ClientUpdateResponse:
+      type: object
+      description: Serializer for client update response
+      properties:
+        success:
+          type: boolean
+        client:
+          $ref: '#/components/schemas/ClientDetailResponse'
+        message:
+          type: string
+      required:
+        - client
+        - message
+        - success
     CompanyDefaults:
       type: object
       properties:
@@ -8606,6 +8856,23 @@ components:
         company:
           type: string
           readOnly: true
+    PatchedClientUpdateRequest:
+      type: object
+      description: Serializer for client update request
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          maxLength: 50
+        address:
+          type: string
+        is_account_customer:
+          type: boolean
     PatchedCompanyDefaults:
       type: object
       properties:
