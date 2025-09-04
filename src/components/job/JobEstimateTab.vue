@@ -108,6 +108,7 @@ import CostSetSummaryCard from '../../components/shared/CostSetSummaryCard.vue'
 import CompactSummaryCard from '../shared/CompactSummaryCard.vue'
 import { costlineService } from '../../services/costline.service'
 import { fetchCostSet } from '../../services/costing.service'
+import { useSmartCostLineDelete } from '../../composables/useSmartCostLineDelete'
 import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
 import { toast } from 'vue-sonner'
@@ -245,35 +246,12 @@ async function submitEditCostLine(payload: CostLine) {
   }
 }
 
-async function handleDeleteCostLine(line: CostLine) {
-  if (!line.id) return
-  isLoading.value = true
-  toast.info('Deleting cost line...', { id: 'delete-cost-line' })
-  try {
-    await costlineService.deleteCostLine(line.id)
-    costLines.value = costLines.value.filter((l) => l.id !== line.id)
-    toast.success('Cost line deleted successfully!')
-    emit('cost-line-changed')
-  } catch (error) {
-    toast.error('Failed to delete cost line.')
-    debugLog('Failed to delete cost line:', error)
-  } finally {
-    isLoading.value = false
-    toast.dismiss('delete-cost-line')
-  }
-}
-
-// Bridge for SmartCostLinesTable delete event (id or index)
-function handleSmartDelete(idOrIndex: string | number) {
-  const line =
-    typeof idOrIndex === 'string'
-      ? (costLines.value.find((l) => l.id === idOrIndex) ?? null)
-      : (costLines.value[idOrIndex] ?? null)
-
-  if (line) {
-    void handleDeleteCostLine(line as CostLine)
-  }
-}
+// Use the smart delete composable
+const { handleSmartDelete } = useSmartCostLineDelete({
+  costLines,
+  onCostLineChanged: () => emit('cost-line-changed'),
+  isLoading,
+})
 
 async function handleAddMaterial(payload: CostLine) {
   if (!isCompanyDefaultsReady.value) {

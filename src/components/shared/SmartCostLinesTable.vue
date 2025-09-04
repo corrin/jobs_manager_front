@@ -24,7 +24,7 @@ import { Textarea } from '../ui/textarea'
 import ItemSelect from '../../views/purchasing/ItemSelect.vue'
 import type { DataTableRowContext } from '../../utils/data-table-types'
 import { toast } from 'vue-sonner'
-import { HelpCircle, MoreVertical, Copy, Trash2, Plus } from 'lucide-vue-next'
+import { HelpCircle, Trash2, Plus } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
 } from '../ui/dropdown-menu'
 
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
@@ -90,6 +89,13 @@ const emit = defineEmits<{
   'create-line': [line: CostLine]
 }>()
 
+// Add logging to track emit calls
+const originalEmit = emit
+const loggedEmit = (event: string, ...args: unknown[]) => {
+  console.log(`📤 SmartCostLinesTable emitting event: ${event}`, args)
+  return (originalEmit as (event: string, ...args: unknown[]) => void)(event, ...args)
+}
+
 // UI state
 const selectedRowIndex = ref<number>(-1)
 const containerRef = ref<HTMLElement | null>(null)
@@ -116,7 +122,7 @@ watch(
 
 function handleAddLine() {
   pendingFocusNewRow.value = true
-  emit('add-line')
+  loggedEmit('add-line')
 }
 
 // Local UI-only mapping: selected Item id per line (not persisted)
@@ -236,6 +242,28 @@ function isLineReadyForSave(line: CostLine): boolean {
 }
 
 /**
+ * Ensure there's always at least one empty line for editing
+ */
+const displayLines = computed(() => {
+  if (props.lines.length === 0) {
+    // Create an empty line with default values
+    return [
+      {
+        id: null,
+        kind: 'material',
+        desc: '',
+        quantity: 1,
+        unit_cost: null,
+        unit_rev: null,
+        ext_refs: {},
+        meta: {},
+      } as CostLine,
+    ]
+  }
+  return props.lines
+})
+
+/**
  * Build the column defs for DataTable
  */
 const columns = computed(() =>
@@ -245,7 +273,7 @@ const columns = computed(() =>
       id: 'kind',
       header: 'Type',
       cell: ({ row }: RowCtx) => {
-        const line = props.lines[row.index]
+        const line = displayLines.value[row.index]
         const badge = getKindBadge(line)
 
         if (!canEditKindForLine(line)) {
@@ -335,12 +363,63 @@ const columns = computed(() =>
       meta: { editable: props.allowTypeEdit && !props.readOnly },
     },
 
+    // Item (optional, UI-only) - moved to be first after Type
+    props.showItemColumn
+      ? {
+          id: 'item',
+          header: 'Item',
+          cell: ({ row }: RowCtx) => {
+            const line = displayLines.value[row.index]
+            const model = selectedItemMap.get(line) || null
+            const enabled =
+              String(line.kind) !== 'time' &&
+              !props.readOnly &&
+              (props.tabKind !== 'actual' || String(line.kind) === 'adjust')
+            return h(ItemSelect, {
+              modelValue: model,
+              disabled: !enabled,
+              onClick: (e: Event) => e.stopPropagation(),
+              'onUpdate:modelValue': (val: string | null) => {
+                if (!enabled) return
+                selectedItemMap.set(line, val)
+                onItemSelected(line) // reset unit_rev override on item change
+              },
+              // bridge ItemSelect's prefill outputs
+              'onUpdate:description': (desc: string) => {
+                if (!enabled) return
+                Object.assign(line, { desc })
+              },
+              'onUpdate:unit_cost': (cost: number | null) => {
+                if (!enabled) return
+                Object.assign(line, { unit_cost: Number(cost ?? 0) })
+
+                // Auto-calculate unit_rev with markup for material/adjust lines
+                if (String(line.kind) !== 'time') {
+                  const derived = apply(line).derived
+                  Object.assign(line, { unit_rev: derived.unit_rev })
+                }
+
+                // Check if line is ready for creation after all fields are populated
+                // Use nextTick to ensure all updates are complete before checking
+                nextTick(() => {
+                  if (!line.id && isLineReadyForSave(line)) {
+                    console.log('Creating new line from item prefill:', line)
+                    emit('create-line', line)
+                  }
+                })
+              },
+            })
+          },
+          meta: { editable: !props.readOnly },
+        }
+      : null,
+
     // Description
     {
       id: 'desc',
       header: 'Description',
       cell: ({ row }: RowCtx) => {
-        const line = props.lines[row.index]
+        const line = displayLines.value[row.index]
         const canEdit = canEditField(line, 'desc')
 
         return h(
@@ -385,7 +464,7 @@ const columns = computed(() =>
       id: 'quantity',
       header: 'Quantity',
       cell: ({ row }: RowCtx) => {
-        const line = props.lines[row.index]
+        const line = displayLines.value[row.index]
         return h('div', { class: 'flex items-center justify-end gap-2' }, [
           h(Input, {
             type: 'number',
@@ -441,7 +520,7 @@ const columns = computed(() =>
       id: 'unit',
       header: 'Unit',
       cell: ({ row }: RowCtx) => {
-        const line = props.lines[row.index]
+        const line = displayLines.value[row.index]
         return h(
           'div',
           { class: 'text-right text-xs text-gray-500' },
@@ -456,7 +535,7 @@ const columns = computed(() =>
       id: 'unit_cost',
       header: 'Unit Cost',
       cell: ({ row }: RowCtx) => {
-        const line = props.lines[row.index]
+        const line = displayLines.value[row.index]
         const editable = canEditField(line, 'unit_cost')
         const isTime = String(line.kind) === 'time'
         const resolved = apply(line).derived
@@ -523,7 +602,7 @@ const columns = computed(() =>
       id: 'unit_rev',
       header: 'Unit Revenue',
       cell: ({ row }: RowCtx) => {
-        const line = props.lines[row.index]
+        const line = displayLines.value[row.index]
         const editable = canEditField(line, 'unit_rev')
         const isTime = String(line.kind) === 'time'
         const resolved = apply(line).derived
@@ -583,7 +662,7 @@ const columns = computed(() =>
       id: 'total_cost',
       header: 'Total Cost',
       cell: ({ row }: RowCtx) => {
-        const line = props.lines[row.index]
+        const line = displayLines.value[row.index]
         const d = apply(line).derived
         return h('div', { class: 'text-right font-medium' }, `$${formatMoney(d.total_cost)}`)
       },
@@ -595,48 +674,12 @@ const columns = computed(() =>
       id: 'total_rev',
       header: 'Total Revenue',
       cell: ({ row }: RowCtx) => {
-        const line = props.lines[row.index]
+        const line = displayLines.value[row.index]
         const d = apply(line).derived
         return h('div', { class: 'text-right font-medium' }, `$${formatMoney(d.total_rev)}`)
       },
       meta: { editable: false },
     },
-
-    // Item (optional, UI-only)
-    props.showItemColumn
-      ? {
-          id: 'item',
-          header: 'Item',
-          cell: ({ row }: RowCtx) => {
-            const line = props.lines[row.index]
-            const model = selectedItemMap.get(line) || null
-            const enabled =
-              String(line.kind) !== 'time' &&
-              !props.readOnly &&
-              (props.tabKind !== 'actual' || String(line.kind) === 'adjust')
-            return h(ItemSelect, {
-              modelValue: model,
-              disabled: !enabled,
-              onClick: (e: Event) => e.stopPropagation(),
-              'onUpdate:modelValue': (val: string | null) => {
-                if (!enabled) return
-                selectedItemMap.set(line, val)
-                onItemSelected(line) // reset unit_rev override on item change
-              },
-              // bridge ItemSelect's prefill outputs
-              'onUpdate:description': (desc: string) => {
-                if (!enabled) return
-                Object.assign(line, { desc })
-              },
-              'onUpdate:unit_cost': (cost: number | null) => {
-                if (!enabled) return
-                Object.assign(line, { unit_cost: Number(cost ?? 0) })
-              },
-            })
-          },
-          meta: { editable: !props.readOnly },
-        }
-      : null,
 
     // Source (optional, read-only)
     props.showSourceColumn
@@ -644,7 +687,7 @@ const columns = computed(() =>
           id: 'source',
           header: 'Source',
           cell: ({ row }: RowCtx) => {
-            const line = props.lines[row.index]
+            const line = displayLines.value[row.index]
             if (!props.sourceResolver) return h('span', { class: 'text-gray-400 text-sm' }, '-')
             const resolved = props.sourceResolver(line)
             if (!resolved || !resolved.visible)
@@ -675,57 +718,64 @@ const columns = computed(() =>
         }
       : null,
 
-    // Actions (delete)
+    // Actions (delete only)
     {
       id: 'actions',
       header: 'Actions',
       cell: ({ row }: RowCtx) => {
-        const line = props.lines[row.index]
+        const line = displayLines.value[row.index]
         const disabled = !!props.readOnly
-        return h(DropdownMenu, null, {
-          default: () => [
-            h(DropdownMenuTrigger, { asChild: true }, () =>
-              h(
-                Button,
-                {
-                  variant: 'outline',
-                  size: 'icon',
-                  class: 'h-8 w-8',
-                  disabled,
-                  'aria-label': 'Actions',
-                },
-                () => h(MoreVertical, { class: 'w-4 h-4' }),
-              ),
-            ),
-            h(DropdownMenuContent, { align: 'end', class: 'w-44' }, () => [
-              h(
-                DropdownMenuItem,
-                {
-                  onClick: () => emit('duplicate-line', line),
-                  disabled,
-                },
-                () => [h(Copy, { class: 'w-4 h-4 mr-2' }), 'Duplicate'],
-              ),
-              h(DropdownMenuSeparator),
-              h(
-                DropdownMenuItem,
-                {
-                  class: 'text-red-600 focus:text-red-700',
-                  onClick: () => {
-                    if (disabled) return
-                    const confirmed = window.confirm(
-                      'Delete this line? This action cannot be undone.',
-                    )
-                    if (!confirmed) return
-                    if (line.id) emit('delete-line', line.id as string)
-                    else emit('delete-line', row.index)
-                  },
-                },
-                () => [h(Trash2, { class: 'w-4 h-4 mr-2' }), 'Delete'],
-              ),
-            ]),
-          ],
-        })
+        return h(
+          Button,
+          {
+            variant: 'outline',
+            size: 'icon',
+            class: 'h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50',
+            disabled,
+            'aria-label': 'Delete line',
+            onClick: (e: Event) => {
+              e.stopPropagation()
+              if (disabled) return
+
+              console.log('🗑️ Delete button clicked for line:', {
+                lineId: line.id,
+                rowIndex: row.index,
+                lineDesc: line.desc,
+                isLocalLine: !line.id,
+                totalDisplayLines: displayLines.value.length,
+                totalPropsLines: props.lines.length,
+              })
+
+              // For local lines (no ID), delete immediately without confirmation
+              if (!line.id) {
+                // Find the actual index in the original props.lines array
+                const actualIndex = props.lines.findIndex((l) => l === line)
+                console.log('🔍 Looking for local line in props.lines:', {
+                  actualIndex,
+                  foundLine: actualIndex >= 0 ? props.lines[actualIndex] : null,
+                  searchedLine: line,
+                })
+
+                if (actualIndex >= 0) {
+                  console.log('✅ Emitting delete-line with actualIndex:', actualIndex)
+                  loggedEmit('delete-line', actualIndex)
+                } else {
+                  // This is the auto-generated empty line - don't delete it, just clear it
+                  console.log('⚠️ Auto-generated empty line - cannot delete, ignoring')
+                  return
+                }
+                return
+              }
+
+              // For saved lines, ask for confirmation
+              const confirmed = window.confirm('Delete this line? This action cannot be undone.')
+              if (!confirmed) return
+              console.log('✅ Emitting delete-line with line.id:', line.id)
+              loggedEmit('delete-line', line.id as string)
+            },
+          },
+          () => h(Trash2, { class: 'w-4 h-4' }),
+        )
       },
       meta: { editable: !props.readOnly },
     },
@@ -736,7 +786,7 @@ const columns = computed(() =>
  * Keyboard navigation
  */
 const { onKeydown } = useGridKeyboardNav({
-  getRowCount: () => props.lines.length,
+  getRowCount: () => displayLines.value.length,
   getSelectedIndex: () => selectedRowIndex.value,
   setSelectedIndex: (i) => (selectedRowIndex.value = i),
 
@@ -753,16 +803,45 @@ const { onKeydown } = useGridKeyboardNav({
   addLine: () => emit('add-line'),
   duplicateSelected: () => {
     const i = selectedRowIndex.value
-    if (i >= 0 && i < props.lines.length) {
-      emit('duplicate-line', props.lines[i])
+    if (i >= 0 && i < displayLines.value.length) {
+      const line = displayLines.value[i]
+      // Only duplicate actual lines, not auto-generated empty ones
+      if (line.id || props.lines.includes(line)) {
+        loggedEmit('duplicate-line', line)
+      }
     }
   },
   deleteSelected: () => {
     const i = selectedRowIndex.value
-    if (i >= 0 && i < props.lines.length) {
-      const line = props.lines[i]
-      if (line.id) emit('delete-line', line.id as string)
-      else emit('delete-line', i)
+    console.log('⌨️ Keyboard delete triggered for selectedRowIndex:', i)
+
+    if (i >= 0 && i < displayLines.value.length) {
+      const line = displayLines.value[i]
+      console.log('🗑️ Keyboard delete for line:', {
+        lineId: line.id,
+        selectedIndex: i,
+        lineDesc: line.desc,
+        isLocalLine: !line.id,
+      })
+
+      if (line.id) {
+        console.log('✅ Keyboard emitting delete-line with line.id:', line.id)
+        loggedEmit('delete-line', line.id as string)
+      } else {
+        // Find the actual index in the original props.lines array
+        const actualIndex = props.lines.findIndex((l) => l === line)
+        console.log('🔍 Keyboard looking for local line in props.lines:', {
+          actualIndex,
+          foundLine: actualIndex >= 0 ? props.lines[actualIndex] : null,
+        })
+
+        if (actualIndex >= 0) {
+          console.log('✅ Keyboard emitting delete-line with actualIndex:', actualIndex)
+          loggedEmit('delete-line', actualIndex)
+        } else {
+          console.log('⚠️ Keyboard: Auto-generated empty line - cannot delete, ignoring')
+        }
+      }
     }
   },
   moveSelectedUp: () => {
@@ -771,7 +850,7 @@ const { onKeydown } = useGridKeyboardNav({
   },
   moveSelectedDown: () => {
     const i = selectedRowIndex.value
-    if (i >= 0 && i < props.lines.length - 1) emit('move-line', i, 'down')
+    if (i >= 0 && i < displayLines.value.length - 1) emit('move-line', i, 'down')
   },
 })
 
@@ -799,27 +878,24 @@ const shortcutsTitle = computed(
         <HelpCircle class="w-4 h-4" />
         <span>Shortcuts</span>
       </button>
-
-      <Button
-        v-if="!props.readOnly"
-        variant="default"
-        size="sm"
-        class="ml-auto"
-        @click="handleAddLine"
-        aria-label="Add Line"
-      >
-        <Plus class="w-4 h-4 mr-1" /> Add Line
-      </Button>
     </div>
 
     <div class="flex-1 overflow-y-auto" tabindex="0" @keydown="onKeydown" ref="containerRef">
       <DataTable
         class="smart-costlines-table"
         :columns="columns as any"
-        :data="props.lines"
+        :data="displayLines"
         :hide-footer="true"
-        @rowClick="(row: any) => handleRowClick(row as CostLine, (props.lines as any).indexOf(row))"
+        @rowClick="
+          (row: any) => handleRowClick(row as CostLine, (displayLines as any).indexOf(row))
+        "
       />
+    </div>
+
+    <div v-if="!props.readOnly" class="px-4 py-2">
+      <Button variant="default" size="sm" @click="handleAddLine" aria-label="Add Row">
+        <Plus class="w-4 h-4 mr-1" /> Add row
+      </Button>
     </div>
     <!-- Shortcuts Help Dialog -->
     <Dialog :open="showShortcuts" @update:open="showShortcuts = $event">

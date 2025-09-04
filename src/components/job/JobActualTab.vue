@@ -75,6 +75,11 @@
               :showItemColumn="false"
               :showSourceColumn="true"
               :sourceResolver="resolveSource"
+              @delete-line="handleSmartDelete"
+              @add-line="() => {}"
+              @duplicate-line="() => {}"
+              @move-line="() => {}"
+              @create-line="() => {}"
             ></SmartCostLinesTable>
           </div>
         </div>
@@ -143,6 +148,7 @@ import CompactSummaryCard from '../shared/CompactSummaryCard.vue'
 import { fetchCostSet } from '../../services/costing.service'
 import { costlineService } from '../../services/costline.service'
 import { schemas } from '../../api/generated/api'
+import { useSmartCostLineDelete } from '../../composables/useSmartCostLineDelete'
 import { api } from '../../api/client'
 import { z } from 'zod'
 import ActualCostDropdown from './ActualCostDropdown.vue'
@@ -252,6 +258,13 @@ async function loadActualCosts() {
     isLoading.value = false
   }
 }
+
+// Use the smart delete composable
+const { handleSmartDelete } = useSmartCostLineDelete({
+  costLines,
+  onCostLineChanged: () => emit('cost-line-changed'),
+  isLoading,
+})
 
 onMounted(async () => {
   await Promise.all([loadStaff(), loadActualCosts()])
