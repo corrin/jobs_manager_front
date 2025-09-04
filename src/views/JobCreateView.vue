@@ -138,6 +138,24 @@
                     </p>
                   </div>
                 </div>
+
+                <div>
+                  <label
+                    for="pricing_methodology"
+                    class="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Pricing Methodology
+                  </label>
+                  <select
+                    id="pricing_methodology"
+                    v-model="formData.pricing_methodology"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select pricing methodology</option>
+                    <option value="fixed_price">Fixed Price</option>
+                    <option value="time_and_materials">Time & Materials</option>
+                  </select>
+                </div>
               </div>
 
               <div class="space-y-6">
@@ -316,6 +334,7 @@ const formData = ref<
   contact_id: null,
   estimatedMaterials: null,
   estimatedTime: null,
+  pricing_methodology: '',
 })
 
 const selectedClient = ref<ClientSearchResult | null>(null)
@@ -537,5 +556,6 @@ onMounted(() => {
   formData.value.contact_id = null
   formData.value.estimatedMaterials = null
   formData.value.estimatedTime = null
+  formData.value.pricing_methodology = ''
 })
 </script>
