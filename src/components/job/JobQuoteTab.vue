@@ -457,6 +457,7 @@ import { api } from '../../api/client'
 import { z } from 'zod'
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import { costlineService } from '../../services/costline.service'
+import { useSmartCostLineDelete } from '../../composables/useSmartCostLineDelete'
 import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
 import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
@@ -470,6 +471,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '../../components/ui/dialog'
+import { Button } from '../../components/ui/button'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
@@ -843,33 +845,12 @@ async function submitEditCostLine(payload: CostLine) {
   }
 }
 
-async function handleDeleteCostLine(line: CostLine) {
-  if (!line.id) return
-  isLoading.value = true
-  toast.info('Deleting cost line...')
-  try {
-    await costlineService.deleteCostLine(line.id)
-    costLines.value = costLines.value.filter((l) => l.id !== line.id)
-    toast.success('Cost line deleted successfully!')
-  } catch (error) {
-    toast.error('Failed to delete cost line.')
-    debugLog('Failed to delete cost line:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Bridge for SmartCostLinesTable delete event (id or index)
-function handleSmartDelete(idOrIndex: string | number) {
-  const line =
-    typeof idOrIndex === 'string'
-      ? (costLines.value.find((l) => l.id === idOrIndex) ?? null)
-      : (costLines.value[idOrIndex] ?? null)
-
-  if (line) {
-    void handleDeleteCostLine(line as CostLine)
-  }
-}
+// Use the smart delete composable
+const { handleSmartDelete } = useSmartCostLineDelete({
+  costLines,
+  onCostLineChanged: () => emit('cost-line-changed'),
+  isLoading,
+})
 
 // Helper functions for formatting
 function formatCurrency(value: number): string {
