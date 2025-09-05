@@ -1304,7 +1304,15 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
   if (event.data && typeof event.data === 'object') {
     event.data.isModified = true
     const entry = event.data as TimesheetEntryWithMeta
-    autosave.scheduleEntry(entry)
+
+    // Always trigger autosave for billable field changes and other key fields
+    if (
+      event.colDef.field === 'billable' ||
+      ['hours', 'rate', 'jobNumber', 'jobId', 'description'].includes(event.colDef.field || '')
+    ) {
+      debugLog('💾 Triggering autosave for field change:', event.colDef.field)
+      autosave.scheduleEntry(entry)
+    }
   }
 
   hasUnsavedChanges.value = true
