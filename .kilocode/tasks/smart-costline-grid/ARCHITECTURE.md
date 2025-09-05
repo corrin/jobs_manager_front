@@ -92,7 +92,7 @@ High-level component map
   - On Unit Rev manual change: set overriddenUnitRev = true; recompute totals.
   - On Kind change: re-apply respective rules; for time, lock unit_cost/unit_rev to defaults from Company Defaults.
 
-  4.2 [useCostLineAutosave()](src/composables/useCostLineAutosave.ts:1)
+    4.2 [useCostLineAutosave()](src/composables/useCostLineAutosave.ts:1)
 
 - Inputs: debounceMs, service methods (injected or imported), current line data and a shallow snapshot for rollback.
 - Integration:
@@ -106,7 +106,7 @@ High-level component map
   - Triggers: onBlur per-cell and onCommit (Enter) per-cell/row.
   - Identity handling: if the line had no id, on successful create replace temp identity with backend id.
 
-  4.3 [useGridKeyboardNav()](src/composables/useGridKeyboardNav.ts:1)
+    4.3 [useGridKeyboardNav()](src/composables/useGridKeyboardNav.ts:1)
 
 - Responsibilities:
   - Manage entry/exit edit mode: Enter/F2 to edit; Enter to commit; Esc to cancel.
