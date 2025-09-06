@@ -66,7 +66,6 @@
 
         <div class="bg-white rounded-xl border border-slate-200">
           <Card class="border-0 shadow-none overflow-hidden">
-            <!-- Header compacto -->
             <CardHeader class="px-3 pt-3 pb-2">
               <CardTitle>
                 Invoices <span class="text-slate-400 text-sm">({{ invoices.length }})</span>
@@ -89,7 +88,6 @@
                     :key="invoice.id"
                     class="px-3 py-1.5 hover:bg-slate-50 flex items-center gap-3"
                   >
-                    <!-- Esquerda: number + status + date -->
                     <div class="min-w-0 flex-1">
                       <div class="flex items-center gap-2">
                         <span class="font-medium text-slate-900 text-sm leading-5">
@@ -157,7 +155,6 @@
               </div>
             </CardContent>
 
-            <!-- Linha separadora sutil antes do footer -->
             <div class="border-t border-slate-200"></div>
 
             <CardFooter class="flex justify-center pt-4" v-if="!props.jobData?.fully_invoiced">
