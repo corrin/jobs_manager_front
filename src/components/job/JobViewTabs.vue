@@ -61,8 +61,14 @@
         <JobActualTab
           v-if="jobData"
           :job-id="jobData.id"
+          :job-data="jobData"
           :actual-summary-from-backend="jobData.latest_actual?.summary"
           @cost-line-changed="$emit('reload-job')"
+          @quote-created="$emit('quote-created')"
+          @quote-accepted="$emit('quote-accepted')"
+          @invoice-created="$emit('invoice-created')"
+          @quote-deleted="$emit('quote-deleted')"
+          @invoice-deleted="$emit('invoice-deleted')"
         />
       </div>
       <div v-if="activeTab === 'financial'" class="h-full p-4 md:p-6">
@@ -170,6 +176,8 @@ const emit = defineEmits<{
   (e: 'quote-created'): void
   (e: 'quote-accepted'): void
   (e: 'invoice-created'): void
+  (e: 'quote-deleted'): void
+  (e: 'invoice-deleted'): void
   (e: 'delete-job'): void
   (e: 'reload-job'): void
   (e: 'job-updated', job: unknown): void
