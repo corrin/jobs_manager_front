@@ -817,6 +817,7 @@ const JobCreateRequest = z
     order_number: z.string().optional(),
     notes: z.string().optional(),
     contact_id: z.string().uuid().nullish(),
+    pricing_methodology: z.string().nullish(),
   })
   .passthrough()
 const JobCreateResponse = z
