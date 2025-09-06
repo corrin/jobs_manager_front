@@ -31,8 +31,7 @@ main() {
     npm ci
     npm run build
 
-    # Restart services
-    sudo systemctl restart vue
+    # Reload nginx to serve new build
     sudo systemctl reload nginx
 
     echo "Frontend deployment completed"
