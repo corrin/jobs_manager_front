@@ -139,6 +139,6 @@ function formatCurrency(value: number): string {
 <style scoped>
 .compact-summary-card {
   min-width: 200px;
-  max-width: 250px;
+  max-width: 325px;
 }
 </style>
