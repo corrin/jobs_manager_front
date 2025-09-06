@@ -13,6 +13,7 @@
           </div>
           <div class="mb-3">
             <div class="flex items-center gap-2 mb-1">
+              <span class="text-xl font-bold text-gray-900">Job #{{ jobData?.job_number }}</span>
               <div class="group">
                 <InlineEditText
                   v-if="jobDataWithPaid"
@@ -31,8 +32,7 @@
                 Quote Accepted
               </span>
             </div>
-            <div class="flex items-center gap-2 text-sm text-gray-500">
-              <span>Job #{{ jobData?.job_number }}</span>
+            <div class="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
               <span>•</span>
               <div class="group">
                 <InlineEditClient
@@ -43,13 +43,12 @@
                   placeholder="Select client"
                 />
               </div>
-            </div>
-            <div class="flex items-center gap-2 text-xs text-gray-400 mt-1">
+              <span>•</span>
               <div class="group">
                 <InlineEditSelect
                   v-if="jobDataWithPaid"
                   :value="localJobStatus"
-                  :options="JOB_STATUS_CHOICES"
+                  :options="JOB_STATUS_CHOICES as any"
                   @update:value="handleStatusUpdate"
                   placeholder="Status"
                 />
@@ -63,6 +62,48 @@
                   @update:value="handlePricingMethodologyUpdate"
                 />
               </div>
+              <template v-if="jobDataWithPaid?.quoted">
+                <span>•</span>
+                <label class="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    v-model="localQuoted"
+                    @change="(e) => handleQuotedUpdate((e.target as HTMLInputElement).checked)"
+                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>Already Quoted</span>
+                </label>
+              </template>
+              <template v-if="jobDataWithPaid?.fully_invoiced">
+                <span>•</span>
+                <label class="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    v-model="localFullyInvoiced"
+                    @change="
+                      (e) => handleFullyInvoicedUpdate((e.target as HTMLInputElement).checked)
+                    "
+                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>Fully Invoiced</span>
+                </label>
+              </template>
+              <span>•</span>
+              <label class="flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  v-model="localPaid"
+                  @change="(e) => handlePaidUpdate((e.target as HTMLInputElement).checked)"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Job Paid</span>
+              </label>
+              <template v-if="jobDataWithPaid?.quote_acceptance_date">
+                <span
+                  >• Quote Accepted On:
+                  {{ formatDate(jobDataWithPaid.quote_acceptance_date) }}</span
+                >
+              </template>
             </div>
           </div>
         </div>
@@ -76,7 +117,10 @@
               <ArrowLeft class="w-5 h-5" />
             </button>
             <div class="flex flex-col justify-center h-full">
-              <div class="flex items-center gap-2">
+              <div class="flex items-center">
+                <span class="text-xl font-bold text-gray-900"
+                  >Job #{{ jobData?.job_number }} -</span
+                >
                 <div class="group">
                   <InlineEditText
                     v-if="jobDataWithPaid"
@@ -96,8 +140,6 @@
                 </span>
               </div>
               <div class="flex items-center gap-2 text-xs text-gray-500">
-                <span>Job #{{ jobData?.job_number }}</span>
-                <span>•</span>
                 <div class="group">
                   <InlineEditClient
                     v-if="jobDataWithPaid"
@@ -112,7 +154,7 @@
                   <InlineEditSelect
                     v-if="jobDataWithPaid"
                     :value="localJobStatus"
-                    :options="JOB_STATUS_CHOICES"
+                    :options="JOB_STATUS_CHOICES as any"
                     @update:value="handleStatusUpdate"
                     placeholder="Select Status"
                   />
@@ -127,6 +169,48 @@
                     placeholder="Select methodology"
                   />
                 </div>
+                <template v-if="jobDataWithPaid?.quoted">
+                  <span>•</span>
+                  <label class="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      v-model="localQuoted"
+                      @change="(e) => handleQuotedUpdate((e.target as HTMLInputElement).checked)"
+                      class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>Already Quoted</span>
+                  </label>
+                </template>
+                <template v-if="jobDataWithPaid?.fully_invoiced">
+                  <span>•</span>
+                  <label class="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      v-model="localFullyInvoiced"
+                      @change="
+                        (e) => handleFullyInvoicedUpdate((e.target as HTMLInputElement).checked)
+                      "
+                      class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>Fully Invoiced</span>
+                  </label>
+                </template>
+                <span>•</span>
+                <label class="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    v-model="localPaid"
+                    @change="(e) => handlePaidUpdate((e.target as HTMLInputElement).checked)"
+                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>Job Paid</span>
+                </label>
+                <template v-if="jobDataWithPaid?.quote_acceptance_date">
+                  <span
+                    >• Quote Accepted On:
+                    {{ formatDate(jobDataWithPaid.quote_acceptance_date) }}</span
+                  >
+                </template>
               </div>
             </div>
           </div>
@@ -245,6 +329,9 @@ const localClientName = ref('')
 const localClientId = ref('')
 const localJobStatus = ref('')
 const localPricingMethodology = ref('')
+const localQuoted = ref(false)
+const localFullyInvoiced = ref(false)
+const localPaid = ref(false)
 
 // Pricing methodology options
 const pricingMethodologyOptions = [
@@ -337,6 +424,9 @@ watch(
       localClientId.value = newJobData.client_id || ''
       localJobStatus.value = newJobData.job_status || ''
       localPricingMethodology.value = newJobData.pricing_methodology || ''
+      localQuoted.value = newJobData.quoted || false
+      localFullyInvoiced.value = newJobData.fully_invoiced || false
+      localPaid.value = newJobData.paid || false
     }
   },
   { immediate: true },
@@ -490,6 +580,10 @@ debugLog('JobView - jobId:', jobId.value)
 
 watch(jobData, (val) => {
   debugLog('JobView - jobData changed:', val)
+})
+
+onMounted(() => {
+  debugLog('Quote accepted?: ', shouldShowQuoteWarning.value)
 })
 </script>
 
