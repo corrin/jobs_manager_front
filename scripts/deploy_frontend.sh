@@ -7,33 +7,12 @@ set -e  # Exit on any error
 
 # Configuration
 PROJECT_PATH="/opt/workflow_app/jobs_manager_front"
-LOG_FILE="$PROJECT_PATH/logs/deploy_machine.log"
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Logging function
-log() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a "$LOG_FILE"
-}
-
-log_success() {
-    echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] ✅ $1${NC}" | tee -a "$LOG_FILE"
-}
-
-log_error() {
-    echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] ❌ $1${NC}" | tee -a "$LOG_FILE"
-}
 
 # Main deployment function
 main() {
-    log "Starting frontend deployment process..."
+    echo "Starting frontend deployment..."
 
     cd "$PROJECT_PATH"
-    mkdir -p logs
 
     # Update code from git
     git switch main
@@ -43,9 +22,9 @@ main() {
 
     # Update schema (graceful fallback if backend unavailable)
     if npm run update-schema 2>/dev/null; then
-        log_success "API schema updated"
+        echo "API schema updated"
     else
-        log "Backend unavailable - using existing schema"
+        echo "Using existing schema (backend unavailable)"
     fi
 
     # Install dependencies and build
@@ -56,10 +35,10 @@ main() {
     sudo systemctl restart vue
     sudo systemctl reload nginx
 
-    log_success "Frontend deployment completed successfully!"
+    echo "Frontend deployment completed"
 }
 
 # Handle script interruption
-trap 'log_error "Deployment interrupted"; exit 1' INT TERM
+trap 'echo "Deployment interrupted"; exit 1' INT TERM
 
 main
