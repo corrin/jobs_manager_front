@@ -1,6 +1,6 @@
 <template>
   <div class="job-actual-tab h-full grid grid-rows-[auto_1fr] gap-4">
-    <!-- HEADER COM KPIs COMPACTOS -->
+    <!-- HEADER -->
     <div class="flex items-start justify-between gap-4">
       <div>
         <h2 class="text-2xl font-bold text-gray-900">
@@ -12,35 +12,27 @@
         </p>
       </div>
 
-      <!-- KPIs como chips (uma linha, densos) -->
+      <!-- KPIs as chips -->
       <ul class="hidden xl:flex items-center gap-2 shrink-0">
         <li class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
           <span class="w-1.5 h-6 rounded-full bg-blue-500"></span>
           <span class="text-[11px] uppercase tracking-wide text-slate-600">Estimate</span>
-          <strong class="tabular-nums text-slate-900">{{
-            finances.formatCurrency(finances.estimateTotal.value)
-          }}</strong>
+          <strong class="tabular-nums text-slate-900">{{ formatCurrency(estimateTotal) }}</strong>
         </li>
         <li class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
           <span class="w-1.5 h-6 rounded-full bg-emerald-500"></span>
           <span class="text-[11px] uppercase tracking-wide text-slate-600">Time & Expenses</span>
-          <strong class="tabular-nums text-slate-900">{{
-            finances.formatCurrency(finances.timeAndExpenses.value)
-          }}</strong>
+          <strong class="tabular-nums text-slate-900">{{ formatCurrency(timeAndExpenses) }}</strong>
         </li>
         <li class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
           <span class="w-1.5 h-6 rounded-full bg-orange-500"></span>
           <span class="text-[11px] uppercase tracking-wide text-slate-600">Invoiced</span>
-          <strong class="tabular-nums text-slate-900">{{
-            finances.formatCurrency(finances.invoiceTotal.value)
-          }}</strong>
+          <strong class="tabular-nums text-slate-900">{{ formatCurrency(invoiceTotal) }}</strong>
         </li>
         <li class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
           <span class="w-1.5 h-6 rounded-full bg-violet-500"></span>
           <span class="text-[11px] uppercase tracking-wide text-slate-600">To Be Invoiced</span>
-          <strong class="tabular-nums text-slate-900">{{
-            finances.formatCurrency(finances.toBeInvoiced.value)
-          }}</strong>
+          <strong class="tabular-nums text-slate-900">{{ formatCurrency(toBeInvoiced) }}</strong>
         </li>
       </ul>
 
@@ -54,7 +46,7 @@
       </div>
     </div>
 
-    <!-- CONTEÚDO: GRID COM ASIDE STICKY + MAIN -->
+    <!-- CONTENT: STICKY GRID ASIDE + MAIN -->
     <div class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 min-h-0">
       <!-- ASIDE (STICKY): Summary + Invoices -->
       <aside class="space-y-4 lg:sticky lg:top-16 self-start">
@@ -73,95 +65,109 @@
         </div>
 
         <div class="bg-white rounded-xl border border-slate-200">
-          <Card class="border-0 shadow-none">
-            <CardHeader class="pb-2">
-              <CardTitle>Invoices</CardTitle>
+          <Card class="border-0 shadow-none overflow-hidden">
+            <!-- Header compacto -->
+            <CardHeader class="px-3 pt-3 pb-2">
+              <CardTitle>
+                Invoices <span class="text-slate-400 text-sm">({{ invoices.length }})</span>
+              </CardTitle>
               <CardDescription>Manage invoices for this job.</CardDescription>
             </CardHeader>
-            <!-- altura limitada + scroll: elimina branco gigante -->
-            <CardContent class="max-h-80 overflow-y-auto">
+
+            <CardContent class="p-0 pb-2">
               <div
-                v-if="finances.invoices.value.length === 0"
-                class="text-center py-6 text-gray-500"
+                class="max-h-[min(12vh,20rem)] overflow-y-auto px-2"
+                style="scrollbar-gutter: stable"
               >
-                No invoices for this project
-              </div>
-              <Table v-else>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Number</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead class="text-right">Total</TableHead>
-                    <TableHead class="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-for="invoice in finances.invoices.value" :key="invoice.id">
-                    <TableCell class="font-medium">{{ invoice.number }}</TableCell>
-                    <TableCell>{{ finances.formatDate(invoice.date) }}</TableCell>
-                    <TableCell>
-                      <Badge :variant="invoice.status === 'PAID' ? 'default' : 'secondary'">{{
-                        invoice.status
-                      }}</Badge>
-                    </TableCell>
-                    <TableCell class="text-right">{{
-                      finances.formatCurrency(invoice.total_incl_tax)
-                    }}</TableCell>
-                    <TableCell class="text-right">
-                      <div class="flex items-center justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          @click="finances.goToInvoiceOnXero(invoice.online_url)"
-                          :disabled="!invoice.online_url"
+                <div v-if="invoices.length === 0" class="text-center py-6 text-gray-500">
+                  No invoices for this project
+                </div>
+
+                <ul v-else role="list" class="divide-y divide-slate-200 rounded-md bg-white">
+                  <li
+                    v-for="invoice in invoices"
+                    :key="invoice.id"
+                    class="px-3 py-1.5 hover:bg-slate-50 flex items-center gap-3"
+                  >
+                    <!-- Esquerda: number + status + date -->
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium text-slate-900 text-sm leading-5">
+                          {{ invoice.number }}
+                        </span>
+                        <Badge
+                          :variant="invoice.status === 'PAID' ? 'default' : 'secondary'"
+                          class="text-[10px] px-1.5 py-0.5 rounded-full"
                         >
-                          <ExternalLink class="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          @click="finances.deleteInvoiceOnXero(invoice.xero_id)"
-                          :disabled="!!finances.deletingInvoiceId.value"
-                        >
-                          <svg
-                            v-if="finances.deletingInvoiceId.value === invoice.xero_id"
-                            class="animate-spin h-4 w-4"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              class="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              stroke-width="4"
-                            />
-                            <path
-                              class="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            />
-                          </svg>
-                          <Trash2 v-else class="h-4 w-4" />
-                        </Button>
+                          {{ invoice.status }}
+                        </Badge>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+                      <div class="text-[11px] leading-4 text-slate-500">
+                        {{ formatDate(invoice.date) }}
+                      </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="shrink-0 text-sm font-semibold tabular-nums text-slate-900">
+                      {{ formatCurrency(invoice.total_incl_tax) }}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="shrink-0 flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        class="h-7 w-7"
+                        @click="goToInvoiceOnXero(invoice.online_url)"
+                        :disabled="!invoice.online_url"
+                      >
+                        <ExternalLink class="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        class="h-7 w-7"
+                        @click="deleteInvoiceOnXero(invoice.xero_id)"
+                        :disabled="!!deletingInvoiceId"
+                      >
+                        <svg
+                          v-if="deletingInvoiceId === invoice.xero_id"
+                          class="animate-spin h-4 w-4"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                          />
+                          <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        <Trash2 v-else class="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </li>
+                </ul>
+              </div>
             </CardContent>
-            <CardFooter
-              class="flex justify-center border-t pt-4"
-              v-if="!props.jobData?.fully_invoiced"
-            >
+
+            <!-- Linha separadora sutil antes do footer -->
+            <div class="border-t border-slate-200"></div>
+
+            <CardFooter class="flex justify-center pt-4" v-if="!props.jobData?.fully_invoiced">
               <button
-                @click="finances.createInvoice()"
-                :disabled="finances.isCreatingInvoice.value"
+                @click="createInvoice()"
+                :disabled="isCreatingInvoice"
                 class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 flex items-center gap-2"
               >
                 <svg
-                  v-if="finances.isCreatingInvoice.value"
+                  v-if="isCreatingInvoice"
                   class="animate-spin -ml-1 mr-1 h-4 w-4"
                   viewBox="0 0 24 24"
                 >
@@ -179,7 +185,7 @@
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                {{ finances.isCreatingInvoice.value ? 'Creating...' : 'Create Invoice' }}
+                {{ isCreatingInvoice ? 'Creating...' : 'Create Invoice' }}
               </button>
             </CardFooter>
           </Card>
@@ -192,7 +198,6 @@
           <h3 class="text-lg font-semibold text-gray-900">Actual Details</h3>
         </div>
 
-        <!-- sem min-h gigante: deixa o container controlar a altura -->
         <div class="flex-1 min-h-0 overflow-auto">
           <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
             <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -294,8 +299,7 @@
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
 
-import { onMounted, ref, computed } from 'vue'
-import { useFinances } from '../../composables/useFinances'
+import { onMounted, ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
@@ -324,7 +328,6 @@ import {
 import { Button } from '../ui/button'
 import { Card, CardHeader, CardFooter, CardContent, CardDescription, CardTitle } from '../ui/card'
 import { ExternalLink, Trash2 } from 'lucide-vue-next'
-import { Table, TableBody, TableHeader, TableRow, TableCell, TableHead } from '../ui/table'
 import { Badge } from '../ui/badge'
 
 type CostLine = z.infer<typeof schemas.CostLine>
@@ -333,6 +336,7 @@ type CostSet = z.infer<typeof schemas.CostSet>
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
 type StockItem = z.infer<typeof schemas.StockItem>
 type StockConsumeRequest = z.infer<typeof schemas.StockConsumeRequest>
+type Invoice = z.infer<typeof schemas.Invoice>
 
 // Type guard functions to safely access meta and ext_refs
 function isDeliveryReceiptMeta(meta: unknown): meta is { source: string; po_number?: string } {
@@ -387,15 +391,125 @@ const emit = defineEmits<{
   'invoice-deleted': []
 }>()
 
-// Initialize finances composable
-const finances = useFinances(
-  { jobData: props.jobData || null, jobId: props.jobId },
-  {
-    'quote-created': () => emit('quote-created'),
-    'quote-accepted': () => emit('quote-accepted'),
-    'invoice-created': () => emit('invoice-created'),
-    'quote-deleted': () => emit('quote-deleted'),
-    'invoice-deleted': () => emit('invoice-deleted'),
+// Local state for invoices
+const isCreatingInvoice = ref(false)
+const deletingInvoiceId = ref<string | null>(null) // Track which invoice is being deleted
+
+// --- COMPUTED PROPERTIES ---
+const invoices = ref<Array<Invoice>>([])
+const estimateTotal = computed(() => props.jobData?.latest_estimate?.summary?.rev || 0)
+const timeAndExpenses = computed(() => {
+  const costLines = props.jobData?.latest_actual?.cost_lines
+  return costLines?.reduce((sum, line) => sum + (line.total_rev || 0), 0) || 0
+})
+
+const invoiceTotal = computed(() => {
+  if (!invoices.value.length) return 0
+  return invoices.value.reduce((sum, invoice) => sum + (invoice.total_excl_tax || 0), 0)
+})
+
+const toBeInvoiced = computed(() => {
+  const actualTotal = props.jobData?.latest_actual?.summary?.rev || 0
+  return Math.max(0, actualTotal - invoiceTotal.value)
+})
+
+// --- FORMATTING FUNCTIONS ---
+const formatCurrency = (amount: number | undefined | null): string => {
+  if (amount === null || amount === undefined) {
+    return new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(0)
+  }
+  return new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(amount)
+}
+
+const formatDate = (dateString: string | null | undefined) => {
+  if (!dateString) return 'N/A'
+  return new Date(dateString).toLocaleDateString('en-NZ', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+// --- INVOICE METHODS ---
+const createInvoice = async () => {
+  if (!props.jobData?.id || isCreatingInvoice.value) return
+  isCreatingInvoice.value = true
+  try {
+    const response = await api.api_xero_create_invoice_create(undefined, {
+      params: { job_id: props.jobData.id },
+    })
+    if (!response.success) {
+      debugLog(response.error || 'Failed to create invoice')
+      return
+    }
+    toast.success('Invoice created successfully!')
+    emit('invoice-created')
+  } catch (err: unknown) {
+    let msg = 'Unexpected error while trying to create invoice.'
+    debugLog('Error creating invoice:', err)
+    if ((err as AxiosError).isAxiosError) {
+      const axiosErr = err as AxiosError<{ message: string }>
+      msg = axiosErr.response?.data?.message ?? msg
+    }
+    toast.error(`Failed to create invoice: ${msg}`)
+  } finally {
+    isCreatingInvoice.value = false
+  }
+}
+
+const goToInvoiceOnXero = (url: string | null | undefined) => {
+  if (url && url !== '#') {
+    window.open(url, '_blank')
+  } else {
+    toast.error('No online URL available for this invoice.')
+  }
+}
+
+const deleteInvoiceOnXero = async (invoiceXeroId: string) => {
+  if (!props.jobData?.id || deletingInvoiceId.value) return
+  deletingInvoiceId.value = invoiceXeroId
+  try {
+    const response = await api.api_xero_delete_invoice_destroy(undefined, {
+      params: { job_id: props.jobData.id },
+      queries: { xero_invoice_id: invoiceXeroId },
+    })
+    toast.success('Invoice deleted successfully!')
+    emit('invoice-deleted')
+    invoices.value = invoices.value.filter((invoice) => invoice.xero_id !== response.xero_id)
+  } catch (err) {
+    debugLog('Error deleting invoice:', err)
+    toast.error('Failed to delete invoice.')
+  } finally {
+    deletingInvoiceId.value = null
+  }
+}
+
+// --- WATCHERS ---
+watch(
+  () => props.jobData?.id,
+  (newJobId) => {
+    if (newJobId) {
+      isQuoteDeleted.value = false
+      deletingInvoiceId.value = null
+    }
+  },
+)
+
+watch(
+  () => props.jobData?.invoices,
+  (newInvoices) => {
+    // Create a copy of the array to ensure we don't mutate the prop
+    invoices.value = newInvoices ? [...newInvoices] : []
+  },
+  { immediate: true, deep: true }, // immediate: true runs the watcher on component mount
+)
+
+watch(
+  () => props.jobData?.quoted,
+  (isQuoted) => {
+    if (isQuoted && isQuoteDeleted.value) {
+      isQuoteDeleted.value = false
+    }
   },
 )
 
