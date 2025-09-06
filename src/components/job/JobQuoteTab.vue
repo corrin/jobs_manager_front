@@ -637,72 +637,20 @@ async function refreshQuoteData() {
       params: { job_id: props.jobId },
     })
 
-    console.log('🔍 REFRESH QUOTE DEBUG - API Response:', {
-      success: response.success,
-      hasData: !!response.data,
-      hasLatestQuote: !!response.data?.latest_quote,
-      latestQuoteRev: response.data?.latest_quote?.rev,
-      costLinesCount: response.data?.latest_quote?.cost_lines?.length || 0,
-      quoteSummary: response.data?.latest_quote?.summary,
-      summaryRevisions: response.data?.latest_quote?.summary?.revisions?.length || 0,
-    })
-
     if (response.success && response.data) {
       const jobData = response.data
 
-      // 🚨 CRITICAL: Check if refreshQuoteData is destroying revisions in summary
-      if (jobData.latest_quote?.summary?.revisions) {
-        console.log(
-          '🔍 REFRESH QUOTE DEBUG - Quote summary has revisions:',
-          jobData.latest_quote.summary.revisions.length,
-        )
-        console.log(
-          '🔍 REFRESH QUOTE DEBUG - Revisions data:',
-          jobData.latest_quote.summary.revisions,
-        )
-      } else {
-        console.warn('🚨 REFRESH QUOTE DEBUG - No revisions in quote summary!')
-        console.warn('  - Summary exists:', !!jobData.latest_quote?.summary)
-        console.warn('  - Summary content:', jobData.latest_quote?.summary)
-      }
+      if (props.jobData) Object.assign(props.jobData, jobData)
 
-      if (props.jobData) {
-        // 🚨 CRITICAL: This Object.assign might be overwriting revisions data!
-        console.log('🔍 REFRESH QUOTE DEBUG - BEFORE Object.assign:')
-        console.log(
-          '  - Current jobData.latest_quote.summary:',
-          props.jobData.latest_quote?.summary,
-        )
-
-        // Update props.jobData with API response directly - NO CONVERSIONS
-        Object.assign(props.jobData, jobData)
-
-        console.log('🔍 REFRESH QUOTE DEBUG - AFTER Object.assign:')
-        console.log(
-          '  - Updated jobData.latest_quote.summary:',
-          props.jobData.latest_quote?.summary,
-        )
-      }
-
-      // Accept latest_quote exactly as the API returns it - NO CONVERSIONS
       if (jobData.latest_quote) {
         const latestQuote = jobData.latest_quote as CostSet
         if (latestQuote.cost_lines && Array.isArray(latestQuote.cost_lines)) {
           costLines.value = latestQuote.cost_lines
-          console.log(
-            '🔍 REFRESH QUOTE DEBUG - Updated costLines with',
-            latestQuote.cost_lines.length,
-            'lines',
-          )
         } else {
-          // If cost_lines is empty or null after revision, clear it
           costLines.value = []
-          console.log('🔍 REFRESH QUOTE DEBUG - Cleared costLines (empty/null)')
         }
       } else {
-        // If no latest_quote, clear cost lines
         costLines.value = []
-        console.log('🔍 REFRESH QUOTE DEBUG - Cleared costLines (no latest_quote)')
       }
     }
   } catch (error) {
@@ -779,48 +727,14 @@ function onShowQuoteRevisions() {
 
 async function fetchQuoteRevisions() {
   if (!props.jobId) return
-  console.log('🔍 FETCH REVISIONS DEBUG - Starting for jobId:', props.jobId)
-
-  // 🔍 DEBUG: Log before fetch
-  console.log('🔍 FETCH REVISIONS DEBUG - BEFORE:')
-  console.log('  - Current revisions count:', quoteRevisionsData.value?.total_revisions)
-  console.log('  - Current revisions data:', quoteRevisionsData.value?.revisions?.length)
 
   isLoading.value = true
   try {
-    // 🔍 DEBUG: Log the exact API call being made
-    console.log('🔍 FETCH REVISIONS DEBUG - Making API call with params:', { job_id: props.jobId })
-
     const response = await api.job_rest_jobs_cost_sets_quote_revise_retrieve({
       params: { job_id: props.jobId },
     })
 
-    // 🔍 DEBUG: Log the complete raw response
-    console.log('🔍 FETCH REVISIONS DEBUG - RAW API Response:', response)
-    console.log('🔍 FETCH REVISIONS DEBUG - API Response breakdown:', {
-      totalRevisions: response.total_revisions,
-      currentCostSetRev: response.current_cost_set_rev,
-      revisionsCount: response.revisions?.length,
-      revisionNumbers: response.revisions?.map((r) => r.quote_revision),
-      fullRevisions: response.revisions,
-    })
-
-    // 🚨 CRITICAL: Check if API is consistently returning 0 revisions
-    if (response.total_revisions === 0 && response.revisions?.length === 0) {
-      console.error('🚨 CRITICAL: API is returning 0 revisions consistently!')
-      console.error('  - This suggests either:')
-      console.error('    1. No revisions exist in the database')
-      console.error('    2. API endpoint has a bug')
-      console.error('    3. Wrong job_id being passed')
-      console.error('  - Job ID being used:', props.jobId)
-      console.error('  - Job ID type:', typeof props.jobId)
-    }
-
     quoteRevisionsData.value = response
-
-    console.log('🔍 FETCH REVISIONS DEBUG - AFTER UPDATE:')
-    console.log('  - Updated revisions count:', quoteRevisionsData.value?.total_revisions)
-    console.log('  - Updated revisions data:', quoteRevisionsData.value?.revisions?.length)
   } catch (error) {
     toast.error('Failed to fetch quote revisions')
     debugLog('Failed to fetch quote revisions:', error)
@@ -1116,7 +1030,6 @@ async function onCopyFromRevision(revision: { quote_revision: number; cost_lines
     return
   }
 
-  // 🔧 VALIDATION: Ensure we're copying from a real archived revision
   if (!quoteRevisionsData.value || quoteRevisionsData.value.total_revisions === 0) {
     toast.error(
       'No archived revisions available. Create a revision first using "Create New Revision".',
@@ -1131,15 +1044,9 @@ async function onCopyFromRevision(revision: { quote_revision: number; cost_lines
     id: 'copy-revision',
   })
 
-  console.log('🔍 COPY REVISION DEBUG - Copying from REAL archived revision:')
-  console.log('  - Archived revision number:', revision.quote_revision)
-  console.log('  - Lines to copy:', revisionLines.length)
-  console.log('  - Total archived revisions available:', quoteRevisionsData.value.total_revisions)
-
   try {
     // Clear existing quote lines first
     if (costLines.value.length > 0) {
-      console.log('🔍 COPY REVISION DEBUG - Clearing current quote lines:', costLines.value.length)
       for (const line of costLines.value) {
         if (line.id) {
           await costlineService.deleteCostLine(line.id)
@@ -1148,7 +1055,6 @@ async function onCopyFromRevision(revision: { quote_revision: number; cost_lines
       costLines.value = []
     }
 
-    // Copy each archived revision line to current quote
     const createdLines: CostLine[] = []
     console.log('🔍 COPY REVISION DEBUG - Creating new lines from archived data...')
     for (const revisionLine of revisionLines) {
@@ -1175,7 +1081,7 @@ async function onCopyFromRevision(revision: { quote_revision: number; cost_lines
       'lines from archived revision',
     )
 
-    // Only refresh quote data to update summary (archived revisions remain in summary.revisions[])
+    // Only refresh quote data to update summary
     await refreshQuoteData()
 
     toast.success(
