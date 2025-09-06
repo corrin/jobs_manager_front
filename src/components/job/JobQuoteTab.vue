@@ -10,6 +10,24 @@
           </h2>
         </div>
         <div v-if="currentQuote?.has_quote" class="flex items-center gap-2">
+          <!-- Print and Download buttons -->
+          <button
+            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-green-600 text-white border border-green-700 text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            style="min-width: 0"
+            @click="printJob"
+            :title="'Print Job Sheet'"
+          >
+            <Printer class="w-4 h-4 mr-1" /> Print
+          </button>
+          <button
+            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style="min-width: 0"
+            @click="downloadJobSheet"
+            :title="'Download Job Sheet'"
+          >
+            <Download class="w-4 h-4 mr-1" /> Download Sheet
+          </button>
+
           <button
             class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             style="min-width: 0"
@@ -484,11 +502,14 @@ import {
   RotateCcw,
   FileX,
   Copy,
+  Printer,
+  Download,
 } from 'lucide-vue-next'
 import CostLineDropdown from './CostLineDropdown.vue'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import { quoteService } from '../../services/quote.service'
+import { jobService } from '../../services/job.service'
 import { toast } from 'vue-sonner'
 import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
@@ -510,6 +531,7 @@ import {
   DialogFooter,
 } from '../../components/ui/dialog'
 import { Button } from '../../components/ui/button'
+import { Badge } from '../../components/ui/badge'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
@@ -718,6 +740,54 @@ async function onLinkQuote() {
 function onGoToSpreadsheet() {
   if (!props.jobData?.quote_sheet?.sheet_url) return
   window.open(props.jobData.quote_sheet.sheet_url, '_blank')
+}
+
+async function printJob() {
+  if (!props.jobData?.id) {
+    toast.error('Job ID not available')
+    return
+  }
+
+  try {
+    const blob = await jobService.getWorkshopPdf(props.jobData.id)
+    const pdfUrl = URL.createObjectURL(blob)
+
+    const printWindow = window.open(pdfUrl, '_blank')
+    if (printWindow) {
+      printWindow.addEventListener('load', () => {
+        printWindow.print()
+      })
+      toast.success('Print dialog opened')
+    } else {
+      toast.error('Failed to open print window. Please check popup blocker settings.')
+    }
+  } catch (error) {
+    toast.error('Error generating PDF for printing')
+    debugLog('Error printing job:', error)
+  }
+}
+
+async function downloadJobSheet() {
+  if (!props.jobData?.id) {
+    toast.error('Job ID not available')
+    return
+  }
+
+  try {
+    const blob = await jobService.getWorkshopPdf(props.jobData.id)
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `job_${props.jobData.job_number}_sheet.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success('Job sheet download started')
+  } catch (error) {
+    toast.error('Error generating PDF for download')
+    debugLog('Error downloading job sheet:', error)
+  }
 }
 
 function onShowQuoteRevisions() {

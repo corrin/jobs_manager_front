@@ -1,84 +1,221 @@
 <template>
-  <div class="job-actual-tab h-full flex flex-col">
-    <div class="flex-shrink-0 mb-6">
-      <div class="flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">
+  <div class="job-actual-tab h-full grid grid-rows-[auto_1fr] gap-4">
+    <!-- HEADER COM KPIs COMPACTOS -->
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900">
           Actual Costs
           <span v-if="isLoading" class="ml-2 text-sm text-gray-500">Loading...</span>
         </h2>
-        <div class="flex items-center gap-4">
-          <div class="text-sm text-gray-500">
-            View and add actual costs from stock consumption and adjustments
-          </div>
-          <ActualCostDropdown
-            :disabled="isLoading"
-            @add-material="handleAddMaterial"
-            @add-adjustment="handleAddAdjustment"
-          />
-        </div>
+        <p class="text-sm text-gray-500">
+          View and add actual costs from stock consumption and adjustments
+        </p>
+      </div>
+
+      <!-- KPIs como chips (uma linha, densos) -->
+      <ul class="hidden xl:flex items-center gap-2 shrink-0">
+        <li class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
+          <span class="w-1.5 h-6 rounded-full bg-blue-500"></span>
+          <span class="text-[11px] uppercase tracking-wide text-slate-600">Estimate</span>
+          <strong class="tabular-nums text-slate-900">{{
+            finances.formatCurrency(finances.estimateTotal.value)
+          }}</strong>
+        </li>
+        <li class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
+          <span class="w-1.5 h-6 rounded-full bg-emerald-500"></span>
+          <span class="text-[11px] uppercase tracking-wide text-slate-600">Time & Expenses</span>
+          <strong class="tabular-nums text-slate-900">{{
+            finances.formatCurrency(finances.timeAndExpenses.value)
+          }}</strong>
+        </li>
+        <li class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
+          <span class="w-1.5 h-6 rounded-full bg-orange-500"></span>
+          <span class="text-[11px] uppercase tracking-wide text-slate-600">Invoiced</span>
+          <strong class="tabular-nums text-slate-900">{{
+            finances.formatCurrency(finances.invoiceTotal.value)
+          }}</strong>
+        </li>
+        <li class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
+          <span class="w-1.5 h-6 rounded-full bg-violet-500"></span>
+          <span class="text-[11px] uppercase tracking-wide text-slate-600">To Be Invoiced</span>
+          <strong class="tabular-nums text-slate-900">{{
+            finances.formatCurrency(finances.toBeInvoiced.value)
+          }}</strong>
+        </li>
+      </ul>
+
+      <div class="flex items-center gap-2">
+        <ActualCostDropdown
+          class="w-full"
+          :disabled="isLoading"
+          @add-material="handleAddMaterial"
+          @add-adjustment="handleAddAdjustment"
+        />
       </div>
     </div>
 
-    <!-- Financial Cards -->
-    <div class="flex-shrink-0 mb-6">
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-          <div class="text-sm font-medium text-blue-800">Estimate</div>
-          <div class="text-2xl font-bold text-blue-900">
-            {{ finances.formatCurrency(finances.estimateTotal.value) }}
+    <!-- CONTEÚDO: GRID COM ASIDE STICKY + MAIN -->
+    <div class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 min-h-0">
+      <!-- ASIDE (STICKY): Summary + Invoices -->
+      <aside class="space-y-4 lg:sticky lg:top-16 self-start">
+        <div class="bg-white rounded-xl border border-slate-200">
+          <div class="p-3 w-full">
+            <CompactSummaryCard
+              title="Actual Summary"
+              class="w-full"
+              :summary="props.actualSummaryFromBackend || actualSummary"
+              :costLines="costLines"
+              :isLoading="isLoading"
+              :revision="revision"
+              @expand="showDetailedSummary = true"
+            />
           </div>
         </div>
-        <div class="bg-green-50 rounded-lg p-4 border border-green-200">
-          <div class="text-sm font-medium text-green-800">Time & Expenses</div>
-          <div class="text-2xl font-bold text-green-900">
-            {{ finances.formatCurrency(finances.timeAndExpenses.value) }}
-          </div>
-        </div>
-        <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
-          <div class="text-sm font-medium text-orange-800">Invoiced (Excl. Taxes)</div>
-          <div class="text-2xl font-bold text-orange-900">
-            {{ finances.formatCurrency(finances.invoiceTotal.value) }}
-          </div>
-        </div>
-        <div class="bg-purple-50 rounded-lg p-4 border border-purple-200">
-          <div class="text-sm font-medium text-purple-800">To Be Invoiced (Excl. Taxes)</div>
-          <div class="text-2xl font-bold text-purple-900">
-            {{ finances.formatCurrency(finances.toBeInvoiced.value) }}
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <div class="flex-1 flex gap-6 min-h-0">
-      <!-- Cost Lines Grid -->
-      <div class="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col">
-        <div class="flex-shrink-0 p-4 border-b border-gray-200">
+        <div class="bg-white rounded-xl border border-slate-200">
+          <Card class="border-0 shadow-none">
+            <CardHeader class="pb-2">
+              <CardTitle>Invoices</CardTitle>
+              <CardDescription>Manage invoices for this job.</CardDescription>
+            </CardHeader>
+            <!-- altura limitada + scroll: elimina branco gigante -->
+            <CardContent class="max-h-80 overflow-y-auto">
+              <div
+                v-if="finances.invoices.value.length === 0"
+                class="text-center py-6 text-gray-500"
+              >
+                No invoices for this project
+              </div>
+              <Table v-else>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Number</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead class="text-right">Total</TableHead>
+                    <TableHead class="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="invoice in finances.invoices.value" :key="invoice.id">
+                    <TableCell class="font-medium">{{ invoice.number }}</TableCell>
+                    <TableCell>{{ finances.formatDate(invoice.date) }}</TableCell>
+                    <TableCell>
+                      <Badge :variant="invoice.status === 'PAID' ? 'default' : 'secondary'">{{
+                        invoice.status
+                      }}</Badge>
+                    </TableCell>
+                    <TableCell class="text-right">{{
+                      finances.formatCurrency(invoice.total_incl_tax)
+                    }}</TableCell>
+                    <TableCell class="text-right">
+                      <div class="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          @click="finances.goToInvoiceOnXero(invoice.online_url)"
+                          :disabled="!invoice.online_url"
+                        >
+                          <ExternalLink class="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          @click="finances.deleteInvoiceOnXero(invoice.xero_id)"
+                          :disabled="!!finances.deletingInvoiceId.value"
+                        >
+                          <svg
+                            v-if="finances.deletingInvoiceId.value === invoice.xero_id"
+                            class="animate-spin h-4 w-4"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              class="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              stroke-width="4"
+                            />
+                            <path
+                              class="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
+                          </svg>
+                          <Trash2 v-else class="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+            <CardFooter
+              class="flex justify-center border-t pt-4"
+              v-if="!props.jobData?.fully_invoiced"
+            >
+              <button
+                @click="finances.createInvoice()"
+                :disabled="finances.isCreatingInvoice.value"
+                class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 flex items-center gap-2"
+              >
+                <svg
+                  v-if="finances.isCreatingInvoice.value"
+                  class="animate-spin -ml-1 mr-1 h-4 w-4"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  />
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                {{ finances.isCreatingInvoice.value ? 'Creating...' : 'Create Invoice' }}
+              </button>
+            </CardFooter>
+          </Card>
+        </div>
+      </aside>
+
+      <!-- MAIN (GRID) -->
+      <main class="bg-white rounded-xl border border-slate-200 flex flex-col min-h-0">
+        <div class="px-4 py-3 border-b border-slate-200">
           <h3 class="text-lg font-semibold text-gray-900">Actual Details</h3>
         </div>
-        <div class="flex-1 overflow-hidden">
-          <div v-if="isLoading" class="flex-1 flex items-center justify-center">
-            <div class="flex items-center space-x-2 text-gray-500">
-              <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                ></circle>
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              <span>Loading cost lines...</span>
-            </div>
+
+        <!-- sem min-h gigante: deixa o container controlar a altura -->
+        <div class="flex-1 min-h-0 overflow-auto">
+          <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
+            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <span>Loading cost lines...</span>
           </div>
+
           <div
             v-else-if="!costLines || costLines.length === 0"
-            class="flex-1 flex items-center justify-center"
+            class="h-full flex items-center justify-center"
           >
             <div class="text-center py-8">
               <svg
@@ -97,6 +234,7 @@
               <p class="text-gray-500">No actual costs recorded yet</p>
             </div>
           </div>
+
           <div v-else>
             <SmartCostLinesTable
               :lines="costLines"
@@ -110,138 +248,13 @@
               @duplicate-line="() => {}"
               @move-line="() => {}"
               @create-line="() => {}"
-            >
-            </SmartCostLinesTable>
+            />
           </div>
         </div>
-      </div>
-
-      <!-- Invoices Section -->
-      <div class="flex-shrink-0 flex lg:flex-col gap-1 ml-15 items-center w-125">
-        <Card class="w-full">
-          <CardHeader>
-            <CardTitle>Invoices</CardTitle>
-            <CardDescription>Manage invoices for this job.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div v-if="finances.invoices.value.length === 0" class="text-center py-8">
-              <div class="text-gray-500 mb-4">No invoices for this project</div>
-            </div>
-            <Table v-else>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Number</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead class="text-right">Total</TableHead>
-                  <TableHead class="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow v-for="invoice in finances.invoices.value" :key="invoice.id">
-                  <TableCell class="font-medium">{{ invoice.number }}</TableCell>
-                  <TableCell>{{ finances.formatDate(invoice.date) }}</TableCell>
-                  <TableCell>
-                    <Badge :variant="invoice.status === 'PAID' ? 'default' : 'secondary'">{{
-                      invoice.status
-                    }}</Badge>
-                  </TableCell>
-                  <TableCell class="text-right">{{
-                    finances.formatCurrency(invoice.total_incl_tax)
-                  }}</TableCell>
-                  <TableCell class="text-right">
-                    <div class="flex items-center justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        @click="finances.goToInvoiceOnXero(invoice.online_url)"
-                        :disabled="!invoice.online_url"
-                      >
-                        <ExternalLink class="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        @click="finances.deleteInvoiceOnXero(invoice.xero_id)"
-                        :disabled="!!finances.deletingInvoiceId.value"
-                      >
-                        <svg
-                          v-if="finances.deletingInvoiceId.value === invoice.xero_id"
-                          class="animate-spin h-4 w-4"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                          ></circle>
-                          <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        <Trash2 v-else class="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-          <CardFooter
-            class="flex justify-center border-t pt-6"
-            v-if="!props.jobData?.fully_invoiced"
-          >
-            <button
-              @click="finances.createInvoice()"
-              :disabled="finances.isCreatingInvoice.value"
-              class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              <svg
-                v-if="finances.isCreatingInvoice.value"
-                class="animate-spin -ml-1 mr-1 h-4 w-4 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                ></circle>
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              {{ finances.isCreatingInvoice.value ? 'Creating...' : 'Create Invoice' }}
-            </button>
-          </CardFooter>
-        </Card>
-        <div class="w-64 flex-shrink-0">
-          <CompactSummaryCard
-            title="Actual Summary"
-            :summary="props.actualSummaryFromBackend || actualSummary"
-            :costLines="costLines"
-            :isLoading="isLoading"
-            :revision="revision"
-            @expand="showDetailedSummary = true"
-          />
-        </div>
-      </div>
+      </main>
     </div>
 
-    <!-- Detailed Summary Dialog -->
+    <!-- DIALOGS -->
     <Dialog :open="showDetailedSummary" @update:open="showDetailedSummary = $event">
       <DialogContent class="sm:max-w-4xl max-h-[80vh]">
         <DialogHeader>
@@ -263,14 +276,11 @@
       </DialogContent>
     </Dialog>
 
-    <!-- Stock Consumption Modal -->
     <StockConsumptionModal
       v-if="showStockModal"
       @close="closeStockModal"
       @submit="submitStockConsumption"
     />
-
-    <!-- Adjustment Modal -->
     <CostLineAdjustmentModal
       v-if="showAdjustmentModal"
       :initial="null"
@@ -470,6 +480,7 @@ const actualSummary = computed(() => {
     cost,
     rev,
     hours,
+    profitMargin: rev - cost,
     created: undefined,
   }
 })
@@ -518,7 +529,7 @@ function resolveSource(
     return {
       visible: true,
       label,
-      onClick: () => navigateToDeliveryReceipt(line.ext_refs.purchase_order_id),
+      onClick: () => navigateToDeliveryReceipt(line.ext_refs.purchase_order_id as string),
     }
   }
 
@@ -538,7 +549,7 @@ function resolveSource(
     return {
       visible: true,
       label: staffName,
-      onClick: () => navigateToTimesheet(line.meta.staff_id, date),
+      onClick: () => navigateToTimesheet(line.meta.staff_id as string, date),
     }
   }
 
