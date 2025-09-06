@@ -7428,6 +7428,9 @@ components:
           type: string
           format: uuid
           nullable: true
+        pricing_methodology:
+          type: string
+          nullable: true
       required:
         - client_id
         - name

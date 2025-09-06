@@ -4,13 +4,10 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   deploy:
-    name: Deploy Vue.js to EC2
+    name: Deploy Frontend to EC2
     runs-on: ubuntu-latest
 
     steps:
@@ -18,33 +15,69 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # SSH Configuration
-      - name: Set up SSH key
-        uses: webfactory/ssh-agent@v0.9.0
+      # AWS Configuration
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
 
-      # Deploy via SSH
-      - name: Deploy Vue.js App to EC2
+      - name: Deploy to Frontend Machine
         env:
-          AWS_HOST: ${{ secrets.AWS_HOST }}
-          AWS_USER: ${{ secrets.AWS_USER }}
-          FRONTEND_PATH: ${{ secrets.PROJECT_PATH }}
+          FRONTEND_INSTANCE_ID: ${{ vars.FRONTEND_INSTANCE_ID }}
+          PROJECT_PATH: ${{ vars.FRONTEND_PROJECT_PATH }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
         run: |
-          BRANCH_NAME=${{ github.head_ref || github.ref_name }}
-          echo "Deploying branch: $BRANCH_NAME"
-          ssh -T -o StrictHostKeyChecking=no $AWS_USER@$AWS_HOST << EOF
-            cd $FRONTEND_PATH
+          echo "Deploying to Frontend Machine: $FRONTEND_INSTANCE_ID"
 
-            if git branch | grep -q "$BRANCH_NAME"; then
-              git switch $BRANCH_NAME
-            else
-              git switch -c $BRANCH_NAME
-            fi
-            git pull -f origin $BRANCH_NAME
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids $FRONTEND_INSTANCE_ID \
+            --document-name "AWS-RunShellScript" \
+            --parameters "commands=['sudo su - ubuntu -c \"$PROJECT_PATH/scripts/deploy_machine.sh main frontend\"']" \
+            --region $AWS_REGION \
+            --query 'Command.CommandId' \
+            --output text)
 
-            sudo systemctl restart vue
-          EOF
+          echo "Command ID: $COMMAND_ID"
 
-      - name: Notify Deployment Success
-        run: echo "✅ Vue.js Frontend deployed successfully to EC2!"
+          # Wait for command to complete
+          aws ssm wait command-executed \
+            --command-id $COMMAND_ID \
+            --instance-id $FRONTEND_INSTANCE_ID \
+            --region $AWS_REGION
+
+          # Get command output
+          STATUS=$(aws ssm get-command-invocation \
+            --command-id $COMMAND_ID \
+            --instance-id $FRONTEND_INSTANCE_ID \
+            --region $AWS_REGION \
+            --query 'Status' \
+            --output text)
+
+          OUTPUT=$(aws ssm get-command-invocation \
+            --command-id $COMMAND_ID \
+            --instance-id $FRONTEND_INSTANCE_ID \
+            --region $AWS_REGION \
+            --query 'StandardOutputContent' \
+            --output text)
+
+          ERROR_OUTPUT=$(aws ssm get-command-invocation \
+            --command-id $COMMAND_ID \
+            --instance-id $FRONTEND_INSTANCE_ID \
+            --region $AWS_REGION \
+            --query 'StandardErrorContent' \
+            --output text)
+
+          echo "Status: $STATUS"
+          echo "Output: $OUTPUT"
+          if [ "$ERROR_OUTPUT" != "None" ] && [ "$ERROR_OUTPUT" != "" ]; then
+            echo "Error Output: $ERROR_OUTPUT"
+          fi
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "Frontend deployment failed"
+            exit 1
+          else
+            echo "✅ Frontend deployment successful"
+          fi
