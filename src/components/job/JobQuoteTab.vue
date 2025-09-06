@@ -207,7 +207,11 @@
                 !previewData.changes.updates?.length &&
                 !previewData.changes.deletions?.length)
                 ? 'No Changes to Apply'
-                : `Apply ${(previewData.changes.additions?.length || 0) + (previewData.changes.updates?.length || 0) + (previewData.changes.deletions?.length || 0)} Changes`
+                : `Apply ${
+                    (previewData.changes.additions?.length || 0) +
+                    (previewData.changes.updates?.length || 0) +
+                    (previewData.changes.deletions?.length || 0)
+                  } Changes`
             }}
           </button>
         </DialogFooter>
@@ -216,26 +220,30 @@
 
     <!-- Quote Revisions Modal -->
     <Dialog :open="showQuoteRevisionsModal" @update:open="showQuoteRevisionsModal = $event">
-      <DialogContent class="sm:max-w-4xl max-h-[85vh] min-h-[60vh]">
-        <DialogHeader>
-          <DialogTitle>Quote Revisions History</DialogTitle>
-          <DialogDescription>
+      <DialogContent class="sm:max-w-5xl max-h-[90vh] min-h-[70vh] flex flex-col">
+        <DialogHeader class="flex-shrink-0 pb-4">
+          <DialogTitle class="text-xl font-semibold">Quote Revisions History</DialogTitle>
+          <DialogDescription class="text-muted-foreground">
             View all previous quote revisions and create new ones
           </DialogDescription>
         </DialogHeader>
 
-        <div v-if="isLoading" class="flex items-center justify-center py-8">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span class="ml-2">Loading revisions...</span>
+        <div v-if="isLoading" class="flex-1 flex items-center justify-center">
+          <div class="flex flex-col items-center gap-3">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span class="text-sm text-muted-foreground">Loading revisions...</span>
+          </div>
         </div>
 
-        <div v-else-if="quoteRevisionsData" class="space-y-6">
+        <div v-else-if="quoteRevisionsData" class="flex-1 flex flex-col min-h-0 space-y-4">
           <!-- Summary Header -->
-          <div class="bg-blue-50 rounded-lg p-4">
+          <div class="flex-shrink-0 bg-muted/50 rounded-lg p-4 border">
             <div class="flex items-center justify-between">
               <div>
-                <h4 class="font-medium text-blue-900">Job {{ quoteRevisionsData.job_number }}</h4>
-                <p class="text-sm text-blue-700">
+                <h4 class="font-medium text-foreground mb-1">
+                  Job {{ quoteRevisionsData.job_number }}
+                </h4>
+                <p class="text-sm text-muted-foreground">
                   {{ quoteRevisionsData.total_revisions }} revision{{
                     quoteRevisionsData.total_revisions !== 1 ? 's' : ''
                   }}
@@ -243,8 +251,8 @@
                 </p>
               </div>
               <div class="text-right">
-                <p class="text-sm text-blue-700">Current CostSet Rev</p>
-                <p class="font-semibold text-blue-900">
+                <p class="text-sm text-muted-foreground">Current CostSet Rev</p>
+                <p class="font-semibold text-foreground">
                   #{{ quoteRevisionsData.current_cost_set_rev }}
                 </p>
               </div>
@@ -252,112 +260,140 @@
           </div>
 
           <!-- Create New Revision Button -->
-          <div class="flex justify-end">
-            <button
-              @click="onCreateNewRevision"
-              :disabled="isCreatingRevision"
-              class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-            >
+          <div class="flex-shrink-0 flex justify-end">
+            <Button @click="onCreateNewRevision" :disabled="isCreatingRevision" size="sm">
               <PlusCircle class="w-4 h-4 mr-2" />
               {{ isCreatingRevision ? 'Creating...' : 'Create New Revision' }}
-            </button>
+            </Button>
           </div>
 
           <!-- Revisions List -->
-          <div v-if="quoteRevisionsData.revisions.length > 0" class="space-y-4">
-            <h5 class="font-medium text-gray-900">Previous Revisions</h5>
-            <div class="space-y-3 max-h-[50vh] overflow-y-auto">
+          <div v-if="quoteRevisionsData.revisions.length > 0" class="flex-1 flex flex-col min-h-0">
+            <h5 class="flex-shrink-0 font-medium text-foreground mb-3">Previous Revisions</h5>
+            <div class="flex-1 overflow-y-auto space-y-3 pr-2">
               <div
                 v-for="revision in quoteRevisionsData.revisions"
                 :key="revision.quote_revision"
-                class="bg-white border border-gray-200 rounded-lg p-4"
+                class="bg-card border rounded-lg p-4 shadow-sm"
               >
-                <div class="flex items-start justify-between">
+                <!-- HEADER -->
+                <div class="flex items-start justify-between mb-3">
                   <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-2">
+                    <div class="flex items-center gap-3">
                       <div class="flex items-center gap-2">
-                        <RotateCcw class="w-4 h-4 text-blue-600" />
-                        <span class="font-semibold text-gray-900"
-                          >Revision #{{ revision.quote_revision }}</span
-                        >
+                        <RotateCcw class="w-4 h-4 text-primary" />
+                        <span class="font-semibold text-foreground">
+                          Revision #{{ revision.quote_revision }}
+                        </span>
                       </div>
-                      <span class="text-sm text-gray-500">
-                        {{ formatDate(revision.archived_at) }}
+                      <span class="text-sm text-muted-foreground">
+                        {{ revision.archived_at ? formatDate(revision.archived_at) : '—' }}
                       </span>
                     </div>
+                  </div>
 
-                    <div v-if="revision.reason" class="mb-3">
-                      <p class="text-sm text-gray-600">
-                        <span class="font-medium">Reason:</span> {{ revision.reason }}
-                      </p>
-                    </div>
+                  <div class="flex-shrink-0">
+                    <Button
+                      type="button"
+                      @click="onCopyFromRevision(revision)"
+                      :disabled="isLoading"
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Copy class="w-3 h-3 mr-1" />
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+                <!-- /HEADER -->
 
-                    <div class="grid grid-cols-3 gap-4 text-sm mb-4">
-                      <div>
-                        <span class="text-gray-500">Cost:</span>
-                        <span class="ml-1 font-medium text-red-600">
-                          ${{ formatCurrency(revision.summary.cost) }}
-                        </span>
-                      </div>
-                      <div>
-                        <span class="text-gray-500">Revenue:</span>
-                        <span class="ml-1 font-medium text-green-600">
-                          ${{ formatCurrency(revision.summary.rev) }}
-                        </span>
-                      </div>
-                      <div>
-                        <span class="text-gray-500">Hours:</span>
-                        <span class="ml-1 font-medium text-blue-600">
-                          {{ formatNumber(revision.summary.hours) }}h
-                        </span>
-                      </div>
-                    </div>
+                <!-- Reason -->
+                <div v-if="revision.reason" class="mb-3 p-3 bg-muted/30 rounded-md">
+                  <p class="text-sm">
+                    <span class="font-medium">Reason:</span> {{ revision.reason }}
+                  </p>
+                </div>
 
-                    <!-- Cost Lines Details -->
-                    <div class="mt-4 border-t border-gray-100 pt-4">
-                      <h6 class="text-sm font-medium text-gray-900 mb-3">
-                        Cost Lines ({{ revision.cost_lines.length }})
-                      </h6>
-                      <div class="space-y-2 max-h-24 overflow-y-auto">
-                        <div
-                          v-for="line in revision.cost_lines"
-                          :key="line.id"
-                          class="flex items-center justify-between text-xs bg-gray-50 rounded p-2"
-                        >
-                          <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                              <span
-                                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
-                                :class="{
-                                  'bg-blue-100 text-blue-800': line.kind === 'time',
-                                  'bg-purple-100 text-purple-800': line.kind === 'material',
-                                  'bg-orange-100 text-orange-800': line.kind === 'adjust',
-                                }"
-                              >
-                                {{ line.kind }}
-                              </span>
-                              <span class="font-medium text-gray-900 truncate max-w-32">{{
-                                line.desc
-                              }}</span>
-                            </div>
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-3 gap-4 text-sm mb-4">
+                  <div class="flex flex-col">
+                    <span class="text-muted-foreground text-xs uppercase tracking-wide">Cost</span>
+                    <span class="font-semibold text-destructive">
+                      {{ formatCurrency(revision.summary.cost) }}
+                    </span>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-muted-foreground text-xs uppercase tracking-wide"
+                      >Revenue</span
+                    >
+                    <span class="font-semibold text-green-600">
+                      {{ formatCurrency(revision.summary.rev) }}
+                    </span>
+                  </div>
+                  <div class="flex flex-col">
+                    <span class="text-muted-foreground text-xs uppercase tracking-wide">Hours</span>
+                    <span class="font-semibold text-primary">
+                      {{ formatNumber(revision.summary.hours) }}h
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Cost Lines -->
+                <div class="border-t pt-4">
+                  <div class="flex items-center justify-between mb-3">
+                    <h6 class="text-sm font-medium text-foreground">
+                      Cost Lines ({{ revision.cost_lines.length }})
+                    </h6>
+                  </div>
+
+                  <div class="space-y-2 max-h-40 overflow-y-auto">
+                    <div
+                      v-for="line in revision.cost_lines"
+                      :key="line.id"
+                      class="flex items-center justify-between text-sm bg-muted/30 rounded-md p-3"
+                    >
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            class="text-xs"
+                            :class="
+                              line.kind === 'time'
+                                ? 'bg-blue-100 text-blue-800'
+                                : line.kind === 'material'
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : 'bg-orange-100 text-orange-800'
+                            "
+                          >
+                            {{ line.kind }}
+                          </Badge>
+                          <span class="font-medium text-foreground truncate">
+                            {{ line.desc }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-4 text-right flex-shrink-0">
+                        <div class="text-center">
+                          <div class="text-xs text-muted-foreground uppercase tracking-wide">
+                            Qty
                           </div>
-                          <div class="flex items-center gap-3 text-right">
-                            <div>
-                              <span class="text-gray-500">Qty:</span>
-                              <span class="font-medium">{{ formatNumber(line.quantity) }}</span>
-                            </div>
-                            <div>
-                              <span class="text-gray-500">Cost:</span>
-                              <span class="font-medium text-red-600"
-                                >${{ formatCurrency(line.total_cost) }}</span
-                              >
-                            </div>
-                            <div>
-                              <span class="text-gray-500">Rev:</span>
-                              <span class="font-medium text-green-600"
-                                >${{ formatCurrency(line.total_rev) }}</span
-                              >
-                            </div>
+                          <div class="font-medium">{{ formatNumber(line.quantity) }}</div>
+                        </div>
+                        <div class="text-center">
+                          <div class="text-xs text-muted-foreground uppercase tracking-wide">
+                            Cost
+                          </div>
+                          <div class="font-medium text-destructive">
+                            {{ formatCurrency(line.total_cost) }}
+                          </div>
+                        </div>
+                        <div class="text-center">
+                          <div class="text-xs text-muted-foreground uppercase tracking-wide">
+                            Rev
+                          </div>
+                          <div class="font-medium text-green-600">
+                            {{ formatCurrency(line.total_rev) }}
                           </div>
                         </div>
                       </div>
@@ -367,18 +403,20 @@
               </div>
             </div>
           </div>
+        </div>
 
-          <div v-else class="text-center py-8">
-            <FileX class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p class="text-gray-500">No previous revisions found</p>
-            <p class="text-sm text-gray-400 mt-1">Create your first revision to get started</p>
+        <div v-else class="flex-1 flex items-center justify-center">
+          <div class="text-center">
+            <FileX class="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+            <p class="text-muted-foreground">No previous revisions found</p>
+            <p class="text-sm text-muted-foreground/70 mt-1">
+              Create your first revision to get started
+            </p>
           </div>
         </div>
 
-        <DialogFooter>
-          <button class="px-4 py-2 bg-gray-200 rounded-md" @click="showQuoteRevisionsModal = false">
-            Close
-          </button>
+        <DialogFooter class="flex-shrink-0 pt-4 border-t">
+          <Button variant="outline" @click="showQuoteRevisionsModal = false"> Close </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -588,16 +626,62 @@ watch(
 async function refreshQuoteData() {
   if (!props.jobId) return
   isLoading.value = true
+
+  // 🔍 DEBUG: Log before refresh
+  console.log('🔍 REFRESH QUOTE DEBUG - BEFORE:')
+  console.log('  - Current quote rev:', currentQuote.value?.quote?.rev)
+  console.log('  - Current cost lines count:', costLines.value.length)
+
   try {
     const response: JobDetailResponse = await api.job_rest_jobs_retrieve({
       params: { job_id: props.jobId },
     })
 
+    console.log('🔍 REFRESH QUOTE DEBUG - API Response:', {
+      success: response.success,
+      hasData: !!response.data,
+      hasLatestQuote: !!response.data?.latest_quote,
+      latestQuoteRev: response.data?.latest_quote?.rev,
+      costLinesCount: response.data?.latest_quote?.cost_lines?.length || 0,
+      quoteSummary: response.data?.latest_quote?.summary,
+      summaryRevisions: response.data?.latest_quote?.summary?.revisions?.length || 0,
+    })
+
     if (response.success && response.data) {
       const jobData = response.data
+
+      // 🚨 CRITICAL: Check if refreshQuoteData is destroying revisions in summary
+      if (jobData.latest_quote?.summary?.revisions) {
+        console.log(
+          '🔍 REFRESH QUOTE DEBUG - Quote summary has revisions:',
+          jobData.latest_quote.summary.revisions.length,
+        )
+        console.log(
+          '🔍 REFRESH QUOTE DEBUG - Revisions data:',
+          jobData.latest_quote.summary.revisions,
+        )
+      } else {
+        console.warn('🚨 REFRESH QUOTE DEBUG - No revisions in quote summary!')
+        console.warn('  - Summary exists:', !!jobData.latest_quote?.summary)
+        console.warn('  - Summary content:', jobData.latest_quote?.summary)
+      }
+
       if (props.jobData) {
+        // 🚨 CRITICAL: This Object.assign might be overwriting revisions data!
+        console.log('🔍 REFRESH QUOTE DEBUG - BEFORE Object.assign:')
+        console.log(
+          '  - Current jobData.latest_quote.summary:',
+          props.jobData.latest_quote?.summary,
+        )
+
         // Update props.jobData with API response directly - NO CONVERSIONS
         Object.assign(props.jobData, jobData)
+
+        console.log('🔍 REFRESH QUOTE DEBUG - AFTER Object.assign:')
+        console.log(
+          '  - Updated jobData.latest_quote.summary:',
+          props.jobData.latest_quote?.summary,
+        )
       }
 
       // Accept latest_quote exactly as the API returns it - NO CONVERSIONS
@@ -605,18 +689,26 @@ async function refreshQuoteData() {
         const latestQuote = jobData.latest_quote as CostSet
         if (latestQuote.cost_lines && Array.isArray(latestQuote.cost_lines)) {
           costLines.value = latestQuote.cost_lines
+          console.log(
+            '🔍 REFRESH QUOTE DEBUG - Updated costLines with',
+            latestQuote.cost_lines.length,
+            'lines',
+          )
         } else {
           // If cost_lines is empty or null after revision, clear it
           costLines.value = []
+          console.log('🔍 REFRESH QUOTE DEBUG - Cleared costLines (empty/null)')
         }
       } else {
         // If no latest_quote, clear cost lines
         costLines.value = []
+        console.log('🔍 REFRESH QUOTE DEBUG - Cleared costLines (no latest_quote)')
       }
     }
   } catch (error) {
     toast.error('Failed to refresh quote data')
     debugLog('Failed to refresh quote data:', error)
+    console.error('🔍 REFRESH QUOTE DEBUG - ERROR:', error)
   } finally {
     isLoading.value = false
   }
@@ -687,16 +779,52 @@ function onShowQuoteRevisions() {
 
 async function fetchQuoteRevisions() {
   if (!props.jobId) return
-  console.log('fetchQuoteRevisions jobId:', props.jobId)
+  console.log('🔍 FETCH REVISIONS DEBUG - Starting for jobId:', props.jobId)
+
+  // 🔍 DEBUG: Log before fetch
+  console.log('🔍 FETCH REVISIONS DEBUG - BEFORE:')
+  console.log('  - Current revisions count:', quoteRevisionsData.value?.total_revisions)
+  console.log('  - Current revisions data:', quoteRevisionsData.value?.revisions?.length)
+
   isLoading.value = true
   try {
+    // 🔍 DEBUG: Log the exact API call being made
+    console.log('🔍 FETCH REVISIONS DEBUG - Making API call with params:', { job_id: props.jobId })
+
     const response = await api.job_rest_jobs_cost_sets_quote_revise_retrieve({
       params: { job_id: props.jobId },
     })
+
+    // 🔍 DEBUG: Log the complete raw response
+    console.log('🔍 FETCH REVISIONS DEBUG - RAW API Response:', response)
+    console.log('🔍 FETCH REVISIONS DEBUG - API Response breakdown:', {
+      totalRevisions: response.total_revisions,
+      currentCostSetRev: response.current_cost_set_rev,
+      revisionsCount: response.revisions?.length,
+      revisionNumbers: response.revisions?.map((r) => r.quote_revision),
+      fullRevisions: response.revisions,
+    })
+
+    // 🚨 CRITICAL: Check if API is consistently returning 0 revisions
+    if (response.total_revisions === 0 && response.revisions?.length === 0) {
+      console.error('🚨 CRITICAL: API is returning 0 revisions consistently!')
+      console.error('  - This suggests either:')
+      console.error('    1. No revisions exist in the database')
+      console.error('    2. API endpoint has a bug')
+      console.error('    3. Wrong job_id being passed')
+      console.error('  - Job ID being used:', props.jobId)
+      console.error('  - Job ID type:', typeof props.jobId)
+    }
+
     quoteRevisionsData.value = response
+
+    console.log('🔍 FETCH REVISIONS DEBUG - AFTER UPDATE:')
+    console.log('  - Updated revisions count:', quoteRevisionsData.value?.total_revisions)
+    console.log('  - Updated revisions data:', quoteRevisionsData.value?.revisions?.length)
   } catch (error) {
     toast.error('Failed to fetch quote revisions')
     debugLog('Failed to fetch quote revisions:', error)
+    console.error('🔍 FETCH REVISIONS DEBUG - ERROR:', error)
   } finally {
     isLoading.value = false
   }
@@ -978,6 +1106,89 @@ async function onCopyFromEstimate() {
   } finally {
     isLoading.value = false
     toast.dismiss('copy-estimate')
+  }
+}
+
+// Copy all cost lines from a specific archived quote revision
+async function onCopyFromRevision(revision: { quote_revision: number; cost_lines: CostLine[] }) {
+  if (!revision?.cost_lines?.length) {
+    toast.error('No cost lines found in this revision')
+    return
+  }
+
+  // 🔧 VALIDATION: Ensure we're copying from a real archived revision
+  if (!quoteRevisionsData.value || quoteRevisionsData.value.total_revisions === 0) {
+    toast.error(
+      'No archived revisions available. Create a revision first using "Create New Revision".',
+    )
+    console.warn('🚨 COPY ATTEMPT: No archived revisions exist in summary.revisions[]')
+    return
+  }
+
+  const revisionLines = revision.cost_lines
+  isLoading.value = true
+  toast.info(`Copying from archived revision ${revision.quote_revision}...`, {
+    id: 'copy-revision',
+  })
+
+  console.log('🔍 COPY REVISION DEBUG - Copying from REAL archived revision:')
+  console.log('  - Archived revision number:', revision.quote_revision)
+  console.log('  - Lines to copy:', revisionLines.length)
+  console.log('  - Total archived revisions available:', quoteRevisionsData.value.total_revisions)
+
+  try {
+    // Clear existing quote lines first
+    if (costLines.value.length > 0) {
+      console.log('🔍 COPY REVISION DEBUG - Clearing current quote lines:', costLines.value.length)
+      for (const line of costLines.value) {
+        if (line.id) {
+          await costlineService.deleteCostLine(line.id)
+        }
+      }
+      costLines.value = []
+    }
+
+    // Copy each archived revision line to current quote
+    const createdLines: CostLine[] = []
+    console.log('🔍 COPY REVISION DEBUG - Creating new lines from archived data...')
+    for (const revisionLine of revisionLines) {
+      const createPayload = {
+        kind: revisionLine.kind as 'material' | 'time' | 'adjust',
+        desc: revisionLine.desc || '',
+        quantity: revisionLine.quantity || 0,
+        unit_cost: revisionLine.unit_cost ?? 0,
+        unit_rev: revisionLine.unit_rev ?? 0,
+        ext_refs: (revisionLine.ext_refs as Record<string, unknown>) || {},
+        meta: (revisionLine.meta as Record<string, unknown>) || {},
+      }
+
+      const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
+      createdLines.push(created)
+      console.log('🔍 COPY REVISION DEBUG - Recreated line from archive:', created.id, created.desc)
+    }
+
+    // Update local state
+    costLines.value = createdLines
+    console.log(
+      '🔍 COPY REVISION DEBUG - Successfully restored',
+      createdLines.length,
+      'lines from archived revision',
+    )
+
+    // Only refresh quote data to update summary (archived revisions remain in summary.revisions[])
+    await refreshQuoteData()
+
+    toast.success(
+      `Restored ${createdLines.length} lines from archived revision ${revision.quote_revision}!`,
+    )
+    emit('cost-line-changed')
+  } catch (error) {
+    toast.error('Failed to copy from archived revision.')
+    debugLog('Failed to copy from revision:', error)
+    console.error('🔍 COPY REVISION DEBUG - ERROR:', error)
+  } finally {
+    isLoading.value = false
+    toast.dismiss('copy-revision')
   }
 }
 </script>
