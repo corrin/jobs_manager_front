@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Frontend deployment script for both GitHub Actions CD and machine startup
-# Usage: ./deploy_machine.sh main frontend
+# Usage: ./deploy_machine.sh
 
 set -e  # Exit on any error
 
@@ -39,7 +39,7 @@ main() {
     git switch main
     git fetch origin main
     git reset --hard origin/main
-    chmod +x scripts/deploy_machine.sh
+    chmod +x scripts/deploy_frontend.sh
 
     # Update schema (graceful fallback if backend unavailable)
     if npm run update-schema 2>/dev/null; then
@@ -62,4 +62,4 @@ main() {
 # Handle script interruption
 trap 'log_error "Deployment interrupted"; exit 1' INT TERM
 
-main "$@"
+main
