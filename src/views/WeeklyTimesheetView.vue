@@ -2,51 +2,57 @@
   <AppLayout>
     <div class="flex flex-col min-h-screen">
       <div class="sticky top-0 bg-white backdrop-blur-md border-b border-gray-200 p-1">
-        <div class="px-3 sm:px-4 lg:px-6 py-1 sm:py-2">
-          <div class="space-y-2 lg:space-y-0 pt-2">
+        <div class="px-2 sm:px-3 lg:px-4 py-1 sm:py-1.5 lg:py-2">
+          <div class="space-y-1 lg:space-y-0 pt-1 lg:pt-2">
             <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between">
               <div
-                class="flex flex-col sm:flex-row sm:items-end sm:space-x-4 text-center sm:text-left"
+                class="flex flex-col sm:flex-row sm:items-end sm:space-x-3 lg:space-x-4 text-center sm:text-left"
               >
-                <h1 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
+                <h1 class="text-base sm:text-lg lg:text-2xl xl:text-3xl font-bold text-gray-900">
                   Weekly Timesheet Overview
                 </h1>
                 <div
-                  class="flex items-center justify-center sm:justify-start space-x-2 text-gray-600 mt-1 sm:mt-0"
+                  class="flex items-center justify-center sm:justify-start space-x-1 lg:space-x-2 text-gray-600 mt-1 sm:mt-0"
                 >
-                  <Calendar class="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span class="text-xs sm:text-sm">{{ formatDisplayDateRange() }}</span>
+                  <Calendar class="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                  <span class="text-xs sm:text-sm lg:text-base">{{
+                    formatDisplayDateRange()
+                  }}</span>
                 </div>
               </div>
 
               <div
-                class="flex items-center justify-center sm:justify-end space-x-2 sm:space-x-3 mt-2 sm:mt-0"
+                class="flex items-center justify-center sm:justify-end space-x-1 sm:space-x-2 lg:space-x-3 mt-1 sm:mt-0 lg:mt-2"
               >
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1 lg:space-x-2">
                   <button
                     @click="toggleIMSMode(!imsMode)"
                     :class="[
-                      'relative inline-flex h-5 w-9 sm:h-6 sm:w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2',
+                      'relative inline-flex h-4 w-8 sm:h-5 sm:w-9 lg:h-6 lg:w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2',
                       imsMode ? 'bg-gray-600' : 'bg-gray-200',
                     ]"
                   >
                     <span
                       :class="[
-                        'inline-block h-3 w-3 sm:h-4 sm:w-4 transform rounded-full bg-white transition-transform',
-                        imsMode ? 'translate-x-5 sm:translate-x-6' : 'translate-x-1',
+                        'inline-block h-2 w-2 sm:h-3 sm:w-3 lg:h-4 lg:w-4 transform rounded-full bg-white transition-transform',
+                        imsMode
+                          ? 'translate-x-4 sm:translate-x-5 lg:translate-x-6'
+                          : 'translate-x-0.5',
                       ]"
                     ></span>
                   </button>
-                  <Label class="text-gray-700 text-xs sm:text-sm font-medium">Payroll View</Label>
+                  <Label class="text-gray-700 text-xs sm:text-sm lg:text-base font-medium"
+                    >Payroll View</Label
+                  >
                 </div>
 
                 <Button
                   @click="openWeeklyMetricsModal"
                   variant="ghost"
                   size="sm"
-                  class="text-gray-600 hover:bg-gray-100 text-xs sm:text-sm"
+                  class="text-gray-600 hover:bg-gray-100 text-xs sm:text-sm lg:text-base h-8 lg:h-10 px-2 lg:px-3"
                 >
-                  <BarChart3 class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                  <BarChart3 class="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 sm:mr-2 lg:mr-2" />
                   <span class="hidden sm:inline">Job Metrics</span>
                 </Button>
 
@@ -54,11 +60,11 @@
                   @click="refreshData"
                   variant="ghost"
                   size="sm"
-                  class="text-gray-600 hover:bg-gray-100 text-xs sm:text-sm"
+                  class="text-gray-600 hover:bg-gray-100 text-xs sm:text-sm lg:text-base h-8 lg:h-10 px-2 lg:px-3"
                   :disabled="loading"
                 >
                   <RefreshCw
-                    class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2"
+                    class="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 sm:mr-2 lg:mr-2"
                     :class="{ 'animate-spin': loading }"
                   />
                   <span class="hidden sm:inline">Refresh</span>
@@ -68,90 +74,96 @@
                   @click="goToCurrentWeek"
                   variant="default"
                   size="sm"
-                  class="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 font-medium text-xs sm:text-sm"
+                  class="bg-gray-600 hover:bg-gray-700 text-white border-gray-500 font-medium text-xs sm:text-sm lg:text-base h-8 lg:h-10 px-2 lg:px-4"
                 >
-                  <Home class="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
+                  <Home class="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 sm:mr-2 lg:mr-2" />
                   <span class="hidden sm:inline">This Week</span>
                 </Button>
               </div>
             </div>
 
-            <div class="flex items-center justify-center space-x-2 sm:space-x-4">
+            <div class="flex items-center justify-center space-x-1 sm:space-x-2 lg:space-x-4">
               <Button
                 @click="navigateWeek(-1)"
                 variant="ghost"
                 size="sm"
-                class="text-gray-600 hover:bg-gray-100 px-2 sm:px-4"
+                class="text-gray-600 hover:bg-gray-100 px-1.5 sm:px-2 lg:px-3 h-8 lg:h-10"
               >
-                <ChevronLeft class="h-4 w-4 sm:h-5 sm:w-5" />
-                <span class="hidden sm:inline ml-1">Previous</span>
+                <ChevronLeft class="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                <span class="hidden sm:inline ml-1 text-xs sm:text-sm lg:text-base">Previous</span>
               </Button>
 
               <Button
                 @click="openWeekPicker"
                 variant="ghost"
                 size="sm"
-                class="text-gray-600 hover:bg-gray-100 px-3 sm:px-4"
+                class="text-gray-600 hover:bg-gray-100 px-2 sm:px-3 lg:px-4 h-8 lg:h-10"
               >
-                <CalendarDays class="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
-                <span class="text-xs sm:text-sm">Change Week</span>
+                <CalendarDays class="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5 mr-1 lg:mr-2" />
+                <span class="text-xs sm:text-sm lg:text-base">Change Week</span>
               </Button>
 
               <Button
                 @click="navigateWeek(1)"
                 variant="ghost"
                 size="sm"
-                class="text-gray-600 hover:bg-gray-100 px-2 sm:px-4"
+                class="text-gray-600 hover:bg-gray-100 px-1.5 sm:px-2 lg:px-3 h-8 lg:h-10"
               >
-                <span class="hidden sm:inline mr-1">Next</span>
-                <ChevronRight class="h-4 w-4 sm:h-5 sm:w-5" />
+                <span class="hidden sm:inline mr-1 text-xs sm:text-sm lg:text-base">Next</span>
+                <ChevronRight class="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="flex-1 p-2 sm:p-4 lg:p-1 space-y-3 sm:space-y-4 lg:space-y-6">
+      <div class="flex-1 p-1 sm:p-2 lg:p-3 space-y-2 sm:space-y-3 lg:space-y-4">
         <!-- Loading Spinner -->
         <div v-if="loading" class="flex-1 flex items-center justify-center bg-gray-50">
-          <div class="text-center space-y-4 p-8">
+          <div class="text-center space-y-3 lg:space-y-4 p-6 lg:p-8">
             <div
-              class="h-12 w-12 mx-auto rounded-full border-4 border-gray-300 border-t-gray-600 animate-spin"
+              class="h-10 w-10 sm:h-12 sm:w-12 lg:h-14 lg:w-14 mx-auto rounded-full border-4 border-gray-300 border-t-gray-600 animate-spin"
             ></div>
-            <p class="text-gray-600 text-lg font-medium">Loading weekly timesheet data...</p>
+            <p class="text-gray-600 text-base sm:text-lg lg:text-xl font-medium">
+              Loading weekly timesheet data...
+            </p>
           </div>
         </div>
-        <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 sm:p-6">
-          <div class="flex items-start space-x-3">
-            <AlertCircle class="h-5 w-5 sm:h-6 sm:w-6 text-red-600 flex-shrink-0 mt-0.5" />
+        <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 lg:p-6">
+          <div class="flex items-start space-x-2 lg:space-x-3">
+            <AlertCircle
+              class="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-red-600 flex-shrink-0 mt-0.5"
+            />
             <div class="flex-1">
-              <h3 class="text-base sm:text-lg font-semibold text-red-900">Error Loading Data</h3>
-              <p class="text-red-700 text-sm sm:text-base mt-1">{{ error }}</p>
-              <Button @click="refreshData" class="mt-3" variant="outline" size="sm">
-                <RefreshCw class="h-4 w-4 mr-2" />
+              <h3 class="text-sm sm:text-base lg:text-lg font-semibold text-red-900">
+                Error Loading Data
+              </h3>
+              <p class="text-red-700 text-xs sm:text-sm lg:text-base mt-1">{{ error }}</p>
+              <Button @click="refreshData" class="mt-2 lg:mt-3" variant="outline" size="sm">
+                <RefreshCw class="h-3 w-3 lg:h-4 lg:w-4 mr-2" />
                 Try Again
               </Button>
             </div>
           </div>
         </div>
 
-        <div v-else-if="weeklyData" class="space-y-4">
+        <div v-else-if="weeklyData" class="space-y-2 lg:space-y-3">
           <div
-            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-16rem)] lg:h-[calc(100vh-10rem)]"
+            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-14rem)] lg:h-[calc(100vh-8rem)] xl:h-[calc(100vh-6rem)]"
           >
             <div class="flex-1 overflow-y-auto">
               <table class="min-w-full divide-y divide-gray-200 table-fixed">
                 <thead class="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th
-                      class="w-48 px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      class="w-48 px-1.5 py-1.5 lg:py-2 text-left text-xs sm:text-sm lg:text-base font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Staff Member
                     </th>
                     <th
                       v-for="day in displayDays"
                       :key="day.date"
-                      class="w-20 px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider"
+                      class="w-20 px-1 py-1.5 lg:py-2 text-center text-xs sm:text-sm lg:text-base font-medium text-gray-700 uppercase tracking-wider"
                     >
                       <button
                         @click="goToDailyViewHeader(day.date)"
@@ -164,12 +176,12 @@
                       </button>
                     </th>
                     <th
-                      class="w-24 px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      class="w-24 px-1.5 py-1.5 lg:py-2 text-center text-xs sm:text-sm lg:text-base font-medium text-gray-500 uppercase tracking-wider"
                     >
                       {{ imsMode ? 'Weekly Total' : 'Total' }}
                     </th>
                     <th
-                      class="w-28 px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      class="w-28 px-1.5 py-1.5 lg:py-2 text-center text-xs sm:text-sm lg:text-base font-medium text-gray-500 uppercase tracking-wider"
                     >
                       {{ imsMode ? 'Billable Hours' : 'Billable %' }}
                     </th>
