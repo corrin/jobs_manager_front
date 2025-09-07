@@ -81,9 +81,6 @@
           @job-updated="$emit('job-updated', $event)"
         />
       </div>
-      <div v-if="activeTab === 'workflow'" class="h-full p-4 md:p-6">
-        <JobWorkflowTab v-if="jobData" :job-data="jobData" />
-      </div>
       <div v-if="activeTab === 'history'" class="h-full p-4 md:p-6">
         <JobHistoryTab
           v-if="jobData"
@@ -123,7 +120,6 @@ import JobQuoteTab from './JobQuoteTab.vue'
 import JobActualTab from './JobActualTab.vue'
 import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
 import JobSettingsTab from './JobSettingsTab.vue'
-import JobWorkflowTab from './JobWorkflowTab.vue'
 import JobHistoryTab from './JobHistoryTab.vue'
 import JobAttachmentsTab from './JobAttachmentsTab.vue'
 import JobPdfTab from './JobPdfTab.vue'
@@ -174,7 +170,6 @@ const allTabs = [
   { key: 'actual', label: 'Actual' },
   { key: 'costAnalysis', label: 'Cost Analysis' },
   { key: 'jobSettings', label: 'Job Settings' },
-  { key: 'workflow', label: 'Workflow' },
   { key: 'history', label: 'History' },
   { key: 'attachments', label: 'Attachments' },
   { key: 'printJob', label: 'Print Job' },

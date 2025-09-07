@@ -56,6 +56,10 @@ export function useJobHeaderAutosave(jobData: Job) {
       contact_name: newJobData.contact_name,
       job_status: newJobData.job_status,
       pricing_methodology: newJobData.pricing_methodology,
+      quoted: newJobData.quoted,
+      fully_invoiced: newJobData.fully_invoiced,
+      paid: newJobData.paid,
+      quote_acceptance_date: newJobData.quote_acceptance_date,
     }
 
     localJobData.value = { ...jobDataSnapshot }
@@ -80,6 +84,10 @@ export function useJobHeaderAutosave(jobData: Job) {
         contact_name: originalJobData.value.contact_name,
         job_status: originalJobData.value.job_status,
         pricing_methodology: originalJobData.value.pricing_methodology,
+        quoted: originalJobData.value.quoted,
+        fully_invoiced: originalJobData.value.fully_invoiced,
+        paid: originalJobData.value.paid,
+        quote_acceptance_date: originalJobData.value.quote_acceptance_date,
       }
     },
     applyOptimistic: (patch) => {
@@ -109,6 +117,11 @@ export function useJobHeaderAutosave(jobData: Job) {
           job_status: originalJobData.value.job_status ?? baseline.job_status,
           pricing_methodology:
             originalJobData.value.pricing_methodology ?? baseline.pricing_methodology,
+          quoted: originalJobData.value.quoted ?? baseline.quoted,
+          fully_invoiced: originalJobData.value.fully_invoiced ?? baseline.fully_invoiced,
+          paid: originalJobData.value.paid ?? baseline.paid,
+          quote_acceptance_date:
+            originalJobData.value.quote_acceptance_date ?? baseline.quote_acceptance_date,
         }
 
         // Start with complete original jobData to ensure all required fields are present
@@ -117,6 +130,13 @@ export function useJobHeaderAutosave(jobData: Job) {
           ...baseline, // Complete job data with all required fields
           ...header,
           ...(patch as Partial<Job>), // Apply patch changes (this will override contact_id if needed)
+          quoted:
+            'quoted' in (patch as Partial<Job>) ? (patch as Partial<Job>).quoted : baseline.quoted,
+          fully_invoiced:
+            'fully_invoiced' in (patch as Partial<Job>)
+              ? (patch as Partial<Job>).fully_invoiced
+              : baseline.fully_invoiced,
+          paid: 'paid' in (patch as Partial<Job>) ? (patch as Partial<Job>).paid : baseline.paid,
         } as Job
 
         if ('client_id' in (patch as Record<string, unknown>)) {
@@ -166,6 +186,10 @@ export function useJobHeaderAutosave(jobData: Job) {
           contact_name: savedJob.contact_name,
           job_status: savedJob.job_status,
           pricing_methodology: savedJob.pricing_methodology,
+          quoted: savedJob.quoted,
+          fully_invoiced: savedJob.fully_invoiced,
+          paid: savedJob.paid,
+          quote_acceptance_date: savedJob.quote_acceptance_date,
         }
 
         toast.success('Job updated successfully')
@@ -230,6 +254,21 @@ export function useJobHeaderAutosave(jobData: Job) {
     enqueueIfNotInitializing('pricing_methodology', newMethod)
   }
 
+  const handleQuotedUpdate = (newValue: boolean) => {
+    localJobData.value.quoted = newValue
+    enqueueIfNotInitializing('quoted', newValue)
+  }
+
+  const handleFullyInvoicedUpdate = (newValue: boolean) => {
+    localJobData.value.fully_invoiced = newValue
+    enqueueIfNotInitializing('fully_invoiced', newValue)
+  }
+
+  const handlePaidUpdate = (newValue: boolean) => {
+    localJobData.value.paid = newValue
+    enqueueIfNotInitializing('paid', newValue)
+  }
+
   // Status indicators
   const saveHasError = computed(() => !!autosave.error.value)
   const saveStatusText = computed(() => {
@@ -273,6 +312,9 @@ export function useJobHeaderAutosave(jobData: Job) {
     handleClientUpdate,
     handleStatusUpdate,
     handlePricingMethodologyUpdate,
+    handleQuotedUpdate,
+    handleFullyInvoicedUpdate,
+    handlePaidUpdate,
     saveHasError,
     saveStatusText,
     retrySave,
