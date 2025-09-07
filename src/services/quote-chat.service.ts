@@ -28,10 +28,7 @@ export class QuoteChatService {
 
   async saveMessage(jobId: string, message: Omit<JobQuoteChat, 'id'>): Promise<JobQuoteChat> {
     try {
-      return await api.job_api_jobs_quote_chat_create(
-        { body: message },
-        { params: { job_id: jobId } },
-      )
+      return await api.job_api_jobs_quote_chat_create(message, { params: { job_id: jobId } })
     } catch (error) {
       debugLog('Failed to save chat message:', error)
       throw error
@@ -44,10 +41,9 @@ export class QuoteChatService {
     updates: Partial<JobQuoteChat>,
   ): Promise<JobQuoteChat> {
     try {
-      return await api.job_api_jobs_quote_chat_partial_update(
-        { body: updates },
-        { params: { job_id: jobId, message_id: messageId } },
-      )
+      return await api.job_api_jobs_quote_chat_partial_update(updates, {
+        params: { job_id: jobId, message_id: messageId },
+      })
     } catch (error) {
       debugLog('Failed to update chat message:', error)
       throw error
@@ -80,6 +76,7 @@ export class QuoteChatService {
     role: 'user' | 'assistant',
   ): Omit<JobQuoteChat, 'id'> {
     return {
+      message_id: vueMessage._id,
       role,
       content: vueMessage.content,
       metadata: vueMessage.metadata || {},
@@ -89,10 +86,9 @@ export class QuoteChatService {
   async getAssistantResponse(jobId: string, message: string): Promise<JobQuoteChat> {
     try {
       const request: JobQuoteChatInteractionRequest = { message }
-      return await api.job_api_jobs_quote_chat_interaction_create(
-        { body: request },
-        { params: { job_id: jobId } },
-      )
+      return await api.job_api_jobs_quote_chat_interaction_create(request, {
+        params: { job_id: jobId },
+      })
     } catch (error) {
       debugLog('Failed to get assistant response:', error)
       throw error
