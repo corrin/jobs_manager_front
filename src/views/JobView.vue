@@ -48,7 +48,7 @@
                 <InlineEditSelect
                   v-if="jobDataWithPaid"
                   :value="localJobStatus"
-                  :options="JOB_STATUS_CHOICES as any"
+                  :options="JOB_STATUS_CHOICES"
                   @update:value="handleStatusUpdate"
                   placeholder="Status"
                 />
@@ -151,7 +151,7 @@
                   <InlineEditSelect
                     v-if="jobDataWithPaid"
                     :value="localJobStatus"
-                    :options="JOB_STATUS_CHOICES as any"
+                    :options="JOB_STATUS_CHOICES"
                     @update:value="handleStatusUpdate"
                     placeholder="Select Status"
                   />
