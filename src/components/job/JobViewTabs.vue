@@ -108,7 +108,7 @@
           v-if="jobData"
           :job-id="jobData.id"
           :job-name="jobData.name"
-          :job-number="jobData.job_number"
+          :job-number="String(jobData.job_number)"
           :client-name="jobData.client_name"
         />
       </div>
