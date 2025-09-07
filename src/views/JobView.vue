@@ -67,8 +67,8 @@
                 <label class="flex items-center gap-1">
                   <input
                     type="checkbox"
+                    disabled
                     v-model="localQuoted"
-                    @change="(e) => handleQuotedUpdate((e.target as HTMLInputElement).checked)"
                     class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span>Already Quoted</span>
@@ -79,10 +79,8 @@
                 <label class="flex items-center gap-1">
                   <input
                     type="checkbox"
+                    disabled
                     v-model="localFullyInvoiced"
-                    @change="
-                      (e) => handleFullyInvoicedUpdate((e.target as HTMLInputElement).checked)
-                    "
                     class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span>Fully Invoiced</span>
@@ -93,7 +91,6 @@
                 <input
                   type="checkbox"
                   v-model="localPaid"
-                  @change="(e) => handlePaidUpdate((e.target as HTMLInputElement).checked)"
                   class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span>Job Paid</span>
@@ -175,7 +172,7 @@
                     <input
                       type="checkbox"
                       v-model="localQuoted"
-                      @change="(e) => handleQuotedUpdate((e.target as HTMLInputElement).checked)"
+                      disabled
                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <span>Already Quoted</span>
@@ -186,10 +183,8 @@
                   <label class="flex items-center gap-1">
                     <input
                       type="checkbox"
+                      disabled
                       v-model="localFullyInvoiced"
-                      @change="
-                        (e) => handleFullyInvoicedUpdate((e.target as HTMLInputElement).checked)
-                      "
                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <span>Fully Invoiced</span>
@@ -200,7 +195,6 @@
                   <input
                     type="checkbox"
                     v-model="localPaid"
-                    @change="(e) => handlePaidUpdate((e.target as HTMLInputElement).checked)"
                     class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span>Job Paid</span>
