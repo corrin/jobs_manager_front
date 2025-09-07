@@ -61,19 +61,14 @@
         <JobActualTab
           v-if="jobData"
           :job-id="jobData.id"
+          :job-data="jobData"
           :actual-summary-from-backend="jobData.latest_actual?.summary"
           @cost-line-changed="$emit('reload-job')"
-        />
-      </div>
-      <div v-if="activeTab === 'financial'" class="h-full p-4 md:p-6">
-        <JobFinancialTab
-          v-if="jobData"
-          :job-data="jobData"
-          :job-id="jobData.id"
-          :latest-pricings="latestPricings || undefined"
           @quote-created="$emit('quote-created')"
           @quote-accepted="$emit('quote-accepted')"
           @invoice-created="$emit('invoice-created')"
+          @quote-deleted="$emit('quote-deleted')"
+          @invoice-deleted="$emit('invoice-deleted')"
         />
       </div>
       <div v-if="activeTab === 'costAnalysis'" class="h-full p-4 md:p-6">
@@ -131,7 +126,6 @@ import { debugLog } from '@/utils/debug'
 import JobEstimateTab from './JobEstimateTab.vue'
 import JobQuoteTab from './JobQuoteTab.vue'
 import JobActualTab from './JobActualTab.vue'
-import JobFinancialTab from './JobFinancialTab.vue'
 import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
 import JobSettingsTab from './JobSettingsTab.vue'
 import JobWorkflowTab from './JobWorkflowTab.vue'
@@ -147,7 +141,6 @@ type JobTabKey =
   | 'estimate'
   | 'quote'
   | 'actual'
-  | 'financial'
   | 'costAnalysis'
   | 'jobSettings'
   | 'workflow'
@@ -170,6 +163,8 @@ const emit = defineEmits<{
   (e: 'quote-created'): void
   (e: 'quote-accepted'): void
   (e: 'invoice-created'): void
+  (e: 'quote-deleted'): void
+  (e: 'invoice-deleted'): void
   (e: 'delete-job'): void
   (e: 'reload-job'): void
   (e: 'job-updated', job: unknown): void
@@ -182,7 +177,6 @@ const allTabs = [
   { key: 'estimate', label: 'Estimate' },
   { key: 'quote', label: 'Quote' },
   { key: 'actual', label: 'Actual' },
-  { key: 'financial', label: 'Financial' },
   { key: 'costAnalysis', label: 'Cost Analysis' },
   { key: 'jobSettings', label: 'Job Settings' },
   { key: 'workflow', label: 'Workflow' },

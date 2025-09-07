@@ -10,52 +10,6 @@
           </h2>
         </div>
         <div v-if="currentQuote?.has_quote" class="flex items-center gap-2">
-          <button
-            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style="min-width: 0"
-            @click="onCopyFromEstimate"
-            :disabled="isLoading || !hasEstimateData"
-            :title="'Copy from Estimate'"
-          >
-            <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
-          </button>
-          <button
-            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-black text-white border border-gray-800 text-sm font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style="min-width: 0"
-            @click="onShowQuoteRevisions"
-            :title="'Quote Revisions'"
-          >
-            <BookOpen class="w-4 h-4 mr-1" /> Quote Revisions
-          </button>
-          <template v-if="props.jobData?.quote_sheet">
-            <button
-              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-black text-white border border-gray-800 text-sm font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              style="min-width: 0"
-              @click="onGoToSpreadsheet"
-              :title="'Go to Spreadsheet'"
-            >
-              <ExternalLink class="w-4 h-4 mr-1" /> Go to Spreadsheet
-            </button>
-            <button
-              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-black text-white border border-gray-800 text-sm font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              style="min-width: 0"
-              @click="onRefreshSpreadsheet"
-              :disabled="isLoading || isRefreshing"
-              :title="'Refresh Spreadsheet'"
-            >
-              <RefreshCw class="w-4 h-4 mr-1" /> Refresh Spreadsheet
-            </button>
-          </template>
-          <template v-else>
-            <button
-              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-black text-white border border-gray-800 text-sm font-medium hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              style="min-width: 0"
-              @click="onLinkQuote"
-              :title="'Link Spreadsheet'"
-            >
-              <Link2 class="w-4 h-4 mr-1" /> Link Spreadsheet
-            </button>
-          </template>
           <CostLineDropdown
             :disabled="isLoading || areEditsBlocked"
             :wageRate="wageRate"
@@ -69,20 +23,217 @@
       </div>
     </div>
 
-    <div v-if="currentQuote?.has_quote" class="flex-1 flex gap-6 min-h-0">
-      <div v-if="isLoading" class="flex-1 flex items-center justify-center">
-        <div class="flex items-center gap-2">
-          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-          Quote data is still loading, please wait
-        </div>
-      </div>
-      <template v-else>
-        <div class="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col">
-          <div class="flex-shrink-0 p-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
+    <!-- CONTENT: STICKY GRID ASIDE + MAIN -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 min-h-0">
+      <!-- ASIDE -->
+      <aside class="space-y-4 lg:sticky lg:top-16 self-start">
+        <!-- Summary -->
+        <div class="bg-white rounded-xl border border-slate-200">
+          <div class="p-3 w-full">
+            <CompactSummaryCard
+              :key="`quote-summary-compact-${quoteKey}`"
+              title="Quote Summary"
+              class="w-full"
+              :summary="currentQuote.quote?.summary"
+              :costLines="quoteCostLines"
+              :isLoading="isLoading"
+              :revision="currentQuote.quote?.rev"
+              @expand="showDetailedSummary = true"
+            />
           </div>
-          <div class="flex-1 overflow-hidden">
+        </div>
+
+        <!-- Quote Management -->
+        <div class="bg-white rounded-xl border border-slate-200">
+          <Card class="border-0 shadow-none">
+            <CardHeader class="pb-2 flex flex-col items-center">
+              <CardTitle>Quote Management</CardTitle>
+              <CardDescription>Manage quotes for this job.</CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <template v-if="hasXeroQuote">
+                <div class="space-y-2">
+                  <div class="flex items-center gap-3">
+                    <span class="h-8 w-1 rounded bg-blue-500/80"></span>
+                    <div>
+                      <div class="text-sm uppercase tracking-wide text-slate-500">Quote total</div>
+                      <div class="text-1xl font-semibold tabular-nums text-slate-900">
+                        {{ formatCurrency(localQuote?.total_excl_tax || 0) }}
+                      </div>
+                      <div v-if="isQuoteAccepted" class="text-xs text-emerald-700 font-medium">
+                        Accepted · {{ formatDate(props.jobData!.quote_acceptance_date!) }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Xero</span>
+                      <div class="h-px bg-slate-200 flex-1"></div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <Button
+                        class="mr-10"
+                        variant="outline"
+                        size="sm"
+                        @click="goToQuoteOnXero"
+                        :disabled="!localQuote?.online_url"
+                      >
+                        <ExternalLink class="h-4 w-4 mr-1" /> Open in Xero
+                      </Button>
+
+                      <Button
+                        v-if="!isQuoteAccepted"
+                        size="sm"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        :disabled="isAcceptingQuote"
+                        @click="acceptQuote"
+                      >
+                        <svg
+                          v-if="isAcceptingQuote"
+                          class="animate-spin h-4 w-4 mr-1"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                          />
+                        </svg>
+                        {{ isAcceptingQuote ? 'Accepting…' : 'Accept Quote' }}
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        :disabled="isDeletingQuote"
+                        @click="deleteQuoteOnXero"
+                      >
+                        <svg
+                          v-if="isDeletingQuote"
+                          class="animate-spin h-4 w-4 mr-1"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                          />
+                        </svg>
+                        {{ isDeletingQuote ? 'Deleting…' : 'Delete' }}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Local</span>
+                      <div class="h-px bg-slate-200 flex-1"></div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <Button
+                        class="mr-50"
+                        variant="outline"
+                        size="sm"
+                        @click="onShowQuoteRevisions"
+                      >
+                        <BookOpen class="h-4 w-4 mr-1" /> Revisions
+                      </Button>
+                      <Button variant="outline" size="sm" @click="printJob">
+                        <Printer class="h-4 w-4 mr-1" /> Print
+                      </Button>
+                      <Button variant="outline" size="sm" @click="downloadJobSheet">
+                        <Download class="h-4 w-4 mr-1" /> Download Sheet
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="flex flex-col items-center text-center py-8">
+                  <div class="text-gray-500 mb-4">No quotes for this project</div>
+                  <button
+                    @click="createQuote"
+                    :disabled="isCreatingQuote"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <svg
+                      v-if="isCreatingQuote"
+                      class="animate-spin -ml-1 mr-1 h-4 w-4"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      />
+                    </svg>
+                    {{ isCreatingQuote ? 'Creating...' : 'Create Quote' }}
+                  </button>
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                      <span class="text-[11px] uppercase tracking-wide text-slate-500">Local</span>
+                      <div class="h-px bg-slate-200 flex-1"></div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <Button
+                        class="mr-50"
+                        variant="outline"
+                        size="sm"
+                        @click="onShowQuoteRevisions"
+                      >
+                        <BookOpen class="h-4 w-4 mr-1" /> Revisions
+                      </Button>
+                      <Button variant="outline" size="sm" @click="printJob">
+                        <Printer class="h-4 w-4 mr-1" /> Print
+                      </Button>
+                      <Button variant="outline" size="sm" @click="downloadJobSheet">
+                        <Download class="h-4 w-4 mr-1" /> Download Sheet
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </CardContent>
+          </Card>
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="bg-white rounded-xl border border-slate-200 flex flex-col min-h-0">
+        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
+          <button
+            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style="min-width: 0"
+            @click="onCopyFromEstimate"
+            :disabled="
+              isLoading || !props.jobData?.latest_estimate?.cost_lines?.length || !hasEstimateData
+            "
+            :title="'Copy from Estimate'"
+          >
+            <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto">
+          <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
+            <!-- spinner -->
+          </div>
+          <template v-else>
             <SmartCostLinesTable
+              v-if="hasCostSetQuote"
               :lines="costLines"
               tabKind="quote"
               :readOnly="isLoading || areEditsBlocked"
@@ -91,51 +242,12 @@
               @delete-line="handleSmartDelete"
               @add-line="handleAddEmptyLine"
               @duplicate-line="(line) => handleAddMaterial(line)"
-              @move-line="(index, direction) => {}"
               @create-line="handleCreateFromEmpty"
             />
-          </div>
+            <div v-else class="text-center py-8 text-gray-500">No quote data available</div>
+          </template>
         </div>
-        <div class="w-64 flex-shrink-0">
-          <CompactSummaryCard
-            :key="`quote-summary-compact-${quoteKey}`"
-            title="Quote Summary"
-            :summary="currentQuote.quote?.summary"
-            :costLines="quoteCostLines"
-            :isLoading="isLoading"
-            :revision="currentQuote.quote?.rev"
-            @expand="showDetailedSummary = true"
-          />
-        </div>
-      </template>
-    </div>
-
-    <div v-else class="flex-1">
-      <CostLineDropdown
-        :disabled="true"
-        :wageRate="wageRate"
-        :chargeOutRate="chargeOutRate"
-        :materialsMarkup="materialsMarkup"
-      />
-      <SmartCostLinesTable
-        :lines="quoteCostLines"
-        tabKind="quote"
-        :readOnly="true"
-        :showItemColumn="false"
-        :showSourceColumn="false"
-        @delete-line="() => {}"
-        @add-line="() => {}"
-        @duplicate-line="() => {}"
-        @move-line="() => {}"
-      />
-      <CostSetSummaryCard
-        :key="`quote-summary-alt-${quoteKey}`"
-        title="Quote Summary"
-        :summary="null"
-        :costLines="quoteCostLines"
-        :isLoading="isLoading"
-        :revision="currentQuote.quote?.rev"
-      />
+      </main>
     </div>
 
     <Dialog :open="showPreviewModal" @update:open="showPreviewModal = $event">
@@ -474,21 +586,22 @@
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
 
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import {
-  Link2,
-  ExternalLink,
-  RefreshCw,
   BookOpen,
   PlusCircle,
   RotateCcw,
   FileX,
   Copy,
+  Printer,
+  Download,
+  ExternalLink,
 } from 'lucide-vue-next'
 import CostLineDropdown from './CostLineDropdown.vue'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import { quoteService } from '../../services/quote.service'
+import { jobService } from '../../services/job.service'
 import { toast } from 'vue-sonner'
 import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
@@ -500,7 +613,6 @@ import CostLineMaterialModal from './CostLineMaterialModal.vue'
 import CostLineTimeModal from './CostLineTimeModal.vue'
 import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
 import CompactSummaryCard from '../shared/CompactSummaryCard.vue'
-import { useJobsStore } from '../../stores/jobs'
 import {
   Dialog,
   DialogContent,
@@ -510,6 +622,8 @@ import {
   DialogFooter,
 } from '../../components/ui/dialog'
 import { Button } from '../../components/ui/button'
+import { Badge } from '../../components/ui/badge'
+import { Card, CardHeader, CardContent, CardDescription, CardTitle } from '../ui/card'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
@@ -562,6 +676,12 @@ const costLines = ref<CostLine[]>([])
 const quoteKey = ref(0) // Force reactivity key
 const showDetailedSummary = ref(false)
 
+// Quote management state
+const isCreatingQuote = ref(false)
+const isQuoteDeleted = ref(false)
+const isDeletingQuote = ref(false)
+const isAcceptingQuote = ref(false)
+
 const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
 const wageRate = computed(() => {
@@ -582,14 +702,16 @@ const quoteCostLines = computed(() => {
   return lines
 })
 
+const hasCostSetQuote = computed(
+  () => !!(currentQuote.value?.has_quote && currentQuote.value.quote),
+)
+const hasXeroQuote = computed(() => !!props.jobData?.quote)
+const isQuoteAccepted = computed(() => !!props.jobData?.quote_acceptance_date)
+const localQuote = computed(() => props.jobData?.quote ?? null) // Xero
+
 // Check if estimate data is available for copying
 const hasEstimateData = computed(() => {
   return !!props.jobData?.latest_estimate?.cost_lines?.length
-})
-
-// Check if quote is accepted and edits should be blocked
-const isQuoteAccepted = computed(() => {
-  return !!props.jobData?.quote_acceptance_date
 })
 
 // Check if there are any quote revisions available
@@ -681,43 +803,52 @@ async function onApplySpreadsheetChanges() {
   }
 }
 
-async function onRefreshSpreadsheet() {
-  if (!props.jobData?.id) return
-  isRefreshing.value = true
-  toast.info('Checking for updates...', { id: 'quote-refresh' })
-  try {
-    const preview = await quoteService.previewQuote(props.jobId)
-    previewData.value = preview
-    showPreviewModal.value = true
-    toast.dismiss('quote-refresh')
-  } catch {
-    toast.error('Error checking for updates', { id: 'quote-refresh' })
-  } finally {
-    isRefreshing.value = false
+async function printJob() {
+  if (!props.jobData?.id) {
+    toast.error('Job ID not available')
+    return
   }
-}
 
-async function onLinkQuote() {
-  if (!props.jobId) return
-  isLoading.value = true
-  toast.info('Linking spreadsheet...')
   try {
-    await quoteService.linkQuote(props.jobId)
-    toast.success('Spreadsheet linked successfully!')
-    const jobsStore = useJobsStore()
-    await jobsStore.fetchJob(props.jobId)
-    await refreshQuoteData()
+    const blob = await jobService.getWorkshopPdf(props.jobData.id)
+    const pdfUrl = URL.createObjectURL(blob)
+
+    const printWindow = window.open(pdfUrl, '_blank')
+    if (printWindow) {
+      printWindow.addEventListener('load', () => {
+        printWindow.print()
+      })
+      toast.success('Print dialog opened')
+    } else {
+      toast.error('Failed to open print window. Please check popup blocker settings.')
+    }
   } catch (error) {
-    toast.error('Error linking spreadsheet')
-    debugLog('Error linking spreadsheet:', error)
-  } finally {
-    isLoading.value = false
+    toast.error('Error generating PDF for printing')
+    debugLog('Error printing job:', error)
   }
 }
 
-function onGoToSpreadsheet() {
-  if (!props.jobData?.quote_sheet?.sheet_url) return
-  window.open(props.jobData.quote_sheet.sheet_url, '_blank')
+async function downloadJobSheet() {
+  if (!props.jobData?.id) {
+    toast.error('Job ID not available')
+    return
+  }
+
+  try {
+    const blob = await jobService.getWorkshopPdf(props.jobData.id)
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `job_${props.jobData.job_number}_sheet.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success('Job sheet download started')
+  } catch (error) {
+    toast.error('Error generating PDF for download')
+    debugLog('Error downloading job sheet:', error)
+  }
 }
 
 function onShowQuoteRevisions() {
@@ -894,23 +1025,95 @@ const { handleSmartDelete } = useSmartCostLineDelete({
   isLoading,
 })
 
+// --- QUOTE METHODS ---
+const createQuote = async () => {
+  if (!props.jobData?.id || isCreatingQuote.value) return
+  isCreatingQuote.value = true
+  try {
+    const response = await api.api_xero_create_quote_create(undefined, {
+      params: { job_id: props.jobData.id },
+    })
+    if (!response.success) {
+      debugLog(response.error || 'Failed to create quote')
+      return
+    }
+    toast.success('Quote created successfully!')
+    isQuoteDeleted.value = false
+    emit('cost-line-changed')
+  } catch (err) {
+    debugLog('Error creating quote:', err)
+    toast.error('Failed to create quote.')
+  } finally {
+    isCreatingQuote.value = false
+  }
+}
+
+const acceptQuote = async () => {
+  if (!props.jobData?.id || isAcceptingQuote.value) return
+  isAcceptingQuote.value = true
+  try {
+    const response = await api.job_rest_jobs_quote_accept_create(undefined, {
+      params: { job_id: props.jobData.id },
+    })
+    if (response.success) {
+      toast.success('Quote accepted successfully!')
+      emit('cost-line-changed')
+    } else {
+      toast.error('Failed to accept quote')
+    }
+  } catch (err) {
+    debugLog('Error accepting quote:', err)
+    toast.error('Failed to accept quote.')
+  } finally {
+    isAcceptingQuote.value = false
+  }
+}
+
+const goToQuoteOnXero = () => {
+  if (props.jobData?.quote?.online_url && props.jobData.quote.online_url !== '#') {
+    window.open(props.jobData.quote.online_url, '_blank')
+  }
+}
+
+const deleteQuoteOnXero = async () => {
+  if (!props.jobData?.id || isDeletingQuote.value) return
+  isDeletingQuote.value = true
+  try {
+    const response = await api.api_xero_delete_quote_destroy(undefined, {
+      params: { job_id: props.jobData.id },
+    })
+    if (!response.success) {
+      debugLog(response.error || 'Failed to delete quote')
+      return
+    }
+    isQuoteDeleted.value = true
+    toast.success('Quote deleted successfully!')
+    emit('cost-line-changed')
+  } catch (err) {
+    debugLog('Error deleting quote:', err)
+    toast.error('Failed to delete quote.')
+  } finally {
+    isDeletingQuote.value = false
+  }
+}
+
 // Helper functions for formatting
 function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-NZ', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
 }
 
 function formatNumber(value: number): string {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-NZ', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(value)
 }
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return new Date(dateString).toLocaleDateString('en-NZ', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -1097,4 +1300,8 @@ async function onCopyFromRevision(revision: { quote_revision: number; cost_lines
     toast.dismiss('copy-revision')
   }
 }
+
+onMounted(() => {
+  console.log('[QUOTE-TAB]: Props ', props.jobData)
+})
 </script>
