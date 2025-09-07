@@ -114,7 +114,8 @@
       />
       <ConfirmModal
         v-if="showConfirm"
-        :staff="selectedStaff"
+        title="Confirm Deletion"
+        :message="`Are you sure you want to delete ${selectedStaff?.first_name} ${selectedStaff?.last_name}? This action cannot be undone.`"
         @close="closeConfirm"
         @confirm="deleteStaff"
       />
