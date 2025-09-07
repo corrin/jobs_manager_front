@@ -295,20 +295,9 @@ const AWSInstanceStatusResponse = z
     details: z.string().optional(),
   })
   .passthrough()
-const ProviderTypeEnum = z.enum(['Claude', 'Gemini', 'Mistral'])
-const AIProvider = z
-  .object({
-    id: z.number().int(),
-    name: z.string().max(100),
-    provider_type: ProviderTypeEnum,
-    model_name: z.string().max(100).optional(),
-    default: z.boolean().optional(),
-  })
-  .passthrough()
 const CompanyDefaults = z
   .object({
     company_name: z.string().max(255),
-    ai_providers: z.array(AIProvider),
     is_primary: z.boolean().optional(),
     time_markup: z.number().gt(-1000).lt(1000).optional(),
     materials_markup: z.number().gt(-1000).lt(1000).optional(),
@@ -346,7 +335,6 @@ const CompanyDefaults = z
 const PatchedCompanyDefaults = z
   .object({
     company_name: z.string().max(255),
-    ai_providers: z.array(AIProvider),
     is_primary: z.boolean(),
     time_markup: z.number().gt(-1000).lt(1000),
     materials_markup: z.number().gt(-1000).lt(1000),
@@ -382,26 +370,32 @@ const PatchedCompanyDefaults = z
   })
   .partial()
   .passthrough()
-const AIProviderCreateUpdate = z
+const ProviderTypeEnum = z.enum(['Claude', 'Gemini', 'Mistral'])
+const AIProvider = z
   .object({
     id: z.number().int(),
     name: z.string().max(100),
     provider_type: ProviderTypeEnum,
     model_name: z.string().max(100).optional(),
     default: z.boolean().optional(),
+  })
+  .passthrough()
+const AIProviderCreateUpdate = z
+  .object({
+    name: z.string().max(100),
+    provider_type: ProviderTypeEnum,
+    model_name: z.string().max(100).optional(),
+    default: z.boolean().optional(),
     api_key: z.string().optional(),
-    company: z.string(),
   })
   .passthrough()
 const PatchedAIProviderCreateUpdate = z
   .object({
-    id: z.number().int(),
     name: z.string().max(100),
     provider_type: ProviderTypeEnum,
     model_name: z.string().max(100),
     default: z.boolean(),
     api_key: z.string(),
-    company: z.string(),
   })
   .partial()
   .passthrough()
@@ -670,6 +664,16 @@ const JobQuoteChatUpdate = z
   .partial()
   .passthrough()
 const JobQuoteChatInteractionRequest = z.object({ message: z.string().max(5000) }).passthrough()
+const JobQuoteChatInteractionSuccessResponse = z
+  .object({ success: z.boolean().optional().default(true), data: JobQuoteChat })
+  .passthrough()
+const JobQuoteChatInteractionErrorResponse = z
+  .object({
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    code: z.string().optional(),
+  })
+  .passthrough()
 const JobReorderRequest = z
   .object({
     before_id: z.string().uuid().nullable(),
@@ -1811,10 +1815,10 @@ export const schemas = {
   TokenVerify,
   UserProfile,
   AWSInstanceStatusResponse,
-  ProviderTypeEnum,
-  AIProvider,
   CompanyDefaults,
   PatchedCompanyDefaults,
+  ProviderTypeEnum,
+  AIProvider,
   AIProviderCreateUpdate,
   PatchedAIProviderCreateUpdate,
   AppError,
@@ -1854,6 +1858,8 @@ export const schemas = {
   PatchedJobQuoteChatUpdate,
   JobQuoteChatUpdate,
   JobQuoteChatInteractionRequest,
+  JobQuoteChatInteractionSuccessResponse,
+  JobQuoteChatInteractionErrorResponse,
   JobReorderRequest,
   KanbanSuccessResponse,
   KanbanErrorResponse,
@@ -2491,9 +2497,8 @@ provider as the default for the company.`,
     method: 'post',
     path: '/api/workflow/ai-providers/:id/set-default/',
     alias: 'api_workflow_ai_providers_set_default_create',
-    description: `Set this provider as the default for the company.
-This will atomically unset any other provider that is currently the default
-for the same company.`,
+    description: `Set this provider as the default.
+This will atomically unset any other provider that is currently the default.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3670,12 +3675,7 @@ Expected JSON:
     method: 'post',
     path: '/job/api/jobs/:job_id/quote-chat/interaction/',
     alias: 'job_api_jobs_quote_chat_interaction_create',
-    description: `Receives a user message, sends it to the MCPChatService for processing,
-and returns the AI&#x27;s final response.
-
-The frontend is expected to first save the user&#x27;s message via the
-JobQuoteChatHistoryView, and then call this endpoint to get the
-assistant&#x27;s reply.`,
+    description: `Sends user message to AI assistant and returns the generated response`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3689,7 +3689,24 @@ assistant&#x27;s reply.`,
         schema: z.string().uuid(),
       },
     ],
-    response: z.object({ message: z.string().max(5000) }).passthrough(),
+    response: JobQuoteChatInteractionSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        description: `Invalid input data or configuration error`,
+        schema: JobQuoteChatInteractionErrorResponse,
+      },
+      {
+        status: 404,
+        description: `Job not found`,
+        schema: JobQuoteChatInteractionErrorResponse,
+      },
+      {
+        status: 500,
+        description: `Internal server error`,
+        schema: JobQuoteChatInteractionErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',

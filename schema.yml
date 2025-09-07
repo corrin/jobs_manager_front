@@ -783,9 +783,8 @@ paths:
     post:
       operationId: api_workflow_ai_providers_set_default_create
       description: |-
-        Set this provider as the default for the company.
-        This will atomically unset any other provider that is currently the default
-        for the same company.
+        Set this provider as the default.
+        This will atomically unset any other provider that is currently the default.
       parameters:
         - in: path
           name: id
@@ -2574,13 +2573,8 @@ paths:
   /job/api/jobs/{job_id}/quote-chat/interaction/:
     post:
       operationId: job_api_jobs_quote_chat_interaction_create
-      description: |-
-        Receives a user message, sends it to the MCPChatService for processing,
-        and returns the AI's final response.
-
-        The frontend is expected to first save the user's message via the
-        JobQuoteChatHistoryView, and then call this endpoint to get the
-        assistant's reply.
+      description: Sends user message to AI assistant and returns the generated response
+      summary: Get AI assistant response
       parameters:
         - in: path
           name: job_id
@@ -2606,12 +2600,30 @@ paths:
         - cookieAuth: []
         - {}
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobQuoteChatInteractionRequest'
-          description: ''
+                $ref: '#/components/schemas/JobQuoteChatInteractionSuccessResponse'
+          description: AI response generated successfully
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobQuoteChatInteractionErrorResponse'
+          description: Invalid input data or configuration error
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobQuoteChatInteractionErrorResponse'
+          description: Job not found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobQuoteChatInteractionErrorResponse'
+          description: Internal server error
   /job/api/jobs/{job_id}/reorder/:
     post:
       operationId: job_api_jobs_reorder_create
@@ -5473,9 +5485,6 @@ components:
         Serializer for creating and updating AIProvider instances.
         This serializer handles the `api_key` securely by making it write-only.
       properties:
-        id:
-          type: integer
-          readOnly: true
         name:
           type: string
           description: Friendly name for this provider
@@ -5501,12 +5510,7 @@ components:
           writeOnly: true
           description: API Key for the provider. Leave blank to keep unchanged on
             update.
-        company:
-          type: string
-          readOnly: true
       required:
-        - company
-        - id
         - name
         - provider_type
     AWSInstanceStatusResponse:
@@ -6109,11 +6113,6 @@ components:
         company_name:
           type: string
           maxLength: 255
-        ai_providers:
-          type: array
-          items:
-            $ref: '#/components/schemas/AIProvider'
-          readOnly: true
         is_primary:
           type: boolean
         time_markup:
@@ -6279,7 +6278,6 @@ components:
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
       required:
-        - ai_providers
         - company_name
         - created_at
         - updated_at
@@ -7793,6 +7791,20 @@ components:
       required:
         - data
         - success
+    JobQuoteChatInteractionErrorResponse:
+      type: object
+      description: Serializer for error chat interaction response.
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: string
+        code:
+          type: string
+          description: Error code for specific error types
+      required:
+        - error
     JobQuoteChatInteractionRequest:
       type: object
       description: Serializer for chat interaction request data.
@@ -7803,6 +7815,17 @@ components:
           maxLength: 5000
       required:
         - message
+    JobQuoteChatInteractionSuccessResponse:
+      type: object
+      description: Serializer for successful chat interaction response.
+      properties:
+        success:
+          type: boolean
+          default: true
+        data:
+          $ref: '#/components/schemas/JobQuoteChat'
+      required:
+        - data
     JobQuoteChatUpdate:
       type: object
       description: |-
@@ -8828,9 +8851,6 @@ components:
         Serializer for creating and updating AIProvider instances.
         This serializer handles the `api_key` securely by making it write-only.
       properties:
-        id:
-          type: integer
-          readOnly: true
         name:
           type: string
           description: Friendly name for this provider
@@ -8856,9 +8876,6 @@ components:
           writeOnly: true
           description: API Key for the provider. Leave blank to keep unchanged on
             update.
-        company:
-          type: string
-          readOnly: true
     PatchedClientUpdateRequest:
       type: object
       description: Serializer for client update request
@@ -8882,11 +8899,6 @@ components:
         company_name:
           type: string
           maxLength: 255
-        ai_providers:
-          type: array
-          items:
-            $ref: '#/components/schemas/AIProvider'
-          readOnly: true
         is_primary:
           type: boolean
         time_markup:

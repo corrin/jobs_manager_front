@@ -2,13 +2,9 @@
   <Dialog :open="true" @update:open="handleClose">
     <DialogContent class="max-w-md animate-in fade-in-0 zoom-in-95">
       <DialogHeader>
-        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogTitle>{{ title }}</DialogTitle>
+        <DialogDescription>{{ message }}</DialogDescription>
       </DialogHeader>
-      <p class="mb-6">
-        Are you sure you want to delete
-        <span class="font-semibold">{{ staff?.first_name }} {{ staff?.last_name }}</span
-        >? This action cannot be undone.
-      </p>
       <DialogFooter class="flex gap-2 justify-end">
         <Button variant="ghost" @click="handleClose">Cancel</Button>
         <Button variant="destructive" @click="handleConfirm">Delete</Button>
@@ -22,9 +18,13 @@ import Dialog from '@/components/ui/dialog/Dialog.vue'
 import DialogContent from '@/components/ui/dialog/DialogContent.vue'
 import DialogHeader from '@/components/ui/dialog/DialogHeader.vue'
 import DialogTitle from '@/components/ui/dialog/DialogTitle.vue'
+import DialogDescription from '@/components/ui/dialog/DialogDescription.vue'
 import DialogFooter from '@/components/ui/dialog/DialogFooter.vue'
 import Button from '@/components/ui/button/Button.vue'
-const { staff } = defineProps<{ staff: { first_name?: string; last_name?: string } | null }>()
+const { title, message } = defineProps<{
+  title: string
+  message: string
+}>()
 const emit = defineEmits(['close', 'confirm'])
 function handleClose() {
   emit('close')
