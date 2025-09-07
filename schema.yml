@@ -2465,16 +2465,8 @@ paths:
           description: ''
     post:
       operationId: job_api_jobs_quote_chat_create
-      description: |-
-        Save a new chat message (user or assistant).
-
-        Expected JSON:
-        {
-            "message_id": "user-1234567892",
-            "role": "user",
-            "content": "Actually, make that 5 boxes instead",
-            "metadata": {}
-        }
+      description: Save a new chat message (user or assistant) for a job
+      summary: Save a new chat message
       parameters:
         - in: path
           name: job_id
@@ -2500,11 +2492,11 @@ paths:
         - cookieAuth: []
         - {}
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobQuoteChatCreate'
+                $ref: '#/components/schemas/JobQuoteChatInteractionSuccessResponse'
           description: ''
     delete:
       operationId: job_api_jobs_quote_chat_destroy

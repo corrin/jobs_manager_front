@@ -126,6 +126,7 @@ const handleSendMessage = async () => {
   if (!currentInput.value.trim() || isLoading.value) return
 
   const messageContent = currentInput.value.trim()
+  console.log('DEBUG: messageContent =', messageContent)
   currentInput.value = ''
   isLoading.value = true
 
@@ -138,6 +139,7 @@ const handleSendMessage = async () => {
       timestamp: new Date().toISOString(),
       system: false,
     }
+    console.log('DEBUG: userMessage =', userMessage)
     messages.value.push(userMessage)
 
     await saveMessage(userMessage, 'user')
@@ -214,6 +216,7 @@ const loadChatHistory = async () => {
 const saveMessage = async (message: VueChatMessage, role: 'user' | 'assistant') => {
   try {
     const backendMessage = quoteChatService.convertFromVueMessage(message, role)
+    console.log('DEBUG: backendMessage =', backendMessage)
     await quoteChatService.saveMessage(props.jobId, backendMessage)
   } catch (error) {
     debugLog('Failed to save chat message:', error)

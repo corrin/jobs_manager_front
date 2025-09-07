@@ -654,15 +654,6 @@ const JobQuoteChatCreate = z
     metadata: z.unknown().optional(),
   })
   .passthrough()
-const PatchedJobQuoteChatUpdate = z
-  .object({ content: z.string(), metadata: z.unknown() })
-  .partial()
-  .passthrough()
-const JobQuoteChatUpdate = z
-  .object({ content: z.string(), metadata: z.unknown() })
-  .partial()
-  .passthrough()
-const JobQuoteChatInteractionRequest = z.object({ message: z.string().max(5000) }).passthrough()
 const JobQuoteChat = z
   .object({
     message_id: z.string().max(100),
@@ -675,6 +666,15 @@ const JobQuoteChat = z
 const JobQuoteChatInteractionSuccessResponse = z
   .object({ success: z.boolean().optional().default(true), data: JobQuoteChat })
   .passthrough()
+const PatchedJobQuoteChatUpdate = z
+  .object({ content: z.string(), metadata: z.unknown() })
+  .partial()
+  .passthrough()
+const JobQuoteChatUpdate = z
+  .object({ content: z.string(), metadata: z.unknown() })
+  .partial()
+  .passthrough()
+const JobQuoteChatInteractionRequest = z.object({ message: z.string().max(5000) }).passthrough()
 const JobQuoteChatInteractionErrorResponse = z
   .object({
     success: z.boolean().optional().default(false),
@@ -1863,11 +1863,11 @@ export const schemas = {
   JobQuoteChatHistoryResponse,
   RoleEnum,
   JobQuoteChatCreate,
+  JobQuoteChat,
+  JobQuoteChatInteractionSuccessResponse,
   PatchedJobQuoteChatUpdate,
   JobQuoteChatUpdate,
   JobQuoteChatInteractionRequest,
-  JobQuoteChat,
-  JobQuoteChatInteractionSuccessResponse,
   JobQuoteChatInteractionErrorResponse,
   JobReorderRequest,
   KanbanSuccessResponse,
@@ -3610,15 +3610,7 @@ Response format matches job_quote_chat_plan.md specification.`,
     method: 'post',
     path: '/job/api/jobs/:job_id/quote-chat/',
     alias: 'job_api_jobs_quote_chat_create',
-    description: `Save a new chat message (user or assistant).
-
-Expected JSON:
-{
-    &quot;message_id&quot;: &quot;user-1234567892&quot;,
-    &quot;role&quot;: &quot;user&quot;,
-    &quot;content&quot;: &quot;Actually, make that 5 boxes instead&quot;,
-    &quot;metadata&quot;: {}
-}`,
+    description: `Save a new chat message (user or assistant) for a job`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3632,7 +3624,7 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: JobQuoteChatCreate,
+    response: JobQuoteChatInteractionSuccessResponse,
   },
   {
     method: 'delete',
