@@ -2488,13 +2488,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobQuoteChat'
+              $ref: '#/components/schemas/JobQuoteChatCreate'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobQuoteChat'
+              $ref: '#/components/schemas/JobQuoteChatCreate'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobQuoteChat'
+              $ref: '#/components/schemas/JobQuoteChatCreate'
         required: true
       security:
         - cookieAuth: []
@@ -2504,7 +2504,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobQuoteChat'
+                $ref: '#/components/schemas/JobQuoteChatCreate'
           description: ''
     delete:
       operationId: job_api_jobs_quote_chat_destroy
@@ -7757,8 +7757,8 @@ components:
     JobQuoteChat:
       type: object
       description: |-
-        Serializer for creating new JobQuoteChat messages.
-        Validates required fields and business rules.
+        Serializer for JobQuoteChat responses (includes timestamp).
+        Used when returning saved messages to the client.
       properties:
         message_id:
           type: string
@@ -7779,6 +7779,26 @@ components:
         - message_id
         - role
         - timestamp
+    JobQuoteChatCreate:
+      type: object
+      description: |-
+        Serializer for creating new JobQuoteChat messages.
+        Validates required fields and business rules.
+      properties:
+        message_id:
+          type: string
+          description: Frontend-generated unique ID
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        content:
+          type: string
+        metadata:
+          description: Extra data like streaming status, processing time, etc.
+      required:
+        - content
+        - message_id
+        - role
     JobQuoteChatHistoryResponse:
       type: object
       description: Serializer for chat history response.

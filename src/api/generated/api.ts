@@ -646,13 +646,12 @@ const JobQuoteChatHistoryResponse = z
   .object({ success: z.boolean(), data: z.object({}).partial().passthrough() })
   .passthrough()
 const RoleEnum = z.enum(['user', 'assistant'])
-const JobQuoteChat = z
+const JobQuoteChatCreate = z
   .object({
     message_id: z.string().max(100),
     role: RoleEnum,
     content: z.string(),
     metadata: z.unknown().optional(),
-    timestamp: z.string().datetime({ offset: true }),
   })
   .passthrough()
 const PatchedJobQuoteChatUpdate = z
@@ -664,6 +663,15 @@ const JobQuoteChatUpdate = z
   .partial()
   .passthrough()
 const JobQuoteChatInteractionRequest = z.object({ message: z.string().max(5000) }).passthrough()
+const JobQuoteChat = z
+  .object({
+    message_id: z.string().max(100),
+    role: RoleEnum,
+    content: z.string(),
+    metadata: z.unknown().optional(),
+    timestamp: z.string().datetime({ offset: true }),
+  })
+  .passthrough()
 const JobQuoteChatInteractionSuccessResponse = z
   .object({ success: z.boolean().optional().default(true), data: JobQuoteChat })
   .passthrough()
@@ -1854,10 +1862,11 @@ export const schemas = {
   ArchiveJobsRequest,
   JobQuoteChatHistoryResponse,
   RoleEnum,
-  JobQuoteChat,
+  JobQuoteChatCreate,
   PatchedJobQuoteChatUpdate,
   JobQuoteChatUpdate,
   JobQuoteChatInteractionRequest,
+  JobQuoteChat,
   JobQuoteChatInteractionSuccessResponse,
   JobQuoteChatInteractionErrorResponse,
   JobReorderRequest,
@@ -3615,7 +3624,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: JobQuoteChat,
+        schema: JobQuoteChatCreate,
       },
       {
         name: 'job_id',
@@ -3623,7 +3632,7 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: JobQuoteChat,
+    response: JobQuoteChatCreate,
   },
   {
     method: 'delete',
