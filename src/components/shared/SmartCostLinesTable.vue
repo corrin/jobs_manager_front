@@ -1,4 +1,3 @@
-o
 <script setup lang="ts">
 /**
  * SmartCostLinesTable.vue
@@ -1128,7 +1127,6 @@ const shortcutsTitle = computed(
       <DataTable
         class="smart-costlines-table"
         :columns="columns as any"
-        :key="negativeIdsSig"
         :data="displayLines"
         :hide-footer="true"
         @rowClick="

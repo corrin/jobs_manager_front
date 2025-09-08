@@ -6,15 +6,6 @@
           Job Estimate
           <span v-if="isLoading" class="ml-2 text-sm text-gray-500">Loading...</span>
         </h2>
-        <CostLineDropdown
-          :disabled="isLoading"
-          :wageRate="wageRate"
-          :chargeOutRate="chargeOutRate"
-          :materialsMarkup="materialsMarkup"
-          @add-material="handleAddMaterial"
-          @add-time="handleAddTime"
-          @add-adjustment="handleAddAdjustment"
-        />
       </div>
     </div>
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 min-h-0">
@@ -75,30 +66,6 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
-    <CostLineMaterialModal
-      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'material'"
-      :materialsMarkup="materialsMarkup"
-      :initial="editingCostLine"
-      mode="edit"
-      @close="closeEditModal"
-      @submit="submitEditCostLine"
-    />
-    <CostLineTimeModal
-      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'time'"
-      :wageRate="wageRate"
-      :chargeOutRate="chargeOutRate"
-      :initial="editingCostLine"
-      mode="edit"
-      @close="closeEditModal"
-      @submit="submitEditCostLine"
-    />
-    <CostLineAdjustmentModal
-      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'adjust'"
-      :initial="editingCostLine"
-      mode="edit"
-      @close="closeEditModal"
-      @submit="submitEditCostLine"
-    />
   </div>
 </template>
 
@@ -107,7 +74,6 @@ import { debugLog } from '../../utils/debug'
 
 import { onMounted, ref, computed } from 'vue'
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
-import CostLineDropdown from './CostLineDropdown.vue'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../../components/shared/CostSetSummaryCard.vue'
 import CompactSummaryCard from '../shared/CompactSummaryCard.vue'
@@ -117,9 +83,6 @@ import { useSmartCostLineDelete } from '../../composables/useSmartCostLineDelete
 import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
 import { toast } from 'vue-sonner'
-import CostLineMaterialModal from './CostLineMaterialModal.vue'
-import CostLineTimeModal from './CostLineTimeModal.vue'
-import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
 import {
   Dialog,
   DialogContent,
@@ -148,18 +111,6 @@ const emit = defineEmits<{
 
 const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
-const chargeOutRate = computed(() => {
-  const rate = companyDefaults.value?.charge_out_rate
-  return rate || 0
-})
-const wageRate = computed(() => {
-  const rate = companyDefaults.value?.wage_rate
-  return rate || 0
-})
-const materialsMarkup = computed(() => {
-  const markup = companyDefaults.value?.materials_markup
-  return markup || 0
-})
 
 const costLines = ref<CostLine[]>([])
 const isLoading = ref(false)
@@ -224,33 +175,6 @@ const estimateSummary = computed(() => {
   }
 })
 
-const editingCostLine = ref<CostLine | null>(null)
-const showEditModal = ref(false)
-
-function closeEditModal() {
-  showEditModal.value = false
-  editingCostLine.value = null
-}
-
-async function submitEditCostLine(payload: CostLine) {
-  if (!payload || !payload.id) return
-  isLoading.value = true
-  toast.info('Updating cost line...', { id: 'update-cost-line' })
-  try {
-    const updated = await costlineService.updateCostLine(payload.id, payload)
-    costLines.value = costLines.value.map((l) => (l.id === updated.id ? { ...updated } : l))
-    toast.success('Cost line updated!')
-    emit('cost-line-changed')
-    closeEditModal()
-  } catch (error) {
-    toast.error('Failed to update cost line.')
-    debugLog('Failed to update cost line:', error)
-  } finally {
-    isLoading.value = false
-    toast.dismiss('update-cost-line')
-  }
-}
-
 // Use the smart delete composable
 const { handleSmartDelete } = useSmartCostLineDelete({
   costLines,
@@ -294,85 +218,6 @@ async function handleAddMaterial(payload: CostLine) {
   } finally {
     isLoading.value = false
     toast.dismiss('add-material')
-  }
-}
-
-async function handleAddTime(payload: CostLine) {
-  if (!isCompanyDefaultsReady.value) {
-    toast.error('Company defaults not loaded yet.')
-    return
-  }
-  if (!payload || payload.kind !== 'time') return
-  isLoading.value = true
-  toast.info('Adding time cost line...', { id: 'add-time' })
-  try {
-    const createPayload: CostLineCreateUpdate = {
-      kind: 'time',
-      desc: payload.desc,
-      quantity: payload.quantity,
-      unit_cost: payload.unit_cost ?? wageRate.value,
-      unit_rev: payload.unit_rev ?? chargeOutRate.value,
-      ext_refs: payload.ext_refs,
-      meta: payload.meta,
-    }
-    const created = await costlineService.createCostLine(props.jobId, 'estimate', createPayload)
-    costLines.value = [
-      ...costLines.value,
-      {
-        ...created,
-        quantity: created.quantity,
-        unit_cost: created.unit_cost,
-        unit_rev: created.unit_rev,
-      },
-    ]
-    toast.success('Time cost line added!')
-    emit('cost-line-changed')
-  } catch (error) {
-    toast.error('Failed to add time cost line.')
-    debugLog('Failed to add time:', error)
-  } finally {
-    isLoading.value = false
-    toast.dismiss('add-time')
-  }
-}
-
-async function handleAddAdjustment(payload: CostLine) {
-  if (!isCompanyDefaultsReady.value) {
-    toast.error('Company defaults not loaded yet.')
-    return
-  }
-  if (!payload || payload.kind !== 'adjust') return
-  isLoading.value = true
-  toast.info('Adding adjustment cost line...', { id: 'add-adjustment' })
-  try {
-    const createPayload: CostLineCreateUpdate = {
-      kind: 'adjust',
-      desc: payload.desc,
-      quantity: payload.quantity,
-      unit_cost: payload.unit_cost ?? 0,
-      unit_rev: payload.unit_rev ?? 0,
-      ext_refs: payload.ext_refs,
-      meta: payload.meta,
-    }
-    const created = await costlineService.createCostLine(props.jobId, 'estimate', createPayload)
-    costLines.value = [
-      ...costLines.value,
-      {
-        ...created,
-        quantity: created.quantity,
-        unit_cost: created.unit_cost,
-        unit_rev: created.unit_rev,
-      },
-    ]
-    toast.success('Adjustment cost line added!')
-    toast.dismiss('add-adjustment')
-    emit('cost-line-changed')
-  } catch (error) {
-    toast.error('Failed to add adjustment cost line.')
-    debugLog('Failed to add adjustment:', error)
-  } finally {
-    isLoading.value = false
-    toast.dismiss('add-adjustment')
   }
 }
 
