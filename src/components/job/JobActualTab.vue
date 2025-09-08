@@ -611,6 +611,7 @@ async function handleCreateLine(line: CostLine) {
 // Handler for add line (only 'material' or 'adjust')
 function handleAddLine(kind: 'material' | 'adjust' = 'material') {
   const newLine: CostLine = {
+    __localId: crypto.randomUUID(), // Temporary local ID for tracking
     id: '',
     kind,
     desc: '',

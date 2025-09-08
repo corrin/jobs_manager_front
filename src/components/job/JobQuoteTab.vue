@@ -1125,6 +1125,7 @@ function formatDate(dateString: string): string {
 // Add empty line to the grid (UI-only, not persisted until user fills baseline data)
 function handleAddEmptyLine() {
   const newLine: CostLine = {
+    __localId: crypto.randomUUID(), // Temporary local ID for tracking
     id: '', // empty ID indicates unsaved line
     kind: 'material',
     desc: '',
