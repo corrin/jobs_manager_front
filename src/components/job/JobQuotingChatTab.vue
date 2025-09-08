@@ -38,6 +38,15 @@
               {{ formatTime(message.timestamp) }}
             </div>
 
+            <!-- Mode indicator for Assistant Messages -->
+            <div v-if="message.senderId !== currentUserId && message.metadata?.mode" class="mt-2">
+              <span
+                class="inline-flex items-center px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
+              >
+                Mode: {{ message.metadata.mode }}
+              </span>
+            </div>
+
             <!-- MCP Tool Details for Assistant Messages -->
             <div v-if="message.senderId !== currentUserId && message.metadata" class="mt-3">
               <McpToolDetails :metadata="message.metadata" />
@@ -49,7 +58,10 @@
           <div class="rounded-lg p-4 max-w-md shadow-sm bg-white text-gray-800">
             <div class="flex items-center space-x-2">
               <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-              <span>AI is processing your request...</span>
+              <div class="flex flex-col">
+                <span>{{ getLoadingMessage(currentMode) }}</span>
+                <span class="text-xs text-gray-500 mt-1">This may take up to 2 minutes...</span>
+              </div>
             </div>
           </div>
         </div>
@@ -58,6 +70,33 @@
 
     <!-- Input Area -->
     <div class="flex-shrink-0 space-y-2">
+      <!-- Mode Selector -->
+      <fieldset class="mb-2">
+        <legend class="text-xs text-gray-600 mb-1">Mode</legend>
+        <div role="radiogroup" class="inline-flex rounded border overflow-hidden">
+          <label
+            v-for="m in modes"
+            :key="m"
+            class="px-2 py-1 text-xs cursor-pointer select-none border-r last:border-r-0"
+            :class="[
+              currentMode === m
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50',
+              isLoading ? 'opacity-50 cursor-not-allowed' : '',
+            ]"
+          >
+            <input
+              class="sr-only"
+              type="radio"
+              name="quote-mode"
+              :value="m"
+              v-model="currentMode"
+              :disabled="isLoading"
+            />
+            {{ m }}
+          </label>
+        </div>
+      </fieldset>
       <div class="flex space-x-2">
         <div class="flex-1 relative">
           <textarea
@@ -115,6 +154,10 @@ interface Props {
 
 const props = defineProps<Props>()
 
+type Mode = 'AUTO' | 'CALC' | 'PRICE' | 'TABLE'
+const modes: Mode[] = ['AUTO', 'CALC', 'PRICE', 'TABLE']
+const currentMode = ref<Mode>('AUTO')
+
 const currentUserId = 'user-1'
 const currentInput = ref('')
 const isLoading = ref(false)
@@ -147,6 +190,7 @@ const handleSendMessage = async () => {
     const backendAssistantMessage = await quoteChatService.getAssistantResponse(
       props.jobId,
       messageContent,
+      currentMode.value,
     )
 
     const assistantMessage = quoteChatService.convertToVueMessage(backendAssistantMessage)
@@ -178,6 +222,16 @@ const formatTime = (timestamp: string): string => {
     debugLog('Error formatting time:', error)
     return 'Invalid time'
   }
+}
+
+const getLoadingMessage = (mode: Mode): string => {
+  const messages: Record<Mode, string> = {
+    AUTO: 'AI is analyzing your request...',
+    CALC: 'AI is calculating dimensions and material requirements...',
+    PRICE: 'AI is looking up current pricing information...',
+    TABLE: 'AI is generating your quote summary...',
+  }
+  return messages[mode] || 'AI is processing your request...'
 }
 
 const quoteChatService = QuoteChatService.getInstance()
