@@ -287,36 +287,25 @@ function isLineReadyForSave(line: CostLine): boolean {
 /**
  * Ensure there's always at least one empty line for editing
  */
+const emptyLine = ref<CostLine>({
+  id: null,
+  kind: 'material',
+  desc: '',
+  quantity: 1,
+  unit_cost: null,
+  unit_rev: null,
+  ext_refs: {},
+  meta: {},
+})
+
 const displayLines = computed(() => {
   if (props.lines.length === 0) {
-    // Create an empty line with default values
-    return [
-      {
-        id: null,
-        kind: 'material',
-        desc: '',
-        quantity: 1,
-        unit_cost: null,
-        unit_rev: null,
-        ext_refs: {},
-        meta: {},
-      } as CostLine,
-    ]
+    // Return the reactive empty line
+    return [emptyLine.value]
   }
 
-  // Always add an empty line at the end for new entries
-  const emptyLine: CostLine = {
-    id: null,
-    kind: 'material' as const,
-    desc: '',
-    quantity: 1,
-    unit_cost: null,
-    unit_rev: null,
-    ext_refs: {},
-    meta: {},
-  }
-
-  return [...props.lines, emptyLine]
+  // Always add the reactive empty line at the end for new entries
+  return [...props.lines, emptyLine.value]
 })
 
 /**
@@ -337,84 +326,109 @@ const columns = computed(() =>
         }
 
         // Attractive dropdown with badges
-        return h(DropdownMenu, null, {
-          default: () => [
-            h(DropdownMenuTrigger, { asChild: true }, () =>
-              h(
-                Button,
-                {
-                  variant: 'outline',
-                  size: 'sm',
-                  class: `h-7 px-2 py-1 text-xs ${badge.class} bg-opacity-60 hover:bg-opacity-80`,
-                  onClick: (e: Event) => e.stopPropagation(),
-                },
-                () => badge.label,
-              ),
-            ),
-            h(DropdownMenuContent, { align: 'start', class: 'w-40 z-50' }, () =>
-              kindOptions.map((opt) =>
-                h(
-                  DropdownMenuItem,
-                  {
-                    onClick: () => {
-                      const newKind = opt as KindOption
-                      if (newKind === String(line.kind)) return
-
-                      // Update kind and re-derive units
-                      Object.assign(line, { kind: newKind })
-                      onKindChanged(line)
-
-                      // Apply company defaults for time
-                      if (newKind === 'time') {
-                        Object.assign(line, {
-                          unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
-                          unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
-                        })
-                      } else {
-                        // For material/adjust, recalculate unit_rev with markup
-                        const derived = apply(line).derived
-                        Object.assign(line, { unit_rev: derived.unit_rev })
-                      }
-
-                      // Save if line has real ID and meets baseline
-                      if (line.id && isLineReadyForSave(line)) {
-                        console.log('Saving kind change:', line.id, newKind)
-                        const patch: PatchedCostLineCreateUpdate = {
-                          kind: newKind,
-                          ...(newKind === 'time'
-                            ? {
-                                unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
-                                unit_rev:
-                                  companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
-                              }
-                            : { unit_rev: Number(line.unit_rev) }),
-                        }
-                        const optimistic: Partial<CostLine> = { ...patch }
-                        autosave.scheduleSave(line, patch, optimistic)
-                      }
+        return h(
+          DropdownMenu,
+          { key: line.kind },
+          {
+            default: () => [
+              h('div', { onClick: (e: Event) => e.stopPropagation() }, [
+                h(DropdownMenuTrigger, { asChild: true }, () =>
+                  h(
+                    Button,
+                    {
+                      variant: 'outline',
+                      size: 'sm',
+                      class: `h-7 px-2 py-1 text-xs ${badge.class} bg-opacity-60 hover:bg-opacity-80`,
                     },
-                  },
-                  () => [
-                    h(
-                      'span',
-                      {
-                        class: `inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold mr-2 ${
-                          opt === 'time'
-                            ? 'bg-blue-100 text-blue-800'
-                            : opt === 'adjust'
-                              ? 'bg-pink-100 text-pink-800'
-                              : 'bg-green-100 text-green-800'
-                        }`,
+                    () => badge.label,
+                  ),
+                ),
+              ]),
+              h(DropdownMenuContent, { align: 'start', class: 'w-40 z-50' }, () =>
+                kindOptions.map((opt) =>
+                  h(
+                    DropdownMenuItem,
+                    {
+                      onClick: () => {
+                        const newKind = opt as KindOption
+                        if (newKind === String(line.kind)) return
+
+                        if (line === emptyLine.value) {
+                          // For the empty line, create a new object and update the ref
+                          const newLine = { ...line, kind: newKind }
+                          onKindChanged(newLine)
+
+                          // Apply company defaults for time
+                          if (newKind === 'time') {
+                            Object.assign(newLine, {
+                              unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
+                              unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
+                            })
+                          } else {
+                            // For material/adjust, recalculate unit_rev with markup
+                            const derived = apply(newLine).derived
+                            Object.assign(newLine, { unit_rev: derived.unit_rev })
+                          }
+
+                          emptyLine.value = newLine
+                        } else {
+                          // For existing lines, mutate as before
+                          Object.assign(line, { kind: newKind })
+                          onKindChanged(line)
+
+                          // Apply company defaults for time
+                          if (newKind === 'time') {
+                            Object.assign(line, {
+                              unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
+                              unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
+                            })
+                          } else {
+                            // For material/adjust, recalculate unit_rev with markup
+                            const derived = apply(line).derived
+                            Object.assign(line, { unit_rev: derived.unit_rev })
+                          }
+
+                          // Save if line has real ID and meets baseline
+                          if (line.id && isLineReadyForSave(line)) {
+                            console.log('Saving kind change:', line.id, newKind)
+                            const patch: PatchedCostLineCreateUpdate = {
+                              kind: newKind,
+                              ...(newKind === 'time'
+                                ? {
+                                    unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
+                                    unit_rev:
+                                      companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
+                                  }
+                                : { unit_rev: Number(line.unit_rev) }),
+                            }
+                            const optimistic: Partial<CostLine> = { ...patch }
+                            autosave.scheduleSave(line, patch, optimistic)
+                          }
+                        }
                       },
-                      opt === 'time' ? 'Labour' : opt === 'adjust' ? 'Adjustment' : 'Material',
-                    ),
-                    h('span', { class: 'text-xs' }, opt),
-                  ],
+                    },
+                    () => [
+                      h(
+                        'span',
+                        {
+                          class: `inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold mr-2 ${
+                            opt === 'time'
+                              ? 'bg-blue-100 text-blue-800'
+                              : opt === 'adjust'
+                                ? 'bg-pink-100 text-pink-800'
+                                : 'bg-green-100 text-green-800'
+                          }`,
+                        },
+                        opt === 'time' ? 'Labour' : opt === 'adjust' ? 'Adjustment' : 'Material',
+                      ),
+                      h('span', { class: 'text-xs' }, opt),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
-        })
+            ],
+          },
+        )
       },
       meta: { editable: props.allowTypeEdit && !props.readOnly },
     },
@@ -511,7 +525,9 @@ const columns = computed(() =>
                       h(Lock, { class: 'w-3.5 h-3.5' }),
                       reason === 'delivery_receipt'
                         ? 'Locked from delivery receipt'
-                        : 'Locked by stock allocation',
+                        : reason === 'stock'
+                          ? 'Locked from stock consumption'
+                          : 'Locked for editing',
                     ],
                   )
                 : null,
@@ -598,22 +614,18 @@ const columns = computed(() =>
         const isBlocked =
           isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
 
-        // UI-only: no flex/gap/null — keeps the input aligned under the header
-        return h('div', { class: 'inline-block w-24 text-right align-top' }, [
+        return [
           h(Input, {
             type: 'number',
             step: String(kind === 'time' ? 0.25 : 1),
-            // Allow negative for adjustments: omit min attribute when 'adjust'
             ...(kind === 'adjust' ? {} : { min: '0.0000001' }),
             modelValue: line.quantity,
             disabled: !canEditField(line, 'quantity') || isBlocked,
-            class: 'w-24 text-right',
+            class: 'w-28 text-right',
             onClick: (e: Event) => e.stopPropagation(),
             'onUpdate:modelValue': (val: string | number) => {
               const num = Number(val)
-              if (!Number.isNaN(num)) {
-                Object.assign(line, { quantity: num })
-              }
+              if (!Number.isNaN(num)) Object.assign(line, { quantity: num })
             },
             onBlur: () => {
               const validation = validateLine(line)
@@ -621,21 +633,11 @@ const columns = computed(() =>
                 toast.error(validation.issues[0]?.message || 'Invalid quantity')
                 return
               }
-              // Create new line if it doesn't have an ID yet and meets baseline criteria
               if (!line.id && isLineReadyForSave(line)) {
-                console.log('Creating new line from empty:', line)
                 emit('create-line', line)
                 return
               }
-              // Only save existing lines that meet baseline criteria
-              if (!line.id || !isLineReadyForSave(line)) {
-                console.log('Skipping quantity save - no ID or not ready:', {
-                  id: line.id,
-                  ready: isLineReadyForSave(line),
-                })
-                return
-              }
-              console.log('Saving quantity change:', line.id, line.quantity)
+              if (!line.id || !isLineReadyForSave(line)) return
               const qtyNum = Number(line.quantity || 0)
               const patch: PatchedCostLineCreateUpdate = { quantity: qtyNum }
               const optimistic: Partial<CostLine> = { quantity: qtyNum }
@@ -646,12 +648,12 @@ const columns = computed(() =>
             ? [
                 h(
                   Badge,
-                  { variant: 'secondary', class: 'mt-1 text-xs inline-block' },
+                  { variant: 'secondary', class: 'mt-1 text-xs' },
                   () => 'Select stock first',
                 ),
               ]
             : []),
-        ])
+        ]
       },
     },
 
