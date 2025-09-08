@@ -146,6 +146,31 @@ function handleAddLine() {
 // Local UI-only mapping: selected Item id per line (not persisted)
 const selectedItemMap = new WeakMap<CostLine, string | null>()
 
+const createdOnce = new WeakSet<CostLine>()
+
+function resetEmptyLine(kind: KindOption = 'material') {
+  emptyLine.value = {
+    id: '',
+    kind,
+    desc: '',
+    quantity: 1,
+    unit_cost: null,
+    unit_rev: null,
+    ext_refs: {},
+    meta: {},
+  }
+}
+
+function maybeEmitCreate(line: CostLine) {
+  if (createdOnce.has(line)) return
+  createdOnce.add(line)
+
+  const payload = line
+  emit('create-line', payload)
+
+  if (line === emptyLine.value) resetEmptyLine(line.kind as KindOption)
+}
+
 // Company Defaults and calculations
 const companyDefaultsStore = useCompanyDefaultsStore()
 onMounted(() => {
@@ -288,31 +313,28 @@ function isLineReadyForSave(line: CostLine): boolean {
  * Ensure there's always at least one empty line for editing
  */
 const emptyLine = ref<CostLine>({
-  id: null,
+  id: '',
   kind: 'material',
   desc: '',
   quantity: 1,
-  unit_cost: null,
-  unit_rev: null,
+  unit_cost: undefined,
+  unit_rev: undefined,
   ext_refs: {},
   meta: {},
 })
 
-const displayLines = computed(() => {
-  if (props.lines.length === 0) {
-    // Return the reactive empty line
-    return [emptyLine.value]
-  }
+const displayLines = computed(() =>
+  props.lines.length === 0 ? [emptyLine.value] : [...props.lines],
+)
 
-  // Always add the reactive empty line at the end for new entries
-  return [...props.lines, emptyLine.value]
-})
+const negativeIdsSig = computed(() => props.negativeStockIds?.slice().sort().join('|') || '')
 
 /**
  * Build the column defs for DataTable
  */
-const columns = computed(() =>
-  [
+const columns = computed(() => {
+  void negativeIdsSig.value
+  return [
     // Type / Kind
     {
       id: 'kind',
@@ -328,7 +350,7 @@ const columns = computed(() =>
         // Attractive dropdown with badges
         return h(
           DropdownMenu,
-          { key: line.kind },
+          { key: String(line.id) + line.kind },
           {
             default: () => [
               h('div', { onClick: (e: Event) => e.stopPropagation() }, [
@@ -453,7 +475,7 @@ const columns = computed(() =>
 
             const reason = lockReason(line)
 
-            return h('div', { class: 'min-w-[14rem]' }, [
+            return h('div', { class: 'min-w-[12rem]' }, [
               h(ItemSelect, {
                 modelValue: model,
                 disabled: !enabled,
@@ -499,7 +521,7 @@ const columns = computed(() =>
                     if (kind !== 'time')
                       Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
                     nextTick(() => {
-                      if (!line.id && isLineReadyForSave(line)) emit('create-line', line)
+                      if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
                     })
                   } else {
                     Object.assign(line, { desc: '' })
@@ -513,7 +535,7 @@ const columns = computed(() =>
                   if (kind !== 'time')
                     Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
                   nextTick(() => {
-                    if (!line.id && isLineReadyForSave(line)) emit('create-line', line)
+                    if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
                   })
                 },
               }),
@@ -556,8 +578,7 @@ const columns = computed(() =>
         return h(
           'div',
           {
-            class:
-              'w-full max-w-full px-3 py-2 text-sm text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer',
+            class: 'w-full max-w-full',
             tabindex: 0,
             role: 'button',
             title: line.desc || '',
@@ -580,10 +601,25 @@ const columns = computed(() =>
             h(
               'div',
               {
-                class: 'line-clamp-2 overflow-hidden text-ellipsis break-words max-w-[225px]',
-                style: 'word-wrap: break-word; overflow-wrap: break-word;',
+                class: [
+                  'group',
+                  'w-full',
+                  'rounded-md border border-slate-200',
+                  'px-2 py-2 text-sm text-gray-900',
+                  'hover:border-slate-300',
+                  'focus-within:ring-2 focus-within:ring-blue-500',
+                  'cursor-text transition',
+                ].join(' '),
               },
-              line.desc || '',
+              [
+                h(
+                  'div',
+                  {
+                    class: 'line-clamp-2 overflow-hidden text-ellipsis break-words',
+                  },
+                  line.desc || '',
+                ),
+              ],
             ),
             ...(isBlocked
               ? [
@@ -634,7 +670,7 @@ const columns = computed(() =>
                 return
               }
               if (!line.id && isLineReadyForSave(line)) {
-                emit('create-line', line)
+                maybeEmitCreate(line)
                 return
               }
               if (!line.id || !isLineReadyForSave(line)) return
@@ -706,7 +742,7 @@ const columns = computed(() =>
               // Create new line if it doesn't have an ID yet and meets baseline criteria
               if (!line.id && isLineReadyForSave(line)) {
                 console.log('Creating new line from unit_cost edit:', line)
-                emit('create-line', line)
+                maybeEmitCreate(line)
                 return
               }
 
@@ -788,7 +824,7 @@ const columns = computed(() =>
               // Create new line if it doesn't have an ID yet and meets baseline criteria
               if (!line.id && isLineReadyForSave(line)) {
                 console.log('Creating new line from unit_rev edit:', line)
-                emit('create-line', line)
+                maybeEmitCreate(line)
                 return
               }
 
@@ -866,7 +902,7 @@ const columns = computed(() =>
                 'span',
                 {
                   class:
-                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer select-none',
+                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer select-none w-fit',
                   role: resolved.onClick ? 'button' : undefined,
                   tabindex: resolved.onClick ? 0 : -1,
                   onClick: resolved.onClick
@@ -890,7 +926,7 @@ const columns = computed(() =>
                   'span',
                   {
                     class:
-                      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200',
+                      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200 w-fit',
                     title: 'Stock level for this item is negative',
                   },
                   [h(AlertTriangle, { class: 'w-3.5 h-3.5 mr-1' }), 'Negative'],
@@ -905,7 +941,7 @@ const columns = computed(() =>
                   {
                     class:
                       lock === 'delivery_receipt'
-                        ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200'
+                        ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200 w-fit'
                         : 'hidden',
                     title:
                       lock === 'delivery_receipt'
@@ -920,7 +956,7 @@ const columns = computed(() =>
               )
             }
 
-            return h('div', { class: 'flex items-center gap-1' }, chips)
+            return h('div', { class: 'flex flex-col gap-1' }, chips)
           },
           meta: { editable: false },
         }
@@ -987,8 +1023,8 @@ const columns = computed(() =>
       },
       meta: { editable: !props.readOnly },
     },
-  ].filter(Boolean),
-)
+  ].filter(Boolean)
+})
 
 /**
  * Keyboard navigation
@@ -1092,6 +1128,7 @@ const shortcutsTitle = computed(
       <DataTable
         class="smart-costlines-table"
         :columns="columns as any"
+        :key="negativeIdsSig"
         :data="displayLines"
         :hide-footer="true"
         @rowClick="

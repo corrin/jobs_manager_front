@@ -474,7 +474,7 @@ const blockedFieldsByKind = ref<Record<KindOption, string[]>>({
 })
 
 const negativeStockSet = reactive(new Set<string>())
-const negativeStockIds = computed(() => Array.from(negativeStockSet))
+const negativeStockIds = computed(() => [...negativeStockSet].sort())
 
 async function checkAndUpdateNegativeStocks() {
   negativeStockSet.clear()
@@ -567,6 +567,7 @@ async function consumeStockForNewLine(payload: {
       toast.warning(`Warning: Stock now negative (${Math.abs(stock.quantity).toFixed(3)} units).`)
     }
 
+    checkAndUpdateNegativeStocks()
     // Note: Since we reload, the line will be re-created from backend with id
   } catch (error) {
     toast.error('Failed to consume stock.')
