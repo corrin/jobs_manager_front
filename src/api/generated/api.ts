@@ -1538,6 +1538,22 @@ const StockConsumeResponse = z
     remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
   })
   .passthrough()
+const SupplierPriceStatusItem = z
+  .object({
+    supplier_id: z.string().uuid(),
+    supplier_name: z.string(),
+    last_uploaded_at: z.string().datetime({ offset: true }).nullable(),
+    file_name: z.string().nullable(),
+    total_products: z.number().int().nullable(),
+    changes_last_update: z.number().int().nullable(),
+  })
+  .passthrough()
+const SupplierPriceStatusResponse = z
+  .object({
+    items: z.array(SupplierPriceStatusItem),
+    total_count: z.number().int(),
+  })
+  .passthrough()
 const XeroItem = z
   .object({
     code: z.string(),
@@ -1975,6 +1991,8 @@ export const schemas = {
   StockCreate,
   StockConsumeRequest,
   StockConsumeResponse,
+  SupplierPriceStatusItem,
+  SupplierPriceStatusResponse,
   XeroItem,
   XeroItemListResponse,
   DjangoJobExecutionStatusEnum,
@@ -5131,6 +5149,17 @@ DELETE: Marks a stock item as inactive instead of deleting it`,
       },
     ],
     response: StockConsumeResponse,
+  },
+  {
+    method: 'get',
+    path: '/purchasing/rest/supplier-price-status/',
+    alias: 'getSupplierPriceStatus',
+    description: `Return latest price upload status per supplier.
+
+Minimal-impact: read-only query over existing Client and SupplierPriceList
+models. No migrations required.`,
+    requestFormat: 'json',
+    response: SupplierPriceStatusResponse,
   },
   {
     method: 'get',

@@ -86,9 +86,11 @@ export class QuoteChatService {
   async getAssistantResponse(jobId: string, message: string): Promise<JobQuoteChat> {
     try {
       const request: JobQuoteChatInteractionRequest = { message }
-      return await api.job_api_jobs_quote_chat_interaction_create(request, {
+      const response = await api.job_api_jobs_quote_chat_interaction_create(request, {
         params: { job_id: jobId },
       })
+      console.log('🔍 DEBUG: assistant response =', response)
+      return response.data
     } catch (error) {
       debugLog('Failed to get assistant response:', error)
       throw error
