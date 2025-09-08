@@ -45,6 +45,7 @@ import { useCostLineCalculations } from '../../composables/useCostLineCalculatio
 import { useCostLineAutosave } from '../../composables/useCostLineAutosave'
 import { useGridKeyboardNav } from '../../composables/useGridKeyboardNav'
 import { costlineService } from '../../services/costline.service'
+import { api } from '../../api/client'
 
 import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
@@ -54,7 +55,7 @@ type CostLine = z.infer<typeof schemas.CostLine>
 type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdate>
 
 type TabKind = 'estimate' | 'quote' | 'actual'
-type KindOption = 'material' | 'time' | 'adjust'
+export type KindOption = 'material' | 'time' | 'adjust'
 
 // Row context helper (DataTable passes TanStack context with row)
 type RowCtx = DataTableRowContext & { row: { index: number } }
@@ -72,12 +73,27 @@ const props = withDefaults(
     sourceResolver?: (
       line: CostLine,
     ) => { visible: boolean; label: string; onClick?: () => void } | null
+    // Limit available kinds for dropdown
+    allowedKinds?: KindOption[]
+    // Block specific fields by kind (e.g., for 'actual' tab material lines until stock selected)
+    blockedFieldsByKind?: Record<KindOption, string[]>
+    // For 'actual' tab: Function to call on stock selection for new lines
+    consumeStockFn?: (payload: {
+      stockId: string
+      quantity: number
+      unitCost: number
+      unitRev: number
+    }) => Promise<void>
+    // Job ID for consumption context
+    jobId?: string
   }>(),
   {
     readOnly: false,
     showItemColumn: true,
     showSourceColumn: false,
     allowTypeEdit: true,
+    allowedKinds: () => ['material', 'time', 'adjust'],
+    blockedFieldsByKind: () => ({ material: [], time: [], adjust: [] }),
   },
 )
 
@@ -90,10 +106,9 @@ const emit = defineEmits<{
 }>()
 
 // Add logging to track emit calls
-const originalEmit = emit
 const loggedEmit = (event: string, ...args: unknown[]) => {
   console.log(`📤 SmartCostLinesTable emitting event: ${event}`, args)
-  return (originalEmit as (event: string, ...args: unknown[]) => void)(event, ...args)
+  return (emit as any)(event, ...args) // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 // UI state
@@ -189,17 +204,25 @@ function formatMoney(n: number | undefined | null) {
   }).format(val)
 }
 
+function isDeliveryReceipt(line: CostLine): boolean {
+  return !!(line?.meta && (line.meta as Record<string, string>).source === 'delivery_receipt')
+}
+
+function isStockLine(line: CostLine): boolean {
+  return !!(line?.ext_refs && (line.ext_refs as Record<string, unknown>).stock_id)
+}
+
 /**
  * Kind options and guards
  */
-const kindOptions: KindOption[] = ['material', 'time', 'adjust']
+const kindOptions: KindOption[] = props.allowedKinds || ['material', 'time', 'adjust']
 
 function canEditKindForLine(line: CostLine): boolean {
   if (props.readOnly) return false
   if (!props.allowTypeEdit) return false
   if (props.tabKind === 'actual') {
     // In "actual", lines usually originate from PO/timesheet; allow kind change only for "adjust"
-    return String(line.kind) === 'adjust'
+    return ['material', 'adjust'].includes(String(line.kind))
   }
   return true
 }
@@ -209,6 +232,9 @@ function canEditField(
   field: 'desc' | 'quantity' | 'unit_cost' | 'unit_rev',
 ): boolean {
   if (props.readOnly) return false
+
+  if (isDeliveryReceipt(line)) return false
+
   const kind = String(line.kind)
   if (field === 'unit_cost') {
     return isUnitCostEditable(line)
@@ -219,7 +245,10 @@ function canEditField(
   if (field === 'quantity') {
     if (props.tabKind === 'actual') {
       // For actuals, quantity on non-adjust lines typically should not be edited (origin = system)
-      return kind === 'adjust'
+      const isMaterial = kind === 'material'
+      const isConsumed =
+        !!line.id || !!(line.ext_refs && (line.ext_refs as Record<string, unknown>).stock_id)
+      return kind === 'adjust' || (isMaterial && isConsumed)
     }
     return true
   }
@@ -260,7 +289,20 @@ const displayLines = computed(() => {
       } as CostLine,
     ]
   }
-  return props.lines
+
+  // Always add an empty line at the end for new entries
+  const emptyLine: CostLine = {
+    id: null,
+    kind: 'material' as const,
+    desc: '',
+    quantity: 1,
+    unit_cost: null,
+    unit_rev: null,
+    ext_refs: {},
+    meta: {},
+  }
+
+  return [...props.lines, emptyLine]
 })
 
 /**
@@ -305,8 +347,8 @@ const columns = computed(() =>
                       if (newKind === String(line.kind)) return
 
                       // Update kind and re-derive units
-                      onKindChanged(line)
                       Object.assign(line, { kind: newKind })
+                      onKindChanged(line)
 
                       // Apply company defaults for time
                       if (newKind === 'time') {
@@ -371,20 +413,97 @@ const columns = computed(() =>
           cell: ({ row }: RowCtx) => {
             const line = displayLines.value[row.index]
             const model = selectedItemMap.get(line) || null
+            const kind = String(line.kind)
+            const isMaterial = kind === 'material'
+            const isNewLine = !line.id
+            const isActualTab = props.tabKind === 'actual'
+            // Allow ItemSelect to be clickable when no stock is selected for new material lines
+            const lockedByDeliveryReceipt = isDeliveryReceipt(line)
+            const lockedStockExisting = !!line.id && isStockLine(line)
             const enabled =
-              String(line.kind) !== 'time' &&
-              !props.readOnly &&
-              (props.tabKind !== 'actual' || String(line.kind) === 'adjust')
+              kind !== 'time' && !props.readOnly && !lockedByDeliveryReceipt && !lockedStockExisting
+
             return h(ItemSelect, {
               modelValue: model,
               disabled: !enabled,
               onClick: (e: Event) => e.stopPropagation(),
-              'onUpdate:modelValue': (val: string | null) => {
+              'onUpdate:modelValue': async (val: string | null) => {
                 if (!enabled) return
                 selectedItemMap.set(line, val)
                 onItemSelected(line) // reset unit_rev override on item change
+
+                // For actual tab new material lines: Trigger consumption on selection
+                if (
+                  isActualTab &&
+                  isNewLine &&
+                  isMaterial &&
+                  val &&
+                  props.consumeStockFn &&
+                  props.jobId
+                ) {
+                  try {
+                    // Get stock item from ItemSelect component (assuming it exposes items)
+                    // For now, we'll need to fetch the stock item details
+                    const stockResponse = await api.purchasing_rest_stock_retrieve({
+                      params: { id: val },
+                    })
+                    const stockItem = stockResponse
+                    if (stockItem) {
+                      const quantity = Number(line.quantity || 1)
+                      const unitCost = Number(stockItem.unit_cost || 0)
+                      const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
+                      const unitRev = unitCost * (1 + markup)
+
+                      await props.consumeStockFn({
+                        stockId: val,
+                        quantity,
+                        unitCost,
+                        unitRev,
+                      })
+
+                      // After success, unblock fields for this line
+                      // Note: This is UI-only; parent can listen to events if needed
+                      console.log('Stock consumed, unblocking fields for line')
+                    }
+                  } catch {
+                    toast.error('Failed to consume stock. Line not created.')
+                    // Revert selection
+                    selectedItemMap.set(line, null)
+                    return
+                  }
+                }
+
+                // Bridge prefill - fetch stock item details
+                let found = null
+                try {
+                  found = await api.purchasing_rest_stock_retrieve({ params: { id: val } })
+                } catch (error) {
+                  console.warn('Failed to fetch stock item details:', error)
+                }
+                if (found) {
+                  Object.assign(line, { desc: found.description || '' })
+                  Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
+
+                  // Auto-calculate unit_rev with markup for material/adjust lines
+                  if (kind !== 'time') {
+                    const derived = apply(line).derived
+                    Object.assign(line, { unit_rev: derived.unit_rev })
+                  }
+
+                  // Check if line is ready for creation after all fields are populated
+                  // Use nextTick to ensure all updates are complete before checking
+                  nextTick(() => {
+                    if (!line.id && isLineReadyForSave(line)) {
+                      console.log('Creating new line from item prefill:', line)
+                      emit('create-line', line)
+                    }
+                  })
+                } else {
+                  Object.assign(line, { desc: '' })
+                  Object.assign(line, { unit_cost: 0 })
+                }
               },
-              // bridge ItemSelect's prefill outputs
+              // bridge ItemSelect's prefill outputs (redundant but keep for compatibility)
               'onUpdate:description': (desc: string) => {
                 if (!enabled) return
                 Object.assign(line, { desc })
@@ -394,7 +513,7 @@ const columns = computed(() =>
                 Object.assign(line, { unit_cost: Number(cost ?? 0) })
 
                 // Auto-calculate unit_rev with markup for material/adjust lines
-                if (String(line.kind) !== 'time') {
+                if (kind !== 'time') {
                   const derived = apply(line).derived
                   Object.assign(line, { unit_rev: derived.unit_rev })
                 }
@@ -420,7 +539,15 @@ const columns = computed(() =>
       header: 'Description',
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
-        const canEdit = canEditField(line, 'desc')
+        const kind = String(line.kind)
+        const isNewLine = !line.id
+        const isActualTab = props.tabKind === 'actual'
+        const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
+        const isFieldBlocked = blockedFields.includes('desc')
+        const hasStockSelected = selectedItemMap.get(line) && selectedItemMap.get(line) !== ''
+        const isBlocked =
+          isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
+        const canEdit = canEditField(line, 'desc') && !isBlocked
 
         return h(
           'div',
@@ -454,6 +581,15 @@ const columns = computed(() =>
               },
               line.desc || '',
             ),
+            ...(isBlocked
+              ? [
+                  h(
+                    Badge,
+                    { variant: 'secondary', class: 'mt-1 text-xs' },
+                    () => 'Select stock first',
+                  ),
+                ]
+              : []),
           ],
         )
       },
@@ -465,14 +601,24 @@ const columns = computed(() =>
       header: 'Quantity',
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
-        return h('div', { class: 'flex items-center justify-end gap-2' }, [
+        const kind = String(line.kind)
+        const isNewLine = !line.id
+        const isActualTab = props.tabKind === 'actual'
+        const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
+        const isFieldBlocked = blockedFields.includes('quantity')
+        const hasStockSelected = selectedItemMap.get(line) && selectedItemMap.get(line) !== ''
+        const isBlocked =
+          isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
+
+        // UI-only: no flex/gap/null — keeps the input aligned under the header
+        return h('div', { class: 'inline-block w-24 text-right align-top' }, [
           h(Input, {
             type: 'number',
-            step: String(String(line.kind) === 'time' ? 0.25 : 1),
+            step: String(kind === 'time' ? 0.25 : 1),
             // Allow negative for adjustments: omit min attribute when 'adjust'
-            ...(String(line.kind) === 'adjust' ? {} : { min: '0.0000001' }),
+            ...(kind === 'adjust' ? {} : { min: '0.0000001' }),
             modelValue: line.quantity,
-            disabled: !canEditField(line, 'quantity'),
+            disabled: !canEditField(line, 'quantity') || isBlocked,
             class: 'w-24 text-right',
             onClick: (e: Event) => e.stopPropagation(),
             'onUpdate:modelValue': (val: string | number) => {
@@ -490,11 +636,9 @@ const columns = computed(() =>
               // Create new line if it doesn't have an ID yet and meets baseline criteria
               if (!line.id && isLineReadyForSave(line)) {
                 console.log('Creating new line from empty:', line)
-                // Trigger creation via parent component
                 emit('create-line', line)
                 return
               }
-
               // Only save existing lines that meet baseline criteria
               if (!line.id || !isLineReadyForSave(line)) {
                 console.log('Skipping quantity save - no ID or not ready:', {
@@ -503,7 +647,6 @@ const columns = computed(() =>
                 })
                 return
               }
-
               console.log('Saving quantity change:', line.id, line.quantity)
               const qtyNum = Number(line.quantity || 0)
               const patch: PatchedCostLineCreateUpdate = { quantity: qtyNum }
@@ -511,23 +654,17 @@ const columns = computed(() =>
               autosave.onBlurSave(line, patch, optimistic)
             },
           }),
-          // unit suffix is handled by dedicated Unit column for alignment
-          null,
+          ...(isBlocked
+            ? [
+                h(
+                  Badge,
+                  { variant: 'secondary', class: 'mt-1 text-xs inline-block' },
+                  () => 'Select stock first',
+                ),
+              ]
+            : []),
         ])
       },
-    },
-    {
-      id: 'unit',
-      header: 'Unit',
-      cell: ({ row }: RowCtx) => {
-        const line = displayLines.value[row.index]
-        return h(
-          'div',
-          { class: 'text-right text-xs text-gray-500' },
-          String(line.kind) === 'time' ? 'hrs' : '',
-        )
-      },
-      meta: { editable: false },
     },
 
     // Unit Cost
@@ -536,64 +673,83 @@ const columns = computed(() =>
       header: 'Unit Cost',
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
-        const editable = canEditField(line, 'unit_cost')
-        const isTime = String(line.kind) === 'time'
+        const kind = String(line.kind)
+        const isNewLine = !line.id
+        const isActualTab = props.tabKind === 'actual'
+        const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
+        const isFieldBlocked = blockedFields.includes('unit_cost')
+        const hasStockSelected = selectedItemMap.get(line) && selectedItemMap.get(line) !== ''
+        const isBlocked =
+          isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
+        const editable = canEditField(line, 'unit_cost') && !isBlocked
+        const isTime = kind === 'time'
         const resolved = apply(line).derived
-        return h(Input, {
-          type: 'number',
-          step: '0.01',
-          min: '0',
-          modelValue: isTime ? resolved.unit_cost : (line.unit_cost ?? ''),
-          disabled: !editable,
-          class: 'w-28 text-right',
-          onClick: (e: Event) => e.stopPropagation(),
-          'onUpdate:modelValue': (val: string | number) => {
-            if (!editable) return
-            if (val === '') {
-              Object.assign(line, { unit_cost: 0 })
-            } else {
-              const num = Number(val)
-              if (!Number.isNaN(num)) {
-                Object.assign(line, { unit_cost: num })
+        return [
+          h(Input, {
+            type: 'number',
+            step: '0.01',
+            min: '0',
+            modelValue: isTime ? resolved.unit_cost : (line.unit_cost ?? ''),
+            disabled: !editable,
+            class: 'w-28 text-right',
+            onClick: (e: Event) => e.stopPropagation(),
+            'onUpdate:modelValue': (val: string | number) => {
+              if (!editable) return
+              if (val === '') {
+                Object.assign(line, { unit_cost: 0 })
+              } else {
+                const num = Number(val)
+                if (!Number.isNaN(num)) {
+                  Object.assign(line, { unit_cost: num })
 
-                // Auto-recalculate unit_rev for material/adjust unless overridden
-                if (String(line.kind) !== 'time') {
-                  const derived = apply(line).derived
-                  Object.assign(line, { unit_rev: derived.unit_rev })
+                  // Auto-recalculate unit_rev for material/adjust unless overridden
+                  if (kind !== 'time') {
+                    const derived = apply(line).derived
+                    Object.assign(line, { unit_rev: derived.unit_rev })
+                  }
                 }
               }
-            }
-          },
-          onBlur: () => {
-            if (!editable) return
+            },
+            onBlur: () => {
+              if (!editable) return
 
-            // Create new line if it doesn't have an ID yet and meets baseline criteria
-            if (!line.id && isLineReadyForSave(line)) {
-              console.log('Creating new line from unit_cost edit:', line)
-              emit('create-line', line)
-              return
-            }
+              // Create new line if it doesn't have an ID yet and meets baseline criteria
+              if (!line.id && isLineReadyForSave(line)) {
+                console.log('Creating new line from unit_cost edit:', line)
+                emit('create-line', line)
+                return
+              }
 
-            if (!line.id || !isLineReadyForSave(line)) {
-              console.log('Skipping unit_cost save:', {
-                editable,
-                id: line.id,
-                ready: isLineReadyForSave(line),
-              })
-              return
-            }
+              if (!line.id || !isLineReadyForSave(line)) {
+                console.log('Skipping unit_cost save:', {
+                  editable,
+                  id: line.id,
+                  ready: isLineReadyForSave(line),
+                })
+                return
+              }
 
-            console.log('Saving unit_cost change:', line.id, line.unit_cost)
-            // For material/adjust, unit_rev may be auto recalculated unless overridden
-            const derived = apply(line).derived
-            const patch: PatchedCostLineCreateUpdate = {
-              unit_cost: Number(line.unit_cost ?? 0),
-              ...(String(line.kind) !== 'time' ? { unit_rev: Number(derived.unit_rev) } : {}),
-            }
-            const optimistic: Partial<CostLine> = { ...patch }
-            autosave.onBlurSave(line, patch, optimistic)
-          },
-        })
+              console.log('Saving unit_cost change:', line.id, line.unit_cost)
+              // For material/adjust, unit_rev may be auto recalculated unless overridden
+              const derived = apply(line).derived
+              const patch: PatchedCostLineCreateUpdate = {
+                unit_cost: Number(line.unit_cost ?? 0),
+                ...(kind !== 'time' ? { unit_rev: Number(derived.unit_rev) } : {}),
+              }
+              const optimistic: Partial<CostLine> = { ...patch }
+              autosave.onBlurSave(line, patch, optimistic)
+            },
+          }),
+          ...(isBlocked
+            ? [
+                h(
+                  Badge,
+                  { variant: 'secondary', class: 'mt-1 text-xs' },
+                  () => 'Select stock first',
+                ),
+              ]
+            : []),
+        ]
       },
     },
 
@@ -603,57 +759,76 @@ const columns = computed(() =>
       header: 'Unit Revenue',
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
-        const editable = canEditField(line, 'unit_rev')
-        const isTime = String(line.kind) === 'time'
+        const kind = String(line.kind)
+        const isNewLine = !line.id
+        const isActualTab = props.tabKind === 'actual'
+        const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
+        const isFieldBlocked = blockedFields.includes('unit_rev')
+        const hasStockSelected = selectedItemMap.get(line) && selectedItemMap.get(line) !== ''
+        const isBlocked =
+          isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
+        const editable = canEditField(line, 'unit_rev') && !isBlocked
+        const isTime = kind === 'time'
         const resolved = apply(line).derived
-        return h(Input, {
-          type: 'number',
-          step: '0.01',
-          min: '0',
-          modelValue: isTime ? resolved.unit_rev : (line.unit_rev ?? ''),
-          disabled: !editable,
-          class: 'w-28 text-right',
-          onClick: (e: Event) => e.stopPropagation(),
-          'onUpdate:modelValue': (val: string | number) => {
-            if (!editable) return
-            if (val === '') {
-              Object.assign(line, { unit_rev: 0 })
-            } else {
-              const num = Number(val)
-              if (!Number.isNaN(num)) {
-                Object.assign(line, { unit_rev: num })
+        return [
+          h(Input, {
+            type: 'number',
+            step: '0.01',
+            min: '0',
+            modelValue: isTime ? resolved.unit_rev : (line.unit_rev ?? ''),
+            disabled: !editable,
+            class: 'w-28 text-right',
+            onClick: (e: Event) => e.stopPropagation(),
+            'onUpdate:modelValue': (val: string | number) => {
+              if (!editable) return
+              if (val === '') {
+                Object.assign(line, { unit_rev: 0 })
+              } else {
+                const num = Number(val)
+                if (!Number.isNaN(num)) {
+                  Object.assign(line, { unit_rev: num })
+                }
               }
-            }
-            // Mark override when user types in unit_rev
-            onUnitRevenueManuallyEdited(line)
-          },
-          onBlur: () => {
-            if (!editable) return
+              // Mark override when user types in unit_rev
+              onUnitRevenueManuallyEdited(line)
+            },
+            onBlur: () => {
+              if (!editable) return
 
-            // Create new line if it doesn't have an ID yet and meets baseline criteria
-            if (!line.id && isLineReadyForSave(line)) {
-              console.log('Creating new line from unit_rev edit:', line)
-              emit('create-line', line)
-              return
-            }
+              // Create new line if it doesn't have an ID yet and meets baseline criteria
+              if (!line.id && isLineReadyForSave(line)) {
+                console.log('Creating new line from unit_rev edit:', line)
+                emit('create-line', line)
+                return
+              }
 
-            if (!line.id || !isLineReadyForSave(line)) {
-              console.log('Skipping unit_rev save:', {
-                editable,
-                id: line.id,
-                ready: isLineReadyForSave(line),
-              })
-              return
-            }
+              if (!line.id || !isLineReadyForSave(line)) {
+                console.log('Skipping unit_rev save:', {
+                  editable,
+                  id: line.id,
+                  ready: isLineReadyForSave(line),
+                })
+                return
+              }
 
-            console.log('Saving unit_rev change:', line.id, line.unit_rev)
-            const patch: PatchedCostLineCreateUpdate = {
-              unit_rev: Number(line.unit_rev ?? 0),
-            }
-            const optimistic: Partial<CostLine> = { unit_rev: Number(line.unit_rev ?? 0) }
-            autosave.onBlurSave(line, patch, optimistic)
-          },
-        })
+              console.log('Saving unit_rev change:', line.id, line.unit_rev)
+              const patch: PatchedCostLineCreateUpdate = {
+                unit_rev: Number(line.unit_rev ?? 0),
+              }
+              const optimistic: Partial<CostLine> = { unit_rev: Number(line.unit_rev ?? 0) }
+              autosave.onBlurSave(line, patch, optimistic)
+            },
+          }),
+          ...(isBlocked
+            ? [
+                h(
+                  Badge,
+                  { variant: 'secondary', class: 'mt-1 text-xs' },
+                  () => 'Select stock first',
+                ),
+              ]
+            : []),
+        ]
       },
     },
 
@@ -693,26 +868,40 @@ const columns = computed(() =>
             if (!resolved || !resolved.visible)
               return h('span', { class: 'text-gray-400 text-sm' }, '-')
 
-            return h(
-              'span',
-              {
-                class:
-                  'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer select-none',
-                role: resolved.onClick ? 'button' : undefined,
-                tabindex: resolved.onClick ? 0 : -1,
-                onClick: resolved.onClick
-                  ? () => resolved.onClick && resolved.onClick()
-                  : undefined,
-                onKeydown: (e: KeyboardEvent) => {
-                  if ((e.key === 'Enter' || e.key === ' ') && resolved.onClick) {
-                    e.preventDefault()
-                    resolved.onClick()
-                  }
+            // Add negative stock warning if applicable
+            const kind = String(line.kind)
+            const isMaterial = kind === 'material'
+            const hasStockId = line.ext_refs?.stock_id
+            let warningBadge = null
+            if (isMaterial && hasStockId) {
+              // Check if this line has negative stock (to be passed from parent)
+              // For now, assume parent handles this via sourceResolver
+              warningBadge = null // Placeholder - parent should handle via sourceResolver
+            }
+
+            return h('div', { class: 'flex items-center gap-1' }, [
+              h(
+                'span',
+                {
+                  class:
+                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer select-none',
+                  role: resolved.onClick ? 'button' : undefined,
+                  tabindex: resolved.onClick ? 0 : -1,
+                  onClick: resolved.onClick
+                    ? () => resolved.onClick && resolved.onClick()
+                    : undefined,
+                  onKeydown: (e: KeyboardEvent) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && resolved.onClick) {
+                      e.preventDefault()
+                      resolved.onClick()
+                    }
+                  },
+                  title: resolved.label,
                 },
-                title: resolved.label,
-              },
-              resolved.label,
-            )
+                resolved.label,
+              ),
+              warningBadge,
+            ])
           },
           meta: { editable: false },
         }

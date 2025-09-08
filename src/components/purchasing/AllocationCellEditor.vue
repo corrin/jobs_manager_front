@@ -116,8 +116,7 @@ async function handleSaveAndClose() {
     return
   }
 
-  const currentState = JSON.stringify(validRows)
-  if (validRows.length > 0 && currentState !== initialState.value) {
+  if (validRows.length > 0) {
     const transformedRows = validRows.map((row) => {
       const isStock = row.job_id === props.stockHoldingJobId
       const baseRow: Record<string, unknown> = {
