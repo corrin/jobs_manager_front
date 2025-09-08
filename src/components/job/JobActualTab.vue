@@ -219,6 +219,7 @@
               :consumeStockFn="consumeStockForNewLine"
               :jobId="props.jobId"
               :allowTypeEdit="true"
+              :negativeStockIds="negativeStockIds"
               @delete-line="handleSmartDelete"
               @add-line="handleAddLine"
               @duplicate-line="() => {}"
@@ -257,7 +258,7 @@
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
 
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, ref, computed, watch, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
@@ -471,25 +472,20 @@ const blockedFieldsByKind = ref<Record<KindOption, string[]>>({
   material: ['desc', 'quantity', 'unit_cost', 'unit_rev'],
   adjust: [],
 })
-const negativeStockLines = ref<Set<string>>(new Set()) // Track lines with negative stock
 
-// Function to check and update negative stock for all material lines
+const negativeStockSet = reactive(new Set<string>())
+const negativeStockIds = computed(() => Array.from(negativeStockSet))
+
 async function checkAndUpdateNegativeStocks() {
-  negativeStockLines.value.clear()
-  const materialLines = costLines.value.filter((l) => l.kind === 'material' && l.ext_refs?.stock_id)
-  if (materialLines.length === 0) return
+  negativeStockSet.clear()
 
-  const stockIds = materialLines.map((l) => l.ext_refs.stock_id as string)
   try {
-    const stocks = await Promise.all(
-      stockIds.map((id) => api.purchasing_rest_stock_retrieve({ params: { id } })),
-    )
-    stocks.forEach((stock, index) => {
-      const line = materialLines[index]
-      if (line && stock.quantity < 0) {
-        negativeStockLines.value.add(line.id)
+    const stocks = await api.purchasing_rest_stock_retrieve()
+    for (const stock of stocks.items) {
+      if (stock.quantity < 0) {
+        negativeStockSet.add(stock.id)
       }
-    })
+    }
   } catch (error) {
     console.warn('Failed to check stock status:', error)
   }
@@ -711,7 +707,6 @@ function resolveSource(
     isDeliveryReceiptExtRefs(line.ext_refs)
   ) {
     const label = line.meta.po_number || 'Delivery Receipt'
-    console.log('Line data: ', line)
     return {
       visible: true,
       label,

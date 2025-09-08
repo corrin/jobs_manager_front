@@ -1,3 +1,4 @@
+o
 <script setup lang="ts">
 /**
  * SmartCostLinesTable.vue
@@ -24,7 +25,7 @@ import { Textarea } from '../ui/textarea'
 import ItemSelect from '../../views/purchasing/ItemSelect.vue'
 import type { DataTableRowContext } from '../../utils/data-table-types'
 import { toast } from 'vue-sonner'
-import { HelpCircle, Trash2, Plus } from 'lucide-vue-next'
+import { HelpCircle, Trash2, Plus, Lock, AlertTriangle } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -86,6 +87,7 @@ const props = withDefaults(
     }) => Promise<void>
     // Job ID for consumption context
     jobId?: string
+    negativeStockIds?: string[]
   }>(),
   {
     readOnly: false,
@@ -94,6 +96,7 @@ const props = withDefaults(
     allowTypeEdit: true,
     allowedKinds: () => ['material', 'time', 'adjust'],
     blockedFieldsByKind: () => ({ material: [], time: [], adjust: [] }),
+    negativeStockIds: () => [],
   },
 )
 
@@ -210,6 +213,17 @@ function isDeliveryReceipt(line: CostLine): boolean {
 
 function isStockLine(line: CostLine): boolean {
   return !!(line?.ext_refs && (line.ext_refs as Record<string, unknown>).stock_id)
+}
+
+function isNegativeStock(line: CostLine): boolean {
+  if (!line?.id || !isStockLine(line)) return false
+  return props.negativeStockIds?.includes(line.ext_refs?.stock_id as string) ?? false
+}
+
+function lockReason(line: CostLine): 'delivery_receipt' | 'stock' | null {
+  if (isDeliveryReceipt(line)) return 'delivery_receipt'
+  if (line?.id && isStockLine(line)) return 'stock'
+  return null
 }
 
 /**
@@ -417,117 +431,91 @@ const columns = computed(() =>
             const isMaterial = kind === 'material'
             const isNewLine = !line.id
             const isActualTab = props.tabKind === 'actual'
-            // Allow ItemSelect to be clickable when no stock is selected for new material lines
+
             const lockedByDeliveryReceipt = isDeliveryReceipt(line)
             const lockedStockExisting = !!line.id && isStockLine(line)
             const enabled =
               kind !== 'time' && !props.readOnly && !lockedByDeliveryReceipt && !lockedStockExisting
 
-            return h(ItemSelect, {
-              modelValue: model,
-              disabled: !enabled,
-              onClick: (e: Event) => e.stopPropagation(),
-              'onUpdate:modelValue': async (val: string | null) => {
-                if (!enabled) return
-                selectedItemMap.set(line, val)
-                onItemSelected(line) // reset unit_rev override on item change
+            const reason = lockReason(line)
 
-                // For actual tab new material lines: Trigger consumption on selection
-                if (
-                  isActualTab &&
-                  isNewLine &&
-                  isMaterial &&
-                  val &&
-                  props.consumeStockFn &&
-                  props.jobId
-                ) {
-                  try {
-                    // Get stock item from ItemSelect component (assuming it exposes items)
-                    // For now, we'll need to fetch the stock item details
-                    const stockResponse = await api.purchasing_rest_stock_retrieve({
-                      params: { id: val },
-                    })
-                    const stockItem = stockResponse
-                    if (stockItem) {
-                      const quantity = Number(line.quantity || 1)
-                      const unitCost = Number(stockItem.unit_cost || 0)
+            return h('div', { class: 'min-w-[14rem]' }, [
+              h(ItemSelect, {
+                modelValue: model,
+                disabled: !enabled,
+                onClick: (e: Event) => e.stopPropagation(),
+                'onUpdate:modelValue': async (val: string | null) => {
+                  if (!enabled) return
+                  selectedItemMap.set(line, val)
+                  onItemSelected(line)
+
+                  if (
+                    isActualTab &&
+                    isNewLine &&
+                    isMaterial &&
+                    val &&
+                    props.consumeStockFn &&
+                    props.jobId
+                  ) {
+                    try {
+                      const stock = await api.purchasing_rest_stock_retrieve({
+                        params: { id: val },
+                      })
+                      const qty = Number(line.quantity || 1)
+                      const unitCost = Number(stock.unit_cost || 0)
                       const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
                       const unitRev = unitCost * (1 + markup)
-
-                      await props.consumeStockFn({
-                        stockId: val,
-                        quantity,
-                        unitCost,
-                        unitRev,
-                      })
-
-                      // After success, unblock fields for this line
-                      // Note: This is UI-only; parent can listen to events if needed
-                      console.log('Stock consumed, unblocking fields for line')
+                      await props.consumeStockFn({ stockId: val, quantity: qty, unitCost, unitRev })
+                    } catch {
+                      toast.error('Failed to consume stock. Line not created.')
+                      selectedItemMap.set(line, null)
+                      return
                     }
-                  } catch {
-                    toast.error('Failed to consume stock. Line not created.')
-                    // Revert selection
-                    selectedItemMap.set(line, null)
-                    return
-                  }
-                }
-
-                // Bridge prefill - fetch stock item details
-                let found = null
-                try {
-                  found = await api.purchasing_rest_stock_retrieve({ params: { id: val } })
-                } catch (error) {
-                  console.warn('Failed to fetch stock item details:', error)
-                }
-                if (found) {
-                  Object.assign(line, { desc: found.description || '' })
-                  Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
-
-                  // Auto-calculate unit_rev with markup for material/adjust lines
-                  if (kind !== 'time') {
-                    const derived = apply(line).derived
-                    Object.assign(line, { unit_rev: derived.unit_rev })
                   }
 
-                  // Check if line is ready for creation after all fields are populated
-                  // Use nextTick to ensure all updates are complete before checking
+                  let found = null
+                  try {
+                    found = await api.purchasing_rest_stock_retrieve({ params: { id: val } })
+                  } catch (error) {
+                    console.warn('Failed to fetch stock item details:', error)
+                  }
+                  if (found) {
+                    Object.assign(line, { desc: found.description || '' })
+                    Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
+                    if (kind !== 'time')
+                      Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
+                    nextTick(() => {
+                      if (!line.id && isLineReadyForSave(line)) emit('create-line', line)
+                    })
+                  } else {
+                    Object.assign(line, { desc: '' })
+                    Object.assign(line, { unit_cost: 0 })
+                  }
+                },
+                'onUpdate:description': (desc: string) => enabled && Object.assign(line, { desc }),
+                'onUpdate:unit_cost': (cost: number | null) => {
+                  if (!enabled) return
+                  Object.assign(line, { unit_cost: Number(cost ?? 0) })
+                  if (kind !== 'time')
+                    Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
                   nextTick(() => {
-                    if (!line.id && isLineReadyForSave(line)) {
-                      console.log('Creating new line from item prefill:', line)
-                      emit('create-line', line)
-                    }
+                    if (!line.id && isLineReadyForSave(line)) emit('create-line', line)
                   })
-                } else {
-                  Object.assign(line, { desc: '' })
-                  Object.assign(line, { unit_cost: 0 })
-                }
-              },
-              // bridge ItemSelect's prefill outputs (redundant but keep for compatibility)
-              'onUpdate:description': (desc: string) => {
-                if (!enabled) return
-                Object.assign(line, { desc })
-              },
-              'onUpdate:unit_cost': (cost: number | null) => {
-                if (!enabled) return
-                Object.assign(line, { unit_cost: Number(cost ?? 0) })
-
-                // Auto-calculate unit_rev with markup for material/adjust lines
-                if (kind !== 'time') {
-                  const derived = apply(line).derived
-                  Object.assign(line, { unit_rev: derived.unit_rev })
-                }
-
-                // Check if line is ready for creation after all fields are populated
-                // Use nextTick to ensure all updates are complete before checking
-                nextTick(() => {
-                  if (!line.id && isLineReadyForSave(line)) {
-                    console.log('Creating new line from item prefill:', line)
-                    emit('create-line', line)
-                  }
-                })
-              },
-            })
+                },
+              }),
+              !enabled
+                ? h(
+                    'div',
+                    { class: 'mt-1 inline-flex items-center gap-1 text-[11px] text-slate-500' },
+                    [
+                      h(Lock, { class: 'w-3.5 h-3.5' }),
+                      reason === 'delivery_receipt'
+                        ? 'Locked from delivery receipt'
+                        : 'Locked by stock allocation',
+                    ],
+                  )
+                : null,
+            ])
           },
           meta: { editable: !props.readOnly },
         }
@@ -868,18 +856,10 @@ const columns = computed(() =>
             if (!resolved || !resolved.visible)
               return h('span', { class: 'text-gray-400 text-sm' }, '-')
 
-            // Add negative stock warning if applicable
-            const kind = String(line.kind)
-            const isMaterial = kind === 'material'
-            const hasStockId = line.ext_refs?.stock_id
-            let warningBadge = null
-            if (isMaterial && hasStockId) {
-              // Check if this line has negative stock (to be passed from parent)
-              // For now, assume parent handles this via sourceResolver
-              warningBadge = null // Placeholder - parent should handle via sourceResolver
-            }
+            const neg = isNegativeStock(line)
+            const lock = lockReason(line)
 
-            return h('div', { class: 'flex items-center gap-1' }, [
+            const chips = [
               h(
                 'span',
                 {
@@ -900,8 +880,45 @@ const columns = computed(() =>
                 },
                 resolved.label,
               ),
-              warningBadge,
-            ])
+            ]
+
+            if (neg) {
+              chips.push(
+                h(
+                  'span',
+                  {
+                    class:
+                      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200',
+                    title: 'Stock level for this item is negative',
+                  },
+                  [h(AlertTriangle, { class: 'w-3.5 h-3.5 mr-1' }), 'Negative'],
+                ),
+              )
+            }
+
+            if (lock) {
+              chips.push(
+                h(
+                  'span',
+                  {
+                    class:
+                      lock === 'delivery_receipt'
+                        ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200'
+                        : 'hidden',
+                    title:
+                      lock === 'delivery_receipt'
+                        ? 'Locked by delivery receipt'
+                        : 'Locked by stock allocation',
+                  },
+                  [
+                    h(Lock, { class: lock === 'delivery_receipt' ? 'w-3.5 h-3.5 mr-1' : 'hidden' }),
+                    lock === 'delivery_receipt' ? 'Locked' : '',
+                  ],
+                ),
+              )
+            }
+
+            return h('div', { class: 'flex items-center gap-1' }, chips)
           },
           meta: { editable: false },
         }
