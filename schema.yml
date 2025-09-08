@@ -7845,6 +7845,17 @@ components:
           type: string
           description: User message content to send to the AI assistant
           maxLength: 5000
+        mode:
+          allOf:
+            - $ref: '#/components/schemas/ModeEnum'
+          default: AUTO
+          description: |-
+            Operation mode: CALC for calculations, PRICE for pricing, TABLE for summaries, AUTO for automatic detection
+
+            * `CALC` - CALC
+            * `PRICE` - PRICE
+            * `TABLE` - TABLE
+            * `AUTO` - AUTO
       required:
         - message
     JobQuoteChatInteractionSuccessResponse:
@@ -8456,6 +8467,18 @@ components:
         * `galvanized` - Galvanized
         * `unspecified` - Unspecified
         * `other` - Other
+    ModeEnum:
+      enum:
+        - CALC
+        - PRICE
+        - TABLE
+        - AUTO
+      type: string
+      description: |-
+        * `CALC` - CALC
+        * `PRICE` - PRICE
+        * `TABLE` - TABLE
+        * `AUTO` - AUTO
     ModernStaff:
       type: object
       description: Serializer for staff in timesheet context

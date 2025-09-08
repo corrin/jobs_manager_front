@@ -674,7 +674,13 @@ const JobQuoteChatUpdate = z
   .object({ content: z.string(), metadata: z.unknown() })
   .partial()
   .passthrough()
-const JobQuoteChatInteractionRequest = z.object({ message: z.string().max(5000) }).passthrough()
+const ModeEnum = z.enum(['CALC', 'PRICE', 'TABLE', 'AUTO'])
+const JobQuoteChatInteractionRequest = z
+  .object({
+    message: z.string().max(5000),
+    mode: ModeEnum.optional().default('AUTO'),
+  })
+  .passthrough()
 const JobQuoteChatInteractionErrorResponse = z
   .object({
     success: z.boolean().optional().default(false),
@@ -1883,6 +1889,7 @@ export const schemas = {
   JobQuoteChatInteractionSuccessResponse,
   PatchedJobQuoteChatUpdate,
   JobQuoteChatUpdate,
+  ModeEnum,
   JobQuoteChatInteractionRequest,
   JobQuoteChatInteractionErrorResponse,
   JobReorderRequest,
@@ -3700,7 +3707,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ message: z.string().max(5000) }).passthrough(),
+        schema: JobQuoteChatInteractionRequest,
       },
       {
         name: 'job_id',
