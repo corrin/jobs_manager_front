@@ -4885,6 +4885,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/StockConsumeResponse'
           description: ''
+  /purchasing/rest/supplier-price-status/:
+    get:
+      operationId: getSupplierPriceStatus
+      description: |-
+        Return latest price upload status per supplier.
+
+        Minimal-impact: read-only query over existing Client and SupplierPriceList
+        models. No migrations required.
+      tags:
+        - purchasing
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPriceStatusResponse'
+          description: ''
   /purchasing/rest/xero-items/:
     get:
       operationId: purchasing_rest_xero_items_retrieve
@@ -7825,6 +7845,17 @@ components:
           type: string
           description: User message content to send to the AI assistant
           maxLength: 5000
+        mode:
+          allOf:
+            - $ref: '#/components/schemas/ModeEnum'
+          default: AUTO
+          description: |-
+            Operation mode: CALC for calculations, PRICE for pricing, TABLE for summaries, AUTO for automatic detection
+
+            * `CALC` - CALC
+            * `PRICE` - PRICE
+            * `TABLE` - TABLE
+            * `AUTO` - AUTO
       required:
         - message
     JobQuoteChatInteractionSuccessResponse:
@@ -8436,6 +8467,18 @@ components:
         * `galvanized` - Galvanized
         * `unspecified` - Unspecified
         * `other` - Other
+    ModeEnum:
+      enum:
+        - CALC
+        - PRICE
+        - TABLE
+        - AUTO
+      type: string
+      description: |-
+        * `CALC` - CALC
+        * `PRICE` - PRICE
+        * `TABLE` - TABLE
+        * `AUTO` - AUTO
     ModernStaff:
       type: object
       description: Serializer for staff in timesheet context
@@ -10531,6 +10574,48 @@ components:
         - missing_staff
         - partial_staff
         - total_staff
+    SupplierPriceStatusItem:
+      type: object
+      description: Single supplier price status row.
+      properties:
+        supplier_id:
+          type: string
+          format: uuid
+        supplier_name:
+          type: string
+        last_uploaded_at:
+          type: string
+          format: date-time
+          nullable: true
+        file_name:
+          type: string
+          nullable: true
+        total_products:
+          type: integer
+          nullable: true
+        changes_last_update:
+          type: integer
+          nullable: true
+      required:
+        - changes_last_update
+        - file_name
+        - last_uploaded_at
+        - supplier_id
+        - supplier_name
+        - total_products
+    SupplierPriceStatusResponse:
+      type: object
+      description: Response containing list of supplier price statuses.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplierPriceStatusItem'
+        total_count:
+          type: integer
+      required:
+        - items
+        - total_count
     TimesheetCostLine:
       type: object
       description: |-
