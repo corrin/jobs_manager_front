@@ -87,7 +87,7 @@
       title="Confirm Deletion"
       :message="`Are you sure you want to delete the provider '${providerToDelete?.name}'? This action cannot be undone.`"
       @confirm="deleteProvider"
-      @cancel="isConfirmOpen = false"
+      @close="isConfirmOpen = false"
     />
   </AppLayout>
 </template>
@@ -167,11 +167,10 @@ const handleSave = async (providerData: AIProvider) => {
         name: providerData.name,
         provider_type: providerData.provider_type,
         api_key: providerData.api_key,
-        api_url: providerData.api_url,
         model_name: providerData.model_name,
         default: providerData.default,
       }
-      await aiProviderService.updateProvider(providerData.id, updateData)
+      await aiProviderService.updateProvider(Number(providerData.id), updateData)
       toast.success('Provider updated successfully.')
     } else {
       // For create, use the create format
@@ -179,10 +178,10 @@ const handleSave = async (providerData: AIProvider) => {
         name: providerData.name,
         provider_type: providerData.provider_type,
         api_key: providerData.api_key,
-        api_url: providerData.api_url,
         model_name: providerData.model_name,
         default: providerData.default || false,
       }
+      console.log('Creating AI provider with data:', createData)
       await aiProviderService.createProvider(createData)
       toast.success('Provider created successfully.')
     }
@@ -201,7 +200,7 @@ const toggleDefault = async (provider: AIProvider) => {
 
   isTogglingDefault.value = true
   try {
-    await aiProviderService.setDefaultProvider(provider.id, provider)
+    await aiProviderService.setDefaultProvider(Number(provider.id), provider)
     toast.success(`'${provider.name}' is now the default provider.`)
     await fetchProviders()
   } catch (error: unknown) {
@@ -222,7 +221,7 @@ const confirmDelete = (provider: AIProvider) => {
 const deleteProvider = async () => {
   if (!providerToDelete.value) return
   try {
-    await aiProviderService.deleteProvider(providerToDelete.value.id)
+    await aiProviderService.deleteProvider(Number(providerToDelete.value.id))
     toast.success('Provider deleted successfully.')
     await fetchProviders()
   } catch (error: unknown) {

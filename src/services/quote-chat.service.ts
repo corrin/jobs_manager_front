@@ -19,7 +19,7 @@ export class QuoteChatService {
 
   async getChatHistory(jobId: string): Promise<JobQuoteChatHistoryResponse> {
     try {
-      return await api.job_api_jobs_quote_chat_retrieve({ id: jobId })
+      return await api.job_api_jobs_quote_chat_retrieve({ params: { job_id: jobId } })
     } catch (error) {
       debugLog('Failed to load chat history:', error)
       throw error
@@ -28,10 +28,7 @@ export class QuoteChatService {
 
   async saveMessage(jobId: string, message: Omit<JobQuoteChat, 'id'>): Promise<JobQuoteChat> {
     try {
-      return await api.job_api_jobs_quote_chat_create({
-        id: jobId,
-        body: message,
-      })
+      return await api.job_api_jobs_quote_chat_create(message, { params: { job_id: jobId } })
     } catch (error) {
       debugLog('Failed to save chat message:', error)
       throw error
@@ -44,10 +41,8 @@ export class QuoteChatService {
     updates: Partial<JobQuoteChat>,
   ): Promise<JobQuoteChat> {
     try {
-      return await api.job_api_jobs_quote_chat_partial_update({
-        id: jobId,
-        message_id: messageId,
-        body: updates,
+      return await api.job_api_jobs_quote_chat_partial_update(updates, {
+        params: { job_id: jobId, message_id: messageId },
       })
     } catch (error) {
       debugLog('Failed to update chat message:', error)
@@ -57,7 +52,7 @@ export class QuoteChatService {
 
   async clearChatHistory(jobId: string): Promise<void> {
     try {
-      await api.job_api_jobs_quote_chat_destroy({ id: jobId })
+      await api.job_api_jobs_quote_chat_destroy({}, { params: { job_id: jobId } })
     } catch (error) {
       debugLog('Failed to clear chat history:', error)
       throw error
@@ -81,19 +76,26 @@ export class QuoteChatService {
     role: 'user' | 'assistant',
   ): Omit<JobQuoteChat, 'id'> {
     return {
+      message_id: vueMessage._id,
       role,
       content: vueMessage.content,
       metadata: vueMessage.metadata || {},
     }
   }
 
-  async getAssistantResponse(jobId: string, message: string): Promise<JobQuoteChat> {
+  async getAssistantResponse(
+    jobId: string,
+    message: string,
+    mode: string = 'AUTO',
+  ): Promise<JobQuoteChat> {
     try {
-      const request: JobQuoteChatInteractionRequest = { message }
-      return await api.job_api_jobs_quote_chat_interaction_create({
-        id: jobId,
-        body: request,
+      const request: JobQuoteChatInteractionRequest = { message, mode }
+      const response = await api.job_api_jobs_quote_chat_interaction_create(request, {
+        params: { job_id: jobId },
+        timeout: 120000, // 2 minutes for AI processing
       })
+      console.log('🔍 DEBUG: assistant response =', response)
+      return response.data
     } catch (error) {
       debugLog('Failed to get assistant response:', error)
       throw error

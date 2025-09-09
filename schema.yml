@@ -783,9 +783,8 @@ paths:
     post:
       operationId: api_workflow_ai_providers_set_default_create
       description: |-
-        Set this provider as the default for the company.
-        This will atomically unset any other provider that is currently the default
-        for the same company.
+        Set this provider as the default.
+        This will atomically unset any other provider that is currently the default.
       parameters:
         - in: path
           name: id
@@ -2466,16 +2465,8 @@ paths:
           description: ''
     post:
       operationId: job_api_jobs_quote_chat_create
-      description: |-
-        Save a new chat message (user or assistant).
-
-        Expected JSON:
-        {
-            "message_id": "user-1234567892",
-            "role": "user",
-            "content": "Actually, make that 5 boxes instead",
-            "metadata": {}
-        }
+      description: Save a new chat message (user or assistant) for a job
+      summary: Save a new chat message
       parameters:
         - in: path
           name: job_id
@@ -2489,23 +2480,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobQuoteChat'
+              $ref: '#/components/schemas/JobQuoteChatCreate'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobQuoteChat'
+              $ref: '#/components/schemas/JobQuoteChatCreate'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobQuoteChat'
+              $ref: '#/components/schemas/JobQuoteChatCreate'
         required: true
       security:
         - cookieAuth: []
         - {}
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobQuoteChat'
+                $ref: '#/components/schemas/JobQuoteChatInteractionSuccessResponse'
           description: ''
     delete:
       operationId: job_api_jobs_quote_chat_destroy
@@ -2574,13 +2565,8 @@ paths:
   /job/api/jobs/{job_id}/quote-chat/interaction/:
     post:
       operationId: job_api_jobs_quote_chat_interaction_create
-      description: |-
-        Receives a user message, sends it to the MCPChatService for processing,
-        and returns the AI's final response.
-
-        The frontend is expected to first save the user's message via the
-        JobQuoteChatHistoryView, and then call this endpoint to get the
-        assistant's reply.
+      description: Sends user message to AI assistant and returns the generated response
+      summary: Get AI assistant response
       parameters:
         - in: path
           name: job_id
@@ -2606,12 +2592,30 @@ paths:
         - cookieAuth: []
         - {}
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobQuoteChatInteractionRequest'
-          description: ''
+                $ref: '#/components/schemas/JobQuoteChatInteractionSuccessResponse'
+          description: AI response generated successfully
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobQuoteChatInteractionErrorResponse'
+          description: Invalid input data or configuration error
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobQuoteChatInteractionErrorResponse'
+          description: Job not found
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobQuoteChatInteractionErrorResponse'
+          description: Internal server error
   /job/api/jobs/{job_id}/reorder/:
     post:
       operationId: job_api_jobs_reorder_create
@@ -4883,6 +4887,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/StockConsumeResponse'
           description: ''
+  /purchasing/rest/supplier-price-status/:
+    get:
+      operationId: getSupplierPriceStatus
+      description: |-
+        Return latest price upload status per supplier.
+
+        Minimal-impact: read-only query over existing Client and SupplierPriceList
+        models. No migrations required.
+      tags:
+        - purchasing
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPriceStatusResponse'
+          description: ''
   /purchasing/rest/xero-items/:
     get:
       operationId: purchasing_rest_xero_items_retrieve
@@ -5475,9 +5499,6 @@ components:
         Serializer for creating and updating AIProvider instances.
         This serializer handles the `api_key` securely by making it write-only.
       properties:
-        id:
-          type: integer
-          readOnly: true
         name:
           type: string
           description: Friendly name for this provider
@@ -5503,12 +5524,7 @@ components:
           writeOnly: true
           description: API Key for the provider. Leave blank to keep unchanged on
             update.
-        company:
-          type: string
-          readOnly: true
       required:
-        - company
-        - id
         - name
         - provider_type
     AWSInstanceStatusResponse:
@@ -6111,11 +6127,6 @@ components:
         company_name:
           type: string
           maxLength: 255
-        ai_providers:
-          type: array
-          items:
-            $ref: '#/components/schemas/AIProvider'
-          readOnly: true
         is_primary:
           type: boolean
         time_markup:
@@ -6281,7 +6292,6 @@ components:
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
       required:
-        - ai_providers
         - company_name
         - created_at
         - updated_at
@@ -7774,8 +7784,8 @@ components:
     JobQuoteChat:
       type: object
       description: |-
-        Serializer for creating new JobQuoteChat messages.
-        Validates required fields and business rules.
+        Serializer for JobQuoteChat responses (includes timestamp).
+        Used when returning saved messages to the client.
       properties:
         message_id:
           type: string
@@ -7796,6 +7806,26 @@ components:
         - message_id
         - role
         - timestamp
+    JobQuoteChatCreate:
+      type: object
+      description: |-
+        Serializer for creating new JobQuoteChat messages.
+        Validates required fields and business rules.
+      properties:
+        message_id:
+          type: string
+          description: Frontend-generated unique ID
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        content:
+          type: string
+        metadata:
+          description: Extra data like streaming status, processing time, etc.
+      required:
+        - content
+        - message_id
+        - role
     JobQuoteChatHistoryResponse:
       type: object
       description: Serializer for chat history response.
@@ -7808,6 +7838,20 @@ components:
       required:
         - data
         - success
+    JobQuoteChatInteractionErrorResponse:
+      type: object
+      description: Serializer for error chat interaction response.
+      properties:
+        success:
+          type: boolean
+          default: false
+        error:
+          type: string
+        code:
+          type: string
+          description: Error code for specific error types
+      required:
+        - error
     JobQuoteChatInteractionRequest:
       type: object
       description: Serializer for chat interaction request data.
@@ -7816,8 +7860,30 @@ components:
           type: string
           description: User message content to send to the AI assistant
           maxLength: 5000
+        mode:
+          allOf:
+            - $ref: '#/components/schemas/ModeEnum'
+          default: AUTO
+          description: |-
+            Operation mode: CALC for calculations, PRICE for pricing, TABLE for summaries, AUTO for automatic detection
+
+            * `CALC` - CALC
+            * `PRICE` - PRICE
+            * `TABLE` - TABLE
+            * `AUTO` - AUTO
       required:
         - message
+    JobQuoteChatInteractionSuccessResponse:
+      type: object
+      description: Serializer for successful chat interaction response.
+      properties:
+        success:
+          type: boolean
+          default: true
+        data:
+          $ref: '#/components/schemas/JobQuoteChat'
+      required:
+        - data
     JobQuoteChatUpdate:
       type: object
       description: |-
@@ -8416,6 +8482,18 @@ components:
         * `galvanized` - Galvanized
         * `unspecified` - Unspecified
         * `other` - Other
+    ModeEnum:
+      enum:
+        - CALC
+        - PRICE
+        - TABLE
+        - AUTO
+      type: string
+      description: |-
+        * `CALC` - CALC
+        * `PRICE` - PRICE
+        * `TABLE` - TABLE
+        * `AUTO` - AUTO
     ModernStaff:
       type: object
       description: Serializer for staff in timesheet context
@@ -8843,9 +8921,6 @@ components:
         Serializer for creating and updating AIProvider instances.
         This serializer handles the `api_key` securely by making it write-only.
       properties:
-        id:
-          type: integer
-          readOnly: true
         name:
           type: string
           description: Friendly name for this provider
@@ -8871,9 +8946,6 @@ components:
           writeOnly: true
           description: API Key for the provider. Leave blank to keep unchanged on
             update.
-        company:
-          type: string
-          readOnly: true
     PatchedClientUpdateRequest:
       type: object
       description: Serializer for client update request
@@ -8897,11 +8969,6 @@ components:
         company_name:
           type: string
           maxLength: 255
-        ai_providers:
-          type: array
-          items:
-            $ref: '#/components/schemas/AIProvider'
-          readOnly: true
         is_primary:
           type: boolean
         time_markup:
@@ -10528,6 +10595,48 @@ components:
         - missing_staff
         - partial_staff
         - total_staff
+    SupplierPriceStatusItem:
+      type: object
+      description: Single supplier price status row.
+      properties:
+        supplier_id:
+          type: string
+          format: uuid
+        supplier_name:
+          type: string
+        last_uploaded_at:
+          type: string
+          format: date-time
+          nullable: true
+        file_name:
+          type: string
+          nullable: true
+        total_products:
+          type: integer
+          nullable: true
+        changes_last_update:
+          type: integer
+          nullable: true
+      required:
+        - changes_last_update
+        - file_name
+        - last_uploaded_at
+        - supplier_id
+        - supplier_name
+        - total_products
+    SupplierPriceStatusResponse:
+      type: object
+      description: Response containing list of supplier price statuses.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplierPriceStatusItem'
+        total_count:
+          type: integer
+      required:
+        - items
+        - total_count
     TimesheetCostLine:
       type: object
       description: |-

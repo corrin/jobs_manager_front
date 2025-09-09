@@ -98,18 +98,13 @@
         />
       </div>
       <div v-if="activeTab === 'quotingChat'" class="h-full p-4 md:p-6">
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center">
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Quoting Chat</h3>
-            <p class="text-gray-500">AI assistant for quoting help.</p>
-            <button
-              @click="openQuotingChat"
-              class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Open Quoting Chat
-            </button>
-          </div>
-        </div>
+        <JobQuotingChatTab
+          v-if="jobData"
+          :job-id="jobData.id"
+          :job-name="jobData.name"
+          :job-number="String(jobData.job_number)"
+          :client-name="jobData.client_name"
+        />
       </div>
     </div>
   </div>
@@ -124,8 +119,8 @@ import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
 import JobSettingsTab from './JobSettingsTab.vue'
 import JobHistoryTab from './JobHistoryTab.vue'
 import JobAttachmentsTab from './JobAttachmentsTab.vue'
+import JobQuotingChatTab from './JobQuotingChatTab.vue'
 import { watch, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
 // Define JobTabKey type locally as it's UI-specific
@@ -185,21 +180,6 @@ const tabs = computed(() => {
 
 function handleTabChange(tab: JobTabKey) {
   emit('change-tab', tab)
-}
-
-const router = useRouter()
-
-function openQuotingChat() {
-  if (!props.jobData) return
-  router.push({
-    name: 'QuotingChatView',
-    query: {
-      jobId: props.jobData.id,
-      jobName: props.jobData.name,
-      jobNumber: props.jobData.job_number,
-      clientName: props.jobData.client_name,
-    },
-  })
 }
 
 const props = defineProps<{

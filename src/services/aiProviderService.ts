@@ -42,7 +42,7 @@ export class AIProviderService {
   ): Promise<AIProvider> {
     try {
       return await api.api_workflow_ai_providers_partial_update(providerData, {
-        params: { id: id.toString() },
+        params: { id },
       })
     } catch (error) {
       debugLog(`Failed to update AI provider ${id}:`, error)
@@ -52,7 +52,7 @@ export class AIProviderService {
 
   async deleteProvider(id: number): Promise<void> {
     try {
-      await api.api_workflow_ai_providers_destroy(undefined, { params: { id: id.toString() } })
+      await api.api_workflow_ai_providers_destroy(undefined, { params: { id } })
     } catch (error) {
       debugLog(`Failed to delete AI provider ${id}:`, error)
       throw error
@@ -61,7 +61,7 @@ export class AIProviderService {
 
   async getProvider(id: number): Promise<AIProvider> {
     try {
-      return await api.api_workflow_ai_providers_retrieve({ params: { id: id.toString() } })
+      return await api.api_workflow_ai_providers_retrieve({ params: { id } })
     } catch (error) {
       debugLog(`Failed to get AI provider ${id}:`, error)
       throw error
@@ -71,7 +71,7 @@ export class AIProviderService {
   async setDefaultProvider(id: number, providerData: AIProvider): Promise<AIProvider> {
     try {
       return await api.api_workflow_ai_providers_set_default_create(providerData, {
-        params: { id: id.toString() },
+        params: { id },
       })
     } catch (error) {
       debugLog(`Failed to set default AI provider ${id}:`, error)

@@ -295,20 +295,9 @@ const AWSInstanceStatusResponse = z
     details: z.string().optional(),
   })
   .passthrough()
-const ProviderTypeEnum = z.enum(['Claude', 'Gemini', 'Mistral'])
-const AIProvider = z
-  .object({
-    id: z.number().int(),
-    name: z.string().max(100),
-    provider_type: ProviderTypeEnum,
-    model_name: z.string().max(100).optional(),
-    default: z.boolean().optional(),
-  })
-  .passthrough()
 const CompanyDefaults = z
   .object({
     company_name: z.string().max(255),
-    ai_providers: z.array(AIProvider),
     is_primary: z.boolean().optional(),
     time_markup: z.number().gt(-1000).lt(1000).optional(),
     materials_markup: z.number().gt(-1000).lt(1000).optional(),
@@ -346,7 +335,6 @@ const CompanyDefaults = z
 const PatchedCompanyDefaults = z
   .object({
     company_name: z.string().max(255),
-    ai_providers: z.array(AIProvider),
     is_primary: z.boolean(),
     time_markup: z.number().gt(-1000).lt(1000),
     materials_markup: z.number().gt(-1000).lt(1000),
@@ -382,26 +370,32 @@ const PatchedCompanyDefaults = z
   })
   .partial()
   .passthrough()
-const AIProviderCreateUpdate = z
+const ProviderTypeEnum = z.enum(['Claude', 'Gemini', 'Mistral'])
+const AIProvider = z
   .object({
     id: z.number().int(),
     name: z.string().max(100),
     provider_type: ProviderTypeEnum,
     model_name: z.string().max(100).optional(),
     default: z.boolean().optional(),
+  })
+  .passthrough()
+const AIProviderCreateUpdate = z
+  .object({
+    name: z.string().max(100),
+    provider_type: ProviderTypeEnum,
+    model_name: z.string().max(100).optional(),
+    default: z.boolean().optional(),
     api_key: z.string().optional(),
-    company: z.string(),
   })
   .passthrough()
 const PatchedAIProviderCreateUpdate = z
   .object({
-    id: z.number().int(),
     name: z.string().max(100),
     provider_type: ProviderTypeEnum,
     model_name: z.string().max(100),
     default: z.boolean(),
     api_key: z.string(),
-    company: z.string(),
   })
   .partial()
   .passthrough()
@@ -652,6 +646,14 @@ const JobQuoteChatHistoryResponse = z
   .object({ success: z.boolean(), data: z.object({}).partial().passthrough() })
   .passthrough()
 const RoleEnum = z.enum(['user', 'assistant'])
+const JobQuoteChatCreate = z
+  .object({
+    message_id: z.string().max(100),
+    role: RoleEnum,
+    content: z.string(),
+    metadata: z.unknown().optional(),
+  })
+  .passthrough()
 const JobQuoteChat = z
   .object({
     message_id: z.string().max(100),
@@ -661,6 +663,9 @@ const JobQuoteChat = z
     timestamp: z.string().datetime({ offset: true }),
   })
   .passthrough()
+const JobQuoteChatInteractionSuccessResponse = z
+  .object({ success: z.boolean().optional().default(true), data: JobQuoteChat })
+  .passthrough()
 const PatchedJobQuoteChatUpdate = z
   .object({ content: z.string(), metadata: z.unknown() })
   .partial()
@@ -669,7 +674,20 @@ const JobQuoteChatUpdate = z
   .object({ content: z.string(), metadata: z.unknown() })
   .partial()
   .passthrough()
-const JobQuoteChatInteractionRequest = z.object({ message: z.string().max(5000) }).passthrough()
+const ModeEnum = z.enum(['CALC', 'PRICE', 'TABLE', 'AUTO'])
+const JobQuoteChatInteractionRequest = z
+  .object({
+    message: z.string().max(5000),
+    mode: ModeEnum.optional().default('AUTO'),
+  })
+  .passthrough()
+const JobQuoteChatInteractionErrorResponse = z
+  .object({
+    success: z.boolean().optional().default(false),
+    error: z.string(),
+    code: z.string().optional(),
+  })
+  .passthrough()
 const JobReorderRequest = z
   .object({
     before_id: z.string().uuid().nullable(),
@@ -1526,6 +1544,22 @@ const StockConsumeResponse = z
     remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
   })
   .passthrough()
+const SupplierPriceStatusItem = z
+  .object({
+    supplier_id: z.string().uuid(),
+    supplier_name: z.string(),
+    last_uploaded_at: z.string().datetime({ offset: true }).nullable(),
+    file_name: z.string().nullable(),
+    total_products: z.number().int().nullable(),
+    changes_last_update: z.number().int().nullable(),
+  })
+  .passthrough()
+const SupplierPriceStatusResponse = z
+  .object({
+    items: z.array(SupplierPriceStatusItem),
+    total_count: z.number().int(),
+  })
+  .passthrough()
 const XeroItem = z
   .object({
     code: z.string(),
@@ -1820,10 +1854,10 @@ export const schemas = {
   TokenVerify,
   UserProfile,
   AWSInstanceStatusResponse,
-  ProviderTypeEnum,
-  AIProvider,
   CompanyDefaults,
   PatchedCompanyDefaults,
+  ProviderTypeEnum,
+  AIProvider,
   AIProviderCreateUpdate,
   PatchedAIProviderCreateUpdate,
   AppError,
@@ -1859,10 +1893,14 @@ export const schemas = {
   ArchiveJobsRequest,
   JobQuoteChatHistoryResponse,
   RoleEnum,
+  JobQuoteChatCreate,
   JobQuoteChat,
+  JobQuoteChatInteractionSuccessResponse,
   PatchedJobQuoteChatUpdate,
   JobQuoteChatUpdate,
+  ModeEnum,
   JobQuoteChatInteractionRequest,
+  JobQuoteChatInteractionErrorResponse,
   JobReorderRequest,
   KanbanSuccessResponse,
   KanbanErrorResponse,
@@ -1969,6 +2007,8 @@ export const schemas = {
   StockCreate,
   StockConsumeRequest,
   StockConsumeResponse,
+  SupplierPriceStatusItem,
+  SupplierPriceStatusResponse,
   XeroItem,
   XeroItemListResponse,
   DjangoJobExecutionStatusEnum,
@@ -2500,9 +2540,8 @@ provider as the default for the company.`,
     method: 'post',
     path: '/api/workflow/ai-providers/:id/set-default/',
     alias: 'api_workflow_ai_providers_set_default_create',
-    description: `Set this provider as the default for the company.
-This will atomically unset any other provider that is currently the default
-for the same company.`,
+    description: `Set this provider as the default.
+This will atomically unset any other provider that is currently the default.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -3605,21 +3644,13 @@ Response format matches job_quote_chat_plan.md specification.`,
     method: 'post',
     path: '/job/api/jobs/:job_id/quote-chat/',
     alias: 'job_api_jobs_quote_chat_create',
-    description: `Save a new chat message (user or assistant).
-
-Expected JSON:
-{
-    &quot;message_id&quot;: &quot;user-1234567892&quot;,
-    &quot;role&quot;: &quot;user&quot;,
-    &quot;content&quot;: &quot;Actually, make that 5 boxes instead&quot;,
-    &quot;metadata&quot;: {}
-}`,
+    description: `Save a new chat message (user or assistant) for a job`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: JobQuoteChat,
+        schema: JobQuoteChatCreate,
       },
       {
         name: 'job_id',
@@ -3627,7 +3658,7 @@ Expected JSON:
         schema: z.string().uuid(),
       },
     ],
-    response: JobQuoteChat,
+    response: JobQuoteChatInteractionSuccessResponse,
   },
   {
     method: 'delete',
@@ -3679,18 +3710,13 @@ Expected JSON:
     method: 'post',
     path: '/job/api/jobs/:job_id/quote-chat/interaction/',
     alias: 'job_api_jobs_quote_chat_interaction_create',
-    description: `Receives a user message, sends it to the MCPChatService for processing,
-and returns the AI&#x27;s final response.
-
-The frontend is expected to first save the user&#x27;s message via the
-JobQuoteChatHistoryView, and then call this endpoint to get the
-assistant&#x27;s reply.`,
+    description: `Sends user message to AI assistant and returns the generated response`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ message: z.string().max(5000) }).passthrough(),
+        schema: JobQuoteChatInteractionRequest,
       },
       {
         name: 'job_id',
@@ -3698,7 +3724,24 @@ assistant&#x27;s reply.`,
         schema: z.string().uuid(),
       },
     ],
-    response: z.object({ message: z.string().max(5000) }).passthrough(),
+    response: JobQuoteChatInteractionSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        description: `Invalid input data or configuration error`,
+        schema: JobQuoteChatInteractionErrorResponse,
+      },
+      {
+        status: 404,
+        description: `Job not found`,
+        schema: JobQuoteChatInteractionErrorResponse,
+      },
+      {
+        status: 500,
+        description: `Internal server error`,
+        schema: JobQuoteChatInteractionErrorResponse,
+      },
+    ],
   },
   {
     method: 'post',
@@ -5123,6 +5166,17 @@ DELETE: Marks a stock item as inactive instead of deleting it`,
       },
     ],
     response: StockConsumeResponse,
+  },
+  {
+    method: 'get',
+    path: '/purchasing/rest/supplier-price-status/',
+    alias: 'getSupplierPriceStatus',
+    description: `Return latest price upload status per supplier.
+
+Minimal-impact: read-only query over existing Client and SupplierPriceList
+models. No migrations required.`,
+    requestFormat: 'json',
+    response: SupplierPriceStatusResponse,
   },
   {
     method: 'get',

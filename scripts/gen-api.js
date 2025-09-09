@@ -8,6 +8,7 @@
 
 import SwaggerParser from '@apidevtools/swagger-parser'
 import { generateZodClientFromOpenAPI } from 'openapi-zod-client'
+import { execSync } from 'child_process'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -28,9 +29,10 @@ async function main() {
       apiClientName: 'api', // generates `export const api = new Zodios(...)`
       withAlias: true,
     },
+    prettierPath: '.prettierrc.json', // Use project's prettier config
   })
 
-  // 4. Append `export { endpoints };` if it’s missing
+  // 4. Append `export { endpoints };` if it's missing
   let content = await fs.readFile(outputPath, 'utf-8')
   if (!/export\s+\{\s*endpoints\s*\}/.test(content)) {
     content += '\nexport { endpoints };\n'
@@ -39,6 +41,10 @@ async function main() {
   } else {
     console.log('ℹ️  `export { endpoints };` already present')
   }
+
+  // 5. Format with project's prettier config for consistency
+  execSync(`npx prettier --write "${outputPath}"`, { stdio: 'inherit' })
+  console.log('✅ Applied Prettier formatting')
 }
 
 main().catch((err) => {
