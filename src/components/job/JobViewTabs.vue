@@ -97,9 +97,6 @@
           @file-deleted="$emit('file-deleted')"
         />
       </div>
-      <div v-if="activeTab === 'printJob'" class="h-full overflow-y-auto p-4 md:p-6">
-        <JobPdfTab v-if="jobData" :job-id="jobData.id" :job-number="jobData.job_number" />
-      </div>
       <div v-if="activeTab === 'quotingChat'" class="h-full p-4 md:p-6">
         <JobQuotingChatTab
           v-if="jobData"
@@ -122,7 +119,6 @@ import JobCostAnalysisTab from './JobCostAnalysisTab.vue'
 import JobSettingsTab from './JobSettingsTab.vue'
 import JobHistoryTab from './JobHistoryTab.vue'
 import JobAttachmentsTab from './JobAttachmentsTab.vue'
-import JobPdfTab from './JobPdfTab.vue'
 import JobQuotingChatTab from './JobQuotingChatTab.vue'
 import { watch, computed } from 'vue'
 import { z } from 'zod'
@@ -137,7 +133,6 @@ type JobTabKey =
   | 'workflow'
   | 'history'
   | 'attachments'
-  | 'printJob'
   | 'quotingChat'
 
 // Use generated Job type from Zodios API
@@ -172,7 +167,6 @@ const allTabs = [
   { key: 'jobSettings', label: 'Job Settings' },
   { key: 'history', label: 'History' },
   { key: 'attachments', label: 'Attachments' },
-  { key: 'printJob', label: 'Print Job' },
   { key: 'quotingChat', label: 'Quoting Chat' },
 ] as const
 

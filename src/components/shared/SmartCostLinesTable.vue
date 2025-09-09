@@ -24,7 +24,7 @@ import { Textarea } from '../ui/textarea'
 import ItemSelect from '../../views/purchasing/ItemSelect.vue'
 import type { DataTableRowContext } from '../../utils/data-table-types'
 import { toast } from 'vue-sonner'
-import { HelpCircle, Trash2, Plus, Lock, AlertTriangle } from 'lucide-vue-next'
+import { HelpCircle, Trash2, Plus, AlertTriangle } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -242,12 +242,6 @@ function isStockLine(line: CostLine): boolean {
 function isNegativeStock(line: CostLine): boolean {
   if (!line?.id || !isStockLine(line)) return false
   return props.negativeStockIds?.includes(line.ext_refs?.stock_id as string) ?? false
-}
-
-function lockReason(line: CostLine): 'delivery_receipt' | 'stock' | null {
-  if (isDeliveryReceipt(line)) return 'delivery_receipt'
-  if (line?.id && isStockLine(line)) return 'stock'
-  return null
 }
 
 /**
@@ -472,8 +466,6 @@ const columns = computed(() => {
             const enabled =
               kind !== 'time' && !props.readOnly && !lockedByDeliveryReceipt && !lockedStockExisting
 
-            const reason = lockReason(line)
-
             return h('div', { class: 'min-w-[12rem]' }, [
               h(ItemSelect, {
                 modelValue: model,
@@ -538,20 +530,6 @@ const columns = computed(() => {
                   })
                 },
               }),
-              !enabled
-                ? h(
-                    'div',
-                    { class: 'mt-1 inline-flex items-center gap-1 text-[11px] text-slate-500' },
-                    [
-                      h(Lock, { class: 'w-3.5 h-3.5' }),
-                      reason === 'delivery_receipt'
-                        ? 'Locked from delivery receipt'
-                        : reason === 'stock'
-                          ? 'Locked from stock consumption'
-                          : 'Locked for editing',
-                    ],
-                  )
-                : null,
             ])
           },
           meta: { editable: !props.readOnly },
@@ -894,7 +872,6 @@ const columns = computed(() => {
               return h('span', { class: 'text-gray-400 text-sm' }, '-')
 
             const neg = isNegativeStock(line)
-            const lock = lockReason(line)
 
             const chips = [
               h(
@@ -929,28 +906,6 @@ const columns = computed(() => {
                     title: 'Stock level for this item is negative',
                   },
                   [h(AlertTriangle, { class: 'w-3.5 h-3.5 mr-1' }), 'Negative'],
-                ),
-              )
-            }
-
-            if (lock) {
-              chips.push(
-                h(
-                  'span',
-                  {
-                    class:
-                      lock === 'delivery_receipt'
-                        ? 'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200 w-fit'
-                        : 'hidden',
-                    title:
-                      lock === 'delivery_receipt'
-                        ? 'Locked by delivery receipt'
-                        : 'Locked by stock allocation',
-                  },
-                  [
-                    h(Lock, { class: lock === 'delivery_receipt' ? 'w-3.5 h-3.5 mr-1' : 'hidden' }),
-                    lock === 'delivery_receipt' ? 'Locked' : '',
-                  ],
                 ),
               )
             }
