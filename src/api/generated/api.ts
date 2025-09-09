@@ -1633,6 +1633,8 @@ const StaffDailyData = z
     job_breakdown: z.array(JobBreakdown),
     entry_count: z.number().int(),
     alerts: z.array(z.string()),
+    is_weekend: z.boolean().optional().default(false),
+    weekend_enabled: z.boolean().optional().default(false),
   })
   .passthrough()
 const DailyTotals = z
@@ -1664,6 +1666,9 @@ const DailyTimesheetSummary = z
     staff_data: z.array(StaffDailyData),
     daily_totals: DailyTotals,
     summary_stats: SummaryStats,
+    weekend_enabled: z.boolean().optional().default(false),
+    is_weekend: z.boolean().optional().default(false),
+    day_type: z.string().optional(),
   })
   .passthrough()
 const ModernTimesheetJob = z
@@ -1742,6 +1747,8 @@ const WeeklyTimesheetData = z
     export_mode: z.string(),
     is_current_week: z.boolean(),
     navigation: z.object({}).partial().passthrough().optional(),
+    weekend_enabled: z.boolean().optional().default(false),
+    week_type: z.string().optional(),
   })
   .passthrough()
 const IMSWeeklyStaffDataWeeklyHours = z
@@ -1788,6 +1795,8 @@ const IMSWeeklyTimesheetData = z
     export_mode: z.string(),
     is_current_week: z.boolean(),
     navigation: z.object({}).partial().passthrough().optional(),
+    weekend_enabled: z.boolean().optional().default(false),
+    week_type: z.string().optional(),
   })
   .passthrough()
 const XeroError = z
@@ -3932,7 +3941,8 @@ Expected JSON:
     method: 'patch',
     path: '/job/rest/cost_lines/:cost_line_id/',
     alias: 'job_rest_cost_lines_partial_update',
-    description: `Update a cost line`,
+    description: `Update a cost line
+Dynamically infers the stock adjustment based on quantity change`,
     requestFormat: 'json',
     parameters: [
       {
@@ -5409,7 +5419,7 @@ Returns:
     method: 'get',
     path: '/timesheets/api/weekly/',
     alias: 'timesheets_api_weekly_retrieve',
-    description: `Return Monday-to-Friday weekly timesheet data.`,
+    description: `Return weekly timesheet data (5 or 7 days based on feature flag).`,
     requestFormat: 'json',
     parameters: [
       {

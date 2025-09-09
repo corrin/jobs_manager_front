@@ -977,26 +977,41 @@ const navigateDate = (direction: number) => {
 
   const date = new Date(year, month, day)
 
-  do {
+  // Only skip weekends if weekend feature is disabled
+  if (!timesheetStore.weekendEnabled) {
+    do {
+      date.setDate(date.getDate() + direction)
+    } while (date.getDay() === 0 || date.getDay() === 6)
+  } else {
     date.setDate(date.getDate() + direction)
-  } while (date.getDay() === 0 || date.getDay() === 6)
+  }
 
   const newYear = date.getFullYear()
   const newMonth = String(date.getMonth() + 1).padStart(2, '0')
   const newDay = String(date.getDate()).padStart(2, '0')
 
   currentDate.value = `${newYear}-${newMonth}-${newDay}`
-  debugLog('📅 Navigated to:', currentDate.value, 'Day of week:', date.getDay())
+  debugLog(
+    '📅 Navigated to:',
+    currentDate.value,
+    'Day of week:',
+    date.getDay(),
+    'Weekend enabled:',
+    timesheetStore.weekendEnabled,
+  )
   updateRoute()
 }
 
 const goToToday = () => {
   const today = new Date()
 
-  if (today.getDay() === 0) {
-    today.setDate(today.getDate() + 1)
-  } else if (today.getDay() === 6) {
-    today.setDate(today.getDate() + 2)
+  // Only skip weekends if weekend feature is disabled
+  if (!timesheetStore.weekendEnabled) {
+    if (today.getDay() === 0) {
+      today.setDate(today.getDate() + 1)
+    } else if (today.getDay() === 6) {
+      today.setDate(today.getDate() + 2)
+    }
   }
 
   const year = today.getFullYear()
@@ -1004,7 +1019,12 @@ const goToToday = () => {
   const day = String(today.getDate()).padStart(2, '0')
 
   currentDate.value = `${year}-${month}-${day}`
-  debugLog('📅 Going to today (or next workday):', currentDate.value)
+  debugLog(
+    '📅 Going to today:',
+    currentDate.value,
+    'Weekend enabled:',
+    timesheetStore.weekendEnabled,
+  )
   updateRoute()
 }
 
