@@ -2883,7 +2883,9 @@ paths:
   /job/rest/cost_lines/{cost_line_id}/:
     patch:
       operationId: job_rest_cost_lines_partial_update
-      description: Update a cost line
+      description: |-
+        Update a cost line
+        Dynamically infers the stock adjustment based on quantity change
       parameters:
         - in: path
           name: cost_line_id
@@ -5250,8 +5252,8 @@ paths:
   /timesheets/api/weekly/:
     get:
       operationId: timesheets_api_weekly_retrieve
-      description: Return Monday-to-Friday weekly timesheet data.
-      summary: Standard weekly overview (Mon–Fri)
+      description: Return weekly timesheet data (5 or 7 days based on feature flag).
+      summary: Standard weekly overview (Mon–Sun when enabled, Mon–Fri when disabled)
       parameters:
         - in: query
           name: start_date
@@ -6537,6 +6539,14 @@ components:
           $ref: '#/components/schemas/DailyTotals'
         summary_stats:
           $ref: '#/components/schemas/SummaryStats'
+        weekend_enabled:
+          type: boolean
+          default: false
+        is_weekend:
+          type: boolean
+          default: false
+        day_type:
+          type: string
       required:
         - daily_totals
         - date
@@ -7082,6 +7092,11 @@ components:
         navigation:
           type: object
           additionalProperties: {}
+        weekend_enabled:
+          type: boolean
+          default: false
+        week_type:
+          type: string
       required:
         - end_date
         - export_mode
@@ -7427,6 +7442,9 @@ components:
         contact_id:
           type: string
           format: uuid
+          nullable: true
+        pricing_methodology:
+          type: string
           nullable: true
       required:
         - client_id
@@ -10067,6 +10085,12 @@ components:
           type: array
           items:
             type: string
+        is_weekend:
+          type: boolean
+          default: false
+        weekend_enabled:
+          type: boolean
+          default: false
       required:
         - actual_hours
         - alerts
@@ -10901,6 +10925,11 @@ components:
         navigation:
           type: object
           additionalProperties: {}
+        weekend_enabled:
+          type: boolean
+          default: false
+        week_type:
+          type: string
       required:
         - end_date
         - export_mode
