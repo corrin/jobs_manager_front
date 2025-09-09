@@ -9,17 +9,6 @@
             }}
           </h2>
         </div>
-        <div v-if="currentQuote?.has_quote" class="flex items-center gap-2">
-          <CostLineDropdown
-            :disabled="isLoading || areEditsBlocked"
-            :wageRate="wageRate"
-            :chargeOutRate="chargeOutRate"
-            :materialsMarkup="materialsMarkup"
-            @add-material="handleAddMaterial"
-            @add-time="handleAddTime"
-            @add-adjustment="handleAddAdjustment"
-          />
-        </div>
       </div>
     </div>
 
@@ -555,31 +544,6 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
-
-    <CostLineMaterialModal
-      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'material'"
-      :materialsMarkup="materialsMarkup"
-      :initial="editingCostLine"
-      mode="edit"
-      @close="closeEditModal"
-      @submit="submitEditCostLine"
-    />
-    <CostLineTimeModal
-      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'time'"
-      :wageRate="wageRate"
-      :chargeOutRate="chargeOutRate"
-      :initial="editingCostLine"
-      mode="edit"
-      @close="closeEditModal"
-      @submit="submitEditCostLine"
-    />
-    <CostLineAdjustmentModal
-      v-if="showEditModal && editingCostLine && editingCostLine.kind === 'adjust'"
-      :initial="editingCostLine"
-      mode="edit"
-      @close="closeEditModal"
-      @submit="submitEditCostLine"
-    />
   </div>
 </template>
 
@@ -597,7 +561,6 @@ import {
   Download,
   ExternalLink,
 } from 'lucide-vue-next'
-import CostLineDropdown from './CostLineDropdown.vue'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import { quoteService } from '../../services/quote.service'
@@ -606,12 +569,8 @@ import { toast } from 'vue-sonner'
 import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
 import { z } from 'zod'
-import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import { costlineService } from '../../services/costline.service'
 import { useSmartCostLineDelete } from '../../composables/useSmartCostLineDelete'
-import CostLineMaterialModal from './CostLineMaterialModal.vue'
-import CostLineTimeModal from './CostLineTimeModal.vue'
-import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
 import CompactSummaryCard from '../shared/CompactSummaryCard.vue'
 import {
   Dialog,
@@ -670,8 +629,6 @@ const showQuoteRevisionsModal = ref(false)
 const quoteRevisionsData = ref<QuoteRevisionsListResponse | null>(null)
 const isCreatingRevision = ref(false)
 const previewData = ref<PreviewQuoteResponse | null>(null)
-const editingCostLine = ref<CostLine | null>(null)
-const showEditModal = ref(false)
 const costLines = ref<CostLine[]>([])
 const quoteKey = ref(0) // Force reactivity key
 const showDetailedSummary = ref(false)
@@ -681,21 +638,6 @@ const isCreatingQuote = ref(false)
 const isQuoteDeleted = ref(false)
 const isDeletingQuote = ref(false)
 const isAcceptingQuote = ref(false)
-
-const companyDefaultsStore = useCompanyDefaultsStore()
-const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
-const wageRate = computed(() => {
-  const rate = companyDefaults.value?.wage_rate
-  return rate || 0
-})
-const chargeOutRate = computed(() => {
-  const rate = companyDefaults.value?.charge_out_rate
-  return rate || 0
-})
-const materialsMarkup = computed(() => {
-  const markup = companyDefaults.value?.materials_markup
-  return markup || 0
-})
 
 const quoteCostLines = computed(() => {
   const lines = currentQuote.value?.quote?.cost_lines || []
@@ -933,91 +875,6 @@ async function handleAddMaterial(payload: CostLine) {
   }
 }
 
-async function handleAddTime(payload: CostLine) {
-  if (!payload || payload.kind !== 'time') return
-  isLoading.value = true
-  toast.info('Adding time cost line...')
-  try {
-    const createPayload = {
-      kind: 'time' as const,
-      desc: payload.desc,
-      quantity: payload.quantity,
-      unit_cost: payload.unit_cost,
-      unit_rev: payload.unit_rev,
-      ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
-      meta: (payload.meta as Record<string, unknown>) || {},
-    }
-    const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
-    // Accept the response exactly as returned by API - NO CONVERSIONS
-    costLines.value = [...costLines.value, created]
-    toast.success('Time cost line added!')
-    emit('cost-line-changed')
-  } catch (error) {
-    toast.error('Failed to add time cost line.')
-    debugLog('Failed to add time:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function handleAddAdjustment(payload: CostLine) {
-  if (!payload || payload.kind !== 'adjust') return
-  isLoading.value = true
-  toast.info('Adding adjustment cost line...')
-  try {
-    const createPayload = {
-      kind: 'adjust' as const,
-      desc: payload.desc,
-      quantity: payload.quantity,
-      unit_cost: payload.unit_cost,
-      unit_rev: payload.unit_rev,
-      ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
-      meta: (payload.meta as Record<string, unknown>) || {},
-    }
-    const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
-    // Accept the response exactly as returned by API - NO CONVERSIONS
-    costLines.value = [...costLines.value, created]
-    toast.success('Adjustment cost line added!')
-    emit('cost-line-changed')
-  } catch (error) {
-    toast.error('Failed to add adjustment cost line.')
-    debugLog('Failed to add adjustment:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-function closeEditModal() {
-  showEditModal.value = false
-  editingCostLine.value = null
-}
-
-async function submitEditCostLine(payload: CostLine) {
-  if (!payload || !payload.id) return
-  isLoading.value = true
-  toast.info('Updating cost line...')
-  try {
-    // Convert payload to ensure proper types for API
-    const updatePayload = {
-      ...payload,
-      quantity: payload.quantity,
-      unit_cost: payload.unit_cost,
-      unit_rev: payload.unit_rev,
-      ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
-      meta: (payload.meta as Record<string, unknown>) || {},
-    }
-    const updated = await costlineService.updateCostLine(payload.id, updatePayload)
-    costLines.value = costLines.value.map((l) => (l.id === updated.id ? { ...updated } : l))
-    toast.success('Cost line updated!')
-    closeEditModal()
-  } catch (error) {
-    toast.error('Failed to update cost line.')
-    debugLog('Failed to update cost line:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
 // Use the smart delete composable
 const { handleSmartDelete } = useSmartCostLineDelete({
   costLines,
@@ -1125,6 +982,7 @@ function formatDate(dateString: string): string {
 // Add empty line to the grid (UI-only, not persisted until user fills baseline data)
 function handleAddEmptyLine() {
   const newLine: CostLine = {
+    __localId: crypto.randomUUID(), // Temporary local ID for tracking
     id: '', // empty ID indicates unsaved line
     kind: 'material',
     desc: '',

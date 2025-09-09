@@ -31,6 +31,9 @@ const table = useVueTable({
     return props.columns
   },
   getCoreRowModel: getCoreRowModel(),
+  // any is justified here since we don't know the shape of the data and it doesn't matter in this component
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getRowId: (row: any, index) => row.id || row.__localId || `local-${index}`,
 })
 
 const colCount = computed(() => props.columns.length)

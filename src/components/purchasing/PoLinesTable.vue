@@ -361,7 +361,7 @@ const columns = computed(() =>
           poStatus: props.poStatus,
           poId: props.poId,
           onSave: (editorState: LineEditorState) => emit('receipt:save', { lineId, editorState }),
-          'onAllocation-deleted': (data: { allocationId: string; allocationType: string }) =>
+          onAllocationDeleted: (data: { allocationId: string; allocationType: string }) =>
             emit('allocation-deleted', data),
         })
       },

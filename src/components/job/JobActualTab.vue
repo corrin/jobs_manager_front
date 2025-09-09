@@ -35,15 +35,6 @@
           <strong class="tabular-nums text-slate-900">{{ formatCurrency(toBeInvoiced) }}</strong>
         </li>
       </ul>
-
-      <div class="flex items-center gap-2">
-        <ActualCostDropdown
-          class="w-full"
-          :disabled="isLoading"
-          @add-material="handleAddMaterial"
-          @add-adjustment="handleAddAdjustment"
-        />
-      </div>
     </div>
 
     <!-- CONTENT: STICKY GRID ASIDE + MAIN -->
@@ -215,41 +206,25 @@
             <span>Loading cost lines...</span>
           </div>
 
-          <div
-            v-else-if="!costLines || costLines.length === 0"
-            class="h-full flex items-center justify-center"
-          >
-            <div class="text-center py-8">
-              <svg
-                class="w-12 h-12 mx-auto mb-4 text-gray-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              <p class="text-gray-500">No actual costs recorded yet</p>
-            </div>
-          </div>
-
           <div v-else>
             <SmartCostLinesTable
               :lines="costLines"
               tabKind="actual"
-              :readOnly="true"
-              :showItemColumn="false"
+              :readOnly="false"
+              :showItemColumn="true"
               :showSourceColumn="true"
               :sourceResolver="resolveSource"
+              :allowedKinds="['material', 'adjust']"
+              :blockedFieldsByKind="blockedFieldsByKind"
+              :consumeStockFn="consumeStockForNewLine"
+              :jobId="props.jobId"
+              :allowTypeEdit="true"
+              :negativeStockIds="negativeStockIds"
               @delete-line="handleSmartDelete"
-              @add-line="() => {}"
+              @add-line="handleAddLine"
               @duplicate-line="() => {}"
               @move-line="() => {}"
-              @create-line="() => {}"
+              @create-line="handleCreateLine"
             />
           </div>
         </div>
@@ -277,26 +252,13 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
-
-    <StockConsumptionModal
-      v-if="showStockModal"
-      @close="closeStockModal"
-      @submit="submitStockConsumption"
-    />
-    <CostLineAdjustmentModal
-      v-if="showAdjustmentModal"
-      :initial="null"
-      mode="create"
-      @close="closeAdjustmentModal"
-      @submit="submitAdjustment"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
 
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, ref, computed, watch, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
@@ -307,12 +269,11 @@ import { schemas } from '../../api/generated/api'
 import { useSmartCostLineDelete } from '../../composables/useSmartCostLineDelete'
 import { api } from '../../api/client'
 import { z } from 'zod'
+import type { AxiosError } from 'axios'
+import type { KindOption } from '../shared/SmartCostLinesTable.vue'
 
 type Job = z.infer<typeof schemas.Job>
 
-import ActualCostDropdown from './ActualCostDropdown.vue'
-import StockConsumptionModal from './StockConsumptionModal.vue'
-import CostLineAdjustmentModal from './CostLineAdjustmentModal.vue'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import {
   Dialog,
@@ -328,10 +289,8 @@ import { ExternalLink, Trash2 } from 'lucide-vue-next'
 import { Badge } from '../ui/badge'
 
 type CostLine = z.infer<typeof schemas.CostLine>
-type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
 type CostSet = z.infer<typeof schemas.CostSet>
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
-type StockItem = z.infer<typeof schemas.StockItem>
 type StockConsumeRequest = z.infer<typeof schemas.StockConsumeRequest>
 type Invoice = z.infer<typeof schemas.Invoice>
 
@@ -486,7 +445,6 @@ watch(
   () => props.jobData?.id,
   (newJobId) => {
     if (newJobId) {
-      isQuoteDeleted.value = false
       deletingInvoiceId.value = null
     }
   },
@@ -501,24 +459,37 @@ watch(
   { immediate: true, deep: true }, // immediate: true runs the watcher on component mount
 )
 
-watch(
-  () => props.jobData?.quoted,
-  (isQuoted) => {
-    if (isQuoted && isQuoteDeleted.value) {
-      isQuoteDeleted.value = false
-    }
-  },
-)
-
 const router = useRouter()
 
 const costLines = ref<CostLine[]>([])
 const staffMap = ref<Record<string, KanbanStaff>>({})
 const isLoading = ref(false)
 const revision = ref(0)
-const showStockModal = ref(false)
-const showAdjustmentModal = ref(false)
 const showDetailedSummary = ref(false)
+
+// For actual tab specifics
+const blockedFieldsByKind = ref<Record<KindOption, string[]>>({
+  material: ['desc', 'quantity', 'unit_cost', 'unit_rev'],
+  adjust: [],
+})
+
+const negativeStockSet = reactive(new Set<string>())
+const negativeStockIds = computed(() => [...negativeStockSet].sort())
+
+async function checkAndUpdateNegativeStocks() {
+  negativeStockSet.clear()
+
+  try {
+    const stocks = await api.purchasing_rest_stock_retrieve()
+    for (const stock of stocks.items) {
+      if (stock.quantity < 0) {
+        negativeStockSet.add(stock.id)
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to check stock status:', error)
+  }
+}
 
 async function loadStaff() {
   try {
@@ -543,6 +514,9 @@ async function loadActualCosts() {
     costLines.value = costSet.cost_lines
 
     revision.value = costSet.rev || 0
+
+    // Check negative stocks after load
+    await checkAndUpdateNegativeStocks()
   } catch (error) {
     debugLog('Failed to load actual cost lines:', error)
   } finally {
@@ -553,9 +527,108 @@ async function loadActualCosts() {
 // Use the smart delete composable
 const { handleSmartDelete } = useSmartCostLineDelete({
   costLines,
-  onCostLineChanged: () => emit('cost-line-changed'),
+  onCostLineChanged: async () => {
+    emit('cost-line-changed')
+    await checkAndUpdateNegativeStocks() // Re-check after delete (backend auto-reverts)
+  },
   isLoading,
 })
+
+// Function for consumption on new material line selection
+async function consumeStockForNewLine(payload: {
+  stockId: string
+  quantity: number
+  unitCost: number
+  unitRev: number
+}) {
+  if (!props.jobId) return
+
+  try {
+    toast.info('Consuming stock...', { id: 'consume-stock' })
+
+    const request: StockConsumeRequest = {
+      job_id: props.jobId,
+      quantity: payload.quantity,
+      unit_cost: payload.unitCost,
+      unit_rev: payload.unitRev,
+    }
+
+    await api.consumeStock(request, {
+      params: { stock_id: payload.stockId },
+    })
+
+    // Success: Emit to parent for reload, or update local if possible
+    toast.success('Stock consumed successfully!')
+    await loadActualCosts() // Reload to sync with backend
+
+    // Check if resulted in negative
+    const stock = await api.purchasing_rest_stock_retrieve({ params: { id: payload.stockId } })
+    if (stock.quantity < 0) {
+      toast.warning(`Warning: Stock now negative (${Math.abs(stock.quantity).toFixed(3)} units).`)
+    }
+
+    checkAndUpdateNegativeStocks()
+    // Note: Since we reload, the line will be re-created from backend with id
+  } catch (error) {
+    toast.error('Failed to consume stock.')
+    debugLog('Failed to consume stock:', error)
+    throw error // To prevent unblocking in table
+  }
+}
+
+// Handler for table's @create-line (for adjustments, since material is handled in table)
+async function handleCreateLine(line: CostLine) {
+  if (line.kind === 'adjust') {
+    // For adjustments, create via service as in EstimateTab
+    isLoading.value = true
+    toast.info('Creating adjustment...', { id: 'create-adjust' })
+    try {
+      const createPayload = {
+        kind: 'adjust' as const,
+        desc: line.desc,
+        quantity: line.quantity,
+        unit_cost: line.unit_cost,
+        unit_rev: line.unit_rev,
+        ext_refs: line.ext_refs || {},
+        meta: { source: 'manual_adjustment' },
+      }
+
+      const created = await costlineService.createCostLine(props.jobId, 'actual', createPayload)
+      costLines.value = costLines.value.map((l) => (l.id === line.id ? created : l)) // Replace temp
+      toast.success('Adjustment added!')
+      emit('cost-line-changed')
+    } catch (error) {
+      toast.error('Failed to create adjustment.')
+      debugLog('Failed to create adjustment:', error)
+    } finally {
+      isLoading.value = false
+      toast.dismiss('create-adjust')
+    }
+  }
+  // For material, table already handled consumption, so no-op or reload
+}
+
+// Handler for add line (only 'material' or 'adjust')
+function handleAddLine(kind: 'material' | 'adjust' = 'material') {
+  const newLine: CostLine = {
+    __localId: crypto.randomUUID(), // Temporary local ID for tracking
+    id: '',
+    kind,
+    desc: '',
+    quantity: 1,
+    unit_cost: 0,
+    unit_rev: 0,
+    total_cost: 0,
+    total_rev: 0,
+    ext_refs: {},
+    meta: {},
+  }
+  costLines.value.push(newLine)
+  // For material in actual, fields are blocked until selection in table
+  if (kind === 'material') {
+    // Table will handle unblock after consume
+  }
+}
 
 onMounted(async () => {
   await Promise.all([loadStaff(), loadActualCosts()])
@@ -636,7 +709,6 @@ function resolveSource(
     isDeliveryReceiptExtRefs(line.ext_refs)
   ) {
     const label = line.meta.po_number || 'Delivery Receipt'
-    console.log('Line data: ', line)
     return {
       visible: true,
       label,
@@ -671,106 +743,5 @@ function resolveSource(
 
   // No source info
   return null
-}
-
-// Modal handlers
-function handleAddMaterial() {
-  showStockModal.value = true
-}
-
-function handleAddAdjustment() {
-  showAdjustmentModal.value = true
-}
-
-function closeStockModal() {
-  showStockModal.value = false
-}
-
-function closeAdjustmentModal() {
-  showAdjustmentModal.value = false
-}
-
-async function submitStockConsumption(payload: {
-  stockItem: StockItem
-  quantity: number
-  unit_cost: number
-  unit_rev: number
-}) {
-  isLoading.value = true
-  toast.info('Consuming stock...', { id: 'add-stock' })
-
-  // Check if consuming more than available stock
-  const isOverConsumption = payload.quantity > (payload.stockItem.quantity as number) // I'm asserting the type here because when comparing the quantity will never be null or undefined
-
-  try {
-    // The consumeStock endpoint automatically:
-    // 1. Reduces stock quantity
-    // 2. Creates "Consumed: " stock record with source = "stock"
-    // 3. Creates cost line for the job
-    const consumeRequest: StockConsumeRequest = {
-      job_id: props.jobId,
-      quantity: payload.quantity,
-      unit_cost: payload.unit_cost,
-      unit_rev: payload.unit_rev,
-    }
-
-    await api.consumeStock(consumeRequest, {
-      params: { stock_id: payload.stockItem.id as string },
-    })
-
-    // Reload cost lines to show the automatically created cost line
-    await loadActualCosts()
-
-    // Show appropriate success message based on stock consumption
-    if (isOverConsumption) {
-      toast.success('Stock consumed successfully! Note: This resulted in negative inventory.', {
-        duration: 6000,
-      })
-    } else {
-      toast.success('Stock consumed successfully!')
-    }
-
-    emit('cost-line-changed')
-    closeStockModal()
-  } catch (error) {
-    toast.error('Failed to consume stock.')
-    debugLog('Failed to consume stock:', error)
-  } finally {
-    isLoading.value = false
-    toast.dismiss('add-stock')
-  }
-}
-
-async function submitAdjustment(payload: CostLine | CostLineCreateUpdate): Promise<void> {
-  if (!payload || payload.kind !== 'adjust') return
-  isLoading.value = true
-  toast.info('Adding adjustment...', { id: 'add-adjustment' })
-  try {
-    const createPayload = {
-      kind: 'adjust' as const,
-      desc: payload.desc,
-      quantity: payload.quantity,
-      unit_cost: payload.unit_cost,
-      unit_rev: payload.unit_rev,
-      ext_refs: {
-        source: 'manual_adjustment',
-      },
-      meta: {
-        source: 'manual_adjustment',
-      },
-    }
-
-    const created = await costlineService.createCostLine(props.jobId, 'actual', createPayload)
-    costLines.value = [...costLines.value, created]
-    toast.success('Adjustment added!')
-    emit('cost-line-changed')
-    closeAdjustmentModal()
-  } catch (error) {
-    toast.error('Failed to add adjustment.')
-    debugLog('Failed to add adjustment:', error)
-  } finally {
-    isLoading.value = false
-    toast.dismiss('add-adjustment')
-  }
 }
 </script>
