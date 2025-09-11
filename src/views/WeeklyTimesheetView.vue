@@ -208,6 +208,7 @@
                     :staff="staff"
                     :ims-mode="imsMode"
                     :week-days="displayDays"
+                    :visible-indexes="displayDays.map((d) => d.idx)"
                     class="hover:bg-blue-50/50 transition-colors duration-150 border-b border-gray-100"
                   />
                 </tbody>
@@ -287,6 +288,28 @@ const weekendEnabled = computed(() => {
   return import.meta.env.VITE_WEEKEND_TIMESHEETS_ENABLED === 'true'
 })
 
+const visibleDayIndexes = computed(() => {
+  if (!weeklyData.value?.week_days) return []
+  const raw = weeklyData.value.week_days.map((d, idx) => ({
+    idx,
+    dow: createLocalDate(d).getDay(),
+    date: d,
+  }))
+
+  if (imsMode.value) {
+    return raw
+      .filter((d) => d.dow >= 1 && d.dow <= 5)
+      .sort((a, b) => a.dow - b.dow)
+      .map((d) => d.idx)
+  }
+
+  if (!weekendEnabled.value) {
+    return raw.filter((d) => d.dow >= 1 && d.dow <= 5).map((d) => d.idx)
+  }
+
+  return raw.map((d) => d.idx)
+})
+
 // Sort staff data alphabetically by first name for consistent display
 const sortedStaffData = computed(() => {
   if (!weeklyData.value?.staff_data) return []
@@ -303,45 +326,19 @@ const displayDays = computed(() => {
     return []
   }
 
-  try {
-    let days = weeklyData.value.week_days
-
-    // For IMS mode, ensure we have Monday-Friday in correct order
-    if (imsMode.value) {
-      // Sort days to ensure Monday-Friday order
-      days = days
-        .map((d) => ({
-          date: d,
-          dateObj: createLocalDate(d),
-          dow: createLocalDate(d).getDay(),
-        }))
-        .sort((a, b) => {
-          // Monday (1) to Friday (5)
-          const aDow = a.dow === 0 ? 7 : a.dow // Sunday becomes 7
-          const bDow = b.dow === 0 ? 7 : b.dow
-          return aDow - bDow
-        })
-        .filter((day) => day.dow >= 1 && day.dow <= 5) // Only Mon-Fri
-        .map((day) => day.date)
-
-      debugLog('📅 IMS mode: Reordered days to Mon-Fri:', days)
+  return visibleDayIndexes.value.map((idx) => {
+    const d = weeklyData.value!.week_days[idx]
+    const date = createLocalDate(d)
+    const dow = date.getDay()
+    return {
+      idx,
+      date: d,
+      name: dateService.getDayName(d, true),
+      short: dateService.getDayNumber(d),
+      dow,
+      isWeekend: dow === 0 || dow === 6,
     }
-
-    return days.map((d, index) => {
-      const date = createLocalDate(d)
-      return {
-        date: d,
-        name: dateService.getDayName(d, true),
-        short: dateService.getDayNumber(d),
-        dow: date.getDay(),
-        isWeekend: weekendEnabled.value && !imsMode.value && index >= 5, // No weekends in IMS mode
-      }
-    })
-  } catch (error) {
-    console.error('Error computing displayDays:', error)
-    debugLog('❌ Error in displayDays computation, returning empty array')
-    return []
-  }
+  })
 })
 
 // Format the header's date range
