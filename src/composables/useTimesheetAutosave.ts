@@ -54,6 +54,18 @@ interface RowState {
   pending: boolean
 }
 
+const keyAliases = new Map<RowKey, RowKey>()
+
+function resolveKey(k: RowKey): RowKey {
+  let current = k
+  const seen = new Set<RowKey>()
+  while (keyAliases.has(current) && !seen.has(current)) {
+    seen.add(current)
+    current = keyAliases.get(current)!
+  }
+  return current
+}
+
 export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: AutosaveOptions<T>) {
   const debounceMs = opts.debounceMs ?? 800
   const MAX_CONCURRENCY = opts.maxConcurrency ?? 2
@@ -70,14 +82,15 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
   const isIdle = () => queuedCount() === 0 && inFlightCount() === 0
 
   function schedule(rowKey: RowKey) {
-    const existing = timers.get(rowKey)
+    const key = resolveKey(rowKey)
+    const existing = timers.get(key)
     if (existing) {
       clearTimeout(existing)
-      debugLog('🔄 [Autosave] rescheduled (cleared existing timer)', { rowKey })
+      debugLog('🔄 [Autosave] rescheduled (cleared existing timer)', { rowKey: key })
     }
-    const t = window.setTimeout(() => enqueue(rowKey), debounceMs)
-    timers.set(rowKey, t)
-    debugLog('⏳ [Autosave] scheduled', { rowKey, debounceMs })
+    const t = window.setTimeout(() => enqueue(key), debounceMs)
+    timers.set(key, t)
+    debugLog('⏳ [Autosave] scheduled', { rowKey: key, debounceMs })
   }
 
   function scheduleEntry(entry: T) {
@@ -88,16 +101,17 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
 
   function enqueue(rowKey: RowKey) {
     // If it's already saving, mark as pending to run again upon completion
-    const st = state.get(rowKey) ?? { isSaving: false, pending: false }
+    const key = resolveKey(rowKey)
+    const st = state.get(key) ?? { isSaving: false, pending: false }
     if (st.isSaving) {
       st.pending = true
-      state.set(rowKey, st)
-      debugLog('⏭️ [Autosave] in-flight, marked pending', { rowKey, currentState: st })
+      state.set(key, st)
+      debugLog('⏭️ [Autosave] in-flight, marked pending', { rowKey: key, currentState: st })
       return
     }
-    queue.push(rowKey)
+    queue.push(key)
     debugLog('📥 [Autosave] enqueued', {
-      rowKey,
+      rowKey: key,
       queueSize: queue.length,
       totalInFlight: inFlight.value,
     })
@@ -106,34 +120,36 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
 
   function process() {
     while (inFlight.value < MAX_CONCURRENCY && queue.length > 0) {
-      const rowKey = queue.shift() as RowKey
-      const st = state.get(rowKey) ?? { isSaving: false, pending: false }
+      const dequeued = queue.shift() as RowKey
+      const key = resolveKey(dequeued)
+      const st = state.get(key) ?? { isSaving: false, pending: false }
       st.isSaving = true
       st.pending = false
-      state.set(rowKey, st)
+      state.set(key, st)
       inFlight.value++
 
       debugLog('🚀 [Autosave] processing', {
-        rowKey,
+        rowKey: key,
         inFlight: inFlight.value,
         remainingQueue: queue.length,
       })
 
-      saveRow(rowKey)
+      saveRow(key)
         .catch((err) => {
           // Errors already handled in saveRow (toasts); just logging here
           debugLog('❌ [Autosave] unhandled error in saveRow', err)
         })
         .finally(() => {
           inFlight.value--
-          const s = state.get(rowKey) ?? { isSaving: false, pending: false }
+          const effectiveKey = resolveKey(key)
+          const s = state.get(effectiveKey) ?? { isSaving: false, pending: false }
           s.isSaving = false
-          state.set(rowKey, s)
+          state.set(effectiveKey, s)
 
           // If new changes occurred during the save, re-enqueue
           if (s.pending) {
-            debugLog('🔁 [Autosave] pending true, re-enqueue', { rowKey })
-            enqueue(rowKey)
+            debugLog('🔁 [Autosave] pending true, re-enqueue', { rowKey: effectiveKey })
+            enqueue(effectiveKey)
           }
 
           // Continue processing queue
@@ -194,6 +210,8 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
   function migrateRowKeyIfChanged(prevKey: RowKey, entry: T) {
     const newKey = opts.getRowKey(entry)
     if (!newKey || newKey === prevKey) return
+
+    keyAliases.set(prevKey, newKey)
 
     // Migrate timer
     const t = timers.get(prevKey)
