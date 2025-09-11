@@ -908,17 +908,28 @@ const {
 
 const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
   getRowKey: (entry) => {
-    const id = entry.id
-    if (id !== null && id !== undefined && String(id) !== '') return String(id)
-    return entry.tempId
+    if (entry.id != null && String(entry.id) !== '') return String(entry.id)
+
+    if (entry.tempId) {
+      const rows = gridData.value as TimesheetEntryWithMeta[]
+      const found = rows.find((r) => r.tempId === entry.tempId)
+      if (found?.id != null && String(found.id) !== '') return String(found.id)
+      return entry.tempId
+    }
+
+    return undefined
   },
   getEntry: (rowKey) => {
     const rows = gridData.value as unknown as TimesheetEntryWithMeta[]
+
     const byId = rows.find(
       (r) => r.id !== null && r.id !== undefined && String(r.id) === String(rowKey),
     )
+
     if (byId) return byId
+
     const byTemp = rows.find((r) => r.tempId && String(r.tempId) === String(rowKey))
+
     return byTemp || null
   },
   isRowComplete: (e) => {
@@ -1312,6 +1323,27 @@ async function handleDeleteEntry(id: number): Promise<void> {
   }
 }
 
+function scheduleFor(entry: TimesheetEntryWithMeta) {
+  const rows = gridData.value as TimesheetEntryWithMeta[]
+
+  if (entry.id != null && String(entry.id) !== '') {
+    autosave.schedule(String(entry.id))
+    return
+  }
+
+  // if it has tempId, try to promote
+  if (!entry.tempId) return
+
+  const now = rows.find((r) => r.tempId && String(r.tempId) === String(entry.tempId))
+  if (now?.id != null && String(now.id) !== '') {
+    entry.id = now.id
+    delete entry.tempId
+    autosave.schedule(String(now.id))
+  } else {
+    autosave.schedule(String(entry.tempId))
+  }
+}
+
 function handleCellValueChanged(event: CellValueChangedEvent) {
   debugLog('🔧 TimesheetEntryView handleCellValueChanged called:', {
     field: event.colDef.field,
@@ -1331,7 +1363,7 @@ function handleCellValueChanged(event: CellValueChangedEvent) {
       ['hours', 'rate', 'jobNumber', 'jobId', 'description'].includes(event.colDef.field || '')
     ) {
       debugLog('💾 Triggering autosave for field change:', event.colDef.field)
-      autosave.scheduleEntry(entry)
+      scheduleFor(entry)
     }
   }
 

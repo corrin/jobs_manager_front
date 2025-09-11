@@ -284,7 +284,7 @@ const showWeekPicker = ref(false)
 const timesheetStore = useTimesheetStore()
 const weekendEnabled = computed(() => {
   timesheetStore.initializeFeatureFlags()
-  return timesheetStore.weekendEnabled
+  return import.meta.env.VITE_WEEKEND_TIMESHEETS_ENABLED === 'true'
 })
 
 // Sort staff data alphabetically by first name for consistent display

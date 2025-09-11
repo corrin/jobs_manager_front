@@ -692,7 +692,9 @@ const columns = computed(() => {
             type: 'number',
             step: '0.01',
             min: '0',
-            modelValue: isTime ? resolved.unit_cost : (line.unit_cost ?? ''),
+            modelValue: isTime
+              ? (line.unit_cost ?? resolved.unit_cost ?? '')
+              : (line.unit_cost ?? ''),
             disabled: !editable,
             class: 'w-28 text-right',
             onClick: (e: Event) => e.stopPropagation(),
@@ -778,7 +780,7 @@ const columns = computed(() => {
             type: 'number',
             step: '0.01',
             min: '0',
-            modelValue: isTime ? resolved.unit_rev : (line.unit_rev ?? ''),
+            modelValue: isTime ? (line.unit_rev ?? resolved.unit_rev ?? '') : (line.unit_rev ?? ''),
             disabled: !editable,
             class: 'w-28 text-right',
             onClick: (e: Event) => e.stopPropagation(),
@@ -841,8 +843,10 @@ const columns = computed(() => {
       header: 'Total Cost',
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
-        const d = apply(line).derived
-        return h('div', { class: 'text-right font-medium' }, `$${formatMoney(d.total_cost)}`)
+        const qty = Number(line.quantity || 0)
+        const umc = Number(line.unit_cost ?? apply(line).derived.unit_cost ?? 0)
+        const totalCost = String(line.kind) === 'time' ? qty * umc : qty * umc
+        return h('div', { class: 'text-right font-medium' }, `$${formatMoney(totalCost)}`)
       },
       meta: { editable: false },
     },
@@ -853,8 +857,10 @@ const columns = computed(() => {
       header: 'Total Revenue',
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
-        const d = apply(line).derived
-        return h('div', { class: 'text-right font-medium' }, `$${formatMoney(d.total_rev)}`)
+        const qty = Number(line.quantity ?? 0)
+        const umr = Number(line.unit_rev ?? apply(line).derived.unit_rev ?? 0)
+        const totalRev = qty * umr
+        return h('div', { class: 'text-right font-medium' }, `$${formatMoney(totalRev)}`)
       },
       meta: { editable: false },
     },
