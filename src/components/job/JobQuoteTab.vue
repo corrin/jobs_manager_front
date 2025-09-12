@@ -174,12 +174,6 @@
                       >
                         <BookOpen class="h-4 w-4 mr-1" /> Revisions
                       </Button>
-                      <Button variant="outline" size="sm" @click="printJob">
-                        <Printer class="h-4 w-4 mr-1" /> Print
-                      </Button>
-                      <Button variant="outline" size="sm" @click="downloadJobSheet">
-                        <Download class="h-4 w-4 mr-1" /> Download Sheet
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -222,12 +216,6 @@
                         @click="onShowQuoteRevisions"
                       >
                         <BookOpen class="h-4 w-4 mr-1" /> Revisions
-                      </Button>
-                      <Button variant="outline" size="sm" @click="printJob">
-                        <Printer class="h-4 w-4 mr-1" /> Print
-                      </Button>
-                      <Button variant="outline" size="sm" @click="downloadJobSheet">
-                        <Download class="h-4 w-4 mr-1" /> Download Sheet
                       </Button>
                     </div>
                   </div>
@@ -551,20 +539,10 @@
 import { debugLog } from '../../utils/debug'
 
 import { ref, computed, watch, onMounted } from 'vue'
-import {
-  BookOpen,
-  PlusCircle,
-  RotateCcw,
-  FileX,
-  Copy,
-  Printer,
-  Download,
-  ExternalLink,
-} from 'lucide-vue-next'
+import { BookOpen, PlusCircle, RotateCcw, FileX, Copy, ExternalLink } from 'lucide-vue-next'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import { quoteService } from '../../services/quote.service'
-import { jobService } from '../../services/job.service'
 import { toast } from 'vue-sonner'
 import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
@@ -742,54 +720,6 @@ async function onApplySpreadsheetChanges() {
     toast.error('Error applying changes', { id: 'quote-apply' })
   } finally {
     toast.dismiss('quote-apply')
-  }
-}
-
-async function printJob() {
-  if (!props.jobData?.id) {
-    toast.error('Job ID not available')
-    return
-  }
-
-  try {
-    const blob = await jobService.getWorkshopPdf(props.jobData.id)
-    const pdfUrl = URL.createObjectURL(blob)
-
-    const printWindow = window.open(pdfUrl, '_blank')
-    if (printWindow) {
-      printWindow.addEventListener('load', () => {
-        printWindow.print()
-      })
-      toast.success('Print dialog opened')
-    } else {
-      toast.error('Failed to open print window. Please check popup blocker settings.')
-    }
-  } catch (error) {
-    toast.error('Error generating PDF for printing')
-    debugLog('Error printing job:', error)
-  }
-}
-
-async function downloadJobSheet() {
-  if (!props.jobData?.id) {
-    toast.error('Job ID not available')
-    return
-  }
-
-  try {
-    const blob = await jobService.getWorkshopPdf(props.jobData.id)
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `job_${props.jobData.job_number}_sheet.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    toast.success('Job sheet download started')
-  } catch (error) {
-    toast.error('Error generating PDF for download')
-    debugLog('Error downloading job sheet:', error)
   }
 }
 

@@ -208,6 +208,20 @@
               </div>
             </div>
           </div>
+          <div class="flex items-center gap-2">
+            <button
+              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-gray-100 text-gray-700 border border-gray-300 text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              @click="printJob"
+            >
+              <Printer class="w-4 h-4 mr-1" /> Print
+            </button>
+            <button
+              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-gray-100 text-gray-700 border border-gray-300 text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              @click="downloadJobSheet"
+            >
+              <Download class="w-4 h-4 mr-1" /> Download Sheet
+            </button>
+          </div>
         </div>
       </div>
 
@@ -294,8 +308,10 @@ import { useJobEvents } from '../composables/useJobEvents'
 import { useJobHeaderAutosave } from '../composables/useJobHeaderAutosave'
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { api } from '../api/client'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft, Printer, Download } from 'lucide-vue-next'
 import { JOB_STATUS_CHOICES } from '../constants/job-status'
+import { jobService } from '../services/job.service'
+import { toast } from 'vue-sonner'
 
 const route = useRoute()
 const router = useRouter()
@@ -568,6 +584,54 @@ function handleFileDeleted() {
 function handleReloadJob() {
   // Simple job reload when cost lines are changed
   jobsStore.fetchJob(jobId.value)
+}
+
+async function printJob() {
+  if (!jobDataWithPaid.value?.id) {
+    toast.error('Job ID not available')
+    return
+  }
+
+  try {
+    const blob = await jobService.getWorkshopPdf(jobDataWithPaid.value.id)
+    const pdfUrl = URL.createObjectURL(blob)
+
+    const printWindow = window.open(pdfUrl, '_blank')
+    if (printWindow) {
+      printWindow.addEventListener('load', () => {
+        printWindow.print()
+      })
+      toast.success('Print dialog opened')
+    } else {
+      toast.error('Failed to open print window. Please check popup blocker settings.')
+    }
+  } catch (error) {
+    toast.error('Error generating PDF for printing')
+    debugLog('Error printing job:', error)
+  }
+}
+
+async function downloadJobSheet() {
+  if (!jobDataWithPaid.value?.id) {
+    toast.error('Job ID not available')
+    return
+  }
+
+  try {
+    const blob = await jobService.getWorkshopPdf(jobDataWithPaid.value.id)
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `job_${jobDataWithPaid.value.job_number}_sheet.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success('Job sheet download started')
+  } catch (error) {
+    toast.error('Error generating PDF for download')
+    debugLog('Error downloading job sheet:', error)
+  }
 }
 
 debugLog('JobView - jobId:', jobId.value)
