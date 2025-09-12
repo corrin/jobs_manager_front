@@ -38,7 +38,57 @@
     </div>
 
     <!-- CONTENT: STICKY GRID ASIDE + MAIN -->
-    <div class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 min-h-0">
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 min-h-0">
+      <!-- MAIN (GRID) -->
+      <main class="bg-white rounded-xl border border-slate-200 flex flex-col min-h-0">
+        <div class="px-4 py-3 border-b border-slate-200">
+          <h3 class="text-lg font-semibold text-gray-900">Actual Details</h3>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto">
+          <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
+            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <span>Loading cost lines...</span>
+          </div>
+
+          <div v-else>
+            <SmartCostLinesTable
+              :lines="costLines"
+              tabKind="actual"
+              :readOnly="false"
+              :showItemColumn="true"
+              :showSourceColumn="true"
+              :sourceResolver="resolveSource"
+              :allowedKinds="['material', 'adjust']"
+              :blockedFieldsByKind="blockedFieldsByKind"
+              :consumeStockFn="consumeStockForNewLine"
+              :jobId="props.jobId"
+              :allowTypeEdit="true"
+              :negativeStockIds="negativeStockIds"
+              @delete-line="handleSmartDelete"
+              @add-line="handleAddLine"
+              @duplicate-line="() => {}"
+              @move-line="() => {}"
+              @create-line="handleCreateLine"
+            />
+          </div>
+        </div>
+      </main>
+
       <!-- ASIDE (STICKY): Summary + Invoices -->
       <aside class="space-y-4 lg:sticky lg:top-16 self-start">
         <div class="bg-white rounded-xl border border-slate-200">
@@ -180,56 +230,6 @@
           </Card>
         </div>
       </aside>
-
-      <!-- MAIN (GRID) -->
-      <main class="bg-white rounded-xl border border-slate-200 flex flex-col min-h-0">
-        <div class="px-4 py-3 border-b border-slate-200">
-          <h3 class="text-lg font-semibold text-gray-900">Actual Details</h3>
-        </div>
-
-        <div class="flex-1 min-h-0 overflow-auto">
-          <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
-            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              />
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <span>Loading cost lines...</span>
-          </div>
-
-          <div v-else>
-            <SmartCostLinesTable
-              :lines="costLines"
-              tabKind="actual"
-              :readOnly="false"
-              :showItemColumn="true"
-              :showSourceColumn="true"
-              :sourceResolver="resolveSource"
-              :allowedKinds="['material', 'adjust']"
-              :blockedFieldsByKind="blockedFieldsByKind"
-              :consumeStockFn="consumeStockForNewLine"
-              :jobId="props.jobId"
-              :allowTypeEdit="true"
-              :negativeStockIds="negativeStockIds"
-              @delete-line="handleSmartDelete"
-              @add-line="handleAddLine"
-              @duplicate-line="() => {}"
-              @move-line="() => {}"
-              @create-line="handleCreateLine"
-            />
-          </div>
-        </div>
-      </main>
     </div>
 
     <!-- DIALOGS -->

@@ -13,7 +13,46 @@
     </div>
 
     <!-- CONTENT: STICKY GRID ASIDE + MAIN -->
-    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 min-h-0">
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 min-h-0">
+      <!-- MAIN -->
+      <main class="bg-white rounded-xl border border-slate-200 flex flex-col min-h-0">
+        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
+          <button
+            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style="min-width: 0"
+            @click="onCopyFromEstimate"
+            :disabled="
+              isLoading || !props.jobData?.latest_estimate?.cost_lines?.length || !hasEstimateData
+            "
+            :title="'Copy from Estimate'"
+          >
+            <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto">
+          <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
+            <!-- spinner -->
+          </div>
+          <template v-else>
+            <SmartCostLinesTable
+              v-if="hasCostSetQuote"
+              :lines="costLines"
+              tabKind="quote"
+              :readOnly="isLoading || areEditsBlocked"
+              :showItemColumn="true"
+              :showSourceColumn="false"
+              @delete-line="handleSmartDelete"
+              @add-line="handleAddEmptyLine"
+              @duplicate-line="(line) => handleAddMaterial(line)"
+              @create-line="handleCreateFromEmpty"
+            />
+            <div v-else class="text-center py-8 text-gray-500">No quote data available</div>
+          </template>
+        </div>
+      </main>
+
       <!-- ASIDE -->
       <aside class="space-y-4 lg:sticky lg:top-16 self-start">
         <!-- Summary -->
@@ -198,45 +237,6 @@
           </Card>
         </div>
       </aside>
-
-      <!-- MAIN -->
-      <main class="bg-white rounded-xl border border-slate-200 flex flex-col min-h-0">
-        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
-          <button
-            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style="min-width: 0"
-            @click="onCopyFromEstimate"
-            :disabled="
-              isLoading || !props.jobData?.latest_estimate?.cost_lines?.length || !hasEstimateData
-            "
-            :title="'Copy from Estimate'"
-          >
-            <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
-          </button>
-        </div>
-
-        <div class="flex-1 min-h-0 overflow-auto">
-          <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
-            <!-- spinner -->
-          </div>
-          <template v-else>
-            <SmartCostLinesTable
-              v-if="hasCostSetQuote"
-              :lines="costLines"
-              tabKind="quote"
-              :readOnly="isLoading || areEditsBlocked"
-              :showItemColumn="true"
-              :showSourceColumn="false"
-              @delete-line="handleSmartDelete"
-              @add-line="handleAddEmptyLine"
-              @duplicate-line="(line) => handleAddMaterial(line)"
-              @create-line="handleCreateFromEmpty"
-            />
-            <div v-else class="text-center py-8 text-gray-500">No quote data available</div>
-          </template>
-        </div>
-      </main>
     </div>
 
     <Dialog :open="showPreviewModal" @update:open="showPreviewModal = $event">

@@ -8,22 +8,7 @@
         </h2>
       </div>
     </div>
-    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 min-h-0">
-      <aside class="space-y-4 lg:sticky lg:top-16 self-start">
-        <div class="bg-white rounded-xl border border-slate-200">
-          <div class="p-3 w-full">
-            <CompactSummaryCard
-              title="Estimate Summary"
-              class="w-full"
-              :summary="props.estimateSummaryFromBackend || estimateSummary"
-              :costLines="costLines"
-              :isLoading="isLoading"
-              :revision="revision"
-              @expand="showDetailedSummary = true"
-            />
-          </div>
-        </div>
-      </aside>
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 min-h-0">
       <main class="bg-white rounded-xl border border-slate-200 flex flex-col min-h-0">
         <div class="px-4 py-3 border-b border-slate-200">
           <h3 class="text-lg font-semibold text-gray-900">Estimate Details</h3>
@@ -43,6 +28,21 @@
           />
         </div>
       </main>
+      <aside class="space-y-4 lg:sticky lg:top-16 self-start">
+        <div class="bg-white rounded-xl border border-slate-200">
+          <div class="p-3 w-full">
+            <CompactSummaryCard
+              title="Estimate Summary"
+              class="w-full"
+              :summary="props.estimateSummaryFromBackend || estimateSummary"
+              :costLines="costLines"
+              :isLoading="isLoading"
+              :revision="revision"
+              @expand="showDetailedSummary = true"
+            />
+          </div>
+        </div>
+      </aside>
     </div>
 
     <!-- Detailed Summary Dialog -->
