@@ -13,7 +13,46 @@
     </div>
 
     <!-- CONTENT: STICKY GRID ASIDE + MAIN -->
-    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 min-h-0">
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 min-h-0">
+      <!-- MAIN -->
+      <main class="bg-white rounded-xl border border-slate-200 flex flex-col min-h-0">
+        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
+          <button
+            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style="min-width: 0"
+            @click="onCopyFromEstimate"
+            :disabled="
+              isLoading || !props.jobData?.latest_estimate?.cost_lines?.length || !hasEstimateData
+            "
+            :title="'Copy from Estimate'"
+          >
+            <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
+          </button>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto">
+          <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
+            <!-- spinner -->
+          </div>
+          <template v-else>
+            <SmartCostLinesTable
+              v-if="hasCostSetQuote"
+              :lines="costLines"
+              tabKind="quote"
+              :readOnly="isLoading || areEditsBlocked"
+              :showItemColumn="true"
+              :showSourceColumn="false"
+              @delete-line="handleSmartDelete"
+              @add-line="handleAddEmptyLine"
+              @duplicate-line="(line) => handleAddMaterial(line)"
+              @create-line="handleCreateFromEmpty"
+            />
+            <div v-else class="text-center py-8 text-gray-500">No quote data available</div>
+          </template>
+        </div>
+      </main>
+
       <!-- ASIDE -->
       <aside class="space-y-4 lg:sticky lg:top-16 self-start">
         <!-- Summary -->
@@ -135,12 +174,6 @@
                       >
                         <BookOpen class="h-4 w-4 mr-1" /> Revisions
                       </Button>
-                      <Button variant="outline" size="sm" @click="printJob">
-                        <Printer class="h-4 w-4 mr-1" /> Print
-                      </Button>
-                      <Button variant="outline" size="sm" @click="downloadJobSheet">
-                        <Download class="h-4 w-4 mr-1" /> Download Sheet
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -184,12 +217,6 @@
                       >
                         <BookOpen class="h-4 w-4 mr-1" /> Revisions
                       </Button>
-                      <Button variant="outline" size="sm" @click="printJob">
-                        <Printer class="h-4 w-4 mr-1" /> Print
-                      </Button>
-                      <Button variant="outline" size="sm" @click="downloadJobSheet">
-                        <Download class="h-4 w-4 mr-1" /> Download Sheet
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -198,45 +225,6 @@
           </Card>
         </div>
       </aside>
-
-      <!-- MAIN -->
-      <main class="bg-white rounded-xl border border-slate-200 flex flex-col min-h-0">
-        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
-          <button
-            class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style="min-width: 0"
-            @click="onCopyFromEstimate"
-            :disabled="
-              isLoading || !props.jobData?.latest_estimate?.cost_lines?.length || !hasEstimateData
-            "
-            :title="'Copy from Estimate'"
-          >
-            <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
-          </button>
-        </div>
-
-        <div class="flex-1 min-h-0 overflow-auto">
-          <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
-            <!-- spinner -->
-          </div>
-          <template v-else>
-            <SmartCostLinesTable
-              v-if="hasCostSetQuote"
-              :lines="costLines"
-              tabKind="quote"
-              :readOnly="isLoading || areEditsBlocked"
-              :showItemColumn="true"
-              :showSourceColumn="false"
-              @delete-line="handleSmartDelete"
-              @add-line="handleAddEmptyLine"
-              @duplicate-line="(line) => handleAddMaterial(line)"
-              @create-line="handleCreateFromEmpty"
-            />
-            <div v-else class="text-center py-8 text-gray-500">No quote data available</div>
-          </template>
-        </div>
-      </main>
     </div>
 
     <Dialog :open="showPreviewModal" @update:open="showPreviewModal = $event">
@@ -551,20 +539,10 @@
 import { debugLog } from '../../utils/debug'
 
 import { ref, computed, watch, onMounted } from 'vue'
-import {
-  BookOpen,
-  PlusCircle,
-  RotateCcw,
-  FileX,
-  Copy,
-  Printer,
-  Download,
-  ExternalLink,
-} from 'lucide-vue-next'
+import { BookOpen, PlusCircle, RotateCcw, FileX, Copy, ExternalLink } from 'lucide-vue-next'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import { quoteService } from '../../services/quote.service'
-import { jobService } from '../../services/job.service'
 import { toast } from 'vue-sonner'
 import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
@@ -742,54 +720,6 @@ async function onApplySpreadsheetChanges() {
     toast.error('Error applying changes', { id: 'quote-apply' })
   } finally {
     toast.dismiss('quote-apply')
-  }
-}
-
-async function printJob() {
-  if (!props.jobData?.id) {
-    toast.error('Job ID not available')
-    return
-  }
-
-  try {
-    const blob = await jobService.getWorkshopPdf(props.jobData.id)
-    const pdfUrl = URL.createObjectURL(blob)
-
-    const printWindow = window.open(pdfUrl, '_blank')
-    if (printWindow) {
-      printWindow.addEventListener('load', () => {
-        printWindow.print()
-      })
-      toast.success('Print dialog opened')
-    } else {
-      toast.error('Failed to open print window. Please check popup blocker settings.')
-    }
-  } catch (error) {
-    toast.error('Error generating PDF for printing')
-    debugLog('Error printing job:', error)
-  }
-}
-
-async function downloadJobSheet() {
-  if (!props.jobData?.id) {
-    toast.error('Job ID not available')
-    return
-  }
-
-  try {
-    const blob = await jobService.getWorkshopPdf(props.jobData.id)
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `job_${props.jobData.job_number}_sheet.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    toast.success('Job sheet download started')
-  } catch (error) {
-    toast.error('Error generating PDF for download')
-    debugLog('Error downloading job sheet:', error)
   }
 }
 

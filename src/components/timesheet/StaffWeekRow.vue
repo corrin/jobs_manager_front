@@ -29,40 +29,39 @@
     </td>
 
     <!-- Daily Hours Columns -->
-    <td
-      v-for="(day, index) in staff.weekly_hours"
-      :key="index"
-      class="px-1 py-1.5 lg:py-2 text-center relative"
-    >
+    <td v-for="idx in visibleIndexes" :key="idx" class="px-1 py-1.5 lg:py-2 text-center relative">
       <div
         class="flex items-center justify-center min-h-[28px] lg:min-h-[32px] rounded-md transition-all duration-200 relative group/cell"
-        :class="getDayBackgroundClass(day)"
-        :title="getDayTooltip(day)"
+        :class="getDayBackgroundClass(staff.weekly_hours[idx])"
+        :title="getDayTooltip(staff.weekly_hours[idx])"
       >
         <!-- Hours Display -->
         <div class="flex items-center space-x-0.5 lg:space-x-1">
-          <span v-if="day.hours > 0" class="text-xs lg:text-sm font-medium">
-            {{ formatHours(day.hours) }}
+          <span v-if="staff.weekly_hours[idx].hours > 0" class="text-xs lg:text-sm font-medium">
+            {{ formatHours(staff.weekly_hours[idx].hours) }}
           </span>
           <span v-else class="text-xs lg:text-sm text-gray-400">-</span>
 
           <!-- Status/Leave Icon -->
           <div class="flex-shrink-0">
-            <StatusBadge :status="day.status || ''" :leave-type="day.leave_type as string" />
+            <StatusBadge
+              :status="staff.weekly_hours[idx].status || ''"
+              :leave-type="staff.weekly_hours[idx].leave_type as string"
+            />
           </div>
         </div>
 
         <!-- IMS Mode Indicators -->
         <div v-if="imsMode" class="absolute top-0 right-0 flex space-x-0.5 p-0.5">
           <div
-            v-if="day.overtime && day.overtime > 0"
+            v-if="staff.weekly_hours[idx].overtime && staff.weekly_hours[idx].overtime > 0"
             class="h-1 lg:h-1.5 w-1 lg:w-1.5 bg-orange-500 rounded-full"
-            :title="`Overtime: ${formatHours(day.overtime)}h`"
+            :title="`Overtime: ${formatHours(staff.weekly_hours[idx].overtime)}h`"
           ></div>
           <div
-            v-if="day.leave_hours && day.leave_hours > 0"
+            v-if="staff.weekly_hours[idx].leave_hours && staff.weekly_hours[idx].leave_hours > 0"
             class="h-1 lg:h-1.5 w-1 lg:w-1.5 bg-blue-500 rounded-full"
-            :title="`Leave: ${formatHours(day.leave_hours)}h`"
+            :title="`Leave: ${formatHours(staff.weekly_hours[idx].leave_hours)}h`"
           ></div>
         </div>
 
@@ -72,20 +71,20 @@
           class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 lg:mb-2 px-1.5 lg:px-2 py-1 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover/cell:opacity-100 transition-opacity duration-200 z-10 pointer-events-none whitespace-nowrap"
         >
           <div class="space-y-0.5 lg:space-y-1">
-            <div v-if="day.standard_hours" class="text-xs lg:text-sm">
-              Standard: {{ formatHours(day.standard_hours) }}h
+            <div v-if="staff.weekly_hours[idx].standard_hours" class="text-xs lg:text-sm">
+              Standard: {{ formatHours(staff.weekly_hours[idx].standard_hours) }}h
             </div>
-            <div v-if="day.time_and_half_hours" class="text-xs lg:text-sm">
-              Time & Half: {{ formatHours(day.time_and_half_hours) }}h
+            <div v-if="staff.weekly_hours[idx].time_and_half_hours" class="text-xs lg:text-sm">
+              Time & Half: {{ formatHours(staff.weekly_hours[idx].time_and_half_hours) }}h
             </div>
-            <div v-if="day.double_time_hours" class="text-xs lg:text-sm">
-              Double Time: {{ formatHours(day.double_time_hours) }}h
+            <div v-if="staff.weekly_hours[idx].double_time_hours" class="text-xs lg:text-sm">
+              Double Time: {{ formatHours(staff.weekly_hours[idx].double_time_hours) }}h
             </div>
-            <div v-if="day.leave_hours" class="text-xs lg:text-sm">
-              Leave: {{ formatHours(day.leave_hours) }}h
+            <div v-if="staff.weekly_hours[idx].leave_hours" class="text-xs lg:text-sm">
+              Leave: {{ formatHours(staff.weekly_hours[idx].leave_hours) }}h
             </div>
-            <div v-if="day.unpaid_hours" class="text-xs lg:text-sm">
-              Unpaid: {{ formatHours(day.unpaid_hours) }}h
+            <div v-if="staff.weekly_hours[idx].unpaid_hours" class="text-xs lg:text-sm">
+              Unpaid: {{ formatHours(staff.weekly_hours[idx].unpaid_hours) }}h
             </div>
           </div>
           <div
@@ -131,6 +130,7 @@ interface Props {
   staff: WeeklyStaffData
   imsMode: boolean
   weekDays: Array<{ date: string; name: string; short: string }>
+  visibleIndexes: number[]
 }
 
 defineProps<Props>()

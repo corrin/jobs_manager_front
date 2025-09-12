@@ -832,6 +832,7 @@ const handleReceiptSave = async (payload: {
     'partially_received',
     'fully_received',
   ]
+
   if (!allowedStatuses.includes(po.value.status)) {
     toast.error('The purchase order must be sent to the supplier before creating receipts')
     return
@@ -851,14 +852,7 @@ const handleReceiptSave = async (payload: {
     return quantity > 0 && hasValidJobId
   })
 
-  // 1. Get the allocations that ALREADY EXIST for this row from the component state.
-  // We map to the simple format the API expects (job_id and quantity).
-  const existingAllocs = (existingAllocations.value[lineId] || []).map((alloc) => ({
-    job_id: alloc.job_id,
-    quantity: alloc.quantity,
-  }))
-
-  // 2. Maps NEW allocations received from the publisher to the API format.
+  // Maps NEW allocations received from the publisher to the API format.
   const newApiAllocations: DeliveryAllocation[] = validNewRows.map((r) => {
     const isStock = r.target === 'stock'
     return {
@@ -867,24 +861,35 @@ const handleReceiptSave = async (payload: {
     }
   })
 
-  // 3. Combine the existing allocations with the new ones that were just created.
-  const combinedAllocations = [...existingAllocs, ...newApiAllocations]
-
-  if (combinedAllocations.length === 0) {
-    debugLog('❌ No valid allocations to save after combining existing and new.')
+  if (newApiAllocations.length === 0) {
+    debugLog('❌ No valid allocations to save.')
     return
   }
 
-  const map: Record<string, DeliveryAllocation[]> = { [lineId]: combinedAllocations }
+  const byJob: Record<string, number> = {}
+  for (const a of newApiAllocations) {
+    byJob[a.job_id] = (byJob[a.job_id] ?? 0) + a.quantity
+  }
+  const consolidated: DeliveryAllocation[] = Object.entries(byJob).map(([job_id, quantity]) => ({
+    job_id,
+    quantity,
+  }))
+
+  // Validate against remaining quantity
+  const ordered = po.value.lines.find((l) => l.id === lineId)?.quantity ?? 0
+  const already = po.value.lines.find((l) => l.id === lineId)?.received_quantity ?? 0
+  const remaining = Math.max(0, ordered - already)
+  const totalNew = consolidated.reduce((s, a) => s + a.quantity, 0)
+  if (totalNew > remaining) {
+    toast.error('Allocation exceeds remaining quantity for this line')
+    return
+  }
+
+  const map: Record<string, DeliveryAllocation[]> = { [lineId]: consolidated }
   const request = transformDeliveryReceiptForAPI(po.value.id, map)
 
   try {
-    debugLog(
-      '💾 Saving receipt for line:',
-      lineId,
-      'with combined allocations:',
-      combinedAllocations,
-    )
+    debugLog('💾 Saving receipt for line:', lineId, 'with NEW allocations:', consolidated)
     await receiptStore.submitDeliveryReceipt(po.value.id, request.allocations)
     toast.success('Receipt saved')
 

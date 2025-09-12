@@ -225,8 +225,8 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
   const dragType = event.dataTransfer?.getData('application/x-drag-type')
 
   // Only handle staff drops, let job drops pass through to SortableJS
-  if (dragType !== 'staff' && !dragData?.startsWith('staff-')) {
-    // This is likely a job drag, don't intercept it
+  if (dragType !== 'staff' || !dragData) {
+    // This is likely a job drag or invalid drag, don't intercept it
     return
   }
 

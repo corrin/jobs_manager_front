@@ -4,9 +4,9 @@
       <div class="p-3 border-b border-gray-200">
         <div class="flex items-center justify-between">
           <h3 class="font-semibold text-gray-900 text-sm">
-            {{ status.label }}
+            {{ normalizedStatus.label }}
           </h3>
-          <div class="group relative" :title="status.tooltip">
+          <div class="group relative" :title="normalizedStatus.tooltip">
             <span class="w-4 h-4 text-gray-400 hover:text-gray-600 font-bold text-sm">
               ({{ jobs.length }})
             </span>
@@ -16,14 +16,14 @@
 
       <div
         ref="jobListRef"
-        :data-status="status.key"
-        class="p-3 transition-colors duration-200"
+        :data-status="normalizedStatus.key"
+        class="p-3 transition-colors duration-200 relative h-[calc(90vh-12.5rem)] overflow-y-auto"
         :class="{
           'bg-blue-50 border-blue-200': isDragging,
           // Single column layout with Tailwind - option to toggle back to 2-column by changing 'grid-cols-1' to 'grid-cols-2'
           'space-y-3': jobs.length > 0,
+          'min-h-32': normalizedStatus.key === 'draft' && jobs.length === 0,
         }"
-        style="height: calc(90vh - 12.5rem); overflow-y: auto"
       >
         <JobCard
           v-for="job in jobs"
@@ -40,18 +40,18 @@
           @staff-unassigned="$emit('staff-unassigned', $event)"
         />
 
+        <!-- Only show empty state for non-draft columns or when not loading -->
         <div
-          v-if="jobs.length === 0 && !isLoading"
+          v-if="jobs.length === 0 && !isLoading && normalizedStatus.key !== 'draft'"
           class="flex items-center justify-center text-gray-500 h-32"
         >
           <div class="text-center">
-            <div v-if="isLoading" class="text-sm">
-              Still loading jobs {{ status.label.toLowerCase() }}
-            </div>
-            <div v-else class="text-sm">No jobs in {{ status.label.toLowerCase() }}</div>
-            <div v-if="!isLoading" class="text-xs mt-1">Drag jobs here to update status</div>
+            <div class="text-sm">No jobs in {{ normalizedStatus.label.toLowerCase() }}</div>
+            <div class="text-xs mt-1">Drag jobs here to update status</div>
           </div>
         </div>
+
+        <!-- No empty state for draft column to prevent SortableJS interference -->
 
         <div
           v-if="jobs.length === 0 && isLoading"
@@ -62,7 +62,8 @@
               class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"
             ></div>
             <div class="text-sm">
-              Jobs in {{ status.label.toLowerCase() }} status are still loading, please wait
+              Jobs in {{ normalizedStatus.label.toLowerCase() }} status are still loading, please
+              wait
             </div>
           </div>
         </div>
@@ -93,7 +94,7 @@
     <div v-else class="w-full">
       <div
         ref="jobListRef"
-        :data-status="status.key"
+        :data-status="normalizedStatus.key"
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
       >
         <div
@@ -140,7 +141,7 @@
 <script setup lang="ts">
 import { debugLog } from '@/utils/debug'
 
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import JobCard from '@/components/JobCard.vue'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
@@ -149,7 +150,7 @@ type Job = z.infer<typeof schemas.Job>
 type StatusChoice = z.infer<typeof schemas.Status7b9Enum>
 
 interface KanbanColumnProps {
-  status: StatusChoice
+  status: StatusChoice | { key: string; label: string; tooltip?: string }
   jobs: Job[]
   showLoadMore?: boolean
   isLoading?: boolean
@@ -179,6 +180,18 @@ const props = withDefaults(defineProps<KanbanColumnProps>(), {
   isJobSelectedForMovement: () => false,
 })
 
+// Normalize status to handle both string and object formats
+const normalizedStatus = computed(() => {
+  if (typeof props.status === 'string') {
+    return {
+      key: props.status,
+      label: props.status.charAt(0).toUpperCase() + props.status.slice(1).replace(/_/g, ' '),
+      tooltip: `Status: ${props.status.replace(/_/g, ' ')}`,
+    }
+  }
+  return props.status
+})
+
 const emit = defineEmits<KanbanColumnEmits>()
 
 const jobListRef = ref<HTMLElement>()
@@ -197,8 +210,8 @@ onMounted(async () => {
   await nextTick()
 
   if (jobListRef.value) {
-    debugLog(`🔧 Column ${props.status.key} ready, emitting sortable-ready`)
-    emit('sortable-ready', jobListRef.value, props.status.key)
+    debugLog(`🔧 Column ${normalizedStatus.value.key} ready, emitting sortable-ready`)
+    emit('sortable-ready', jobListRef.value, normalizedStatus.value.key)
 
     jobListRef.value.addEventListener('archived-job-drop', handleArchivedJobDrop as EventListener)
   }

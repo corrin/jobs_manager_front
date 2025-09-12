@@ -287,9 +287,6 @@ export function useTimesheetEntryGrid(
       // Skip if already saving
       if ((data as TimesheetEntryGridRowWithSaving).isSaving) return
 
-      // ✅ DISABLED AUTOSAVE - Only mark as modified, don't save automatically
-      // This prevents duplicate saves when user clicks "Save All"
-
       // Handle existing row updates - ONLY mark as modified
       if (!data.isNewRow && updatedEntry.id && !isRowEmpty(updatedEntry)) {
         data.isModified = true
