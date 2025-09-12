@@ -455,6 +455,15 @@ const sortableInitialized = ref<Set<string>>(new Set())
 const columnsReadyForSortable = ref<Map<string, HTMLElement>>(new Map())
 
 const handleSortableReady = (element: HTMLElement, status: string) => {
+  console.log(`🔧 handleSortableReady called for ${status}`, {
+    status,
+    element,
+    elementConnected: element.isConnected,
+    elementDataStatus: element.dataset.status,
+    elementId: element.id,
+    elementClasses: element.className,
+  })
+
   columnsReadyForSortable.value.set(status, element)
 
   const columnJobs = getJobsByStatus.value(status)

@@ -122,6 +122,7 @@ const handleDragStart = (staffId: string, event: DragEvent): void => {
   console.log('🎯 Staff drag start:', staffId)
   if (event.dataTransfer) {
     event.dataTransfer.setData('text/plain', staffId)
+    event.dataTransfer.setData('application/x-drag-type', 'staff')
     event.dataTransfer.effectAllowed = 'copy'
   }
 
