@@ -234,11 +234,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
   // Optimistic job status update
   const updateJobStatusOptimistic = async (jobId: string, newStatus: string): Promise<void> => {
-    if (newStatus === 'draft') {
-      debugLog(`🎯 DRAFT COLUMN: Optimistic update: Job ${jobId} -> ${newStatus}`)
-    } else {
-      debugLog(`🎯 Optimistic update: Job ${jobId} -> ${newStatus}`)
-    }
+    debugLog(`🔄 Starting status update: Job ${jobId} -> ${newStatus}`)
 
     // Find the job in current columns
     let sourceColumnId: string | null = null
@@ -249,34 +245,23 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       if (jobIndex !== -1) {
         sourceColumnId = columnId
         job = columnState.jobs[jobIndex]
-        // Don't remove from source column yet - let revalidation handle it
-        if (columnId === 'draft' || newStatus === 'draft') {
-          debugLog(
-            `🎯 DRAFT COLUMN: Found job ${jobId} in column ${columnId}, moving to ${newStatus}`,
-          )
-        }
+        debugLog(`📍 Found job ${jobId} in column ${columnId}`)
         break
       }
     }
 
     if (!job || !sourceColumnId) {
-      if (newStatus === 'draft') {
-        debugLog(`❌ DRAFT COLUMN: Job ${jobId} not found for optimistic update`)
-      } else {
-        debugLog(`❌ Job ${jobId} not found for optimistic update`)
-      }
+      debugLog(`❌ Job ${jobId} not found for status update`)
       return
     }
 
     // Determine target column
     const targetColumnId = KanbanCategorizationService.getColumnForStatus(newStatus)
-
-    if (sourceColumnId === 'draft' || targetColumnId === 'draft') {
-      debugLog(`🎯 DRAFT COLUMN: Target column for status ${newStatus} is ${targetColumnId}`)
-    }
+    debugLog(`🎯 Moving from column ${sourceColumnId} to ${targetColumnId}`)
 
     try {
-      // Make API call first without touching UI
+      // Make API call first
+      debugLog(`📡 Calling API to update job status`)
       await jobService.updateJobStatus(jobId, newStatus)
       debugLog(`✅ Job ${jobId} status updated successfully`)
 
@@ -284,10 +269,23 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       const columnsToRevalidate = [sourceColumnId, targetColumnId].filter(
         (id, index, arr) => arr.indexOf(id) === index, // Remove duplicates
       )
+      debugLog(`🔄 Revalidating columns: ${columnsToRevalidate.join(', ')}`)
       await revalidateColumns(columnsToRevalidate)
+      debugLog(`✅ Status update and revalidation completed`)
     } catch (err) {
       debugLog(`❌ Failed to update job ${jobId} status:`, err)
       error.value = err instanceof Error ? err.message : 'Failed to update job status'
+
+      // On error, revalidate both columns to ensure consistency
+      try {
+        const columnsToRevalidate = [sourceColumnId, targetColumnId].filter(
+          (id, index, arr) => arr.indexOf(id) === index,
+        )
+        await revalidateColumns(columnsToRevalidate)
+        debugLog(`🔄 Emergency revalidation completed after error`)
+      } catch (revalidateErr) {
+        debugLog(`❌ Emergency revalidation also failed:`, revalidateErr)
+      }
     }
   }
 
@@ -306,12 +304,20 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
     })
 
     try {
+      debugLog(`🔄 Calling reorderJob API with:`, {
+        jobId,
+        beforeId,
+        afterId,
+        status,
+      })
+
       await jobService.reorderJob(jobId, beforeId, afterId, status)
       debugLog(`✅ Job ${jobId} reordered successfully`)
 
       // Revalidate the affected column to get correct positioning
       if (status) {
         const columnId = KanbanCategorizationService.getColumnForStatus(status)
+        debugLog(`🔄 Revalidating column: ${columnId}`)
         await revalidateColumns([columnId])
       }
     } catch (err) {
@@ -321,6 +327,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       // Revalidate the affected column on error too
       if (status) {
         const columnId = KanbanCategorizationService.getColumnForStatus(status)
+        debugLog(`🔄 Revalidating column on error: ${columnId}`)
         await revalidateColumns([columnId])
       }
     }
@@ -494,8 +501,15 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
   // Initialize
   onMounted(async () => {
-    initializeColumnStates()
-    await Promise.all([loadAllColumns(), loadStatusChoices()])
+    try {
+      debugLog('🚀 Initializing Kanban...')
+      initializeColumnStates()
+      await Promise.all([loadAllColumns(), loadStatusChoices()])
+      debugLog('✅ Kanban initialization complete')
+    } catch (error) {
+      debugLog('❌ Error during Kanban initialization:', error)
+      error.value = error instanceof Error ? error.message : 'Failed to initialize kanban'
+    }
   })
 
   return {
