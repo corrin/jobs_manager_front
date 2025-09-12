@@ -382,6 +382,16 @@ const handleStatusUpdate = (newStatus: string) => {
   }
 }
 
+const handlePaidUpdate = (newVal: boolean) => {
+  debugLog('JobView - Paid update:', newVal, 'headerAutosave exists:', !!headerAutosave)
+  localPaid.value = newVal
+  if (headerAutosave) {
+    headerAutosave.handlePaidUpdate(newVal)
+  } else {
+    debugLog('JobView - headerAutosave not initialized yet for paid update')
+  }
+}
+
 const handlePricingMethodologyUpdate = (newMethod: string) => {
   debugLog(
     'JobView - Pricing methodology update:',
@@ -638,6 +648,10 @@ debugLog('JobView - jobId:', jobId.value)
 
 watch(jobData, (val) => {
   debugLog('JobView - jobData changed:', val)
+})
+
+watch(localPaid, (newVal) => {
+  handlePaidUpdate(newVal)
 })
 
 onMounted(() => {

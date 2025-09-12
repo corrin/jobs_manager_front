@@ -196,12 +196,13 @@
               </div>
             </CardContent>
 
-            <div v-if="!props.jobData?.paid">
+            <!-- Invoice footer: visible always; disabled if paid -->
+            <div>
               <div class="border-t border-slate-200"></div>
-              <CardFooter class="flex justify-center pt-4">
+              <CardFooter class="flex flex-col items-center gap-2 pt-4">
                 <button
                   @click="createInvoice()"
-                  :disabled="isCreatingInvoice"
+                  :disabled="isCreatingInvoice || !!props.jobData?.paid"
                   class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 flex items-center gap-2"
                 >
                   <svg
@@ -225,6 +226,10 @@
                   </svg>
                   {{ isCreatingInvoice ? 'Creating...' : 'Create Invoice' }}
                 </button>
+
+                <p v-if="props.jobData?.paid" class="text-xs text-slate-500 text-center">
+                  Job is marked as <strong>Paid</strong>. Unmark “Paid” to create another invoice.
+                </p>
               </CardFooter>
             </div>
           </Card>

@@ -17,14 +17,13 @@
       <div
         ref="jobListRef"
         :data-status="normalizedStatus.key"
-        class="p-3 transition-colors duration-200 relative"
+        class="p-3 transition-colors duration-200 relative h-[calc(90vh-12.5rem)] overflow-y-auto"
         :class="{
           'bg-blue-50 border-blue-200': isDragging,
           // Single column layout with Tailwind - option to toggle back to 2-column by changing 'grid-cols-1' to 'grid-cols-2'
           'space-y-3': jobs.length > 0,
           'min-h-32': normalizedStatus.key === 'draft' && jobs.length === 0,
         }"
-        style="height: calc(90vh - 12.5rem); overflow-y: auto"
       >
         <JobCard
           v-for="job in jobs"
