@@ -14,7 +14,23 @@
         </div>
       </div>
 
-      <div class="overflow-y-auto max-h-[67vh] rounded-2xl shadow-lg border">
+      <div class="flex items-center gap-4">
+        <div class="relative flex-1 max-w-md">
+          <Search
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"
+          />
+          <input
+            v-model="searchTerm"
+            type="text"
+            placeholder="Search by PO #, Supplier, or Status..."
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+      </div>
+
+      <div
+        class="overflow-y-auto max-h-[70.3vh] lg:max-h-[80vh] xl:max-h-[85vh] rounded-2xl shadow-lg border"
+      >
         <table class="min-w-full text-sm">
           <thead class="bg-slate-50 border-b">
             <tr>
@@ -84,7 +100,7 @@ import { debugLog } from '@/utils/debug'
 
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
-import { FileText, Pencil, Trash2, PlusCircle, FileSpreadsheet } from 'lucide-vue-next'
+import { FileText, Pencil, Trash2, PlusCircle, FileSpreadsheet, Search } from 'lucide-vue-next'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -96,13 +112,30 @@ const store = usePurchaseOrderStore()
 const orders = computed(() => store.orders)
 
 const page = ref(1)
-const pageSize = 10
+const pageSize = 11
+const searchTerm = ref('')
 
-const totalPages = computed(() => Math.max(1, Math.ceil(orders.value.length / pageSize)))
+const filteredOrders = computed(() => {
+  if (!searchTerm.value.trim()) {
+    return orders.value
+  }
+
+  const term = searchTerm.value.toLowerCase()
+  return orders.value.filter(
+    (
+      po: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    ) =>
+      po.po_number.toLowerCase().includes(term) ||
+      po.supplier.toLowerCase().includes(term) ||
+      formatStatus(po.status).toLowerCase().includes(term),
+  )
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredOrders.value.length / pageSize)))
 
 const pagedOrders = computed(() => {
   const start = (page.value - 1) * pageSize
-  return orders.value.slice(start, start + pageSize)
+  return filteredOrders.value.slice(start, start + pageSize)
 })
 
 watch(
@@ -111,6 +144,10 @@ watch(
     if (page.value > totalPages.value) page.value = 1
   },
 )
+
+watch(searchTerm, () => {
+  page.value = 1
+})
 
 const formatStatus = (status: string) => {
   switch (status) {
@@ -159,7 +196,7 @@ const goToCreate = () => router.push('/purchasing/po/create')
 const createFromQuote = () => router.push('/purchasing/po/create-from-quote')
 
 const deletePo = async (id: string) => {
-  const po = orders.value.find((p) => p.id === id)
+  const po = orders.value.find((p: any) => p.id === id) // eslint-disable-line @typescript-eslint/no-explicit-any
   if (!po || isPoDeleted(po.status)) {
     toast.warning('This purchase order is already deleted')
     return
