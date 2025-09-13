@@ -106,6 +106,10 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Pagination from '@/components/ui/pagination/Pagination.vue'
 import { toast } from 'vue-sonner'
+import { schemas } from '@/api/generated/api'
+import { z } from 'zod'
+
+type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
 
 const router = useRouter()
 const store = usePurchaseOrderStore()
@@ -122,12 +126,10 @@ const filteredOrders = computed(() => {
 
   const term = searchTerm.value.toLowerCase()
   return orders.value.filter(
-    (
-      po: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    ) =>
+    (po: PurchaseOrder) =>
       po.po_number.toLowerCase().includes(term) ||
       po.supplier.toLowerCase().includes(term) ||
-      formatStatus(po.status).toLowerCase().includes(term),
+      formatStatus(po.status!).toLowerCase().includes(term),
   )
 })
 
@@ -196,8 +198,8 @@ const goToCreate = () => router.push('/purchasing/po/create')
 const createFromQuote = () => router.push('/purchasing/po/create-from-quote')
 
 const deletePo = async (id: string) => {
-  const po = orders.value.find((p: any) => p.id === id) // eslint-disable-line @typescript-eslint/no-explicit-any
-  if (!po || isPoDeleted(po.status)) {
+  const po = orders.value.find((p: PurchaseOrder) => p.id === id)
+  if (!po || isPoDeleted(po.status!)) {
     toast.warning('This purchase order is already deleted')
     return
   }
