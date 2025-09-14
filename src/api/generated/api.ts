@@ -582,6 +582,17 @@ const JobContactResponse = z
     notes: z.string().nullable(),
   })
   .passthrough()
+const JobContactUpdateRequest = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    email: z.string().nullable(),
+    phone: z.string().nullable(),
+    position: z.string().nullable(),
+    is_primary: z.boolean(),
+    notes: z.string().nullable(),
+  })
+  .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
 const JobFileStatusEnum = z.enum(['active', 'deleted'])
 const JobFile = z
@@ -1933,6 +1944,7 @@ export const schemas = {
   ClientCreateResponse,
   ClientDuplicateErrorResponse,
   JobContactResponse,
+  JobContactUpdateRequest,
   ClientSearchResponse,
   JobFileStatusEnum,
   JobFile,
@@ -3247,6 +3259,40 @@ Expected JSON:
     ],
     response: JobContactResponse,
     errors: [
+      {
+        status: 404,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/clients/jobs/:job_id/contact/',
+    alias: 'clients_jobs_contact_update',
+    description: `Update the contact person associated with a specific job.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: JobContactUpdateRequest,
+      },
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobContactResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
       {
         status: 404,
         schema: ClientErrorResponse,

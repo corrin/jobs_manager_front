@@ -1696,6 +1696,59 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
+    put:
+      operationId: clients_jobs_contact_update
+      description: Update the contact person associated with a specific job.
+      summary: Update job contact
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the job
+          required: true
+      tags:
+        - Clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobContactUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobContactUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JobContactUpdateRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobContactResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
   /clients/search/:
     get:
       operationId: clients_search_retrieve
@@ -7697,6 +7750,37 @@ components:
     JobContactResponse:
       type: object
       description: Serializer for job contact information response
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        position:
+          type: string
+          nullable: true
+        is_primary:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+      required:
+        - email
+        - id
+        - is_primary
+        - name
+        - notes
+        - phone
+        - position
+    JobContactUpdateRequest:
+      type: object
+      description: Serializer for job contact update request
       properties:
         id:
           type: string

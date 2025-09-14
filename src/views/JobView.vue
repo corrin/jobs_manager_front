@@ -37,6 +37,7 @@
               <div class="group">
                 <InlineEditClient
                   v-if="jobDataWithPaid"
+                  :key="localClientId"
                   :client-name="localClientName"
                   :client-id="localClientId"
                   @update:client="handleClientUpdate"
@@ -141,6 +142,7 @@
                 <div class="group">
                   <InlineEditClient
                     v-if="jobDataWithPaid"
+                    :key="localClientId"
                     :client-name="localClientName"
                     :client-id="localClientId"
                     @update:client="handleClientUpdate"

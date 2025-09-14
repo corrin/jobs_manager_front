@@ -229,8 +229,7 @@ function handleAddEmptyLine() {
     id: '', // empty ID indicates unsaved line
     kind: 'material',
     desc: '',
-    // @ts-expect-error - Allow null for initial empty state
-    quantity: null,
+    quantity: 1,
     // @ts-expect-error - Allow null for initial empty state
     unit_cost: null,
     // @ts-expect-error - Allow null for initial empty state

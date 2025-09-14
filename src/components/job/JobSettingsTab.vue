@@ -157,7 +157,7 @@
                 :optional="true"
                 :client-id="localJobData.client?.id || ''"
                 :client-name="localJobData.client?.name || ''"
-                :initial-contact-id="undefined"
+                :initial-contact-id="localJobData.contact_id"
                 v-model="contactDisplayValue"
                 @update:selected-contact="handleContactSelected"
               />
@@ -238,7 +238,7 @@ import { toast } from 'vue-sonner'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card'
 import { api } from '../../api/client'
 
-type ClientContact = z.infer<typeof schemas.ClientContactResult>
+type ClientContact = z.infer<typeof schemas.JobContactUpdateRequest>
 
 // Use the existing JobHeaderResponse schema from generated API
 type Job = z.infer<typeof schemas.JobHeaderResponse>
@@ -707,24 +707,39 @@ const handleClientUpdated = (updatedClient: Client) => {
   toast.success('Client updated successfully')
 }
 
-const handleContactSelected = (contact: ClientContact | null) => {
+const handleContactSelected = async (contact: ClientContact | null) => {
   if (contact) {
     localJobData.value.contact_id = contact.id
     localJobData.value.contact_name = contact.name
     contactDisplayValue.value = contact.name
+
+    // Ensure all fields are present for Zod validation (convert undefined to null)
+    const contactToSend = {
+      id: contact.id,
+      name: contact.name,
+      email: contact.email ?? null,
+      phone: contact.phone ?? null,
+      position: contact.position ?? null,
+      notes: contact.notes ?? null,
+      is_primary: contact.is_primary,
+    }
+
+    // Save contact directly (not through header autosave)
+    try {
+      await api.clients_jobs_contact_update(contactToSend, {
+        params: { job_id: props.jobId },
+      })
+      toast.success('Contact updated successfully')
+    } catch (error) {
+      toast.error('Failed to update contact')
+      debugLog('Failed to update contact:', error)
+    }
   } else {
+    // Clear contact locally - no API call needed since clearing means no contact association
     localJobData.value.contact_id = undefined
     localJobData.value.contact_name = undefined
     contactDisplayValue.value = ''
   }
-
-  // Include client_id to satisfy autosave validation
-  autosave.queueChanges({
-    contact_id: localJobData.value.contact_id ?? null,
-    contact_name: localJobData.value.contact_name ?? null,
-    client_id: localJobData.value.client?.id ?? null,
-  })
-  void autosave.flush('contact-change')
 }
 
 /* ------------------------------
@@ -777,6 +792,7 @@ const autosave = createJobAutosave({
       }
 
       // Build partial payload with current values of all basic info fields
+      // Build partial payload, excluding contact fields since they are saved separately
       const currentBasicInfo = jobsStore.currentBasicInfo
       const partialPayload: Partial<Job> = {
         ...patch,
@@ -822,9 +838,7 @@ const autosave = createJobAutosave({
             next.order_number = (patch.order_number as string | null) ?? null
           if ('notes' in patch) next.notes = (patch.notes as string | null) ?? null
 
-          if ('contact_id' in patch) next.contact_id = patch.contact_id as string | null | undefined
-          if ('contact_name' in patch)
-            next.contact_name = patch.contact_name as string | null | undefined
+          // Contact fields are handled separately, not through header
 
           return next
         }
@@ -944,22 +958,6 @@ watch(
     }
   },
   { deep: true },
-)
-watch(
-  () => localJobData.value.contact_id,
-  (v) => {
-    if (!isSyncingFromStore.value) {
-      enqueueIfNotInitializing('contact_id', v)
-    }
-  },
-)
-watch(
-  () => localJobData.value.contact_name,
-  (v) => {
-    if (!isSyncingFromStore.value) {
-      enqueueIfNotInitializing('contact_name', v)
-    }
-  },
 )
 
 // Watchers for basic info computed properties
