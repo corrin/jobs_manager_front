@@ -193,9 +193,6 @@ const pricingMethodologyString = computed(() => props.pricingMethodology || '')
 const quotedBoolean = computed(() => props.quoted || false)
 const fullyInvoicedBoolean = computed(() => props.fullyInvoiced || false)
 
-// Removed analysisData as it's no longer needed
-// Removed watches for jobData as it's no longer a prop
-
 watch(
   () => props.companyDefaults,
   (val) => {
