@@ -8,7 +8,6 @@ import { z } from 'zod'
 import { schemas } from '../api/generated/api'
 
 type Job = z.infer<typeof schemas.Job>
-type JobData = z.infer<typeof schemas.JobData>
 type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
 
 /**
@@ -19,6 +18,24 @@ type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
 export function useJobHeaderAutosave(header: JobHeaderResponse) {
   const router = useRouter()
   const jobsStore = useJobsStore()
+
+  const headerToPartialHeaderPatch = (patch: Partial<Job>): Partial<JobHeaderResponse> => {
+    const p: Partial<JobHeaderResponse> = {}
+    if ('name' in patch) p.name = patch.name as string
+    if ('client_id' in patch || 'client_name' in patch) {
+      p.client = {
+        id: (patch.client_id as string | null | undefined) ?? undefined,
+        name: (patch.client_name as string | null | undefined) ?? undefined,
+      } as JobHeaderResponse['client']
+    }
+    if ('job_status' in patch) p.status = String(patch.job_status)
+    if ('pricing_methodology' in patch) p.pricing_methodology = (patch.pricing_methodology as Job['pricing_methodology']) ?? null
+    if ('quoted' in patch) p.quoted = Boolean(patch.quoted)
+    if ('fully_invoiced' in patch) p.fully_invoiced = Boolean(patch.fully_invoiced)
+    if ('paid' in patch) p.paid = Boolean(patch.paid)
+    if ('quote_acceptance_date' in patch) p.quote_acceptance_date = (patch.quote_acceptance_date as string | null | undefined) ?? null
+    return p
+  }
 
   // Local state and original snapshot (always based on header)
   const localHeader = ref<JobHeaderResponse>(header)
@@ -100,10 +117,12 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     applyOptimistic: (patch) => {
       // patch comes in "local" format (Partial<Job>), so first convert to header
       localHeader.value = applyPatchToHeader(localHeader.value, patch as Partial<Job>)
+      // Update store for immediate reactivity across app
+      jobsStore.patchHeader(header.job_id, headerToPartialHeaderPatch(patch as Partial<Job>))
     },
     rollbackOptimistic: (previous) => {
-      // previous also comes as "local" (Partial<Job>) — reapply over current header
       localHeader.value = applyPatchToHeader(localHeader.value, previous as Partial<Job>)
+      jobsStore.patchHeader(header.job_id, headerToPartialHeaderPatch(previous as Partial<Job>))
     },
     saveAdapter: async (patch): Promise<SaveResult> => {
       try {
@@ -120,6 +139,15 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
         // apply the patch (local fields)
         Object.assign(payloadJob, patch as Partial<Job>)
 
+        // Include current basic info from store to prevent overwriting
+        const currentBasicInfo = jobsStore.currentBasicInfo
+        if (currentBasicInfo) {
+          payloadJob.description = currentBasicInfo.description
+          payloadJob.delivery_date = currentBasicInfo.delivery_date
+          payloadJob.order_number = currentBasicInfo.order_number
+          payloadJob.notes = currentBasicInfo.notes
+        }
+
         // if client changed, clear contact (optional, but aligned with previous behavior)
         if ('client_id' in (patch as Partial<Job>)) {
           payloadJob.contact_id = null
@@ -129,33 +157,15 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
         const res = await jobService.updateJobHeaderPartial(jobId, payloadJob)
         if (!res.success) return { success: false, error: res.error }
 
-        // Use res.data (JobDetailResponse) to oa store/snapshots
-        const payload = res.data?.data as JobData | undefined
-        if (payload?.job) {
-          // Update store to maintain global reactivity
-          jobsStore.setDetailedJob(payload)
+        // For header-only updates, don't update the full job in store
+        // to avoid overwriting basic info fields that aren't in the response
+        // Just update the header snapshot
+        const updatedHeader = applyPatchToHeader(originalHeader.value, patch as Partial<Job>)
+        originalHeader.value = updatedHeader
+        localHeader.value = updatedHeader
 
-          // Update our original snapshot from what was RECEIVED from backend,
-          // but convert back to HEADER (to be our source of truth)
-          const updatedHeader: JobHeaderResponse = {
-            job_id: payload.job.id,
-            job_number: payload.job.job_number,
-            name: payload.job.name,
-            client: {
-              id: payload.job.client_id ?? '',
-              name: payload.job.client_name ?? '',
-            },
-            status: payload.job.job_status,
-            pricing_methodology: payload.job.pricing_methodology ?? null,
-            fully_invoiced: payload.job.fully_invoiced,
-            quoted: payload.job.quoted,
-            quote_acceptance_date: payload.job.quote_acceptance_date ?? null,
-            paid: Boolean(payload.job.paid),
-          }
-
-          originalHeader.value = updatedHeader
-          localHeader.value = updatedHeader
-        }
+        // Update only the header in store, not the full job
+        jobsStore.patchHeader(header.job_id, headerToPartialHeaderPatch(patch as Partial<Job>))
 
         toast.success('Job updated successfully')
         return { success: true, serverData: res.data }

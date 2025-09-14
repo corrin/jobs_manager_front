@@ -244,19 +244,8 @@
           :pricing-methodology="jobHeader.pricing_methodology || ''"
           :quoted="jobHeader.quoted"
           :fully-invoiced="jobHeader.fully_invoiced"
-          :paid="localPaid"
+          :paid="jobHeader?.paid ?? false"
           :company-defaults="companyDefaults"
-          @quote-imported="handleQuoteImported"
-          @quote-created="handleQuoteCreated"
-          @quote-accepted="handleQuoteAccepted"
-          @invoice-created="handleInvoiceCreated"
-          @quote-deleted="handleQuoteDeleted"
-          @invoice-deleted="handleInvoiceDeleted"
-          @reload-job="handleReloadJob"
-          @job-updated="handleJobUpdated"
-          @event-added="handleEventAdded"
-          @file-uploaded="handleFileUploaded"
-          @file-deleted="handleFileDeleted"
         />
       </template>
 
@@ -275,8 +264,6 @@
         :job-number="jobDataWithPaid.job_number"
         :is-open="showAttachmentsModal"
         @close="showAttachmentsModal = false"
-        @file-uploaded="handleFileUploaded"
-        @file-deleted="handleFileDeleted"
       />
       <JobPdfDialog
         v-if="showPdfDialog && jobDataWithPaid"
@@ -306,9 +293,6 @@ import { useJobTabs } from '../composables/useJobTabs'
 import { useJobNotifications } from '../composables/useJobNotifications'
 import { useJobEvents } from '../composables/useJobEvents'
 import { useJobHeaderAutosave } from '../composables/useJobHeaderAutosave'
-import { z } from 'zod'
-import { schemas } from '../api/generated/api'
-type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { api } from '../api/client'
 import { ArrowLeft, Printer, Download } from 'lucide-vue-next'
@@ -322,24 +306,21 @@ const jobsStore = useJobsStore()
 const jobId = computed(() => route.params.id as string)
 const loadingJob = ref(false)
 
-// Header somente (novo formato)
-const jobHeader = ref<JobHeaderResponse | null>(null)
-const loadingHeader = ref(false)
+// Use store for header (single source of truth)
+const jobHeader = computed(() => jobsStore.currentHeader)
 
 onMounted(async () => {
   jobsStore.setCurrentJobId(jobId.value)
 
   loadingJob.value = true
-  loadingHeader.value = true
   try {
     const headerResponse = await api.job_rest_jobs_header_retrieve({
       params: { job_id: jobId.value },
     })
-    jobHeader.value = headerResponse
+    jobsStore.setHeader(headerResponse)
   } catch (error) {
     console.error('Failed to fetch job header:', error)
   } finally {
-    loadingHeader.value = false
     loadingJob.value = false
   }
 
@@ -483,7 +464,7 @@ function handleJobUpdated(updatedJob) {
   if (updatedJob?.data) {
     jobsStore.setDetailedJob(updatedJob.data)
     notifications.notifyJobUpdated(updatedJob.data?.job?.name || 'Job')
-  } else if (updatedJob?.job) {
+  } else if (updatedJob?.job) { 
     jobsStore.setDetailedJob(updatedJob)
     notifications.notifyJobUpdated(updatedJob.job?.name || 'Job')
   } else {
@@ -501,42 +482,6 @@ async function handleEventAdded(event) {
 
 function navigateBack() {
   router.push({ name: 'kanban' })
-}
-
-function handleQuoteImported() {
-  notifications.notifyJobUpdated('Quote imported')
-  jobsStore.fetchJob(jobId.value)
-}
-function handleQuoteCreated() {
-  notifications.notifyJobUpdated('Quote created')
-  jobsStore.fetchJob(jobId.value)
-}
-function handleQuoteAccepted() {
-  notifications.notifyJobUpdated('Quote accepted')
-  jobsStore.fetchJob(jobId.value)
-}
-function handleInvoiceCreated() {
-  notifications.notifyJobUpdated('Invoice created')
-  jobsStore.fetchJob(jobId.value)
-}
-function handleQuoteDeleted() {
-  notifications.notifyJobUpdated('Quote deleted')
-  jobsStore.fetchJob(jobId.value)
-}
-function handleInvoiceDeleted() {
-  notifications.notifyJobUpdated('Invoice deleted')
-  jobsStore.fetchJob(jobId.value)
-}
-function handleFileUploaded() {
-  notifications.notifyJobUpdated('File uploaded')
-  jobsStore.fetchJob(jobId.value)
-}
-function handleFileDeleted() {
-  notifications.notifyJobUpdated('File deleted')
-  jobsStore.fetchJob(jobId.value)
-}
-function handleReloadJob() {
-  jobsStore.fetchJob(jobId.value)
 }
 
 async function printJob() {

@@ -65,10 +65,6 @@ export function useJobEvents(jobId: string | Ref<string | null>) {
     }
   }
 
-  onMounted(() => {
-    loadEvents()
-  })
-
   return {
     jobEvents: computed(() => jobEvents.value),
     loading,

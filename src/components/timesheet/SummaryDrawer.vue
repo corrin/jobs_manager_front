@@ -259,7 +259,7 @@ const loadJobDetails = async () => {
   try {
     const jobPromises = jobIdsWithEntries.value.map(async (jobId) => {
       try {
-        const jobDetail = await api.job_rest_jobs_retrieve({ params: { job_id: jobId } })
+        const jobDetail = await api.getFullJob({ params: { job_id: jobId } })
         debugLog('Job detail: ', jobDetail)
         return { jobId, job: jobDetail.data.job }
       } catch (err) {

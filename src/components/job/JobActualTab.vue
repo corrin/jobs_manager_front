@@ -277,12 +277,8 @@ import { api } from '../../api/client'
 import { z } from 'zod'
 import type { AxiosError } from 'axios'
 import type { KindOption } from '../shared/SmartCostLinesTable.vue'
-
-// Removed Job type as it's no longer needed
-
+import { useStockStore } from '../../stores/stockStore'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
-
-// Remove Job type import
 import {
   Dialog,
   DialogContent,
@@ -357,6 +353,9 @@ const emit = defineEmits<{
   'quote-deleted': []
   'invoice-deleted': []
 }>()
+
+// Use stock store (moved to top for scoping)
+const stockStore = useStockStore()
 
 // Local state for invoices
 const isCreatingInvoice = ref(false)
@@ -476,15 +475,16 @@ const negativeStockIds = computed(() => [...negativeStockSet].sort())
 async function checkAndUpdateNegativeStocks() {
   negativeStockSet.clear()
 
-  try {
-    const stocks = await api.purchasing_rest_stock_retrieve()
-    for (const stock of stocks.items) {
-      if (stock.quantity < 0) {
-        negativeStockSet.add(stock.id)
-      }
+  // Ensure stock data is loaded
+  if (stockStore.items.length === 0) {
+    await stockStore.fetchStock()
+  }
+
+  // Use stock store data instead of calling API directly
+  for (const stock of stockStore.items) {
+    if (stock.quantity < 0) {
+      negativeStockSet.add(stock.id)
     }
-  } catch (error) {
-    console.warn('Failed to check stock status:', error)
   }
 }
 
@@ -545,9 +545,8 @@ async function loadInvoices() {
     const response = await api.job_rest_jobs_invoices_retrieve({
       params: { job_id: props.jobId },
     })
-    if (response.success && response.data) {
-      invoices.value = response.data.invoices || []
-    }
+    // Zodios returns data directly, not wrapped in {success, data}
+    invoices.value = response.invoices || []
   } catch (error) {
     debugLog('Failed to load invoices:', error)
   }
@@ -590,9 +589,10 @@ async function consumeStockForNewLine(payload: {
     toast.success('Stock consumed successfully!')
     await loadActualCosts() // Reload to sync with backend
 
-    // Check if resulted in negative
-    const stock = await api.purchasing_rest_stock_retrieve({ params: { id: payload.stockId } })
-    if (stock.quantity < 0) {
+    // Refresh stock data and check if resulted in negative
+    await stockStore.fetchStock()
+    const stock = stockStore.items.find(s => s.id === payload.stockId)
+    if (stock && stock.quantity < 0) {
       toast.warning(`Warning: Stock now negative (${Math.abs(stock.quantity).toFixed(3)} units).`)
     }
 
@@ -645,8 +645,10 @@ function handleAddLine(kind: 'material' | 'adjust' = 'material') {
     kind,
     desc: '',
     quantity: 1,
-    unit_cost: 0,
-    unit_rev: 0,
+    // @ts-expect-error - Allow null for initial empty state
+    unit_cost: null,
+    // @ts-expect-error - Allow null for initial empty state
+    unit_rev: null,
     total_cost: 0,
     total_rev: 0,
     ext_refs: {},

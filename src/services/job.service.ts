@@ -122,7 +122,7 @@ export const jobService = {
   },
 
   getJob(jobId: string): Promise<JobDetailResponse> {
-    return api.job_rest_jobs_retrieve({ params: { job_id: jobId } })
+    return api.getFullJob({ params: { job_id: jobId } })
   },
 
   deleteJob(jobId: string): Promise<{ success: boolean; error?: string; message?: string }> {

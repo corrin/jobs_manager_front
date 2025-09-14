@@ -4,14 +4,21 @@ import { schemas } from '../api/generated/api'
 import { debugLog } from '../utils/debug'
 import type { z } from 'zod'
 
+type Job = z.infer<typeof schemas.Job>
 type JobDetail = z.infer<typeof schemas.JobDetailResponse>['data']
+
+// Basic info fields that are stored separately to prevent autosave conflicts
+type JobBasicInfo = z.infer<typeof schemas.JobBasicInformationResponse>
 type JobEvent = z.infer<typeof schemas.JobEvent>
 type KanbanJobUI = z.infer<typeof schemas.KanbanJob>
 type CompanyDefaultsJobDetail = z.infer<typeof schemas.CompanyDefaultsJobDetail>
+type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
 
 export const useJobsStore = defineStore('jobs', () => {
   const detailedJobs = ref<Record<string, JobDetail>>({})
   const kanbanJobs = ref<Record<string, KanbanJobUI>>({})
+  const headersById = ref<Record<string, JobHeaderResponse>>({})
+  const basicInfoById = ref<Record<string, JobBasicInfo>>({})
   const currentJobId = ref<string | null>(null)
   const isLoadingJob = ref(false)
   const isLoadingKanban = ref(false)
@@ -20,6 +27,16 @@ export const useJobsStore = defineStore('jobs', () => {
   const currentJob = computed(() => {
     if (!currentJobId.value) return null
     return detailedJobs.value[currentJobId.value] || null
+  })
+
+  const currentHeader = computed(() => {
+    if (!currentJobId.value) return null
+    return headersById.value[currentJobId.value] || null
+  })
+
+  const currentBasicInfo = computed(() => {
+    if (!currentJobId.value) return null
+    return basicInfoById.value[currentJobId.value] || null
   })
 
   const allKanbanJobs = computed(() => {
@@ -56,22 +73,40 @@ export const useJobsStore = defineStore('jobs', () => {
 
     const jobId = jobDetail.job.id
     const existingJob = detailedJobs.value[jobId]
-    if (existingJob && JSON.stringify(existingJob) === JSON.stringify(jobDetail)) {
+
+    // Preserve existing basic info fields if they're not present in the new data
+    const mergedJobDetail = { ...jobDetail }
+    if (existingJob && existingJob.job) {
+      mergedJobDetail.job = {
+        ...existingJob.job, // Start with existing data
+        ...jobDetail.job,   // Override with new data
+        // Preserve basic info fields if not present in new data
+        description: jobDetail.job.description ?? existingJob.job.description,
+        order_number: jobDetail.job.order_number ?? existingJob.job.order_number,
+        notes: jobDetail.job.notes ?? existingJob.job.notes,
+        delivery_date: jobDetail.job.delivery_date ?? existingJob.job.delivery_date,
+      }
+      // Preserve other arrays/objects if not present
+      mergedJobDetail.events = jobDetail.events ?? existingJob.events
+      mergedJobDetail.company_defaults = jobDetail.company_defaults ?? existingJob.company_defaults
+    }
+
+    if (existingJob && JSON.stringify(existingJob) === JSON.stringify(mergedJobDetail)) {
       debugLog('🔄 Store - JobDetail data identical, skipping update to prevent loop:', jobId)
       return
     }
 
     debugLog('🏪 Store - setDetailedJob called:', {
       jobId,
-      jobStatus: jobDetail.job.job_status,
-      hasEvents: Array.isArray(jobDetail.events),
-      eventsCount: jobDetail.events?.length || 0,
+      jobStatus: mergedJobDetail.job.job_status,
+      hasEvents: Array.isArray(mergedJobDetail.events),
+      eventsCount: mergedJobDetail.events?.length || 0,
+      preservedBasicInfo: !!existingJob,
     })
 
-    const newJobDetail = { ...jobDetail }
     detailedJobs.value = {
       ...detailedJobs.value,
-      [jobId]: newJobDetail,
+      [jobId]: mergedJobDetail,
     }
 
     debugLog('🏪 Store - Job updated successfully:', {
@@ -79,9 +114,12 @@ export const useJobsStore = defineStore('jobs', () => {
       newStatus: detailedJobs.value[jobId]?.job?.job_status,
     })
 
+    // Always keep header in sync when receiving full job
+    setHeader(jobToHeader(mergedJobDetail.job))
+
     if (kanbanJobs.value[jobId]) {
       debugLog('🏪 Store - Also updating kanban job')
-      updateKanbanJobFromDetailed(newJobDetail)
+      updateKanbanJobFromDetailed(mergedJobDetail)
     }
   }
 
@@ -134,7 +172,7 @@ export const useJobsStore = defineStore('jobs', () => {
         ...kanbanJob,
         name: detailedJob.job.name,
         job_status: detailedJob.job.job_status,
-        client_name: detailedJob.job.client_name,
+        client_name: detailedJob.job.client_name || '',
         contact_person: detailedJob.job.contact_name || kanbanJob.contact_person,
         paid: detailedJob.job.paid || false,
       }
@@ -169,7 +207,35 @@ export const useJobsStore = defineStore('jobs', () => {
   const clearAll = (): void => {
     clearDetailedJobs()
     clearKanbanJobs()
+    basicInfoById.value = {}
     currentContext.value = null
+  }
+
+  const setBasicInfo = (jobId: string, basicInfo: JobBasicInfo): void => {
+    basicInfoById.value[jobId] = basicInfo
+  }
+
+  const updateBasicInfo = (jobId: string, updates: Partial<JobBasicInfo>): void => {
+    const existing = basicInfoById.value[jobId]
+    if (existing) {
+      basicInfoById.value[jobId] = { ...existing, ...updates }
+    }
+  }
+
+  const loadBasicInfo = async (jobId: string): Promise<JobBasicInfo | null> => {
+    try {
+      const { api } = await import('../api/client')
+      const data = await api.job_rest_jobs_basic_info_retrieve({
+        params: { job_id: jobId },
+      })
+
+      debugLog('✅ Store - loadBasicInfo success:', { jobId, data })
+      setBasicInfo(jobId, data)
+      return data
+    } catch (error) {
+      debugLog('❌ Store - loadBasicInfo error:', error)
+      throw error
+    }
   }
 
   const updateJobStatus = (jobId: string, newStatus: string): void => {
@@ -214,6 +280,38 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
+  const jobToHeader = (job: Job): JobHeaderResponse => {
+    return {
+      job_id: job.id,
+      job_number: job.job_number,
+      name: job.name,
+      client: {
+        id: job.client_id ?? '',
+        name: job.client_name ?? '',
+      },
+      status: job.job_status,
+      pricing_methodology: job.pricing_methodology ?? null,
+      fully_invoiced: job.fully_invoiced,
+      quoted: job.quoted,
+      quote_acceptance_date: job.quote_acceptance_date ?? null,
+      paid: Boolean(job.paid),
+    }
+  }
+
+  const setHeader = (header: JobHeaderResponse): void => {
+    headersById.value[header.job_id] = header
+  }
+
+  const patchHeader = (jobId: string, patch: Partial<JobHeaderResponse>): void => {
+    const cur = headersById.value[jobId]
+    if (!cur) return
+    headersById.value[jobId] = { ...cur, ...patch, client: patch.client ?? cur.client }
+  }
+
+  const upsertFromFullJob = (job: Job): void => {
+    setHeader(jobToHeader(job))
+  }
+
   async function fetchJob(jobId: string): Promise<unknown> {
     if (!jobId) return undefined
 
@@ -236,12 +334,16 @@ export const useJobsStore = defineStore('jobs', () => {
   return {
     detailedJobs,
     kanbanJobs,
+    headersById,
+    basicInfoById,
     currentJobId,
     isLoadingJob,
     isLoadingKanban,
     currentContext,
 
     currentJob,
+    currentHeader,
+    currentBasicInfo,
     allKanbanJobs,
     getJobById,
     getKanbanJobById,
@@ -266,6 +368,15 @@ export const useJobsStore = defineStore('jobs', () => {
     addJobEvent,
     updateJobCompanyDefaults,
     updateJobPartialData,
+
+    setBasicInfo,
+    updateBasicInfo,
+    loadBasicInfo,
+
+    jobToHeader,
+    setHeader,
+    patchHeader,
+    upsertFromFullJob,
 
     fetchJob,
   }
