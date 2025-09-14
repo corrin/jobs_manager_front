@@ -7,7 +7,7 @@ import {
   SelectItem,
 } from '../../components/ui/select'
 import { Input } from '../../components/ui/input'
-import { useStockStore } from '../../stores/stockStore'
+import { useStockStore, type StockItem } from '../../stores/stockStore'
 import { onMounted, computed, ref } from 'vue'
 
 const props = withDefaults(
@@ -37,14 +37,14 @@ onMounted(async () => {
 
 const filteredItems = computed(() => {
   if (!searchTerm.value) return store.items
-  return store.items.filter((item) =>
+  return store.items.filter((item: StockItem) =>
     (item.description || '').toLowerCase().includes(searchTerm.value.toLowerCase()),
   )
 })
 
 const displayLabel = computed(() => {
   if (!props.modelValue) return 'Select Item'
-  const found = store.items.find((i) => i.id === props.modelValue)
+  const found = store.items.find((i: StockItem) => i.id == props.modelValue)
   return found ? found.description || 'Stock Item' : 'Select Item'
 })
 </script>
@@ -56,8 +56,8 @@ const displayLabel = computed(() => {
     class="w-40"
     @update:model-value="
       (val) => {
-        emit('update:modelValue', val)
-        const found = store.items.find((i) => i.id === val)
+        emit('update:modelValue', val as string | null)
+        const found = store.items.find((i: StockItem) => i.id == val)
 
         if (found) {
           emit('update:description', found.description || '')
@@ -78,7 +78,7 @@ const displayLabel = computed(() => {
     <SelectContent class="max-h-60">
       <!-- Search input -->
       <div class="p-2 border-b">
-        <Input v-model="searchTerm" placeholder="Search items..." class="h-8 text-sm" @click.stop />
+        <Input v-model="searchTerm" placeholder="Search items..." class="h-8 text-sm" @click.stop @keydown.stop />
       </div>
 
       <!-- Items list -->
