@@ -39,30 +39,34 @@
     <div class="flex-1 overflow-y-auto min-h-0">
       <div v-if="activeTab === 'estimate'" class="h-full p-4 md:p-6">
         <JobEstimateTab
-          v-if="jobData && companyDefaults"
-          :job-id="jobData.id"
+          v-if="companyDefaults"
+          :job-id="jobId"
           :company-defaults="companyDefaults"
           @cost-line-changed="$emit('reload-job')"
         />
       </div>
       <div
-        v-if="activeTab === 'quote' && jobData?.pricing_methodology !== 'time_materials'"
+        v-if="activeTab === 'quote' && pricingMethodology !== 'time_materials'"
         class="h-full p-4 md:p-6"
       >
         <JobQuoteTab
-          v-if="jobData"
-          :job-id="jobData.id"
-          :job-data="jobData"
+          :job-id="jobId"
+          :job-number="jobNumberString"
+          :pricing-methodology="pricingMethodologyString"
+          :quoted="quotedBoolean"
+          :fully-invoiced="fullyInvoicedBoolean"
           @quote-imported="$emit('quote-imported', $event)"
           @cost-line-changed="$emit('reload-job')"
         />
       </div>
       <div v-if="activeTab === 'actual'" class="h-full p-4 md:p-6">
         <JobActualTab
-          v-if="jobData"
-          :job-id="jobData.id"
-          :job-data="jobData"
-          :actual-summary-from-backend="jobData.latest_actual?.summary"
+          :job-id="jobId"
+          :job-number="jobNumberString"
+          :pricing-methodology="pricingMethodologyString"
+          :quoted="quotedBoolean"
+          :fully-invoiced="fullyInvoicedBoolean"
+          :paid="props.paid"
           @cost-line-changed="$emit('reload-job')"
           @quote-created="$emit('quote-created')"
           @quote-accepted="$emit('quote-accepted')"
@@ -72,39 +76,31 @@
         />
       </div>
       <div v-if="activeTab === 'costAnalysis'" class="h-full p-4 md:p-6">
-        <JobCostAnalysisTab v-if="jobData" :job-id="jobData.id" :job-data="analysisData" />
+        <JobCostAnalysisTab :job-id="jobId" :pricing-methodology="pricingMethodologyString" />
       </div>
       <div v-if="activeTab === 'jobSettings'" class="h-full p-4 md:p-6">
         <JobSettingsTab
-          v-if="jobData"
-          :job-data="jobData"
+          :job-id="jobId"
+          :job-number="jobNumberString"
+          :pricing-methodology="pricingMethodologyString"
+          :quoted="quotedBoolean"
+          :fully-invoiced="fullyInvoicedBoolean"
           @job-updated="$emit('job-updated', $event)"
         />
       </div>
       <div v-if="activeTab === 'history'" class="h-full p-4 md:p-6">
-        <JobHistoryTab
-          v-if="jobData"
-          :job-id="jobData.id"
-          @event-added="$emit('event-added', $event)"
-        />
+        <JobHistoryTab :job-id="jobId" @event-added="$emit('event-added', $event)" />
       </div>
       <div v-if="activeTab === 'attachments'" class="h-full p-4 md:p-6">
         <JobAttachmentsTab
-          v-if="jobData"
-          :job-id="jobData.id"
-          :job-number="jobData.job_number"
+          :job-id="jobId"
+          :job-number="jobNumber"
           @file-uploaded="$emit('file-uploaded')"
           @file-deleted="$emit('file-deleted')"
         />
       </div>
       <div v-if="activeTab === 'quotingChat'" class="h-full p-4 md:p-6">
-        <JobQuotingChatTab
-          v-if="jobData"
-          :job-id="jobData.id"
-          :job-name="jobData.name"
-          :job-number="String(jobData.job_number)"
-          :client-name="jobData.client_name"
-        />
+        <JobQuotingChatTab :job-id="jobId" :job-number="jobNumberString" />
       </div>
     </div>
   </div>
@@ -121,8 +117,6 @@ import JobHistoryTab from './JobHistoryTab.vue'
 import JobAttachmentsTab from './JobAttachmentsTab.vue'
 import JobQuotingChatTab from './JobQuotingChatTab.vue'
 import { watch, computed } from 'vue'
-import { z } from 'zod'
-import { schemas } from '@/api/generated/api'
 // Define JobTabKey type locally as it's UI-specific
 type JobTabKey =
   | 'estimate'
@@ -135,8 +129,7 @@ type JobTabKey =
   | 'attachments'
   | 'quotingChat'
 
-// Use generated Job type from Zodios API
-type Job = z.infer<typeof schemas.Job>
+// Removed Job type as it's no longer needed
 
 const emit = defineEmits<{
   (e: 'change-tab', tab: JobTabKey): void
@@ -171,7 +164,7 @@ const allTabs = [
 ] as const
 
 const tabs = computed(() => {
-  if (props.jobData?.pricing_methodology === 'time_materials') {
+  if (props.pricingMethodology === 'time_materials') {
     return allTabs.filter((tab) => tab.key !== 'quote')
   }
 
@@ -184,32 +177,25 @@ function handleTabChange(tab: JobTabKey) {
 
 const props = defineProps<{
   activeTab: JobTabKey
-  jobData: Job | null
+  jobId: string
+  jobNumber: number
+  chargeOutRate?: number
+  pricingMethodology?: string
+  quoted?: boolean
+  fullyInvoiced?: boolean
+  paid?: boolean
   companyDefaults: Record<string, unknown> | null
-  latestPricings: Record<string, unknown> | null
 }>()
 
-const analysisData = computed(() => {
-  if (!props.jobData) return undefined
+// Computed props with proper types for components
+const jobNumberString = computed(() => props.jobNumber.toString())
+const pricingMethodologyString = computed(() => props.pricingMethodology || '')
+const quotedBoolean = computed(() => props.quoted || false)
+const fullyInvoicedBoolean = computed(() => props.fullyInvoiced || false)
 
-  const hasValidQuote =
-    props.jobData.latest_quote &&
-    typeof props.jobData.latest_quote === 'object' &&
-    Object.keys(props.jobData.latest_quote).length > 0
+// Removed analysisData as it's no longer needed
+// Removed watches for jobData as it's no longer a prop
 
-  return {
-    pricing_methodology: props.jobData.pricing_methodology,
-    has_quote: hasValidQuote,
-    quote: props.jobData.latest_quote || null,
-  }
-})
-
-watch(
-  () => props.jobData,
-  (val) => {
-    debugLog('[JobViewTabs] jobData prop changed:', val)
-  },
-)
 watch(
   () => props.companyDefaults,
   (val) => {

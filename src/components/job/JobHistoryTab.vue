@@ -63,7 +63,14 @@
         <div class="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <h3 class="text-lg font-medium text-gray-900 mb-6">Event Timeline</h3>
 
-          <div v-if="events && events.length > 0" class="relative">
+          <div v-if="isLoading" class="text-center py-12">
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"
+            ></div>
+            <p class="text-gray-500">Loading events...</p>
+          </div>
+
+          <div v-else-if="events.length > 0" class="relative">
             <!-- Timeline line -->
             <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
 
@@ -94,13 +101,13 @@
                           formatDate(event.timestamp || event.created_date)
                         }}</span>
                         <span>•</span>
-                        <span class="px-2 py-1 bg-gray-100 rounded-full">{{
-                          formatEventType(event.event_type) || 'General'
-                        }}</span>
-                        <span v-if="event.staff">•</span>
-                        <span v-if="event.staff" class="font-medium text-gray-700">{{
-                          event.staff
-                        }}</span>
+                        <span class="px-2 py-1 bg-gray-100 rounded-full">
+                          {{ formatEventType(event.event_type) || 'General' }}
+                        </span>
+                        <template v-if="event.staff">
+                          <span>•</span>
+                          <span class="font-medium text-gray-700">{{ event.staff }}</span>
+                        </template>
                       </div>
                     </div>
                   </div>
@@ -138,33 +145,92 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useJobEvents } from '../../composables/useJobEvents'
-import { Collapsible, CollapsibleContent } from '../ui/collapsible'
+import { ref, watch } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
+import { Collapsible, CollapsibleContent } from '../ui/collapsible'
 import { formatEventType } from '@/utils/string-formatting'
+import { api } from '@/api/client'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
+import { toast } from 'vue-sonner'
+
+type JobEvent = z.infer<typeof schemas.JobEvent>
+type JobEventsResponse = z.infer<typeof schemas.JobEventsResponse>
+type JobEventCreateRequest = z.infer<typeof schemas.JobEventCreateRequest>
+type JobEventCreateResponse = z.infer<typeof schemas.JobEventCreateResponse>
 
 interface Props {
   jobId: string
 }
 
 const props = defineProps<Props>()
+const emit = defineEmits<{ 'event-added': [event: JobEvent] }>()
 
-const emit = defineEmits<{
-  'event-added': [event: unknown]
-}>()
-
+// UI state
 const isAddEventOpen = ref(false)
 const newEventDescription = ref('')
 const isAdding = ref(false)
+const isLoading = ref(false)
 
-const { jobEvents: events, addEvent: addJobEvent } = useJobEvents(ref(props.jobId))
+const events = ref<JobEvent[]>([])
 
-onMounted(() => {
-  // Events are automatically loaded by the composable
-})
+async function loadEvents() {
+  if (!props.jobId) return
+  isLoading.value = true
+  try {
+    const resp: JobEventsResponse = await api.job_rest_jobs_events_retrieve({
+      params: { job_id: props.jobId },
+    })
+    events.value = [...(resp.events ?? [])].sort((a, b) => {
+      const aDate = new Date((a.timestamp as string) || (a.created_date as string) || 0).getTime()
+      const bDate = new Date((b.timestamp as string) || (b.created_date as string) || 0).getTime()
+      return bDate - aDate
+    })
+  } catch (e) {
+    toast.error('Failed to load job events')
+    debugLog('Failed to load job events:', e)
+    events.value = []
+  } finally {
+    isLoading.value = false
+  }
+}
 
-const formatDate = (dateString: string | unknown) => {
+// Add a new manual event via REST
+async function addEvent() {
+  const description = newEventDescription.value.trim()
+  if (!description || !props.jobId) return
+
+  isAdding.value = true
+  try {
+    const body: JobEventCreateRequest = { description }
+    const resp: JobEventCreateResponse = await api.job_rest_jobs_events_create(body, {
+      params: { job_id: props.jobId },
+    })
+
+    if (resp.success && resp.event) {
+      // otimista: insere no topo
+      events.value = [resp.event, ...events.value]
+      emit('event-added', resp.event)
+      newEventDescription.value = ''
+      isAddEventOpen.value = false
+      toast.success('Event added')
+    } else {
+      toast.error('Could not add event')
+    }
+  } catch (e) {
+    toast.error('Failed to add event')
+    debugLog('Failed to add event:', e)
+  } finally {
+    isAdding.value = false
+  }
+}
+
+function cancelAddEvent() {
+  newEventDescription.value = ''
+  isAddEventOpen.value = false
+}
+
+function formatDate(dateString: unknown) {
   if (!dateString || typeof dateString !== 'string') return ''
   return new Date(dateString).toLocaleString('en-AU', {
     year: 'numeric',
@@ -175,24 +241,11 @@ const formatDate = (dateString: string | unknown) => {
   })
 }
 
-const addEvent = async () => {
-  if (!newEventDescription.value.trim()) return
-
-  isAdding.value = true
-  try {
-    await addJobEvent(newEventDescription.value.trim())
-    emit('event-added', { description: newEventDescription.value.trim() })
-    newEventDescription.value = ''
-    isAddEventOpen.value = false
-  } catch (error) {
-    console.error('Failed to add event:', error)
-  } finally {
-    isAdding.value = false
-  }
-}
-
-const cancelAddEvent = () => {
-  newEventDescription.value = ''
-  isAddEventOpen.value = false
-}
+watch(
+  () => props.jobId,
+  () => {
+    void loadEvents()
+  },
+  { immediate: true },
+)
 </script>
