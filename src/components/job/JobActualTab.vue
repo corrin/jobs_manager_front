@@ -354,7 +354,6 @@ const emit = defineEmits<{
   'invoice-deleted': []
 }>()
 
-// Use stock store (moved to top for scoping)
 const stockStore = useStockStore()
 
 // Local state for invoices
@@ -364,8 +363,6 @@ const deletingInvoiceId = ref<string | null>(null) // Track which invoice is bei
 // Local state for KPIs
 const estimateTotal = ref(0)
 const costsSummaryLoading = ref(false)
-
-// Removed jobData and initial API call
 
 // --- COMPUTED PROPERTIES ---
 const invoices = ref<Array<Invoice>>([])
@@ -453,8 +450,6 @@ const deleteInvoiceOnXero = async (invoiceXeroId: string) => {
   }
 }
 
-// Removed watchers that depend on jobData
-
 const router = useRouter()
 
 const costLines = ref<CostLine[]>([])
@@ -527,11 +522,6 @@ async function loadCostsSummary() {
     const response = await api.job_rest_jobs_costs_summary_retrieve({
       params: { job_id: props.jobId },
     })
-    // if (response.success && response.data) {
-    //   // Find estimate summary
-    //   const estimateSummary = response.data.find((summary) => summary.set_type === 'estimate')
-    //   estimateTotal.value = estimateSummary?.summary?.rev || 0
-    // }
     estimateTotal.value = response.estimate.rev || 0
   } catch (error) {
     debugLog('Failed to load costs summary:', error)
@@ -591,7 +581,7 @@ async function consumeStockForNewLine(payload: {
 
     // Refresh stock data and check if resulted in negative
     await stockStore.fetchStock()
-    const stock = stockStore.items.find(s => s.id === payload.stockId)
+    const stock = stockStore.items.find((s) => s.id === payload.stockId)
     if (stock && stock.quantity < 0) {
       toast.warning(`Warning: Stock now negative (${Math.abs(stock.quantity).toFixed(3)} units).`)
     }

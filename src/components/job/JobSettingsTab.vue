@@ -315,7 +315,7 @@ async function loadBasicInfo() {
           delivery_date: basicInfo.delivery_date,
           order_number: basicInfo.order_number,
           notes: basicInfo.notes,
-        }
+        },
       })
     }
   } catch (error) {
@@ -410,9 +410,7 @@ const deliveryDateComputed = computed({
 
 const orderNumberComputed = computed({
   get: () => {
-    return localJobData.value?.order_number ??
-           basicInfo.value?.order_number ??
-           ''
+    return localJobData.value?.order_number ?? basicInfo.value?.order_number ?? ''
   },
   set: (value: string) => {
     if (props.jobId) {
@@ -428,9 +426,7 @@ const orderNumberComputed = computed({
 
 const notesComputed = computed({
   get: () => {
-    return localJobData.value?.notes ??
-           basicInfo.value?.notes ??
-           ''
+    return localJobData.value?.notes ?? basicInfo.value?.notes ?? ''
   },
   set: (value: string) => {
     if (props.jobId) {
@@ -818,13 +814,17 @@ const autosave = createJobAutosave({
             next.quote_acceptance_date = (patch.quote_acceptance_date as string | null) ?? undefined
 
           // Basic infos (kept locally)
-          if ('description' in patch) next.description = (patch.description as string | null) ?? null
-          if ('delivery_date' in patch) next.delivery_date = (patch.delivery_date as string | null) ?? null
-          if ('order_number' in patch) next.order_number = (patch.order_number as string | null) ?? null
+          if ('description' in patch)
+            next.description = (patch.description as string | null) ?? null
+          if ('delivery_date' in patch)
+            next.delivery_date = (patch.delivery_date as string | null) ?? null
+          if ('order_number' in patch)
+            next.order_number = (patch.order_number as string | null) ?? null
           if ('notes' in patch) next.notes = (patch.notes as string | null) ?? null
 
           if ('contact_id' in patch) next.contact_id = patch.contact_id as string | null | undefined
-          if ('contact_name' in patch) next.contact_name = patch.contact_name as string | null | undefined
+          if ('contact_name' in patch)
+            next.contact_name = patch.contact_name as string | null | undefined
 
           return next
         }
@@ -835,9 +835,11 @@ const autosave = createJobAutosave({
         const headerPatch: Partial<Job> = {}
         if ('name' in partialPayload) headerPatch.name = partialPayload.name
         if ('job_status' in partialPayload) headerPatch.status = String(partialPayload.job_status)
-        if ('pricing_methodology' in partialPayload) headerPatch.pricing_methodology = partialPayload.pricing_methodology
+        if ('pricing_methodology' in partialPayload)
+          headerPatch.pricing_methodology = partialPayload.pricing_methodology
         if ('quoted' in partialPayload) headerPatch.quoted = !!partialPayload.quoted
-        if ('fully_invoiced' in partialPayload) headerPatch.fully_invoiced = !!partialPayload.fully_invoiced
+        if ('fully_invoiced' in partialPayload)
+          headerPatch.fully_invoiced = !!partialPayload.fully_invoiced
         if ('paid' in partialPayload) headerPatch.paid = !!partialPayload.paid
         if ('quote_acceptance_date' in partialPayload)
           headerPatch.quote_acceptance_date = partialPayload.quote_acceptance_date ?? undefined

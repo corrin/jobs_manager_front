@@ -153,6 +153,7 @@ import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 import { toast } from 'vue-sonner'
+import { debugLog } from '../../utils/debug'
 
 type JobEvent = z.infer<typeof schemas.JobEvent>
 type JobEventsResponse = z.infer<typeof schemas.JobEventsResponse>
@@ -208,7 +209,6 @@ async function addEvent() {
     })
 
     if (resp.success && resp.event) {
-      // otimista: insere no topo
       events.value = [resp.event, ...events.value]
       emit('event-added', resp.event)
       newEventDescription.value = ''

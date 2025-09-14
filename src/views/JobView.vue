@@ -460,19 +460,6 @@ const showHistoryModal = ref(false)
 const showAttachmentsModal = ref(false)
 const showPdfDialog = ref(false)
 
-function handleJobUpdated(updatedJob) {
-  if (updatedJob?.data) {
-    jobsStore.setDetailedJob(updatedJob.data)
-    notifications.notifyJobUpdated(updatedJob.data?.job?.name || 'Job')
-  } else if (updatedJob?.job) { 
-    jobsStore.setDetailedJob(updatedJob)
-    notifications.notifyJobUpdated(updatedJob.job?.name || 'Job')
-  } else {
-    jobsStore.setDetailedJob(updatedJob)
-    notifications.notifyJobUpdated(updatedJob?.name || 'Job')
-  }
-}
-
 async function handleEventAdded(event) {
   if (event?.description) {
     await addEvent(event.description)

@@ -29,11 +29,13 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
       } as JobHeaderResponse['client']
     }
     if ('job_status' in patch) p.status = String(patch.job_status)
-    if ('pricing_methodology' in patch) p.pricing_methodology = (patch.pricing_methodology as Job['pricing_methodology']) ?? null
+    if ('pricing_methodology' in patch)
+      p.pricing_methodology = (patch.pricing_methodology as Job['pricing_methodology']) ?? null
     if ('quoted' in patch) p.quoted = Boolean(patch.quoted)
     if ('fully_invoiced' in patch) p.fully_invoiced = Boolean(patch.fully_invoiced)
     if ('paid' in patch) p.paid = Boolean(patch.paid)
-    if ('quote_acceptance_date' in patch) p.quote_acceptance_date = (patch.quote_acceptance_date as string | null | undefined) ?? null
+    if ('quote_acceptance_date' in patch)
+      p.quote_acceptance_date = (patch.quote_acceptance_date as string | null | undefined) ?? null
     return p
   }
 

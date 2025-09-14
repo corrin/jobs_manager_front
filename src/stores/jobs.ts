@@ -79,7 +79,7 @@ export const useJobsStore = defineStore('jobs', () => {
     if (existingJob && existingJob.job) {
       mergedJobDetail.job = {
         ...existingJob.job, // Start with existing data
-        ...jobDetail.job,   // Override with new data
+        ...jobDetail.job, // Override with new data
         // Preserve basic info fields if not present in new data
         description: jobDetail.job.description ?? existingJob.job.description,
         order_number: jobDetail.job.order_number ?? existingJob.job.order_number,

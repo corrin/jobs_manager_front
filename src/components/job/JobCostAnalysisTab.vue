@@ -185,14 +185,12 @@ const ensureSummary = (s?: JobCostSetSummary | null): JobCostSetSummary => ({
   cost: s?.cost ?? 0,
   rev: s?.rev ?? 0,
   hours: s?.hours ?? 0,
-  // backend envia nullable → exibimos 0% quando null/undefined
   profitMargin: s?.profitMargin ?? 0,
 })
 
 async function loadAll() {
   loading.value = true
   try {
-    // novo contrato: uma única chamada que já retorna { estimate, quote, actual }
     const resp: JobCostSummaryResponse = await api.job_rest_jobs_costs_summary_retrieve({
       params: { job_id: props.jobId },
     })
@@ -205,7 +203,6 @@ async function loadAll() {
       !!resp.quote && ((resp.quote.cost ?? 0) > 0 || (resp.quote.rev ?? 0) > 0)
   } catch (error) {
     console.error('Failed to load cost summary:', error)
-    // zera tudo para evitar NaN
     estimate.value = zeroSummary()
     quote.value = zeroSummary()
     actual.value = zeroSummary()
@@ -250,7 +247,7 @@ const hoursRef = computed(() =>
 
 const costDiff = computed(() => percentDiff(actual.value.cost, costRef.value))
 const revenueDiff = computed(() => percentDiff(actual.value.rev, revRef.value))
-const profitDiff = computed(() => percentDiff(actual.value.profitMargin, pmRef.value))
+const profitDiff = computed(() => percentDiff(actual.value.profitMargin!, pmRef.value!))
 const hoursDiff = computed(() => percentDiff(actual.value.hours, hoursRef.value))
 
 const costClass = computed(() =>
