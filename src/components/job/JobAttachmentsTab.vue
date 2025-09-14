@@ -236,6 +236,7 @@ import { Button } from '@/components/ui/button'
 import CameraModal from './CameraModal.vue'
 import { jobService } from '@/services/job.service'
 import { schemas } from '@/api/generated/api'
+import { api } from '@/api/client'
 import { formatFileSize, formatDate } from '@/utils/string-formatting'
 import type { z } from 'zod'
 import { debugLog } from '@/utils/debug'
@@ -276,7 +277,9 @@ async function loadFiles() {
 
   isLoading.value = true
   try {
-    const response = await jobService.listJobFiles(props.jobNumber)
+    const response = await api.retrieveJobFilesApi_3({
+      params: { job_number: props.jobNumber },
+    })
     files.value = Array.isArray(response) ? response : []
     debugLog('✅ Files loaded successfully:', files.value.length, 'files')
   } catch (error) {
@@ -465,7 +468,7 @@ const uploadFile = async (file: File) => {
       }
     }, 200)
 
-    const response = await jobService.uploadJobFiles(String(props.jobNumber), [file])
+    const response = await jobService.uploadJobFiles(props.jobNumber, [file])
 
     clearInterval(progressInterval)
     uploadProgress.value = 100
@@ -584,7 +587,7 @@ async function updatePrintSetting(file: JobFile) {
     })
 
     const result = await jobService.updateJobFilePrintSetting(
-      String(props.jobNumber),
+      props.jobNumber,
       file.filename,
       file.print_on_jobsheet,
     )

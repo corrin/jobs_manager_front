@@ -56,7 +56,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea
-                v-model="localJobData.description"
+                v-model="descriptionComputed"
                 rows="4"
                 @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
@@ -67,7 +67,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Date</label>
               <input
-                v-model="localJobData.delivery_date"
+                v-model="deliveryDateComputed"
                 type="date"
                 @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -88,7 +88,7 @@
               <div class="space-y-3">
                 <div v-if="!isChangingClient" class="space-y-2">
                   <input
-                    :value="localJobData.client_name"
+                    :value="localJobData.client?.name"
                     type="text"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-600"
                     readonly
@@ -155,9 +155,9 @@
                 id="contact"
                 label="Contact Person"
                 :optional="true"
-                :client-id="currentClientId"
-                :client-name="currentClientName"
-                :initial-contact-id="safeContactId"
+                :client-id="localJobData.client?.id || ''"
+                :client-name="localJobData.client?.name || ''"
+                :initial-contact-id="localJobData.contact_id"
                 v-model="contactDisplayValue"
                 @update:selected-contact="handleContactSelected"
               />
@@ -166,7 +166,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Order Number</label>
               <input
-                v-model="localJobData.order_number"
+                v-model="orderNumberComputed"
                 type="text"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Customer order number (optional)"
@@ -196,7 +196,7 @@
 
             <div class="flex-grow">
               <RichTextEditor
-                v-model="jobNotesComputed"
+                v-model="notesComputed"
                 label="Internal Notes"
                 placeholder="Add internal notes about this job..."
                 :required="false"
@@ -212,7 +212,7 @@
     <CreateClientModal
       :is-open="showEditClientModal"
       :edit-mode="true"
-      :client-id="props.jobData?.client_id || ''"
+      :client-id="jobData?.client.id || ''"
       :client-data="currentClientData"
       @update:is-open="showEditClientModal = $event"
       @client-created="handleClientUpdated"
@@ -238,32 +238,52 @@ import { toast } from 'vue-sonner'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card'
 import { api } from '../../api/client'
 
-type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
-type ClientContact = z.infer<typeof schemas.ClientContactResult>
-type Job = z.infer<typeof schemas.Job>
+type ClientContact = z.infer<typeof schemas.JobContactUpdateRequest>
+
+// Use the existing JobHeaderResponse schema from generated API
+type Job = z.infer<typeof schemas.JobHeaderResponse>
 
 const props = defineProps<{
-  jobData: Job
+  jobId: string
+  jobNumber: string
+  pricingMethodology: string
+  quoted: boolean
+  fullyInvoiced: boolean
 }>()
 
 const jobsStore = useJobsStore()
+const jobHeader = computed(() => jobsStore.currentHeader)
 
-const localJobData = ref<Partial<Job>>({})
-const originalJobData = ref<Partial<Job>>({}) // Original data snapshot
-const errorMessages = ref<string[]>([])
+const jobData = ref<Job | null>(null)
 
-const isChangingClient = ref(false)
-const newClientId = ref('')
-const newClientName = ref('')
-const selectedNewClient = ref<Client | null>(null)
-
-const contactDisplayValue = ref('')
-const showEditClientModal = ref(false)
-
-const jobStatusChoices = ref<{ value: string; label: string }[]>([])
-const isInitializing = ref(true)
-
+// Combined onMounted hook for all initialization
 onMounted(async () => {
+  if (props.jobId) {
+    // Set current job ID in store for basic info to work
+    jobsStore.setCurrentJobId(props.jobId)
+
+    // Load both header and basic info in parallel
+    await Promise.all([
+      // Load header data
+      (async () => {
+        try {
+          const response = await api.job_rest_jobs_header_retrieve({
+            params: { job_id: props.jobId },
+          })
+          if (response) {
+            jobData.value = response
+          }
+        } catch (error) {
+          toast.error('Failed to load job header data')
+          debugLog('Failed to load job header data:', error)
+        }
+      })(),
+      // Load basic information
+      loadBasicInfo(),
+    ])
+  }
+
+  // Load job status choices
   try {
     const statusMap = await jobService.getStatusChoices()
     if (statusMap.statuses) {
@@ -279,38 +299,57 @@ onMounted(async () => {
   }
 })
 
-const currentClientId = computed(() => {
-  const clientId =
-    isChangingClient.value && newClientId.value
-      ? newClientId.value
-      : String(localJobData.value.client_id || '')
+// Function to load basic information
+async function loadBasicInfo() {
+  debugLog('Loading basic information for job ID:', props.jobId)
+  basicInfoLoading.value = true
+  try {
+    const basicInfo = await jobsStore.loadBasicInfo(props.jobId)
+    debugLog('Loaded basic info:', basicInfo)
+    // Also update the detailed job in store if it exists
+    if (basicInfo && jobsStore.currentJob) {
+      jobsStore.updateDetailedJob(props.jobId, {
+        job: {
+          ...jobsStore.currentJob.job,
+          description: basicInfo.description,
+          delivery_date: basicInfo.delivery_date,
+          order_number: basicInfo.order_number,
+          notes: basicInfo.notes,
+        },
+      })
+    }
+  } catch (error) {
+    debugLog('Failed to load basic information:', error)
+  } finally {
+    basicInfoLoading.value = false
+  }
+}
 
-  debugLog('JobSettingsTab - currentClientId computed:', {
-    isChangingClient: isChangingClient.value,
-    newClientId: newClientId.value,
-    localJobDataClientId: localJobData.value.client_id,
-    result: clientId,
-  })
+const localJobData = ref<Partial<Job>>({})
+const originalJobData = ref<Partial<Job>>({}) // Original data snapshot
+const errorMessages = ref<string[]>([])
 
-  return clientId
+// Use store for basic information
+const basicInfo = computed(() => {
+  const info = jobsStore.currentBasicInfo
+  debugLog('JobSettingsTab - basicInfo computed:', info)
+  return info
 })
+const basicInfoLoading = ref(false)
 
-const currentClientName = computed(() => {
-  return isChangingClient.value && newClientName.value
-    ? newClientName.value
-    : String(localJobData.value.client_name || '')
-})
+const isChangingClient = ref(false)
+const newClientId = ref('')
+const newClientName = ref('')
+const selectedNewClient = ref<Client | null>(null)
 
-const safeContactId = computed((): string | undefined => {
-  return localJobData.value.contact_id ? String(localJobData.value.contact_id) : undefined
-})
+const contactDisplayValue = ref('')
+const showEditClientModal = ref(false)
 
-const jobNotesComputed = computed({
-  get: () => localJobData.value.notes || '',
-  set: (value: string) => {
-    localJobData.value.notes = value || null
-  },
-})
+const jobStatusChoices = ref<{ value: string; label: string }[]>([])
+const isInitializing = ref(true)
+const isSyncingFromStore = ref(false)
+
+// Status choices are now loaded in the combined onMounted hook above
 
 const currentClientData = ref({
   name: '',
@@ -327,51 +366,247 @@ const resetClientChangeState = () => {
   selectedNewClient.value = null
 }
 
+// Computed properties for basic info fields to handle null case
+const descriptionComputed = computed({
+  get: () => {
+    // Priority: localJobData (current unsaved) > basicInfo (store) > empty string
+    const localValue = localJobData.value?.description
+    const storeValue = basicInfo.value?.description
+    const result = localValue ?? storeValue ?? ''
+    debugLog('descriptionComputed get:', { localValue, storeValue, result })
+    return typeof result === 'string' ? result : ''
+  },
+  set: (value: string) => {
+    if (props.jobId) {
+      const newValue = value || null
+      jobsStore.updateBasicInfo(props.jobId, { description: newValue })
+      // Update local data to trigger autosave watchers (don't update original)
+      if (localJobData.value) {
+        localJobData.value.description = newValue
+      }
+    }
+  },
+})
+
+const deliveryDateComputed = computed({
+  get: () => {
+    const localValue = localJobData.value?.delivery_date
+    const storeValue = basicInfo.value?.delivery_date
+    const result = localValue ?? storeValue ?? ''
+    debugLog('deliveryDateComputed get:', { localValue, storeValue, result })
+    return result
+  },
+  set: (value: string) => {
+    if (props.jobId) {
+      const newValue = value || null
+      jobsStore.updateBasicInfo(props.jobId, { delivery_date: newValue })
+      // Update local data to trigger autosave watchers (don't update original)
+      if (localJobData.value) {
+        localJobData.value.delivery_date = newValue
+      }
+    }
+  },
+})
+
+const orderNumberComputed = computed({
+  get: () => {
+    return localJobData.value?.order_number ?? basicInfo.value?.order_number ?? ''
+  },
+  set: (value: string) => {
+    if (props.jobId) {
+      const newValue = value || null
+      jobsStore.updateBasicInfo(props.jobId, { order_number: newValue })
+      // Update local data to trigger autosave watchers (don't update original)
+      if (localJobData.value) {
+        localJobData.value.order_number = newValue
+      }
+    }
+  },
+})
+
+const notesComputed = computed({
+  get: () => {
+    return localJobData.value?.notes ?? basicInfo.value?.notes ?? ''
+  },
+  set: (value: string) => {
+    if (props.jobId) {
+      const newValue = value || null
+      jobsStore.updateBasicInfo(props.jobId, { notes: newValue })
+      // Update local data to trigger autosave watchers (don't update original)
+      if (localJobData.value) {
+        localJobData.value.notes = newValue
+      }
+    }
+  },
+})
+
 watch(
-  () => props.jobData,
+  () => jobData.value,
   async (newJobData) => {
     debugLog('JobSettingsTab - jobData watcher triggered. New jobData:', newJobData)
-    if (!newJobData || !newJobData.id) {
+    if (!newJobData || !newJobData.job_id) {
       debugLog(
-        '🚫 JobSettingsTab - Watcher: Received null/undefined/invalid jobData, skipping initialization.',
+        '🚫 JobSettingsTab - Watcher: Received null/undefined/invalid jobData, initializing with defaults.',
       )
+      // Initialize with default values when jobData is null
+      const defaultJobData = {
+        job_id: props.jobId || '',
+        job_number: props.jobNumber ? Number(props.jobNumber) : 0,
+        name: '',
+        client: null,
+        contact_id: undefined,
+        contact_name: undefined,
+        status: '',
+        pricing_methodology: props.pricingMethodology || 'time_materials',
+        fully_invoiced: false,
+        quoted: false,
+        quote_acceptance_date: undefined,
+        paid: false,
+        // Include basic info fields - will be updated when basicInfo loads
+        description: null,
+        delivery_date: null,
+        order_number: null,
+        notes: null,
+      }
+
+      localJobData.value = { ...defaultJobData }
+      originalJobData.value = { ...defaultJobData }
+      contactDisplayValue.value = ''
+      isInitializing.value = false
       return
     }
     debugLog(
-      '✅ JobSettingsTab - Watcher: Received valid jobData, initializing. ID:',
-      newJobData.id,
+      '✅ JobSettingsTab - Watcher: Received valid jobData, initializing. Job ID:',
+      newJobData.job_id,
     )
 
     isInitializing.value = true
 
-    // Initialize local data with proper structure
+    // Initialize local data with proper structure matching JobHeaderResponse
     const jobDataSnapshot = {
-      id: newJobData.id,
+      job_id: newJobData.job_id,
+      job_number: Number(newJobData.job_number),
       name: newJobData.name,
-      description: newJobData.description,
-      client_id: newJobData.client_id,
-      client_name: newJobData.client_name,
-      contact_id: newJobData.contact_id,
-      contact_name: newJobData.contact_name,
-      order_number: newJobData.order_number,
-      notes: newJobData.notes,
+      client: newJobData.client,
+      status: newJobData.status,
       pricing_methodology: newJobData.pricing_methodology,
-      job_status: newJobData.job_status,
-      delivery_date: newJobData.delivery_date,
-      paid: newJobData.paid,
-      quoted: newJobData.quoted,
       fully_invoiced: newJobData.fully_invoiced,
+      quoted: newJobData.quoted,
+      quote_acceptance_date: newJobData.quote_acceptance_date,
+      paid: newJobData.paid,
+      // Basic info fields will be updated by separate watcher
+      description: null,
+      delivery_date: null,
+      order_number: null,
+      notes: null,
     }
 
     localJobData.value = { ...jobDataSnapshot }
     originalJobData.value = { ...jobDataSnapshot } // Keep original snapshot
 
-    contactDisplayValue.value = String(newJobData.contact_name || '')
+    // Load contact information using the job contacts endpoint
+    try {
+      const contactResponse = await api.clients_jobs_contact_retrieve({
+        params: { job_id: newJobData.job_id },
+      })
+      if (contactResponse) {
+        // The response is a single contact object
+        localJobData.value.contact_id = contactResponse.id
+        localJobData.value.contact_name = contactResponse.name
+        contactDisplayValue.value = contactResponse.name || ''
+      }
+    } catch (error: unknown) {
+      // Handle 404 when no contact is associated with the job - simply ignore
+      const axiosError = error as { response?: { status?: number } }
+      if (axiosError?.response?.status === 404) {
+        debugLog('No contact associated with this job - ignoring 404')
+        localJobData.value.contact_id = undefined
+        localJobData.value.contact_name = undefined
+        contactDisplayValue.value = ''
+      } else {
+        debugLog('Failed to load contact information:', error)
+        contactDisplayValue.value = ''
+      }
+    }
 
     debugLog('JobSettingsTab - Local job data initialized:', localJobData.value)
 
     await nextTick()
     isInitializing.value = false
+  },
+  { immediate: true, deep: true },
+)
+
+// Separate watcher for basic info to update local data when it loads
+watch(
+  () => basicInfo.value,
+  (newBasicInfo) => {
+    debugLog('JobSettingsTab - Basic info watcher triggered:', newBasicInfo)
+    if (newBasicInfo && localJobData.value) {
+      // Only update if the values are different to avoid unnecessary reactivity
+      if (localJobData.value.description !== newBasicInfo.description) {
+        localJobData.value.description = newBasicInfo.description
+        debugLog('Updated description:', newBasicInfo.description)
+      }
+      if (localJobData.value.delivery_date !== newBasicInfo.delivery_date) {
+        localJobData.value.delivery_date = newBasicInfo.delivery_date
+        debugLog('Updated delivery_date:', newBasicInfo.delivery_date)
+      }
+      if (localJobData.value.order_number !== newBasicInfo.order_number) {
+        localJobData.value.order_number = newBasicInfo.order_number
+        debugLog('Updated order_number:', newBasicInfo.order_number)
+      }
+      if (localJobData.value.notes !== newBasicInfo.notes) {
+        localJobData.value.notes = newBasicInfo.notes
+        debugLog('Updated notes:', newBasicInfo.notes)
+      }
+      debugLog('JobSettingsTab - Basic info updated in local data:', newBasicInfo)
+    } else {
+      debugLog('JobSettingsTab - Basic info watcher: no newBasicInfo or no localJobData')
+    }
+  },
+  { immediate: true, deep: true },
+)
+
+// Watcher for store header changes to sync with header edits
+watch(
+  () => jobHeader.value,
+  (newHeader) => {
+    if (newHeader && localJobData.value && !isInitializing.value) {
+      // Prevent field watchers from triggering during sync
+      isSyncingFromStore.value = true
+
+      // Preserve existing basic info fields to prevent overwriting
+      const preservedBasicInfo = {
+        description: localJobData.value.description,
+        delivery_date: localJobData.value.delivery_date,
+        order_number: localJobData.value.order_number,
+        notes: localJobData.value.notes,
+      }
+
+      // Update local data when header changes (e.g., from inline edits)
+      // IMPORTANT: Don't update basic info fields as they're managed separately
+      localJobData.value.name = newHeader.name
+      localJobData.value.client = newHeader.client
+      localJobData.value.status = newHeader.status
+      localJobData.value.pricing_methodology = newHeader.pricing_methodology
+      localJobData.value.quoted = newHeader.quoted
+      localJobData.value.fully_invoiced = newHeader.fully_invoiced
+      localJobData.value.paid = newHeader.paid
+
+      // Restore preserved basic info fields
+      localJobData.value.description = preservedBasicInfo.description
+      localJobData.value.delivery_date = preservedBasicInfo.delivery_date
+      localJobData.value.order_number = preservedBasicInfo.order_number
+      localJobData.value.notes = preservedBasicInfo.notes
+
+      debugLog('JobSettingsTab - Header updated from store:', newHeader)
+
+      // Allow field watchers to trigger again
+      nextTick(() => {
+        isSyncingFromStore.value = false
+      })
+    }
   },
   { immediate: true, deep: true },
 )
@@ -402,27 +637,37 @@ const confirmClientChange = () => {
     return
   }
 
-  localJobData.value.client_id = newClientId.value
-  localJobData.value.client_name = selectedNewClient.value.name
+  localJobData.value.client = {
+    id: newClientId.value,
+    name: selectedNewClient.value.name,
+  }
 
-  localJobData.value.contact_id = undefined
-  localJobData.value.contact_name = undefined
   contactDisplayValue.value = ''
 
   resetClientChangeState()
 
-  // Enqueues atomic client change + cleans contact and forces flush
+  // Send client_id/client_name and clear contact
   autosave.queueChanges({
-    client_id: localJobData.value.client_id || '',
-    client_name: localJobData.value.client_name || '',
+    client_id: localJobData.value.client?.id ?? null,
+    client_name: localJobData.value.client?.name ?? null,
     contact_id: null,
     contact_name: null,
   })
   void autosave.flush('client-change')
+
+  // Update header immediately for instant reactivity
+  if (jobHeader.value) {
+    jobsStore.patchHeader(jobHeader.value.job_id, {
+      client: {
+        id: localJobData.value.client?.id ?? '',
+        name: localJobData.value.client?.name ?? '',
+      },
+    })
+  }
 }
 
 const editCurrentClient = async () => {
-  if (!props.jobData?.client_id) {
+  if (!jobData.value?.client?.id) {
     debugLog('No current client to edit')
     return
   }
@@ -430,7 +675,7 @@ const editCurrentClient = async () => {
   try {
     // Fetch current client data from API
     const clientDetail = await api.clients_retrieve({
-      params: { client_id: props.jobData.client_id },
+      params: { client_id: jobData.value.client.id },
     })
 
     // Update currentClientData with fetched data
@@ -451,31 +696,50 @@ const editCurrentClient = async () => {
 
 const handleClientUpdated = (updatedClient: Client) => {
   // Update local job data with new client information
-  localJobData.value.client_name = updatedClient.name
+  if (localJobData.value.client) {
+    localJobData.value.client.name = updatedClient.name
+  }
 
   // Queue the change for autosave
-  autosave.queueChange('client_name', updatedClient.name)
+  autosave.queueChange('client', localJobData.value.client)
   void autosave.flush('client-updated')
 
   toast.success('Client updated successfully')
 }
 
-const handleContactSelected = (contact: ClientContact | null) => {
+const handleContactSelected = async (contact: ClientContact | null) => {
   if (contact) {
     localJobData.value.contact_id = contact.id
     localJobData.value.contact_name = contact.name
     contactDisplayValue.value = contact.name
+
+    // Ensure all fields are present for Zod validation (convert undefined to null)
+    const contactToSend = {
+      id: contact.id,
+      name: contact.name,
+      email: contact.email ?? null,
+      phone: contact.phone ?? null,
+      position: contact.position ?? null,
+      notes: contact.notes ?? null,
+      is_primary: contact.is_primary,
+    }
+
+    // Save contact directly (not through header autosave)
+    try {
+      await api.clients_jobs_contact_update(contactToSend, {
+        params: { job_id: props.jobId },
+      })
+      toast.success('Contact updated successfully')
+    } catch (error) {
+      toast.error('Failed to update contact')
+      debugLog('Failed to update contact:', error)
+    }
   } else {
+    // Clear contact locally - no API call needed since clearing means no contact association
     localJobData.value.contact_id = undefined
     localJobData.value.contact_name = undefined
     contactDisplayValue.value = ''
   }
-
-  autosave.queueChanges({
-    contact_id: localJobData.value.contact_id ?? null,
-    contact_name: localJobData.value.contact_name ?? null,
-  })
-  void autosave.flush('contact-change')
 }
 
 /* ------------------------------
@@ -488,26 +752,27 @@ let unbindRouteGuard: () => void = () => {}
 
 /** Instance */
 const autosave = createJobAutosave({
-  jobId: props.jobData?.id || '',
+  jobId: props.jobId || '',
   getSnapshot: () => {
     // Returns original snapshot, not current data
     const data = originalJobData.value || {}
     return {
       id: data.id,
+      job_number: data.job_number,
       name: data.name,
-      description: data.description,
-      client_id: data.client_id,
-      client_name: data.client_name,
+      client: data.client,
       contact_id: data.contact_id,
       contact_name: data.contact_name,
+      job_status: data.status,
+      pricing_methodology: data.pricing_methodology,
+      fully_invoiced: data.fully_invoiced,
+      quoted: data.quoted,
+      quote_acceptance_date: data.quote_acceptance_date,
+      paid: data.paid,
+      description: data.description,
       order_number: data.order_number,
       notes: data.notes,
-      pricing_methodology: data.pricing_methodology,
-      job_status: data.job_status,
       delivery_date: data.delivery_date,
-      paid: data.paid,
-      quoted: data.quoted,
-      invoiced: data.invoiced,
     }
   },
   applyOptimistic: (patch) => {
@@ -522,57 +787,108 @@ const autosave = createJobAutosave({
   },
   saveAdapter: async (patch) => {
     try {
-      if (!props.jobData?.id) {
+      if (!props.jobId) {
         return { success: false, error: 'Missing job id' }
       }
 
-      // Mounts compatible wrapper with current service
-      const mergedJob = {
-        ...(props.jobData as Job),
-        ...(patch as Partial<Job>),
-      } as Job
-
-      const jobDetailResponse: JobDetailResponse = {
-        success: true,
-        data: {
-          job: mergedJob,
-          events: [],
-          company_defaults: {
-            wage_rate: 0,
-            time_markup: 0,
-            materials_markup: 0,
-            charge_out_rate: 0,
-          },
-        },
+      // Build partial payload with current values of all basic info fields
+      // Build partial payload, excluding contact fields since they are saved separately
+      const currentBasicInfo = jobsStore.currentBasicInfo
+      const partialPayload: Partial<Job> = {
+        ...patch,
+        // Always include current basic info values to prevent overwriting
+        description: localJobData.value?.description ?? currentBasicInfo?.description ?? null,
+        delivery_date: localJobData.value?.delivery_date ?? currentBasicInfo?.delivery_date ?? null,
+        order_number: localJobData.value?.order_number ?? currentBasicInfo?.order_number ?? null,
+        notes: localJobData.value?.notes ?? currentBasicInfo?.notes ?? null,
       }
 
-      const result = await jobService.updateJob(props.jobData.id, jobDetailResponse)
+      // Use the partial update method (similar to useJobHeaderAutosave)
+      const result = await jobService.updateJobHeaderPartial(props.jobId, partialPayload)
       if (result.success) {
-        if (result.data?.data) {
-          // Atualiza store como as abas já fazem
-          // Update store like tabs already do
-          jobsStore.setDetailedJob(result.data.data)
+        // Apply the patch to local snapshot (don't trust partial server response)
+        const applyPatchToLocal = (
+          base: Partial<Job>,
+          patch: Record<string, unknown>,
+        ): Partial<Job> => {
+          const next = { ...base }
 
-          // Updates original snapshot based on saved data
-          const savedJob = result.data.data.job
-          originalJobData.value = {
-            id: savedJob.id,
-            name: savedJob.name,
-            description: savedJob.description,
-            client_id: savedJob.client_id,
-            client_name: savedJob.client_name,
-            contact_id: savedJob.contact_id,
-            contact_name: savedJob.contact_name,
-            order_number: savedJob.order_number,
-            notes: savedJob.notes,
-            pricing_methodology: savedJob.pricing_methodology,
-            job_status: savedJob.job_status,
-            delivery_date: savedJob.delivery_date,
-            paid: savedJob.paid,
-            quoted: savedJob.quoted,
-            invoiced: savedJob.invoiced,
+          if ('name' in patch) next.name = patch.name as string
+          if ('job_status' in patch) next.status = String(patch.job_status)
+          if ('client_id' in patch || 'client_name' in patch) {
+            next.client = {
+              id: (patch.client_id as string | null) ?? base.client?.id ?? '',
+              name: (patch.client_name as string | null) ?? base.client?.name ?? '',
+            }
+          }
+          if ('pricing_methodology' in patch)
+            next.pricing_methodology = patch.pricing_methodology as string
+          if ('quoted' in patch) next.quoted = Boolean(patch.quoted)
+          if ('fully_invoiced' in patch) next.fully_invoiced = Boolean(patch.fully_invoiced)
+          if ('paid' in patch) next.paid = Boolean(patch.paid)
+          if ('quote_acceptance_date' in patch)
+            next.quote_acceptance_date = (patch.quote_acceptance_date as string | null) ?? undefined
+
+          // Basic infos (kept locally)
+          if ('description' in patch)
+            next.description = (patch.description as string | null) ?? null
+          if ('delivery_date' in patch)
+            next.delivery_date = (patch.delivery_date as string | null) ?? null
+          if ('order_number' in patch)
+            next.order_number = (patch.order_number as string | null) ?? null
+          if ('notes' in patch) next.notes = (patch.notes as string | null) ?? null
+
+          // Contact fields are handled separately, not through header
+
+          return next
+        }
+
+        originalJobData.value = applyPatchToLocal(originalJobData.value, partialPayload)
+
+        // Update ONLY header fields in store
+        const headerPatch: Partial<Job> = {}
+        if ('name' in partialPayload) headerPatch.name = partialPayload.name
+        if ('job_status' in partialPayload) headerPatch.status = String(partialPayload.job_status)
+        if ('pricing_methodology' in partialPayload)
+          headerPatch.pricing_methodology = partialPayload.pricing_methodology
+        if ('quoted' in partialPayload) headerPatch.quoted = !!partialPayload.quoted
+        if ('fully_invoiced' in partialPayload)
+          headerPatch.fully_invoiced = !!partialPayload.fully_invoiced
+        if ('paid' in partialPayload) headerPatch.paid = !!partialPayload.paid
+        if ('quote_acceptance_date' in partialPayload)
+          headerPatch.quote_acceptance_date = partialPayload.quote_acceptance_date ?? undefined
+        if ('client_id' in partialPayload || 'client_name' in partialPayload) {
+          headerPatch.client = {
+            id: (partialPayload.client_id as string | null | undefined) ?? undefined,
+            name: (partialPayload.client_name as string | null | undefined) ?? undefined,
           }
         }
+        if (Object.keys(headerPatch).length && props.jobId) {
+          jobsStore.patchHeader(props.jobId, headerPatch)
+        }
+
+        // Update basic infos in store with local values
+        if (props.jobId) {
+          jobsStore.updateBasicInfo(props.jobId, {
+            description: originalJobData.value.description ?? null,
+            delivery_date: originalJobData.value.delivery_date ?? null,
+            order_number: originalJobData.value.order_number ?? null,
+            notes: originalJobData.value.notes ?? null,
+          })
+
+          if (jobsStore.currentJob) {
+            jobsStore.updateDetailedJob(props.jobId, {
+              job: {
+                ...jobsStore.currentJob.job,
+                description: originalJobData.value.description ?? null,
+                delivery_date: originalJobData.value.delivery_date ?? null,
+                order_number: originalJobData.value.order_number ?? null,
+                notes: originalJobData.value.notes ?? null,
+              },
+            })
+          }
+        }
+
         // Notifies success
         toast.success('Job updated successfully')
         return { success: true, serverData: result.data }
@@ -611,7 +927,15 @@ const enqueueIfNotInitializing = (key: string, value: unknown) => {
 
 watch(
   () => localJobData.value.name,
-  (v) => enqueueIfNotInitializing('name', v),
+  (v) => {
+    if (!isSyncingFromStore.value) {
+      enqueueIfNotInitializing('name', v)
+      // Sync with store for immediate reactivity
+      if (jobHeader.value) {
+        jobsStore.patchHeader(jobHeader.value.job_id, { name: v ?? '' })
+      }
+    }
+  },
 )
 watch(
   () => localJobData.value.description,
@@ -619,34 +943,55 @@ watch(
 )
 watch(
   () => localJobData.value.pricing_methodology,
-  (v) => enqueueIfNotInitializing('pricing_methodology', v),
+  (v) => {
+    if (!isSyncingFromStore.value) {
+      enqueueIfNotInitializing('pricing_methodology', v)
+    }
+  },
 )
 watch(
-  () => localJobData.value.client_id,
-  (v) => enqueueIfNotInitializing('client_id', v),
-)
-watch(
-  () => localJobData.value.client_name,
-  (v) => enqueueIfNotInitializing('client_name', v),
-)
-watch(
-  () => localJobData.value.contact_id,
-  (v) => enqueueIfNotInitializing('contact_id', v),
-)
-watch(
-  () => localJobData.value.contact_name,
-  (v) => enqueueIfNotInitializing('contact_name', v),
-)
-// notes via computed proxy
-watch(jobNotesComputed, (v) => enqueueIfNotInitializing('notes', v))
-watch(
-  () => localJobData.value.order_number,
-  (v) => enqueueIfNotInitializing('order_number', v),
+  () => localJobData.value.client,
+  (v) => {
+    if (!isSyncingFromStore.value) {
+      enqueueIfNotInitializing('client_id', v?.id ?? null)
+      enqueueIfNotInitializing('client_name', v?.name ?? null)
+    }
+  },
+  { deep: true },
 )
 
+// Watchers for basic info computed properties
 watch(
-  () => localJobData.value.delivery_date,
-  (v) => enqueueIfNotInitializing('delivery_date', v),
+  () => descriptionComputed.value,
+  (v) => {
+    if (!isSyncingFromStore.value) {
+      enqueueIfNotInitializing('description', v)
+    }
+  },
+)
+watch(
+  () => deliveryDateComputed.value,
+  (v) => {
+    if (!isSyncingFromStore.value) {
+      enqueueIfNotInitializing('delivery_date', v)
+    }
+  },
+)
+watch(
+  () => orderNumberComputed.value,
+  (v) => {
+    if (!isSyncingFromStore.value) {
+      enqueueIfNotInitializing('order_number', v)
+    }
+  },
+)
+watch(
+  () => notesComputed.value,
+  (v) => {
+    if (!isSyncingFromStore.value) {
+      enqueueIfNotInitializing('notes', v)
+    }
+  },
 )
 
 /** UI helpers */

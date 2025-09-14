@@ -15,8 +15,9 @@
         </div>
         <div class="flex-1 overflow-hidden">
           <SmartCostLinesTable
+            :jobId="jobId"
+            :tabKind="'estimate'"
             :lines="costLines"
-            tabKind="estimate"
             :readOnly="isLoading"
             :showItemColumn="true"
             :showSourceColumn="false"
@@ -34,7 +35,7 @@
             <CompactSummaryCard
               title="Estimate Summary"
               class="w-full"
-              :summary="props.estimateSummaryFromBackend || estimateSummary"
+              :summary="estimateSummary"
               :costLines="costLines"
               :isLoading="isLoading"
               :revision="revision"
@@ -55,7 +56,7 @@
         <div class="max-h-[60vh] overflow-y-auto">
           <CostSetSummaryCard
             title="Estimate Summary"
-            :summary="props.estimateSummaryFromBackend || estimateSummary"
+            :summary="estimateSummary"
             :costLines="costLines"
             :isLoading="isLoading"
             :revision="revision"
@@ -100,7 +101,6 @@ type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
 
 type Props = {
   jobId: string
-  estimateSummaryFromBackend?: { cost: number; rev: number; hours: number; created?: string }
 }
 
 const props = defineProps<Props>()
@@ -113,6 +113,8 @@ const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
 
 const costLines = ref<CostLine[]>([])
+const estimateCostSet = ref<CostSet | null>(null)
+
 const isLoading = ref(false)
 const revision = ref(0)
 const showDetailedSummary = ref(false)
@@ -121,6 +123,7 @@ async function loadEstimate() {
   isLoading.value = true
   try {
     const costSet: CostSet = await fetchCostSet(props.jobId, 'estimate')
+    estimateCostSet.value = costSet
     costLines.value = costSet.cost_lines.map((line) => ({
       ...line,
       quantity: line.quantity,
@@ -140,12 +143,6 @@ onMounted(async () => {
 })
 
 const estimateSummary = computed(() => {
-  if (props.estimateSummaryFromBackend) {
-    return {
-      ...props.estimateSummaryFromBackend,
-      profitMargin: props.estimateSummaryFromBackend.rev - props.estimateSummaryFromBackend.cost,
-    }
-  }
   let cost = 0
   let rev = 0
   let hours = 0
@@ -233,6 +230,9 @@ function handleAddEmptyLine() {
     kind: 'material',
     desc: '',
     quantity: 1,
+    // @ts-expect-error - Allow null for initial empty state
+    unit_cost: null,
+    // @ts-expect-error - Allow null for initial empty state
     unit_cost: null,
     unit_rev: null,
     total_cost: 0,

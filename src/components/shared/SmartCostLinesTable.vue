@@ -509,6 +509,8 @@ const columns = computed(() => {
                   if (found) {
                     Object.assign(line, { desc: found.description || '' })
                     Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
+                    // Ensure quantity is set for new lines
+                    if (line.quantity == null) Object.assign(line, { quantity: 1 })
                     if (kind !== 'time')
                       Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
                     nextTick(() => {

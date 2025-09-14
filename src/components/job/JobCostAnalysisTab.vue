@@ -4,7 +4,7 @@
       <div>
         <h2 class="text-lg font-semibold text-gray-900">Cost Analysis</h2>
         <p class="text-sm text-gray-500">
-          <span v-if="props.jobData?.pricing_methodology === 'time_materials'">
+          <span v-if="props.pricingMethodology === 'time_materials'">
             Compare Estimate and Actual cost sets for this Time & Materials job
           </span>
           <span v-else-if="!showQuoteColumn">
@@ -155,126 +155,100 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { ArrowUp, ArrowDown, CheckCircle, AlertTriangle, XCircle } from 'lucide-vue-next'
-import { useCostingStore } from '../../stores/costing'
-import { schemas } from '@/api/generated/api'
-import type { z } from 'zod'
-import type { CostSetSummary } from '@/api/generated/api'
+import { api } from '../../api/client'
+import { schemas } from '../../api/generated/api'
+import { z } from 'zod'
 
-type CostSet = z.infer<typeof schemas.CostSet>
+type JobCostSetSummary = z.infer<typeof schemas.JobCostSetSummary>
+type JobCostSummaryResponse = z.infer<typeof schemas.JobCostSummaryResponse>
 
 const props = defineProps<{
   jobId: string
-  jobData?: {
-    pricing_methodology?: 'fixed_price' | 'time_materials'
-    has_quote?: boolean
-    quote: CostSet | null
-  }
+  pricingMethodology: string
 }>()
-const costingStore = useCostingStore()
-const loading = ref(true)
 
-// Reactive flag to track if we have valid quote data
+const loading = ref(true)
 const hasValidQuoteData = ref(false)
 
-// Computed to determine if quote column should be shown
-const showQuoteColumn = computed(() => {
-  // Don't show quote column for time_materials jobs
-  if (props.jobData?.pricing_methodology === 'time_materials') {
-    return false
-  }
-
-  // Show quote column if we have actual quote data with cost/revenue OR the hasValidQuoteData flag
-  const hasQuoteData = quote.value.cost > 0 || quote.value.rev > 0 || hasValidQuoteData.value
-
-  return hasQuoteData
+const zeroSummary = (): JobCostSetSummary => ({
+  cost: 0,
+  rev: 0,
+  hours: 0,
+  profitMargin: 0,
 })
 
-const estimate = ref<CostSetSummary>({ cost: 0, rev: 0, hours: 0, profitMargin: 0 })
-const quote = ref<CostSetSummary>({ cost: 0, rev: 0, hours: 0, profitMargin: 0 })
-const actual = ref<CostSetSummary>({ cost: 0, rev: 0, hours: 0, profitMargin: 0 })
+const estimate = ref<JobCostSetSummary>(zeroSummary())
+const quote = ref<JobCostSetSummary>(zeroSummary())
+const actual = ref<JobCostSetSummary>(zeroSummary())
+
+const ensureSummary = (s?: JobCostSetSummary | null): JobCostSetSummary => ({
+  cost: s?.cost ?? 0,
+  rev: s?.rev ?? 0,
+  hours: s?.hours ?? 0,
+  profitMargin: s?.profitMargin ?? 0,
+})
 
 async function loadAll() {
   loading.value = true
+  try {
+    const resp: JobCostSummaryResponse = await api.job_rest_jobs_costs_summary_retrieve({
+      params: { job_id: props.jobId },
+    })
 
-  await costingStore.load(props.jobId, 'estimate')
-  const est = costingStore.costSet
+    estimate.value = ensureSummary(resp.estimate)
+    quote.value = ensureSummary(resp.quote)
+    actual.value = ensureSummary(resp.actual)
 
-  await costingStore.load(props.jobId, 'quote')
-  const quo = costingStore.costSet
-
-  // Check if we have valid quote data
-  hasValidQuoteData.value = !!(quo && quo.cost_lines && quo.cost_lines.length > 0)
-
-  await costingStore.load(props.jobId, 'actual')
-  const act = costingStore.costSet
-
-  estimate.value = summarise(est)
-  quote.value = summarise(quo)
-  actual.value = summarise(act)
-
-  loading.value = false
+    hasValidQuoteData.value =
+      !!resp.quote && ((resp.quote.cost ?? 0) > 0 || (resp.quote.rev ?? 0) > 0)
+  } catch (error) {
+    console.error('Failed to load cost summary:', error)
+    estimate.value = zeroSummary()
+    quote.value = zeroSummary()
+    actual.value = zeroSummary()
+    hasValidQuoteData.value = false
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(loadAll)
 
-function summarise(costSet: CostSet | undefined): CostSetSummary {
-  if (!costSet || !costSet.cost_lines) {
-    return { cost: 0, rev: 0, hours: 0, profitMargin: 0 }
-  }
+const showQuoteColumn = computed(() => {
+  if (props.pricingMethodology === 'time_materials') return false
+  return hasValidQuoteData.value || quote.value.cost > 0 || quote.value.rev > 0
+})
 
-  let cost = 0,
-    rev = 0,
-    hours = 0
-
-  for (const line of costSet.cost_lines) {
-    const quantity = line.quantity
-    const lineCost = quantity * line.unit_cost
-    const lineRev = quantity * line.unit_rev
-
-    cost += lineCost
-    rev += lineRev
-    if (line.kind === 'time') hours += quantity
-  }
-
-  const profitMargin = rev === 0 ? 0 : ((rev - cost) / rev) * 100
-  const summary = { cost, rev, hours, profitMargin }
-
-  return summary
+function percentDiff(actualNum: number, refNum: number): number {
+  if (!refNum) return 0
+  return ((actualNum - refNum) / refNum) * 100
 }
 
-const costDiff = computed(() => {
-  const referenceValue =
-    props.jobData?.pricing_methodology === 'time_materials' || !showQuoteColumn.value
-      ? estimate.value.cost
-      : quote.value.cost
-  return percentDiff(actual.value.cost, referenceValue)
-})
-const revenueDiff = computed(() => {
-  const referenceValue =
-    props.jobData?.pricing_methodology === 'time_materials' || !showQuoteColumn.value
-      ? estimate.value.rev
-      : quote.value.rev
-  return percentDiff(actual.value.rev, referenceValue)
-})
-const profitDiff = computed(() => {
-  const referenceValue =
-    props.jobData?.pricing_methodology === 'time_materials' || !showQuoteColumn.value
-      ? estimate.value.profitMargin
-      : quote.value.profitMargin
-  return percentDiff(actual.value.profitMargin, referenceValue)
-})
-const hoursDiff = computed(() => {
-  const referenceValue =
-    props.jobData?.pricing_methodology === 'time_materials' || !showQuoteColumn.value
-      ? estimate.value.hours
-      : quote.value.hours
-  return percentDiff(actual.value.hours, referenceValue)
-})
+const costRef = computed(() =>
+  props.pricingMethodology === 'time_materials' || !showQuoteColumn.value
+    ? estimate.value.cost
+    : quote.value.cost,
+)
+const revRef = computed(() =>
+  props.pricingMethodology === 'time_materials' || !showQuoteColumn.value
+    ? estimate.value.rev
+    : quote.value.rev,
+)
+const pmRef = computed(() =>
+  props.pricingMethodology === 'time_materials' || !showQuoteColumn.value
+    ? estimate.value.profitMargin
+    : quote.value.profitMargin,
+)
+const hoursRef = computed(() =>
+  props.pricingMethodology === 'time_materials' || !showQuoteColumn.value
+    ? estimate.value.hours
+    : quote.value.hours,
+)
 
-function percentDiff(actual: number, ref: number): number {
-  if (!ref || ref === 0) return 0
-  return ((actual - ref) / ref) * 100
-}
+const costDiff = computed(() => percentDiff(actual.value.cost, costRef.value))
+const revenueDiff = computed(() => percentDiff(actual.value.rev, revRef.value))
+const profitDiff = computed(() => percentDiff(actual.value.profitMargin!, pmRef.value!))
+const hoursDiff = computed(() => percentDiff(actual.value.hours, hoursRef.value))
 
 const costClass = computed(() =>
   costDiff.value > 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold',
@@ -282,18 +256,21 @@ const costClass = computed(() =>
 const costIcon = computed(() =>
   costDiff.value > 0 ? ArrowUp : costDiff.value < 0 ? ArrowDown : null,
 )
+
 const revenueClass = computed(() =>
   revenueDiff.value >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold',
 )
 const revenueIcon = computed(() =>
   revenueDiff.value > 0 ? ArrowUp : revenueDiff.value < 0 ? ArrowDown : null,
 )
+
 const profitClass = computed(() =>
   profitDiff.value >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold',
 )
 const profitIcon = computed(() =>
   profitDiff.value > 0 ? ArrowUp : profitDiff.value < 0 ? ArrowDown : null,
 )
+
 const hoursClass = computed(() =>
   hoursDiff.value <= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold',
 )
@@ -305,17 +282,10 @@ const quotePerformance = computed(() => {
   if (!showQuoteColumn.value || !hasValidQuoteData.value || quote.value.cost === 0) {
     return { status: 'nodata' as const, deviation: 0 }
   }
-
-  // Calculate absolute deviation of actual cost from quoted cost
   const deviation = Math.abs(percentDiff(actual.value.cost, quote.value.cost))
-
-  if (deviation <= 20) {
-    return { status: 'good' as const, deviation } // Within 20%
-  } else if (deviation <= 40) {
-    return { status: 'amber' as const, deviation } // Within 40%
-  } else {
-    return { status: 'red' as const, deviation } // Outside 40%
-  }
+  if (deviation <= 20) return { status: 'good' as const, deviation }
+  if (deviation <= 40) return { status: 'amber' as const, deviation }
+  return { status: 'red' as const, deviation }
 })
 
 const quoteAccuracyIcon = computed(() => {
@@ -346,7 +316,6 @@ const quoteAccuracyClass = computed(() => {
 
 const quoteAccuracyDisplayValue = computed(() => {
   if (quotePerformance.value.status === 'nodata') return 0
-  // Return the actual signed difference to show if it was over or under
   return percentDiff(actual.value.cost, quote.value.cost)
 })
 
@@ -373,12 +342,10 @@ table {
   border-collapse: separate;
   border-spacing: 0;
 }
-
 th,
 td {
   border-bottom: 1px solid #e5e7eb;
 }
-
 th:last-child,
 td:last-child {
   border-right: none;

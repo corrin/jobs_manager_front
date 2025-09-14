@@ -22,7 +22,7 @@ class QuoteService {
 
     // The endpoint only returns { template_url }, but we need to return QuoteSpreadsheet
     // Let's fetch the updated job to get the complete quote_sheet
-    const jobResponse = await api.job_rest_jobs_retrieve({}, { params: { job_id: jobId } })
+    const jobResponse = await api.getFullJob({}, { params: { job_id: jobId } })
     return jobResponse.quote_sheet
   }
 
