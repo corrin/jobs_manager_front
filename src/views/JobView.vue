@@ -306,16 +306,15 @@ import { useJobTabs } from '../composables/useJobTabs'
 import { useJobNotifications } from '../composables/useJobNotifications'
 import { useJobEvents } from '../composables/useJobEvents'
 import { useJobHeaderAutosave } from '../composables/useJobHeaderAutosave'
+import { z } from 'zod'
+import { schemas } from '../api/generated/api'
+type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { api } from '../api/client'
-import { schemas } from '../api/generated/api'
 import { ArrowLeft, Printer, Download } from 'lucide-vue-next'
 import { JOB_STATUS_CHOICES } from '../constants/job-status'
 import { jobService } from '../services/job.service'
 import { toast } from 'vue-sonner'
-import { z } from 'zod'
-
-type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
 
 const route = useRoute()
 const router = useRouter()
@@ -416,22 +415,22 @@ const jobDataWithPaid = computed(() => {
 })
 
 watch(
-  jobDataWithPaid,
-  (newJobData) => {
-    if (newJobData) {
-      if (!headerAutosave) {
-        headerAutosave = useJobHeaderAutosave(newJobData)
-        debugLog('JobView - headerAutosave initialized')
-      }
-      localJobName.value = newJobData.name || ''
-      localClientName.value = newJobData.client_name || ''
-      localClientId.value = newJobData.client_id || ''
-      localJobStatus.value = newJobData.job_status || ''
-      localPricingMethodology.value = newJobData.pricing_methodology || ''
-      localQuoted.value = newJobData.quoted || false
-      localFullyInvoiced.value = newJobData.fully_invoiced || false
-      localPaid.value = newJobData.paid || false
+  jobHeader,
+  (h) => {
+    if (!h) return
+    if (!headerAutosave) {
+      headerAutosave = useJobHeaderAutosave(h)
     }
+
+    // locals (for the InlineEdit... existing components)
+    localJobName.value = h.name
+    localClientName.value = h.client?.name ?? ''
+    localClientId.value = h.client?.id ?? ''
+    localJobStatus.value = h.status
+    localPricingMethodology.value = h.pricing_methodology ?? ''
+    localQuoted.value = h.quoted
+    localFullyInvoiced.value = h.fully_invoiced
+    localPaid.value = h.paid
   },
   { immediate: true },
 )

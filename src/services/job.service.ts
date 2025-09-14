@@ -5,6 +5,52 @@ import { z } from 'zod'
 import { AdvancedFilters } from '../constants/advanced-filters'
 import { AxiosError } from 'axios'
 
+type Job = z.infer<typeof schemas.Job>
+
+/**
+ * Updates partial Job fields (header autosave) without going through Zodios,
+ * since the backend accepts partials in data.job and returns complete JobDetailResponse.
+ */
+async function updateJobHeaderPartial(
+  jobId: string,
+  patch: Partial<Job>,
+): Promise<{ success: true; data: JobDetailResponse } | { success: false; error: string }> {
+  try {
+    // Build only what's needed; backend accepts partial in data.job
+    const body = {
+      data: {
+        job: {
+          ...patch,
+          // Ensure null for nullable fields when undefined
+          contact_id: patch.contact_id ?? null,
+          contact_name: patch.contact_name ?? null,
+          notes: patch.notes ?? null,
+          order_number: patch.order_number ?? null,
+          description: patch.description ?? null,
+          delivery_date: patch.delivery_date ?? null,
+        },
+        // Backend ignores these in update; we keep expected shape
+        events: [],
+        company_defaults: {
+          wage_rate: 0,
+          time_markup: 0,
+          materials_markup: 0,
+          charge_out_rate: 0,
+        },
+      },
+      success: true,
+    }
+
+    const url = `/job/rest/jobs/${jobId}/`
+
+    const { data } = await axios.put<JobDetailResponse>(url, body)
+    return { success: true, data }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error updating job header'
+    return { success: false, error: msg }
+  }
+}
+
 type AdvancedSearchResponse = z.infer<typeof schemas.AdvancedSearchResponse>
 type KanbanJob = z.infer<typeof schemas.KanbanJob>
 export type JobCreateData = z.infer<typeof schemas.JobCreateRequest>
@@ -32,6 +78,9 @@ export const jobService = {
   getAllJobs(): Promise<FetchAllJobsResponse> {
     return api.job_api_jobs_fetch_all_retrieve()
   },
+
+  // Partial update for header autosave
+  updateJobHeaderPartial,
 
   getJobsByStatus(status: string): Promise<FetchJobsResponse> {
     return api.job_api_jobs_fetch_retrieve({ params: { status } })

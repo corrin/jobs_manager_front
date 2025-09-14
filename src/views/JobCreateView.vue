@@ -153,7 +153,7 @@
                   >
                     <option value="">Select pricing methodology</option>
                     <option value="fixed_price">Fixed Price</option>
-                    <option value="time_and_materials">Time & Materials</option>
+                    <option value="time_materials">Time & Materials</option>
                   </select>
                 </div>
               </div>

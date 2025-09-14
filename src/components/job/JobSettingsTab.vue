@@ -259,20 +259,25 @@ const jobData = ref<Job | null>(null)
 // Combined onMounted hook for all initialization
 onMounted(async () => {
   if (props.jobId) {
-    try {
-      const response = await api.job_rest_jobs_header_retrieve({
-        params: { job_id: props.jobId },
-      })
-      if (response) {
-        jobData.value = response
-      }
-    } catch (error) {
-      toast.error('Failed to load job header data')
-      debugLog('Failed to load job header data:', error)
-    }
-
-    // Load basic information
-    await loadBasicInfo()
+    // Load both header and basic info in parallel
+    await Promise.all([
+      // Load header data
+      (async () => {
+        try {
+          const response = await api.job_rest_jobs_header_retrieve({
+            params: { job_id: props.jobId },
+          })
+          if (response) {
+            jobData.value = response
+          }
+        } catch (error) {
+          toast.error('Failed to load job header data')
+          debugLog('Failed to load job header data:', error)
+        }
+      })(),
+      // Load basic information
+      await loadBasicInfo(),
+    ])
   }
 
   // Load job status choices
@@ -414,11 +419,11 @@ watch(
         quoted: false,
         quote_acceptance_date: undefined,
         paid: false,
-        // Include basic info fields
-        description: basicInfo.value?.description || null,
-        delivery_date: basicInfo.value?.delivery_date || null,
-        order_number: basicInfo.value?.order_number || null,
-        notes: basicInfo.value?.notes || null,
+        // Include basic info fields - will be updated when basicInfo loads
+        description: null,
+        delivery_date: null,
+        order_number: null,
+        notes: null,
       }
 
       localJobData.value = { ...defaultJobData }
@@ -429,7 +434,7 @@ watch(
     }
     debugLog(
       '✅ JobSettingsTab - Watcher: Received valid jobData, initializing. Job ID:',
-      newJobData.id,
+      newJobData.job_id,
     )
 
     isInitializing.value = true
@@ -446,11 +451,11 @@ watch(
       quoted: newJobData.quoted,
       quote_acceptance_date: newJobData.quote_acceptance_date,
       paid: newJobData.paid,
-      // Include basic info fields
-      description: basicInfo.value?.description || null,
-      delivery_date: basicInfo.value?.delivery_date || null,
-      order_number: basicInfo.value?.order_number || null,
-      notes: basicInfo.value?.notes || null,
+      // Basic info fields will be updated by separate watcher
+      description: null,
+      delivery_date: null,
+      order_number: null,
+      notes: null,
     }
 
     localJobData.value = { ...jobDataSnapshot }
@@ -467,15 +472,39 @@ watch(
         localJobData.value.contact_name = contactResponse.name
         contactDisplayValue.value = contactResponse.name || ''
       }
-    } catch (error) {
-      debugLog('Failed to load contact information:', error)
-      contactDisplayValue.value = ''
+    } catch (error: unknown) {
+      // Handle 404 when no contact is associated with the job - simply ignore
+      const axiosError = error as { response?: { status?: number } }
+      if (axiosError?.response?.status === 404) {
+        debugLog('No contact associated with this job - ignoring 404')
+        localJobData.value.contact_id = undefined
+        localJobData.value.contact_name = undefined
+        contactDisplayValue.value = ''
+      } else {
+        debugLog('Failed to load contact information:', error)
+        contactDisplayValue.value = ''
+      }
     }
 
     debugLog('JobSettingsTab - Local job data initialized:', localJobData.value)
 
     await nextTick()
     isInitializing.value = false
+  },
+  { immediate: true, deep: true },
+)
+
+// Separate watcher for basic info to update local data when it loads
+watch(
+  () => basicInfo.value,
+  (newBasicInfo) => {
+    if (newBasicInfo && localJobData.value) {
+      localJobData.value.description = newBasicInfo.description
+      localJobData.value.delivery_date = newBasicInfo.delivery_date
+      localJobData.value.order_number = newBasicInfo.order_number
+      localJobData.value.notes = newBasicInfo.notes
+      debugLog('JobSettingsTab - Basic info updated in local data:', newBasicInfo)
+    }
   },
   { immediate: true, deep: true },
 )
