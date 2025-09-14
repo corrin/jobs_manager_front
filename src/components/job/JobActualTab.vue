@@ -67,8 +67,9 @@
 
           <div v-else>
             <SmartCostLinesTable
+              :jobId="jobId"
+              :tabKind="'actual'"
               :lines="costLines"
-              tabKind="actual"
               :readOnly="false"
               :showItemColumn="true"
               :showSourceColumn="true"
@@ -76,7 +77,6 @@
               :allowedKinds="['material', 'adjust']"
               :blockedFieldsByKind="blockedFieldsByKind"
               :consumeStockFn="consumeStockForNewLine"
-              :jobId="props.jobId"
               :allowTypeEdit="true"
               :negativeStockIds="negativeStockIds"
               @delete-line="handleSmartDelete"
@@ -96,7 +96,7 @@
             <CompactSummaryCard
               title="Actual Summary"
               class="w-full"
-              :summary="props.actualSummaryFromBackend || actualSummary"
+              :summary="actualSummary"
               :costLines="costLines"
               :isLoading="isLoading"
               :revision="revision"
@@ -148,7 +148,7 @@
 
                     <!-- Total -->
                     <div class="shrink-0 text-sm font-semibold tabular-nums text-slate-900">
-                      {{ formatCurrency(invoice.total_incl_tax) }}
+                      {{ formatCurrency(invoice.total_excl_tax) }}
                     </div>
 
                     <!-- Actions -->
@@ -202,7 +202,7 @@
               <CardFooter class="flex flex-col items-center gap-2 pt-4">
                 <button
                   @click="createInvoice()"
-                  :disabled="isCreatingInvoice || !!props.jobData?.paid"
+                  :disabled="isCreatingInvoice || !!props.paid"
                   class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 flex items-center gap-2"
                 >
                   <svg
@@ -227,8 +227,8 @@
                   {{ isCreatingInvoice ? 'Creating...' : 'Create Invoice' }}
                 </button>
 
-                <p v-if="props.jobData?.paid" class="text-xs text-slate-500 text-center">
-                  Job is marked as <strong>Paid</strong>. Unmark “Paid” to create another invoice.
+                <p v-if="props.paid" class="text-xs text-slate-500 text-center">
+                  Job is marked as <strong>Paid</strong>. Unmark "Paid" to create another invoice.
                 </p>
               </CardFooter>
             </div>
@@ -247,7 +247,7 @@
         <div class="max-h-[60vh] overflow-y-auto">
           <CostSetSummaryCard
             title="Actual Summary"
-            :summary="props.actualSummaryFromBackend || actualSummary"
+            :summary="actualSummary"
             :costLines="costLines"
             :isLoading="isLoading"
             :revision="revision"
@@ -264,7 +264,7 @@
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
 
-import { onMounted, ref, computed, watch, reactive } from 'vue'
+import { onMounted, ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
@@ -278,9 +278,11 @@ import { z } from 'zod'
 import type { AxiosError } from 'axios'
 import type { KindOption } from '../shared/SmartCostLinesTable.vue'
 
-type Job = z.infer<typeof schemas.Job>
+// Removed Job type as it's no longer needed
 
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
+
+// Remove Job type import
 import {
   Dialog,
   DialogContent,
@@ -340,8 +342,11 @@ function isStockExtRefs(extRefs: unknown): extRefs is { stock_id: string } {
 
 const props = defineProps<{
   jobId: string
-  jobData?: Job
-  actualSummaryFromBackend?: { cost: number; rev: number; hours: number; created?: string }
+  jobNumber: string
+  pricingMethodology: string
+  quoted: boolean
+  fullyInvoiced: boolean
+  paid?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -357,13 +362,15 @@ const emit = defineEmits<{
 const isCreatingInvoice = ref(false)
 const deletingInvoiceId = ref<string | null>(null) // Track which invoice is being deleted
 
+// Local state for KPIs
+const estimateTotal = ref(0)
+const costsSummaryLoading = ref(false)
+
+// Removed jobData and initial API call
+
 // --- COMPUTED PROPERTIES ---
 const invoices = ref<Array<Invoice>>([])
-const estimateTotal = computed(() => props.jobData?.latest_estimate?.summary?.rev || 0)
-const timeAndExpenses = computed(() => {
-  const costLines = props.jobData?.latest_actual?.cost_lines
-  return costLines?.reduce((sum, line) => sum + (line.total_rev || 0), 0) || 0
-})
+const timeAndExpenses = computed(() => actualSummary.value.rev)
 
 const invoiceTotal = computed(() => {
   if (!invoices.value.length) return 0
@@ -371,7 +378,7 @@ const invoiceTotal = computed(() => {
 })
 
 const toBeInvoiced = computed(() => {
-  const actualTotal = props.jobData?.latest_actual?.summary?.rev || 0
+  const actualTotal = actualSummary.value.rev
   return Math.max(0, actualTotal - invoiceTotal.value)
 })
 
@@ -394,11 +401,11 @@ const formatDate = (dateString: string | null | undefined) => {
 
 // --- INVOICE METHODS ---
 const createInvoice = async () => {
-  if (!props.jobData?.id || isCreatingInvoice.value) return
+  if (!props.jobId || isCreatingInvoice.value) return
   isCreatingInvoice.value = true
   try {
     const response = await api.api_xero_create_invoice_create(undefined, {
-      params: { job_id: props.jobData.id },
+      params: { job_id: props.jobId },
     })
     if (!response.success) {
       debugLog(response.error || 'Failed to create invoice')
@@ -406,6 +413,7 @@ const createInvoice = async () => {
     }
     toast.success('Invoice created successfully!')
     emit('invoice-created')
+    await loadInvoices() // Reload invoices after creation
   } catch (err: unknown) {
     let msg = 'Unexpected error while trying to create invoice.'
     debugLog('Error creating invoice:', err)
@@ -428,16 +436,16 @@ const goToInvoiceOnXero = (url: string | null | undefined) => {
 }
 
 const deleteInvoiceOnXero = async (invoiceXeroId: string) => {
-  if (!props.jobData?.id || deletingInvoiceId.value) return
+  if (!props.jobId || deletingInvoiceId.value) return
   deletingInvoiceId.value = invoiceXeroId
   try {
-    const response = await api.api_xero_delete_invoice_destroy(undefined, {
-      params: { job_id: props.jobData.id },
+    await api.api_xero_delete_invoice_destroy(undefined, {
+      params: { job_id: props.jobId },
       queries: { xero_invoice_id: invoiceXeroId },
     })
     toast.success('Invoice deleted successfully!')
     emit('invoice-deleted')
-    invoices.value = invoices.value.filter((invoice) => invoice.xero_id !== response.xero_id)
+    await loadInvoices() // Reload invoices after deletion
   } catch (err) {
     debugLog('Error deleting invoice:', err)
     toast.error('Failed to delete invoice.')
@@ -446,24 +454,7 @@ const deleteInvoiceOnXero = async (invoiceXeroId: string) => {
   }
 }
 
-// --- WATCHERS ---
-watch(
-  () => props.jobData?.id,
-  (newJobId) => {
-    if (newJobId) {
-      deletingInvoiceId.value = null
-    }
-  },
-)
-
-watch(
-  () => props.jobData?.invoices,
-  (newInvoices) => {
-    // Create a copy of the array to ensure we don't mutate the prop
-    invoices.value = newInvoices ? [...newInvoices] : []
-  },
-  { immediate: true, deep: true }, // immediate: true runs the watcher on component mount
-)
+// Removed watchers that depend on jobData
 
 const router = useRouter()
 
@@ -527,6 +518,38 @@ async function loadActualCosts() {
     debugLog('Failed to load actual cost lines:', error)
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadCostsSummary() {
+  costsSummaryLoading.value = true
+  try {
+    const response = await api.job_rest_jobs_costs_summary_retrieve({
+      params: { job_id: props.jobId },
+    })
+    // if (response.success && response.data) {
+    //   // Find estimate summary
+    //   const estimateSummary = response.data.find((summary) => summary.set_type === 'estimate')
+    //   estimateTotal.value = estimateSummary?.summary?.rev || 0
+    // }
+    estimateTotal.value = response.estimate.rev || 0
+  } catch (error) {
+    debugLog('Failed to load costs summary:', error)
+  } finally {
+    costsSummaryLoading.value = false
+  }
+}
+
+async function loadInvoices() {
+  try {
+    const response = await api.job_rest_jobs_invoices_retrieve({
+      params: { job_id: props.jobId },
+    })
+    if (response.success && response.data) {
+      invoices.value = response.data.invoices || []
+    }
+  } catch (error) {
+    debugLog('Failed to load invoices:', error)
   }
 }
 
@@ -637,14 +660,10 @@ function handleAddLine(kind: 'material' | 'adjust' = 'material') {
 }
 
 onMounted(async () => {
-  await Promise.all([loadStaff(), loadActualCosts()])
+  await Promise.all([loadStaff(), loadActualCosts(), loadCostsSummary(), loadInvoices()])
 })
 
 const actualSummary = computed(() => {
-  if (props.actualSummaryFromBackend) {
-    return props.actualSummaryFromBackend
-  }
-
   let cost = 0
   let rev = 0
   let hours = 0

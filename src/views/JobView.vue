@@ -13,7 +13,7 @@
           </div>
           <div class="mb-3">
             <div class="flex items-center gap-2 mb-1">
-              <span class="text-xl font-bold text-gray-900">Job #{{ jobData?.job_number }}</span>
+              <span class="text-xl font-bold text-gray-900">Job #{{ jobHeader?.job_number }}</span>
               <div class="group">
                 <InlineEditText
                   v-if="jobDataWithPaid"
@@ -104,6 +104,7 @@
             </div>
           </div>
         </div>
+
         <div class="hidden md:flex items-center justify-between h-12">
           <div class="flex items-center space-x-4 h-full">
             <button
@@ -116,7 +117,7 @@
             <div class="flex flex-col justify-center h-full">
               <div class="flex items-center">
                 <span class="text-xl font-bold text-gray-900"
-                  >Job #{{ jobData?.job_number }} -</span
+                  >Job #{{ jobHeader?.job_number }} -</span
                 >
                 <div class="group">
                   <InlineEditText
@@ -231,25 +232,20 @@
       >
         <span class="text-gray-500 text-lg font-medium">Loading...</span>
       </div>
+
       <template v-else>
-        <!-- Debug: Check what's failing - keep for now in case we need to debug further -->
-        <!-- <div v-if="!jobDataWithPaid" class="p-4 text-red-600">DEBUG: jobDataWithPaid is falsy</div>
-        <div v-if="!companyDefaults" class="p-4 text-red-600">DEBUG: companyDefaults is falsy</div>
-        <div v-if="!activeTab" class="p-4 text-red-600">DEBUG: activeTab is falsy</div> -->
         <JobViewTabs
-          v-if="jobDataWithPaid && companyDefaults && activeTab"
+          v-if="jobHeader && companyDefaults && activeTab"
           :active-tab="activeTab"
           @change-tab="setTab"
-          :job-data="jobDataWithPaid"
+          :job-id="jobId"
+          :job-number="jobHeader.job_number"
+          :charge-out-rate="companyDefaults?.charge_out_rate ?? 0"
+          :pricing-methodology="jobHeader.pricing_methodology || ''"
+          :quoted="jobHeader.quoted"
+          :fully-invoiced="jobHeader.fully_invoiced"
+          :paid="localPaid"
           :company-defaults="companyDefaults"
-          :latest-pricings="latestPricings"
-          @open-history="openHistoryModal"
-          @open-attachments="openAttachmentsModal"
-          @open-pdf="openPdfDialog"
-          @job-updated="handleJobUpdated"
-          @event-added="handleEventAdded"
-          @file-uploaded="handleFileUploaded"
-          @file-deleted="handleFileDeleted"
           @quote-imported="handleQuoteImported"
           @quote-created="handleQuoteCreated"
           @quote-accepted="handleQuoteAccepted"
@@ -257,8 +253,13 @@
           @quote-deleted="handleQuoteDeleted"
           @invoice-deleted="handleInvoiceDeleted"
           @reload-job="handleReloadJob"
+          @job-updated="handleJobUpdated"
+          @event-added="handleEventAdded"
+          @file-uploaded="handleFileUploaded"
+          @file-deleted="handleFileDeleted"
         />
       </template>
+
       <JobHistoryModal
         v-if="showHistoryModal && jobDataWithPaid"
         :job-id="jobId"
@@ -290,7 +291,6 @@
 
 <script setup lang="ts">
 import { debugLog } from '../utils/debug'
-
 import { ref, computed, onMounted, watch } from 'vue'
 import AppLayout from '../components/AppLayout.vue'
 import JobViewTabs from '../components/job/JobViewTabs.vue'
@@ -308,24 +308,42 @@ import { useJobEvents } from '../composables/useJobEvents'
 import { useJobHeaderAutosave } from '../composables/useJobHeaderAutosave'
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { api } from '../api/client'
+import { schemas } from '../api/generated/api'
 import { ArrowLeft, Printer, Download } from 'lucide-vue-next'
 import { JOB_STATUS_CHOICES } from '../constants/job-status'
 import { jobService } from '../services/job.service'
 import { toast } from 'vue-sonner'
+import { z } from 'zod'
+
+type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
 
 const route = useRoute()
 const router = useRouter()
 const jobsStore = useJobsStore()
 const jobId = computed(() => route.params.id as string)
-const jobData = computed(() => {
-  const jobDetail = jobsStore.getJobById(jobId.value)
-  return jobDetail?.job
-})
-const loadingJob = computed(() => jobsStore.isLoadingJob)
+const loadingJob = ref(false)
+
+// Header somente (novo formato)
+const jobHeader = ref<JobHeaderResponse | null>(null)
+const loadingHeader = ref(false)
 
 onMounted(async () => {
   jobsStore.setCurrentJobId(jobId.value)
-  await jobsStore.fetchJob(jobId.value)
+
+  loadingJob.value = true
+  loadingHeader.value = true
+  try {
+    const headerResponse = await api.job_rest_jobs_header_retrieve({
+      params: { job_id: jobId.value },
+    })
+    jobHeader.value = headerResponse
+  } catch (error) {
+    console.error('Failed to fetch job header:', error)
+  } finally {
+    loadingHeader.value = false
+    loadingJob.value = false
+  }
+
   await companyDefaultsStore.loadCompanyDefaults()
 })
 
@@ -333,7 +351,7 @@ const { jobEvents, addEvent, loading: jobEventsLoading } = useJobEvents(jobId)
 const { activeTab, setTab } = useJobTabs('actual')
 const notifications = useJobNotifications()
 
-// Local reactive data for header fields
+// Locais
 const localJobName = ref('')
 const localClientName = ref('')
 const localClientId = ref('')
@@ -343,102 +361,68 @@ const localQuoted = ref(false)
 const localFullyInvoiced = ref(false)
 const localPaid = ref(false)
 
-// Pricing methodology options
 const pricingMethodologyOptions = [
   { key: 'time_materials', label: 'Time & Materials' },
   { key: 'fixed_price', label: 'Fixed Price' },
 ]
 
-// Header autosave integration - will be initialized when job data is available
 let headerAutosave: ReturnType<typeof useJobHeaderAutosave> | null = null
 
-// Handler functions
 const handleNameUpdate = (newName: string) => {
   localJobName.value = newName
-  if (headerAutosave) {
-    headerAutosave.handleNameUpdate(newName)
-  } else {
-    debugLog('JobView - headerAutosave not initialized yet for name update')
-  }
+  headerAutosave?.handleNameUpdate(newName)
 }
 
 const handleClientUpdate = (client: { id: string; name: string }) => {
   localClientName.value = client.name
   localClientId.value = client.id
-  if (headerAutosave) {
-    headerAutosave.handleClientUpdate(client)
-  } else {
-    debugLog('JobView - headerAutosave not initialized yet for client update')
-  }
+  headerAutosave?.handleClientUpdate(client)
 }
 
 const handleStatusUpdate = (newStatus: string) => {
-  debugLog('JobView - Status update:', newStatus, 'headerAutosave exists:', !!headerAutosave)
   localJobStatus.value = newStatus
-  if (headerAutosave) {
-    headerAutosave.handleStatusUpdate(newStatus)
-  } else {
-    debugLog('JobView - headerAutosave not initialized yet for status update')
-  }
+  headerAutosave?.handleStatusUpdate(newStatus)
 }
 
 const handlePaidUpdate = (newVal: boolean) => {
-  debugLog('JobView - Paid update:', newVal, 'headerAutosave exists:', !!headerAutosave)
   localPaid.value = newVal
-  if (headerAutosave) {
-    headerAutosave.handlePaidUpdate(newVal)
-  } else {
-    debugLog('JobView - headerAutosave not initialized yet for paid update')
-  }
+  headerAutosave?.handlePaidUpdate(newVal)
 }
 
 const handlePricingMethodologyUpdate = (newMethod: string) => {
-  debugLog(
-    'JobView - Pricing methodology update:',
-    newMethod,
-    'headerAutosave exists:',
-    !!headerAutosave,
-  )
   localPricingMethodology.value = newMethod
-  if (headerAutosave) {
-    headerAutosave.handlePricingMethodologyUpdate(newMethod)
-  } else {
-    debugLog('JobView - headerAutosave not initialized yet for pricing methodology update')
-  }
+  headerAutosave?.handlePricingMethodologyUpdate(newMethod)
 }
 
 const companyDefaultsStore = useCompanyDefaultsStore()
 const companyDefaults = computed(() => companyDefaultsStore.companyDefaults)
 
-const latestPricings = computed(() => jobData.value?.latestPricings || {})
 const jobDataWithPaid = computed(() => {
-  if (!jobData.value) return undefined
-
-  // Ensure we have a proper Job object structure
-  const job = jobData.value
-  if (!job.id) {
-    debugLog('🚨 JobView - jobDataWithPaid: Invalid job data structure:', job)
-    return undefined
-  }
-
+  if (!jobHeader.value) return undefined
+  const h = jobHeader.value
   return {
-    ...job,
-    paid: Boolean(job.paid),
+    id: h.job_id,
+    job_number: h.job_number,
+    name: h.name,
+    client_name: h.client?.name ?? '',
+    client_id: h.client?.id ?? '',
+    job_status: h.status ?? '',
+    pricing_methodology: h.pricing_methodology ?? '',
+    quoted: h.quoted,
+    fully_invoiced: h.fully_invoiced,
+    quote_acceptance_date: h.quote_acceptance_date ?? null,
+    paid: Boolean(h.paid),
   }
 })
 
-// Initialize header autosave and local values when job data changes
 watch(
   jobDataWithPaid,
   (newJobData) => {
     if (newJobData) {
-      // Initialize headerAutosave only once
       if (!headerAutosave) {
         headerAutosave = useJobHeaderAutosave(newJobData)
         debugLog('JobView - headerAutosave initialized')
       }
-
-      // Update local values
       localJobName.value = newJobData.name || ''
       localClientName.value = newJobData.client_name || ''
       localClientId.value = newJobData.client_id || ''
@@ -451,25 +435,38 @@ watch(
   },
   { immediate: true },
 )
-const jobError = computed(() => !loadingJob.value && !jobData.value)
 
-// Quote status computed properties
-const isQuoteAccepted = computed(() => {
-  return !!jobDataWithPaid.value?.quote_acceptance_date
-})
+const jobError = computed(() => !loadingJob.value && !jobHeader.value)
 
-// Check if there are any quote revisions available
-const hasQuoteRevisions = computed(() => {
-  if (!quoteRevisionsData.value) return false
-  return quoteRevisionsData.value.total_revisions > 0
-})
+// Quote accepted / revisions
+const isQuoteAccepted = computed(() => !!jobDataWithPaid.value?.quote_acceptance_date)
+const quoteRevisionsData = ref<{ total_revisions: number } | null>(null)
 
-// Show warning only if quote is accepted AND there are no revisions
-const shouldShowQuoteWarning = computed(() => {
-  return isQuoteAccepted.value && !hasQuoteRevisions.value
-})
+async function fetchQuoteRevisions() {
+  if (!jobId.value) return
+  try {
+    const response = await api.job_rest_jobs_cost_sets_quote_revise_retrieve({
+      params: { job_id: jobId.value },
+    })
+    quoteRevisionsData.value = response
+  } catch {
+    quoteRevisionsData.value = { total_revisions: 0 }
+  }
+}
 
-// Format date function
+watch(
+  () => jobDataWithPaid.value?.quote_acceptance_date,
+  (acceptanceDate) => {
+    if (acceptanceDate) fetchQuoteRevisions()
+  },
+  { immediate: true },
+)
+
+const hasQuoteRevisions = computed(
+  () => !!quoteRevisionsData.value && quoteRevisionsData.value.total_revisions > 0,
+)
+const shouldShowQuoteWarning = computed(() => isQuoteAccepted.value && !hasQuoteRevisions.value)
+
 const formatDate = (dateString: string) => {
   if (!dateString) return ''
   return new Date(dateString).toLocaleDateString('en-AU', {
@@ -483,56 +480,14 @@ const showHistoryModal = ref(false)
 const showAttachmentsModal = ref(false)
 const showPdfDialog = ref(false)
 
-// Store quote revisions data to check if edits should be blocked
-const quoteRevisionsData = ref<{ total_revisions: number } | null>(null)
-
-// Fetch quote revisions to determine if edits should be blocked
-async function fetchQuoteRevisions() {
-  if (!jobId.value) return
-  try {
-    const response = await api.job_rest_jobs_cost_sets_quote_revise_retrieve({
-      params: { job_id: jobId.value },
-    })
-    quoteRevisionsData.value = response
-  } catch {
-    // Silently fail - if we can't fetch revisions, assume no revisions exist
-    quoteRevisionsData.value = { total_revisions: 0 }
-  }
-}
-
-// Watch for quote acceptance to fetch revisions data
-watch(
-  () => jobDataWithPaid.value?.quote_acceptance_date,
-  (acceptanceDate) => {
-    if (acceptanceDate) {
-      fetchQuoteRevisions()
-    }
-  },
-  { immediate: true },
-)
-
-function openHistoryModal() {
-  showHistoryModal.value = true
-}
-function openAttachmentsModal() {
-  showAttachmentsModal.value = true
-}
-function openPdfDialog() {
-  showPdfDialog.value = true
-}
-
 function handleJobUpdated(updatedJob) {
-  // Extract JobDetail from the API response wrapper if needed
   if (updatedJob?.data) {
-    // This is a JobDetailResponse wrapper, extract the data
     jobsStore.setDetailedJob(updatedJob.data)
     notifications.notifyJobUpdated(updatedJob.data?.job?.name || 'Job')
   } else if (updatedJob?.job) {
-    // This is already a JobDetail structure
     jobsStore.setDetailedJob(updatedJob)
     notifications.notifyJobUpdated(updatedJob.job?.name || 'Job')
   } else {
-    // This might be a direct job object
     jobsStore.setDetailedJob(updatedJob)
     notifications.notifyJobUpdated(updatedJob?.name || 'Job')
   }
@@ -541,7 +496,6 @@ function handleJobUpdated(updatedJob) {
 async function handleEventAdded(event) {
   if (event?.description) {
     await addEvent(event.description)
-    await jobsStore.fetchJob(jobId.value)
     notifications.notifyEventAdded(event.event_type || 'Event')
   }
 }
@@ -552,47 +506,37 @@ function navigateBack() {
 
 function handleQuoteImported() {
   notifications.notifyJobUpdated('Quote imported')
-  // Reload job data to show the imported quote
   jobsStore.fetchJob(jobId.value)
 }
 function handleQuoteCreated() {
   notifications.notifyJobUpdated('Quote created')
-  // Reload job data to show the newly created quote
   jobsStore.fetchJob(jobId.value)
 }
 function handleQuoteAccepted() {
   notifications.notifyJobUpdated('Quote accepted')
-  // Reload job data to reflect quote acceptance
   jobsStore.fetchJob(jobId.value)
 }
 function handleInvoiceCreated() {
   notifications.notifyJobUpdated('Invoice created')
-  // Reload job data to show the newly created invoice
   jobsStore.fetchJob(jobId.value)
 }
 function handleQuoteDeleted() {
   notifications.notifyJobUpdated('Quote deleted')
-  // Reload job data to reflect quote deletion
   jobsStore.fetchJob(jobId.value)
 }
 function handleInvoiceDeleted() {
   notifications.notifyJobUpdated('Invoice deleted')
-  // Reload job data to reflect invoice deletion
   jobsStore.fetchJob(jobId.value)
 }
 function handleFileUploaded() {
   notifications.notifyJobUpdated('File uploaded')
-  // Reload job data to update file list
   jobsStore.fetchJob(jobId.value)
 }
 function handleFileDeleted() {
   notifications.notifyJobUpdated('File deleted')
-  // Reload job data to update file list
   jobsStore.fetchJob(jobId.value)
 }
-
 function handleReloadJob() {
-  // Simple job reload when cost lines are changed
   jobsStore.fetchJob(jobId.value)
 }
 
@@ -601,15 +545,13 @@ async function printJob() {
     toast.error('Job ID not available')
     return
   }
-
   try {
     const blob = await jobService.getWorkshopPdf(jobDataWithPaid.value.id)
     const pdfUrl = URL.createObjectURL(blob)
-
-    const printWindow = window.open(pdfUrl, '_blank')
-    if (printWindow) {
-      printWindow.addEventListener('load', () => {
-        printWindow.print()
+    const win = window.open(pdfUrl, '_blank')
+    if (win) {
+      win.addEventListener('load', () => {
+        win.print()
       })
       toast.success('Print dialog opened')
     } else {
@@ -626,7 +568,6 @@ async function downloadJobSheet() {
     toast.error('Job ID not available')
     return
   }
-
   try {
     const blob = await jobService.getWorkshopPdf(jobDataWithPaid.value.id)
     const url = URL.createObjectURL(blob)
@@ -644,16 +585,11 @@ async function downloadJobSheet() {
   }
 }
 
-debugLog('JobView - jobId:', jobId.value)
-
-watch(jobData, (val) => {
-  debugLog('JobView - jobData changed:', val)
-})
+debugLog('JobView - jobId:', jobId.value, 'jobHeader:', jobHeader.value)
 
 watch(localPaid, (newVal) => {
   handlePaidUpdate(newVal)
 })
-
 onMounted(() => {
   debugLog('Quote accepted?: ', shouldShowQuoteWarning.value)
 })

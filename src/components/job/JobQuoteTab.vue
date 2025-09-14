@@ -22,9 +22,7 @@
             class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             style="min-width: 0"
             @click="onCopyFromEstimate"
-            :disabled="
-              isLoading || !props.jobData?.latest_estimate?.cost_lines?.length || !hasEstimateData
-            "
+            :disabled="isLoading || !hasEstimateData"
             :title="'Copy from Estimate'"
           >
             <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
@@ -38,8 +36,9 @@
           <template v-else>
             <SmartCostLinesTable
               v-if="hasCostSetQuote"
+              :jobId="jobId"
+              :tabKind="'quote'"
               :lines="costLines"
-              tabKind="quote"
               :readOnly="isLoading || areEditsBlocked"
               :showItemColumn="true"
               :showSourceColumn="false"
@@ -90,7 +89,7 @@
                         {{ formatCurrency(localQuote?.total_excl_tax || 0) }}
                       </div>
                       <div v-if="isQuoteAccepted" class="text-xs text-emerald-700 font-medium">
-                        Accepted · {{ formatDate(props.jobData!.quote_acceptance_date!) }}
+                        Accepted · {{ formatDate(props.quoteAcceptanceDate!) }}
                       </div>
                     </div>
                   </div>
@@ -285,8 +284,7 @@
               !previewData?.changes ||
               (!previewData.changes.additions?.length &&
                 !previewData.changes.updates?.length &&
-                !previewData.changes.deletions?.length) ||
-              isRefreshing
+                !previewData.changes.deletions?.length)
             "
             @click="onApplySpreadsheetChanges"
           >
@@ -563,45 +561,76 @@ import { Badge } from '../../components/ui/badge'
 import { Card, CardHeader, CardContent, CardDescription, CardTitle } from '../ui/card'
 
 type CostLine = z.infer<typeof schemas.CostLine>
-type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
-type Job = z.infer<typeof schemas.Job>
 type CostSet = z.infer<typeof schemas.CostSet>
 type PreviewQuoteResponse = z.infer<typeof schemas.PreviewQuoteResponse>
 type QuoteRevisionsListResponse = z.infer<typeof schemas.QuoteRevisionsList>
+type Quote = z.infer<typeof schemas.Quote>
 
 const props = defineProps<{
   jobId: string
-  jobData?: Job
+  jobNumber: string
+  pricingMethodology: string
+  quoted: boolean
+  fullyInvoiced: boolean
+  quoteAcceptanceDate?: string | null
 }>()
 
 const emit = defineEmits<{
   'cost-line-changed': []
+  'quote-accepted': []
 }>()
 
-const currentQuote = computed(() => {
-  const jobData = props.jobData
+const quoteCostSet = ref<CostSet | null>(null)
+const xeroQuote = ref<Quote | null>(null)
 
-  if (!jobData || !jobData.latest_quote) {
+// Fetch quote cost set on mount
+onMounted(async () => {
+  if (props.jobId) {
+    try {
+      const response: CostSet = await api.job_rest_jobs_cost_sets_retrieve({
+        params: { id: props.jobId, kind: 'quote' },
+      })
+      quoteCostSet.value = response
+
+      // Try to load Xero quote if available
+      try {
+        const xeroQuoteResponse: Quote = await api.job_rest_jobs_quote_retrieve({
+          params: { job_id: props.jobId },
+        })
+        xeroQuote.value = xeroQuoteResponse
+      } catch {
+        // Xero quote not available, that's ok
+        xeroQuote.value = null
+      }
+    } catch (error) {
+      toast.error('Failed to load quote data')
+      debugLog('Failed to load quote data:', error)
+    }
+  }
+})
+
+const currentQuote = computed(() => {
+  const costSet = quoteCostSet.value
+
+  if (!costSet) {
     return { has_quote: false, quote: null }
   }
 
   // Use API structure exactly as returned - NO CONVERSIONS
-  const quote = jobData.latest_quote as CostSet
   return {
     has_quote: true,
     quote: {
-      id: quote.id,
-      kind: quote.kind,
-      rev: quote.rev,
-      created: quote.created,
-      summary: quote.summary,
-      cost_lines: quote.cost_lines || [],
+      id: costSet.id,
+      kind: costSet.kind,
+      rev: costSet.rev,
+      created: costSet.created,
+      summary: costSet.summary,
+      cost_lines: costSet.cost_lines || [],
     },
   }
 })
 
 const isLoading = ref(false)
-const isRefreshing = ref(false)
 const showPreviewModal = ref(false)
 const showQuoteRevisionsModal = ref(false)
 const quoteRevisionsData = ref<QuoteRevisionsListResponse | null>(null)
@@ -625,13 +654,25 @@ const quoteCostLines = computed(() => {
 const hasCostSetQuote = computed(
   () => !!(currentQuote.value?.has_quote && currentQuote.value.quote),
 )
-const hasXeroQuote = computed(() => !!props.jobData?.quote)
-const isQuoteAccepted = computed(() => !!props.jobData?.quote_acceptance_date)
-const localQuote = computed(() => props.jobData?.quote ?? null) // Xero
+const hasXeroQuote = computed(() => !!xeroQuote.value)
+const isQuoteAccepted = computed(() => !!props.quoteAcceptanceDate)
+const localQuote = computed(() => xeroQuote.value) // Xero
 
 // Check if estimate data is available for copying
-const hasEstimateData = computed(() => {
-  return !!props.jobData?.latest_estimate?.cost_lines?.length
+const hasEstimateData = ref(false)
+
+// Load estimate data availability on mount
+onMounted(async () => {
+  if (props.jobId) {
+    try {
+      const estimateResponse: CostSet = await api.job_rest_jobs_cost_sets_retrieve({
+        params: { id: props.jobId, kind: 'estimate' },
+      })
+      hasEstimateData.value = !!estimateResponse?.cost_lines?.length
+    } catch {
+      hasEstimateData.value = false
+    }
+  }
 })
 
 // Check if there are any quote revisions available
@@ -642,7 +683,7 @@ const hasQuoteRevisions = computed(() => {
 
 // Edits are blocked if quote is accepted AND there are no revisions to unlock it
 const areEditsBlocked = computed(() => {
-  return isQuoteAccepted.value && !hasQuoteRevisions.value
+  return !!props.quoteAcceptanceDate && !hasQuoteRevisions.value
 })
 
 watch(
@@ -655,7 +696,7 @@ watch(
 
 // Watch for quote acceptance to fetch revisions data
 watch(
-  () => props.jobData?.quote_acceptance_date,
+  () => props.quoteAcceptanceDate,
   (acceptanceDate) => {
     if (acceptanceDate && currentQuote.value?.has_quote) {
       // When a quote gets accepted, fetch revisions to check if edits should be blocked
@@ -675,25 +716,28 @@ async function refreshQuoteData() {
   console.log('  - Current cost lines count:', costLines.value.length)
 
   try {
-    const response: JobDetailResponse = await api.job_rest_jobs_retrieve({
-      params: { job_id: props.jobId },
+    const response: CostSet = await api.job_rest_jobs_cost_sets_retrieve({
+      params: { id: props.jobId, kind: 'quote' },
     })
 
-    if (response.success && response.data) {
-      const jobData = response.data
+    // Update our local quote cost set
+    quoteCostSet.value = response
 
-      if (props.jobData) Object.assign(props.jobData, jobData)
+    if (response.cost_lines && Array.isArray(response.cost_lines)) {
+      costLines.value = response.cost_lines
+    } else {
+      costLines.value = []
+    }
 
-      if (jobData.latest_quote) {
-        const latestQuote = jobData.latest_quote as CostSet
-        if (latestQuote.cost_lines && Array.isArray(latestQuote.cost_lines)) {
-          costLines.value = latestQuote.cost_lines
-        } else {
-          costLines.value = []
-        }
-      } else {
-        costLines.value = []
-      }
+    // Refresh Xero quote data
+    try {
+      const xeroQuoteResponse: Quote = await api.job_rest_jobs_quote_retrieve({
+        params: { job_id: props.jobId },
+      })
+      xeroQuote.value = xeroQuoteResponse
+    } catch {
+      // Xero quote not available, that's ok
+      xeroQuote.value = null
     }
   } catch (error) {
     toast.error('Failed to refresh quote data')
@@ -705,7 +749,7 @@ async function refreshQuoteData() {
 }
 
 async function onApplySpreadsheetChanges() {
-  if (!props.jobData?.id) return
+  if (!props.jobId) return
   toast.info('Applying changes...', { id: 'quote-apply' })
   try {
     const result = await quoteService.applyQuote(props.jobId)
@@ -796,6 +840,7 @@ async function handleAddMaterial(payload: CostLine) {
     const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
     costLines.value = [...costLines.value, created]
     toast.success('Material cost line added!')
+    await refreshQuoteData()
     emit('cost-line-changed')
   } catch (error) {
     toast.error('Failed to add material cost line.')
@@ -808,17 +853,20 @@ async function handleAddMaterial(payload: CostLine) {
 // Use the smart delete composable
 const { handleSmartDelete } = useSmartCostLineDelete({
   costLines,
-  onCostLineChanged: () => emit('cost-line-changed'),
+  onCostLineChanged: () => async () => {
+    await refreshQuoteData()
+    emit('cost-line-changed')
+  },
   isLoading,
 })
 
 // --- QUOTE METHODS ---
 const createQuote = async () => {
-  if (!props.jobData?.id || isCreatingQuote.value) return
+  if (!props.jobId || isCreatingQuote.value) return
   isCreatingQuote.value = true
   try {
     const response = await api.api_xero_create_quote_create(undefined, {
-      params: { job_id: props.jobData.id },
+      params: { job_id: props.jobId },
     })
     if (!response.success) {
       debugLog(response.error || 'Failed to create quote')
@@ -826,6 +874,7 @@ const createQuote = async () => {
     }
     toast.success('Quote created successfully!')
     isQuoteDeleted.value = false
+    await refreshQuoteData()
     emit('cost-line-changed')
   } catch (err) {
     debugLog('Error creating quote:', err)
@@ -836,15 +885,17 @@ const createQuote = async () => {
 }
 
 const acceptQuote = async () => {
-  if (!props.jobData?.id || isAcceptingQuote.value) return
+  if (!props.jobId || isAcceptingQuote.value) return
   isAcceptingQuote.value = true
   try {
     const response = await api.job_rest_jobs_quote_accept_create(undefined, {
-      params: { job_id: props.jobData.id },
+      params: { job_id: props.jobId },
     })
     if (response.success) {
       toast.success('Quote accepted successfully!')
+      await refreshQuoteData()
       emit('cost-line-changed')
+      emit('quote-accepted')
     } else {
       toast.error('Failed to accept quote')
     }
@@ -857,17 +908,17 @@ const acceptQuote = async () => {
 }
 
 const goToQuoteOnXero = () => {
-  if (props.jobData?.quote?.online_url && props.jobData.quote.online_url !== '#') {
-    window.open(props.jobData.quote.online_url, '_blank')
+  if (xeroQuote.value?.online_url && xeroQuote.value.online_url !== '#') {
+    window.open(xeroQuote.value.online_url, '_blank')
   }
 }
 
 const deleteQuoteOnXero = async () => {
-  if (!props.jobData?.id || isDeletingQuote.value) return
+  if (!props.jobId || isDeletingQuote.value) return
   isDeletingQuote.value = true
   try {
     const response = await api.api_xero_delete_quote_destroy(undefined, {
-      params: { job_id: props.jobData.id },
+      params: { job_id: props.jobId },
     })
     if (!response.success) {
       debugLog(response.error || 'Failed to delete quote')
@@ -875,6 +926,7 @@ const deleteQuoteOnXero = async () => {
     }
     isQuoteDeleted.value = true
     toast.success('Quote deleted successfully!')
+    await refreshQuoteData()
     emit('cost-line-changed')
   } catch (err) {
     debugLog('Error deleting quote:', err)
@@ -950,6 +1002,7 @@ async function handleCreateFromEmpty(line: CostLine) {
       costLines.value[index] = created
     }
 
+    refreshQuoteData()
     emit('cost-line-changed')
     toast.success('Cost line created!')
     console.log('✅ Successfully created cost line:', created)
@@ -961,23 +1014,32 @@ async function handleCreateFromEmpty(line: CostLine) {
 
 // Copy all cost lines from estimate to quote
 async function onCopyFromEstimate() {
-  if (!props.jobData?.latest_estimate?.cost_lines?.length) {
+  if (!hasEstimateData.value) {
     toast.error('No estimate data available to copy')
     return
   }
 
-  const estimateLines = props.jobData.latest_estimate.cost_lines
   isLoading.value = true
   toast.info('Copying from estimate...', { id: 'copy-estimate' })
 
   try {
+    // Fetch estimate data
+    const estimateResponse: CostSet = await api.job_rest_jobs_cost_sets_retrieve({
+      params: { id: props.jobId, kind: 'estimate' },
+    })
+
+    if (!estimateResponse?.cost_lines?.length) {
+      toast.error('No estimate data available to copy')
+      return
+    }
+
+    const estimateLines = estimateResponse.cost_lines
+
     // Clear existing quote lines first
     if (costLines.value.length > 0) {
-      for (const line of costLines.value) {
-        if (line.id) {
-          await costlineService.deleteCostLine(line.id)
-        }
-      }
+      await Promise.allSettled(
+        costLines.value.filter((l) => l.id).map((line) => costlineService.deleteCostLine(line.id)),
+      )
     }
 
     // Copy each estimate line to quote
@@ -1038,11 +1100,9 @@ async function onCopyFromRevision(revision: { quote_revision: number; cost_lines
   try {
     // Clear existing quote lines first
     if (costLines.value.length > 0) {
-      for (const line of costLines.value) {
-        if (line.id) {
-          await costlineService.deleteCostLine(line.id)
-        }
-      }
+      await Promise.allSettled(
+        costLines.value.filter((l) => l.id).map((line) => costlineService.deleteCostLine(line.id)),
+      )
       costLines.value = []
     }
 
@@ -1090,6 +1150,12 @@ async function onCopyFromRevision(revision: { quote_revision: number; cost_lines
 }
 
 onMounted(() => {
-  console.log('[QUOTE-TAB]: Props ', props.jobData)
+  console.log('[QUOTE-TAB]: Props ', {
+    jobId: props.jobId,
+    jobNumber: props.jobNumber,
+    pricingMethodology: props.pricingMethodology,
+    quoted: props.quoted,
+    fullyInvoiced: props.fullyInvoiced,
+  })
 })
 </script>
