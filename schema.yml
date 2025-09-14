@@ -1660,6 +1660,42 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
+  /clients/jobs/{job_id}/contact/:
+    get:
+      operationId: clients_jobs_contact_retrieve
+      description: Retrieve contact information for a specific job.
+      summary: Get job contact
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the job
+          required: true
+      tags:
+        - Clients
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobContactResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
   /clients/search/:
     get:
       operationId: clients_search_retrieve
@@ -2985,7 +3021,7 @@ paths:
           description: ''
   /job/rest/jobs/{job_id}/:
     get:
-      operationId: job_rest_jobs_retrieve
+      operationId: getFullJob
       description: Fetch complete job data including financial information
       parameters:
         - in: path
@@ -3067,6 +3103,36 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JobDeleteResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+  /job/rest/jobs/{job_id}/basic-info/:
+    get:
+      operationId: job_rest_jobs_basic_info_retrieve
+      description: Fetch job basic information (description, delivery date, order
+        number, notes)
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobBasicInformationResponse'
           description: ''
         '400':
           content:
@@ -3209,7 +3275,65 @@ paths:
               schema:
                 $ref: '#/components/schemas/QuoteRevisionResponse'
           description: ''
+  /job/rest/jobs/{job_id}/costs/summary/:
+    get:
+      operationId: job_rest_jobs_costs_summary_retrieve
+      description: Fetch job cost summary across all cost sets
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobCostSummaryResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
   /job/rest/jobs/{job_id}/events/:
+    get:
+      operationId: job_rest_jobs_events_retrieve
+      description: Fetch job events list
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobEventsResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+  /job/rest/jobs/{job_id}/events/create/:
     post:
       operationId: job_rest_jobs_events_create
       description: Add a manual event to the Job with duplicate prevention.
@@ -3257,6 +3381,93 @@ paths:
                 $ref: '#/components/schemas/JobRestErrorResponse'
           description: ''
         '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+  /job/rest/jobs/{job_id}/header/:
+    get:
+      operationId: job_rest_jobs_header_retrieve
+      description: Fetch essential job header information for fast loading
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobHeaderResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+  /job/rest/jobs/{job_id}/invoices/:
+    get:
+      operationId: job_rest_jobs_invoices_retrieve
+      description: Fetch job invoices list
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobInvoicesResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+  /job/rest/jobs/{job_id}/quote/:
+    get:
+      operationId: job_rest_jobs_quote_retrieve
+      description: Fetch job quote
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+          description: ''
+        '400':
           content:
             application/json:
               schema:
@@ -4179,6 +4390,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JobFileUploadViewResponse'
+          description: ''
+  /job/rest/jobs/status-choices/:
+    get:
+      operationId: job_rest_jobs_status_choices_retrieve
+      description: Fetch job status choices
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusChoicesResponse'
           description: ''
   /job/rest/jobs/weekly-metrics/:
     get:
@@ -7401,6 +7628,28 @@ components:
         - days_in_current_status
         - last_activity_date
         - last_activity_days_ago
+    JobBasicInformationResponse:
+      type: object
+      description: Serializer for job basic information response
+      properties:
+        description:
+          type: string
+          nullable: true
+        delivery_date:
+          type: string
+          format: date
+          nullable: true
+        order_number:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - delivery_date
+        - description
+        - notes
+        - order_number
     JobBreakdown:
       type: object
       description: Serializer for job breakdown data
@@ -7433,6 +7682,91 @@ components:
         - job_name
         - job_number
         - revenue
+    JobClientHeader:
+      type: object
+      description: Serializer for client data in job header response
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - id
+        - name
+    JobContactResponse:
+      type: object
+      description: Serializer for job contact information response
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        position:
+          type: string
+          nullable: true
+        is_primary:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+      required:
+        - email
+        - id
+        - is_primary
+        - name
+        - notes
+        - phone
+        - position
+    JobCostSetSummary:
+      type: object
+      description: Serializer for cost set summary data in job views
+      properties:
+        cost:
+          type: number
+          format: double
+        rev:
+          type: number
+          format: double
+        hours:
+          type: number
+          format: double
+        profitMargin:
+          type: number
+          format: double
+          nullable: true
+      required:
+        - cost
+        - hours
+        - profitMargin
+        - rev
+    JobCostSummaryResponse:
+      type: object
+      description: Serializer for job cost summary response
+      properties:
+        estimate:
+          allOf:
+            - $ref: '#/components/schemas/JobCostSetSummary'
+          nullable: true
+        quote:
+          allOf:
+            - $ref: '#/components/schemas/JobCostSetSummary'
+          nullable: true
+        actual:
+          allOf:
+            - $ref: '#/components/schemas/JobCostSetSummary'
+          nullable: true
+      required:
+        - actual
+        - estimate
+        - quote
     JobCreateRequest:
       type: object
       description: Serializer for job creation request data.
@@ -7568,6 +7902,16 @@ components:
       required:
         - event
         - success
+    JobEventsResponse:
+      type: object
+      description: Serializer for job events response
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobEvent'
+      required:
+        - events
     JobFile:
       type: object
       properties:
@@ -7734,6 +8078,56 @@ components:
         - job_display_name
         - job_number
         - name
+    JobHeaderResponse:
+      type: object
+      description: Serializer for job header response - essential job data for fast
+        loading
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        job_number:
+          type: integer
+        name:
+          type: string
+        client:
+          $ref: '#/components/schemas/JobClientHeader'
+        status:
+          type: string
+        pricing_methodology:
+          type: string
+          nullable: true
+        fully_invoiced:
+          type: boolean
+        quoted:
+          type: boolean
+        quote_acceptance_date:
+          type: string
+          format: date-time
+          nullable: true
+        paid:
+          type: boolean
+      required:
+        - client
+        - fully_invoiced
+        - job_id
+        - job_number
+        - name
+        - paid
+        - pricing_methodology
+        - quote_acceptance_date
+        - quoted
+        - status
+    JobInvoicesResponse:
+      type: object
+      description: Serializer for job invoices response
+      properties:
+        invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invoice'
+      required:
+        - invoices
     JobMetrics:
       type: object
       description: Serializer for job metrics in weekly timesheet context
@@ -7920,6 +8314,15 @@ components:
           type: string
       required:
         - error
+    JobStatusChoicesResponse:
+      type: object
+      description: Serializer for job status choices response
+      properties:
+        statuses:
+          type: object
+          additionalProperties: {}
+      required:
+        - statuses
     JobStatusUpdateRequest:
       type: object
       description: Serializer for job status update request data.

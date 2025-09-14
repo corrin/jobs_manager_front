@@ -571,6 +571,17 @@ const ClientDuplicateErrorResponse = z
     existing_client: z.object({}).partial().passthrough(),
   })
   .passthrough()
+const JobContactResponse = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    email: z.string().nullable(),
+    phone: z.string().nullable(),
+    position: z.string().nullable(),
+    is_primary: z.boolean(),
+    notes: z.string().nullable(),
+  })
+  .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
 const JobFileStatusEnum = z.enum(['active', 'deleted'])
 const JobFile = z
@@ -1002,6 +1013,14 @@ const JobDeleteResponse = z
     message: z.string(),
   })
   .passthrough()
+const JobBasicInformationResponse = z
+  .object({
+    description: z.string().nullable(),
+    delivery_date: z.string().nullable(),
+    order_number: z.string().nullable(),
+    notes: z.string().nullable(),
+  })
+  .passthrough()
 const QuoteRevisionsList = z
   .object({
     job_id: z.string(),
@@ -1025,8 +1044,40 @@ const QuoteRevisionResponse = z
     error: z.string().optional(),
   })
   .passthrough()
+const JobCostSetSummary = z
+  .object({
+    cost: z.number(),
+    rev: z.number(),
+    hours: z.number(),
+    profitMargin: z.number().nullable(),
+  })
+  .passthrough()
+const JobCostSummaryResponse = z
+  .object({
+    estimate: JobCostSetSummary.nullable(),
+    quote: JobCostSetSummary.nullable(),
+    actual: JobCostSetSummary.nullable(),
+  })
+  .passthrough()
+const JobEventsResponse = z.object({ events: z.array(JobEvent) }).passthrough()
 const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
 const JobEventCreateResponse = z.object({ success: z.boolean(), event: JobEvent }).passthrough()
+const JobClientHeader = z.object({ id: z.string().uuid(), name: z.string() }).passthrough()
+const JobHeaderResponse = z
+  .object({
+    job_id: z.string().uuid(),
+    job_number: z.number().int(),
+    name: z.string(),
+    client: JobClientHeader,
+    status: z.string(),
+    pricing_methodology: z.string().nullable(),
+    fully_invoiced: z.boolean(),
+    quoted: z.boolean(),
+    quote_acceptance_date: z.string().datetime({ offset: true }).nullable(),
+    paid: z.boolean(),
+  })
+  .passthrough()
+const JobInvoicesResponse = z.object({ invoices: z.array(Invoice) }).passthrough()
 const JobQuoteAcceptance = z
   .object({
     success: z.boolean(),
@@ -1112,6 +1163,9 @@ const JobFileUploadViewResponse = z
     uploaded: z.array(JobFile),
     message: z.string(),
   })
+  .passthrough()
+const JobStatusChoicesResponse = z
+  .object({ statuses: z.object({}).partial().passthrough() })
   .passthrough()
 const WeeklyMetrics = z
   .object({
@@ -1878,6 +1932,7 @@ export const schemas = {
   ClientSearchResult,
   ClientCreateResponse,
   ClientDuplicateErrorResponse,
+  JobContactResponse,
   ClientSearchResponse,
   JobFileStatusEnum,
   JobFile,
@@ -1939,11 +1994,18 @@ export const schemas = {
   JobData,
   JobDetailResponse,
   JobDeleteResponse,
+  JobBasicInformationResponse,
   QuoteRevisionsList,
   QuoteRevisionRequest,
   QuoteRevisionResponse,
+  JobCostSetSummary,
+  JobCostSummaryResponse,
+  JobEventsResponse,
   JobEventCreateRequest,
   JobEventCreateResponse,
+  JobClientHeader,
+  JobHeaderResponse,
+  JobInvoicesResponse,
   JobQuoteAcceptance,
   QuoteImportStatusResponse,
   DraftLine,
@@ -1955,6 +2017,7 @@ export const schemas = {
   PreviewQuoteResponse,
   JobFileThumbnailErrorResponse,
   JobFileUploadViewResponse,
+  JobStatusChoicesResponse,
   WeeklyMetrics,
   MonthEndJobHistory,
   MonthEndJob,
@@ -3171,6 +3234,31 @@ Expected JSON:
   },
   {
     method: 'get',
+    path: '/clients/jobs/:job_id/contact/',
+    alias: 'clients_jobs_contact_retrieve',
+    description: `Retrieve contact information for a specific job.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobContactResponse,
+    errors: [
+      {
+        status: 404,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/clients/search/',
     alias: 'clients_search_retrieve',
     description: `Searches clients by name following early return pattern.`,
@@ -4100,7 +4188,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   {
     method: 'get',
     path: '/job/rest/jobs/:job_id/',
-    alias: 'job_rest_jobs_retrieve',
+    alias: 'getFullJob',
     description: `Fetch complete job data including financial information`,
     requestFormat: 'json',
     parameters: [
@@ -4152,6 +4240,27 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
     ],
     response: JobDeleteResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/basic-info/',
+    alias: 'job_rest_jobs_basic_info_retrieve',
+    description: `Fetch job basic information (description, delivery date, order number, notes)`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobBasicInformationResponse,
     errors: [
       {
         status: 400,
@@ -4243,8 +4352,50 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     response: QuoteRevisionResponse,
   },
   {
-    method: 'post',
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/costs/summary/',
+    alias: 'job_rest_jobs_costs_summary_retrieve',
+    description: `Fetch job cost summary across all cost sets`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobCostSummaryResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/job/rest/jobs/:job_id/events/',
+    alias: 'job_rest_jobs_events_retrieve',
+    description: `Fetch job events list`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobEventsResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/job/rest/jobs/:job_id/events/create/',
     alias: 'job_rest_jobs_events_create',
     description: `Add a manual event to the Job with duplicate prevention.`,
     requestFormat: 'json',
@@ -4272,6 +4423,69 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
       {
         status: 429,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/header/',
+    alias: 'job_rest_jobs_header_retrieve',
+    description: `Fetch essential job header information for fast loading`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobHeaderResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/invoices/',
+    alias: 'job_rest_jobs_invoices_retrieve',
+    description: `Fetch job invoices list`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobInvoicesResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/quote/',
+    alias: 'job_rest_jobs_quote_retrieve',
+    description: `Fetch job quote`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: Quote,
+    errors: [
+      {
+        status: 400,
         schema: z.object({ error: z.string() }).passthrough(),
       },
     ],
@@ -4722,6 +4936,14 @@ and creates JobFile database records with proper file metadata.`,
       },
     ],
     response: JobFileUploadViewResponse,
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/status-choices/',
+    alias: 'job_rest_jobs_status_choices_retrieve',
+    description: `Fetch job status choices`,
+    requestFormat: 'json',
+    response: z.object({ statuses: z.object({}).partial().passthrough() }).passthrough(),
   },
   {
     method: 'get',
