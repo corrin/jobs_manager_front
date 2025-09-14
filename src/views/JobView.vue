@@ -331,7 +331,6 @@ const { jobEvents, addEvent, loading: jobEventsLoading } = useJobEvents(jobId)
 const { activeTab, setTab } = useJobTabs('actual')
 const notifications = useJobNotifications()
 
-// Locais
 const localJobName = ref('')
 const localClientName = ref('')
 const localClientId = ref('')
