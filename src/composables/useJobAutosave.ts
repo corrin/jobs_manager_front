@@ -87,6 +87,12 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
     ((key: string, value: unknown) => {
       if (value == null) return value
       if (typeof value === 'string') {
+        // For description and notes fields, preserve newlines
+        // Only trim leading/trailing whitespace
+        if (key === 'description' || key === 'notes') {
+          return value.trim()
+        }
+
         // trim and collapse internal whitespace
         const collapsed = value.trim().replace(/\s+/g, ' ')
 
