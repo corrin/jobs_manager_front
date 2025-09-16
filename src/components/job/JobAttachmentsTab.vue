@@ -240,6 +240,7 @@ import { api } from '@/api/client'
 import { formatFileSize, formatDate } from '@/utils/string-formatting'
 import type { z } from 'zod'
 import { debugLog } from '@/utils/debug'
+import axios from 'axios'
 
 type JobFile = z.infer<typeof schemas.JobFile> & {
   thumbnailError?: boolean
@@ -500,15 +501,13 @@ async function downloadFile(file: JobFile) {
   }
 
   try {
-    // Fetch the file as a blob to force download
+    // Use axios to ensure cookies are sent with the request for authentication
+    const response = await axios.get(file.download_url, {
+      responseType: 'blob',
+      withCredentials: true, // Explicitly set to ensure cookies are sent
+    })
 
-    // NOTE: the use of fetch here is to ensure we can handle large files and avoid CORS issues, justified for the simple download.
-    const response = await fetch(file.download_url)
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const blob = await response.blob()
+    const blob = response.data
     const url = window.URL.createObjectURL(blob)
 
     // Open file in new tab for viewing/printing
