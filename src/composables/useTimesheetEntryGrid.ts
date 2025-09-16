@@ -37,6 +37,7 @@ export function useTimesheetEntryGrid(
   onDeleteEntry: (id: number) => Promise<void>,
   options?: {
     resolveStaffById?: ResolveStaffById
+    onScheduleAutosave?: (entry: TimesheetEntryGridRowWithSaving) => void
   },
 ) {
   const gridApi = ref<GridApi | null>(null)
@@ -199,6 +200,7 @@ export function useTimesheetEntryGrid(
     rowHeight: 48,
     headerHeight: 44,
     animateRows: true,
+    suppressScrollOnNewData: true,
     onCellValueChanged: (event: CellValueChangedEvent) => {
       handleCellValueChanged(event)
     },
@@ -276,8 +278,8 @@ export function useTimesheetEntryGrid(
         const entry = createEntryFromRowData(data)
 
         // Update the row data with recalculated values
-        if (typeof event.node.rowIndex === 'number') {
-          updateRowData(event.node.rowIndex, entry)
+        if (event.node.rowIndex !== null && event.node.rowIndex !== undefined) {
+          nextTick(() => updateRowData(event.node.rowIndex, entry))
         }
       }
 
@@ -287,20 +289,22 @@ export function useTimesheetEntryGrid(
       // Skip if already saving
       if ((data as TimesheetEntryGridRowWithSaving).isSaving) return
 
-      // Handle existing row updates - ONLY mark as modified
+      // Handle existing row updates - mark as modified and schedule autosave
       if (!data.isNewRow && updatedEntry.id && !isRowEmpty(updatedEntry)) {
         data.isModified = true
-        console.log('🔄 Existing row marked as modified (no autosave):', updatedEntry.id)
+        console.log('🔄 Existing row marked as modified:', updatedEntry.id)
+        options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
       }
 
-      // Handle new row completion - ONLY mark as modified
+      // Handle new row completion - mark as modified and schedule autosave
       if (data.isNewRow && isRowComplete(updatedEntry)) {
         if (isDuplicateEntry(updatedEntry)) {
           return
         }
         data.isModified = true
         data.isNewRow = false // Convert to regular row but don't save yet
-        console.log('✏️ New row marked as modified (no autosave):', updatedEntry.description)
+        console.log('✏️ New row marked as modified:', updatedEntry.description)
+        options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
       }
     } catch (error) {
       console.error('Error in handleCellValueChanged:', error)
@@ -415,12 +419,22 @@ export function useTimesheetEntryGrid(
     }
   }
 
-  function updateRowData(rowIndex: number, entry: TimesheetEntry): void {
-    if (!gridApi.value || gridApi.value.isDestroyed?.()) return
+  function updateRowData(rowIndex: number | null, entry: TimesheetEntry): void {
+    if (
+      !gridApi.value ||
+      gridApi.value.isDestroyed?.() ||
+      rowIndex === null ||
+      rowIndex === undefined
+    )
+      return
     const rowNode = gridApi.value.getRowNode(String(rowIndex))
     if (rowNode) {
       Object.assign(rowNode.data, entry)
-      gridApi.value.refreshCells({ rowNodes: [rowNode], force: true })
+      nextTick(() => {
+        if (gridApi.value && !gridApi.value.isDestroyed?.()) {
+          gridApi.value.refreshCells({ rowNodes: [rowNode] })
+        }
+      })
     }
   }
 
@@ -495,7 +509,11 @@ export function useTimesheetEntryGrid(
 
       const newRow = calculations.createNewRow(staffMember, date)
       Object.assign(rowNode.data, newRow)
-      gridApi.value.refreshCells({ rowNodes: [rowNode], force: true })
+      nextTick(() => {
+        if (gridApi.value && !gridApi.value.isDestroyed?.()) {
+          gridApi.value.refreshCells({ rowNodes: [rowNode] })
+        }
+      })
     }
   }
 
