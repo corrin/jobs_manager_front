@@ -35,7 +35,6 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
   const error = ref<string | null>(null)
   const searchQuery = ref('')
   const showAdvancedSearch = ref(false)
-  const showSearchResults = ref(false)
   const showArchived = ref(false)
   const statusChoices = ref<StatusChoice[]>([])
   const selectedMobileStatus = ref('')
@@ -214,10 +213,21 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
   // Get jobs for a specific column with staff filtering
   const getJobsByStatus = computed(() => (columnId: string) => {
-    const columnState = columnStates[columnId]
-    if (!columnState) return []
-
-    return columnState.jobs.filter((job) => jobMatchesStaffFilters(job))
+    if (filteredJobs.value.length > 0) {
+      // When searching, group filteredJobs by column
+      const grouped: Record<string, KanbanJob[]> = {}
+      filteredJobs.value.forEach((job) => {
+        const colId = KanbanCategorizationService.getColumnForStatus(job.status)
+        if (!grouped[colId]) grouped[colId] = []
+        grouped[colId].push(job)
+      })
+      return (grouped[columnId] || []).filter((job) => jobMatchesStaffFilters(job))
+    } else {
+      // Normal mode: use columnStates
+      const columnState = columnStates[columnId]
+      if (!columnState) return []
+      return columnState.jobs.filter((job) => jobMatchesStaffFilters(job))
+    }
   })
 
   // Get column loading state
@@ -387,14 +397,12 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
   // Search functionality - now searches backend for better results
   const handleSearch = async (): Promise<void> => {
     if (!searchQuery.value.trim()) {
-      showSearchResults.value = false
       filteredJobs.value = []
       return
     }
 
     try {
       isLoading.value = true
-      showSearchResults.value = true
 
       // Check if search query is a job number (numeric)
       const isJobNumber = /^\d+$/.test(searchQuery.value.trim())
@@ -452,7 +460,6 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
   const handleAdvancedSearch = async (): Promise<void> => {
     try {
       isLoading.value = true
-      showSearchResults.value = true
       filteredJobs.value = []
 
       // Convert array fields to comma-separated strings for backend
@@ -478,10 +485,10 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
   // Utility functions
   const clearFilters = (): void => {
     advancedFilters.value = { ...DEFAULT_ADVANCED_FILTERS }
+    filteredJobs.value = []
   }
 
   const backToKanban = (): void => {
-    showSearchResults.value = false
     searchQuery.value = ''
     filteredJobs.value = []
   }
@@ -518,7 +525,6 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
     error,
     searchQuery,
     showAdvancedSearch,
-    showSearchResults,
     showArchived,
     advancedFilters,
     activeStaffFilters,

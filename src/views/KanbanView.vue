@@ -32,7 +32,7 @@
         </div>
 
         <div class="flex-1 flex flex-col px-2 sm:px-4 lg:px-6 py-1 md:py-2">
-          <div v-if="!showSearchResults" class="mb-2 md:mb-3 flex justify-center">
+          <div class="mb-2 md:mb-3 flex justify-center">
             <div class="flex justify-center w-full">
               <StaffPanel
                 :active-filters="activeStaffFilters"
@@ -41,141 +41,7 @@
             </div>
           </div>
 
-          <div v-if="showSearchResults" class="mb-2 md:mb-3">
-            <div class="flex items-centre justify-between mb-4">
-              <h2 class="text-lg font-semibold text-grey-900">
-                <span v-if="!isLoading">Search Results ({{ filteredJobs.length }} jobs found)</span>
-                <span v-else class="flex items-center">
-                  <svg
-                    class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Searching...
-                </span>
-              </h2>
-              <button
-                @click="backToKanban"
-                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colours flex items-centre text-sm"
-              >
-                <LayoutGrid class="mr-2 h-4 w-4" />
-                Back to Kanban
-              </button>
-            </div>
-
-            <!-- Loading state for search results -->
-            <div v-if="isLoading" class="flex justify-center items-center py-12">
-              <div class="text-center">
-                <svg
-                  class="animate-spin mx-auto h-12 w-12 text-blue-500"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  ></circle>
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <p class="mt-4 text-gray-600">Searching jobs...</p>
-              </div>
-            </div>
-
-            <!-- Search results with simple pagination -->
-            <div v-else class="relative">
-              <!-- Results header -->
-              <div class="mb-4 flex items-center justify-between">
-                <div class="text-sm text-gray-600">
-                  Showing {{ Math.min(visibleJobsCount, filteredJobs.length) }} of
-                  {{ filteredJobs.length }} jobs
-                </div>
-                <div v-if="hasMoreJobs" class="flex items-center space-x-2">
-                  <button
-                    @click="loadMoreVisibleJobs"
-                    class="px-3 py-1 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
-                  >
-                    Load More
-                  </button>
-                </div>
-              </div>
-
-              <!-- Simple grid with only visible jobs -->
-              <div class="max-h-[70vh] overflow-y-auto scroll-smooth">
-                <div
-                  class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 p-2"
-                >
-                  <div
-                    v-for="job in visibleJobs"
-                    :key="job.id"
-                    class="transform transition-all duration-300 ease-out opacity-100 translate-y-0"
-                  >
-                    <JobCard
-                      :job="job"
-                      @click="viewJob(job)"
-                      class="h-full hover:shadow-lg transition-shadow duration-200"
-                    />
-                  </div>
-                </div>
-
-                <!-- Load more at bottom -->
-                <div v-if="hasMoreJobs" class="text-center py-6">
-                  <button
-                    @click="loadMoreVisibleJobs"
-                    class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors flex items-center mx-auto"
-                  >
-                    <svg
-                      class="animate-spin -ml-1 mr-2 h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      v-if="false"
-                    >
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      ></circle>
-                      <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Load More Jobs ({{ filteredJobs.length - visibleJobsCount }} remaining)
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="!showSearchResults" class="flex-1 flex flex-col space-y-1 md:space-y-2">
+          <div class="flex-1 flex flex-col space-y-1 md:space-y-2">
             <div class="block md:hidden">
               <select
                 v-model="selectedMobileStatus"
@@ -286,9 +152,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted, nextTick, computed } from 'vue'
-import { Search, LayoutGrid } from 'lucide-vue-next'
-import JobCard from '@/components/JobCard.vue'
+import { ref, onUnmounted, onMounted, nextTick } from 'vue'
+import { Search } from 'lucide-vue-next'
 import KanbanColumn from '@/components/KanbanColumn.vue'
 import AppLayout from '@/components/AppLayout.vue'
 import StaffPanel from '@/components/StaffPanel.vue'
@@ -312,10 +177,8 @@ onUnmounted(() => {
 })
 
 const {
-  filteredJobs,
   isLoading,
   searchQuery,
-  showSearchResults,
   advancedFilters,
   activeStaffFilters,
   selectedMobileStatus,
@@ -328,7 +191,6 @@ const {
   handleSearch,
   handleAdvancedSearch,
   clearFilters,
-  backToKanban,
   loadMoreJobs,
   viewJob,
   updateJobStatus,
@@ -395,36 +257,10 @@ const handleStaffUnassigned = async (payload: { staffId: string; jobId: string }
 
 const showAdvancedSearchDialog = ref(false)
 
-// Simple pagination variables
-const visibleJobsCount = ref(20) // Initial visible jobs
-const JOBS_PER_BATCH = 20
-
-// Computed properties for pagination
-const hasMoreJobs = computed(() => visibleJobsCount.value < filteredJobs.value.length)
-
-const visibleJobs = computed(() => {
-  return filteredJobs.value.slice(0, visibleJobsCount.value)
-})
-
-const loadMoreVisibleJobs = () => {
-  if (hasMoreJobs.value) {
-    visibleJobsCount.value = Math.min(
-      visibleJobsCount.value + JOBS_PER_BATCH,
-      filteredJobs.value.length,
-    )
-  }
-}
-
-// Reset visible jobs when search results change
-const resetVisibleJobs = () => {
-  visibleJobsCount.value = Math.min(JOBS_PER_BATCH, filteredJobs.value.length)
-}
-
 const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
   try {
     Object.assign(advancedFilters.value, filters)
     await handleAdvancedSearch()
-    resetVisibleJobs()
   } catch (error) {
     console.error('Error performing advanced search from dialog:', error)
   }

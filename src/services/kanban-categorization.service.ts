@@ -94,11 +94,17 @@ export class KanbanCategorizationService {
     on_hold: 'unusual', // On Hold -> Unusual
     completed: 'recently_completed', // Completed -> Recently Completed
     rejected: 'recently_completed', // Rejected -> Recently Completed (with rejected_flag)
-    // Hidden statuses (not shown on kanban): special, archived
+    // Additional common backend statuses
+    active: 'in_progress',
+    pending: 'awaiting_approval',
+    special: 'draft', // Show special jobs in draft
+    archived: 'archived',
   }
 
   static getColumnForStatus(status: string): string {
-    return this.STATUS_TO_COLUMN_MAP[status] || 'draft'
+    // Normalize status to lowercase and replace spaces with underscores
+    const normalizedStatus = status.toLowerCase().replace(/ /g, '_')
+    return this.STATUS_TO_COLUMN_MAP[normalizedStatus] || 'draft'
   }
 
   static getColumnInfo(columnId: string): KanbanColumn | null {
