@@ -74,6 +74,20 @@ export class KanbanCategorizationService {
       colorTheme: 'emerald',
       badgeColorClass: 'bg-emerald-500',
     },
+    special: {
+      columnId: 'special',
+      columnTitle: 'Special',
+      statusKey: 'special',
+      colorTheme: 'gray',
+      badgeColorClass: 'bg-gray-500',
+    },
+    archived: {
+      columnId: 'archived',
+      columnTitle: 'Archived',
+      statusKey: 'archived',
+      colorTheme: 'slate',
+      badgeColorClass: 'bg-slate-500',
+    },
   }
 
   // Status to column mapping for quick lookup - based on Corrin's mapping table
@@ -94,11 +108,17 @@ export class KanbanCategorizationService {
     on_hold: 'unusual', // On Hold -> Unusual
     completed: 'recently_completed', // Completed -> Recently Completed
     rejected: 'recently_completed', // Rejected -> Recently Completed (with rejected_flag)
-    // Hidden statuses (not shown on kanban): special, archived
+    // Additional common backend statuses
+    active: 'in_progress',
+    pending: 'awaiting_approval',
+    special: 'special',
+    archived: 'archived',
   }
 
   static getColumnForStatus(status: string): string {
-    return this.STATUS_TO_COLUMN_MAP[status] || 'draft'
+    // Normalize status to lowercase and replace spaces with underscores
+    const normalizedStatus = status.toLowerCase().replace(/ /g, '_')
+    return this.STATUS_TO_COLUMN_MAP[normalizedStatus] || 'draft'
   }
 
   static getColumnInfo(columnId: string): KanbanColumn | null {
