@@ -142,7 +142,9 @@
       {{ truncatedJobName }}
     </h4>
 
-    <p class="text-xs text-gray-600 mb-1 line-clamp-1 leading-tight">{{ job.description }}</p>
+    <p class="text-xs text-gray-600 mb-1 line-clamp-2 leading-tight whitespace-pre-wrap">
+      {{ job.description }}
+    </p>
 
     <div class="text-xs text-gray-500 mb-2 truncate font-medium">Client: {{ job.client_name }}</div>
     <div v-if="job.contact_person" class="text-xs text-gray-500 mb-2 truncate font-medium">
