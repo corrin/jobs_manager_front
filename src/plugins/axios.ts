@@ -17,7 +17,7 @@ export const getApiBaseUrl = () => {
 }
 
 axios.defaults.baseURL = getApiBaseUrl()
-axios.defaults.timeout = 20000
+axios.defaults.timeout = 60000
 axios.defaults.withCredentials = true
 
 axios.interceptors.request.use(

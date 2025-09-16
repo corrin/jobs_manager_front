@@ -65,10 +65,23 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       hasMore: true,
       error: null,
     }
+    // Add special column
+    columnStates['special'] = {
+      jobs: [],
+      loading: false,
+      loaded: false,
+      hasMore: true,
+      error: null,
+    }
   }
 
   // Staff filter logic
   const jobMatchesStaffFilters = (job: KanbanJob): boolean => {
+    // Archived jobs are always shown regardless of staff filters
+    if (job.status === 'Archived' || job.status_key === 'archived') {
+      return true
+    }
+
     if (activeStaffFilters.value.length === 0) {
       return true
     }
@@ -345,7 +358,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
   // Visible status choices
   const visibleStatusChoices = computed(() => {
-    return KanbanCategorizationService.getAllColumns().map((col) => ({
+    const mainColumns = KanbanCategorizationService.getAllColumns().map((col) => ({
       key: col.columnId,
       label: col.columnTitle,
       tooltip: `Status: ${col.statusKey
@@ -354,6 +367,48 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ')}`,
     }))
+
+    // Add special and archived columns if they have jobs during search
+    if (filteredJobs.value.length > 0) {
+      const hasSpecialJobs = filteredJobs.value.some(
+        (job) => KanbanCategorizationService.getColumnForStatus(job.status) === 'special',
+      )
+      const hasArchivedJobs = filteredJobs.value.some(
+        (job) => KanbanCategorizationService.getColumnForStatus(job.status) === 'archived',
+      )
+
+      if (hasSpecialJobs) {
+        const specialCol = KanbanCategorizationService.getColumnInfo('special')
+        if (specialCol) {
+          mainColumns.push({
+            key: specialCol.columnId,
+            label: specialCol.columnTitle,
+            tooltip: `Status: ${specialCol.statusKey
+              .replace(/_/g, ' ')
+              .split(' ')
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ')}`,
+          })
+        }
+      }
+
+      if (hasArchivedJobs) {
+        const archivedCol = KanbanCategorizationService.getColumnInfo('archived')
+        if (archivedCol) {
+          mainColumns.push({
+            key: archivedCol.columnId,
+            label: archivedCol.columnTitle,
+            tooltip: `Status: ${archivedCol.statusKey
+              .replace(/_/g, ' ')
+              .split(' ')
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ')}`,
+          })
+        }
+      }
+    }
+
+    return mainColumns
   })
 
   // Load status choices

@@ -74,6 +74,20 @@ export class KanbanCategorizationService {
       colorTheme: 'emerald',
       badgeColorClass: 'bg-emerald-500',
     },
+    special: {
+      columnId: 'special',
+      columnTitle: 'Special',
+      statusKey: 'special',
+      colorTheme: 'gray',
+      badgeColorClass: 'bg-gray-500',
+    },
+    archived: {
+      columnId: 'archived',
+      columnTitle: 'Archived',
+      statusKey: 'archived',
+      colorTheme: 'slate',
+      badgeColorClass: 'bg-slate-500',
+    },
   }
 
   // Status to column mapping for quick lookup - based on Corrin's mapping table
@@ -97,7 +111,7 @@ export class KanbanCategorizationService {
     // Additional common backend statuses
     active: 'in_progress',
     pending: 'awaiting_approval',
-    special: 'draft', // Show special jobs in draft
+    special: 'special',
     archived: 'archived',
   }
 

@@ -112,7 +112,7 @@
               </div>
 
               <div class="hidden lg:block">
-                <div class="w-full mx-auto px-2">
+                <div class="w-full mx-auto px-2 overflow-x-auto">
                   <div
                     class="grid gap-2 xl:gap-3"
                     :style="`grid-template-columns: repeat(${visibleStatusChoices.length}, minmax(0, 1fr))`"
