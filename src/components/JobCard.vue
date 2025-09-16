@@ -43,14 +43,7 @@
         fill="none"
         viewBox="0 0 24 24"
       >
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        ></circle>
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
         <path
           class="opacity-75"
           fill="currentColor"
@@ -65,19 +58,21 @@
         stroke="currentColor"
         viewBox="0 0 24 24"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="3"
-          d="M5 13l4 4L19 7"
-        ></path>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
       </svg>
     </div>
 
+    <!-- Top row: job number badge + staff avatars -->
     <div class="flex justify-between items-center mb-1">
-      <span class="text-xs font-semibold text-blue-600">#{{ job.job_number }}</span>
+      <!-- Bigger, high-contrast job number -->
+      <span
+        class="inline-flex items-center rounded-md bg-blue-600 text-white px-2 py-1 text-[0.82rem] font-semibold tracking-wide"
+        style="font-variant-numeric: tabular-nums"
+      >
+        #{{ job.job_number }}
+      </span>
 
-      <!-- Staff avatars moved next to job number -->
+      <!-- Staff avatars next to job number (unchanged behavior) -->
       <div
         ref="jobStaffContainerRef"
         class="flex gap-1 items-center min-h-[20px] p-1 rounded transition-colors"
@@ -100,9 +95,7 @@
             :title="staff.display_name"
             :data-staff-id="staff.id"
             class="cursor-pointer transition-all duration-200"
-            :class="{
-              'opacity-75 scale-95': hoveredStaffId === staff.id,
-            }"
+            :class="{ 'opacity-75 scale-95': hoveredStaffId === staff.id }"
           />
           <!-- X indicator on hover -->
           <div
@@ -138,17 +131,23 @@
       </div>
     </div>
 
-    <h4 class="font-medium text-gray-900 text-xs mb-1 leading-tight">
-      {{ truncatedJobName }}
+    <!-- Customer name elevated to title -->
+    <h4 class="font-semibold text-gray-900 text-[0.98rem] mb-1 leading-tight">
+      {{ job.client_name }}
     </h4>
 
-    <p class="text-xs text-gray-600 mb-1 line-clamp-2 leading-tight whitespace-pre-wrap">
-      {{ job.description }}
+    <!-- Description (kept line-clamp-2 to avoid tall cards in columns) -->
+    <p
+      class="text-[0.84rem] text-gray-700 mb-2 leading-snug whitespace-pre-wrap"
+      :class="isRealDescription ? 'line-clamp-2' : 'line-clamp-1'"
+      :title="!isRealDescription ? job.name : undefined"
+    >
+      {{ descriptionOrName }}
     </p>
 
-    <div class="text-xs text-gray-500 mb-2 truncate font-medium">Client: {{ job.client_name }}</div>
-    <div v-if="job.contact_person" class="text-xs text-gray-500 mb-2 truncate font-medium">
-      Contact: {{ job.contact_person }}
+    <!-- Contact only (client line removed by request) -->
+    <div v-if="job.contact_person" class="text-[0.8rem] text-gray-600 truncate font-medium">
+      <span class="font-semibold">Contact:</span> {{ job.contact_person }}
     </div>
   </div>
 </template>
@@ -198,7 +197,7 @@ const isAssigningStaff = ref(false)
 const isUnassigningStaff = ref(false)
 const operationSuccess = ref(false)
 
-// Staff drag and drop handlers
+// Staff drag and drop handlers (UNCHANGED)
 const handleDragOver = (event: DragEvent): void => {
   event.preventDefault()
   if (event.dataTransfer) {
@@ -309,9 +308,11 @@ const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<
 
 const { handleClick } = useJobCard(props.job, emit)
 
-const truncatedJobName = computed(() => {
-  return props.job.name.length > 12 ? props.job.name.substring(0, 12) + '...' : props.job.name
+const descriptionOrName = computed(() => {
+  const d = (props.job.description || '').trim()
+  return d.length ? d : props.job.name
 })
+const isRealDescription = computed(() => (props.job.description || '').trim().length > 0)
 
 onMounted(() => {
   if (jobStaffContainerRef.value) {
@@ -356,14 +357,16 @@ onMounted(() => {
   cursor: grabbing;
 }
 
+/* Typographic tweaks for readability */
 .job-card .text-xs {
   font-size: 0.78rem;
   line-height: 1.1;
 }
 
 .job-card h4 {
-  font-size: 0.92rem;
-  font-weight: 500;
+  font-size: 0.98rem;
+  /* bumped up for older eyes */
+  font-weight: 600;
   margin-bottom: 0.15rem;
   line-height: 1.15;
 }
@@ -430,6 +433,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 
+/* Existing single-line clamp kept in case other parts use it */
 .job-card .line-clamp-1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -507,10 +511,7 @@ onMounted(() => {
 }
 
 /* Override any sortable drag styles on the X button */
-.staff-avatar-container .absolute:hover {
-  cursor: pointer !important;
-}
-
+.staff-avatar-container .absolute:hover,
 .staff-avatar-container .absolute:active {
   cursor: pointer !important;
 }
@@ -531,6 +532,7 @@ onMounted(() => {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -550,10 +552,12 @@ onMounted(() => {
     transform: scale(0.8);
     opacity: 0;
   }
+
   50% {
     transform: scale(1.1);
     opacity: 1;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
