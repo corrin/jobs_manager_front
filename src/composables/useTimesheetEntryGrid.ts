@@ -305,6 +305,12 @@ export function useTimesheetEntryGrid(
         data.isNewRow = false // Convert to regular row but don't save yet
         console.log('✏️ New row marked as modified:', updatedEntry.description)
         options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
+
+        // Ensure there's always an empty row at the end
+        nextTick(() => {
+          const staffData = options?.resolveStaffById?.(data.staffId || '')
+          ensureEmptyRow(data.staffId, staffData)
+        })
       }
     } catch (error) {
       console.error('Error in handleCellValueChanged:', error)
@@ -450,6 +456,23 @@ export function useTimesheetEntryGrid(
     )
   }
 
+  function ensureEmptyRow(staffId?: string, staffData?: TimesheetEntryStaffMember): void {
+    // Check if we have any rows
+    if (gridData.value.length === 0) {
+      addNewRow(staffId, undefined, staffData)
+      return
+    }
+
+    // Check if the last row is complete (not empty and not new)
+    const lastRow = gridData.value[gridData.value.length - 1]
+    const lastEntry = createEntryFromRowData(lastRow)
+
+    if (!lastRow.isNewRow && isRowComplete(lastEntry)) {
+      // Last row is complete, add a new empty row
+      addNewRow(staffId, undefined, staffData)
+    }
+  }
+
   // ✅ REMOVED: saveNewRow function no longer needed since we disabled autosave
   // All saving is now handled by the parent component's "Save All" functionality
 
@@ -463,9 +486,10 @@ export function useTimesheetEntryGrid(
     }
     if (rowDataToRemove && rowDataToRemove.isNewRow) {
       clearRow(rowIndex)
-      if (gridData.value.length === 0) {
-        addNewRow()
-      }
+      // Ensure there's always an empty row at the end
+      nextTick(() => {
+        ensureEmptyRow()
+      })
       return
     }
     try {
@@ -481,9 +505,10 @@ export function useTimesheetEntryGrid(
       throw error
     } finally {
       loading.value = false
-      if (gridData.value.length === 0) {
-        addNewRow()
-      }
+      // Ensure there's always an empty row at the end
+      nextTick(() => {
+        ensureEmptyRow()
+      })
     }
   }
 
@@ -550,9 +575,9 @@ export function useTimesheetEntryGrid(
         gridApi.value.applyTransaction({ add: gridData.value })
       }
     }
-    if (gridData.value.length === 0) {
-      addNewRow(staffId, undefined, staffData)
-    }
+
+    // Ensure there's always an empty row at the end
+    ensureEmptyRow(staffId, staffData)
   }
 
   function addNewRow(staffId?: string, date?: string, staffData?: TimesheetEntryStaffMember): void {
@@ -575,6 +600,11 @@ export function useTimesheetEntryGrid(
         }
       })
     }
+
+    // After adding a row, ensure there's still an empty row at the end
+    nextTick(() => {
+      ensureEmptyRow(staffId, staffData)
+    })
   }
 
   function getSelectedEntry(): TimesheetEntry | null {
@@ -650,5 +680,6 @@ export function useTimesheetEntryGrid(
     isRowComplete,
     hasData: computed(() => gridData.value.length > 0),
     setCurrentStaff,
+    ensureEmptyRow,
   }
 }
