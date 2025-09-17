@@ -313,7 +313,6 @@
                 :rowData="gridData"
                 :gridOptions="gridOptions"
                 @grid-ready="onGridReady"
-                @cell-value-changed="onCellValueChanged"
                 @first-data-rendered="onFirstDataRendered"
               />
             </div>
@@ -535,10 +534,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { AgGridVue } from 'ag-grid-vue3'
-import type { GridReadyEvent, CellValueChangedEvent, RowNode } from 'ag-grid-community'
+import type { GridReadyEvent, RowNode } from 'ag-grid-community'
 import { v4 as uuidv4 } from 'uuid'
 import { debounce } from 'lodash-es'
 
@@ -589,6 +588,14 @@ type Staff = z.infer<typeof schemas.Staff>
 type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
 type CostLine = z.infer<typeof schemas.CostLine>
 type Job = z.infer<typeof schemas.Job>
+
+// Type for autosave callback
+type TimesheetEntryGridRowWithSaving = TimesheetCostLine & {
+  tempId?: string
+  isModified?: boolean
+  isNewRow?: boolean
+  isSaving?: boolean
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -896,14 +903,35 @@ const {
   loadData,
   addNewRow,
   handleKeyboardShortcut,
-  handleCellValueChanged: gridHandleCellValueChanged,
   setCurrentStaff,
 } = useTimesheetEntryGrid(
   companyDefaultsRef,
   timesheetStore.jobs, // Pass jobs from timesheet store
   handleSaveEntry,
   handleDeleteEntry,
-  { resolveStaffById: (id: string) => timesheetStore.staff.find((s) => s.id === id) },
+  {
+    resolveStaffById: (id: string) => timesheetStore.staff.find((s) => s.id === id),
+    onScheduleAutosave: (entry: TimesheetEntryGridRowWithSaving) => {
+      const rows = gridData.value as TimesheetEntryWithMeta[]
+
+      if (entry.id != null && String(entry.id) !== '') {
+        autosave.schedule(String(entry.id))
+        return
+      }
+
+      // if it has tempId, try to promote
+      if (!entry.tempId) return
+
+      const now = rows.find((r) => r.tempId && String(r.tempId) === String(entry.tempId))
+      if (now?.id != null && String(now.id) !== '') {
+        entry.id = now.id
+        delete entry.tempId
+        autosave.schedule(String(now.id))
+      } else {
+        autosave.schedule(String(entry.tempId))
+      }
+    },
+  },
 )
 
 const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
@@ -1281,9 +1309,17 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
           ;(targetNode as unknown as { setData: (d: unknown) => void }).setData(
             rows[idx] as unknown,
           )
-          api.refreshCells({ rowNodes: [targetNode], force: true })
+          nextTick(() => {
+            if (api && !api.isDestroyed?.()) {
+              api.refreshCells({ rowNodes: [targetNode!] })
+            }
+          })
         } else {
-          api.refreshCells({ force: true })
+          nextTick(() => {
+            if (api && !api.isDestroyed?.()) {
+              api.refreshCells()
+            }
+          })
         }
       }
     }
@@ -1323,59 +1359,8 @@ async function handleDeleteEntry(id: number): Promise<void> {
   }
 }
 
-function scheduleFor(entry: TimesheetEntryWithMeta) {
-  const rows = gridData.value as TimesheetEntryWithMeta[]
-
-  if (entry.id != null && String(entry.id) !== '') {
-    autosave.schedule(String(entry.id))
-    return
-  }
-
-  // if it has tempId, try to promote
-  if (!entry.tempId) return
-
-  const now = rows.find((r) => r.tempId && String(r.tempId) === String(entry.tempId))
-  if (now?.id != null && String(now.id) !== '') {
-    entry.id = now.id
-    delete entry.tempId
-    autosave.schedule(String(now.id))
-  } else {
-    autosave.schedule(String(entry.tempId))
-  }
-}
-
-function handleCellValueChanged(event: CellValueChangedEvent) {
-  debugLog('🔧 TimesheetEntryView handleCellValueChanged called:', {
-    field: event.colDef.field,
-    newValue: event.newValue,
-    oldValue: event.oldValue,
-  })
-
-  gridHandleCellValueChanged(event)
-
-  if (event.data && typeof event.data === 'object') {
-    event.data.isModified = true
-    const entry = event.data as TimesheetEntryWithMeta
-
-    // Always trigger autosave for billable field changes and other key fields
-    if (
-      event.colDef.field === 'billable' ||
-      ['hours', 'rate', 'jobNumber', 'jobId', 'description'].includes(event.colDef.field || '')
-    ) {
-      debugLog('💾 Triggering autosave for field change:', event.colDef.field)
-      scheduleFor(entry)
-    }
-  }
-
-  hasUnsavedChanges.value = true
-}
-
 function onGridReady(params: GridReadyEvent) {
   setGridApi(params.api)
-}
-
-function onCellValueChanged(event: CellValueChangedEvent) {
-  handleCellValueChanged(event)
 }
 
 function onFirstDataRendered() {
