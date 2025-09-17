@@ -16,8 +16,6 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
-
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type Quill from 'quill'
 import RangeStatic from 'quill'
@@ -54,7 +52,6 @@ let isUpdatingFromProp = false
 
 const initializeEditor = async () => {
   if (!editorContainer.value) {
-    debugLog('Editor container not found')
     return
   }
   try {
@@ -79,13 +76,13 @@ const initializeEditor = async () => {
 
     quill = new Quill(editorContainer.value, options)
 
-    if (props.modelValue) {
-      quill.root.innerHTML = props.modelValue
-    }
+    // Always set content after initialization, even if empty
+    const content = props.modelValue || ''
+    quill.root.innerHTML = content
 
     setupEventHandlers()
-  } catch (error) {
-    debugLog('Failed to initialize Quill editor:', error)
+  } catch {
+    // Error handling without console logging
   }
 }
 
@@ -111,24 +108,35 @@ const setupEventHandlers = () => {
 }
 
 const updateContent = (newContent: string | undefined) => {
-  if (!quill) return
+  if (!quill) {
+    return
+  }
 
   const safeContent = newContent || ''
   const currentContent = quill.root.innerHTML
 
-  if (currentContent === safeContent) return
+  if (currentContent === safeContent) {
+    return
+  }
 
   isUpdatingFromProp = true
 
-  const selection = quill.getSelection()
+  try {
+    const selection = quill.getSelection()
+    quill.root.innerHTML = safeContent
 
-  quill.root.innerHTML = safeContent
-
-  if (selection) {
-    nextTick(() => {
-      if (!quill) return
-      quill.setSelection(selection)
-    })
+    if (selection) {
+      nextTick(() => {
+        if (!quill) return
+        try {
+          quill.setSelection(selection)
+        } catch {
+          // Failed to restore selection
+        }
+      })
+    }
+  } catch {
+    // Error updating content
   }
 
   isUpdatingFromProp = false

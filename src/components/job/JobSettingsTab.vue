@@ -56,9 +56,10 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea
-                v-model="descriptionComputed"
+                v-model="localJobData.description"
                 rows="4"
-                @blur="handleBlurFlush"
+                @input="handleFieldInput('description', $event.target.value)"
+                @blur="handleFieldBlur"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
                 placeholder="Describe the job requirements and scope..."
               ></textarea>
@@ -67,8 +68,9 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Date</label>
               <input
-                v-model="deliveryDateComputed"
+                v-model="localJobData.delivery_date"
                 type="date"
+                @input="handleFieldInput('delivery_date', $event.target.value)"
                 @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
@@ -166,8 +168,9 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Order Number</label>
               <input
-                v-model="orderNumberComputed"
+                v-model="localJobData.order_number"
                 type="text"
+                @input="handleFieldInput('order_number', $event.target.value)"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Customer order number (optional)"
               />
@@ -196,11 +199,11 @@
 
             <div class="flex-grow">
               <RichTextEditor
-                v-model="notesComputed"
+                v-model="localJobData.notes"
                 label="Internal Notes"
                 placeholder="Add internal notes about this job..."
                 :required="false"
-                @blur="handleBlurFlush"
+                @blur="handleFieldBlur"
               />
             </div>
           </CardContent>
@@ -258,70 +261,120 @@ const jobData = ref<Job | null>(null)
 
 // Combined onMounted hook for all initialization
 onMounted(async () => {
-  if (props.jobId) {
-    // Set current job ID in store for basic info to work
-    jobsStore.setCurrentJobId(props.jobId)
+  // Load persisted data first
+  const persisted = loadFromLocalStorage()
+  if (persisted) {
+    // popula o form para não "piscar" vazio
+    localJobData.value = { ...(localJobData.value ?? {}), ...persisted }
+    // e atualiza o snapshot base para o diff não ver "mudança para vazio"
+    originalJobData.value = { ...(originalJobData.value ?? {}), ...persisted }
+    persistedApplied.value = true
+  }
 
-    // Load both header and basic info in parallel
-    await Promise.all([
-      // Load header data
-      (async () => {
-        try {
-          const response = await api.job_rest_jobs_header_retrieve({
-            params: { job_id: props.jobId },
-          })
-          if (response) {
-            jobData.value = response
-          }
-        } catch (error) {
-          toast.error('Failed to load job header data')
-          debugLog('Failed to load job header data:', error)
+  // Keep isInitializing true until full loading is done
+  await Promise.all([
+    // Load job data if jobId exists
+    (async () => {
+      if (props.jobId) {
+        // Set current job ID in store for basic info to work
+        jobsStore.setCurrentJobId(props.jobId)
+
+        // Load both header and basic info in parallel
+        await Promise.all([
+          // Load header data
+          (async () => {
+            try {
+              const response = await api.job_rest_jobs_header_retrieve({
+                params: { job_id: props.jobId },
+              })
+              if (response) {
+                jobData.value = response
+              }
+            } catch (error) {
+              toast.error('Failed to load job header data')
+              debugLog('Failed to load job header data:', error)
+            }
+          })(),
+          // Load basic information
+          loadBasicInfo(),
+        ])
+      }
+    })(),
+
+    // Load job status choices
+    (async () => {
+      try {
+        const statusMap = await jobService.getStatusChoices()
+        if (statusMap.statuses) {
+          jobStatusChoices.value = Object.entries(statusMap.statuses).map(([value, label]) => ({
+            value,
+            label: String(label),
+          }))
         }
-      })(),
-      // Load basic information
-      loadBasicInfo(),
-    ])
-  }
+      } catch {
+        debugLog('Failed to load job status choices')
+        toast.error('Failed to load job status choices - please contact Corrin.')
+        jobStatusChoices.value = []
+      }
+    })(),
+  ])
 
-  // Load job status choices
-  try {
-    const statusMap = await jobService.getStatusChoices()
-    if (statusMap.statuses) {
-      jobStatusChoices.value = Object.entries(statusMap.statuses).map(([value, label]) => ({
-        value,
-        label: String(label),
-      }))
-    }
-  } catch {
-    debugLog('Failed to load job status choices')
-    toast.error('Failed to load job status choices - please contact Corrin.')
-    jobStatusChoices.value = []
-  }
+  // Only set isInitializing to false after all loading is complete
+  isInitializing.value = false
 })
 
 // Function to load basic information
 async function loadBasicInfo() {
-  debugLog('Loading basic information for job ID:', props.jobId)
   basicInfoLoading.value = true
   try {
     const basicInfo = await jobsStore.loadBasicInfo(props.jobId)
-    debugLog('Loaded basic info:', basicInfo)
+
+    // Force update local data immediately after loading
+    if (basicInfo && localJobData.value) {
+      isHydratingBasicInfo.value = true
+
+      // Only update fields that are empty or don't have user input
+      if (!localJobData.value.description || !localJobData.value.description.trim()) {
+        localJobData.value.description = basicInfo.description || ''
+      }
+      if (!localJobData.value.delivery_date || !localJobData.value.delivery_date.trim()) {
+        localJobData.value.delivery_date = basicInfo.delivery_date || ''
+      }
+      if (!localJobData.value.order_number || !localJobData.value.order_number.trim()) {
+        localJobData.value.order_number = basicInfo.order_number || ''
+      }
+      if (!localJobData.value.notes || !localJobData.value.notes.trim()) {
+        localJobData.value.notes = basicInfo.notes || ''
+      }
+
+      // Force reactivity update
+      localJobData.value = { ...localJobData.value }
+
+      // Update original snapshot for diff
+      originalJobData.value.description = localJobData.value.description ?? ''
+      originalJobData.value.delivery_date = localJobData.value.delivery_date ?? ''
+      originalJobData.value.order_number = localJobData.value.order_number ?? ''
+      originalJobData.value.notes = localJobData.value.notes ?? ''
+    }
+
     // Also update the detailed job in store if it exists
     if (basicInfo && jobsStore.currentJob) {
       jobsStore.updateDetailedJob(props.jobId, {
         job: {
           ...jobsStore.currentJob.job,
-          description: basicInfo.description,
-          delivery_date: basicInfo.delivery_date,
-          order_number: basicInfo.order_number,
-          notes: basicInfo.notes,
+          description: basicInfo.description || null,
+          delivery_date: basicInfo.delivery_date || null,
+          order_number: basicInfo.order_number || null,
+          notes: basicInfo.notes || null,
         },
       })
     }
-  } catch (error) {
-    debugLog('Failed to load basic information:', error)
+  } catch {
+    // Handle error silently
   } finally {
+    isHydratingBasicInfo.value = false
     basicInfoLoading.value = false
+    basicInfoHydrated.value = true
   }
 }
 
@@ -329,11 +382,18 @@ const localJobData = ref<Partial<Job>>({})
 const originalJobData = ref<Partial<Job>>({}) // Original data snapshot
 const errorMessages = ref<string[]>([])
 
+// Data readiness check for autosave
+const dataReady = computed(
+  () =>
+    !isInitializing.value &&
+    !basicInfoLoading.value &&
+    !!localJobData.value?.job_id &&
+    (basicInfoHydrated.value || persistedApplied.value),
+)
+
 // Use store for basic information
 const basicInfo = computed(() => {
-  const info = jobsStore.currentBasicInfo
-  debugLog('JobSettingsTab - basicInfo computed:', info)
-  return info
+  return jobsStore.currentBasicInfo
 })
 const basicInfoLoading = ref(false)
 
@@ -348,6 +408,70 @@ const showEditClientModal = ref(false)
 const jobStatusChoices = ref<{ value: string; label: string }[]>([])
 const isInitializing = ref(true)
 const isSyncingFromStore = ref(false)
+
+// Readiness flags for preventing premature saves
+const basicInfoHydrated = ref(false)
+const persistedApplied = ref(false)
+const isHydratingBasicInfo = ref(false)
+
+// Data persistence across tab switches
+const PERSISTENCE_KEY = computed(() => `job-settings-${props.jobId}`)
+const persistedData = ref<Partial<Job> | null>(null)
+
+// Notification debouncing
+const lastNotificationTime = ref(0)
+const NOTIFICATION_DEBOUNCE_MS = 3000 // 3 seconds minimum between notifications
+
+// Typing state tracking to prevent interruption
+const isUserTyping = ref(false)
+const typingTimeout = ref<NodeJS.Timeout | null>(null)
+const TYPING_TIMEOUT_MS = 1000 // Consider user stopped typing after 1 second
+
+// Persistence functions
+const saveToLocalStorage = () => {
+  if (localJobData.value && props.jobId) {
+    const dataToSave = {
+      description: localJobData.value.description,
+      delivery_date: localJobData.value.delivery_date,
+      order_number: localJobData.value.order_number,
+      notes: localJobData.value.notes,
+      timestamp: Date.now(),
+    }
+    localStorage.setItem(PERSISTENCE_KEY.value, JSON.stringify(dataToSave))
+    debugLog('Saved data to localStorage:', dataToSave)
+  }
+}
+
+const loadFromLocalStorage = () => {
+  if (props.jobId) {
+    const saved = localStorage.getItem(PERSISTENCE_KEY.value)
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        // Only restore if saved within last 24 hours
+        if (Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+          persistedData.value = parsed
+          debugLog('Loaded data from localStorage:', parsed)
+          return parsed
+        } else {
+          // Clean up old data
+          localStorage.removeItem(PERSISTENCE_KEY.value)
+        }
+      } catch (error) {
+        debugLog('Error parsing localStorage data:', error)
+        localStorage.removeItem(PERSISTENCE_KEY.value)
+      }
+    }
+  }
+  return null
+}
+
+const clearLocalStorage = () => {
+  if (props.jobId) {
+    localStorage.removeItem(PERSISTENCE_KEY.value)
+    debugLog('Cleared localStorage data')
+  }
+}
 
 // Status choices are now loaded in the combined onMounted hook above
 
@@ -366,88 +490,51 @@ const resetClientChangeState = () => {
   selectedNewClient.value = null
 }
 
-// Computed properties for basic info fields to handle null case
-const descriptionComputed = computed({
-  get: () => {
-    // Priority: localJobData (current unsaved) > basicInfo (store) > empty string
-    const localValue = localJobData.value?.description
-    const storeValue = basicInfo.value?.description
-    const result = localValue ?? storeValue ?? ''
-    debugLog('descriptionComputed get:', { localValue, storeValue, result })
-    return typeof result === 'string' ? result : ''
-  },
-  set: (value: string) => {
-    if (props.jobId) {
-      const newValue = value || null
-      jobsStore.updateBasicInfo(props.jobId, { description: newValue })
-      // Update local data to trigger autosave watchers (don't update original)
-      if (localJobData.value) {
-        localJobData.value.description = newValue
-      }
-    }
-  },
-})
+// Handle field input changes
+const handleFieldInput = (field: string, value: string) => {
+  if (!localJobData.value) return
 
-const deliveryDateComputed = computed({
-  get: () => {
-    const localValue = localJobData.value?.delivery_date
-    const storeValue = basicInfo.value?.delivery_date
-    const result = localValue ?? storeValue ?? ''
-    debugLog('deliveryDateComputed get:', { localValue, storeValue, result })
-    return result
-  },
-  set: (value: string) => {
-    if (props.jobId) {
-      const newValue = value || null
-      jobsStore.updateBasicInfo(props.jobId, { delivery_date: newValue })
-      // Update local data to trigger autosave watchers (don't update original)
-      if (localJobData.value) {
-        localJobData.value.delivery_date = newValue
-      }
-    }
-  },
-})
+  const newValue = value || ''
 
-const orderNumberComputed = computed({
-  get: () => {
-    return localJobData.value?.order_number ?? basicInfo.value?.order_number ?? ''
-  },
-  set: (value: string) => {
-    if (props.jobId) {
-      const newValue = value || null
-      jobsStore.updateBasicInfo(props.jobId, { order_number: newValue })
-      // Update local data to trigger autosave watchers (don't update original)
-      if (localJobData.value) {
-        localJobData.value.order_number = newValue
-      }
-    }
-  },
-})
+  // Mark user as actively typing
+  isUserTyping.value = true
 
-const notesComputed = computed({
-  get: () => {
-    return localJobData.value?.notes ?? basicInfo.value?.notes ?? ''
-  },
-  set: (value: string) => {
-    if (props.jobId) {
-      const newValue = value || null
-      jobsStore.updateBasicInfo(props.jobId, { notes: newValue })
-      // Update local data to trigger autosave watchers (don't update original)
-      if (localJobData.value) {
-        localJobData.value.notes = newValue
-      }
-    }
-  },
-})
+  // Clear existing timeout
+  if (typingTimeout.value) {
+    clearTimeout(typingTimeout.value)
+  }
+
+  // Set timeout to mark typing as stopped
+  typingTimeout.value = setTimeout(() => {
+    isUserTyping.value = false
+  }, TYPING_TIMEOUT_MS)
+
+  // Type-safe field assignment
+  if (field === 'description') {
+    localJobData.value.description = newValue
+  } else if (field === 'delivery_date') {
+    localJobData.value.delivery_date = newValue
+  } else if (field === 'order_number') {
+    localJobData.value.order_number = newValue
+  } else if (field === 'notes') {
+    localJobData.value.notes = newValue
+  }
+
+  // Update store for persistence
+  if (props.jobId) {
+    jobsStore.updateBasicInfo(props.jobId, { [field]: newValue })
+  }
+
+  // Queue autosave change
+  if (!isInitializing.value) {
+    autosave.queueChange(field, newValue)
+  }
+}
 
 watch(
   () => jobData.value,
   async (newJobData) => {
-    debugLog('JobSettingsTab - jobData watcher triggered. New jobData:', newJobData)
     if (!newJobData || !newJobData.job_id) {
-      debugLog(
-        '🚫 JobSettingsTab - Watcher: Received null/undefined/invalid jobData, initializing with defaults.',
-      )
       // Initialize with default values when jobData is null
       const defaultJobData = {
         job_id: props.jobId || '',
@@ -463,22 +550,18 @@ watch(
         quote_acceptance_date: undefined,
         paid: false,
         // Include basic info fields - will be updated when basicInfo loads
-        description: null,
-        delivery_date: null,
-        order_number: null,
-        notes: null,
+        description: '',
+        delivery_date: '',
+        order_number: '',
+        notes: '',
       }
 
       localJobData.value = { ...defaultJobData }
       originalJobData.value = { ...defaultJobData }
       contactDisplayValue.value = ''
-      isInitializing.value = false
       return
     }
-    debugLog(
-      '✅ JobSettingsTab - Watcher: Received valid jobData, initializing. Job ID:',
-      newJobData.job_id,
-    )
+    // Received valid jobData, initializing
 
     isInitializing.value = true
 
@@ -494,15 +577,19 @@ watch(
       quoted: newJobData.quoted,
       quote_acceptance_date: newJobData.quote_acceptance_date,
       paid: newJobData.paid,
-      // Basic info fields will be updated by separate watcher
-      description: null,
-      delivery_date: null,
-      order_number: null,
-      notes: null,
     }
 
-    localJobData.value = { ...jobDataSnapshot }
-    originalJobData.value = { ...jobDataSnapshot } // Keep original snapshot
+    // Preserve existing basic info fields when updating with header data
+    localJobData.value = {
+      ...jobDataSnapshot,
+      description: localJobData.value?.description ?? '',
+      delivery_date: localJobData.value?.delivery_date ?? '',
+      order_number: localJobData.value?.order_number ?? '',
+      notes: localJobData.value?.notes ?? '',
+    }
+
+    // Keep original snapshot with current state
+    originalJobData.value = { ...localJobData.value }
 
     // Load contact information using the job contacts endpoint
     try {
@@ -529,10 +616,7 @@ watch(
       }
     }
 
-    debugLog('JobSettingsTab - Local job data initialized:', localJobData.value)
-
     await nextTick()
-    isInitializing.value = false
   },
   { immediate: true, deep: true },
 )
@@ -541,28 +625,48 @@ watch(
 watch(
   () => basicInfo.value,
   (newBasicInfo) => {
-    debugLog('JobSettingsTab - Basic info watcher triggered:', newBasicInfo)
-    if (newBasicInfo && localJobData.value) {
-      // Only update if the values are different to avoid unnecessary reactivity
-      if (localJobData.value.description !== newBasicInfo.description) {
-        localJobData.value.description = newBasicInfo.description
-        debugLog('Updated description:', newBasicInfo.description)
+    if (newBasicInfo && localJobData.value && !isHydratingBasicInfo.value) {
+      // Don't update text fields if user is actively typing
+      if (isUserTyping.value) {
+        return
       }
-      if (localJobData.value.delivery_date !== newBasicInfo.delivery_date) {
-        localJobData.value.delivery_date = newBasicInfo.delivery_date
-        debugLog('Updated delivery_date:', newBasicInfo.delivery_date)
+
+      // Always update from server data if we have it, but preserve user input if they started typing
+      const hasUserInput =
+        (localJobData.value.description && localJobData.value.description.trim()) ||
+        (localJobData.value.delivery_date && localJobData.value.delivery_date.trim()) ||
+        (localJobData.value.order_number && localJobData.value.order_number.trim()) ||
+        (localJobData.value.notes && localJobData.value.notes.trim())
+
+      if (!hasUserInput) {
+        // No user input yet, safe to update from server
+        localJobData.value.description = newBasicInfo.description || ''
+        localJobData.value.delivery_date = newBasicInfo.delivery_date || ''
+        localJobData.value.order_number = newBasicInfo.order_number || ''
+        localJobData.value.notes = newBasicInfo.notes || ''
+      } else {
+        // User has input, only update fields that are still empty
+        if (!localJobData.value.description && newBasicInfo.description) {
+          localJobData.value.description = newBasicInfo.description
+        }
+        if (!localJobData.value.delivery_date && newBasicInfo.delivery_date) {
+          localJobData.value.delivery_date = newBasicInfo.delivery_date
+        }
+        if (!localJobData.value.order_number && newBasicInfo.order_number) {
+          localJobData.value.order_number = newBasicInfo.order_number
+        }
+        if (!localJobData.value.notes && newBasicInfo.notes) {
+          localJobData.value.notes = newBasicInfo.notes
+        }
       }
-      if (localJobData.value.order_number !== newBasicInfo.order_number) {
-        localJobData.value.order_number = newBasicInfo.order_number
-        debugLog('Updated order_number:', newBasicInfo.order_number)
-      }
-      if (localJobData.value.notes !== newBasicInfo.notes) {
-        localJobData.value.notes = newBasicInfo.notes
-        debugLog('Updated notes:', newBasicInfo.notes)
-      }
-      debugLog('JobSettingsTab - Basic info updated in local data:', newBasicInfo)
-    } else {
-      debugLog('JobSettingsTab - Basic info watcher: no newBasicInfo or no localJobData')
+    }
+
+    // Sincroniza snapshot original para o diff pós-hidratação
+    if (!isHydratingBasicInfo.value) {
+      originalJobData.value.description = localJobData.value?.description ?? ''
+      originalJobData.value.delivery_date = localJobData.value?.delivery_date ?? ''
+      originalJobData.value.order_number = localJobData.value?.order_number ?? ''
+      originalJobData.value.notes = localJobData.value?.notes ?? ''
     }
   },
   { immediate: true, deep: true },
@@ -600,7 +704,7 @@ watch(
       localJobData.value.order_number = preservedBasicInfo.order_number
       localJobData.value.notes = preservedBasicInfo.notes
 
-      debugLog('JobSettingsTab - Header updated from store:', newHeader)
+      // Header updated from store
 
       // Allow field watchers to trigger again
       nextTick(() => {
@@ -753,6 +857,8 @@ let unbindRouteGuard: () => void = () => {}
 /** Instance */
 const autosave = createJobAutosave({
   jobId: props.jobId || '',
+  debounceMs: 2000, // Increased debounce for text fields to prevent interruption
+  canSave: () => dataReady.value, // barreira de prontidão
   getSnapshot: () => {
     // Returns original snapshot, not current data
     const data = originalJobData.value || {}
@@ -769,10 +875,10 @@ const autosave = createJobAutosave({
       quoted: data.quoted,
       quote_acceptance_date: data.quote_acceptance_date,
       paid: data.paid,
-      description: data.description,
-      order_number: data.order_number,
-      notes: data.notes,
-      delivery_date: data.delivery_date,
+      description: data.description || '',
+      order_number: data.order_number || '',
+      notes: data.notes || '',
+      delivery_date: data.delivery_date || '',
     }
   },
   applyOptimistic: (patch) => {
@@ -791,17 +897,11 @@ const autosave = createJobAutosave({
         return { success: false, error: 'Missing job id' }
       }
 
-      // Build partial payload with current values of all basic info fields
-      // Build partial payload, excluding contact fields since they are saved separately
-      const currentBasicInfo = jobsStore.currentBasicInfo
-      const partialPayload: Partial<Job> = {
-        ...patch,
-        // Always include current basic info values to prevent overwriting
-        description: localJobData.value?.description ?? currentBasicInfo?.description ?? null,
-        delivery_date: localJobData.value?.delivery_date ?? currentBasicInfo?.delivery_date ?? null,
-        order_number: localJobData.value?.order_number ?? currentBasicInfo?.order_number ?? null,
-        notes: localJobData.value?.notes ?? currentBasicInfo?.notes ?? null,
-      }
+      // Only send the patch data - no filling in from local/store
+      const partialPayload: Partial<Job> = { ...patch }
+
+      // Save to localStorage for persistence
+      saveToLocalStorage()
 
       // Use the partial update method (similar to useJobHeaderAutosave)
       const result = await jobService.updateJobHeaderPartial(props.jobId, partialPayload)
@@ -829,14 +929,13 @@ const autosave = createJobAutosave({
           if ('quote_acceptance_date' in patch)
             next.quote_acceptance_date = (patch.quote_acceptance_date as string | null) ?? undefined
 
-          // Basic infos (kept locally)
-          if ('description' in patch)
-            next.description = (patch.description as string | null) ?? null
+          // Basic infos (kept locally) - convert null to empty string for form display
+          if ('description' in patch) next.description = (patch.description as string | null) ?? ''
           if ('delivery_date' in patch)
-            next.delivery_date = (patch.delivery_date as string | null) ?? null
+            next.delivery_date = (patch.delivery_date as string | null) ?? ''
           if ('order_number' in patch)
-            next.order_number = (patch.order_number as string | null) ?? null
-          if ('notes' in patch) next.notes = (patch.notes as string | null) ?? null
+            next.order_number = (patch.order_number as string | null) ?? ''
+          if ('notes' in patch) next.notes = (patch.notes as string | null) ?? ''
 
           // Contact fields are handled separately, not through header
 
@@ -870,27 +969,35 @@ const autosave = createJobAutosave({
         // Update basic infos in store with local values
         if (props.jobId) {
           jobsStore.updateBasicInfo(props.jobId, {
-            description: originalJobData.value.description ?? null,
-            delivery_date: originalJobData.value.delivery_date ?? null,
-            order_number: originalJobData.value.order_number ?? null,
-            notes: originalJobData.value.notes ?? null,
+            description: originalJobData.value.description?.trim() || null,
+            delivery_date: originalJobData.value.delivery_date?.trim() || null,
+            order_number: originalJobData.value.order_number?.trim() || null,
+            notes: originalJobData.value.notes?.trim() || null,
           })
 
           if (jobsStore.currentJob) {
             jobsStore.updateDetailedJob(props.jobId, {
               job: {
                 ...jobsStore.currentJob.job,
-                description: originalJobData.value.description ?? null,
-                delivery_date: originalJobData.value.delivery_date ?? null,
-                order_number: originalJobData.value.order_number ?? null,
-                notes: originalJobData.value.notes ?? null,
+                description: originalJobData.value.description?.trim() || null,
+                delivery_date: originalJobData.value.delivery_date?.trim() || null,
+                order_number: originalJobData.value.order_number?.trim() || null,
+                notes: originalJobData.value.notes?.trim() || null,
               },
             })
           }
         }
 
-        // Notifies success
-        toast.success('Job updated successfully')
+        // Clear localStorage on successful save
+        clearLocalStorage()
+
+        // Debounced success notification
+        const now = Date.now()
+        if (now - lastNotificationTime.value >= NOTIFICATION_DEBOUNCE_MS) {
+          toast.success('Job updated successfully')
+          lastNotificationTime.value = now
+        }
+
         return { success: true, serverData: result.data }
       }
 
@@ -913,6 +1020,22 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  // Clear typing timeout to prevent memory leaks
+  if (typingTimeout.value) {
+    clearTimeout(typingTimeout.value)
+  }
+
+  // Save current state to localStorage before unmounting
+  if (
+    localJobData.value &&
+    (localJobData.value.description ||
+      localJobData.value.delivery_date ||
+      localJobData.value.order_number ||
+      localJobData.value.notes)
+  ) {
+    saveToLocalStorage()
+  }
+
   autosave.onBeforeUnloadUnbind()
   autosave.onVisibilityUnbind()
   unbindRouteGuard()
@@ -938,10 +1061,6 @@ watch(
   },
 )
 watch(
-  () => localJobData.value.description,
-  (v) => enqueueIfNotInitializing('description', v),
-)
-watch(
   () => localJobData.value.pricing_methodology,
   (v) => {
     if (!isSyncingFromStore.value) {
@@ -960,35 +1079,35 @@ watch(
   { deep: true },
 )
 
-// Watchers for basic info computed properties
+// Watchers for basic info fields
 watch(
-  () => descriptionComputed.value,
+  () => localJobData.value?.description,
   (v) => {
-    if (!isSyncingFromStore.value) {
+    if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
       enqueueIfNotInitializing('description', v)
     }
   },
 )
 watch(
-  () => deliveryDateComputed.value,
+  () => localJobData.value?.delivery_date,
   (v) => {
-    if (!isSyncingFromStore.value) {
+    if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
       enqueueIfNotInitializing('delivery_date', v)
     }
   },
 )
 watch(
-  () => orderNumberComputed.value,
+  () => localJobData.value?.order_number,
   (v) => {
-    if (!isSyncingFromStore.value) {
+    if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
       enqueueIfNotInitializing('order_number', v)
     }
   },
 )
 watch(
-  () => notesComputed.value,
+  () => localJobData.value?.notes,
   (v) => {
-    if (!isSyncingFromStore.value) {
+    if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
       enqueueIfNotInitializing('notes', v)
     }
   },
@@ -996,10 +1115,22 @@ watch(
 
 /** UI helpers */
 const handleBlurFlush = () => {
-  void autosave.flush('blur')
+  void autosave.flush()
 }
+
+const handleFieldBlur = () => {
+  // Clear typing state when field loses focus
+  isUserTyping.value = false
+  if (typingTimeout.value) {
+    clearTimeout(typingTimeout.value)
+    typingTimeout.value = null
+  }
+  // Trigger save
+  void autosave.flush()
+}
+
 const retrySave = () => {
-  void autosave.flush('retry-click')
+  void autosave.flush()
 }
 
 const saveHasError = computed(() => !!autosave.error.value)
