@@ -5,46 +5,18 @@ import { z } from 'zod'
 import { AdvancedFilters } from '../constants/advanced-filters'
 import { AxiosError } from 'axios'
 
-type Job = z.infer<typeof schemas.Job>
-
 /**
- * Updates partial Job fields (header autosave) without going through Zodios,
- * since the backend accepts partials in data.job and returns complete JobDetailResponse.
+ * Updates partial Job fields using PATCH endpoint
  */
 async function updateJobHeaderPartial(
   jobId: string,
-  patch: Partial<Job>,
+  payload: Record<string, unknown>,
 ): Promise<{ success: true; data: JobDetailResponse } | { success: false; error: string }> {
   try {
-    // Build only what's needed; backend accepts partial in data.job
-    const body = {
-      data: {
-        job: {
-          ...patch,
-          // Ensure null for nullable fields when undefined
-          contact_id: patch.contact_id ?? null,
-          contact_name: patch.contact_name ?? null,
-          notes: patch.notes ?? null,
-          order_number: patch.order_number ?? null,
-          description: patch.description ?? null,
-          delivery_date: patch.delivery_date ?? null,
-        },
-        // Backend ignores these in update; we keep expected shape
-        events: [],
-        company_defaults: {
-          wage_rate: 0,
-          time_markup: 0,
-          materials_markup: 0,
-          charge_out_rate: 0,
-        },
-      },
-      success: true,
-    }
-
-    const url = `/job/rest/jobs/${jobId}/`
-
-    const { data } = await axios.put<JobDetailResponse>(url, body)
-    return { success: true, data }
+    const res = await api.job_rest_jobs_partial_update(payload, {
+      params: { job_id: jobId },
+    })
+    return { success: true, data: res }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error updating job header'
     return { success: false, error: msg }
@@ -86,10 +58,9 @@ export const jobService = {
     return api.job_api_jobs_fetch_retrieve({ params: { status } })
   },
 
-  getJobsByColumn(columnId: string, maxJobs: number = 50): Promise<FetchJobsByColumnResponse> {
+  getJobsByColumn(columnId: string): Promise<FetchJobsByColumnResponse> {
     return api.job_api_jobs_fetch_by_column_retrieve({
       params: { column_id: columnId },
-      queries: { max_jobs: maxJobs },
     })
   },
 
@@ -212,7 +183,9 @@ export const jobService = {
       status:
         Array.isArray(filters.status) && filters.status.length > 0
           ? filters.status.join(',')
-          : filters.status,
+          : typeof filters.status === 'string'
+            ? filters.status
+            : undefined,
     }
 
     console.log('🔍 Advanced search filters:', processedFilters)

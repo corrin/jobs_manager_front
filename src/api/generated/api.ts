@@ -1018,6 +1018,37 @@ const JobData = z
 const JobDetailResponse = z
   .object({ success: z.boolean().optional().default(true), data: JobData })
   .passthrough()
+const JobStatusEnum = z.enum([
+  'draft',
+  'awaiting_approval',
+  'approved',
+  'in_progress',
+  'unusual',
+  'recently_completed',
+  'special',
+  'archived',
+])
+const BlankEnum = z.unknown()
+const NullEnum = z.unknown()
+const PatchedJobPatchRequest = z
+  .object({
+    name: z.string().max(100),
+    description: z.string().nullable(),
+    notes: z.string().nullable(),
+    order_number: z.string().max(100).nullable(),
+    job_status: JobStatusEnum,
+    paid: z.boolean(),
+    job_is_valid: z.boolean(),
+    delivery_date: z.string().nullable(),
+    quote_acceptance_date: z.string().datetime({ offset: true }).nullable(),
+    charge_out_rate: z.number().gt(-100000000).lt(100000000),
+    pricing_methodology: z.union([PricingMethodologyEnum, BlankEnum, NullEnum]).nullable(),
+    client_id: z.string().uuid().nullable(),
+    contact_id: z.string().uuid().nullable(),
+    job_files: z.array(z.object({}).partial().passthrough()),
+  })
+  .partial()
+  .passthrough()
 const JobDeleteResponse = z
   .object({
     success: z.boolean().optional().default(true),
@@ -1430,8 +1461,6 @@ const MetalTypeEnum = z.enum([
   'unspecified',
   'other',
 ])
-const BlankEnum = z.unknown()
-const NullEnum = z.unknown()
 const PurchaseOrderLine = z
   .object({
     id: z.string().uuid(),
@@ -2005,6 +2034,10 @@ export const schemas = {
   CompanyDefaultsJobDetail,
   JobData,
   JobDetailResponse,
+  JobStatusEnum,
+  BlankEnum,
+  NullEnum,
+  PatchedJobPatchRequest,
   JobDeleteResponse,
   JobBasicInformationResponse,
   QuoteRevisionsList,
@@ -2062,8 +2095,6 @@ export const schemas = {
   PurchaseOrderCreate,
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
-  BlankEnum,
-  NullEnum,
   PurchaseOrderLine,
   PurchaseOrderDetail,
   PurchaseOrderLineUpdate,
@@ -2427,7 +2458,8 @@ information about a token&#x27;s fitness for a particular use.`,
     description: `API view for managing company default settings.
 
 This view provides endpoints to retrieve and update the company&#x27;s default
-configuration settings. Only admin users are permitted to access these endpoints.
+configuration settings. All authenticated users can retrieve settings,
+but only authenticated users can update them.
 
 Endpoints:
     GET: Retrieve current company defaults
@@ -2435,7 +2467,7 @@ Endpoints:
     PATCH: Partially update company defaults
 
 Permissions:
-    - IsAdminUser: Only admin users can access this API
+    - IsAuthenticated: Any logged-in user can access this API
 
 Returns:
     Company defaults data serialized using CompanyDefaultsSerializer`,
@@ -2449,7 +2481,8 @@ Returns:
     description: `API view for managing company default settings.
 
 This view provides endpoints to retrieve and update the company&#x27;s default
-configuration settings. Only admin users are permitted to access these endpoints.
+configuration settings. All authenticated users can retrieve settings,
+but only authenticated users can update them.
 
 Endpoints:
     GET: Retrieve current company defaults
@@ -2457,7 +2490,7 @@ Endpoints:
     PATCH: Partially update company defaults
 
 Permissions:
-    - IsAdminUser: Only admin users can access this API
+    - IsAuthenticated: Any logged-in user can access this API
 
 Returns:
     Company defaults data serialized using CompanyDefaultsSerializer`,
@@ -2478,7 +2511,8 @@ Returns:
     description: `API view for managing company default settings.
 
 This view provides endpoints to retrieve and update the company&#x27;s default
-configuration settings. Only admin users are permitted to access these endpoints.
+configuration settings. All authenticated users can retrieve settings,
+but only authenticated users can update them.
 
 Endpoints:
     GET: Retrieve current company defaults
@@ -2486,7 +2520,7 @@ Endpoints:
     PATCH: Partially update company defaults
 
 Permissions:
-    - IsAdminUser: Only admin users can access this API
+    - IsAuthenticated: Any logged-in user can access this API
 
 Returns:
     Company defaults data serialized using CompanyDefaultsSerializer`,
@@ -4257,6 +4291,32 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         name: 'body',
         type: 'Body',
         schema: JobDetailResponse,
+      },
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobDetailResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/job/rest/jobs/:job_id/',
+    alias: 'job_rest_jobs_partial_update',
+    description: `Partially update Job data. Only updates the fields provided in the request body.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedJobPatchRequest,
       },
       {
         name: 'job_id',

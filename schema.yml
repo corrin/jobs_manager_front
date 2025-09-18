@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: MSM Jobs Manager API
+  title: Jobs Manager API
   version: 1.0.0
 paths:
   /accounting/api/reports/calendar/:
@@ -504,7 +504,8 @@ paths:
         API view for managing company default settings.
 
         This view provides endpoints to retrieve and update the company's default
-        configuration settings. Only admin users are permitted to access these endpoints.
+        configuration settings. All authenticated users can retrieve settings,
+        but only authenticated users can update them.
 
         Endpoints:
             GET: Retrieve current company defaults
@@ -512,7 +513,7 @@ paths:
             PATCH: Partially update company defaults
 
         Permissions:
-            - IsAdminUser: Only admin users can access this API
+            - IsAuthenticated: Any logged-in user can access this API
 
         Returns:
             Company defaults data serialized using CompanyDefaultsSerializer
@@ -533,7 +534,8 @@ paths:
         API view for managing company default settings.
 
         This view provides endpoints to retrieve and update the company's default
-        configuration settings. Only admin users are permitted to access these endpoints.
+        configuration settings. All authenticated users can retrieve settings,
+        but only authenticated users can update them.
 
         Endpoints:
             GET: Retrieve current company defaults
@@ -541,7 +543,7 @@ paths:
             PATCH: Partially update company defaults
 
         Permissions:
-            - IsAdminUser: Only admin users can access this API
+            - IsAuthenticated: Any logged-in user can access this API
 
         Returns:
             Company defaults data serialized using CompanyDefaultsSerializer
@@ -574,7 +576,8 @@ paths:
         API view for managing company default settings.
 
         This view provides endpoints to retrieve and update the company's default
-        configuration settings. Only admin users are permitted to access these endpoints.
+        configuration settings. All authenticated users can retrieve settings,
+        but only authenticated users can update them.
 
         Endpoints:
             GET: Retrieve current company defaults
@@ -582,7 +585,7 @@ paths:
             PATCH: Partially update company defaults
 
         Permissions:
-            - IsAdminUser: Only admin users can access this API
+            - IsAuthenticated: Any logged-in user can access this API
 
         Returns:
             Company defaults data serialized using CompanyDefaultsSerializer
@@ -3119,6 +3122,46 @@ paths:
             schema:
               $ref: '#/components/schemas/JobDetailResponse'
         required: true
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobDetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+    patch:
+      operationId: job_rest_jobs_partial_update
+      description: Partially update Job data. Only updates the fields provided in
+        the request body.
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedJobPatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedJobPatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedJobPatchRequest'
       security:
         - cookieAuth: []
         - {}
@@ -8407,6 +8450,26 @@ components:
           additionalProperties: {}
       required:
         - statuses
+    JobStatusEnum:
+      enum:
+        - draft
+        - awaiting_approval
+        - approved
+        - in_progress
+        - unusual
+        - recently_completed
+        - special
+        - archived
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `awaiting_approval` - Awaiting Approval
+        * `approved` - Approved
+        * `in_progress` - In Progress
+        * `unusual` - Unusual
+        * `recently_completed` - Recently Completed
+        * `special` - Special
+        * `archived` - Archived
     JobStatusUpdateRequest:
       type: object
       description: Serializer for job status update request data.
@@ -9672,6 +9735,92 @@ components:
           type: string
           format: byte
           readOnly: true
+    PatchedJobPatchRequest:
+      type: object
+      description: Serializer for job PATCH request - all updatable fields are optional
+      properties:
+        name:
+          type: string
+          description: Job name
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+          description: Job description
+        notes:
+          type: string
+          nullable: true
+          description: Internal notes about the job
+        order_number:
+          type: string
+          nullable: true
+          description: Order number
+          maxLength: 100
+        job_status:
+          allOf:
+            - $ref: '#/components/schemas/JobStatusEnum'
+          description: |-
+            Job status
+
+            * `draft` - Draft
+            * `awaiting_approval` - Awaiting Approval
+            * `approved` - Approved
+            * `in_progress` - In Progress
+            * `unusual` - Unusual
+            * `recently_completed` - Recently Completed
+            * `special` - Special
+            * `archived` - Archived
+        paid:
+          type: boolean
+          description: Whether the job has been paid
+        job_is_valid:
+          type: boolean
+          description: Whether the job is valid
+        delivery_date:
+          type: string
+          format: date
+          nullable: true
+          description: Delivery date
+        quote_acceptance_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Quote acceptance date
+        charge_out_rate:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Charge out rate
+        pricing_methodology:
+          nullable: true
+          description: |-
+            Pricing methodology
+
+            * `time_materials` - Time & Materials
+            * `fixed_price` - Fixed Price
+          oneOf:
+            - $ref: '#/components/schemas/PricingMethodologyEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
+        client_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Client ID
+        contact_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Contact person ID
+        job_files:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: Job files
     PatchedJobQuoteChatUpdate:
       type: object
       description: |-
