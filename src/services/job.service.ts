@@ -181,11 +181,7 @@ export const jobService = {
       ...filters,
       // Convert status array to comma-separated string if it's an array
       status:
-        Array.isArray(filters.status) && filters.status.length > 0
-          ? filters.status.join(',')
-          : typeof filters.status === 'string'
-            ? filters.status
-            : undefined,
+        Array.isArray(filters.status) && filters.status.length > 0 ? filters.status.join(',') : '',
     }
 
     console.log('🔍 Advanced search filters:', processedFilters)
