@@ -201,6 +201,7 @@ export function useTimesheetEntryGrid(
     headerHeight: 44,
     animateRows: true,
     suppressScrollOnNewData: true,
+    popupParent: document.body,
     onCellValueChanged: (event: CellValueChangedEvent) => {
       handleCellValueChanged(event)
     },

@@ -371,8 +371,8 @@ async function loadBasicInfo() {
         },
       })
     }
-  } catch {
-    // Handle error silently
+  } catch (e) {
+    debugLog('Failed to load basic job information: ', e)
   } finally {
     isHydratingBasicInfo.value = false
     basicInfoLoading.value = false

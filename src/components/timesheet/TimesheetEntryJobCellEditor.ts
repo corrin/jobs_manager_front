@@ -103,24 +103,22 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     this.dropdown = document.createElement('div')
     this.dropdown.className = 'job-dropdown'
     this.dropdown.style.cssText = `
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
+      position: fixed;
       max-height: 300px;
       min-width: 350px;
       overflow-y: auto;
       background: white;
       border: 2px solid #4361EE;
-      border-top: none;
-      border-radius: 0 0 4px 4px;
+      border-radius: 4px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
+      z-index: 9999;
       display: none;
+      pointer-events: auto;
     `
 
     this.container.appendChild(this.input)
-    this.container.appendChild(this.dropdown)
+    // Append dropdown to document body to avoid clipping by grid container
+    document.body.appendChild(this.dropdown)
   }
 
   private setupEventListeners(): void {
@@ -469,6 +467,24 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   }
 
   private showDropdown(): void {
+    // Position the dropdown using fixed positioning
+    const inputRect = this.input.getBoundingClientRect()
+    const dropdownHeight = 300 // max-height
+    const viewportHeight = window.innerHeight
+    const viewportWidth = window.innerWidth
+
+    // Calculate position
+    let top = inputRect.bottom + 2
+    const left = Math.max(0, Math.min(inputRect.left, viewportWidth - 350)) // 350 is min-width
+
+    // If dropdown would go off-screen, position it above the input
+    if (top + dropdownHeight > viewportHeight) {
+      top = inputRect.top - dropdownHeight - 2
+    }
+
+    this.dropdown.style.top = `${top}px`
+    this.dropdown.style.left = `${left}px`
+    this.dropdown.style.width = `${Math.min(350, viewportWidth - left - 20)}px`
     this.dropdown.style.display = 'block'
     this.renderDropdown()
   }
@@ -504,6 +520,11 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
   }
 
   destroy(): void {
+    // Remove dropdown from document body
+    if (this.dropdown && this.dropdown.parentNode) {
+      this.dropdown.parentNode.removeChild(this.dropdown)
+    }
+    // Remove container from its parent
     if (this.container && this.container.parentNode) {
       this.container.parentNode.removeChild(this.container)
     }
