@@ -2427,7 +2427,8 @@ information about a token&#x27;s fitness for a particular use.`,
     description: `API view for managing company default settings.
 
 This view provides endpoints to retrieve and update the company&#x27;s default
-configuration settings. Only admin users are permitted to access these endpoints.
+configuration settings. All authenticated users can retrieve settings,
+but only authenticated users can update them.
 
 Endpoints:
     GET: Retrieve current company defaults
@@ -2435,7 +2436,7 @@ Endpoints:
     PATCH: Partially update company defaults
 
 Permissions:
-    - IsAdminUser: Only admin users can access this API
+    - IsAuthenticated: Any logged-in user can access this API
 
 Returns:
     Company defaults data serialized using CompanyDefaultsSerializer`,
@@ -2449,7 +2450,8 @@ Returns:
     description: `API view for managing company default settings.
 
 This view provides endpoints to retrieve and update the company&#x27;s default
-configuration settings. Only admin users are permitted to access these endpoints.
+configuration settings. All authenticated users can retrieve settings,
+but only authenticated users can update them.
 
 Endpoints:
     GET: Retrieve current company defaults
@@ -2457,7 +2459,7 @@ Endpoints:
     PATCH: Partially update company defaults
 
 Permissions:
-    - IsAdminUser: Only admin users can access this API
+    - IsAuthenticated: Any logged-in user can access this API
 
 Returns:
     Company defaults data serialized using CompanyDefaultsSerializer`,
@@ -2478,7 +2480,8 @@ Returns:
     description: `API view for managing company default settings.
 
 This view provides endpoints to retrieve and update the company&#x27;s default
-configuration settings. Only admin users are permitted to access these endpoints.
+configuration settings. All authenticated users can retrieve settings,
+but only authenticated users can update them.
 
 Endpoints:
     GET: Retrieve current company defaults
@@ -2486,7 +2489,7 @@ Endpoints:
     PATCH: Partially update company defaults
 
 Permissions:
-    - IsAdminUser: Only admin users can access this API
+    - IsAuthenticated: Any logged-in user can access this API
 
 Returns:
     Company defaults data serialized using CompanyDefaultsSerializer`,

@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: MSM Jobs Manager API
+  title: Jobs Manager API
   version: 1.0.0
 paths:
   /accounting/api/reports/calendar/:
@@ -504,7 +504,8 @@ paths:
         API view for managing company default settings.
 
         This view provides endpoints to retrieve and update the company's default
-        configuration settings. Only admin users are permitted to access these endpoints.
+        configuration settings. All authenticated users can retrieve settings,
+        but only authenticated users can update them.
 
         Endpoints:
             GET: Retrieve current company defaults
@@ -512,7 +513,7 @@ paths:
             PATCH: Partially update company defaults
 
         Permissions:
-            - IsAdminUser: Only admin users can access this API
+            - IsAuthenticated: Any logged-in user can access this API
 
         Returns:
             Company defaults data serialized using CompanyDefaultsSerializer
@@ -533,7 +534,8 @@ paths:
         API view for managing company default settings.
 
         This view provides endpoints to retrieve and update the company's default
-        configuration settings. Only admin users are permitted to access these endpoints.
+        configuration settings. All authenticated users can retrieve settings,
+        but only authenticated users can update them.
 
         Endpoints:
             GET: Retrieve current company defaults
@@ -541,7 +543,7 @@ paths:
             PATCH: Partially update company defaults
 
         Permissions:
-            - IsAdminUser: Only admin users can access this API
+            - IsAuthenticated: Any logged-in user can access this API
 
         Returns:
             Company defaults data serialized using CompanyDefaultsSerializer
@@ -574,7 +576,8 @@ paths:
         API view for managing company default settings.
 
         This view provides endpoints to retrieve and update the company's default
-        configuration settings. Only admin users are permitted to access these endpoints.
+        configuration settings. All authenticated users can retrieve settings,
+        but only authenticated users can update them.
 
         Endpoints:
             GET: Retrieve current company defaults
@@ -582,7 +585,7 @@ paths:
             PATCH: Partially update company defaults
 
         Permissions:
-            - IsAdminUser: Only admin users can access this API
+            - IsAuthenticated: Any logged-in user can access this API
 
         Returns:
             Company defaults data serialized using CompanyDefaultsSerializer
