@@ -224,7 +224,7 @@
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  {{ isCreatingInvoice ? 'Creating...' : 'Create Invoice' }}
+                  {{ isCreatingInvoice ? 'Creating...' : invoiceButtonText }}
                 </button>
 
                 <p v-if="props.paid" class="text-xs text-slate-500 text-center">
@@ -376,6 +376,17 @@ const invoiceTotal = computed(() => {
 const toBeInvoiced = computed(() => {
   const actualTotal = actualSummary.value.rev
   return Math.max(0, actualTotal - invoiceTotal.value)
+})
+
+const invoiceButtonText = computed(() => {
+  if (props.pricingMethodology === 'fixed_price') {
+    return 'Create Invoice from Quote'
+  } else if (props.pricingMethodology === 'time_materials') {
+    return 'Create T&M Invoice'
+  } else {
+    console.error(`Unknown pricing methodology: ${props.pricingMethodology}`)
+    return 'Report a bug'
+  }
 })
 
 // --- FORMATTING FUNCTIONS ---
