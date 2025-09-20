@@ -147,7 +147,7 @@ const selectedStaff = ref<Staff | null>(null)
 const filteredStaff = computed(() =>
   !search.value
     ? staffList.value
-    : staffList.value.filter((s) =>
+    : staffList.value.filter((s: Staff) =>
         [
           s.first_name,
           s.last_name,
