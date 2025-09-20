@@ -52,11 +52,13 @@
         <JobQuoteTab
           :job-id="jobId"
           :job-number="jobNumberString"
+          :job-status="jobStatusString"
           :pricing-methodology="pricingMethodologyString"
           :quoted="quotedBoolean"
           :fully-invoiced="fullyInvoicedBoolean"
           @quote-imported="$emit('quote-imported', $event)"
           @cost-line-changed="$emit('reload-job')"
+          @quote-accepted="$emit('quote-accepted')"
         />
       </div>
       <div v-if="activeTab === 'actual'" class="h-full p-4 md:p-6">
@@ -179,6 +181,7 @@ const props = defineProps<{
   activeTab: JobTabKey
   jobId: string
   jobNumber: number
+  jobStatus?: string
   chargeOutRate?: number
   pricingMethodology?: string
   quoted?: boolean
@@ -189,6 +192,7 @@ const props = defineProps<{
 
 // Computed props with proper types for components
 const jobNumberString = computed(() => props.jobNumber.toString())
+const jobStatusString = computed(() => props.jobStatus || '')
 const pricingMethodologyString = computed(() => props.pricingMethodology || '')
 const quotedBoolean = computed(() => props.quoted || false)
 const fullyInvoicedBoolean = computed(() => props.fullyInvoiced || false)
