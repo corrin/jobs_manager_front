@@ -249,7 +249,6 @@
           :fully-invoiced="jobHeader.fully_invoiced"
           :paid="jobHeader?.paid ?? false"
           :company-defaults="companyDefaults"
-          @quote-accepted="handleQuoteAccepted"
         />
       </template>
 
@@ -375,11 +374,6 @@ const handlePaidUpdate = (newVal: boolean) => {
 const handlePricingMethodologyUpdate = (newMethod: string) => {
   localPricingMethodology.value = newMethod
   headerAutosave?.handlePricingMethodologyUpdate(newMethod)
-}
-
-const handleQuoteAccepted = () => {
-  // When quote is accepted, update job status to approved using existing mechanism
-  handleStatusUpdate('approved')
 }
 
 const companyDefaultsStore = useCompanyDefaultsStore()

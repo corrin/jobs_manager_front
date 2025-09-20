@@ -58,7 +58,6 @@
           :fully-invoiced="fullyInvoicedBoolean"
           @quote-imported="$emit('quote-imported', $event)"
           @cost-line-changed="$emit('reload-job')"
-          @quote-accepted="$emit('quote-accepted')"
         />
       </div>
       <div v-if="activeTab === 'actual'" class="h-full p-4 md:p-6">

@@ -578,7 +578,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'cost-line-changed': []
-  'quote-accepted': []
 }>()
 
 const quoteCostSet = ref<CostSet | null>(null)
@@ -900,7 +899,6 @@ const acceptQuote = async () => {
       toast.success('Quote accepted successfully!')
       await refreshQuoteData()
       emit('cost-line-changed')
-      emit('quote-accepted')
     } else {
       toast.error('Failed to accept quote')
     }
