@@ -74,7 +74,11 @@
                 type="password"
                 placeholder="Confirm Password"
                 :required="!props.staff"
+                :class="{ 'border-red-500 focus:ring-red-500': passwordMismatch }"
               />
+              <p v-if="passwordMismatch" class="text-sm text-red-600 mt-1">
+                Passwords do not match
+              </p>
             </div>
           </div>
           <div class="flex gap-2">
@@ -391,6 +395,13 @@ const initials = computed(() => {
   const first = form.value.first_name?.trim()[0] || ''
   const last = form.value.last_name?.trim()[0] || ''
   return (first + last).toUpperCase() || 'U'
+})
+
+const passwordMismatch = computed(() => {
+  if (!form.value.password && !form.value.password_confirmation) {
+    return false
+  }
+  return form.value.password !== form.value.password_confirmation
 })
 
 watch(
