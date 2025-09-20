@@ -396,7 +396,7 @@ const toBeInvoiced = computed(() => {
 const invoiceButtonText = computed(() => {
   if (props.pricingMethodology === 'fixed_price') {
     return 'Create Invoice from Quote'
-  } else if (props.pricingMethodology === 'time_and_materials') {
+  } else if (props.pricingMethodology === 'time_materials') {
     return 'Create T&M Invoice'
   } else {
     console.error(`Unknown pricing methodology: ${props.pricingMethodology}`)
