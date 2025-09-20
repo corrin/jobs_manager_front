@@ -19,6 +19,14 @@
           <span class="text-[11px] uppercase tracking-wide text-slate-600">Estimate</span>
           <strong class="tabular-nums text-slate-900">{{ formatCurrency(estimateTotal) }}</strong>
         </li>
+        <li
+          v-if="pricingMethodology === 'fixed_price'"
+          class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2"
+        >
+          <span class="w-1.5 h-6 rounded-full bg-purple-500"></span>
+          <span class="text-[11px] uppercase tracking-wide text-slate-600">Quote</span>
+          <strong class="tabular-nums text-slate-900">{{ formatCurrency(quoteTotal) }}</strong>
+        </li>
         <li class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
           <span class="w-1.5 h-6 rounded-full bg-emerald-500"></span>
           <span class="text-[11px] uppercase tracking-wide text-slate-600">Time & Expenses</span>
@@ -362,6 +370,7 @@ const deletingInvoiceId = ref<string | null>(null) // Track which invoice is bei
 
 // Local state for KPIs
 const estimateTotal = ref(0)
+const quoteTotal = ref(0)
 const costsSummaryLoading = ref(false)
 
 // --- COMPUTED PROPERTIES ---
@@ -374,8 +383,14 @@ const invoiceTotal = computed(() => {
 })
 
 const toBeInvoiced = computed(() => {
-  const actualTotal = actualSummary.value.rev
-  return Math.max(0, actualTotal - invoiceTotal.value)
+  // For fixed price jobs with a quote, use the quoted amount
+  // For T&M jobs or jobs without quotes, use the actual time & expenses
+  const amountToInvoice =
+    props.pricingMethodology === 'fixed_price' && quoteTotal.value > 0
+      ? quoteTotal.value
+      : actualSummary.value.rev
+
+  return Math.max(0, amountToInvoice - invoiceTotal.value)
 })
 
 const invoiceButtonText = computed(() => {
@@ -533,7 +548,8 @@ async function loadCostsSummary() {
     const response = await api.job_rest_jobs_costs_summary_retrieve({
       params: { job_id: props.jobId },
     })
-    estimateTotal.value = response.estimate.rev || 0
+    estimateTotal.value = response.estimate?.rev || 0
+    quoteTotal.value = response.quote?.rev || 0
   } catch (error) {
     debugLog('Failed to load costs summary:', error)
   } finally {
