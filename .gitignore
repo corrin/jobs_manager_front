@@ -40,3 +40,5 @@ ENV_SETUP.md
 .env.prod
 .env.development
 cookies.txt
+
+adhoc/
