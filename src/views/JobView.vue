@@ -242,14 +242,12 @@
           @change-tab="setTab"
           :job-id="jobId"
           :job-number="jobHeader.job_number"
-          :job-status="localJobStatus"
           :charge-out-rate="companyDefaults?.charge_out_rate ?? 0"
           :pricing-methodology="jobHeader.pricing_methodology || ''"
           :quoted="jobHeader.quoted"
           :fully-invoiced="jobHeader.fully_invoiced"
           :paid="jobHeader?.paid ?? false"
           :company-defaults="companyDefaults"
-          @quote-accepted="handleQuoteAccepted"
         />
       </template>
 
@@ -375,11 +373,6 @@ const handlePaidUpdate = (newVal: boolean) => {
 const handlePricingMethodologyUpdate = (newMethod: string) => {
   localPricingMethodology.value = newMethod
   headerAutosave?.handlePricingMethodologyUpdate(newMethod)
-}
-
-const handleQuoteAccepted = () => {
-  // When quote is accepted, update job status to approved using existing mechanism
-  handleStatusUpdate('approved')
 }
 
 const companyDefaultsStore = useCompanyDefaultsStore()

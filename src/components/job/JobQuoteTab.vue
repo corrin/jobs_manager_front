@@ -114,7 +114,7 @@
                         v-if="!isQuoteAccepted"
                         size="sm"
                         class="bg-emerald-600 hover:bg-emerald-700 text-white"
-                        :disabled="isAcceptingQuote || !canAcceptQuote"
+                        :disabled="isAcceptingQuote"
                         @click="acceptQuote"
                       >
                         <svg
@@ -569,7 +569,6 @@ type Quote = z.infer<typeof schemas.Quote>
 const props = defineProps<{
   jobId: string
   jobNumber: string
-  jobStatus: string
   pricingMethodology: string
   quoted: boolean
   fullyInvoiced: boolean
@@ -657,10 +656,6 @@ const hasCostSetQuote = computed(
 )
 const hasXeroQuote = computed(() => !!xeroQuote.value)
 const isQuoteAccepted = computed(() => !!props.quoteAcceptanceDate)
-const canAcceptQuote = computed(() => {
-  // Button should only be enabled if status is draft or awaiting_approval
-  return props.jobStatus === 'draft' || props.jobStatus === 'awaiting_approval'
-})
 const localQuote = computed(() => xeroQuote.value) // Xero
 
 // Check if estimate data is available for copying
