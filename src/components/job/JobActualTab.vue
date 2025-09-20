@@ -503,7 +503,31 @@ async function loadActualCosts() {
   try {
     const costSet: CostSet = await fetchCostSet(props.jobId, 'actual')
 
-    costLines.value = costSet.cost_lines
+    // Sort cost lines: Materials first, then Adjustments, then Time (labor)
+    // Within each type, newer items first (reverse the original order)
+    const sortedLines = [...costSet.cost_lines].sort((a, b) => {
+      // Define sort order for kinds
+      const kindOrder: Record<string, number> = {
+        material: 1,
+        adjust: 2,
+        time: 3,
+      }
+
+      const orderA = kindOrder[a.kind] || 999
+      const orderB = kindOrder[b.kind] || 999
+
+      // If different kinds, sort by kind order
+      if (orderA !== orderB) {
+        return orderA - orderB
+      }
+
+      // Same kind: reverse to show newer items first
+      // Assuming items are ordered by creation in the backend response,
+      // we want to reverse them within each type
+      return costSet.cost_lines.indexOf(b) - costSet.cost_lines.indexOf(a)
+    })
+
+    costLines.value = sortedLines
 
     revision.value = costSet.rev || 0
 
