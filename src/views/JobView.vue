@@ -242,6 +242,7 @@
           @change-tab="setTab"
           :job-id="jobId"
           :job-number="jobHeader.job_number"
+          :job-status="localJobStatus"
           :charge-out-rate="companyDefaults?.charge_out_rate ?? 0"
           :pricing-methodology="jobHeader.pricing_methodology || ''"
           :quoted="jobHeader.quoted"

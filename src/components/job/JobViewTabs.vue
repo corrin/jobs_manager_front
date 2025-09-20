@@ -52,6 +52,7 @@
         <JobQuoteTab
           :job-id="jobId"
           :job-number="jobNumberString"
+          :job-status="jobStatusString"
           :pricing-methodology="pricingMethodologyString"
           :quoted="quotedBoolean"
           :fully-invoiced="fullyInvoicedBoolean"
@@ -179,6 +180,7 @@ const props = defineProps<{
   activeTab: JobTabKey
   jobId: string
   jobNumber: number
+  jobStatus?: string
   chargeOutRate?: number
   pricingMethodology?: string
   quoted?: boolean
@@ -189,6 +191,7 @@ const props = defineProps<{
 
 // Computed props with proper types for components
 const jobNumberString = computed(() => props.jobNumber.toString())
+const jobStatusString = computed(() => props.jobStatus || '')
 const pricingMethodologyString = computed(() => props.pricingMethodology || '')
 const quotedBoolean = computed(() => props.quoted || false)
 const fullyInvoicedBoolean = computed(() => props.fullyInvoiced || false)
