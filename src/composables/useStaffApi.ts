@@ -4,6 +4,7 @@ import { schemas } from '../api/generated/api'
 import { api } from '@/api/client'
 
 type Staff = z.infer<typeof schemas.Staff>
+type StaffCreate = z.infer<typeof schemas.StaffCreate>
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
 
 export function useStaffApi() {
@@ -29,10 +30,10 @@ export function useStaffApi() {
     }
   }
 
-  async function createStaff(data: Record<string, unknown>): Promise<Staff> {
+  async function createStaff(data: StaffCreate): Promise<Staff> {
     error.value = null
     try {
-      return await api.accounts_api_staff_create(data as z.infer<typeof schemas.Staff>)
+      return await api.accounts_api_staff_create(data)
     } catch (e: unknown) {
       if (e instanceof Error) {
         error.value = e.message

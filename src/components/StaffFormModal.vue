@@ -55,6 +55,34 @@
           </div>
           <div class="flex gap-2">
             <div class="w-1/2">
+              <label class="block text-sm font-medium mb-1" for="password">Password</label>
+              <Input
+                id="password"
+                v-model="form.password"
+                type="password"
+                placeholder="Password"
+                :required="!props.staff"
+              />
+            </div>
+            <div class="w-1/2">
+              <label class="block text-sm font-medium mb-1" for="password_confirmation"
+                >Confirm Password</label
+              >
+              <Input
+                id="password_confirmation"
+                v-model="form.password_confirmation"
+                type="password"
+                placeholder="Confirm Password"
+                :required="!props.staff"
+                :class="{ 'border-red-500 focus:ring-red-500': passwordMismatch }"
+              />
+              <p v-if="passwordMismatch" class="text-sm text-red-600 mt-1">
+                Passwords do not match
+              </p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <div class="w-1/2">
               <label class="block text-sm font-medium mb-1" for="wage_rate"
                 >Wage Rate (NZD/hour)</label
               >
@@ -224,9 +252,6 @@
               ><input type="checkbox" v-model="form.is_staff" /> Staff</label
             >
             <label class="flex items-center gap-2"
-              ><input type="checkbox" v-model="form.is_active" /> Active</label
-            >
-            <label class="flex items-center gap-2"
               ><input type="checkbox" v-model="form.is_superuser" /> Superuser</label
             >
           </div>
@@ -281,7 +306,42 @@ import { toast } from 'vue-sonner'
 
 type Staff = z.infer<typeof schemas.Staff>
 
-const staffSchema = schemas.Staff
+const createStaffSchema = schemas.Staff.omit({
+  id: true,
+  last_login: true,
+  date_joined: true,
+  created_at: true,
+  updated_at: true,
+  groups: true,
+  user_permissions: true,
+  icon: true,
+})
+  .extend({
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password_confirmation: z.string().min(1, 'Please confirm your password'),
+    groups: z.string(),
+    user_permissions: z.string(),
+    icon: z.instanceof(File).optional().nullable(),
+  })
+  .refine((data) => data.password === data.password_confirmation, {
+    message: "Passwords don't match",
+    path: ['password_confirmation'],
+  })
+
+const updateStaffSchema = schemas.PatchedStaff.extend({
+  password_confirmation: z.string().optional(),
+}).refine(
+  (data) => {
+    if (data.password || data.password_confirmation) {
+      return data.password === data.password_confirmation
+    }
+    return true
+  },
+  {
+    message: "Passwords don't match",
+    path: ['password_confirmation'],
+  },
+)
 
 const tabs = [
   { key: 'personal', label: 'Personal Info', icon: UserIcon },
@@ -300,6 +360,8 @@ const form = ref({
   last_name: '',
   preferred_name: '',
   email: '',
+  password: '',
+  password_confirmation: '',
   wage_rate: 0,
   ims_payroll_id: '',
   icon: null as File | null,
@@ -311,7 +373,6 @@ const form = ref({
   hours_sat: 0,
   hours_sun: 0,
   is_staff: false,
-  is_active: true,
   is_superuser: false,
   groups: '',
   user_permissions: '',
@@ -336,6 +397,13 @@ const initials = computed(() => {
   return (first + last).toUpperCase() || 'U'
 })
 
+const passwordMismatch = computed(() => {
+  if (!form.value.password && !form.value.password_confirmation) {
+    return false
+  }
+  return form.value.password !== form.value.password_confirmation
+})
+
 watch(
   () => props.staff,
   (staff) => {
@@ -351,6 +419,8 @@ watch(
         last_name: staff.last_name,
         preferred_name: staff.preferred_name || '',
         email: staff.email,
+        password: '',
+        password_confirmation: '',
         wage_rate: staff.wage_rate || 0,
         ims_payroll_id: staff.ims_payroll_id || '',
         icon: null,
@@ -385,6 +455,8 @@ watch(
         last_name: '',
         preferred_name: '',
         email: '',
+        password: '',
+        password_confirmation: '',
         wage_rate: 0,
         ims_payroll_id: '',
         icon: null,
@@ -396,7 +468,6 @@ watch(
         hours_sat: 0,
         hours_sun: 0,
         is_staff: false,
-        is_active: true,
         is_superuser: false,
         groups: '',
         user_permissions: '',
@@ -429,9 +500,17 @@ async function submitForm() {
     typeof form.value.wage_rate,
   )
 
-  const parsed = staffSchema.safeParse({
-    ...form.value,
+  // Prepare data for validation - transform form data to match schema expectations
+  const validationData = {
+    first_name: form.value.first_name,
+    last_name: form.value.last_name,
+    preferred_name: form.value.preferred_name || null,
+    email: form.value.email,
+    ...(form.value.password && { password: form.value.password }),
     wage_rate: form.value.wage_rate,
+    ims_payroll_id: form.value.ims_payroll_id || null,
+    is_staff: form.value.is_staff,
+    is_superuser: form.value.is_superuser,
     hours_mon: form.value.hours_mon,
     hours_tue: form.value.hours_tue,
     hours_wed: form.value.hours_wed,
@@ -439,7 +518,33 @@ async function submitForm() {
     hours_fri: form.value.hours_fri,
     hours_sat: form.value.hours_sat,
     hours_sun: form.value.hours_sun,
-  })
+    // Convert groups and user_permissions from strings to arrays for validation
+    groups:
+      form.value.groups && form.value.groups.trim()
+        ? form.value.groups
+            .split(',')
+            .map((g) => Number(g.trim()))
+            .filter((g) => !isNaN(g))
+        : [],
+    user_permissions:
+      form.value.user_permissions && form.value.user_permissions.trim()
+        ? form.value.user_permissions
+            .split(',')
+            .map((p) => Number(p.trim()))
+            .filter((p) => !isNaN(p))
+        : [],
+    // Handle datetime fields - only include if valid
+    ...(form.value.last_login &&
+      form.value.last_login.trim() && { last_login: form.value.last_login }),
+    date_joined: form.value.date_joined,
+    // Add password_confirmation for validation only (not for API)
+    ...(form.value.password_confirmation && {
+      password_confirmation: form.value.password_confirmation,
+    }),
+  }
+
+  const schema = props.staff ? updateStaffSchema : createStaffSchema
+  const parsed = schema.safeParse(validationData)
 
   console.log('StaffFormModal - Schema validation result:', parsed)
 
@@ -452,14 +557,13 @@ async function submitForm() {
   try {
     // Prepare data for API - convert and format fields as expected by PatchedStaff schema
     const apiData = {
-      ...(props.staff && { id: props.staff.id }), // Include ID for update operations
       first_name: form.value.first_name,
       last_name: form.value.last_name,
       preferred_name: form.value.preferred_name || null,
       email: form.value.email,
+      ...(form.value.password && { password: form.value.password }), // Include password if provided
       wage_rate: form.value.wage_rate,
       ims_payroll_id: form.value.ims_payroll_id || null,
-      is_active: form.value.is_active,
       is_staff: form.value.is_staff,
       is_superuser: form.value.is_superuser,
       hours_mon: form.value.hours_mon,
@@ -489,22 +593,10 @@ async function submitForm() {
         form.value.last_login.trim() && { last_login: form.value.last_login }),
       date_joined: form.value.date_joined,
       // Don't send updated_at - it's auto-managed by backend
+      // Icon is handled separately via multipart/form-data if needed
     }
 
     console.log('StaffFormModal - API data being sent:', apiData)
-    console.log('StaffFormModal - Groups converted:', form.value.groups, '→', apiData.groups)
-    console.log(
-      'StaffFormModal - User permissions converted:',
-      form.value.user_permissions,
-      '→',
-      apiData.user_permissions,
-    )
-    console.log('StaffFormModal - ID included:', apiData.id)
-    console.log(
-      'StaffFormModal - Last login field included:',
-      'last_login' in apiData,
-      apiData.last_login,
-    )
 
     if (props.staff) {
       await updateStaff(props.staff.id, apiData)

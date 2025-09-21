@@ -109,14 +109,11 @@ paths:
   /accounts/api/staff/:
     get:
       operationId: accounts_api_staff_list
-      description: |-
-        API endpoint for listing and creating staff members.
-
-        Supports both GET (list all staff) and POST (create new staff) operations.
-        Requires authentication and staff permissions. Handles multipart/form data
-        for file uploads (e.g., profile pictures).
+      description: API endpoint for listing all staff members and creating new staff
+        members. Supports multipart/form data for file uploads (e.g., profile pictures).
+      summary: List and create staff members
       tags:
-        - accounts
+        - Staff Management
       security:
         - cookieAuth: []
       responses:
@@ -130,22 +127,19 @@ paths:
           description: ''
     post:
       operationId: accounts_api_staff_create
-      description: |-
-        API endpoint for listing and creating staff members.
-
-        Supports both GET (list all staff) and POST (create new staff) operations.
-        Requires authentication and staff permissions. Handles multipart/form data
-        for file uploads (e.g., profile pictures).
+      description: Create a new staff member with the provided details. Supports multipart/form
+        data for file uploads (e.g., profile pictures).
+      summary: Create a new staff member
       tags:
-        - accounts
+        - Staff Management
       requestBody:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Staff'
+              $ref: '#/components/schemas/StaffCreate'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Staff'
+              $ref: '#/components/schemas/StaffCreate'
         required: true
       security:
         - cookieAuth: []
@@ -159,12 +153,11 @@ paths:
   /accounts/api/staff/{id}/:
     get:
       operationId: accounts_api_staff_retrieve
-      description: |-
-        API endpoint for retrieving, updating, and deleting individual staff members.
-
-        Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
-        specific staff members. Includes comprehensive logging for update operations
-        and handles multipart/form data for file uploads.
+      description: API endpoint for retrieving, updating, and deleting individual
+        staff members. Supports GET (retrieve), PUT/PATCH (update), and DELETE operations.
+        Includes comprehensive logging for update operations and handles multipart/form
+        data for file uploads.
+      summary: Retrieve, update, or delete staff member
       parameters:
         - in: path
           name: id
@@ -173,7 +166,7 @@ paths:
             format: uuid
           required: true
       tags:
-        - accounts
+        - Staff Management
       security:
         - cookieAuth: []
       responses:
@@ -185,12 +178,11 @@ paths:
           description: ''
     put:
       operationId: accounts_api_staff_update
-      description: |-
-        API endpoint for retrieving, updating, and deleting individual staff members.
-
-        Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
-        specific staff members. Includes comprehensive logging for update operations
-        and handles multipart/form data for file uploads.
+      description: API endpoint for retrieving, updating, and deleting individual
+        staff members. Supports GET (retrieve), PUT/PATCH (update), and DELETE operations.
+        Includes comprehensive logging for update operations and handles multipart/form
+        data for file uploads.
+      summary: Retrieve, update, or delete staff member
       parameters:
         - in: path
           name: id
@@ -199,7 +191,7 @@ paths:
             format: uuid
           required: true
       tags:
-        - accounts
+        - Staff Management
       requestBody:
         content:
           multipart/form-data:
@@ -220,12 +212,11 @@ paths:
           description: ''
     patch:
       operationId: accounts_api_staff_partial_update
-      description: |-
-        API endpoint for retrieving, updating, and deleting individual staff members.
-
-        Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
-        specific staff members. Includes comprehensive logging for update operations
-        and handles multipart/form data for file uploads.
+      description: API endpoint for retrieving, updating, and deleting individual
+        staff members. Supports GET (retrieve), PUT/PATCH (update), and DELETE operations.
+        Includes comprehensive logging for update operations and handles multipart/form
+        data for file uploads.
+      summary: Retrieve, update, or delete staff member
       parameters:
         - in: path
           name: id
@@ -234,7 +225,7 @@ paths:
             format: uuid
           required: true
       tags:
-        - accounts
+        - Staff Management
       requestBody:
         content:
           multipart/form-data:
@@ -254,12 +245,11 @@ paths:
           description: ''
     delete:
       operationId: accounts_api_staff_destroy
-      description: |-
-        API endpoint for retrieving, updating, and deleting individual staff members.
-
-        Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
-        specific staff members. Includes comprehensive logging for update operations
-        and handles multipart/form data for file uploads.
+      description: API endpoint for retrieving, updating, and deleting individual
+        staff members. Supports GET (retrieve), PUT/PATCH (update), and DELETE operations.
+        Includes comprehensive logging for update operations and handles multipart/form
+        data for file uploads.
+      summary: Retrieve, update, or delete staff member
       parameters:
         - in: path
           name: id
@@ -268,7 +258,7 @@ paths:
             format: uuid
           required: true
       tags:
-        - accounts
+        - Staff Management
       security:
         - cookieAuth: []
       responses:
@@ -9861,29 +9851,13 @@ components:
             $ref: '#/components/schemas/PurchaseOrderLineUpdate'
     PatchedStaff:
       type: object
+      description: Base serializer for Staff model with shared logic for create and
+        update operations.
       properties:
         id:
           type: string
           format: uuid
           readOnly: true
-        password:
-          type: string
-          maxLength: 128
-        last_login:
-          type: string
-          format: date-time
-          nullable: true
-        is_superuser:
-          type: boolean
-          title: Superuser status
-          description: Designates that this user has all permissions without explicitly
-            assigning them.
-        icon:
-          type: string
-          format: uri
-          nullable: true
-        password_needs_reset:
-          type: boolean
         email:
           type: string
           format: email
@@ -9898,6 +9872,10 @@ components:
           type: string
           nullable: true
           maxLength: 30
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
         wage_rate:
           type: number
           format: double
@@ -9909,6 +9887,10 @@ components:
           type: string
           nullable: true
           maxLength: 100
+        icon:
+          type: string
+          format: uri
+          nullable: true
         raw_ims_data:
           nullable: true
         xero_user_id:
@@ -9922,16 +9904,22 @@ components:
           description: Date staff member left employment (null for current employees)
         is_staff:
           type: boolean
-        date_joined:
-          type: string
-          format: date-time
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
+        is_superuser:
+          type: boolean
+          title: Superuser status
+          description: Designates that this user has all permissions without explicitly
+            assigning them.
+        groups:
+          type: array
+          items:
+            type: integer
+          description: The groups this user belongs to. A user will get all permissions
+            granted to each of their groups.
+        user_permissions:
+          type: array
+          items:
+            type: integer
+          description: Specific permissions for this user.
         hours_mon:
           type: number
           format: double
@@ -9988,17 +9976,23 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           description: Standard hours for Sunday, 0 for non-working day
-        groups:
-          type: array
-          items:
-            type: integer
-          description: The groups this user belongs to. A user will get all permissions
-            granted to each of their groups.
-        user_permissions:
-          type: array
-          items:
-            type: integer
-          description: Specific permissions for this user.
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PreviewQuoteResponse:
       type: object
       description: Serializer for preview quote response.
@@ -10593,29 +10587,13 @@ components:
         * `assistant` - Assistant
     Staff:
       type: object
+      description: Base serializer for Staff model with shared logic for create and
+        update operations.
       properties:
         id:
           type: string
           format: uuid
           readOnly: true
-        password:
-          type: string
-          maxLength: 128
-        last_login:
-          type: string
-          format: date-time
-          nullable: true
-        is_superuser:
-          type: boolean
-          title: Superuser status
-          description: Designates that this user has all permissions without explicitly
-            assigning them.
-        icon:
-          type: string
-          format: uri
-          nullable: true
-        password_needs_reset:
-          type: boolean
         email:
           type: string
           format: email
@@ -10630,6 +10608,10 @@ components:
           type: string
           nullable: true
           maxLength: 30
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
         wage_rate:
           type: number
           format: double
@@ -10641,6 +10623,10 @@ components:
           type: string
           nullable: true
           maxLength: 100
+        icon:
+          type: string
+          format: uri
+          nullable: true
         raw_ims_data:
           nullable: true
         xero_user_id:
@@ -10654,16 +10640,22 @@ components:
           description: Date staff member left employment (null for current employees)
         is_staff:
           type: boolean
-        date_joined:
-          type: string
-          format: date-time
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
+        is_superuser:
+          type: boolean
+          title: Superuser status
+          description: Designates that this user has all permissions without explicitly
+            assigning them.
+        groups:
+          type: array
+          items:
+            type: integer
+          description: The groups this user belongs to. A user will get all permissions
+            granted to each of their groups.
+        user_permissions:
+          type: array
+          items:
+            type: integer
+          description: Specific permissions for this user.
         hours_mon:
           type: number
           format: double
@@ -10720,6 +10712,133 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           description: Standard hours for Sunday, 0 for non-working day
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created_at
+        - date_joined
+        - email
+        - first_name
+        - id
+        - last_login
+        - last_name
+        - updated_at
+    StaffCreate:
+      type: object
+      description: Base serializer for Staff model with shared logic for create and
+        update operations.
+      properties:
+        first_name:
+          type: string
+          maxLength: 30
+        last_name:
+          type: string
+          maxLength: 30
+        preferred_name:
+          type: string
+          nullable: true
+          maxLength: 30
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+        wage_rate:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        ims_payroll_id:
+          type: string
+          nullable: true
+          maxLength: 100
+        icon:
+          type: string
+          format: uri
+          nullable: true
+        hours_mon:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Standard hours for Monday, 0 for non-working day
+        hours_tue:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Standard hours for Tuesday, 0 for non-working day
+        hours_wed:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Standard hours for Wednesday, 0 for non-working day
+        hours_thu:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Standard hours for Thursday, 0 for non-working day
+        hours_fri:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Standard hours for Friday, 0 for non-working day
+        hours_sat:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Standard hours for Saturday, 0 for non-working day
+        hours_sun:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Standard hours for Sunday, 0 for non-working day
+        is_staff:
+          type: boolean
+        is_superuser:
+          type: boolean
+          title: Superuser status
+          description: Designates that this user has all permissions without explicitly
+            assigning them.
         groups:
           type: array
           items:
@@ -10734,9 +10853,8 @@ components:
       required:
         - email
         - first_name
-        - id
         - last_name
-        - updated_at
+        - password
     StaffDailyData:
       type: object
       description: Serializer for individual staff daily timesheet data

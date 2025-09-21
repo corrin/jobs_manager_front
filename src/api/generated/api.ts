@@ -200,24 +200,21 @@ const StaffPerformanceResponse = z
 const Staff = z
   .object({
     id: z.string().uuid(),
-    password: z.string().max(128).optional(),
-    last_login: z.string().datetime({ offset: true }).nullish(),
-    is_superuser: z.boolean().optional(),
-    icon: z.string().url().nullish(),
-    password_needs_reset: z.boolean().optional(),
     email: z.string().max(254).email(),
     first_name: z.string().max(30),
     last_name: z.string().max(30),
     preferred_name: z.string().max(30).nullish(),
+    password: z.string().max(128).optional(),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     ims_payroll_id: z.string().max(100).nullish(),
+    icon: z.string().url().nullish(),
     raw_ims_data: z.unknown().nullish(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_staff: z.boolean().optional(),
-    date_joined: z.string().datetime({ offset: true }).optional(),
-    created_at: z.string().datetime({ offset: true }).optional(),
-    updated_at: z.string().datetime({ offset: true }),
+    is_superuser: z.boolean().optional(),
+    groups: z.array(z.number().int()).optional(),
+    user_permissions: z.array(z.number().int()).optional(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
     hours_tue: z.number().gt(-100).lt(100).optional(),
     hours_wed: z.number().gt(-100).lt(100).optional(),
@@ -225,6 +222,31 @@ const Staff = z
     hours_fri: z.number().gt(-100).lt(100).optional(),
     hours_sat: z.number().gt(-100).lt(100).optional(),
     hours_sun: z.number().gt(-100).lt(100).optional(),
+    last_login: z.string().datetime({ offset: true }).nullable(),
+    date_joined: z.string().datetime({ offset: true }),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough()
+const StaffCreate = z
+  .object({
+    first_name: z.string().max(30),
+    last_name: z.string().max(30),
+    preferred_name: z.string().max(30).nullish(),
+    email: z.string().max(254).email(),
+    password: z.string().max(128),
+    wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
+    ims_payroll_id: z.string().max(100).nullish(),
+    icon: z.string().url().nullish(),
+    hours_mon: z.number().gt(-100).lt(100).optional(),
+    hours_tue: z.number().gt(-100).lt(100).optional(),
+    hours_wed: z.number().gt(-100).lt(100).optional(),
+    hours_thu: z.number().gt(-100).lt(100).optional(),
+    hours_fri: z.number().gt(-100).lt(100).optional(),
+    hours_sat: z.number().gt(-100).lt(100).optional(),
+    hours_sun: z.number().gt(-100).lt(100).optional(),
+    is_staff: z.boolean().optional(),
+    is_superuser: z.boolean().optional(),
     groups: z.array(z.number().int()).optional(),
     user_permissions: z.array(z.number().int()).optional(),
   })
@@ -232,24 +254,21 @@ const Staff = z
 const PatchedStaff = z
   .object({
     id: z.string().uuid(),
-    password: z.string().max(128),
-    last_login: z.string().datetime({ offset: true }).nullable(),
-    is_superuser: z.boolean(),
-    icon: z.string().url().nullable(),
-    password_needs_reset: z.boolean(),
     email: z.string().max(254).email(),
     first_name: z.string().max(30),
     last_name: z.string().max(30),
     preferred_name: z.string().max(30).nullable(),
+    password: z.string().max(128),
     wage_rate: z.number().gt(-100000000).lt(100000000),
     ims_payroll_id: z.string().max(100).nullable(),
+    icon: z.string().url().nullable(),
     raw_ims_data: z.unknown().nullable(),
     xero_user_id: z.string().max(255).nullable(),
     date_left: z.string().nullable(),
     is_staff: z.boolean(),
-    date_joined: z.string().datetime({ offset: true }),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
+    is_superuser: z.boolean(),
+    groups: z.array(z.number().int()),
+    user_permissions: z.array(z.number().int()),
     hours_mon: z.number().gt(-100).lt(100),
     hours_tue: z.number().gt(-100).lt(100),
     hours_wed: z.number().gt(-100).lt(100),
@@ -257,8 +276,10 @@ const PatchedStaff = z
     hours_fri: z.number().gt(-100).lt(100),
     hours_sat: z.number().gt(-100).lt(100),
     hours_sun: z.number().gt(-100).lt(100),
-    groups: z.array(z.number().int()),
-    user_permissions: z.array(z.number().int()),
+    last_login: z.string().datetime({ offset: true }).nullable(),
+    date_joined: z.string().datetime({ offset: true }),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
   })
   .partial()
   .passthrough()
@@ -1941,6 +1962,7 @@ export const schemas = {
   StaffPerformancePeriodSummary,
   StaffPerformanceResponse,
   Staff,
+  StaffCreate,
   PatchedStaff,
   KanbanStaff,
   CustomTokenObtainPair,
@@ -2215,11 +2237,7 @@ Returns:
     method: 'get',
     path: '/accounts/api/staff/',
     alias: 'accounts_api_staff_list',
-    description: `API endpoint for listing and creating staff members.
-
-Supports both GET (list all staff) and POST (create new staff) operations.
-Requires authentication and staff permissions. Handles multipart/form data
-for file uploads (e.g., profile pictures).`,
+    description: `API endpoint for listing all staff members and creating new staff members. Supports multipart/form data for file uploads (e.g., profile pictures).`,
     requestFormat: 'json',
     response: z.array(Staff),
   },
@@ -2227,17 +2245,13 @@ for file uploads (e.g., profile pictures).`,
     method: 'post',
     path: '/accounts/api/staff/',
     alias: 'accounts_api_staff_create',
-    description: `API endpoint for listing and creating staff members.
-
-Supports both GET (list all staff) and POST (create new staff) operations.
-Requires authentication and staff permissions. Handles multipart/form data
-for file uploads (e.g., profile pictures).`,
+    description: `Create a new staff member with the provided details. Supports multipart/form data for file uploads (e.g., profile pictures).`,
     requestFormat: 'form-data',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: Staff,
+        schema: StaffCreate,
       },
     ],
     response: Staff,
@@ -2246,11 +2260,7 @@ for file uploads (e.g., profile pictures).`,
     method: 'get',
     path: '/accounts/api/staff/:id/',
     alias: 'accounts_api_staff_retrieve',
-    description: `API endpoint for retrieving, updating, and deleting individual staff members.
-
-Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
-specific staff members. Includes comprehensive logging for update operations
-and handles multipart/form data for file uploads.`,
+    description: `API endpoint for retrieving, updating, and deleting individual staff members. Supports GET (retrieve), PUT/PATCH (update), and DELETE operations. Includes comprehensive logging for update operations and handles multipart/form data for file uploads.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2265,11 +2275,7 @@ and handles multipart/form data for file uploads.`,
     method: 'put',
     path: '/accounts/api/staff/:id/',
     alias: 'accounts_api_staff_update',
-    description: `API endpoint for retrieving, updating, and deleting individual staff members.
-
-Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
-specific staff members. Includes comprehensive logging for update operations
-and handles multipart/form data for file uploads.`,
+    description: `API endpoint for retrieving, updating, and deleting individual staff members. Supports GET (retrieve), PUT/PATCH (update), and DELETE operations. Includes comprehensive logging for update operations and handles multipart/form data for file uploads.`,
     requestFormat: 'form-data',
     parameters: [
       {
@@ -2289,11 +2295,7 @@ and handles multipart/form data for file uploads.`,
     method: 'patch',
     path: '/accounts/api/staff/:id/',
     alias: 'accounts_api_staff_partial_update',
-    description: `API endpoint for retrieving, updating, and deleting individual staff members.
-
-Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
-specific staff members. Includes comprehensive logging for update operations
-and handles multipart/form data for file uploads.`,
+    description: `API endpoint for retrieving, updating, and deleting individual staff members. Supports GET (retrieve), PUT/PATCH (update), and DELETE operations. Includes comprehensive logging for update operations and handles multipart/form data for file uploads.`,
     requestFormat: 'form-data',
     parameters: [
       {
@@ -2313,11 +2315,7 @@ and handles multipart/form data for file uploads.`,
     method: 'delete',
     path: '/accounts/api/staff/:id/',
     alias: 'accounts_api_staff_destroy',
-    description: `API endpoint for retrieving, updating, and deleting individual staff members.
-
-Supports GET (retrieve), PUT/PATCH (update), and DELETE operations on
-specific staff members. Includes comprehensive logging for update operations
-and handles multipart/form data for file uploads.`,
+    description: `API endpoint for retrieving, updating, and deleting individual staff members. Supports GET (retrieve), PUT/PATCH (update), and DELETE operations. Includes comprehensive logging for update operations and handles multipart/form data for file uploads.`,
     requestFormat: 'json',
     parameters: [
       {
