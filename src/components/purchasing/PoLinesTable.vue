@@ -150,6 +150,7 @@ const columns = computed(() =>
         h(ItemSelect, {
           modelValue: row.original.item_code,
           disabled: isColumnDisabled.value,
+          showQuantity: false,
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
             : (val: string | null) => {

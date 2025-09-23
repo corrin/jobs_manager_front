@@ -895,13 +895,21 @@ const columns = computed(() => {
           cell: ({ row }: RowCtx) => {
             const line = displayLines.value[row.index]
             if (!props.sourceResolver)
-              return h('div', { class: 'source-cell text-gray-400 text-sm' }, '-')
+              return h(
+                'div',
+                { class: 'source-cell text-gray-400 text-sm flex justify-center items-center' },
+                '-',
+              )
             const resolved = props.sourceResolver(line)
             if (!resolved || !resolved.visible)
-              return h('div', { class: 'source-cell text-gray-400 text-sm' }, '-')
+              return h(
+                'div',
+                { class: 'source-cell flex justify-center items-center text-gray-400 text-sm' },
+                '-',
+              )
 
             const neg = isNegativeStock(line)
-            return h('div', { class: 'source-cell flex flex-col gap-1' }, [
+            return h('div', { class: 'source-cell flex flex-col gap-1 items-center' }, [
               h(
                 'span',
                 {
@@ -1263,9 +1271,12 @@ const shortcutsTitle = computed(
   min-width: 28ch;
 }
 
-/* Source column: auto-size based on content */
+/* Source column: individual cells fit content */
 .smart-costlines-table :deep(.source-col) {
   width: auto;
+}
+
+.smart-costlines-table :deep(.source-cell) {
   min-width: 12ch;
   max-width: 24ch;
 }

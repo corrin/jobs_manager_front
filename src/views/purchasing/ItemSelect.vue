@@ -15,9 +15,11 @@ const props = withDefaults(
   defineProps<{
     modelValue: string | null
     disabled?: boolean
+    showQuantity?: boolean
   }>(),
   {
     disabled: false,
+    showQuantity: true,
   },
 )
 
@@ -81,7 +83,7 @@ const displayLabel = computed(() => {
       </SelectValue>
     </SelectTrigger>
 
-    <SelectContent class="max-h-80 w-full !min-w-96">
+    <SelectContent class="max-h-80 w-140">
       <!-- Search input -->
       <div class="p-3 border-b bg-muted/50">
         <Input
@@ -98,14 +100,14 @@ const displayLabel = computed(() => {
         {{ searchTerm ? 'No items found matching your search' : 'No stock items available' }}
       </div>
 
-      <div v-else class="max-h-64 overflow-y-auto">
+      <div v-else class="max-h-64 w-full overflow-y-auto">
         <SelectItem
           v-for="i in filteredItems"
           :key="i.id || 'unknown'"
           :value="i.id || ''"
           class="cursor-pointer p-4 border-b border-border last:border-b-0 hover:bg-accent/50 focus:bg-accent/50 bg-background w-full"
         >
-          <div class="flex w-full items-start justify-between gap-6 !min-w-170">
+          <div class="flex w-full items-start justify-between gap-6 !min-w-125">
             <div class="flex-1 min-w-0">
               <div class="font-medium text-sm leading-tight truncate">
                 {{ i.description || 'Unnamed Stock Item' }}
@@ -132,7 +134,7 @@ const displayLabel = computed(() => {
               </Badge>
 
               <Badge
-                v-if="i.quantity !== null && i.quantity !== undefined"
+                v-if="showQuantity && i.quantity !== null && i.quantity !== undefined"
                 :variant="i.quantity <= 0 ? 'secondary' : 'outline'"
                 :class="
                   i.quantity < 0
