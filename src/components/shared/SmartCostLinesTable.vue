@@ -49,6 +49,7 @@ import { api } from '../../api/client'
 
 import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
+import { StockItem, useStockStore } from '../../stores/stockStore'
 
 // Types from generated schemas
 type CostLine = z.infer<typeof schemas.CostLine>
@@ -168,6 +169,36 @@ function maybeEmitCreate(line: CostLine) {
   emit('create-line', payload)
 
   if (line === emptyLine.value) resetEmptyLine(line.kind as KindOption)
+}
+
+const derivedCache = new WeakMap<CostLine, ReturnType<typeof apply>['derived']>()
+
+function getDerived(line: CostLine) {
+  let derived = derivedCache.get(line)
+  if (!derived) {
+    derived = apply(line).derived
+    derivedCache.set(line, derived)
+  }
+
+  return derived
+}
+
+function invalidateDerived(line: CostLine) {
+  derivedCache.delete(line)
+}
+
+const stockStore = useStockStore()
+const stockIndex = computed<Map<string, StockItem>>(() => {
+  const map = new Map<string, StockItem>()
+  for (const stock of stockStore.items) map.set(stock.id, stock)
+  return map
+})
+
+function displayItemLabel(line: CostLine): string {
+  const stockId =
+    (line?.ext_refs as Record<string, unknown>)?.stock_id || selectedItemMap.get(line) || null
+    const stock = stockId ? stockIndex.value.get(stockId) : undefined
+    const code = stock?.item_code
 }
 
 // Company Defaults and calculations
@@ -466,15 +497,21 @@ const columns = computed(() => {
             const enabled =
               kind !== 'time' && !props.readOnly && !lockedByDeliveryReceipt && !lockedStockExisting
 
+            if (!isNewLine || !enabled) {
+              const label = isMaterial && isStockLine(line) ? 'Stock' : 'N/A'
+              return h('div', { class: 'min-w-[12rem] truncate text-sm text-slate-700' }, label)
+            }
+
             return h('div', { class: 'min-w-[12rem]' }, [
               h(ItemSelect, {
                 modelValue: model,
                 disabled: !enabled,
                 onClick: (e: Event) => e.stopPropagation(),
-                'onUpdate:modelValue': async (val: string | null) => {
+                async 'onUpdate:modelValue'(val: string | null) {
                   if (!enabled) return
                   selectedItemMap.set(line, val)
                   onItemSelected(line)
+                  invalidateDerived(line)
 
                   if (
                     isActualTab &&
@@ -521,17 +558,23 @@ const columns = computed(() => {
                     Object.assign(line, { unit_cost: 0 })
                   }
                 },
-                'onUpdate:description': (desc: string) => enabled && Object.assign(line, { desc }),
+                'onUpdate:description'(desc: string) { 
+                  if (!enabled) return
+                  Object.assign(line, { desc })
+                },
                 'onUpdate:unit_cost': (cost: number | null) => {
                   if (!enabled) return
+                  invalidateDerived(line)
                   Object.assign(line, { unit_cost: Number(cost ?? 0) })
-                  if (kind !== 'time')
-                    Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
+                  if (kind !== 'time') {
+                    const derived = getDerived(line)
+                    Object.assign(line, { unit_rev: derived.unit_rev })
+                  }
                   nextTick(() => {
                     if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
                   })
-                },
-              }),
+                }
+              })
             ])
           },
           meta: { editable: !props.readOnly },
@@ -629,18 +672,26 @@ const columns = computed(() => {
         const isBlocked =
           isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
 
+        const editable = canEditField(line, 'quantity') && !isBlocked
+        if (!editable) {
+          return h('div', { class: 'w-28 text-right tabular-nums' },
+            String(Number(line.quantity ?? 0))
+          )
+        }
         return [
           h(Input, {
             type: 'number',
             step: String(kind === 'time' ? 0.25 : 1),
             ...(kind === 'adjust' ? {} : { min: '0.0000001' }),
             modelValue: line.quantity,
-            disabled: !canEditField(line, 'quantity') || isBlocked,
             class: 'w-28 text-right',
             onClick: (e: Event) => e.stopPropagation(),
             'onUpdate:modelValue': (val: string | number) => {
               const num = Number(val)
-              if (!Number.isNaN(num)) Object.assign(line, { quantity: num })
+              if (!Number.isNaN(num)) {
+                Object.assign(line, { quantity: num })
+                invalidateDerived(line)
+              }
             },
             onBlur: () => {
               const validation = validateLine(line)
@@ -688,7 +739,7 @@ const columns = computed(() => {
           isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
         const editable = canEditField(line, 'unit_cost') && !isBlocked
         const isTime = kind === 'time'
-        const resolved = apply(line).derived
+        const resolved = getDerived(line)
         return [
           h(Input, {
             type: 'number',
@@ -697,7 +748,12 @@ const columns = computed(() => {
             modelValue: isTime
               ? (line.unit_cost ?? resolved.unit_cost ?? '')
               : (line.unit_cost ?? ''),
-            disabled: !editable,
+            // if (!editable) {
+            //   const umc = kind ===  'time'
+            //     ? (line.unit_cost ?? resolved.unit_cost ??)
+            //     : (line.unit_cost ?? 0)
+            //   return h('div')
+            // },
             class: 'w-28 text-right',
             onClick: (e: Event) => e.stopPropagation(),
             'onUpdate:modelValue': (val: string | number) => {

@@ -19,10 +19,8 @@
           <span class="text-[11px] uppercase tracking-wide text-slate-600">Estimate</span>
           <strong class="tabular-nums text-slate-900">{{ formatCurrency(estimateTotal) }}</strong>
         </li>
-        <li
-          v-if="pricingMethodology === 'fixed_price'"
-          class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2"
-        >
+        <li v-if="pricingMethodology === 'fixed_price'"
+          class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
           <span class="w-1.5 h-6 rounded-full bg-purple-500"></span>
           <span class="text-[11px] uppercase tracking-wide text-slate-600">Quote</span>
           <strong class="tabular-nums text-slate-900">{{ formatCurrency(quoteTotal) }}</strong>
@@ -56,43 +54,20 @@
         <div class="flex-1 min-h-0 overflow-auto">
           <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
             <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              />
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
             <span>Loading cost lines...</span>
           </div>
 
           <div v-else>
-            <SmartCostLinesTable
-              :jobId="jobId"
-              :tabKind="'actual'"
-              :lines="costLines"
-              :readOnly="false"
-              :showItemColumn="true"
-              :showSourceColumn="true"
-              :sourceResolver="resolveSource"
-              :allowedKinds="['material', 'adjust']"
-              :blockedFieldsByKind="blockedFieldsByKind"
-              :consumeStockFn="consumeStockForNewLine"
-              :allowTypeEdit="true"
-              :negativeStockIds="negativeStockIds"
-              @delete-line="handleSmartDelete"
-              @add-line="handleAddLine"
-              @duplicate-line="() => {}"
-              @move-line="() => {}"
-              @create-line="handleCreateLine"
-            />
+            <SmartCostLinesTable :jobId="jobId" :tabKind="'actual'" :lines="costLines" :readOnly="false"
+              :showItemColumn="true" :showSourceColumn="true" :sourceResolver="resolveSource"
+              :allowedKinds="['material', 'adjust']" :blockedFieldsByKind="blockedFieldsByKind"
+              :consumeStockFn="consumeStockForNewLine" :allowTypeEdit="true" :negativeStockIds="negativeStockIds"
+              @delete-line="handleSmartDelete" @add-line="handleAddLine" @duplicate-line="() => { }"
+              @move-line="() => { }" @create-line="handleCreateLine" />
           </div>
         </div>
       </main>
@@ -101,15 +76,8 @@
       <aside class="space-y-4 lg:sticky lg:top-16 self-start">
         <div class="bg-white rounded-xl border border-slate-200">
           <div class="p-3 w-full">
-            <CompactSummaryCard
-              title="Actual Summary"
-              class="w-full"
-              :summary="actualSummary"
-              :costLines="costLines"
-              :isLoading="isLoading"
-              :revision="revision"
-              @expand="showDetailedSummary = true"
-            />
+            <CompactSummaryCard title="Actual Summary" class="w-full" :summary="actualSummary" :costLines="costLines"
+              :isLoading="isLoading" :revision="revision" @expand="showDetailedSummary = true" />
           </div>
         </div>
 
@@ -123,29 +91,21 @@
             </CardHeader>
 
             <CardContent class="p-0 pb-2">
-              <div
-                class="max-h-[min(12vh,20rem)] overflow-y-auto px-2"
-                style="scrollbar-gutter: stable"
-              >
+              <div class="max-h-[min(12vh,20rem)] overflow-y-auto px-2" style="scrollbar-gutter: stable">
                 <div v-if="invoices.length === 0" class="text-center py-6 text-gray-500">
                   No invoices for this project
                 </div>
 
                 <ul v-else role="list" class="divide-y divide-slate-200 rounded-md bg-white">
-                  <li
-                    v-for="invoice in invoices"
-                    :key="invoice.id"
-                    class="px-3 py-1.5 hover:bg-slate-50 flex items-center gap-3"
-                  >
+                  <li v-for="invoice in invoices" :key="invoice.id"
+                    class="px-3 py-1.5 hover:bg-slate-50 flex items-center gap-3">
                     <div class="min-w-0 flex-1">
                       <div class="flex items-center gap-2">
                         <span class="font-medium text-slate-900 text-sm leading-5">
                           {{ invoice.number }}
                         </span>
-                        <Badge
-                          :variant="invoice.status === 'PAID' ? 'default' : 'secondary'"
-                          class="text-[10px] px-1.5 py-0.5 rounded-full"
-                        >
+                        <Badge :variant="invoice.status === 'PAID' ? 'default' : 'secondary'"
+                          class="text-[10px] px-1.5 py-0.5 rounded-full">
                           {{ invoice.status }}
                         </Badge>
                       </div>
@@ -161,40 +121,17 @@
 
                     <!-- Actions -->
                     <div class="shrink-0 flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        class="h-7 w-7"
-                        @click="goToInvoiceOnXero(invoice.online_url)"
-                        :disabled="!invoice.online_url"
-                      >
+                      <Button variant="outline" size="icon" class="h-7 w-7"
+                        @click="goToInvoiceOnXero(invoice.online_url)" :disabled="!invoice.online_url">
                         <ExternalLink class="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        class="h-7 w-7"
-                        @click="deleteInvoiceOnXero(invoice.xero_id)"
-                        :disabled="!!deletingInvoiceId"
-                      >
-                        <svg
-                          v-if="deletingInvoiceId === invoice.xero_id"
-                          class="animate-spin h-4 w-4"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            class="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            stroke-width="4"
-                          />
-                          <path
-                            class="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          />
+                      <Button variant="destructive" size="icon" class="h-7 w-7"
+                        @click="deleteInvoiceOnXero(invoice.xero_id)" :disabled="!!deletingInvoiceId">
+                        <svg v-if="deletingInvoiceId === invoice.xero_id" class="animate-spin h-4 w-4"
+                          viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                          <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
                         <Trash2 v-else class="h-4 w-4" />
                       </Button>
@@ -208,29 +145,12 @@
             <div>
               <div class="border-t border-slate-200"></div>
               <CardFooter class="flex flex-col items-center gap-2 pt-4">
-                <button
-                  @click="createInvoice()"
-                  :disabled="isCreatingInvoice || !!props.paid"
-                  class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 flex items-center gap-2"
-                >
-                  <svg
-                    v-if="isCreatingInvoice"
-                    class="animate-spin -ml-1 mr-1 h-4 w-4"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    />
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
+                <button @click="createInvoice()" :disabled="isCreatingInvoice || !!props.paid"
+                  class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 flex items-center gap-2">
+                  <svg v-if="isCreatingInvoice" class="animate-spin -ml-1 mr-1 h-4 w-4" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   {{ isCreatingInvoice ? 'Creating...' : invoiceButtonText }}
                 </button>
@@ -253,13 +173,8 @@
           <DialogDescription>Complete breakdown of actual costs and revenue</DialogDescription>
         </DialogHeader>
         <div class="max-h-[60vh] overflow-y-auto">
-          <CostSetSummaryCard
-            title="Actual Summary"
-            :summary="actualSummary"
-            :costLines="costLines"
-            :isLoading="isLoading"
-            :revision="revision"
-          />
+          <CostSetSummaryCard title="Actual Summary" :summary="actualSummary" :costLines="costLines"
+            :isLoading="isLoading" :revision="revision" />
         </div>
         <DialogFooter>
           <Button variant="outline" @click="showDetailedSummary = false">Close</Button>
@@ -496,16 +411,15 @@ const negativeStockIds = computed(() => [...negativeStockSet].sort())
 async function checkAndUpdateNegativeStocks() {
   negativeStockSet.clear()
 
-  // Ensure stock data is loaded
-  if (stockStore.items.length === 0) {
-    await stockStore.fetchStock()
-  }
+  const list = stockStore.items
 
-  // Use stock store data instead of calling API directly
-  for (const stock of stockStore.items) {
-    if (stock.quantity < 0) {
-      negativeStockSet.add(stock.id)
+  const CHUNK = 300
+
+  for (let i = 0; i < list.length; i += CHUNK) {
+    for (const s of list.slice(i, i + CHUNK)) {
+      if (s.quantity < 0) negativeStockSet.add(s.id)
     }
+    await Promise.resolve() // Yield to avoid blocking
   }
 }
 
@@ -607,13 +521,13 @@ async function consumeStockForNewLine(payload: {
     await loadActualCosts() // Reload to sync with backend
 
     // Refresh stock data and check if resulted in negative
-    await stockStore.fetchStock()
+    await stockStore.ensureLoaded({ force: true })
     const stock = stockStore.items.find((s) => s.id === payload.stockId)
     if (stock && stock.quantity < 0) {
       toast.warning(`Warning: Stock now negative (${Math.abs(stock.quantity).toFixed(3)} units).`)
     }
 
-    checkAndUpdateNegativeStocks()
+    await checkAndUpdateNegativeStocks()
     // Note: Since we reload, the line will be re-created from backend with id
   } catch (error) {
     toast.error('Failed to consume stock.')
@@ -662,10 +576,9 @@ function handleAddLine(kind: 'material' | 'adjust' = 'material') {
     kind,
     desc: '',
     quantity: 1,
-    // @ts-expect-error - Allow null for initial empty state
+    // @ts-expect-error: Allow null for initial state
     unit_cost: null,
-    // @ts-expect-error - Allow null for initial empty state
-    unit_cost: null,
+    // @ts-expect-error: Allow null for initial state
     unit_rev: null,
     total_cost: 0,
     total_rev: 0,
@@ -680,6 +593,7 @@ function handleAddLine(kind: 'material' | 'adjust' = 'material') {
 }
 
 onMounted(async () => {
+  await stockStore.ensureLoaded({ ttlMs: 0 })
   await Promise.all([loadStaff(), loadActualCosts(), loadCostsSummary(), loadInvoices()])
 })
 

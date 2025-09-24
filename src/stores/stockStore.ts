@@ -15,6 +15,32 @@ export const useStockStore = defineStore('stock', () => {
   const items = ref<StockItem[]>([])
   const loading = ref(false)
 
+  let inflight: Promise<void> | null = null
+  let lastFetched = 0
+  const TTL = 60_000
+
+  async function refresh() {
+    loading.value = true
+    try {
+      const response = await api.purchasing_rest_stock_retrieve()
+      items.value = response.items || []
+      lastFetched = Date.now()
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function ensureLoaded(opts?: { force?: boolean; ttlMs?: number }) {
+    const force = !!opts?.force
+    const ttlMs = opts?.ttlMs ?? TTL
+    const fresh = items.value.length && Date.now() - lastFetched < ttlMs
+
+    if (!force && fresh) return
+    if (inflight) return inflight
+    inflight = refresh().finally(() => (inflight = null))
+    return inflight
+  }
+
   async function fetchStock() {
     loading.value = true
     try {
@@ -73,5 +99,5 @@ export const useStockStore = defineStore('stock', () => {
     await api.purchasing_rest_stock_destroy({ params: { id } })
   }
 
-  return { items, loading, fetchStock, consumeStock, create, deactivate }
+  return { items, loading, fetchStock, consumeStock, create, deactivate, ensureLoaded }
 })
