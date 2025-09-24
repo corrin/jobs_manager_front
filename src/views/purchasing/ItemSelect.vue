@@ -83,7 +83,7 @@ const displayLabel = computed(() => {
       </SelectValue>
     </SelectTrigger>
 
-    <SelectContent class="max-h-80 w-140">
+    <SelectContent class="max-h-80 w-[550px]">
       <!-- Search input -->
       <div class="p-3 border-b bg-muted/50">
         <Input
@@ -107,7 +107,7 @@ const displayLabel = computed(() => {
           :value="i.id || ''"
           class="cursor-pointer p-4 border-b border-border last:border-b-0 hover:bg-accent/50 focus:bg-accent/50 bg-background w-full"
         >
-          <div class="flex w-full items-start justify-between gap-6 !min-w-125">
+          <div class="flex w-full items-start justify-between gap-6 !min-w-[500px]">
             <div class="flex-1 min-w-0">
               <div class="font-medium text-sm leading-tight truncate">
                 {{ i.description || 'Unnamed Stock Item' }}
