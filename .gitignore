@@ -37,8 +37,9 @@ ENV_SETUP.md
 
 .env
 .env.uat
-.env.prod
+.env.*
 .env.development
 cookies.txt
-
 adhoc/
+.env.production
+script-output/
