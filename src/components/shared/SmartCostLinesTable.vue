@@ -541,7 +541,7 @@ const columns = computed(() => {
     // Description
     {
       id: 'desc',
-      header: 'Description',
+      header: () => h('div', { class: 'desc-col' }, 'Description'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -557,7 +557,7 @@ const columns = computed(() => {
         return h(
           'div',
           {
-            class: 'w-full max-w-full',
+            class: 'desc-cell w-full',
             tabindex: 0,
             role: 'button',
             title: line.desc || '',
@@ -588,6 +588,7 @@ const columns = computed(() => {
                   'hover:border-slate-300',
                   'focus-within:ring-2 focus-within:ring-blue-500',
                   'cursor-text transition',
+                  'max-w-[90ch]',
                 ].join(' '),
               },
               [
@@ -617,7 +618,7 @@ const columns = computed(() => {
     // Quantity
     {
       id: 'quantity',
-      header: 'Quantity',
+      header: () => h('div', { class: 'col-8ch text-right' }, 'Quantity'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -630,35 +631,38 @@ const columns = computed(() => {
           isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
 
         return [
-          h(Input, {
-            type: 'number',
-            step: String(kind === 'time' ? 0.25 : 1),
-            ...(kind === 'adjust' ? {} : { min: '0.0000001' }),
-            modelValue: line.quantity,
-            disabled: !canEditField(line, 'quantity') || isBlocked,
-            class: 'w-28 text-right',
-            onClick: (e: Event) => e.stopPropagation(),
-            'onUpdate:modelValue': (val: string | number) => {
-              const num = Number(val)
-              if (!Number.isNaN(num)) Object.assign(line, { quantity: num })
-            },
-            onBlur: () => {
-              const validation = validateLine(line)
-              if (!validation.isValid) {
-                toast.error(validation.issues[0]?.message || 'Invalid quantity')
-                return
-              }
-              if (!line.id && isLineReadyForSave(line)) {
-                maybeEmitCreate(line)
-                return
-              }
-              if (!line.id || !isLineReadyForSave(line)) return
-              const qtyNum = Number(line.quantity || 0)
-              const patch: PatchedCostLineCreateUpdate = { quantity: qtyNum }
-              const optimistic: Partial<CostLine> = { quantity: qtyNum }
-              autosave.onBlurSave(line, patch, optimistic)
-            },
-          }),
+          h('div', { class: 'col-8ch' }, [
+            h(Input, {
+              type: 'number',
+              step: String(kind === 'time' ? 0.25 : 1),
+              ...(kind === 'adjust' ? {} : { min: '0.0000001' }),
+              modelValue: line.quantity,
+              disabled: !canEditField(line, 'quantity') || isBlocked,
+              class: 'w-full text-right numeric-input',
+              inputmode: 'decimal',
+              onClick: (e: Event) => e.stopPropagation(),
+              'onUpdate:modelValue': (val: string | number) => {
+                const num = Number(val)
+                if (!Number.isNaN(num)) Object.assign(line, { quantity: num })
+              },
+              onBlur: () => {
+                const validation = validateLine(line)
+                if (!validation.isValid) {
+                  toast.error(validation.issues[0]?.message || 'Invalid quantity')
+                  return
+                }
+                if (!line.id && isLineReadyForSave(line)) {
+                  maybeEmitCreate(line)
+                  return
+                }
+                if (!line.id || !isLineReadyForSave(line)) return
+                const qtyNum = Number(line.quantity || 0)
+                const patch: PatchedCostLineCreateUpdate = { quantity: qtyNum }
+                const optimistic: Partial<CostLine> = { quantity: qtyNum }
+                autosave.onBlurSave(line, patch, optimistic)
+              },
+            }),
+          ]),
           ...(isBlocked
             ? [
                 h(
@@ -675,7 +679,7 @@ const columns = computed(() => {
     // Unit Cost
     {
       id: 'unit_cost',
-      header: 'Unit Cost',
+      header: () => h('div', { class: 'col-8ch text-right' }, 'Unit Cost'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -690,63 +694,66 @@ const columns = computed(() => {
         const isTime = kind === 'time'
         const resolved = apply(line).derived
         return [
-          h(Input, {
-            type: 'number',
-            step: '0.01',
-            min: '0',
-            modelValue: isTime
-              ? (line.unit_cost ?? resolved.unit_cost ?? '')
-              : (line.unit_cost ?? ''),
-            disabled: !editable,
-            class: 'w-28 text-right',
-            onClick: (e: Event) => e.stopPropagation(),
-            'onUpdate:modelValue': (val: string | number) => {
-              if (!editable) return
-              if (val === '') {
-                Object.assign(line, { unit_cost: 0 })
-              } else {
-                const num = Number(val)
-                if (!Number.isNaN(num)) {
-                  Object.assign(line, { unit_cost: num })
+          h('div', { class: 'col-8ch' }, [
+            h(Input, {
+              type: 'number',
+              step: '0.01',
+              min: '0',
+              modelValue: isTime
+                ? (line.unit_cost ?? resolved.unit_cost ?? '')
+                : (line.unit_cost ?? ''),
+              disabled: !editable,
+              class: 'w-full text-right numeric-input',
+              inputmode: 'decimal',
+              onClick: (e: Event) => e.stopPropagation(),
+              'onUpdate:modelValue': (val: string | number) => {
+                if (!editable) return
+                if (val === '') {
+                  Object.assign(line, { unit_cost: 0 })
+                } else {
+                  const num = Number(val)
+                  if (!Number.isNaN(num)) {
+                    Object.assign(line, { unit_cost: num })
 
-                  // Auto-recalculate unit_rev for material/adjust unless overridden
-                  if (kind !== 'time') {
-                    const derived = apply(line).derived
-                    Object.assign(line, { unit_rev: derived.unit_rev })
+                    // Auto-recalculate unit_rev for material/adjust unless overridden
+                    if (kind !== 'time') {
+                      const derived = apply(line).derived
+                      Object.assign(line, { unit_rev: derived.unit_rev })
+                    }
                   }
                 }
-              }
-            },
-            onBlur: () => {
-              if (!editable) return
+              },
+              onBlur: () => {
+                if (!editable) return
 
-              // Create new line if it doesn't have an ID yet and meets baseline criteria
-              if (!line.id && isLineReadyForSave(line)) {
-                console.log('Creating new line from unit_cost edit:', line)
-                maybeEmitCreate(line)
-                return
-              }
+                // Create new line if it doesn't have an ID yet and meets baseline criteria
+                if (!line.id && isLineReadyForSave(line)) {
+                  console.log('Creating new line from unit_cost edit:', line)
+                  maybeEmitCreate(line)
+                  return
+                }
 
-              if (!line.id || !isLineReadyForSave(line)) {
-                console.log('Skipping unit_cost save:', {
-                  editable,
-                  id: line.id,
-                  ready: isLineReadyForSave(line),
-                })
-                return
-              }
+                if (!line.id || !isLineReadyForSave(line)) {
+                  console.log('Skipping unit_cost save:', {
+                    editable,
+                    id: line.id,
+                    ready: isLineReadyForSave(line),
+                  })
+                  return
+                }
 
-              console.log('Saving unit_cost change:', line.id, line.unit_cost)
-              // For material/adjust, unit_rev may be auto recalculated unless overridden
-              const derived = apply(line).derived
-              const patch: PatchedCostLineCreateUpdate = {
-                unit_cost: Number(line.unit_cost ?? 0),
-                ...(kind !== 'time' ? { unit_rev: Number(derived.unit_rev) } : {}),
-              }
-              const optimistic: Partial<CostLine> = { ...patch }
-              autosave.onBlurSave(line, patch, optimistic)
-            },
-          }),
+                console.log('Saving unit_cost change:', line.id, line.unit_cost)
+                // For material/adjust, unit_rev may be auto recalculated unless overridden
+                const derived = apply(line).derived
+                const patch: PatchedCostLineCreateUpdate = {
+                  unit_cost: Number(line.unit_cost ?? 0),
+                  ...(kind !== 'time' ? { unit_rev: Number(derived.unit_rev) } : {}),
+                }
+                const optimistic: Partial<CostLine> = { ...patch }
+                autosave.onBlurSave(line, patch, optimistic)
+              },
+            }),
+          ]),
           ...(isBlocked
             ? [
                 h(
@@ -763,7 +770,7 @@ const columns = computed(() => {
     // Unit Revenue
     {
       id: 'unit_rev',
-      header: 'Unit Revenue',
+      header: () => h('div', { class: 'col-8ch text-right' }, 'Unit Revenue'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -778,54 +785,59 @@ const columns = computed(() => {
         const isTime = kind === 'time'
         const resolved = apply(line).derived
         return [
-          h(Input, {
-            type: 'number',
-            step: '0.01',
-            min: '0',
-            modelValue: isTime ? (line.unit_rev ?? resolved.unit_rev ?? '') : (line.unit_rev ?? ''),
-            disabled: !editable,
-            class: 'w-28 text-right',
-            onClick: (e: Event) => e.stopPropagation(),
-            'onUpdate:modelValue': (val: string | number) => {
-              if (!editable) return
-              if (val === '') {
-                Object.assign(line, { unit_rev: 0 })
-              } else {
-                const num = Number(val)
-                if (!Number.isNaN(num)) {
-                  Object.assign(line, { unit_rev: num })
+          h('div', { class: 'col-8ch' }, [
+            h(Input, {
+              type: 'number',
+              step: '0.01',
+              min: '0',
+              modelValue: isTime
+                ? (line.unit_rev ?? resolved.unit_rev ?? '')
+                : (line.unit_rev ?? ''),
+              disabled: !editable,
+              class: 'w-full text-right numeric-input',
+              inputmode: 'decimal',
+              onClick: (e: Event) => e.stopPropagation(),
+              'onUpdate:modelValue': (val: string | number) => {
+                if (!editable) return
+                if (val === '') {
+                  Object.assign(line, { unit_rev: 0 })
+                } else {
+                  const num = Number(val)
+                  if (!Number.isNaN(num)) {
+                    Object.assign(line, { unit_rev: num })
+                  }
                 }
-              }
-              // Mark override when user types in unit_rev
-              onUnitRevenueManuallyEdited(line)
-            },
-            onBlur: () => {
-              if (!editable) return
+                // Mark override when user types in unit_rev
+                onUnitRevenueManuallyEdited(line)
+              },
+              onBlur: () => {
+                if (!editable) return
 
-              // Create new line if it doesn't have an ID yet and meets baseline criteria
-              if (!line.id && isLineReadyForSave(line)) {
-                console.log('Creating new line from unit_rev edit:', line)
-                maybeEmitCreate(line)
-                return
-              }
+                // Create new line if it doesn't have an ID yet and meets baseline criteria
+                if (!line.id && isLineReadyForSave(line)) {
+                  console.log('Creating new line from unit_rev edit:', line)
+                  maybeEmitCreate(line)
+                  return
+                }
 
-              if (!line.id || !isLineReadyForSave(line)) {
-                console.log('Skipping unit_rev save:', {
-                  editable,
-                  id: line.id,
-                  ready: isLineReadyForSave(line),
-                })
-                return
-              }
+                if (!line.id || !isLineReadyForSave(line)) {
+                  console.log('Skipping unit_rev save:', {
+                    editable,
+                    id: line.id,
+                    ready: isLineReadyForSave(line),
+                  })
+                  return
+                }
 
-              console.log('Saving unit_rev change:', line.id, line.unit_rev)
-              const patch: PatchedCostLineCreateUpdate = {
-                unit_rev: Number(line.unit_rev ?? 0),
-              }
-              const optimistic: Partial<CostLine> = { unit_rev: Number(line.unit_rev ?? 0) }
-              autosave.onBlurSave(line, patch, optimistic)
-            },
-          }),
+                console.log('Saving unit_rev change:', line.id, line.unit_rev)
+                const patch: PatchedCostLineCreateUpdate = {
+                  unit_rev: Number(line.unit_rev ?? 0),
+                }
+                const optimistic: Partial<CostLine> = { unit_rev: Number(line.unit_rev ?? 0) }
+                autosave.onBlurSave(line, patch, optimistic)
+              },
+            }),
+          ]),
           ...(isBlocked
             ? [
                 h(
@@ -842,13 +854,17 @@ const columns = computed(() => {
     // Total Cost
     {
       id: 'total_cost',
-      header: 'Total Cost',
+      header: () => h('div', { class: 'col-12ch text-right' }, 'Total Cost'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const qty = Number(line.quantity || 0)
         const umc = Number(line.unit_cost ?? apply(line).derived.unit_cost ?? 0)
         const totalCost = String(line.kind) === 'time' ? qty * umc : qty * umc
-        return h('div', { class: 'text-right font-medium' }, `$${formatMoney(totalCost)}`)
+        return h(
+          'div',
+          { class: 'col-12ch text-right font-medium numeric-text' },
+          `$${formatMoney(totalCost)}`,
+        )
       },
       meta: { editable: false },
     },
@@ -856,37 +872,49 @@ const columns = computed(() => {
     // Total Revenue
     {
       id: 'total_rev',
-      header: 'Total Revenue',
+      header: () => h('div', { class: 'col-12ch text-right' }, 'Total Revenue'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const qty = Number(line.quantity ?? 0)
         const umr = Number(line.unit_rev ?? apply(line).derived.unit_rev ?? 0)
         const totalRev = qty * umr
-        return h('div', { class: 'text-right font-medium' }, `$${formatMoney(totalRev)}`)
+        return h(
+          'div',
+          { class: 'col-12ch text-right font-medium numeric-text' },
+          `$${formatMoney(totalRev)}`,
+        )
       },
       meta: { editable: false },
     },
 
-    // Source (optional, read-only)
+    // Source (optional)
     props.showSourceColumn
       ? {
           id: 'source',
-          header: 'Source',
+          header: () => h('div', { class: 'source-col' }, 'Source'),
           cell: ({ row }: RowCtx) => {
             const line = displayLines.value[row.index]
-            if (!props.sourceResolver) return h('span', { class: 'text-gray-400 text-sm' }, '-')
+            if (!props.sourceResolver)
+              return h(
+                'div',
+                { class: 'source-cell text-gray-400 text-sm flex justify-center items-center' },
+                '-',
+              )
             const resolved = props.sourceResolver(line)
             if (!resolved || !resolved.visible)
-              return h('span', { class: 'text-gray-400 text-sm' }, '-')
+              return h(
+                'div',
+                { class: 'source-cell flex justify-center items-center text-gray-400 text-sm' },
+                '-',
+              )
 
             const neg = isNegativeStock(line)
-
-            const chips = [
+            return h('div', { class: 'source-cell flex flex-col gap-1 items-center' }, [
               h(
                 'span',
                 {
                   class:
-                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer select-none w-fit',
+                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer select-none truncate',
                   role: resolved.onClick ? 'button' : undefined,
                   tabindex: resolved.onClick ? 0 : -1,
                   onClick: resolved.onClick
@@ -902,23 +930,20 @@ const columns = computed(() => {
                 },
                 resolved.label,
               ),
-            ]
-
-            if (neg) {
-              chips.push(
-                h(
-                  'span',
-                  {
-                    class:
-                      'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200 w-fit',
-                    title: 'Stock level for this item is negative',
-                  },
-                  [h(AlertTriangle, { class: 'w-3.5 h-3.5 mr-1' }), 'Negative'],
-                ),
-              )
-            }
-
-            return h('div', { class: 'flex flex-col gap-1' }, chips)
+              ...(neg
+                ? [
+                    h(
+                      'span',
+                      {
+                        class:
+                          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200 truncate',
+                        title: 'Stock level for this item is negative',
+                      },
+                      [h(AlertTriangle, { class: 'w-3.5 h-3.5 mr-1' }), 'Negative'],
+                    ),
+                  ]
+                : []),
+            ])
           },
           meta: { editable: false },
         }
@@ -927,61 +952,64 @@ const columns = computed(() => {
     // Actions (delete only)
     {
       id: 'actions',
-      header: 'Actions',
+      header: () => h('div', { class: 'w-full text-center' }, 'Actions'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const disabled = !!props.readOnly
-        return h(
-          Button,
-          {
-            variant: 'outline',
-            size: 'icon',
-            class: 'h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50',
-            disabled,
-            'aria-label': 'Delete line',
-            onClick: (e: Event) => {
-              e.stopPropagation()
-              if (disabled) return
+        return h('div', { class: 'flex items-center justify-center w-full' }, [
+          h(
+            Button,
+            {
+              variant: 'outline',
+              size: 'icon',
+              class:
+                'h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center justify-center',
+              disabled,
+              'aria-label': 'Delete line',
+              onClick: (e: Event) => {
+                e.stopPropagation()
+                if (disabled) return
 
-              console.log('🗑️ Delete button clicked for line:', {
-                lineId: line.id,
-                rowIndex: row.index,
-                lineDesc: line.desc,
-                isLocalLine: !line.id,
-                totalDisplayLines: displayLines.value.length,
-                totalPropsLines: props.lines.length,
-              })
-
-              // For local lines (no ID), delete immediately without confirmation
-              if (!line.id) {
-                // Find the actual index in the original props.lines array
-                const actualIndex = props.lines.findIndex((l) => l === line)
-                console.log('🔍 Looking for local line in props.lines:', {
-                  actualIndex,
-                  foundLine: actualIndex >= 0 ? props.lines[actualIndex] : null,
-                  searchedLine: line,
+                console.log('🗑️ Delete button clicked for line:', {
+                  lineId: line.id,
+                  rowIndex: row.index,
+                  lineDesc: line.desc,
+                  isLocalLine: !line.id,
+                  totalDisplayLines: displayLines.value.length,
+                  totalPropsLines: props.lines.length,
                 })
 
-                if (actualIndex >= 0) {
-                  console.log('✅ Emitting delete-line with actualIndex:', actualIndex)
-                  loggedEmit('delete-line', actualIndex)
-                } else {
-                  // This is the auto-generated empty line - don't delete it, just clear it
-                  console.log('⚠️ Auto-generated empty line - cannot delete, ignoring')
+                // For local lines (no ID), delete immediately without confirmation
+                if (!line.id) {
+                  // Find the actual index in the original props.lines array
+                  const actualIndex = props.lines.findIndex((l) => l === line)
+                  console.log('🔍 Looking for local line in props.lines:', {
+                    actualIndex,
+                    foundLine: actualIndex >= 0 ? props.lines[actualIndex] : null,
+                    searchedLine: line,
+                  })
+
+                  if (actualIndex >= 0) {
+                    console.log('✅ Emitting delete-line with actualIndex:', actualIndex)
+                    loggedEmit('delete-line', actualIndex)
+                  } else {
+                    // This is the auto-generated empty line - don't delete it, just clear it
+                    console.log('⚠️ Auto-generated empty line - cannot delete, ignoring')
+                    return
+                  }
                   return
                 }
-                return
-              }
 
-              // For saved lines, ask for confirmation
-              const confirmed = window.confirm('Delete this line? This action cannot be undone.')
-              if (!confirmed) return
-              console.log('✅ Emitting delete-line with line.id:', line.id)
-              loggedEmit('delete-line', line.id as string)
+                // For saved lines, ask for confirmation
+                const confirmed = window.confirm('Delete this line? This action cannot be undone.')
+                if (!confirmed) return
+                console.log('✅ Emitting delete-line with line.id:', line.id)
+                loggedEmit('delete-line', line.id as string)
+              },
             },
-          },
-          () => h(Trash2, { class: 'w-4 h-4' }),
-        )
+            () => h(Trash2, { class: 'w-4 h-4' }),
+          ),
+        ])
       },
       meta: { editable: !props.readOnly },
     },
@@ -1086,7 +1114,12 @@ const shortcutsTitle = computed(
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto" tabindex="0" @keydown="onKeydown" ref="containerRef">
+    <div
+      class="flex-1 overflow-y-auto overflow-x-hidden"
+      tabindex="0"
+      @keydown="onKeydown"
+      ref="containerRef"
+    >
       <DataTable
         class="smart-costlines-table"
         :columns="columns as any"
@@ -1175,26 +1208,25 @@ const shortcutsTitle = computed(
 </template>
 
 <style scoped>
-/* Layout and spacing (8px scale) */
+/* Layout */
+.smart-costlines-table :deep(table) {
+  /* Let content determine widths (numeric ~8ch, totals ~12ch, desc soaks rest) */
+  table-layout: auto;
+  width: 100%;
+}
+
+.smart-costlines-table :deep(th),
+.smart-costlines-table :deep(td) {
+  word-break: break-word;
+  white-space: normal;
+  padding: 8px 12px;
+}
+
 .smart-costlines-table :deep(thead) {
   position: sticky;
   top: 0;
   z-index: 10;
   background: white;
-}
-
-/* First column sticky for usability (if DataTable structure supports) */
-/* .smart-costlines-table :deep(tbody td:first-child),
-.smart-costlines-table :deep(thead th:first-child) {
-  position: sticky;
-  left: 0;
-  background: white;
-  z-index: 5;
-} */
-
-.smart-costlines-table :deep(th),
-.smart-costlines-table :deep(td) {
-  padding: 8px 12px;
 }
 
 /* Row hover */
@@ -1208,11 +1240,75 @@ const shortcutsTitle = computed(
   text-align: right;
 }
 
-/* Focus ring for keyboard navigation */
+/* Focus ring */
 .smart-costlines-table :deep(input:focus),
 .smart-costlines-table :deep(button:focus),
 .smart-costlines-table :deep(select:focus) {
   outline: none;
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.6);
+}
+
+/* === Smart width helpers (character-based) === */
+.smart-costlines-table :deep(.col-8ch) {
+  width: 8ch;
+  max-width: 8ch;
+}
+
+.smart-costlines-table :deep(.col-10ch) {
+  width: 10ch;
+  max-width: 10ch;
+}
+
+.smart-costlines-table :deep(.col-12ch) {
+  width: 12ch;
+  max-width: 12ch;
+}
+
+/* Description column: expand to fill remaining space */
+.smart-costlines-table :deep(.desc-col) {
+  /* Header marker so the column can flex */
+  width: auto;
+  min-width: 28ch;
+}
+
+/* Source column: individual cells fit content */
+.smart-costlines-table :deep(.source-col) {
+  width: auto;
+}
+
+.smart-costlines-table :deep(.source-cell) {
+  min-width: 12ch;
+  max-width: 24ch;
+}
+
+/* Remove the old hard clamp on Description column width */
+.smart-costlines-table :deep(td:has(.desc-cell)),
+.smart-costlines-table :deep(th:has(.desc-cell)) {
+  width: auto;
+}
+
+/* Inner Description box can cap itself visually without forcing column width */
+.smart-costlines-table :deep(.desc-cell .group) {
+  max-width: min(90ch, 100%);
+}
+
+/* Numeric readability */
+.smart-costlines-table :deep(.numeric-input),
+.smart-costlines-table :deep(.numeric-text) {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings:
+    'tnum' 1,
+    'lnum' 1;
+}
+
+/* Hide spinner buttons for number inputs */
+.smart-costlines-table :deep(input[type='number']) {
+  -moz-appearance: textfield;
+}
+
+.smart-costlines-table :deep(input[type='number']::-webkit-outer-spin-button),
+.smart-costlines-table :deep(input[type='number']::-webkit-inner-spin-button) {
+  -webkit-appearance: none;
+  margin: 0;
 }
 </style>
