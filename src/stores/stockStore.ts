@@ -17,14 +17,11 @@ export const useStockStore = defineStore('stock', () => {
   let inFlight: Promise<StockItem[]> | null = null
 
   async function fetchStock(force = false): Promise<StockItem[]> {
-    // Early return if already have data and not forcing
-    if (!force) {
-      if (items.value.length > 0) return items.value
-      if (loading.value && inFlight) return inFlight
-    }
+    // Return existing in-flight promise if one exists (unless forcing)
+    if (loading.value && inFlight && !force) return inFlight
 
-    // Return existing in-flight promise if one exists
-    if (loading.value && inFlight) return inFlight
+    // Early return if already have data and not forcing
+    if (!force && items.value.length > 0) return items.value
 
     loading.value = true
     inFlight = (async () => {
