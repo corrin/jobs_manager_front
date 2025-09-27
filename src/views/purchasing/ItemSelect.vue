@@ -33,8 +33,10 @@ const store = useStockStore()
 const searchTerm = ref('')
 
 onMounted(async () => {
-  // Simple call - store handles everything
-  await store.fetchStock()
+  // Avoid triggering redundant fetches when many ItemSelects mount at once
+  if (store.items.length === 0 && !store.loading) {
+    await store.fetchStock()
+  }
 })
 
 const filteredItems = computed(() => {

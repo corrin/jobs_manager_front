@@ -272,7 +272,7 @@
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
 
-import { onMounted, onBeforeUnmount, ref, computed, reactive } from 'vue'
+import { onMounted, ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
@@ -507,28 +507,6 @@ async function checkAndUpdateNegativeStocks() {
   }
 }
 
-// Local AbortController for background stock refresh used during initial mount
-const stockAc = new AbortController()
-onBeforeUnmount(() => stockAc.abort())
-
-function recomputeNegativeStocksFromStore() {
-  negativeStockSet.clear()
-  for (const stock of stockStore.items) {
-    if (stock.quantity < 0) negativeStockSet.add(stock.id)
-  }
-}
-
-function refreshStockAndUpdateNegativeStocksSafe() {
-  const p = stockStore.fetchStockSafe({ signal: stockAc.signal, timeout: 15000 })
-  void Promise.resolve(p)
-    .then(() => {
-      recomputeNegativeStocksFromStore()
-    })
-    .catch(() => {
-      // swallow: non-blocking background fetch
-    })
-}
-
 async function loadStaff() {
   try {
     const staff: KanbanStaff[] = await api.accounts_api_staff_all_list()
@@ -553,8 +531,8 @@ async function loadActualCosts() {
 
     revision.value = costSet.rev || 0
 
-    // Kick off non-blocking stock refresh (do not await)
-    refreshStockAndUpdateNegativeStocksSafe()
+    // Ensure stock is loaded so UI has stock library available
+    await checkAndUpdateNegativeStocks()
   } catch (error) {
     debugLog('Failed to load actual cost lines:', error)
   } finally {

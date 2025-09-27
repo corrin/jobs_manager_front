@@ -466,6 +466,28 @@ const columns = computed(() => {
             const enabled =
               kind !== 'time' && !props.readOnly && !lockedByDeliveryReceipt && !lockedStockExisting
 
+            const isActive = selectedRowIndex.value === row.index
+
+            // Lazy mount: render lightweight control until row is active (selected)
+            if (!isActive) {
+              return h('div', { class: 'min-w-[12rem] flex items-center gap-2' }, [
+                h(
+                  Button,
+                  {
+                    variant: 'outline',
+                    size: 'sm',
+                    disabled: !enabled,
+                    onClick: (e: Event) => {
+                      e.stopPropagation()
+                      selectedRowIndex.value = row.index
+                    },
+                  },
+                  () => (model ? 'Change item' : 'Select item'),
+                ),
+                h('span', { class: 'text-xs text-slate-500 line-clamp-1' }, line.desc || ''),
+              ])
+            }
+
             return h('div', { class: 'min-w-[12rem]' }, [
               h(ItemSelect, {
                 modelValue: model,
