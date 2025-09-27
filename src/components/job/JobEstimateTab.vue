@@ -14,11 +14,30 @@
           <h3 class="text-lg font-semibold text-gray-900">Estimate Details</h3>
         </div>
         <div class="flex-1 overflow-hidden">
+          <div v-if="isLoading" class="h-full flex items-center justify-center text-gray-500 gap-2">
+            <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              />
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <span>Loading estimate...</span>
+          </div>
           <SmartCostLinesTable
+            v-else
             :jobId="jobId"
             :tabKind="'estimate'"
             :lines="costLines"
-            :readOnly="isLoading"
+            :readOnly="false"
             :showItemColumn="true"
             :showSourceColumn="false"
             @delete-line="handleSmartDelete"
@@ -74,6 +93,7 @@
 import { debugLog } from '../../utils/debug'
 
 import { onMounted, ref, computed } from 'vue'
+import { useStockStore } from '../../stores/stockStore'
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../../components/shared/CostSetSummaryCard.vue'
@@ -138,8 +158,22 @@ async function loadEstimate() {
   }
 }
 
+const stockStore = useStockStore()
+
 onMounted(async () => {
-  await loadEstimate()
+  isLoading.value = true
+  try {
+    // Ensure required data is present before rendering the table
+    await Promise.all([
+      companyDefaultsStore.isLoaded
+        ? Promise.resolve()
+        : companyDefaultsStore.loadCompanyDefaults(),
+      stockStore.fetchStock(),
+    ])
+    await loadEstimate()
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const estimateSummary = computed(() => {
