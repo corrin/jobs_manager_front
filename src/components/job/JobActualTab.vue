@@ -507,6 +507,28 @@ async function checkAndUpdateNegativeStocks() {
   }
 }
 
+// Local AbortController for background stock refresh used during initial mount
+const stockAc = new AbortController()
+onBeforeUnmount(() => stockAc.abort())
+
+function recomputeNegativeStocksFromStore() {
+  negativeStockSet.clear()
+  for (const stock of stockStore.items) {
+    if (stock.quantity < 0) negativeStockSet.add(stock.id)
+  }
+}
+
+function refreshStockAndUpdateNegativeStocksSafe() {
+  const p = stockStore.fetchStockSafe({ signal: stockAc.signal, timeout: 15000 })
+  void Promise.resolve(p)
+    .then(() => {
+      recomputeNegativeStocksFromStore()
+    })
+    .catch(() => {
+      // swallow: non-blocking background fetch
+    })
+}
+
 async function loadStaff() {
   try {
     const staff: KanbanStaff[] = await api.accounts_api_staff_all_list()
@@ -531,8 +553,8 @@ async function loadActualCosts() {
 
     revision.value = costSet.rev || 0
 
-    // Check negative stocks after load
-    await checkAndUpdateNegativeStocks()
+    // Kick off non-blocking stock refresh (do not await)
+    refreshStockAndUpdateNegativeStocksSafe()
   } catch (error) {
     debugLog('Failed to load actual cost lines:', error)
   } finally {
