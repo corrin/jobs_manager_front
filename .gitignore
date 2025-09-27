@@ -40,7 +40,6 @@ ENV_SETUP.md
 .env.*
 .env.development
 cookies.txt
-W
 adhoc/
 .env.production
 script-output/
