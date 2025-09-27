@@ -368,13 +368,10 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
         .join(' ')}`,
     }))
 
-    // Add special and archived columns if they have jobs during search
+    // Add special column if it has jobs during search
     if (filteredJobs.value.length > 0) {
       const hasSpecialJobs = filteredJobs.value.some(
         (job) => KanbanCategorizationService.getColumnForStatus(job.status) === 'special',
-      )
-      const hasArchivedJobs = filteredJobs.value.some(
-        (job) => KanbanCategorizationService.getColumnForStatus(job.status) === 'archived',
       )
 
       if (hasSpecialJobs) {
@@ -384,21 +381,6 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
             key: specialCol.columnId,
             label: specialCol.columnTitle,
             tooltip: `Status: ${specialCol.statusKey
-              .replace(/_/g, ' ')
-              .split(' ')
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(' ')}`,
-          })
-        }
-      }
-
-      if (hasArchivedJobs) {
-        const archivedCol = KanbanCategorizationService.getColumnInfo('archived')
-        if (archivedCol) {
-          mainColumns.push({
-            key: archivedCol.columnId,
-            label: archivedCol.columnTitle,
-            tooltip: `Status: ${archivedCol.statusKey
               .replace(/_/g, ' ')
               .split(' ')
               .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

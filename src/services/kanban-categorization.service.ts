@@ -138,6 +138,7 @@ export class KanbanCategorizationService {
       this.COLUMN_STRUCTURE.in_progress,
       this.COLUMN_STRUCTURE.unusual,
       this.COLUMN_STRUCTURE.recently_completed,
+      this.COLUMN_STRUCTURE.archived,
     ]
   }
 
@@ -174,7 +175,7 @@ export class KanbanCategorizationService {
   }
 
   static isStatusHiddenFromKanban(status: string): boolean {
-    const hiddenStatuses = new Set(['special', 'rejected', 'archived'])
+    const hiddenStatuses = new Set(['special', 'rejected'])
     return hiddenStatuses.has(status)
   }
 
