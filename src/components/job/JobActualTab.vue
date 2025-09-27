@@ -519,13 +519,7 @@ function recomputeNegativeStocksFromStore() {
 }
 
 function refreshStockAndUpdateNegativeStocksSafe() {
-  const maybeSafe = stockStore as unknown as {
-    fetchStockSafe?: (opts: { signal?: AbortSignal; timeout?: number }) => Promise<unknown>
-  }
-  const p = maybeSafe.fetchStockSafe
-    ? maybeSafe.fetchStockSafe({ signal: stockAc.signal, timeout: 15000 })
-    : stockStore.fetchStock()
-
+  const p = stockStore.fetchStockSafe({ signal: stockAc.signal, timeout: 15000 })
   void Promise.resolve(p)
     .then(() => {
       recomputeNegativeStocksFromStore()
