@@ -83,6 +83,16 @@
               >
                 Total Revenue
               </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Created
+              </th>
+              <th
+                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Updated
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -122,6 +132,12 @@
               <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                 ${{ formatCurrency(line.quantity * line.unit_rev) }}
               </td>
+              <td class="px-4 py-3 text-sm text-gray-500">
+                {{ line.created_at ? formatDate(line.created_at) : '-' }}
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-500">
+                {{ line.updated_at ? formatDate(line.updated_at) : '-' }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -131,10 +147,15 @@
 </template>
 
 <script setup lang="ts">
-import { schemas } from '@/api/generated/api'
+import { schemas } from '../../api/generated/api'
 import { z } from 'zod'
+import { formatDate } from '../../utils/string-formatting'
 
-type CostLine = z.infer<typeof schemas.CostLine>
+// Extend CostLine type to include timestamp fields (to be added to backend schema)
+type CostLine = z.infer<typeof schemas.CostLine> & {
+  created_at?: string
+  updated_at?: string
+}
 
 withDefaults(
   defineProps<{
