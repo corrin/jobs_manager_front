@@ -14,41 +14,58 @@ export { StockItem }
 export const useStockStore = defineStore('stock', () => {
   const items = ref<StockItem[]>([])
   const loading = ref(false)
+  let inFlight: Promise<StockItem[]> | null = null
 
-  async function fetchStock() {
+  async function fetchStock(force = false): Promise<StockItem[]> {
+    // Return existing in-flight promise if one exists (unless forcing)
+    if (loading.value && inFlight && !force) return inFlight
+
+    // Early return if already have data and not forcing
+    if (!force && items.value.length > 0) return items.value
+
     loading.value = true
-    try {
-      const response = await api.purchasing_rest_stock_retrieve()
-      items.value = response.items || []
-    } catch (error: unknown) {
-      // Handle zodios validation error and extract the actual data
-      if (
-        error &&
-        typeof error === 'object' &&
-        'cause' in error &&
-        error.cause &&
-        typeof error.cause === 'object' &&
-        'received' in error.cause
-      ) {
-        try {
-          // The zodios error contains the actual response data in cause.received
-          const receivedData = (error.cause as { received?: unknown }).received
-          if (receivedData && typeof receivedData === 'object' && 'items' in receivedData) {
-            // Parse the StockList response and extract items
-            const stockList = schemas.StockList.parse(receivedData)
-            items.value = stockList.items || []
-            return
+    inFlight = (async () => {
+      try {
+        const response = await api.purchasing_rest_stock_retrieve()
+        items.value = response.items || []
+        return items.value
+      } catch (error: unknown) {
+        // Handle zodios validation error and extract the actual data
+        if (
+          error &&
+          typeof error === 'object' &&
+          'cause' in error &&
+          error.cause &&
+          typeof error.cause === 'object' &&
+          'received' in error.cause
+        ) {
+          try {
+            // The zodios error contains the actual response data in cause.received
+            const receivedData = (error.cause as { received?: unknown }).received
+            if (receivedData && typeof receivedData === 'object' && 'items' in receivedData) {
+              // Parse the StockList response and extract items
+              const stockList = schemas.StockList.parse(receivedData)
+              items.value = stockList.items || []
+              return items.value
+            }
+          } catch (parseError) {
+            console.error('Error parsing stock data:', parseError)
           }
-        } catch (parseError) {
-          console.error('Error parsing stock data:', parseError)
         }
-      }
 
-      console.error('Error fetching stock:', error)
-      items.value = []
-    } finally {
-      loading.value = false
-    }
+        console.error('Error fetching stock:', error)
+        items.value = []
+        return items.value
+      } finally {
+        loading.value = false
+        // Clear inFlight after microtask to avoid races with immediate subsequent checks
+        queueMicrotask(() => {
+          inFlight = null
+        })
+      }
+    })()
+
+    return inFlight
   }
 
   async function consumeStock(

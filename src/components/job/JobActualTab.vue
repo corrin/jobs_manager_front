@@ -496,10 +496,8 @@ const negativeStockIds = computed(() => [...negativeStockSet].sort())
 async function checkAndUpdateNegativeStocks() {
   negativeStockSet.clear()
 
-  // Ensure stock data is loaded
-  if (stockStore.items.length === 0) {
-    await stockStore.fetchStock()
-  }
+  // Simple call - store handles dedup
+  await stockStore.fetchStock()
 
   // Use stock store data instead of calling API directly
   for (const stock of stockStore.items) {

@@ -33,9 +33,8 @@ const store = useStockStore()
 const searchTerm = ref('')
 
 onMounted(async () => {
-  if (store.items.length === 0 && !store.loading) {
-    await store.fetchStock()
-  }
+  // Simple call - store handles everything
+  await store.fetchStock()
 })
 
 const filteredItems = computed(() => {
