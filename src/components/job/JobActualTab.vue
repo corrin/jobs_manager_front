@@ -272,7 +272,7 @@
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
 
-import { onMounted, ref, computed, reactive } from 'vue'
+import { onMounted, onBeforeUnmount, ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
