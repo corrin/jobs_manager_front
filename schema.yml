@@ -7722,6 +7722,10 @@ components:
           type: boolean
           description: Indicates if this is a shop job (no client).
           readOnly: true
+        rejected_flag:
+          type: boolean
+          description: Indicates if this job was rejected (shown in Recently Completed
+            with rejected styling)
       required:
         - charge_out_rate
         - client_name
@@ -8339,6 +8343,8 @@ components:
           nullable: true
         paid:
           type: boolean
+        rejected_flag:
+          type: boolean
       required:
         - client
         - fully_invoiced
@@ -8349,6 +8355,7 @@ components:
         - pricing_methodology
         - quote_acceptance_date
         - quoted
+        - rejected_flag
         - status
     JobInvoicesResponse:
       type: object
@@ -9881,6 +9888,9 @@ components:
         job_is_valid:
           type: boolean
           description: Whether the job is valid
+        rejected_flag:
+          type: boolean
+          description: Whether the job was rejected (quote declined by client)
         delivery_date:
           type: string
           format: date

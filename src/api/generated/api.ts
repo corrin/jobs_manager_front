@@ -1038,6 +1038,7 @@ const Job = z
     xero_quote: XeroQuote.nullable(),
     xero_invoices: z.array(XeroInvoice),
     shop_job: z.boolean(),
+    rejected_flag: z.boolean().optional(),
   })
   .passthrough()
 const JobEvent = z
@@ -1088,6 +1089,7 @@ const PatchedJobPatchRequest = z
     job_status: JobStatusEnum,
     paid: z.boolean(),
     job_is_valid: z.boolean(),
+    rejected_flag: z.boolean(),
     delivery_date: z.string().nullable(),
     quote_acceptance_date: z.string().datetime({ offset: true }).nullable(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
@@ -1166,6 +1168,7 @@ const JobHeaderResponse = z
     quoted: z.boolean(),
     quote_acceptance_date: z.string().datetime({ offset: true }).nullable(),
     paid: z.boolean(),
+    rejected_flag: z.boolean(),
   })
   .passthrough()
 const JobInvoicesResponse = z.object({ invoices: z.array(Invoice) }).passthrough()
