@@ -49,7 +49,6 @@ import { api } from '../../api/client'
 
 import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
-import { formatDate } from '../../utils/string-formatting'
 
 // Types from generated schemas
 // Extend CostLine type to include timestamp fields (to be added to backend schema)
@@ -234,6 +233,14 @@ function formatMoney(n: number | undefined | null) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(val)
+}
+
+function formatModifiedDate(dateString: string): string {
+  const date = new Date(dateString)
+  const day = date.getDate().toString().padStart(2, '0')
+  const month = date.toLocaleDateString('en-NZ', { month: 'short' }).toUpperCase()
+  const year = date.getFullYear().toString().slice(-2)
+  return `${day}/${month}/${year}`
 }
 
 function isDeliveryReceipt(line: CostLine): boolean {
@@ -546,7 +553,7 @@ const columns = computed(() => {
     // Description
     {
       id: 'desc',
-      header: () => h('div', { class: 'desc-col' }, 'Description'),
+      header: () => h('div', { class: 'desc-col text-center' }, 'Description'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -562,7 +569,7 @@ const columns = computed(() => {
         return h(
           'div',
           {
-            class: 'desc-cell w-full',
+            class: 'desc-cell w-48',
             tabindex: 0,
             role: 'button',
             title: line.desc || '',
@@ -623,7 +630,7 @@ const columns = computed(() => {
     // Quantity
     {
       id: 'quantity',
-      header: () => h('div', { class: 'col-8ch text-right' }, 'Quantity'),
+      header: () => h('div', { class: 'col-8ch text-center' }, 'Quantity'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -684,7 +691,7 @@ const columns = computed(() => {
     // Unit Cost
     {
       id: 'unit_cost',
-      header: () => h('div', { class: 'col-8ch text-right' }, 'Unit Cost'),
+      header: () => h('div', { class: 'col-8ch text-center' }, 'Unit Cost'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -775,7 +782,7 @@ const columns = computed(() => {
     // Unit Revenue
     {
       id: 'unit_rev',
-      header: () => h('div', { class: 'col-8ch text-right' }, 'Unit Revenue'),
+      header: () => h('div', { class: 'col-8ch text-center' }, 'Unit Rev'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -859,7 +866,7 @@ const columns = computed(() => {
     // Total Cost
     {
       id: 'total_cost',
-      header: () => h('div', { class: 'col-12ch text-right' }, 'Total Cost'),
+      header: () => h('div', { class: 'col-12ch text-center' }, 'Total Cost'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const qty = Number(line.quantity || 0)
@@ -877,7 +884,7 @@ const columns = computed(() => {
     // Total Revenue
     {
       id: 'total_rev',
-      header: () => h('div', { class: 'col-12ch text-right' }, 'Total Revenue'),
+      header: () => h('div', { class: 'col-12ch text-center' }, 'Total Revenue'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const qty = Number(line.quantity ?? 0)
@@ -954,31 +961,42 @@ const columns = computed(() => {
         }
       : null,
 
-    // Created At
+    // Last Modified (most recent of created_at or updated_at) - compact
     {
-      id: 'created_at',
-      header: () => h('div', { class: 'col-12ch text-left' }, 'Created'),
+      id: 'last_modified',
+      header: () => h('div', { class: 'col-10ch text-center' }, 'Modified'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
-        return h(
-          'div',
-          { class: 'col-12ch text-left text-gray-500 text-sm' },
-          line.created_at ? formatDate(line.created_at) : '-',
-        )
-      },
-      meta: { editable: false },
-    },
+        const mostRecentDate = line.updated_at || line.created_at
 
-    // Updated At
-    {
-      id: 'updated_at',
-      header: () => h('div', { class: 'col-12ch text-left' }, 'Updated'),
-      cell: ({ row }: RowCtx) => {
-        const line = displayLines.value[row.index]
+        if (!mostRecentDate) {
+          return h('div', { class: 'col-8ch text-left text-gray-400 text-xs' }, '-')
+        }
+
+        const formattedDate = formatModifiedDate(mostRecentDate)
+        const fullDateTime = new Date(mostRecentDate).toLocaleString('en-NZ', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+
         return h(
           'div',
-          { class: 'col-12ch text-left text-gray-500 text-sm' },
-          line.updated_at ? formatDate(line.updated_at) : '-',
+          {
+            class: 'col-10ch text-center text-gray-500 text-xs hover:text-gray-700',
+            style: 'cursor: default;',
+            title: `Full date/time: ${fullDateTime}`,
+            onMouseenter: (e: MouseEvent) => {
+              ;(e.target as HTMLElement).style.cursor = 'pointer'
+            },
+            onMouseleave: (e: MouseEvent) => {
+              ;(e.target as HTMLElement).style.cursor = 'default'
+            },
+          },
+          formattedDate,
         )
       },
       meta: { editable: false },

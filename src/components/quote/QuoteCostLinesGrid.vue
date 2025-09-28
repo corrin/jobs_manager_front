@@ -84,14 +84,9 @@
                 Total Revenue
               </th>
               <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Created
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Updated
+                Modified
               </th>
             </tr>
           </thead>
@@ -132,11 +127,16 @@
               <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                 ${{ formatCurrency(line.quantity * line.unit_rev) }}
               </td>
-              <td class="px-4 py-3 text-sm text-gray-500">
-                {{ line.created_at ? formatDate(line.created_at) : '-' }}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-500">
-                {{ line.updated_at ? formatDate(line.updated_at) : '-' }}
+              <td class="px-4 py-3 text-xs text-gray-500 text-center">
+                <span
+                  v-if="line.updated_at || line.created_at"
+                  :title="getFullDateTime(line.updated_at || line.created_at || '')"
+                  class="hover:text-gray-700"
+                  style="cursor: pointer"
+                >
+                  {{ formatModifiedDate(line.updated_at || line.created_at || '') }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
               </td>
             </tr>
           </tbody>
@@ -149,7 +149,6 @@
 <script setup lang="ts">
 import { schemas } from '../../api/generated/api'
 import { z } from 'zod'
-import { formatDate } from '../../utils/string-formatting'
 
 // Extend CostLine type to include timestamp fields (to be added to backend schema)
 type CostLine = z.infer<typeof schemas.CostLine> & {
@@ -179,6 +178,27 @@ function formatCurrency(value: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
+}
+
+function getFullDateTime(dateString: string): string {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleString('en-NZ', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
+function formatModifiedDate(dateString: string): string {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const day = date.getDate().toString().padStart(2, '0')
+  const month = date.toLocaleDateString('en-NZ', { month: 'short' }).toUpperCase()
+  const year = date.getFullYear().toString().slice(-2)
+  return `${day}/${month}/${year}`
 }
 </script>
 
