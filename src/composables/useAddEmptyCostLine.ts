@@ -26,7 +26,7 @@ export function useAddEmptyCostLine(options: UseAddEmptyCostLineOptions) {
       quantity: 1,
       // @ts-expect-error - Allow null for initial empty state
       unit_cost: null,
-      // @ts-expect-error - Allow null for initial empty state
+      // @ts-expect-error - Allow null for initial empty state (unit_rev)
       unit_rev: null,
       total_cost: 0,
       total_rev: 0,
