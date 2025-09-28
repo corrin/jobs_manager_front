@@ -500,6 +500,7 @@ watch(
         quoted: false,
         quote_acceptance_date: undefined,
         paid: false,
+        rejected_flag: false,
         // Include basic info fields - will be updated when basicInfo loads
         description: '',
         delivery_date: '',
@@ -895,6 +896,7 @@ const autosave = createJobAutosave({
           if ('quoted' in p) next.quoted = !!p.quoted
           if ('fully_invoiced' in p) next.fully_invoiced = !!p.fully_invoiced
           if ('paid' in p) next.paid = !!p.paid
+          if ('rejected_flag' in p) next.rejected_flag = !!p.rejected_flag
           if ('quote_acceptance_date' in p)
             next.quote_acceptance_date = (p.quote_acceptance_date as string | null) ?? undefined
           if ('client_id' in p) {

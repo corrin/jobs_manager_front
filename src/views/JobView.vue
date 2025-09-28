@@ -91,10 +91,21 @@
               <label class="flex items-center gap-1">
                 <input
                   type="checkbox"
-                  v-model="localPaid"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  disabled
+                  :checked="jobDataWithPaid?.paid"
+                  class="rounded border-gray-300 text-gray-400 cursor-not-allowed"
                 />
                 <span>Job Paid</span>
+              </label>
+              <span>•</span>
+              <label class="flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  v-model="localRejected"
+                  @change="handleRejectedChange"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>Rejected Job</span>
               </label>
               <template v-if="jobDataWithPaid?.quote_acceptance_date">
                 <span
@@ -197,10 +208,21 @@
                 <label class="flex items-center gap-1">
                   <input
                     type="checkbox"
-                    v-model="localPaid"
-                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    disabled
+                    :checked="jobDataWithPaid?.paid"
+                    class="rounded border-gray-300 text-gray-400 cursor-not-allowed"
                   />
                   <span>Job Paid</span>
+                </label>
+                <span>•</span>
+                <label class="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    v-model="localRejected"
+                    @change="handleRejectedChange"
+                    class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>Rejected Job</span>
                 </label>
                 <template v-if="jobDataWithPaid?.quote_acceptance_date">
                   <span
@@ -296,6 +318,7 @@ import { useJobTabs } from '../composables/useJobTabs'
 import { useJobNotifications } from '../composables/useJobNotifications'
 import { useJobEvents } from '../composables/useJobEvents'
 import { useJobHeaderAutosave } from '../composables/useJobHeaderAutosave'
+import { useJobFinancials } from '../composables/useJobFinancials'
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { api } from '../api/client'
 import { ArrowLeft, Printer, Download } from 'lucide-vue-next'
@@ -341,7 +364,7 @@ const localJobStatus = ref('')
 const localPricingMethodology = ref('')
 const localQuoted = ref(false)
 const localFullyInvoiced = ref(false)
-const localPaid = ref(false)
+const localRejected = ref(false)
 
 const pricingMethodologyOptions = [
   { key: 'time_materials', label: 'Time & Materials' },
@@ -366,14 +389,103 @@ const handleStatusUpdate = (newStatus: string) => {
   headerAutosave?.handleStatusUpdate(newStatus)
 }
 
-const handlePaidUpdate = (newVal: boolean) => {
-  localPaid.value = newVal
-  headerAutosave?.handlePaidUpdate(newVal)
-}
-
 const handlePricingMethodologyUpdate = (newMethod: string) => {
   localPricingMethodology.value = newMethod
   headerAutosave?.handlePricingMethodologyUpdate(newMethod)
+}
+
+// Initialize the job financials composable
+const { fetchJobFinancials } = useJobFinancials(jobId)
+
+const handleRejectedChange = async () => {
+  if (!jobHeader.value) return
+
+  if (!localRejected.value) {
+    // UNCHECKING - warn about moving back to draft
+    const confirmed = confirm('Warning: This will move the job back to Draft status. Are you sure?')
+
+    if (!confirmed) {
+      // User cancelled - revert the checkbox
+      localRejected.value = true
+      return
+    }
+
+    try {
+      await api.job_rest_jobs_partial_update(
+        {
+          rejected_flag: false,
+          job_status: 'draft',
+        },
+        {
+          params: { job_id: jobId.value },
+        },
+      )
+
+      // Update the header in the store
+      jobsStore.patchHeader(jobHeader.value.job_id, {
+        status: 'draft',
+        rejected_flag: false,
+      })
+
+      // Update local status
+      localJobStatus.value = 'draft'
+
+      toast.success('Job moved back to Draft status')
+    } catch (error) {
+      console.error('Failed to update rejected status:', error)
+      toast.error('Failed to update job')
+      // Revert the checkbox on error
+      localRejected.value = true
+    }
+  } else {
+    // CHECKING - validate no money to be invoiced
+    try {
+      // Use the composable to fetch financial data
+      const financials = await fetchJobFinancials(jobHeader.value.pricing_methodology || undefined)
+
+      // Check if there's money to be invoiced
+      if (financials.toBeInvoiced > 0) {
+        // Show warning but allow proceeding
+        const confirmed = confirm(
+          `Warning: Job has $${financials.toBeInvoiced.toFixed(2)} still to be invoiced. Are you sure you want to reject?`,
+        )
+
+        if (!confirmed) {
+          // User cancelled - revert the checkbox
+          localRejected.value = false
+          return
+        }
+        // User confirmed - proceed with rejection despite outstanding amount
+      }
+
+      // Proceed with rejection
+      await api.job_rest_jobs_partial_update(
+        {
+          rejected_flag: true,
+          job_status: 'recently_completed',
+        },
+        {
+          params: { job_id: jobId.value },
+        },
+      )
+
+      // Update the header in the store
+      jobsStore.patchHeader(jobHeader.value.job_id, {
+        status: 'recently_completed',
+        rejected_flag: true,
+      })
+
+      // Update local status
+      localJobStatus.value = 'recently_completed'
+
+      toast.success('Job marked as rejected and moved to Recently Completed')
+    } catch (error) {
+      console.error('Failed to update rejected status:', error)
+      toast.error('Failed to update job')
+      // Revert the checkbox on error
+      localRejected.value = false
+    }
+  }
 }
 
 const companyDefaultsStore = useCompanyDefaultsStore()
@@ -413,7 +525,7 @@ watch(
     localPricingMethodology.value = h.pricing_methodology ?? ''
     localQuoted.value = h.quoted
     localFullyInvoiced.value = h.fully_invoiced
-    localPaid.value = h.paid
+    localRejected.value = h.rejected_flag
   },
   { immediate: true },
 )
@@ -520,9 +632,6 @@ async function downloadJobSheet() {
 
 debugLog('JobView - jobId:', jobId.value, 'jobHeader:', jobHeader.value)
 
-watch(localPaid, (newVal) => {
-  handlePaidUpdate(newVal)
-})
 onMounted(() => {
   debugLog('Quote accepted?: ', shouldShowQuoteWarning.value)
 })
