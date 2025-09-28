@@ -9,7 +9,7 @@ type CostLine = z.infer<typeof schemas.CostLine>
 
 export interface UseSmartCostLineDeleteOptions {
   costLines: Ref<CostLine[]>
-  onCostLineChanged?: () => void
+  onCostLineChanged?: () => void | Promise<void>
   isLoading?: Ref<boolean>
 }
 
@@ -29,7 +29,9 @@ export function useSmartCostLineDelete(options: UseSmartCostLineDeleteOptions) {
       await costlineService.deleteCostLine(line.id)
       costLines.value = costLines.value.filter((l) => l.id !== line.id)
       toast.success('Cost line deleted successfully!')
-      onCostLineChanged?.()
+      if (onCostLineChanged) {
+        await onCostLineChanged()
+      }
     } catch (error) {
       toast.error('Failed to delete cost line.')
       debugLog('Failed to delete cost line:', error)
@@ -43,7 +45,7 @@ export function useSmartCostLineDelete(options: UseSmartCostLineDeleteOptions) {
    * Bridge for SmartCostLinesTable delete event (id or index)
    * Handles both saved lines (with ID) and local lines (without ID)
    */
-  function handleSmartDelete(idOrIndex: string | number) {
+  async function handleSmartDelete(idOrIndex: string | number) {
     console.log('🎯 useSmartCostLineDelete handleSmartDelete called with:', {
       idOrIndex,
       type: typeof idOrIndex,
@@ -63,7 +65,7 @@ export function useSmartCostLineDelete(options: UseSmartCostLineDeleteOptions) {
     if (line) {
       if (line.id) {
         console.log('✅ useSmartCostLineDelete calling handleDeleteCostLine for saved line')
-        void handleDeleteCostLine(line as CostLine)
+        await handleDeleteCostLine(line as CostLine)
       } else {
         console.log('🗑️ useSmartCostLineDelete removing local line from array')
         // For local lines without ID, just remove from array
@@ -71,7 +73,9 @@ export function useSmartCostLineDelete(options: UseSmartCostLineDeleteOptions) {
         if (index >= 0) {
           costLines.value = costLines.value.filter((_, i) => i !== index)
           toast.success('Line removed!')
-          onCostLineChanged?.()
+          if (onCostLineChanged) {
+            await onCostLineChanged()
+          }
         }
       }
     } else {
