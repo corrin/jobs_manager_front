@@ -49,9 +49,14 @@ import { api } from '../../api/client'
 
 import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
+import { formatDate } from '../../utils/string-formatting'
 
 // Types from generated schemas
-type CostLine = z.infer<typeof schemas.CostLine>
+// Extend CostLine type to include timestamp fields (to be added to backend schema)
+type CostLine = z.infer<typeof schemas.CostLine> & {
+  created_at?: string
+  updated_at?: string
+}
 type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdate>
 
 type TabKind = 'estimate' | 'quote' | 'actual'
@@ -948,6 +953,36 @@ const columns = computed(() => {
           meta: { editable: false },
         }
       : null,
+
+    // Created At
+    {
+      id: 'created_at',
+      header: () => h('div', { class: 'col-12ch text-left' }, 'Created'),
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        return h(
+          'div',
+          { class: 'col-12ch text-left text-gray-500 text-sm' },
+          line.created_at ? formatDate(line.created_at) : '-',
+        )
+      },
+      meta: { editable: false },
+    },
+
+    // Updated At
+    {
+      id: 'updated_at',
+      header: () => h('div', { class: 'col-12ch text-left' }, 'Updated'),
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        return h(
+          'div',
+          { class: 'col-12ch text-left text-gray-500 text-sm' },
+          line.updated_at ? formatDate(line.updated_at) : '-',
+        )
+      },
+      meta: { editable: false },
+    },
 
     // Actions (delete only)
     {
