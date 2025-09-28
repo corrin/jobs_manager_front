@@ -113,7 +113,7 @@
                           : 'text-red-600'
                       "
                     >
-                      Estimated time (hours) *
+                      Estimated workshop time (hours) *
                     </label>
                     <input
                       id="estimatedTime"
@@ -129,7 +129,7 @@
                             ? 'border-gray-300'
                             : 'border-red-300 bg-red-50',
                       ]"
-                      placeholder="Enter estimated hours"
+                      placeholder="Enter estimated workshop hours"
                       @keydown="filterNumericInput"
                       @change="sanitizeTimeInput"
                     />
@@ -319,6 +319,16 @@ const sanitizeTimeInput = (event: Event) => {
   }
 }
 
+// Convert workshop hours to office time at a 1:8 ratio, rounded up to quarter-hours.
+const calculateOfficeTimeQuantity = (workshopHours: number): number => {
+  if (workshopHours <= 0) {
+    return 0
+  }
+
+  const quarters = Math.ceil((workshopHours / 8) * 4)
+  return quarters / 4
+}
+
 const router = useRouter()
 const companyDefaultsStore = useCompanyDefaultsStore()
 
@@ -469,7 +479,7 @@ const validateForm = (): boolean => {
   }
 
   if (formData.value.estimatedTime === null || formData.value.estimatedTime < 0) {
-    errors.value.estimatedTime = 'Estimated time must be provided and be 0 or greater'
+    errors.value.estimatedTime = 'Estimated workshop time must be provided and be 0 or greater'
     return false
   }
 
@@ -518,7 +528,7 @@ const handleSubmit = async () => {
       try {
         await costlineService.createCostLine(job_id, 'estimate', {
           kind: 'time',
-          desc: 'Estimated time',
+          desc: 'Estimated workshop time',
           quantity: formData.value.estimatedTime!,
           unit_cost: companyDefaultsStore.companyDefaults?.wage_rate,
           unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate,
@@ -526,6 +536,18 @@ const handleSubmit = async () => {
       } catch (error: unknown) {
         toast.error((error as Error).message)
         debugLog('Failed to create time cost line:', error)
+      }
+      try {
+        await costlineService.createCostLine(job_id, 'estimate', {
+          kind: 'time',
+          desc: 'Estimated Office Time',
+          quantity: calculateOfficeTimeQuantity(formData.value.estimatedTime ?? 0),
+          unit_cost: companyDefaultsStore.companyDefaults?.wage_rate,
+          unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate,
+        })
+      } catch (error: unknown) {
+        toast.error((error as Error).message)
+        debugLog('Failed to create office time cost line:', error)
       }
       toast.success('Job created!')
       toast.dismiss('create-job')
