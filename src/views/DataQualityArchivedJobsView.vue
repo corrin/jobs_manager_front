@@ -153,16 +153,60 @@
               <table class="w-full">
                 <thead class="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th class="text-left px-4 py-3 text-sm font-semibold text-slate-700">
-                      Job Number
+                    <th
+                      class="text-left px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 select-none"
+                      @click="handleSort('jobNumber')"
+                    >
+                      <div class="flex items-center gap-1">
+                        Job Number
+                        <span v-if="sortColumn === 'jobNumber'" class="text-slate-500">
+                          {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                        </span>
+                      </div>
                     </th>
-                    <th class="text-left px-4 py-3 text-sm font-semibold text-slate-700">Client</th>
-                    <th class="text-left px-4 py-3 text-sm font-semibold text-slate-700">Issue</th>
-                    <th class="text-left px-4 py-3 text-sm font-semibold text-slate-700">
-                      Current Status
+                    <th
+                      class="text-left px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 select-none"
+                      @click="handleSort('clientName')"
+                    >
+                      <div class="flex items-center gap-1">
+                        Client
+                        <span v-if="sortColumn === 'clientName'" class="text-slate-500">
+                          {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                        </span>
+                      </div>
                     </th>
-                    <th class="text-left px-4 py-3 text-sm font-semibold text-slate-700">
-                      Archived Date
+                    <th
+                      class="text-left px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 select-none"
+                      @click="handleSort('details')"
+                    >
+                      <div class="flex items-center gap-1">
+                        Issue
+                        <span v-if="sortColumn === 'details'" class="text-slate-500">
+                          {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                        </span>
+                      </div>
+                    </th>
+                    <th
+                      class="text-left px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 select-none"
+                      @click="handleSort('status')"
+                    >
+                      <div class="flex items-center gap-1">
+                        Current Status
+                        <span v-if="sortColumn === 'status'" class="text-slate-500">
+                          {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                        </span>
+                      </div>
+                    </th>
+                    <th
+                      class="text-left px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 select-none"
+                      @click="handleSort('archivedDate')"
+                    >
+                      <div class="flex items-center gap-1">
+                        Archived Date
+                        <span v-if="sortColumn === 'archivedDate'" class="text-slate-500">
+                          {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                        </span>
+                      </div>
                     </th>
                     <th class="text-center px-4 py-3 text-sm font-semibold text-slate-700">
                       Action
@@ -170,7 +214,7 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200">
-                  <tr v-for="issue in issues" :key="issue.id" class="hover:bg-slate-50">
+                  <tr v-for="issue in sortedIssues" :key="issue.id" class="hover:bg-slate-50">
                     <td class="px-4 py-3 text-sm font-medium text-slate-900">
                       {{ issue.jobNumber }}
                     </td>
@@ -255,6 +299,10 @@ const summary = ref<{
   has_open_tasks: number
 } | null>(null)
 
+// Sorting state
+const sortColumn = ref<keyof ValidationIssue | null>(null)
+const sortDirection = ref<'asc' | 'desc'>('asc')
+
 const stats = computed(() => {
   return {
     totalArchived: totalRecords.value,
@@ -262,6 +310,34 @@ const stats = computed(() => {
     issuesFound: failedRecords.value,
   }
 })
+
+// Computed property for sorted issues
+const sortedIssues = computed(() => {
+  if (!sortColumn.value) return issues.value
+
+  return [...issues.value].sort((a, b) => {
+    const aVal = a[sortColumn.value as keyof ValidationIssue]
+    const bVal = b[sortColumn.value as keyof ValidationIssue]
+
+    let comparison = 0
+    if (aVal < bVal) comparison = -1
+    if (aVal > bVal) comparison = 1
+
+    return sortDirection.value === 'asc' ? comparison : -comparison
+  })
+})
+
+// Function to handle column header clicks
+const handleSort = (column: keyof ValidationIssue) => {
+  if (sortColumn.value === column) {
+    // Toggle direction if same column
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    // New column, default to ascending
+    sortColumn.value = column
+    sortDirection.value = 'asc'
+  }
+}
 
 const getIssueClass = (issue: string): string => {
   if (issue.toLowerCase().includes('not invoiced')) return 'bg-amber-100 text-amber-800'
