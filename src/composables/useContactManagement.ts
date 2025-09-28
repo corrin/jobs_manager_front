@@ -5,7 +5,8 @@ import { z } from 'zod'
 import type { ClientContact } from '@/composables/useClientLookup'
 import { debugLog } from '@/utils/debug'
 
-type NewContactData = z.infer<typeof schemas.ClientContactCreateRequest>
+type ContactCreateRequest = z.infer<typeof schemas.ClientContactCreateRequest>
+type NewContactData = Omit<ContactCreateRequest, 'client_id'>
 
 /**
  * Composable for managing client contacts
@@ -101,6 +102,7 @@ export function useContactManagement() {
   const loadContacts = async (clientId: string) => {
     if (!clientId) {
       contacts.value = []
+      newContactForm.value.is_primary = true
       return
     }
 
@@ -115,9 +117,11 @@ export function useContactManagement() {
       } else {
         contacts.value = []
       }
+      newContactForm.value.is_primary = contacts.value.length === 0
     } catch (error) {
       debugLog('Error loading contacts:', error)
       contacts.value = []
+      newContactForm.value.is_primary = true
     } finally {
       isLoading.value = false
     }
@@ -167,26 +171,42 @@ export function useContactManagement() {
       // If this is the first contact for the client, automatically make it primary
       const shouldBePrimary = newContactForm.value.is_primary || contacts.value.length === 0
 
-      const contactData = {
+      const contactData: ContactCreateRequest = {
         client_id: currentClientId.value,
         name: newContactForm.value.name.trim(),
-        position: newContactForm.value.position?.trim() || '',
-        email: newContactForm.value.email?.trim() || '',
-        phone: newContactForm.value.phone?.trim() || '',
-        notes: newContactForm.value.notes?.trim() || '',
         is_primary: shouldBePrimary,
+      }
+
+      // Only include optional fields when they contain data to match API validation rules.
+      const trimmedPosition = newContactForm.value.position?.trim()
+      if (trimmedPosition) {
+        contactData.position = trimmedPosition
+      }
+
+      const trimmedEmail = newContactForm.value.email?.trim()
+      if (trimmedEmail) {
+        contactData.email = trimmedEmail
+      }
+
+      const trimmedPhone = newContactForm.value.phone?.trim()
+      if (trimmedPhone) {
+        contactData.phone = trimmedPhone
+      }
+
+      const trimmedNotes = newContactForm.value.notes?.trim()
+      if (trimmedNotes) {
+        contactData.notes = trimmedNotes
       }
 
       debugLog('Creating new contact:', contactData)
 
       const response = await api.clients_contacts_create(contactData)
 
-      if (!response) {
+      if (!response || !('contact' in response) || !response.contact) {
         throw new Error('Invalid response from server')
       }
 
-      // The response should be the created contact itself
-      const newContact: ClientContact = response as ClientContact
+      const newContact = response.contact as ClientContact
 
       debugLog('Contact created successfully:', newContact)
 
@@ -223,7 +243,7 @@ export function useContactManagement() {
       email: '',
       phone: '',
       notes: '',
-      is_primary: false,
+      is_primary: contacts.value.length === 0,
     }
   }
 
