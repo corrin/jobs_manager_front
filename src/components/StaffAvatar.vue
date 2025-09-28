@@ -14,8 +14,8 @@
     :data-staff-id="staff.id"
   >
     <img
-      v-if="staff.avatarUrl && staff.avatarUrl !== null"
-      :src="staff.avatarUrl"
+      v-if="iconUrl"
+      :src="iconUrl"
       :alt="staff.display_name"
       class="w-full h-full object-cover"
     />
@@ -55,7 +55,12 @@ defineEmits<{
   click: []
 }>()
 
-const getInitials = (staff: StaffAvatar): string => {
+const iconUrl = computed(() => {
+  const icon = props.staff.icon
+  return icon?.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL}${icon}` : icon
+})
+
+const getInitials = (staff: Staff): string => {
   if (staff.initials) {
     return staff.initials
   }
