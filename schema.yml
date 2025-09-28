@@ -3031,6 +3031,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/CostLineErrorResponse'
           description: ''
+  /job/rest/data-quality/archived-jobs-compliance/:
+    get:
+      operationId: check_archived_jobs_compliance
+      description: Verify that all archived jobs are either cancelled or fully invoiced
+        and paid.
+      summary: Check archived jobs compliance
+      tags:
+        - Data Quality
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArchivedJobsComplianceResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /job/rest/jobs/:
     post:
       operationId: job_rest_jobs_create
@@ -6108,6 +6133,75 @@ components:
           description: List of job IDs to archive
       required:
         - ids
+    ArchivedJobIssue:
+      type: object
+      description: Details of a non-compliant archived job.
+      properties:
+        job_id:
+          type: string
+          description: Job's unique identifier
+        job_number:
+          type: string
+          description: Job number
+        client_name:
+          type: string
+          description: Client name or 'Shop Job'
+        archived_date:
+          type: string
+          format: date
+          description: Date when job was archived
+        current_status:
+          type: string
+          description: Job's current status
+        issue:
+          type: string
+          description: "Compliance issue: 'Not invoiced', 'Not paid', 'Not cancelled',
+            'Has open tasks'"
+        invoice_status:
+          type: string
+          nullable: true
+          description: Invoice status if relevant
+        outstanding_amount:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Outstanding amount if relevant
+      required:
+        - archived_date
+        - client_name
+        - current_status
+        - issue
+        - job_id
+        - job_number
+    ArchivedJobsComplianceResponse:
+      type: object
+      description: Response for archived jobs compliance check.
+      properties:
+        total_archived_jobs:
+          type: integer
+          description: Total number of archived jobs
+        non_compliant_jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArchivedJobIssue'
+          description: List of non-compliant jobs with details
+        summary:
+          allOf:
+            - $ref: '#/components/schemas/ComplianceSummary'
+          description: Summary of compliance issues
+        checked_at:
+          type: string
+          format: date-time
+          description: When the check was performed
+      required:
+        - checked_at
+        - non_compliant_jobs
+        - summary
+        - total_archived_jobs
     AssignJobRequest:
       type: object
       description: Serialiser for job assignment request
@@ -6663,6 +6757,27 @@ components:
         - job_status
         - name
         - updated_at
+    ComplianceSummary:
+      type: object
+      description: Summary of compliance issues.
+      properties:
+        not_invoiced:
+          type: integer
+          description: Number of jobs that are not invoiced
+        not_paid:
+          type: integer
+          description: Number of jobs that are not paid
+        not_cancelled:
+          type: integer
+          description: Number of jobs that should be cancelled but are not
+        has_open_tasks:
+          type: integer
+          description: Number of jobs with open tasks
+      required:
+        - has_open_tasks
+        - not_cancelled
+        - not_invoiced
+        - not_paid
     CostLine:
       type: object
       description: Serializer for CostLine model - read-only with basic depth

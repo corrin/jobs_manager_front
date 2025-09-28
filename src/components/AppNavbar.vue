@@ -145,7 +145,7 @@
           >
             <div
               v-if="activeDropdown === 'reports'"
-              class="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
+              class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
             >
               <router-link
                 to="/reports/kpi"
@@ -164,6 +164,16 @@
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
               >
                 <Users class="w-4 h-4 mr-2" /> Staff Performance
+              </router-link>
+              <div class="border-t border-gray-200 my-1"></div>
+              <div class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Data Quality
+              </div>
+              <router-link
+                to="/reports/data-quality/archived-jobs"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <AlertTriangle class="w-4 h-4 mr-2" /> Archived Jobs Validation
               </router-link>
             </div>
           </Transition>
@@ -412,6 +422,18 @@
                         @click="closeMobileMenu"
                         >Staff Performance</router-link
                       >
+                      <div class="border-t border-gray-200 mt-2 mb-1"></div>
+                      <div
+                        class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >
+                        Data Quality
+                      </div>
+                      <router-link
+                        to="/reports/data-quality/archived-jobs"
+                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                        >Archived Jobs Validation</router-link
+                      >
                     </div>
                   </div>
                 </Transition>
@@ -525,6 +547,7 @@ import {
   Server,
   Cog,
   Brain,
+  AlertTriangle,
 } from 'lucide-vue-next'
 import { useAppLayout } from '@/composables/useAppLayout'
 

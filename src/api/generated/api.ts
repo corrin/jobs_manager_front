@@ -870,6 +870,34 @@ const CostLineCreateUpdate = z
   })
   .passthrough()
 const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
+const ArchivedJobIssue = z
+  .object({
+    job_id: z.string(),
+    job_number: z.string(),
+    client_name: z.string(),
+    archived_date: z.string(),
+    current_status: z.string(),
+    issue: z.string(),
+    invoice_status: z.string().nullish(),
+    outstanding_amount: z.number().gt(-100000000).lt(100000000).nullish(),
+  })
+  .passthrough()
+const ComplianceSummary = z
+  .object({
+    not_invoiced: z.number().int(),
+    not_paid: z.number().int(),
+    not_cancelled: z.number().int(),
+    has_open_tasks: z.number().int(),
+  })
+  .passthrough()
+const ArchivedJobsComplianceResponse = z
+  .object({
+    total_archived_jobs: z.number().int(),
+    non_compliant_jobs: z.array(ArchivedJobIssue),
+    summary: ComplianceSummary,
+    checked_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough()
 const JobCreateRequest = z
   .object({
     name: z.string().max(255),
@@ -2036,6 +2064,9 @@ export const schemas = {
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
   CostLineErrorResponse,
+  ArchivedJobIssue,
+  ComplianceSummary,
+  ArchivedJobsComplianceResponse,
   JobCreateRequest,
   JobCreateResponse,
   JobRestErrorResponse,
@@ -4146,6 +4177,20 @@ Dynamically infers the stock adjustment based on quantity change`,
       {
         status: 500,
         schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/job/rest/data-quality/archived-jobs-compliance/',
+    alias: 'check_archived_jobs_compliance',
+    description: `Verify that all archived jobs are either cancelled or fully invoiced and paid.`,
+    requestFormat: 'json',
+    response: ArchivedJobsComplianceResponse,
+    errors: [
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
       },
     ],
   },

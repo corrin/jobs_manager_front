@@ -256,6 +256,12 @@ const router = createRouter({
       component: () => import('@/views/StaffPerformanceReportView.vue'),
       meta: { requiresAuth: true, title: 'Staff Performance Report - Jobs Manager' },
     },
+    {
+      path: '/reports/data-quality/archived-jobs',
+      name: 'data-quality-archived-jobs',
+      component: () => import('@/views/DataQualityArchivedJobsView.vue'),
+      meta: { requiresAuth: true, title: 'Archived Jobs Validation - Jobs Manager' },
+    },
   ],
 })
 
