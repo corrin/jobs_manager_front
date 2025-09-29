@@ -431,7 +431,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
     }
   }
 
-  // Search functionality - now searches backend for better results
+  // Search functionality - search locally first, then backend if no results
   const handleSearch = async (): Promise<void> => {
     if (!searchQuery.value.trim()) {
       filteredJobs.value = []
@@ -455,15 +455,37 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
           await jobService.performAdvancedSearch(searchFilters)
         filteredJobs.value = response.jobs || []
       } else {
-        // For text searches, use advanced search with name filter
-        const searchFilters: AdvancedFilters = {
-          ...DEFAULT_ADVANCED_FILTERS,
-          name: searchQuery.value.trim(),
-        }
+        // For text searches, first search locally in loaded jobs
+        const allJobs: KanbanJob[] = []
+        Object.values(columnStates).forEach((columnState) => {
+          allJobs.push(...columnState.jobs)
+        })
 
-        const response: AdvancedSearchResponse =
-          await jobService.performAdvancedSearch(searchFilters)
-        filteredJobs.value = response.jobs || []
+        const query = searchQuery.value.toLowerCase()
+        const localResults = allJobs.filter((job) => {
+          return (
+            job.name?.toLowerCase().includes(query) ||
+            job.description?.toLowerCase().includes(query) ||
+            job.client_name?.toLowerCase().includes(query) ||
+            String(job.job_number).toLowerCase().includes(query) ||
+            job.contact_person?.toLowerCase().includes(query)
+          )
+        })
+
+        if (localResults.length > 0) {
+          // Use local results if found
+          filteredJobs.value = localResults
+        } else {
+          // If no local results, search backend
+          const searchFilters: AdvancedFilters = {
+            ...DEFAULT_ADVANCED_FILTERS,
+            name: searchQuery.value.trim().toLowerCase(),
+          }
+
+          const response: AdvancedSearchResponse =
+            await jobService.performAdvancedSearch(searchFilters)
+          filteredJobs.value = response.jobs || []
+        }
       }
 
       debugLog(
@@ -481,11 +503,9 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       const query = searchQuery.value.toLowerCase()
       filteredJobs.value = allJobs.filter((job) => {
         return (
-          job.name.toLowerCase().includes(query) ||
-          job.job_number.toString().toLowerCase().includes(query) ||
+          job.name?.toLowerCase().includes(query) ||
           job.description?.toLowerCase().includes(query) ||
-          job.client_name?.toLowerCase().includes(query) ||
-          job.contact_person?.toLowerCase().includes(query)
+          job.client_name?.toLowerCase().includes(query)
         )
       })
     } finally {
