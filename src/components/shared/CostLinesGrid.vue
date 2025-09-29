@@ -82,6 +82,11 @@
                 Total Revenue
               </th>
               <th
+                class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Modified
+              </th>
+              <th
                 v-if="showActions"
                 class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
@@ -132,6 +137,17 @@
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                 ${{ formatCurrency(calculateTotal(line.quantity, line.unit_rev)) }}
+              </td>
+              <td class="px-4 py-3 text-xs text-gray-500 text-center">
+                <span
+                  v-if="line.updated_at || line.created_at"
+                  :title="getFullDateTime(line.updated_at || line.created_at || '')"
+                  class="hover:text-gray-700"
+                  style="cursor: pointer"
+                >
+                  {{ formatModifiedDate(line.updated_at || line.created_at || '') }}
+                </span>
+                <span v-else class="text-gray-400">-</span>
               </td>
               <td v-if="showActions" class="px-4 py-3 text-center">
                 <button
@@ -187,7 +203,11 @@
 import { schemas } from '../../api/generated/api'
 import { z } from 'zod'
 
-type CostLine = z.infer<typeof schemas.CostLine>
+// Extend CostLine type to include timestamp fields (to be added to backend schema)
+type CostLine = z.infer<typeof schemas.CostLine> & {
+  created_at?: string
+  updated_at?: string
+}
 
 withDefaults(
   defineProps<{
@@ -231,6 +251,25 @@ function calculateTotal(quantity: number | undefined, price: number | undefined)
   const qty = quantity || 0
   const prc = price || 0
   return qty * prc
+}
+
+function getFullDateTime(dateString: string): string {
+  return new Date(dateString).toLocaleString('en-NZ', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
+function formatModifiedDate(dateString: string): string {
+  const date = new Date(dateString)
+  const day = date.getDate().toString().padStart(2, '0')
+  const month = date.toLocaleDateString('en-NZ', { month: 'short' }).toUpperCase()
+  const year = date.getFullYear().toString().slice(-2)
+  return `${day}/${month}/${year}`
 }
 
 function getKindDisplayName(kind: string): string {
