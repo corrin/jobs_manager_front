@@ -70,20 +70,27 @@
             <p class="text-gray-500">Loading events...</p>
           </div>
 
-          <div v-else-if="events.length > 0" class="relative">
+          <div v-else-if="timelineItems.length > 0" class="relative">
             <!-- Timeline line -->
             <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
 
             <div class="space-y-6">
               <div
-                v-for="event in events"
-                :key="event.id"
+                v-for="item in timelineItems"
+                :key="item.id"
                 class="relative flex items-start group hover:bg-gray-50 -mx-3 px-3 py-2 rounded-lg transition-colors duration-200"
               >
                 <!-- Timeline dot -->
                 <div class="relative flex-shrink-0">
                   <div
-                    class="w-3 h-3 bg-blue-600 rounded-full border-2 border-white shadow-sm"
+                    :class="[
+                      'w-3 h-3 rounded-full border-2 border-white shadow-sm',
+                      item.type === 'job_event'
+                        ? 'bg-blue-600'
+                        : item.type === 'costline_created'
+                          ? 'bg-green-600'
+                          : 'bg-amber-600',
+                    ]"
                   ></div>
                 </div>
 
@@ -92,21 +99,54 @@
                   <div
                     class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm group-hover:shadow-md transition-shadow duration-200"
                   >
-                    <p class="text-sm text-gray-900 leading-relaxed">{{ event.description }}</p>
+                    <p class="text-sm text-gray-900 leading-relaxed">{{ item.description }}</p>
+                    <template v-if="item.costlineDesc">
+                      <p class="text-xs text-gray-600 mt-1 italic">{{ item.costlineDesc }}</p>
+                    </template>
                     <div
                       class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100"
                     >
-                      <div class="flex items-center space-x-3 text-xs text-gray-500">
-                        <span class="font-medium">{{
-                          formatDate(event.timestamp || event.created_date)
-                        }}</span>
+                      <div class="flex items-center space-x-3 text-xs text-gray-500 flex-wrap">
+                        <span class="font-medium">{{ formatDate(item.timestamp) }}</span>
                         <span>•</span>
-                        <span class="px-2 py-1 bg-gray-100 rounded-full">
-                          {{ formatEventType(event.event_type) || 'General' }}
+                        <span
+                          :class="[
+                            'px-2 py-1 rounded-full',
+                            item.type === 'job_event'
+                              ? 'bg-blue-100 text-blue-700'
+                              : item.type === 'costline_created'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-amber-100 text-amber-700',
+                          ]"
+                        >
+                          {{
+                            item.type === 'job_event'
+                              ? formatEventType(item.eventType) || 'General'
+                              : item.type === 'costline_created'
+                                ? 'Costline Created'
+                                : 'Costline Updated'
+                          }}
                         </span>
-                        <template v-if="event.staff">
+                        <template v-if="item.costlineKind">
                           <span>•</span>
-                          <span class="font-medium text-gray-700">{{ event.staff }}</span>
+                          <span class="px-2 py-1 bg-gray-100 rounded-full capitalize">
+                            {{ item.costlineKind }}
+                          </span>
+                        </template>
+                        <template v-if="item.costlineType">
+                          <span>•</span>
+                          <span
+                            :class="[
+                              'px-2 py-1 rounded-full capitalize',
+                              getCostlineTypeColor(item.costlineType),
+                            ]"
+                          >
+                            {{ item.costlineType }}
+                          </span>
+                        </template>
+                        <template v-if="item.staff">
+                          <span>•</span>
+                          <span class="font-medium text-gray-700">{{ item.staff }}</span>
                         </template>
                       </div>
                     </div>
@@ -145,7 +185,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
 import { Collapsible, CollapsibleContent } from '../ui/collapsible'
 import { formatEventType } from '@/utils/string-formatting'
@@ -155,17 +195,34 @@ import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import { debugLog } from '../../utils/debug'
 
-type JobEvent = z.infer<typeof schemas.JobEvent>
-type JobEventsResponse = z.infer<typeof schemas.JobEventsResponse>
 type JobEventCreateRequest = z.infer<typeof schemas.JobEventCreateRequest>
 type JobEventCreateResponse = z.infer<typeof schemas.JobEventCreateResponse>
+
+// Timeline entry from the unified backend endpoint
+// TODO: This will be replaced by schemas.TimelineEntry once schema is regenerated
+interface TimelineEntry {
+  id: string
+  timestamp: string
+  entry_type: 'job_event' | 'costline'
+  description: string
+  staff?: string | null
+  event_type?: string
+  // CostLine-specific fields
+  cost_set_kind?: 'estimate' | 'quote' | 'actual'
+  costline_kind?: 'time' | 'material' | 'adjust'
+  quantity?: number
+  unit_cost?: number
+  unit_rev?: number
+  total_cost?: number
+  total_rev?: number
+}
 
 interface Props {
   jobId: string
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{ 'event-added': [event: JobEvent] }>()
+const emit = defineEmits<{ 'event-added': [] }>()
 
 // UI state
 const isAddEventOpen = ref(false)
@@ -173,24 +230,55 @@ const newEventDescription = ref('')
 const isAdding = ref(false)
 const isLoading = ref(false)
 
-const events = ref<JobEvent[]>([])
+const timelineEntries = ref<TimelineEntry[]>([])
 
-async function loadEvents() {
+// Transform timeline entries to camelCase format for template
+const timelineItems = computed(() => {
+  return timelineEntries.value.map((entry) => ({
+    id: entry.id,
+    timestamp: entry.timestamp,
+    type: entry.entry_type === 'costline'
+      ? (entry.cost_set_kind === 'actual' ? 'costline_updated' : 'costline_created')
+      : 'job_event',
+    description: entry.description,
+    staff: entry.staff || null,
+    eventType: entry.event_type,
+    costlineDesc: entry.cost_set_kind
+      ? `${entry.cost_set_kind.charAt(0).toUpperCase() + entry.cost_set_kind.slice(1)} - ${entry.costline_kind || ''}`
+      : null,
+    costlineKind: entry.costline_kind,
+    costlineType: entry.costline_kind,
+  }))
+})
+
+async function loadTimeline() {
   if (!props.jobId) return
   isLoading.value = true
   try {
-    const resp: JobEventsResponse = await api.job_rest_jobs_events_retrieve({
-      params: { job_id: props.jobId },
-    })
-    events.value = [...(resp.events ?? [])].sort((a, b) => {
-      const aDate = new Date((a.timestamp as string) || (a.created_date as string) || 0).getTime()
-      const bDate = new Date((b.timestamp as string) || (b.created_date as string) || 0).getTime()
-      return bDate - aDate
-    })
+    // TODO: Replace with generated API method once schema is updated
+    // const response = await api.job_rest_jobs_timeline_retrieve({ params: { job_id: props.jobId } })
+
+    // Temporary direct fetch until schema is regenerated
+    const response = await fetch(
+      `${import.meta.env.VITE_API_BASE_URL}/job/rest/jobs/${props.jobId}/timeline/`,
+      {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      },
+    )
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    timelineEntries.value = data.timeline || []
   } catch (e) {
-    toast.error('Failed to load job events')
-    debugLog('Failed to load job events:', e)
-    events.value = []
+    toast.error('Failed to load timeline')
+    debugLog('Failed to load timeline:', e)
+    timelineEntries.value = []
   } finally {
     isLoading.value = false
   }
@@ -209,8 +297,9 @@ async function addEvent() {
     })
 
     if (resp.success && resp.event) {
-      events.value = [resp.event, ...events.value]
-      emit('event-added', resp.event)
+      // Reload the full timeline to include the new event
+      await loadTimeline()
+      emit('event-added')
       newEventDescription.value = ''
       isAddEventOpen.value = false
       toast.success('Event added')
@@ -222,6 +311,19 @@ async function addEvent() {
     debugLog('Failed to add event:', e)
   } finally {
     isAdding.value = false
+  }
+}
+
+function getCostlineTypeColor(type: 'time' | 'material' | 'adjust'): string {
+  switch (type) {
+    case 'time':
+      return 'bg-purple-100 text-purple-700'
+    case 'material':
+      return 'bg-orange-100 text-orange-700'
+    case 'adjust':
+      return 'bg-pink-100 text-pink-700'
+    default:
+      return 'bg-gray-100 text-gray-700'
   }
 }
 
@@ -244,7 +346,7 @@ function formatDate(dateString: unknown) {
 watch(
   () => props.jobId,
   () => {
-    void loadEvents()
+    void loadTimeline()
   },
   { immediate: true },
 )
