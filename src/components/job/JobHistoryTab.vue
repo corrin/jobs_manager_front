@@ -222,7 +222,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{ 'event-added': [] }>()
+const emit = defineEmits<{ 'event-added': [event: JobEventCreateResponse['event']] }>()
 
 // UI state
 const isAddEventOpen = ref(false)
@@ -299,7 +299,7 @@ async function addEvent() {
     if (resp.success && resp.event) {
       // Reload the full timeline to include the new event
       await loadTimeline()
-      emit('event-added')
+      emit('event-added', resp.event)
       newEventDescription.value = ''
       isAddEventOpen.value = false
       toast.success('Event added')
