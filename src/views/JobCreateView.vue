@@ -577,8 +577,8 @@ const handleSubmit = async () => {
       }
       toast.success('Job created!')
       toast.dismiss('create-job')
-      // Redirect to quote tab for fixed price jobs, actual tab for time & materials
-      const defaultTab = formData.value.pricing_methodology === 'fixed_price' ? 'quote' : 'actual'
+      // Redirect to quote tab for fixed price jobs, estimate to t&m jobs
+      const defaultTab = formData.value.pricing_methodology === 'fixed_price' ? 'quote' : 'estimate'
       router.push({
         name: 'job-edit',
         params: { id: job_id },
