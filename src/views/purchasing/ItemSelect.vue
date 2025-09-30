@@ -1,3 +1,4 @@
+o
 <script setup lang="ts">
 import {
   Select,
@@ -7,7 +8,6 @@ import {
   SelectItem,
 } from '../../components/ui/select'
 import { Input } from '../../components/ui/input'
-import { Badge } from '../../components/ui/badge'
 import { useStockStore, type StockItem } from '../../stores/stockStore'
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import { onMounted, computed, ref } from 'vue'
@@ -67,11 +67,35 @@ const filteredItems = computed(() => {
   })
 })
 
-const displayLabel = computed(() => {
-  if (!props.modelValue) return 'Select Item'
-  if (props.modelValue === '__labour__') return 'Labour'
+const displayCode = computed(() => {
+  console.log('🔍 ItemSelect displayCode computed:', {
+    modelValue: props.modelValue,
+    storeItemsCount: store.items.length,
+    isLabour: props.modelValue === '__labour__',
+  })
+
+  if (!props.modelValue) {
+    console.log('📝 No modelValue, returning "Select Item"')
+    return 'Select Item'
+  }
+
+  if (props.modelValue === '__labour__') {
+    console.log('👷 Labour selected, returning "LABOUR"')
+    return 'LABOUR'
+  }
+
   const found = store.items.find((i: StockItem) => i.id == props.modelValue)
-  return found ? found.description || 'Stock Item' : 'Select Item'
+  console.log('🔎 Looking for item:', {
+    searchedId: props.modelValue,
+    found: !!found,
+    foundItem: found
+      ? { id: found.id, item_code: found.item_code, description: found.description }
+      : null,
+  })
+
+  const result = found?.item_code || 'Select Item'
+  console.log('📋 Final displayCode result:', result)
+  return result
 })
 </script>
 
@@ -82,20 +106,41 @@ const displayLabel = computed(() => {
     class="!w-full min-w-64"
     @update:model-value="
       (val) => {
+        console.log('🔄 ItemSelect update:modelValue called:', {
+          val,
+          currentModelValue: props.modelValue,
+          storeItemsCount: store.items.length,
+        })
+
         emit('update:modelValue', val as string | null)
 
         if (val === '__labour__') {
+          console.log('👷 Labour selected, emitting labour data')
           emit('update:description', 'Labour')
           emit('update:unit_cost', companyDefaultsStore.companyDefaults?.wage_rate ?? 0)
           emit('update:kind', 'time')
         } else {
           const found = store.items.find((i: StockItem) => i.id == val)
+          console.log('🔎 Looking for stock item:', {
+            searchedId: val,
+            found: !!found,
+            foundItem: found
+              ? {
+                  id: found.id,
+                  item_code: found.item_code,
+                  description: found.description,
+                  unit_cost: found.unit_cost,
+                }
+              : null,
+          })
 
           if (found) {
+            console.log('✅ Found stock item, emitting data')
             emit('update:description', found.description || '')
             emit('update:unit_cost', found.unit_cost || null)
             emit('update:kind', 'material')
           } else {
+            console.log('❌ Stock item not found, emitting empty data')
             emit('update:description', '')
             emit('update:unit_cost', null)
             emit('update:kind', null)
@@ -105,11 +150,7 @@ const displayLabel = computed(() => {
     "
   >
     <SelectTrigger class="h-10">
-      <SelectValue :placeholder="'Select Item'">
-        <div class="flex items-center gap-2">
-          <span class="truncate">{{ displayLabel }}</span>
-        </div>
-      </SelectValue>
+      <SelectValue :placeholder="'Select Item'" :display-value="displayCode" />
     </SelectTrigger>
 
     <SelectContent class="max-h-80 w-[550px]">
@@ -134,48 +175,14 @@ const displayLabel = computed(() => {
           v-for="i in filteredItems"
           :key="i.id || 'unknown'"
           :value="i.id || ''"
-          class="cursor-pointer p-4 border-b border-border last:border-b-0 hover:bg-accent/50 focus:bg-accent/50 bg-background w-full"
+          class="cursor-pointer p-3 hover:bg-accent/50 focus:bg-accent/50 bg-background"
         >
-          <div class="flex w-full items-start justify-between gap-6 !min-w-[500px]">
-            <div class="flex-1 min-w-0">
-              <div class="font-medium text-sm leading-tight truncate">
-                {{ i.description || 'Unnamed Stock Item' }}
-              </div>
-              <div v-if="i.item_code" class="text-xs text-muted-foreground mt-1 truncate">
-                Code: {{ i.item_code }}
-              </div>
+          <div class="flex flex-col">
+            <div class="font-medium text-sm leading-tight">
+              {{ i.description || 'Unnamed Stock Item' }}
             </div>
-
-            <div class="flex flex-col items-end gap-1 shrink-0">
-              <Badge
-                v-if="i.unit_cost"
-                variant="default"
-                class="text-xs font-semibold bg-green-600 hover:bg-green-700"
-              >
-                ${{ Number(i.unit_cost).toFixed(2) }}
-              </Badge>
-              <Badge
-                v-else
-                variant="secondary"
-                class="text-xs bg-yellow-500 hover:bg-yellow-600 text-white"
-              >
-                No price
-              </Badge>
-
-              <Badge
-                v-if="showQuantity && i.quantity !== null && i.quantity !== undefined"
-                :variant="i.quantity <= 0 ? 'secondary' : 'outline'"
-                :class="
-                  i.quantity < 0
-                    ? 'bg-red-100 text-red-800 border-red-200'
-                    : i.quantity === 0
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-gray-100 text-gray-800'
-                "
-                class="text-xs"
-              >
-                Qty: {{ i.quantity }}
-              </Badge>
+            <div v-if="i.item_code" class="text-xs text-muted-foreground mt-1">
+              {{ i.item_code }}
             </div>
           </div>
         </SelectItem>
