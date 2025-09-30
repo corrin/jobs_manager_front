@@ -6170,6 +6170,14 @@ components:
           exclusiveMinimum: true
           nullable: true
           description: Outstanding amount if relevant
+        job_value:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Total job value (invoiced amount or quote/actual revenue)
       required:
         - archived_date
         - client_name
@@ -6177,6 +6185,7 @@ components:
         - issue
         - job_id
         - job_number
+        - job_value
     ArchivedJobsComplianceResponse:
       type: object
       description: Response for archived jobs compliance check.
@@ -6827,12 +6836,22 @@ components:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
           description: Additional metadata
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
       required:
+        - created_at
         - desc
         - id
         - kind
         - total_cost
         - total_rev
+        - updated_at
     CostLineCreateUpdate:
       type: object
       description: Serializer for CostLine creation and updates - full write capabilities
@@ -6868,9 +6887,19 @@ components:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
           description: Additional metadata
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
       required:
+        - created_at
         - desc
         - kind
+        - updated_at
     CostLineErrorResponse:
       type: object
       description: Serializer for cost line error responses.
@@ -9830,6 +9859,14 @@ components:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
           description: Additional metadata
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedDjangoJob:
       type: object
       properties:
@@ -11583,6 +11620,14 @@ components:
         meta:
           readOnly: true
           description: Additional metadata
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
         job_id:
           type: string
           readOnly: true
@@ -11612,6 +11657,7 @@ components:
       required:
         - charge_out_rate
         - client_name
+        - created_at
         - desc
         - ext_refs
         - id
@@ -11625,6 +11671,7 @@ components:
         - total_rev
         - unit_cost
         - unit_rev
+        - updated_at
         - wage_rate
     TokenRefresh:
       type: object

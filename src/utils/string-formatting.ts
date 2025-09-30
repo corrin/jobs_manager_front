@@ -80,3 +80,16 @@ export function capitalize(str: string): string {
   if (!str) return ''
   return str.charAt(0).toUpperCase() + str.slice(1)
 }
+
+/**
+ * Formats a number as New Zealand currency
+ * @param value - Number to format
+ * @returns Formatted currency string (e.g., "$1,234.56")
+ */
+export function formatCurrency(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '$0.00'
+  return new Intl.NumberFormat('en-NZ', {
+    style: 'currency',
+    currency: 'NZD',
+  }).format(value)
+}

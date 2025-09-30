@@ -855,6 +855,8 @@ const PatchedCostLineCreateUpdate = z
     unit_rev: z.number().gt(-100000000).lt(100000000),
     ext_refs: z.unknown(),
     meta: z.unknown(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
   })
   .partial()
   .passthrough()
@@ -867,6 +869,8 @@ const CostLineCreateUpdate = z
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
     ext_refs: z.unknown().optional(),
     meta: z.unknown().optional(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
 const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
@@ -880,6 +884,7 @@ const ArchivedJobIssue = z
     issue: z.string(),
     invoice_status: z.string().nullish(),
     outstanding_amount: z.number().gt(-100000000).lt(100000000).nullish(),
+    job_value: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const ComplianceSummary = z
@@ -939,6 +944,8 @@ const CostLine = z
     total_rev: z.number(),
     ext_refs: z.unknown().optional(),
     meta: z.unknown().optional(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
 const CostSet = z
@@ -1330,6 +1337,8 @@ const TimesheetCostLine = z
     total_rev: z.number(),
     ext_refs: z.unknown(),
     meta: z.unknown(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
     job_id: z.string(),
     job_number: z.number().int(),
     job_name: z.string(),

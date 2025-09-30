@@ -32,7 +32,7 @@
           </div>
 
           <!-- Summary Stats -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
               <div class="flex items-center gap-3">
                 <Archive class="w-5 h-5 text-slate-500" />
@@ -57,6 +57,15 @@
                 <div>
                   <p class="text-sm text-slate-600">Issues Found</p>
                   <p class="text-2xl font-bold text-amber-600">{{ stats.issuesFound }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+              <div class="flex items-center gap-3">
+                <Clock class="w-5 h-5 text-slate-500" />
+                <div>
+                  <p class="text-sm text-slate-600">Archived Since</p>
+                  <p class="text-sm font-semibold">{{ archivedSince }}</p>
                 </div>
               </div>
             </div>
@@ -188,22 +197,22 @@
                     </th>
                     <th
                       class="text-left px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 select-none"
-                      @click="handleSort('status')"
-                    >
-                      <div class="flex items-center gap-1">
-                        Current Status
-                        <span v-if="sortColumn === 'status'" class="text-slate-500">
-                          {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                        </span>
-                      </div>
-                    </th>
-                    <th
-                      class="text-left px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 select-none"
                       @click="handleSort('archivedDate')"
                     >
                       <div class="flex items-center gap-1">
                         Archived Date
                         <span v-if="sortColumn === 'archivedDate'" class="text-slate-500">
+                          {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                        </span>
+                      </div>
+                    </th>
+                    <th
+                      class="text-right px-4 py-3 text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 select-none"
+                      @click="handleSort('jobValue')"
+                    >
+                      <div class="flex items-center justify-end gap-1">
+                        Job Value
+                        <span v-if="sortColumn === 'jobValue'" class="text-slate-500">
                           {{ sortDirection === 'asc' ? '↑' : '↓' }}
                         </span>
                       </div>
@@ -229,11 +238,11 @@
                         {{ issue.details }}
                       </span>
                     </td>
-                    <td class="px-4 py-3 text-sm text-slate-700">
-                      {{ issue.status }}
-                    </td>
                     <td class="px-4 py-3 text-sm text-slate-600">
                       {{ formatDate(issue.archivedDate) }}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-slate-900 text-right font-medium">
+                      {{ formatCurrency(issue.jobValue) }}
                     </td>
                     <td class="px-4 py-3 text-center">
                       <RouterLink
@@ -269,6 +278,7 @@ import {
   Clock,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import { formatCurrency } from '@/utils/string-formatting'
 
 interface ValidationIssue {
   id: string
@@ -282,14 +292,15 @@ interface ValidationIssue {
     | 'invalid_status'
     | 'open_tasks'
   details: string
-  status: string
   archivedDate: string
+  jobValue: number
 }
 
 const loading = ref(false)
 const error = ref<string | null>(null)
 const issues = ref<ValidationIssue[]>([])
 const lastRunTime = ref<string>('Never')
+const archivedSince = ref<string>('N/A')
 const totalRecords = ref<number>(0)
 const failedRecords = ref<number>(0)
 const summary = ref<{
@@ -381,8 +392,8 @@ const refreshData = async () => {
           job_number: string
           client_name: string
           issue?: string
-          current_status: string
           archived_date: string
+          job_value: number
           invoice_status?: string
           outstanding_amount?: number
         }) => ({
@@ -392,14 +403,27 @@ const refreshData = async () => {
           clientName: job.client_name,
           type: job.issue?.toLowerCase().replace(/ /g, '_') || 'unknown',
           details: job.issue,
-          status: job.current_status,
           archivedDate: job.archived_date,
+          jobValue: job.job_value,
           invoiceStatus: job.invoice_status,
           outstandingAmount: job.outstanding_amount,
         }),
       )
+
+      // Calculate earliest archived date
+      const earliestDate = data.non_compliant_jobs.reduce(
+        (earliest: string, job: { archived_date: string }) => {
+          return !earliest || job.archived_date < earliest ? job.archived_date : earliest
+        },
+        '',
+      )
+
+      if (earliestDate) {
+        archivedSince.value = formatDate(earliestDate)
+      }
     } else {
       issues.value = []
+      archivedSince.value = 'N/A'
     }
 
     // Use checked_at from response or current time
@@ -438,13 +462,13 @@ const refreshData = async () => {
 const exportToCsv = () => {
   if (!issues.value.length) return
 
-  const headers = ['Job Number', 'Client', 'Issue', 'Current Status', 'Archived Date']
+  const headers = ['Job Number', 'Client', 'Issue', 'Archived Date', 'Job Value']
   const rows = issues.value.map((issue) => [
     issue.jobNumber,
     issue.clientName,
     issue.details,
-    issue.status,
     formatDate(issue.archivedDate),
+    formatCurrency(issue.jobValue),
   ])
 
   const csvContent = [
