@@ -510,6 +510,9 @@ async function saveLines() {
     return
   }
 
+  // Take snapshot for rollback
+  const snapshot = JSON.parse(JSON.stringify(po.value.lines))
+
   linesToDelete.value = linesToDelete.value.filter((id) => {
     const l = po.value.lines.find((x: PurchaseOrderLine) => x.id === id)
     return l ? isValidLine(l) : true
@@ -637,7 +640,12 @@ async function saveLines() {
     toast.success('Lines saved')
   } catch (error) {
     debugLog('❌ Error saving lines:', error)
-    toast.error('Failed to save lines: ' + extractErrorMessage(error, 'Unknown error'))
+    // Rollback on error
+    po.value.lines = snapshot
+    toast.error(
+      'Failed to save lines. Changes have been reverted: ' +
+        extractErrorMessage(error, 'Unknown error'),
+    )
   }
 }
 

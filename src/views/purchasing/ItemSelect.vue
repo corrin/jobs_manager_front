@@ -9,6 +9,7 @@ import {
 import { Input } from '../../components/ui/input'
 import { Badge } from '../../components/ui/badge'
 import { useStockStore, type StockItem } from '../../stores/stockStore'
+import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import { onMounted, computed, ref } from 'vue'
 
 const props = withDefaults(
@@ -27,10 +28,22 @@ const emit = defineEmits<{
   'update:modelValue': [string | null]
   'update:description': [string]
   'update:unit_cost': [number | null]
+  'update:kind': [string | null]
 }>()
 
 const store = useStockStore()
+const companyDefaultsStore = useCompanyDefaultsStore()
 const searchTerm = ref('')
+
+// Mocked Labour item for time entries
+const mockedLabourItem = computed(() => ({
+  id: '__labour__',
+  description: 'Labour',
+  item_code: 'LABOUR',
+  unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
+  unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
+  quantity: null,
+}))
 
 onMounted(async () => {
   // Avoid triggering redundant fetches when many ItemSelects mount at once
@@ -40,9 +53,14 @@ onMounted(async () => {
 })
 
 const filteredItems = computed(() => {
-  if (!searchTerm.value) return store.items
+  const stockItems = store.items
+  const labourItem = [mockedLabourItem.value]
+
+  const allItems = [...stockItems, ...labourItem]
+
+  if (!searchTerm.value) return allItems
   const term = searchTerm.value.toLowerCase()
-  return store.items.filter((item: StockItem) => {
+  return allItems.filter((item) => {
     const searchableFields = [item.description, item.item_code].filter(Boolean) // Remove null/undefined values
 
     return searchableFields.some((field) => field?.toLowerCase().includes(term))
@@ -51,6 +69,7 @@ const filteredItems = computed(() => {
 
 const displayLabel = computed(() => {
   if (!props.modelValue) return 'Select Item'
+  if (props.modelValue === '__labour__') return 'Labour'
   const found = store.items.find((i: StockItem) => i.id == props.modelValue)
   return found ? found.description || 'Stock Item' : 'Select Item'
 })
@@ -64,14 +83,23 @@ const displayLabel = computed(() => {
     @update:model-value="
       (val) => {
         emit('update:modelValue', val as string | null)
-        const found = store.items.find((i: StockItem) => i.id == val)
 
-        if (found) {
-          emit('update:description', found.description || '')
-          emit('update:unit_cost', found.unit_cost || null)
+        if (val === '__labour__') {
+          emit('update:description', 'Labour')
+          emit('update:unit_cost', companyDefaultsStore.companyDefaults?.wage_rate ?? 0)
+          emit('update:kind', 'time')
         } else {
-          emit('update:description', '')
-          emit('update:unit_cost', null)
+          const found = store.items.find((i: StockItem) => i.id == val)
+
+          if (found) {
+            emit('update:description', found.description || '')
+            emit('update:unit_cost', found.unit_cost || null)
+            emit('update:kind', 'material')
+          } else {
+            emit('update:description', '')
+            emit('update:unit_cost', null)
+            emit('update:kind', null)
+          }
         }
       }
     "

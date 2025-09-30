@@ -33,12 +33,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from '../ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '../ui/dropdown-menu'
 
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import { useCostLineCalculations } from '../../composables/useCostLineCalculations'
@@ -71,8 +65,6 @@ const props = withDefaults(
     readOnly?: boolean
     showItemColumn?: boolean
     showSourceColumn?: boolean
-    // Allow editing of the kind field (Type)
-    allowTypeEdit?: boolean
     // Resolver for "Source" column (read-only). If not provided, Source column will be hidden or blank.
     sourceResolver?: (
       line: CostLine,
@@ -96,7 +88,6 @@ const props = withDefaults(
     readOnly: false,
     showItemColumn: true,
     showSourceColumn: false,
-    allowTypeEdit: true,
     allowedKinds: () => ['material', 'time', 'adjust'],
     blockedFieldsByKind: () => ({ material: [], time: [], adjust: [] }),
     negativeStockIds: () => [],
@@ -174,6 +165,40 @@ function maybeEmitCreate(line: CostLine) {
   if (line === emptyLine.value) resetEmptyLine(line.kind as KindOption)
 }
 
+function updateLineKind(line: CostLine, newKind: KindOption) {
+  if (String(line.kind) === newKind) return
+
+  Object.assign(line, { kind: newKind })
+
+  // Apply company defaults for time
+  if (newKind === 'time') {
+    Object.assign(line, {
+      unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
+      unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
+    })
+  } else {
+    // Recalculate unit_rev with markup for material/adjust
+    const derived = apply(line).derived
+    Object.assign(line, { unit_rev: derived.unit_rev })
+  }
+
+  // Save if line has real ID and meets baseline
+  if (line.id && isLineReadyForSave(line)) {
+    console.log('Saving kind change:', line.id, newKind)
+    const patch: PatchedCostLineCreateUpdate = {
+      kind: newKind,
+      ...(newKind === 'time'
+        ? {
+            unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
+            unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
+          }
+        : { unit_rev: Number(line.unit_rev) }),
+    }
+    const optimistic: Partial<CostLine> = { ...patch }
+    autosave.scheduleSave(line, patch, optimistic)
+  }
+}
+
 // Company Defaults and calculations
 const companyDefaultsStore = useCompanyDefaultsStore()
 onMounted(() => {
@@ -189,7 +214,6 @@ const {
   isUnitRevenueEditable,
   onUnitRevenueManuallyEdited,
   onItemSelected,
-  onKindChanged,
 } = useCostLineCalculations({
   getCompanyDefaults: () => companyDefaultsStore.companyDefaults,
 })
@@ -254,21 +278,6 @@ function isStockLine(line: CostLine): boolean {
 function isNegativeStock(line: CostLine): boolean {
   if (!line?.id || !isStockLine(line)) return false
   return props.negativeStockIds?.includes(line.ext_refs?.stock_id as string) ?? false
-}
-
-/**
- * Kind options and guards
- */
-const kindOptions: KindOption[] = props.allowedKinds || ['material', 'time', 'adjust']
-
-function canEditKindForLine(line: CostLine): boolean {
-  if (props.readOnly) return false
-  if (!props.allowTypeEdit) return false
-  if (props.tabKind === 'actual') {
-    // In "actual", lines usually originate from PO/timesheet; allow kind change only for "adjust"
-    return ['material', 'adjust'].includes(String(line.kind))
-  }
-  return true
 }
 
 function canEditField(
@@ -340,124 +349,16 @@ const negativeIdsSig = computed(() => props.negativeStockIds?.slice().sort().joi
 const columns = computed(() => {
   void negativeIdsSig.value
   return [
-    // Type / Kind
+    // Type / Kind - Now readonly badge only
     {
       id: 'kind',
       header: 'Type',
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const badge = getKindBadge(line)
-
-        if (!canEditKindForLine(line)) {
-          return h(Badge, { class: `text-xs font-medium ${badge.class}` }, () => badge.label)
-        }
-
-        // Attractive dropdown with badges
-        return h(
-          DropdownMenu,
-          { key: String(line.id) + line.kind },
-          {
-            default: () => [
-              h('div', { onClick: (e: Event) => e.stopPropagation() }, [
-                h(DropdownMenuTrigger, { asChild: true }, () =>
-                  h(
-                    Button,
-                    {
-                      variant: 'outline',
-                      size: 'sm',
-                      class: `h-7 px-2 py-1 text-xs ${badge.class} bg-opacity-60 hover:bg-opacity-80`,
-                    },
-                    () => badge.label,
-                  ),
-                ),
-              ]),
-              h(DropdownMenuContent, { align: 'start', class: 'w-40 z-50' }, () =>
-                kindOptions.map((opt) =>
-                  h(
-                    DropdownMenuItem,
-                    {
-                      onClick: () => {
-                        const newKind = opt as KindOption
-                        if (newKind === String(line.kind)) return
-
-                        if (line === emptyLine.value) {
-                          // For the empty line, create a new object and update the ref
-                          const newLine = { ...line, kind: newKind }
-                          onKindChanged(newLine)
-
-                          // Apply company defaults for time
-                          if (newKind === 'time') {
-                            Object.assign(newLine, {
-                              unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
-                              unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
-                            })
-                          } else {
-                            // For material/adjust, recalculate unit_rev with markup
-                            const derived = apply(newLine).derived
-                            Object.assign(newLine, { unit_rev: derived.unit_rev })
-                          }
-
-                          emptyLine.value = newLine
-                        } else {
-                          // For existing lines, mutate as before
-                          Object.assign(line, { kind: newKind })
-                          onKindChanged(line)
-
-                          // Apply company defaults for time
-                          if (newKind === 'time') {
-                            Object.assign(line, {
-                              unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
-                              unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
-                            })
-                          } else {
-                            // For material/adjust, recalculate unit_rev with markup
-                            const derived = apply(line).derived
-                            Object.assign(line, { unit_rev: derived.unit_rev })
-                          }
-
-                          // Save if line has real ID and meets baseline
-                          if (line.id && isLineReadyForSave(line)) {
-                            console.log('Saving kind change:', line.id, newKind)
-                            const patch: PatchedCostLineCreateUpdate = {
-                              kind: newKind,
-                              ...(newKind === 'time'
-                                ? {
-                                    unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
-                                    unit_rev:
-                                      companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
-                                  }
-                                : { unit_rev: Number(line.unit_rev) }),
-                            }
-                            const optimistic: Partial<CostLine> = { ...patch }
-                            autosave.scheduleSave(line, patch, optimistic)
-                          }
-                        }
-                      },
-                    },
-                    () => [
-                      h(
-                        'span',
-                        {
-                          class: `inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold mr-2 ${
-                            opt === 'time'
-                              ? 'bg-blue-100 text-blue-800'
-                              : opt === 'adjust'
-                                ? 'bg-pink-100 text-pink-800'
-                                : 'bg-green-100 text-green-800'
-                          }`,
-                        },
-                        opt === 'time' ? 'Labour' : opt === 'adjust' ? 'Adjustment' : 'Material',
-                      ),
-                      h('span', { class: 'text-xs' }, opt),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          },
-        )
+        return h(Badge, { class: `text-xs font-medium ${badge.class}` }, () => badge.label)
       },
-      meta: { editable: props.allowTypeEdit && !props.readOnly },
+      meta: { editable: false }, // Always readonly
     },
 
     // Item (optional, UI-only) - moved to be first after Type
@@ -508,6 +409,20 @@ const columns = computed(() => {
                 'onUpdate:modelValue': async (val: string | null) => {
                   if (!enabled) return
                   selectedItemMap.set(line, val)
+
+                  // Infer kind based on selection
+                  let newKind: KindOption = 'adjust' // Default fallback
+                  if (val === '__labour__') {
+                    newKind = 'time'
+                  } else if (val) {
+                    newKind = 'material'
+                  }
+
+                  // Update kind if it changed
+                  if (String(line.kind) !== newKind) {
+                    updateLineKind(line, newKind)
+                  }
+
                   onItemSelected(line)
 
                   if (
@@ -554,6 +469,17 @@ const columns = computed(() => {
                     Object.assign(line, { desc: '' })
                     Object.assign(line, { unit_cost: 0 })
                   }
+
+                  // Save immediately for existing lines
+                  if (line.id && isLineReadyForSave(line)) {
+                    const patch: PatchedCostLineCreateUpdate = {
+                      desc: line.desc || '',
+                      unit_cost: Number(line.unit_cost ?? 0),
+                      unit_rev: Number(line.unit_rev ?? 0),
+                    }
+                    const optimistic: Partial<CostLine> = { ...patch }
+                    autosave.scheduleSave(line, patch, optimistic)
+                  }
                 },
                 'onUpdate:description': (desc: string) => enabled && Object.assign(line, { desc }),
                 'onUpdate:unit_cost': (cost: number | null) => {
@@ -564,6 +490,10 @@ const columns = computed(() => {
                   nextTick(() => {
                     if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
                   })
+                },
+                'onUpdate:kind': (newKind: string | null) => {
+                  if (!enabled || !newKind) return
+                  updateLineKind(line, newKind as KindOption)
                 },
               }),
             ])
@@ -1251,7 +1181,15 @@ const shortcutsTitle = computed(
             @update:model-value="
               (payload: string | number) => {
                 const v = typeof payload === 'string' ? payload : String(payload)
-                if (descModalLine) descModalLine.desc = v
+                if (descModalLine) {
+                  descModalLine.desc = v
+
+                  // Infer kind as 'adjust' if no item is selected and description is being set
+                  const hasSelectedItem = selectedItemMap.get(descModalLine)
+                  if (!hasSelectedItem && v.trim() && String(descModalLine.kind) !== 'adjust') {
+                    updateLineKind(descModalLine, 'adjust')
+                  }
+                }
               }
             "
           />
