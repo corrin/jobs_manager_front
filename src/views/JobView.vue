@@ -354,7 +354,15 @@ onMounted(async () => {
 })
 
 const { jobEvents, addEvent, loading: jobEventsLoading } = useJobEvents(jobId)
-const { activeTab, setTab } = useJobTabs('actual')
+// Check if this is a newly created job (redirected from creation)
+const isNewJob = computed(() => route.query.new === 'true')
+const queryTab = computed(() => route.query.tab as string)
+const defaultTab = computed(() => {
+  if (queryTab.value) return queryTab.value
+  if (isNewJob.value) return 'quote'
+  return 'actual'
+})
+const { activeTab, setTab } = useJobTabs(defaultTab.value)
 const notifications = useJobNotifications()
 
 const localJobName = ref('')

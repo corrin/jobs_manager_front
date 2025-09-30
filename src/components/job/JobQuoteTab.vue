@@ -19,10 +19,11 @@
         <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
           <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
           <button
+            v-if="costLines.length === 0"
             class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             style="min-width: 0"
             @click="onCopyFromEstimate"
-            :disabled="isLoading || !hasEstimateData"
+            :disabled="isLoading"
             :title="'Copy from Estimate'"
           >
             <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
@@ -377,19 +378,6 @@
                         {{ revision.archived_at ? formatDate(revision.archived_at) : '—' }}
                       </span>
                     </div>
-                  </div>
-
-                  <div class="flex-shrink-0">
-                    <Button
-                      type="button"
-                      @click="onCopyFromRevision(revision)"
-                      :disabled="isLoading"
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Copy class="w-3 h-3 mr-1" />
-                      Copy
-                    </Button>
                   </div>
                 </div>
                 <!-- /HEADER -->
@@ -1079,79 +1067,6 @@ async function onCopyFromEstimate() {
   } finally {
     isLoading.value = false
     toast.dismiss('copy-estimate')
-  }
-}
-
-// Copy all cost lines from a specific archived quote revision
-async function onCopyFromRevision(revision: { quote_revision: number; cost_lines: CostLine[] }) {
-  if (!revision?.cost_lines?.length) {
-    toast.error('No cost lines found in this revision')
-    return
-  }
-
-  if (!quoteRevisionsData.value || quoteRevisionsData.value.total_revisions === 0) {
-    toast.error(
-      'No archived revisions available. Create a revision first using "Create New Revision".',
-    )
-    console.warn('🚨 COPY ATTEMPT: No archived revisions exist in summary.revisions[]')
-    return
-  }
-
-  const revisionLines = revision.cost_lines
-  isLoading.value = true
-  toast.info(`Copying from archived revision ${revision.quote_revision}...`, {
-    id: 'copy-revision',
-  })
-
-  try {
-    // Clear existing quote lines first
-    if (costLines.value.length > 0) {
-      await Promise.allSettled(
-        costLines.value.filter((l) => l.id).map((line) => costlineService.deleteCostLine(line.id)),
-      )
-      costLines.value = []
-    }
-
-    const createdLines: CostLine[] = []
-    console.log('🔍 COPY REVISION DEBUG - Creating new lines from archived data...')
-    for (const revisionLine of revisionLines) {
-      const createPayload = {
-        kind: revisionLine.kind as 'material' | 'time' | 'adjust',
-        desc: revisionLine.desc || '',
-        quantity: revisionLine.quantity || 0,
-        unit_cost: revisionLine.unit_cost ?? 0,
-        unit_rev: revisionLine.unit_rev ?? 0,
-        ext_refs: (revisionLine.ext_refs as Record<string, unknown>) || {},
-        meta: (revisionLine.meta as Record<string, unknown>) || {},
-      }
-
-      const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
-      createdLines.push(created)
-      console.log('🔍 COPY REVISION DEBUG - Recreated line from archive:', created.id, created.desc)
-    }
-
-    // Update local state
-    costLines.value = createdLines
-    console.log(
-      '🔍 COPY REVISION DEBUG - Successfully restored',
-      createdLines.length,
-      'lines from archived revision',
-    )
-
-    // Only refresh quote data to update summary
-    await refreshQuoteData()
-
-    toast.success(
-      `Restored ${createdLines.length} lines from archived revision ${revision.quote_revision}!`,
-    )
-    emit('cost-line-changed')
-  } catch (error) {
-    toast.error('Failed to copy from archived revision.')
-    debugLog('Failed to copy from revision:', error)
-    console.error('🔍 COPY REVISION DEBUG - ERROR:', error)
-  } finally {
-    isLoading.value = false
-    toast.dismiss('copy-revision')
   }
 }
 
