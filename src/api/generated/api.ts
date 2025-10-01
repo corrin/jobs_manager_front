@@ -4073,6 +4073,11 @@ Expected JSON:
         schema: z.string().optional(),
       },
       {
+        name: 'rejected_flag',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
         name: 'status',
         type: 'Query',
         schema: z.string().optional(),

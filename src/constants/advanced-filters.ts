@@ -21,6 +21,7 @@ export const AdvancedFiltersSchema = z.object({
   created_after: z.string().optional().default(''),
   created_before: z.string().optional().default(''),
   paid: z.string().optional().default(''),
+  rejected_flag: z.string().optional().default(''),
   xero_invoice_params: z.string().optional().default(''),
 })
 
@@ -40,5 +41,6 @@ export const DEFAULT_ADVANCED_FILTERS: AdvancedFilters = {
   created_after: '',
   created_before: '',
   paid: '',
+  rejected_flag: '',
   xero_invoice_params: '',
 }
