@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import { schemas } from '../api/generated/api'
 import { debugLog } from '../utils/debug'
 import type { z } from 'zod'
+import { api } from '../api/client'
+import { jobService } from '../services/job.service'
 
 type Job = z.infer<typeof schemas.Job>
 type JobDetail = z.infer<typeof schemas.JobDetailResponse>['data']
@@ -224,7 +226,6 @@ export const useJobsStore = defineStore('jobs', () => {
 
   const loadBasicInfo = async (jobId: string): Promise<JobBasicInfo | null> => {
     try {
-      const { api } = await import('../api/client')
       const data = await api.job_rest_jobs_basic_info_retrieve({
         params: { job_id: jobId },
       })
@@ -316,7 +317,6 @@ export const useJobsStore = defineStore('jobs', () => {
     if (!jobId) return undefined
 
     try {
-      const { jobService } = await import('../services/job.service')
       const response = await jobService.getJob(jobId)
 
       if (response.success && response.data) {
