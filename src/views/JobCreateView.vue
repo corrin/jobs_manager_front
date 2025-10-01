@@ -71,70 +71,60 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label
-                      for="estimatedMaterials"
+                      for="estimated_materials"
                       class="block text-sm font-medium mb-2"
-                      :class="
-                        formData.estimatedMaterials !== null && formData.estimatedMaterials >= 0
-                          ? 'text-gray-700'
-                          : 'text-red-600'
-                      "
+                      :class="formData.estimated_materials >= 0 ? 'text-gray-700' : 'text-red-600'"
                     >
                       Estimated materials ($) *
                     </label>
                     <input
-                      id="estimatedMaterials"
+                      id="estimated_materials"
                       type="number"
                       step="0.01"
                       min="0"
-                      v-model.number="formData.estimatedMaterials"
+                      v-model.number="formData.estimated_materials"
                       class="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       :class="[
-                        errors.estimatedMaterials
+                        errors.estimated_materials
                           ? 'border-red-500'
-                          : formData.estimatedMaterials !== null && formData.estimatedMaterials >= 0
+                          : formData.estimated_materials >= 0
                             ? 'border-gray-300'
                             : 'border-red-300 bg-red-50',
                       ]"
                       placeholder="Enter materials cost"
                       @keydown="filterNumericInput"
-                      @change="sanitizeMaterialsInput"
                     />
-                    <p v-if="errors.estimatedMaterials" class="mt-1 text-sm text-red-600">
-                      {{ errors.estimatedMaterials }}
+                    <p v-if="errors.estimated_materials" class="mt-1 text-sm text-red-600">
+                      {{ errors.estimated_materials }}
                     </p>
                   </div>
                   <div>
                     <label
-                      for="estimatedTime"
+                      for="estimated_time"
                       class="block text-sm font-medium mb-2"
-                      :class="
-                        formData.estimatedTime !== null && formData.estimatedTime >= 0
-                          ? 'text-gray-700'
-                          : 'text-red-600'
-                      "
+                      :class="formData.estimated_time >= 0 ? 'text-gray-700' : 'text-red-600'"
                     >
                       Estimated workshop time (hours) *
                     </label>
                     <input
-                      id="estimatedTime"
+                      id="estimated_time"
                       type="number"
                       step="0.01"
                       min="0"
-                      v-model.number="formData.estimatedTime"
+                      v-model.number="formData.estimated_time"
                       class="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       :class="[
-                        errors.estimatedTime
+                        errors.estimated_time
                           ? 'border-red-500'
-                          : formData.estimatedTime !== null && formData.estimatedTime >= 0
+                          : formData.estimated_time >= 0
                             ? 'border-gray-300'
                             : 'border-red-300 bg-red-50',
                       ]"
                       placeholder="Enter estimated workshop hours"
                       @keydown="filterNumericInput"
-                      @change="sanitizeTimeInput"
                     />
-                    <p v-if="errors.estimatedTime" class="mt-1 text-sm text-red-600">
-                      {{ errors.estimatedTime }}
+                    <p v-if="errors.estimated_time" class="mt-1 text-sm text-red-600">
+                      {{ errors.estimated_time }}
                     </p>
                   </div>
                 </div>
@@ -251,8 +241,6 @@ import ClientLookup from '../components/ClientLookup.vue'
 import ContactSelector from '../components/ContactSelector.vue'
 import RichTextEditor from '../components/RichTextEditor.vue'
 import { jobService, type JobCreateData } from '../services/job.service'
-import { costlineService } from '../services/costline.service'
-import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 import { debugLog } from '../utils/debug'
@@ -299,42 +287,9 @@ const filterNumericInput = (event: KeyboardEvent) => {
   event.preventDefault()
 }
 
-const sanitizeMaterialsInput = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const sanitizedValue = parseFloat(target.value)
-  if (isNaN(sanitizedValue) || sanitizedValue < 0) {
-    formData.value.estimatedMaterials = null
-  } else {
-    formData.value.estimatedMaterials = sanitizedValue
-  }
-}
-
-const sanitizeTimeInput = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const sanitizedValue = parseFloat(target.value)
-  if (isNaN(sanitizedValue) || sanitizedValue < 0) {
-    formData.value.estimatedTime = null
-  } else {
-    formData.value.estimatedTime = sanitizedValue
-  }
-}
-
-// Convert workshop hours to office time at a 1:8 ratio, rounded up to quarter-hours.
-const calculateOfficeTimeQuantity = (workshopHours: number): number => {
-  if (workshopHours <= 0) {
-    return 0
-  }
-
-  const quarters = Math.ceil((workshopHours / 8) * 4)
-  return quarters / 4
-}
-
 const router = useRouter()
-const companyDefaultsStore = useCompanyDefaultsStore()
 
-const formData = ref<
-  JobCreateData & { estimatedMaterials: number | null; estimatedTime: number | null }
->({
+const formData = ref<JobCreateData>({
   name: '',
   client_id: '',
   client_name: '',
@@ -342,8 +297,8 @@ const formData = ref<
   order_number: '',
   notes: '',
   contact_id: null,
-  estimatedMaterials: null,
-  estimatedTime: null,
+  estimated_materials: 0,
+  estimated_time: 0,
   pricing_methodology: '',
 })
 
@@ -422,11 +377,11 @@ const hasValidXeroClient = computed(() => {
 })
 
 const hasValidTimeEstimate = computed(() => {
-  return formData.value.estimatedTime !== null && formData.value.estimatedTime >= 0
+  return formData.value.estimated_time >= 0
 })
 
 const hasValidMaterialsEstimate = computed(() => {
-  return formData.value.estimatedMaterials !== null && formData.value.estimatedMaterials >= 0
+  return formData.value.estimated_materials >= 0
 })
 
 const canSubmit = computed(() => {
@@ -444,8 +399,8 @@ const canSubmit = computed(() => {
     clientId: formData.value.client_id,
     selectedClient: selectedClient.value,
     xeroContactId: selectedClient.value?.xero_contact_id,
-    estimatedTime: formData.value.estimatedTime,
-    estimatedMaterials: formData.value.estimatedMaterials,
+    estimated_time: formData.value.estimated_time,
+    estimated_materials: formData.value.estimated_materials,
   })
 
   return nameCheck && xeroCheck && timeCheck && materialsCheck
@@ -473,13 +428,13 @@ const validateForm = (): boolean => {
     return false
   }
 
-  if (formData.value.estimatedMaterials === null || formData.value.estimatedMaterials < 0) {
-    errors.value.estimatedMaterials = 'Estimated materials must be provided and be 0 or greater'
+  if (formData.value.estimated_materials < 0) {
+    errors.value.estimated_materials = 'Estimated materials must be 0 or greater'
     return false
   }
 
-  if (formData.value.estimatedTime === null || formData.value.estimatedTime < 0) {
-    errors.value.estimatedTime = 'Estimated workshop time must be provided and be 0 or greater'
+  if (formData.value.estimated_time < 0) {
+    errors.value.estimated_time = 'Estimated workshop time must be 0 or greater'
     return false
   }
 
@@ -487,16 +442,6 @@ const validateForm = (): boolean => {
 }
 
 const handleSubmit = async () => {
-  if (
-    !companyDefaultsStore.companyDefaults ||
-    !companyDefaultsStore.companyDefaults.wage_rate ||
-    !companyDefaultsStore.companyDefaults.materials_markup ||
-    !companyDefaultsStore.companyDefaults.charge_out_rate
-  ) {
-    debugLog('Invalid CompanyDefaults value - cannot proceed')
-    toast.error('Invalid CompanyDefaults value detected - contact Corrin')
-  }
-
   if (!validateForm()) {
     debugLog('Validation errors:', errors.value)
     return
@@ -510,78 +455,14 @@ const handleSubmit = async () => {
     const result = await jobService.createJob(formData.value)
 
     if (result.success && result.job_id) {
-      const job_id = result.job_id
-      // Create estimate cost lines
-      const estimateLines = []
-      try {
-        const materialLine = await costlineService.createCostLine(job_id, 'estimate', {
-          kind: 'material',
-          desc: 'Estimated materials',
-          quantity: 1,
-          unit_cost: formData.value.estimatedMaterials!,
-          unit_rev:
-            formData.value.estimatedMaterials! *
-            (1 + companyDefaultsStore.companyDefaults?.materials_markup),
-        })
-        estimateLines.push(materialLine)
-      } catch (error: unknown) {
-        toast.error((error as Error).message)
-        debugLog('Failed to create material cost line:', error)
-      }
-      try {
-        const workshopTimeLine = await costlineService.createCostLine(job_id, 'estimate', {
-          kind: 'time',
-          desc: 'Estimated workshop time',
-          quantity: formData.value.estimatedTime!,
-          unit_cost: companyDefaultsStore.companyDefaults?.wage_rate,
-          unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate,
-        })
-        estimateLines.push(workshopTimeLine)
-      } catch (error: unknown) {
-        toast.error((error as Error).message)
-        debugLog('Failed to create time cost line:', error)
-      }
-      try {
-        const officeTimeLine = await costlineService.createCostLine(job_id, 'estimate', {
-          kind: 'time',
-          desc: 'Estimated Office Time',
-          quantity: calculateOfficeTimeQuantity(formData.value.estimatedTime ?? 0),
-          unit_cost: companyDefaultsStore.companyDefaults?.wage_rate,
-          unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate,
-        })
-        estimateLines.push(officeTimeLine)
-      } catch (error: unknown) {
-        toast.error((error as Error).message)
-        debugLog('Failed to create office time cost line:', error)
-      }
-
-      // Automatically copy estimate lines to quote cost set only for fixed price jobs
-      if (formData.value.pricing_methodology === 'fixed_price') {
-        try {
-          for (const estimateLine of estimateLines) {
-            await costlineService.createCostLine(job_id, 'quote', {
-              kind: estimateLine.kind as 'material' | 'time' | 'adjust',
-              desc: estimateLine.desc || '',
-              quantity: estimateLine.quantity || 0,
-              unit_cost: estimateLine.unit_cost ?? 0,
-              unit_rev: estimateLine.unit_rev ?? 0,
-              ext_refs: (estimateLine.ext_refs as Record<string, unknown>) || {},
-              meta: (estimateLine.meta as Record<string, unknown>) || {},
-            })
-          }
-          debugLog('Successfully copied estimate lines to quote cost set')
-        } catch (error: unknown) {
-          toast.error('Failed to copy estimate to quote: ' + (error as Error).message)
-          debugLog('Failed to copy estimate lines to quote:', error)
-        }
-      }
       toast.success('Job created!')
       toast.dismiss('create-job')
+
       // Redirect to quote tab for fixed price jobs, estimate to t&m jobs
       const defaultTab = formData.value.pricing_methodology === 'fixed_price' ? 'quote' : 'estimate'
       router.push({
         name: 'job-edit',
-        params: { id: job_id },
+        params: { id: result.job_id },
         query: { new: 'true', tab: defaultTab },
       })
     } else {
@@ -608,8 +489,8 @@ onMounted(() => {
   formData.value.order_number = ''
   formData.value.notes = ''
   formData.value.contact_id = null
-  formData.value.estimatedMaterials = null
-  formData.value.estimatedTime = null
+  formData.value.estimated_materials = 0
+  formData.value.estimated_time = 0
   formData.value.pricing_methodology = ''
 })
 </script>

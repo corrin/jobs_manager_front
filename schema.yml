@@ -8060,8 +8060,24 @@ components:
         pricing_methodology:
           type: string
           nullable: true
+        estimated_materials:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: 0
+          exclusiveMaximum: true
+          description: Estimated material costs in dollars
+        estimated_time:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: 0
+          exclusiveMaximum: true
+          description: Estimated workshop time in hours
       required:
         - client_id
+        - estimated_materials
+        - estimated_time
         - name
     JobCreateResponse:
       type: object

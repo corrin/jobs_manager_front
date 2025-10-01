@@ -912,6 +912,8 @@ const JobCreateRequest = z
     notes: z.string().optional(),
     contact_id: z.string().uuid().nullish(),
     pricing_methodology: z.string().nullish(),
+    estimated_materials: z.number().gte(0).lt(100000000),
+    estimated_time: z.number().gte(0).lt(100000000),
   })
   .passthrough()
 const JobCreateResponse = z
