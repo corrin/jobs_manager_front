@@ -289,8 +289,6 @@ function isNegativeStock(line: CostLine): boolean {
   return props.negativeStockIds?.includes(line.ext_refs?.stock_id as string) ?? false
 }
 
-// Removed unused function
-
 function canEditField(
   line: CostLine,
   field: 'desc' | 'quantity' | 'unit_cost' | 'unit_rev',
