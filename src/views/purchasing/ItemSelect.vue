@@ -1,4 +1,3 @@
-o
 <script setup lang="ts">
 import {
   Select,
