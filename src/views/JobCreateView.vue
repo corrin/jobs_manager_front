@@ -511,8 +511,10 @@ const handleSubmit = async () => {
 
     if (result.success && result.job_id) {
       const job_id = result.job_id
+      // Create estimate cost lines
+      const estimateLines = []
       try {
-        await costlineService.createCostLine(job_id, 'estimate', {
+        const materialLine = await costlineService.createCostLine(job_id, 'estimate', {
           kind: 'material',
           desc: 'Estimated materials',
           quantity: 1,
@@ -521,37 +523,67 @@ const handleSubmit = async () => {
             formData.value.estimatedMaterials! *
             (1 + companyDefaultsStore.companyDefaults?.materials_markup),
         })
+        estimateLines.push(materialLine)
       } catch (error: unknown) {
         toast.error((error as Error).message)
         debugLog('Failed to create material cost line:', error)
       }
       try {
-        await costlineService.createCostLine(job_id, 'estimate', {
+        const workshopTimeLine = await costlineService.createCostLine(job_id, 'estimate', {
           kind: 'time',
           desc: 'Estimated workshop time',
           quantity: formData.value.estimatedTime!,
           unit_cost: companyDefaultsStore.companyDefaults?.wage_rate,
           unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate,
         })
+        estimateLines.push(workshopTimeLine)
       } catch (error: unknown) {
         toast.error((error as Error).message)
         debugLog('Failed to create time cost line:', error)
       }
       try {
-        await costlineService.createCostLine(job_id, 'estimate', {
+        const officeTimeLine = await costlineService.createCostLine(job_id, 'estimate', {
           kind: 'time',
           desc: 'Estimated Office Time',
           quantity: calculateOfficeTimeQuantity(formData.value.estimatedTime ?? 0),
           unit_cost: companyDefaultsStore.companyDefaults?.wage_rate,
           unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate,
         })
+        estimateLines.push(officeTimeLine)
       } catch (error: unknown) {
         toast.error((error as Error).message)
         debugLog('Failed to create office time cost line:', error)
       }
+
+      // Automatically copy estimate lines to quote cost set only for fixed price jobs
+      if (formData.value.pricing_methodology === 'fixed_price') {
+        try {
+          for (const estimateLine of estimateLines) {
+            await costlineService.createCostLine(job_id, 'quote', {
+              kind: estimateLine.kind as 'material' | 'time' | 'adjust',
+              desc: estimateLine.desc || '',
+              quantity: estimateLine.quantity || 0,
+              unit_cost: estimateLine.unit_cost ?? 0,
+              unit_rev: estimateLine.unit_rev ?? 0,
+              ext_refs: (estimateLine.ext_refs as Record<string, unknown>) || {},
+              meta: (estimateLine.meta as Record<string, unknown>) || {},
+            })
+          }
+          debugLog('Successfully copied estimate lines to quote cost set')
+        } catch (error: unknown) {
+          toast.error('Failed to copy estimate to quote: ' + (error as Error).message)
+          debugLog('Failed to copy estimate lines to quote:', error)
+        }
+      }
       toast.success('Job created!')
       toast.dismiss('create-job')
-      router.push({ name: 'job-edit', params: { id: job_id } })
+      // Redirect to quote tab for fixed price jobs, estimate to t&m jobs
+      const defaultTab = formData.value.pricing_methodology === 'fixed_price' ? 'quote' : 'estimate'
+      router.push({
+        name: 'job-edit',
+        params: { id: job_id },
+        query: { new: 'true', tab: defaultTab },
+      })
     } else {
       throw new Error(String(result.error) || 'Failed to create job')
     }
