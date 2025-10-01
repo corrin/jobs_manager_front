@@ -2851,6 +2851,11 @@ paths:
             type: string
           description: Filter by paid status
         - in: query
+          name: rejected_flag
+          schema:
+            type: string
+          description: Filter by rejected status
+        - in: query
           name: status
           schema:
             type: string
