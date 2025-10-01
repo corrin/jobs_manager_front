@@ -581,6 +581,7 @@ const { handleSmartDelete } = useSmartCostLineDelete({
 
 // Function for consumption on new material line selection
 async function consumeStockForNewLine(payload: {
+  line: CostLine
   stockId: string
   quantity: number
   unitCost: number
@@ -598,13 +599,26 @@ async function consumeStockForNewLine(payload: {
       unit_rev: payload.unitRev,
     }
 
-    await api.consumeStock(request, {
+    const response = await api.consumeStock(request, {
       params: { stock_id: payload.stockId },
     })
 
-    // Success: Emit to parent for reload, or update local if possible
+    // Replace the temp line with the created one
+    const tempLineIndex = costLines.value.findIndex((l) => l === payload.line)
+
+    if (tempLineIndex >= 0) {
+      // Common case: there was a temp line in the parent component
+      costLines.value[tempLineIndex] = response.line
+    } else {
+      // Initial case: user was on the local emptyLine of the table (child)
+      // Insert the created line in the parent's array
+      costLines.value.push(response.line)
+    }
+
+    debugLog('[CONSUME-STOCK] New array: ', costLines.value, ' Received line: ', response.line)
+
     toast.success('Stock consumed successfully!')
-    await loadActualCosts() // Reload to sync with backend
+    emit('cost-line-changed')
 
     // Refresh stock data and check if resulted in negative
     await stockStore.fetchStock()
@@ -614,7 +628,6 @@ async function consumeStockForNewLine(payload: {
     }
 
     checkAndUpdateNegativeStocks()
-    // Note: Since we reload, the line will be re-created from backend with id
   } catch (error) {
     toast.error('Failed to consume stock.')
     debugLog('Failed to consume stock:', error)

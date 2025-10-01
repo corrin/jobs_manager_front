@@ -6175,14 +6175,6 @@ components:
           exclusiveMinimum: true
           nullable: true
           description: Outstanding amount if relevant
-        job_value:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Total job value (invoiced amount or quote/actual revenue)
       required:
         - archived_date
         - client_name
@@ -6190,7 +6182,6 @@ components:
         - issue
         - job_id
         - job_number
-        - job_value
     ArchivedJobsComplianceResponse:
       type: object
       description: Response for archived jobs compliance check.
@@ -11401,7 +11392,10 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        line:
+          $ref: '#/components/schemas/CostLine'
       required:
+        - line
         - success
     StockCreate:
       type: object

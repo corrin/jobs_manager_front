@@ -884,7 +884,6 @@ const ArchivedJobIssue = z
     issue: z.string(),
     invoice_status: z.string().nullish(),
     outstanding_amount: z.number().gt(-100000000).lt(100000000).nullish(),
-    job_value: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const ComplianceSummary = z
@@ -1699,6 +1698,7 @@ const StockConsumeResponse = z
     success: z.boolean(),
     message: z.string().optional(),
     remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
+    line: CostLine,
   })
   .passthrough()
 const SupplierPriceStatusItem = z

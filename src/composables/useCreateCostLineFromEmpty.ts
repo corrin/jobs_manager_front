@@ -3,6 +3,7 @@ import { toast } from 'vue-sonner'
 import { costlineService } from '../services/costline.service'
 import { schemas } from '../api/generated/api'
 import type { z } from 'zod'
+import { debugLog } from '../utils/debug'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
@@ -28,9 +29,10 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
       return
     }
 
-    console.log(`Creating cost line from empty line (${costSetKind}):`, line)
+    debugLog(`Creating cost line from empty line (${costSetKind}):`, line)
 
     try {
+      const now = new Date().toISOString()
       const createPayload: CostLineCreateUpdate = {
         kind: line.kind as 'material' | 'time' | 'adjust',
         desc: line.desc || '',
@@ -39,6 +41,8 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
         unit_rev: line.unit_rev ?? 0,
         ext_refs: (line.ext_refs as Record<string, unknown>) || {},
         meta: (line.meta as Record<string, unknown>) || {},
+        created_at: now,
+        updated_at: now,
       }
 
       const created = await costlineService.createCostLine(jobId, costSetKind, createPayload)
@@ -50,7 +54,7 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
       }
 
       toast.success('Cost line created!')
-      console.log('✅ Successfully created cost line:', created)
+      debugLog('✅ Successfully created cost line:', created)
 
       // Call success callback if provided
       if (onSuccess) {
@@ -59,7 +63,7 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
 
       return created
     } catch (error) {
-      console.error('Failed to create cost line:', error)
+      debugLog('Failed to create cost line:', error)
       toast.error('Failed to create cost line')
       throw error
     }

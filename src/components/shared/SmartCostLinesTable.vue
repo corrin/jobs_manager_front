@@ -24,6 +24,7 @@ import { Textarea } from '../ui/textarea'
 import ItemSelect from '../../views/purchasing/ItemSelect.vue'
 import type { DataTableRowContext } from '../../utils/data-table-types'
 import { toast } from 'vue-sonner'
+import { debugLog } from '../../utils/debug'
 import { HelpCircle, Trash2, Plus, AlertTriangle } from 'lucide-vue-next'
 import {
   Dialog,
@@ -33,14 +34,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from '../ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '../ui/dropdown-menu'
 
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
+import { useStockStore } from '../../stores/stockStore'
 import { useCostLineCalculations } from '../../composables/useCostLineCalculations'
 import { useCostLineAutosave } from '../../composables/useCostLineAutosave'
 import { useGridKeyboardNav } from '../../composables/useGridKeyboardNav'
@@ -71,8 +67,6 @@ const props = withDefaults(
     readOnly?: boolean
     showItemColumn?: boolean
     showSourceColumn?: boolean
-    // Allow editing of the kind field (Type)
-    allowTypeEdit?: boolean
     // Resolver for "Source" column (read-only). If not provided, Source column will be hidden or blank.
     sourceResolver?: (
       line: CostLine,
@@ -83,6 +77,7 @@ const props = withDefaults(
     blockedFieldsByKind?: Record<KindOption, string[]>
     // For 'actual' tab: Function to call on stock selection for new lines
     consumeStockFn?: (payload: {
+      line: CostLine
       stockId: string
       quantity: number
       unitCost: number
@@ -96,7 +91,6 @@ const props = withDefaults(
     readOnly: false,
     showItemColumn: true,
     showSourceColumn: false,
-    allowTypeEdit: true,
     allowedKinds: () => ['material', 'time', 'adjust'],
     blockedFieldsByKind: () => ({ material: [], time: [], adjust: [] }),
     negativeStockIds: () => [],
@@ -113,7 +107,7 @@ const emit = defineEmits<{
 
 // Add logging to track emit calls
 const loggedEmit = (event: string, ...args: unknown[]) => {
-  console.log(`📤 SmartCostLinesTable emitting event: ${event}`, args)
+  debugLog(`📤 SmartCostLinesTable emitting event: ${event}`, args)
   return (emit as any)(event, ...args) // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
@@ -146,8 +140,11 @@ function handleAddLine() {
   loggedEmit('add-line')
 }
 
-// Local UI-only mapping: selected Item id per line (not persisted)
-const selectedItemMap = new WeakMap<CostLine, string | null>()
+// Local UI-only mapping: selected Item data per line (not persisted)
+const selectedItemMap = new WeakMap<
+  CostLine,
+  { id: string; description: string; item_code?: string } | null
+>()
 
 const createdOnce = new WeakSet<CostLine>()
 
@@ -174,11 +171,50 @@ function maybeEmitCreate(line: CostLine) {
   if (line === emptyLine.value) resetEmptyLine(line.kind as KindOption)
 }
 
+function updateLineKind(line: CostLine, newKind: KindOption) {
+  if (String(line.kind) === newKind) return
+
+  Object.assign(line, { kind: newKind })
+
+  // Apply company defaults for time
+  if (newKind === 'time') {
+    Object.assign(line, {
+      unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
+      unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
+    })
+  } else {
+    // Recalculate unit_rev with markup for material/adjust
+    const derived = apply(line).derived
+    Object.assign(line, { unit_rev: derived.unit_rev })
+  }
+
+  // Save if line has real ID and meets baseline
+  if (line.id && isLineReadyForSave(line)) {
+    debugLog('Saving kind change:', line.id, newKind)
+    const patch: PatchedCostLineCreateUpdate = {
+      kind: newKind,
+      ...(newKind === 'time'
+        ? {
+            unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
+            unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
+          }
+        : { unit_rev: Number(line.unit_rev) }),
+    }
+    const optimistic: Partial<CostLine> = { ...patch }
+    autosave.scheduleSave(line, patch, optimistic)
+  }
+}
+
 // Company Defaults and calculations
 const companyDefaultsStore = useCompanyDefaultsStore()
+const store = useStockStore()
 onMounted(() => {
   if (!companyDefaultsStore.isLoaded && !companyDefaultsStore.isLoading) {
     companyDefaultsStore.loadCompanyDefaults()
+  }
+  // Ensure stock is loaded for item lookup
+  if (store.items.length === 0 && !store.loading) {
+    store.fetchStock()
   }
 })
 
@@ -189,7 +225,6 @@ const {
   isUnitRevenueEditable,
   onUnitRevenueManuallyEdited,
   onItemSelected,
-  onKindChanged,
 } = useCostLineCalculations({
   getCompanyDefaults: () => companyDefaultsStore.companyDefaults,
 })
@@ -254,21 +289,6 @@ function isStockLine(line: CostLine): boolean {
 function isNegativeStock(line: CostLine): boolean {
   if (!line?.id || !isStockLine(line)) return false
   return props.negativeStockIds?.includes(line.ext_refs?.stock_id as string) ?? false
-}
-
-/**
- * Kind options and guards
- */
-const kindOptions: KindOption[] = props.allowedKinds || ['material', 'time', 'adjust']
-
-function canEditKindForLine(line: CostLine): boolean {
-  if (props.readOnly) return false
-  if (!props.allowTypeEdit) return false
-  if (props.tabKind === 'actual') {
-    // In "actual", lines usually originate from PO/timesheet; allow kind change only for "adjust"
-    return ['material', 'adjust'].includes(String(line.kind))
-  }
-  return true
 }
 
 function canEditField(
@@ -340,134 +360,28 @@ const negativeIdsSig = computed(() => props.negativeStockIds?.slice().sort().joi
 const columns = computed(() => {
   void negativeIdsSig.value
   return [
-    // Type / Kind
+    // Type / Kind - Now readonly badge only
     {
       id: 'kind',
       header: 'Type',
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const badge = getKindBadge(line)
-
-        if (!canEditKindForLine(line)) {
-          return h(Badge, { class: `text-xs font-medium ${badge.class}` }, () => badge.label)
-        }
-
-        // Attractive dropdown with badges
-        return h(
-          DropdownMenu,
-          { key: String(line.id) + line.kind },
-          {
-            default: () => [
-              h('div', { onClick: (e: Event) => e.stopPropagation() }, [
-                h(DropdownMenuTrigger, { asChild: true }, () =>
-                  h(
-                    Button,
-                    {
-                      variant: 'outline',
-                      size: 'sm',
-                      class: `h-7 px-2 py-1 text-xs ${badge.class} bg-opacity-60 hover:bg-opacity-80`,
-                    },
-                    () => badge.label,
-                  ),
-                ),
-              ]),
-              h(DropdownMenuContent, { align: 'start', class: 'w-40 z-50' }, () =>
-                kindOptions.map((opt) =>
-                  h(
-                    DropdownMenuItem,
-                    {
-                      onClick: () => {
-                        const newKind = opt as KindOption
-                        if (newKind === String(line.kind)) return
-
-                        if (line === emptyLine.value) {
-                          // For the empty line, create a new object and update the ref
-                          const newLine = { ...line, kind: newKind }
-                          onKindChanged(newLine)
-
-                          // Apply company defaults for time
-                          if (newKind === 'time') {
-                            Object.assign(newLine, {
-                              unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
-                              unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
-                            })
-                          } else {
-                            // For material/adjust, recalculate unit_rev with markup
-                            const derived = apply(newLine).derived
-                            Object.assign(newLine, { unit_rev: derived.unit_rev })
-                          }
-
-                          emptyLine.value = newLine
-                        } else {
-                          // For existing lines, mutate as before
-                          Object.assign(line, { kind: newKind })
-                          onKindChanged(line)
-
-                          // Apply company defaults for time
-                          if (newKind === 'time') {
-                            Object.assign(line, {
-                              unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
-                              unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
-                            })
-                          } else {
-                            // For material/adjust, recalculate unit_rev with markup
-                            const derived = apply(line).derived
-                            Object.assign(line, { unit_rev: derived.unit_rev })
-                          }
-
-                          // Save if line has real ID and meets baseline
-                          if (line.id && isLineReadyForSave(line)) {
-                            console.log('Saving kind change:', line.id, newKind)
-                            const patch: PatchedCostLineCreateUpdate = {
-                              kind: newKind,
-                              ...(newKind === 'time'
-                                ? {
-                                    unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
-                                    unit_rev:
-                                      companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
-                                  }
-                                : { unit_rev: Number(line.unit_rev) }),
-                            }
-                            const optimistic: Partial<CostLine> = { ...patch }
-                            autosave.scheduleSave(line, patch, optimistic)
-                          }
-                        }
-                      },
-                    },
-                    () => [
-                      h(
-                        'span',
-                        {
-                          class: `inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold mr-2 ${
-                            opt === 'time'
-                              ? 'bg-blue-100 text-blue-800'
-                              : opt === 'adjust'
-                                ? 'bg-pink-100 text-pink-800'
-                                : 'bg-green-100 text-green-800'
-                          }`,
-                        },
-                        opt === 'time' ? 'Labour' : opt === 'adjust' ? 'Adjustment' : 'Material',
-                      ),
-                      h('span', { class: 'text-xs' }, opt),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          },
-        )
+        return h(Badge, { class: `text-xs font-medium ${badge.class}` }, () => badge.label)
       },
-      meta: { editable: props.allowTypeEdit && !props.readOnly },
+      meta: { editable: false }, // Always readonly
     },
 
-    // Item (optional, UI-only) - moved to be first after Type
+    // Item
     props.showItemColumn
       ? {
           id: 'item',
-          header: 'Item',
+          header: () => h('div', { class: 'col-item text-left' }, 'Item'),
           cell: ({ row }: RowCtx) => {
             const line = displayLines.value[row.index]
-            const model = selectedItemMap.get(line) || null
+            const selectedItem = selectedItemMap.get(line)
+            const model =
+              selectedItem?.id || (line.ext_refs as Record<string, unknown>)?.stock_id || null
             const kind = String(line.kind)
             const isMaterial = kind === 'material'
             const isNewLine = !line.id
@@ -482,7 +396,7 @@ const columns = computed(() => {
 
             // Lazy mount: render lightweight control until row is active (selected)
             if (!isActive) {
-              return h('div', { class: 'min-w-[12rem] flex items-center gap-2' }, [
+              return h('div', { class: 'col-item flex items-center' }, [
                 h(
                   Button,
                   {
@@ -493,21 +407,105 @@ const columns = computed(() => {
                       e.stopPropagation()
                       selectedRowIndex.value = row.index
                     },
+                    class: 'font-mono uppercase tracking-wide',
                   },
-                  () => (model ? 'Change item' : 'Select item'),
+                  () => {
+                    if (!model) {
+                      // Check if this is a time line without stock_id (labour)
+                      const stockId = (line.ext_refs as Record<string, unknown>)?.stock_id as string
+                      if (!stockId && String(line.kind) === 'time') {
+                        return 'LABOUR'
+                      }
+
+                      // Check if this is an existing line with stock selected
+                      if (stockId) {
+                        // Try to find the item in the stock store by ID
+                        const stockItem = store.items.find((item) => item.id === stockId)
+                        if (stockItem?.item_code) {
+                          return stockItem.item_code
+                        }
+                      }
+
+                      // If no stock_id or item not found by ID, try to find by description
+                      if (line.desc) {
+                        const stockItemByDesc = store.items.find(
+                          (item) => item.description?.toLowerCase() === line.desc?.toLowerCase(),
+                        )
+                        if (stockItemByDesc?.item_code) {
+                          return stockItemByDesc.item_code
+                        }
+                      }
+
+                      // If no valid item found, prompt user to select a valid item
+                      return 'Select Item'
+                    }
+
+                    // Handle labour items specially
+                    if (model === '__labour__') {
+                      return 'LABOUR'
+                    }
+
+                    // If we have selectedItem, use its code
+                    if (selectedItem?.item_code) {
+                      return selectedItem.item_code
+                    }
+
+                    // If no selectedItem but we have a model (stock_id), find the item in store
+                    if (model && model !== '__labour__') {
+                      const stockItem = store.items.find((item) => item.id === model)
+                      if (stockItem?.item_code) {
+                        return stockItem.item_code
+                      }
+                    }
+
+                    return 'Change item'
+                  },
                 ),
-                h('span', { class: 'text-xs text-slate-500 line-clamp-1' }, line.desc || ''),
               ])
             }
 
-            return h('div', { class: 'min-w-[12rem]' }, [
+            return h('div', { class: 'col-item' }, [
               h(ItemSelect, {
                 modelValue: model,
                 disabled: !enabled,
+                lineKind: String(line.kind),
+                tabKind: props.tabKind,
                 onClick: (e: Event) => e.stopPropagation(),
                 'onUpdate:modelValue': async (val: string | null) => {
                   if (!enabled) return
-                  selectedItemMap.set(line, val)
+                  if (val) {
+                    debugLog('💾 Storing item selection:', { val, lineId: line.id })
+                    // Store full item data for display
+                    if (val === '__labour__') {
+                      selectedItemMap.set(line, {
+                        id: val,
+                        description: 'Labour',
+                        item_code: 'LABOUR',
+                      })
+                      debugLog('👷 Stored labour item in selectedItemMap')
+                    } else {
+                      // For regular items, we'll fetch the data below and update
+                      selectedItemMap.set(line, { id: val, description: '', item_code: '' })
+                      debugLog('📦 Stored placeholder for stock item in selectedItemMap')
+                    }
+                  } else {
+                    selectedItemMap.set(line, null)
+                    debugLog('🗑️ Cleared selectedItemMap for line')
+                  }
+
+                  // Infer kind based on selection
+                  let newKind: KindOption = 'adjust' // Default fallback
+                  if (val === '__labour__') {
+                    newKind = 'time'
+                  } else if (val) {
+                    newKind = 'material'
+                  }
+
+                  // Update kind if it changed
+                  if (String(line.kind) !== newKind) {
+                    updateLineKind(line, newKind)
+                  }
+
                   onItemSelected(line)
 
                   if (
@@ -526,7 +524,16 @@ const columns = computed(() => {
                       const unitCost = Number(stock.unit_cost || 0)
                       const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
                       const unitRev = unitCost * (1 + markup)
-                      await props.consumeStockFn({ stockId: val, quantity: qty, unitCost, unitRev })
+                      await props.consumeStockFn({
+                        line,
+                        stockId: val,
+                        quantity: qty,
+                        unitCost,
+                        unitRev,
+                      })
+
+                      // to leave the active mode and show the chip/label instead of "Select Item"
+                      selectedRowIndex.value = -1
                     } catch {
                       toast.error('Failed to consume stock. Line not created.')
                       selectedItemMap.set(line, null)
@@ -538,21 +545,47 @@ const columns = computed(() => {
                   try {
                     found = await api.purchasing_rest_stock_retrieve({ params: { id: val } })
                   } catch (error) {
-                    console.warn('Failed to fetch stock item details:', error)
+                    debugLog('Failed to fetch stock item details:', error)
                   }
                   if (found) {
+                    debugLog('✅ API returned stock item:', {
+                      id: found.id,
+                      item_code: found.item_code,
+                      description: found.description,
+                    })
                     Object.assign(line, { desc: found.description || '' })
                     Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
+                    // Update selectedItemMap with full data
+                    selectedItemMap.set(line, {
+                      id: val,
+                      description: found.description || '',
+                      item_code: found.item_code || '',
+                    })
+                    debugLog('💾 Updated selectedItemMap with full item data:', {
+                      id: val,
+                      description: found.description || '',
+                      item_code: found.item_code || '',
+                    })
                     // Ensure quantity is set for new lines
                     if (line.quantity == null) Object.assign(line, { quantity: 1 })
                     if (kind !== 'time')
                       Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
-                    nextTick(() => {
-                      if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
-                    })
                   } else {
+                    debugLog('❌ API did not return stock item for id:', val)
                     Object.assign(line, { desc: '' })
                     Object.assign(line, { unit_cost: 0 })
+                    selectedItemMap.set(line, null)
+                  }
+
+                  // Save immediately for existing lines
+                  if (line.id && isLineReadyForSave(line)) {
+                    const patch: PatchedCostLineCreateUpdate = {
+                      desc: line.desc || '',
+                      unit_cost: Number(line.unit_cost ?? 0),
+                      unit_rev: Number(line.unit_rev ?? 0),
+                    }
+                    const optimistic: Partial<CostLine> = { ...patch }
+                    autosave.scheduleSave(line, patch, optimistic)
                   }
                 },
                 'onUpdate:description': (desc: string) => enabled && Object.assign(line, { desc }),
@@ -565,6 +598,10 @@ const columns = computed(() => {
                     if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
                   })
                 },
+                'onUpdate:kind': (newKind: string | null) => {
+                  if (!enabled || !newKind) return
+                  updateLineKind(line, newKind as KindOption)
+                },
               }),
             ])
           },
@@ -575,7 +612,7 @@ const columns = computed(() => {
     // Description
     {
       id: 'desc',
-      header: () => h('div', { class: 'desc-col text-center' }, 'Description'),
+      header: () => h('div', { class: 'desc-col text-left' }, 'Description'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -583,7 +620,7 @@ const columns = computed(() => {
         const isActualTab = props.tabKind === 'actual'
         const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
         const isFieldBlocked = blockedFields.includes('desc')
-        const hasStockSelected = selectedItemMap.get(line) && selectedItemMap.get(line) !== ''
+        const hasStockSelected = !!selectedItemMap.get(line)
         const isBlocked =
           isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
         const canEdit = canEditField(line, 'desc') && !isBlocked
@@ -591,7 +628,7 @@ const columns = computed(() => {
         return h(
           'div',
           {
-            class: 'desc-cell w-48',
+            class: 'desc-cell w-full',
             tabindex: 0,
             role: 'button',
             title: line.desc || '',
@@ -660,12 +697,12 @@ const columns = computed(() => {
         const isActualTab = props.tabKind === 'actual'
         const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
         const isFieldBlocked = blockedFields.includes('quantity')
-        const hasStockSelected = selectedItemMap.get(line) && selectedItemMap.get(line) !== ''
+        const hasStockSelected = !!selectedItemMap.get(line)
         const isBlocked =
           isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
 
         return [
-          h('div', { class: 'col-8ch' }, [
+          h('div', { class: 'col-10ch' }, [
             h(Input, {
               type: 'number',
               step: String(kind === 'time' ? 0.25 : 1),
@@ -713,7 +750,7 @@ const columns = computed(() => {
     // Unit Cost
     {
       id: 'unit_cost',
-      header: () => h('div', { class: 'col-8ch text-center' }, 'Unit Cost'),
+      header: () => h('div', { class: 'col-10ch text-center' }, 'Unit Cost'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -721,14 +758,14 @@ const columns = computed(() => {
         const isActualTab = props.tabKind === 'actual'
         const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
         const isFieldBlocked = blockedFields.includes('unit_cost')
-        const hasStockSelected = selectedItemMap.get(line) && selectedItemMap.get(line) !== ''
+        const hasStockSelected = !!selectedItemMap.get(line)
         const isBlocked =
           isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
         const editable = canEditField(line, 'unit_cost') && !isBlocked
         const isTime = kind === 'time'
         const resolved = apply(line).derived
         return [
-          h('div', { class: 'col-8ch' }, [
+          h('div', { class: 'col-10ch' }, [
             h(Input, {
               type: 'number',
               step: '0.01',
@@ -762,13 +799,13 @@ const columns = computed(() => {
 
                 // Create new line if it doesn't have an ID yet and meets baseline criteria
                 if (!line.id && isLineReadyForSave(line)) {
-                  console.log('Creating new line from unit_cost edit:', line)
+                  debugLog('Creating new line from unit_cost edit:', line)
                   maybeEmitCreate(line)
                   return
                 }
 
                 if (!line.id || !isLineReadyForSave(line)) {
-                  console.log('Skipping unit_cost save:', {
+                  debugLog('Skipping unit_cost save:', {
                     editable,
                     id: line.id,
                     ready: isLineReadyForSave(line),
@@ -776,7 +813,7 @@ const columns = computed(() => {
                   return
                 }
 
-                console.log('Saving unit_cost change:', line.id, line.unit_cost)
+                debugLog('Saving unit_cost change:', line.id, line.unit_cost)
                 // For material/adjust, unit_rev may be auto recalculated unless overridden
                 const derived = apply(line).derived
                 const patch: PatchedCostLineCreateUpdate = {
@@ -804,7 +841,7 @@ const columns = computed(() => {
     // Unit Revenue
     {
       id: 'unit_rev',
-      header: () => h('div', { class: 'col-8ch text-center' }, 'Unit Rev'),
+      header: () => h('div', { class: 'col-10ch text-center' }, 'Unit Rev'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -812,14 +849,14 @@ const columns = computed(() => {
         const isActualTab = props.tabKind === 'actual'
         const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
         const isFieldBlocked = blockedFields.includes('unit_rev')
-        const hasStockSelected = selectedItemMap.get(line) && selectedItemMap.get(line) !== ''
+        const hasStockSelected = !!selectedItemMap.get(line)
         const isBlocked =
           isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
         const editable = canEditField(line, 'unit_rev') && !isBlocked
         const isTime = kind === 'time'
         const resolved = apply(line).derived
         return [
-          h('div', { class: 'col-8ch' }, [
+          h('div', { class: 'col-10ch' }, [
             h(Input, {
               type: 'number',
               step: '0.01',
@@ -849,13 +886,13 @@ const columns = computed(() => {
 
                 // Create new line if it doesn't have an ID yet and meets baseline criteria
                 if (!line.id && isLineReadyForSave(line)) {
-                  console.log('Creating new line from unit_rev edit:', line)
+                  debugLog('Creating new line from unit_rev edit:', line)
                   maybeEmitCreate(line)
                   return
                 }
 
                 if (!line.id || !isLineReadyForSave(line)) {
-                  console.log('Skipping unit_rev save:', {
+                  debugLog('Skipping unit_rev save:', {
                     editable,
                     id: line.id,
                     ready: isLineReadyForSave(line),
@@ -863,7 +900,7 @@ const columns = computed(() => {
                   return
                 }
 
-                console.log('Saving unit_rev change:', line.id, line.unit_rev)
+                debugLog('Saving unit_rev change:', line.id, line.unit_rev)
                 const patch: PatchedCostLineCreateUpdate = {
                   unit_rev: Number(line.unit_rev ?? 0),
                 }
@@ -1045,7 +1082,7 @@ const columns = computed(() => {
                 e.stopPropagation()
                 if (disabled) return
 
-                console.log('🗑️ Delete button clicked for line:', {
+                debugLog('🗑️ Delete button clicked for line:', {
                   lineId: line.id,
                   rowIndex: row.index,
                   lineDesc: line.desc,
@@ -1058,18 +1095,18 @@ const columns = computed(() => {
                 if (!line.id) {
                   // Find the actual index in the original props.lines array
                   const actualIndex = props.lines.findIndex((l) => l === line)
-                  console.log('🔍 Looking for local line in props.lines:', {
+                  debugLog('🔍 Looking for local line in props.lines:', {
                     actualIndex,
                     foundLine: actualIndex >= 0 ? props.lines[actualIndex] : null,
                     searchedLine: line,
                   })
 
                   if (actualIndex >= 0) {
-                    console.log('✅ Emitting delete-line with actualIndex:', actualIndex)
+                    debugLog('✅ Emitting delete-line with actualIndex:', actualIndex)
                     loggedEmit('delete-line', actualIndex)
                   } else {
                     // This is the auto-generated empty line - don't delete it, just clear it
-                    console.log('⚠️ Auto-generated empty line - cannot delete, ignoring')
+                    debugLog('⚠️ Auto-generated empty line - cannot delete, ignoring')
                     return
                   }
                   return
@@ -1078,7 +1115,7 @@ const columns = computed(() => {
                 // For saved lines, ask for confirmation
                 const confirmed = window.confirm('Delete this line? This action cannot be undone.')
                 if (!confirmed) return
-                console.log('✅ Emitting delete-line with line.id:', line.id)
+                debugLog('✅ Emitting delete-line with line.id:', line.id)
                 loggedEmit('delete-line', line.id as string)
               },
             },
@@ -1122,11 +1159,11 @@ const { onKeydown } = useGridKeyboardNav({
   },
   deleteSelected: () => {
     const i = selectedRowIndex.value
-    console.log('⌨️ Keyboard delete triggered for selectedRowIndex:', i)
+    debugLog('⌨️ Keyboard delete triggered for selectedRowIndex:', i)
 
     if (i >= 0 && i < displayLines.value.length) {
       const line = displayLines.value[i]
-      console.log('🗑️ Keyboard delete for line:', {
+      debugLog('🗑️ Keyboard delete for line:', {
         lineId: line.id,
         selectedIndex: i,
         lineDesc: line.desc,
@@ -1134,21 +1171,21 @@ const { onKeydown } = useGridKeyboardNav({
       })
 
       if (line.id) {
-        console.log('✅ Keyboard emitting delete-line with line.id:', line.id)
+        debugLog('✅ Keyboard emitting delete-line with line.id:', line.id)
         loggedEmit('delete-line', line.id as string)
       } else {
         // Find the actual index in the original props.lines array
         const actualIndex = props.lines.findIndex((l) => l === line)
-        console.log('🔍 Keyboard looking for local line in props.lines:', {
+        debugLog('🔍 Keyboard looking for local line in props.lines:', {
           actualIndex,
           foundLine: actualIndex >= 0 ? props.lines[actualIndex] : null,
         })
 
         if (actualIndex >= 0) {
-          console.log('✅ Keyboard emitting delete-line with actualIndex:', actualIndex)
+          debugLog('✅ Keyboard emitting delete-line with actualIndex:', actualIndex)
           loggedEmit('delete-line', actualIndex)
         } else {
-          console.log('⚠️ Keyboard: Auto-generated empty line - cannot delete, ignoring')
+          debugLog('⚠️ Keyboard: Auto-generated empty line - cannot delete, ignoring')
         }
       }
     }
@@ -1251,7 +1288,15 @@ const shortcutsTitle = computed(
             @update:model-value="
               (payload: string | number) => {
                 const v = typeof payload === 'string' ? payload : String(payload)
-                if (descModalLine) descModalLine.desc = v
+                if (descModalLine) {
+                  descModalLine.desc = v
+
+                  // Infer kind as 'adjust' if no item is selected and description is being set
+                  const hasSelectedItem = !!selectedItemMap.get(descModalLine)
+                  if (!hasSelectedItem && v.trim() && String(descModalLine.kind) !== 'adjust') {
+                    updateLineKind(descModalLine, 'adjust')
+                  }
+                }
               }
             "
           />
