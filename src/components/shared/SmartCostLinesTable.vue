@@ -372,11 +372,11 @@ const columns = computed(() => {
       meta: { editable: false }, // Always readonly
     },
 
-    // Item (optional, UI-only) - moved to be first after Type
+    // Item
     props.showItemColumn
       ? {
           id: 'item',
-          header: 'Item',
+          header: () => h('div', { class: 'col-item text-left' }, 'Item'),
           cell: ({ row }: RowCtx) => {
             const line = displayLines.value[row.index]
             const selectedItem = selectedItemMap.get(line)
@@ -395,7 +395,7 @@ const columns = computed(() => {
 
             // Lazy mount: render lightweight control until row is active (selected)
             if (!isActive) {
-              return h('div', { class: 'min-w-[12rem] flex items-center' }, [
+              return h('div', { class: 'col-item flex items-center' }, [
                 h(
                   Button,
                   {
@@ -409,27 +409,18 @@ const columns = computed(() => {
                     class: 'font-mono uppercase tracking-wide',
                   },
                   () => {
-                    console.log('🔍 SmartCostLinesTable button text:', {
-                      model,
-                      selectedItem: selectedItem
-                        ? { id: selectedItem.id, item_code: selectedItem.item_code }
-                        : null,
-                      lineExtRefs: line.ext_refs,
-                      lineDesc: line.desc,
-                      isLabour: model === '__labour__',
-                    })
-
                     if (!model) {
-                      // Check if this is an existing line with stock selected
+                      // Check if this is a time line without stock_id (labour)
                       const stockId = (line.ext_refs as Record<string, unknown>)?.stock_id as string
+                      if (!stockId && String(line.kind) === 'time') {
+                        return 'LABOUR'
+                      }
+
+                      // Check if this is an existing line with stock selected
                       if (stockId) {
                         // Try to find the item in the stock store by ID
                         const stockItem = store.items.find((item) => item.id === stockId)
                         if (stockItem?.item_code) {
-                          console.log(
-                            '📋 Found existing stock item code by ID:',
-                            stockItem.item_code,
-                          )
                           return stockItem.item_code
                         }
                       }
@@ -440,32 +431,32 @@ const columns = computed(() => {
                           (item) => item.description?.toLowerCase() === line.desc?.toLowerCase(),
                         )
                         if (stockItemByDesc?.item_code) {
-                          console.log(
-                            '📋 Found existing stock item code by description:',
-                            stockItemByDesc.item_code,
-                          )
                           return stockItemByDesc.item_code
                         }
                       }
 
                       // If no valid item found, prompt user to select a valid item
-                      console.log('📋 No valid item found, prompting user to select item')
                       return 'Select Item'
                     }
 
-                    const code = selectedItem?.item_code || (model === '__labour__' ? 'LABOUR' : '')
-                    const result = code || 'Change item'
-                    console.log('📋 Button text result:', result)
-                    return result
+                    // Handle labour items specially
+                    if (model === '__labour__') {
+                      return 'LABOUR'
+                    }
+
+                    const code = selectedItem?.item_code || ''
+                    return code || 'Change item'
                   },
                 ),
               ])
             }
 
-            return h('div', { class: 'min-w-[12rem]' }, [
+            return h('div', { class: 'col-item' }, [
               h(ItemSelect, {
                 modelValue: model,
                 disabled: !enabled,
+                lineKind: String(line.kind),
+                tabKind: props.tabKind,
                 onClick: (e: Event) => e.stopPropagation(),
                 'onUpdate:modelValue': async (val: string | null) => {
                   if (!enabled) return
@@ -557,9 +548,7 @@ const columns = computed(() => {
                     if (line.quantity == null) Object.assign(line, { quantity: 1 })
                     if (kind !== 'time')
                       Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
-                    nextTick(() => {
-                      if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
-                    })
+                    // Don't create line immediately - let user fill other fields first
                   } else {
                     console.log('❌ API did not return stock item for id:', val)
                     Object.assign(line, { desc: '' })
@@ -602,7 +591,7 @@ const columns = computed(() => {
     // Description
     {
       id: 'desc',
-      header: () => h('div', { class: 'desc-col text-center' }, 'Description'),
+      header: () => h('div', { class: 'desc-col text-left' }, 'Description'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -618,7 +607,7 @@ const columns = computed(() => {
         return h(
           'div',
           {
-            class: 'desc-cell w-48',
+            class: 'desc-cell w-full',
             tabindex: 0,
             role: 'button',
             title: line.desc || '',
@@ -692,7 +681,7 @@ const columns = computed(() => {
           isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
 
         return [
-          h('div', { class: 'col-8ch' }, [
+          h('div', { class: 'col-10ch' }, [
             h(Input, {
               type: 'number',
               step: String(kind === 'time' ? 0.25 : 1),
@@ -740,7 +729,7 @@ const columns = computed(() => {
     // Unit Cost
     {
       id: 'unit_cost',
-      header: () => h('div', { class: 'col-8ch text-center' }, 'Unit Cost'),
+      header: () => h('div', { class: 'col-10ch text-center' }, 'Unit Cost'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -755,7 +744,7 @@ const columns = computed(() => {
         const isTime = kind === 'time'
         const resolved = apply(line).derived
         return [
-          h('div', { class: 'col-8ch' }, [
+          h('div', { class: 'col-10ch' }, [
             h(Input, {
               type: 'number',
               step: '0.01',
@@ -831,7 +820,7 @@ const columns = computed(() => {
     // Unit Revenue
     {
       id: 'unit_rev',
-      header: () => h('div', { class: 'col-8ch text-center' }, 'Unit Rev'),
+      header: () => h('div', { class: 'col-10ch text-center' }, 'Unit Rev'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const kind = String(line.kind)
@@ -846,7 +835,7 @@ const columns = computed(() => {
         const isTime = kind === 'time'
         const resolved = apply(line).derived
         return [
-          h('div', { class: 'col-8ch' }, [
+          h('div', { class: 'col-10ch' }, [
             h(Input, {
               type: 'number',
               step: '0.01',

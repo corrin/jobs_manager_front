@@ -17,10 +17,14 @@ const props = withDefaults(
     modelValue: string | null
     disabled?: boolean
     showQuantity?: boolean
+    lineKind?: string
+    tabKind?: string
   }>(),
   {
     disabled: false,
     showQuantity: true,
+    lineKind: undefined,
+    tabKind: undefined,
   },
 )
 
@@ -54,9 +58,10 @@ onMounted(async () => {
 
 const filteredItems = computed(() => {
   const stockItems = store.items
-  const labourItem = [mockedLabourItem.value]
+  const labourItem = props.tabKind === 'actual' ? [] : [mockedLabourItem.value]
 
-  const allItems = [...stockItems, ...labourItem]
+  // Include LABOUR unless in actual tab, put it first
+  const allItems = [...labourItem, ...stockItems]
 
   if (!searchTerm.value) return allItems
   const term = searchTerm.value.toLowerCase()
@@ -65,37 +70,6 @@ const filteredItems = computed(() => {
 
     return searchableFields.some((field) => field?.toLowerCase().includes(term))
   })
-})
-
-const displayCode = computed(() => {
-  console.log('🔍 ItemSelect displayCode computed:', {
-    modelValue: props.modelValue,
-    storeItemsCount: store.items.length,
-    isLabour: props.modelValue === '__labour__',
-  })
-
-  if (!props.modelValue) {
-    console.log('📝 No modelValue, returning "Select Item"')
-    return 'Select Item'
-  }
-
-  if (props.modelValue === '__labour__') {
-    console.log('👷 Labour selected, returning "LABOUR"')
-    return 'LABOUR'
-  }
-
-  const found = store.items.find((i: StockItem) => i.id == props.modelValue)
-  console.log('🔎 Looking for item:', {
-    searchedId: props.modelValue,
-    found: !!found,
-    foundItem: found
-      ? { id: found.id, item_code: found.item_code, description: found.description }
-      : null,
-  })
-
-  const result = found?.item_code || 'Select Item'
-  console.log('📋 Final displayCode result:', result)
-  return result
 })
 </script>
 
@@ -106,41 +80,20 @@ const displayCode = computed(() => {
     class="!w-full min-w-64"
     @update:model-value="
       (val) => {
-        console.log('🔄 ItemSelect update:modelValue called:', {
-          val,
-          currentModelValue: props.modelValue,
-          storeItemsCount: store.items.length,
-        })
-
         emit('update:modelValue', val as string | null)
 
         if (val === '__labour__') {
-          console.log('👷 Labour selected, emitting labour data')
           emit('update:description', 'Labour')
           emit('update:unit_cost', companyDefaultsStore.companyDefaults?.wage_rate ?? 0)
           emit('update:kind', 'time')
         } else {
           const found = store.items.find((i: StockItem) => i.id == val)
-          console.log('🔎 Looking for stock item:', {
-            searchedId: val,
-            found: !!found,
-            foundItem: found
-              ? {
-                  id: found.id,
-                  item_code: found.item_code,
-                  description: found.description,
-                  unit_cost: found.unit_cost,
-                }
-              : null,
-          })
 
           if (found) {
-            console.log('✅ Found stock item, emitting data')
             emit('update:description', found.description || '')
             emit('update:unit_cost', found.unit_cost || null)
             emit('update:kind', 'material')
           } else {
-            console.log('❌ Stock item not found, emitting empty data')
             emit('update:description', '')
             emit('update:unit_cost', null)
             emit('update:kind', null)
@@ -150,7 +103,7 @@ const displayCode = computed(() => {
     "
   >
     <SelectTrigger class="h-10">
-      <SelectValue :placeholder="'Select Item'" :display-value="displayCode" />
+      <SelectValue :placeholder="'Select Item'" />
     </SelectTrigger>
 
     <SelectContent class="max-h-80 w-[550px]">
@@ -178,11 +131,8 @@ const displayCode = computed(() => {
           class="cursor-pointer p-3 hover:bg-accent/50 focus:bg-accent/50 bg-background"
         >
           <div class="flex flex-col">
-            <div class="font-medium text-sm leading-tight">
-              {{ i.description || 'Unnamed Stock Item' }}
-            </div>
-            <div v-if="i.item_code" class="text-xs text-muted-foreground mt-1">
-              {{ i.item_code }}
+            <div class="font-medium text-sm leading-tight font-mono uppercase tracking-wide">
+              {{ i.item_code || i.description || 'Unnamed Item' }}
             </div>
           </div>
         </SelectItem>

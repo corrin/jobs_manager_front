@@ -996,7 +996,6 @@ async function handleCreateFromEmpty(line: CostLine) {
       costLines.value[index] = created
     }
 
-    refreshQuoteData()
     emit('cost-line-changed')
     toast.success('Cost line created!')
     console.log('✅ Successfully created cost line:', created)
