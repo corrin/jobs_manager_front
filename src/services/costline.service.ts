@@ -21,7 +21,7 @@ export const getTimesheetEntries = async (
       },
     })
   } catch (error) {
-    console.error('Error fetching timesheet entries:', error)
+    debugLog('Error fetching timesheet entries:', error)
     throw error
   }
 }
@@ -32,10 +32,10 @@ export const createCostLine = async (
   payload: CostLineCreateUpdate,
 ): Promise<CostLineCreateUpdate> => {
   // 🔍 DEBUG: Log cost line creation
-  console.log('🔍 COSTLINE SERVICE DEBUG - Creating cost line:')
-  console.log('  - Job ID:', jobId)
-  console.log('  - Kind:', kind)
-  console.log('  - Payload:', payload)
+  debugLog('🔍 COSTLINE SERVICE DEBUG - Creating cost line:')
+  debugLog('  - Job ID:', jobId)
+  debugLog('  - Kind:', kind)
+  debugLog('  - Payload:', payload)
 
   let result: CostLineCreateUpdate
 
@@ -49,7 +49,7 @@ export const createCostLine = async (
     })
   }
 
-  console.log('🔍 COSTLINE SERVICE DEBUG - Created cost line result:', result)
+  debugLog('🔍 COSTLINE SERVICE DEBUG - Created cost line result:', result)
   return result
 }
 
@@ -64,17 +64,17 @@ export const updateCostLine = async (
 
 export const deleteCostLine = async (id: string): Promise<void> => {
   debugLog('🚀 SERVICE: Starting DELETE request for cost line ID:', id)
-  console.log('🔍 COSTLINE SERVICE DEBUG - Deleting cost line:', id)
+  debugLog('🔍 COSTLINE SERVICE DEBUG - Deleting cost line:', id)
 
   try {
     await api.job_rest_cost_lines_delete_destroy(undefined, {
       params: { cost_line_id: id },
     })
     debugLog('✅ SERVICE: DELETE request completed successfully')
-    console.log('🔍 COSTLINE SERVICE DEBUG - Successfully deleted cost line:', id)
+    debugLog('🔍 COSTLINE SERVICE DEBUG - Successfully deleted cost line:', id)
   } catch (error) {
     debugLog('❌ SERVICE: DELETE request failed:', error)
-    console.error('🔍 COSTLINE SERVICE DEBUG - Delete failed:', error)
+    debugLog('🔍 COSTLINE SERVICE DEBUG - Delete failed:', error)
     throw error
   }
 }

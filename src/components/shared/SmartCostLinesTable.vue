@@ -77,6 +77,7 @@ const props = withDefaults(
     blockedFieldsByKind?: Record<KindOption, string[]>
     // For 'actual' tab: Function to call on stock selection for new lines
     consumeStockFn?: (payload: {
+      line: CostLine
       stockId: string
       quantity: number
       unitCost: number
@@ -379,7 +380,8 @@ const columns = computed(() => {
           cell: ({ row }: RowCtx) => {
             const line = displayLines.value[row.index]
             const selectedItem = selectedItemMap.get(line)
-            const model = selectedItem?.id || null
+            const model =
+              selectedItem?.id || (line.ext_refs as Record<string, unknown>)?.stock_id || null
             const kind = String(line.kind)
             const isMaterial = kind === 'material'
             const isNewLine = !line.id
@@ -443,8 +445,20 @@ const columns = computed(() => {
                       return 'LABOUR'
                     }
 
-                    const code = selectedItem?.item_code || ''
-                    return code || 'Change item'
+                    // If we have selectedItem, use its code
+                    if (selectedItem?.item_code) {
+                      return selectedItem.item_code
+                    }
+
+                    // If no selectedItem but we have a model (stock_id), find the item in store
+                    if (model && model !== '__labour__') {
+                      const stockItem = store.items.find((item) => item.id === model)
+                      if (stockItem?.item_code) {
+                        return stockItem.item_code
+                      }
+                    }
+
+                    return 'Change item'
                   },
                 ),
               ])
@@ -510,7 +524,16 @@ const columns = computed(() => {
                       const unitCost = Number(stock.unit_cost || 0)
                       const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
                       const unitRev = unitCost * (1 + markup)
-                      await props.consumeStockFn({ stockId: val, quantity: qty, unitCost, unitRev })
+                      await props.consumeStockFn({
+                        line,
+                        stockId: val,
+                        quantity: qty,
+                        unitCost,
+                        unitRev,
+                      })
+
+                      // to leave the active mode and show the chip/label instead of "Select Item"
+                      selectedRowIndex.value = -1
                     } catch {
                       toast.error('Failed to consume stock. Line not created.')
                       selectedItemMap.set(line, null)

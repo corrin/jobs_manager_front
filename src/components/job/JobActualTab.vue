@@ -281,6 +281,8 @@ import { fetchCostSet } from '../../services/costing.service'
 import { costlineService } from '../../services/costline.service'
 import { schemas } from '../../api/generated/api'
 import { useSmartCostLineDelete } from '../../composables/useSmartCostLineDelete'
+import { useAddEmptyCostLine } from '../../composables/useAddEmptyCostLine'
+import { useCostSummary } from '../../composables/useCostSummary'
 import { api } from '../../api/client'
 import { z } from 'zod'
 import type { AxiosError } from 'axios'
@@ -579,6 +581,7 @@ const { handleSmartDelete } = useSmartCostLineDelete({
 
 // Function for consumption on new material line selection
 async function consumeStockForNewLine(payload: {
+  line: CostLine
   stockId: string
   quantity: number
   unitCost: number
@@ -596,20 +599,23 @@ async function consumeStockForNewLine(payload: {
       unit_rev: payload.unitRev,
     }
 
-    const createdLine = await api.consumeStock(request, {
+    const response = await api.consumeStock(request, {
       params: { stock_id: payload.stockId },
     })
 
     // Replace the temp line with the created one
-    // Find the temp line (the one without id that matches the stock_id)
-    const tempLineIndex = costLines.value.findIndex(
-      (l) => !l.id && l.ext_refs?.stock_id === payload.stockId,
-    )
+    const tempLineIndex = costLines.value.findIndex((l) => l === payload.line)
+
     if (tempLineIndex >= 0) {
-      costLines.value[tempLineIndex] = createdLine
+      // Common case: there was a temp line in the parent component
+      costLines.value[tempLineIndex] = response.line
     } else {
-      costLines.value.push(createdLine)
+      // Initial case: user was on the local emptyLine of the table (child)
+      // Insert the created line in the parent's array
+      costLines.value.push(response.line)
     }
+
+    debugLog('[CONSUME-STOCK] New array: ', costLines.value, ' Received line: ', response.line)
 
     toast.success('Stock consumed successfully!')
     emit('cost-line-changed')
@@ -661,64 +667,29 @@ async function handleCreateLine(line: CostLine) {
   // For material, table already handled consumption, so no-op or reload
 }
 
+// Use the composable for adding empty lines
+const { pushEmptyLine } = useAddEmptyCostLine({
+  costLines,
+  onLineAdded: (line) => {
+    // For material in actual, fields are blocked until selection in table
+    if (line.kind === 'material') {
+      // Table will handle unblock after consume
+    }
+  },
+})
+
 // Handler for add line (only 'material' or 'adjust')
 function handleAddLine(kind: 'material' | 'adjust' = 'material') {
-  const newLine: CostLine = {
-    __localId: crypto.randomUUID(), // Temporary local ID for tracking
-    id: '',
-    kind,
-    desc: '',
-    quantity: 1,
-    // @ts-expect-error - Allow null for initial empty state
-    unit_cost: null,
-    // @ts-expect-error - Allow null for initial empty state
-    unit_cost: null,
-    unit_rev: null,
-    total_cost: 0,
-    total_rev: 0,
-    ext_refs: {},
-    meta: {},
-  }
-  costLines.value.push(newLine)
-  // For material in actual, fields are blocked until selection in table
-  if (kind === 'material') {
-    // Table will handle unblock after consume
-  }
+  pushEmptyLine(kind)
 }
 
 onMounted(async () => {
   await Promise.all([loadStaff(), loadActualCosts(), loadCostsSummary(), loadInvoices()])
 })
 
-const actualSummary = computed(() => {
-  let cost = 0
-  let rev = 0
-  let hours = 0
-
-  for (const line of costLines.value) {
-    const quantity = line.quantity || 0
-    const unitCost = line.unit_cost || 0
-    const unitRev = line.unit_rev || 0
-
-    cost += quantity * unitCost
-    rev += quantity * unitRev
-
-    // Count hours for time entries
-    if (line.kind === 'time') {
-      hours += quantity
-    }
-
-    // For adjustments, the revenue calculation is already included above,
-    // but we might want to handle them specially in the future
-  }
-
-  return {
-    cost,
-    rev,
-    hours,
-    profitMargin: rev - cost,
-    created: undefined,
-  }
+// Use the cost summary composable (simple version for actual)
+const { simpleSummary: actualSummary } = useCostSummary({
+  costLines,
 })
 
 function navigateToDeliveryReceipt(purchaseOrderId: string) {

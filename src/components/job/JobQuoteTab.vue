@@ -534,7 +534,8 @@ import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
 import { z } from 'zod'
 import { costlineService } from '../../services/costline.service'
-import { useSmartCostLineDelete } from '../../composables/useSmartCostLineDelete'
+import { fetchCostSet } from '../../services/costing.service'
+import { useCostLinesActions } from '../../composables/useCostLinesActions'
 import CompactSummaryCard from '../shared/CompactSummaryCard.vue'
 import {
   Dialog,
@@ -575,9 +576,7 @@ const xeroQuote = ref<Quote | null>(null)
 onMounted(async () => {
   if (props.jobId) {
     try {
-      const response: CostSet = await api.job_rest_jobs_cost_sets_retrieve({
-        params: { id: props.jobId, kind: 'quote' },
-      })
+      const response = await fetchCostSet(props.jobId, 'quote')
       quoteCostSet.value = response
 
       // Try to load Xero quote if available
@@ -657,9 +656,7 @@ const hasEstimateData = ref(false)
 onMounted(async () => {
   if (props.jobId) {
     try {
-      const estimateResponse: CostSet = await api.job_rest_jobs_cost_sets_retrieve({
-        params: { id: props.jobId, kind: 'estimate' },
-      })
+      const estimateResponse = await fetchCostSet(props.jobId, 'estimate')
       hasEstimateData.value = !!estimateResponse?.cost_lines?.length
     } catch {
       hasEstimateData.value = false
@@ -708,9 +705,7 @@ async function refreshQuoteData() {
   console.log('  - Current cost lines count:', costLines.value.length)
 
   try {
-    const response: CostSet = await api.job_rest_jobs_cost_sets_retrieve({
-      params: { id: props.jobId, kind: 'quote' },
-    })
+    const response = await fetchCostSet(props.jobId, 'quote')
 
     // Update our local quote cost set
     quoteCostSet.value = response
@@ -814,43 +809,17 @@ async function onCreateNewRevision() {
   }
 }
 
-async function handleAddMaterial(payload: CostLine) {
-  if (!payload || payload.kind !== 'material') return
-  isLoading.value = true
-  toast.info('Adding material cost line...')
-
-  try {
-    const createPayload = {
-      kind: 'material' as const,
-      desc: payload.desc,
-      quantity: payload.quantity,
-      unit_cost: payload.unit_cost,
-      unit_rev: payload.unit_rev,
-      ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
-      meta: (payload.meta as Record<string, unknown>) || {},
-    }
-    const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
-    costLines.value = [...costLines.value, created]
-    toast.success('Material cost line added!')
-    await refreshQuoteData()
-    emit('cost-line-changed')
-  } catch (error) {
-    toast.error('Failed to add material cost line.')
-    debugLog('Failed to add material:', error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Use the smart delete composable
-const { handleSmartDelete } = useSmartCostLineDelete({
-  costLines,
-  onCostLineChanged: () => async () => {
-    await refreshQuoteData()
-    emit('cost-line-changed')
-  },
-  isLoading,
-})
+const { handleAddMaterial, handleSmartDelete, handleAddEmptyLine, handleCreateFromEmpty } =
+  useCostLinesActions({
+    costLines,
+    jobId: props.jobId,
+    costSetKind: 'quote',
+    isLoading,
+    onCostLinesChanged: async () => {
+      // For quote tab, local state is already updated, no need to refresh
+      emit('cost-line-changed')
+    },
+  })
 
 // --- QUOTE METHODS ---
 const createQuote = async () => {
@@ -952,59 +921,6 @@ function formatDate(dateString: string): string {
   })
 }
 
-// Add empty line to the grid (UI-only, not persisted until user fills baseline data)
-function handleAddEmptyLine() {
-  const newLine: CostLine = {
-    __localId: crypto.randomUUID(), // Temporary local ID for tracking
-    id: '', // empty ID indicates unsaved line
-    kind: 'material',
-    desc: '',
-    quantity: 1,
-    // @ts-expect-error - Allow null for initial empty state
-    unit_cost: null,
-    // @ts-expect-error - Allow null for initial empty state
-    unit_cost: null,
-    unit_rev: null,
-    total_cost: 0,
-    total_rev: 0,
-    ext_refs: {},
-    meta: {},
-  }
-  costLines.value = [...costLines.value, newLine]
-}
-
-// Handle creating a new line from an empty line that meets baseline criteria
-async function handleCreateFromEmpty(line: CostLine) {
-  console.log('Creating cost line from empty line:', line)
-
-  try {
-    const createPayload = {
-      kind: line.kind as 'material' | 'time' | 'adjust',
-      desc: line.desc || '',
-      quantity: line.quantity || 1,
-      unit_cost: line.unit_cost ?? 0,
-      unit_rev: line.unit_rev ?? 0,
-      ext_refs: (line.ext_refs as Record<string, unknown>) || {},
-      meta: (line.meta as Record<string, unknown>) || {},
-    }
-
-    const created = await costlineService.createCostLine(props.jobId, 'quote', createPayload)
-
-    // Replace the empty line with the created one
-    const index = costLines.value.findIndex((l) => l === line)
-    if (index !== -1) {
-      costLines.value[index] = created
-    }
-
-    emit('cost-line-changed')
-    toast.success('Cost line created!')
-    console.log('✅ Successfully created cost line:', created)
-  } catch (error) {
-    toast.error('Failed to create cost line.')
-    console.error('❌ Failed to create cost line:', error)
-  }
-}
-
 // Copy all cost lines from estimate to quote
 async function onCopyFromEstimate() {
   if (!hasEstimateData.value) {
@@ -1017,9 +933,7 @@ async function onCopyFromEstimate() {
 
   try {
     // Fetch estimate data
-    const estimateResponse: CostSet = await api.job_rest_jobs_cost_sets_retrieve({
-      params: { id: props.jobId, kind: 'estimate' },
-    })
+    const estimateResponse = await fetchCostSet(props.jobId, 'estimate')
 
     if (!estimateResponse?.cost_lines?.length) {
       toast.error('No estimate data available to copy')
