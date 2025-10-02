@@ -488,7 +488,7 @@ const showDetailedSummary = ref(false)
 
 // For actual tab specifics
 const blockedFieldsByKind = ref<Record<KindOption, string[]>>({
-  material: ['desc', 'quantity', 'unit_cost', 'unit_rev'],
+  material: ['quantity', 'unit_cost', 'unit_rev'], // Allow desc editing for material items
   adjust: [],
 })
 
