@@ -650,6 +650,8 @@ async function handleCreateLine(line: CostLine) {
         unit_rev: line.unit_rev,
         ext_refs: line.ext_refs || {},
         meta: { source: 'manual_adjustment' },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }
 
       const created = await costlineService.createCostLine(props.jobId, 'actual', createPayload)
