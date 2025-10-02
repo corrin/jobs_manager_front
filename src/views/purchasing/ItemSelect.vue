@@ -79,6 +79,18 @@ function formatCurrency(value: number): string {
     maximumFractionDigits: 2,
   }).format(value)
 }
+
+const displayPrice = (item: StockItem) => {
+  let price = '0.00'
+  if (item.id === '__labour__') {
+    price = formatCurrency(item.unit_rev || 0)
+  } else {
+    price = formatCurrency(
+      (item.unit_cost || 0) * (1 + (companyDefaultsStore.companyDefaults?.materials_markup || 0)),
+    )
+  }
+  return price
+}
 </script>
 
 <template>
@@ -158,14 +170,7 @@ function formatCurrency(value: number): string {
                 variant="secondary"
                 class="text-xs font-semibold"
               >
-                ${{
-                  i.id === '__labour__'
-                    ? formatCurrency(i.unit_rev || 0)
-                    : formatCurrency(
-                        (i.unit_cost || 0) *
-                          (1 + (companyDefaultsStore.companyDefaults?.materials_markup || 0)),
-                      )
-                }}
+                ${{ displayPrice(i) }}
               </Badge>
               <Badge v-else variant="secondary" class="text-xs"> No price </Badge>
 
