@@ -19,6 +19,7 @@ import type { DataTableRowContext } from '@/utils/data-table-types'
 import { z } from 'zod'
 import { debugLog } from '../../utils/debug'
 import { useStockStore } from '@/stores/stockStore'
+import type { StockItem } from '@/stores/stockStore'
 
 type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
 type JobForPurchasing = z.infer<typeof schemas.JobForPurchasing>
@@ -62,6 +63,7 @@ const stockStore = useStockStore()
 
 const showAdditionalFieldsModal = ref(false)
 const editingLineIndex = ref<number>(-1)
+const editingItemIndex = ref<number>(-1)
 const additionalFields = ref({
   metal_type: '',
   alloy: '',
@@ -146,42 +148,74 @@ const columns = computed(() =>
     {
       id: 'item_code',
       header: 'Item',
-      cell: ({ row }: DataTableRowContext) =>
-        h(ItemSelect, {
-          modelValue: row.original.item_code,
-          disabled: isColumnDisabled.value,
-          showQuantity: false,
-          'onUpdate:modelValue': isColumnDisabled.value
-            ? undefined
-            : (val: string | null) => {
-                console.log('🔄 PoLinesTable: Received modelValue update:', val)
-                console.log('📦 PoLinesTable: Available stock items:', stockStore.items.length)
+      cell: ({ row }: DataTableRowContext) => {
+        const isEditing = editingItemIndex.value === row.index
 
-                const found = stockStore.items.find((i) => i.id === val)
-                console.log('🎯 PoLinesTable: Found stock item:', found)
+        if (isEditing) {
+          // Show ItemSelect when editing
+          return h(ItemSelect, {
+            modelValue: row.original.item_code,
+            disabled: isColumnDisabled.value,
+            showQuantity: false,
+            'onUpdate:modelValue': isColumnDisabled.value
+              ? undefined
+              : (val: string | null) => {
+                  debugLog('🔄 PoLinesTable: Received modelValue update:', val)
+                  debugLog('📦 PoLinesTable: Available stock items:', stockStore.items.length)
 
-                const updated = props.lines.map((l, idx) =>
-                  idx === row.index
-                    ? {
-                        ...l,
-                        // Auto-populate all fields from stock item when selected
-                        ...(found && {
-                          description: found.description || l.description,
-                          unit_cost: found.unit_cost || l.unit_cost,
-                          metal_type: found.metal_type || l.metal_type,
-                          alloy: found.alloy || l.alloy,
-                          specifics: found.specifics || l.specifics,
-                          location: found.location || l.location,
-                          item_code: found.item_code || null,
-                        }),
-                      }
-                    : l,
-                )
+                  const found = stockStore.items.find((i: StockItem) => i.id === val)
+                  debugLog('🎯 PoLinesTable: Found stock item:', found)
 
-                console.log('📝 PoLinesTable: Updated line:', updated[row.index])
-                emit('update:lines', updated)
+                  const updated = props.lines.map((l, idx) =>
+                    idx === row.index
+                      ? {
+                          ...l,
+                          // Auto-populate all fields from stock item when selected
+                          ...(found && {
+                            description: found.description || l.description,
+                            unit_cost: found.unit_cost || l.unit_cost,
+                            metal_type: found.metal_type || l.metal_type,
+                            alloy: found.alloy || l.alloy,
+                            specifics: found.specifics || l.specifics,
+                            location: found.location || l.location,
+                            item_code: found.item_code || null,
+                          }),
+                        }
+                      : l,
+                  )
+
+                  debugLog('📝 PoLinesTable: Updated line:', updated[row.index])
+                  emit('update:lines', updated)
+
+                  // Exit edit mode after selection
+                  editingItemIndex.value = -1
+                },
+          })
+        } else {
+          // Show item code button when not editing
+          const itemCode = row.original.item_code
+          const displayText = itemCode || 'Select Item'
+
+          return h('div', { class: 'col-item flex items-center' }, [
+            h(
+              Button,
+              {
+                variant: 'outline',
+                size: 'sm',
+                disabled: isColumnDisabled.value,
+                onClick: isColumnDisabled.value
+                  ? undefined
+                  : (e: Event) => {
+                      e.stopPropagation()
+                      editingItemIndex.value = row.index
+                    },
+                class: 'font-mono uppercase tracking-wide',
               },
-        }),
+              displayText,
+            ),
+          ])
+        }
+      },
       meta: { editable: !isColumnDisabled.value },
     },
     {

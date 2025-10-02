@@ -58,9 +58,12 @@ onMounted(async () => {
 
 const filteredItems = computed(() => {
   const stockItems = store.items
-  const labourItem = props.tabKind === 'actual' ? [] : [mockedLabourItem.value]
+  // Only show labour items in job-related contexts (estimate, quote, actual tabs)
+  // Don't show labour in purchasing contexts
+  const labourItem =
+    props.tabKind === 'estimate' || props.tabKind === 'quote' ? [mockedLabourItem.value] : []
 
-  // Include LABOUR unless in actual tab, put it first
+  // Include LABOUR only for job contexts, put it first
   const allItems = [...labourItem, ...stockItems]
 
   if (!searchTerm.value) return allItems
