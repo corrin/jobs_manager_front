@@ -539,6 +539,9 @@ const columns = computed(() => {
                       selectedItemMap.set(line, null)
                       return
                     }
+                  } else {
+                    // For other tabs (quote, estimate), also leave active mode to show item code
+                    selectedRowIndex.value = -1
                   }
 
                   let found = null
