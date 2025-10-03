@@ -19,7 +19,11 @@
 import type { z } from 'zod'
 import { schemas } from '../api/generated/api'
 
-type CostLine = z.infer<typeof schemas.CostLine>
+// Extend CostLine type to include timestamp fields (to be added to backend schema)
+type CostLine = z.infer<typeof schemas.CostLine> & {
+  created_at?: string
+  updated_at?: string
+}
 type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdate>
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
@@ -116,7 +120,19 @@ export function useCostLineAutosave(opts: Options) {
     const timer = window.setTimeout(async () => {
       try {
         console.log('🔄 Autosave: Starting save for line', line.id, apiPatch)
-        await opts.saveFn(String(line.id), apiPatch)
+        const result = await opts.saveFn(String(line.id), apiPatch)
+
+        // Sync timestamps from the server response (if available)
+        if (result && typeof result === 'object') {
+          const response = result as Partial<CostLine>
+          if (response.created_at !== undefined) {
+            line.created_at = response.created_at
+          }
+          if (response.updated_at !== undefined) {
+            line.updated_at = response.updated_at
+          }
+        }
+
         status.set(line, 'saved')
         lastError.delete(line)
         prevSnapshot.delete(line)
