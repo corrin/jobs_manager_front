@@ -118,8 +118,9 @@ const showShortcuts = ref(false)
 const showDescModal = ref(false)
 const descModalLine = ref<CostLine | null>(null)
 const pendingFocusNewRow = ref(false)
+const openItemSelect = ref(false)
 
-// Focus first editable input after a row has been added
+// Focus on ItemSelect trigger and open popover after a row has been added
 watch(
   () => props.lines.length,
   async (len, prev) => {
@@ -127,10 +128,13 @@ watch(
       pendingFocusNewRow.value = false
       selectedRowIndex.value = len - 1
       await nextTick()
-      const el = containerRef.value?.querySelector(
-        'input:not([disabled]), textarea:not([disabled]), select:not([disabled])',
+      const itemTrigger = containerRef.value?.querySelector(
+        '.item-select-trigger',
       ) as HTMLElement | null
-      el?.focus()
+      if (itemTrigger) {
+        itemTrigger.focus()
+        openItemSelect.value = true
+      }
     }
   },
 )
@@ -467,6 +471,8 @@ const columns = computed(() => {
             return h('div', { class: 'col-item' }, [
               h(ItemSelect, {
                 modelValue: model,
+                open: openItemSelect.value,
+                'onUpdate:open': (val: boolean) => (openItemSelect.value = val),
                 disabled: !enabled,
                 lineKind: String(line.kind),
                 tabKind: props.tabKind,
@@ -1355,6 +1361,24 @@ const shortcutsTitle = computed(
 /* Row hover */
 .smart-costlines-table :deep(tbody tr:hover) {
   background-color: rgb(249, 250, 251);
+}
+
+/* Borders */
+.smart-costlines-table :deep(tbody tr) {
+  border: 1px solid #e5e7eb;
+  border-bottom: none;
+}
+
+.smart-costlines-table :deep(tbody tr:last-child) {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.smart-costlines-table :deep(td) {
+  border-right: 1px solid #f3f4f6;
+}
+
+.smart-costlines-table :deep(td:last-child) {
+  border-right: none;
 }
 
 /* Numeric alignment */
