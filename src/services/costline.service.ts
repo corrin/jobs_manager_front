@@ -31,20 +31,30 @@ export const createCostLine = async (
   kind: 'estimate' | 'quote' | 'actual',
   payload: CostLineCreateUpdate,
 ): Promise<CostLineCreateUpdate> => {
-  // 🔍 DEBUG: Log cost line creation
   debugLog('🔍 COSTLINE SERVICE DEBUG - Creating cost line:')
   debugLog('  - Job ID:', jobId)
   debugLog('  - Kind:', kind)
   debugLog('  - Payload:', payload)
 
+  // Ensure required fields expected by schema are present
+  const now = new Date().toISOString()
+  const p = payload as Partial<CostLineCreateUpdate>
+  const body: CostLineCreateUpdate = {
+    ...payload,
+    created_at: p.created_at ?? now,
+    updated_at: p.updated_at ?? now,
+    ext_refs: p.ext_refs ?? {},
+    meta: p.meta ?? {},
+  }
+
   let result: CostLineCreateUpdate
 
   if (kind === 'actual') {
-    result = await api.job_rest_jobs_cost_sets_actual_cost_lines_create(payload, {
+    result = await api.job_rest_jobs_cost_sets_actual_cost_lines_create(body, {
       params: { job_id: String(jobId) },
     })
   } else {
-    result = await api.job_rest_jobs_cost_sets_cost_lines_create(payload, {
+    result = await api.job_rest_jobs_cost_sets_cost_lines_create(body, {
       params: { job_id: String(jobId), kind },
     })
   }

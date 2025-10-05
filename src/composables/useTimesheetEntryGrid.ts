@@ -181,7 +181,9 @@ export function useTimesheetEntryGrid(
       onCellClicked: (params: CellClickedEvent) => {
         const rowId = params.data?.id
         if (!rowId) return
-        const rowIndex = gridData.value.findIndex((row) => String(row.id) === String(rowId))
+        const rowIndex = gridData.value.findIndex(
+          (row: TimesheetEntryGridRow) => String(row.id) === String(rowId),
+        )
         if (rowIndex === -1) return
         deleteRow(rowIndex)
       },
@@ -208,6 +210,7 @@ export function useTimesheetEntryGrid(
     onRowDoubleClicked: handleRowDoubleClicked,
     onCellClicked: handleCellClicked,
     onCellKeyDown: handleCellKeyDown,
+    onGridPreDestroyed: () => gridPreDestroy(),
     getRowStyle: (params: { data?: TimesheetEntryGridRow }) => {
       if (!params.data) return undefined
       if (params.data.isNewRow) {
@@ -217,9 +220,21 @@ export function useTimesheetEntryGrid(
     },
   }))
 
+  // AG Grid API guards
+  function isApiAlive(api?: GridApi | null): api is GridApi {
+    const typed = api as unknown as GridApi & { isDestroyed?: () => boolean }
+    return !!typed && !typed.isDestroyed?.()
+  }
+
+  // Expose a pre-destroy hook to clear local API reference
+  function gridPreDestroy(): void {
+    gridApi.value = null
+  }
+
   async function handleCellClicked(event: CellClickedEvent): Promise<void> {
     const rowIndex = event.node.rowIndex
     const colKey = event.colDef.field
+    if (!isApiAlive(event.api)) return
     if (colKey && event.colDef.editable && typeof rowIndex === 'number' && rowIndex >= 0) {
       event.api.startEditingCell({ rowIndex, colKey })
       event.api.setFocusedCell(rowIndex, colKey)
@@ -315,7 +330,9 @@ export function useTimesheetEntryGrid(
       }
     } catch (error) {
       console.error('Error in handleCellValueChanged:', error)
-      event.api.refreshCells({ rowNodes: [event.node], force: true })
+      if (isApiAlive(event.api)) {
+        event.api.refreshCells({ rowNodes: [event.node], force: true })
+      }
     } finally {
       loading.value = false
     }
@@ -323,6 +340,7 @@ export function useTimesheetEntryGrid(
 
   function handleRowDoubleClicked(event: RowDoubleClickedEvent): void {
     if (event.rowIndex === null) return
+    if (!isApiAlive(event.api)) return
     const editableCol = columnDefs.value.find(
       (col) => col.editable && typeof col.field === 'string',
     )
@@ -335,7 +353,10 @@ export function useTimesheetEntryGrid(
 
   function handleCellKeyDown(params: CellKeyDownEvent): void {
     const { event, api, node, column } = params
-    if (!event || !(event instanceof KeyboardEvent) || !node.rowIndex !== null) {
+    if (!event || !(event instanceof KeyboardEvent) || node.rowIndex == null) {
+      return
+    }
+    if (!isApiAlive(api)) {
       return
     }
     switch (event.key) {
@@ -427,19 +448,13 @@ export function useTimesheetEntryGrid(
   }
 
   function updateRowData(rowIndex: number | null, entry: TimesheetEntry): void {
-    if (
-      !gridApi.value ||
-      gridApi.value.isDestroyed?.() ||
-      rowIndex === null ||
-      rowIndex === undefined
-    )
-      return
-    const rowNode = gridApi.value.getRowNode(String(rowIndex))
+    if (!isApiAlive(gridApi.value) || rowIndex == null) return
+    const rowNode = gridApi.value!.getRowNode(String(rowIndex))
     if (rowNode) {
       Object.assign(rowNode.data, entry)
       nextTick(() => {
-        if (gridApi.value && !gridApi.value.isDestroyed?.()) {
-          gridApi.value.refreshCells({ rowNodes: [rowNode] })
+        if (isApiAlive(gridApi.value)) {
+          gridApi.value!.refreshCells({ rowNodes: [rowNode] })
         }
       })
     }
@@ -481,8 +496,8 @@ export function useTimesheetEntryGrid(
     if (!gridApi.value) return
     const [rowDataToRemove] = gridData.value.splice(rowIndex, 1)
     if (rowDataToRemove) {
-      if (gridApi.value && !gridApi.value.isDestroyed()) {
-        gridApi.value.applyTransaction({ remove: [rowDataToRemove] })
+      if (isApiAlive(gridApi.value)) {
+        gridApi.value!.applyTransaction({ remove: [rowDataToRemove] })
       }
     }
     if (rowDataToRemove && rowDataToRemove.isNewRow) {
@@ -500,8 +515,8 @@ export function useTimesheetEntryGrid(
       }
     } catch (error) {
       gridData.value.splice(rowIndex, 0, rowDataToRemove)
-      if (gridApi.value && !gridApi.value.isDestroyed()) {
-        gridApi.value.applyTransaction({ add: [rowDataToRemove] })
+      if (isApiAlive(gridApi.value)) {
+        gridApi.value!.applyTransaction({ add: [rowDataToRemove] })
       }
       throw error
     } finally {
@@ -518,8 +533,8 @@ export function useTimesheetEntryGrid(
     staffId?: string,
     staffData?: TimesheetEntryStaffMember,
   ): void {
-    if (!gridApi.value || gridApi.value.isDestroyed?.()) return
-    const rowNode = gridApi.value.getRowNode(String(rowIndex))
+    if (!isApiAlive(gridApi.value)) return
+    const rowNode = gridApi.value!.getRowNode(String(rowIndex))
     if (rowNode) {
       const currentStaffId = staffId || rowNode.data.staffId || ''
       const date = rowNode.data.date || new Date().toISOString().split('T')[0]
@@ -536,8 +551,8 @@ export function useTimesheetEntryGrid(
       const newRow = calculations.createNewRow(staffMember, date)
       Object.assign(rowNode.data, newRow)
       nextTick(() => {
-        if (gridApi.value && !gridApi.value.isDestroyed?.()) {
-          gridApi.value.refreshCells({ rowNodes: [rowNode] })
+        if (isApiAlive(gridApi.value)) {
+          gridApi.value!.refreshCells({ rowNodes: [rowNode] })
         }
       })
     }
@@ -565,15 +580,16 @@ export function useTimesheetEntryGrid(
     })
 
     gridData.value = rows
-    if (gridApi.value && !gridApi.value.isDestroyed()) {
-      // Clear existing data and set new data
+    if (isApiAlive(gridApi.value)) {
       const allRowData: TimesheetEntryGridRow[] = []
-      gridApi.value.forEachNode((node) => allRowData.push(node.data))
+      gridApi.value!.forEachNode((node: { data?: TimesheetEntryGridRow }) => {
+        if (node.data) allRowData.push(node.data)
+      })
       if (allRowData.length > 0) {
-        gridApi.value.applyTransaction({ remove: allRowData })
+        gridApi.value!.applyTransaction({ remove: allRowData })
       }
       if (gridData.value.length > 0) {
-        gridApi.value.applyTransaction({ add: gridData.value })
+        gridApi.value!.applyTransaction({ add: gridData.value })
       }
     }
 
@@ -592,12 +608,12 @@ export function useTimesheetEntryGrid(
 
     const newRow = calculations.createNewRow(staffData, currentDate)
     gridData.value.push(newRow)
-    if (gridApi.value && !gridApi.value.isDestroyed()) {
-      gridApi.value.applyTransaction({ add: [newRow] })
+    if (isApiAlive(gridApi.value)) {
+      gridApi.value!.applyTransaction({ add: [newRow] })
     } else {
       nextTick(() => {
-        if (gridApi.value && !gridApi.value.isDestroyed()) {
-          gridApi.value.applyTransaction({ add: [newRow] })
+        if (isApiAlive(gridApi.value)) {
+          gridApi.value!.applyTransaction({ add: [newRow] })
         }
       })
     }
@@ -609,8 +625,8 @@ export function useTimesheetEntryGrid(
   }
 
   function getSelectedEntry(): TimesheetEntry | null {
-    if (!gridApi.value || gridApi.value.isDestroyed?.() || selectedRowIndex.value < 0) return null
-    const rowNode = gridApi.value.getRowNode(String(selectedRowIndex.value))
+    if (!isApiAlive(gridApi.value) || selectedRowIndex.value < 0) return null
+    const rowNode = gridApi.value!.getRowNode(String(selectedRowIndex.value))
     return rowNode ? createEntryFromRowData(rowNode.data) : null
   }
 
@@ -643,9 +659,9 @@ export function useTimesheetEntryGrid(
   }
 
   function getGridData(): TimesheetEntryGridRow[] {
-    if (!gridApi.value) return []
+    if (!isApiAlive(gridApi.value)) return []
     const data: TimesheetEntryGridRow[] = []
-    gridApi.value.forEachNode((node: { data?: TimesheetEntryGridRow }) => {
+    gridApi.value!.forEachNode((node: { data?: TimesheetEntryGridRow }) => {
       if (node.data && !node.data.isEmptyRow) {
         data.push(node.data)
       }
@@ -682,5 +698,6 @@ export function useTimesheetEntryGrid(
     hasData: computed(() => gridData.value.length > 0),
     setCurrentStaff,
     ensureEmptyRow,
+    gridPreDestroy,
   }
 }
