@@ -46,24 +46,6 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
   const isInitializing = ref(false)
   let unbindRouteGuard: () => void = () => {}
 
-  // ---- mappings between Header and Job (only when necessary) ----
-  const headerToPartialJob = (h: JobHeaderResponse): Partial<Job> => {
-    // Header has: job_id, job_number, name, client:{id,name}, status, pricing_methodology, quoted, fully_invoiced, paid, quote_acceptance_date
-    // Job expects: id, name, client_id, client_name, job_status, pricing_methodology, quoted, fully_invoiced, paid, quote_acceptance_date, ...
-    return {
-      id: h.job_id,
-      name: h.name,
-      client_id: h.client?.id ?? null,
-      client_name: h.client?.name ?? null,
-      job_status: h.status, // NOTE: maps status -> job_status
-      pricing_methodology: h.pricing_methodology as 'time_materials' | 'fixed_price' | undefined,
-      quoted: h.quoted,
-      fully_invoiced: h.fully_invoiced,
-      paid: h.paid,
-      quote_acceptance_date: h.quote_acceptance_date ?? null,
-    }
-  }
-
   /**
    * Applies a patch (based on "local" fields reflected from header) to the header snapshot.
    * Accepts keys: name, client_id, client_name, job_status, pricing_methodology, quoted, fully_invoiced, paid.
@@ -133,41 +115,52 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
           return { success: false, error: 'Missing job id' }
         }
 
-        // Builds partial payload (Job) from received PATCH.
-        // Backend accepts partial via serializer.partial=True.
-        // Wrap in { data: { job: ... } } as per JobDetailResponse.
-        const payloadJob: Partial<Job> = headerToPartialJob(originalHeader.value)
+        // Only allow header fields to be updated here to prevent cross-job contamination
+        const allowedHeaderKeys = [
+          'name',
+          'client_id',
+          'client_name',
+          'job_status',
+          'pricing_methodology',
+          'quoted',
+          'fully_invoiced',
+          'paid',
+          'quote_acceptance_date',
+        ] as const
 
-        // apply the patch (local fields)
-        Object.assign(payloadJob, patch as Partial<Job>)
+        // Filter incoming patch down to allowed header keys only
+        const filteredPatch: Partial<Job> = {}
+        Object.entries(patch as Partial<Job>).forEach(([k, v]) => {
+          if ((allowedHeaderKeys as readonly string[]).includes(k as string)) {
+            ;(filteredPatch as Record<string, unknown>)[k] = v as unknown
+          }
+        })
 
-        // Include current basic info from store to prevent overwriting
-        const currentBasicInfo = jobsStore.currentBasicInfo
-        if (currentBasicInfo) {
-          payloadJob.description = currentBasicInfo.description
-          payloadJob.delivery_date = currentBasicInfo.delivery_date
-          payloadJob.order_number = currentBasicInfo.order_number
-          payloadJob.notes = currentBasicInfo.notes
-        }
+        // Build payload strictly from filteredPatch (no base/header merge)
+        const payloadJob: Record<string, unknown> = { ...filteredPatch }
 
-        // if client changed, clear contact (optional, but aligned with previous behavior)
-        if ('client_id' in (patch as Partial<Job>)) {
+        // If client changed, clear contact fields
+        if ('client_id' in (filteredPatch as Partial<Job>)) {
           payloadJob.contact_id = null
           payloadJob.contact_name = null
         }
 
+        // Use partial update endpoint for job header autosave
         const res = await jobService.updateJobHeaderPartial(jobId, payloadJob)
         if (!res.success) return { success: false, error: res.error }
 
-        // For header-only updates, don't update the full job in store
-        // to avoid overwriting basic info fields that aren't in the response
-        // Just update the header snapshot
-        const updatedHeader = applyPatchToHeader(originalHeader.value, patch as Partial<Job>)
+        // Update only the header snapshot and store header
+        const updatedHeader = applyPatchToHeader(
+          originalHeader.value,
+          filteredPatch as Partial<Job>,
+        )
         originalHeader.value = updatedHeader
         localHeader.value = updatedHeader
 
-        // Update only the header in store, not the full job
-        jobsStore.patchHeader(header.job_id, headerToPartialHeaderPatch(patch as Partial<Job>))
+        jobsStore.patchHeader(
+          header.job_id,
+          headerToPartialHeaderPatch(filteredPatch as Partial<Job>),
+        )
 
         toast.success('Job updated successfully')
         return { success: true, serverData: res.data }

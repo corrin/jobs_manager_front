@@ -21,25 +21,9 @@ export const useJobsStore = defineStore('jobs', () => {
   const kanbanJobs = ref<Record<string, KanbanJobUI>>({})
   const headersById = ref<Record<string, JobHeaderResponse>>({})
   const basicInfoById = ref<Record<string, JobBasicInfo>>({})
-  const currentJobId = ref<string | null>(null)
   const isLoadingJob = ref(false)
   const isLoadingKanban = ref(false)
   const currentContext = ref<'kanban' | 'detail' | null>(null)
-
-  const currentJob = computed(() => {
-    if (!currentJobId.value) return null
-    return detailedJobs.value[currentJobId.value] || null
-  })
-
-  const currentHeader = computed(() => {
-    if (!currentJobId.value) return null
-    return headersById.value[currentJobId.value] || null
-  })
-
-  const currentBasicInfo = computed(() => {
-    if (!currentJobId.value) return null
-    return basicInfoById.value[currentJobId.value] || null
-  })
 
   const allKanbanJobs = computed(() => {
     return Object.values(kanbanJobs.value)
@@ -54,6 +38,18 @@ export const useJobsStore = defineStore('jobs', () => {
   const getKanbanJobById = computed(() => {
     return (id: string): KanbanJobUI | null => {
       return kanbanJobs.value[id] || null
+    }
+  })
+
+  const getHeaderById = computed(() => {
+    return (id: string): JobHeaderResponse | null => {
+      return headersById.value[id] || null
+    }
+  })
+
+  const getBasicInfoById = computed(() => {
+    return (id: string): JobBasicInfo | null => {
+      return basicInfoById.value[id] || null
     }
   })
 
@@ -181,10 +177,6 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
-  const setCurrentJobId = (jobId: string | null): void => {
-    currentJobId.value = jobId
-  }
-
   const setCurrentContext = (context: 'kanban' | 'detail' | null): void => {
     currentContext.value = context
   }
@@ -199,7 +191,6 @@ export const useJobsStore = defineStore('jobs', () => {
 
   const clearDetailedJobs = (): void => {
     detailedJobs.value = {}
-    currentJobId.value = null
   }
 
   const clearKanbanJobs = (): void => {
@@ -336,17 +327,15 @@ export const useJobsStore = defineStore('jobs', () => {
     kanbanJobs,
     headersById,
     basicInfoById,
-    currentJobId,
     isLoadingJob,
     isLoadingKanban,
     currentContext,
 
-    currentJob,
-    currentHeader,
-    currentBasicInfo,
     allKanbanJobs,
     getJobById,
     getKanbanJobById,
+    getHeaderById,
+    getBasicInfoById,
 
     setDetailedJob,
     updateDetailedJob,
@@ -355,7 +344,6 @@ export const useJobsStore = defineStore('jobs', () => {
     setKanbanJob,
     updateKanbanJob,
     removeKanbanJob,
-    setCurrentJobId,
     setCurrentContext,
     setLoadingJob,
     setLoadingKanban,

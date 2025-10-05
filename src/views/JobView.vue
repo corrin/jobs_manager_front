@@ -333,11 +333,9 @@ const jobId = computed(() => route.params.id as string)
 const loadingJob = ref(false)
 
 // Use store for header (single source of truth)
-const jobHeader = computed(() => jobsStore.currentHeader)
+const jobHeader = computed(() => jobsStore.headersById[jobId.value] ?? null)
 
 onMounted(async () => {
-  jobsStore.setCurrentJobId(jobId.value)
-
   loadingJob.value = true
   try {
     const headerResponse = await api.job_rest_jobs_header_retrieve({

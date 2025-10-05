@@ -4,6 +4,7 @@ import axios from '../plugins/axios'
 import { z } from 'zod'
 import { AdvancedFilters } from '../constants/advanced-filters'
 import { AxiosError } from 'axios'
+import { debugLog } from '../utils/debug'
 
 /**
  * Updates partial Job fields using PATCH endpoint
@@ -13,12 +14,20 @@ async function updateJobHeaderPartial(
   payload: Record<string, unknown>,
 ): Promise<{ success: true; data: JobDetailResponse } | { success: false; error: string }> {
   try {
+    const keys = Object.keys(payload || {})
+    debugLog('[jobService.updateJobHeaderPartial] → request', { jobId, keys })
     const res = await api.job_rest_jobs_partial_update(payload, {
       params: { job_id: jobId },
+    })
+    debugLog('[jobService.updateJobHeaderPartial] ← response', {
+      jobId,
+      keys,
+      ok: true,
     })
     return { success: true, data: res }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error updating job header'
+    debugLog('[jobService.updateJobHeaderPartial] ✖ error', { jobId, error: msg })
     return { success: false, error: msg }
   }
 }
@@ -190,10 +199,18 @@ export const jobService = {
 
   // Update job status
   updateJobStatus(jobId: string, newStatus: string): Promise<JobStatusUpdate> {
-    return api.job_api_jobs_update_status_create(
-      { status: newStatus },
-      { params: { job_id: jobId } },
-    )
+    debugLog('[jobService.updateJobStatus] →', { jobId, newStatus })
+    return api
+      .job_api_jobs_update_status_create({ status: newStatus }, { params: { job_id: jobId } })
+      .then((r) => {
+        debugLog('[jobService.updateJobStatus] ← ok', { jobId, newStatus })
+        return r
+      })
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : String(e)
+        debugLog('[jobService.updateJobStatus] ✖ error', { jobId, newStatus, error: msg })
+        throw e
+      })
   },
 
   // Update job data
@@ -242,12 +259,52 @@ export const jobService = {
     afterId?: string,
     status?: string,
   ): Promise<JobReorderRequest> {
+    // Defensive guards to avoid self-referencing or contradictory hints
+    if (beforeId && beforeId === jobId) {
+      debugLog('[jobService.reorderJob] adjusted beforeId equals jobId, clearing beforeId', {
+        jobId,
+        beforeId,
+        afterId,
+        status,
+      })
+      beforeId = undefined
+    }
+    if (afterId && afterId === jobId) {
+      debugLog('[jobService.reorderJob] adjusted afterId equals jobId, clearing afterId', {
+        jobId,
+        beforeId,
+        afterId,
+        status,
+      })
+      afterId = undefined
+    }
+    if (beforeId && afterId && beforeId === afterId) {
+      debugLog('[jobService.reorderJob] beforeId === afterId, clearing afterId', {
+        jobId,
+        beforeId,
+        afterId,
+        status,
+      })
+      afterId = undefined
+    }
+
     const payload: JobReorderPayload = {}
     if (beforeId) payload.before_id = beforeId
     if (afterId) payload.after_id = afterId
     if (status) payload.status = status
 
-    return api.job_api_jobs_reorder_create(payload, { params: { job_id: jobId } })
+    debugLog('[jobService.reorderJob] →', { jobId, payload })
+    return api
+      .job_api_jobs_reorder_create(payload, { params: { job_id: jobId } })
+      .then((r) => {
+        debugLog('[jobService.reorderJob] ← ok', { jobId })
+        return r
+      })
+      .catch((e) => {
+        const msg = e instanceof Error ? e.message : String(e)
+        debugLog('[jobService.reorderJob] ✖ error', { jobId, payload, error: msg })
+        throw e
+      })
   },
 
   // Add job event
