@@ -41,7 +41,6 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   })
 
-  // New getters to remove reliance on global currentJobId
   const getHeaderById = computed(() => {
     return (id: string): JobHeaderResponse | null => {
       return headersById.value[id] || null

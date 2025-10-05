@@ -959,10 +959,12 @@ const autosave = createJobAutosave({
             notes: notes || null,
           })
 
-          if (jobsStore.currentJob) {
+          // Update detailed job using explicit id (no global current job)
+          const existingDetailCurrent = jobsStore.getJobById(props.jobId)
+          if (existingDetailCurrent) {
             jobsStore.updateDetailedJob(props.jobId, {
               job: {
-                ...jobsStore.currentJob.job,
+                ...existingDetailCurrent.job,
                 description: desc || null,
                 delivery_date: delDate || null,
                 order_number: ordNum || null,
