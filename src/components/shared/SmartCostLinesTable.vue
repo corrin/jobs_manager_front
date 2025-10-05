@@ -115,11 +115,10 @@ const loggedEmit = (event: string, ...args: unknown[]) => {
 const selectedRowIndex = ref<number>(-1)
 const containerRef = ref<HTMLElement | null>(null)
 const showShortcuts = ref(false)
-const showDescModal = ref(false)
-const descModalLine = ref<CostLine | null>(null)
 const pendingFocusNewRow = ref(false)
+const openItemSelect = ref(false)
 
-// Focus first editable input after a row has been added
+// Focus on ItemSelect trigger and open popover after a row has been added
 watch(
   () => props.lines.length,
   async (len, prev) => {
@@ -127,10 +126,13 @@ watch(
       pendingFocusNewRow.value = false
       selectedRowIndex.value = len - 1
       await nextTick()
-      const el = containerRef.value?.querySelector(
-        'input:not([disabled]), textarea:not([disabled]), select:not([disabled])',
+      const itemTrigger = containerRef.value?.querySelector(
+        '.item-select-trigger',
       ) as HTMLElement | null
-      el?.focus()
+      if (itemTrigger) {
+        itemTrigger.focus()
+        openItemSelect.value = true
+      }
     }
   },
 )
@@ -348,9 +350,7 @@ const emptyLine = ref<CostLine>({
   meta: {},
 })
 
-const displayLines = computed(() =>
-  props.lines.length === 0 ? [emptyLine.value] : [...props.lines],
-)
+const displayLines = computed(() => [...props.lines, emptyLine.value])
 
 const negativeIdsSig = computed(() => props.negativeStockIds?.slice().sort().join('|') || '')
 
@@ -467,6 +467,8 @@ const columns = computed(() => {
             return h('div', { class: 'col-item' }, [
               h(ItemSelect, {
                 modelValue: model,
+                open: openItemSelect.value,
+                'onUpdate:open': (val: boolean) => (openItemSelect.value = val),
                 disabled: !enabled,
                 lineKind: String(line.kind),
                 tabKind: props.tabKind,
@@ -573,6 +575,11 @@ const columns = computed(() => {
                     if (line.quantity == null) Object.assign(line, { quantity: 1 })
                     if (kind !== 'time')
                       Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
+
+                    // For phantom rows (no ID), emit create-line if ready after fetch
+                    if (!line.id && isLineReadyForSave(line)) {
+                      loggedEmit('create-line', line)
+                    }
                   } else {
                     debugLog('❌ API did not return stock item for id:', val)
                     Object.assign(line, { desc: '' })
@@ -628,64 +635,60 @@ const columns = computed(() => {
           isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
         const canEdit = canEditField(line, 'desc') && !isBlocked
 
-        return h(
-          'div',
-          {
-            class: 'desc-cell w-full',
-            tabindex: 0,
-            role: 'button',
-            title: line.desc || '',
+        return h('div', { class: 'desc-cell w-full flex items-start gap-2' }, [
+          h(Textarea, {
+            modelValue: line.desc || '',
+            disabled: !canEdit,
+            class: 'w-full min-h-[2.25rem] text-sm',
+            rows: 1,
             onClick: (e: Event) => {
+              // Stop propagation to grid; fully inline editing
               e.stopPropagation()
-              if (canEdit) {
-                descModalLine.value = line
-                showDescModal.value = true
-              }
             },
             onKeydown: (e: KeyboardEvent) => {
-              if ((e.key === 'Enter' || e.key === ' ') && canEdit) {
+              const ctrlOrCmd = e.metaKey || e.ctrlKey
+              if (e.key === 'Enter' && ctrlOrCmd) {
                 e.preventDefault()
-                descModalLine.value = line
-                showDescModal.value = true
+                e.stopPropagation()
+                loggedEmit('add-line')
+                return
+              }
+              // Allow line breaks in textarea and prevent bubbling to the grid
+              e.stopPropagation()
+            },
+            'onUpdate:modelValue': (v: string | number) => {
+              const val = typeof v === 'string' ? v : String(v)
+              Object.assign(line, { desc: val })
+              // Infer "adjust" when user starts typing without a selected item
+              const hasSelectedItemLocal = !!selectedItemMap.get(line)
+              if (!hasSelectedItemLocal && val.trim() && String(line.kind) !== 'adjust') {
+                updateLineKind(line, 'adjust')
               }
             },
-          },
-          [
-            h(
-              'div',
-              {
-                class: [
-                  'group',
-                  'w-full',
-                  'rounded-md border border-slate-200',
-                  'px-2 py-2 text-sm text-gray-900',
-                  'hover:border-slate-300',
-                  'focus-within:ring-2 focus-within:ring-blue-500',
-                  'cursor-text transition',
-                  'max-w-[90ch]',
-                ].join(' '),
-              },
-              [
+            onBlur: () => {
+              if (!canEdit) return
+              // Create from phantom row if baseline is satisfied
+              if (!line.id && isLineReadyForSave(line)) {
+                maybeEmitCreate(line)
+                return
+              }
+              // Save inline for existing lines
+              if (!line.id || !isLineReadyForSave(line)) return
+              const patch: PatchedCostLineCreateUpdate = { desc: line.desc || '' }
+              const optimistic: Partial<CostLine> = { desc: line.desc || '' }
+              autosave.onBlurSave(line, patch, optimistic)
+            },
+          }),
+          ...(isBlocked
+            ? [
                 h(
-                  'div',
-                  {
-                    class: 'line-clamp-2 overflow-hidden text-ellipsis break-words',
-                  },
-                  line.desc || '',
+                  Badge,
+                  { variant: 'secondary', class: 'mt-1 text-xs' },
+                  () => 'Select stock first',
                 ),
-              ],
-            ),
-            ...(isBlocked
-              ? [
-                  h(
-                    Badge,
-                    { variant: 'secondary', class: 'mt-1 text-xs' },
-                    () => 'Select stock first',
-                  ),
-                ]
-              : []),
-          ],
-        )
+              ]
+            : []),
+        ])
       },
     },
 
@@ -883,6 +886,17 @@ const columns = computed(() => {
                 }
                 // Mark override when user types in unit_rev
                 onUnitRevenueManuallyEdited(line)
+              },
+              onKeydown: (e: KeyboardEvent) => {
+                if (
+                  (e.key === 'Tab' || e.key === 'Enter') &&
+                  row.index === displayLines.value.length - 1
+                ) {
+                  e.preventDefault()
+                  if (isLineReadyForSave(line)) {
+                    maybeEmitCreate(line)
+                  }
+                }
               },
               onBlur: () => {
                 if (!editable) return
@@ -1275,58 +1289,7 @@ const shortcutsTitle = computed(
       </DialogContent>
     </Dialog>
 
-    <!-- Description Edit Dialog -->
-    <Dialog :open="showDescModal" @update:open="showDescModal = $event">
-      <DialogContent class="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Edit Description</DialogTitle>
-          <DialogDescription>Update the line description</DialogDescription>
-        </DialogHeader>
-        <div class="space-y-3">
-          <Textarea
-            v-if="descModalLine"
-            :model-value="descModalLine?.desc || ''"
-            class="w-full"
-            rows="4"
-            @update:model-value="
-              (payload: string | number) => {
-                const v = typeof payload === 'string' ? payload : String(payload)
-                if (descModalLine) {
-                  descModalLine.desc = v
-
-                  // Infer kind as 'adjust' if no item is selected and description is being set
-                  const hasSelectedItem = !!selectedItemMap.get(descModalLine)
-                  if (!hasSelectedItem && v.trim() && String(descModalLine.kind) !== 'adjust') {
-                    updateLineKind(descModalLine, 'adjust')
-                  }
-                }
-              }
-            "
-          />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" size="sm" @click="showDescModal = false">Cancel</Button>
-          <Button
-            size="sm"
-            @click="
-              () => {
-                if (!descModalLine?.id || !isLineReadyForSave(descModalLine)) {
-                  showDescModal = false
-                  return
-                }
-
-                const patch: PatchedCostLineCreateUpdate = { desc: descModalLine.desc || '' }
-                const optimistic: Partial<CostLine> = { desc: descModalLine.desc || '' }
-                autosave.onBlurSave(descModalLine, patch, optimistic)
-                showDescModal = false
-              }
-            "
-          >
-            Save
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <!-- Description Edit Dialog removed – all edits inline -->
   </div>
 </template>
 
@@ -1355,6 +1318,24 @@ const shortcutsTitle = computed(
 /* Row hover */
 .smart-costlines-table :deep(tbody tr:hover) {
   background-color: rgb(249, 250, 251);
+}
+
+/* Borders */
+.smart-costlines-table :deep(tbody tr) {
+  border: 1px solid #e5e7eb;
+  border-bottom: none;
+}
+
+.smart-costlines-table :deep(tbody tr:last-child) {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.smart-costlines-table :deep(td) {
+  border-right: 1px solid #f3f4f6;
+}
+
+.smart-costlines-table :deep(td:last-child) {
+  border-right: none;
 }
 
 /* Numeric alignment */

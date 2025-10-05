@@ -125,7 +125,7 @@ const displayPrice = (item: StockItem) => {
       }
     "
   >
-    <SelectTrigger class="h-10">
+    <SelectTrigger class="h-10 item-select-trigger">
       <SelectValue :placeholder="'Select Item'" />
     </SelectTrigger>
 
