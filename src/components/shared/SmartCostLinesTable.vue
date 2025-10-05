@@ -352,9 +352,7 @@ const emptyLine = ref<CostLine>({
   meta: {},
 })
 
-const displayLines = computed(() =>
-  props.lines.length === 0 ? [emptyLine.value] : [...props.lines],
-)
+const displayLines = computed(() => [...props.lines, emptyLine.value])
 
 const negativeIdsSig = computed(() => props.negativeStockIds?.slice().sort().join('|') || '')
 
@@ -579,6 +577,11 @@ const columns = computed(() => {
                     if (line.quantity == null) Object.assign(line, { quantity: 1 })
                     if (kind !== 'time')
                       Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
+
+                    // For phantom rows (no ID), emit create-line if ready after fetch
+                    if (!line.id && isLineReadyForSave(line)) {
+                      loggedEmit('create-line', line)
+                    }
                   } else {
                     debugLog('❌ API did not return stock item for id:', val)
                     Object.assign(line, { desc: '' })
@@ -889,6 +892,17 @@ const columns = computed(() => {
                 }
                 // Mark override when user types in unit_rev
                 onUnitRevenueManuallyEdited(line)
+              },
+              onKeydown: (e: KeyboardEvent) => {
+                if (
+                  (e.key === 'Tab' || e.key === 'Enter') &&
+                  row.index === displayLines.value.length - 1
+                ) {
+                  e.preventDefault()
+                  if (isLineReadyForSave(line)) {
+                    maybeEmitCreate(line)
+                  }
+                }
               },
               onBlur: () => {
                 if (!editable) return

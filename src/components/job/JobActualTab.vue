@@ -655,7 +655,13 @@ async function handleCreateLine(line: CostLine) {
       }
 
       const created = await costlineService.createCostLine(props.jobId, 'actual', createPayload)
-      costLines.value = costLines.value.map((l) => (l.id === line.id ? created : l)) // Replace temp
+      // Replace if the source line exists in parent's array, otherwise append (phantom row case)
+      const idx = costLines.value.findIndex((l) => l === line || l.id === line.id)
+      if (idx >= 0) {
+        costLines.value[idx] = created
+      } else {
+        costLines.value.push(created)
+      }
       toast.success('Adjustment added!')
       emit('cost-line-changed')
     } catch (error) {

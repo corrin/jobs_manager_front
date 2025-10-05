@@ -47,10 +47,13 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
 
       const created = await costlineService.createCostLine(jobId, costSetKind, createPayload)
 
-      // Replace the empty line with the created one
+      // Insert created line into costLines; replace if the source line exists, otherwise push (phantom row case)
       const index = costLines.value.findIndex((l) => l === line)
       if (index !== -1) {
         costLines.value[index] = created
+      } else {
+        // When creating from the table's phantom row (not present in costLines), append it
+        costLines.value.push(created)
       }
 
       toast.success('Cost line created!')
