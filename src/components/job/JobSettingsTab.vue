@@ -255,7 +255,7 @@ const props = defineProps<{
 }>()
 
 const jobsStore = useJobsStore()
-const jobHeader = computed(() => jobsStore.currentHeader)
+const jobHeader = computed(() => jobsStore.headersById[props.jobId] ?? null)
 
 const jobData = ref<Job | null>(null)
 
@@ -266,9 +266,6 @@ onMounted(async () => {
     // Load job data if jobId exists
     (async () => {
       if (props.jobId) {
-        // Set current job ID in store for basic info to work
-        jobsStore.setCurrentJobId(props.jobId)
-
         // Load both header and basic info in parallel
         await Promise.all([
           // Load header data
@@ -360,10 +357,11 @@ async function loadBasicInfo() {
     }
 
     // Also update the detailed job in store if it exists
-    if (basicInfo && jobsStore.currentJob) {
+    const existingDetail = jobsStore.getJobById(props.jobId)
+    if (basicInfo && existingDetail) {
       jobsStore.updateDetailedJob(props.jobId, {
         job: {
-          ...jobsStore.currentJob.job,
+          ...existingDetail.job,
           description: basicInfo.description || null,
           delivery_date: basicInfo.delivery_date || null,
           order_number: basicInfo.order_number || null,
@@ -395,7 +393,7 @@ const dataReady = computed(
 
 // Use store for basic information
 const basicInfo = computed(() => {
-  return jobsStore.currentBasicInfo
+  return jobsStore.getBasicInfoById(props.jobId)
 })
 const basicInfoLoading = ref(false)
 

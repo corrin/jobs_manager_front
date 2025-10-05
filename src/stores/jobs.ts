@@ -57,6 +57,19 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   })
 
+  // New getters to remove reliance on global currentJobId
+  const getHeaderById = computed(() => {
+    return (id: string): JobHeaderResponse | null => {
+      return headersById.value[id] || null
+    }
+  })
+
+  const getBasicInfoById = computed(() => {
+    return (id: string): JobBasicInfo | null => {
+      return basicInfoById.value[id] || null
+    }
+  })
+
   const setDetailedJob = (jobDetail: JobDetail): void => {
     if (!jobDetail) {
       debugLog('🚨 Store - setDetailedJob called with null/undefined jobDetail')
@@ -347,6 +360,10 @@ export const useJobsStore = defineStore('jobs', () => {
     allKanbanJobs,
     getJobById,
     getKanbanJobById,
+    getHeaderById,
+    getBasicInfoById,
+    getHeaderById,
+    getBasicInfoById,
 
     setDetailedJob,
     updateDetailedJob,

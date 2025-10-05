@@ -1,5 +1,6 @@
 import { ref, type Ref } from 'vue'
 import Sortable from 'sortablejs'
+import type { SortableEvent } from 'sortablejs'
 import { debugLog } from '../utils/debug'
 
 export interface OptimizedDragEventPayload {
@@ -59,16 +60,16 @@ export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler)
         isDragging.value = true
         document.body.classList.add('is-dragging')
       },
-      onMove: (evt) => {
-        const toColumn = (evt.to.closest('[data-status]') as HTMLElement)?.dataset.status
+      onMove: (evt: SortableEvent) => {
+        const toColumn = (evt.to.closest('[data-status]') as HTMLElement | null)?.dataset.status
         if (status === 'draft' || toColumn === 'draft') {
           debugLog(`🎯 DRAFT COLUMN: Moving from ${status} to: ${toColumn}`)
         }
         return true
       },
-      onEnd: async (evt) => {
-        const dragFromStatus = evt.from.dataset.status
-        const dragToStatus = evt.to.dataset.status
+      onEnd: async (evt: SortableEvent) => {
+        const dragFromStatus = (evt.from as HTMLElement).dataset.status
+        const dragToStatus = (evt.to as HTMLElement).dataset.status
 
         if (dragFromStatus === 'draft' || dragToStatus === 'draft') {
           debugLog(`🎯 DRAFT COLUMN: Drag ended - ${dragFromStatus} → ${dragToStatus}`)
@@ -90,14 +91,12 @@ export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler)
         const newIndex = evt.newIndex ?? 0
 
         // Get all job IDs from the target column's DOM elements (current state)
-        const targetColumnJobs: string[] = []
-        for (let i = 0; i < evt.to.children.length; i++) {
-          const child = evt.to.children[i] as HTMLElement
-          const childJobId = child.dataset.jobId
-          if (childJobId) {
-            targetColumnJobs.push(childJobId)
-          }
-        }
+        // Use only draggable job-card elements to keep indices aligned with Sortable's newIndex
+        const targetColumnJobs: string[] = Array.from(
+          evt.to.querySelectorAll<HTMLElement>('.job-card'),
+        )
+          .map((el) => el.dataset.jobId)
+          .filter((id): id is string => !!id)
 
         // Calculate beforeId and afterId based on the new position in the array
         const beforeId = newIndex > 0 ? targetColumnJobs[newIndex - 1] : undefined
