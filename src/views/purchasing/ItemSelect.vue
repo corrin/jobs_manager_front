@@ -7,6 +7,7 @@ import {
   SelectItem,
 } from '../../components/ui/select'
 import { Input } from '../../components/ui/input'
+import { Badge } from '../../components/ui/badge'
 import { useStockStore, type StockItem } from '../../stores/stockStore'
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import { onMounted, computed, ref } from 'vue'
@@ -57,9 +58,12 @@ onMounted(async () => {
 
 const filteredItems = computed(() => {
   const stockItems = store.items
-  const labourItem = props.tabKind === 'actual' ? [] : [mockedLabourItem.value]
+  // Only show labour items in job-related contexts (estimate, quote, actual tabs)
+  // Don't show labour in purchasing contexts
+  const labourItem =
+    props.tabKind === 'estimate' || props.tabKind === 'quote' ? [mockedLabourItem.value] : []
 
-  // Include LABOUR unless in actual tab, put it first
+  // Include LABOUR only for job contexts, put it first
   const allItems = [...labourItem, ...stockItems]
 
   if (!searchTerm.value) return allItems
@@ -70,6 +74,26 @@ const filteredItems = computed(() => {
     return searchableFields.some((field) => field?.toLowerCase().includes(term))
   })
 })
+
+// Helper function for formatting currency
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('en-NZ', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
+}
+
+const displayPrice = (item: StockItem) => {
+  let price = '0.00'
+  if (item.id === '__labour__') {
+    price = formatCurrency(item.unit_rev || 0)
+  } else {
+    price = formatCurrency(
+      (item.unit_cost || 0) * (1 + (companyDefaultsStore.companyDefaults?.materials_markup || 0)),
+    )
+  }
+  return price
+}
 </script>
 
 <template>
@@ -127,11 +151,35 @@ const filteredItems = computed(() => {
           v-for="i in filteredItems"
           :key="i.id || 'unknown'"
           :value="i.id || ''"
-          class="cursor-pointer p-3 hover:bg-accent/50 focus:bg-accent/50 bg-background"
+          class="cursor-pointer p-4 border-b border-border last:border-b-0 hover:bg-accent/50 focus:bg-accent/50 bg-background w-full"
         >
-          <div class="flex flex-col">
-            <div class="font-medium text-sm leading-tight font-mono uppercase tracking-wide">
-              {{ i.item_code || i.description || 'Unnamed Item' }}
+          <div class="flex w-full items-start justify-between gap-6 !min-w-[500px]">
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-sm leading-tight truncate">
+                {{ i.description || 'Unnamed Item' }}
+              </div>
+              <div v-if="i.item_code" class="text-xs text-muted-foreground mt-1 truncate">
+                Code: {{ i.item_code }}
+              </div>
+            </div>
+
+            <div class="flex flex-col items-end gap-1 shrink-0">
+              <Badge
+                v-if="
+                  i.id === '__labour__'
+                    ? i.unit_rev || i.unit_rev === 0
+                    : i.unit_cost || i.unit_cost === 0
+                "
+                variant="secondary"
+                class="text-xs font-semibold"
+              >
+                ${{ displayPrice(i) }}
+              </Badge>
+              <Badge v-else variant="secondary" class="text-xs"> No price </Badge>
+
+              <div class="text-xs text-muted-foreground">
+                {{ i.id === '__labour__' ? 'per hour' : '' }}
+              </div>
             </div>
           </div>
         </SelectItem>
