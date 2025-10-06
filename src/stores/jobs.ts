@@ -322,6 +322,24 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
+  /**
+   * Reloads job data when a concurrency conflict occurs.
+   * This fetches fresh data from the server to get the latest ETag and job state.
+   * @param jobId - The job ID to reload
+   */
+  async function reloadJobOnConflict(jobId: string): Promise<void> {
+    debugLog('🔄 Store - reloadJobOnConflict called:', { jobId })
+
+    try {
+      // Fetch fresh job data - this will also capture the new ETag via interceptor
+      await fetchJob(jobId)
+      debugLog('✅ Store - reloadJobOnConflict success:', { jobId })
+    } catch (error) {
+      debugLog('❌ Store - reloadJobOnConflict error:', { jobId, error })
+      throw error
+    }
+  }
+
   return {
     detailedJobs,
     kanbanJobs,
@@ -367,5 +385,6 @@ export const useJobsStore = defineStore('jobs', () => {
     upsertFromFullJob,
 
     fetchJob,
+    reloadJobOnConflict,
   }
 })

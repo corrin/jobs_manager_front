@@ -3064,7 +3064,7 @@ paths:
   /job/rest/jobs/:
     post:
       operationId: job_rest_jobs_create
-      description: Create a new Job.
+      description: Create a new Job. Concurrency is controlled in this endpoint (E-tag/If-Match).
       tags:
         - Jobs
       requestBody:
@@ -3098,7 +3098,8 @@ paths:
   /job/rest/jobs/{job_id}/:
     get:
       operationId: getFullJob
-      description: Fetch complete job data including financial information
+      description: Fetch complete job data including financial information. Concurrency
+        is controlled in this endpoint (E-tag/If-Match)
       parameters:
         - in: path
           name: job_id
@@ -3120,7 +3121,8 @@ paths:
           description: ''
     put:
       operationId: job_rest_jobs_update
-      description: Update Job data (autosave).
+      description: Update Job data (autosave). Concurrency is controlled in this endpoint
+        (E-tag/If-Match).
       parameters:
         - in: path
           name: job_id
@@ -3161,7 +3163,7 @@ paths:
     patch:
       operationId: job_rest_jobs_partial_update
       description: Partially update Job data. Only updates the fields provided in
-        the request body.
+        the request body. Concurrency is controlled in this endpoint (E-tag/If-Match).
       parameters:
         - in: path
           name: job_id
@@ -3200,7 +3202,8 @@ paths:
           description: ''
     delete:
       operationId: job_rest_jobs_destroy
-      description: Delete a Job if permitted.
+      description: Delete a Job if permitted. Concurrency is controlled in this endpoint
+        (E-tag/If-Match).
       parameters:
         - in: path
           name: job_id
@@ -3230,7 +3233,7 @@ paths:
     get:
       operationId: job_rest_jobs_basic_info_retrieve
       description: Fetch job basic information (description, delivery date, order
-        number, notes)
+        number, notes). Concurrency is controlled in this endpoint (E-tag/If-Match)
       parameters:
         - in: path
           name: job_id
@@ -3394,7 +3397,8 @@ paths:
   /job/rest/jobs/{job_id}/costs/summary/:
     get:
       operationId: job_rest_jobs_costs_summary_retrieve
-      description: Fetch job cost summary across all cost sets
+      description: Fetch job cost summary across all cost sets. Concurrency is controlled
+        in this endpoint (E-tag/If-Match)
       parameters:
         - in: path
           name: job_id
@@ -3423,7 +3427,8 @@ paths:
   /job/rest/jobs/{job_id}/events/:
     get:
       operationId: job_rest_jobs_events_retrieve
-      description: Fetch job events list
+      description: Fetch job events list. Concurrency is controlled in this endpoint
+        (E-tag/If-Match)
       parameters:
         - in: path
           name: job_id
@@ -3452,7 +3457,8 @@ paths:
   /job/rest/jobs/{job_id}/events/create/:
     post:
       operationId: job_rest_jobs_events_create
-      description: Add a manual event to the Job with duplicate prevention.
+      description: Add a manual event to the Job with duplicate prevention. Concurrency
+        is controlled in this endpoint (E-tag/If-Match).
       parameters:
         - in: path
           name: job_id
@@ -3505,7 +3511,8 @@ paths:
   /job/rest/jobs/{job_id}/header/:
     get:
       operationId: job_rest_jobs_header_retrieve
-      description: Fetch essential job header information for fast loading
+      description: Fetch essential job header information for fast loading. Concurrency
+        is controlled in this endpoint (E-tag/If-Match)
       parameters:
         - in: path
           name: job_id
@@ -3534,7 +3541,8 @@ paths:
   /job/rest/jobs/{job_id}/invoices/:
     get:
       operationId: job_rest_jobs_invoices_retrieve
-      description: Fetch job invoices list
+      description: Fetch job invoices list. Concurrency is controlled in this endpoint
+        (E-tag/If-Match)
       parameters:
         - in: path
           name: job_id
@@ -3563,7 +3571,7 @@ paths:
   /job/rest/jobs/{job_id}/quote/:
     get:
       operationId: job_rest_jobs_quote_retrieve
-      description: Fetch job quote
+      description: Fetch job quote. Concurrency is controlled in this endpoint (E-tag/If-Match)
       parameters:
         - in: path
           name: job_id
@@ -3593,7 +3601,7 @@ paths:
     post:
       operationId: job_rest_jobs_quote_accept_create
       description: Accept a quote for the job. Sets the quote_acceptance_date to current
-        datetime.
+        datetime. Concurrency is controlled in this endpoint (E-tag/If-Match).
       parameters:
         - in: path
           name: job_id
@@ -4510,7 +4518,8 @@ paths:
   /job/rest/jobs/status-choices/:
     get:
       operationId: job_rest_jobs_status_choices_retrieve
-      description: Fetch job status choices
+      description: Fetch job status choices. Concurrency is controlled in this endpoint
+        (E-tag/If-Match)
       tags:
         - Jobs
       security:
@@ -4527,7 +4536,7 @@ paths:
     get:
       operationId: job_rest_jobs_weekly_metrics_list
       description: Fetch weekly metrics data for jobs with time entries in the specified
-        week.
+        week. Concurrency is controlled in this endpoint (E-tag/If-Match).
       parameters:
         - in: query
           name: week
@@ -6175,6 +6184,14 @@ components:
           exclusiveMinimum: true
           nullable: true
           description: Outstanding amount if relevant
+        job_value:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Total job value (invoiced amount or quote/actual revenue)
       required:
         - archived_date
         - client_name
@@ -6182,6 +6199,7 @@ components:
         - issue
         - job_id
         - job_number
+        - job_value
     ArchivedJobsComplianceResponse:
       type: object
       description: Response for archived jobs compliance check.

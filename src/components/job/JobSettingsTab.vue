@@ -884,6 +884,15 @@ const autosave = createJobAutosave({
 
       // Use the partial update method (similar to useJobHeaderAutosave)
       const result = await jobService.updateJobHeaderPartial(props.jobId, partialPayload)
+      if (!result.success) {
+        // Check if this is a concurrency error (should not be retried automatically)
+        const isConcurrencyError =
+          result.error?.includes('Concurrent modification detected') ||
+          result.error?.includes('Missing version information') ||
+          result.error?.includes('412') ||
+          result.error?.includes('428')
+        return { success: false, error: result.error, conflict: isConcurrencyError }
+      }
       if (result.success) {
         // Update local snapshot ONLY for keys sent
         const apply = (base: Partial<Job>, p: Record<string, unknown>) => {
@@ -989,7 +998,13 @@ const autosave = createJobAutosave({
       return { success: false, error: result.error || 'Update failed' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      return { success: false, error: msg }
+      // Check if this is a concurrency error (should not be retried automatically)
+      const isConcurrencyError =
+        msg.includes('Concurrent modification detected') ||
+        msg.includes('Missing version information') ||
+        msg.includes('412') ||
+        msg.includes('428')
+      return { success: false, error: msg, conflict: isConcurrencyError }
     }
   },
   devLogging: true,

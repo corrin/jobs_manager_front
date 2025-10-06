@@ -884,6 +884,7 @@ const ArchivedJobIssue = z
     issue: z.string(),
     invoice_status: z.string().nullish(),
     outstanding_amount: z.number().gt(-100000000).lt(100000000).nullish(),
+    job_value: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const ComplianceSummary = z
@@ -4217,7 +4218,7 @@ Dynamically infers the stock adjustment based on quantity change`,
     method: 'post',
     path: '/job/rest/jobs/',
     alias: 'job_rest_jobs_create',
-    description: `Create a new Job.`,
+    description: `Create a new Job. Concurrency is controlled in this endpoint (E-tag/If-Match).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4331,7 +4332,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/:job_id/',
     alias: 'getFullJob',
-    description: `Fetch complete job data including financial information`,
+    description: `Fetch complete job data including financial information. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4346,7 +4347,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'put',
     path: '/job/rest/jobs/:job_id/',
     alias: 'job_rest_jobs_update',
-    description: `Update Job data (autosave).`,
+    description: `Update Job data (autosave). Concurrency is controlled in this endpoint (E-tag/If-Match).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4372,7 +4373,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'patch',
     path: '/job/rest/jobs/:job_id/',
     alias: 'job_rest_jobs_partial_update',
-    description: `Partially update Job data. Only updates the fields provided in the request body.`,
+    description: `Partially update Job data. Only updates the fields provided in the request body. Concurrency is controlled in this endpoint (E-tag/If-Match).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4398,7 +4399,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'delete',
     path: '/job/rest/jobs/:job_id/',
     alias: 'job_rest_jobs_destroy',
-    description: `Delete a Job if permitted.`,
+    description: `Delete a Job if permitted. Concurrency is controlled in this endpoint (E-tag/If-Match).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4419,7 +4420,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/:job_id/basic-info/',
     alias: 'job_rest_jobs_basic_info_retrieve',
-    description: `Fetch job basic information (description, delivery date, order number, notes)`,
+    description: `Fetch job basic information (description, delivery date, order number, notes). Concurrency is controlled in this endpoint (E-tag/If-Match)`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4523,7 +4524,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/:job_id/costs/summary/',
     alias: 'job_rest_jobs_costs_summary_retrieve',
-    description: `Fetch job cost summary across all cost sets`,
+    description: `Fetch job cost summary across all cost sets. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4544,7 +4545,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/:job_id/events/',
     alias: 'job_rest_jobs_events_retrieve',
-    description: `Fetch job events list`,
+    description: `Fetch job events list. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4565,7 +4566,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'post',
     path: '/job/rest/jobs/:job_id/events/create/',
     alias: 'job_rest_jobs_events_create',
-    description: `Add a manual event to the Job with duplicate prevention.`,
+    description: `Add a manual event to the Job with duplicate prevention. Concurrency is controlled in this endpoint (E-tag/If-Match).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4599,7 +4600,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/:job_id/header/',
     alias: 'job_rest_jobs_header_retrieve',
-    description: `Fetch essential job header information for fast loading`,
+    description: `Fetch essential job header information for fast loading. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4620,7 +4621,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/:job_id/invoices/',
     alias: 'job_rest_jobs_invoices_retrieve',
-    description: `Fetch job invoices list`,
+    description: `Fetch job invoices list. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4641,7 +4642,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'get',
     path: '/job/rest/jobs/:job_id/quote/',
     alias: 'job_rest_jobs_quote_retrieve',
-    description: `Fetch job quote`,
+    description: `Fetch job quote. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
     requestFormat: 'json',
     parameters: [
       {
@@ -4662,7 +4663,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     method: 'post',
     path: '/job/rest/jobs/:job_id/quote/accept/',
     alias: 'job_rest_jobs_quote_accept_create',
-    description: `Accept a quote for the job. Sets the quote_acceptance_date to current datetime.`,
+    description: `Accept a quote for the job. Sets the quote_acceptance_date to current datetime. Concurrency is controlled in this endpoint (E-tag/If-Match).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -5109,7 +5110,7 @@ and creates JobFile database records with proper file metadata.`,
     method: 'get',
     path: '/job/rest/jobs/status-choices/',
     alias: 'job_rest_jobs_status_choices_retrieve',
-    description: `Fetch job status choices`,
+    description: `Fetch job status choices. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
     requestFormat: 'json',
     response: z.object({ statuses: z.object({}).partial().passthrough() }).passthrough(),
   },
@@ -5117,7 +5118,7 @@ and creates JobFile database records with proper file metadata.`,
     method: 'get',
     path: '/job/rest/jobs/weekly-metrics/',
     alias: 'job_rest_jobs_weekly_metrics_list',
-    description: `Fetch weekly metrics data for jobs with time entries in the specified week.`,
+    description: `Fetch weekly metrics data for jobs with time entries in the specified week. Concurrency is controlled in this endpoint (E-tag/If-Match).`,
     requestFormat: 'json',
     parameters: [
       {

@@ -147,7 +147,15 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
 
         // Use partial update endpoint for job header autosave
         const res = await jobService.updateJobHeaderPartial(jobId, payloadJob)
-        if (!res.success) return { success: false, error: res.error }
+        if (!res.success) {
+          // Check if this is a concurrency error (should not be retried automatically)
+          const isConcurrencyError =
+            res.error?.includes('Concurrent modification detected') ||
+            res.error?.includes('Missing version information') ||
+            res.error?.includes('412') ||
+            res.error?.includes('428')
+          return { success: false, error: res.error, conflict: isConcurrencyError }
+        }
 
         // Update only the header snapshot and store header
         const updatedHeader = applyPatchToHeader(
@@ -166,7 +174,13 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
         return { success: true, serverData: res.data }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
-        return { success: false, error: msg }
+        // Check if this is a concurrency error (should not be retried automatically)
+        const isConcurrencyError =
+          msg.includes('Concurrent modification detected') ||
+          msg.includes('Missing version information') ||
+          msg.includes('412') ||
+          msg.includes('428')
+        return { success: false, error: msg, conflict: isConcurrencyError }
       }
     },
     devLogging: true,
