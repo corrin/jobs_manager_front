@@ -235,7 +235,9 @@ const {
 const autosave = useCostLineAutosave({
   debounceMs: 600, // within spec 400–800ms
   saveFn: async (id: string, patch: PatchedCostLineCreateUpdate) => {
-    await costlineService.updateCostLine(id, patch)
+    const updated = await costlineService.updateCostLine(id, patch)
+    // Return the updated line so timestamps can be synced
+    return updated
   },
   onOptimisticApply: (line, patch) => {
     // Mutate in-place to propagate to parent summaries (objects are shared by reference)
