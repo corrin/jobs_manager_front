@@ -129,19 +129,13 @@
                         </span>
                         <template v-if="item.costlineKind">
                           <span>•</span>
-                          <span class="px-2 py-1 bg-gray-100 rounded-full capitalize">
-                            {{ item.costlineKind }}
-                          </span>
-                        </template>
-                        <template v-if="item.costlineType">
-                          <span>•</span>
                           <span
                             :class="[
                               'px-2 py-1 rounded-full capitalize',
-                              getCostlineTypeColor(item.costlineType),
+                              getCostlineTypeColor(item.costlineKind),
                             ]"
                           >
-                            {{ item.costlineType }}
+                            {{ item.costlineKind }}
                           </span>
                         </template>
                         <template v-if="item.staff">
@@ -250,7 +244,6 @@ const timelineItems = computed(() => {
       ? `${entry.cost_set_kind.charAt(0).toUpperCase() + entry.cost_set_kind.slice(1)} - ${entry.costline_kind || ''}`
       : null,
     costlineKind: entry.costline_kind,
-    costlineType: entry.costline_kind,
   }))
 })
 
