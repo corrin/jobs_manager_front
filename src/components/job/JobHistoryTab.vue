@@ -187,7 +187,6 @@ import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 import { toast } from 'vue-sonner'
-import { debugLog } from '../../utils/debug'
 
 type JobEventCreateRequest = z.infer<typeof schemas.JobEventCreateRequest>
 type JobEventCreateResponse = z.infer<typeof schemas.JobEventCreateResponse>
@@ -255,7 +254,7 @@ async function loadTimeline() {
     timelineEntries.value = response.timeline || []
   } catch (e) {
     toast.error('Failed to load timeline')
-    debugLog('Failed to load timeline:', e)
+    console.error('Failed to load timeline:', e)
     timelineEntries.value = []
   } finally {
     isLoading.value = false
