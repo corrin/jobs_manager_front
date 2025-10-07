@@ -53,7 +53,7 @@ defineEmits<{
   dayClick: [day: DayKPI]
 }>()
 
-const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const dayHeaders = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 
 const monthYear = computed(() => {
   const date = new Date(props.year, props.month - 1)
@@ -73,11 +73,14 @@ const paddingDays = computed(() => {
   const firstDay = new Date(props.year, props.month - 1, 1)
   const dayOfWeek = firstDay.getDay()
 
-  return dayOfWeek === 0 ? 6 : dayOfWeek - 1
+  // Convert to Monday-based (0 = Mon, 6 = Sun)
+  // Skip weekends entirely
+  if (dayOfWeek === 0 || dayOfWeek === 6) return 0
+  return dayOfWeek - 1
 })
 
 const remainingDays = computed(() => {
-  const totalCells = 42
+  const totalCells = 35 // 5 days × 7 weeks max
   const usedCells = paddingDays.value + calendarDays.value.length
   return totalCells - usedCells
 })
@@ -103,7 +106,7 @@ const remainingDays = computed(() => {
 }
 
 .kpi-calendar__day-headers {
-  @apply grid grid-cols-6 gap-1 mb-1;
+  @apply grid grid-cols-5 gap-1 mb-1;
 }
 
 .kpi-calendar__day-header {
@@ -112,7 +115,7 @@ const remainingDays = computed(() => {
 }
 
 .kpi-calendar__days {
-  @apply grid grid-cols-6 gap-1;
+  @apply grid grid-cols-5 gap-1;
 }
 
 .kpi-calendar__day-empty {
