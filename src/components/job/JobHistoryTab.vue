@@ -237,9 +237,12 @@ const timelineItems = computed(() => {
   return timelineEntries.value.map((entry) => ({
     id: entry.id,
     timestamp: entry.timestamp,
-    type: entry.entry_type === 'costline'
-      ? (entry.cost_set_kind === 'actual' ? 'costline_updated' : 'costline_created')
-      : 'job_event',
+    type:
+      entry.entry_type === 'costline'
+        ? entry.cost_set_kind === 'actual'
+          ? 'costline_updated'
+          : 'costline_created'
+        : 'job_event',
     description: entry.description,
     staff: entry.staff || null,
     eventType: entry.event_type,
@@ -255,26 +258,8 @@ async function loadTimeline() {
   if (!props.jobId) return
   isLoading.value = true
   try {
-    // TODO: Replace with generated API method once schema is updated
-    // const response = await api.job_rest_jobs_timeline_retrieve({ params: { job_id: props.jobId } })
-
-    // Temporary direct fetch until schema is regenerated
-    const response = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/job/rest/jobs/${props.jobId}/timeline/`,
-      {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      },
-    )
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const data = await response.json()
-    timelineEntries.value = data.timeline || []
+    const response = await api.job_rest_jobs_timeline_retrieve({ params: { job_id: props.jobId } })
+    timelineEntries.value = response.timeline || []
   } catch (e) {
     toast.error('Failed to load timeline')
     debugLog('Failed to load timeline:', e)
