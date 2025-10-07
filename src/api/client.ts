@@ -9,6 +9,7 @@ import {
   ConcurrencyError,
 } from '../types/concurrency'
 import { toast } from 'vue-sonner'
+import { emitConcurrencyRetry } from '../composables/useConcurrencyEvents'
 
 // Global registry for ETag management to avoid circular imports
 let etagManager: {
@@ -109,8 +110,7 @@ axios.interceptors.response.use(
           action: {
             label: 'Retry',
             onClick: () => {
-              // The user can manually retry their action
-              // This will be handled by the component that initiated the request
+              emitConcurrencyRetry(jobId)
             },
           },
         })
@@ -147,8 +147,7 @@ axios.interceptors.response.use(
           action: {
             label: 'Retry',
             onClick: () => {
-              // The user can manually retry their action
-              // This will be handled by the component that initiated the request
+              emitConcurrencyRetry(jobId)
             },
           },
         })

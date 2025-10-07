@@ -4,6 +4,7 @@ import { createJobAutosave, type SaveResult } from './useJobAutosave'
 import { jobService } from '../services/job.service'
 import { useJobsStore } from '../stores/jobs'
 import { toast } from 'vue-sonner'
+import { onConcurrencyRetry } from '@/composables/useConcurrencyEvents'
 import { z } from 'zod'
 import { schemas } from '../api/generated/api'
 
@@ -45,6 +46,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
 
   const isInitializing = ref(false)
   let unbindRouteGuard: () => void = () => {}
+  let unbindConcurrencyRetry: () => void = () => {}
 
   /**
    * Applies a patch (based on "local" fields reflected from header) to the header snapshot.
@@ -149,11 +151,11 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
         const res = await jobService.updateJobHeaderPartial(jobId, payloadJob)
         if (!res.success) {
           // Check if this is a concurrency error (should not be retried automatically)
+          const msg = String(res.error || '')
           const isConcurrencyError =
-            res.error?.includes('Concurrent modification detected') ||
-            res.error?.includes('Missing version information') ||
-            res.error?.includes('412') ||
-            res.error?.includes('428')
+            /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
+              msg,
+            )
           return { success: false, error: res.error, conflict: isConcurrencyError }
         }
 
@@ -176,10 +178,9 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
         const msg = e instanceof Error ? e.message : String(e)
         // Check if this is a concurrency error (should not be retried automatically)
         const isConcurrencyError =
-          msg.includes('Concurrent modification detected') ||
-          msg.includes('Missing version information') ||
-          msg.includes('412') ||
-          msg.includes('428')
+          /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
+            msg,
+          )
         return { success: false, error: msg, conflict: isConcurrencyError }
       }
     },
@@ -234,6 +235,10 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     unbindRouteGuard = autosave.onRouteLeaveBind({
       beforeEach: (guard: any) => router.beforeEach(guard), // eslint-disable-line @typescript-eslint/no-explicit-any
     })
+    // Listen for global "Retry" from concurrency toast for this job
+    unbindConcurrencyRetry = onConcurrencyRetry(header.job_id, () => {
+      void autosave.flush('retry-click')
+    })
     isInitializing.value = false
   })
 
@@ -241,6 +246,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     autosave.onBeforeUnloadUnbind()
     autosave.onVisibilityUnbind()
     unbindRouteGuard()
+    unbindConcurrencyRetry()
   })
 
   return {

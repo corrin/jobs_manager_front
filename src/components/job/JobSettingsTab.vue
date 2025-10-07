@@ -240,6 +240,7 @@ import { debugLog } from '../../utils/debug'
 import { toast } from 'vue-sonner'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card'
 import { api } from '../../api/client'
+import { onConcurrencyRetry } from '@/composables/useConcurrencyEvents'
 
 type ClientContact = z.infer<typeof schemas.JobContactUpdateRequest>
 
@@ -821,6 +822,7 @@ const handleContactSelected = async (contact: ClientContact | null) => {
 const router = useRouter()
 
 let unbindRouteGuard: () => void = () => {}
+let unbindConcurrencyRetry: () => void = () => {}
 
 /** Instance */
 const autosave = createJobAutosave({
@@ -1017,6 +1019,10 @@ onMounted(() => {
   unbindRouteGuard = autosave.onRouteLeaveBind({
     beforeEach: (to, from, next) => router.beforeEach(to, from, next),
   })
+  // Listen to global "Retry" click from the concurrency toast for this Job
+  unbindConcurrencyRetry = onConcurrencyRetry(props.jobId, () => {
+    void autosave.flush('retry-click')
+  })
 })
 
 onUnmounted(() => {
@@ -1028,6 +1034,7 @@ onUnmounted(() => {
   autosave.onBeforeUnloadUnbind()
   autosave.onVisibilityUnbind()
   unbindRouteGuard()
+  unbindConcurrencyRetry()
 })
 
 /** Granular watchers to avoid reactive noise */
@@ -1118,7 +1125,7 @@ const handleFieldBlur = () => {
 }
 
 const retrySave = () => {
-  void autosave.flush()
+  void autosave.flush('retry-click')
 }
 
 const saveHasError = computed(() => !!autosave.error.value)

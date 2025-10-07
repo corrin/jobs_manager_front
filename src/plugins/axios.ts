@@ -14,6 +14,7 @@ import {
   ConcurrencyError,
 } from '@/types/concurrency'
 import { toast } from 'vue-sonner'
+import { emitConcurrencyRetry } from '@/composables/useConcurrencyEvents'
 
 // Global registry for ETag management to avoid circular imports
 let etagManager: {
@@ -118,10 +119,16 @@ axios.interceptors.response.use(
           debugLog(`[ETags] Failed to reload job ${jobId}:`, reloadError)
         }
 
-        // Show user notification
-        toast.error(
-          'This job was updated by another user. Data reloaded. Please retry your changes.',
-        )
+        // Show persistent user notification with explicit user-controlled retry
+        toast.error('This job was updated by another user. Data reloaded.', {
+          duration: Infinity,
+          action: {
+            label: 'Retry',
+            onClick: () => {
+              emitConcurrencyRetry(jobId)
+            },
+          },
+        })
 
         // Create and throw ConcurrencyError
         const concurrencyError = new ConcurrencyError(
@@ -149,8 +156,16 @@ axios.interceptors.response.use(
           debugLog(`[ETags] Failed to reload job ${jobId}:`, reloadError)
         }
 
-        // Show user notification
-        toast.error('Missing version information. Job data reloaded. Please retry your changes.')
+        // Show persistent user notification with explicit user-controlled retry
+        toast.error('Missing version information. Job data reloaded.', {
+          duration: Infinity,
+          action: {
+            label: 'Retry',
+            onClick: () => {
+              emitConcurrencyRetry(jobId)
+            },
+          },
+        })
 
         // Create and throw ConcurrencyError
         const concurrencyError = new ConcurrencyError(
