@@ -286,7 +286,7 @@ async function addEvent() {
     }
   } catch (e) {
     toast.error('Failed to add event')
-    debugLog('Failed to add event:', e)
+    console.error('Failed to add event:', e)
   } finally {
     isAdding.value = false
   }
