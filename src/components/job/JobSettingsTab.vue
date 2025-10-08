@@ -649,15 +649,18 @@ watch(
   () => jobsStore.conflictReloadAtById[props.jobId],
   (ts) => {
     if (!ts) return
-    const bi = jobsStore.getBasicInfoById(props.jobId)
-    if (!bi || !localJobData.value) return
+    const basicInfo = jobsStore.getBasicInfoById(props.jobId)
+    if (!basicInfo || !localJobData.value) return
 
     isServerSyncingBasicInfo.value = true
     try {
-      if (bi.description !== undefined) localJobData.value.description = bi.description || ''
-      if (bi.delivery_date !== undefined) localJobData.value.delivery_date = bi.delivery_date || ''
-      if (bi.order_number !== undefined) localJobData.value.order_number = bi.order_number || ''
-      if (bi.notes !== undefined) localJobData.value.notes = bi.notes || ''
+      if (basicInfo.description !== undefined)
+        localJobData.value.description = basicInfo.description || ''
+      if (basicInfo.delivery_date !== undefined)
+        localJobData.value.delivery_date = basicInfo.delivery_date || ''
+      if (basicInfo.order_number !== undefined)
+        localJobData.value.order_number = basicInfo.order_number || ''
+      if (basicInfo.notes !== undefined) localJobData.value.notes = basicInfo.notes || ''
 
       // Align original snapshot with server data
       originalJobData.value.description = localJobData.value.description ?? ''
