@@ -1200,6 +1200,26 @@ const QuoteImportStatusResponse = z
     summary: z.unknown().optional(),
   })
   .passthrough()
+const TimelineEntry = z
+  .object({
+    id: z.string().uuid(),
+    timestamp: z.string().datetime({ offset: true }),
+    entry_type: z.string(),
+    description: z.string(),
+    staff: z.string().nullish(),
+    event_type: z.string().nullish(),
+    cost_set_kind: z.string().nullish(),
+    costline_kind: z.string().nullish(),
+    quantity: z.number().gt(-10000000).lt(10000000).nullish(),
+    unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
+    unit_rev: z.number().gt(-100000000).lt(100000000).nullish(),
+    total_cost: z.number().gt(-100000000).lt(100000000).nullish(),
+    total_rev: z.number().gt(-100000000).lt(100000000).nullish(),
+    created_at: z.string().datetime({ offset: true }).nullish(),
+    updated_at: z.string().datetime({ offset: true }).nullish(),
+  })
+  .passthrough()
+const JobTimelineResponse = z.object({ timeline: z.array(TimelineEntry) }).passthrough()
 const DraftLine = z
   .object({
     kind: z.string(),
@@ -2121,6 +2141,8 @@ export const schemas = {
   JobInvoicesResponse,
   JobQuoteAcceptance,
   QuoteImportStatusResponse,
+  TimelineEntry,
+  JobTimelineResponse,
   DraftLine,
   QuoteChanges,
   ApplyQuoteResponse,
@@ -4699,6 +4721,27 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
     ],
     response: QuoteImportStatusResponse,
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/timeline/',
+    alias: 'job_rest_jobs_timeline_retrieve',
+    description: `Fetch unified job timeline (events + cost lines)`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobTimelineResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
