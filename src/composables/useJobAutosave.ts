@@ -187,10 +187,10 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       debounceTimer = null
     }
 
-    // If this is an explicit user retry, unpause and re-enqueue the last conflicting patch BEFORE deciding there's nothing to flush
+    // If this is an explicit user retry, unpause and ALWAYS re-enqueue the last conflicting patch
     if (reason === 'retry-click') {
       pausedDueToConflict.value = false
-      if (lastConflictPatch && changeBuffer.size === 0) {
+      if (lastConflictPatch) {
         for (const [k, v] of Object.entries(lastConflictPatch)) {
           changeBuffer.set(k, v)
           pendingKeys.value.add(k)
@@ -198,6 +198,8 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
         log('🔁 re-enqueued last conflicting patch on user retry', {
           keys: Object.keys(lastConflictPatch),
         })
+      } else {
+        log('ℹ️ retry-click received but no lastConflictPatch present')
       }
     }
 
@@ -306,7 +308,12 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       log('✅ saved', { keys: Object.keys(sendingPatch), reason })
     } catch (e) {
       try {
-        opts.rollbackOptimistic(previousValues)
+        // Do NOT rollback on concurrency conflicts, or we will overwrite the freshly reloaded server data
+        if (!pausedDueToConflict.value) {
+          opts.rollbackOptimistic(previousValues)
+        } else {
+          log('↩️ rollback skipped due to concurrency conflict; keeping reloaded server data')
+        }
       } catch {
         /* ignore */
       }

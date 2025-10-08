@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { createJobAutosave, type SaveResult } from './useJobAutosave'
 import { jobService } from '../services/job.service'
@@ -186,6 +186,24 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     },
     devLogging: true,
   })
+
+  // Sync header UI with store after a conflict-triggered reload (or any store update)
+  const storeHeader = computed(() => jobsStore.getHeaderById(header.job_id))
+  watch(
+    storeHeader,
+    (newHeader) => {
+      if (!newHeader) return
+      // Update both local and original snapshots so the UI reflects the latest server data
+      // Preserve object shape (especially client) to avoid partial merging issues
+      localHeader.value = {
+        ...localHeader.value,
+        ...newHeader,
+        client: newHeader.client,
+      }
+      originalHeader.value = newHeader
+    },
+    { deep: true },
+  )
 
   // Helpers
   const enqueue = (key: keyof Partial<Job>, value: unknown) => {

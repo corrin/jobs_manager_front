@@ -291,13 +291,21 @@ export const useJobsStore = defineStore('jobs', () => {
   }
 
   const setHeader = (header: JobHeaderResponse): void => {
-    headersById.value[header.job_id] = header
+    // Immutable update to guarantee reactivity of consumers (e.g., JobView header)
+    headersById.value = {
+      ...headersById.value,
+      [header.job_id]: header,
+    }
   }
 
   const patchHeader = (jobId: string, patch: Partial<JobHeaderResponse>): void => {
     const cur = headersById.value[jobId]
     if (!cur) return
-    headersById.value[jobId] = { ...cur, ...patch, client: patch.client ?? cur.client }
+    // Immutable update to force dependent computeds/watchers to re-run
+    headersById.value = {
+      ...headersById.value,
+      [jobId]: { ...cur, ...patch, client: patch.client ?? cur.client },
+    }
   }
 
   const upsertFromFullJob = (job: Job): void => {
@@ -331,8 +339,28 @@ export const useJobsStore = defineStore('jobs', () => {
     debugLog('🔄 Store - reloadJobOnConflict called:', { jobId })
 
     try {
-      // Fetch fresh job data - this will also capture the new ETag via interceptor
+      // 1) Fetch full job detail (captures new ETag via interceptor and updates detailed + header)
       await fetchJob(jobId)
+
+      // 2) Also fetch the lightweight header directly to guarantee the latest name/status/etc.
+      //    This ensures views bound to headersById reflect backend changes immediately.
+      try {
+        const headerResponse = await api.job_rest_jobs_header_retrieve({
+          params: { job_id: jobId },
+        })
+        setHeader(headerResponse)
+        debugLog('🏪 Store - header refreshed after conflict:', {
+          jobId,
+          name: headerResponse.name,
+          status: headerResponse.status,
+        })
+      } catch (headerErr) {
+        debugLog('⚠️ Store - header refresh failed after conflict (will rely on full job):', {
+          jobId,
+          error: headerErr,
+        })
+      }
+
       debugLog('✅ Store - reloadJobOnConflict success:', { jobId })
     } catch (error) {
       debugLog('❌ Store - reloadJobOnConflict error:', { jobId, error })

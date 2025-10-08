@@ -12,12 +12,13 @@
             </button>
           </div>
           <div class="mb-3">
-            <div class="flex items-center gap-2 mb-1">
+            <div class="flex items-center gap-2 mb-1" :key="titleKey">
               <span class="text-xl font-bold text-gray-900">Job #{{ jobHeader?.job_number }}</span>
               <div class="group">
                 <InlineEditText
                   v-if="jobDataWithPaid"
-                  :value="localJobName"
+                  :key="jobHeader?.name ?? localJobName"
+                  :value="jobHeader?.name ?? ''"
                   @update:value="handleNameUpdate"
                   placeholder="Job name"
                   class="text-lg font-bold text-gray-900"
@@ -127,14 +128,15 @@
               <ArrowLeft class="w-5 h-5" />
             </button>
             <div class="flex flex-col justify-center h-full">
-              <div class="flex items-center">
+              <div class="flex items-center" :key="titleKey">
                 <span class="text-xl font-bold text-gray-900"
                   >Job #{{ jobHeader?.job_number }} -</span
                 >
                 <div class="group">
                   <InlineEditText
                     v-if="jobDataWithPaid"
-                    :value="localJobName"
+                    :key="jobHeader?.name ?? localJobName"
+                    :value="jobHeader?.name ?? ''"
                     @update:value="handleNameUpdate"
                     placeholder="Job name"
                     class="text-lg font-bold text-gray-900"
@@ -376,6 +378,14 @@ const pricingMethodologyOptions = [
   { key: 'time_materials', label: 'Time & Materials' },
   { key: 'fixed_price', label: 'Fixed Price' },
 ]
+
+// Force re-render of header title block when header data changes
+const titleKey = computed(() => {
+  const h = jobHeader.value
+  return h
+    ? `${h.job_id}:${h.name}:${h.status}:${h.pricing_methodology}:${h.quoted}:${h.fully_invoiced}:${h.paid}`
+    : 'none'
+})
 
 let headerAutosave: ReturnType<typeof useJobHeaderAutosave> | null = null
 
