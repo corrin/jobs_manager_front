@@ -752,10 +752,12 @@ const confirmClientChange = () => {
 
   resetClientChangeState()
 
-  // Send client_id and clear contact
+  // Send client_id, client_name and clear contact (id and name)
   autosave.queueChanges({
     client_id: localJobData.value.client?.id ?? null,
+    client_name: localJobData.value.client?.name ?? null,
     contact_id: null,
+    contact_name: null,
   })
   void autosave.flush('client-change')
 
@@ -804,9 +806,15 @@ const handleClientUpdated = (updatedClient: Client) => {
     localJobData.value.client.name = updatedClient.name
   }
 
-  // Queue the change for autosave
-  autosave.queueChange('client', localJobData.value.client)
-  void autosave.flush('client-updated')
+  // Reflect name in header immediately (no API call; backend derives client_name)
+  if (jobHeader.value) {
+    jobsStore.patchHeader(jobHeader.value.job_id, {
+      client: {
+        id: jobHeader.value.client?.id ?? '',
+        name: updatedClient.name,
+      },
+    })
+  }
 
   toast.success('Client updated successfully')
 }
@@ -909,7 +917,6 @@ const autosave = createJobAutosave({
 
       const partialPayload: Record<string, unknown> = {}
       for (const [k, v] of Object.entries(patch)) {
-        if (k === 'client_name' || k === 'contact_name') continue // derived, don't send
         partialPayload[k] = normalise(k, v)
       }
 
@@ -939,10 +946,19 @@ const autosave = createJobAutosave({
           if ('rejected_flag' in p) next.rejected_flag = !!p.rejected_flag
           if ('quote_acceptance_date' in p)
             next.quote_acceptance_date = (p.quote_acceptance_date as string | null) ?? undefined
-          if ('client_id' in p) {
+          if ('client_id' in p || 'client_name' in p) {
+            const newId =
+              ('client_id' in p ? (p.client_id as string | null) : next.client?.id) ??
+              next.client?.id ??
+              ''
+            const newName =
+              ('client_name' in p ? ((p.client_name as string | null) ?? '') : undefined) ??
+              localJobData.value.client?.name ??
+              next.client?.name ??
+              ''
             next.client = {
-              id: (p.client_id as string | null) ?? next.client?.id ?? '',
-              name: next.client?.name ?? '',
+              id: newId,
+              name: newName,
             }
           }
           if ('description' in p) next.description = (p.description as string | null) ?? ''
@@ -965,10 +981,13 @@ const autosave = createJobAutosave({
         if ('quote_acceptance_date' in partialPayload)
           headerPatch.quote_acceptance_date =
             (partialPayload.quote_acceptance_date as string | null) ?? undefined
-        if ('client_id' in partialPayload) {
+        if ('client_id' in partialPayload || 'client_name' in partialPayload) {
           headerPatch.client = {
-            id: (partialPayload.client_id as string | null) ?? '',
-            name: originalJobData.value.client?.name ?? '',
+            id: (partialPayload.client_id as string | null) ?? jobHeader.value?.client?.id ?? '',
+            name:
+              (partialPayload.client_name as string | null) ??
+              localJobData.value.client?.name ??
+              '',
           }
         }
         if (Object.keys(headerPatch).length && props.jobId) {
@@ -1099,6 +1118,7 @@ watch(
   (v) => {
     if (!isSyncingFromStore.value) {
       enqueueIfNotInitializing('client_id', v?.id ?? null)
+      enqueueIfNotInitializing('client_name', v?.name ?? null)
     }
   },
   { deep: true },
