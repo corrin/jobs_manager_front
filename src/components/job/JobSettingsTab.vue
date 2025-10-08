@@ -240,6 +240,7 @@ import { debugLog } from '../../utils/debug'
 import { toast } from 'vue-sonner'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card'
 import { api } from '../../api/client'
+import { onConcurrencyRetry } from '@/composables/useConcurrencyEvents'
 
 type ClientContact = z.infer<typeof schemas.JobContactUpdateRequest>
 
@@ -412,6 +413,7 @@ const isSyncingFromStore = ref(false)
 // Readiness flags for preventing premature saves
 const basicInfoHydrated = ref(false)
 const isHydratingBasicInfo = ref(false)
+const isServerSyncingBasicInfo = ref(false)
 
 // Notification debouncing
 const lastNotificationTime = ref(0)
@@ -631,7 +633,7 @@ watch(
       }
     }
 
-    // Sincroniza snapshot original para o diff pós-hidratação
+    // Sync original snapshot for post-hydration diff|readiness barrier
     if (!isHydratingBasicInfo.value) {
       originalJobData.value.description = localJobData.value?.description ?? ''
       originalJobData.value.delivery_date = localJobData.value?.delivery_date ?? ''
@@ -640,6 +642,39 @@ watch(
     }
   },
   { immediate: true, deep: true },
+)
+
+// Force-sync basic info fields after a conflict-triggered reload (do not enqueue autosave)
+watch(
+  () => jobsStore.conflictReloadAtById[props.jobId],
+  (ts) => {
+    if (!ts) return
+    const basicInfo = jobsStore.getBasicInfoById(props.jobId)
+    if (!basicInfo || !localJobData.value) return
+
+    isServerSyncingBasicInfo.value = true
+    try {
+      if (basicInfo.description !== undefined)
+        localJobData.value.description = basicInfo.description || ''
+      if (basicInfo.delivery_date !== undefined)
+        localJobData.value.delivery_date = basicInfo.delivery_date || ''
+      if (basicInfo.order_number !== undefined)
+        localJobData.value.order_number = basicInfo.order_number || ''
+      if (basicInfo.notes !== undefined) localJobData.value.notes = basicInfo.notes || ''
+
+      // Align original snapshot with server data
+      originalJobData.value.description = localJobData.value.description ?? ''
+      originalJobData.value.delivery_date = localJobData.value.delivery_date ?? ''
+      originalJobData.value.order_number = localJobData.value.order_number ?? ''
+      originalJobData.value.notes = localJobData.value.notes ?? ''
+
+      // Trigger reactivity
+      localJobData.value = { ...localJobData.value }
+    } finally {
+      isServerSyncingBasicInfo.value = false
+    }
+  },
+  { immediate: false },
 )
 
 // Watcher for store header changes to sync with header edits
@@ -720,10 +755,12 @@ const confirmClientChange = () => {
 
   resetClientChangeState()
 
-  // Send client_id and clear contact
+  // Send client_id, client_name and clear contact (id and name)
   autosave.queueChanges({
     client_id: localJobData.value.client?.id ?? null,
+    client_name: localJobData.value.client?.name ?? null,
     contact_id: null,
+    contact_name: null,
   })
   void autosave.flush('client-change')
 
@@ -772,9 +809,15 @@ const handleClientUpdated = (updatedClient: Client) => {
     localJobData.value.client.name = updatedClient.name
   }
 
-  // Queue the change for autosave
-  autosave.queueChange('client', localJobData.value.client)
-  void autosave.flush('client-updated')
+  // Reflect name in header immediately (no API call; backend derives client_name)
+  if (jobHeader.value) {
+    jobsStore.patchHeader(jobHeader.value.job_id, {
+      client: {
+        id: jobHeader.value.client?.id ?? '',
+        name: updatedClient.name,
+      },
+    })
+  }
 
   toast.success('Client updated successfully')
 }
@@ -821,12 +864,13 @@ const handleContactSelected = async (contact: ClientContact | null) => {
 const router = useRouter()
 
 let unbindRouteGuard: () => void = () => {}
+let unbindConcurrencyRetry: () => void = () => {}
 
 /** Instance */
 const autosave = createJobAutosave({
   jobId: props.jobId || '',
   debounceMs: 2000, // Increased debounce for text fields to prevent interruption
-  canSave: () => dataReady.value, // barreira de prontidão
+  canSave: () => dataReady.value, // Sync original snapshot for post-hydration diff|readiness barrier
   getSnapshot: () => {
     // Returns original snapshot, not current data
     const data = originalJobData.value || {}
@@ -876,7 +920,6 @@ const autosave = createJobAutosave({
 
       const partialPayload: Record<string, unknown> = {}
       for (const [k, v] of Object.entries(patch)) {
-        if (k === 'client_name' || k === 'contact_name') continue // derived, don't send
         partialPayload[k] = normalise(k, v)
       }
 
@@ -884,6 +927,15 @@ const autosave = createJobAutosave({
 
       // Use the partial update method (similar to useJobHeaderAutosave)
       const result = await jobService.updateJobHeaderPartial(props.jobId, partialPayload)
+      if (!result.success) {
+        // Detect concurrency by robust regex (no auto-retry)
+        const msg = String(result.error || '')
+        const isConcurrencyError =
+          /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
+            msg,
+          )
+        return { success: false, error: result.error, conflict: isConcurrencyError }
+      }
       if (result.success) {
         // Update local snapshot ONLY for keys sent
         const apply = (base: Partial<Job>, p: Record<string, unknown>) => {
@@ -897,10 +949,19 @@ const autosave = createJobAutosave({
           if ('rejected_flag' in p) next.rejected_flag = !!p.rejected_flag
           if ('quote_acceptance_date' in p)
             next.quote_acceptance_date = (p.quote_acceptance_date as string | null) ?? undefined
-          if ('client_id' in p) {
+          if ('client_id' in p || 'client_name' in p) {
+            const newId =
+              ('client_id' in p ? (p.client_id as string | null) : next.client?.id) ??
+              next.client?.id ??
+              ''
+            const newName =
+              ('client_name' in p ? ((p.client_name as string | null) ?? '') : undefined) ??
+              localJobData.value.client?.name ??
+              next.client?.name ??
+              ''
             next.client = {
-              id: (p.client_id as string | null) ?? next.client?.id ?? '',
-              name: next.client?.name ?? '',
+              id: newId,
+              name: newName,
             }
           }
           if ('description' in p) next.description = (p.description as string | null) ?? ''
@@ -923,10 +984,13 @@ const autosave = createJobAutosave({
         if ('quote_acceptance_date' in partialPayload)
           headerPatch.quote_acceptance_date =
             (partialPayload.quote_acceptance_date as string | null) ?? undefined
-        if ('client_id' in partialPayload) {
+        if ('client_id' in partialPayload || 'client_name' in partialPayload) {
           headerPatch.client = {
-            id: (partialPayload.client_id as string | null) ?? '',
-            name: originalJobData.value.client?.name ?? '',
+            id: (partialPayload.client_id as string | null) ?? jobHeader.value?.client?.id ?? '',
+            name:
+              (partialPayload.client_name as string | null) ??
+              localJobData.value.client?.name ??
+              '',
           }
         }
         if (Object.keys(headerPatch).length && props.jobId) {
@@ -989,7 +1053,12 @@ const autosave = createJobAutosave({
       return { success: false, error: result.error || 'Update failed' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      return { success: false, error: msg }
+      // Detect concurrency by robust regex (no auto-retry)
+      const isConcurrencyError =
+        /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
+          msg,
+        )
+      return { success: false, error: msg, conflict: isConcurrencyError }
     }
   },
   devLogging: true,
@@ -1002,6 +1071,10 @@ onMounted(() => {
   unbindRouteGuard = autosave.onRouteLeaveBind({
     beforeEach: (to, from, next) => router.beforeEach(to, from, next),
   })
+  // Listen to global "Retry" click from the concurrency toast for this Job
+  unbindConcurrencyRetry = onConcurrencyRetry(props.jobId, () => {
+    void autosave.flush('retry-click')
+  })
 })
 
 onUnmounted(() => {
@@ -1013,11 +1086,12 @@ onUnmounted(() => {
   autosave.onBeforeUnloadUnbind()
   autosave.onVisibilityUnbind()
   unbindRouteGuard()
+  unbindConcurrencyRetry()
 })
 
 /** Granular watchers to avoid reactive noise */
 const enqueueIfNotInitializing = (key: string, value: unknown) => {
-  if (!isInitializing.value) {
+  if (!isInitializing.value && !isServerSyncingBasicInfo.value) {
     autosave.queueChange(key, value)
   }
 }
@@ -1047,6 +1121,7 @@ watch(
   (v) => {
     if (!isSyncingFromStore.value) {
       enqueueIfNotInitializing('client_id', v?.id ?? null)
+      enqueueIfNotInitializing('client_name', v?.name ?? null)
     }
   },
   { deep: true },
@@ -1103,7 +1178,7 @@ const handleFieldBlur = () => {
 }
 
 const retrySave = () => {
-  void autosave.flush()
+  void autosave.flush('retry-click')
 }
 
 const saveHasError = computed(() => !!autosave.error.value)

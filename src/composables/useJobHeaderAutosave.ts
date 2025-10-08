@@ -1,9 +1,10 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { createJobAutosave, type SaveResult } from './useJobAutosave'
 import { jobService } from '../services/job.service'
 import { useJobsStore } from '../stores/jobs'
 import { toast } from 'vue-sonner'
+import { onConcurrencyRetry } from '@/composables/useConcurrencyEvents'
 import { z } from 'zod'
 import { schemas } from '../api/generated/api'
 
@@ -45,6 +46,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
 
   const isInitializing = ref(false)
   let unbindRouteGuard: () => void = () => {}
+  let unbindConcurrencyRetry: () => void = () => {}
 
   /**
    * Applies a patch (based on "local" fields reflected from header) to the header snapshot.
@@ -147,7 +149,15 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
 
         // Use partial update endpoint for job header autosave
         const res = await jobService.updateJobHeaderPartial(jobId, payloadJob)
-        if (!res.success) return { success: false, error: res.error }
+        if (!res.success) {
+          // Check if this is a concurrency error (should not be retried automatically)
+          const msg = String(res.error || '')
+          const isConcurrencyError =
+            /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
+              msg,
+            )
+          return { success: false, error: res.error, conflict: isConcurrencyError }
+        }
 
         // Update only the header snapshot and store header
         const updatedHeader = applyPatchToHeader(
@@ -166,11 +176,34 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
         return { success: true, serverData: res.data }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
-        return { success: false, error: msg }
+        // Check if this is a concurrency error (should not be retried automatically)
+        const isConcurrencyError =
+          /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
+            msg,
+          )
+        return { success: false, error: msg, conflict: isConcurrencyError }
       }
     },
     devLogging: true,
   })
+
+  // Sync header UI with store after a conflict-triggered reload (or any store update)
+  const storeHeader = computed(() => jobsStore.getHeaderById(header.job_id))
+  watch(
+    storeHeader,
+    (newHeader) => {
+      if (!newHeader) return
+      // Update both local and original snapshots so the UI reflects the latest server data
+      // Preserve object shape (especially client) to avoid partial merging issues
+      localHeader.value = {
+        ...localHeader.value,
+        ...newHeader,
+        client: newHeader.client,
+      }
+      originalHeader.value = newHeader
+    },
+    { deep: true },
+  )
 
   // Helpers
   const enqueue = (key: keyof Partial<Job>, value: unknown) => {
@@ -220,6 +253,10 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     unbindRouteGuard = autosave.onRouteLeaveBind({
       beforeEach: (guard: any) => router.beforeEach(guard), // eslint-disable-line @typescript-eslint/no-explicit-any
     })
+    // Listen for global "Retry" from concurrency toast for this job
+    unbindConcurrencyRetry = onConcurrencyRetry(header.job_id, () => {
+      void autosave.flush('retry-click')
+    })
     isInitializing.value = false
   })
 
@@ -227,6 +264,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     autosave.onBeforeUnloadUnbind()
     autosave.onVisibilityUnbind()
     unbindRouteGuard()
+    unbindConcurrencyRetry()
   })
 
   return {

@@ -8,12 +8,14 @@ import router from '@/router'
 import { useXeroAuth } from '../composables/useXeroAuth'
 import { debugLog } from '@/utils/debug'
 
-export const getApiBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL
-  }
+// ETag / concurrency handling lives in api/client.ts (Zodios). This helper remains for auth (401/logout) and Xero only.
 
-  return 'http://localhost:8001'
+export const getApiBaseUrl = () => {
+  const env = import.meta.env
+  if (env?.VITE_API_BASE_URL) {
+    return env.VITE_API_BASE_URL as string
+  }
+  return 'http://localhost:8000'
 }
 
 axios.defaults.baseURL = getApiBaseUrl()
@@ -21,28 +23,27 @@ axios.defaults.timeout = 60000
 axios.defaults.withCredentials = true
 
 axios.interceptors.request.use(
-  (config) => {
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  },
+  (config) => config,
+  (error) => Promise.reject(error),
 )
 
 let isRedirecting = false
 
 axios.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response
+  },
   async (error) => {
     const authStore = useAuthStore()
     const isAuthError = error.response?.status === 401
     const currentPath = router.currentRoute.value.path
     const isOnLoginPage = currentPath === '/login'
     if (error.response?.data?.redirect_to_auth) {
-      const { startLogin } = useXeroAuth()
-      startLogin()
+      const { loginXero } = useXeroAuth()
+      loginXero()
       return Promise.reject(error)
     }
+
     if (isAuthError && !isOnLoginPage && !isRedirecting) {
       debugLog('Authentication failed - cookies may have expired')
 

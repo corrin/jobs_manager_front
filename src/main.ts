@@ -23,7 +23,23 @@ window.EventSource = Impl as unknown as typeof EventSource
 
 const app = createApp(App)
 
-app.use(createPinia())
+const pinia = createPinia()
+app.use(pinia)
 app.use(router)
+
+// Set up ETag manager after Pinia is initialized
+import { setupETagManager, setupJobReloadManager } from './api/client'
+import { useJobETags } from './composables/useJobETags'
+import { useJobsStore } from './stores/jobs'
+
+// Initialize the ETag manager with the composable
+const { getETag, setETag } = useJobETags()
+setupETagManager({ getETag, setETag })
+
+// Initialize the job reload manager with the store
+const jobsStore = useJobsStore(pinia)
+setupJobReloadManager({
+  reloadJobOnConflict: (jobId: string) => jobsStore.reloadJobOnConflict(jobId),
+})
 
 app.mount('#app')
