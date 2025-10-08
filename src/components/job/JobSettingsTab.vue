@@ -413,6 +413,7 @@ const isSyncingFromStore = ref(false)
 // Readiness flags for preventing premature saves
 const basicInfoHydrated = ref(false)
 const isHydratingBasicInfo = ref(false)
+const isServerSyncingBasicInfo = ref(false)
 
 // Notification debouncing
 const lastNotificationTime = ref(0)
@@ -632,7 +633,7 @@ watch(
       }
     }
 
-    // Sincroniza snapshot original para o diff pós-hidratação
+    // Sync original snapshot for post-hydration diff|readiness barrier
     if (!isHydratingBasicInfo.value) {
       originalJobData.value.description = localJobData.value?.description ?? ''
       originalJobData.value.delivery_date = localJobData.value?.delivery_date ?? ''
@@ -641,6 +642,36 @@ watch(
     }
   },
   { immediate: true, deep: true },
+)
+
+// Force-sync basic info fields after a conflict-triggered reload (do not enqueue autosave)
+watch(
+  () => jobsStore.conflictReloadAtById[props.jobId],
+  (ts) => {
+    if (!ts) return
+    const bi = jobsStore.getBasicInfoById(props.jobId)
+    if (!bi || !localJobData.value) return
+
+    isServerSyncingBasicInfo.value = true
+    try {
+      if (bi.description !== undefined) localJobData.value.description = bi.description || ''
+      if (bi.delivery_date !== undefined) localJobData.value.delivery_date = bi.delivery_date || ''
+      if (bi.order_number !== undefined) localJobData.value.order_number = bi.order_number || ''
+      if (bi.notes !== undefined) localJobData.value.notes = bi.notes || ''
+
+      // Align original snapshot with server data
+      originalJobData.value.description = localJobData.value.description ?? ''
+      originalJobData.value.delivery_date = localJobData.value.delivery_date ?? ''
+      originalJobData.value.order_number = localJobData.value.order_number ?? ''
+      originalJobData.value.notes = localJobData.value.notes ?? ''
+
+      // Trigger reactivity
+      localJobData.value = { ...localJobData.value }
+    } finally {
+      isServerSyncingBasicInfo.value = false
+    }
+  },
+  { immediate: false },
 )
 
 // Watcher for store header changes to sync with header edits
@@ -828,7 +859,7 @@ let unbindConcurrencyRetry: () => void = () => {}
 const autosave = createJobAutosave({
   jobId: props.jobId || '',
   debounceMs: 2000, // Increased debounce for text fields to prevent interruption
-  canSave: () => dataReady.value, // barreira de prontidão
+  canSave: () => dataReady.value, // Sync original snapshot for post-hydration diff|readiness barrier
   getSnapshot: () => {
     // Returns original snapshot, not current data
     const data = originalJobData.value || {}
@@ -887,12 +918,12 @@ const autosave = createJobAutosave({
       // Use the partial update method (similar to useJobHeaderAutosave)
       const result = await jobService.updateJobHeaderPartial(props.jobId, partialPayload)
       if (!result.success) {
-        // Check if this is a concurrency error (should not be retried automatically)
+        // Detect concurrency by robust regex (no auto-retry)
+        const msg = String(result.error || '')
         const isConcurrencyError =
-          result.error?.includes('Concurrent modification detected') ||
-          result.error?.includes('Missing version information') ||
-          result.error?.includes('412') ||
-          result.error?.includes('428')
+          /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
+            msg,
+          )
         return { success: false, error: result.error, conflict: isConcurrencyError }
       }
       if (result.success) {
@@ -1000,12 +1031,11 @@ const autosave = createJobAutosave({
       return { success: false, error: result.error || 'Update failed' }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      // Check if this is a concurrency error (should not be retried automatically)
+      // Detect concurrency by robust regex (no auto-retry)
       const isConcurrencyError =
-        msg.includes('Concurrent modification detected') ||
-        msg.includes('Missing version information') ||
-        msg.includes('412') ||
-        msg.includes('428')
+        /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
+          msg,
+        )
       return { success: false, error: msg, conflict: isConcurrencyError }
     }
   },
@@ -1039,7 +1069,7 @@ onUnmounted(() => {
 
 /** Granular watchers to avoid reactive noise */
 const enqueueIfNotInitializing = (key: string, value: unknown) => {
-  if (!isInitializing.value) {
+  if (!isInitializing.value && !isServerSyncingBasicInfo.value) {
     autosave.queueChange(key, value)
   }
 }

@@ -21,6 +21,8 @@ export const useJobsStore = defineStore('jobs', () => {
   const kanbanJobs = ref<Record<string, KanbanJobUI>>({})
   const headersById = ref<Record<string, JobHeaderResponse>>({})
   const basicInfoById = ref<Record<string, JobBasicInfo>>({})
+  // Conflict reload timestamp per jobId for UI sync (JobView / JobSettings)
+  const conflictReloadAtById = ref<Record<string, number>>({})
   const isLoadingJob = ref(false)
   const isLoadingKanban = ref(false)
   const currentContext = ref<'kanban' | 'detail' | null>(null)
@@ -205,13 +207,21 @@ export const useJobsStore = defineStore('jobs', () => {
   }
 
   const setBasicInfo = (jobId: string, basicInfo: JobBasicInfo): void => {
-    basicInfoById.value[jobId] = basicInfo
+    // Immutable update to guarantee reactivity for consumers
+    basicInfoById.value = {
+      ...basicInfoById.value,
+      [jobId]: basicInfo,
+    }
   }
 
   const updateBasicInfo = (jobId: string, updates: Partial<JobBasicInfo>): void => {
     const existing = basicInfoById.value[jobId]
     if (existing) {
-      basicInfoById.value[jobId] = { ...existing, ...updates }
+      // Immutable update to guarantee reactivity
+      basicInfoById.value = {
+        ...basicInfoById.value,
+        [jobId]: { ...existing, ...updates },
+      }
     }
   }
 
@@ -361,6 +371,26 @@ export const useJobsStore = defineStore('jobs', () => {
         })
       }
 
+      // 3) Refresh Basic Info to reflect immediately in JobSettingsTab
+      try {
+        const bi = await api.job_rest_jobs_basic_info_retrieve({
+          params: { job_id: jobId },
+        })
+        setBasicInfo(jobId, bi)
+        debugLog('🏪 Store - basic info refreshed after conflict:', {
+          jobId,
+          hasDescription: !!bi.description,
+        })
+      } catch (biErr) {
+        debugLog('⚠️ Store - basic info refresh failed after conflict:', { jobId, error: biErr })
+      }
+
+      // 4) Mark conflict reload timestamp so components can force local sync
+      conflictReloadAtById.value = {
+        ...conflictReloadAtById.value,
+        [jobId]: Date.now(),
+      }
+
       debugLog('✅ Store - reloadJobOnConflict success:', { jobId })
     } catch (error) {
       debugLog('❌ Store - reloadJobOnConflict error:', { jobId, error })
@@ -382,6 +412,7 @@ export const useJobsStore = defineStore('jobs', () => {
     getKanbanJobById,
     getHeaderById,
     getBasicInfoById,
+    conflictReloadAtById,
 
     setDetailedJob,
     updateDetailedJob,

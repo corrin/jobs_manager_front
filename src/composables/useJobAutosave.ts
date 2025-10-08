@@ -258,7 +258,7 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       if (!('contact_name' in effectivePatch)) effectivePatch['contact_name'] = null
     }
 
-    // regra de completude (exemplo)
+    // completeness rule (example)
     const virtualSnapshot = { ...originalSnapshot, ...effectivePatch }
     if (
       ('contact_id' in effectivePatch || 'contact_name' in effectivePatch) &&
