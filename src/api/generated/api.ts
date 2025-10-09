@@ -1057,6 +1057,12 @@ const JobEvent = z
     timestamp: z.string().datetime({ offset: true }),
     staff: z.string().nullable(),
     event_type: z.string(),
+    schema_version: z.number().int(),
+    change_id: z.string().uuid().nullable(),
+    delta_before: z.unknown().nullable(),
+    delta_after: z.unknown().nullable(),
+    delta_meta: z.unknown().nullable(),
+    delta_checksum: z.string(),
   })
   .passthrough()
 const CompanyDefaultsJobDetail = z
@@ -1077,35 +1083,30 @@ const JobData = z
 const JobDetailResponse = z
   .object({ success: z.boolean().optional().default(true), data: JobData })
   .passthrough()
-const JobStatusEnum = z.enum([
-  'draft',
-  'awaiting_approval',
-  'approved',
-  'in_progress',
-  'unusual',
-  'recently_completed',
-  'special',
-  'archived',
-])
-const BlankEnum = z.unknown()
-const NullEnum = z.unknown()
-const PatchedJobPatchRequest = z
+const JobDeltaEnvelope = z
   .object({
-    name: z.string().max(100),
-    description: z.string().nullable(),
-    notes: z.string().nullable(),
-    order_number: z.string().max(100).nullable(),
-    job_status: JobStatusEnum,
-    paid: z.boolean(),
-    job_is_valid: z.boolean(),
-    rejected_flag: z.boolean(),
-    delivery_date: z.string().nullable(),
-    quote_acceptance_date: z.string().datetime({ offset: true }).nullable(),
-    charge_out_rate: z.number().gt(-100000000).lt(100000000),
-    pricing_methodology: z.union([PricingMethodologyEnum, BlankEnum, NullEnum]).nullable(),
-    client_id: z.string().uuid().nullable(),
-    contact_id: z.string().uuid().nullable(),
-    job_files: z.array(z.object({}).partial().passthrough()),
+    change_id: z.string().uuid(),
+    actor_id: z.string().uuid().nullish(),
+    made_at: z.string().datetime({ offset: true }).nullish(),
+    job_id: z.string().uuid().nullish(),
+    fields: z.array(z.string()).min(1),
+    before: z.unknown(),
+    after: z.unknown(),
+    before_checksum: z.string(),
+    etag: z.string().nullish(),
+  })
+  .passthrough()
+const PatchedJobDeltaEnvelope = z
+  .object({
+    change_id: z.string().uuid(),
+    actor_id: z.string().uuid().nullable(),
+    made_at: z.string().datetime({ offset: true }).nullable(),
+    job_id: z.string().uuid().nullable(),
+    fields: z.array(z.string()).min(1),
+    before: z.unknown(),
+    after: z.unknown(),
+    before_checksum: z.string(),
+    etag: z.string().nullable(),
   })
   .partial()
   .passthrough()
@@ -1220,6 +1221,12 @@ const TimelineEntry = z
   })
   .passthrough()
 const JobTimelineResponse = z.object({ timeline: z.array(TimelineEntry) }).passthrough()
+const JobUndoRequest = z
+  .object({
+    change_id: z.string().uuid(),
+    undo_change_id: z.string().uuid().nullish(),
+  })
+  .passthrough()
 const DraftLine = z
   .object({
     kind: z.string(),
@@ -1544,6 +1551,8 @@ const MetalTypeEnum = z.enum([
   'unspecified',
   'other',
 ])
+const BlankEnum = z.unknown()
+const NullEnum = z.unknown()
 const PurchaseOrderLine = z
   .object({
     id: z.string().uuid(),
@@ -2122,10 +2131,8 @@ export const schemas = {
   CompanyDefaultsJobDetail,
   JobData,
   JobDetailResponse,
-  JobStatusEnum,
-  BlankEnum,
-  NullEnum,
-  PatchedJobPatchRequest,
+  JobDeltaEnvelope,
+  PatchedJobDeltaEnvelope,
   JobDeleteResponse,
   JobBasicInformationResponse,
   QuoteRevisionsList,
@@ -2143,6 +2150,7 @@ export const schemas = {
   QuoteImportStatusResponse,
   TimelineEntry,
   JobTimelineResponse,
+  JobUndoRequest,
   DraftLine,
   QuoteChanges,
   ApplyQuoteResponse,
@@ -2185,6 +2193,8 @@ export const schemas = {
   PurchaseOrderCreate,
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
+  BlankEnum,
+  NullEnum,
   PurchaseOrderLine,
   PurchaseOrderDetail,
   PurchaseOrderLineUpdate,
@@ -4375,7 +4385,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobDetailResponse,
+        schema: JobDeltaEnvelope,
       },
       {
         name: 'job_id',
@@ -4401,7 +4411,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedJobPatchRequest,
+        schema: PatchedJobDeltaEnvelope,
       },
       {
         name: 'job_id',
@@ -4736,6 +4746,32 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
     ],
     response: JobTimelineResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/job/rest/jobs/:job_id/undo-change/',
+    alias: 'job_rest_jobs_undo_change_create',
+    description: `Undo a previously applied job delta (requires delta envelope undo support).`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: JobUndoRequest,
+      },
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobDetailResponse,
     errors: [
       {
         status: 400,

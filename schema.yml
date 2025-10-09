@@ -3136,13 +3136,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobDetailResponse'
+              $ref: '#/components/schemas/JobDeltaEnvelope'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobDetailResponse'
+              $ref: '#/components/schemas/JobDeltaEnvelope'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobDetailResponse'
+              $ref: '#/components/schemas/JobDeltaEnvelope'
         required: true
       security:
         - cookieAuth: []
@@ -3177,13 +3177,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedJobPatchRequest'
+              $ref: '#/components/schemas/PatchedJobDeltaEnvelope'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedJobPatchRequest'
+              $ref: '#/components/schemas/PatchedJobDeltaEnvelope'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedJobPatchRequest'
+              $ref: '#/components/schemas/PatchedJobDeltaEnvelope'
       security:
         - cookieAuth: []
         - {}
@@ -3683,6 +3683,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JobTimelineResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
+  /job/rest/jobs/{job_id}/undo-change/:
+    post:
+      operationId: job_rest_jobs_undo_change_create
+      description: Undo a previously applied job delta (requires delta envelope undo
+        support).
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Jobs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobUndoRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobUndoRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JobUndoRequest'
+        required: true
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobDetailResponse'
           description: ''
         '400':
           content:
@@ -8163,6 +8205,43 @@ components:
           type: string
       required:
         - message
+    JobDeltaEnvelope:
+      type: object
+      description: Serializer that validates the delta envelope submitted by the frontend.
+      properties:
+        change_id:
+          type: string
+          format: uuid
+        actor_id:
+          type: string
+          format: uuid
+          nullable: true
+        made_at:
+          type: string
+          format: date-time
+          nullable: true
+        job_id:
+          type: string
+          format: uuid
+          nullable: true
+        fields:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        before: {}
+        after: {}
+        before_checksum:
+          type: string
+        etag:
+          type: string
+          nullable: true
+      required:
+        - after
+        - before
+        - before_checksum
+        - change_id
+        - fields
     JobDetailResponse:
       type: object
       description: Serializer for job detail response.
@@ -8200,10 +8279,36 @@ components:
         event_type:
           type: string
           readOnly: true
+        schema_version:
+          type: integer
+          readOnly: true
+        change_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        delta_before:
+          readOnly: true
+          nullable: true
+        delta_after:
+          readOnly: true
+          nullable: true
+        delta_meta:
+          readOnly: true
+          nullable: true
+        delta_checksum:
+          type: string
+          readOnly: true
       required:
+        - change_id
+        - delta_after
+        - delta_before
+        - delta_checksum
+        - delta_meta
         - description
         - event_type
         - id
+        - schema_version
         - staff
         - timestamp
     JobEventCreateRequest:
@@ -8650,26 +8755,6 @@ components:
           additionalProperties: {}
       required:
         - statuses
-    JobStatusEnum:
-      enum:
-        - draft
-        - awaiting_approval
-        - approved
-        - in_progress
-        - unusual
-        - recently_completed
-        - special
-        - archived
-      type: string
-      description: |-
-        * `draft` - Draft
-        * `awaiting_approval` - Awaiting Approval
-        * `approved` - Approved
-        * `in_progress` - In Progress
-        * `unusual` - Unusual
-        * `recently_completed` - Recently Completed
-        * `special` - Special
-        * `archived` - Archived
     JobStatusUpdateRequest:
       type: object
       description: Serializer for job status update request data.
@@ -8689,6 +8774,19 @@ components:
             $ref: '#/components/schemas/TimelineEntry'
       required:
         - timeline
+    JobUndoRequest:
+      type: object
+      description: Request serializer for undoing a job delta.
+      properties:
+        change_id:
+          type: string
+          format: uuid
+        undo_change_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+        - change_id
     JobsListResponse:
       type: object
       description: Serializer for jobs list API response
@@ -9953,95 +10051,37 @@ components:
           type: string
           format: byte
           readOnly: true
-    PatchedJobPatchRequest:
+    PatchedJobDeltaEnvelope:
       type: object
-      description: Serializer for job PATCH request - all updatable fields are optional
+      description: Serializer that validates the delta envelope submitted by the frontend.
       properties:
-        name:
+        change_id:
           type: string
-          description: Job name
-          maxLength: 100
-        description:
+          format: uuid
+        actor_id:
           type: string
+          format: uuid
           nullable: true
-          description: Job description
-        notes:
-          type: string
-          nullable: true
-          description: Internal notes about the job
-        order_number:
-          type: string
-          nullable: true
-          description: Order number
-          maxLength: 100
-        job_status:
-          allOf:
-            - $ref: '#/components/schemas/JobStatusEnum'
-          description: |-
-            Job status
-
-            * `draft` - Draft
-            * `awaiting_approval` - Awaiting Approval
-            * `approved` - Approved
-            * `in_progress` - In Progress
-            * `unusual` - Unusual
-            * `recently_completed` - Recently Completed
-            * `special` - Special
-            * `archived` - Archived
-        paid:
-          type: boolean
-          description: Whether the job has been paid
-        job_is_valid:
-          type: boolean
-          description: Whether the job is valid
-        rejected_flag:
-          type: boolean
-          description: Whether the job was rejected (quote declined by client)
-        delivery_date:
-          type: string
-          format: date
-          nullable: true
-          description: Delivery date
-        quote_acceptance_date:
+        made_at:
           type: string
           format: date-time
           nullable: true
-          description: Quote acceptance date
-        charge_out_rate:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Charge out rate
-        pricing_methodology:
-          nullable: true
-          description: |-
-            Pricing methodology
-
-            * `time_materials` - Time & Materials
-            * `fixed_price` - Fixed Price
-          oneOf:
-            - $ref: '#/components/schemas/PricingMethodologyEnum'
-            - $ref: '#/components/schemas/BlankEnum'
-            - $ref: '#/components/schemas/NullEnum'
-        client_id:
+        job_id:
           type: string
           format: uuid
           nullable: true
-          description: Client ID
-        contact_id:
-          type: string
-          format: uuid
-          nullable: true
-          description: Contact person ID
-        job_files:
+        fields:
           type: array
           items:
-            type: object
-            additionalProperties: {}
-          description: Job files
+            type: string
+          minItems: 1
+        before: {}
+        after: {}
+        before_checksum:
+          type: string
+        etag:
+          type: string
+          nullable: true
     PatchedJobQuoteChatUpdate:
       type: object
       description: |-
