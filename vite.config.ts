@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
     'msm-corrin-frontend.loca.lt',
     'msm-corrin-front.loca.lt',
     'msm-workflow.ngrok-free.app',
+    'msm-test-dev.ngrok-free.app',
     ...(env.VITE_ALLOWED_HOSTS ? env.VITE_ALLOWED_HOSTS.split(',').map((host) => host.trim()) : []),
   ]
 
