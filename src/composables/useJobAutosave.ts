@@ -135,6 +135,8 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
   const pausedDueToConflict = ref(false)
   // Keep the exact patch that conflicted so we can offer a true "Retry"
   let lastConflictPatch: Record<string, unknown> | null = null
+  let retryLatched = false
+  let retryTimer: number | null = null
 
   let debounceTimer: number | null = null
   let pendingAfterFlight = false
@@ -163,6 +165,20 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       void attemptFlush('debounce')
     }, debounceMs)
     log('⏳ scheduled debounce', { debounceMs, pendingKeys: [...pendingKeys.value] })
+  }
+
+  function scheduleRetryLatch() {
+    if (retryTimer) {
+      clearTimeout(retryTimer)
+      retryTimer = null
+    }
+    const delay = Math.min(1000, Math.max(250, debounceMs))
+    retryTimer = window.setTimeout(() => {
+      retryTimer = null
+      if (retryLatched) {
+        void attemptFlush('retry-latched')
+      }
+    }, delay)
   }
 
   function queueChange(key: string, nextValue: unknown) {
@@ -204,8 +220,36 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       }
     }
 
-    // While paused, only proceed if this invocation was triggered by an explicit retry-click
-    if (pausedDueToConflict.value && reason !== 'retry-click') {
+    // Ensure latched retry has the patch present before proceeding (buffer may have been cleared)
+    if (reason === 'retry-latched') {
+      if (lastConflictPatch && changeBuffer.size === 0) {
+        for (const [k, v] of Object.entries(lastConflictPatch)) {
+          changeBuffer.set(k, v)
+          pendingKeys.value.add(k)
+        }
+        log('🔁 re-enqueued latched patch on readiness', {
+          keys: Object.keys(lastConflictPatch),
+        })
+      }
+    }
+
+    // If readiness was reached after a latched retry, ensure the patch is present before proceeding
+    if (reason === 'retry-latched') {
+      if (lastConflictPatch && changeBuffer.size === 0) {
+        for (const [k, v] of Object.entries(lastConflictPatch)) {
+          changeBuffer.set(k, v)
+          pendingKeys.value.add(k)
+        }
+        log('🔁 re-enqueued latched patch on readiness', {
+          keys: Object.keys(lastConflictPatch),
+        })
+      } else if (!lastConflictPatch) {
+        log('ℹ️ retry-latched received but no lastConflictPatch present')
+      }
+    }
+
+    // While paused, only proceed if this invocation was triggered by an explicit retry-click (or latched after click)
+    if (pausedDueToConflict.value && reason !== 'retry-click' && reason !== 'retry-latched') {
       log('⛔ paused due to concurrency conflict; awaiting user retry', { reason })
       return
     }
@@ -224,8 +268,13 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
 
     const originalSnapshot = opts.getSnapshot() ?? {}
 
-    if (opts.canSave && !opts.canSave(originalSnapshot)) {
+    if (opts.canSave && !opts.canSave(originalSnapshot) && reason !== 'retry-latched') {
       log('⛔ canSave=false (not hydrated/ready)', { reason })
+      if (reason === 'retry-click') {
+        retryLatched = true
+        log('🔒 retry latched until ready', { pendingKeys: [...pendingKeys.value] })
+        scheduleRetryLatch()
+      }
       return
     }
 
@@ -269,8 +318,9 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       return
     }
 
-    if (reason === 'retry-click' && pausedDueToConflict.value) {
+    if ((reason === 'retry-click' || reason === 'retry-latched') && pausedDueToConflict.value) {
       pausedDueToConflict.value = false
+      retryLatched = false
     }
     isSaving.value = true
     error.value = null

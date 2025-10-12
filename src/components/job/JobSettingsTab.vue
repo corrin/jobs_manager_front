@@ -417,7 +417,7 @@ const isServerSyncingBasicInfo = ref(false)
 
 // Notification debouncing
 const lastNotificationTime = ref(0)
-const NOTIFICATION_DEBOUNCE_MS = 3000 // 3 seconds minimum between notifications
+const NOTIFICATION_DEBOUNCE_MS = 2000 // 3 seconds minimum between notifications
 
 // Typing state tracking to prevent interruption
 const isUserTyping = ref(false)
@@ -883,7 +883,7 @@ let unbindConcurrencyRetry: () => void = () => {}
 /** Instance */
 const autosave = createJobAutosave({
   jobId: props.jobId || '',
-  debounceMs: 2000, // Increased debounce for text fields to prevent interruption
+  debounceMs: 1000, // Increased debounce for text fields to prevent interruption
   canSave: () => dataReady.value, // Sync original snapshot for post-hydration diff|readiness barrier
   getSnapshot: () => {
     // Returns original snapshot, not current data
