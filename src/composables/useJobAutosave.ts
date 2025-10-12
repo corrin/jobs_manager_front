@@ -91,8 +91,10 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
     ((key: string, value: unknown) => {
       if (value == null) return value
       if (typeof value === 'string') {
-        if (key === 'description' || key === 'notes') return value.trim()
-        const collapsed = value.trim().replace(/\s+/g, ' ')
+        const trimmed = value.trim()
+        if (trimmed === '') return null // Convert empty strings to null for nullable fields
+        if (key === 'description' || key === 'notes' || key === 'order_number') return trimmed
+        const collapsed = trimmed.replace(/\s+/g, ' ')
         if (key === 'pricing_methodology' || key === 'job_status') return collapsed.toLowerCase()
         return collapsed
       }
@@ -187,9 +189,8 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       debounceTimer = null
     }
 
-    // If this is an explicit user retry, unpause and ALWAYS re-enqueue the last conflicting patch
+    // If this is an explicit user retry, re-enqueue the last conflicting patch (do not unpause yet)
     if (reason === 'retry-click') {
-      pausedDueToConflict.value = false
       if (lastConflictPatch) {
         for (const [k, v] of Object.entries(lastConflictPatch)) {
           changeBuffer.set(k, v)
@@ -203,8 +204,8 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       }
     }
 
-    // If still paused (no retry), wait for user action
-    if (pausedDueToConflict.value) {
+    // While paused, only proceed if this invocation was triggered by an explicit retry-click
+    if (pausedDueToConflict.value && reason !== 'retry-click') {
       log('⛔ paused due to concurrency conflict; awaiting user retry', { reason })
       return
     }
@@ -268,6 +269,9 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       return
     }
 
+    if (reason === 'retry-click' && pausedDueToConflict.value) {
+      pausedDueToConflict.value = false
+    }
     isSaving.value = true
     error.value = null
     pendingAfterFlight = false

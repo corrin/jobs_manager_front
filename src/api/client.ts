@@ -66,7 +66,20 @@ axios.interceptors.request.use(
 
     return config
   },
-  (error) => {
+  async (error) => {
+    // Handle validation errors (400/422) - DO NOT reload data, let user handle stale data
+    // The JobDelta system should handle this by showing proper error messages
+    // and allowing user to retry with fresh data if needed
+    if (error.response?.status === 400 || error.response?.status === 422) {
+      const url = error.config?.url || ''
+      const jobId = extractJobId(url)
+
+      if (jobId && isJobMutationEndpoint(url)) {
+        debugLog(`[ETags] Validation error for job ${jobId} - letting JobDelta handle it`)
+        // JobDelta service will surface the error to user, no silent reload
+      }
+    }
+
     return Promise.reject(error)
   },
 )

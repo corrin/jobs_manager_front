@@ -57,12 +57,25 @@ export function useJobDeltaQueue(jobId: string) {
 }
 
 export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDeltaEnvelope> {
-  const fields = [...new Set(input.fields)].sort()
-  const before = fields.reduce<Record<string, unknown>>((acc, key) => {
+  const allFields = [...new Set(input.fields)].sort()
+
+  // Filter to only fields where before !== after
+  const changedFields = allFields.filter((field) => {
+    const beforeValue = input.before[field]
+    const afterValue = input.after[field]
+    // Simple equality check (should work for primitives and objects that are the same reference)
+    return beforeValue !== afterValue
+  })
+
+  if (changedFields.length === 0) {
+    throw new Error('No fields changed in delta envelope')
+  }
+
+  const before = changedFields.reduce<Record<string, unknown>>((acc, key) => {
     acc[key] = input.before[key]
     return acc
   }, {})
-  const after = fields.reduce<Record<string, unknown>>((acc, key) => {
+  const after = changedFields.reduce<Record<string, unknown>>((acc, key) => {
     acc[key] = input.after[key]
     return acc
   }, {})
@@ -72,14 +85,14 @@ export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDe
   const actor_id = input.actor_id ?? null
   const etag = input.etag ?? null
 
-  const before_checksum = await computeJobDeltaChecksum(input.job_id, before, fields)
+  const before_checksum = await computeJobDeltaChecksum(input.job_id, before, changedFields)
 
   const envelope: JobDeltaEnvelope = {
     change_id,
     actor_id,
     made_at,
     job_id: input.job_id,
-    fields,
+    fields: changedFields,
     before,
     after,
     before_checksum,

@@ -6,11 +6,11 @@ import {
   computeJobDeltaChecksum,
   deltaChecksumUtils,
 } from '../deltaChecksum'
+import { buildJobDeltaEnvelope } from '../../composables/useJobDelta'
 
 beforeAll(async () => {
   if (!globalThis.crypto?.subtle) {
     const { webcrypto } = await import('node:crypto')
-    // @ts-expect-error - assign webcrypto for test environment
     globalThis.crypto = webcrypto as Crypto
   }
 })
@@ -49,5 +49,51 @@ describe('serialiseForChecksum & compute', () => {
       'quoted',
     ])
     expect(checksumRepeat).toEqual(checksum)
+  })
+})
+
+describe('buildJobDeltaEnvelope', () => {
+  it('filters out unchanged fields', async () => {
+    const envelope = await buildJobDeltaEnvelope({
+      job_id: 'job-123',
+      before: {
+        name: 'Old Name',
+        description: 'Same Description',
+        delivery_date: '2024-01-01',
+      },
+      after: {
+        name: 'New Name',
+        description: 'Same Description', // unchanged
+        delivery_date: '2024-01-01', // unchanged
+      },
+      fields: ['name', 'description', 'delivery_date'],
+      actor_id: 'user-123',
+      etag: 'etag-123',
+    })
+
+    expect(envelope.fields).toEqual(['name']) // only changed field
+    expect(envelope.before.name).toEqual('Old Name')
+    expect(envelope.after.name).toEqual('New Name')
+    expect(envelope.before.description).toBeUndefined()
+    expect(envelope.after.description).toBeUndefined()
+  })
+
+  it('throws error when no fields changed', async () => {
+    await expect(
+      buildJobDeltaEnvelope({
+        job_id: 'job-123',
+        before: {
+          name: 'Same Name',
+          description: 'Same Description',
+        },
+        after: {
+          name: 'Same Name',
+          description: 'Same Description',
+        },
+        fields: ['name', 'description'],
+        actor_id: 'user-123',
+        etag: 'etag-123',
+      }),
+    ).rejects.toThrow('No fields changed in delta envelope')
   })
 })

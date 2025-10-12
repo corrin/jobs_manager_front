@@ -87,14 +87,16 @@ function canonicaliseDate(value: Date): string {
   return new Date(utcMillis).toISOString()
 }
 
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+const DATE_TIME_LIKE = /^\d{4}-\d{2}-\d{2}T/
+
 function canonicaliseString(value: string): string {
   const trimmed = value.trim()
   if (trimmed === '') return ''
-  if (!ISO_UTC_REGEX.test(trimmed) && !Number.isNaN(Date.parse(trimmed))) {
+  if (DATE_ONLY.test(trimmed)) return trimmed
+  if (DATE_TIME_LIKE.test(trimmed) || ISO_UTC_REGEX.test(trimmed)) {
     const parsed = new Date(trimmed)
-    if (!Number.isNaN(parsed.valueOf())) {
-      return parsed.toISOString()
-    }
+    if (!Number.isNaN(parsed.valueOf())) return parsed.toISOString()
   }
   return trimmed
 }
