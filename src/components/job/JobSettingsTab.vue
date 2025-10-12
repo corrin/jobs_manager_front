@@ -547,16 +547,17 @@ watch(
       notes: localJobData.value?.notes ?? '',
     }
 
-    // Keep original snapshot with current state (excluding contact fields from autosave)
+    // Keep original snapshot with current state (including separated client/contact fields for delta)
     originalJobData.value = {
       ...localJobData.value,
       description: normalizeNullable(localJobData.value.description),
       delivery_date: normalizeNullable(localJobData.value.delivery_date),
       order_number: normalizeNullable(localJobData.value.order_number),
       notes: normalizeNullable(localJobData.value.notes),
-      // Exclude contact fields from autosave snapshot
-      contact_id: undefined,
-      contact_name: undefined,
+      // Include separated fields for delta consistency (only id fields, not name)
+      client_id: localJobData.value.client?.id ?? null,
+      contact_id: localJobData.value.contact_id ?? null,
+      contact_name: localJobData.value.contact_name ?? null,
     }
 
     // Load contact information using the job contacts endpoint
@@ -656,9 +657,10 @@ watch(
       originalJobData.value.delivery_date = normalizeNullable(localJobData.value?.delivery_date)
       originalJobData.value.order_number = normalizeNullable(localJobData.value?.order_number)
       originalJobData.value.notes = normalizeNullable(localJobData.value?.notes)
-      // Keep contact fields excluded from autosave snapshot
-      originalJobData.value.contact_id = undefined
-      originalJobData.value.contact_name = undefined
+      // Include separated fields for delta consistency (only id fields, not name)
+      originalJobData.value.client_id = localJobData.value?.client?.id ?? null
+      originalJobData.value.contact_id = localJobData.value?.contact_id ?? null
+      originalJobData.value.contact_name = localJobData.value?.contact_name ?? null
     }
   },
   { immediate: true, deep: true },
@@ -687,9 +689,10 @@ watch(
       originalJobData.value.delivery_date = normalizeNullable(localJobData.value.delivery_date)
       originalJobData.value.order_number = normalizeNullable(localJobData.value.order_number)
       originalJobData.value.notes = normalizeNullable(localJobData.value.notes)
-      // Keep contact fields excluded from autosave snapshot
-      originalJobData.value.contact_id = undefined
-      originalJobData.value.contact_name = undefined
+      // Include separated fields for delta consistency (only id fields, not name)
+      originalJobData.value.client_id = localJobData.value.client?.id ?? null
+      originalJobData.value.contact_id = localJobData.value.contact_id ?? null
+      originalJobData.value.contact_name = localJobData.value.contact_name ?? null
 
       // Trigger reactivity
       localJobData.value = { ...localJobData.value }
@@ -893,9 +896,10 @@ const autosave = createJobAutosave({
       job_number: data.job_number,
       name: data.name,
       client: data.client,
-      // Exclude contact fields from autosave - they are managed separately
-      // contact_id: data.contact_id,
-      // contact_name: data.contact_name,
+      // Include separated fields for delta consistency (only id fields, not name)
+      client_id: data.client_id,
+      contact_id: data.contact_id,
+      contact_name: data.contact_name,
       job_status: data.status,
       pricing_methodology: data.pricing_methodology,
       fully_invoiced: data.fully_invoiced,
@@ -910,18 +914,14 @@ const autosave = createJobAutosave({
   },
   applyOptimistic: (patch) => {
     Object.entries(patch).forEach(([k, v]) => {
-      // Skip contact fields as they are managed separately
-      if (k !== 'contact_id' && k !== 'contact_name') {
-        ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
-      }
+      // Apply all fields including separated client/contact fields
+      ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
     })
   },
   rollbackOptimistic: (previous) => {
     Object.entries(previous).forEach(([k, v]) => {
-      // Skip contact fields as they are managed separately
-      if (k !== 'contact_id' && k !== 'contact_name') {
-        ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
-      }
+      // Rollback all fields including separated client/contact fields
+      ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
     })
   },
   saveAdapter: async (patch) => {
@@ -1137,16 +1137,17 @@ onMounted(() => {
           notes: localJobData.value?.notes ?? '',
         }
 
-        // Update original snapshot with fresh server data (excluding contact fields)
+        // Update original snapshot with fresh server data (including separated fields for delta)
         originalJobData.value = {
           ...freshData,
           description: normalizeNullable(localJobData.value.description),
           delivery_date: normalizeNullable(localJobData.value.delivery_date),
           order_number: normalizeNullable(localJobData.value.order_number),
           notes: normalizeNullable(localJobData.value.notes),
-          // Exclude contact fields from autosave snapshot
-          contact_id: undefined,
-          contact_name: undefined,
+          // Include separated fields for delta consistency (only id fields, not name)
+          client_id: localJobData.value.client?.id ?? null,
+          contact_id: localJobData.value.contact_id ?? null,
+          contact_name: localJobData.value.contact_name ?? null,
         }
 
         // Reload basic info to ensure consistency
@@ -1210,12 +1211,9 @@ watch(
       // Only enqueue if this is a real user change, not initial loading or hydration
       const oldId = oldV?.id ?? null
       const newId = v?.id ?? null
-      const oldName = oldV?.name ?? null
-      const newName = v?.name ?? null
 
-      if (oldId !== newId || oldName !== newName) {
+      if (oldId !== newId) {
         enqueueIfNotInitializing('client_id', newId)
-        enqueueIfNotInitializing('client_name', newName)
         // Clear contact when client changes
         enqueueIfNotInitializing('contact_id', null)
         enqueueIfNotInitializing('contact_name', null)
