@@ -270,7 +270,7 @@ const createQuickClient = async (clientName: string) => {
     }
   } catch (error) {
     toast.error(`Failed to create client: ${error instanceof Error ? error.message : error}`)
-    debugLog('Quick client creation error:', error)
+    console.error('Quick client creation error:', error)
   } finally {
     isCreatingQuickClient.value = false
   }

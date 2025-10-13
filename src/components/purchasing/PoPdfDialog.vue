@@ -24,8 +24,6 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
-
 import {
   Dialog,
   DialogContent,
@@ -66,7 +64,7 @@ watch(
         toast.success('PDF ready')
       } catch (err) {
         toast.dismiss('po-pdf-loading')
-        debugLog('Error generating Purchase Order PDF:', err)
+        console.error('Error generating Purchase Order PDF:', err)
         const errorMessage = err instanceof Error ? err.message : 'Failed to generate PDF'
         toast.error(`PDF generation failed: ${errorMessage}`)
         emit('update:open', false)
@@ -91,7 +89,7 @@ function printPdf() {
       toast.error('Failed to open print dialog. Please check if pop-ups are blocked.')
     }
   } catch (err) {
-    debugLog('Error printing PDF:', err)
+    console.error('Error printing PDF:', err)
     toast.error('Failed to print PDF')
   }
 }

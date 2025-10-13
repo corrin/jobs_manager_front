@@ -260,7 +260,7 @@ const loadChatHistory = async () => {
       }
     }
   } catch (error) {
-    debugLog('Failed to load chat history:', error)
+    console.error('Failed to load chat history:', error)
     toast.error('Failed to load chat history', {
       description: 'Could not retrieve previous conversation. Starting fresh.',
     })
@@ -273,7 +273,7 @@ const saveMessage = async (message: VueChatMessage, role: 'user' | 'assistant') 
     console.log('DEBUG: backendMessage =', backendMessage)
     await quoteChatService.saveMessage(props.jobId, backendMessage)
   } catch (error) {
-    debugLog('Failed to save chat message:', error)
+    console.error('Failed to save chat message:', error)
     toast.error('Failed to save message', {
       description: 'Message was not saved to database',
     })
@@ -300,7 +300,7 @@ const clearChatHistory = async () => {
         description: 'All messages have been deleted',
       })
     } catch (error) {
-      debugLog('Failed to clear chat history:', error)
+      console.error('Failed to clear chat history:', error)
       toast.error('Failed to clear chat history', {
         description: 'Could not delete messages from database',
       })
