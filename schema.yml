@@ -8258,8 +8258,8 @@ components:
       description: |-
         Serializer for JobEvent model - read-only for frontend consumption
 
-        Merged from duplicate definition - uses get_display_full_name for better
-        staff display (respects preferred names vs just first_name)
+        Enhanced to expose complete delta envelope data for undo operations.
+        Includes all fields necessary for frontend to implement undo functionality.
       properties:
         id:
           type: string
@@ -8299,7 +8299,18 @@ components:
         delta_checksum:
           type: string
           readOnly: true
+        can_undo:
+          type: boolean
+          description: Whether this event can be undone
+          readOnly: true
+        undo_description:
+          type: string
+          nullable: true
+          description: Human-readable description of what undoing this event would
+            do
+          readOnly: true
       required:
+        - can_undo
         - change_id
         - delta_after
         - delta_before
@@ -8311,6 +8322,7 @@ components:
         - schema_version
         - staff
         - timestamp
+        - undo_description
     JobEventCreateRequest:
       type: object
       description: Serializer for job event creation request
@@ -11686,6 +11698,33 @@ components:
         event_type:
           type: string
           nullable: true
+        can_undo:
+          type: boolean
+          nullable: true
+          description: Whether this event can be undone (only for event entries)
+          readOnly: true
+        undo_description:
+          type: string
+          nullable: true
+          description: Human-readable description of what undoing this event would
+            do (only for event entries)
+          readOnly: true
+        change_id:
+          type: string
+          format: uuid
+          nullable: true
+        schema_version:
+          type: integer
+          nullable: true
+        delta_before:
+          nullable: true
+        delta_after:
+          nullable: true
+        delta_meta:
+          nullable: true
+        delta_checksum:
+          type: string
+          nullable: true
         cost_set_kind:
           type: string
           nullable: true
@@ -11742,10 +11781,12 @@ components:
           format: date-time
           nullable: true
       required:
+        - can_undo
         - description
         - entry_type
         - id
         - timestamp
+        - undo_description
     TimesheetCostLine:
       type: object
       description: |-

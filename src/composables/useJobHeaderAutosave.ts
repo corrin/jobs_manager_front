@@ -42,6 +42,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     if ('quoted' in patch) p.quoted = Boolean(patch.quoted)
     if ('fully_invoiced' in patch) p.fully_invoiced = Boolean(patch.fully_invoiced)
     if ('paid' in patch) p.paid = Boolean(patch.paid)
+    if ('rejected_flag' in patch) p.rejected_flag = Boolean(patch.rejected_flag)
     if ('quote_acceptance_date' in patch)
       p.quote_acceptance_date = (patch.quote_acceptance_date as string | null | undefined) ?? null
     return p
@@ -95,6 +96,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
       quoted: patch.quoted ?? base.quoted,
       fully_invoiced: patch.fully_invoiced ?? base.fully_invoiced,
       paid: patch.paid ?? base.paid,
+      rejected_flag: patch.rejected_flag ?? base.rejected_flag,
       quote_acceptance_date:
         (patch.quote_acceptance_date as string | null | undefined) ?? base.quote_acceptance_date,
     }
@@ -132,13 +134,13 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
         const allowedHeaderKeys = [
           'name',
           'client_id',
-          'client_name',
           'job_status',
           'pricing_methodology',
           'quoted',
           'fully_invoiced',
           'paid',
           'quote_acceptance_date',
+          'rejected_flag',
         ] as const
 
         // Filter incoming patch down to allowed header keys only
@@ -175,8 +177,8 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
             case 'client_id':
               beforeValues[field] = headerSnapshot.client?.id ?? null
               break
-            case 'client_name':
-              beforeValues[field] = headerSnapshot.client?.name ?? null
+            case 'rejected_flag':
+              beforeValues[field] = headerSnapshot.rejected_flag ?? false
               break
             case 'job_status':
               beforeValues[field] = headerSnapshot.status
@@ -296,6 +298,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
   const handleQuotedUpdate = (v: boolean) => enqueue('quoted', v)
   const handleFullyInvoicedUpdate = (v: boolean) => enqueue('fully_invoiced', v)
   const handlePaidUpdate = (v: boolean) => enqueue('paid', v)
+  const handleRejectedUpdate = (v: boolean) => enqueue('rejected_flag', v)
 
   // Status indicators
   const saveHasError = computed(() => !!autosave.error.value)
@@ -346,6 +349,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     handleQuotedUpdate,
     handleFullyInvoicedUpdate,
     handlePaidUpdate,
+    handleRejectedUpdate,
     // status
     saveHasError,
     saveStatusText,

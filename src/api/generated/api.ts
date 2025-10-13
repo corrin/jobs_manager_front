@@ -1063,6 +1063,8 @@ const JobEvent = z
     delta_after: z.unknown().nullable(),
     delta_meta: z.unknown().nullable(),
     delta_checksum: z.string(),
+    can_undo: z.boolean(),
+    undo_description: z.string().nullable(),
   })
   .passthrough()
 const CompanyDefaultsJobDetail = z
@@ -1209,6 +1211,14 @@ const TimelineEntry = z
     description: z.string(),
     staff: z.string().nullish(),
     event_type: z.string().nullish(),
+    can_undo: z.boolean().nullable(),
+    undo_description: z.string().nullable(),
+    change_id: z.string().uuid().nullish(),
+    schema_version: z.number().int().nullish(),
+    delta_before: z.unknown().nullish(),
+    delta_after: z.unknown().nullish(),
+    delta_meta: z.unknown().nullish(),
+    delta_checksum: z.string().nullish(),
     cost_set_kind: z.string().nullish(),
     costline_kind: z.string().nullish(),
     quantity: z.number().gt(-10000000).lt(10000000).nullish(),

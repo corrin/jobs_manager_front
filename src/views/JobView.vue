@@ -427,21 +427,10 @@ const handleRejectedChange = async () => {
     }
 
     try {
-      await api.job_rest_jobs_partial_update(
-        {
-          rejected_flag: false,
-          job_status: 'draft',
-        },
-        {
-          params: { job_id: jobId.value },
-        },
-      )
-
-      // Update the header in the store
-      jobsStore.patchHeader(jobHeader.value.job_id, {
-        status: 'draft',
-        rejected_flag: false,
-      })
+      // Use header autosave for consistency
+      headerAutosave?.handleRejectedUpdate(false)
+      headerAutosave?.handleStatusUpdate('draft')
+      void headerAutosave?.retrySave() // Force immediate save
 
       // Update local status
       localJobStatus.value = 'draft'
@@ -474,22 +463,10 @@ const handleRejectedChange = async () => {
         // User confirmed - proceed with rejection despite outstanding amount
       }
 
-      // Proceed with rejection
-      await api.job_rest_jobs_partial_update(
-        {
-          rejected_flag: true,
-          job_status: 'recently_completed',
-        },
-        {
-          params: { job_id: jobId.value },
-        },
-      )
-
-      // Update the header in the store
-      jobsStore.patchHeader(jobHeader.value.job_id, {
-        status: 'recently_completed',
-        rejected_flag: true,
-      })
+      // Use header autosave for consistency
+      headerAutosave?.handleRejectedUpdate(true)
+      headerAutosave?.handleStatusUpdate('recently_completed')
+      void headerAutosave?.retrySave() // Force immediate save
 
       // Update local status
       localJobStatus.value = 'recently_completed'
