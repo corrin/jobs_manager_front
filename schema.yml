@@ -4810,116 +4810,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ModernTimesheetDayGetResponse'
           description: ''
-  /purchasing/api/delivery-receipts/process/:
-    post:
-      operationId: purchasing_api_delivery_receipts_process_create
-      description: |-
-        REST API view for processing delivery receipts.
-
-        POST: Processes delivery receipt for a purchase order with stock allocations
-      tags:
-        - purchasing
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeliveryReceiptRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DeliveryReceiptRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DeliveryReceiptRequest'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeliveryReceiptResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DeliveryReceiptResponse'
-          description: ''
-  /purchasing/api/purchase-orders/{purchase_order_id}/email/:
-    post:
-      operationId: purchasing_api_purchase_orders_email_create
-      description: |-
-        Generate and return email details for the specified purchase order.
-
-        Args:
-            request: The HTTP request
-            purchase_order_id: UUID of the purchase order
-
-        Returns:
-            Response: Email details if successful
-            Response: Error details if unsuccessful
-      parameters:
-        - in: path
-          name: purchase_order_id
-          schema:
-            type: string
-            format: uuid
-          required: true
-      tags:
-        - purchasing
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PurchaseOrderEmailRequest'
-          description: ''
-  /purchasing/api/purchase-orders/{purchase_order_id}/pdf/:
-    get:
-      operationId: purchasing_api_purchase_orders_pdf_retrieve
-      description: |-
-        Generate and return a PDF for the specified purchase order.
-
-        Args:
-            request: The HTTP request
-            purchase_order_id: UUID of the purchase order
-
-        Returns:
-            FileResponse: PDF file if successful
-            Response: Error details if unsuccessful
-      parameters:
-        - in: path
-          name: purchase_order_id
-          schema:
-            type: string
-            format: uuid
-          required: true
-      tags:
-        - purchasing
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PurchaseOrderPDFResponse'
-          description: ''
   /purchasing/rest/all-jobs/:
     get:
       operationId: purchasing_rest_all_jobs_retrieve
@@ -4988,6 +4878,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PurchasingJobsResponse'
+          description: ''
+  /purchasing/rest/product-mappings/:
+    get:
+      operationId: listProductMappings
+      description: Get list of product mappings prioritizing unvalidated ones.
+      tags:
+        - Product Mapping
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductMappingListResponse'
+          description: ''
+  /purchasing/rest/product-mappings/{mapping_id}/validate/:
+    post:
+      operationId: validateProductMapping
+      description: Validate a product parsing mapping.
+      parameters:
+        - in: path
+          name: mapping_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Product Mapping
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductMappingValidateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductMappingValidateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductMappingValidateRequest'
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductMappingValidateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductMappingValidateResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductMappingValidateResponse'
           description: ''
   /purchasing/rest/purchase-orders/:
     get:
@@ -6920,7 +6872,7 @@ components:
         ext_refs:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
-          description: Additional metadata
+          description: Additional metadata - structure varies by kind (see class docstring)
         created_at:
           type: string
           format: date-time
@@ -6968,10 +6920,14 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        accounting_date:
+          type: string
+          format: date
+          description: The date this cost should be attributed to for accounting purposes
         ext_refs:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
-          description: Additional metadata
+          description: Additional metadata - structure varies by kind (see class docstring)
         created_at:
           type: string
           format: date-time
@@ -6981,6 +6937,7 @@ components:
           format: date-time
           readOnly: true
       required:
+        - accounting_date
         - created_at
         - desc
         - kind
@@ -8258,8 +8215,8 @@ components:
       description: |-
         Serializer for JobEvent model - read-only for frontend consumption
 
-        Enhanced to expose complete delta envelope data for undo operations.
-        Includes all fields necessary for frontend to implement undo functionality.
+        Merged from duplicate definition - uses get_display_full_name for better
+        staff display (respects preferred names vs just first_name)
       properties:
         id:
           type: string
@@ -8299,18 +8256,7 @@ components:
         delta_checksum:
           type: string
           readOnly: true
-        can_undo:
-          type: boolean
-          description: Whether this event can be undone
-          readOnly: true
-        undo_description:
-          type: string
-          nullable: true
-          description: Human-readable description of what undoing this event would
-            do
-          readOnly: true
       required:
-        - can_undo
         - change_id
         - delta_after
         - delta_before
@@ -8322,7 +8268,6 @@ components:
         - schema_version
         - staff
         - timestamp
-        - undo_description
     JobEventCreateRequest:
       type: object
       description: Serializer for job event creation request
@@ -10034,10 +9979,14 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        accounting_date:
+          type: string
+          format: date
+          description: The date this cost should be attributed to for accounting purposes
         ext_refs:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
-          description: Additional metadata
+          description: Additional metadata - structure varies by kind (see class docstring)
         created_at:
           type: string
           format: date-time
@@ -10309,6 +10258,153 @@ components:
       description: |-
         * `time_materials` - Time & Materials
         * `fixed_price` - Fixed Price
+    ProductMapping:
+      type: object
+      description: Serializer for ProductParsingMapping model.
+      properties:
+        id:
+          type: string
+          format: uuid
+        input_hash:
+          type: string
+        input_data: {}
+        derived_key:
+          type: string
+          nullable: true
+        mapped_item_code:
+          type: string
+          nullable: true
+        mapped_description:
+          type: string
+          nullable: true
+        mapped_metal_type:
+          type: string
+          nullable: true
+        mapped_alloy:
+          type: string
+          nullable: true
+        mapped_specifics:
+          type: string
+          nullable: true
+        mapped_dimensions:
+          type: string
+          nullable: true
+        mapped_unit_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        mapped_price_unit:
+          type: string
+          nullable: true
+        parser_version:
+          type: string
+          nullable: true
+        parser_confidence:
+          type: number
+          format: double
+          maximum: 10
+          minimum: -10
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        is_validated:
+          type: boolean
+        validated_at:
+          type: string
+          format: date-time
+          nullable: true
+        validation_notes:
+          type: string
+          nullable: true
+        item_code_is_in_xero:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - created_at
+        - derived_key
+        - id
+        - input_data
+        - input_hash
+        - is_validated
+        - item_code_is_in_xero
+        - mapped_alloy
+        - mapped_description
+        - mapped_dimensions
+        - mapped_item_code
+        - mapped_metal_type
+        - mapped_price_unit
+        - mapped_specifics
+        - mapped_unit_cost
+        - parser_confidence
+        - parser_version
+        - validated_at
+        - validation_notes
+    ProductMappingListResponse:
+      type: object
+      description: Serializer for product mapping list response.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductMapping'
+        total_count:
+          type: integer
+        validated_count:
+          type: integer
+        unvalidated_count:
+          type: integer
+      required:
+        - items
+        - total_count
+        - unvalidated_count
+        - validated_count
+    ProductMappingValidateRequest:
+      type: object
+      description: Serializer for product mapping validation request.
+      properties:
+        mapped_item_code:
+          type: string
+        mapped_description:
+          type: string
+        mapped_metal_type:
+          type: string
+        mapped_alloy:
+          type: string
+        mapped_specifics:
+          type: string
+        mapped_dimensions:
+          type: string
+        mapped_unit_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+        mapped_price_unit:
+          type: string
+        validation_notes:
+          type: string
+    ProductMappingValidateResponse:
+      type: object
+      description: Serializer for product mapping validation response.
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        updated_products_count:
+          type: integer
+      required:
+        - message
+        - success
     ProviderTypeEnum:
       enum:
         - Claude
@@ -10429,16 +10525,6 @@ components:
         * `partially_received` - Partially Received
         * `fully_received` - Fully Received
         * `deleted` - Deleted
-    PurchaseOrderEmailRequest:
-      type: object
-      description: Serializer for purchase order email generation request
-      properties:
-        recipient_email:
-          type: string
-          format: email
-        message:
-          type: string
-          maxLength: 1000
     PurchaseOrderLine:
       type: object
       description: Serializer for PurchaseOrderLine model.
@@ -10643,14 +10729,6 @@ components:
         - status
         - supplier
         - supplier_id
-    PurchaseOrderPDFResponse:
-      type: object
-      description: Serializer for purchase order PDF generation response
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
     PurchaseOrderUpdate:
       type: object
       description: Serializer for updating purchase orders.
@@ -11698,33 +11776,6 @@ components:
         event_type:
           type: string
           nullable: true
-        can_undo:
-          type: boolean
-          nullable: true
-          description: Whether this event can be undone (only for event entries)
-          readOnly: true
-        undo_description:
-          type: string
-          nullable: true
-          description: Human-readable description of what undoing this event would
-            do (only for event entries)
-          readOnly: true
-        change_id:
-          type: string
-          format: uuid
-          nullable: true
-        schema_version:
-          type: integer
-          nullable: true
-        delta_before:
-          nullable: true
-        delta_after:
-          nullable: true
-        delta_meta:
-          nullable: true
-        delta_checksum:
-          type: string
-          nullable: true
         cost_set_kind:
           type: string
           nullable: true
@@ -11781,12 +11832,10 @@ components:
           format: date-time
           nullable: true
       required:
-        - can_undo
         - description
         - entry_type
         - id
         - timestamp
-        - undo_description
     TimesheetCostLine:
       type: object
       description: |-
@@ -11853,7 +11902,7 @@ components:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
           readOnly: true
-          description: Additional metadata
+          description: Additional metadata - structure varies by kind (see class docstring)
         created_at:
           type: string
           format: date-time

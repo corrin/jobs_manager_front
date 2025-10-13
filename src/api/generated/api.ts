@@ -853,6 +853,7 @@ const PatchedCostLineCreateUpdate = z
     quantity: z.number().gt(-10000000).lt(10000000),
     unit_cost: z.number().gt(-100000000).lt(100000000),
     unit_rev: z.number().gt(-100000000).lt(100000000),
+    accounting_date: z.string(),
     ext_refs: z.unknown(),
     meta: z.unknown(),
     created_at: z.string().datetime({ offset: true }),
@@ -867,6 +868,7 @@ const CostLineCreateUpdate = z
     quantity: z.number().gt(-10000000).lt(10000000).optional(),
     unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
+    accounting_date: z.string(),
     ext_refs: z.unknown().optional(),
     meta: z.unknown().optional(),
     created_at: z.string().datetime({ offset: true }),
@@ -1063,8 +1065,6 @@ const JobEvent = z
     delta_after: z.unknown().nullable(),
     delta_meta: z.unknown().nullable(),
     delta_checksum: z.string(),
-    can_undo: z.boolean(),
-    undo_description: z.string().nullable(),
   })
   .passthrough()
 const CompanyDefaultsJobDetail = z
@@ -1211,14 +1211,6 @@ const TimelineEntry = z
     description: z.string(),
     staff: z.string().nullish(),
     event_type: z.string().nullish(),
-    can_undo: z.boolean().nullable(),
-    undo_description: z.string().nullable(),
-    change_id: z.string().uuid().nullish(),
-    schema_version: z.number().int().nullish(),
-    delta_before: z.unknown().nullish(),
-    delta_after: z.unknown().nullish(),
-    delta_meta: z.unknown().nullish(),
-    delta_checksum: z.string().nullish(),
     cost_set_kind: z.string().nullish(),
     costline_kind: z.string().nullish(),
     quantity: z.number().gt(-10000000).lt(10000000).nullish(),
@@ -1441,40 +1433,6 @@ const ModernTimesheetDayGetResponse = z
     date: z.string(),
   })
   .passthrough()
-const DeliveryReceiptAllocation = z
-  .object({
-    job_id: z.string().uuid(),
-    quantity: z.number().gt(-100000000).lt(100000000),
-    retail_rate: z.number().gt(-1000).lt(1000).optional(),
-    metadata: z.object({}).partial().passthrough().optional(),
-  })
-  .passthrough()
-const DeliveryReceiptLine = z
-  .object({
-    total_received: z.number().gt(-100000000).lt(100000000),
-    allocations: z.array(DeliveryReceiptAllocation),
-  })
-  .passthrough()
-const DeliveryReceiptRequest = z
-  .object({
-    purchase_order_id: z.string().uuid(),
-    allocations: z.record(DeliveryReceiptLine),
-  })
-  .passthrough()
-const DeliveryReceiptResponse = z
-  .object({ success: z.boolean(), error: z.string().optional() })
-  .passthrough()
-const PurchaseOrderEmailRequest = z
-  .object({
-    recipient_email: z.string().email(),
-    message: z.string().max(1000),
-  })
-  .partial()
-  .passthrough()
-const PurchaseOrderPDFResponse = z
-  .object({ success: z.boolean(), message: z.string() })
-  .partial()
-  .passthrough()
 const Status7b9Enum = z.enum([
   'draft',
   'awaiting_approval',
@@ -1503,8 +1461,83 @@ const AllJobsResponse = z
     stock_holding_job_id: z.string(),
   })
   .passthrough()
+const DeliveryReceiptAllocation = z
+  .object({
+    job_id: z.string().uuid(),
+    quantity: z.number().gt(-100000000).lt(100000000),
+    retail_rate: z.number().gt(-1000).lt(1000).optional(),
+    metadata: z.object({}).partial().passthrough().optional(),
+  })
+  .passthrough()
+const DeliveryReceiptLine = z
+  .object({
+    total_received: z.number().gt(-100000000).lt(100000000),
+    allocations: z.array(DeliveryReceiptAllocation),
+  })
+  .passthrough()
+const DeliveryReceiptRequest = z
+  .object({
+    purchase_order_id: z.string().uuid(),
+    allocations: z.record(DeliveryReceiptLine),
+  })
+  .passthrough()
+const DeliveryReceiptResponse = z
+  .object({ success: z.boolean(), error: z.string().optional() })
+  .passthrough()
 const PurchasingJobsResponse = z
   .object({ jobs: z.array(JobForPurchasing), total_count: z.number().int() })
+  .passthrough()
+const ProductMapping = z
+  .object({
+    id: z.string().uuid(),
+    input_hash: z.string(),
+    input_data: z.unknown(),
+    derived_key: z.string().nullable(),
+    mapped_item_code: z.string().nullable(),
+    mapped_description: z.string().nullable(),
+    mapped_metal_type: z.string().nullable(),
+    mapped_alloy: z.string().nullable(),
+    mapped_specifics: z.string().nullable(),
+    mapped_dimensions: z.string().nullable(),
+    mapped_unit_cost: z.number().gt(-100000000).lt(100000000).nullable(),
+    mapped_price_unit: z.string().nullable(),
+    parser_version: z.string().nullable(),
+    parser_confidence: z.number().gt(-10).lt(10).nullable(),
+    is_validated: z.boolean(),
+    validated_at: z.string().datetime({ offset: true }).nullable(),
+    validation_notes: z.string().nullable(),
+    item_code_is_in_xero: z.boolean(),
+    created_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough()
+const ProductMappingListResponse = z
+  .object({
+    items: z.array(ProductMapping),
+    total_count: z.number().int(),
+    validated_count: z.number().int(),
+    unvalidated_count: z.number().int(),
+  })
+  .passthrough()
+const ProductMappingValidateRequest = z
+  .object({
+    mapped_item_code: z.string(),
+    mapped_description: z.string(),
+    mapped_metal_type: z.string(),
+    mapped_alloy: z.string(),
+    mapped_specifics: z.string(),
+    mapped_dimensions: z.string(),
+    mapped_unit_cost: z.number().gt(-100000000).lt(100000000).nullable(),
+    mapped_price_unit: z.string(),
+    validation_notes: z.string(),
+  })
+  .partial()
+  .passthrough()
+const ProductMappingValidateResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string(),
+    updated_products_count: z.number().int().optional(),
+  })
   .passthrough()
 const PurchaseOrderList = z
   .object({
@@ -2188,16 +2221,18 @@ export const schemas = {
   ModernTimesheetEntryPostResponse,
   ModernTimesheetJobGetResponse,
   ModernTimesheetDayGetResponse,
+  Status7b9Enum,
+  JobForPurchasing,
+  AllJobsResponse,
   DeliveryReceiptAllocation,
   DeliveryReceiptLine,
   DeliveryReceiptRequest,
   DeliveryReceiptResponse,
-  PurchaseOrderEmailRequest,
-  PurchaseOrderPDFResponse,
-  Status7b9Enum,
-  JobForPurchasing,
-  AllJobsResponse,
   PurchasingJobsResponse,
+  ProductMapping,
+  ProductMappingListResponse,
+  ProductMappingValidateRequest,
+  ProductMappingValidateResponse,
   PurchaseOrderList,
   PurchaseOrderLineCreate,
   PurchaseOrderCreate,
@@ -5334,80 +5369,6 @@ POST: Processes selected jobs for month-end archiving and status updates`,
     response: ModernTimesheetDayGetResponse,
   },
   {
-    method: 'post',
-    path: '/purchasing/api/delivery-receipts/process/',
-    alias: 'purchasing_api_delivery_receipts_process_create',
-    description: `REST API view for processing delivery receipts.
-
-POST: Processes delivery receipt for a purchase order with stock allocations`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: DeliveryReceiptRequest,
-      },
-    ],
-    response: DeliveryReceiptResponse,
-    errors: [
-      {
-        status: 400,
-        schema: DeliveryReceiptResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/purchasing/api/purchase-orders/:purchase_order_id/email/',
-    alias: 'purchasing_api_purchase_orders_email_create',
-    description: `Generate and return email details for the specified purchase order.
-
-Args:
-    request: The HTTP request
-    purchase_order_id: UUID of the purchase order
-
-Returns:
-    Response: Email details if successful
-    Response: Error details if unsuccessful`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: PurchaseOrderEmailRequest,
-      },
-      {
-        name: 'purchase_order_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: PurchaseOrderEmailRequest,
-  },
-  {
-    method: 'get',
-    path: '/purchasing/api/purchase-orders/:purchase_order_id/pdf/',
-    alias: 'purchasing_api_purchase_orders_pdf_retrieve',
-    description: `Generate and return a PDF for the specified purchase order.
-
-Args:
-    request: The HTTP request
-    purchase_order_id: UUID of the purchase order
-
-Returns:
-    FileResponse: PDF file if successful
-    Response: Error details if unsuccessful`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'purchase_order_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: PurchaseOrderPDFResponse,
-  },
-  {
     method: 'get',
     path: '/purchasing/rest/all-jobs/',
     alias: 'purchasing_rest_all_jobs_retrieve',
@@ -5445,6 +5406,44 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
     description: `Get list of jobs suitable for purchasing operations.`,
     requestFormat: 'json',
     response: PurchasingJobsResponse,
+  },
+  {
+    method: 'get',
+    path: '/purchasing/rest/product-mappings/',
+    alias: 'listProductMappings',
+    description: `Get list of product mappings prioritizing unvalidated ones.`,
+    requestFormat: 'json',
+    response: ProductMappingListResponse,
+  },
+  {
+    method: 'post',
+    path: '/purchasing/rest/product-mappings/:mapping_id/validate/',
+    alias: 'validateProductMapping',
+    description: `Validate a product parsing mapping.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ProductMappingValidateRequest,
+      },
+      {
+        name: 'mapping_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ProductMappingValidateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ProductMappingValidateResponse,
+      },
+      {
+        status: 404,
+        schema: ProductMappingValidateResponse,
+      },
+    ],
   },
   {
     method: 'get',

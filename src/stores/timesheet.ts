@@ -359,12 +359,14 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       debugLog('📝 Creating new time entry:', entryData)
 
       // Use generated API to create time entry
+      const accountingDate = selectedDate.value || new Date().toISOString().split('T')[0]
       const costLineData = {
         kind: 'time' as const,
         desc: entryData.description,
         quantity: entryData.hours,
         unit_cost: entryData.wageRate,
         unit_rev: entryData.chargeOutRate,
+        accounting_date: accountingDate,
         meta: {
           staff_id: selectedStaffId.value,
           date: selectedDate.value,

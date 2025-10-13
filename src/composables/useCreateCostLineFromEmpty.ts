@@ -33,12 +33,14 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
 
     try {
       const now = new Date().toISOString()
+      const accountingDate = new Date().toISOString().split('T')[0]
       const createPayload: CostLineCreateUpdate = {
         kind: line.kind as 'material' | 'time' | 'adjust',
         desc: line.desc || '',
         quantity: line.quantity || 1,
         unit_cost: line.unit_cost ?? 0,
         unit_rev: line.unit_rev ?? 0,
+        accounting_date: accountingDate,
         ext_refs: (line.ext_refs as Record<string, unknown>) || {},
         meta: (line.meta as Record<string, unknown>) || {},
         created_at: now,
