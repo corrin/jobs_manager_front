@@ -436,6 +436,9 @@ async function undoChange(entry: TimelineEntry) {
     expandedItems.value = new Set()
     // Reload timeline to reflect the undo
     await loadTimeline()
+
+    // Reload the page to ensure all components reflect the changes
+    window.location.reload()
   } catch (e) {
     toast.error('Failed to undo change')
     console.error('Failed to undo change:', e)
