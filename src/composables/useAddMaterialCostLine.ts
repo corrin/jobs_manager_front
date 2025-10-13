@@ -3,7 +3,6 @@ import { toast } from 'vue-sonner'
 import { costlineService } from '../services/costline.service'
 import { schemas } from '../api/generated/api'
 import type { z } from 'zod'
-import { debugLog } from '../utils/debug'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
@@ -62,7 +61,7 @@ export function useAddMaterialCostLine(options: UseAddMaterialCostLineOptions) {
       return created
     } catch (error) {
       toast.error('Failed to add material cost line.')
-      debugLog('Failed to add material:', error)
+      console.error('Failed to add material:', error)
       throw error
     } finally {
       if (isLoading) isLoading.value = false

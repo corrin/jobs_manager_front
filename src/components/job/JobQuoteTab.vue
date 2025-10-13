@@ -591,7 +591,7 @@ onMounted(async () => {
       }
     } catch (error) {
       toast.error('Failed to load quote data')
-      debugLog('Failed to load quote data:', error)
+      console.error('Failed to load quote data:', error)
     }
   }
 })
@@ -728,7 +728,7 @@ async function refreshQuoteData() {
     }
   } catch (error) {
     toast.error('Failed to refresh quote data')
-    debugLog('Failed to refresh quote data:', error)
+    console.error('Failed to refresh quote data:', error)
     console.error('🔍 REFRESH QUOTE DEBUG - ERROR:', error)
   } finally {
     isLoading.value = false
@@ -771,7 +771,7 @@ async function fetchQuoteRevisions() {
     quoteRevisionsData.value = response
   } catch (error) {
     toast.error('Failed to fetch quote revisions')
-    debugLog('Failed to fetch quote revisions:', error)
+    console.error('Failed to fetch quote revisions:', error)
     console.error('🔍 FETCH REVISIONS DEBUG - ERROR:', error)
   } finally {
     isLoading.value = false
@@ -802,7 +802,7 @@ async function onCreateNewRevision() {
     }
   } catch (error) {
     toast.error('Error creating quote revision')
-    debugLog('Error creating quote revision:', error)
+    console.error('Error creating quote revision:', error)
   } finally {
     isCreatingRevision.value = false
     toast.dismiss('create-revision')
@@ -838,7 +838,7 @@ const createQuote = async () => {
     await refreshQuoteData()
     emit('cost-line-changed')
   } catch (err) {
-    debugLog('Error creating quote:', err)
+    console.error('Error creating quote:', err)
     toast.error('Failed to create quote.')
   } finally {
     isCreatingQuote.value = false
@@ -860,7 +860,7 @@ const acceptQuote = async () => {
       toast.error('Failed to accept quote')
     }
   } catch (err) {
-    debugLog('Error accepting quote:', err)
+    console.error('Error accepting quote:', err)
     toast.error('Failed to accept quote.')
   } finally {
     isAcceptingQuote.value = false
@@ -889,7 +889,7 @@ const deleteQuoteOnXero = async () => {
     await refreshQuoteData()
     emit('cost-line-changed')
   } catch (err) {
-    debugLog('Error deleting quote:', err)
+    console.error('Error deleting quote:', err)
     toast.error('Failed to delete quote.')
   } finally {
     isDeletingQuote.value = false
@@ -976,7 +976,7 @@ async function onCopyFromEstimate() {
     emit('cost-line-changed')
   } catch (error) {
     toast.error('Failed to copy from estimate.')
-    debugLog('Failed to copy from estimate:', error)
+    console.error('Failed to copy from estimate:', error)
   } finally {
     isLoading.value = false
     toast.dismiss('copy-estimate')

@@ -66,7 +66,7 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
 
       return created
     } catch (error) {
-      debugLog('Failed to create cost line:', error)
+      console.error('Failed to create cost line:', error)
       toast.error('Failed to create cost line')
       throw error
     }

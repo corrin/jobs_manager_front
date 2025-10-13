@@ -284,7 +284,7 @@ async function loadFiles() {
     files.value = Array.isArray(response) ? response : []
     debugLog('✅ Files loaded successfully:', files.value.length, 'files')
   } catch (error) {
-    debugLog('❌ Failed to load files:', error)
+    console.error('❌ Failed to load files:', error)
     toast.error('Failed to load attachments')
     files.value = []
   } finally {
@@ -537,7 +537,7 @@ async function downloadFile(file: JobFile) {
 
     debugLog('📥 File opened for printing and download initiated:', file.filename)
   } catch (error) {
-    debugLog('❌ Error downloading file:', error)
+    console.error('❌ Error downloading file:', error)
     toast.error('Failed to download file')
   }
 }
@@ -566,7 +566,7 @@ async function deleteFile(id: string) {
     toast.success(`File "${file.filename}" deleted successfully`)
     emit('file-deleted', id)
   } catch (error) {
-    debugLog('❌ Error deleting file:', error)
+    console.error('❌ Error deleting file:', error)
     toast.error('Failed to delete file')
 
     // Rollback optimistic update
@@ -597,7 +597,7 @@ async function updatePrintSetting(file: JobFile) {
 
     toast.success(`Print setting updated for "${file.filename}"`)
   } catch (error) {
-    debugLog('❌ Error updating print setting:', error)
+    console.error('❌ Error updating print setting:', error)
     toast.error('Failed to update print setting')
 
     // Revert the change

@@ -471,7 +471,7 @@ const deleteInvoiceOnXero = async (invoiceXeroId: string) => {
     emit('invoice-deleted')
     await loadInvoices() // Reload invoices after deletion
   } catch (err) {
-    debugLog('Error deleting invoice:', err)
+    console.error('Error deleting invoice:', err)
     toast.error('Failed to delete invoice.')
   } finally {
     deletingInvoiceId.value = null
@@ -630,7 +630,7 @@ async function consumeStockForNewLine(payload: {
     checkAndUpdateNegativeStocks()
   } catch (error) {
     toast.error('Failed to consume stock.')
-    debugLog('Failed to consume stock:', error)
+    console.error('Failed to consume stock:', error)
     throw error // To prevent unblocking in table
   }
 }
@@ -666,7 +666,7 @@ async function handleCreateLine(line: CostLine) {
       emit('cost-line-changed')
     } catch (error) {
       toast.error('Failed to create adjustment.')
-      debugLog('Failed to create adjustment:', error)
+      console.error('Failed to create adjustment:', error)
     } finally {
       isLoading.value = false
       toast.dismiss('create-adjust')

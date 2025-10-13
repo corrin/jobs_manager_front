@@ -19,8 +19,6 @@
 </template>
 
 <script setup lang="ts">
-import { debugLog } from '@/utils/debug'
-
 import { ref, onMounted } from 'vue'
 import PDF from 'pdf-vue3'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
@@ -42,7 +40,7 @@ async function loadPdf() {
     pdfData.value = new Uint8Array(buffer)
   } catch (err) {
     hasError.value = true
-    debugLog('Error loading Purchase Order PDF:', err)
+    console.error('Error loading Purchase Order PDF:', err)
     const errorMessage = err instanceof Error ? err.message : 'Failed to load PDF'
     toast.error(`PDF loading failed: ${errorMessage}`)
   }

@@ -280,7 +280,7 @@ onMounted(async () => {
               }
             } catch (error) {
               toast.error('Failed to load job header data')
-              debugLog('Failed to load job header data:', error)
+              console.error('Failed to load job header data:', error)
             }
           })(),
           // Load basic information
@@ -300,7 +300,7 @@ onMounted(async () => {
           }))
         }
       } catch {
-        debugLog('Failed to load job status choices')
+        console.error('Failed to load job status choices')
         toast.error('Failed to load job status choices - please contact Corrin.')
         jobStatusChoices.value = []
       }
@@ -815,7 +815,7 @@ const editCurrentClient = async () => {
 
     showEditClientModal.value = true
   } catch (error) {
-    debugLog('Error fetching client data:', error)
+    console.error('Error fetching client data:', error)
     toast.error('Failed to load client data for editing')
   }
 }
@@ -864,7 +864,7 @@ const handleContactSelected = async (contact: ClientContact | null) => {
       toast.success('Contact updated successfully')
     } catch (error) {
       toast.error('Failed to update contact')
-      debugLog('Failed to update contact:', error)
+      console.error('Failed to update contact:', error)
     }
   } else {
     // Clear contact locally - no API call needed since clearing means no contact association
