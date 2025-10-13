@@ -21,6 +21,8 @@ export const useJobsStore = defineStore('jobs', () => {
   const kanbanJobs = ref<Record<string, KanbanJobUI>>({})
   const headersById = ref<Record<string, JobHeaderResponse>>({})
   const basicInfoById = ref<Record<string, JobBasicInfo>>({})
+  // Conflict reload timestamp per jobId for UI sync (JobView / JobSettings)
+  const conflictReloadAtById = ref<Record<string, number>>({})
   const isLoadingJob = ref(false)
   const isLoadingKanban = ref(false)
   const currentContext = ref<'kanban' | 'detail' | null>(null)
@@ -205,13 +207,21 @@ export const useJobsStore = defineStore('jobs', () => {
   }
 
   const setBasicInfo = (jobId: string, basicInfo: JobBasicInfo): void => {
-    basicInfoById.value[jobId] = basicInfo
+    // Immutable update to guarantee reactivity for consumers
+    basicInfoById.value = {
+      ...basicInfoById.value,
+      [jobId]: basicInfo,
+    }
   }
 
   const updateBasicInfo = (jobId: string, updates: Partial<JobBasicInfo>): void => {
     const existing = basicInfoById.value[jobId]
     if (existing) {
-      basicInfoById.value[jobId] = { ...existing, ...updates }
+      // Immutable update to guarantee reactivity
+      basicInfoById.value = {
+        ...basicInfoById.value,
+        [jobId]: { ...existing, ...updates },
+      }
     }
   }
 
@@ -291,13 +301,21 @@ export const useJobsStore = defineStore('jobs', () => {
   }
 
   const setHeader = (header: JobHeaderResponse): void => {
-    headersById.value[header.job_id] = header
+    // Immutable update to guarantee reactivity of consumers (e.g., JobView header)
+    headersById.value = {
+      ...headersById.value,
+      [header.job_id]: header,
+    }
   }
 
   const patchHeader = (jobId: string, patch: Partial<JobHeaderResponse>): void => {
     const cur = headersById.value[jobId]
     if (!cur) return
-    headersById.value[jobId] = { ...cur, ...patch, client: patch.client ?? cur.client }
+    // Immutable update to force dependent computeds/watchers to re-run
+    headersById.value = {
+      ...headersById.value,
+      [jobId]: { ...cur, ...patch, client: patch.client ?? cur.client },
+    }
   }
 
   const upsertFromFullJob = (job: Job): void => {
@@ -322,6 +340,64 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
+  /**
+   * Reloads job data when a concurrency conflict occurs.
+   * This fetches fresh data from the server to get the latest ETag and job state.
+   * @param jobId - The job ID to reload
+   */
+  async function reloadJobOnConflict(jobId: string): Promise<void> {
+    debugLog('🔄 Store - reloadJobOnConflict called:', { jobId })
+
+    try {
+      // 1) Fetch full job detail (captures new ETag via interceptor and updates detailed + header)
+      await fetchJob(jobId)
+
+      // 2) Also fetch the lightweight header directly to guarantee the latest name/status/etc.
+      //    This ensures views bound to headersById reflect backend changes immediately.
+      try {
+        const headerResponse = await api.job_rest_jobs_header_retrieve({
+          params: { job_id: jobId },
+        })
+        setHeader(headerResponse)
+        debugLog('🏪 Store - header refreshed after conflict:', {
+          jobId,
+          name: headerResponse.name,
+          status: headerResponse.status,
+        })
+      } catch (headerErr) {
+        debugLog('⚠️ Store - header refresh failed after conflict (will rely on full job):', {
+          jobId,
+          error: headerErr,
+        })
+      }
+
+      // 3) Refresh Basic Info to reflect immediately in JobSettingsTab
+      try {
+        const bi = await api.job_rest_jobs_basic_info_retrieve({
+          params: { job_id: jobId },
+        })
+        setBasicInfo(jobId, bi)
+        debugLog('🏪 Store - basic info refreshed after conflict:', {
+          jobId,
+          hasDescription: !!bi.description,
+        })
+      } catch (biErr) {
+        debugLog('⚠️ Store - basic info refresh failed after conflict:', { jobId, error: biErr })
+      }
+
+      // 4) Mark conflict reload timestamp so components can force local sync
+      conflictReloadAtById.value = {
+        ...conflictReloadAtById.value,
+        [jobId]: Date.now(),
+      }
+
+      debugLog('✅ Store - reloadJobOnConflict success:', { jobId })
+    } catch (error) {
+      debugLog('❌ Store - reloadJobOnConflict error:', { jobId, error })
+      throw error
+    }
+  }
+
   return {
     detailedJobs,
     kanbanJobs,
@@ -336,6 +412,7 @@ export const useJobsStore = defineStore('jobs', () => {
     getKanbanJobById,
     getHeaderById,
     getBasicInfoById,
+    conflictReloadAtById,
 
     setDetailedJob,
     updateDetailedJob,
@@ -367,5 +444,6 @@ export const useJobsStore = defineStore('jobs', () => {
     upsertFromFullJob,
 
     fetchJob,
+    reloadJobOnConflict,
   }
 })

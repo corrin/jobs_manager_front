@@ -130,6 +130,9 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
   const lastSavedAt = ref<Date | null>(null)
   const error = ref<string | null>(null)
   const inFlightToken = ref(0)
+  const pausedDueToConflict = ref(false)
+  // Keep the exact patch that conflicted so we can offer a true "Retry"
+  let lastConflictPatch: Record<string, unknown> | null = null
 
   let debounceTimer: number | null = null
   let pendingAfterFlight = false
@@ -184,6 +187,29 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       debounceTimer = null
     }
 
+    // If this is an explicit user retry, unpause and ALWAYS re-enqueue the last conflicting patch
+    if (reason === 'retry-click') {
+      pausedDueToConflict.value = false
+      if (lastConflictPatch) {
+        for (const [k, v] of Object.entries(lastConflictPatch)) {
+          changeBuffer.set(k, v)
+          pendingKeys.value.add(k)
+        }
+        log('🔁 re-enqueued last conflicting patch on user retry', {
+          keys: Object.keys(lastConflictPatch),
+        })
+      } else {
+        log('ℹ️ retry-click received but no lastConflictPatch present')
+      }
+    }
+
+    // If still paused (no retry), wait for user action
+    if (pausedDueToConflict.value) {
+      log('⛔ paused due to concurrency conflict; awaiting user retry', { reason })
+      return
+    }
+
+    // After handling retry-click re-enqueue, if still empty and not saving, exit
     if (changeBuffer.size === 0 && !isSaving.value) {
       log('🟢 nothing to flush', { reason })
       return
@@ -232,7 +258,7 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       if (!('contact_name' in effectivePatch)) effectivePatch['contact_name'] = null
     }
 
-    // regra de completude (exemplo)
+    // completeness rule (example)
     const virtualSnapshot = { ...originalSnapshot, ...effectivePatch }
     if (
       ('contact_id' in effectivePatch || 'contact_name' in effectivePatch) &&
@@ -267,13 +293,27 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
         log('🕒 stale response ignored', { token, current: inFlightToken.value })
         return
       }
-      if (!res.success) throw new Error(res.error || (res.conflict ? 'Conflict' : 'Save failed'))
+      if (!res.success) {
+        if (res.conflict === true) {
+          pausedDueToConflict.value = true
+          // Preserve the patch to allow a true "Retry" after reload
+          lastConflictPatch = { ...sendingPatch }
+          log('⏸️ paused autosave due to concurrency conflict; user action required')
+        }
+        throw new Error(res.error || (res.conflict ? 'Conflict' : 'Save failed'))
+      }
       lastSavedAt.value = new Date()
       error.value = null
+      lastConflictPatch = null
       log('✅ saved', { keys: Object.keys(sendingPatch), reason })
     } catch (e) {
       try {
-        opts.rollbackOptimistic(previousValues)
+        // Do NOT rollback on concurrency conflicts, or we will overwrite the freshly reloaded server data
+        if (!pausedDueToConflict.value) {
+          opts.rollbackOptimistic(previousValues)
+        } else {
+          log('↩️ rollback skipped due to concurrency conflict; keeping reloaded server data')
+        }
       } catch {
         /* ignore */
       }
@@ -282,7 +322,7 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
       log('❌ save failed', { msg, reason })
     } finally {
       isSaving.value = false
-      if (pendingAfterFlight || changeBuffer.size > 0) {
+      if (!pausedDueToConflict.value && (pendingAfterFlight || changeBuffer.size > 0)) {
         log('🔁 pending detected, attempting next flush')
         pendingAfterFlight = false
         queueMicrotask(() => {
@@ -307,9 +347,15 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
 
         const res = await opts.saveAdapter(patch)
         if (!res.success) {
-          // Simple heuristic: 400/422 or conflicts should not be retried (the adapter can signal this via flags)
+          // Simple heuristic: 400/422, conflicts, or concurrency issues should not be retried
+          const isConcurrency =
+            !!res.error &&
+            /(precondition|if-?match|412|428|concurrency|etag|updated by another user|data reloaded)/i.test(
+              String(res.error),
+            )
           const nonTransient =
             res.conflict === true ||
+            isConcurrency ||
             (res.error && /\b(400|422|validation|invalid)\b/i.test(String(res.error)))
           if (nonTransient) return res
           throw new Error(res.error || 'Transient save error')
@@ -319,8 +365,14 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
         attempt++
         const isLast = attempt >= policy.attempts
         const msg = err instanceof Error ? err.message : String(err)
+        const isConcurrencyMsg =
+          /(precondition|if-?match|412|428|concurrency|etag|updated by another user|data reloaded)/i.test(
+            msg,
+          )
         const transient =
-          !/\b(400|422|validation|invalid|conflict)\b/i.test(msg) && msg.toLowerCase() !== 'offline'
+          !/\b(400|422|validation|invalid|conflict)\b/i.test(msg) &&
+          msg.toLowerCase() !== 'offline' &&
+          !isConcurrencyMsg
 
         log('⏱️ retry', { attempt, msg, transient, isLast })
         if (!transient || isLast) return { success: false, error: msg }
