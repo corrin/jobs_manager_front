@@ -417,7 +417,7 @@ const isServerSyncingBasicInfo = ref(false)
 
 // Notification debouncing
 const lastNotificationTime = ref(0)
-const NOTIFICATION_DEBOUNCE_MS = 2000 // 3 seconds minimum between notifications
+const NOTIFICATION_DEBOUNCE_MS = 2000 // 2 seconds minimum between notifications
 
 // Typing state tracking to prevent interruption
 const isUserTyping = ref(false)
