@@ -1192,6 +1192,7 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
       quantity: entry.hours,
       unit_cost: entry.wageRate,
       unit_rev: entry.chargeOutRate,
+      accounting_date: date,
       meta: {
         staff_id: staffId,
         date: date,

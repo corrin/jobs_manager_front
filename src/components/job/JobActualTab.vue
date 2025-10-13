@@ -648,6 +648,7 @@ async function handleCreateLine(line: CostLine) {
         quantity: line.quantity,
         unit_cost: line.unit_cost,
         unit_rev: line.unit_rev,
+        accounting_date: new Date().toISOString().split('T')[0],
         ext_refs: line.ext_refs || {},
         meta: { source: 'manual_adjustment' },
         created_at: new Date().toISOString(),

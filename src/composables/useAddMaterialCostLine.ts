@@ -36,14 +36,19 @@ export function useAddMaterialCostLine(options: UseAddMaterialCostLineOptions) {
     toast.info('Adding material cost line...', { id: 'add-material' })
 
     try {
+      const now = new Date().toISOString()
+      const accountingDate = new Date().toISOString().split('T')[0]
       const createPayload: CostLineCreateUpdate = {
         kind: 'material' as const,
         desc: payload.desc,
         quantity: payload.quantity,
         unit_cost: payload.unit_cost ?? 0,
         unit_rev: payload.unit_rev ?? 0,
+        accounting_date: accountingDate,
         ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
         meta: (payload.meta as Record<string, unknown>) || {},
+        created_at: now,
+        updated_at: now,
       }
 
       const created = await costlineService.createCostLine(jobId, costSetKind, createPayload)
