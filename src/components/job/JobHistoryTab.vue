@@ -77,7 +77,7 @@
             <div class="space-y-6">
               <div
                 v-for="item in timelineItems"
-                :key="item.id"
+                :key="item.expandedKey"
                 class="relative flex items-start group hover:bg-gray-50 -mx-3 px-3 py-2 rounded-lg transition-colors duration-200"
               >
                 <!-- Timeline dot -->
@@ -143,7 +143,89 @@
                           <span class="font-medium text-gray-700">{{ item.staff }}</span>
                         </template>
                       </div>
+
+                      <!-- Undo button for undoable events -->
+                      <button
+                        v-if="item.canUndo"
+                        @click="toggleExpanded(item.id)"
+                        class="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors flex items-center gap-1"
+                      >
+                        <ChevronDown
+                          :class="[
+                            'w-3 h-3 transition-transform duration-200',
+                            expandedItems.has(item.id) ? 'rotate-180' : '',
+                          ]"
+                        />
+                        {{ expandedItems.has(item.id) ? 'Hide' : 'Undo' }}
+                      </button>
                     </div>
+
+                    <!-- Collapsible undo section -->
+                    <Collapsible v-if="item.canUndo" :open="expandedItems.has(item.id)">
+                      <CollapsibleContent>
+                        <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <h4 class="text-sm font-medium text-gray-900 mb-3">Undo Change</h4>
+
+                          <!-- Change details -->
+                          <div class="space-y-3 mb-4">
+                            <div>
+                              <span class="text-xs font-medium text-gray-700">Change:</span>
+                              <span class="text-xs text-gray-600 ml-2">{{
+                                item.originalEntry.undo_description || 'Revert this change'
+                              }}</span>
+                            </div>
+
+                            <!-- Delta comparison -->
+                            <template
+                              v-if="
+                                item.originalEntry.delta_before && item.originalEntry.delta_after
+                              "
+                            >
+                              <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                  <span class="text-xs font-medium text-red-700">Before:</span>
+                                  <div
+                                    class="mt-1 text-xs text-gray-600 bg-red-50 p-2 rounded border"
+                                  >
+                                    <pre class="whitespace-pre-wrap">{{
+                                      formatDelta(item.originalEntry.delta_before)
+                                    }}</pre>
+                                  </div>
+                                </div>
+                                <div>
+                                  <span class="text-xs font-medium text-green-700">After:</span>
+                                  <div
+                                    class="mt-1 text-xs text-gray-600 bg-green-50 p-2 rounded border"
+                                  >
+                                    <pre class="whitespace-pre-wrap">{{
+                                      formatDelta(item.originalEntry.delta_after)
+                                    }}</pre>
+                                  </div>
+                                </div>
+                              </div>
+                            </template>
+                          </div>
+
+                          <!-- Undo action buttons -->
+                          <div class="flex justify-end space-x-2">
+                            <button
+                              @click="toggleExpanded(item.id)"
+                              class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              @click="undoChange(item.originalEntry)"
+                              class="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
+                              :disabled="isUndoing"
+                            >
+                              <span v-if="isUndoing">Undoing...</span>
+                              <span v-else>Confirm Undo</span>
+                            </button>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
                 </div>
               </div>
@@ -185,53 +267,43 @@ import { Collapsible, CollapsibleContent } from '../ui/collapsible'
 import { formatEventType } from '@/utils/string-formatting'
 import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
-import type { z } from 'zod'
+import { z } from 'zod'
 import { toast } from 'vue-sonner'
 
 type JobEventCreateRequest = z.infer<typeof schemas.JobEventCreateRequest>
 type JobEventCreateResponse = z.infer<typeof schemas.JobEventCreateResponse>
+type JobUndoRequest = z.infer<typeof schemas.JobUndoRequest>
 
 // Timeline entry from the unified backend endpoint
-// TODO: This will be replaced by schemas.TimelineEntry once schema is regenerated
-interface TimelineEntry {
-  id: string
-  timestamp: string
-  entry_type: 'job_event' | 'costline'
-  description: string
-  staff?: string | null
-  event_type?: string
-  // CostLine-specific fields
-  cost_set_kind?: 'estimate' | 'quote' | 'actual'
-  costline_kind?: 'time' | 'material' | 'adjust'
-  quantity?: number
-  unit_cost?: number
-  unit_rev?: number
-  total_cost?: number
-  total_rev?: number
-}
+type TimelineEntry = z.infer<typeof schemas.TimelineEntry>
 
 interface Props {
   jobId: string
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{ 'event-added': [event: JobEventCreateResponse['event']] }>()
+const emit = defineEmits<{
+  'event-added': [event: JobEventCreateResponse['event']]
+  'job-updated': []
+}>()
 
 // UI state
 const isAddEventOpen = ref(false)
 const newEventDescription = ref('')
 const isAdding = ref(false)
 const isLoading = ref(false)
+const isUndoing = ref(false)
+const expandedItems = ref<Set<string>>(new Set())
 
 const timelineEntries = ref<TimelineEntry[]>([])
 
 // Transform timeline entries to camelCase format for template
 const timelineItems = computed(() => {
-  return timelineEntries.value.map((entry) => ({
+  return timelineEntries.value.map((entry: TimelineEntry) => ({
     id: entry.id,
     timestamp: entry.timestamp,
     type:
-      entry.entry_type === 'costline'
+      entry.entry_type === 'costline_created'
         ? entry.cost_set_kind === 'actual'
           ? 'costline_updated'
           : 'costline_created'
@@ -241,8 +313,13 @@ const timelineItems = computed(() => {
     eventType: entry.event_type,
     costlineDesc: entry.cost_set_kind
       ? `${entry.cost_set_kind.charAt(0).toUpperCase() + entry.cost_set_kind.slice(1)} - ${entry.costline_kind || ''}`
-      : null,
-    costlineKind: entry.costline_kind,
+      : undefined,
+    costlineKind: entry.costline_kind || undefined,
+    // Include original entry data for undo functionality
+    originalEntry: entry,
+    canUndo: entry.schema_version === 1 && entry.can_undo,
+    // Reactive key to force re-render when expanded state changes
+    expandedKey: `${entry.id}-${expandedItems.value.has(entry.id)}`,
   }))
 })
 
@@ -291,7 +368,7 @@ async function addEvent() {
   }
 }
 
-function getCostlineTypeColor(type: 'time' | 'material' | 'adjust'): string {
+function getCostlineTypeColor(type: 'time' | 'material' | 'adjust' | null): string {
   switch (type) {
     case 'time':
       return 'bg-purple-100 text-purple-700'
@@ -318,6 +395,53 @@ function formatDate(dateString: unknown) {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function toggleExpanded(itemId: string) {
+  const newExpanded = new Set(expandedItems.value)
+  if (newExpanded.has(itemId)) {
+    newExpanded.delete(itemId)
+  } else {
+    newExpanded.add(itemId)
+  }
+  expandedItems.value = newExpanded
+}
+
+function formatDelta(delta: Record<string, unknown> | null): string {
+  if (!delta) return 'No data'
+  return Object.entries(delta)
+    .map(([key, value]) => `${key}: ${String(value)}`)
+    .join('\n')
+}
+
+async function undoChange(entry: TimelineEntry) {
+  if (!entry.change_id) {
+    toast.error('Cannot undo: No change ID available')
+    return
+  }
+
+  isUndoing.value = true
+  try {
+    const body: JobUndoRequest = { change_id: entry.change_id }
+    await api.job_rest_jobs_undo_change_create(body, {
+      params: { job_id: props.jobId },
+    })
+
+    toast.success('Change undone successfully')
+
+    // Emit event to notify parent components that job data may have changed
+    emit('job-updated')
+
+    // Clear all expanded items since timeline will be reloaded
+    expandedItems.value = new Set()
+    // Reload timeline to reflect the undo
+    await loadTimeline()
+  } catch (e) {
+    toast.error('Failed to undo change')
+    console.error('Failed to undo change:', e)
+  } finally {
+    isUndoing.value = false
+  }
 }
 
 watch(

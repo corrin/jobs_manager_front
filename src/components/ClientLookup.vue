@@ -206,12 +206,11 @@ const handleBlur = () => {
 }
 
 const selectClient = (client: Client) => {
+  preserveSelectedClient()
   selectClientFromComposable(client)
-
   emit('update:modelValue', client.name)
   emit('update:selectedClient', client)
   emit('update:selectedId', client.id)
-
   showSuggestions.value = false
 }
 
@@ -297,13 +296,16 @@ watch(
   },
 )
 
-watch(selectedClient, (newClient) => {
-  if (newClient) {
-    emit('update:selectedClient', newClient)
-    emit('update:selectedId', newClient.id)
-  } else {
-    emit('update:selectedClient', null)
-    emit('update:selectedId', '')
+watch(selectedClient, (newClient, oldClient) => {
+  // Only emit if this is a real change, not during initial loading
+  if (newClient?.id !== oldClient?.id) {
+    if (newClient) {
+      emit('update:selectedClient', newClient)
+      emit('update:selectedId', newClient.id)
+    } else {
+      emit('update:selectedClient', null)
+      emit('update:selectedId', '')
+    }
   }
 })
 

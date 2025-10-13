@@ -60,7 +60,7 @@
 import { debugLog } from '../utils/debug'
 import { toast } from 'vue-sonner'
 
-import { watch } from 'vue'
+import { ref, watch } from 'vue'
 import { Users, X } from 'lucide-vue-next'
 import { useContactManagement } from '../composables/useContactManagement'
 import ContactSelectionModal from './ContactSelectionModal.vue'
@@ -109,6 +109,10 @@ const {
   findPrimaryContact,
 } = useContactManagement()
 
+const suppressEmit = ref(false)
+const isHydrating = ref(true)
+let loadToken = 0
+
 const handleOpenModal = async () => {
   debugLog('ContactSelector - handleOpenModal called:', {
     clientId: props.clientId,
@@ -136,7 +140,6 @@ const handleOpenModal = async () => {
 const selectExistingContact = (contact: ClientContact) => {
   debugLog('ContactSelector - selectExistingContact:', contact)
   selectFromComposable(contact)
-  emitUpdates()
 }
 
 const handleSaveContact = async () => {
@@ -164,7 +167,6 @@ const handleSaveContact = async () => {
   })
   if (success) {
     toast.success('Contact created successfully!')
-    emitUpdates()
   } else {
     toast.error('Failed to create contact. Please check the form and try again.')
   }
@@ -179,7 +181,6 @@ const isValidEmail = (email: string): boolean => {
 const clearSelection = () => {
   debugLog('ContactSelector - clearSelection')
   clearFromComposable()
-  emitUpdates()
 }
 
 const selectPrimaryContact = async () => {
@@ -207,7 +208,6 @@ const selectPrimaryContact = async () => {
   if (primaryContact) {
     debugLog('Found primary contact:', primaryContact)
     selectFromComposable(primaryContact)
-    emitUpdates()
   } else {
     debugLog('No primary contact found', {
       totalContacts: contacts.value.length,
@@ -223,6 +223,7 @@ defineExpose({
 })
 
 const emitUpdates = () => {
+  if (suppressEmit.value) return
   debugLog('ContactSelector - emitUpdates', {
     displayValue: displayValue.get(),
     selectedContact: selectedContact.value,
@@ -231,65 +232,60 @@ const emitUpdates = () => {
   emit('update:selectedContact', selectedContact.value)
 }
 
-watch(selectedContact, () => {
-  debugLog('ContactSelector - selectedContact changed:', selectedContact.value)
-  emitUpdates()
-})
-
 watch(
-  () => props.clientId,
-  async (newClientId, oldClientId) => {
-    if (newClientId === oldClientId) return
-
-    debugLog('ContactSelector - clientId changed:', { newClientId, oldClientId })
-
-    // Always clear the current selection first when client changes
-    displayValue.set('')
-    selectedContact.value = null
-    clearFromComposable() // Ensure composable's internal state is also cleared
-
-    // Clear contacts array to prevent showing old client's contacts
-    contacts.value = []
-
-    // Emit cleared state immediately to parent
+  selectedContact,
+  () => {
+    debugLog('ContactSelector - selectedContact changed:', selectedContact.value)
     emitUpdates()
-
-    if (!newClientId) {
-      debugLog('Client ID cleared, keeping contact selector empty.')
-      return
-    }
-
-    // Load contacts for the new client
-    debugLog('Loading contacts for new client:', newClientId)
-    await loadContactsOnly(newClientId)
-
-    // Only attempt to select primary contact if we found contacts
-    if (contacts.value.length > 0) {
-      const primaryContact = findPrimaryContact()
-      if (primaryContact) {
-        debugLog('Found primary contact for new client:', primaryContact)
-        selectFromComposable(primaryContact)
-        // emitUpdates will be called by the selectedContact watcher
-      } else {
-        debugLog('No primary contact found for new client, keeping cleared state.')
-      }
-    } else {
-      debugLog('No contacts found for new client, keeping cleared state.')
-    }
+    isHydrating.value = false
   },
+  { flush: 'sync' },
 )
 
 watch(
   () => [props.clientId, props.initialContactId],
-  async ([clientId, contactId]) => {
-    debugLog('ContactSelector - watch clientId/initialContactId:', { clientId, contactId })
-    if (clientId && contactId && contacts.value.length === 0) {
-      await loadContactsOnly(clientId)
-      const initialContact = contacts.value.find((contact) => contact.id === contactId)
-      if (initialContact) {
-        selectFromComposable(initialContact)
-      }
+  async ([clientId, initialId]) => {
+    debugLog('ContactSelector - unified watch:', { clientId, initialId })
+
+    // Quando mudar o cliente: limpe estado local (sem emitir)
+    suppressEmit.value = true
+    displayValue.set('')
+    selectedContact.value = null
+    contacts.value = []
+    suppressEmit.value = false
+
+    if (!clientId) {
+      debugLog('Client ID vazio; nada a carregar.')
+      return
     }
+
+    // Evitar corridas: token local
+    const token = ++loadToken
+
+    // Carrega contatos do cliente atual
+    await loadContactsOnly(clientId)
+    if (token !== loadToken) return // request antigo, ignora
+
+    // Regra de seleção:
+    // 1) Se temos initialId → selecione-o (mudança programática, sem emitir)
+    // 2) Senão → se houver primary → selecione (programático)
+    // 3) Senão → deixe vazio
+    const decideAndSelect = () => {
+      const choose =
+        (initialId && contacts.value.find((c: ClientContact) => c.id === initialId)) ||
+        (!initialId && findPrimaryContact()) ||
+        null
+
+      suppressEmit.value = true
+      if (choose) {
+        selectFromComposable(choose)
+      } else {
+        clearFromComposable()
+      }
+      suppressEmit.value = false
+    }
+
+    decideAndSelect()
   },
   { immediate: true },
 )

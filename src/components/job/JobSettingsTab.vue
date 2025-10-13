@@ -351,10 +351,10 @@ async function loadBasicInfo() {
       localJobData.value = { ...localJobData.value }
 
       // Update original snapshot for diff
-      originalJobData.value.description = localJobData.value.description ?? ''
-      originalJobData.value.delivery_date = localJobData.value.delivery_date ?? ''
-      originalJobData.value.order_number = localJobData.value.order_number ?? ''
-      originalJobData.value.notes = localJobData.value.notes ?? ''
+      originalJobData.value.description = normalizeNullable(localJobData.value.description)
+      originalJobData.value.delivery_date = normalizeNullable(localJobData.value.delivery_date)
+      originalJobData.value.order_number = normalizeNullable(localJobData.value.order_number)
+      originalJobData.value.notes = normalizeNullable(localJobData.value.notes)
     }
 
     // Also update the detailed job in store if it exists
@@ -417,7 +417,7 @@ const isServerSyncingBasicInfo = ref(false)
 
 // Notification debouncing
 const lastNotificationTime = ref(0)
-const NOTIFICATION_DEBOUNCE_MS = 3000 // 3 seconds minimum between notifications
+const NOTIFICATION_DEBOUNCE_MS = 2000 // 2 seconds minimum between notifications
 
 // Typing state tracking to prevent interruption
 const isUserTyping = ref(false)
@@ -433,6 +433,13 @@ const currentClientData = ref({
   address: '',
   is_account_customer: true,
 })
+
+const normalizeNullable = (v: unknown): string | null => {
+  if (v == null) return null
+  if (typeof v !== 'string') return null
+  const t = v.trim()
+  return t ? t : null
+}
 
 const resetClientChangeState = () => {
   isChangingClient.value = false
@@ -502,10 +509,10 @@ watch(
         paid: false,
         rejected_flag: false,
         // Include basic info fields - will be updated when basicInfo loads
-        description: '',
-        delivery_date: '',
-        order_number: '',
-        notes: '',
+        description: null,
+        delivery_date: null,
+        order_number: null,
+        notes: null,
       }
 
       localJobData.value = { ...defaultJobData }
@@ -540,10 +547,21 @@ watch(
       notes: localJobData.value?.notes ?? '',
     }
 
-    // Keep original snapshot with current state
-    originalJobData.value = { ...localJobData.value }
+    // Keep original snapshot with current state (including separated client/contact fields for delta)
+    originalJobData.value = {
+      ...localJobData.value,
+      description: normalizeNullable(localJobData.value.description),
+      delivery_date: normalizeNullable(localJobData.value.delivery_date),
+      order_number: normalizeNullable(localJobData.value.order_number),
+      notes: normalizeNullable(localJobData.value.notes),
+      // Include separated fields for delta consistency (only id fields, not name)
+      client_id: localJobData.value.client?.id ?? null,
+      contact_id: localJobData.value.contact_id ?? null,
+      contact_name: localJobData.value.contact_name ?? null,
+    }
 
     // Load contact information using the job contacts endpoint
+    // IMPORTANT: Do NOT trigger autosave here - this is just loading initial data
     try {
       const contactResponse = await api.clients_jobs_contact_retrieve({
         params: { job_id: newJobData.job_id },
@@ -635,10 +653,14 @@ watch(
 
     // Sync original snapshot for post-hydration diff|readiness barrier
     if (!isHydratingBasicInfo.value) {
-      originalJobData.value.description = localJobData.value?.description ?? ''
-      originalJobData.value.delivery_date = localJobData.value?.delivery_date ?? ''
-      originalJobData.value.order_number = localJobData.value?.order_number ?? ''
-      originalJobData.value.notes = localJobData.value?.notes ?? ''
+      originalJobData.value.description = normalizeNullable(localJobData.value?.description)
+      originalJobData.value.delivery_date = normalizeNullable(localJobData.value?.delivery_date)
+      originalJobData.value.order_number = normalizeNullable(localJobData.value?.order_number)
+      originalJobData.value.notes = normalizeNullable(localJobData.value?.notes)
+      // Include separated fields for delta consistency (only id fields, not name)
+      originalJobData.value.client_id = localJobData.value?.client?.id ?? null
+      originalJobData.value.contact_id = localJobData.value?.contact_id ?? null
+      originalJobData.value.contact_name = localJobData.value?.contact_name ?? null
     }
   },
   { immediate: true, deep: true },
@@ -663,10 +685,14 @@ watch(
       if (basicInfo.notes !== undefined) localJobData.value.notes = basicInfo.notes || ''
 
       // Align original snapshot with server data
-      originalJobData.value.description = localJobData.value.description ?? ''
-      originalJobData.value.delivery_date = localJobData.value.delivery_date ?? ''
-      originalJobData.value.order_number = localJobData.value.order_number ?? ''
-      originalJobData.value.notes = localJobData.value.notes ?? ''
+      originalJobData.value.description = normalizeNullable(localJobData.value.description)
+      originalJobData.value.delivery_date = normalizeNullable(localJobData.value.delivery_date)
+      originalJobData.value.order_number = normalizeNullable(localJobData.value.order_number)
+      originalJobData.value.notes = normalizeNullable(localJobData.value.notes)
+      // Include separated fields for delta consistency (only id fields, not name)
+      originalJobData.value.client_id = localJobData.value.client?.id ?? null
+      originalJobData.value.contact_id = localJobData.value.contact_id ?? null
+      originalJobData.value.contact_name = localJobData.value.contact_name ?? null
 
       // Trigger reactivity
       localJobData.value = { ...localJobData.value }
@@ -754,15 +780,6 @@ const confirmClientChange = () => {
   contactDisplayValue.value = ''
 
   resetClientChangeState()
-
-  // Send client_id, client_name and clear contact (id and name)
-  autosave.queueChanges({
-    client_id: localJobData.value.client?.id ?? null,
-    client_name: localJobData.value.client?.name ?? null,
-    contact_id: null,
-    contact_name: null,
-  })
-  void autosave.flush('client-change')
 
   // Update header immediately for instant reactivity
   if (jobHeader.value) {
@@ -869,7 +886,7 @@ let unbindConcurrencyRetry: () => void = () => {}
 /** Instance */
 const autosave = createJobAutosave({
   jobId: props.jobId || '',
-  debounceMs: 2000, // Increased debounce for text fields to prevent interruption
+  debounceMs: 1000, // Increased debounce for text fields to prevent interruption
   canSave: () => dataReady.value, // Sync original snapshot for post-hydration diff|readiness barrier
   getSnapshot: () => {
     // Returns original snapshot, not current data
@@ -879,6 +896,8 @@ const autosave = createJobAutosave({
       job_number: data.job_number,
       name: data.name,
       client: data.client,
+      // Include separated fields for delta consistency (only id fields, not name)
+      client_id: data.client_id,
       contact_id: data.contact_id,
       contact_name: data.contact_name,
       job_status: data.status,
@@ -887,19 +906,21 @@ const autosave = createJobAutosave({
       quoted: data.quoted,
       quote_acceptance_date: data.quote_acceptance_date,
       paid: data.paid,
-      description: data.description || '',
-      order_number: data.order_number || '',
-      notes: data.notes || '',
-      delivery_date: data.delivery_date || '',
+      description: data.description || null,
+      order_number: data.order_number || null,
+      notes: data.notes || null,
+      delivery_date: data.delivery_date || null,
     }
   },
   applyOptimistic: (patch) => {
     Object.entries(patch).forEach(([k, v]) => {
+      // Apply all fields including separated client/contact fields
       ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
     })
   },
   rollbackOptimistic: (previous) => {
     Object.entries(previous).forEach(([k, v]) => {
+      // Rollback all fields including separated client/contact fields
       ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
     })
   },
@@ -925,8 +946,12 @@ const autosave = createJobAutosave({
 
       if (Object.keys(partialPayload).length === 0) return { success: true }
 
-      // Use the partial update method (similar to useJobHeaderAutosave)
-      const result = await jobService.updateJobHeaderPartial(props.jobId, partialPayload)
+      // Use the partial update method with client snapshot for before values
+      const result = await jobService.updateJobHeaderPartial(
+        props.jobId,
+        partialPayload,
+        originalJobData.value,
+      )
       if (!result.success) {
         // Detect concurrency by robust regex (no auto-retry)
         const msg = String(result.error || '')
@@ -936,6 +961,14 @@ const autosave = createJobAutosave({
           )
         return { success: false, error: result.error, conflict: isConcurrencyError }
       }
+
+      // On success, update the original snapshot with the new values
+      // This ensures subsequent saves use the correct "before" values
+      Object.entries(partialPayload).forEach(([k, v]) => {
+        if (originalJobData.value) {
+          ;(originalJobData.value as Record<string, unknown>)[k] = v
+        }
+      })
       if (result.success) {
         // Update local snapshot ONLY for keys sent
         const apply = (base: Partial<Job>, p: Record<string, unknown>) => {
@@ -964,10 +997,10 @@ const autosave = createJobAutosave({
               name: newName,
             }
           }
-          if ('description' in p) next.description = (p.description as string | null) ?? ''
-          if ('delivery_date' in p) next.delivery_date = (p.delivery_date as string | null) ?? ''
-          if ('order_number' in p) next.order_number = (p.order_number as string | null) ?? ''
-          if ('notes' in p) next.notes = (p.notes as string | null) ?? ''
+          if ('description' in p) next.description = (p.description as string | null) ?? null
+          if ('delivery_date' in p) next.delivery_date = (p.delivery_date as string | null) ?? null
+          if ('order_number' in p) next.order_number = (p.order_number as string | null) ?? null
+          if ('notes' in p) next.notes = (p.notes as string | null) ?? null
           return next
         }
         originalJobData.value = apply(originalJobData.value, partialPayload)
@@ -1072,8 +1105,61 @@ onMounted(() => {
     beforeEach: (to, from, next) => router.beforeEach(to, from, next),
   })
   // Listen to global "Retry" click from the concurrency toast for this Job
-  unbindConcurrencyRetry = onConcurrencyRetry(props.jobId, () => {
-    void autosave.flush('retry-click')
+  unbindConcurrencyRetry = onConcurrencyRetry(props.jobId, async () => {
+    // Reload fresh data from server to get current ETag/version
+    try {
+      const response = await api.job_rest_jobs_header_retrieve({
+        params: { job_id: props.jobId },
+      })
+      if (response) {
+        // Update jobData with fresh server data
+        jobData.value = response
+
+        // Update local data with fresh server state
+        const freshData = {
+          job_id: response.job_id,
+          job_number: Number(response.job_number),
+          name: response.name,
+          client: response.client,
+          status: response.status,
+          pricing_methodology: response.pricing_methodology,
+          fully_invoiced: response.fully_invoiced,
+          quoted: response.quoted,
+          quote_acceptance_date: response.quote_acceptance_date,
+          paid: response.paid,
+        }
+
+        localJobData.value = {
+          ...freshData,
+          description: localJobData.value?.description ?? '',
+          delivery_date: localJobData.value?.delivery_date ?? '',
+          order_number: localJobData.value?.order_number ?? '',
+          notes: localJobData.value?.notes ?? '',
+        }
+
+        // Update original snapshot with fresh server data (including separated fields for delta)
+        originalJobData.value = {
+          ...freshData,
+          description: normalizeNullable(localJobData.value.description),
+          delivery_date: normalizeNullable(localJobData.value.delivery_date),
+          order_number: normalizeNullable(localJobData.value.order_number),
+          notes: normalizeNullable(localJobData.value.notes),
+          // Include separated fields for delta consistency (only id fields, not name)
+          client_id: localJobData.value.client?.id ?? null,
+          contact_id: localJobData.value.contact_id ?? null,
+          contact_name: localJobData.value.contact_name ?? null,
+        }
+
+        // Reload basic info to ensure consistency
+        await loadBasicInfo()
+
+        // Now retry the save with fresh data
+        void autosave.flush('retry-click')
+      }
+    } catch (error) {
+      debugLog('Failed to reload job data for retry:', error)
+      toast.error('Failed to reload job data. Please refresh the page.')
+    }
   })
 })
 
@@ -1098,7 +1184,8 @@ const enqueueIfNotInitializing = (key: string, value: unknown) => {
 
 watch(
   () => localJobData.value.name,
-  (v) => {
+  (v, oldV) => {
+    if (v === oldV) return
     if (!isSyncingFromStore.value) {
       enqueueIfNotInitializing('name', v)
       // Sync with store for immediate reactivity
@@ -1110,7 +1197,8 @@ watch(
 )
 watch(
   () => localJobData.value.pricing_methodology,
-  (v) => {
+  (v, oldV) => {
+    if (v === oldV) return
     if (!isSyncingFromStore.value) {
       enqueueIfNotInitializing('pricing_methodology', v)
     }
@@ -1118,10 +1206,18 @@ watch(
 )
 watch(
   () => localJobData.value.client,
-  (v) => {
-    if (!isSyncingFromStore.value) {
-      enqueueIfNotInitializing('client_id', v?.id ?? null)
-      enqueueIfNotInitializing('client_name', v?.name ?? null)
+  (v, oldV) => {
+    if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
+      // Only enqueue if this is a real user change, not initial loading or hydration
+      const oldId = oldV?.id ?? null
+      const newId = v?.id ?? null
+
+      if (oldId !== newId) {
+        enqueueIfNotInitializing('client_id', newId)
+        // Clear contact when client changes
+        enqueueIfNotInitializing('contact_id', null)
+        enqueueIfNotInitializing('contact_name', null)
+      }
     }
   },
   { deep: true },
@@ -1130,15 +1226,21 @@ watch(
 // Watchers for basic info fields
 watch(
   () => localJobData.value?.description,
-  (v) => {
-    if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
+  (v, oldV) => {
+    if (
+      !isSyncingFromStore.value &&
+      !isInitializing.value &&
+      !isHydratingBasicInfo.value &&
+      v !== oldV
+    ) {
       enqueueIfNotInitializing('description', v)
     }
   },
 )
 watch(
   () => localJobData.value?.delivery_date,
-  (v) => {
+  (v, oldV) => {
+    if (v === oldV) return
     if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
       enqueueIfNotInitializing('delivery_date', v)
     }
@@ -1146,16 +1248,26 @@ watch(
 )
 watch(
   () => localJobData.value?.order_number,
-  (v) => {
-    if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
+  (v, oldV) => {
+    if (
+      !isSyncingFromStore.value &&
+      !isInitializing.value &&
+      !isHydratingBasicInfo.value &&
+      v !== oldV
+    ) {
       enqueueIfNotInitializing('order_number', v)
     }
   },
 )
 watch(
   () => localJobData.value?.notes,
-  (v) => {
-    if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
+  (v, oldV) => {
+    if (
+      !isSyncingFromStore.value &&
+      !isInitializing.value &&
+      !isHydratingBasicInfo.value &&
+      v !== oldV
+    ) {
       enqueueIfNotInitializing('notes', v)
     }
   },

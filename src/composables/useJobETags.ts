@@ -8,15 +8,14 @@
 import { ref } from 'vue'
 import { debugLog } from '@/utils/debug'
 
+const etagByJob = ref(new Map<string, string>())
+
 /**
  * Composable for managing ETags for job endpoints
  *
  * @returns Object with ETag management functions
  */
 export function useJobETags() {
-  // In-memory storage for ETags keyed by job ID
-  const etagByJob = ref(new Map<string, string>())
-
   /**
    * Get the ETag for a specific job
    * @param jobId - The job ID to get ETag for

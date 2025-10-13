@@ -1,12 +1,16 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { createJobAutosave, type SaveResult } from './useJobAutosave'
-import { jobService } from '../services/job.service'
 import { useJobsStore } from '../stores/jobs'
 import { toast } from 'vue-sonner'
 import { onConcurrencyRetry } from '@/composables/useConcurrencyEvents'
 import { z } from 'zod'
 import { schemas } from '../api/generated/api'
+import { useAuthStore } from '@/stores/auth'
+import { useJobETags } from '@/composables/useJobETags'
+import { buildJobDeltaEnvelope, useJobDeltaQueue } from '@/composables/useJobDelta'
+import { submitJobDelta } from '@/services/delta.service'
+import { isConcurrencyError } from '@/types/concurrency'
 
 type Job = z.infer<typeof schemas.Job>
 type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
@@ -19,6 +23,9 @@ type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
 export function useJobHeaderAutosave(header: JobHeaderResponse) {
   const router = useRouter()
   const jobsStore = useJobsStore()
+  const authStore = useAuthStore()
+  const etagStore = useJobETags()
+  const deltaQueue = useJobDeltaQueue(header.job_id)
 
   const headerToPartialHeaderPatch = (patch: Partial<Job>): Partial<JobHeaderResponse> => {
     const p: Partial<JobHeaderResponse> = {}
@@ -35,6 +42,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     if ('quoted' in patch) p.quoted = Boolean(patch.quoted)
     if ('fully_invoiced' in patch) p.fully_invoiced = Boolean(patch.fully_invoiced)
     if ('paid' in patch) p.paid = Boolean(patch.paid)
+    if ('rejected_flag' in patch) p.rejected_flag = Boolean(patch.rejected_flag)
     if ('quote_acceptance_date' in patch)
       p.quote_acceptance_date = (patch.quote_acceptance_date as string | null | undefined) ?? null
     return p
@@ -88,6 +96,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
       quoted: patch.quoted ?? base.quoted,
       fully_invoiced: patch.fully_invoiced ?? base.fully_invoiced,
       paid: patch.paid ?? base.paid,
+      rejected_flag: patch.rejected_flag ?? base.rejected_flag,
       quote_acceptance_date:
         (patch.quote_acceptance_date as string | null | undefined) ?? base.quote_acceptance_date,
     }
@@ -116,18 +125,22 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
         if (!jobId) {
           return { success: false, error: 'Missing job id' }
         }
+        const actorId = authStore.user?.id ?? null
+        if (!actorId) {
+          return { success: false, error: 'Missing actor id' }
+        }
 
         // Only allow header fields to be updated here to prevent cross-job contamination
         const allowedHeaderKeys = [
           'name',
           'client_id',
-          'client_name',
           'job_status',
           'pricing_methodology',
           'quoted',
           'fully_invoiced',
           'paid',
           'quote_acceptance_date',
+          'rejected_flag',
         ] as const
 
         // Filter incoming patch down to allowed header keys only
@@ -138,6 +151,10 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
           }
         })
 
+        if (Object.keys(filteredPatch).length === 0) {
+          return { success: true }
+        }
+
         // Build payload strictly from filteredPatch (no base/header merge)
         const payloadJob: Record<string, unknown> = { ...filteredPatch }
 
@@ -147,41 +164,94 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
           payloadJob.contact_name = null
         }
 
-        // Use partial update endpoint for job header autosave
-        const res = await jobService.updateJobHeaderPartial(jobId, payloadJob)
+        const fields = Object.keys(payloadJob)
+
+        const detail = jobsStore.getJobById(jobId)
+        const beforeValues: Record<string, unknown> = {}
+        const headerSnapshot = originalHeader.value
+        for (const field of fields) {
+          switch (field) {
+            case 'name':
+              beforeValues[field] = headerSnapshot.name
+              break
+            case 'client_id':
+              beforeValues[field] = headerSnapshot.client?.id ?? null
+              break
+            case 'rejected_flag':
+              beforeValues[field] = headerSnapshot.rejected_flag ?? false
+              break
+            case 'job_status':
+              beforeValues[field] = headerSnapshot.status
+              break
+            case 'pricing_methodology':
+              beforeValues[field] = headerSnapshot.pricing_methodology
+              break
+            case 'quoted':
+              beforeValues[field] = headerSnapshot.quoted
+              break
+            case 'fully_invoiced':
+              beforeValues[field] = headerSnapshot.fully_invoiced
+              break
+            case 'paid':
+              beforeValues[field] = headerSnapshot.paid
+              break
+            case 'quote_acceptance_date':
+              beforeValues[field] = headerSnapshot.quote_acceptance_date
+              break
+            case 'contact_id':
+              beforeValues[field] = detail?.job?.contact_id ?? null
+              break
+            case 'contact_name':
+              beforeValues[field] = detail?.job?.contact_name ?? null
+              break
+            default:
+              beforeValues[field] = detail?.job
+                ? (detail.job as Record<string, unknown>)[field]
+                : undefined
+          }
+        }
+
+        const changeId = deltaQueue.getOrCreateChangeId(payloadJob)
+        const etag = etagStore.getETag(jobId)
+        const envelope = await buildJobDeltaEnvelope({
+          job_id: jobId,
+          change_id: changeId,
+          actor_id: actorId,
+          made_at: new Date().toISOString(),
+          etag,
+          before: beforeValues,
+          after: payloadJob,
+          fields,
+        })
+
+        const res = await submitJobDelta(jobId, envelope)
         if (!res.success) {
-          // Check if this is a concurrency error (should not be retried automatically)
-          const msg = String(res.error || '')
-          const isConcurrencyError =
+          const msg = res.error
+          const conflict =
             /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
               msg,
             )
-          return { success: false, error: res.error, conflict: isConcurrencyError }
+          return { success: false, error: msg, conflict }
         }
 
-        // Update only the header snapshot and store header
-        const updatedHeader = applyPatchToHeader(
-          originalHeader.value,
-          filteredPatch as Partial<Job>,
-        )
+        deltaQueue.clearChangeId()
+
+        if (res.data?.data) {
+          jobsStore.setDetailedJob(res.data.data)
+        }
+
+        const updatedHeader = applyPatchToHeader(originalHeader.value, payloadJob as Partial<Job>)
         originalHeader.value = updatedHeader
         localHeader.value = updatedHeader
 
-        jobsStore.patchHeader(
-          header.job_id,
-          headerToPartialHeaderPatch(filteredPatch as Partial<Job>),
-        )
+        jobsStore.patchHeader(header.job_id, headerToPartialHeaderPatch(payloadJob as Partial<Job>))
 
         toast.success('Job updated successfully')
         return { success: true, serverData: res.data }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
-        // Check if this is a concurrency error (should not be retried automatically)
-        const isConcurrencyError =
-          /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
-            msg,
-          )
-        return { success: false, error: msg, conflict: isConcurrencyError }
+        const conflict = isConcurrencyError(e)
+        return { success: false, error: msg, conflict }
       }
     },
     devLogging: true,
@@ -228,6 +298,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
   const handleQuotedUpdate = (v: boolean) => enqueue('quoted', v)
   const handleFullyInvoicedUpdate = (v: boolean) => enqueue('fully_invoiced', v)
   const handlePaidUpdate = (v: boolean) => enqueue('paid', v)
+  const handleRejectedUpdate = (v: boolean) => enqueue('rejected_flag', v)
 
   // Status indicators
   const saveHasError = computed(() => !!autosave.error.value)
@@ -278,6 +349,7 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     handleQuotedUpdate,
     handleFullyInvoicedUpdate,
     handlePaidUpdate,
+    handleRejectedUpdate,
     // status
     saveHasError,
     saveStatusText,

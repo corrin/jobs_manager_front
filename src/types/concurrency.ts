@@ -71,6 +71,7 @@ export function isJobMutationEndpoint(url: string): boolean {
   const mutationPatterns = [
     /\/job\/rest\/jobs\/[^\/]+\/?$/, // PUT/PATCH/DELETE on job detail
     /\/job\/rest\/jobs\/[^\/]+\/events/, // POST events
+    /\/job\/rest\/jobs\/[^\/]+\/undo-change/, // POST undo change
     /\/job\/rest\/jobs\/[^\/]+\/quote\/accept/, // POST quote accept
   ]
 

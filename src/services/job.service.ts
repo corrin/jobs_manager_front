@@ -5,20 +5,134 @@ import { z } from 'zod'
 import { AdvancedFilters } from '../constants/advanced-filters'
 import { AxiosError } from 'axios'
 import { debugLog } from '../utils/debug'
+import { buildJobDeltaEnvelope, useJobDeltaQueue } from '../composables/useJobDelta'
+import { useAuthStore } from '../stores/auth'
+import { useJobETags } from '../composables/useJobETags'
 
 /**
- * Updates partial Job fields using PATCH endpoint
+ * Updates partial Job fields using PATCH endpoint with JobDelta envelope
  */
 async function updateJobHeaderPartial(
   jobId: string,
   payload: Record<string, unknown>,
+  beforeSnapshot?: Record<string, unknown>,
 ): Promise<{ success: true; data: JobDetailResponse } | { success: false; error: string }> {
   try {
     const keys = Object.keys(payload || {})
     debugLog('[jobService.updateJobHeaderPartial] → request', { jobId, keys })
-    const res = await api.job_rest_jobs_partial_update(payload, {
+
+    // normalizer to ensure checksum parity with backend (nullable fields use null, not '')
+    const nullableKeys = new Set([
+      'description',
+      'order_number',
+      'notes',
+      'delivery_date',
+      'quote_acceptance_date',
+      // include 'contact_name' if ever present
+      'contact_name',
+    ])
+    const normalizeBefore = (k: string, v: unknown) => {
+      if (v === undefined) return nullableKeys.has(k) ? null : v
+      if (v === '') return nullableKeys.has(k) ? null : ''
+      return v
+    }
+
+    // Use provided before snapshot, or get from server as fallback (should not happen in normal flow)
+    const beforeValues: Record<string, unknown> = {}
+
+    if (beforeSnapshot) {
+      // Extract before values from provided snapshot with normalization
+      for (const field of keys) {
+        beforeValues[field] = normalizeBefore(field, beforeSnapshot[field])
+      }
+      debugLog('[jobService.updateJobHeaderPartial] using client snapshot', { jobId, keys })
+    } else {
+      // Fallback: get from server (should not happen in normal delta flow)
+      debugLog('[jobService.updateJobHeaderPartial] ⚠️ FALLBACK: fetching from server', {
+        jobId,
+        keys,
+      })
+      const currentJob = await api.getFullJob({ params: { job_id: jobId } })
+
+      for (const field of keys) {
+        switch (field) {
+          case 'name':
+            beforeValues[field] = currentJob.data.job.name
+            break
+          case 'client_id':
+            beforeValues[field] = currentJob.data.job.client_id
+            break
+          case 'client_name':
+            beforeValues[field] = currentJob.data.job.client_name
+            break
+          case 'job_status':
+            beforeValues[field] = currentJob.data.job.job_status
+            break
+          case 'pricing_methodology':
+            beforeValues[field] = currentJob.data.job.pricing_methodology
+            break
+          case 'quoted':
+            beforeValues[field] = currentJob.data.job.quoted
+            break
+          case 'fully_invoiced':
+            beforeValues[field] = currentJob.data.job.fully_invoiced
+            break
+          case 'paid':
+            beforeValues[field] = currentJob.data.job.paid
+            break
+          case 'quote_acceptance_date':
+            beforeValues[field] = currentJob.data.job.quote_acceptance_date
+            break
+          case 'description':
+            beforeValues[field] = currentJob.data.job.description
+            break
+          case 'delivery_date':
+            beforeValues[field] = currentJob.data.job.delivery_date
+            break
+          case 'order_number':
+            beforeValues[field] = currentJob.data.job.order_number
+            break
+          case 'notes':
+            beforeValues[field] = currentJob.data.job.notes
+            break
+          default:
+            beforeValues[field] = (currentJob.data.job as Record<string, unknown>)[field]
+        }
+        beforeValues[field] = normalizeBefore(field, beforeValues[field])
+      }
+    }
+
+    // Get auth and etag stores
+    const authStore = useAuthStore()
+    const etagStore = useJobETags()
+    const deltaQueue = useJobDeltaQueue(jobId)
+
+    const actorId = authStore.user?.id ?? null
+    if (!actorId) {
+      return { success: false, error: 'Missing actor id' }
+    }
+
+    const changeId = deltaQueue.getOrCreateChangeId(payload)
+    const etag = etagStore.getETag(jobId)
+
+    // Build JobDelta envelope
+    const envelope = await buildJobDeltaEnvelope({
+      job_id: jobId,
+      change_id: changeId,
+      actor_id: actorId,
+      made_at: new Date().toISOString(),
+      etag,
+      before: beforeValues,
+      after: payload,
+      fields: keys,
+    })
+
+    const res = await api.job_rest_jobs_partial_update(envelope, {
       params: { job_id: jobId },
     })
+
+    deltaQueue.clearChangeId()
+
     debugLog('[jobService.updateJobHeaderPartial] ← response', {
       jobId,
       keys,
