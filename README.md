@@ -16,23 +16,15 @@ The app expects the backend to run at `http://localhost:8000`.
 
 ### Running with Tunnels (Remote Access)
 
-For remote access during development:
-
-**Frontend (ngrok):**
+For remote access during development (ngrok):
 
 ```bash
-ngrok http 5173 --domain=msm-workflow.ngrok-free.app
+ngrok http 5173 --domain=msm-workflow-front.ngrok-free.app
 ```
 
 Monitor requests at: http://localhost:4040
 
-**Backend (localtunnel):**
-
-```bash
-lt --port 8000 --subdomain msm-corrin
-```
-
-Exposes backend at: https://msm-corrin.loca.lt
+**Backend tunnels**: See the [backend repository](https://github.com/corrin/jobs_manager) docs for backend tunnel setup
 
 ## Project Structure
 

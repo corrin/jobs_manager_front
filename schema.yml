@@ -6869,6 +6869,10 @@ components:
           format: double
           description: Get total revenue (quantity * unit_rev)
           readOnly: true
+        accounting_date:
+          type: string
+          format: date
+          description: The date this cost should be attributed to for accounting purposes
         ext_refs:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
@@ -6882,6 +6886,7 @@ components:
           format: date-time
           readOnly: true
       required:
+        - accounting_date
         - created_at
         - desc
         - id
@@ -11938,6 +11943,11 @@ components:
           format: double
           description: Get total revenue (quantity * unit_rev)
           readOnly: true
+        accounting_date:
+          type: string
+          format: date
+          readOnly: true
+          description: The date this cost should be attributed to for accounting purposes
         ext_refs:
           readOnly: true
           description: External references (e.g., time entry IDs, material IDs)
@@ -11979,6 +11989,7 @@ components:
           description: Get staff wage rate from metadata staff_id
           readOnly: true
       required:
+        - accounting_date
         - charge_out_rate
         - client_name
         - created_at
