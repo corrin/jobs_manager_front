@@ -20,6 +20,9 @@ async function fetchSchema() {
   console.log(`Fetching schema from ${schemaUrl}...`)
   const response = await fetch(schemaUrl, {
     signal: AbortSignal.timeout(10000), // 10 second timeout
+    headers: {
+      'User-Agent': 'jobs-manager-frontend/schema-updater',
+    },
   })
 
   if (!response.ok) {
