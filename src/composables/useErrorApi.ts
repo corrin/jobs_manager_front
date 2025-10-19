@@ -2,25 +2,37 @@ import { ref } from 'vue'
 import { z } from 'zod'
 import { schemas } from '../api/generated/api'
 import { api } from '@/api/client'
-import { getApiBaseUrl } from '../plugins/axios'
 
 type XeroError = z.infer<typeof schemas.XeroError>
+type AppError = z.infer<typeof schemas.AppError>
+type JobDeltaRejection = z.infer<typeof schemas.JobDeltaRejection>
 
 interface DateRange {
   start: string | null
   end: string | null
 }
 
+type ErrorType = 'xero' | 'system' | 'job'
+type ErrorResultMap = {
+  xero: XeroError
+  system: AppError
+  job: JobDeltaRejection
+}
+
+const PAGE_SIZE = 20
+
 export function useErrorApi() {
   const error = ref<string | null>(null)
 
-  async function fetchErrors(
-    type: 'xero' | 'system',
+  async function fetchErrors<T extends ErrorType>(
+    type: T,
     page: number,
-    search: string,
-    range: DateRange,
-  ): Promise<{ results: XeroError[]; pageCount: number }> {
+    _search: string,
+    _range: DateRange,
+  ): Promise<{ results: ErrorResultMap[T][]; pageCount: number }> {
     error.value = null
+    void _search
+    void _range
     try {
       if (type === 'xero') {
         // Use Zodios API for xero errors
@@ -32,7 +44,7 @@ export function useErrorApi() {
             pageCount: response.count
               ? Math.ceil(response.count / (response.results?.length || 50))
               : 0,
-          }
+          } as { results: ErrorResultMap[T][]; pageCount: number }
         } else {
           const response = await api.xero_errors_list()
           return {
@@ -40,28 +52,44 @@ export function useErrorApi() {
             pageCount: response.count
               ? Math.ceil(response.count / (response.results?.length || 50))
               : 0,
-          }
+          } as { results: ErrorResultMap[T][]; pageCount: number }
         }
-      } else {
-        // TODO: System errors endpoint not available in generated API yet
-        // This should be migrated when the system errors endpoint is added to the OpenAPI spec
-        const axios = (await import('axios')).default
-        const params: Record<string, unknown> = { page }
-        if (search.trim()) params.search = search.trim()
-        if (range.start) params.date_from = range.start
-        if (range.end) params.date_to = range.end
-        const base = getApiBaseUrl()
-        const res = await axios.get(`${base}/system-errors/`, { params })
+      }
+
+      if (type === 'system') {
+        const offset = Math.max(page - 1, 0) * PAGE_SIZE
+        const response = await api.rest_app_errors_retrieve({
+          queries: {
+            limit: PAGE_SIZE,
+            offset,
+          },
+        })
         return {
-          results: res.data.results,
-          pageCount: Math.ceil(res.data.count / 50),
-        }
+          results: response.results || [],
+          pageCount: response.count ? Math.ceil(response.count / PAGE_SIZE) : 0,
+        } as { results: ErrorResultMap[T][]; pageCount: number }
+      }
+
+      if (type === 'job') {
+        const offset = Math.max(page - 1, 0) * PAGE_SIZE
+        const response = await api.job_rest_jobs_delta_rejections_retrieve({
+          queries: {
+            limit: PAGE_SIZE,
+            offset,
+          },
+        })
+        return {
+          results: response.results || [],
+          pageCount: response.count ? Math.ceil(response.count / PAGE_SIZE) : 0,
+        } as { results: ErrorResultMap[T][]; pageCount: number }
       }
     } catch (e: unknown) {
       if (e instanceof Error) error.value = e.message
       else error.value = 'Failed to fetch errors.'
-      return { results: [], pageCount: 0 }
+      return { results: [] as ErrorResultMap[T][], pageCount: 0 }
     }
+
+    return { results: [] as ErrorResultMap[T][], pageCount: 0 }
   }
 
   return { fetchErrors, error }

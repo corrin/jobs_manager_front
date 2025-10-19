@@ -1294,6 +1294,29 @@ const PreviewQuoteResponse = z
   })
   .partial()
   .passthrough()
+const JobDeltaRejection = z
+  .object({
+    id: z.string().uuid(),
+    change_id: z.string().uuid().nullable(),
+    reason: z.string(),
+    detail: z.unknown(),
+    checksum: z.string(),
+    request_etag: z.string(),
+    request_ip: z.string().nullable(),
+    created_at: z.string().datetime({ offset: true }),
+    envelope: z.unknown(),
+    staff_id: z.string().uuid().nullable(),
+    staff_email: z.string().nullable(),
+  })
+  .passthrough()
+const JobDeltaRejectionListResponse = z
+  .object({
+    count: z.number().int(),
+    next: z.string().nullish(),
+    previous: z.string().nullish(),
+    results: z.array(JobDeltaRejection),
+  })
+  .passthrough()
 const JobFileThumbnailErrorResponse = z
   .object({
     status: z.string().optional().default('error'),
@@ -1844,6 +1867,14 @@ const PatchedDjangoJob = z
   })
   .partial()
   .passthrough()
+const AppErrorListResponse = z
+  .object({
+    count: z.number().int(),
+    next: z.string().nullish(),
+    previous: z.string().nullish(),
+    results: z.array(AppError),
+  })
+  .passthrough()
 const JobBreakdown = z
   .object({
     job_id: z.string(),
@@ -2213,6 +2244,8 @@ export const schemas = {
   ValidationReport,
   DiffPreview,
   PreviewQuoteResponse,
+  JobDeltaRejection,
+  JobDeltaRejectionListResponse,
   JobFileThumbnailErrorResponse,
   JobFileUploadViewResponse,
   JobStatusChoicesResponse,
@@ -2278,6 +2311,7 @@ export const schemas = {
   DjangoJobExecution,
   DjangoJob,
   PatchedDjangoJob,
+  AppErrorListResponse,
   JobBreakdown,
   StaffDailyData,
   DailyTotals,
@@ -4853,6 +4887,37 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   },
   {
     method: 'get',
+    path: '/job/rest/jobs/delta-rejections/',
+    alias: 'job_rest_jobs_delta_rejections_retrieve',
+    description: `Fetch rejected job delta envelopes for forensic analysis.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Query',
+        schema: z.string().uuid().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'offset',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+    ],
+    response: JobDeltaRejectionListResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/job/rest/jobs/files/',
     alias: 'retrieveJobFilesApi_4',
     description: `Route the request to serve a file or list files for a job.`,
@@ -5798,6 +5863,20 @@ models. No migrations required.`,
       },
     ],
     response: z.void(),
+  },
+  {
+    method: 'get',
+    path: '/rest/app-errors/',
+    alias: 'rest_app_errors_retrieve',
+    description: `REST-style view that exposes AppError telemetry for admin monitoring.
+
+        Supports pagination via 'limit'/'offset' query params and optional filters:
+        - 'app' (icontains match)
+        - 'severity' (exact integer)
+        - 'resolved' (boolean)
+        - 'job_id' / 'user_id' (UUID strings)`,
+    requestFormat: 'json',
+    response: AppErrorListResponse,
   },
   {
     method: 'get',
