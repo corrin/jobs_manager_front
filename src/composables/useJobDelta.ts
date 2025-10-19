@@ -5,6 +5,18 @@ import { computeJobDeltaChecksum } from '@/utils/deltaChecksum'
 
 type JobDeltaEnvelope = z.infer<typeof schemas.JobDeltaEnvelope>
 
+/**
+ * Compute SHA-256 hash of HTML content for telemetry/debugging
+ */
+async function computeHtmlHash(html: unknown): Promise<string> {
+  const text = typeof html === 'string' ? html : JSON.stringify(html)
+  const encoder = new TextEncoder()
+  const data = encoder.encode(text)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 type EnvelopeInput = Partial<JobDeltaEnvelope> & {
   job_id: string
   before: Record<string, unknown>
@@ -56,6 +68,16 @@ export function useJobDeltaQueue(jobId: string) {
   }
 }
 
+/**
+ * Build a Job Delta envelope for sending updates to the server.
+ *
+ * IMPORTANT: The `before` and `after` fields, along with their hashes and checksums,
+ * are included for TELEMETRY and DEBUGGING purposes only. The backend uses ETags
+ * (via If-Match header) for concurrency control, not checksum validation.
+ *
+ * This telemetry data helps debug issues by logging what the frontend believed
+ * the state was when making changes, but it is NOT used to gate updates.
+ */
 export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDeltaEnvelope> {
   const allFields = [...new Set(input.fields)].sort()
 
@@ -71,6 +93,7 @@ export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDe
     throw new Error('No fields changed in delta envelope')
   }
 
+  // Capture before/after for telemetry (not validation)
   const before = changedFields.reduce<Record<string, unknown>>((acc, key) => {
     acc[key] = input.before[key]
     return acc
@@ -87,6 +110,10 @@ export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDe
 
   const before_checksum = await computeJobDeltaChecksum(input.job_id, before, changedFields)
 
+  // Compute telemetry hashes for debugging (not used for validation)
+  const telemetry_before_hash = await computeHtmlHash(before)
+  const telemetry_after_hash = await computeHtmlHash(after)
+
   const envelope: JobDeltaEnvelope = {
     change_id,
     actor_id,
@@ -97,7 +124,10 @@ export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDe
     after,
     before_checksum,
     etag,
-  }
+    // Add telemetry fields as extra properties (backend can log these)
+    telemetry_before_hash,
+    telemetry_after_hash,
+  } as JobDeltaEnvelope
 
   return schemas.JobDeltaEnvelope.parse(envelope)
 }

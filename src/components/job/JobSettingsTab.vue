@@ -962,48 +962,28 @@ const autosave = createJobAutosave({
         return { success: false, error: result.error, conflict: isConcurrencyError }
       }
 
-      // On success, update the original snapshot with the new values
-      // This ensures subsequent saves use the correct "before" values
-      Object.entries(partialPayload).forEach(([k, v]) => {
-        if (originalJobData.value) {
-          ;(originalJobData.value as Record<string, unknown>)[k] = v
-        }
-      })
+      // Verify response identity matches request (guard against stale responses)
+      if (result.data?.data?.job?.id !== props.jobId) {
+        debugLog('Ignoring stale response for different job', {
+          expected: props.jobId,
+          received: result.data?.data?.job?.id,
+        })
+        return { success: false, error: 'Stale response for different job' }
+      }
+
       if (result.success) {
-        // Update local snapshot ONLY for keys sent
-        const apply = (base: Partial<Job>, p: Record<string, unknown>) => {
-          const next = { ...base }
-          if ('name' in p) next.name = p.name as string
-          if ('job_status' in p) next.status = String(p.job_status)
-          if ('pricing_methodology' in p) next.pricing_methodology = p.pricing_methodology as string
-          if ('quoted' in p) next.quoted = !!p.quoted
-          if ('fully_invoiced' in p) next.fully_invoiced = !!p.fully_invoiced
-          if ('paid' in p) next.paid = !!p.paid
-          if ('rejected_flag' in p) next.rejected_flag = !!p.rejected_flag
-          if ('quote_acceptance_date' in p)
-            next.quote_acceptance_date = (p.quote_acceptance_date as string | null) ?? undefined
-          if ('client_id' in p || 'client_name' in p) {
-            const newId =
-              ('client_id' in p ? (p.client_id as string | null) : next.client?.id) ??
-              next.client?.id ??
-              ''
-            const newName =
-              ('client_name' in p ? ((p.client_name as string | null) ?? '') : undefined) ??
-              localJobData.value.client?.name ??
-              next.client?.name ??
-              ''
-            next.client = {
-              id: newId,
-              name: newName,
+        // Update originalJobData from server response (not what we sent)
+        // This is the source of truth and handles any server-side normalization
+        if (result.data?.data?.job) {
+          const serverJob = result.data.data.job
+          Object.keys(partialPayload).forEach((k) => {
+            if (k in serverJob && originalJobData.value) {
+              ;(originalJobData.value as Record<string, unknown>)[k] = (
+                serverJob as Record<string, unknown>
+              )[k]
             }
-          }
-          if ('description' in p) next.description = (p.description as string | null) ?? null
-          if ('delivery_date' in p) next.delivery_date = (p.delivery_date as string | null) ?? null
-          if ('order_number' in p) next.order_number = (p.order_number as string | null) ?? null
-          if ('notes' in p) next.notes = (p.notes as string | null) ?? null
-          return next
+          })
         }
-        originalJobData.value = apply(originalJobData.value, partialPayload)
         // Update ONLY header fields in store
         const headerPatch: Partial<Job> = {}
         if ('name' in partialPayload) headerPatch.name = partialPayload.name as string
