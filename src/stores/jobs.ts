@@ -225,6 +225,50 @@ export const useJobsStore = defineStore('jobs', () => {
     }
   }
 
+  const commitJobBasicInfoFromServer = (jobId: string, payload: Partial<JobBasicInfo>): void => {
+    if (!jobId || !payload) return
+
+    const sanitized: Partial<JobBasicInfo> = {}
+
+    if ('description' in payload) {
+      sanitized.description = payload.description ?? null
+    }
+    if ('delivery_date' in payload) {
+      sanitized.delivery_date = payload.delivery_date ?? null
+    }
+    if ('order_number' in payload) {
+      sanitized.order_number = payload.order_number ?? null
+    }
+    if ('notes' in payload) {
+      sanitized.notes = payload.notes ?? null
+    }
+
+    if (Object.keys(sanitized).length === 0) return
+
+    const existing = basicInfoById.value[jobId]
+    basicInfoById.value = {
+      ...basicInfoById.value,
+      [jobId]: {
+        ...(existing ?? ({} as JobBasicInfo)),
+        ...sanitized,
+      },
+    }
+
+    const detail = detailedJobs.value[jobId]
+    if (detail) {
+      detailedJobs.value = {
+        ...detailedJobs.value,
+        [jobId]: {
+          ...detail,
+          job: {
+            ...detail.job,
+            ...sanitized,
+          },
+        },
+      }
+    }
+  }
+
   const loadBasicInfo = async (jobId: string): Promise<JobBasicInfo | null> => {
     try {
       const data = await api.job_rest_jobs_basic_info_retrieve({
@@ -436,6 +480,7 @@ export const useJobsStore = defineStore('jobs', () => {
 
     setBasicInfo,
     updateBasicInfo,
+    commitJobBasicInfoFromServer,
     loadBasicInfo,
 
     jobToHeader,
