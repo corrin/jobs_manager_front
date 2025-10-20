@@ -15,13 +15,6 @@ const emit = defineEmits<{ 'update:modelValue': [JobErrorFilterState] }>()
 
 const model = useVModel(props, 'modelValue', emit)
 
-const jobIdModel = computed({
-  get: () => model.value.jobId,
-  set: (value: string) => {
-    model.value = { ...model.value, jobId: value }
-  },
-})
-
 const hasFilters = computed(() => !!model.value.jobId.trim())
 
 function resetFilters() {
@@ -35,7 +28,7 @@ function resetFilters() {
       <Label for="job-error-job-id">Job ID</Label>
       <Input
         id="job-error-job-id"
-        v-model="jobIdModel"
+        v-model="model.jobId"
         placeholder="UUID or leave blank for all"
         autocomplete="off"
       />

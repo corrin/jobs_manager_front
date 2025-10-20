@@ -3,13 +3,7 @@
     <div class="p-4 relative space-y-4">
       <ErrorTabs v-model="activeTab" />
       <Alert v-if="fetchError" variant="destructive">{{ fetchError }}</Alert>
-      <ErrorFilter
-        v-if="activeTab === 'xero'"
-        :search="searchTerm"
-        :range="dateRange"
-        @update:search="searchTerm = $event"
-        @update:range="dateRange = $event"
-      />
+      <ErrorFilter v-if="activeTab === 'xero'" v-model="xeroFilter" />
       <SystemErrorFilter v-else-if="activeTab === 'system'" v-model="systemFilter" />
       <JobErrorFilter v-else v-model="jobFilter" />
       <ErrorTable
@@ -37,7 +31,7 @@ import SystemErrorFilter from '@/components/admin/errors/SystemErrorFilter.vue'
 import JobErrorFilter from '@/components/admin/errors/JobErrorFilter.vue'
 import ErrorTable from '@/components/admin/errors/ErrorTable.vue'
 import ErrorDialog from '@/components/admin/errors/ErrorDialog.vue'
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useErrorApi } from '@/composables/useErrorApi'
 import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
@@ -74,18 +68,20 @@ const errors = ref<DisplayErrorRow[]>([])
 const loading = ref(false)
 const page = ref(1)
 const pageCount = ref(1)
-const searchTerm = ref('')
-const dateRange = ref<DateRange>({ start: null, end: null })
 const activeTab = ref<ErrorTab>('xero')
 const selectedError = ref<DisplayErrorRow | null>(null)
-const systemFilter = reactive<SystemErrorFilterState>({
+const xeroFilter = ref({
+  search: '',
+  range: { start: null, end: null } as DateRange,
+})
+const systemFilter = ref<SystemErrorFilterState>({
   app: '',
   severity: '',
   resolved: 'all',
   jobId: '',
   userId: '',
 })
-const jobFilter = reactive<JobErrorFilterState>({
+const jobFilter = ref<JobErrorFilterState>({
   jobId: '',
 })
 
@@ -105,8 +101,8 @@ async function loadErrors() {
     let res
     if (activeTab.value === 'xero') {
       res = await fetchErrors('xero', page.value, {
-        search: searchTerm.value,
-        range: dateRange.value,
+        search: xeroFilter.value.search,
+        range: xeroFilter.value.range,
       })
     } else if (activeTab.value === 'system') {
       res = await fetchErrors('system', page.value, buildSystemFilterPayload())
@@ -182,7 +178,7 @@ watch(
 )
 
 watch(
-  () => [searchTerm.value, dateRange.value.start, dateRange.value.end],
+  xeroFilter,
   () => {
     if (activeTab.value !== 'xero') return
     if (page.value !== 1) {
@@ -191,6 +187,7 @@ watch(
     }
     loadErrors()
   },
+  { deep: true },
 )
 
 watch(
@@ -239,25 +236,25 @@ function extractFieldsFromUnknown(value: unknown): string | null {
 }
 
 function buildSystemFilterPayload() {
-  const severityValue = systemFilter.severity.trim()
+  const severityValue = systemFilter.value.severity.trim()
   const parsedSeverity = severityValue === '' ? undefined : Number.parseInt(severityValue, 10)
   return {
-    app: systemFilter.app.trim() || undefined,
+    app: systemFilter.value.app.trim() || undefined,
     severity: Number.isNaN(parsedSeverity) ? undefined : parsedSeverity,
     resolved:
-      systemFilter.resolved === 'true'
+      systemFilter.value.resolved === 'true'
         ? true
-        : systemFilter.resolved === 'false'
+        : systemFilter.value.resolved === 'false'
           ? false
           : undefined,
-    jobId: systemFilter.jobId.trim() || undefined,
-    userId: systemFilter.userId.trim() || undefined,
+    jobId: systemFilter.value.jobId.trim() || undefined,
+    userId: systemFilter.value.userId.trim() || undefined,
   }
 }
 
 function buildJobFilterPayload() {
   return {
-    jobId: jobFilter.jobId.trim() || undefined,
+    jobId: jobFilter.value.jobId.trim() || undefined,
   }
 }
 </script>

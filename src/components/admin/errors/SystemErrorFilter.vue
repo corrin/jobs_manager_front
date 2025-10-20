@@ -26,41 +26,6 @@ const emit = defineEmits<{ 'update:modelValue': [SystemErrorFilterState] }>()
 
 const model = useVModel(props, 'modelValue', emit)
 
-const appFilter = computed({
-  get: () => model.value.app,
-  set: (value: string) => {
-    model.value = { ...model.value, app: value }
-  },
-})
-
-const severityFilter = computed({
-  get: () => model.value.severity,
-  set: (value: string) => {
-    model.value = { ...model.value, severity: value }
-  },
-})
-
-const resolvedFilter = computed<'all' | 'true' | 'false'>({
-  get: () => model.value.resolved,
-  set: (value) => {
-    model.value = { ...model.value, resolved: value }
-  },
-})
-
-const jobFilter = computed({
-  get: () => model.value.jobId,
-  set: (value: string) => {
-    model.value = { ...model.value, jobId: value }
-  },
-})
-
-const userFilter = computed({
-  get: () => model.value.userId,
-  set: (value: string) => {
-    model.value = { ...model.value, userId: value }
-  },
-})
-
 const hasActiveFilters = computed(() => {
   const value = model.value
   return (
@@ -83,7 +48,7 @@ function resetFilters() {
       <Label for="system-error-app">Search</Label>
       <Input
         id="system-error-app"
-        v-model="appFilter"
+        v-model="model.app"
         placeholder="App contains..."
         autocomplete="off"
       />
@@ -92,7 +57,7 @@ function resetFilters() {
       <Label for="system-error-severity">Severity</Label>
       <Input
         id="system-error-severity"
-        v-model="severityFilter"
+        v-model="model.severity"
         type="number"
         min="0"
         step="1"
@@ -101,7 +66,7 @@ function resetFilters() {
     </div>
     <div class="flex flex-col gap-2">
       <Label for="system-error-resolved">Resolved</Label>
-      <Select v-model="resolvedFilter">
+      <Select v-model="model.resolved">
         <SelectTrigger id="system-error-resolved">
           <SelectValue placeholder="All statuses" />
         </SelectTrigger>
@@ -114,13 +79,18 @@ function resetFilters() {
     </div>
     <div class="flex flex-col gap-2">
       <Label for="system-error-job">Job ID</Label>
-      <Input id="system-error-job" v-model="jobFilter" placeholder="Job UUID" autocomplete="off" />
+      <Input
+        id="system-error-job"
+        v-model="model.jobId"
+        placeholder="Job UUID"
+        autocomplete="off"
+      />
     </div>
     <div class="flex flex-col gap-2">
       <Label for="system-error-user">User ID</Label>
       <Input
         id="system-error-user"
-        v-model="userFilter"
+        v-model="model.userId"
         placeholder="User UUID"
         autocomplete="off"
       />
