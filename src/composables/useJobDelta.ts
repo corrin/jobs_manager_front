@@ -5,6 +5,33 @@ import { computeJobDeltaChecksum } from '@/utils/deltaChecksum'
 
 type JobDeltaEnvelope = z.infer<typeof schemas.JobDeltaEnvelope>
 
+/**
+ * Compute SHA-256 hash of HTML/content for telemetry/debugging purposes.
+ * Falls back to a simple hash when Web Crypto is unavailable (e.g. during SSR/tests).
+ */
+async function computeHtmlHash(html: unknown): Promise<string> {
+  const text = typeof html === 'string' ? html : JSON.stringify(html ?? null)
+
+  if (typeof crypto !== 'undefined' && typeof crypto.subtle !== 'undefined') {
+    try {
+      const encoder = new TextEncoder()
+      const data = encoder.encode(text)
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+    } catch {
+      // Fall through to non-crypto fallback
+    }
+  }
+
+  let hash = 0
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash << 5) - hash + text.charCodeAt(i)
+    hash |= 0
+  }
+  return `fallback-${(hash >>> 0).toString(16)}`
+}
+
 type EnvelopeInput = Partial<JobDeltaEnvelope> & {
   job_id: string
   before: Record<string, unknown>
@@ -56,6 +83,10 @@ export function useJobDeltaQueue(jobId: string) {
   }
 }
 
+/**
+ * Build a Job Delta envelope for sending updates to the server.
+ * The telemetry hashes help diagnose checksum mismatches but are ignored by the backend.
+ */
 export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDeltaEnvelope> {
   const allFields = [...new Set(input.fields)].sort()
 
@@ -86,8 +117,10 @@ export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDe
   const etag = input.etag ?? null
 
   const before_checksum = await computeJobDeltaChecksum(input.job_id, before, changedFields)
+  const telemetry_before_hash = await computeHtmlHash(before)
+  const telemetry_after_hash = await computeHtmlHash(after)
 
-  const envelope: JobDeltaEnvelope = {
+  const envelope: Record<string, unknown> = {
     change_id,
     actor_id,
     made_at,
@@ -97,7 +130,9 @@ export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDe
     after,
     before_checksum,
     etag,
+    telemetry_before_hash,
+    telemetry_after_hash,
   }
 
-  return schemas.JobDeltaEnvelope.parse(envelope)
+  return schemas.JobDeltaEnvelope.parse(envelope) as JobDeltaEnvelope
 }

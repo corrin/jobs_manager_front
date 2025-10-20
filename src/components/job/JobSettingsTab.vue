@@ -973,6 +973,14 @@ const autosave = createJobAutosave({
         const touchedKeys = Object.keys(partialPayload)
         const serverJobDetail = result.data?.data?.job
 
+        if (serverJobDetail?.id && serverJobDetail.id !== props.jobId) {
+          debugLog('Ignoring stale response for different job', {
+            expected: props.jobId,
+            received: serverJobDetail.id,
+          })
+          return { success: false, error: 'Stale response for different job' }
+        }
+
         const applyPayloadToBaseline = (base: Partial<Job>, payload: Record<string, unknown>) => {
           const next = { ...base }
           if ('name' in payload) next.name = payload.name as string
