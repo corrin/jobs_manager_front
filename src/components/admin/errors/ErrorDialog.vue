@@ -42,6 +42,8 @@ const recordMeta = computed(() => {
 
   const { record } = raw
   return [
+    { label: 'Job Name', value: record.job_name ?? '-' },
+    { label: 'Job ID', value: record.job_id ?? '-' },
     { label: 'Change ID', value: record.change_id ?? '-' },
     { label: 'Checksum', value: record.checksum },
     { label: 'Request ETag', value: record.request_etag },
@@ -73,7 +75,7 @@ const errorTypeLabel = computed(() => {
 
 <template>
   <Dialog :open="!!props.error" @update:open="emit('close')">
-    <DialogContent class="w-full max-w-[min(90vw,80rem)] max-h-[85vh] space-y-4 overflow-y-auto">
+    <DialogContent class="w-full !max-w-[min(90vw,80rem)] max-h-[85vh] space-y-4 overflow-y-auto">
       <DialogHeader>
         <DialogTitle>{{ errorTypeLabel || 'Error Details' }}</DialogTitle>
       </DialogHeader>

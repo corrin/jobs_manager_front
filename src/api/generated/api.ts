@@ -1167,6 +1167,31 @@ const JobCostSummaryResponse = z
     actual: JobCostSetSummary.nullable(),
   })
   .passthrough()
+const JobDeltaRejection = z
+  .object({
+    id: z.string().uuid(),
+    change_id: z.string().uuid().nullable(),
+    job_id: z.string().uuid().nullable(),
+    job_name: z.string().nullable(),
+    reason: z.string(),
+    detail: z.unknown(),
+    checksum: z.string(),
+    request_etag: z.string(),
+    request_ip: z.string().nullable(),
+    created_at: z.string().datetime({ offset: true }),
+    envelope: z.unknown(),
+    staff_id: z.string().uuid().nullable(),
+    staff_email: z.string().nullable(),
+  })
+  .passthrough()
+const JobDeltaRejectionListResponse = z
+  .object({
+    count: z.number().int(),
+    next: z.string().nullish(),
+    previous: z.string().nullish(),
+    results: z.array(JobDeltaRejection),
+  })
+  .passthrough()
 const JobEventsResponse = z.object({ events: z.array(JobEvent) }).passthrough()
 const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
 const JobEventCreateResponse = z.object({ success: z.boolean(), event: JobEvent }).passthrough()
@@ -1293,29 +1318,6 @@ const PreviewQuoteResponse = z
     diff_preview: DiffPreview.nullable(),
   })
   .partial()
-  .passthrough()
-const JobDeltaRejection = z
-  .object({
-    id: z.string().uuid(),
-    change_id: z.string().uuid().nullable(),
-    reason: z.string(),
-    detail: z.unknown(),
-    checksum: z.string(),
-    request_etag: z.string(),
-    request_ip: z.string().nullable(),
-    created_at: z.string().datetime({ offset: true }),
-    envelope: z.unknown(),
-    staff_id: z.string().uuid().nullable(),
-    staff_email: z.string().nullable(),
-  })
-  .passthrough()
-const JobDeltaRejectionListResponse = z
-  .object({
-    count: z.number().int(),
-    next: z.string().nullish(),
-    previous: z.string().nullish(),
-    results: z.array(JobDeltaRejection),
-  })
   .passthrough()
 const JobFileThumbnailErrorResponse = z
   .object({
@@ -2226,6 +2228,8 @@ export const schemas = {
   QuoteRevisionResponse,
   JobCostSetSummary,
   JobCostSummaryResponse,
+  JobDeltaRejection,
+  JobDeltaRejectionListResponse,
   JobEventsResponse,
   JobEventCreateRequest,
   JobEventCreateResponse,
@@ -2244,8 +2248,6 @@ export const schemas = {
   ValidationReport,
   DiffPreview,
   PreviewQuoteResponse,
-  JobDeltaRejection,
-  JobDeltaRejectionListResponse,
   JobFileThumbnailErrorResponse,
   JobFileUploadViewResponse,
   JobStatusChoicesResponse,
@@ -4666,6 +4668,37 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   },
   {
     method: 'get',
+    path: '/job/rest/jobs/:job_id/delta-rejections/',
+    alias: 'job_rest_job_delta_rejections_list',
+    description: `Fetch delta rejections recorded for this job.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'offset',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+    ],
+    response: JobDeltaRejectionListResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/job/rest/jobs/:job_id/events/',
     alias: 'job_rest_jobs_events_retrieve',
     description: `Fetch job events list. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
@@ -4888,8 +4921,8 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   {
     method: 'get',
     path: '/job/rest/jobs/delta-rejections/',
-    alias: 'job_rest_jobs_delta_rejections_retrieve',
-    description: `Fetch rejected job delta envelopes for forensic analysis.`,
+    alias: 'job_rest_jobs_delta_rejections_admin_list',
+    description: `Fetch rejected job delta envelopes (global admin view).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -5870,11 +5903,11 @@ models. No migrations required.`,
     alias: 'rest_app_errors_retrieve',
     description: `REST-style view that exposes AppError telemetry for admin monitoring.
 
-        Supports pagination via 'limit'/'offset' query params and optional filters:
-        - 'app' (icontains match)
-        - 'severity' (exact integer)
-        - 'resolved' (boolean)
-        - 'job_id' / 'user_id' (UUID strings)`,
+Supports pagination via &#x60;&#x60;limit&#x60;&#x60;/&#x60;&#x60;offset&#x60;&#x60; query params and optional filters:
+- &#x60;&#x60;app&#x60;&#x60; (icontains match)
+- &#x60;&#x60;severity&#x60;&#x60; (exact integer)
+- &#x60;&#x60;resolved&#x60;&#x60; (boolean)
+- &#x60;&#x60;job_id&#x60;&#x60; / &#x60;&#x60;user_id&#x60;&#x60; (UUID strings)`,
     requestFormat: 'json',
     response: AppErrorListResponse,
   },

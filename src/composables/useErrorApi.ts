@@ -19,6 +19,29 @@ type ErrorResultMap = {
   job: JobDeltaRejection
 }
 
+type XeroErrorFilters = {
+  search?: string
+  range?: DateRange
+}
+
+type SystemErrorFilters = {
+  app?: string
+  severity?: number
+  resolved?: boolean
+  jobId?: string
+  userId?: string
+}
+
+type JobErrorFilters = {
+  jobId?: string
+}
+
+type ErrorFilterMap = {
+  xero: XeroErrorFilters
+  system: SystemErrorFilters
+  job: JobErrorFilters
+}
+
 const PAGE_SIZE = 20
 
 export function useErrorApi() {
@@ -27,12 +50,9 @@ export function useErrorApi() {
   async function fetchErrors<T extends ErrorType>(
     type: T,
     page: number,
-    _search: string,
-    _range: DateRange,
+    filters: ErrorFilterMap[T],
   ): Promise<{ results: ErrorResultMap[T][]; pageCount: number }> {
     error.value = null
-    void _search
-    void _range
     try {
       if (type === 'xero') {
         // Use Zodios API for xero errors
@@ -58,11 +78,22 @@ export function useErrorApi() {
 
       if (type === 'system') {
         const offset = Math.max(page - 1, 0) * PAGE_SIZE
+        const queries: Record<string, unknown> = {
+          limit: PAGE_SIZE,
+          offset,
+        }
+        if (filters.app) queries.app = filters.app
+        if (typeof filters.severity === 'number' && Number.isFinite(filters.severity)) {
+          queries.severity = filters.severity
+        }
+        if (typeof filters.resolved === 'boolean') {
+          queries.resolved = filters.resolved
+        }
+        if (filters.jobId) queries.job_id = filters.jobId
+        if (filters.userId) queries.user_id = filters.userId
+
         const response = await api.rest_app_errors_retrieve({
-          queries: {
-            limit: PAGE_SIZE,
-            offset,
-          },
+          queries,
         })
         return {
           results: response.results || [],
@@ -72,11 +103,16 @@ export function useErrorApi() {
 
       if (type === 'job') {
         const offset = Math.max(page - 1, 0) * PAGE_SIZE
-        const response = await api.job_rest_jobs_delta_rejections_retrieve({
-          queries: {
-            limit: PAGE_SIZE,
-            offset,
-          },
+        const queries: Record<string, unknown> = {
+          limit: PAGE_SIZE,
+          offset,
+        }
+        if (filters.jobId) {
+          queries.job_id = filters.jobId
+        }
+
+        const response = await api.job_rest_jobs_delta_rejections_admin_list({
+          queries,
         })
         return {
           results: response.results || [],

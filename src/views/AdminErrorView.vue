@@ -10,6 +10,8 @@
         @update:search="searchTerm = $event"
         @update:range="dateRange = $event"
       />
+      <SystemErrorFilter v-else-if="activeTab === 'system'" v-model="systemFilter" />
+      <JobErrorFilter v-else v-model="jobFilter" />
       <ErrorTable
         :headers="tableHeaders"
         :rows="errors"
@@ -31,12 +33,15 @@ import Progress from '@/components/ui/progress/Progress.vue'
 import { Alert } from '@/components/ui/alert'
 import ErrorTabs from '@/components/admin/errors/ErrorTabs.vue'
 import ErrorFilter from '@/components/admin/errors/ErrorFilter.vue'
+import SystemErrorFilter from '@/components/admin/errors/SystemErrorFilter.vue'
+import JobErrorFilter from '@/components/admin/errors/JobErrorFilter.vue'
 import ErrorTable from '@/components/admin/errors/ErrorTable.vue'
 import ErrorDialog from '@/components/admin/errors/ErrorDialog.vue'
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useErrorApi } from '@/composables/useErrorApi'
 import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
+import type { SystemErrorFilterState, JobErrorFilterState } from '@/types/errorFilters'
 
 // Use generated types from Zodios API
 type XeroError = z.infer<typeof schemas.XeroError>
@@ -73,13 +78,23 @@ const searchTerm = ref('')
 const dateRange = ref<DateRange>({ start: null, end: null })
 const activeTab = ref<ErrorTab>('xero')
 const selectedError = ref<DisplayErrorRow | null>(null)
+const systemFilter = reactive<SystemErrorFilterState>({
+  app: '',
+  severity: '',
+  resolved: 'all',
+  jobId: '',
+  userId: '',
+})
+const jobFilter = reactive<JobErrorFilterState>({
+  jobId: '',
+})
 
 const tableHeaders = computed(() => {
   if (activeTab.value === 'system') {
     return ['Timestamp', 'Message', 'App / Job', 'Severity']
   }
   if (activeTab.value === 'job') {
-    return ['Captured', 'Reason', 'Source', 'Change']
+    return ['Captured', 'Reason', 'Job', 'Fields']
   }
   return ['Date', 'Message', 'Entity', 'Severity']
 })
@@ -87,7 +102,17 @@ const tableHeaders = computed(() => {
 async function loadErrors() {
   loading.value = true
   try {
-    const res = await fetchErrors(activeTab.value, page.value, searchTerm.value, dateRange.value)
+    let res
+    if (activeTab.value === 'xero') {
+      res = await fetchErrors('xero', page.value, {
+        search: searchTerm.value,
+        range: dateRange.value,
+      })
+    } else if (activeTab.value === 'system') {
+      res = await fetchErrors('system', page.value, buildSystemFilterPayload())
+    } else {
+      res = await fetchErrors('job', page.value, buildJobFilterPayload())
+    }
     errors.value = mapResultsToRows(activeTab.value, res.results)
     pageCount.value = Math.max(res.pageCount, 1)
   } finally {
@@ -123,8 +148,8 @@ function mapResultsToRows(type: ErrorTab, rows: XeroError[] | AppError[] | JobDe
     id: row.id,
     occurredAt: row.created_at,
     message: row.reason,
-    entity: row.staff_email ?? row.staff_id ?? row.request_ip ?? '-',
-    severity: row.change_id ?? row.request_etag ?? row.checksum,
+    entity: row.job_name ?? row.job_id ?? row.staff_email ?? '-',
+    severity: extractProblemFields(row),
     raw: { type: 'job', record: row },
   }))
 }
@@ -136,14 +161,105 @@ function closeErrorDialog() {
   selectedError.value = null
 }
 
-watch([searchTerm, dateRange, activeTab], () => {
-  page.value = 1
-  errors.value = []
-  selectedError.value = null
-})
-watch([page, searchTerm, dateRange, activeTab], loadErrors, { deep: true })
+watch(
+  () => activeTab.value,
+  () => {
+    errors.value = []
+    selectedError.value = null
+    if (page.value !== 1) {
+      page.value = 1
+      return
+    }
+    loadErrors()
+  },
+)
+
+watch(
+  () => page.value,
+  () => {
+    loadErrors()
+  },
+)
+
+watch(
+  () => [searchTerm.value, dateRange.value.start, dateRange.value.end],
+  () => {
+    if (activeTab.value !== 'xero') return
+    if (page.value !== 1) {
+      page.value = 1
+      return
+    }
+    loadErrors()
+  },
+)
+
+watch(
+  systemFilter,
+  () => {
+    if (activeTab.value !== 'system') return
+    if (page.value !== 1) {
+      page.value = 1
+      return
+    }
+    loadErrors()
+  },
+  { deep: true },
+)
+
+watch(
+  jobFilter,
+  () => {
+    if (activeTab.value !== 'job') return
+    if (page.value !== 1) {
+      page.value = 1
+      return
+    }
+    loadErrors()
+  },
+  { deep: true },
+)
 
 onMounted(() => loadErrors())
+
+function extractProblemFields(row: JobDeltaRejection): string {
+  const fromDetail = extractFieldsFromUnknown(row.detail)
+  if (fromDetail) return fromDetail
+  const fromEnvelope = extractFieldsFromUnknown(row.envelope)
+  if (fromEnvelope) return fromEnvelope
+  return row.change_id ?? row.request_etag ?? row.checksum ?? '-'
+}
+
+function extractFieldsFromUnknown(value: unknown): string | null {
+  if (!value || typeof value !== 'object') return null
+  const fields = (value as { fields?: unknown }).fields
+  if (Array.isArray(fields) && fields.length > 0) {
+    return fields.map((field) => String(field)).join(', ')
+  }
+  return null
+}
+
+function buildSystemFilterPayload() {
+  const severityValue = systemFilter.severity.trim()
+  const parsedSeverity = severityValue === '' ? undefined : Number.parseInt(severityValue, 10)
+  return {
+    app: systemFilter.app.trim() || undefined,
+    severity: Number.isNaN(parsedSeverity) ? undefined : parsedSeverity,
+    resolved:
+      systemFilter.resolved === 'true'
+        ? true
+        : systemFilter.resolved === 'false'
+          ? false
+          : undefined,
+    jobId: systemFilter.jobId.trim() || undefined,
+    userId: systemFilter.userId.trim() || undefined,
+  }
+}
+
+function buildJobFilterPayload() {
+  return {
+    jobId: jobFilter.jobId.trim() || undefined,
+  }
+}
 </script>
 
 <style scoped></style>
