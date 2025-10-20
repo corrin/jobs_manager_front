@@ -102,6 +102,7 @@ export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDe
     throw new Error('No fields changed in delta envelope')
   }
 
+  // Capture before/after for telemetry (not validation)
   const before = changedFields.reduce<Record<string, unknown>>((acc, key) => {
     acc[key] = input.before[key]
     return acc
