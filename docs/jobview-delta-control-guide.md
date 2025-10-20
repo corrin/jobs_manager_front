@@ -227,8 +227,16 @@ Every PATCH/POST that mutates a job must send a JSON payload in the following sh
    - Surface a timeline view highlighting undoable events.
    - Disable undo when the backend responds with conflict (e.g., later changes exist).
 6. **QA & Release**
-   - Follow the manual validation checklist: multi-tab editing, stale window retry, high-frequency edits, undo happy path, undo conflicts, and offline/online recovery.
-   - Confirm that legacy payloads (missing the envelope) receive an immediate HTTP 400, signalling to upgrade any remaining integrations.
+
+- Follow the manual validation checklist: multi-tab editing, stale window retry, high-frequency edits, undo happy path, undo conflicts, and offline/online recovery.
+- Confirm that legacy payloads (missing the envelope) receive an immediate HTTP 400, signalling to upgrade any remaining integrations.
+
+### Manual QA Checklist – Job Settings Autosave
+
+1. Open a job in Job Settings, edit the description, wait for the save toast, and confirm the server snapshot reflects the new text after a full refresh.
+2. Immediately after saving the description, change the order number and then the internal notes within two seconds; verify that each PATCH succeeds without checksum conflicts and the values persist after reloading the job.
+3. Trigger a concurrency conflict (e.g., update notes in another browser), observe the reload banner, review the refreshed state, and use the Retry button to resubmit the original change.
+4. Confirm that rich-text notes preserve markup round-trips (bold/italic) after the autosave completes and the page is reloaded.
 
 ## Coordination Notes
 

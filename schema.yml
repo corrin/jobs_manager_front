@@ -3424,6 +3424,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobRestErrorResponse'
           description: ''
+  /job/rest/jobs/{job_id}/delta-rejections/:
+    get:
+      operationId: job_rest_job_delta_rejections_list
+      description: Fetch delta rejections recorded for this job.
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Maximum number of records to return (default 50, max 200).
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          description: Offset for pagination (default 0).
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobDeltaRejectionListResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
   /job/rest/jobs/{job_id}/events/:
     get:
       operationId: job_rest_jobs_events_retrieve
@@ -3899,6 +3938,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PreviewQuoteResponse'
+          description: ''
+  /job/rest/jobs/delta-rejections/:
+    get:
+      operationId: job_rest_jobs_delta_rejections_admin_list
+      description: Fetch rejected job delta envelopes (global admin view).
+      parameters:
+        - in: query
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          description: Optional job UUID filter.
+        - in: query
+          name: limit
+          schema:
+            type: integer
+          description: Maximum number of records to return (default 50, max 200).
+        - in: query
+          name: offset
+          schema:
+            type: integer
+          description: Offset for pagination (default 0).
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobDeltaRejectionListResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
           description: ''
   /job/rest/jobs/files/:
     get:
@@ -5498,6 +5576,29 @@ paths:
       responses:
         '204':
           description: No response body
+  /rest/app-errors/:
+    get:
+      operationId: rest_app_errors_retrieve
+      description: |-
+        REST-style view that exposes AppError telemetry for admin monitoring.
+
+        Supports pagination via ``limit``/``offset`` query params and optional filters:
+        - ``app`` (icontains match)
+        - ``severity`` (exact integer)
+        - ``resolved`` (boolean)
+        - ``job_id`` / ``user_id`` (UUID strings)
+      tags:
+        - rest
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppErrorListResponse'
+          description: ''
   /timesheets/api/daily/:
     get:
       operationId: getDailyTimesheetSummaryByDate
@@ -6139,6 +6240,25 @@ components:
         - id
         - message
         - timestamp
+    AppErrorListResponse:
+      type: object
+      description: Serializer for paginated AppError list response.
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppError'
+      required:
+        - count
+        - results
     ApplyQuoteResponse:
       type: object
       description: Serializer for apply quote response.
@@ -8204,6 +8324,81 @@ components:
         - before_checksum
         - change_id
         - fields
+    JobDeltaRejection:
+      type: object
+      description: Serializer for delta rejection records (read-only).
+      properties:
+        id:
+          type: string
+          format: uuid
+        change_id:
+          type: string
+          format: uuid
+          nullable: true
+        job_id:
+          type: string
+          format: uuid
+          nullable: true
+        job_name:
+          type: string
+          nullable: true
+          readOnly: true
+        reason:
+          type: string
+        detail:
+          readOnly: true
+        checksum:
+          type: string
+        request_etag:
+          type: string
+        request_ip:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        envelope: {}
+        staff_id:
+          type: string
+          format: uuid
+          nullable: true
+        staff_email:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+        - change_id
+        - checksum
+        - created_at
+        - detail
+        - envelope
+        - id
+        - job_id
+        - job_name
+        - reason
+        - request_etag
+        - request_ip
+        - staff_email
+        - staff_id
+    JobDeltaRejectionListResponse:
+      type: object
+      description: Serializer for paginated delta rejection responses.
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobDeltaRejection'
+      required:
+        - count
+        - results
     JobDetailResponse:
       type: object
       description: Serializer for job detail response.

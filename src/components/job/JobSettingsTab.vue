@@ -351,10 +351,10 @@ async function loadBasicInfo() {
       localJobData.value = { ...localJobData.value }
 
       // Update original snapshot for diff
-      originalJobData.value.description = normalizeNullable(localJobData.value.description)
-      originalJobData.value.delivery_date = normalizeNullable(localJobData.value.delivery_date)
-      originalJobData.value.order_number = normalizeNullable(localJobData.value.order_number)
-      originalJobData.value.notes = normalizeNullable(localJobData.value.notes)
+      serverBaseline.value.description = normalizeNullable(localJobData.value.description)
+      serverBaseline.value.delivery_date = normalizeNullable(localJobData.value.delivery_date)
+      serverBaseline.value.order_number = normalizeNullable(localJobData.value.order_number)
+      serverBaseline.value.notes = normalizeNullable(localJobData.value.notes)
     }
 
     // Also update the detailed job in store if it exists
@@ -380,7 +380,7 @@ async function loadBasicInfo() {
 }
 
 const localJobData = ref<Partial<Job>>({})
-const originalJobData = ref<Partial<Job>>({}) // Original data snapshot
+const serverBaseline = ref<Partial<Job>>({}) // Last server-confirmed snapshot
 const errorMessages = ref<string[]>([])
 
 // Data readiness check for autosave
@@ -478,11 +478,6 @@ const handleFieldInput = (field: string, value: string) => {
     localJobData.value.notes = newValue
   }
 
-  // Update store for persistence
-  if (props.jobId) {
-    jobsStore.updateBasicInfo(props.jobId, { [field]: newValue })
-  }
-
   // Queue autosave change
   if (!isInitializing.value) {
     autosave.queueChange(field, newValue)
@@ -516,7 +511,7 @@ watch(
       }
 
       localJobData.value = { ...defaultJobData }
-      originalJobData.value = { ...defaultJobData }
+      serverBaseline.value = { ...defaultJobData }
       contactDisplayValue.value = ''
       return
     }
@@ -548,7 +543,7 @@ watch(
     }
 
     // Keep original snapshot with current state (including separated client/contact fields for delta)
-    originalJobData.value = {
+    serverBaseline.value = {
       ...localJobData.value,
       description: normalizeNullable(localJobData.value.description),
       delivery_date: normalizeNullable(localJobData.value.delivery_date),
@@ -651,16 +646,20 @@ watch(
       }
     }
 
-    // Sync original snapshot for post-hydration diff|readiness barrier
-    if (!isHydratingBasicInfo.value) {
-      originalJobData.value.description = normalizeNullable(localJobData.value?.description)
-      originalJobData.value.delivery_date = normalizeNullable(localJobData.value?.delivery_date)
-      originalJobData.value.order_number = normalizeNullable(localJobData.value?.order_number)
-      originalJobData.value.notes = normalizeNullable(localJobData.value?.notes)
-      // Include separated fields for delta consistency (only id fields, not name)
-      originalJobData.value.client_id = localJobData.value?.client?.id ?? null
-      originalJobData.value.contact_id = localJobData.value?.contact_id ?? null
-      originalJobData.value.contact_name = localJobData.value?.contact_name ?? null
+    // Sync server baseline from latest store payload once hydration is complete
+    if (!isHydratingBasicInfo.value && newBasicInfo) {
+      if (newBasicInfo.description !== undefined) {
+        serverBaseline.value.description = normalizeNullable(newBasicInfo.description ?? null)
+      }
+      if (newBasicInfo.delivery_date !== undefined) {
+        serverBaseline.value.delivery_date = normalizeNullable(newBasicInfo.delivery_date ?? null)
+      }
+      if (newBasicInfo.order_number !== undefined) {
+        serverBaseline.value.order_number = normalizeNullable(newBasicInfo.order_number ?? null)
+      }
+      if (newBasicInfo.notes !== undefined) {
+        serverBaseline.value.notes = normalizeNullable(newBasicInfo.notes ?? null)
+      }
     }
   },
   { immediate: true, deep: true },
@@ -684,15 +683,23 @@ watch(
         localJobData.value.order_number = basicInfo.order_number || ''
       if (basicInfo.notes !== undefined) localJobData.value.notes = basicInfo.notes || ''
 
-      // Align original snapshot with server data
-      originalJobData.value.description = normalizeNullable(localJobData.value.description)
-      originalJobData.value.delivery_date = normalizeNullable(localJobData.value.delivery_date)
-      originalJobData.value.order_number = normalizeNullable(localJobData.value.order_number)
-      originalJobData.value.notes = normalizeNullable(localJobData.value.notes)
+      // Align server baseline with authoritative payload
+      if (basicInfo.description !== undefined) {
+        serverBaseline.value.description = normalizeNullable(basicInfo.description ?? null)
+      }
+      if (basicInfo.delivery_date !== undefined) {
+        serverBaseline.value.delivery_date = normalizeNullable(basicInfo.delivery_date ?? null)
+      }
+      if (basicInfo.order_number !== undefined) {
+        serverBaseline.value.order_number = normalizeNullable(basicInfo.order_number ?? null)
+      }
+      if (basicInfo.notes !== undefined) {
+        serverBaseline.value.notes = normalizeNullable(basicInfo.notes ?? null)
+      }
       // Include separated fields for delta consistency (only id fields, not name)
-      originalJobData.value.client_id = localJobData.value.client?.id ?? null
-      originalJobData.value.contact_id = localJobData.value.contact_id ?? null
-      originalJobData.value.contact_name = localJobData.value.contact_name ?? null
+      serverBaseline.value.client_id = localJobData.value.client?.id ?? null
+      serverBaseline.value.contact_id = localJobData.value.contact_id ?? null
+      serverBaseline.value.contact_name = localJobData.value.contact_name ?? null
 
       // Trigger reactivity
       localJobData.value = { ...localJobData.value }
@@ -890,7 +897,7 @@ const autosave = createJobAutosave({
   canSave: () => dataReady.value, // Sync original snapshot for post-hydration diff|readiness barrier
   getSnapshot: () => {
     // Returns original snapshot, not current data
-    const data = originalJobData.value || {}
+    const data = serverBaseline.value || {}
     return {
       id: data.id,
       job_number: data.job_number,
@@ -950,7 +957,7 @@ const autosave = createJobAutosave({
       const result = await jobService.updateJobHeaderPartial(
         props.jobId,
         partialPayload,
-        originalJobData.value,
+        serverBaseline.value,
       )
       if (!result.success) {
         // Detect concurrency by robust regex (no auto-retry)
@@ -962,96 +969,274 @@ const autosave = createJobAutosave({
         return { success: false, error: result.error, conflict: isConcurrencyError }
       }
 
-      // Verify response identity matches request (guard against stale responses)
-      if (result.data?.data?.job?.id !== props.jobId) {
-        debugLog('Ignoring stale response for different job', {
-          expected: props.jobId,
-          received: result.data?.data?.job?.id,
-        })
-        return { success: false, error: 'Stale response for different job' }
-      }
-
       if (result.success) {
-        // Update originalJobData from server response (not what we sent)
-        // This is the source of truth and handles any server-side normalization
-        if (result.data?.data?.job) {
-          const serverJob = result.data.data.job
-          Object.keys(partialPayload).forEach((k) => {
-            if (k in serverJob && originalJobData.value) {
-              ;(originalJobData.value as Record<string, unknown>)[k] = (
-                serverJob as Record<string, unknown>
-              )[k]
-            }
+        const touchedKeys = Object.keys(partialPayload)
+        const serverJobDetail = result.data?.data?.job
+
+        if (serverJobDetail?.id && serverJobDetail.id !== props.jobId) {
+          debugLog('Ignoring stale response for different job', {
+            expected: props.jobId,
+            received: serverJobDetail.id,
           })
+          return { success: false, error: 'Stale response for different job' }
         }
-        // Update ONLY header fields in store
-        const headerPatch: Partial<Job> = {}
-        if ('name' in partialPayload) headerPatch.name = partialPayload.name as string
-        if ('job_status' in partialPayload) headerPatch.status = String(partialPayload.job_status)
-        if ('pricing_methodology' in partialPayload)
-          headerPatch.pricing_methodology = partialPayload.pricing_methodology as string
-        if ('quoted' in partialPayload) headerPatch.quoted = !!partialPayload.quoted
-        if ('fully_invoiced' in partialPayload)
-          headerPatch.fully_invoiced = !!partialPayload.fully_invoiced
-        if ('paid' in partialPayload) headerPatch.paid = !!partialPayload.paid
-        if ('quote_acceptance_date' in partialPayload)
-          headerPatch.quote_acceptance_date =
-            (partialPayload.quote_acceptance_date as string | null) ?? undefined
-        if ('client_id' in partialPayload || 'client_name' in partialPayload) {
-          headerPatch.client = {
-            id: (partialPayload.client_id as string | null) ?? jobHeader.value?.client?.id ?? '',
-            name:
-              (partialPayload.client_name as string | null) ??
+
+        const applyPayloadToBaseline = (base: Partial<Job>, payload: Record<string, unknown>) => {
+          const next = { ...base }
+          if ('name' in payload) next.name = payload.name as string
+          if ('job_status' in payload) next.status = String(payload.job_status)
+          if ('pricing_methodology' in payload)
+            next.pricing_methodology = payload.pricing_methodology as string
+          if ('quoted' in payload) next.quoted = !!payload.quoted
+          if ('fully_invoiced' in payload) next.fully_invoiced = !!payload.fully_invoiced
+          if ('paid' in payload) next.paid = !!payload.paid
+          if ('rejected_flag' in payload) next.rejected_flag = !!payload.rejected_flag
+          if ('quote_acceptance_date' in payload) {
+            next.quote_acceptance_date =
+              (payload.quote_acceptance_date as string | null) ?? undefined
+          }
+          if ('client_id' in payload || 'client_name' in payload) {
+            const newId =
+              ('client_id' in payload ? (payload.client_id as string | null) : next.client?.id) ??
+              next.client?.id ??
+              ''
+            const newName =
+              ('client_name' in payload
+                ? ((payload.client_name as string | null) ?? '')
+                : undefined) ??
               localJobData.value.client?.name ??
-              '',
+              next.client?.name ??
+              ''
+            next.client = {
+              id: newId,
+              name: newName,
+            }
           }
-        }
-        if (Object.keys(headerPatch).length && props.jobId) {
-          jobsStore.patchHeader(props.jobId, headerPatch)
+          if ('description' in payload)
+            next.description = (payload.description as string | null) ?? null
+          if ('delivery_date' in payload)
+            next.delivery_date = (payload.delivery_date as string | null) ?? null
+          if ('order_number' in payload)
+            next.order_number = (payload.order_number as string | null) ?? null
+          if ('notes' in payload) next.notes = (payload.notes as string | null) ?? null
+          return next
         }
 
-        // Update basic infos in store with local values
+        const nextBaseline = applyPayloadToBaseline(serverBaseline.value, partialPayload)
+        const headerPatch: Partial<Job> = {}
+        const basicInfoPatch: Partial<z.infer<typeof schemas.JobBasicInformationResponse>> = {}
+
+        const coerceNullableString = (value: unknown): string | null => {
+          if (value == null) return null
+          return typeof value === 'string' ? value : String(value)
+        }
+
+        if (serverJobDetail) {
+          if (touchedKeys.includes('description')) {
+            const desc = serverJobDetail.description ?? null
+            nextBaseline.description = normalizeNullable(desc)
+            localJobData.value.description = desc ?? ''
+            basicInfoPatch.description = desc
+          }
+          if (touchedKeys.includes('delivery_date')) {
+            const delivery = serverJobDetail.delivery_date ?? null
+            nextBaseline.delivery_date = normalizeNullable(delivery)
+            localJobData.value.delivery_date = delivery ?? ''
+            basicInfoPatch.delivery_date = delivery
+          }
+          if (touchedKeys.includes('order_number')) {
+            const order = serverJobDetail.order_number ?? null
+            nextBaseline.order_number = normalizeNullable(order)
+            localJobData.value.order_number = order ?? ''
+            basicInfoPatch.order_number = order
+          }
+          if (touchedKeys.includes('notes')) {
+            const notesVal = serverJobDetail.notes ?? null
+            nextBaseline.notes = normalizeNullable(notesVal)
+            localJobData.value.notes = notesVal ?? ''
+            basicInfoPatch.notes = notesVal
+          }
+          if (touchedKeys.includes('name')) {
+            nextBaseline.name = serverJobDetail.name
+            localJobData.value.name = serverJobDetail.name
+            headerPatch.name = serverJobDetail.name
+          }
+          if (touchedKeys.includes('job_status')) {
+            nextBaseline.status = serverJobDetail.job_status
+            localJobData.value.status = serverJobDetail.job_status
+            headerPatch.status = serverJobDetail.job_status
+          }
+          if (touchedKeys.includes('pricing_methodology')) {
+            nextBaseline.pricing_methodology = serverJobDetail.pricing_methodology
+            localJobData.value.pricing_methodology = serverJobDetail.pricing_methodology
+            headerPatch.pricing_methodology = serverJobDetail.pricing_methodology
+          }
+          if (touchedKeys.includes('quoted')) {
+            nextBaseline.quoted = !!serverJobDetail.quoted
+            localJobData.value.quoted = !!serverJobDetail.quoted
+            headerPatch.quoted = !!serverJobDetail.quoted
+          }
+          if (touchedKeys.includes('fully_invoiced')) {
+            nextBaseline.fully_invoiced = !!serverJobDetail.fully_invoiced
+            localJobData.value.fully_invoiced = !!serverJobDetail.fully_invoiced
+            headerPatch.fully_invoiced = !!serverJobDetail.fully_invoiced
+          }
+          if (touchedKeys.includes('paid')) {
+            nextBaseline.paid = !!serverJobDetail.paid
+            localJobData.value.paid = !!serverJobDetail.paid
+            headerPatch.paid = !!serverJobDetail.paid
+          }
+          if (touchedKeys.includes('quote_acceptance_date')) {
+            nextBaseline.quote_acceptance_date = serverJobDetail.quote_acceptance_date ?? undefined
+            localJobData.value.quote_acceptance_date =
+              serverJobDetail.quote_acceptance_date ?? undefined
+            headerPatch.quote_acceptance_date = serverJobDetail.quote_acceptance_date ?? undefined
+          }
+          if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
+            nextBaseline.client = {
+              id: serverJobDetail.client_id ?? '',
+              name: serverJobDetail.client_name ?? '',
+            }
+            nextBaseline.client_id = serverJobDetail.client_id ?? null
+            nextBaseline.client_name = serverJobDetail.client_name ?? null
+            localJobData.value.client = {
+              id: serverJobDetail.client_id ?? '',
+              name: serverJobDetail.client_name ?? '',
+            }
+            headerPatch.client = {
+              id: serverJobDetail.client_id ?? '',
+              name: serverJobDetail.client_name ?? '',
+            }
+          }
+          if (touchedKeys.includes('contact_id')) {
+            nextBaseline.contact_id = serverJobDetail.contact_id ?? null
+            localJobData.value.contact_id = serverJobDetail.contact_id ?? null
+          }
+          if (touchedKeys.includes('contact_name')) {
+            nextBaseline.contact_name = serverJobDetail.contact_name ?? null
+            localJobData.value.contact_name = serverJobDetail.contact_name ?? null
+          }
+        } else {
+          if (touchedKeys.includes('description')) {
+            const desc = coerceNullableString(partialPayload.description)
+            nextBaseline.description = normalizeNullable(desc)
+            localJobData.value.description = desc ?? ''
+            basicInfoPatch.description = desc
+          }
+          if (touchedKeys.includes('delivery_date')) {
+            const delivery = coerceNullableString(partialPayload.delivery_date)
+            nextBaseline.delivery_date = normalizeNullable(delivery)
+            localJobData.value.delivery_date = delivery ?? ''
+            basicInfoPatch.delivery_date = delivery
+          }
+          if (touchedKeys.includes('order_number')) {
+            const order = coerceNullableString(partialPayload.order_number)
+            nextBaseline.order_number = normalizeNullable(order)
+            localJobData.value.order_number = order ?? ''
+            basicInfoPatch.order_number = order
+          }
+          if (touchedKeys.includes('notes')) {
+            const notesVal = coerceNullableString(partialPayload.notes)
+            nextBaseline.notes = normalizeNullable(notesVal)
+            localJobData.value.notes = notesVal ?? ''
+            basicInfoPatch.notes = notesVal
+          }
+          if (touchedKeys.includes('name')) {
+            const nameVal = coerceNullableString(partialPayload.name) ?? ''
+            nextBaseline.name = nameVal
+            localJobData.value.name = nameVal
+            headerPatch.name = nameVal
+          }
+          if (touchedKeys.includes('job_status')) {
+            const statusVal = coerceNullableString(partialPayload.job_status) ?? ''
+            nextBaseline.status = statusVal
+            localJobData.value.status = statusVal
+            headerPatch.status = statusVal
+          }
+          if (touchedKeys.includes('pricing_methodology')) {
+            const pricingVal = coerceNullableString(partialPayload.pricing_methodology) ?? ''
+            nextBaseline.pricing_methodology = pricingVal
+            localJobData.value.pricing_methodology = pricingVal
+            headerPatch.pricing_methodology = pricingVal
+          }
+          if (touchedKeys.includes('quoted')) {
+            const quotedVal = !!partialPayload.quoted
+            nextBaseline.quoted = quotedVal
+            localJobData.value.quoted = quotedVal
+            headerPatch.quoted = quotedVal
+          }
+          if (touchedKeys.includes('fully_invoiced')) {
+            const invoicedVal = !!partialPayload.fully_invoiced
+            nextBaseline.fully_invoiced = invoicedVal
+            localJobData.value.fully_invoiced = invoicedVal
+            headerPatch.fully_invoiced = invoicedVal
+          }
+          if (touchedKeys.includes('paid')) {
+            const paidVal = !!partialPayload.paid
+            nextBaseline.paid = paidVal
+            localJobData.value.paid = paidVal
+            headerPatch.paid = paidVal
+          }
+          if (touchedKeys.includes('quote_acceptance_date')) {
+            const quoteDate = coerceNullableString(partialPayload.quote_acceptance_date)
+            nextBaseline.quote_acceptance_date = quoteDate ?? undefined
+            localJobData.value.quote_acceptance_date = quoteDate ?? undefined
+            headerPatch.quote_acceptance_date = quoteDate ?? undefined
+          }
+          if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
+            const clientId = coerceNullableString(partialPayload.client_id) ?? ''
+            const clientName = coerceNullableString(partialPayload.client_name) ?? ''
+            nextBaseline.client = { id: clientId, name: clientName }
+            nextBaseline.client_id = clientId
+            nextBaseline.client_name = clientName
+            localJobData.value.client = { id: clientId, name: clientName }
+            headerPatch.client = { id: clientId, name: clientName }
+          }
+          if (touchedKeys.includes('contact_id')) {
+            const contactId = coerceNullableString(partialPayload.contact_id)
+            nextBaseline.contact_id = contactId
+            localJobData.value.contact_id = contactId
+          }
+          if (touchedKeys.includes('contact_name')) {
+            const contactName = coerceNullableString(partialPayload.contact_name)
+            nextBaseline.contact_name = contactName
+            localJobData.value.contact_name = contactName
+          }
+        }
+
+        serverBaseline.value = nextBaseline
+
         if (props.jobId) {
-          const desc =
-            typeof originalJobData.value.description === 'string'
-              ? originalJobData.value.description.trim()
-              : null
-          const delDate =
-            typeof originalJobData.value.delivery_date === 'string'
-              ? originalJobData.value.delivery_date.trim()
-              : null
-          const ordNum =
-            typeof originalJobData.value.order_number === 'string'
-              ? originalJobData.value.order_number.trim()
-              : null
-          const notes =
-            typeof originalJobData.value.notes === 'string'
-              ? originalJobData.value.notes.trim()
-              : null
+          if (Object.keys(headerPatch).length) {
+            jobsStore.patchHeader(props.jobId, headerPatch)
+          }
 
-          jobsStore.updateBasicInfo(props.jobId, {
-            description: desc || null,
-            delivery_date: delDate || null,
-            order_number: ordNum || null,
-            notes: notes || null,
-          })
+          if (Object.keys(basicInfoPatch).length) {
+            const basicInfoStorePatch: Partial<
+              z.infer<typeof schemas.JobBasicInformationResponse>
+            > = {}
+            if ('description' in basicInfoPatch) {
+              const value = basicInfoPatch.description ?? null
+              basicInfoStorePatch.description = value
+            }
+            if ('delivery_date' in basicInfoPatch) {
+              const value = basicInfoPatch.delivery_date ?? null
+              basicInfoStorePatch.delivery_date = value
+            }
+            if ('order_number' in basicInfoPatch) {
+              const value = basicInfoPatch.order_number ?? null
+              basicInfoStorePatch.order_number = value
+            }
+            if ('notes' in basicInfoPatch) {
+              const value = basicInfoPatch.notes ?? null
+              basicInfoStorePatch.notes = value
+            }
 
-          // Update detailed job using explicit id (no global current job)
-          const existingDetailCurrent = jobsStore.getJobById(props.jobId)
-          if (existingDetailCurrent) {
-            jobsStore.updateDetailedJob(props.jobId, {
-              job: {
-                ...existingDetailCurrent.job,
-                description: desc || null,
-                delivery_date: delDate || null,
-                order_number: ordNum || null,
-                notes: notes || null,
-              },
-            })
+            if (Object.keys(basicInfoStorePatch).length) {
+              jobsStore.commitJobBasicInfoFromServer(props.jobId, basicInfoStorePatch)
+            }
           }
         }
-
-        // Save successful
 
         // Debounced success notification
         const now = Date.now()
@@ -1118,7 +1303,7 @@ onMounted(() => {
         }
 
         // Update original snapshot with fresh server data (including separated fields for delta)
-        originalJobData.value = {
+        serverBaseline.value = {
           ...freshData,
           description: normalizeNullable(localJobData.value.description),
           delivery_date: normalizeNullable(localJobData.value.delivery_date),

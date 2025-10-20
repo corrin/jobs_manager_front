@@ -8,21 +8,23 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Pagination } from '@/components/ui/pagination'
-import { z } from 'zod'
-import { schemas } from '@/api/generated/api'
-
-// Use generated XeroError type from Zodios API
-type XeroError = z.infer<typeof schemas.XeroError>
 
 const props = defineProps<{
-  errors: XeroError[]
+  headers: string[]
+  rows: Array<{
+    id: string
+    occurredAt: string
+    message: string
+    entity: string
+    severity: string
+  }>
   loading: boolean
   page: number
   pageCount: number
 }>()
 const emit = defineEmits(['rowClick', 'update:page'])
 
-function onRowClick(record: XeroError) {
+function onRowClick(record: (typeof props.rows)[number]) {
   emit('rowClick', record)
 }
 </script>
@@ -33,15 +35,12 @@ function onRowClick(record: XeroError) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Message</TableHead>
-            <TableHead>Entity</TableHead>
-            <TableHead>Severity</TableHead>
+            <TableHead v-for="header in props.headers" :key="header">{{ header }}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <TableRow v-if="props.loading">
-            <TableCell colspan="4" class="text-center py-6">
+            <TableCell :colspan="props.headers.length" class="text-center py-6">
               <div class="flex items-center justify-center gap-2">
                 <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
                 Error records are still loading, please wait
@@ -49,20 +48,20 @@ function onRowClick(record: XeroError) {
             </TableCell>
           </TableRow>
           <TableRow
-            v-for="err in props.errors"
-            :key="err.id"
+            v-for="row in props.rows"
+            :key="row.id"
             class="cursor-pointer hover:bg-accent"
-            @click="onRowClick(err)"
+            @click="onRowClick(row)"
           >
-            <TableCell>{{ new Date(err.timestamp).toLocaleString() }}</TableCell>
-            <TableCell>{{ err.message }}</TableCell>
-            <TableCell>{{ err.entity || '-' }}</TableCell>
-            <TableCell>{{ err.severity || 'error' }}</TableCell>
+            <TableCell>{{ new Date(row.occurredAt).toLocaleString() }}</TableCell>
+            <TableCell>{{ row.message }}</TableCell>
+            <TableCell>{{ row.entity || '-' }}</TableCell>
+            <TableCell>{{ row.severity || '-' }}</TableCell>
           </TableRow>
-          <TableRow v-if="!props.loading && props.errors.length === 0">
-            <TableCell colspan="4" class="text-center py-6"
-              >No errors found for the current filters.</TableCell
-            >
+          <TableRow v-if="!props.loading && props.rows.length === 0">
+            <TableCell :colspan="props.headers.length" class="text-center py-6">
+              No errors found for the current filters.
+            </TableCell>
           </TableRow>
         </TableBody>
       </Table>

@@ -7,9 +7,23 @@ import { computed } from 'vue'
 const props = defineProps<{ page: number; total: number }>()
 const emit = defineEmits(['update:page'])
 
-const pages = computed(() =>
-  props.total < 1 ? [1] : Array.from({ length: props.total }, (_, i) => i + 1),
-)
+const MAX_VISIBLE = 10
+
+const pages = computed(() => {
+  if (props.total < 1) return [1]
+  if (props.total <= MAX_VISIBLE) {
+    return Array.from({ length: props.total }, (_, i) => i + 1)
+  }
+
+  const halfWindow = Math.floor(MAX_VISIBLE / 2)
+  const maxStart = props.total - MAX_VISIBLE + 1
+  const candidateStart = props.page - halfWindow
+  const start = Math.max(1, Math.min(candidateStart, maxStart))
+  const last = Math.min(start + MAX_VISIBLE - 1, props.total)
+  const length = last - start + 1
+
+  return Array.from({ length }, (_, i) => start + i)
+})
 function select(p: number) {
   if (p !== props.page) emit('update:page', p)
 }

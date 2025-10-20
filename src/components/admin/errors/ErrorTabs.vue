@@ -12,6 +12,7 @@ const model = useVModel(props, 'modelValue', emit)
     <TabsList class="w-full">
       <TabsTrigger value="xero">Xero Errors</TabsTrigger>
       <TabsTrigger value="system">System Errors</TabsTrigger>
+      <TabsTrigger value="job">Job Errors</TabsTrigger>
     </TabsList>
   </Tabs>
 </template>
