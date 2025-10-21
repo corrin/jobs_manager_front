@@ -312,7 +312,7 @@ const columns = computed(() =>
           step: '0.01',
           min: '0',
           modelValue: row.original.unit_cost ?? '',
-          disabled: !!row.original.item_code || row.original.price_tbc || isColumnDisabled.value,
+          disabled: row.original.price_tbc || isColumnDisabled.value,
           class: 'w-24 text-right',
           onClick: (e: Event) => e.stopPropagation(),
           'onUpdate:modelValue': isColumnDisabled.value
