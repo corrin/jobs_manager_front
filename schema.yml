@@ -288,11 +288,10 @@ paths:
   /accounts/api/token/:
     post:
       operationId: accounts_api_token_create
-      description: 'Obtains JWT tokens for authentication. When ENABLE_JWT_AUTH=True,
-        tokens are set as httpOnly cookies, and the response body will be an empty
-        object (schema: EmptySerializer). Otherwise, the response body will contain
-        the tokens (schema: TokenObtainPairResponseSerializer). Also checks if the
-        user needs to reset their password.'
+      description: Obtains JWT tokens for authentication. When ENABLE_JWT_AUTH=True,
+        tokens are set as httpOnly cookies and the response body will be an empty
+        object. Otherwise, the response body will contain the tokens. Also checks
+        if the user needs to reset their password.
       tags:
         - accounts
       requestBody:
@@ -312,23 +311,16 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
+                $ref: '#/components/schemas/TokenObtainPairResponse'
           description: ''
         '401':
-          content:
-            application/json:
-              schema:
-                description: Authentication failed due to invalid credentials
-          description: ''
+          description: No response body
   /accounts/api/token/refresh/:
     post:
       operationId: accounts_api_token_refresh_create
-      description: 'Refreshes the JWT access token using a refresh token. When ENABLE_JWT_AUTH=True,
+      description: Refreshes the JWT access token using a refresh token. When ENABLE_JWT_AUTH=True,
         the new access token is set as an httpOnly cookie and removed from the JSON
-        response (schema: EmptySerializer). Otherwise, the response contains the new
-        access token (schema: TokenRefreshResponseSerializer).'
+        response. Otherwise, the response contains the new access token.
       tags:
         - accounts
       requestBody:
@@ -348,16 +340,10 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
+                $ref: '#/components/schemas/TokenRefreshResponse'
           description: ''
         '401':
-          content:
-            application/json:
-              schema:
-                description: Authentication failed due to invalid refresh token
-          description: ''
+          description: No response body
   /accounts/api/token/verify/:
     post:
       operationId: accounts_api_token_verify_create
@@ -3424,6 +3410,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobRestErrorResponse'
           description: ''
+  /job/rest/jobs/{job_id}/delivery-docket/:
+    get:
+      operationId: generateDeliveryDocketRest
+      description: Generate a delivery docket PDF for a job and save it as a JobFile
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopPDFResponse'
+          description: ''
   /job/rest/jobs/{job_id}/delta-rejections/:
     get:
       operationId: job_rest_job_delta_rejections_list
@@ -5037,14 +5046,6 @@ paths:
                 items:
                   $ref: '#/components/schemas/PurchaseOrderList'
           description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
-          description: ''
     post:
       operationId: purchasing_rest_purchase_orders_create
       description: Create new purchase order.
@@ -5183,14 +5184,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AllocationDetailsResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
           description: ''
   /purchasing/rest/purchase-orders/{po_id}/lines/{line_id}/allocations/delete/:
     post:
@@ -12203,6 +12196,28 @@ components:
         - unit_rev
         - updated_at
         - wage_rate
+    TokenObtainPairResponse:
+      type: object
+      description: |-
+        Serializer for the response of the token obtain pair view.
+        This is used to properly document the API response schema.
+
+        All fields are optional because when ENABLE_JWT_AUTH=True,
+        tokens are set as httpOnly cookies and removed from the JSON response.
+      properties:
+        access:
+          type: string
+          description: JWT access token (only present when not using httpOnly cookies)
+        refresh:
+          type: string
+          description: JWT refresh token (only present when not using httpOnly cookies)
+        password_needs_reset:
+          type: boolean
+          description: Indicates if the user needs to reset their password
+        password_reset_url:
+          type: string
+          format: uri
+          description: URL to reset password if needed
     TokenRefresh:
       type: object
       properties:
@@ -12215,6 +12230,19 @@ components:
       required:
         - access
         - refresh
+    TokenRefreshResponse:
+      type: object
+      description: |-
+        Serializer for the response of the token refresh view.
+        This is used to properly document the API response schema.
+
+        The access field is optional because when ENABLE_JWT_AUTH=True,
+        the token is set as an httpOnly cookie and removed from the JSON response.
+      properties:
+        access:
+          type: string
+          description: New JWT access token (only present when not using httpOnly
+            cookies)
     TokenVerify:
       type: object
       properties:

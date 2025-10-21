@@ -274,6 +274,18 @@ export const jobService = {
     }
   },
 
+  async getDeliveryDocket(jobId: string): Promise<Blob> {
+    try {
+      const response = await axios.get(`/job/rest/jobs/${jobId}/delivery-docket/`, {
+        responseType: 'blob',
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching delivery docket:', error)
+      throw error
+    }
+  },
+
   // Settings
   getCompanyDefaults(): Promise<CompanyDefaults> {
     return api.api_company_defaults_retrieve()

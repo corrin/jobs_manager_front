@@ -248,6 +248,12 @@
             >
               <Download class="w-4 h-4 mr-1" /> Download Sheet
             </button>
+            <button
+              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-gray-100 text-gray-700 border border-gray-300 text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              @click="printDeliveryDocket"
+            >
+              <Printer class="w-4 h-4 mr-1" /> Print Docket
+            </button>
           </div>
         </div>
       </div>
@@ -620,6 +626,28 @@ async function downloadJobSheet() {
   } catch (error) {
     toast.error('Error generating PDF for download')
     debugLog('Error downloading job sheet:', error)
+  }
+}
+
+async function printDeliveryDocket() {
+  if (!jobDataWithPaid.value?.id) {
+    toast.error('Job ID not available')
+    return
+  }
+  try {
+    const blob = await jobService.getDeliveryDocket(jobDataWithPaid.value.id)
+    const pdfUrl = URL.createObjectURL(blob)
+    const win = window.open(pdfUrl, '_blank')
+    if (win) {
+      win.addEventListener('load', () => {
+        win.print()
+      })
+    } else {
+      toast.error('Failed to open print window. Please check popup blocker settings.')
+    }
+  } catch (error) {
+    toast.error('Error generating delivery docket for printing')
+    debugLog('Error printing delivery docket:', error)
   }
 }
 

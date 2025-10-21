@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
             },
           }
         : {}),
-      port: 5174,
+      port: 5173,
     },
   }
 })
