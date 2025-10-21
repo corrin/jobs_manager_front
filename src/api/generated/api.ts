@@ -293,7 +293,17 @@ const KanbanStaff = z
   })
   .passthrough()
 const CustomTokenObtainPair = z.object({ username: z.string(), password: z.string() }).passthrough()
+const TokenObtainPairResponse = z
+  .object({
+    access: z.string(),
+    refresh: z.string(),
+    password_needs_reset: z.boolean(),
+    password_reset_url: z.string().url(),
+  })
+  .partial()
+  .passthrough()
 const TokenRefresh = z.object({ access: z.string(), refresh: z.string() }).passthrough()
+const TokenRefreshResponse = z.object({ access: z.string() }).partial().passthrough()
 const TokenVerify = z.object({ token: z.string() }).passthrough()
 const UserProfile = z
   .object({
@@ -2126,7 +2136,9 @@ export const schemas = {
   PatchedStaff,
   KanbanStaff,
   CustomTokenObtainPair,
+  TokenObtainPairResponse,
   TokenRefresh,
+  TokenRefreshResponse,
   TokenVerify,
   UserProfile,
   AWSInstanceStatusResponse,
@@ -2512,7 +2524,7 @@ based on the &#x27;actual_users&#x27; query parameter.`,
     method: 'post',
     path: '/accounts/api/token/',
     alias: 'accounts_api_token_create',
-    description: `Obtains JWT tokens for authentication. When ENABLE_JWT_AUTH&#x3D;True, tokens are set as httpOnly cookies, and the response body will be an empty object (schema: EmptySerializer). Otherwise, the response body will contain the tokens (schema: TokenObtainPairResponseSerializer). Also checks if the user needs to reset their password.`,
+    description: `Obtains JWT tokens for authentication. When ENABLE_JWT_AUTH&#x3D;True, tokens are set as httpOnly cookies and the response body will be an empty object. Otherwise, the response body will contain the tokens. Also checks if the user needs to reset their password.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2521,11 +2533,12 @@ based on the &#x27;actual_users&#x27; query parameter.`,
         schema: CustomTokenObtainPair,
       },
     ],
-    response: z.object({}).partial().passthrough(),
+    response: TokenObtainPairResponse,
     errors: [
       {
         status: 401,
-        schema: z.unknown(),
+        description: `No response body`,
+        schema: z.void(),
       },
     ],
   },
@@ -2533,7 +2546,7 @@ based on the &#x27;actual_users&#x27; query parameter.`,
     method: 'post',
     path: '/accounts/api/token/refresh/',
     alias: 'accounts_api_token_refresh_create',
-    description: `Refreshes the JWT access token using a refresh token. When ENABLE_JWT_AUTH&#x3D;True, the new access token is set as an httpOnly cookie and removed from the JSON response (schema: EmptySerializer). Otherwise, the response contains the new access token (schema: TokenRefreshResponseSerializer).`,
+    description: `Refreshes the JWT access token using a refresh token. When ENABLE_JWT_AUTH&#x3D;True, the new access token is set as an httpOnly cookie and removed from the JSON response. Otherwise, the response contains the new access token.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -2542,11 +2555,12 @@ based on the &#x27;actual_users&#x27; query parameter.`,
         schema: TokenRefresh,
       },
     ],
-    response: z.object({}).partial().passthrough(),
+    response: z.object({ access: z.string() }).partial().passthrough(),
     errors: [
       {
         status: 401,
-        schema: z.unknown(),
+        description: `No response body`,
+        schema: z.void(),
       },
     ],
   },
@@ -4668,6 +4682,21 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   },
   {
     method: 'get',
+    path: '/job/rest/jobs/:job_id/delivery-docket/',
+    alias: 'generateDeliveryDocketRest',
+    description: `Generate a delivery docket PDF for a job and save it as a JobFile`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: WorkshopPDFResponse,
+  },
+  {
+    method: 'get',
     path: '/job/rest/jobs/:job_id/delta-rejections/',
     alias: 'job_rest_job_delta_rejections_list',
     description: `Fetch delta rejections recorded for this job.`,
@@ -5562,12 +5591,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
     description: `Get list of purchase orders with optional status filtering.`,
     requestFormat: 'json',
     response: z.array(PurchaseOrderList),
-    errors: [
-      {
-        status: 400,
-        schema: z.object({}).partial().passthrough(),
-      },
-    ],
   },
   {
     method: 'post',
@@ -5658,12 +5681,6 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
       },
     ],
     response: AllocationDetailsResponse,
-    errors: [
-      {
-        status: 404,
-        schema: z.object({}).partial().passthrough(),
-      },
-    ],
   },
   {
     method: 'post',
