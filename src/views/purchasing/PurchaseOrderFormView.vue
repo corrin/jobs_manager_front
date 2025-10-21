@@ -341,6 +341,7 @@ async function saveSummary() {
   await store.patch(orderId, updateData)
   toast.success('Summary saved')
   await load()
+  await loadExistingAllocations()
 }
 
 const handleAddLineEvent = () => {
