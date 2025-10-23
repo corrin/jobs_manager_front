@@ -50,6 +50,7 @@ import { z } from 'zod'
 
 // Use generated types from Zodios API
 type Staff = z.infer<typeof schemas.Staff>
+type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
 
 interface Props {
   activeFilters?: string[]
@@ -79,10 +80,10 @@ const loadStaffMembers = async (): Promise<void> => {
   try {
     isLoading.value = true
     error.value = null
-    const data = await listStaffForKanban(true)
+    const data = await listStaffForKanban()
 
     // Use the Staff data directly from Zodios API (already validated)
-    staffMembers.value = data.map((staffData) => ({
+    staffMembers.value = data.map((staffData: KanbanStaff) => ({
       ...staffData,
       display_name:
         staffData.display_name || `${staffData.first_name} ${staffData.last_name}`.trim(),
