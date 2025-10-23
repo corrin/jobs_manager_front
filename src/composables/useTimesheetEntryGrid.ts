@@ -321,7 +321,7 @@ export function useTimesheetEntryGrid(
         }
         data.isModified = true
         data.isNewRow = false // Convert to regular row but don't save yet
-        console.log('✏️ New row marked as modified:', updatedEntry.description)
+        console.log('✏️ New row marked as modified:', updatedEntry.description || '')
         options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
 
         // Ensure there's always an empty row at the end
@@ -463,7 +463,7 @@ export function useTimesheetEntryGrid(
   }
 
   function isRowComplete(entry: TimesheetEntry): boolean {
-    return !!(entry.jobNumber && entry.hours > 0 && entry.description.trim())
+    return !!(entry.jobNumber && entry.hours > 0)
   }
 
   function isRowEmpty(entry: TimesheetEntry): boolean {
@@ -490,9 +490,6 @@ export function useTimesheetEntryGrid(
       addNewRow(staffId, undefined, staffData)
     }
   }
-
-  // ✅ REMOVED: saveNewRow function no longer needed since we disabled autosave
-  // All saving is now handled by the parent component's "Save All" functionality
 
   async function deleteRow(rowIndex: number): Promise<void> {
     if (!gridApi.value) return

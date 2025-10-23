@@ -962,9 +962,8 @@ const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
   },
   isRowComplete: (e) => {
     const hasJob = !!(e.jobId || e.jobNumber)
-    const hasDesc = !!String(e.description || '').trim()
     const hasHours = Number(e.hours) > 0
-    return hasJob && hasDesc && hasHours
+    return hasJob && hasHours
   },
   isDuplicate: (e) => {
     if (e.id) return false
@@ -1140,10 +1139,10 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
     hasDescription,
     hours: entry.hours,
     hasHours,
-    validationPassed: hasJob && hasDescription && hasHours,
+    validationPassed: hasJob && hasHours,
   })
 
-  if (!hasJob || !hasDescription || !hasHours) {
+  if (!hasJob || !hasHours) {
     debugLog('❌ VALIDATION FAILED - Entry not saved:', {
       hasJob,
       hasDescription,
@@ -1538,7 +1537,7 @@ const loadTimesheetData = async () => {
 }
 
 // ✅ Create debounced version to prevent rapid successive calls
-const debouncedLoadTimesheetData = debounce(loadTimesheetData, 300)
+const debouncedLoadTimesheetData = debounce(loadTimesheetData, 1000)
 
 const getRateTypeFromMultiplier = (multiplier: number): string => {
   switch (multiplier) {
