@@ -226,7 +226,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
   // Get jobs for a specific column with staff filtering
   const getJobsByStatus = computed(() => (columnId: string) => {
-    if (filteredJobs.value.length > 0) {
+    if (filteredJobs.value.length > 0 || searchQuery.value.trim() !== '') {
       // When searching, group filteredJobs by column
       const grouped: Record<string, KanbanJob[]> = {}
       filteredJobs.value.forEach((job) => {

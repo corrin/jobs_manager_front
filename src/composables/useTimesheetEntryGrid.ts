@@ -115,6 +115,8 @@ export function useTimesheetEntryGrid(
       field: 'description',
       flex: 2,
       minWidth: 200,
+      autoHeight: true,
+      wrapText: true,
       editable: true,
       cellEditor: 'agTextCellEditor',
       cellEditorParams: {
