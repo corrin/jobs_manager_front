@@ -518,6 +518,43 @@
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <!-- Xero Export Options Modal -->
+    <Dialog :open="showXeroExportModal" @update:open="showXeroExportModal = $event">
+      <DialogContent class="sm:max-w-md" @keydown.enter.prevent="executeCreateQuote(false)">
+        <DialogHeader>
+          <DialogTitle>Export Quote to Xero</DialogTitle>
+          <DialogDescription> Choose how you want to export this quote to Xero </DialogDescription>
+        </DialogHeader>
+        <div class="space-y-4 py-4">
+          <div class="space-y-3">
+            <Button
+              class="w-full h-auto py-4 px-4 flex flex-col items-start gap-1"
+              variant="default"
+              @click="executeCreateQuote(false)"
+            >
+              <span class="font-semibold">Send Total Only</span>
+              <span class="text-xs font-normal opacity-90">
+                Export as a single line item with the total amount (Default)
+              </span>
+            </Button>
+            <Button
+              class="w-full h-auto py-4 px-4 flex flex-col items-start gap-1"
+              variant="outline"
+              @click="executeCreateQuote(true)"
+            >
+              <span class="font-semibold">Send Breakdown</span>
+              <span class="text-xs font-normal opacity-70">
+                Export with all individual line items
+              </span>
+            </Button>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" @click="showXeroExportModal = false">Cancel</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -632,6 +669,7 @@ const isCreatingQuote = ref(false)
 const isQuoteDeleted = ref(false)
 const isDeletingQuote = ref(false)
 const isAcceptingQuote = ref(false)
+const showXeroExportModal = ref(false)
 
 const quoteCostLines = computed(() => {
   const lines = currentQuote.value?.quote?.cost_lines || []
@@ -822,13 +860,22 @@ const { handleAddMaterial, handleSmartDelete, handleAddEmptyLine, handleCreateFr
   })
 
 // --- QUOTE METHODS ---
-const createQuote = async () => {
+const createQuote = () => {
+  // Show modal to ask user if they want breakdown or total
+  showXeroExportModal.value = true
+}
+
+const executeCreateQuote = async (breakdown: boolean) => {
   if (!props.jobId || isCreatingQuote.value) return
   isCreatingQuote.value = true
+  showXeroExportModal.value = false
   try {
-    const response = await api.api_xero_create_quote_create(undefined, {
-      params: { job_id: props.jobId },
-    })
+    const response = await api.api_xero_create_quote_create(
+      { breakdown },
+      {
+        params: { job_id: props.jobId },
+      },
+    )
     if (!response.success) {
       debugLog(response.error || 'Failed to create quote')
       return

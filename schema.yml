@@ -1100,6 +1100,18 @@ paths:
           required: true
       tags:
         - Xero
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/XeroQuoteCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/XeroQuoteCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/XeroQuoteCreateRequest'
+        required: true
       security:
         - cookieAuth: []
         - {}
@@ -1109,6 +1121,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/XeroDocumentSuccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroDocumentErrorResponse'
           description: ''
         '404':
           content:
@@ -12736,6 +12754,18 @@ components:
           format: uri
           nullable: true
           maxLength: 200
+    XeroQuoteCreateRequest:
+      type: object
+      description: |-
+        Request serializer for creating a Xero quote.
+        Requires explicit choice of breakdown format.
+      properties:
+        breakdown:
+          type: boolean
+          description: If true, sends detailed line items. If false, sends single
+            total line.
+      required:
+        - breakdown
   securitySchemes:
     cookieAuth:
       type: apiKey
