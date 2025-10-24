@@ -476,6 +476,7 @@ const XeroDocumentErrorResponse = z
     redirect_to_auth: z.boolean().optional(),
   })
   .passthrough()
+const XeroQuoteCreateRequest = z.object({ breakdown: z.boolean() }).passthrough()
 const ClientDetailResponse = z
   .object({
     id: z.string(),
@@ -2152,6 +2153,7 @@ export const schemas = {
   PaginatedAppErrorList,
   XeroDocumentSuccessResponse,
   XeroDocumentErrorResponse,
+  XeroQuoteCreateRequest,
   ClientDetailResponse,
   ClientErrorResponse,
   ClientContactResult,
@@ -3083,6 +3085,11 @@ Endpoints:
     requestFormat: 'json',
     parameters: [
       {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ breakdown: z.boolean() }).passthrough(),
+      },
+      {
         name: 'job_id',
         type: 'Path',
         schema: z.string().uuid(),
@@ -3090,6 +3097,10 @@ Endpoints:
     ],
     response: XeroDocumentSuccessResponse,
     errors: [
+      {
+        status: 400,
+        schema: XeroDocumentErrorResponse,
+      },
       {
         status: 404,
         schema: XeroDocumentErrorResponse,
