@@ -1178,7 +1178,7 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
   })
 
   if (isEditingDescription) {
-    debugLog('�>" VALIDATION SKIP - Description currently being edited, delaying save', {
+    debugLog('➡️ VALIDATION SKIP - Description currently being edited, delaying save', {
       entryId: entry.id,
       tempId: entry.tempId,
     })
