@@ -318,8 +318,8 @@ function canEditField(
     return kind === 'adjust' || (isMaterial && isConsumed)
   }
   if (field === 'desc' && props.tabKind === 'actual') {
-    // only allow description editing for adjustments
-    return kind === 'adjust'
+    // only allow description editing for adjustments and materials
+    return kind === 'adjust' || 'material'
   }
 
   // desc & quantity in non-actual tabs
