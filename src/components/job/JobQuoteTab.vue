@@ -816,8 +816,9 @@ const { handleAddMaterial, handleSmartDelete, handleAddEmptyLine, handleCreateFr
     costSetKind: 'quote',
     isLoading,
     onCostLinesChanged: async () => {
-      // For quote tab, local state is already updated, no need to refresh
+      // Refresh quote data to update summary from API
       emit('cost-line-changed')
+      await refreshQuoteData()
     },
   })
 
