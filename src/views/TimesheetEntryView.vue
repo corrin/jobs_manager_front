@@ -613,6 +613,35 @@ debugLog('🗓️ Today is:', todayDate, 'Day of week:', new Date().getDay())
 const initialDate = (route.query.date as string) || todayDate
 const initialStaffId = (route.query.staffId as string) || ''
 
+const descriptionEditingRows = new Set<string>()
+
+function getRowKey(entry: { id?: unknown; tempId?: unknown } | null | undefined): string | null {
+  if (!entry) return null
+  if (entry.id != null && String(entry.id) !== '') return String(entry.id)
+  if (entry.tempId != null && String(entry.tempId) !== '') return String(entry.tempId)
+  return null
+}
+
+function setDescriptionEditingState(
+  entry: { id?: unknown; tempId?: unknown } | null | undefined,
+  isEditing: boolean,
+): void {
+  const key = getRowKey(entry)
+  if (!key) return
+  if (isEditing) {
+    descriptionEditingRows.add(key)
+  } else {
+    descriptionEditingRows.delete(key)
+  }
+}
+
+function isDescriptionBeingEdited(
+  entry: { id?: unknown; tempId?: unknown } | null | undefined,
+): boolean {
+  const key = getRowKey(entry)
+  return key ? descriptionEditingRows.has(key) : false
+}
+
 debugLog('🔗 URL params:', { date: route.query.date, staffId: route.query.staffId })
 debugLog('📊 Using initial values:', { date: initialDate, staffId: initialStaffId })
 
@@ -911,6 +940,9 @@ const {
   handleDeleteEntry,
   {
     resolveStaffById: (id: string) => timesheetStore.staff.find((s) => s.id === id),
+    onDescriptionEditChange: (entry: TimesheetEntryGridRowWithSaving, isEditing: boolean) => {
+      setDescriptionEditingState(entry, isEditing)
+    },
     onScheduleAutosave: (entry: TimesheetEntryGridRowWithSaving) => {
       const rows = gridData.value as TimesheetEntryWithMeta[]
 
@@ -962,9 +994,9 @@ const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
   },
   isRowComplete: (e) => {
     const hasJob = !!(e.jobId || e.jobNumber)
-    const hasDesc = !!String(e.description || '').trim()
     const hasHours = Number(e.hours) > 0
-    return hasJob && hasDesc && hasHours
+    const isEditingDescription = isDescriptionBeingEdited(e)
+    return hasJob && hasHours && !isEditingDescription
   },
   isDuplicate: (e) => {
     if (e.id) return false
@@ -1130,6 +1162,7 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
   const hasJob = entry.jobId || entry.jobNumber
   const hasDescription = entry.description && entry.description.trim().length > 0
   const hasHours = entry.hours > 0
+  const isEditingDescription = isDescriptionBeingEdited(entry)
 
   debugLog('🔍 VALIDATION CHECK:', {
     entryId: entry.id,
@@ -1140,10 +1173,19 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
     hasDescription,
     hours: entry.hours,
     hasHours,
-    validationPassed: hasJob && hasDescription && hasHours,
+    isEditingDescription,
+    validationPassed: hasJob && hasHours && !isEditingDescription,
   })
 
-  if (!hasJob || !hasDescription || !hasHours) {
+  if (isEditingDescription) {
+    debugLog('➡️ VALIDATION SKIP - Description currently being edited, delaying save', {
+      entryId: entry.id,
+      tempId: entry.tempId,
+    })
+    return
+  }
+
+  if (!hasJob || !hasHours) {
     debugLog('❌ VALIDATION FAILED - Entry not saved:', {
       hasJob,
       hasDescription,
@@ -1538,7 +1580,7 @@ const loadTimesheetData = async () => {
 }
 
 // ✅ Create debounced version to prevent rapid successive calls
-const debouncedLoadTimesheetData = debounce(loadTimesheetData, 300)
+const debouncedLoadTimesheetData = debounce(loadTimesheetData, 1000)
 
 const getRateTypeFromMultiplier = (multiplier: number): string => {
   switch (multiplier) {
