@@ -77,3 +77,29 @@ export function isJobMutationEndpoint(url: string): boolean {
 
   return mutationPatterns.some((pattern) => pattern.test(url))
 }
+
+/**
+ * Utility function to extract purchase order ID from a PO endpoint URL
+ */
+export function extractPoId(url: string): string | null {
+  const match = url.match(/\/purchasing\/rest\/purchase-orders\/([0-9a-f-]{36})/i)
+  return match ? match[1] : null
+}
+
+/**
+ * Utility function to check if a URL is a purchase order endpoint that requires ETag handling
+ */
+export function isPoEndpoint(url: string): boolean {
+  return /\/purchasing\/rest\/purchase-orders\//.test(url)
+}
+
+/**
+ * Utility function to check if a URL is a purchase order mutation endpoint requiring If-Match
+ */
+export function isPoMutationEndpoint(url: string): boolean {
+  const mutationPatterns = [
+    /\/purchasing\/rest\/purchase-orders\/[^\/]+\/?$/, // PATCH on PO detail
+  ]
+
+  return mutationPatterns.some((pattern) => pattern.test(url))
+}

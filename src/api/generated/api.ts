@@ -5603,7 +5603,9 @@ POST: Processes delivery receipt for a purchase order with stock allocations`,
     method: 'patch',
     path: '/purchasing/rest/purchase-orders/:id/',
     alias: 'purchasing_rest_purchase_orders_partial_update',
-    description: `Update purchase order.`,
+    description: `Update purchase order.
+
+Concurrency is controlled in this endpoint (ETag/If-Match).`,
     requestFormat: 'json',
     parameters: [
       {

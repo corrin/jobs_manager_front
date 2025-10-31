@@ -28,18 +28,30 @@ app.use(pinia)
 app.use(router)
 
 // Set up ETag manager after Pinia is initialized
-import { setupETagManager, setupJobReloadManager } from './api/client'
+import { setupETagManager, setupJobReloadManager, setupPoETagManager, setupPoReloadManager } from './api/client'
 import { useJobETags } from './composables/useJobETags'
+import { usePoETags } from './composables/usePoETags'
 import { useJobsStore } from './stores/jobs'
+import { usePurchaseOrderStore } from './stores/purchaseOrderStore'
 
 // Initialize the ETag manager with the composable
-const { getETag, setETag } = useJobETags()
-setupETagManager({ getETag, setETag })
+const { getETag: getJobETag, setETag: setJobETag } = useJobETags()
+setupETagManager({ getETag: getJobETag, setETag: setJobETag })
 
 // Initialize the job reload manager with the store
 const jobsStore = useJobsStore(pinia)
 setupJobReloadManager({
   reloadJobOnConflict: (jobId: string) => jobsStore.reloadJobOnConflict(jobId),
+})
+
+// Initialize the PO ETag manager with the composable
+const { getETag: getPoETag, setETag: setPoETag } = usePoETags()
+setupPoETagManager({ getETag: getPoETag, setETag: setPoETag })
+
+// Initialize the PO reload manager with the store
+const poStore = usePurchaseOrderStore(pinia)
+setupPoReloadManager({
+  reloadPoOnConflict: (poId: string) => poStore.reloadPoOnConflict(poId),
 })
 
 app.mount('#app')
