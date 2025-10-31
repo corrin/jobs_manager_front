@@ -95,7 +95,22 @@ axios.interceptors.request.use(
 
     // Add If-Match header for PO mutation endpoints
     if (isPoMutationEndpoint(url)) {
-      const poId = extractPoId(url)
+      let poId: string | null = null
+
+      // For delivery receipts, extract PO ID from request body
+      if (url.includes('/purchasing/rest/delivery-receipts/')) {
+        try {
+          const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data
+          poId = body?.purchase_order_id || null
+          debugLog(`[PO ETags] Extracted PO ID from delivery receipt body:`, poId)
+        } catch (e) {
+          debugLog(`[PO ETags] Failed to parse delivery receipt body:`, e)
+        }
+      } else {
+        // For other PO endpoints, extract from URL
+        poId = extractPoId(url)
+      }
+
       if (poId && poEtagManager) {
         const etag = poEtagManager.getETag(poId)
         if (etag) {

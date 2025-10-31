@@ -28,7 +28,12 @@ app.use(pinia)
 app.use(router)
 
 // Set up ETag manager after Pinia is initialized
-import { setupETagManager, setupJobReloadManager, setupPoETagManager, setupPoReloadManager } from './api/client'
+import {
+  setupETagManager,
+  setupJobReloadManager,
+  setupPoETagManager,
+  setupPoReloadManager,
+} from './api/client'
 import { useJobETags } from './composables/useJobETags'
 import { usePoETags } from './composables/usePoETags'
 import { useJobsStore } from './stores/jobs'
@@ -53,5 +58,7 @@ const poStore = usePurchaseOrderStore(pinia)
 setupPoReloadManager({
   reloadPoOnConflict: (poId: string) => poStore.reloadPoOnConflict(poId),
 })
+
+// Note: Delivery receipts use the same PO reload manager as purchase orders
 
 app.mount('#app')

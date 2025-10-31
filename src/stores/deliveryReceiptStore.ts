@@ -129,6 +129,25 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     }
   }
 
+  /**
+   * Reloads purchase order data when a concurrency conflict occurs.
+   * This fetches fresh data from the server to get the latest ETag and PO state.
+   * @param poId - The purchase order ID to reload
+   */
+  async function reloadPoOnConflict(poId: string): Promise<void> {
+    debugLog('🔄 PO Store - reloadPoOnConflict called:', { poId })
+
+    try {
+      // Fetch full PO detail (captures new ETag via interceptor)
+      await fetchPurchaseOrder(poId)
+
+      debugLog('✅ PO Store - reloadPoOnConflict success:', { poId })
+    } catch (error) {
+      debugLog('❌ PO Store - reloadPoOnConflict error:', { poId, error })
+      throw error
+    }
+  }
+
   async function fetchExistingAllocations(
     purchaseOrderId: string,
   ): Promise<PurchaseOrderAllocationsResponse> {
@@ -201,5 +220,6 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     submitDeliveryReceipt,
     getDefaultRetailRate,
     fetchExistingAllocations,
+    reloadPoOnConflict,
   }
 })

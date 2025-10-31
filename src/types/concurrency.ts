@@ -99,6 +99,7 @@ export function isPoEndpoint(url: string): boolean {
 export function isPoMutationEndpoint(url: string): boolean {
   const mutationPatterns = [
     /\/purchasing\/rest\/purchase-orders\/[^\/]+\/?$/, // PATCH on PO detail
+    /\/purchasing\/rest\/delivery-receipts\/?$/, // POST delivery receipts
   ]
 
   return mutationPatterns.some((pattern) => pattern.test(url))

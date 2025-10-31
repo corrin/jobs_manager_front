@@ -5492,7 +5492,8 @@ POST: Processes selected jobs for month-end archiving and status updates`,
     alias: 'purchasing_rest_delivery_receipts_create',
     description: `REST API view for processing delivery receipts.
 
-POST: Processes delivery receipt for a purchase order with stock allocations`,
+POST: Processes delivery receipt for a purchase order with stock allocations.
+Concurrency is controlled in this endpoint (ETag/If-Match).`,
     requestFormat: 'json',
     parameters: [
       {
