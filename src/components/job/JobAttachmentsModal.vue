@@ -306,14 +306,14 @@ const isLoading = ref(false)
 const isCameraModalOpen = ref(false)
 
 async function loadFiles() {
-  if (!props.jobNumber) {
-    debugLog('Job number is required for loading files')
+  if (!props.jobId) {
+    debugLog('Job ID is required for loading files')
     return
   }
 
   isLoading.value = true
   try {
-    const list = await jobService.listJobFiles(props.jobNumber)
+    const list = await jobService.listJobFiles(props.jobId)
     files.value = list
   } catch (err) {
     debugLog('Failed to load files:', err)
@@ -325,7 +325,7 @@ async function loadFiles() {
 watch(
   () => props.isOpen,
   (open) => {
-    if (open && props.jobNumber != null) {
+    if (open && props.jobId != null) {
       loadFiles()
     }
   },
@@ -448,8 +448,8 @@ const compressImage = (
 }
 
 const uploadFile = async (file: File) => {
-  if (!props.jobNumber) {
-    debugLog('Job number is required for file upload')
+  if (!props.jobId) {
+    debugLog('Job ID is required for file upload')
     return
   }
 
@@ -457,7 +457,7 @@ const uploadFile = async (file: File) => {
   uploading.value = true
 
   try {
-    const uploaded = await jobService.uploadJobFiles(String(props.jobNumber), [file])
+    const uploaded = await jobService.uploadJobFiles(props.jobId, [file])
 
     if (uploaded.length > 0) {
       files.value.push(...uploaded)
@@ -483,7 +483,7 @@ async function deleteFile(id: string) {
   if (!confirm('Are you sure you want to delete this file?')) return
 
   try {
-    await jobService.deleteJobFile(id)
+    await jobService.deleteJobFile(props.jobId, id)
     emit('file-deleted', id)
     await loadFiles()
   } catch (err) {
@@ -492,20 +492,19 @@ async function deleteFile(id: string) {
 }
 
 async function updatePrintSetting(file: JobFile) {
-  if (!props.jobNumber) {
-    debugLog('Job number is required for updating print setting')
+  if (!props.jobId) {
+    debugLog('Job ID is required for updating print setting')
     return
   }
 
   debugLog('Updating print setting for file:', {
     filename: file.filename,
     current_value: file.print_on_jobsheet,
-    job_number: props.jobNumber,
+    job_id: props.jobId,
   })
 
   try {
-    const response = await jobService.updateJobFile({
-      file_id: file.id,
+    const response = await jobService.updateJobFile(props.jobId, file.id, {
       print_on_jobsheet: file.print_on_jobsheet,
     })
 
@@ -520,8 +519,8 @@ async function updatePrintSetting(file: JobFile) {
 }
 
 const openCameraModal = () => {
-  if (!props.jobNumber) {
-    debugLog('Job number is required for camera capture')
+  if (!props.jobId) {
+    debugLog('Job ID is required for camera capture')
     return
   }
   isCameraModalOpen.value = true

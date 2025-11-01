@@ -268,8 +268,8 @@ const printPdf = () => {
 
 // Attach PDF to job as file
 const attachPdfToJob = async () => {
-  if (!pdfBlob.value || !props.jobNumber) {
-    toast.error('PDF or job number not available')
+  if (!pdfBlob.value || !props.jobId) {
+    toast.error('PDF or job ID not available')
     return
   }
 
@@ -283,7 +283,7 @@ const attachPdfToJob = async () => {
     })
 
     // Upload using job service
-    await jobService.uploadJobFiles(String(props.jobNumber), [file])
+    await jobService.uploadJobFiles(props.jobId, [file])
 
     isAttached.value = true
     toast.success('PDF attached to job successfully')

@@ -23,7 +23,16 @@ axios.defaults.timeout = 60000
 axios.defaults.withCredentials = true
 
 axios.interceptors.request.use(
-  (config) => config,
+  (config) => {
+    // Add bearer token if using bearer auth
+    if (import.meta.env.VITE_AUTH_METHOD === 'bearer') {
+      const token = localStorage.getItem('auth_token')
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    }
+    return config
+  },
   (error) => Promise.reject(error),
 )
 
