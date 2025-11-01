@@ -253,12 +253,10 @@ export const jobService = {
   },
 
   // Files
-  listJobFiles(jobNumber: number): Promise<JobFile[]> {
-    const result = api.retrieveJobFilesApi_6({
-      params: { job_number: jobNumber },
-      queries: { format: 'json' },
+  listJobFiles(jobId: string): Promise<JobFile[]> {
+    return api.listJobFiles({
+      params: { job_id: jobId },
     })
-    return result.then((r: JobFile | JobFile[]) => (Array.isArray(r) ? r : [r]))
   },
 
   // PDF
@@ -449,19 +447,20 @@ export const jobService = {
   },
 
   // Upload job files
-  async uploadJobFiles(jobNumber: string, files: File[]): Promise<unknown> {
+  // Note: Using axios directly because openapi-zod-client incorrectly maps format: binary
+  // to z.string().url() instead of z.instanceof(File). The generator doesn't properly
+  // handle multipart/form-data file uploads. This is a known limitation.
+  async uploadJobFiles(jobId: string, files: File[]): Promise<unknown> {
     try {
       const formData = new FormData()
       files.forEach((file) => {
         formData.append('files', file)
       })
 
-      const response = await axios.post(`/job/api/job-files/${jobNumber}`, formData, {
+      // Use axios directly to bypass incorrect Zod validation
+      const response = await axios.post(`/job/rest/jobs/${jobId}/files/`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-        },
-        params: {
-          format: 'json',
         },
       })
 
@@ -477,11 +476,13 @@ export const jobService = {
   },
 
   // Delete job file
-  async deleteJobFile(fileId: string): Promise<{ success: boolean; error?: string }> {
+  async deleteJobFile(
+    jobId: string,
+    fileId: string,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
-      await api.deleteJobFilesApi_2(undefined, {
-        params: { file_path: fileId },
-        queries: { format: 'json' },
+      await api.deleteJobFile(undefined, {
+        params: { job_id: jobId, file_id: fileId },
       })
       return { success: true }
     } catch (error) {
@@ -493,32 +494,24 @@ export const jobService = {
     }
   },
 
-  // Update job file print setting
-  async updateJobFilePrintSetting(
-    jobNumber: string,
-    filename: string,
-    printOnJobsheet: boolean,
+  // Update job file metadata
+  async updateJobFile(
+    jobId: string,
+    fileId: string,
+    updates: { filename?: string; print_on_jobsheet?: boolean },
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const formData = new FormData()
-      formData.append('filename', filename)
-      formData.append('print_on_jobsheet', String(printOnJobsheet))
-
-      await axios.put(`/job/api/job-files/${jobNumber}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        params: {
-          format: 'json',
-        },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await api.updateJobFile(updates as any, {
+        params: { job_id: jobId, file_id: fileId },
       })
 
       return { success: true }
     } catch (error) {
-      console.error('Error updating job file print setting:', error)
+      console.error('Error updating job file:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update print setting',
+        error: error instanceof Error ? error.message : 'Failed to update file',
       }
     }
   },

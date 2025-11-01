@@ -197,6 +197,8 @@ const StaffPerformanceResponse = z
     period_summary: StaffPerformancePeriodSummary,
   })
   .passthrough()
+const BearerTokenRequest = z.object({ username: z.string(), password: z.string() }).passthrough()
+const BearerTokenResponse = z.object({ token: z.string() }).passthrough()
 const Staff = z
   .object({
     id: z.string().uuid(),
@@ -626,55 +628,6 @@ const JobContactUpdateRequest = z
   })
   .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
-const JobFileStatusEnum = z.enum(['active', 'deleted'])
-const JobFile = z
-  .object({
-    id: z.string().uuid(),
-    filename: z.string().max(255),
-    size: z.number().int().nullable(),
-    mime_type: z.string().max(100).optional(),
-    uploaded_at: z.string().datetime({ offset: true }),
-    print_on_jobsheet: z.boolean().optional(),
-    download_url: z.string(),
-    thumbnail_url: z.string().nullable(),
-    status: JobFileStatusEnum.optional(),
-  })
-  .passthrough()
-const JobFileErrorResponse = z
-  .object({
-    status: z.string().optional().default('error'),
-    message: z.string(),
-  })
-  .passthrough()
-const UploadedFile = z
-  .object({
-    id: z.string(),
-    filename: z.string(),
-    file_path: z.string(),
-    print_on_jobsheet: z.boolean(),
-  })
-  .passthrough()
-const JobFileUploadSuccessResponse = z
-  .object({
-    status: z.string().optional().default('success'),
-    uploaded: z.array(UploadedFile),
-    message: z.string(),
-  })
-  .passthrough()
-const JobFileUploadPartialResponse = z
-  .object({
-    status: z.string(),
-    uploaded: z.array(UploadedFile),
-    errors: z.array(z.string()),
-  })
-  .passthrough()
-const JobFileUpdateSuccessResponse = z
-  .object({
-    status: z.string().optional().default('success'),
-    message: z.string(),
-    print_on_jobsheet: z.boolean(),
-  })
-  .passthrough()
 const AssignJobRequest = z.object({ job_id: z.string(), staff_id: z.string() }).passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
@@ -875,7 +828,7 @@ const PatchedCostLineCreateUpdate = z
 const CostLineCreateUpdate = z
   .object({
     kind: Kind332Enum,
-    desc: z.string().max(255),
+    desc: z.string().max(255).optional(),
     quantity: z.number().gt(-10000000).lt(10000000).optional(),
     unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
@@ -951,7 +904,7 @@ const CostLine = z
   .object({
     id: z.string().uuid(),
     kind: Kind332Enum,
-    desc: z.string().max(255),
+    desc: z.string().max(255).optional(),
     quantity: z.number().gt(-10000000).lt(10000000).optional(),
     unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
@@ -972,6 +925,20 @@ const CostSet = z
     summary: CostSetSummary,
     created: z.string().datetime({ offset: true }),
     cost_lines: z.array(CostLine),
+  })
+  .passthrough()
+const JobFileStatusEnum = z.enum(['active', 'deleted'])
+const JobFile = z
+  .object({
+    id: z.string().uuid(),
+    filename: z.string().max(255),
+    size: z.number().int().nullable(),
+    mime_type: z.string().max(100).optional(),
+    uploaded_at: z.string().datetime({ offset: true }),
+    print_on_jobsheet: z.boolean().optional(),
+    download_url: z.string(),
+    thumbnail_url: z.string().nullable(),
+    status: JobFileStatusEnum.optional(),
   })
   .passthrough()
 const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
@@ -1206,6 +1173,48 @@ const JobDeltaRejectionListResponse = z
 const JobEventsResponse = z.object({ events: z.array(JobEvent) }).passthrough()
 const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
 const JobEventCreateResponse = z.object({ success: z.boolean(), event: JobEvent }).passthrough()
+const JobFileErrorResponse = z
+  .object({
+    status: z.string().optional().default('error'),
+    message: z.string(),
+  })
+  .passthrough()
+const uploadJobFiles_Body = z.object({ files: z.array(z.instanceof(File)) }).passthrough()
+const UploadedFile = z
+  .object({
+    id: z.string(),
+    filename: z.string(),
+    file_path: z.string(),
+    print_on_jobsheet: z.boolean(),
+  })
+  .passthrough()
+const JobFileUploadSuccessResponse = z
+  .object({
+    status: z.string().optional().default('success'),
+    uploaded: z.array(UploadedFile),
+    message: z.string(),
+  })
+  .passthrough()
+const JobFileUploadPartialResponse = z
+  .object({
+    status: z.string(),
+    uploaded: z.array(UploadedFile),
+    errors: z.array(z.string()),
+  })
+  .passthrough()
+const JobFileUpdateSuccessResponse = z
+  .object({
+    status: z.string().optional().default('success'),
+    message: z.string(),
+    print_on_jobsheet: z.boolean(),
+  })
+  .passthrough()
+const JobFileThumbnailErrorResponse = z
+  .object({
+    status: z.string().optional().default('error'),
+    message: z.string(),
+  })
+  .passthrough()
 const JobClientHeader = z.object({ id: z.string().uuid(), name: z.string() }).passthrough()
 const JobHeaderResponse = z
   .object({
@@ -1329,19 +1338,6 @@ const PreviewQuoteResponse = z
     diff_preview: DiffPreview.nullable(),
   })
   .partial()
-  .passthrough()
-const JobFileThumbnailErrorResponse = z
-  .object({
-    status: z.string().optional().default('error'),
-    message: z.string(),
-  })
-  .passthrough()
-const JobFileUploadViewResponse = z
-  .object({
-    status: z.string().optional().default('success'),
-    uploaded: z.array(JobFile),
-    message: z.string(),
-  })
   .passthrough()
 const JobStatusChoicesResponse = z
   .object({ statuses: z.object({}).partial().passthrough() })
@@ -1716,10 +1712,10 @@ const PurchaseOrderUpdate = z
   })
   .partial()
   .passthrough()
-const AllocationItemTypeEnum = z.enum(['job', 'stock'])
+const TypeC98Enum = z.enum(['stock', 'job'])
 const AllocationItem = z
   .object({
-    type: AllocationItemTypeEnum,
+    type: TypeC98Enum,
     job_id: z.string().uuid(),
     job_name: z.string(),
     quantity: z.number(),
@@ -1739,7 +1735,6 @@ const PurchaseOrderAllocationsResponse = z
     allocations: z.record(z.array(AllocationItem)),
   })
   .passthrough()
-const TypeC98Enum = z.enum(['stock', 'job'])
 const AllocationDetailsResponse = z
   .object({
     type: TypeC98Enum,
@@ -1754,12 +1749,8 @@ const AllocationDetailsResponse = z
     unit_revenue: z.number().optional(),
   })
   .passthrough()
-const AllocationTypeEnum = z.enum(['stock', 'job'])
 const AllocationDeleteRequest = z
-  .object({
-    allocation_type: AllocationTypeEnum,
-    allocation_id: z.string().uuid(),
-  })
+  .object({ allocation_type: TypeC98Enum, allocation_id: z.string().uuid() })
   .passthrough()
 const AllocationDeleteResponse = z
   .object({
@@ -2132,6 +2123,8 @@ export const schemas = {
   StaffPerformanceStaffData,
   StaffPerformancePeriodSummary,
   StaffPerformanceResponse,
+  BearerTokenRequest,
+  BearerTokenResponse,
   Staff,
   StaffCreate,
   PatchedStaff,
@@ -2171,13 +2164,6 @@ export const schemas = {
   JobContactResponse,
   JobContactUpdateRequest,
   ClientSearchResponse,
-  JobFileStatusEnum,
-  JobFile,
-  JobFileErrorResponse,
-  UploadedFile,
-  JobFileUploadSuccessResponse,
-  JobFileUploadPartialResponse,
-  JobFileUpdateSuccessResponse,
   AssignJobRequest,
   AssignJobResponse,
   CompleteJob,
@@ -2220,6 +2206,8 @@ export const schemas = {
   CostSetSummary,
   CostLine,
   CostSet,
+  JobFileStatusEnum,
+  JobFile,
   PricingMethodologyEnum,
   QuoteSpreadsheet,
   Status7aeEnum,
@@ -2247,6 +2235,13 @@ export const schemas = {
   JobEventsResponse,
   JobEventCreateRequest,
   JobEventCreateResponse,
+  JobFileErrorResponse,
+  uploadJobFiles_Body,
+  UploadedFile,
+  JobFileUploadSuccessResponse,
+  JobFileUploadPartialResponse,
+  JobFileUpdateSuccessResponse,
+  JobFileThumbnailErrorResponse,
   JobClientHeader,
   JobHeaderResponse,
   JobInvoicesResponse,
@@ -2262,8 +2257,6 @@ export const schemas = {
   ValidationReport,
   DiffPreview,
   PreviewQuoteResponse,
-  JobFileThumbnailErrorResponse,
-  JobFileUploadViewResponse,
   JobStatusChoicesResponse,
   WeeklyMetrics,
   MonthEndJobHistory,
@@ -2306,12 +2299,10 @@ export const schemas = {
   PurchaseOrderLineUpdate,
   PatchedPurchaseOrderUpdate,
   PurchaseOrderUpdate,
-  AllocationItemTypeEnum,
+  TypeC98Enum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
-  TypeC98Enum,
   AllocationDetailsResponse,
-  AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
   StockItem,
@@ -2417,6 +2408,33 @@ Returns:
       },
     ],
     response: StaffPerformanceResponse,
+  },
+  {
+    method: 'post',
+    path: '/accounts/api/bearer-token/',
+    alias: 'accounts_api_bearer_token_create',
+    description: `Generate bearer token. Only enabled when ALLOW_BEARER_TOKEN_AUTHENTICATION&#x3D;True.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: BearerTokenRequest,
+      },
+    ],
+    response: z.object({ token: z.string() }).passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `No response body`,
+        schema: z.void(),
+      },
+      {
+        status: 403,
+        description: `No response body`,
+        schema: z.void(),
+      },
+    ],
   },
   {
     method: 'get',
@@ -3558,364 +3576,6 @@ Expected JSON:
     ],
   },
   {
-    method: 'get',
-    path: '/job/api/job-files/',
-    alias: 'retrieveJobFilesApi',
-    description: `Route the request to serve a file or list files for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: z.array(JobFile),
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/job/api/job-files/',
-    alias: 'uploadJobFilesApi',
-    description: `Handle file uploads for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: JobFileUploadSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'put',
-    path: '/job/api/job-files/',
-    alias: 'updateJobFilesApi',
-    description: `Update an existing job file&#x27;s content or its metadata.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: JobFileUpdateSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/job/api/job-files/',
-    alias: 'deleteJobFilesApi',
-    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: z.void(),
-    errors: [
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/job/api/job-files/:file_path',
-    alias: 'retrieveJobFilesApi_2',
-    description: `Route the request to serve a file or list files for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'file_path',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: z.array(JobFile),
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/job/api/job-files/:file_path',
-    alias: 'uploadJobFilesApi_2',
-    description: `Handle file uploads for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'file_path',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: JobFileUploadSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'put',
-    path: '/job/api/job-files/:file_path',
-    alias: 'updateJobFilesApi_2',
-    description: `Update an existing job file&#x27;s content or its metadata.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'file_path',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: JobFileUpdateSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/job/api/job-files/:file_path',
-    alias: 'deleteJobFilesApi_2',
-    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'file_path',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: z.void(),
-    errors: [
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/job/api/job-files/:job_number',
-    alias: 'retrieveJobFilesApi_3',
-    description: `Route the request to serve a file or list files for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-      {
-        name: 'job_number',
-        type: 'Path',
-        schema: z.number().int(),
-      },
-    ],
-    response: z.array(JobFile),
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/job/api/job-files/:job_number',
-    alias: 'uploadJobFilesApi_3',
-    description: `Handle file uploads for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-      {
-        name: 'job_number',
-        type: 'Path',
-        schema: z.number().int(),
-      },
-    ],
-    response: JobFileUploadSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'put',
-    path: '/job/api/job-files/:job_number',
-    alias: 'updateJobFilesApi_3',
-    description: `Update an existing job file&#x27;s content or its metadata.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-      {
-        name: 'job_number',
-        type: 'Path',
-        schema: z.number().int(),
-      },
-    ],
-    response: JobFileUpdateSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/job/api/job-files/:job_number',
-    alias: 'deleteJobFilesApi_3',
-    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-      {
-        name: 'job_number',
-        type: 'Path',
-        schema: z.number().int(),
-      },
-    ],
-    response: z.void(),
-    errors: [
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
     method: 'post',
     path: '/job/api/job/:job_id/assignment',
     alias: 'job_api_job_assignment_create',
@@ -4794,6 +4454,185 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   },
   {
     method: 'get',
+    path: '/job/rest/jobs/:job_id/files/',
+    alias: 'listJobFiles',
+    description: `List all active files for a job.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.array(JobFile),
+    errors: [
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/job/rest/jobs/:job_id/files/',
+    alias: 'uploadJobFiles',
+    description: `Upload files to a job. Job ID (UUID) is in URL path.`,
+    requestFormat: 'form-data',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: uploadJobFiles_Body,
+      },
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobFileUploadSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/files/:file_id/',
+    alias: 'getJobFile',
+    description: `Download/view a specific job file.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'file_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'format',
+        type: 'Query',
+        schema: z.enum(['file', 'json']).optional(),
+      },
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.instanceof(File),
+    errors: [
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/job/rest/jobs/:job_id/files/:file_id/',
+    alias: 'updateJobFile',
+    description: `Update job file metadata.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: JobFile,
+      },
+      {
+        name: 'file_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'format',
+        type: 'Query',
+        schema: z.enum(['file', 'json']).optional(),
+      },
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobFileUpdateSuccessResponse,
+    errors: [
+      {
+        status: 400,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/job/rest/jobs/:job_id/files/:file_id/',
+    alias: 'deleteJobFile',
+    description: `Delete a job file.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'file_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'format',
+        type: 'Query',
+        schema: z.enum(['file', 'json']).optional(),
+      },
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
+    errors: [
+      {
+        status: 404,
+        schema: JobFileErrorResponse,
+      },
+      {
+        status: 500,
+        schema: JobFileErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/files/:file_id/thumbnail/',
+    alias: 'getJobFileThumbnail',
+    description: `Get JPEG thumbnail for a job file (images only).`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'file_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.instanceof(File),
+    errors: [
+      {
+        status: 404,
+        schema: JobFileThumbnailErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/job/rest/jobs/:job_id/header/',
     alias: 'job_rest_jobs_header_retrieve',
     description: `Fetch essential job header information for fast loading. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
@@ -4988,397 +4827,6 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.object({ error: z.string() }).passthrough(),
       },
     ],
-  },
-  {
-    method: 'get',
-    path: '/job/rest/jobs/files/',
-    alias: 'retrieveJobFilesApi_4',
-    description: `Route the request to serve a file or list files for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: z.array(JobFile),
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/job/rest/jobs/files/',
-    alias: 'uploadJobFilesApi_4',
-    description: `Handle file uploads for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: JobFileUploadSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'put',
-    path: '/job/rest/jobs/files/',
-    alias: 'updateJobFilesApi_4',
-    description: `Update an existing job file&#x27;s content or its metadata.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: JobFileUpdateSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/job/rest/jobs/files/',
-    alias: 'deleteJobFilesApi_4',
-    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: z.void(),
-    errors: [
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/job/rest/jobs/files/:file_id/thumbnail/',
-    alias: 'getJobFileThumbnail',
-    description: `API view for serving JPEG thumbnails of job files.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'file_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: JobFileThumbnailErrorResponse,
-  },
-  {
-    method: 'get',
-    path: '/job/rest/jobs/files/:file_path/',
-    alias: 'retrieveJobFilesApi_5',
-    description: `Route the request to serve a file or list files for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'file_path',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: z.array(JobFile),
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/job/rest/jobs/files/:file_path/',
-    alias: 'uploadJobFilesApi_5',
-    description: `Handle file uploads for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'file_path',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: JobFileUploadSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'put',
-    path: '/job/rest/jobs/files/:file_path/',
-    alias: 'updateJobFilesApi_5',
-    description: `Update an existing job file&#x27;s content or its metadata.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'file_path',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: JobFileUpdateSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/job/rest/jobs/files/:file_path/',
-    alias: 'deleteJobFilesApi_5',
-    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'file_path',
-        type: 'Path',
-        schema: z.string(),
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-    ],
-    response: z.void(),
-    errors: [
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/job/rest/jobs/files/:job_number/',
-    alias: 'retrieveJobFilesApi_6',
-    description: `Route the request to serve a file or list files for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-      {
-        name: 'job_number',
-        type: 'Path',
-        schema: z.number().int(),
-      },
-    ],
-    response: z.array(JobFile),
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/job/rest/jobs/files/:job_number/',
-    alias: 'uploadJobFilesApi_6',
-    description: `Handle file uploads for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-      {
-        name: 'job_number',
-        type: 'Path',
-        schema: z.number().int(),
-      },
-    ],
-    response: JobFileUploadSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'put',
-    path: '/job/rest/jobs/files/:job_number/',
-    alias: 'updateJobFilesApi_6',
-    description: `Update an existing job file&#x27;s content or its metadata.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFile,
-      },
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-      {
-        name: 'job_number',
-        type: 'Path',
-        schema: z.number().int(),
-      },
-    ],
-    response: JobFileUpdateSuccessResponse,
-    errors: [
-      {
-        status: 400,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'delete',
-    path: '/job/rest/jobs/files/:job_number/',
-    alias: 'deleteJobFilesApi_6',
-    description: `Delete a job file by its ID. (Note: file_path param is the job_file.id).`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'format',
-        type: 'Query',
-        schema: z.enum(['file', 'json']).optional(),
-      },
-      {
-        name: 'job_number',
-        type: 'Path',
-        schema: z.number().int(),
-      },
-    ],
-    response: z.void(),
-    errors: [
-      {
-        status: 404,
-        schema: JobFileErrorResponse,
-      },
-      {
-        status: 500,
-        schema: JobFileErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/job/rest/jobs/files/upload/',
-    alias: 'uploadJobFilesRest',
-    description: `REST API view for uploading files to jobs.
-
-Handles multipart file uploads, saves files to the Dropbox workflow folder,
-and creates JobFile database records with proper file metadata.`,
-    requestFormat: 'form-data',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: JobFileUploadViewResponse,
-      },
-    ],
-    response: JobFileUploadViewResponse,
   },
   {
     method: 'get',

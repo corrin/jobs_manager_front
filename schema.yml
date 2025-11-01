@@ -106,6 +106,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/StaffPerformanceResponse'
           description: ''
+  /accounts/api/bearer-token/:
+    post:
+      operationId: accounts_api_bearer_token_create
+      description: Generate bearer token. Only enabled when ALLOW_BEARER_TOKEN_AUTHENTICATION=True.
+      tags:
+        - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BearerTokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BearerTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BearerTokenRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BearerTokenResponse'
+          description: ''
+        '401':
+          description: No response body
+        '403':
+          description: No response body
   /accounts/api/staff/:
     get:
       operationId: accounts_api_staff_list
@@ -1779,640 +1808,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
-  /job/api/job-files/:
-    get:
-      operationId: retrieveJobFilesApi
-      description: Route the request to serve a file or list files for a job.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    post:
-      operationId: uploadJobFilesApi
-      description: Handle file uploads for a job.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-          description: ''
-        '207':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    put:
-      operationId: updateJobFilesApi
-      description: Update an existing job file's content or its metadata.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    delete:
-      operationId: deleteJobFilesApi
-      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '204':
-          description: No response body
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-  /job/api/job-files/{file_path}:
-    get:
-      operationId: retrieveJobFilesApi_2
-      description: Route the request to serve a file or list files for a job.
-      parameters:
-        - in: path
-          name: file_path
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    post:
-      operationId: uploadJobFilesApi_2
-      description: Handle file uploads for a job.
-      parameters:
-        - in: path
-          name: file_path
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-          description: ''
-        '207':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    put:
-      operationId: updateJobFilesApi_2
-      description: Update an existing job file's content or its metadata.
-      parameters:
-        - in: path
-          name: file_path
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    delete:
-      operationId: deleteJobFilesApi_2
-      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
-      parameters:
-        - in: path
-          name: file_path
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '204':
-          description: No response body
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-  /job/api/job-files/{job_number}:
-    get:
-      operationId: retrieveJobFilesApi_3
-      description: Route the request to serve a file or list files for a job.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-        - in: path
-          name: job_number
-          schema:
-            type: integer
-          required: true
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    post:
-      operationId: uploadJobFilesApi_3
-      description: Handle file uploads for a job.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-        - in: path
-          name: job_number
-          schema:
-            type: integer
-          required: true
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-          description: ''
-        '207':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    put:
-      operationId: updateJobFilesApi_3
-      description: Update an existing job file's content or its metadata.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-        - in: path
-          name: job_number
-          schema:
-            type: integer
-          required: true
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    delete:
-      operationId: deleteJobFilesApi_3
-      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-        - in: path
-          name: job_number
-          schema:
-            type: integer
-          required: true
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '204':
-          description: No response body
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
   /job/api/job/{job_id}/assignment:
     post:
       operationId: job_api_job_assignment_create
@@ -3574,6 +2969,288 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobRestErrorResponse'
           description: ''
+  /job/rest/jobs/{job_id}/files/:
+    get:
+      operationId: listJobFiles
+      description: List all active files for a job.
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Job Files
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JobFile'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+    post:
+      operationId: uploadJobFiles
+      description: Upload files to a job. Job ID (UUID) is in URL path.
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Job Files
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Files to upload
+              required:
+                - files
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
+          description: ''
+        '207':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUploadPartialResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+  /job/rest/jobs/{job_id}/files/{file_id}/:
+    get:
+      operationId: getJobFile
+      description: Download/view a specific job file.
+      parameters:
+        - in: path
+          name: file_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Job Files
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+            '*/*':
+              schema:
+                type: string
+                format: binary
+          description: Binary file content
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+    put:
+      operationId: updateJobFile
+      description: Update job file metadata.
+      parameters:
+        - in: path
+          name: file_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Job Files
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobFile'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobFile'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JobFile'
+        required: true
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+    delete:
+      operationId: deleteJobFile
+      description: Delete a job file.
+      parameters:
+        - in: path
+          name: file_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: query
+          name: format
+          schema:
+            type: string
+            enum:
+              - file
+              - json
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Job Files
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '204':
+          description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/JobFileErrorResponse'
+          description: ''
+  /job/rest/jobs/{job_id}/files/{file_id}/thumbnail/:
+    get:
+      operationId: getJobFileThumbnail
+      description: Get JPEG thumbnail for a job file (images only).
+      parameters:
+        - in: path
+          name: file_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Job Files
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: string
+                format: binary
+          description: JPEG thumbnail image
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobFileThumbnailErrorResponse'
+          description: ''
   /job/rest/jobs/{job_id}/header/:
     get:
       operationId: job_rest_jobs_header_retrieve
@@ -4004,692 +3681,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JobRestErrorResponse'
-          description: ''
-  /job/rest/jobs/files/:
-    get:
-      operationId: retrieveJobFilesApi_4
-      description: Route the request to serve a file or list files for a job.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    post:
-      operationId: uploadJobFilesApi_4
-      description: Handle file uploads for a job.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-          description: ''
-        '207':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    put:
-      operationId: updateJobFilesApi_4
-      description: Update an existing job file's content or its metadata.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    delete:
-      operationId: deleteJobFilesApi_4
-      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '204':
-          description: No response body
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-  /job/rest/jobs/files/{file_id}/thumbnail/:
-    get:
-      operationId: getJobFileThumbnail
-      description: API view for serving JPEG thumbnails of job files.
-      parameters:
-        - in: path
-          name: file_id
-          schema:
-            type: string
-            format: uuid
-          required: true
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileThumbnailErrorResponse'
-          description: ''
-  /job/rest/jobs/files/{file_path}/:
-    get:
-      operationId: retrieveJobFilesApi_5
-      description: Route the request to serve a file or list files for a job.
-      parameters:
-        - in: path
-          name: file_path
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    post:
-      operationId: uploadJobFilesApi_5
-      description: Handle file uploads for a job.
-      parameters:
-        - in: path
-          name: file_path
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-          description: ''
-        '207':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    put:
-      operationId: updateJobFilesApi_5
-      description: Update an existing job file's content or its metadata.
-      parameters:
-        - in: path
-          name: file_path
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    delete:
-      operationId: deleteJobFilesApi_5
-      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
-      parameters:
-        - in: path
-          name: file_path
-          schema:
-            type: string
-          required: true
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '204':
-          description: No response body
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-  /job/rest/jobs/files/{job_number}/:
-    get:
-      operationId: retrieveJobFilesApi_6
-      description: Route the request to serve a file or list files for a job.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-        - in: path
-          name: job_number
-          schema:
-            type: integer
-          required: true
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-            '*/*':
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/JobFile'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    post:
-      operationId: uploadJobFilesApi_6
-      description: Handle file uploads for a job.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-        - in: path
-          name: job_number
-          schema:
-            type: integer
-          required: true
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadSuccessResponse'
-          description: ''
-        '207':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUploadPartialResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    put:
-      operationId: updateJobFilesApi_6
-      description: Update an existing job file's content or its metadata.
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-        - in: path
-          name: job_number
-          schema:
-            type: integer
-          required: true
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFile'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileUpdateSuccessResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-    delete:
-      operationId: deleteJobFilesApi_6
-      description: 'Delete a job file by its ID. (Note: file_path param is the job_file.id).'
-      parameters:
-        - in: query
-          name: format
-          schema:
-            type: string
-            enum:
-              - file
-              - json
-        - in: path
-          name: job_number
-          schema:
-            type: integer
-          required: true
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '204':
-          description: No response body
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/JobFileErrorResponse'
-          description: ''
-  /job/rest/jobs/files/upload/:
-    post:
-      operationId: uploadJobFilesRest
-      description: |-
-        REST API view for uploading files to jobs.
-
-        Handles multipart file uploads, saves files to the Dropbox workflow folder,
-        and creates JobFile database records with proper file metadata.
-      tags:
-        - job
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/JobFileUploadViewResponse'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/JobFileUploadViewResponse'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/JobFileUploadViewResponse'
           description: ''
   /job/rest/jobs/status-choices/:
     get:
@@ -6065,7 +5056,7 @@ components:
       properties:
         allocation_type:
           allOf:
-            - $ref: '#/components/schemas/AllocationTypeEnum'
+            - $ref: '#/components/schemas/TypeC98Enum'
           description: |-
             Type of allocation to delete
 
@@ -6139,7 +5130,7 @@ components:
       description: Serializer for individual allocation items (job or stock).
       properties:
         type:
-          $ref: '#/components/schemas/AllocationItemTypeEnum'
+          $ref: '#/components/schemas/TypeC98Enum'
         job_id:
           type: string
           format: uuid
@@ -6181,22 +5172,6 @@ components:
         - job_name
         - quantity
         - type
-    AllocationItemTypeEnum:
-      enum:
-        - job
-        - stock
-      type: string
-      description: |-
-        * `job` - Job
-        * `stock` - Stock
-    AllocationTypeEnum:
-      enum:
-        - stock
-        - job
-      type: string
-      description: |-
-        * `stock` - Stock
-        * `job` - Job
     AppError:
       type: object
       description: Basic serializer for AppError instances.
@@ -6403,6 +5378,29 @@ components:
       required:
         - message
         - success
+    BearerTokenRequest:
+      type: object
+      description: Serializer for bearer token generation request.
+      properties:
+        username:
+          type: string
+          description: Username or email address
+        password:
+          type: string
+          writeOnly: true
+          description: User password
+      required:
+        - password
+        - username
+    BearerTokenResponse:
+      type: object
+      description: Serializer for bearer token generation response.
+      properties:
+        token:
+          type: string
+          description: Bearer token for API authentication
+      required:
+        - token
     BlankEnum:
       enum:
         - ''
@@ -7019,7 +6017,6 @@ components:
       required:
         - accounting_date
         - created_at
-        - desc
         - id
         - kind
         - total_cost
@@ -7075,7 +6072,6 @@ components:
       required:
         - accounting_date
         - created_at
-        - desc
         - kind
         - updated_at
     CostLineErrorResponse:
@@ -8633,22 +7629,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/UploadedFile'
-        message:
-          type: string
-      required:
-        - message
-        - uploaded
-    JobFileUploadViewResponse:
-      type: object
-      description: Serializer for JobFileUploadView response.
-      properties:
-        status:
-          type: string
-          default: success
-        uploaded:
-          type: array
-          items:
-            $ref: '#/components/schemas/JobFile'
         message:
           type: string
       required:

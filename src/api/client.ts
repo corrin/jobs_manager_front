@@ -51,6 +51,14 @@ axios.defaults.withCredentials = true
 // Add ETag interceptors to the client axios instance
 axios.interceptors.request.use(
   (config) => {
+    // Add bearer token if using bearer auth
+    if (import.meta.env.VITE_AUTH_METHOD === 'bearer') {
+      const token = localStorage.getItem('auth_token')
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    }
+
     // Add If-Match header for job mutation endpoints
     const url = config.url || ''
     if (isJobMutationEndpoint(url)) {

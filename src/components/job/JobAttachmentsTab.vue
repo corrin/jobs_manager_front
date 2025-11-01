@@ -236,7 +236,6 @@ import { Button } from '@/components/ui/button'
 import CameraModal from './CameraModal.vue'
 import { jobService } from '@/services/job.service'
 import { schemas } from '@/api/generated/api'
-import { api } from '@/api/client'
 import { formatFileSize, formatDate } from '@/utils/string-formatting'
 import type { z } from 'zod'
 import { debugLog } from '@/utils/debug'
@@ -274,13 +273,11 @@ const isImagePreviewOpen = ref(false)
 
 // File loading
 async function loadFiles() {
-  if (!props.jobNumber) return
+  if (!props.jobId) return
 
   isLoading.value = true
   try {
-    const response = await api.retrieveJobFilesApi_3({
-      params: { job_number: props.jobNumber },
-    })
+    const response = await jobService.listJobFiles(props.jobId)
     files.value = Array.isArray(response) ? response : []
     debugLog('✅ Files loaded successfully:', files.value.length, 'files')
   } catch (error) {
@@ -452,8 +449,8 @@ const compressImage = (
 }
 
 const uploadFile = async (file: File) => {
-  if (!props.jobNumber) {
-    throw new Error('Job number is required')
+  if (!props.jobId) {
+    throw new Error('Job ID is required')
   }
 
   uploadProgress.value = 0
@@ -469,7 +466,7 @@ const uploadFile = async (file: File) => {
       }
     }, 200)
 
-    const response = await jobService.uploadJobFiles(props.jobNumber, [file])
+    const response = await jobService.uploadJobFiles(props.jobId, [file])
 
     clearInterval(progressInterval)
     uploadProgress.value = 100
@@ -557,7 +554,7 @@ async function deleteFile(id: string) {
   try {
     debugLog('🗑️ Deleting file:', file.filename)
 
-    const result = await jobService.deleteJobFile(id)
+    const result = await jobService.deleteJobFile(props.jobId, id)
 
     if (!result.success) {
       throw new Error(result.error || 'Failed to delete file')
@@ -582,14 +579,12 @@ async function updatePrintSetting(file: JobFile) {
     debugLog('🖨️ Updating print setting for file:', {
       filename: file.filename,
       print_on_jobsheet: file.print_on_jobsheet,
-      job_number: props.jobNumber,
+      job_id: props.jobId,
     })
 
-    const result = await jobService.updateJobFilePrintSetting(
-      props.jobNumber,
-      file.filename,
-      file.print_on_jobsheet,
-    )
+    const result = await jobService.updateJobFile(props.jobId, file.id, {
+      print_on_jobsheet: file.print_on_jobsheet,
+    })
 
     if (!result.success) {
       throw new Error(result.error || 'Failed to update print setting')

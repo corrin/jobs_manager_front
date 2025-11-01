@@ -69,7 +69,14 @@ export const useAuthStore = defineStore('auth', () => {
         }),
       )
 
-      await api.accounts_api_token_create(plainCredentials)
+      // Use bearer token auth for ngrok (avoids cookie cross-origin issues)
+      if (import.meta.env.VITE_AUTH_METHOD === 'bearer') {
+        const response = await api.accounts_api_bearer_token_create(plainCredentials)
+        localStorage.setItem('auth_token', response.token)
+      } else {
+        // Use cookie-based JWT auth for production
+        await api.accounts_api_token_create(plainCredentials)
+      }
 
       const userResponse = await api.accounts_me_retrieve()
       user.value = userResponse
@@ -109,9 +116,13 @@ export const useAuthStore = defineStore('auth', () => {
 
   const logout = async (): Promise<void> => {
     try {
-      // Note: logout endpoint might not be available in generated API
-      // Will need to implement via direct axios call if needed
-      await axios.post('/accounts/logout/')
+      // Clear bearer token if using bearer auth
+      if (import.meta.env.VITE_AUTH_METHOD === 'bearer') {
+        localStorage.removeItem('auth_token')
+      } else {
+        // Call backend logout for cookie-based auth
+        await axios.post('/accounts/logout/')
+      }
     } catch (err) {
       debugLog('Backend logout failed:', err)
     } finally {
