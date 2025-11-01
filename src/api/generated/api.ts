@@ -5389,26 +5389,12 @@ Supports pagination via &#x60;&#x60;limit&#x60;&#x60;/&#x60;&#x60;offset&#x60;&#
   },
   {
     method: 'get',
-    path: '/timesheets/api/daily/',
+    path: '/timesheets/api/daily/:target_date/',
     alias: 'getDailyTimesheetSummaryByDate',
     description: `Get daily timesheet summary for all staff
 
 Args:
-    target_date: Date in YYYY-MM-DD format (optional, defaults to today)
-
-Returns:
-    JSON response with daily timesheet data`,
-    requestFormat: 'json',
-    response: DailyTimesheetSummary,
-  },
-  {
-    method: 'get',
-    path: '/timesheets/api/daily/:target_date/',
-    alias: 'getDailyTimesheetSummaryByDate_2',
-    description: `Get daily timesheet summary for all staff
-
-Args:
-    target_date: Date in YYYY-MM-DD format (optional, defaults to today)
+    target_date: Date in YYYY-MM-DD format (required)
 
 Returns:
     JSON response with daily timesheet data`,
@@ -5447,35 +5433,13 @@ Returns:
   },
   {
     method: 'get',
-    path: '/timesheets/api/staff/:staff_id/daily/',
+    path: '/timesheets/api/staff/:staff_id/daily/:target_date/',
     alias: 'getStaffDailyTimesheetDetailByDate',
     description: `Get detailed timesheet data for a specific staff member
 
 Args:
     staff_id: Staff member ID
-    target_date: Date in YYYY-MM-DD format (optional, defaults to today)
-
-Returns:
-    JSON response with staff timesheet detail`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'staff_id',
-        type: 'Path',
-        schema: z.string(),
-      },
-    ],
-    response: DailyTimesheetSummary,
-  },
-  {
-    method: 'get',
-    path: '/timesheets/api/staff/:staff_id/daily/:target_date/',
-    alias: 'getStaffDailyTimesheetDetailByDate_2',
-    description: `Get detailed timesheet data for a specific staff member
-
-Args:
-    staff_id: Staff member ID
-    target_date: Date in YYYY-MM-DD format (optional, defaults to today)
+    target_date: Date in YYYY-MM-DD format (required)
 
 Returns:
     JSON response with staff timesheet detail`,

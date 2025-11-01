@@ -1,5 +1,6 @@
 import { schemas } from '../api/generated/api'
 import { api } from '../api/client'
+import { today } from './date.service'
 import type { z } from 'zod'
 
 // Use inferred types from Zod schemas
@@ -14,32 +15,27 @@ type StaffDailyData = z.infer<typeof schemas.StaffDailyData>
 // - DailyTimesheetSummary (now from generated API)
 
 export const getDailyTimesheetSummary = async (date?: string): Promise<DailyTimesheetSummary> => {
-  if (date) {
-    return await api.getDailyTimesheetSummaryByDate_2({ params: { target_date: date } })
-  } else {
-    return await api.getDailyTimesheetSummaryByDate()
-  }
+  // Date is now required in the API path - use today() if not provided
+  const targetDate = date || today()
+  return await api.getDailyTimesheetSummaryByDate({
+    params: { target_date: targetDate },
+  })
 }
 
 export const getStaffDailyDetail = async (
   staffId: string,
   date?: string,
 ): Promise<StaffDailyData> => {
-  if (date) {
-    // Backend returns single StaffDailyData object, not full DailyTimesheetSummary
-    const response = (await api.getStaffDailyTimesheetDetailByDate_2({
-      params: {
-        staff_id: staffId,
-        target_date: date,
-      },
-    })) as unknown as StaffDailyData
-    return response
-  } else {
-    const response = (await api.getStaffDailyTimesheetDetailByDate({
-      params: { staff_id: staffId },
-    })) as unknown as StaffDailyData
-    return response
-  }
+  // Date is now required in the API path - use today() if not provided
+  const targetDate = date || today()
+  // Backend returns single StaffDailyData object, not full DailyTimesheetSummary
+  const response = (await api.getStaffDailyTimesheetDetailByDate({
+    params: {
+      staff_id: staffId,
+      target_date: targetDate,
+    },
+  })) as unknown as StaffDailyData
+  return response
 }
 
 export const formatHours = (hours: number): string => {

@@ -4601,36 +4601,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/AppErrorListResponse'
           description: ''
-  /timesheets/api/daily/:
+  /timesheets/api/daily/{target_date}/:
     get:
       operationId: getDailyTimesheetSummaryByDate
       description: |-
         Get daily timesheet summary for all staff
 
         Args:
-            target_date: Date in YYYY-MM-DD format (optional, defaults to today)
-
-        Returns:
-            JSON response with daily timesheet data
-      tags:
-        - timesheets
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DailyTimesheetSummary'
-          description: ''
-  /timesheets/api/daily/{target_date}/:
-    get:
-      operationId: getDailyTimesheetSummaryByDate_2
-      description: |-
-        Get daily timesheet summary for all staff
-
-        Args:
-            target_date: Date in YYYY-MM-DD format (optional, defaults to today)
+            target_date: Date in YYYY-MM-DD format (required)
 
         Returns:
             JSON response with daily timesheet data
@@ -4688,7 +4666,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StaffListResponse'
           description: ''
-  /timesheets/api/staff/{staff_id}/daily/:
+  /timesheets/api/staff/{staff_id}/daily/{target_date}/:
     get:
       operationId: getStaffDailyTimesheetDetailByDate
       description: |-
@@ -4696,36 +4674,7 @@ paths:
 
         Args:
             staff_id: Staff member ID
-            target_date: Date in YYYY-MM-DD format (optional, defaults to today)
-
-        Returns:
-            JSON response with staff timesheet detail
-      parameters:
-        - in: path
-          name: staff_id
-          schema:
-            type: string
-          required: true
-      tags:
-        - timesheets
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DailyTimesheetSummary'
-          description: ''
-  /timesheets/api/staff/{staff_id}/daily/{target_date}/:
-    get:
-      operationId: getStaffDailyTimesheetDetailByDate_2
-      description: |-
-        Get detailed timesheet data for a specific staff member
-
-        Args:
-            staff_id: Staff member ID
-            target_date: Date in YYYY-MM-DD format (optional, defaults to today)
+            target_date: Date in YYYY-MM-DD format (required)
 
         Returns:
             JSON response with staff timesheet detail
