@@ -150,6 +150,7 @@ import { toast } from 'vue-sonner'
 import { api } from '@/api/client'
 import { transformDeliveryReceiptForAPI } from '@/utils/delivery-receipt'
 import { schemas } from '@/api/generated/api'
+import { onPoConcurrencyRetry } from '@/composables/usePoConcurrencyEvents'
 import type { z } from 'zod'
 
 // Import types from generated API schemas
@@ -338,10 +339,41 @@ async function saveSummary() {
     }
   }
 
-  await store.patch(orderId, updateData)
-  toast.success('Summary saved')
-  await load()
-  await loadExistingAllocations()
+  try {
+    await store.patch(orderId, updateData)
+    toast.success('Summary saved')
+    await load()
+    await loadExistingAllocations()
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    debugLog('Error saving summary:', err)
+
+    // Listen for retry events if this was a concurrency conflict
+    if (
+      errorMessage.includes('412') ||
+      errorMessage.includes('Precondition Failed') ||
+      errorMessage.includes('updated elsewhere') ||
+      errorMessage.includes('Data reloaded')
+    ) {
+      // Immediately reload data so user can see what changed
+      await load()
+      await loadExistingAllocations()
+
+      const unsubscribe = onPoConcurrencyRetry(orderId, async () => {
+        unsubscribe() // Clean up listener
+        try {
+          await store.patch(orderId, updateData)
+          toast.success('Summary saved')
+          await load() // Reload to show latest data
+          await loadExistingAllocations()
+        } catch (retryErr) {
+          toast.error('Retry failed. Please try again.')
+          debugLog('Retry failed:', retryErr)
+        }
+      })
+    }
+    throw err // Re-throw to maintain existing error handling
+  }
 }
 
 const handleAddLineEvent = () => {
@@ -906,10 +938,42 @@ const handleReceiptSave = async (payload: {
     await updatePoStatusAfterReceipt()
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err)
-    if (!errorMessage.includes('not a valid UUID') && !errorMessage.includes('validation')) {
-      toast.error('Failed to save receipt')
-    }
     debugLog('Error saving receipt:', err)
+
+    // Check if this is a concurrency conflict (handled by the store)
+    const isConcurrencyError =
+      errorMessage.includes('412') ||
+      errorMessage.includes('Precondition Failed') ||
+      errorMessage.includes('(ETag mismatch)') ||
+      errorMessage.includes('updated elsewhere') ||
+      errorMessage.includes('Data reloaded') ||
+      errorMessage.includes('This purchase order was updated elsewhere')
+
+    if (isConcurrencyError) {
+      // Immediately reload allocations to show latest data
+      await loadExistingAllocations()
+      await load()
+
+      // Concurrency errors are handled by the store with toast and reload
+      // Just set up the retry listener
+      const unsubscribe = onPoConcurrencyRetry(po.value.id, async () => {
+        unsubscribe() // Clean up listener
+        try {
+          await receiptStore.submitDeliveryReceipt(po.value.id, request.allocations)
+          toast.success('Receipt saved')
+          await Promise.all([load(), loadExistingAllocations()]) // Reload to show latest data
+          await updatePoStatusAfterReceipt()
+        } catch (retryErr) {
+          toast.error('Retry failed. Please try again.')
+          debugLog('Retry failed:', retryErr)
+        }
+      })
+    } else {
+      // Only show generic error if it's not a concurrency conflict
+      if (!errorMessage.includes('not a valid UUID') && !errorMessage.includes('validation')) {
+        toast.error('Failed to save receipt')
+      }
+    }
   }
 }
 
