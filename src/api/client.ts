@@ -284,15 +284,18 @@ axios.interceptors.response.use(
         }
 
         // Show persistent user notification with retry option
-        toast.error('Missing version information. Purchase order data reloaded.', {
-          duration: Infinity, // Don't auto-dismiss
-          action: {
-            label: 'Retry',
-            onClick: () => {
-              emitPoConcurrencyRetry(poId)
+        toast.error(
+          'Missing version information. Purchase order data has been reloaded - please review before retrying your update.',
+          {
+            duration: Infinity, // Don't auto-dismiss
+            action: {
+              label: 'Retry',
+              onClick: () => {
+                emitPoConcurrencyRetry(poId)
+              },
             },
           },
-        })
+        )
 
         // Create and throw ConcurrencyError
         const concurrencyError = new ConcurrencyError(

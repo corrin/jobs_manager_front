@@ -135,15 +135,15 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
    * @param poId - The purchase order ID to reload
    */
   async function reloadPoOnConflict(poId: string): Promise<void> {
-    debugLog('🔄 PO Store - reloadPoOnConflict called:', { poId })
+    debugLog('🔄 Delivery Receipt Store - reloadPoOnConflict called:', { poId })
 
     try {
       // Fetch full PO detail (captures new ETag via interceptor)
       await fetchPurchaseOrder(poId)
 
-      debugLog('✅ PO Store - reloadPoOnConflict success:', { poId })
+      debugLog('✅ Delivery Receipt Store - reloadPoOnConflict success:', { poId })
     } catch (error) {
-      debugLog('❌ PO Store - reloadPoOnConflict error:', { poId, error })
+      debugLog('❌ Delivery Receipt Store - reloadPoOnConflict error:', { poId, error })
       throw error
     }
   }
