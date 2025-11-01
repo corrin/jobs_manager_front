@@ -99,5 +99,3 @@ export function usePoETags() {
     clearAllETags,
   }
 }
-
-// Debug logging is handled by the imported debugLog function

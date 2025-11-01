@@ -4,6 +4,8 @@ import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import { debugLog } from '@/utils/debug'
+import { toast } from 'vue-sonner'
+import { emitPoConcurrencyRetry } from '@/composables/usePoConcurrencyEvents'
 import type { z } from 'zod'
 
 type Job = z.infer<typeof schemas.JobForPurchasing>
@@ -123,6 +125,43 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
       )
       error.value = errorMessage
       debugLog(`Error submitting delivery receipt for PO ${purchaseOrderId}:`, err)
+
+      // Handle concurrency conflicts
+      if (
+        errorMessage.includes('412') ||
+        errorMessage.includes('Precondition Failed') ||
+        errorMessage.includes('ETag mismatch') ||
+        errorMessage.includes('updated elsewhere') ||
+        errorMessage.includes('Data reloaded')
+      ) {
+        debugLog('🔄 Concurrency conflict detected in delivery receipt store')
+
+        // Show persistent user notification with retry option IMMEDIATELY
+        toast.error('This purchase order was updated elsewhere. Data reloaded.', {
+          duration: Infinity, // Don't auto-dismiss
+          action: {
+            label: 'Retry',
+            onClick: () => {
+              emitPoConcurrencyRetry(purchaseOrderId)
+            },
+          },
+        })
+
+        // Immediately reload data so user can see what changed
+        try {
+          await reloadPoOnConflict(purchaseOrderId)
+          debugLog('✅ Reloaded PO data after concurrency conflict')
+        } catch (reloadError) {
+          debugLog('❌ Failed to reload PO data:', reloadError)
+        }
+
+        // Create and throw ConcurrencyError
+        const concurrencyError = new Error(
+          'This purchase order was updated elsewhere. Data reloaded. Please review and resubmit.',
+        )
+        throw concurrencyError
+      }
+
       throw new Error(errorMessage)
     } finally {
       loading.value = false
