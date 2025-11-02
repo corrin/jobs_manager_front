@@ -310,17 +310,19 @@ function canEditField(
   if (field === 'unit_rev') {
     return isUnitRevenueEditable(line)
   }
-  if (field === 'quantity') {
-    if (props.tabKind === 'actual') {
-      // For actuals, quantity on non-adjust lines typically should not be edited (origin = system)
-      const isMaterial = kind === 'material'
-      const isConsumed =
-        !!line.id || !!(line.ext_refs && (line.ext_refs as Record<string, unknown>).stock_id)
-      return kind === 'adjust' || (isMaterial && isConsumed)
-    }
-    return true
+  if (field === 'quantity' && props.tabKind === 'actual') {
+    // For actuals, quantity on non-adjust lines typically should not be edited (origin = system)
+    const isMaterial = kind === 'material'
+    const isConsumed =
+      !!line.id || !!(line.ext_refs && (line.ext_refs as Record<string, unknown>).stock_id)
+    return kind === 'adjust' || (isMaterial && isConsumed)
   }
-  // desc
+  if (field === 'desc' && props.tabKind === 'actual') {
+    // only allow description editing for adjustments and materials
+    return kind === 'adjust' || 'material'
+  }
+
+  // desc & quantity in non-actual tabs
   return true
 }
 
@@ -663,7 +665,9 @@ const columns = computed(() => {
               Object.assign(line, { desc: val })
               // Infer "adjust" when user starts typing without a selected item
               const hasSelectedItemLocal = !!selectedItemMap.get(line)
-              if (!hasSelectedItemLocal && val.trim() && String(line.kind) !== 'adjust') {
+              const isLabour = line.kind === 'time'
+              const isAdjust = line.kind === 'adjust'
+              if (!hasSelectedItemLocal && val.trim() && !isAdjust && !isLabour) {
                 updateLineKind(line, 'adjust')
               }
             },

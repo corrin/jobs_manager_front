@@ -13,6 +13,8 @@ import type {
   ValueFormatterParams,
   CellClickedEvent,
   CellKeyDownEvent,
+  CellEditingStartedEvent,
+  CellEditingStoppedEvent,
 } from 'ag-grid-community'
 import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
@@ -21,6 +23,9 @@ import { TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
 
 type TimesheetEntryGridRowWithSaving = z.infer<typeof schemas.TimesheetCostLine> & {
   isSaving?: boolean
+  isModified?: boolean
+  isNewRow?: boolean
+  tempId?: string
 }
 
 // Type aliases for compatibility with existing code
@@ -38,6 +43,7 @@ export function useTimesheetEntryGrid(
   options?: {
     resolveStaffById?: ResolveStaffById
     onScheduleAutosave?: (entry: TimesheetEntryGridRowWithSaving) => void
+    onDescriptionEditChange?: (entry: TimesheetEntryGridRowWithSaving, isEditing: boolean) => void
   },
 ) {
   const gridApi = ref<GridApi | null>(null)
@@ -212,6 +218,8 @@ export function useTimesheetEntryGrid(
     onRowDoubleClicked: handleRowDoubleClicked,
     onCellClicked: handleCellClicked,
     onCellKeyDown: handleCellKeyDown,
+    onCellEditingStarted: handleCellEditingStarted,
+    onCellEditingStopped: handleCellEditingStopped,
     onGridPreDestroyed: () => gridPreDestroy(),
     getRowStyle: (params: { data?: TimesheetEntryGridRow }) => {
       if (!params.data) return undefined
@@ -231,6 +239,25 @@ export function useTimesheetEntryGrid(
   // Expose a pre-destroy hook to clear local API reference
   function gridPreDestroy(): void {
     gridApi.value = null
+  }
+
+  function handleCellEditingStarted(event: CellEditingStartedEvent): void {
+    if (event.colDef.field !== 'description' || !event.data) return
+    options?.onDescriptionEditChange?.(event.data as TimesheetEntryGridRowWithSaving, true)
+  }
+
+  function handleCellEditingStopped(event: CellEditingStoppedEvent): void {
+    if (event.colDef.field !== 'description' || !event.data) return
+
+    const row = event.data as TimesheetEntryGridRowWithSaving
+    options?.onDescriptionEditChange?.(row, false)
+
+    if (!row.isModified) return
+
+    const entry = createEntryFromRowData(row)
+    if (!isRowComplete(entry) || isRowEmpty(entry)) return
+
+    options?.onScheduleAutosave?.(row)
   }
 
   async function handleCellClicked(event: CellClickedEvent): Promise<void> {
@@ -321,7 +348,7 @@ export function useTimesheetEntryGrid(
         }
         data.isModified = true
         data.isNewRow = false // Convert to regular row but don't save yet
-        console.log('✏️ New row marked as modified:', updatedEntry.description)
+        console.log('✏️ New row marked as modified:', updatedEntry.description || '')
         options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
 
         // Ensure there's always an empty row at the end
@@ -462,7 +489,7 @@ export function useTimesheetEntryGrid(
   }
 
   function isRowComplete(entry: TimesheetEntry): boolean {
-    return !!(entry.jobNumber && entry.hours > 0 && entry.description.trim())
+    return !!(entry.jobNumber && entry.hours > 0)
   }
 
   function isRowEmpty(entry: TimesheetEntry): boolean {
@@ -489,9 +516,6 @@ export function useTimesheetEntryGrid(
       addNewRow(staffId, undefined, staffData)
     }
   }
-
-  // ✅ REMOVED: saveNewRow function no longer needed since we disabled autosave
-  // All saving is now handled by the parent component's "Save All" functionality
 
   async function deleteRow(rowIndex: number): Promise<void> {
     if (!gridApi.value) return

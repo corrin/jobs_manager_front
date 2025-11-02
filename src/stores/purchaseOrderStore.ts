@@ -15,6 +15,8 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
   const orders = ref<PurchaseOrder[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  // Conflict reload timestamp per poId for UI sync
+  const conflictReloadAtById = ref<Record<string, number>>({})
 
   async function fetchOrders() {
     loading.value = true
@@ -83,6 +85,31 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     }
   }
 
+  /**
+   * Reloads purchase order data when a concurrency conflict occurs.
+   * This fetches fresh data from the server to get the latest ETag and PO state.
+   * @param poId - The purchase order ID to reload
+   */
+  async function reloadPoOnConflict(poId: string): Promise<void> {
+    debugLog('🔄 PO Store - reloadPoOnConflict called:', { poId })
+
+    try {
+      // Fetch full PO detail (captures new ETag via interceptor)
+      await fetchOne(poId)
+
+      // Mark conflict reload timestamp so components can force local sync
+      conflictReloadAtById.value = {
+        ...conflictReloadAtById.value,
+        [poId]: Date.now(),
+      }
+
+      debugLog('✅ PO Store - reloadPoOnConflict success:', { poId })
+    } catch (error) {
+      debugLog('❌ PO Store - reloadPoOnConflict error:', { poId, error })
+      throw error
+    }
+  }
+
   async function fetchPurchaseOrderPdf(id: string): Promise<Blob> {
     if (!id) {
       throw new Error('Purchase order ID is required')
@@ -122,11 +149,13 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     orders,
     loading,
     error,
+    conflictReloadAtById,
     fetchOrders,
     createOrder,
     fetchOne,
     patch,
     fetchPurchaseOrderPdf,
     emailPurchaseOrder,
+    reloadPoOnConflict,
   }
 })

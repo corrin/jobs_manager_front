@@ -3928,7 +3928,8 @@ paths:
       description: |-
         REST API view for processing delivery receipts.
 
-        POST: Processes delivery receipt for a purchase order with stock allocations
+        POST: Processes delivery receipt for a purchase order with stock allocations.
+        Concurrency is controlled in this endpoint (ETag/If-Match).
       tags:
         - purchasing
       requestBody:
@@ -4106,7 +4107,10 @@ paths:
           description: ''
     patch:
       operationId: purchasing_rest_purchase_orders_partial_update
-      description: Update purchase order.
+      description: |-
+        Update purchase order.
+
+        Concurrency is controlled in this endpoint (ETag/If-Match).
       parameters:
         - in: path
           name: id

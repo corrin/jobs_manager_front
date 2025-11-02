@@ -6,10 +6,14 @@ import {
   isJobEndpoint,
   isJobMutationEndpoint,
   extractJobId,
+  isPoEndpoint,
+  isPoMutationEndpoint,
+  extractPoId,
   ConcurrencyError,
 } from '../types/concurrency'
 import { toast } from 'vue-sonner'
 import { emitConcurrencyRetry } from '../composables/useConcurrencyEvents'
+import { emitPoConcurrencyRetry } from '../composables/usePoConcurrencyEvents'
 
 // Global registry for ETag management to avoid circular imports
 let etagManager: {
@@ -19,6 +23,16 @@ let etagManager: {
 
 let jobReloadManager: {
   reloadJobOnConflict: (jobId: string) => Promise<void>
+} | null = null
+
+// Global registry for PO ETag management
+let poEtagManager: {
+  getETag: (poId: string) => string | null
+  setETag: (poId: string, etag: string) => void
+} | null = null
+
+let poReloadManager: {
+  reloadPoOnConflict: (poId: string) => Promise<void>
 } | null = null
 
 // Function to set up the ETag manager after Vue app initialization
@@ -34,6 +48,21 @@ export function setupJobReloadManager(manager: {
   reloadJobOnConflict: (jobId: string) => Promise<void>
 }) {
   jobReloadManager = manager
+}
+
+// Function to set up the PO ETag manager after Vue app initialization
+export function setupPoETagManager(manager: {
+  getETag: (poId: string) => string | null
+  setETag: (poId: string, etag: string) => void
+}) {
+  poEtagManager = manager
+}
+
+// Function to set up the PO reload manager after Vue app initialization
+export function setupPoReloadManager(manager: {
+  reloadPoOnConflict: (poId: string) => Promise<void>
+}) {
+  poReloadManager = manager
 }
 
 function getApiBaseUrl() {
@@ -72,6 +101,33 @@ axios.interceptors.request.use(
       }
     }
 
+    // Add If-Match header for PO mutation endpoints
+    if (isPoMutationEndpoint(url)) {
+      let poId: string | null = null
+
+      // For delivery receipts, extract PO ID from request body
+      if (url.includes('/purchasing/rest/delivery-receipts/')) {
+        try {
+          const body = typeof config.data === 'string' ? JSON.parse(config.data) : config.data
+          poId = body?.purchase_order_id || null
+          debugLog(`[PO ETags] Extracted PO ID from delivery receipt body:`, poId)
+        } catch (e) {
+          debugLog(`[PO ETags] Failed to parse delivery receipt body:`, e)
+        }
+      } else {
+        // For other PO endpoints, extract from URL
+        poId = extractPoId(url)
+      }
+
+      if (poId && poEtagManager) {
+        const etag = poEtagManager.getETag(poId)
+        if (etag) {
+          config.headers['If-Match'] = etag
+          debugLog(`[PO ETags] Added If-Match header for ${url}:`, etag)
+        }
+      }
+    }
+
     return config
   },
   async (error) => {
@@ -106,6 +162,15 @@ axios.interceptors.response.use(
       }
     }
 
+    // Capture ETag from PO endpoint responses
+    if (etag && isPoEndpoint(url)) {
+      const poId = extractPoId(url)
+      if (poId && poEtagManager) {
+        poEtagManager.setETag(poId, etag)
+        debugLog(`[PO ETags] Captured ETag for ${url}:`, etag)
+      }
+    }
+
     return response
   },
   async (error) => {
@@ -113,6 +178,7 @@ axios.interceptors.response.use(
     if (error.response?.status === 412) {
       const url = error.config?.url || ''
       const jobId = extractJobId(url)
+      const poId = extractPoId(url)
 
       if (jobId && jobReloadManager) {
         debugLog(`[ETags] Concurrency conflict detected for job ${jobId}, reloading data`)
@@ -144,12 +210,44 @@ axios.interceptors.response.use(
 
         return Promise.reject(concurrencyError)
       }
+
+      if (poId && poReloadManager) {
+        debugLog(`[PO ETags] Concurrency conflict detected for PO ${poId}, reloading data`)
+
+        // Reload PO data to get fresh ETag
+        try {
+          await poReloadManager.reloadPoOnConflict(poId)
+          debugLog(`[PO ETags] Successfully reloaded PO ${poId} after concurrency conflict`)
+        } catch (reloadError) {
+          debugLog(`[PO ETags] Failed to reload PO ${poId}:`, reloadError)
+        }
+
+        // Show persistent user notification with retry option
+        toast.error('This purchase order was updated elsewhere. Data reloaded.', {
+          duration: Infinity, // Don't auto-dismiss
+          action: {
+            label: 'Retry',
+            onClick: () => {
+              emitPoConcurrencyRetry(poId)
+            },
+          },
+        })
+
+        // Create and throw ConcurrencyError
+        const concurrencyError = new ConcurrencyError(
+          'This purchase order was updated elsewhere. Data reloaded. Please review and resubmit.',
+          poId,
+        )
+
+        return Promise.reject(concurrencyError)
+      }
     }
 
     // Handle 428 Precondition Required (missing If-Match)
     if (error.response?.status === 428) {
       const url = error.config?.url || ''
       const jobId = extractJobId(url)
+      const poId = extractPoId(url)
 
       if (jobId && jobReloadManager) {
         debugLog(`[ETags] Missing ETag for job ${jobId}, reloading data`)
@@ -177,6 +275,40 @@ axios.interceptors.response.use(
         const concurrencyError = new ConcurrencyError(
           'Missing version information. Job data reloaded. Please retry your changes.',
           jobId,
+        )
+
+        return Promise.reject(concurrencyError)
+      }
+
+      if (poId && poReloadManager) {
+        debugLog(`[PO ETags] Missing ETag for PO ${poId}, reloading data`)
+
+        // Reload PO data to get ETag
+        try {
+          await poReloadManager.reloadPoOnConflict(poId)
+          debugLog(`[PO ETags] Successfully reloaded PO ${poId} to get ETag`)
+        } catch (reloadError) {
+          debugLog(`[PO ETags] Failed to reload PO ${poId}:`, reloadError)
+        }
+
+        // Show persistent user notification with retry option
+        toast.error(
+          'Missing version information. Purchase order data has been reloaded - please review before retrying your update.',
+          {
+            duration: Infinity, // Don't auto-dismiss
+            action: {
+              label: 'Retry',
+              onClick: () => {
+                emitPoConcurrencyRetry(poId)
+              },
+            },
+          },
+        )
+
+        // Create and throw ConcurrencyError
+        const concurrencyError = new ConcurrencyError(
+          'Missing version information. Purchase order data reloaded. Please review and resubmit.',
+          poId,
         )
 
         return Promise.reject(concurrencyError)
