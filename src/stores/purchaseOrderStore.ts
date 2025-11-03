@@ -116,8 +116,8 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     }
 
     try {
-      // First, try the standard endpoint
-      const response = await axios.get(`/purchasing/api/purchase-orders/${id}/pdf/`, {
+      // Use the updated endpoint
+      const response = await axios.get(`/purchasing/rest/purchase-orders/${id}/pdf/`, {
         responseType: 'blob',
       })
 
@@ -134,9 +134,9 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     }
 
     try {
-      const response = await api.purchasing_api_purchase_orders_email_create(
+      const response = await api.getPurchaseOrderEmail(
         {}, // Empty body as required by the schema
-        { params: { purchase_order_id: id } },
+        { params: { po_id: id } },
       )
       return response
     } catch (err) {

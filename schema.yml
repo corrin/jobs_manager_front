@@ -3016,16 +3016,11 @@ paths:
         content:
           multipart/form-data:
             schema:
-              type: object
-              properties:
-                files:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                  description: Files to upload
-              required:
-                - files
+              $ref: '#/components/schemas/JobFileUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobFileUploadRequest'
+        required: true
       security:
         - cookieAuth: []
         - {}
@@ -4198,6 +4193,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/AllocationDetailsResponse'
           description: ''
+  /purchasing/rest/purchase-orders/{po_id}/email/:
+    post:
+      operationId: getPurchaseOrderEmail
+      description: Generate email data for the specified purchase order.
+      parameters:
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - purchasing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderEmailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderEmailResponse'
+          description: ''
   /purchasing/rest/purchase-orders/{po_id}/lines/{line_id}/allocations/delete/:
     post:
       operationId: deleteAllocation
@@ -4245,6 +4280,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AllocationDeleteResponse'
+          description: ''
+  /purchasing/rest/purchase-orders/{po_id}/pdf/:
+    get:
+      operationId: getPurchaseOrderPDF
+      description: Generate and download PDF for the specified purchase order.
+      parameters:
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - purchasing
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderPDFResponse'
           description: ''
   /purchasing/rest/stock/:
     get:
@@ -5009,12 +5067,12 @@ components:
       properties:
         allocation_type:
           allOf:
-            - $ref: '#/components/schemas/TypeC98Enum'
+            - $ref: '#/components/schemas/AllocationTypeEnum'
           description: |-
             Type of allocation to delete
 
-            * `stock` - Stock
             * `job` - Job
+            * `stock` - Stock
         allocation_id:
           type: string
           format: uuid
@@ -5048,7 +5106,7 @@ components:
       description: Serializer for allocation details response
       properties:
         type:
-          $ref: '#/components/schemas/TypeC98Enum'
+          $ref: '#/components/schemas/TypeD09Enum'
         id:
           type: string
           format: uuid
@@ -5125,6 +5183,14 @@ components:
         - job_name
         - quantity
         - type
+    AllocationTypeEnum:
+      enum:
+        - job
+        - stock
+      type: string
+      description: |-
+        * `job` - Job
+        * `stock` - Stock
     AppError:
       type: object
       description: Basic serializer for AppError instances.
@@ -7571,6 +7637,22 @@ components:
         - errors
         - status
         - uploaded
+    JobFileUploadRequest:
+      type: object
+      description: Serializer for job file upload requests.
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Files to upload
+        print_on_jobsheet:
+          type: boolean
+          default: true
+          description: Flag indicating whether the file should print on the jobsheet.
+      required:
+        - files
     JobFileUploadSuccessResponse:
       type: object
       description: Serializer for successful file upload response.
@@ -9681,6 +9763,32 @@ components:
         * `partially_received` - Partially Received
         * `fully_received` - Fully Received
         * `deleted` - Deleted
+    PurchaseOrderEmailRequest:
+      type: object
+      description: Serializer for purchase order email generation request
+      properties:
+        recipient_email:
+          type: string
+          format: email
+        message:
+          type: string
+          maxLength: 1000
+    PurchaseOrderEmailResponse:
+      type: object
+      description: Serializer for purchase order email generation response
+      properties:
+        success:
+          type: boolean
+        email_subject:
+          type: string
+        email_body:
+          type: string
+        pdf_url:
+          type: string
+        message:
+          type: string
+      required:
+        - success
     PurchaseOrderLine:
       type: object
       description: Serializer for PurchaseOrderLine model.
@@ -9885,6 +9993,14 @@ components:
         - status
         - supplier
         - supplier_id
+    PurchaseOrderPDFResponse:
+      type: object
+      description: Serializer for purchase order PDF generation response
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
     PurchaseOrderUpdate:
       type: object
       description: Serializer for updating purchase orders.
@@ -11210,6 +11326,14 @@ components:
       description: |-
         * `stock` - Stock
         * `job` - Job
+    TypeD09Enum:
+      enum:
+        - job
+        - stock
+      type: string
+      description: |-
+        * `job` - Job
+        * `stock` - Stock
     UploadedFile:
       type: object
       description: Serializer for file upload response.
