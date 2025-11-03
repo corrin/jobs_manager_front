@@ -1179,7 +1179,12 @@ const JobFileErrorResponse = z
     message: z.string(),
   })
   .passthrough()
-const uploadJobFiles_Body = z.object({ files: z.array(z.instanceof(File)) }).passthrough()
+const JobFileUploadRequest = z
+  .object({
+    files: z.array(z.string().url()),
+    print_on_jobsheet: z.boolean().optional().default(true),
+  })
+  .passthrough()
 const UploadedFile = z
   .object({
     id: z.string(),
@@ -1735,9 +1740,10 @@ const PurchaseOrderAllocationsResponse = z
     allocations: z.record(z.array(AllocationItem)),
   })
   .passthrough()
+const TypeD09Enum = z.enum(['job', 'stock'])
 const AllocationDetailsResponse = z
   .object({
-    type: TypeC98Enum,
+    type: TypeD09Enum,
     id: z.string().uuid(),
     description: z.string(),
     quantity: z.number(),
@@ -1749,8 +1755,28 @@ const AllocationDetailsResponse = z
     unit_revenue: z.number().optional(),
   })
   .passthrough()
+const PurchaseOrderEmailRequest = z
+  .object({
+    recipient_email: z.string().email(),
+    message: z.string().max(1000),
+  })
+  .partial()
+  .passthrough()
+const PurchaseOrderEmailResponse = z
+  .object({
+    success: z.boolean(),
+    email_subject: z.string().optional(),
+    email_body: z.string().optional(),
+    pdf_url: z.string().optional(),
+    message: z.string().optional(),
+  })
+  .passthrough()
+const AllocationTypeEnum = z.enum(['job', 'stock'])
 const AllocationDeleteRequest = z
-  .object({ allocation_type: TypeC98Enum, allocation_id: z.string().uuid() })
+  .object({
+    allocation_type: AllocationTypeEnum,
+    allocation_id: z.string().uuid(),
+  })
   .passthrough()
 const AllocationDeleteResponse = z
   .object({
@@ -1761,6 +1787,10 @@ const AllocationDeleteResponse = z
     job_name: z.string().optional(),
     updated_received_quantity: z.number().optional(),
   })
+  .passthrough()
+const PurchaseOrderPDFResponse = z
+  .object({ success: z.boolean(), message: z.string() })
+  .partial()
   .passthrough()
 const StockItem = z
   .object({
@@ -2236,7 +2266,7 @@ export const schemas = {
   JobEventCreateRequest,
   JobEventCreateResponse,
   JobFileErrorResponse,
-  uploadJobFiles_Body,
+  JobFileUploadRequest,
   UploadedFile,
   JobFileUploadSuccessResponse,
   JobFileUploadPartialResponse,
@@ -2302,9 +2332,14 @@ export const schemas = {
   TypeC98Enum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
+  TypeD09Enum,
   AllocationDetailsResponse,
+  PurchaseOrderEmailRequest,
+  PurchaseOrderEmailResponse,
+  AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
+  PurchaseOrderPDFResponse,
   StockItem,
   StockList,
   StockCreate,
@@ -4483,7 +4518,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: uploadJobFiles_Body,
+        schema: JobFileUploadRequest,
       },
       {
         name: 'job_id',
@@ -5146,6 +5181,32 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
   },
   {
     method: 'post',
+    path: '/purchasing/rest/purchase-orders/:po_id/email/',
+    alias: 'getPurchaseOrderEmail',
+    description: `Generate email data for the specified purchase order.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PurchaseOrderEmailRequest,
+      },
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: PurchaseOrderEmailResponse,
+    errors: [
+      {
+        status: 400,
+        schema: PurchaseOrderEmailResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
     path: '/purchasing/rest/purchase-orders/:po_id/lines/:line_id/allocations/delete/',
     alias: 'deleteAllocation',
     description: `Delete a specific allocation (Stock item or CostLine) from a purchase order line.`,
@@ -5174,6 +5235,21 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         schema: AllocationDeleteResponse,
       },
     ],
+  },
+  {
+    method: 'get',
+    path: '/purchasing/rest/purchase-orders/:po_id/pdf/',
+    alias: 'getPurchaseOrderPDF',
+    description: `Generate and download PDF for the specified purchase order.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: PurchaseOrderPDFResponse,
   },
   {
     method: 'get',
