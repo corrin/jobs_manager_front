@@ -501,8 +501,7 @@ export const jobService = {
     updates: { filename?: string; print_on_jobsheet?: boolean },
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await api.updateJobFile(updates as any, {
+      await api.updateJobFile(updates, {
         params: { job_id: jobId, file_id: fileId },
       })
 

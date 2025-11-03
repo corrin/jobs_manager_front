@@ -319,8 +319,8 @@ const createStaffSchema = schemas.Staff.omit({
   .extend({
     password: z.string().min(8, 'Password must be at least 8 characters'),
     password_confirmation: z.string().min(1, 'Please confirm your password'),
-    groups: z.string(),
-    user_permissions: z.string(),
+    groups: z.array(z.string()).optional(),
+    user_permissions: z.array(z.string()).optional(),
     icon: z.instanceof(File).optional().nullable(),
   })
   .refine((data) => data.password === data.password_confirmation, {

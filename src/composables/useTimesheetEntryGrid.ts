@@ -370,13 +370,12 @@ export function useTimesheetEntryGrid(
   function handleRowDoubleClicked(event: RowDoubleClickedEvent): void {
     if (event.rowIndex === null) return
     if (!isApiAlive(event.api)) return
-    const editableCol = columnDefs.value.find(
-      (col) => col.editable && typeof col.field === 'string',
-    )
-    if (!editableCol || typeof editableCol.field !== 'string') return
+    // Focus on the cell that was double-clicked
+    const clickedCol = event.column?.getColDef()
+    if (!clickedCol || !clickedCol.editable || typeof clickedCol.field !== 'string') return
     event.api.startEditingCell({
       rowIndex: event.rowIndex,
-      colKey: editableCol.field,
+      colKey: clickedCol.field,
     })
   }
 
