@@ -344,6 +344,13 @@ const CompanyDefaults = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
     gdrive_quotes_folder_id: z.string().max(100).nullish(),
     xero_tenant_id: z.string().max(100).nullish(),
+    annual_leave_earnings_rate_id: z.string().max(100).nullish(),
+    sick_leave_earnings_rate_id: z.string().max(100).nullish(),
+    other_leave_earnings_rate_id: z.string().max(100).nullish(),
+    unpaid_leave_earnings_rate_id: z.string().max(100).nullish(),
+    ordinary_earnings_rate_id: z.string().max(100).nullish(),
+    time_half_earnings_rate_id: z.string().max(100).nullish(),
+    double_time_earnings_rate_id: z.string().max(100).nullish(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -381,6 +388,13 @@ const PatchedCompanyDefaults = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullable(),
     gdrive_quotes_folder_id: z.string().max(100).nullable(),
     xero_tenant_id: z.string().max(100).nullable(),
+    annual_leave_earnings_rate_id: z.string().max(100).nullable(),
+    sick_leave_earnings_rate_id: z.string().max(100).nullable(),
+    other_leave_earnings_rate_id: z.string().max(100).nullable(),
+    unpaid_leave_earnings_rate_id: z.string().max(100).nullable(),
+    ordinary_earnings_rate_id: z.string().max(100).nullable(),
+    time_half_earnings_rate_id: z.string().max(100).nullable(),
+    double_time_earnings_rate_id: z.string().max(100).nullable(),
     mon_start: z.string(),
     mon_end: z.string(),
     tue_start: z.string(),
@@ -1179,7 +1193,12 @@ const JobFileErrorResponse = z
     message: z.string(),
   })
   .passthrough()
-const uploadJobFiles_Body = z.object({ files: z.array(z.instanceof(File)) }).passthrough()
+const JobFileUploadRequest = z
+  .object({
+    files: z.array(z.string().url()),
+    print_on_jobsheet: z.boolean().optional().default(true),
+  })
+  .passthrough()
 const UploadedFile = z
   .object({
     id: z.string(),
@@ -1735,9 +1754,10 @@ const PurchaseOrderAllocationsResponse = z
     allocations: z.record(z.array(AllocationItem)),
   })
   .passthrough()
+const TypeD09Enum = z.enum(['job', 'stock'])
 const AllocationDetailsResponse = z
   .object({
-    type: TypeC98Enum,
+    type: TypeD09Enum,
     id: z.string().uuid(),
     description: z.string(),
     quantity: z.number(),
@@ -1749,8 +1769,12 @@ const AllocationDetailsResponse = z
     unit_revenue: z.number().optional(),
   })
   .passthrough()
+const AllocationTypeEnum = z.enum(['job', 'stock'])
 const AllocationDeleteRequest = z
-  .object({ allocation_type: TypeC98Enum, allocation_id: z.string().uuid() })
+  .object({
+    allocation_type: AllocationTypeEnum,
+    allocation_id: z.string().uuid(),
+  })
   .passthrough()
 const AllocationDeleteResponse = z
   .object({
@@ -2236,7 +2260,7 @@ export const schemas = {
   JobEventCreateRequest,
   JobEventCreateResponse,
   JobFileErrorResponse,
-  uploadJobFiles_Body,
+  JobFileUploadRequest,
   UploadedFile,
   JobFileUploadSuccessResponse,
   JobFileUploadPartialResponse,
@@ -2302,7 +2326,9 @@ export const schemas = {
   TypeC98Enum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
+  TypeD09Enum,
   AllocationDetailsResponse,
+  AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
   StockItem,
@@ -4483,7 +4509,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: uploadJobFiles_Body,
+        schema: JobFileUploadRequest,
       },
       {
         name: 'job_id',
@@ -5418,6 +5444,46 @@ Returns:
     description: `Get list of active jobs for timesheet entries using CostSet system.`,
     requestFormat: 'json',
     response: JobsListResponse,
+  },
+  {
+    method: 'post',
+    path: '/timesheets/api/post-to-xero-payroll/',
+    alias: 'timesheets_api_post_to_xero_payroll_create',
+    description: `Post a week&#x27;s timesheet to Xero Payroll.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'staff_id',
+        type: 'Query',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'week_start_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: z
+      .object({
+        success: z.boolean(),
+        xero_timesheet_id: z.string(),
+        entries_posted: z.number().int(),
+        leave_hours: z.number(),
+        work_hours: z.number(),
+        errors: z.array(z.string()),
+      })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',

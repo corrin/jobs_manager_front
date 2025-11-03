@@ -3016,16 +3016,11 @@ paths:
         content:
           multipart/form-data:
             schema:
-              type: object
-              properties:
-                files:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                  description: Files to upload
-              required:
-                - files
+              $ref: '#/components/schemas/JobFileUploadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JobFileUploadRequest'
+        required: true
       security:
         - cookieAuth: []
         - {}
@@ -4648,6 +4643,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobsListResponse'
           description: ''
+  /timesheets/api/post-to-xero-payroll/:
+    post:
+      operationId: timesheets_api_post_to_xero_payroll_create
+      description: Post a week's timesheet to Xero Payroll.
+      summary: Post weekly timesheet to Xero Payroll
+      parameters:
+        - in: query
+          name: staff_id
+          schema:
+            type: string
+            format: uuid
+          description: Staff member UUID
+          required: true
+        - in: query
+          name: week_start_date
+          schema:
+            type: string
+            format: date
+          description: Monday of the week to post (YYYY-MM-DD)
+          required: true
+      tags:
+        - timesheets
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  xero_timesheet_id:
+                    type: string
+                  entries_posted:
+                    type: integer
+                  leave_hours:
+                    type: number
+                  work_hours:
+                    type: number
+                  errors:
+                    type: array
+                    items:
+                      type: string
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
   /timesheets/api/staff/:
     get:
       operationId: timesheets_api_staff_retrieve
@@ -5009,12 +5062,12 @@ components:
       properties:
         allocation_type:
           allOf:
-            - $ref: '#/components/schemas/TypeC98Enum'
+            - $ref: '#/components/schemas/AllocationTypeEnum'
           description: |-
             Type of allocation to delete
 
-            * `stock` - Stock
             * `job` - Job
+            * `stock` - Stock
         allocation_id:
           type: string
           format: uuid
@@ -5048,7 +5101,7 @@ components:
       description: Serializer for allocation details response
       properties:
         type:
-          $ref: '#/components/schemas/TypeC98Enum'
+          $ref: '#/components/schemas/TypeD09Enum'
         id:
           type: string
           format: uuid
@@ -5125,6 +5178,14 @@ components:
         - job_name
         - quantity
         - type
+    AllocationTypeEnum:
+      enum:
+        - job
+        - stock
+      type: string
+      description: |-
+        * `job` - Job
+        * `stock` - Stock
     AppError:
       type: object
       description: Basic serializer for AppError instances.
@@ -5733,6 +5794,41 @@ components:
           type: string
           nullable: true
           description: The Xero tenant ID to use for this company
+          maxLength: 100
+        annual_leave_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Annual Leave
+          maxLength: 100
+        sick_leave_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Sick Leave
+          maxLength: 100
+        other_leave_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Other Leave
+          maxLength: 100
+        unpaid_leave_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Unpaid Leave
+          maxLength: 100
+        ordinary_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
+          maxLength: 100
+        time_half_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
+          maxLength: 100
+        double_time_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Double Time (2.0x)
           maxLength: 100
         mon_start:
           type: string
@@ -7571,6 +7667,22 @@ components:
         - errors
         - status
         - uploaded
+    JobFileUploadRequest:
+      type: object
+      description: Serializer for job file upload requests.
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Files to upload
+        print_on_jobsheet:
+          type: boolean
+          default: true
+          description: Flag indicating whether the file should print on the jobsheet.
+      required:
+        - files
     JobFileUploadSuccessResponse:
       type: object
       description: Serializer for successful file upload response.
@@ -9011,6 +9123,41 @@ components:
           type: string
           nullable: true
           description: The Xero tenant ID to use for this company
+          maxLength: 100
+        annual_leave_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Annual Leave
+          maxLength: 100
+        sick_leave_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Sick Leave
+          maxLength: 100
+        other_leave_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Other Leave
+          maxLength: 100
+        unpaid_leave_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Unpaid Leave
+          maxLength: 100
+        ordinary_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
+          maxLength: 100
+        time_half_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
+          maxLength: 100
+        double_time_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Double Time (2.0x)
           maxLength: 100
         mon_start:
           type: string
@@ -11210,6 +11357,14 @@ components:
       description: |-
         * `stock` - Stock
         * `job` - Job
+    TypeD09Enum:
+      enum:
+        - job
+        - stock
+      type: string
+      description: |-
+        * `job` - Job
+        * `stock` - Stock
     UploadedFile:
       type: object
       description: Serializer for file upload response.
