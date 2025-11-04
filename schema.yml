@@ -4193,6 +4193,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/AllocationDetailsResponse'
           description: ''
+  /purchasing/rest/purchase-orders/{po_id}/email/:
+    post:
+      operationId: getPurchaseOrderEmail
+      description: Generate email data for the specified purchase order.
+      parameters:
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - purchasing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderEmailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderEmailResponse'
+          description: ''
   /purchasing/rest/purchase-orders/{po_id}/lines/{line_id}/allocations/delete/:
     post:
       operationId: deleteAllocation
@@ -4240,6 +4280,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AllocationDeleteResponse'
+          description: ''
+  /purchasing/rest/purchase-orders/{po_id}/pdf/:
+    get:
+      operationId: getPurchaseOrderPDF
+      description: Generate and download PDF for the specified purchase order.
+      parameters:
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - purchasing
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderPDFResponse'
           description: ''
   /purchasing/rest/stock/:
     get:
@@ -4643,28 +4706,71 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobsListResponse'
           description: ''
-  /timesheets/api/post-to-xero-payroll/:
+  /timesheets/api/payroll/create-pay-run/:
     post:
-      operationId: timesheets_api_post_to_xero_payroll_create
-      description: Post a week's timesheet to Xero Payroll.
-      summary: Post weekly timesheet to Xero Payroll
-      parameters:
-        - in: query
-          name: staff_id
-          schema:
-            type: string
-            format: uuid
-          description: Staff member UUID
-          required: true
-        - in: query
-          name: week_start_date
-          schema:
-            type: string
-            format: date
-          description: Monday of the week to post (YYYY-MM-DD)
-          required: true
+      operationId: timesheets_api_payroll_create_pay_run_create
+      description: Create a new pay run for the specified week.
+      summary: Create pay run for a week
       tags:
         - timesheets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePayRunRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreatePayRunRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreatePayRunRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePayRunResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+  /timesheets/api/payroll/post-staff-week/:
+    post:
+      operationId: timesheets_api_payroll_post_staff_week_create
+      description: Post a week's timesheet to Xero Payroll.
+      summary: Post weekly timesheet to Xero Payroll
+      tags:
+        - timesheets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostWeekToXeroRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostWeekToXeroRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostWeekToXeroRequest'
+        required: true
       security:
         - cookieAuth: []
       responses:
@@ -4672,22 +4778,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  xero_timesheet_id:
-                    type: string
-                  entries_posted:
-                    type: integer
-                  leave_hours:
-                    type: number
-                  work_hours:
-                    type: number
-                  errors:
-                    type: array
-                    items:
-                      type: string
+                $ref: '#/components/schemas/PostWeekToXeroResponse'
           description: ''
         '400':
           content:
@@ -4760,8 +4851,8 @@ paths:
   /timesheets/api/weekly/:
     get:
       operationId: timesheets_api_weekly_retrieve
-      description: Return weekly timesheet data (5 or 7 days based on feature flag).
-      summary: Standard weekly overview (Mon–Sun when enabled, Mon–Fri when disabled)
+      description: Return weekly timesheet data with payroll fields (5/7 days).
+      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
       parameters:
         - in: query
           name: start_date
@@ -4833,42 +4924,6 @@ paths:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-  /timesheets/api/weekly/ims/:
-    get:
-      operationId: timesheets_api_weekly_ims_retrieve
-      description: Return IMS-formatted weekly timesheet data.
-      summary: IMS weekly overview (Tue–Fri + next Mon)
-      parameters:
-        - in: query
-          name: start_date
-          schema:
-            type: string
-            format: date
-          description: Monday of target week in YYYY-MM-DD format. Defaults to current
-            week.
-      tags:
-        - timesheets
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IMSWeeklyTimesheetData'
           description: ''
         '400':
           content:
@@ -5795,37 +5850,37 @@ components:
           nullable: true
           description: The Xero tenant ID to use for this company
           maxLength: 100
-        annual_leave_earnings_rate_id:
+        xero_annual_leave_type_id:
           type: string
           nullable: true
-          description: Xero Payroll earnings rate ID for Annual Leave
+          description: Xero Payroll Leave Type ID for Annual Leave
           maxLength: 100
-        sick_leave_earnings_rate_id:
+        xero_sick_leave_type_id:
           type: string
           nullable: true
-          description: Xero Payroll earnings rate ID for Sick Leave
+          description: Xero Payroll Leave Type ID for Sick Leave
           maxLength: 100
-        other_leave_earnings_rate_id:
+        xero_other_leave_type_id:
           type: string
           nullable: true
-          description: Xero Payroll earnings rate ID for Other Leave
+          description: Xero Payroll Leave Type ID for Other Leave
           maxLength: 100
-        unpaid_leave_earnings_rate_id:
+        xero_unpaid_leave_type_id:
           type: string
           nullable: true
-          description: Xero Payroll earnings rate ID for Unpaid Leave
+          description: Xero Payroll Leave Type ID for Unpaid Leave
           maxLength: 100
-        ordinary_earnings_rate_id:
+        xero_ordinary_earnings_rate_id:
           type: string
           nullable: true
           description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
           maxLength: 100
-        time_half_earnings_rate_id:
+        xero_time_half_earnings_rate_id:
           type: string
           nullable: true
           description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
           maxLength: 100
-        double_time_earnings_rate_id:
+        xero_double_time_earnings_rate_id:
           type: string
           nullable: true
           description: Xero Payroll earnings rate ID for Double Time (2.0x)
@@ -6201,6 +6256,39 @@ components:
         - hours
         - profitMargin
         - rev
+    CreatePayRunRequest:
+      type: object
+      description: Request serializer for creating a pay run
+      properties:
+        week_start_date:
+          type: string
+          format: date
+          description: Monday of the week (YYYY-MM-DD)
+      required:
+        - week_start_date
+    CreatePayRunResponse:
+      type: object
+      description: Response serializer for created pay run
+      properties:
+        pay_run_id:
+          type: string
+        status:
+          type: string
+        period_start_date:
+          type: string
+          format: date
+        period_end_date:
+          type: string
+          format: date
+        payment_date:
+          type: string
+          format: date
+      required:
+        - pay_run_id
+        - payment_date
+        - period_end_date
+        - period_start_date
+        - status
     CustomTokenObtainPair:
       type: object
       description: Custom serializer that accepts username and maps it to email
@@ -6582,221 +6670,6 @@ components:
             type: string
         error:
           type: string
-    IMSWeeklyStaffData:
-      type: object
-      description: Serializer for staff data in IMS weekly timesheet context
-      properties:
-        staff_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        weekly_hours:
-          type: array
-          items:
-            $ref: '#/components/schemas/IMSWeeklyStaffDataWeeklyHours'
-        total_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        total_billable_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        billable_percentage:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        status:
-          type: string
-        total_standard_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        total_time_and_half_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        total_double_time_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        total_overtime:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-      required:
-        - billable_percentage
-        - name
-        - staff_id
-        - status
-        - total_billable_hours
-        - total_double_time_hours
-        - total_hours
-        - total_overtime
-        - total_standard_hours
-        - total_time_and_half_hours
-        - weekly_hours
-    IMSWeeklyStaffDataWeeklyHours:
-      type: object
-      description: Serializer for weekly hours data of staff in IMS context
-      properties:
-        day:
-          type: string
-        hours:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        billable_hours:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        scheduled_hours:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        status:
-          type: string
-        leave_type:
-          type: string
-          nullable: true
-        has_leave:
-          type: boolean
-          default: false
-        standard_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        time_and_half_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        double_time_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        unpaid_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        overtime:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        leave_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-      required:
-        - billable_hours
-        - day
-        - double_time_hours
-        - hours
-        - leave_hours
-        - overtime
-        - scheduled_hours
-        - standard_hours
-        - status
-        - time_and_half_hours
-        - unpaid_hours
-    IMSWeeklyTimesheetData:
-      type: object
-      description: |-
-        Same structure of WeeklyTimesheetDataSerializer but for IMS context
-        (substitutes staff_data for the IMS-specific serializer above)
-      properties:
-        start_date:
-          type: string
-          format: date
-        end_date:
-          type: string
-          format: date
-        week_days:
-          type: array
-          items:
-            type: string
-            format: date
-        staff_data:
-          type: array
-          items:
-            $ref: '#/components/schemas/IMSWeeklyStaffData'
-        weekly_summary:
-          $ref: '#/components/schemas/WeeklySummary'
-        job_metrics:
-          $ref: '#/components/schemas/JobMetrics'
-        summary_stats:
-          type: object
-          additionalProperties: {}
-        export_mode:
-          type: string
-        is_current_week:
-          type: boolean
-        navigation:
-          type: object
-          additionalProperties: {}
-        weekend_enabled:
-          type: boolean
-          default: false
-        week_type:
-          type: string
-      required:
-        - end_date
-        - export_mode
-        - is_current_week
-        - job_metrics
-        - staff_data
-        - start_date
-        - summary_stats
-        - week_days
-        - weekly_summary
     Invoice:
       type: object
       properties:
@@ -8733,12 +8606,17 @@ components:
           type: boolean
           description: Check if job has an actual cost set
           readOnly: true
+        leave_type:
+          type: string
+          description: Get leave type if this is a payroll job
+          readOnly: true
       required:
         - charge_out_rate
         - client_name
         - has_actual_costset
         - id
         - job_number
+        - leave_type
         - name
     ModernTimesheetJobGetResponse:
       type: object
@@ -9124,37 +9002,37 @@ components:
           nullable: true
           description: The Xero tenant ID to use for this company
           maxLength: 100
-        annual_leave_earnings_rate_id:
+        xero_annual_leave_type_id:
           type: string
           nullable: true
-          description: Xero Payroll earnings rate ID for Annual Leave
+          description: Xero Payroll Leave Type ID for Annual Leave
           maxLength: 100
-        sick_leave_earnings_rate_id:
+        xero_sick_leave_type_id:
           type: string
           nullable: true
-          description: Xero Payroll earnings rate ID for Sick Leave
+          description: Xero Payroll Leave Type ID for Sick Leave
           maxLength: 100
-        other_leave_earnings_rate_id:
+        xero_other_leave_type_id:
           type: string
           nullable: true
-          description: Xero Payroll earnings rate ID for Other Leave
+          description: Xero Payroll Leave Type ID for Other Leave
           maxLength: 100
-        unpaid_leave_earnings_rate_id:
+        xero_unpaid_leave_type_id:
           type: string
           nullable: true
-          description: Xero Payroll earnings rate ID for Unpaid Leave
+          description: Xero Payroll Leave Type ID for Unpaid Leave
           maxLength: 100
-        ordinary_earnings_rate_id:
+        xero_ordinary_earnings_rate_id:
           type: string
           nullable: true
           description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
           maxLength: 100
-        time_half_earnings_rate_id:
+        xero_time_half_earnings_rate_id:
           type: string
           nullable: true
           description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
           maxLength: 100
-        double_time_earnings_rate_id:
+        xero_double_time_earnings_rate_id:
           type: string
           nullable: true
           description: Xero Payroll earnings rate ID for Double Time (2.0x)
@@ -9528,6 +9406,78 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PostWeekToXeroRequest:
+      type: object
+      description: Request serializer for posting weekly timesheet to Xero
+      properties:
+        staff_id:
+          type: string
+          format: uuid
+          description: Staff member UUID
+        week_start_date:
+          type: string
+          format: date
+          description: Monday of the week (YYYY-MM-DD)
+      required:
+        - staff_id
+        - week_start_date
+    PostWeekToXeroResponse:
+      type: object
+      description: Response serializer for posted timesheet
+      properties:
+        success:
+          type: boolean
+        xero_timesheet_id:
+          type: string
+          nullable: true
+        xero_leave_ids:
+          type: array
+          items:
+            type: string
+        entries_posted:
+          type: integer
+        work_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        other_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        annual_sick_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        unpaid_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - annual_sick_hours
+        - entries_posted
+        - errors
+        - other_leave_hours
+        - success
+        - unpaid_hours
+        - work_hours
+        - xero_leave_ids
+        - xero_timesheet_id
     PreviewQuoteResponse:
       type: object
       description: Serializer for preview quote response.
@@ -9828,6 +9778,32 @@ components:
         * `partially_received` - Partially Received
         * `fully_received` - Fully Received
         * `deleted` - Deleted
+    PurchaseOrderEmailRequest:
+      type: object
+      description: Serializer for purchase order email generation request
+      properties:
+        recipient_email:
+          type: string
+          format: email
+        message:
+          type: string
+          maxLength: 1000
+    PurchaseOrderEmailResponse:
+      type: object
+      description: Serializer for purchase order email generation response
+      properties:
+        success:
+          type: boolean
+        email_subject:
+          type: string
+        email_body:
+          type: string
+        pdf_url:
+          type: string
+        message:
+          type: string
+      required:
+        - success
     PurchaseOrderLine:
       type: object
       description: Serializer for PurchaseOrderLine model.
@@ -10032,6 +10008,14 @@ components:
         - status
         - supplier
         - supplier_id
+    PurchaseOrderPDFResponse:
+      type: object
+      description: Serializer for purchase order PDF generation response
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
     PurchaseOrderUpdate:
       type: object
       description: Serializer for updating purchase orders.
@@ -11483,7 +11467,8 @@ components:
         - status
     WeeklyStaffData:
       type: object
-      description: Serializer for staff data in weekly timesheet context
+      description: Serializer for staff data in weekly timesheet context with payroll
+        fields
       properties:
         staff_id:
           type: string
@@ -11508,6 +11493,13 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        total_scheduled_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         billable_percentage:
           type: number
           format: double
@@ -11517,21 +11509,77 @@ components:
           exclusiveMinimum: true
         status:
           type: string
+        total_billed_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_unbilled_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_overtime_1_5x_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_overtime_2x_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_sick_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_annual_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_other_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - billable_percentage
         - name
         - staff_id
         - status
+        - total_annual_leave_hours
         - total_billable_hours
+        - total_billed_hours
         - total_hours
+        - total_other_leave_hours
+        - total_overtime_1_5x_hours
+        - total_overtime_2x_hours
+        - total_scheduled_hours
+        - total_sick_leave_hours
+        - total_unbilled_hours
         - weekly_hours
     WeeklyStaffDataWeeklyHours:
       type: object
-      description: Serializer for weekly hours data of staff
+      description: Serializer for weekly hours data of staff with payroll fields
       properties:
         day:
           type: string
-          format: date
         hours:
           type: number
           format: double
@@ -11560,13 +11608,69 @@ components:
           nullable: true
         has_leave:
           type: boolean
+          default: false
+        billed_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        unbilled_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        overtime_1_5x_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        overtime_2x_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        sick_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        annual_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        other_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
+        - annual_leave_hours
         - billable_hours
+        - billed_hours
         - day
-        - has_leave
         - hours
+        - other_leave_hours
+        - overtime_1_5x_hours
+        - overtime_2x_hours
         - scheduled_hours
+        - sick_leave_hours
         - status
+        - unbilled_hours
     WeeklySummary:
       type: object
       description: Serializer for weekly summary data
@@ -11593,19 +11697,16 @@ components:
         - total_hours
     WeeklyTimesheetData:
       type: object
-      description: Serializer for comprehensive weekly timesheet data
+      description: Serializer for complete weekly timesheet data with payroll fields
       properties:
         start_date:
           type: string
-          format: date
         end_date:
           type: string
-          format: date
         week_days:
           type: array
           items:
             type: string
-            format: date
         staff_data:
           type: array
           items:
@@ -11615,8 +11716,7 @@ components:
         job_metrics:
           $ref: '#/components/schemas/JobMetrics'
         summary_stats:
-          type: object
-          additionalProperties: {}
+          $ref: '#/components/schemas/SummaryStats'
         export_mode:
           type: string
         is_current_week:
@@ -11624,9 +11724,9 @@ components:
         navigation:
           type: object
           additionalProperties: {}
+          nullable: true
         weekend_enabled:
           type: boolean
-          default: false
         week_type:
           type: string
       required:
