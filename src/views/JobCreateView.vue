@@ -199,6 +199,7 @@
                 type="submit"
                 :disabled="isSubmitting || !canSubmit"
                 class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                :class="{ 'bg-red-600 hover:bg-red-700': isSubmitting && !canSubmit }"
               >
                 <span v-if="isSubmitting" class="flex items-center">
                   <svg
@@ -469,11 +470,18 @@ const handleSubmit = async () => {
       throw new Error(String(result.error) || 'Failed to create job')
     }
   } catch (error: unknown) {
-    toast.error('Failed to create job: ' + ((error as Error).message || error))
+    const errorMessage = (error as Error).message || String(error)
+    toast.error(`Job creation failed: ${errorMessage}`, {
+      duration: Infinity,
+      action: {
+        label: 'Reload Page',
+        onClick: () => window.location.reload(),
+      },
+    })
     debugLog('Job creation error:', error)
     toast.dismiss('create-job')
-  } finally {
-    isSubmitting.value = false
+
+    isSubmitting.value = true
   }
 }
 
