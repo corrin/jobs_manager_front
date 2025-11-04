@@ -1,11 +1,12 @@
 // src/services/weekly-timesheet.service.ts
 
 import { api } from '@/api/client'
-import type { WeeklyTimesheetData, IMSWeeklyTimesheetData } from '@/api/generated/api'
+import type { WeeklyTimesheetData } from '@/api/generated/api'
 import { dateService } from '@/services/date.service'
 
 /**
- * Fetch standard Mon–Fri overview.
+ * Fetch weekly timesheet overview.
+ * Includes all payroll breakdown data (billed/unbilled/overtime/leave).
  */
 export async function fetchWeeklyOverview(startDate?: string): Promise<WeeklyTimesheetData> {
   const queries: Record<string, string> = {}
@@ -14,18 +15,6 @@ export async function fetchWeeklyOverview(startDate?: string): Promise<WeeklyTim
   }
   const response = await api.timesheets_api_weekly_retrieve({ queries })
   return response as WeeklyTimesheetData
-}
-
-/**
- * Fetch IMS overview (Tue–Fri + next Mon).
- */
-export async function fetchIMSOverview(startDate?: string): Promise<IMSWeeklyTimesheetData> {
-  const queries: Record<string, string> = {}
-  if (startDate) {
-    queries.start_date = startDate
-  }
-  const response = await api.timesheets_api_weekly_ims_retrieve({ queries })
-  return response as IMSWeeklyTimesheetData
 }
 
 /**
@@ -104,7 +93,6 @@ export function formatPercentage(percentage: number): string {
 
 export default {
   fetchWeeklyOverview,
-  fetchIMSOverview,
   submitPaidAbsence,
   getCurrentWeekRange,
   getWeekRange,
