@@ -124,8 +124,26 @@ export function useClientLookup() {
     }
 
     if (value.length >= 3) {
-      searchClients(value)
-      if (fromReload) selectClient(suggestions.value[0])
+      const searchPromise = searchClients(value)
+      if (fromReload) {
+        searchPromise
+          .then(() => {
+            if (!selectedClient.value && suggestions.value.length > 0) {
+              const normalizedValue = value.trim().toLowerCase()
+              const matchedClient = suggestions.value.find(
+                (client) => client.name.trim().toLowerCase() === normalizedValue,
+              )
+
+              const clientToSelect = matchedClient ?? suggestions.value[0]
+              if (clientToSelect) {
+                selectClient(clientToSelect)
+              }
+            }
+          })
+          .catch((error) => {
+            console.error('Error restoring client selection:', error)
+          })
+      }
     } else {
       suggestions.value = []
       showSuggestions.value = false
