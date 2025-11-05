@@ -102,14 +102,20 @@ export function useClientLookup() {
     }
   }
 
-  const preserveSelectedClient = () => {
+  const preserveSelectedClient = (modelValue?: string) => {
+    debugLog('Preserving selected client from modelValue:', modelValue)
     // Preserve the selected client when dialog reopens
     if (selectedClient.value && !searchQuery.value) {
       searchQuery.value = selectedClient.value.name
+      handleInputChange(selectedClient.value.name)
+    }
+    if (modelValue && !selectedClient.value) {
+      searchQuery.value = modelValue
+      handleInputChange(modelValue, true)
     }
   }
 
-  const handleInputChange = (value: string) => {
+  const handleInputChange = (value: string, fromReload = false) => {
     searchQuery.value = value
 
     if (selectedClient.value && selectedClient.value.name !== value) {
@@ -119,6 +125,7 @@ export function useClientLookup() {
 
     if (value.length >= 3) {
       searchClients(value)
+      if (fromReload) selectClient(suggestions.value[0])
     } else {
       suggestions.value = []
       showSuggestions.value = false

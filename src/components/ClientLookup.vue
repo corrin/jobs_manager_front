@@ -70,7 +70,9 @@
         <div
           :class="[
             'px-3 py-2 rounded-md text-xs font-medium flex items-center space-x-1',
-            hasValidXeroId || (props.supplierLookup.value && props.supplierLookup.has_xero_id)
+            hasValidXeroId ||
+            (props.supplierLookup.value && props.supplierLookup.has_xero_id) ||
+            forceXero
               ? 'bg-green-100 text-green-800 border border-green-200'
               : 'bg-red-100 text-red-800 border border-red-200',
           ]"
@@ -126,6 +128,7 @@ const props = withDefaults(
     supplierLookup?: { has_xero_id?: boolean; value: boolean }
     searchMode?: boolean
     editMode?: boolean
+    forceXero?: boolean
   }>(),
   {
     placeholder: 'Search for a client...',
@@ -294,6 +297,7 @@ watch(
       preserveSelectedClient()
     }
   },
+  { immediate: true },
 )
 
 watch(selectedClient, (newClient, oldClient) => {
@@ -312,6 +316,6 @@ watch(selectedClient, (newClient, oldClient) => {
 // Preserve client selection when component mounts
 onMounted(() => {
   debugLog('Props value: ', props)
-  preserveSelectedClient()
+  preserveSelectedClient(props.modelValue || '')
 })
 </script>
