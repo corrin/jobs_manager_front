@@ -1,7 +1,7 @@
 <template>
   <AppLayout>
-    <div class="flex flex-col min-h-screen">
-      <div class="sticky top-0 bg-white backdrop-blur-md border-b border-gray-200 p-1">
+    <div class="flex flex-col flex-1 min-h-0">
+      <div class="sticky top-0 z-20 bg-white backdrop-blur-md border-b border-gray-200 p-1">
         <div class="px-2 sm:px-3 lg:px-4 py-1 sm:py-1.5 lg:py-2">
           <div class="space-y-1 lg:space-y-0 pt-1 lg:pt-2">
             <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between">
@@ -118,7 +118,7 @@
         </div>
       </div>
 
-      <div class="flex-1 p-1 sm:p-2 lg:p-3 space-y-2 sm:space-y-3 lg:space-y-4">
+      <div class="p-1 sm:p-2 lg:p-3 space-y-2 sm:space-y-3 lg:space-y-4 flex-1 min-h-0 pb-6">
         <!-- Loading Spinner -->
         <div v-if="loading" class="flex-1 flex items-center justify-center bg-gray-50">
           <div class="text-center space-y-3 lg:space-y-4 p-6 lg:p-8">
@@ -150,11 +150,11 @@
 
         <div v-else-if="weeklyData" class="space-y-2 lg:space-y-3">
           <div
-            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-[calc(100vh-14rem)] lg:h-[calc(100vh-8rem)] xl:h-[calc(100vh-6rem)]"
+            class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col"
           >
-            <div class="flex-1 overflow-y-auto">
+            <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-gray-200 table-fixed">
-                <thead class="bg-gray-50 sticky top-0 z-10">
+                <thead class="bg-gray-50">
                   <tr>
                     <th
                       class="w-48 px-1.5 py-1.5 lg:py-2 text-left text-xs sm:text-sm lg:text-base font-medium text-gray-500 uppercase tracking-wider"
