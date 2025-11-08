@@ -75,6 +75,7 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         title: 'Daily Timesheet Overview - Jobs Manager',
+        allowScroll: true,
       },
     },
     {
@@ -92,6 +93,7 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         title: 'Weekly Timesheet',
+        allowScroll: true,
       },
     },
     {

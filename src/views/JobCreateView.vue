@@ -20,6 +20,7 @@
                     :required="true"
                     placeholder="Search for a client..."
                     :supplier-lookup="{ value: false }"
+                    :force-xero="forceXero"
                   />
                   <p v-if="errors.client_id" class="mt-1 text-sm text-red-600">
                     {{ errors.client_id }}
@@ -197,8 +198,9 @@
               </button>
               <button
                 type="submit"
-                :disabled="isSubmitting || !canSubmit"
+                :disabled="isSubmitting || !canSubmit || hasCreationError"
                 class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                :class="{ 'bg-red-600 hover:bg-red-700': hasCreationError }"
               >
                 <span v-if="isSubmitting" class="flex items-center">
                   <svg
@@ -305,9 +307,11 @@ const formData = ref<JobCreateData>({
 const selectedClient = ref<ClientSearchResult | null>(null)
 const selectedContact = ref<ClientContact | null>(null)
 const contactDisplayName = ref('')
+const forceXero = ref(false)
 
 const errors = ref<Record<string, string>>({})
 const isSubmitting = ref(false)
+const hasCreationError = ref(false)
 
 const handleClientSelection = async (client: ClientSearchResult | null) => {
   debugLog('JobCreateView - handleClientSelection:', {
@@ -469,10 +473,18 @@ const handleSubmit = async () => {
       throw new Error(String(result.error) || 'Failed to create job')
     }
   } catch (error: unknown) {
-    toast.error('Failed to create job: ' + ((error as Error).message || error))
+    const errorMessage = (error as Error).message || String(error)
+    // Save form data and error state in localStorage, then reload the page
+    localStorage.setItem('jobCreationFormData', JSON.stringify(formData.value))
+    localStorage.setItem('hasJobCreationError', 'true')
+    localStorage.setItem('jobCreationErrorMessage', errorMessage)
+    localStorage.setItem('selectedClient', JSON.stringify(selectedClient.value))
+
+    window.location.reload()
     debugLog('Job creation error:', error)
     toast.dismiss('create-job')
-  } finally {
+
+    hasCreationError.value = true
     isSubmitting.value = false
   }
 }
@@ -482,15 +494,37 @@ watch(formData.value, () => {
 })
 
 onMounted(() => {
-  formData.value.name = ''
-  formData.value.client_id = ''
-  formData.value.client_name = ''
-  formData.value.description = ''
-  formData.value.order_number = ''
-  formData.value.notes = ''
-  formData.value.contact_id = null
-  formData.value.estimated_materials = 0
-  formData.value.estimated_time = 0
-  formData.value.pricing_methodology = ''
+  const hasError = localStorage.getItem('hasJobCreationError') === 'true'
+  const errorMessage = localStorage.getItem('jobCreationErrorMessage') || 'Unknown error'
+  const storedFormData = localStorage.getItem('jobCreationFormData')
+
+  if (hasError) {
+    formData.value = storedFormData ? JSON.parse(storedFormData) : formData.value
+    selectedClient.value = localStorage.getItem('selectedClient')
+      ? JSON.parse(localStorage.getItem('selectedClient') as string)
+      : null
+    handleClientSelection(selectedClient.value)
+    forceXero.value = true
+    localStorage.removeItem('jobCreationFormData')
+    localStorage.removeItem('hasJobCreationError')
+    localStorage.removeItem('selectedClient')
+    toast.error('Previous job creation failed', {
+      description: `Page reloaded and state saved. Original error: ${errorMessage}`,
+      dismissible: true,
+    })
+    debugLog('Restored form data after error:', formData.value)
+    debugLog('Restored selected client after error:', selectedClient.value)
+  } else {
+    formData.value.name = ''
+    formData.value.client_id = ''
+    formData.value.client_name = ''
+    formData.value.description = ''
+    formData.value.order_number = ''
+    formData.value.notes = ''
+    formData.value.contact_id = null
+    formData.value.estimated_materials = 0
+    formData.value.estimated_time = 0
+    formData.value.pricing_methodology = ''
+  }
 })
 </script>
