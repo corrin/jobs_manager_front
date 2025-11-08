@@ -108,7 +108,7 @@ export const useStockStore = defineStore('stock', () => {
   }
 
   async function deactivate(id: string) {
-    await api.purchasing_rest_stock_destroy({ params: { id } })
+    await api.purchasing_rest_stock_destroy(undefined, { params: { stock_id: id } })
   }
 
   return { items, loading, fetchStock, fetchStockSafe, consumeStock, create, deactivate }
