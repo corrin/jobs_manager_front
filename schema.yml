@@ -4302,7 +4302,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PurchaseOrderPDFResponse'
+                type: string
+                format: binary
+          description: PDF file attachment
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
           description: ''
   /purchasing/rest/stock/:
     get:
@@ -9993,14 +10006,6 @@ components:
         - status
         - supplier
         - supplier_id
-    PurchaseOrderPDFResponse:
-      type: object
-      description: Serializer for purchase order PDF generation response
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
     PurchaseOrderUpdate:
       type: object
       description: Serializer for updating purchase orders.
@@ -10029,6 +10034,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderLineUpdate'
+    PurchasingErrorResponse:
+      type: object
+      description: Serializer for purchasing error responses
+      properties:
+        error:
+          type: string
+          description: Error message
+        details:
+          type: string
+          description: Optional details about the failure
+      required:
+        - error
     PurchasingJobsResponse:
       type: object
       description: Serializer for PurchasingJobsAPIView response

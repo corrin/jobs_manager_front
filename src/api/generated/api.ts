@@ -1788,9 +1788,8 @@ const AllocationDeleteResponse = z
     updated_received_quantity: z.number().optional(),
   })
   .passthrough()
-const PurchaseOrderPDFResponse = z
-  .object({ success: z.boolean(), message: z.string() })
-  .partial()
+const PurchasingErrorResponse = z
+  .object({ error: z.string(), details: z.string().optional() })
   .passthrough()
 const StockItem = z
   .object({
@@ -2339,7 +2338,7 @@ export const schemas = {
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
-  PurchaseOrderPDFResponse,
+  PurchasingErrorResponse,
   StockItem,
   StockList,
   StockCreate,
@@ -5249,7 +5248,17 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         schema: z.string().uuid(),
       },
     ],
-    response: PurchaseOrderPDFResponse,
+    response: z.instanceof(File),
+    errors: [
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
+      },
+      {
+        status: 500,
+        schema: PurchasingErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',

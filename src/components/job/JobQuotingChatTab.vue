@@ -318,17 +318,56 @@ const handleFileUpload = async (event: Event) => {
 
   if (!files || files.length === 0) return
 
+  const fileArray = Array.from(files)
   debugLog(
     'Files selected:',
-    Array.from(files).map((f) => f.name),
+    fileArray.map((f) => f.name),
   )
 
-  toast.info('File upload', {
-    description: `Selected ${files.length} file(s). File upload will be implemented next.`,
-    duration: 4000,
-  })
+  isLoading.value = true
 
-  target.value = ''
+  try {
+    const { jobService } = await import('@/services/job.service')
+    const response = await jobService.uploadJobFiles(props.jobId, fileArray)
+
+    // Response is an array of uploaded files
+    if (Array.isArray(response)) {
+      const uploadedFiles = response.map((file: { id: string; filename: string }) => ({
+        id: file.id,
+        filename: file.filename,
+      }))
+
+      // Create a message showing files were uploaded
+      const fileNames = uploadedFiles.map((f) => f.filename).join(', ')
+      const userMessage: VueChatMessage = {
+        _id: `file-${Date.now()}`,
+        content: `Uploaded: ${fileNames}`,
+        senderId: currentUserId,
+        username: 'You',
+        timestamp: new Date().toISOString(),
+        system: false,
+        metadata: {
+          file_ids: uploadedFiles.map((f) => f.id),
+          filenames: uploadedFiles.map((f) => f.filename),
+        },
+      }
+
+      messages.value.push(userMessage)
+      await saveMessage(userMessage, 'user')
+
+      toast.success('Files uploaded', {
+        description: `${files.length} file(s) uploaded to job`,
+      })
+    }
+  } catch (error) {
+    console.error('Failed to upload files:', error)
+    toast.error('Upload failed', {
+      description: 'Could not upload files. Please try again.',
+    })
+  } finally {
+    isLoading.value = false
+    target.value = ''
+  }
 }
 
 onMounted(async () => {
