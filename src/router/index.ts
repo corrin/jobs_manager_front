@@ -259,6 +259,18 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Staff Performance Report - Jobs Manager' },
     },
     {
+      path: '/reports/sales-forecast',
+      name: 'sales-forecast-report',
+      component: () => import('@/views/SalesForecastReportView.vue'),
+      meta: { requiresAuth: true, title: 'Sales Forecast Report - Jobs Manager' },
+    },
+    {
+      path: '/reports/profit-and-loss',
+      name: 'profit-loss-report',
+      component: () => import('@/views/ProfitLossReportView.vue'),
+      meta: { requiresAuth: true, title: 'Profit & Loss Report - Jobs Manager' },
+    },
+    {
       path: '/reports/data-quality/archived-jobs',
       name: 'data-quality-archived-jobs',
       component: () => import('@/views/DataQualityArchivedJobsView.vue'),
