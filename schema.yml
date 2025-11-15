@@ -67,6 +67,68 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobAgingResponse'
           description: ''
+  /accounting/api/reports/profit-and-loss/:
+    get:
+      operationId: accounting_api_reports_profit_and_loss_retrieve
+      tags:
+        - accounting
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          description: No response body
+  /accounting/api/reports/sales-forecast/:
+    get:
+      operationId: accounting_api_reports_sales_forecast_retrieve
+      description: Returns monthly sales comparison between Xero invoices and Job
+        Manager revenue for all months with data
+      summary: Get monthly sales forecast data
+      tags:
+        - accounting
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  months:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:
+                          type: string
+                          example: 2025-01
+                        month_label:
+                          type: string
+                          example: Jan 2025
+                        xero_sales:
+                          type: number
+                          example: 125000.5
+                        jm_sales:
+                          type: number
+                          example: 118500.75
+                        variance:
+                          type: number
+                          example: 6499.75
+                        variance_pct:
+                          type: number
+                          example: 5.48
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+          description: ''
   /accounting/api/reports/staff-performance-summary/:
     get:
       operationId: accounting_api_reports_staff_performance_summary_retrieve
@@ -4302,7 +4364,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PurchaseOrderPDFResponse'
+                type: string
+                format: binary
+          description: PDF file attachment
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
           description: ''
   /purchasing/rest/stock/:
     get:
@@ -6909,6 +6984,15 @@ components:
 
             * `time_materials` - Time & Materials
             * `fixed_price` - Fixed Price
+        speed_quality_tradeoff:
+          allOf:
+            - $ref: '#/components/schemas/SpeedQualityTradeoffEnum'
+          description: |-
+            Speed vs quality tradeoff for workshop execution
+
+            * `fast` - Fast - Prioritize Speed
+            * `normal` - Normal - Balanced
+            * `quality` - Quality - Prioritize Quality
         quote_sheet:
           allOf:
             - $ref: '#/components/schemas/QuoteSpreadsheet'
@@ -9993,14 +10077,6 @@ components:
         - status
         - supplier
         - supplier_id
-    PurchaseOrderPDFResponse:
-      type: object
-      description: Serializer for purchase order PDF generation response
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
     PurchaseOrderUpdate:
       type: object
       description: Serializer for updating purchase orders.
@@ -10029,6 +10105,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderLineUpdate'
+    PurchasingErrorResponse:
+      type: object
+      description: Serializer for purchasing error responses
+      properties:
+        error:
+          type: string
+          description: Error message
+        details:
+          type: string
+          description: Optional details about the failure
+      required:
+        - error
     PurchasingJobsResponse:
       type: object
       description: Serializer for PurchasingJobsAPIView response
@@ -10218,6 +10306,16 @@ components:
       description: |-
         * `user` - User
         * `assistant` - Assistant
+    SpeedQualityTradeoffEnum:
+      enum:
+        - fast
+        - normal
+        - quality
+      type: string
+      description: |-
+        * `fast` - Fast - Prioritize Speed
+        * `normal` - Normal - Balanced
+        * `quality` - Quality - Prioritize Quality
     Staff:
       type: object
       description: Base serializer for Staff model with shared logic for create and
