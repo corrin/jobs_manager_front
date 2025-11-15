@@ -76,7 +76,7 @@
                       class="block text-sm font-medium mb-2"
                       :class="formData.estimated_materials >= 0 ? 'text-gray-700' : 'text-red-600'"
                     >
-                      Estimated materials ($) *
+                      Ballpark materials ($) *
                     </label>
                     <input
                       id="estimated_materials"
@@ -105,7 +105,7 @@
                       class="block text-sm font-medium mb-2"
                       :class="formData.estimated_time >= 0 ? 'text-gray-700' : 'text-red-600'"
                     >
-                      Estimated workshop time (hours) *
+                      Ballpark workshop time (hours) *
                     </label>
                     <input
                       id="estimated_time"
