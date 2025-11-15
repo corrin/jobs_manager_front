@@ -76,7 +76,7 @@
                       class="block text-sm font-medium mb-2"
                       :class="formData.estimated_materials >= 0 ? 'text-gray-700' : 'text-red-600'"
                     >
-                      Estimated materials ($) *
+                      Ballpark materials ($) *
                     </label>
                     <input
                       id="estimated_materials"
@@ -105,7 +105,7 @@
                       class="block text-sm font-medium mb-2"
                       :class="formData.estimated_time >= 0 ? 'text-gray-700' : 'text-red-600'"
                     >
-                      Estimated workshop time (hours) *
+                      Ballpark workshop time (hours) *
                     </label>
                     <input
                       id="estimated_time"
@@ -142,7 +142,6 @@
                     v-model="formData.pricing_methodology"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="">Select pricing method</option>
                     <option value="fixed_price">Fixed Price</option>
                     <option value="time_materials">Time & Materials</option>
                   </select>
@@ -301,7 +300,7 @@ const formData = ref<JobCreateData>({
   contact_id: null,
   estimated_materials: 0,
   estimated_time: 0,
-  pricing_methodology: '',
+  pricing_methodology: 'fixed_price',
 })
 
 const selectedClient = ref<ClientSearchResult | null>(null)
@@ -524,7 +523,7 @@ onMounted(() => {
     formData.value.contact_id = null
     formData.value.estimated_materials = 0
     formData.value.estimated_time = 0
-    formData.value.pricing_methodology = ''
+    formData.value.pricing_methodology = 'fixed_price'
   }
 })
 </script>

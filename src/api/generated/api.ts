@@ -942,6 +942,7 @@ const JobFile = z
   })
   .passthrough()
 const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
+const SpeedQualityTradeoffEnum = z.enum(['fast', 'normal', 'quality'])
 const QuoteSpreadsheet = z
   .object({
     id: z.string().uuid(),
@@ -1020,6 +1021,7 @@ const Job = z
     job_files: z.array(JobFile).optional(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     pricing_methodology: PricingMethodologyEnum.optional(),
+    speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
     quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
     fully_invoiced: z.boolean(),
@@ -1788,9 +1790,8 @@ const AllocationDeleteResponse = z
     updated_received_quantity: z.number().optional(),
   })
   .passthrough()
-const PurchaseOrderPDFResponse = z
-  .object({ success: z.boolean(), message: z.string() })
-  .partial()
+const PurchasingErrorResponse = z
+  .object({ error: z.string(), details: z.string().optional() })
   .passthrough()
 const StockItem = z
   .object({
@@ -2239,6 +2240,7 @@ export const schemas = {
   JobFileStatusEnum,
   JobFile,
   PricingMethodologyEnum,
+  SpeedQualityTradeoffEnum,
   QuoteSpreadsheet,
   Status7aeEnum,
   Quote,
@@ -2339,7 +2341,7 @@ export const schemas = {
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
-  PurchaseOrderPDFResponse,
+  PurchasingErrorResponse,
   StockItem,
   StockList,
   StockCreate,
@@ -2420,6 +2422,44 @@ Returns:
     JSON response with job aging data structure`,
     requestFormat: 'json',
     response: JobAgingResponse,
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/profit-and-loss/',
+    alias: 'accounting_api_reports_profit_and_loss_retrieve',
+    requestFormat: 'json',
+    response: z.void(),
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/sales-forecast/',
+    alias: 'accounting_api_reports_sales_forecast_retrieve',
+    description: `Returns monthly sales comparison between Xero invoices and Job Manager revenue for all months with data`,
+    requestFormat: 'json',
+    response: z
+      .object({
+        months: z.array(
+          z
+            .object({
+              month: z.string(),
+              month_label: z.string(),
+              xero_sales: z.number(),
+              jm_sales: z.number(),
+              variance: z.number(),
+              variance_pct: z.number(),
+            })
+            .partial()
+            .passthrough(),
+        ),
+      })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).partial().passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
@@ -5249,7 +5289,17 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         schema: z.string().uuid(),
       },
     ],
-    response: PurchaseOrderPDFResponse,
+    response: z.instanceof(File),
+    errors: [
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
+      },
+      {
+        status: 500,
+        schema: PurchasingErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
