@@ -67,6 +67,68 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobAgingResponse'
           description: ''
+  /accounting/api/reports/profit-and-loss/:
+    get:
+      operationId: accounting_api_reports_profit_and_loss_retrieve
+      tags:
+        - accounting
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          description: No response body
+  /accounting/api/reports/sales-forecast/:
+    get:
+      operationId: accounting_api_reports_sales_forecast_retrieve
+      description: Returns monthly sales comparison between Xero invoices and Job
+        Manager revenue for all months with data
+      summary: Get monthly sales forecast data
+      tags:
+        - accounting
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  months:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:
+                          type: string
+                          example: 2025-01
+                        month_label:
+                          type: string
+                          example: Jan 2025
+                        xero_sales:
+                          type: number
+                          example: 125000.5
+                        jm_sales:
+                          type: number
+                          example: 118500.75
+                        variance:
+                          type: number
+                          example: 6499.75
+                        variance_pct:
+                          type: number
+                          example: 5.48
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+          description: ''
   /accounting/api/reports/staff-performance-summary/:
     get:
       operationId: accounting_api_reports_staff_performance_summary_retrieve
@@ -1438,6 +1500,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+  /clients/{client_id}/jobs/:
+    get:
+      operationId: clients_jobs_retrieve
+      description: Retrieve all jobs for a specific client.
+      summary: Get client jobs
+      parameters:
+        - in: path
+          name: client_id
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the client
+          required: true
+      tags:
+        - Clients
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientJobsResponse'
           description: ''
         '404':
           content:
@@ -4302,7 +4400,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PurchaseOrderPDFResponse'
+                type: string
+                format: binary
+          description: PDF file attachment
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
           description: ''
   /purchasing/rest/stock/:
     get:
@@ -5568,9 +5679,11 @@ components:
           items: {}
         xero_last_modified:
           type: string
+          format: date-time
           nullable: true
         xero_last_synced:
           type: string
+          format: date-time
           nullable: true
         xero_archived:
           type: boolean
@@ -5581,10 +5694,14 @@ components:
           nullable: true
         django_created_at:
           type: string
+          format: date-time
         django_updated_at:
           type: string
+          format: date-time
         last_invoice_date:
           type: string
+          format: date-time
+          nullable: true
         total_spend:
           type: string
       required:
@@ -5636,6 +5753,63 @@ components:
           type: string
       required:
         - error
+    ClientJobHeader:
+      type: object
+      description: Serializer for job header in client jobs list
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        job_number:
+          type: integer
+        name:
+          type: string
+        client:
+          type: object
+          additionalProperties: {}
+          nullable: true
+        status:
+          type: string
+        pricing_methodology:
+          type: string
+          nullable: true
+        fully_invoiced:
+          type: boolean
+        has_quote_in_xero:
+          type: boolean
+        is_fixed_price:
+          type: boolean
+        quote_acceptance_date:
+          type: string
+          format: date-time
+          nullable: true
+        paid:
+          type: boolean
+        rejected_flag:
+          type: boolean
+      required:
+        - client
+        - fully_invoiced
+        - has_quote_in_xero
+        - is_fixed_price
+        - job_id
+        - job_number
+        - name
+        - paid
+        - pricing_methodology
+        - quote_acceptance_date
+        - rejected_flag
+        - status
+    ClientJobsResponse:
+      type: object
+      description: Serializer for client jobs list response
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClientJobHeader'
+      required:
+        - results
     ClientNameOnly:
       type: object
       properties:
@@ -5679,6 +5853,8 @@ components:
           type: string
         last_invoice_date:
           type: string
+          format: date-time
+          nullable: true
         total_spend:
           type: string
       required:
@@ -6909,6 +7085,15 @@ components:
 
             * `time_materials` - Time & Materials
             * `fixed_price` - Fixed Price
+        speed_quality_tradeoff:
+          allOf:
+            - $ref: '#/components/schemas/SpeedQualityTradeoffEnum'
+          description: |-
+            Speed vs quality tradeoff for workshop execution
+
+            * `fast` - Fast - Prioritize Speed
+            * `normal` - Normal - Balanced
+            * `quality` - Quality - Prioritize Quality
         quote_sheet:
           allOf:
             - $ref: '#/components/schemas/QuoteSpreadsheet'
@@ -9993,14 +10178,6 @@ components:
         - status
         - supplier
         - supplier_id
-    PurchaseOrderPDFResponse:
-      type: object
-      description: Serializer for purchase order PDF generation response
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
     PurchaseOrderUpdate:
       type: object
       description: Serializer for updating purchase orders.
@@ -10029,6 +10206,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderLineUpdate'
+    PurchasingErrorResponse:
+      type: object
+      description: Serializer for purchasing error responses
+      properties:
+        error:
+          type: string
+          description: Error message
+        details:
+          type: string
+          description: Optional details about the failure
+      required:
+        - error
     PurchasingJobsResponse:
       type: object
       description: Serializer for PurchasingJobsAPIView response
@@ -10218,6 +10407,16 @@ components:
       description: |-
         * `user` - User
         * `assistant` - Assistant
+    SpeedQualityTradeoffEnum:
+      enum:
+        - fast
+        - normal
+        - quality
+      type: string
+      description: |-
+        * `fast` - Fast - Prioritize Speed
+        * `normal` - Normal - Balanced
+        * `quality` - Quality - Prioritize Quality
     Staff:
       type: object
       description: Base serializer for Staff model with shared logic for create and

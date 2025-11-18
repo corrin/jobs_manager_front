@@ -198,6 +198,19 @@ const router = createRouter({
       },
     },
     {
+      path: '/reports/clients',
+      name: 'clients',
+      component: () => import('@/views/ClientsView.vue'),
+      meta: { requiresAuth: true, title: 'Clients - Jobs Manager' },
+    },
+    {
+      path: '/reports/clients/:id',
+      name: 'client-detail',
+      component: () => import('@/views/ClientDetailView.vue'),
+      meta: { requiresAuth: true, title: 'Client Details - Jobs Manager' },
+      props: true,
+    },
+    {
       path: '/purchasing/po',
       name: 'purchase-orders',
       component: () => import('@/views/purchasing/PurchaseOrderView.vue'),

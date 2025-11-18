@@ -494,14 +494,14 @@ const ClientDetailResponse = z
     primary_contact_email: z.string(),
     additional_contact_persons: z.array(z.unknown()).optional(),
     all_phones: z.array(z.unknown()).optional(),
-    xero_last_modified: z.string().nullable(),
-    xero_last_synced: z.string().nullable(),
+    xero_last_modified: z.string().datetime({ offset: true }).nullable(),
+    xero_last_synced: z.string().datetime({ offset: true }).nullable(),
     xero_archived: z.boolean(),
     xero_merged_into_id: z.string(),
     merged_into: z.string().nullable(),
-    django_created_at: z.string(),
-    django_updated_at: z.string(),
-    last_invoice_date: z.string(),
+    django_created_at: z.string().datetime({ offset: true }),
+    django_updated_at: z.string().datetime({ offset: true }),
+    last_invoice_date: z.string().datetime({ offset: true }).nullable(),
     total_spend: z.string(),
   })
   .passthrough()
@@ -523,6 +523,23 @@ const ClientContactResult = z
   })
   .passthrough()
 const ClientContactResponse = z.object({ results: z.array(ClientContactResult) }).passthrough()
+const ClientJobHeader = z
+  .object({
+    job_id: z.string().uuid(),
+    job_number: z.number().int(),
+    name: z.string(),
+    client: z.object({}).partial().passthrough().nullable(),
+    status: z.string(),
+    pricing_methodology: z.string().nullable(),
+    fully_invoiced: z.boolean(),
+    has_quote_in_xero: z.boolean(),
+    is_fixed_price: z.boolean(),
+    quote_acceptance_date: z.string().datetime({ offset: true }).nullable(),
+    paid: z.boolean(),
+    rejected_flag: z.boolean(),
+  })
+  .passthrough()
+const ClientJobsResponse = z.object({ results: z.array(ClientJobHeader) }).passthrough()
 const ClientUpdateRequest = z
   .object({
     name: z.string().max(255),
@@ -587,7 +604,7 @@ const ClientSearchResult = z
     address: z.string(),
     is_account_customer: z.boolean(),
     xero_contact_id: z.string(),
-    last_invoice_date: z.string(),
+    last_invoice_date: z.string().datetime({ offset: true }).nullable(),
     total_spend: z.string(),
   })
   .passthrough()
@@ -942,6 +959,7 @@ const JobFile = z
   })
   .passthrough()
 const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
+const SpeedQualityTradeoffEnum = z.enum(['fast', 'normal', 'quality'])
 const QuoteSpreadsheet = z
   .object({
     id: z.string().uuid(),
@@ -1020,6 +1038,7 @@ const Job = z
     job_files: z.array(JobFile).optional(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     pricing_methodology: PricingMethodologyEnum.optional(),
+    speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
     quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
     fully_invoiced: z.boolean(),
@@ -1788,9 +1807,8 @@ const AllocationDeleteResponse = z
     updated_received_quantity: z.number().optional(),
   })
   .passthrough()
-const PurchaseOrderPDFResponse = z
-  .object({ success: z.boolean(), message: z.string() })
-  .partial()
+const PurchasingErrorResponse = z
+  .object({ error: z.string(), details: z.string().optional() })
   .passthrough()
 const StockItem = z
   .object({
@@ -2181,6 +2199,8 @@ export const schemas = {
   ClientErrorResponse,
   ClientContactResult,
   ClientContactResponse,
+  ClientJobHeader,
+  ClientJobsResponse,
   ClientUpdateRequest,
   ClientUpdateResponse,
   PatchedClientUpdateRequest,
@@ -2239,6 +2259,7 @@ export const schemas = {
   JobFileStatusEnum,
   JobFile,
   PricingMethodologyEnum,
+  SpeedQualityTradeoffEnum,
   QuoteSpreadsheet,
   Status7aeEnum,
   Quote,
@@ -2339,7 +2360,7 @@ export const schemas = {
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
-  PurchaseOrderPDFResponse,
+  PurchasingErrorResponse,
   StockItem,
   StockList,
   StockCreate,
@@ -2420,6 +2441,44 @@ Returns:
     JSON response with job aging data structure`,
     requestFormat: 'json',
     response: JobAgingResponse,
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/profit-and-loss/',
+    alias: 'accounting_api_reports_profit_and_loss_retrieve',
+    requestFormat: 'json',
+    response: z.void(),
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/sales-forecast/',
+    alias: 'accounting_api_reports_sales_forecast_retrieve',
+    description: `Returns monthly sales comparison between Xero invoices and Job Manager revenue for all months with data`,
+    requestFormat: 'json',
+    response: z
+      .object({
+        months: z.array(
+          z
+            .object({
+              month: z.string(),
+              month_label: z.string(),
+              xero_sales: z.number(),
+              jm_sales: z.number(),
+              variance: z.number(),
+              variance_pct: z.number(),
+            })
+            .partial()
+            .passthrough(),
+        ),
+      })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).partial().passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
@@ -3364,6 +3423,31 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
         status: 400,
         schema: ClientErrorResponse,
       },
+      {
+        status: 404,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/clients/:client_id/jobs/',
+    alias: 'clients_jobs_retrieve',
+    description: `Retrieve all jobs for a specific client.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'client_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ClientJobsResponse,
+    errors: [
       {
         status: 404,
         schema: ClientErrorResponse,
@@ -5249,7 +5333,17 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         schema: z.string().uuid(),
       },
     ],
-    response: PurchaseOrderPDFResponse,
+    response: z.instanceof(File),
+    errors: [
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
+      },
+      {
+        status: 500,
+        schema: PurchasingErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
