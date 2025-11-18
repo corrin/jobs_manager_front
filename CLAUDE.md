@@ -176,29 +176,4 @@ await api.updateJob(id, data) // Unhandled exception
 
 ---
 
-## Common Mistakes to Avoid
-
-1. ❌ **Using `fetch()` or `axios` directly** → Use `api` client
-2. ❌ **Mutating store state** → Use immutable updates
-3. ❌ **Manually typing API responses** → Infer from schemas
-4. ❌ **Relative imports** → Use `@/` alias
-5. ❌ **Stores calling stores directly** → Use composables or services
-6. ❌ **Async in computed** → Use watchers or separate async functions
-7. ❌ **Ignoring ETag conflicts** → Handle 412/428 gracefully
-8. ❌ **Null vs undefined confusion** → Use `null` for API nullables
-
----
-
-## Key Principles
-
-1. **Schema first** - Backend defines contracts
-2. **Type safety** - Compile-time + runtime validation
-3. **Immutability** - New objects for reactivity
-4. **Separation** - Layers have clear boundaries
-5. **Optimistic UX** - Update UI immediately, rollback on error
-6. **Graceful degradation** - Handle conflicts without data loss
-7. **Developer experience** - Generated types, strict checks, clear errors
-
----
-
 This is a **control file**, not documentation. Follow these rules. For "how it works" details, read the code.
