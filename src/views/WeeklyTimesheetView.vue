@@ -24,28 +24,27 @@
               <div
                 class="flex items-center justify-center sm:justify-end space-x-1 sm:space-x-2 lg:space-x-3 mt-1 sm:mt-0 lg:mt-2"
               >
-                <div v-if="weekendEnabled" class="flex items-center space-x-1 lg:space-x-2">
+                <div class="flex items-center space-x-1 lg:space-x-2">
                   <button
-                    @click="toggleIMSMode(!imsMode)"
+                    @click="togglePayrollMode(!payrollMode)"
                     :class="[
                       'relative inline-flex h-4 w-8 sm:h-5 sm:w-9 lg:h-6 lg:w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2',
-                      imsMode ? 'bg-blue-600' : 'bg-gray-200',
+                      payrollMode ? 'bg-blue-600' : 'bg-gray-200',
                     ]"
                   >
                     <span
                       :class="[
                         'inline-block h-2 w-2 sm:h-3 sm:w-3 lg:h-4 lg:w-4 transform rounded-full bg-white transition-transform',
-                        imsMode
+                        payrollMode
                           ? 'translate-x-4 sm:translate-x-5 lg:translate-x-6'
                           : 'translate-x-0.5',
                       ]"
                     ></span>
                   </button>
                   <Label class="text-gray-700 text-xs sm:text-sm lg:text-base font-medium">
-                    {{ imsMode ? 'IMS Mode (Mon-Fri)' : 'Standard Mode (Mon-Sun)' }}
+                    {{ payrollMode ? 'Payroll Mode' : 'Review Mode' }}
                   </Label>
                 </div>
-                <div v-else class="text-xs text-gray-500">Weekend timesheets disabled</div>
 
                 <Button
                   @click="openWeeklyMetricsModal"
@@ -118,7 +117,19 @@
         </div>
       </div>
 
-      <div class="p-1 sm:p-2 lg:p-3 space-y-2 sm:space-y-3 lg:space-y-4 flex-1 min-h-0 pb-6">
+      <div class="flex-1 p-1 sm:p-2 lg:p-3 space-y-2 sm:space-y-3 lg:space-y-4">
+        <!-- Payroll Control Section -->
+        <PayrollControlSection
+          v-if="payrollMode && !loading && !error"
+          :week-start-date="formatToLocalString(selectedWeekStart)"
+          :pay-run-status="payRunStatus"
+          :payment-date="paymentDate"
+          :creating="creatingPayRun"
+          :posting="postingAll"
+          @create-pay-run="handleCreatePayRun"
+          @post-all-to-xero="handlePostAllToXero"
+        />
+
         <!-- Loading Spinner -->
         <div v-if="loading" class="flex-1 flex items-center justify-center bg-gray-50">
           <div class="text-center space-y-3 lg:space-y-4 p-6 lg:p-8">
@@ -192,25 +203,35 @@
                     <th
                       class="w-24 px-1.5 py-1.5 lg:py-2 text-center text-xs sm:text-sm lg:text-base font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      {{ imsMode ? 'Weekly Total' : 'Total' }}
+                      {{ payrollMode ? 'Weekly Total' : 'Total' }}
                     </th>
                     <th
                       class="w-28 px-1.5 py-1.5 lg:py-2 text-center text-xs sm:text-sm lg:text-base font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      {{ imsMode ? 'Billable Hours' : 'Billable %' }}
+                      {{ payrollMode ? 'Billable Hours' : 'Billable %' }}
                     </th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
-                  <StaffWeekRow
-                    v-for="staff in sortedStaffData"
-                    :key="staff.staff_id"
-                    :staff="staff"
-                    :ims-mode="imsMode"
-                    :week-days="displayDays"
-                    :visible-indexes="displayDays.map((d) => d.idx)"
-                    class="hover:bg-blue-50/50 transition-colors duration-150 border-b border-gray-100"
-                  />
+                  <template v-if="payrollMode">
+                    <PayrollStaffRow
+                      v-for="staff in sortedStaffData"
+                      :key="staff.staff_id"
+                      :staff="staff"
+                      :visible-indexes="displayDays.map((d) => d.idx)"
+                    />
+                  </template>
+                  <template v-else>
+                    <StaffWeekRow
+                      v-for="staff in sortedStaffData"
+                      :key="staff.staff_id"
+                      :staff="staff"
+                      :payroll-mode="payrollMode"
+                      :week-days="displayDays"
+                      :visible-indexes="displayDays.map((d) => d.idx)"
+                      class="hover:bg-blue-50/50 transition-colors duration-150 border-b border-gray-100"
+                    />
+                  </template>
                 </tbody>
               </table>
             </div>
@@ -253,8 +274,10 @@ import AppLayout from '@/components/AppLayout.vue'
 import Button from '@/components/ui/button/Button.vue'
 import Label from '@/components/ui/label/Label.vue'
 import StaffWeekRow from '@/components/timesheet/StaffWeekRow.vue'
+import PayrollStaffRow from '@/components/timesheet/PayrollStaffRow.vue'
 import WeeklyMetricsModal from '@/components/timesheet/WeeklyMetricsModal.vue'
 import WeekPickerModal from '@/components/timesheet/WeekPickerModal.vue'
+import PayrollControlSection from '@/components/timesheet/PayrollControlSection.vue'
 
 import {
   dateService,
@@ -262,14 +285,16 @@ import {
   formatToLocalString,
   navigateWeek as navigateWeekDate,
 } from '@/services/date.service'
-import { fetchWeeklyOverview, fetchIMSOverview } from '@/services/weekly-timesheet.service'
-import type { WeeklyTimesheetData, IMSWeeklyTimesheetData } from '@/api/generated/api'
+import { fetchWeeklyOverview } from '@/services/weekly-timesheet.service'
+import { createPayRun, postStaffWeek, getPayrollErrorMessage } from '@/services/payroll.service'
+import type { WeeklyTimesheetData } from '@/api/generated/api'
 import { debugLog } from '../utils/debug'
 import { useTimesheetStore } from '@/stores/timesheet'
+import { toast } from 'vue-sonner'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
-const weeklyData = ref<WeeklyTimesheetData | IMSWeeklyTimesheetData | null>(null)
+const weeklyData = ref<WeeklyTimesheetData | null>(null)
 
 const router = useRouter()
 const route = useRoute()
@@ -277,9 +302,15 @@ const route = useRoute()
 const initialWeekStart = route.query.week ? createLocalDate(route.query.week as string) : new Date()
 const selectedWeekStart = ref(initialWeekStart)
 
-const imsMode = ref(false)
+const payrollMode = ref(false)
 const showWeeklyMetricsModal = ref(false)
 const showWeekPicker = ref(false)
+
+// Payroll state
+const payRunStatus = ref<string | null>(null)
+const paymentDate = ref<string | null>(null)
+const creatingPayRun = ref(false)
+const postingAll = ref(false)
 
 // Use timesheet store for weekend functionality
 const timesheetStore = useTimesheetStore()
@@ -296,7 +327,7 @@ const visibleDayIndexes = computed(() => {
     date: d,
   }))
 
-  if (imsMode.value) {
+  if (payrollMode.value) {
     return raw
       .filter((d) => d.dow >= 1 && d.dow <= 5)
       .sort((a, b) => a.dow - b.dow)
@@ -352,14 +383,14 @@ async function loadData(): Promise<void> {
   loading.value = true
   error.value = null
 
+  // Clear payroll posting state when changing weeks
+  // Note: payRunStatus should be fetched from backend when endpoint is available
+
   try {
     const { startDate } = dateService.getWeekRange(selectedWeekStart.value)
 
-    if (imsMode.value) {
-      weeklyData.value = await fetchIMSOverview(startDate)
-    } else {
-      weeklyData.value = await fetchWeeklyOverview(startDate)
-    }
+    // Fetch weekly data (includes all payroll breakdown regardless of mode)
+    weeklyData.value = await fetchWeeklyOverview(startDate)
 
     // Validate response structure
     if (!weeklyData.value?.week_days || !Array.isArray(weeklyData.value.week_days)) {
@@ -383,7 +414,7 @@ async function loadData(): Promise<void> {
 
     debugLog('❌ Error while loading weekly timesheet data:', {
       error: err,
-      imsMode: imsMode.value,
+      payrollMode: payrollMode.value,
       weekendEnabled: weekendEnabled.value,
       selectedWeekStart: selectedWeekStart.value,
     })
@@ -410,11 +441,9 @@ function goToCurrentWeek() {
   router.push({ query: { week: formatToLocalString(selectedWeekStart.value) } })
   loadData()
 }
-async function toggleIMSMode(checked: boolean) {
-  imsMode.value = checked
-  await loadData()
-
-  debugLog(`Switched to ${imsMode.value ? 'IMS' : 'Standard'} mode`)
+function togglePayrollMode(checked: boolean) {
+  payrollMode.value = checked
+  debugLog(`Switched to ${payrollMode.value ? 'Payroll' : 'Review'} mode`)
 }
 function goToDailyViewHeader(date: string) {
   router.push({ name: 'timesheet-daily', query: { date } })
@@ -436,6 +465,74 @@ function handleWeekSelect(date: string) {
   router.push({ query: { week: formatToLocalString(selectedWeekStart.value) } })
   loadData()
   closeWeekPicker()
+}
+
+// Payroll functions
+async function handleCreatePayRun() {
+  creatingPayRun.value = true
+  try {
+    const weekStartDate = route.query.week as string
+    const result = await createPayRun(weekStartDate)
+
+    payRunStatus.value = result.status
+    paymentDate.value = result.payment_date
+
+    toast.success('Pay run created successfully', {
+      description: `Payment date: ${result.payment_date}`,
+    })
+
+    debugLog('Pay run created:', result)
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } }; message?: string }
+    const errorMessage =
+      error.response?.data?.message || error.message || 'Failed to create pay run'
+    const userMessage = getPayrollErrorMessage(errorMessage)
+    toast.error('Failed to create pay run', {
+      description: userMessage,
+    })
+    debugLog('Create pay run error:', err)
+  } finally {
+    creatingPayRun.value = false
+  }
+}
+
+async function handlePostAllToXero() {
+  if (!weeklyData.value) return
+
+  postingAll.value = true
+  const staffList = weeklyData.value.weekly_summary?.staff || []
+  let successCount = 0
+
+  try {
+    const weekStart = route.query.week as string
+
+    for (const staff of staffList) {
+      const result = await postStaffWeek(staff.staff_id, weekStart)
+
+      if (!result.success) {
+        // Fail early - stop on first error
+        const errors = result.errors.map(getPayrollErrorMessage).join(', ')
+        throw new Error(errors || 'Failed to post staff to Xero')
+      }
+
+      successCount++
+      debugLog(`Posted ${staff.name}:`, result)
+    }
+
+    toast.success('All staff posted successfully', {
+      description: `${successCount} staff members posted to Xero`,
+    })
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } }; message?: string }
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to post to Xero'
+    const userMessage = getPayrollErrorMessage(errorMessage)
+    toast.error('Failed to post to Xero', {
+      description: userMessage,
+    })
+    debugLog('Post all error:', err)
+  } finally {
+    postingAll.value = false
+  }
 }
 
 onMounted(() => {
