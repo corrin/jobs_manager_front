@@ -257,7 +257,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
   Calendar,
@@ -286,7 +286,12 @@ import {
   navigateWeek as navigateWeekDate,
 } from '@/services/date.service'
 import { fetchWeeklyOverview } from '@/services/weekly-timesheet.service'
-import { createPayRun, postStaffWeek, getPayrollErrorMessage } from '@/services/payroll.service'
+import {
+  createPayRun,
+  postStaffWeek,
+  getPayrollErrorMessage,
+  fetchPayRunForWeek,
+} from '@/services/payroll.service'
 import type { WeeklyTimesheetData } from '@/api/generated/api'
 import { debugLog } from '../utils/debug'
 import { useTimesheetStore } from '@/stores/timesheet'
@@ -311,6 +316,60 @@ const payRunStatus = ref<string | null>(null)
 const paymentDate = ref<string | null>(null)
 const creatingPayRun = ref(false)
 const postingAll = ref(false)
+let payRunLookupRequestId = 0
+
+function resetPayRunState() {
+  payRunLookupRequestId += 1
+  payRunStatus.value = null
+  paymentDate.value = null
+}
+
+async function loadPayRunForCurrentWeek() {
+  const weekStartDate =
+    (route.query.week as string | undefined) || formatToLocalString(selectedWeekStart.value)
+
+  if (!payrollMode.value || !weekStartDate) {
+    resetPayRunState()
+    return
+  }
+
+  payRunStatus.value = null
+  paymentDate.value = null
+  const currentRequestId = ++payRunLookupRequestId
+
+  try {
+    const response = await fetchPayRunForWeek(weekStartDate)
+
+    if (currentRequestId !== payRunLookupRequestId) {
+      return
+    }
+
+    if (response.exists && response.pay_run) {
+      payRunStatus.value = response.pay_run.pay_run_status
+      paymentDate.value = response.pay_run.payment_date
+      debugLog('Loaded existing pay run:', response.pay_run)
+    } else {
+      resetPayRunState()
+      debugLog(`No pay run found for week starting ${weekStartDate}`)
+    }
+  } catch (err: unknown) {
+    if (currentRequestId !== payRunLookupRequestId) {
+      return
+    }
+
+    resetPayRunState()
+
+    const error = err as { response?: { data?: { message?: string } }; message?: string }
+    const errorMessage =
+      error.response?.data?.message || error.message || 'Unable to load pay run for this week'
+    const userMessage = getPayrollErrorMessage(errorMessage)
+
+    toast.error('Unable to load pay run', {
+      description: userMessage,
+    })
+    debugLog('Pay run lookup error:', err)
+  }
+}
 
 // Use timesheet store for weekend functionality
 const timesheetStore = useTimesheetStore()
@@ -372,6 +431,29 @@ const displayDays = computed(() => {
   })
 })
 
+watch(
+  () => payrollMode.value,
+  (enabled) => {
+    if (enabled) {
+      void loadPayRunForCurrentWeek()
+    } else {
+      resetPayRunState()
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => selectedWeekStart.value.getTime(),
+  () => {
+    if (payrollMode.value) {
+      void loadPayRunForCurrentWeek()
+    } else {
+      resetPayRunState()
+    }
+  },
+)
+
 // Format the header's date range
 function formatDisplayDateRange(): string {
   if (!weeklyData.value) return ''
@@ -383,8 +465,7 @@ async function loadData(): Promise<void> {
   loading.value = true
   error.value = null
 
-  // Clear payroll posting state when changing weeks
-  // Note: payRunStatus should be fetched from backend when endpoint is available
+  // Payroll state (pay runs) is refreshed separately via loadPayRunForCurrentWeek
 
   try {
     const { startDate } = dateService.getWeekRange(selectedWeekStart.value)

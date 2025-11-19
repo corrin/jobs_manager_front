@@ -854,6 +854,55 @@ const CostLineCreateUpdate = z
   })
   .passthrough()
 const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
+const BrokenFKReference = z
+  .object({
+    model: z.string(),
+    record_id: z.string(),
+    field: z.string(),
+    target_model: z.string(),
+    target_id: z.string(),
+  })
+  .passthrough()
+const BrokenJSONReference = z
+  .object({
+    model: z.string(),
+    record_id: z.string(),
+    field: z.string(),
+    staff_id: z.string().nullish(),
+    stock_id: z.string().nullish(),
+    purchase_order_line_id: z.string().nullish(),
+    issue: z.string().nullish(),
+  })
+  .passthrough()
+const BusinessRuleViolation = z
+  .object({
+    model: z.string(),
+    record_id: z.string(),
+    field: z.string(),
+    rule: z.string(),
+    expected: z.string().nullish(),
+    actual: z.string().nullish(),
+    path: z.array(z.string()).nullish(),
+    expected_path: z.string().nullish(),
+  })
+  .passthrough()
+const DataIntegritySummary = z
+  .object({
+    total_broken_fks: z.number().int(),
+    total_broken_json_refs: z.number().int(),
+    total_business_rule_violations: z.number().int(),
+    total_issues: z.number().int(),
+  })
+  .passthrough()
+const DataIntegrityResponse = z
+  .object({
+    scanned_at: z.string().datetime({ offset: true }),
+    broken_fk_references: z.array(BrokenFKReference),
+    broken_json_references: z.array(BrokenJSONReference),
+    business_rule_violations: z.array(BusinessRuleViolation),
+    summary: DataIntegritySummary,
+  })
+  .passthrough()
 const ArchivedJobIssue = z
   .object({
     job_id: z.string(),
@@ -956,6 +1005,7 @@ const JobFile = z
   })
   .passthrough()
 const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
+const SpeedQualityTradeoffEnum = z.enum(['fast', 'normal', 'quality'])
 const QuoteSpreadsheet = z
   .object({
     id: z.string().uuid(),
@@ -1034,6 +1084,7 @@ const Job = z
     job_files: z.array(JobFile).optional(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     pricing_methodology: PricingMethodologyEnum.optional(),
+    speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
     quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
     fully_invoiced: z.boolean(),
@@ -1802,9 +1853,8 @@ const AllocationDeleteResponse = z
     updated_received_quantity: z.number().optional(),
   })
   .passthrough()
-const PurchaseOrderPDFResponse = z
-  .object({ success: z.boolean(), message: z.string() })
-  .partial()
+const PurchasingErrorResponse = z
+  .object({ error: z.string(), details: z.string().optional() })
   .passthrough()
 const StockItem = z
   .object({
@@ -2016,6 +2066,20 @@ const CreatePayRunResponse = z
     period_end_date: z.string(),
     payment_date: z.string(),
   })
+  .passthrough()
+const PayRunDetails = z
+  .object({
+    pay_run_id: z.string(),
+    payroll_calendar_id: z.string().nullable(),
+    period_start_date: z.string(),
+    period_end_date: z.string(),
+    payment_date: z.string(),
+    pay_run_status: z.string(),
+    pay_run_type: z.string().nullable(),
+  })
+  .passthrough()
+const PayRunForWeekResponse = z
+  .object({ exists: z.boolean(), pay_run: PayRunDetails.nullable() })
   .passthrough()
 const PostWeekToXeroRequest = z
   .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
@@ -2234,6 +2298,11 @@ export const schemas = {
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
   CostLineErrorResponse,
+  BrokenFKReference,
+  BrokenJSONReference,
+  BusinessRuleViolation,
+  DataIntegritySummary,
+  DataIntegrityResponse,
   ArchivedJobIssue,
   ComplianceSummary,
   ArchivedJobsComplianceResponse,
@@ -2247,6 +2316,7 @@ export const schemas = {
   JobFileStatusEnum,
   JobFile,
   PricingMethodologyEnum,
+  SpeedQualityTradeoffEnum,
   QuoteSpreadsheet,
   Status7aeEnum,
   Quote,
@@ -2347,7 +2417,7 @@ export const schemas = {
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
-  PurchaseOrderPDFResponse,
+  PurchasingErrorResponse,
   StockItem,
   StockList,
   StockCreate,
@@ -2371,6 +2441,8 @@ export const schemas = {
   JobsListResponse,
   CreatePayRunRequest,
   CreatePayRunResponse,
+  PayRunDetails,
+  PayRunForWeekResponse,
   PostWeekToXeroRequest,
   PostWeekToXeroResponse,
   ModernStaff,
@@ -2429,6 +2501,44 @@ Returns:
     JSON response with job aging data structure`,
     requestFormat: 'json',
     response: JobAgingResponse,
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/profit-and-loss/',
+    alias: 'accounting_api_reports_profit_and_loss_retrieve',
+    requestFormat: 'json',
+    response: z.void(),
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/sales-forecast/',
+    alias: 'accounting_api_reports_sales_forecast_retrieve',
+    description: `Returns monthly sales comparison between Xero invoices and Job Manager revenue for all months with data`,
+    requestFormat: 'json',
+    response: z
+      .object({
+        months: z.array(
+          z
+            .object({
+              month: z.string(),
+              month_label: z.string(),
+              xero_sales: z.number(),
+              jm_sales: z.number(),
+              variance: z.number(),
+              variance_pct: z.number(),
+            })
+            .partial()
+            .passthrough(),
+        ),
+      })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).partial().passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
@@ -4056,6 +4166,20 @@ Dynamically infers the stock adjustment based on quantity change`,
   },
   {
     method: 'get',
+    path: '/job/rest/data-integrity/scan/',
+    alias: 'scan_data_integrity',
+    description: `Check all foreign key relationships, JSON references, and business rules for violations.`,
+    requestFormat: 'json',
+    response: DataIntegrityResponse,
+    errors: [
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/job/rest/data-quality/archived-jobs-compliance/',
     alias: 'check_archived_jobs_compliance',
     description: `Verify that all archived jobs are either cancelled or fully invoiced and paid.`,
@@ -5258,7 +5382,17 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         schema: z.string().uuid(),
       },
     ],
-    response: PurchaseOrderPDFResponse,
+    response: z.instanceof(File),
+    errors: [
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
+      },
+      {
+        status: 500,
+        schema: PurchasingErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -5525,6 +5659,31 @@ Returns:
       },
       {
         status: 409,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/timesheets/api/payroll/pay-runs/',
+    alias: 'timesheets_api_payroll_pay_runs_retrieve',
+    description: `Return pay run data for the requested week if it exists.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'week_start_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: PayRunForWeekResponse,
+    errors: [
+      {
+        status: 400,
         schema: ClientErrorResponse,
       },
       {
