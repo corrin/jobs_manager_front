@@ -28,6 +28,21 @@ export interface PostStaffWeekResponse {
   errors: string[]
 }
 
+export interface PayRunDetails {
+  pay_run_id: string
+  payroll_calendar_id: string | null
+  period_start_date: string
+  period_end_date: string
+  payment_date: string
+  pay_run_status: string
+  pay_run_type: string | null
+}
+
+export interface PayRunForWeekResponse {
+  exists: boolean
+  pay_run: PayRunDetails | null
+}
+
 /**
  * Create a new pay run for the specified week.
  *
@@ -37,9 +52,7 @@ export interface PostStaffWeekResponse {
  */
 export async function createPayRun(weekStartDate: string): Promise<CreatePayRunResponse> {
   const response = await api.timesheets_api_payroll_create_pay_run_create({
-    body: {
-      week_start_date: weekStartDate,
-    },
+    week_start_date: weekStartDate,
   })
   return response as CreatePayRunResponse
 }
@@ -62,6 +75,19 @@ export async function postStaffWeek(
     },
   })
   return response as PostStaffWeekResponse
+}
+
+/**
+ * Fetch the pay run (if any) that already exists for a given week.
+ *
+ * @param weekStartDate - Monday of the requested week (YYYY-MM-DD)
+ * @returns Whether a pay run exists and its details when present.
+ */
+export async function fetchPayRunForWeek(weekStartDate: string): Promise<PayRunForWeekResponse> {
+  const response = await api.timesheets_api_payroll_pay_runs_retrieve({
+    queries: { week_start_date: weekStartDate },
+  })
+  return response as PayRunForWeekResponse
 }
 
 /**
