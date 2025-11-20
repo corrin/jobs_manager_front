@@ -30,6 +30,22 @@
       </div>
     </div>
 
+    <!-- Warning Banner -->
+    <div
+      v-if="warning"
+      class="bg-red-50 border border-red-200 rounded-md p-3 flex items-start space-x-2 text-red-800"
+    >
+      <AlertTriangle class="h-5 w-5 text-red-600 mt-0.5" />
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-wide text-red-600">
+          Pay Run Warning
+        </p>
+        <p class="text-sm font-bold leading-snug">
+          {{ warning }}
+        </p>
+      </div>
+    </div>
+
     <!-- Action Buttons -->
     <div class="flex items-center space-x-2 flex-wrap gap-2">
       <!-- Create Pay Run Button -->
@@ -66,6 +82,19 @@
         This week's payroll is locked and cannot be modified
       </div>
     </div>
+
+    <div class="flex justify-end pt-2 border-t border-gray-100">
+      <Button
+        variant="ghost"
+        size="sm"
+        class="text-gray-700"
+        :disabled="refreshing"
+        @click="$emit('refreshPayRuns')"
+      >
+        <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': refreshing }" />
+        {{ refreshing ? 'Refreshing...' : 'Refresh Pay Runs' }}
+      </Button>
+    </div>
   </div>
 </template>
 
@@ -73,7 +102,16 @@
 import { computed } from 'vue'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Calendar, CalendarPlus, Send, CheckCircle2, Lock, AlertCircle } from 'lucide-vue-next'
+import {
+  Calendar,
+  CalendarPlus,
+  Send,
+  CheckCircle2,
+  Lock,
+  AlertCircle,
+  AlertTriangle,
+  RefreshCw,
+} from 'lucide-vue-next'
 import { format, addDays, parseISO } from 'date-fns'
 
 interface Props {
@@ -82,6 +120,8 @@ interface Props {
   paymentDate?: string | null // YYYY-MM-DD format
   creating?: boolean
   posting?: boolean
+  warning?: string | null
+  refreshing?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -89,11 +129,14 @@ const props = withDefaults(defineProps<Props>(), {
   paymentDate: null,
   creating: false,
   posting: false,
+  warning: null,
+  refreshing: false,
 })
 
 defineEmits<{
   createPayRun: []
   postAllToXero: []
+  refreshPayRuns: []
 }>()
 
 const payRunExists = computed(() => props.payRunStatus !== null)

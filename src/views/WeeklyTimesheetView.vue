@@ -121,13 +121,16 @@
         <!-- Payroll Control Section -->
         <PayrollControlSection
           v-if="payrollMode && !loading && !error"
-          :week-start-date="formatToLocalString(selectedWeekStart)"
+          :week-start-date="weekStartDate"
           :pay-run-status="payRunStatus"
           :payment-date="paymentDate"
           :creating="creatingPayRun"
           :posting="postingAll"
+          :warning="payRunWarning"
+          :refreshing="refreshingPayRuns"
           @create-pay-run="handleCreatePayRun"
           @post-all-to-xero="handlePostAllToXero"
+          @refresh-pay-runs="handleRefreshPayRuns"
         />
 
         <!-- Loading Spinner -->
@@ -242,13 +245,13 @@
       <WeeklyMetricsModal
         :is-open="showWeeklyMetricsModal"
         :weekly-data="weeklyData"
-        :week-date="formatToLocalString(selectedWeekStart)"
+        :week-date="weekStartDate"
         @close="closeWeeklyMetricsModal"
       />
 
       <WeekPickerModal
         :is-open="showWeekPicker"
-        :initial-week-start="selectedWeekStart.toISOString().split('T')[0]"
+        :initial-week-start="weekStartDate"
         @close="closeWeekPicker"
         @week-selected="handleWeekSelect"
       />
@@ -291,6 +294,7 @@ import {
   postStaffWeek,
   getPayrollErrorMessage,
   fetchPayRunForWeek,
+  refreshPayRuns,
 } from '@/services/payroll.service'
 import type { WeeklyTimesheetData } from '@/api/generated/api'
 import { debugLog } from '../utils/debug'
@@ -304,8 +308,16 @@ const weeklyData = ref<WeeklyTimesheetData | null>(null)
 const router = useRouter()
 const route = useRoute()
 
-const initialWeekStart = route.query.week ? createLocalDate(route.query.week as string) : new Date()
+function normalizeToWeekStart(dateInput: Date | string): Date {
+  const { startDate } = dateService.getWeekRange(dateInput)
+  return createLocalDate(startDate)
+}
+
+const initialWeekStart = route.query.week
+  ? normalizeToWeekStart(route.query.week as string)
+  : normalizeToWeekStart(new Date())
 const selectedWeekStart = ref(initialWeekStart)
+const weekStartDate = computed(() => dateService.getWeekRange(selectedWeekStart.value).startDate)
 
 const payrollMode = ref(false)
 const showWeeklyMetricsModal = ref(false)
@@ -316,19 +328,19 @@ const payRunStatus = ref<string | null>(null)
 const paymentDate = ref<string | null>(null)
 const creatingPayRun = ref(false)
 const postingAll = ref(false)
+const payRunWarning = ref<string | null>(null)
+const refreshingPayRuns = ref(false)
 let payRunLookupRequestId = 0
 
 function resetPayRunState() {
   payRunLookupRequestId += 1
   payRunStatus.value = null
   paymentDate.value = null
+  payRunWarning.value = null
 }
 
 async function loadPayRunForCurrentWeek() {
-  const weekStartDate =
-    (route.query.week as string | undefined) || formatToLocalString(selectedWeekStart.value)
-
-  if (!payrollMode.value || !weekStartDate) {
+  if (!payrollMode.value || !weekStartDate.value) {
     resetPayRunState()
     return
   }
@@ -338,11 +350,13 @@ async function loadPayRunForCurrentWeek() {
   const currentRequestId = ++payRunLookupRequestId
 
   try {
-    const response = await fetchPayRunForWeek(weekStartDate)
+    const response = await fetchPayRunForWeek(weekStartDate.value)
 
     if (currentRequestId !== payRunLookupRequestId) {
       return
     }
+
+    payRunWarning.value = response.warning ?? null
 
     if (response.exists && response.pay_run) {
       payRunStatus.value = response.pay_run.pay_run_status
@@ -350,7 +364,7 @@ async function loadPayRunForCurrentWeek() {
       debugLog('Loaded existing pay run:', response.pay_run)
     } else {
       resetPayRunState()
-      debugLog(`No pay run found for week starting ${weekStartDate}`)
+      debugLog(`No pay run found for week starting ${weekStartDate.value}`)
     }
   } catch (err: unknown) {
     if (currentRequestId !== payRunLookupRequestId) {
@@ -514,12 +528,12 @@ function refreshData() {
 function navigateWeek(direction: number) {
   const newDate = navigateWeekDate(formatToLocalString(selectedWeekStart.value), direction)
   selectedWeekStart.value = createLocalDate(newDate)
-  router.push({ query: { week: formatToLocalString(selectedWeekStart.value) } })
+  router.push({ query: { week: weekStartDate.value } })
   loadData()
 }
 function goToCurrentWeek() {
   selectedWeekStart.value = createLocalDate(dateService.getCurrentWeekStart())
-  router.push({ query: { week: formatToLocalString(selectedWeekStart.value) } })
+  router.push({ query: { week: weekStartDate.value } })
   loadData()
 }
 function togglePayrollMode(checked: boolean) {
@@ -543,7 +557,7 @@ function closeWeekPicker() {
 }
 function handleWeekSelect(date: string) {
   selectedWeekStart.value = createLocalDate(date)
-  router.push({ query: { week: formatToLocalString(selectedWeekStart.value) } })
+  router.push({ query: { week: weekStartDate.value } })
   loadData()
   closeWeekPicker()
 }
@@ -552,8 +566,7 @@ function handleWeekSelect(date: string) {
 async function handleCreatePayRun() {
   creatingPayRun.value = true
   try {
-    const weekStartDate = route.query.week as string
-    const result = await createPayRun(weekStartDate)
+    const result = await createPayRun(weekStartDate.value)
 
     payRunStatus.value = result.status
     paymentDate.value = result.payment_date
@@ -577,18 +590,92 @@ async function handleCreatePayRun() {
   }
 }
 
+async function handleRefreshPayRuns() {
+  if (!weekStartDate.value) return
+
+  refreshingPayRuns.value = true
+  try {
+    const result = await refreshPayRuns(weekStartDate.value)
+    toast.success('Pay runs refreshed', {
+      description: `Fetched ${result.fetched}, created ${result.created}, updated ${result.updated}`,
+    })
+    debugLog('Pay runs synced from Xero:', result)
+    await loadPayRunForCurrentWeek()
+  } catch (err: unknown) {
+    const error = err as { response?: { data?: { message?: string } }; message?: string }
+    const errorMessage =
+      error.response?.data?.message || error.message || 'Failed to refresh pay runs'
+    const userMessage = getPayrollErrorMessage(errorMessage)
+    toast.error('Failed to refresh pay runs', {
+      description: userMessage,
+    })
+    debugLog('Refresh pay runs error:', err)
+  } finally {
+    refreshingPayRuns.value = false
+  }
+}
+
 async function handlePostAllToXero() {
   if (!weeklyData.value) return
 
   postingAll.value = true
-  const staffList = weeklyData.value.weekly_summary?.staff || []
+  const staffList = weeklyData.value.staff_data || []
+  if (!staffList.length) {
+    postingAll.value = false
+    toast.error('No staff data available', {
+      description: 'Refresh the week before posting to Xero.',
+    })
+    debugLog('Post all aborted: no staff_data in weekly payload', weeklyData.value)
+    return
+  }
+  const weekStart = weekStartDate.value || weeklyData.value?.start_date || null
+
+  if (!weekStart) {
+    postingAll.value = false
+    toast.error('Missing week start', {
+      description: 'Unable to determine the selected week. Please refresh and try again.',
+    })
+    debugLog('Post all aborted: missing week start', {
+      selectedWeekStart: selectedWeekStart.value,
+      weeklyData: weeklyData.value,
+    })
+    return
+  }
+
+  const staffTargets: Array<{ staff: (typeof staffList)[number]; staffId: string }> = []
+
+  for (const staff of staffList) {
+    const staffId =
+      staff.staff_id ||
+      // Legacy structures
+      (staff as Record<string, unknown>).staffId ||
+      (staff as Record<string, unknown>).staff_uuid ||
+      (staff as Record<string, unknown>).staffUuid ||
+      (staff as { staff?: { staff_id?: string; id?: string } }).staff?.staff_id ||
+      (staff as { staff?: { staff_id?: string; id?: string } }).staff?.id
+
+    if (!staffId) {
+      debugLog('Skipping staff with missing identifier', staff)
+      continue
+    }
+
+    staffTargets.push({ staff, staffId })
+  }
+
+  if (!staffTargets.length) {
+    postingAll.value = false
+    toast.error('No staff IDs available', {
+      description: 'Unable to find staff identifiers for payroll posting. Please refresh.',
+    })
+    debugLog('Post all aborted: no staff IDs in payload', staffList)
+    return
+  }
+
   let successCount = 0
 
   try {
-    const weekStart = route.query.week as string
-
-    for (const staff of staffList) {
-      const result = await postStaffWeek(staff.staff_id, weekStart)
+    for (const { staff, staffId } of staffTargets) {
+      const result = await postStaffWeek(staffId, weekStart)
 
       if (!result.success) {
         // Fail early - stop on first error

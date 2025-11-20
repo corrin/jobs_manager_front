@@ -2057,16 +2057,6 @@ const ModernTimesheetJob = z
 const JobsListResponse = z
   .object({ jobs: z.array(ModernTimesheetJob), total_count: z.number().int() })
   .passthrough()
-const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
-const CreatePayRunResponse = z
-  .object({
-    pay_run_id: z.string(),
-    status: z.string(),
-    period_start_date: z.string(),
-    period_end_date: z.string(),
-    payment_date: z.string(),
-  })
-  .passthrough()
 const PayRunDetails = z
   .object({
     pay_run_id: z.string(),
@@ -2079,7 +2069,28 @@ const PayRunDetails = z
   })
   .passthrough()
 const PayRunForWeekResponse = z
-  .object({ exists: z.boolean(), pay_run: PayRunDetails.nullable() })
+  .object({
+    exists: z.boolean(),
+    pay_run: PayRunDetails.nullable(),
+    warning: z.string().nullish(),
+  })
+  .passthrough()
+const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
+const CreatePayRunResponse = z
+  .object({
+    pay_run_id: z.string(),
+    status: z.string(),
+    period_start_date: z.string(),
+    period_end_date: z.string(),
+    payment_date: z.string(),
+  })
+  .passthrough()
+const PayRunSyncResponse = z
+  .object({
+    fetched: z.number().int(),
+    created: z.number().int(),
+    updated: z.number().int(),
+  })
   .passthrough()
 const PostWeekToXeroRequest = z
   .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
@@ -2439,10 +2450,11 @@ export const schemas = {
   DailyTimesheetSummary,
   ModernTimesheetJob,
   JobsListResponse,
-  CreatePayRunRequest,
-  CreatePayRunResponse,
   PayRunDetails,
   PayRunForWeekResponse,
+  CreatePayRunRequest,
+  CreatePayRunResponse,
+  PayRunSyncResponse,
   PostWeekToXeroRequest,
   PostWeekToXeroResponse,
   ModernStaff,
@@ -5639,9 +5651,34 @@ Returns:
     response: JobsListResponse,
   },
   {
+    method: 'get',
+    path: '/timesheets/api/payroll/pay-runs/',
+    alias: 'timesheets_api_payroll_pay_runs_retrieve',
+    description: `Return pay run data for the requested week if it exists.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'week_start_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: PayRunForWeekResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
     method: 'post',
-    path: '/timesheets/api/payroll/create-pay-run/',
-    alias: 'timesheets_api_payroll_create_pay_run_create',
+    path: '/timesheets/api/payroll/pay-runs/create',
+    alias: 'timesheets_api_payroll_pay_runs_create_create',
     description: `Create a new pay run for the specified week.`,
     requestFormat: 'json',
     parameters: [
@@ -5668,24 +5705,20 @@ Returns:
     ],
   },
   {
-    method: 'get',
-    path: '/timesheets/api/payroll/pay-runs/',
-    alias: 'timesheets_api_payroll_pay_runs_retrieve',
-    description: `Return pay run data for the requested week if it exists.`,
+    method: 'post',
+    path: '/timesheets/api/payroll/pay-runs/refresh',
+    alias: 'timesheets_api_payroll_pay_runs_refresh_create',
+    description: `Synchronize local pay run cache with Xero.`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'week_start_date',
-        type: 'Query',
-        schema: z.string(),
+        name: 'body',
+        type: 'Body',
+        schema: PayRunSyncResponse,
       },
     ],
-    response: PayRunForWeekResponse,
+    response: PayRunSyncResponse,
     errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
       {
         status: 500,
         schema: ClientErrorResponse,

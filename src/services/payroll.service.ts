@@ -1,6 +1,7 @@
 // src/services/payroll.service.ts
 
 import { api } from '@/api/client'
+import axios from '@/plugins/axios'
 
 /**
  * Response from creating a pay run
@@ -41,6 +42,13 @@ export interface PayRunDetails {
 export interface PayRunForWeekResponse {
   exists: boolean
   pay_run: PayRunDetails | null
+  warning?: string | null
+}
+
+export interface PayRunSyncResult {
+  fetched: number
+  created: number
+  updated: number
 }
 
 /**
@@ -51,8 +59,10 @@ export interface PayRunForWeekResponse {
  * @throws Error if pay run already exists, invalid date, or Xero API error
  */
 export async function createPayRun(weekStartDate: string): Promise<CreatePayRunResponse> {
-  const response = await api.timesheets_api_payroll_create_pay_run_create({
-    week_start_date: weekStartDate,
+  const response = await api.timesheets_api_payroll_pay_runs_create_create({
+    body: {
+      week_start_date: weekStartDate,
+    },
   })
   return response as CreatePayRunResponse
 }
@@ -69,10 +79,8 @@ export async function postStaffWeek(
   weekStartDate: string,
 ): Promise<PostStaffWeekResponse> {
   const response = await api.timesheets_api_payroll_post_staff_week_create({
-    body: {
-      staff_id: staffId,
-      week_start_date: weekStartDate,
-    },
+    staff_id: staffId,
+    week_start_date: weekStartDate,
   })
   return response as PostStaffWeekResponse
 }
@@ -88,6 +96,19 @@ export async function fetchPayRunForWeek(weekStartDate: string): Promise<PayRunF
     queries: { week_start_date: weekStartDate },
   })
   return response as PayRunForWeekResponse
+}
+
+/**
+ * Refresh cached pay runs from Xero and return synchronization stats.
+ *
+ * @param weekStartDate - Monday of the requested week (YYYY-MM-DD)
+ * @returns Counts of fetched/created/updated pay runs from Xero.
+ */
+export async function refreshPayRuns(weekStartDate: string): Promise<PayRunSyncResult> {
+  const response = await axios.post('/timesheets/api/payroll/pay-runs/refresh', {
+    week_start_date: weekStartDate,
+  })
+  return response.data as PayRunSyncResult
 }
 
 /**

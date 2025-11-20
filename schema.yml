@@ -23,6 +23,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -58,6 +59,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -72,6 +74,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           description: No response body
@@ -85,6 +88,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -133,6 +137,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -155,6 +160,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -976,6 +982,7 @@ paths:
         - api
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1009,6 +1016,7 @@ paths:
         - api
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1044,6 +1052,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1079,6 +1088,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1101,6 +1111,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1141,6 +1152,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1193,6 +1205,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1238,6 +1251,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1278,6 +1292,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1312,6 +1327,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1381,6 +1397,7 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1410,6 +1427,7 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1980,6 +1998,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2014,6 +2033,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -2035,6 +2055,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -2076,6 +2097,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdate'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2111,6 +2133,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -2401,6 +2424,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2483,6 +2507,7 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2507,6 +2532,7 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2541,6 +2567,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -2570,6 +2597,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2604,6 +2632,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2643,6 +2672,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobDeltaEnvelope'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2671,6 +2701,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2700,6 +2731,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2804,6 +2836,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2839,6 +2872,7 @@ paths:
               $ref: '#/components/schemas/QuoteRevisionRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2862,6 +2896,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2890,6 +2925,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2922,6 +2958,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2951,6 +2988,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2992,6 +3030,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3032,6 +3071,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3070,6 +3110,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3117,6 +3158,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3177,6 +3219,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3232,6 +3275,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -3274,6 +3318,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3304,6 +3349,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3333,6 +3379,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3361,6 +3408,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3402,6 +3450,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3452,6 +3501,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3493,6 +3543,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3521,6 +3572,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3556,6 +3608,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3697,6 +3750,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3719,6 +3773,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3741,6 +3796,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3762,6 +3818,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3793,6 +3850,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3938,6 +3996,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3969,6 +4028,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3990,6 +4050,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4005,6 +4066,7 @@ paths:
         - Product Mapping
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4038,6 +4100,7 @@ paths:
               $ref: '#/components/schemas/ProductMappingValidateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4065,6 +4128,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4092,6 +4156,7 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderCreate'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4114,6 +4179,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4149,6 +4215,7 @@ paths:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdate'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4171,6 +4238,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4204,6 +4272,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4237,6 +4306,7 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderEmailRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4284,6 +4354,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4312,6 +4383,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4340,6 +4412,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4366,6 +4439,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4391,6 +4465,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -4421,6 +4496,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4440,6 +4516,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4455,6 +4532,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4476,6 +4554,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4499,6 +4578,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4520,6 +4600,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4547,6 +4628,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -4568,6 +4650,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4600,6 +4683,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4631,6 +4715,7 @@ paths:
               $ref: '#/components/schemas/PatchedDjangoJob'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4651,6 +4736,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -4669,6 +4755,7 @@ paths:
         - rest
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4719,9 +4806,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobsListResponse'
           description: ''
-  /timesheets/api/payroll/create-pay-run/:
+  /timesheets/api/payroll/pay-runs/:
+    get:
+      operationId: timesheets_api_payroll_pay_runs_retrieve
+      description: Return pay run data for the requested week if it exists.
+      summary: Get pay run for a week
+      parameters:
+        - in: query
+          name: week_start_date
+          schema:
+            type: string
+            format: date
+          description: Monday of the week (YYYY-MM-DD)
+          required: true
+      tags:
+        - timesheets
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayRunForWeekResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+  /timesheets/api/payroll/pay-runs/create:
     post:
-      operationId: timesheets_api_payroll_create_pay_run_create
+      operationId: timesheets_api_payroll_pay_runs_create_create
       description: Create a new pay run for the specified week.
       summary: Create pay run for a week
       tags:
@@ -4765,21 +4888,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
-  /timesheets/api/payroll/pay-runs/:
-    get:
-      operationId: timesheets_api_payroll_pay_runs_retrieve
-      description: Return pay run data for the requested week if it exists.
-      summary: Get pay run for a week
-      parameters:
-        - in: query
-          name: week_start_date
-          schema:
-            type: string
-            format: date
-          description: Monday of the week (YYYY-MM-DD)
-          required: true
+  /timesheets/api/payroll/pay-runs/refresh:
+    post:
+      operationId: timesheets_api_payroll_pay_runs_refresh_create
+      description: Synchronize local pay run cache with Xero.
+      summary: Refresh cached pay runs from Xero
       tags:
         - timesheets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayRunSyncResponse'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayRunSyncResponse'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayRunSyncResponse'
+        required: true
       security:
         - cookieAuth: []
       responses:
@@ -4787,13 +4914,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PayRunForWeekResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
+                $ref: '#/components/schemas/PayRunSyncResponse'
           description: ''
         '500':
           content:
@@ -5008,6 +5129,7 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5037,6 +5159,7 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -9654,9 +9777,26 @@ components:
           allOf:
             - $ref: '#/components/schemas/PayRunDetails'
           nullable: true
+        warning:
+          type: string
+          nullable: true
       required:
         - exists
         - pay_run
+    PayRunSyncResponse:
+      type: object
+      description: Response payload after refreshing cached pay runs.
+      properties:
+        fetched:
+          type: integer
+        created:
+          type: integer
+        updated:
+          type: integer
+      required:
+        - created
+        - fetched
+        - updated
     PostWeekToXeroRequest:
       type: object
       description: Request serializer for posting weekly timesheet to Xero
