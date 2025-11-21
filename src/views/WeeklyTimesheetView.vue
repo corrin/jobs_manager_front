@@ -645,7 +645,7 @@ async function handlePostAllToXero() {
   const staffTargets: Array<{ staff: (typeof staffList)[number]; staffId: string }> = []
 
   for (const staff of staffList) {
-    const staffId = weeklyData.value.staff_data.staff_id
+    const staffId = staff.staff_id
 
     if (!staffId) {
       debugLog('Skipping staff with missing identifier', staff)
