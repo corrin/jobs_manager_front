@@ -192,8 +192,21 @@
                 @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
-                <option value="time_materials">Time & Materials</option>
                 <option value="fixed_price">Fixed Price</option>
+                <option value="time_materials">Time & Materials</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Speed vs Quality</label>
+              <select
+                v-model="localJobData.speed_quality_tradeoff"
+                @blur="handleBlurFlush"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
+                <option value="fast">Fast - Prioritize Speed</option>
+                <option value="normal">Normal - Balanced</option>
+                <option value="quality">Quality - Prioritize Quality</option>
               </select>
             </div>
 
@@ -498,6 +511,7 @@ watch(
         contact_name: undefined,
         status: '',
         pricing_methodology: props.pricingMethodology || 'time_materials',
+        speed_quality_tradeoff: 'normal' as const,
         fully_invoiced: false,
         quoted: false,
         quote_acceptance_date: undefined,
@@ -527,6 +541,7 @@ watch(
       client: newJobData.client,
       status: newJobData.status,
       pricing_methodology: newJobData.pricing_methodology,
+      speed_quality_tradeoff: newJobData.speed_quality_tradeoff ?? 'normal',
       fully_invoiced: newJobData.fully_invoiced,
       quoted: newJobData.quoted,
       quote_acceptance_date: newJobData.quote_acceptance_date,
@@ -732,6 +747,7 @@ watch(
       localJobData.value.client = newHeader.client
       localJobData.value.status = newHeader.status
       localJobData.value.pricing_methodology = newHeader.pricing_methodology
+      localJobData.value.speed_quality_tradeoff = newHeader.speed_quality_tradeoff ?? 'normal'
       localJobData.value.quoted = newHeader.quoted
       localJobData.value.fully_invoiced = newHeader.fully_invoiced
       localJobData.value.paid = newHeader.paid
@@ -909,6 +925,7 @@ const autosave = createJobAutosave({
       contact_name: data.contact_name,
       job_status: data.status,
       pricing_methodology: data.pricing_methodology,
+      speed_quality_tradeoff: data.speed_quality_tradeoff,
       fully_invoiced: data.fully_invoiced,
       quoted: data.quoted,
       quote_acceptance_date: data.quote_acceptance_date,
@@ -987,6 +1004,8 @@ const autosave = createJobAutosave({
           if ('job_status' in payload) next.status = String(payload.job_status)
           if ('pricing_methodology' in payload)
             next.pricing_methodology = payload.pricing_methodology as string
+          if ('speed_quality_tradeoff' in payload)
+            next.speed_quality_tradeoff = payload.speed_quality_tradeoff as string
           if ('quoted' in payload) next.quoted = !!payload.quoted
           if ('fully_invoiced' in payload) next.fully_invoiced = !!payload.fully_invoiced
           if ('paid' in payload) next.paid = !!payload.paid
@@ -1070,6 +1089,11 @@ const autosave = createJobAutosave({
             nextBaseline.pricing_methodology = serverJobDetail.pricing_methodology
             localJobData.value.pricing_methodology = serverJobDetail.pricing_methodology
             headerPatch.pricing_methodology = serverJobDetail.pricing_methodology
+          }
+          if (touchedKeys.includes('speed_quality_tradeoff')) {
+            nextBaseline.speed_quality_tradeoff = serverJobDetail.speed_quality_tradeoff
+            localJobData.value.speed_quality_tradeoff = serverJobDetail.speed_quality_tradeoff
+            headerPatch.speed_quality_tradeoff = serverJobDetail.speed_quality_tradeoff
           }
           if (touchedKeys.includes('quoted')) {
             nextBaseline.quoted = !!serverJobDetail.quoted
@@ -1158,6 +1182,13 @@ const autosave = createJobAutosave({
             nextBaseline.pricing_methodology = pricingVal
             localJobData.value.pricing_methodology = pricingVal
             headerPatch.pricing_methodology = pricingVal
+          }
+          if (touchedKeys.includes('speed_quality_tradeoff')) {
+            const tradeoffVal =
+              coerceNullableString(partialPayload.speed_quality_tradeoff) ?? 'normal'
+            nextBaseline.speed_quality_tradeoff = tradeoffVal
+            localJobData.value.speed_quality_tradeoff = tradeoffVal
+            headerPatch.speed_quality_tradeoff = tradeoffVal
           }
           if (touchedKeys.includes('quoted')) {
             const quotedVal = !!partialPayload.quoted
@@ -1288,6 +1319,7 @@ onMounted(() => {
           client: response.client,
           status: response.status,
           pricing_methodology: response.pricing_methodology,
+          speed_quality_tradeoff: response.speed_quality_tradeoff ?? 'normal',
           fully_invoiced: response.fully_invoiced,
           quoted: response.quoted,
           quote_acceptance_date: response.quote_acceptance_date,
@@ -1366,6 +1398,15 @@ watch(
     if (v === oldV) return
     if (!isSyncingFromStore.value) {
       enqueueIfNotInitializing('pricing_methodology', v)
+    }
+  },
+)
+watch(
+  () => localJobData.value.speed_quality_tradeoff,
+  (v, oldV) => {
+    if (v === oldV) return
+    if (!isSyncingFromStore.value) {
+      enqueueIfNotInitializing('speed_quality_tradeoff', v)
     }
   },
 )
