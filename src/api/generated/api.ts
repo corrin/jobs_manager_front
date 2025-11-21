@@ -344,6 +344,13 @@ const CompanyDefaults = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
     gdrive_quotes_folder_id: z.string().max(100).nullish(),
     xero_tenant_id: z.string().max(100).nullish(),
+    xero_annual_leave_type_id: z.string().max(100).nullish(),
+    xero_sick_leave_type_id: z.string().max(100).nullish(),
+    xero_other_leave_type_id: z.string().max(100).nullish(),
+    xero_unpaid_leave_type_id: z.string().max(100).nullish(),
+    xero_ordinary_earnings_rate_id: z.string().max(100).nullish(),
+    xero_time_half_earnings_rate_id: z.string().max(100).nullish(),
+    xero_double_time_earnings_rate_id: z.string().max(100).nullish(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -381,6 +388,13 @@ const PatchedCompanyDefaults = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullable(),
     gdrive_quotes_folder_id: z.string().max(100).nullable(),
     xero_tenant_id: z.string().max(100).nullable(),
+    xero_annual_leave_type_id: z.string().max(100).nullable(),
+    xero_sick_leave_type_id: z.string().max(100).nullable(),
+    xero_other_leave_type_id: z.string().max(100).nullable(),
+    xero_unpaid_leave_type_id: z.string().max(100).nullable(),
+    xero_ordinary_earnings_rate_id: z.string().max(100).nullable(),
+    xero_time_half_earnings_rate_id: z.string().max(100).nullable(),
+    xero_double_time_earnings_rate_id: z.string().max(100).nullable(),
     mon_start: z.string(),
     mon_end: z.string(),
     tue_start: z.string(),
@@ -840,6 +854,55 @@ const CostLineCreateUpdate = z
   })
   .passthrough()
 const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
+const BrokenFKReference = z
+  .object({
+    model: z.string(),
+    record_id: z.string(),
+    field: z.string(),
+    target_model: z.string(),
+    target_id: z.string(),
+  })
+  .passthrough()
+const BrokenJSONReference = z
+  .object({
+    model: z.string(),
+    record_id: z.string(),
+    field: z.string(),
+    staff_id: z.string().nullish(),
+    stock_id: z.string().nullish(),
+    purchase_order_line_id: z.string().nullish(),
+    issue: z.string().nullish(),
+  })
+  .passthrough()
+const BusinessRuleViolation = z
+  .object({
+    model: z.string(),
+    record_id: z.string(),
+    field: z.string(),
+    rule: z.string(),
+    expected: z.string().nullish(),
+    actual: z.string().nullish(),
+    path: z.array(z.string()).nullish(),
+    expected_path: z.string().nullish(),
+  })
+  .passthrough()
+const DataIntegritySummary = z
+  .object({
+    total_broken_fks: z.number().int(),
+    total_broken_json_refs: z.number().int(),
+    total_business_rule_violations: z.number().int(),
+    total_issues: z.number().int(),
+  })
+  .passthrough()
+const DataIntegrityResponse = z
+  .object({
+    scanned_at: z.string().datetime({ offset: true }),
+    broken_fk_references: z.array(BrokenFKReference),
+    broken_json_references: z.array(BrokenJSONReference),
+    business_rule_violations: z.array(BusinessRuleViolation),
+    summary: DataIntegritySummary,
+  })
+  .passthrough()
 const ArchivedJobIssue = z
   .object({
     job_id: z.string(),
@@ -942,6 +1005,7 @@ const JobFile = z
   })
   .passthrough()
 const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
+const SpeedQualityTradeoffEnum = z.enum(['fast', 'normal', 'quality'])
 const QuoteSpreadsheet = z
   .object({
     id: z.string().uuid(),
@@ -1020,6 +1084,7 @@ const Job = z
     job_files: z.array(JobFile).optional(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     pricing_methodology: PricingMethodologyEnum.optional(),
+    speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
     quote_sheet: QuoteSpreadsheet.nullable(),
     quoted: z.boolean(),
     fully_invoiced: z.boolean(),
@@ -1788,9 +1853,8 @@ const AllocationDeleteResponse = z
     updated_received_quantity: z.number().optional(),
   })
   .passthrough()
-const PurchaseOrderPDFResponse = z
-  .object({ success: z.boolean(), message: z.string() })
-  .partial()
+const PurchasingErrorResponse = z
+  .object({ error: z.string(), details: z.string().optional() })
   .passthrough()
 const StockItem = z
   .object({
@@ -1987,10 +2051,62 @@ const ModernTimesheetJob = z
     status: Status7b9Enum.optional(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     has_actual_costset: z.boolean(),
+    leave_type: z.string(),
   })
   .passthrough()
 const JobsListResponse = z
   .object({ jobs: z.array(ModernTimesheetJob), total_count: z.number().int() })
+  .passthrough()
+const PayRunDetails = z
+  .object({
+    pay_run_id: z.string(),
+    payroll_calendar_id: z.string().nullable(),
+    period_start_date: z.string(),
+    period_end_date: z.string(),
+    payment_date: z.string(),
+    pay_run_status: z.string(),
+    pay_run_type: z.string().nullable(),
+  })
+  .passthrough()
+const PayRunForWeekResponse = z
+  .object({
+    exists: z.boolean(),
+    pay_run: PayRunDetails.nullable(),
+    warning: z.string().nullish(),
+  })
+  .passthrough()
+const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
+const CreatePayRunResponse = z
+  .object({
+    pay_run_id: z.string(),
+    status: z.string(),
+    period_start_date: z.string(),
+    period_end_date: z.string(),
+    payment_date: z.string(),
+  })
+  .passthrough()
+const PayRunSyncResponse = z
+  .object({
+    fetched: z.number().int(),
+    created: z.number().int(),
+    updated: z.number().int(),
+  })
+  .passthrough()
+const PostWeekToXeroRequest = z
+  .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
+  .passthrough()
+const PostWeekToXeroResponse = z
+  .object({
+    success: z.boolean(),
+    xero_timesheet_id: z.string().nullable(),
+    xero_leave_ids: z.array(z.string()),
+    entries_posted: z.number().int(),
+    work_hours: z.number().gt(-100000000).lt(100000000),
+    other_leave_hours: z.number().gt(-100000000).lt(100000000),
+    annual_sick_hours: z.number().gt(-100000000).lt(100000000),
+    unpaid_hours: z.number().gt(-100000000).lt(100000000),
+    errors: z.array(z.string()),
+  })
   .passthrough()
 const ModernStaff = z
   .object({
@@ -2014,7 +2130,14 @@ const WeeklyStaffDataWeeklyHours = z
     scheduled_hours: z.number().gt(-1000).lt(1000),
     status: z.string(),
     leave_type: z.string().nullish(),
-    has_leave: z.boolean(),
+    has_leave: z.boolean().optional().default(false),
+    billed_hours: z.number().gt(-100000000).lt(100000000),
+    unbilled_hours: z.number().gt(-100000000).lt(100000000),
+    overtime_1_5x_hours: z.number().gt(-100000000).lt(100000000),
+    overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
+    sick_leave_hours: z.number().gt(-100000000).lt(100000000),
+    annual_leave_hours: z.number().gt(-100000000).lt(100000000),
+    other_leave_hours: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklyStaffData = z
@@ -2024,8 +2147,16 @@ const WeeklyStaffData = z
     weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
     total_hours: z.number().gt(-100000000).lt(100000000),
     total_billable_hours: z.number().gt(-100000000).lt(100000000),
+    total_scheduled_hours: z.number().gt(-100000000).lt(100000000),
     billable_percentage: z.number().gt(-1000).lt(1000),
     status: z.string(),
+    total_billed_hours: z.number().gt(-100000000).lt(100000000),
+    total_unbilled_hours: z.number().gt(-100000000).lt(100000000),
+    total_overtime_1_5x_hours: z.number().gt(-100000000).lt(100000000),
+    total_overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
+    total_sick_leave_hours: z.number().gt(-100000000).lt(100000000),
+    total_annual_leave_hours: z.number().gt(-100000000).lt(100000000),
+    total_other_leave_hours: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklySummary = z
@@ -2050,59 +2181,11 @@ const WeeklyTimesheetData = z
     staff_data: z.array(WeeklyStaffData),
     weekly_summary: WeeklySummary,
     job_metrics: JobMetrics,
-    summary_stats: z.object({}).partial().passthrough(),
+    summary_stats: SummaryStats,
     export_mode: z.string(),
     is_current_week: z.boolean(),
-    navigation: z.object({}).partial().passthrough().optional(),
-    weekend_enabled: z.boolean().optional().default(false),
-    week_type: z.string().optional(),
-  })
-  .passthrough()
-const IMSWeeklyStaffDataWeeklyHours = z
-  .object({
-    day: z.string(),
-    hours: z.number().gt(-1000).lt(1000),
-    billable_hours: z.number().gt(-1000).lt(1000),
-    scheduled_hours: z.number().gt(-1000).lt(1000),
-    status: z.string(),
-    leave_type: z.string().nullish(),
-    has_leave: z.boolean().optional().default(false),
-    standard_hours: z.number().gt(-100000000).lt(100000000),
-    time_and_half_hours: z.number().gt(-100000000).lt(100000000),
-    double_time_hours: z.number().gt(-100000000).lt(100000000),
-    unpaid_hours: z.number().gt(-100000000).lt(100000000),
-    overtime: z.number().gt(-100000000).lt(100000000),
-    leave_hours: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const IMSWeeklyStaffData = z
-  .object({
-    staff_id: z.string().uuid(),
-    name: z.string(),
-    weekly_hours: z.array(IMSWeeklyStaffDataWeeklyHours),
-    total_hours: z.number().gt(-100000000).lt(100000000),
-    total_billable_hours: z.number().gt(-100000000).lt(100000000),
-    billable_percentage: z.number().gt(-1000).lt(1000),
-    status: z.string(),
-    total_standard_hours: z.number().gt(-100000000).lt(100000000),
-    total_time_and_half_hours: z.number().gt(-100000000).lt(100000000),
-    total_double_time_hours: z.number().gt(-100000000).lt(100000000),
-    total_overtime: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const IMSWeeklyTimesheetData = z
-  .object({
-    start_date: z.string(),
-    end_date: z.string(),
-    week_days: z.array(z.string()),
-    staff_data: z.array(IMSWeeklyStaffData),
-    weekly_summary: WeeklySummary,
-    job_metrics: JobMetrics,
-    summary_stats: z.object({}).partial().passthrough(),
-    export_mode: z.string(),
-    is_current_week: z.boolean(),
-    navigation: z.object({}).partial().passthrough().optional(),
-    weekend_enabled: z.boolean().optional().default(false),
+    navigation: z.object({}).partial().passthrough().nullish(),
+    weekend_enabled: z.boolean().optional(),
     week_type: z.string().optional(),
   })
   .passthrough()
@@ -2226,6 +2309,11 @@ export const schemas = {
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
   CostLineErrorResponse,
+  BrokenFKReference,
+  BrokenJSONReference,
+  BusinessRuleViolation,
+  DataIntegritySummary,
+  DataIntegrityResponse,
   ArchivedJobIssue,
   ComplianceSummary,
   ArchivedJobsComplianceResponse,
@@ -2239,6 +2327,7 @@ export const schemas = {
   JobFileStatusEnum,
   JobFile,
   PricingMethodologyEnum,
+  SpeedQualityTradeoffEnum,
   QuoteSpreadsheet,
   Status7aeEnum,
   Quote,
@@ -2339,7 +2428,7 @@ export const schemas = {
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
-  PurchaseOrderPDFResponse,
+  PurchasingErrorResponse,
   StockItem,
   StockList,
   StockCreate,
@@ -2361,6 +2450,13 @@ export const schemas = {
   DailyTimesheetSummary,
   ModernTimesheetJob,
   JobsListResponse,
+  PayRunDetails,
+  PayRunForWeekResponse,
+  CreatePayRunRequest,
+  CreatePayRunResponse,
+  PayRunSyncResponse,
+  PostWeekToXeroRequest,
+  PostWeekToXeroResponse,
   ModernStaff,
   StaffListResponse,
   WeeklyStaffDataWeeklyHours,
@@ -2368,9 +2464,6 @@ export const schemas = {
   WeeklySummary,
   JobMetrics,
   WeeklyTimesheetData,
-  IMSWeeklyStaffDataWeeklyHours,
-  IMSWeeklyStaffData,
-  IMSWeeklyTimesheetData,
   XeroError,
   PaginatedXeroErrorList,
 }
@@ -2420,6 +2513,44 @@ Returns:
     JSON response with job aging data structure`,
     requestFormat: 'json',
     response: JobAgingResponse,
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/profit-and-loss/',
+    alias: 'accounting_api_reports_profit_and_loss_retrieve',
+    requestFormat: 'json',
+    response: z.void(),
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/sales-forecast/',
+    alias: 'accounting_api_reports_sales_forecast_retrieve',
+    description: `Returns monthly sales comparison between Xero invoices and Job Manager revenue for all months with data`,
+    requestFormat: 'json',
+    response: z
+      .object({
+        months: z.array(
+          z
+            .object({
+              month: z.string(),
+              month_label: z.string(),
+              xero_sales: z.number(),
+              jm_sales: z.number(),
+              variance: z.number(),
+              variance_pct: z.number(),
+            })
+            .partial()
+            .passthrough(),
+        ),
+      })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).partial().passthrough(),
+      },
+    ],
   },
   {
     method: 'get',
@@ -4047,6 +4178,20 @@ Dynamically infers the stock adjustment based on quantity change`,
   },
   {
     method: 'get',
+    path: '/job/rest/data-integrity/scan/',
+    alias: 'scan_data_integrity',
+    description: `Check all foreign key relationships, JSON references, and business rules for violations.`,
+    requestFormat: 'json',
+    response: DataIntegrityResponse,
+    errors: [
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/job/rest/data-quality/archived-jobs-compliance/',
     alias: 'check_archived_jobs_compliance',
     description: `Verify that all archived jobs are either cancelled or fully invoiced and paid.`,
@@ -5249,7 +5394,17 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         schema: z.string().uuid(),
       },
     ],
-    response: PurchaseOrderPDFResponse,
+    response: z.instanceof(File),
+    errors: [
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
+      },
+      {
+        status: 500,
+        schema: PurchasingErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
@@ -5497,6 +5652,106 @@ Returns:
   },
   {
     method: 'get',
+    path: '/timesheets/api/payroll/pay-runs/',
+    alias: 'timesheets_api_payroll_pay_runs_retrieve',
+    description: `Return pay run data for the requested week if it exists.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'week_start_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: PayRunForWeekResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/timesheets/api/payroll/pay-runs/create',
+    alias: 'timesheets_api_payroll_pay_runs_create_create',
+    description: `Create a new pay run for the specified week.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ week_start_date: z.string() }).passthrough(),
+      },
+    ],
+    response: CreatePayRunResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 409,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/timesheets/api/payroll/pay-runs/refresh',
+    alias: 'timesheets_api_payroll_pay_runs_refresh_create',
+    description: `Synchronize local pay run cache with Xero.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PayRunSyncResponse,
+      },
+    ],
+    response: PayRunSyncResponse,
+    errors: [
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/timesheets/api/payroll/post-staff-week/',
+    alias: 'timesheets_api_payroll_post_staff_week_create',
+    description: `Post a week&#x27;s timesheet to Xero Payroll.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PostWeekToXeroRequest,
+      },
+    ],
+    response: PostWeekToXeroResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/timesheets/api/staff/',
     alias: 'timesheets_api_staff_retrieve',
     description: `Get filtered list of staff members for a specific date.`,
@@ -5541,7 +5796,7 @@ Returns:
     method: 'get',
     path: '/timesheets/api/weekly/',
     alias: 'timesheets_api_weekly_retrieve',
-    description: `Return weekly timesheet data (5 or 7 days based on feature flag).`,
+    description: `Return weekly timesheet data with payroll fields (5/7 days).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -5586,31 +5841,6 @@ Expected payload:
       },
     ],
     response: z.object({}).partial().passthrough(),
-    errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
-      {
-        status: 500,
-        schema: ClientErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/timesheets/api/weekly/ims/',
-    alias: 'timesheets_api_weekly_ims_retrieve',
-    description: `Return IMS-formatted weekly timesheet data.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'start_date',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-    ],
-    response: IMSWeeklyTimesheetData,
     errors: [
       {
         status: 400,

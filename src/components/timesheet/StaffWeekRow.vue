@@ -17,11 +17,11 @@
             {{ staff.name }}
           </p>
           <div
-            v-if="imsMode && staff.total_overtime && staff.total_overtime > 0"
+            v-if="payrollMode && staff.total_overtime && (staff.total_overtime as number) > 0"
             class="flex items-center space-x-1"
           >
             <span class="text-xs lg:text-sm text-orange-600 font-medium">
-              OT: {{ formatHours(staff.total_overtime) }}h
+              OT: {{ formatHours(staff.total_overtime as number) }}h
             </span>
           </div>
         </div>
@@ -33,7 +33,7 @@
       <div
         class="flex items-center justify-center min-h-[28px] lg:min-h-[32px] rounded-md transition-all duration-200 relative group/cell"
         :class="getDayBackgroundClass(staff.weekly_hours[idx])"
-        :title="getDayTooltip(staff.weekly_hours[idx])"
+        :title="getDayTooltip(staff.weekly_hours[idx], idx)"
       >
         <!-- Hours Display -->
         <div class="flex items-center space-x-0.5 lg:space-x-1">
@@ -51,40 +51,46 @@
           </div>
         </div>
 
-        <!-- IMS Mode Indicators -->
-        <div v-if="imsMode" class="absolute top-0 right-0 flex space-x-0.5 p-0.5">
+        <!-- Payroll Mode Indicators -->
+        <div v-if="payrollMode" class="absolute top-0 right-0 flex space-x-0.5 p-0.5">
           <div
-            v-if="staff.weekly_hours[idx].overtime && staff.weekly_hours[idx].overtime > 0"
+            v-if="hasOvertime(idx)"
             class="h-1 lg:h-1.5 w-1 lg:w-1.5 bg-orange-500 rounded-full"
-            :title="`Overtime: ${formatHours(staff.weekly_hours[idx].overtime)}h`"
+            :title="`Overtime: ${formatHours(getTotalOvertime(idx))}h`"
           ></div>
           <div
-            v-if="staff.weekly_hours[idx].leave_hours && staff.weekly_hours[idx].leave_hours > 0"
+            v-if="hasLeave(idx)"
             class="h-1 lg:h-1.5 w-1 lg:w-1.5 bg-blue-500 rounded-full"
-            :title="`Leave: ${formatHours(staff.weekly_hours[idx].leave_hours)}h`"
+            :title="`Leave: ${formatHours(getTotalLeave(idx))}h`"
           ></div>
         </div>
 
-        <!-- Enhanced Tooltip for IMS Mode -->
+        <!-- Enhanced Tooltip for Payroll Mode -->
         <div
-          v-if="imsMode"
+          v-if="payrollMode"
           class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 lg:mb-2 px-1.5 lg:px-2 py-1 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 group-hover/cell:opacity-100 transition-opacity duration-200 z-10 pointer-events-none whitespace-nowrap"
         >
           <div class="space-y-0.5 lg:space-y-1">
-            <div v-if="staff.weekly_hours[idx].standard_hours" class="text-xs lg:text-sm">
-              Standard: {{ formatHours(staff.weekly_hours[idx].standard_hours) }}h
+            <div v-if="staff.weekly_hours[idx].billed_hours" class="text-xs lg:text-sm">
+              Billed: {{ formatHours(staff.weekly_hours[idx].billed_hours) }}h
             </div>
-            <div v-if="staff.weekly_hours[idx].time_and_half_hours" class="text-xs lg:text-sm">
-              Time & Half: {{ formatHours(staff.weekly_hours[idx].time_and_half_hours) }}h
+            <div v-if="staff.weekly_hours[idx].unbilled_hours" class="text-xs lg:text-sm">
+              Unbilled: {{ formatHours(staff.weekly_hours[idx].unbilled_hours) }}h
             </div>
-            <div v-if="staff.weekly_hours[idx].double_time_hours" class="text-xs lg:text-sm">
-              Double Time: {{ formatHours(staff.weekly_hours[idx].double_time_hours) }}h
+            <div v-if="staff.weekly_hours[idx].overtime_1_5x_hours" class="text-xs lg:text-sm">
+              1.5x Time: {{ formatHours(staff.weekly_hours[idx].overtime_1_5x_hours) }}h
             </div>
-            <div v-if="staff.weekly_hours[idx].leave_hours" class="text-xs lg:text-sm">
-              Leave: {{ formatHours(staff.weekly_hours[idx].leave_hours) }}h
+            <div v-if="staff.weekly_hours[idx].overtime_2x_hours" class="text-xs lg:text-sm">
+              2x Time: {{ formatHours(staff.weekly_hours[idx].overtime_2x_hours) }}h
             </div>
-            <div v-if="staff.weekly_hours[idx].unpaid_hours" class="text-xs lg:text-sm">
-              Unpaid: {{ formatHours(staff.weekly_hours[idx].unpaid_hours) }}h
+            <div v-if="staff.weekly_hours[idx].sick_leave_hours" class="text-xs lg:text-sm">
+              Sick Leave: {{ formatHours(staff.weekly_hours[idx].sick_leave_hours) }}h
+            </div>
+            <div v-if="staff.weekly_hours[idx].annual_leave_hours" class="text-xs lg:text-sm">
+              Annual Leave: {{ formatHours(staff.weekly_hours[idx].annual_leave_hours) }}h
+            </div>
+            <div v-if="staff.weekly_hours[idx].other_leave_hours" class="text-xs lg:text-sm">
+              Other Leave: {{ formatHours(staff.weekly_hours[idx].other_leave_hours) }}h
             </div>
           </div>
           <div
@@ -96,17 +102,9 @@
 
     <!-- Total Hours Column -->
     <td class="px-1.5 lg:px-2 py-1.5 lg:py-2 text-center">
-      <div class="flex flex-col items-center space-y-0.5 lg:space-y-1">
-        <span class="text-sm lg:text-base font-bold text-gray-900">
-          {{ formatHours(staff.total_hours) }}
-        </span>
-        <div
-          v-if="imsMode && staff.total_leave_hours && staff.weekly_hours.leave_hours > 0"
-          class="text-xs lg:text-sm text-blue-600"
-        >
-          Leave: {{ formatHours(staff.weekly_hours.leave_hours) }}
-        </div>
-      </div>
+      <span class="text-sm lg:text-base font-bold text-gray-900">
+        {{ formatHours(staff.total_hours) }}
+      </span>
     </td>
 
     <!-- Billable Percentage Column -->
@@ -123,17 +121,17 @@ import { formatHours } from '../../services/weekly-timesheet.service'
 import { z } from 'zod'
 import { schemas } from '../../api/generated/api'
 
-type WeeklyStaffData = z.infer<typeof schemas.IMSWeeklyStaffData>
-type WeeklyDayData = z.infer<typeof schemas.IMSWeeklyStaffDataWeeklyHours>
+type WeeklyStaffData = z.infer<typeof schemas.WeeklyStaffData>
+type WeeklyDayData = z.infer<typeof schemas.WeeklyStaffDataWeeklyHours>
 
 interface Props {
   staff: WeeklyStaffData
-  imsMode: boolean
+  payrollMode: boolean
   weekDays: Array<{ date: string; name: string; short: string }>
   visibleIndexes: number[]
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 const getInitials = (name: string): string => {
   return name
@@ -174,7 +172,7 @@ const getDayBackgroundClass = (day: WeeklyDayData): string => {
   return `${baseClass} bg-gray-50 border border-gray-200`
 }
 
-const getDayTooltip = (day: WeeklyDayData): string => {
+const getDayTooltip = (day: WeeklyDayData, idx: number): string => {
   const parts: string[] = []
 
   if (day.hours > 0) {
@@ -189,10 +187,35 @@ const getDayTooltip = (day: WeeklyDayData): string => {
     parts.push(`Leave Type: ${day.leave_type}`)
   }
 
-  if (day.overtime && day.overtime > 0) {
-    parts.push(`Overtime: ${formatHours(day.overtime)}h`)
+  const overtime = getTotalOvertime(idx)
+  if (overtime > 0) {
+    parts.push(`Overtime: ${formatHours(overtime)}h`)
   }
 
   return parts.length > 0 ? parts.join(' | ') : 'No data'
+}
+
+const hasOvertime = (idx: number): boolean => {
+  const day = props.staff.weekly_hours[idx]
+  return (day.overtime_1_5x_hours || 0) > 0 || (day.overtime_2x_hours || 0) > 0
+}
+
+const getTotalOvertime = (idx: number): number => {
+  const day = props.staff.weekly_hours[idx]
+  return (day.overtime_1_5x_hours || 0) + (day.overtime_2x_hours || 0)
+}
+
+const hasLeave = (idx: number): boolean => {
+  const day = props.staff.weekly_hours[idx]
+  return (
+    (day.sick_leave_hours || 0) > 0 ||
+    (day.annual_leave_hours || 0) > 0 ||
+    (day.other_leave_hours || 0) > 0
+  )
+}
+
+const getTotalLeave = (idx: number): number => {
+  const day = props.staff.weekly_hours[idx]
+  return (day.sick_leave_hours || 0) + (day.annual_leave_hours || 0) + (day.other_leave_hours || 0)
 }
 </script>
