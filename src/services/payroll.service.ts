@@ -1,55 +1,15 @@
 // src/services/payroll.service.ts
 
 import { api } from '@/api/client'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 import axios from '@/plugins/axios'
 
-/**
- * Response from creating a pay run
- */
-export interface CreatePayRunResponse {
-  pay_run_id: string
-  status: string
-  period_start_date: string
-  period_end_date: string
-  payment_date: string
-}
-
-/**
- * Response from posting a staff week to Xero
- */
-export interface PostStaffWeekResponse {
-  success: boolean
-  xero_timesheet_id: string | null
-  xero_leave_ids: string[]
-  entries_posted: number
-  work_hours: string
-  other_leave_hours: string
-  annual_sick_hours: string
-  unpaid_hours: string
-  errors: string[]
-}
-
-export interface PayRunDetails {
-  pay_run_id: string
-  payroll_calendar_id: string | null
-  period_start_date: string
-  period_end_date: string
-  payment_date: string
-  pay_run_status: string
-  pay_run_type: string | null
-}
-
-export interface PayRunForWeekResponse {
-  exists: boolean
-  pay_run: PayRunDetails | null
-  warning?: string | null
-}
-
-export interface PayRunSyncResult {
-  fetched: number
-  created: number
-  updated: number
-}
+export type CreatePayRunResponse = z.infer<typeof schemas.CreatePayRunResponse>
+export type PostStaffWeekResponse = z.infer<typeof schemas.PostWeekToXeroResponse>
+export type PayRunDetails = z.infer<typeof schemas.PayRunDetails>
+export type PayRunForWeekResponse = z.infer<typeof schemas.PayRunForWeekResponse>
+export type PayRunSyncResult = z.infer<typeof schemas.PayRunSyncResponse>
 
 /**
  * Create a new pay run for the specified week.
