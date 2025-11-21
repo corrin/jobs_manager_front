@@ -128,6 +128,7 @@
           :posting="postingAll"
           :warning="payRunWarning"
           :refreshing="refreshingPayRuns"
+          :post-success="postedAllToXero"
           @create-pay-run="handleCreatePayRun"
           @post-all-to-xero="handlePostAllToXero"
           @refresh-pay-runs="handleRefreshPayRuns"
@@ -330,6 +331,7 @@ const creatingPayRun = ref(false)
 const postingAll = ref(false)
 const payRunWarning = ref<string | null>(null)
 const refreshingPayRuns = ref(false)
+const postedAllToXero = ref(false)
 let payRunLookupRequestId = 0
 
 function resetPayRunState() {
@@ -478,6 +480,7 @@ function formatDisplayDateRange(): string {
 async function loadData(): Promise<void> {
   loading.value = true
   error.value = null
+  postedAllToXero.value = false
 
   // Payroll state (pay runs) is refreshed separately via loadPayRunForCurrentWeek
 
@@ -683,6 +686,7 @@ async function handlePostAllToXero() {
     toast.success('All staff posted successfully', {
       description: `${successCount} staff members posted to Xero`,
     })
+    postedAllToXero.value = true
   } catch (err: unknown) {
     const error = err as { response?: { data?: { message?: string } }; message?: string }
     const errorMessage = error.response?.data?.message || error.message || 'Failed to post to Xero'
@@ -691,6 +695,7 @@ async function handlePostAllToXero() {
       description: userMessage,
     })
     debugLog('Post all error:', err)
+    postedAllToXero.value = false
   } finally {
     postingAll.value = false
   }
