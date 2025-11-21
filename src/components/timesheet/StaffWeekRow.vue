@@ -17,11 +17,11 @@
             {{ staff.name }}
           </p>
           <div
-            v-if="payrollMode && staff.total_overtime && staff.total_overtime > 0"
+            v-if="payrollMode && staff.total_overtime && (staff.total_overtime as number) > 0"
             class="flex items-center space-x-1"
           >
             <span class="text-xs lg:text-sm text-orange-600 font-medium">
-              OT: {{ formatHours(staff.total_overtime) }}h
+              OT: {{ formatHours(staff.total_overtime as number) }}h
             </span>
           </div>
         </div>
@@ -33,7 +33,7 @@
       <div
         class="flex items-center justify-center min-h-[28px] lg:min-h-[32px] rounded-md transition-all duration-200 relative group/cell"
         :class="getDayBackgroundClass(staff.weekly_hours[idx])"
-        :title="getDayTooltip(staff.weekly_hours[idx])"
+        :title="getDayTooltip(staff.weekly_hours[idx], idx)"
       >
         <!-- Hours Display -->
         <div class="flex items-center space-x-0.5 lg:space-x-1">
@@ -172,7 +172,7 @@ const getDayBackgroundClass = (day: WeeklyDayData): string => {
   return `${baseClass} bg-gray-50 border border-gray-200`
 }
 
-const getDayTooltip = (day: WeeklyDayData): string => {
+const getDayTooltip = (day: WeeklyDayData, idx: number): string => {
   const parts: string[] = []
 
   if (day.hours > 0) {
@@ -187,7 +187,7 @@ const getDayTooltip = (day: WeeklyDayData): string => {
     parts.push(`Leave Type: ${day.leave_type}`)
   }
 
-  const overtime = getTotalOvertime(props.staff.weekly_hours.indexOf(day))
+  const overtime = getTotalOvertime(idx)
   if (overtime > 0) {
     parts.push(`Overtime: ${formatHours(overtime)}h`)
   }

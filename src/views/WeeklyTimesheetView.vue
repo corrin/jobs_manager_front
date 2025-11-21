@@ -645,14 +645,7 @@ async function handlePostAllToXero() {
   const staffTargets: Array<{ staff: (typeof staffList)[number]; staffId: string }> = []
 
   for (const staff of staffList) {
-    const staffId =
-      staff.staff_id ||
-      // Legacy structures
-      (staff as Record<string, unknown>).staffId ||
-      (staff as Record<string, unknown>).staff_uuid ||
-      (staff as Record<string, unknown>).staffUuid ||
-      (staff as { staff?: { staff_id?: string; id?: string } }).staff?.staff_id ||
-      (staff as { staff?: { staff_id?: string; id?: string } }).staff?.id
+    const staffId = weeklyData.value.staff_data.staff_id
 
     if (!staffId) {
       debugLog('Skipping staff with missing identifier', staff)
