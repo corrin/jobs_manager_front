@@ -9825,6 +9825,7 @@ components:
           type: array
           items:
             type: string
+          nullable: true
         entries_posted:
           type: integer
         work_hours:
@@ -9867,7 +9868,6 @@ components:
         - success
         - unpaid_hours
         - work_hours
-        - xero_leave_ids
         - xero_timesheet_id
     PreviewQuoteResponse:
       type: object

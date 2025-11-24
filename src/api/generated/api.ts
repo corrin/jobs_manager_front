@@ -2099,7 +2099,7 @@ const PostWeekToXeroResponse = z
   .object({
     success: z.boolean(),
     xero_timesheet_id: z.string().nullable(),
-    xero_leave_ids: z.array(z.string()),
+    xero_leave_ids: z.array(z.string()).nullish(),
     entries_posted: z.number().int(),
     work_hours: z.number().gt(-100000000).lt(100000000),
     other_leave_hours: z.number().gt(-100000000).lt(100000000),

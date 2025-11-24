@@ -63,7 +63,7 @@
 
       <!-- Post All to Xero Button -->
       <Button
-        v-if="payRunExists"
+        v-if="payRunExists && !postSuccess"
         @click="$emit('postAllToXero')"
         :disabled="!canPost || posting"
         variant="default"
@@ -71,6 +71,18 @@
       >
         <Send class="h-4 w-4 mr-2" />
         {{ posting ? 'Posting...' : 'Post All to Xero' }}
+      </Button>
+
+      <!-- Continue in Xero Button -->
+      <Button
+        v-else-if="payRunExists && postSuccess"
+        variant="secondary"
+        size="sm"
+        class="bg-green-600 hover:bg-green-700 text-white"
+        @click="continueInXero"
+      >
+        <ExternalLink class="h-4 w-4 mr-2" />
+        Continue in Xero
       </Button>
 
       <!-- Help Text -->
@@ -111,6 +123,7 @@ import {
   AlertCircle,
   AlertTriangle,
   RefreshCw,
+  ExternalLink,
 } from 'lucide-vue-next'
 import { format, addDays, parseISO } from 'date-fns'
 
@@ -122,6 +135,7 @@ interface Props {
   posting?: boolean
   warning?: string | null
   refreshing?: boolean
+  postSuccess?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -131,6 +145,7 @@ const props = withDefaults(defineProps<Props>(), {
   posting: false,
   warning: null,
   refreshing: false,
+  postSuccess: false,
 })
 
 defineEmits<{
@@ -138,6 +153,8 @@ defineEmits<{
   postAllToXero: []
   refreshPayRuns: []
 }>()
+
+const XERO_TIMESHEETS_URL = 'https://go.xero.com/app/timesheets'
 
 const payRunExists = computed(() => props.payRunStatus !== null)
 const isPosted = computed(() => props.payRunStatus === 'Posted')
@@ -163,5 +180,9 @@ function getStatusIcon(status: string) {
   if (status === 'Draft') return CheckCircle2
   if (status === 'Posted') return Lock
   return AlertCircle
+}
+
+function continueInXero() {
+  window.open(XERO_TIMESHEETS_URL, '_blank', 'noopener')
 }
 </script>
