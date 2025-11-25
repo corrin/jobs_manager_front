@@ -29,6 +29,6 @@ export default defineConfig({
     },
   ],
 
-  // Output screenshots to docs_screens/
+  // Output test artifacts (videos, traces) to test-results/
   outputDir: 'test-results/',
 })
