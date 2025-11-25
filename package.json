@@ -13,7 +13,10 @@
     "format": "prettier --write src/",
     "prepare": "simple-git-hooks",
     "gen:api": "node ./scripts/gen-api.js",
-    "update-schema": "node ./scripts/update-schema.js && npx prettier --write schema.yml && npm run gen:api"
+    "update-schema": "node ./scripts/update-schema.js && npx prettier --write schema.yml && npm run gen:api",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@internationalized/date": "^3.8.2",
@@ -66,6 +69,7 @@
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.5.0",
     "@vue/tsconfig": "^0.7.0",
+    "dotenv": "^17.2.3",
     "eslint": "^9.22.0",
     "eslint-plugin-vue": "~10.0.0",
     "jiti": "^2.4.2",
