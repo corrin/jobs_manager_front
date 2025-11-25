@@ -7,5 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export default async function globalSetup() {
   const scriptPath = path.join(__dirname, 'backup-db.sh')
   console.log('\n🔄 Backing up database before tests...')
-  execSync(`bash "${scriptPath}"`, { stdio: 'inherit' })
+  try {
+    execSync(`bash "${scriptPath}"`, { stdio: 'inherit' })
+  } catch (error) {
+    console.error('❌ Database backup failed. Aborting tests.')
+    throw error
+  }
 }
