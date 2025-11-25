@@ -43,3 +43,9 @@ cookies.txt
 adhoc/
 .env.production
 script-output/
+
+# E2E testing
+tests/backups/
+docs_screens/
+test-results/
+playwright-report/
