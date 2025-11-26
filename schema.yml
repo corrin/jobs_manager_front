@@ -67,6 +67,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobAgingResponse'
           description: ''
+  /accounting/api/reports/job-movement/:
+    get:
+      operationId: accounting_api_reports_job_movement_retrieve
+      description: Handle GET request for job movement metrics.
+      tags:
+        - accounting
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          description: No response body
   /accounting/api/reports/profit-and-loss/:
     get:
       operationId: accounting_api_reports_profit_and_loss_retrieve
@@ -1471,48 +1483,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
-  /clients/{client_id}/contacts/:
-    get:
-      operationId: clients_contacts_retrieve
-      description: Retrieve all contacts for a specific client.
-      summary: Get client contacts
-      parameters:
-        - in: path
-          name: client_id
-          schema:
-            type: string
-            format: uuid
-          description: UUID of the client
-          required: true
-      tags:
-        - Clients
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientContactResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
   /clients/{client_id}/jobs/:
     get:
       operationId: clients_jobs_retrieve
@@ -1680,35 +1650,62 @@ paths:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
   /clients/contacts/:
+    get:
+      operationId: clients_contacts_list
+      description: |-
+        ViewSet for ClientContact CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/contacts/           - list all contacts
+        - POST   /api/clients/contacts/           - create contact
+        - GET    /api/clients/contacts/<id>/      - retrieve contact
+        - PUT    /api/clients/contacts/<id>/      - full update
+        - PATCH  /api/clients/contacts/<id>/      - partial update
+        - DELETE /api/clients/contacts/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - client_id: Filter contacts by client UUID
+      tags:
+        - clients
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClientContact'
+          description: ''
     post:
       operationId: clients_contacts_create
       description: |-
-        Create a new client contact.
+        ViewSet for ClientContact CRUD operations.
 
-        Expected JSON:
-        {
-            "client_id": "uuid-of-client",
-            "name": "Contact Name",
-            "email": "contact@example.com",
-            "phone": "123-456-7890",
-            "position": "Job Title",
-            "is_primary": false,
-            "notes": "Additional notes"
-        }
-      summary: Create a new client contact
+        Endpoints:
+        - GET    /api/clients/contacts/           - list all contacts
+        - POST   /api/clients/contacts/           - create contact
+        - GET    /api/clients/contacts/<id>/      - retrieve contact
+        - PUT    /api/clients/contacts/<id>/      - full update
+        - PATCH  /api/clients/contacts/<id>/      - partial update
+        - DELETE /api/clients/contacts/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - client_id: Filter contacts by client UUID
       tags:
         - clients
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientContactCreateRequest'
+              $ref: '#/components/schemas/ClientContact'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ClientContactCreateRequest'
+              $ref: '#/components/schemas/ClientContact'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ClientContactCreateRequest'
+              $ref: '#/components/schemas/ClientContact'
         required: true
       security:
         - cookieAuth: []
@@ -1717,20 +1714,164 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClientContactCreateResponse'
+                $ref: '#/components/schemas/ClientContact'
           description: ''
-        '400':
+  /clients/contacts/{id}/:
+    get:
+      operationId: clients_contacts_retrieve
+      description: |-
+        ViewSet for ClientContact CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/contacts/           - list all contacts
+        - POST   /api/clients/contacts/           - create contact
+        - GET    /api/clients/contacts/<id>/      - retrieve contact
+        - PUT    /api/clients/contacts/<id>/      - full update
+        - PATCH  /api/clients/contacts/<id>/      - partial update
+        - DELETE /api/clients/contacts/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - client_id: Filter contacts by client UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Client Contact.
+          required: true
+      tags:
+        - clients
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
+                $ref: '#/components/schemas/ClientContact'
           description: ''
-        '500':
+    put:
+      operationId: clients_contacts_update
+      description: |-
+        ViewSet for ClientContact CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/contacts/           - list all contacts
+        - POST   /api/clients/contacts/           - create contact
+        - GET    /api/clients/contacts/<id>/      - retrieve contact
+        - PUT    /api/clients/contacts/<id>/      - full update
+        - PATCH  /api/clients/contacts/<id>/      - partial update
+        - DELETE /api/clients/contacts/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - client_id: Filter contacts by client UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Client Contact.
+          required: true
+      tags:
+        - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientContact'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClientContact'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClientContact'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
+                $ref: '#/components/schemas/ClientContact'
           description: ''
+    patch:
+      operationId: clients_contacts_partial_update
+      description: |-
+        ViewSet for ClientContact CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/contacts/           - list all contacts
+        - POST   /api/clients/contacts/           - create contact
+        - GET    /api/clients/contacts/<id>/      - retrieve contact
+        - PUT    /api/clients/contacts/<id>/      - full update
+        - PATCH  /api/clients/contacts/<id>/      - partial update
+        - DELETE /api/clients/contacts/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - client_id: Filter contacts by client UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Client Contact.
+          required: true
+      tags:
+        - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClientContact'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClientContact'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClientContact'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientContact'
+          description: ''
+    delete:
+      operationId: clients_contacts_destroy
+      description: |-
+        ViewSet for ClientContact CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/contacts/           - list all contacts
+        - POST   /api/clients/contacts/           - create contact
+        - GET    /api/clients/contacts/<id>/      - retrieve contact
+        - PUT    /api/clients/contacts/<id>/      - full update
+        - PATCH  /api/clients/contacts/<id>/      - partial update
+        - DELETE /api/clients/contacts/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - client_id: Filter contacts by client UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Client Contact.
+          required: true
+      tags:
+        - clients
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /clients/create/:
     post:
       operationId: clients_create_create
@@ -2532,6 +2673,31 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+  /job/rest/data-integrity/scan/:
+    get:
+      operationId: scan_data_integrity
+      description: Check all foreign key relationships, JSON references, and business
+        rules for violations.
+      summary: Scan database integrity
+      tags:
+        - Data Quality
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataIntegrityResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /job/rest/data-quality/archived-jobs-compliance/:
     get:
@@ -4817,6 +4983,162 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobsListResponse'
           description: ''
+  /timesheets/api/payroll/pay-runs/:
+    get:
+      operationId: timesheets_api_payroll_pay_runs_retrieve
+      description: Return pay run data for the requested week if it exists.
+      summary: Get pay run for a week
+      parameters:
+        - in: query
+          name: week_start_date
+          schema:
+            type: string
+            format: date
+          description: Monday of the week (YYYY-MM-DD)
+          required: true
+      tags:
+        - timesheets
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayRunForWeekResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+  /timesheets/api/payroll/pay-runs/create:
+    post:
+      operationId: timesheets_api_payroll_pay_runs_create_create
+      description: Create a new pay run for the specified week.
+      summary: Create pay run for a week
+      tags:
+        - timesheets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePayRunRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CreatePayRunRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CreatePayRunRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePayRunResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+  /timesheets/api/payroll/pay-runs/refresh:
+    post:
+      operationId: timesheets_api_payroll_pay_runs_refresh_create
+      description: Synchronize local pay run cache with Xero.
+      summary: Refresh cached pay runs from Xero
+      tags:
+        - timesheets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayRunSyncResponse'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayRunSyncResponse'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayRunSyncResponse'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayRunSyncResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+  /timesheets/api/payroll/post-staff-week/:
+    post:
+      operationId: timesheets_api_payroll_post_staff_week_create
+      description: Post a week's timesheet to Xero Payroll.
+      summary: Post weekly timesheet to Xero Payroll
+      tags:
+        - timesheets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostWeekToXeroRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostWeekToXeroRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostWeekToXeroRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostWeekToXeroResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
   /timesheets/api/staff/:
     get:
       operationId: timesheets_api_staff_retrieve
@@ -4876,8 +5198,8 @@ paths:
   /timesheets/api/weekly/:
     get:
       operationId: timesheets_api_weekly_retrieve
-      description: Return weekly timesheet data (5 or 7 days based on feature flag).
-      summary: Standard weekly overview (Mon–Sun when enabled, Mon–Fri when disabled)
+      description: Return weekly timesheet data with payroll fields (5/7 days).
+      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
       parameters:
         - in: query
           name: start_date
@@ -4949,42 +5271,6 @@ paths:
               schema:
                 type: object
                 additionalProperties: {}
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-  /timesheets/api/weekly/ims/:
-    get:
-      operationId: timesheets_api_weekly_ims_retrieve
-      description: Return IMS-formatted weekly timesheet data.
-      summary: IMS weekly overview (Tue–Fri + next Mon)
-      parameters:
-        - in: query
-          name: start_date
-          schema:
-            type: string
-            format: date
-          description: Monday of target week in YYYY-MM-DD format. Defaults to current
-            week.
-      tags:
-        - timesheets
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/IMSWeeklyTimesheetData'
           description: ''
         '400':
           content:
@@ -5534,80 +5820,162 @@ components:
     BlankEnum:
       enum:
         - ''
-    ClientContactCreateRequest:
+    BrokenFKReference:
       type: object
-      description: Serializer for client contact creation request
+      description: Details of a broken foreign key reference.
       properties:
-        client_id:
+        model:
+          type: string
+          description: Model name
+        record_id:
+          type: string
+          description: Record's UUID
+        field:
+          type: string
+          description: FK field name
+        target_model:
+          type: string
+          description: Target model that doesn't exist
+        target_id:
+          type: string
+          description: Target UUID that doesn't exist
+      required:
+        - field
+        - model
+        - record_id
+        - target_id
+        - target_model
+    BrokenJSONReference:
+      type: object
+      description: Details of a broken JSON field reference.
+      properties:
+        model:
+          type: string
+          description: Model name
+        record_id:
+          type: string
+          description: Record's UUID
+        field:
+          type: string
+          description: JSON field path (e.g., meta.staff_id)
+        staff_id:
+          type: string
+          nullable: true
+          description: Invalid staff UUID
+        stock_id:
+          type: string
+          nullable: true
+          description: Invalid stock UUID
+        purchase_order_line_id:
+          type: string
+          nullable: true
+          description: Invalid PO line UUID
+        issue:
+          type: string
+          nullable: true
+          description: Issue description
+      required:
+        - field
+        - model
+        - record_id
+    BusinessRuleViolation:
+      type: object
+      description: Details of a business rule violation.
+      properties:
+        model:
+          type: string
+          description: Model name
+        record_id:
+          type: string
+          description: Record's UUID
+        field:
+          type: string
+          description: Field name
+        rule:
+          type: string
+          description: Business rule that was violated
+        expected:
+          type: string
+          nullable: true
+          description: Expected value
+        actual:
+          type: string
+          nullable: true
+          description: Actual value
+        path:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: Path for circular references
+        expected_path:
+          type: string
+          nullable: true
+          description: Expected file path
+      required:
+        - field
+        - model
+        - record_id
+        - rule
+    ClientContact:
+      type: object
+      description: Serializer for ClientContact model.
+      properties:
+        id:
           type: string
           format: uuid
+          readOnly: true
+        client:
+          type: string
+          format: uuid
+          description: The client this contact belongs to
         name:
           type: string
+          description: Full name of the contact person
           maxLength: 255
         email:
           type: string
           format: email
+          nullable: true
+          description: Email address of the contact
+          maxLength: 254
         phone:
           type: string
-          maxLength: 50
+          nullable: true
+          description: Phone number of the contact
+          maxLength: 150
         position:
           type: string
+          nullable: true
+          description: Job title if it's helpful - else leave blank
           maxLength: 255
         is_primary:
           type: boolean
-          default: false
+          description: Indicates if this is the primary contact for the client
         notes:
           type: string
-      required:
-        - client_id
-        - name
-    ClientContactCreateResponse:
-      type: object
-      description: Serializer for client contact creation response
-      properties:
-        success:
+          nullable: true
+          description: Additional notes about this contact
+        is_active:
           type: boolean
-        contact:
-          $ref: '#/components/schemas/ClientContactResult'
-        message:
+          readOnly: true
+          description: Soft delete flag - inactive contacts are hidden from normal
+            queries
+        created_at:
           type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
       required:
-        - contact
-        - message
-        - success
-    ClientContactResponse:
-      type: object
-      description: Serializer for client contacts response
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/ClientContactResult'
-      required:
-        - results
-    ClientContactResult:
-      type: object
-      description: Serializer for individual client contact result
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        email:
-          type: string
-        phone:
-          type: string
-        position:
-          type: string
-        is_primary:
-          type: boolean
-      required:
-        - email
+        - client
+        - created_at
         - id
-        - is_primary
+        - is_active
         - name
-        - phone
-        - position
+        - updated_at
     ClientCreateRequest:
       type: object
       description: Serializer for client creation request
@@ -5976,6 +6344,41 @@ components:
           nullable: true
           description: The Xero tenant ID to use for this company
           maxLength: 100
+        xero_annual_leave_type_id:
+          type: string
+          nullable: true
+          description: Xero Payroll Leave Type ID for Annual Leave
+          maxLength: 100
+        xero_sick_leave_type_id:
+          type: string
+          nullable: true
+          description: Xero Payroll Leave Type ID for Sick Leave
+          maxLength: 100
+        xero_other_leave_type_id:
+          type: string
+          nullable: true
+          description: Xero Payroll Leave Type ID for Other Leave
+          maxLength: 100
+        xero_unpaid_leave_type_id:
+          type: string
+          nullable: true
+          description: Xero Payroll Leave Type ID for Unpaid Leave
+          maxLength: 100
+        xero_ordinary_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
+          maxLength: 100
+        xero_time_half_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
+          maxLength: 100
+        xero_double_time_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Double Time (2.0x)
+          maxLength: 100
         mon_start:
           type: string
           format: time
@@ -6030,6 +6433,12 @@ components:
           nullable: true
           description: Name of the internal shop client for tracking shop work (e.g.,
             'MSM (Shop)')
+          maxLength: 255
+        test_client_name:
+          type: string
+          nullable: true
+          description: Name of the test client used for testing (e.g., 'ABC Carpet
+            Cleaning TEST IGNORE'). This client's name is preserved during data backports.
           maxLength: 255
         billable_threshold_green:
           type: number
@@ -6347,6 +6756,39 @@ components:
         - hours
         - profitMargin
         - rev
+    CreatePayRunRequest:
+      type: object
+      description: Request serializer for creating a pay run
+      properties:
+        week_start_date:
+          type: string
+          format: date
+          description: Monday of the week (YYYY-MM-DD)
+      required:
+        - week_start_date
+    CreatePayRunResponse:
+      type: object
+      description: Response serializer for created pay run
+      properties:
+        pay_run_id:
+          type: string
+        status:
+          type: string
+        period_start_date:
+          type: string
+          format: date
+        period_end_date:
+          type: string
+          format: date
+        payment_date:
+          type: string
+          format: date
+      required:
+        - pay_run_id
+        - payment_date
+        - period_end_date
+        - period_start_date
+        - status
     CustomTokenObtainPair:
       type: object
       description: Custom serializer that accepts username and maps it to email
@@ -6432,6 +6874,60 @@ components:
         - total_non_billable_hours
         - total_revenue
         - total_scheduled_hours
+    DataIntegrityResponse:
+      type: object
+      description: Response for data integrity scan.
+      properties:
+        scanned_at:
+          type: string
+          format: date-time
+          description: When the scan was performed
+        broken_fk_references:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrokenFKReference'
+          description: List of broken foreign key references
+        broken_json_references:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrokenJSONReference'
+          description: List of broken JSON field references
+        business_rule_violations:
+          type: array
+          items:
+            $ref: '#/components/schemas/BusinessRuleViolation'
+          description: List of business rule violations
+        summary:
+          allOf:
+            - $ref: '#/components/schemas/DataIntegritySummary'
+          description: Summary statistics
+      required:
+        - broken_fk_references
+        - broken_json_references
+        - business_rule_violations
+        - scanned_at
+        - summary
+    DataIntegritySummary:
+      type: object
+      description: Summary of data integrity scan results.
+      properties:
+        total_broken_fks:
+          type: integer
+          description: Number of broken foreign key references found
+        total_broken_json_refs:
+          type: integer
+          description: Number of broken JSON references found
+        total_business_rule_violations:
+          type: integer
+          description: Number of business rule violations found
+        total_issues:
+          type: integer
+          description: Total issues found
+      required:
+        - total_broken_fks
+        - total_broken_json_refs
+        - total_business_rule_violations
+        - total_issues
     DeliveryReceiptAllocation:
       type: object
       description: Serializer for individual allocation within a delivery receipt
@@ -6728,221 +7224,6 @@ components:
             type: string
         error:
           type: string
-    IMSWeeklyStaffData:
-      type: object
-      description: Serializer for staff data in IMS weekly timesheet context
-      properties:
-        staff_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        weekly_hours:
-          type: array
-          items:
-            $ref: '#/components/schemas/IMSWeeklyStaffDataWeeklyHours'
-        total_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        total_billable_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        billable_percentage:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        status:
-          type: string
-        total_standard_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        total_time_and_half_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        total_double_time_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        total_overtime:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-      required:
-        - billable_percentage
-        - name
-        - staff_id
-        - status
-        - total_billable_hours
-        - total_double_time_hours
-        - total_hours
-        - total_overtime
-        - total_standard_hours
-        - total_time_and_half_hours
-        - weekly_hours
-    IMSWeeklyStaffDataWeeklyHours:
-      type: object
-      description: Serializer for weekly hours data of staff in IMS context
-      properties:
-        day:
-          type: string
-        hours:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        billable_hours:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        scheduled_hours:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        status:
-          type: string
-        leave_type:
-          type: string
-          nullable: true
-        has_leave:
-          type: boolean
-          default: false
-        standard_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        time_and_half_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        double_time_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        unpaid_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        overtime:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        leave_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-      required:
-        - billable_hours
-        - day
-        - double_time_hours
-        - hours
-        - leave_hours
-        - overtime
-        - scheduled_hours
-        - standard_hours
-        - status
-        - time_and_half_hours
-        - unpaid_hours
-    IMSWeeklyTimesheetData:
-      type: object
-      description: |-
-        Same structure of WeeklyTimesheetDataSerializer but for IMS context
-        (substitutes staff_data for the IMS-specific serializer above)
-      properties:
-        start_date:
-          type: string
-          format: date
-        end_date:
-          type: string
-          format: date
-        week_days:
-          type: array
-          items:
-            type: string
-            format: date
-        staff_data:
-          type: array
-          items:
-            $ref: '#/components/schemas/IMSWeeklyStaffData'
-        weekly_summary:
-          $ref: '#/components/schemas/WeeklySummary'
-        job_metrics:
-          $ref: '#/components/schemas/JobMetrics'
-        summary_stats:
-          type: object
-          additionalProperties: {}
-        export_mode:
-          type: string
-        is_current_week:
-          type: boolean
-        navigation:
-          type: object
-          additionalProperties: {}
-        weekend_enabled:
-          type: boolean
-          default: false
-        week_type:
-          type: string
-      required:
-        - end_date
-        - export_mode
-        - is_current_week
-        - job_metrics
-        - staff_data
-        - start_date
-        - summary_stats
-        - week_days
-        - weekly_summary
     Invoice:
       type: object
       properties:
@@ -8888,12 +9169,17 @@ components:
           type: boolean
           description: Check if job has an actual cost set
           readOnly: true
+        leave_type:
+          type: string
+          description: Get leave type if this is a payroll job
+          readOnly: true
       required:
         - charge_out_rate
         - client_name
         - has_actual_costset
         - id
         - job_number
+        - leave_type
         - name
     ModernTimesheetJobGetResponse:
       type: object
@@ -9184,6 +9470,58 @@ components:
           writeOnly: true
           description: API Key for the provider. Leave blank to keep unchanged on
             update.
+    PatchedClientContact:
+      type: object
+      description: Serializer for ClientContact model.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        client:
+          type: string
+          format: uuid
+          description: The client this contact belongs to
+        name:
+          type: string
+          description: Full name of the contact person
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email address of the contact
+          maxLength: 254
+        phone:
+          type: string
+          nullable: true
+          description: Phone number of the contact
+          maxLength: 150
+        position:
+          type: string
+          nullable: true
+          description: Job title if it's helpful - else leave blank
+          maxLength: 255
+        is_primary:
+          type: boolean
+          description: Indicates if this is the primary contact for the client
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes about this contact
+        is_active:
+          type: boolean
+          readOnly: true
+          description: Soft delete flag - inactive contacts are hidden from normal
+            queries
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedClientUpdateRequest:
       type: object
       description: Serializer for client update request
@@ -9279,6 +9617,41 @@ components:
           nullable: true
           description: The Xero tenant ID to use for this company
           maxLength: 100
+        xero_annual_leave_type_id:
+          type: string
+          nullable: true
+          description: Xero Payroll Leave Type ID for Annual Leave
+          maxLength: 100
+        xero_sick_leave_type_id:
+          type: string
+          nullable: true
+          description: Xero Payroll Leave Type ID for Sick Leave
+          maxLength: 100
+        xero_other_leave_type_id:
+          type: string
+          nullable: true
+          description: Xero Payroll Leave Type ID for Other Leave
+          maxLength: 100
+        xero_unpaid_leave_type_id:
+          type: string
+          nullable: true
+          description: Xero Payroll Leave Type ID for Unpaid Leave
+          maxLength: 100
+        xero_ordinary_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
+          maxLength: 100
+        xero_time_half_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
+          maxLength: 100
+        xero_double_time_earnings_rate_id:
+          type: string
+          nullable: true
+          description: Xero Payroll earnings rate ID for Double Time (2.0x)
+          maxLength: 100
         mon_start:
           type: string
           format: time
@@ -9333,6 +9706,12 @@ components:
           nullable: true
           description: Name of the internal shop client for tracking shop work (e.g.,
             'MSM (Shop)')
+          maxLength: 255
+        test_client_name:
+          type: string
+          nullable: true
+          description: Name of the test client used for testing (e.g., 'ABC Carpet
+            Cleaning TEST IGNORE'). This client's name is preserved during data backports.
           maxLength: 255
         billable_threshold_green:
           type: number
@@ -9648,6 +10027,139 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PayRunDetails:
+      type: object
+      description: Serializer representing details from a Xero pay run.
+      properties:
+        pay_run_id:
+          type: string
+        payroll_calendar_id:
+          type: string
+          nullable: true
+        period_start_date:
+          type: string
+          format: date
+        period_end_date:
+          type: string
+          format: date
+        payment_date:
+          type: string
+          format: date
+        pay_run_status:
+          type: string
+        pay_run_type:
+          type: string
+          nullable: true
+      required:
+        - pay_run_id
+        - pay_run_status
+        - pay_run_type
+        - payment_date
+        - payroll_calendar_id
+        - period_end_date
+        - period_start_date
+    PayRunForWeekResponse:
+      type: object
+      description: Response serializer when fetching pay run data for a week.
+      properties:
+        exists:
+          type: boolean
+        pay_run:
+          allOf:
+            - $ref: '#/components/schemas/PayRunDetails'
+          nullable: true
+        warning:
+          type: string
+          nullable: true
+      required:
+        - exists
+        - pay_run
+    PayRunSyncResponse:
+      type: object
+      description: Response payload after refreshing cached pay runs.
+      properties:
+        fetched:
+          type: integer
+        created:
+          type: integer
+        updated:
+          type: integer
+      required:
+        - created
+        - fetched
+        - updated
+    PostWeekToXeroRequest:
+      type: object
+      description: Request serializer for posting weekly timesheet to Xero
+      properties:
+        staff_id:
+          type: string
+          format: uuid
+          description: Staff member UUID
+        week_start_date:
+          type: string
+          format: date
+          description: Monday of the week (YYYY-MM-DD)
+      required:
+        - staff_id
+        - week_start_date
+    PostWeekToXeroResponse:
+      type: object
+      description: Response serializer for posted timesheet
+      properties:
+        success:
+          type: boolean
+        xero_timesheet_id:
+          type: string
+          nullable: true
+        xero_leave_ids:
+          type: array
+          items:
+            type: string
+          nullable: true
+        entries_posted:
+          type: integer
+        work_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        other_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        annual_sick_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        unpaid_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - annual_sick_hours
+        - entries_posted
+        - errors
+        - other_leave_hours
+        - success
+        - unpaid_hours
+        - work_hours
+        - xero_timesheet_id
     PreviewQuoteResponse:
       type: object
       description: Serializer for preview quote response.
@@ -11651,7 +12163,8 @@ components:
         - status
     WeeklyStaffData:
       type: object
-      description: Serializer for staff data in weekly timesheet context
+      description: Serializer for staff data in weekly timesheet context with payroll
+        fields
       properties:
         staff_id:
           type: string
@@ -11676,6 +12189,13 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        total_scheduled_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         billable_percentage:
           type: number
           format: double
@@ -11685,21 +12205,77 @@ components:
           exclusiveMinimum: true
         status:
           type: string
+        total_billed_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_unbilled_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_overtime_1_5x_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_overtime_2x_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_sick_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_annual_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        total_other_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - billable_percentage
         - name
         - staff_id
         - status
+        - total_annual_leave_hours
         - total_billable_hours
+        - total_billed_hours
         - total_hours
+        - total_other_leave_hours
+        - total_overtime_1_5x_hours
+        - total_overtime_2x_hours
+        - total_scheduled_hours
+        - total_sick_leave_hours
+        - total_unbilled_hours
         - weekly_hours
     WeeklyStaffDataWeeklyHours:
       type: object
-      description: Serializer for weekly hours data of staff
+      description: Serializer for weekly hours data of staff with payroll fields
       properties:
         day:
           type: string
-          format: date
         hours:
           type: number
           format: double
@@ -11728,13 +12304,69 @@ components:
           nullable: true
         has_leave:
           type: boolean
+          default: false
+        billed_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        unbilled_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        overtime_1_5x_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        overtime_2x_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        sick_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        annual_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        other_leave_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
+        - annual_leave_hours
         - billable_hours
+        - billed_hours
         - day
-        - has_leave
         - hours
+        - other_leave_hours
+        - overtime_1_5x_hours
+        - overtime_2x_hours
         - scheduled_hours
+        - sick_leave_hours
         - status
+        - unbilled_hours
     WeeklySummary:
       type: object
       description: Serializer for weekly summary data
@@ -11761,19 +12393,16 @@ components:
         - total_hours
     WeeklyTimesheetData:
       type: object
-      description: Serializer for comprehensive weekly timesheet data
+      description: Serializer for complete weekly timesheet data with payroll fields
       properties:
         start_date:
           type: string
-          format: date
         end_date:
           type: string
-          format: date
         week_days:
           type: array
           items:
             type: string
-            format: date
         staff_data:
           type: array
           items:
@@ -11783,8 +12412,7 @@ components:
         job_metrics:
           $ref: '#/components/schemas/JobMetrics'
         summary_stats:
-          type: object
-          additionalProperties: {}
+          $ref: '#/components/schemas/SummaryStats'
         export_mode:
           type: string
         is_current_week:
@@ -11792,9 +12420,9 @@ components:
         navigation:
           type: object
           additionalProperties: {}
+          nullable: true
         weekend_enabled:
           type: boolean
-          default: false
         week_type:
           type: string
       required:

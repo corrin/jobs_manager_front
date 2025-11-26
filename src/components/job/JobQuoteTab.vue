@@ -567,6 +567,7 @@ import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
 import { quoteService } from '../../services/quote.service'
 import { toast } from 'vue-sonner'
+import { formatCurrency } from '@/utils/string-formatting'
 import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
 import { z } from 'zod'
@@ -942,14 +943,6 @@ const deleteQuoteOnXero = async () => {
   } finally {
     isDeletingQuote.value = false
   }
-}
-
-// Helper functions for formatting
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-NZ', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
 }
 
 function formatNumber(value: number): string {

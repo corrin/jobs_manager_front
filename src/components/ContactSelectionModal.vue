@@ -13,7 +13,44 @@
 
       <div class="modal-body flex-1 overflow-hidden flex flex-col xl:flex-row gap-4 lg:gap-6 py-4">
         <!-- Existing Contacts Section -->
-        <div class="contacts-section flex-1 min-h-0 flex flex-col">
+        <div class="contacts-section flex-1 min-h-0 flex flex-col relative">
+          <!-- Delete Confirmation Overlay -->
+          <div
+            v-if="showDeleteConfirm"
+            class="absolute inset-0 bg-white/95 z-30 flex items-center justify-center rounded-lg"
+          >
+            <div class="text-center p-6 max-w-sm">
+              <div
+                class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4"
+              >
+                <AlertTriangle class="w-6 h-6 text-red-600" />
+              </div>
+              <h4 class="text-lg font-semibold text-gray-900 mb-2">Delete Contact?</h4>
+              <p class="text-sm text-gray-600 mb-4">
+                Are you sure you want to remove
+                <strong>{{ contactToDelete?.name }}</strong
+                >? The contact will be marked as inactive.
+              </p>
+              <p v-if="contactToDelete?.is_primary" class="text-sm text-amber-600 font-medium mb-4">
+                This is the primary contact for this client.
+              </p>
+              <div class="flex gap-3 justify-center">
+                <button
+                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  @click="cancelDelete"
+                >
+                  Cancel
+                </button>
+                <button
+                  class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+                  @click="executeDelete"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div v-if="isLoading" class="flex-1 flex items-center justify-center">
             <div class="text-center">
               <div
@@ -41,7 +78,10 @@
                     :class="{
                       'ring-2 ring-blue-500 bg-blue-50 border-blue-500 shadow-md mt-1':
                         selectedContact?.id === contact?.id,
-                      'hover:bg-gray-50': selectedContact?.id !== contact?.id,
+                      'ring-2 ring-amber-500 bg-amber-50 border-amber-500':
+                        editingContact?.id === contact?.id,
+                      'hover:bg-gray-50':
+                        selectedContact?.id !== contact?.id && editingContact?.id !== contact?.id,
                     }"
                     @click="selectContact(contact)"
                   >
@@ -100,15 +140,30 @@
                       </div>
                     </div>
 
-                    <!-- Select Button (appears on hover) -->
+                    <!-- Action Buttons (appears on hover) -->
                     <div
-                      class="absolute inset-0 bg-blue-600 bg-opacity-0 group-hover:bg-opacity-5 rounded-lg transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100"
+                      class="absolute inset-0 bg-blue-600 bg-opacity-0 group-hover:bg-opacity-5 rounded-lg transition-all duration-200 flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100"
                     >
                       <button
-                        class="px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors"
+                        class="px-2.5 py-1 text-xs font-medium bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors"
                         @click.stop="selectContact(contact)"
+                        title="Select this contact"
                       >
                         Select
+                      </button>
+                      <button
+                        class="p-1.5 text-xs font-medium bg-gray-600 text-white rounded-md shadow-sm hover:bg-gray-700 transition-colors"
+                        @click.stop="emit('edit-contact', contact)"
+                        title="Edit contact"
+                      >
+                        <PencilLine class="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        class="p-1.5 text-xs font-medium bg-red-600 text-white rounded-md shadow-sm hover:bg-red-700 transition-colors"
+                        @click.stop="confirmDeleteContact(contact)"
+                        title="Delete contact"
+                      >
+                        <Trash2 class="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -126,11 +181,23 @@
           </div>
         </div>
 
-        <!-- Create New Contact Section -->
+        <!-- Create/Edit Contact Section -->
         <div
           class="create-contact-section w-full xl:w-80 2xl:w-96 flex-shrink-0 border-t xl:border-t-0 xl:border-l border-gray-200 pt-4 xl:pt-0 xl:pl-6"
         >
-          <h4 class="section-title text-sm font-semibold text-gray-900 mb-4">Create New Contact</h4>
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="section-title text-sm font-semibold text-gray-900">
+              {{ isEditing ? 'Edit Contact' : 'Create New Contact' }}
+            </h4>
+            <button
+              v-if="isEditing"
+              type="button"
+              class="text-xs text-gray-500 hover:text-gray-700 underline"
+              @click="emit('cancel-edit')"
+            >
+              Cancel edit
+            </button>
+          </div>
 
           <div class="space-y-4">
             <div>
@@ -219,7 +286,7 @@
           @click="handleSave"
           :disabled="isLoading || !localContactForm.name.trim()"
         >
-          {{ isLoading ? 'Saving...' : 'Save' }}
+          {{ isLoading ? 'Saving...' : isEditing ? 'Update Contact' : 'Create Contact' }}
         </button>
       </DialogFooter>
     </DialogContent>
@@ -228,7 +295,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Users } from 'lucide-vue-next'
+import { Users, PencilLine, Trash2, AlertTriangle } from 'lucide-vue-next'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 import {
@@ -252,11 +319,16 @@ const props = defineProps<{
   selectedContact: ClientContact | null
   isLoading: boolean
   newContactForm: NewContactData
+  editingContact: ClientContact | null
+  isEditing: boolean
 }>()
 const emit = defineEmits<{
   close: []
   'select-contact': [contact: ClientContact]
   'save-contact': [newContact: NewContactData]
+  'edit-contact': [contact: ClientContact]
+  'delete-contact': [contactId: string]
+  'cancel-edit': []
 }>()
 
 const nameError = ref('')
@@ -309,6 +381,27 @@ const handleSave = () => {
 
 const selectContact = (contact: ClientContact) => {
   emit('select-contact', contact)
+}
+
+// Delete confirmation state
+const contactToDelete = ref<ClientContact | null>(null)
+const showDeleteConfirm = ref(false)
+
+const confirmDeleteContact = (contact: ClientContact) => {
+  contactToDelete.value = contact
+  showDeleteConfirm.value = true
+}
+
+const cancelDelete = () => {
+  contactToDelete.value = null
+  showDeleteConfirm.value = false
+}
+
+const executeDelete = () => {
+  if (contactToDelete.value?.id) {
+    emit('delete-contact', contactToDelete.value.id)
+  }
+  cancelDelete()
 }
 </script>
 

@@ -8,6 +8,7 @@ import type {
   KPIThresholds,
 } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
+import { formatCurrency } from '@/utils/string-formatting'
 
 // Types for params - keeping as local since they're for input validation
 export interface KPICalendarParams {
@@ -78,10 +79,7 @@ class KPIService {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: 'NZD',
-    }).format(value)
+    return formatCurrency(value)
   }
 
   formatHours(hours: number): string {

@@ -151,6 +151,7 @@ import {
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 import { kpiService } from '@/services/kpi.service'
+import { formatCurrency } from '@/utils/string-formatting'
 
 type MonthlyTotals = z.infer<typeof schemas.KPIMonthlyTotals>
 type Thresholds = z.infer<typeof schemas.KPIThresholds>
@@ -269,8 +270,4 @@ const targetPerformanceClass = computed(() => {
   if (perf >= 80) return 'text-yellow-600'
   return 'text-red-600'
 })
-
-function formatCurrency(value: number): string {
-  return kpiService.formatCurrency(value)
-}
 </script>

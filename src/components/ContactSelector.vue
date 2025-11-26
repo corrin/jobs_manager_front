@@ -46,13 +46,18 @@
     :is-open="isModalOpen"
     :client-id="clientId"
     :client-name="clientName"
-    :contacts="contacts"
+    :contacts="activeContacts"
     :selected-contact="selectedContact"
     :is-loading="isLoading"
     :new-contact-form="newContactForm"
+    :editing-contact="editingContact"
+    :is-editing="isEditing"
     @close="closeModal"
     @select-contact="selectExistingContact"
     @save-contact="handleSaveContact"
+    @edit-contact="handleEditContact"
+    @delete-contact="handleDeleteContact"
+    @cancel-edit="cancelEdit"
   />
 </template>
 
@@ -107,6 +112,14 @@ const {
   saveContact,
   clearSelection: clearFromComposable,
   findPrimaryContact,
+  // Edit mode state and functions
+  editingContact,
+  isEditing,
+  activeContacts,
+  startEditContact,
+  cancelEdit,
+  updateContact,
+  deleteContact,
 } = useContactManagement()
 
 const suppressEmit = ref(false)
@@ -146,6 +159,7 @@ const handleSaveContact = async () => {
   debugLog('ContactSelector - handleSaveContact: before save', {
     newContactForm: newContactForm.value,
     selectedContact: selectedContact.value,
+    isEditing: isEditing.value,
   })
 
   // Validate email format before saving
@@ -154,21 +168,50 @@ const handleSaveContact = async () => {
     return
   }
 
-  toast.info('Creating contact...', { id: 'create-contact' })
+  const actionLabel = isEditing.value ? 'Updating' : 'Creating'
+  toast.info(`${actionLabel} contact...`, { id: 'save-contact' })
 
-  const success = await saveContact()
+  let success: boolean
+  if (isEditing.value) {
+    success = await updateContact()
+  } else {
+    success = await saveContact()
+  }
 
-  toast.dismiss('create-contact')
+  toast.dismiss('save-contact')
 
   debugLog('ContactSelector - handleSaveContact: after save', {
     success,
     newContactForm: newContactForm.value,
     selectedContact: selectedContact.value,
   })
+
   if (success) {
-    toast.success('Contact created successfully!')
+    toast.success(`Contact ${isEditing.value ? 'updated' : 'created'} successfully!`)
   } else {
-    toast.error('Failed to create contact. Please check the form and try again.')
+    toast.error(
+      `Failed to ${isEditing.value ? 'update' : 'create'} contact. Please check the form and try again.`,
+    )
+  }
+}
+
+const handleEditContact = (contact: ClientContact) => {
+  debugLog('ContactSelector - handleEditContact:', contact)
+  startEditContact(contact)
+}
+
+const handleDeleteContact = async (contactId: string) => {
+  debugLog('ContactSelector - handleDeleteContact:', contactId)
+  toast.info('Deleting contact...', { id: 'delete-contact' })
+
+  const success = await deleteContact(contactId)
+
+  toast.dismiss('delete-contact')
+
+  if (success) {
+    toast.success('Contact removed successfully')
+  } else {
+    toast.error('Failed to remove contact. Please try again.')
   }
 }
 

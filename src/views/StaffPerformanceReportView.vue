@@ -283,6 +283,7 @@ import {
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { staffPerformanceReportService } from '@/services/staff-performance-report.service'
+import { formatCurrency } from '@/utils/string-formatting'
 import type {
   StaffPerformanceData,
   TeamAverages,
@@ -298,10 +299,6 @@ const dateRange = ref({
   startDate: '',
   endDate: '',
 })
-
-const formatCurrency = (value: number): string => {
-  return staffPerformanceReportService.formatCurrency(value)
-}
 
 const formatHours = (hours: number): string => {
   return staffPerformanceReportService.formatHours(hours)
@@ -389,7 +386,7 @@ const exportToCsv = () => {
   if (!teamAverages.value || staffData.value.length === 0) return
 
   const dateRangeStr = `${dateRange.value.startDate} to ${dateRange.value.endDate}`
-  staffPerformanceReportService.exportToCsv(staffData.value, teamAverages.value, dateRangeStr)
+  staffPerformanceReportService.exportToFile(staffData.value, teamAverages.value, dateRangeStr)
 }
 
 onMounted(() => {

@@ -60,21 +60,21 @@
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Material Cost</span>
               <span class="text-lg font-semibold text-red-600">
-                ${{ formatCurrency(breakdown.material.cost) }}
+                {{ formatCurrency(breakdown.material.cost) }}
               </span>
             </div>
 
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Time Cost</span>
               <span class="text-lg font-semibold text-red-600">
-                ${{ formatCurrency(breakdown.labour.cost) }}
+                {{ formatCurrency(breakdown.labour.cost) }}
               </span>
             </div>
 
             <div class="flex flex-col pt-2 border-t border-gray-200">
               <span class="text-xs text-gray-500">Total Cost</span>
               <span class="text-xl font-bold text-red-600">
-                ${{ formatCurrency(quoteData.summary.cost) }}
+                {{ formatCurrency(quoteData.summary.cost) }}
               </span>
             </div>
           </div>
@@ -87,21 +87,21 @@
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Material Revenue</span>
               <span class="text-lg font-semibold text-green-600">
-                ${{ formatCurrency(breakdown.material.revenue) }}
+                {{ formatCurrency(breakdown.material.revenue) }}
               </span>
             </div>
 
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Time Revenue</span>
               <span class="text-lg font-semibold text-green-600">
-                ${{ formatCurrency(breakdown.labour.revenue) }}
+                {{ formatCurrency(breakdown.labour.revenue) }}
               </span>
             </div>
 
             <div class="flex flex-col pt-2 border-t border-gray-200">
               <span class="text-xs text-gray-500">Total Revenue</span>
               <span class="text-xl font-bold text-green-600">
-                ${{ formatCurrency(quoteData.summary.rev) }}
+                {{ formatCurrency(quoteData.summary.rev) }}
               </span>
             </div>
           </div>
@@ -204,10 +204,9 @@
                     <div>
                       <div class="font-medium">{{ item.desc }}</div>
                       <div class="text-sm text-gray-600">
-                        {{ item.kind }} • Qty: {{ item.quantity }} • Cost: ${{
-                          formatCurrency(item.unit_cost)
-                        }}
-                        • Total: ${{ formatCurrency(item.total_cost) }}
+                        {{ item.kind }} • Qty: {{ item.quantity }} • Cost:
+                        {{ formatCurrency(item.unit_cost) }} • Total:
+                        {{ formatCurrency(item.total_cost) }}
                       </div>
                     </div>
                     <span class="text-green-600 font-bold text-xs px-2 py-1 bg-green-100 rounded"
@@ -237,10 +236,9 @@
                     <div>
                       <div class="font-medium">{{ item.desc }}</div>
                       <div class="text-sm text-gray-600">
-                        {{ item.kind }} • Qty: {{ item.quantity }} • Cost: ${{
-                          formatCurrency(item.unit_cost)
-                        }}
-                        • Total: ${{ formatCurrency(item.total_cost) }}
+                        {{ item.kind }} • Qty: {{ item.quantity }} • Cost:
+                        {{ formatCurrency(item.unit_cost) }} • Total:
+                        {{ formatCurrency(item.total_cost) }}
                       </div>
                     </div>
                     <span class="text-blue-600 font-bold text-xs px-2 py-1 bg-blue-100 rounded"
@@ -348,6 +346,7 @@ import type { QuoteSheet } from '@/schemas/job.schemas'
 import { extractQuoteErrorMessage, logError } from '@/utils/error-handler'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
+import { formatCurrency } from '@/utils/string-formatting'
 
 type Job = z.infer<typeof schemas.Job>
 type QuoteData = z.infer<typeof schemas.CostSet> // kind == 'quote'
@@ -576,13 +575,6 @@ async function confirmRefresh() {
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
 }

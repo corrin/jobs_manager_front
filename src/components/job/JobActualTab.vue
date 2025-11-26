@@ -271,6 +271,7 @@
 
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
+import { formatCurrency } from '@/utils/string-formatting'
 
 import { onMounted, ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
@@ -405,14 +406,6 @@ const invoiceButtonText = computed(() => {
     return 'Report a bug'
   }
 })
-
-// --- FORMATTING FUNCTIONS ---
-const formatCurrency = (amount: number | undefined | null): string => {
-  if (amount === null || amount === undefined) {
-    return new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(0)
-  }
-  return new Intl.NumberFormat('en-NZ', { style: 'currency', currency: 'NZD' }).format(amount)
-}
 
 const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return 'N/A'

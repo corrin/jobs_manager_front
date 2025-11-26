@@ -35,22 +35,20 @@
       <!-- Total Cost -->
       <div class="flex justify-between items-center">
         <span class="text-xs text-gray-500">Total Cost</span>
-        <span class="text-lg font-bold text-red-600">${{ formatCurrency(typedSummary.cost) }}</span>
+        <span class="text-lg font-bold text-red-600">{{ formatCurrency(typedSummary.cost) }}</span>
       </div>
 
       <!-- Total Revenue -->
       <div class="flex justify-between items-center">
         <span class="text-xs text-gray-500">Total Revenue</span>
-        <span class="text-lg font-bold text-green-600"
-          >${{ formatCurrency(typedSummary.rev) }}</span
-        >
+        <span class="text-lg font-bold text-green-600">{{ formatCurrency(typedSummary.rev) }}</span>
       </div>
 
       <!-- Profit -->
       <div class="flex justify-between items-center pt-2 border-t border-gray-200">
         <span class="text-xs text-gray-500">Profit</span>
         <span :class="['text-lg font-bold', profit >= 0 ? 'text-green-600' : 'text-red-600']">
-          ${{ formatCurrency(profit) }}
+          {{ formatCurrency(profit) }}
         </span>
       </div>
 
@@ -75,6 +73,7 @@ import { computed } from 'vue'
 import { FileX, Maximize2 } from 'lucide-vue-next'
 import { Button } from '../ui/button'
 import { schemas } from '../../api/generated/api'
+import { formatCurrency } from '@/utils/string-formatting'
 import { z } from 'zod'
 
 type CostLine = z.infer<typeof schemas.CostLine>
@@ -124,13 +123,6 @@ const profit = computed(() => {
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
 }

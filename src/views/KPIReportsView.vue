@@ -327,6 +327,7 @@ import MonthSelector from '@/components/kpi/MonthSelector.vue'
 import { kpiService } from '@/services/kpi.service'
 import type { KPICalendarResponse, DayKPI } from '@/services/kpi.service'
 import { BarChart3, Download, RefreshCw, Settings } from 'lucide-vue-next'
+import { formatCurrency } from '@/utils/string-formatting'
 
 const router = useRouter()
 const loading = ref(false)
@@ -493,10 +494,6 @@ const performanceVariant = computed(() => {
 
 function formatHours(hours: number): string {
   return kpiService.formatHours(hours)
-}
-
-function formatCurrency(value: number): string {
-  return kpiService.formatCurrency(value)
 }
 
 function handleDayClick(day: DayKPI) {

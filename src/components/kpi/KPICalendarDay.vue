@@ -35,6 +35,7 @@
 import { computed } from 'vue'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
+import { formatCurrency } from '@/utils/string-formatting'
 
 type DayKPI = z.infer<typeof schemas.KPIDayData>
 type Thresholds = z.infer<typeof schemas.KPIThresholds>
@@ -73,15 +74,6 @@ function formatHours(hours: number): string {
   const minutes = Math.round((hours - wholeHours) * 60)
   if (minutes === 0) return `${wholeHours}h`
   return `${wholeHours}.${minutes < 10 ? '0' : ''}${Math.round(minutes / 6)}`
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-NZ', {
-    style: 'currency',
-    currency: 'NZD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
 }
 </script>
 

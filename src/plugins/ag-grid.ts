@@ -1,5 +1,6 @@
 import { ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community'
 import type { ValueFormatterParams } from 'ag-grid-community'
+import { formatCurrency } from '@/utils/string-formatting'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -58,10 +59,7 @@ export const defaultGridOptions = {
       cellClass: 'numeric-cell currency-cell',
       valueFormatter: (params: ValueFormatterParams) => {
         if (params.value == null) return ''
-        return new Intl.NumberFormat('en-NZ', {
-          style: 'currency',
-          currency: 'NZD',
-        }).format(params.value)
+        return formatCurrency(params.value)
       },
     },
     hoursColumn: {

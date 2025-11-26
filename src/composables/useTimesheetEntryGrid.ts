@@ -18,6 +18,7 @@ import type {
 } from 'ag-grid-community'
 import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
+import { formatCurrency } from '@/utils/string-formatting'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
 import { TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
 
@@ -155,7 +156,7 @@ export function useTimesheetEntryGrid(
       field: 'wage',
       width: 100,
       editable: false,
-      valueFormatter: (params: ValueFormatterParams) => `$${(params.value || 0).toFixed(2)}`,
+      valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.value || 0),
       cellClass: 'text-right',
       cellStyle: { color: '#059669', fontWeight: '600' },
     },
@@ -164,7 +165,7 @@ export function useTimesheetEntryGrid(
       field: 'bill',
       width: 100,
       editable: false,
-      valueFormatter: (params: ValueFormatterParams) => `$${(params.value || 0).toFixed(2)}`,
+      valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.value || 0),
       cellClass: 'text-right',
       cellStyle: { color: '#2563EB', fontWeight: '600' },
     },

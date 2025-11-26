@@ -1,5 +1,6 @@
 import api from '@/plugins/axios'
 import { debugLog } from '@/utils/debug'
+import { formatCurrency, toCsvString, downloadCsv } from '@/utils/string-formatting'
 import type {
   StaffPerformanceReportResponse,
   StaffPerformanceReportParams,
@@ -52,7 +53,7 @@ export class StaffPerformanceReportService {
     }
   }
 
-  exportToCsv(staff: StaffPerformanceData[], teamAverages: TeamAverages, dateRange: string): void {
+  exportToFile(staff: StaffPerformanceData[], teamAverages: TeamAverages, dateRange: string): void {
     const headers = [
       'Staff Name',
       'Total Hours',
@@ -65,7 +66,7 @@ export class StaffPerformanceReportService {
       'Total Profit',
     ]
 
-    const csvData = staff.map((member) => [
+    const rows = staff.map((member) => [
       member.name,
       member.total_hours,
       member.billable_hours,
@@ -77,30 +78,13 @@ export class StaffPerformanceReportService {
       member.profit,
     ])
 
-    const csvContent = [
-      [`Staff Performance Report - ${dateRange}`],
-      [
-        `Team Averages - Billable: ${teamAverages.billable_percentage}%, Revenue/hr: $${teamAverages.revenue_per_hour}, Profit/hr: $${teamAverages.profit_per_hour}`,
-      ],
-      [],
-      headers,
-      ...csvData,
-    ]
-      .map((row) => row.map((cell) => `"${cell}"`).join(','))
-      .join('\n')
+    // Build CSV with title and summary rows
+    const titleRow = `"Staff Performance Report - ${dateRange}"`
+    const summaryRow = `"Team Averages - Billable: ${teamAverages.billable_percentage}%, Revenue/hr: ${formatCurrency(teamAverages.revenue_per_hour)}, Profit/hr: ${formatCurrency(teamAverages.profit_per_hour)}"`
+    const dataContent = toCsvString(headers, rows)
+    const csvContent = [titleRow, summaryRow, '', dataContent].join('\n')
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute(
-      'download',
-      `staff-performance-report-${new Date().toISOString().split('T')[0]}.csv`,
-    )
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    downloadCsv(csvContent, `staff-performance-report-${new Date().toISOString().split('T')[0]}`)
   }
 
   getPerformanceComparison(
@@ -138,12 +122,7 @@ export class StaffPerformanceReportService {
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: 'NZD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value)
+    return formatCurrency(value)
   }
 
   formatHours(hours: number): string {

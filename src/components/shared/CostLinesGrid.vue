@@ -127,16 +127,16 @@
                 }}<span v-if="line.kind === 'time'" class="text-xs text-gray-500 ml-1">hrs</span>
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 text-right">
-                ${{ formatCurrency(line.unit_cost) }}
+                {{ formatCurrency(line.unit_cost) }}
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 text-right">
-                ${{ formatCurrency(line.unit_rev) }}
+                {{ formatCurrency(line.unit_rev) }}
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">
-                ${{ formatCurrency(calculateTotal(line.quantity, line.unit_cost)) }}
+                {{ formatCurrency(calculateTotal(line.quantity, line.unit_cost)) }}
               </td>
               <td class="px-4 py-3 text-sm text-gray-900 text-right font-medium">
-                ${{ formatCurrency(calculateTotal(line.quantity, line.unit_rev)) }}
+                {{ formatCurrency(calculateTotal(line.quantity, line.unit_rev)) }}
               </td>
               <td class="px-4 py-3 text-xs text-gray-500 text-center">
                 <span
@@ -202,6 +202,7 @@
 <script setup lang="ts">
 import { schemas } from '../../api/generated/api'
 import { z } from 'zod'
+import { formatCurrency } from '@/utils/string-formatting'
 
 // Extend CostLine type to include timestamp fields (to be added to backend schema)
 type CostLine = z.infer<typeof schemas.CostLine> & {
@@ -235,14 +236,6 @@ function formatNumber(value: number | undefined): string {
   const num = value || 0
   return new Intl.NumberFormat('en-NZ', {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(num)
-}
-
-function formatCurrency(value: number | undefined): string {
-  const num = value || 0
-  return new Intl.NumberFormat('en-NZ', {
-    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(num)
 }

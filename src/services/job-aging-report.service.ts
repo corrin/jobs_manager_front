@@ -1,5 +1,6 @@
 import api from '@/plugins/axios'
 import { debugLog } from '@/utils/debug'
+import { exportToCsv } from '@/utils/string-formatting'
 
 export interface JobAgingData {
   id: string
@@ -60,7 +61,7 @@ export class JobAgingReportService {
     }
   }
 
-  exportToCsv(jobs: JobAgingData[]): void {
+  exportToFile(jobs: JobAgingData[]): void {
     const headers = [
       'Job Number',
       'Job Name',
@@ -75,7 +76,7 @@ export class JobAgingReportService {
       'Actual Total',
     ]
 
-    const csvData = jobs.map((job) => [
+    const rows = jobs.map((job) => [
       job.job_number,
       job.name,
       job.client_name,
@@ -89,19 +90,7 @@ export class JobAgingReportService {
       job.financial_data.actual_total,
     ])
 
-    const csvContent = [headers, ...csvData]
-      .map((row) => row.map((cell) => `"${cell}"`).join(','))
-      .join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `job-aging-report-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    exportToCsv(headers, rows, `job-aging-report-${new Date().toISOString().split('T')[0]}`)
   }
 
   getActivityAgeStatus(daysAgo: number): 'recent' | 'warning' | 'stale' {

@@ -11,6 +11,7 @@ import { Badge } from '../../components/ui/badge'
 import { useStockStore, type StockItem } from '../../stores/stockStore'
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import { onMounted, computed, ref } from 'vue'
+import { formatCurrency } from '@/utils/string-formatting'
 
 const props = withDefaults(
   defineProps<{
@@ -74,14 +75,6 @@ const filteredItems = computed(() => {
     return searchableFields.some((field) => field?.toLowerCase().includes(term))
   })
 })
-
-// Helper function for formatting currency
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-NZ', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
 
 const displayPrice = (item: StockItem) => {
   let price = '0.00'

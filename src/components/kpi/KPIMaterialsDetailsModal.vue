@@ -213,6 +213,7 @@ import {
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 import { kpiService } from '@/services/kpi.service'
+import { formatCurrency } from '@/utils/string-formatting'
 
 type DayKPI = z.infer<typeof schemas.KPIDayData>
 
@@ -347,10 +348,6 @@ function getDayTotalNonLabour(day: DayKPI): number {
   const materialRev = day.details?.material_revenue || 0
   const adjustmentRev = getDayAdjustmentRevenue(day)
   return materialRev + adjustmentRev
-}
-
-function formatCurrency(value: number): string {
-  return kpiService.formatCurrency(value)
 }
 
 function formatDateShort(dateString: string): string {

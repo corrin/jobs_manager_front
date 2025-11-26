@@ -177,6 +177,7 @@ import {
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 import { kpiService } from '@/services/kpi.service'
+import { formatCurrency } from '@/utils/string-formatting'
 
 type MonthlyTotals = z.infer<typeof schemas.KPIMonthlyTotals>
 type DayKPI = z.infer<typeof schemas.KPIDayData>
@@ -267,10 +268,6 @@ const labourProfitPercent = computed(() => {
 
 function formatHours(hours: number): string {
   return kpiService.formatHours(hours)
-}
-
-function formatCurrency(value: number): string {
-  return kpiService.formatCurrency(value)
 }
 
 function formatDateShort(dateString: string): string {
