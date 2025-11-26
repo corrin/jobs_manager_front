@@ -12,10 +12,10 @@ import { debugLog } from '@/utils/debug'
 
 export const getApiBaseUrl = () => {
   const env = import.meta.env
-  if (env?.VITE_API_BASE_URL) {
-    return env.VITE_API_BASE_URL as string
+  if (!env?.VITE_API_BASE_URL) {
+    throw new Error('VITE_API_BASE_URL must be set in environment')
   }
-  return 'http://localhost:8000'
+  return env.VITE_API_BASE_URL as string
 }
 
 axios.defaults.baseURL = getApiBaseUrl()

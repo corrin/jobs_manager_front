@@ -66,10 +66,10 @@ export function setupPoReloadManager(manager: {
 }
 
 function getApiBaseUrl() {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL
+  if (!import.meta.env.VITE_API_BASE_URL) {
+    throw new Error('VITE_API_BASE_URL must be set in environment')
   }
-  return 'http://localhost:8000'
+  return import.meta.env.VITE_API_BASE_URL
 }
 
 // Configure axios instance for the client
