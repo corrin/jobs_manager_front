@@ -197,7 +197,9 @@ const StaffPerformanceResponse = z
     period_summary: StaffPerformancePeriodSummary,
   })
   .passthrough()
-const BearerTokenRequest = z.object({ username: z.string(), password: z.string() }).passthrough()
+const BearerTokenRequestRequest = z
+  .object({ username: z.string().min(1), password: z.string().min(1) })
+  .passthrough()
 const BearerTokenResponse = z.object({ token: z.string() }).passthrough()
 const Staff = z
   .object({
@@ -206,7 +208,6 @@ const Staff = z
     first_name: z.string().max(30),
     last_name: z.string().max(30),
     preferred_name: z.string().max(30).nullish(),
-    password: z.string().max(128).optional(),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     ims_payroll_id: z.string().max(100).nullish(),
     icon: z.string().url().nullish(),
@@ -230,16 +231,16 @@ const Staff = z
     updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
-const StaffCreate = z
+const StaffCreateRequest = z
   .object({
-    first_name: z.string().max(30),
-    last_name: z.string().max(30),
+    first_name: z.string().min(1).max(30),
+    last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
-    email: z.string().max(254).email(),
-    password: z.string().max(128),
+    email: z.string().min(1).max(254).email(),
+    password: z.string().min(1).max(128),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     ims_payroll_id: z.string().max(100).nullish(),
-    icon: z.string().url().nullish(),
+    icon: z.instanceof(File).nullish(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
     hours_tue: z.number().gt(-100).lt(100).optional(),
     hours_wed: z.number().gt(-100).lt(100).optional(),
@@ -253,17 +254,42 @@ const StaffCreate = z
     user_permissions: z.array(z.number().int()).optional(),
   })
   .passthrough()
-const PatchedStaff = z
+const StaffRequest = z
   .object({
-    id: z.string().uuid(),
-    email: z.string().max(254).email(),
-    first_name: z.string().max(30),
-    last_name: z.string().max(30),
+    email: z.string().min(1).max(254).email(),
+    first_name: z.string().min(1).max(30),
+    last_name: z.string().min(1).max(30),
+    preferred_name: z.string().max(30).nullish(),
+    password: z.string().min(1).max(128).optional(),
+    wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
+    ims_payroll_id: z.string().max(100).nullish(),
+    icon: z.instanceof(File).nullish(),
+    raw_ims_data: z.unknown().nullish(),
+    xero_user_id: z.string().max(255).nullish(),
+    date_left: z.string().nullish(),
+    is_staff: z.boolean().optional(),
+    is_superuser: z.boolean().optional(),
+    groups: z.array(z.number().int()).optional(),
+    user_permissions: z.array(z.number().int()).optional(),
+    hours_mon: z.number().gt(-100).lt(100).optional(),
+    hours_tue: z.number().gt(-100).lt(100).optional(),
+    hours_wed: z.number().gt(-100).lt(100).optional(),
+    hours_thu: z.number().gt(-100).lt(100).optional(),
+    hours_fri: z.number().gt(-100).lt(100).optional(),
+    hours_sat: z.number().gt(-100).lt(100).optional(),
+    hours_sun: z.number().gt(-100).lt(100).optional(),
+  })
+  .passthrough()
+const PatchedStaffRequest = z
+  .object({
+    email: z.string().min(1).max(254).email(),
+    first_name: z.string().min(1).max(30),
+    last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullable(),
-    password: z.string().max(128),
+    password: z.string().min(1).max(128),
     wage_rate: z.number().gt(-100000000).lt(100000000),
     ims_payroll_id: z.string().max(100).nullable(),
-    icon: z.string().url().nullable(),
+    icon: z.instanceof(File).nullable(),
     raw_ims_data: z.unknown().nullable(),
     xero_user_id: z.string().max(255).nullable(),
     date_left: z.string().nullable(),
@@ -278,10 +304,6 @@ const PatchedStaff = z
     hours_fri: z.number().gt(-100).lt(100),
     hours_sat: z.number().gt(-100).lt(100),
     hours_sun: z.number().gt(-100).lt(100),
-    last_login: z.string().datetime({ offset: true }).nullable(),
-    date_joined: z.string().datetime({ offset: true }),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
   })
   .partial()
   .passthrough()
@@ -294,7 +316,9 @@ const KanbanStaff = z
     display_name: z.string(),
   })
   .passthrough()
-const CustomTokenObtainPair = z.object({ username: z.string(), password: z.string() }).passthrough()
+const CustomTokenObtainPairRequest = z
+  .object({ username: z.string().min(1), password: z.string().min(1) })
+  .passthrough()
 const TokenObtainPairResponse = z
   .object({
     access: z.string(),
@@ -304,9 +328,9 @@ const TokenObtainPairResponse = z
   })
   .partial()
   .passthrough()
-const TokenRefresh = z.object({ access: z.string(), refresh: z.string() }).passthrough()
+const TokenRefreshRequest = z.object({ refresh: z.string().min(1) }).passthrough()
 const TokenRefreshResponse = z.object({ access: z.string() }).partial().passthrough()
-const TokenVerify = z.object({ token: z.string() }).passthrough()
+const TokenVerifyRequest = z.object({ token: z.string().min(1) }).passthrough()
 const UserProfile = z
   .object({
     id: z.string().uuid(),
@@ -373,9 +397,52 @@ const CompanyDefaults = z
     shop_hours_target_percentage: z.number().gt(-1000).lt(1000).optional(),
   })
   .passthrough()
-const PatchedCompanyDefaults = z
+const CompanyDefaultsRequest = z
   .object({
-    company_name: z.string().max(255),
+    company_name: z.string().min(1).max(255),
+    is_primary: z.boolean().optional(),
+    time_markup: z.number().gt(-1000).lt(1000).optional(),
+    materials_markup: z.number().gt(-1000).lt(1000).optional(),
+    charge_out_rate: z.number().gt(-10000).lt(10000).optional(),
+    wage_rate: z.number().gt(-10000).lt(10000).optional(),
+    starting_job_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+    starting_po_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+    po_prefix: z.string().min(1).max(10).optional(),
+    master_quote_template_url: z.string().max(200).url().nullish(),
+    master_quote_template_id: z.string().max(100).nullish(),
+    gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
+    gdrive_quotes_folder_id: z.string().max(100).nullish(),
+    xero_tenant_id: z.string().max(100).nullish(),
+    xero_annual_leave_type_id: z.string().max(100).nullish(),
+    xero_sick_leave_type_id: z.string().max(100).nullish(),
+    xero_other_leave_type_id: z.string().max(100).nullish(),
+    xero_unpaid_leave_type_id: z.string().max(100).nullish(),
+    xero_ordinary_earnings_rate_id: z.string().max(100).nullish(),
+    xero_time_half_earnings_rate_id: z.string().max(100).nullish(),
+    xero_double_time_earnings_rate_id: z.string().max(100).nullish(),
+    mon_start: z.string().optional(),
+    mon_end: z.string().optional(),
+    tue_start: z.string().optional(),
+    tue_end: z.string().optional(),
+    wed_start: z.string().optional(),
+    wed_end: z.string().optional(),
+    thu_start: z.string().optional(),
+    thu_end: z.string().optional(),
+    fri_start: z.string().optional(),
+    fri_end: z.string().optional(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullish(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
+    shop_client_name: z.string().max(255).nullish(),
+    test_client_name: z.string().max(255).nullish(),
+    billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
+    billable_threshold_amber: z.number().gt(-1000).lt(1000).optional(),
+    daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
+    shop_hours_target_percentage: z.number().gt(-1000).lt(1000).optional(),
+  })
+  .passthrough()
+const PatchedCompanyDefaultsRequest = z
+  .object({
+    company_name: z.string().min(1).max(255),
     is_primary: z.boolean(),
     time_markup: z.number().gt(-1000).lt(1000),
     materials_markup: z.number().gt(-1000).lt(1000),
@@ -383,7 +450,7 @@ const PatchedCompanyDefaults = z
     wage_rate: z.number().gt(-10000).lt(10000),
     starting_job_number: z.number().int().gte(-2147483648).lte(2147483647),
     starting_po_number: z.number().int().gte(-2147483648).lte(2147483647),
-    po_prefix: z.string().max(10),
+    po_prefix: z.string().min(1).max(10),
     master_quote_template_url: z.string().max(200).url().nullable(),
     master_quote_template_id: z.string().max(100).nullable(),
     gdrive_quotes_folder_url: z.string().max(200).url().nullable(),
@@ -406,8 +473,6 @@ const PatchedCompanyDefaults = z
     thu_end: z.string(),
     fri_start: z.string(),
     fri_end: z.string(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
     last_xero_sync: z.string().datetime({ offset: true }).nullable(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
     shop_client_name: z.string().max(255).nullable(),
@@ -429,24 +494,40 @@ const AIProvider = z
     default: z.boolean().optional(),
   })
   .passthrough()
-const AIProviderCreateUpdate = z
+const AIProviderCreateUpdateRequest = z
   .object({
-    name: z.string().max(100),
+    name: z.string().min(1).max(100),
     provider_type: ProviderTypeEnum,
     model_name: z.string().max(100).optional(),
     default: z.boolean().optional(),
     api_key: z.string().optional(),
   })
   .passthrough()
-const PatchedAIProviderCreateUpdate = z
+const AIProviderCreateUpdate = z
   .object({
     name: z.string().max(100),
+    provider_type: ProviderTypeEnum,
+    model_name: z.string().max(100).optional(),
+    default: z.boolean().optional(),
+  })
+  .passthrough()
+const PatchedAIProviderCreateUpdateRequest = z
+  .object({
+    name: z.string().min(1).max(100),
     provider_type: ProviderTypeEnum,
     model_name: z.string().max(100),
     default: z.boolean(),
     api_key: z.string(),
   })
   .partial()
+  .passthrough()
+const AIProviderRequest = z
+  .object({
+    name: z.string().min(1).max(100),
+    provider_type: ProviderTypeEnum,
+    model_name: z.string().max(100).optional(),
+    default: z.boolean().optional(),
+  })
   .passthrough()
 const AppError = z
   .object({
@@ -473,6 +554,21 @@ const PaginatedAppErrorList = z
     results: z.array(AppError),
   })
   .passthrough()
+const AppErrorRequest = z
+  .object({
+    message: z.string().min(1),
+    data: z.unknown().nullish(),
+    app: z.string().max(50).nullish(),
+    file: z.string().max(200).nullish(),
+    function: z.string().max(100).nullish(),
+    severity: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+    job_id: z.string().uuid().nullish(),
+    user_id: z.string().uuid().nullish(),
+    resolved: z.boolean().optional(),
+    resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
+    resolved_by: z.string().uuid().nullish(),
+  })
+  .passthrough()
 const XeroDocumentSuccessResponse = z
   .object({
     success: z.boolean().optional().default(true),
@@ -494,7 +590,7 @@ const XeroDocumentErrorResponse = z
     redirect_to_auth: z.boolean().optional(),
   })
   .passthrough()
-const XeroQuoteCreateRequest = z.object({ breakdown: z.boolean() }).passthrough()
+const XeroQuoteCreateRequestRequest = z.object({ breakdown: z.boolean() }).passthrough()
 const ClientDetailResponse = z
   .object({
     id: z.string(),
@@ -545,9 +641,9 @@ const ClientJobHeader = z
   })
   .passthrough()
 const ClientJobsResponse = z.object({ results: z.array(ClientJobHeader) }).passthrough()
-const ClientUpdateRequest = z
+const ClientUpdateRequestRequest = z
   .object({
-    name: z.string().max(255),
+    name: z.string().min(1).max(255),
     email: z.string().email(),
     phone: z.string().max(50),
     address: z.string(),
@@ -562,9 +658,9 @@ const ClientUpdateResponse = z
     message: z.string(),
   })
   .passthrough()
-const PatchedClientUpdateRequest = z
+const PatchedClientUpdateRequestRequest = z
   .object({
-    name: z.string().max(255),
+    name: z.string().min(1).max(255),
     email: z.string().email(),
     phone: z.string().max(50),
     address: z.string(),
@@ -588,25 +684,32 @@ const ClientContact = z
     updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
-const PatchedClientContact = z
+const ClientContactRequest = z
   .object({
-    id: z.string().uuid(),
     client: z.string().uuid(),
-    name: z.string().max(255),
+    name: z.string().min(1).max(255),
+    email: z.string().max(254).email().nullish(),
+    phone: z.string().max(150).nullish(),
+    position: z.string().max(255).nullish(),
+    is_primary: z.boolean().optional(),
+    notes: z.string().nullish(),
+  })
+  .passthrough()
+const PatchedClientContactRequest = z
+  .object({
+    client: z.string().uuid(),
+    name: z.string().min(1).max(255),
     email: z.string().max(254).email().nullable(),
     phone: z.string().max(150).nullable(),
     position: z.string().max(255).nullable(),
     is_primary: z.boolean(),
     notes: z.string().nullable(),
-    is_active: z.boolean(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
   })
   .partial()
   .passthrough()
-const ClientCreateRequest = z
+const ClientCreateRequestRequest = z
   .object({
-    name: z.string().max(255),
+    name: z.string().min(1).max(255),
     email: z.string().email().nullish(),
     phone: z.string().max(50).nullish(),
     address: z.string().nullish(),
@@ -651,10 +754,10 @@ const JobContactResponse = z
     notes: z.string().nullable(),
   })
   .passthrough()
-const JobContactUpdateRequest = z
+const JobContactUpdateRequestRequest = z
   .object({
     id: z.string().uuid(),
-    name: z.string(),
+    name: z.string().min(1),
     email: z.string().nullable(),
     phone: z.string().nullable(),
     position: z.string().nullable(),
@@ -663,7 +766,9 @@ const JobContactUpdateRequest = z
   })
   .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
-const AssignJobRequest = z.object({ job_id: z.string(), staff_id: z.string() }).passthrough()
+const AssignJobRequestRequest = z
+  .object({ job_id: z.string().min(1), staff_id: z.string().min(1) })
+  .passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
   .object({
@@ -683,16 +788,17 @@ const PaginatedCompleteJobList = z
     results: z.array(CompleteJob),
   })
   .passthrough()
+const ArchiveJobsRequestRequest = z.object({ ids: z.array(z.string().min(1)) }).passthrough()
 const ArchiveJobsRequest = z.object({ ids: z.array(z.string()) }).passthrough()
 const JobQuoteChatHistoryResponse = z
   .object({ success: z.boolean(), data: z.object({}).partial().passthrough() })
   .passthrough()
 const RoleEnum = z.enum(['user', 'assistant'])
-const JobQuoteChatCreate = z
+const JobQuoteChatCreateRequest = z
   .object({
-    message_id: z.string().max(100),
+    message_id: z.string().min(1).max(100),
     role: RoleEnum,
-    content: z.string(),
+    content: z.string().min(1),
     metadata: z.unknown().optional(),
   })
   .passthrough()
@@ -708,8 +814,8 @@ const JobQuoteChat = z
 const JobQuoteChatInteractionSuccessResponse = z
   .object({ success: z.boolean().optional().default(true), data: JobQuoteChat })
   .passthrough()
-const PatchedJobQuoteChatUpdate = z
-  .object({ content: z.string(), metadata: z.unknown() })
+const PatchedJobQuoteChatUpdateRequest = z
+  .object({ content: z.string().min(1), metadata: z.unknown() })
   .partial()
   .passthrough()
 const JobQuoteChatUpdate = z
@@ -717,9 +823,9 @@ const JobQuoteChatUpdate = z
   .partial()
   .passthrough()
 const ModeEnum = z.enum(['CALC', 'PRICE', 'TABLE', 'AUTO'])
-const JobQuoteChatInteractionRequest = z
+const JobQuoteChatInteractionRequestRequest = z
   .object({
-    message: z.string().max(5000),
+    message: z.string().min(1).max(5000),
     mode: ModeEnum.optional().default('AUTO'),
   })
   .passthrough()
@@ -730,11 +836,11 @@ const JobQuoteChatInteractionErrorResponse = z
     code: z.string().optional(),
   })
   .passthrough()
-const JobReorderRequest = z
+const JobReorderRequestRequest = z
   .object({
     before_id: z.string().uuid().nullable(),
     after_id: z.string().uuid().nullable(),
-    status: z.string().nullable(),
+    status: z.string().min(1).nullable(),
   })
   .partial()
   .passthrough()
@@ -747,7 +853,7 @@ const KanbanSuccessResponse = z
 const KanbanErrorResponse = z
   .object({ success: z.boolean().optional().default(false), error: z.string() })
   .passthrough()
-const JobStatusUpdateRequest = z.object({ status: z.string() }).passthrough()
+const JobStatusUpdateRequestRequest = z.object({ status: z.string().min(1) }).passthrough()
 const KanbanJobPerson = z
   .object({
     id: z.string().uuid(),
@@ -845,7 +951,7 @@ const WorkshopPDFResponse = z
   .partial()
   .passthrough()
 const Kind332Enum = z.enum(['time', 'material', 'adjust'])
-const PatchedCostLineCreateUpdate = z
+const PatchedCostLineCreateUpdateRequest = z
   .object({
     kind: Kind332Enum,
     desc: z.string().max(255),
@@ -855,8 +961,6 @@ const PatchedCostLineCreateUpdate = z
     accounting_date: z.string(),
     ext_refs: z.unknown(),
     meta: z.unknown(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
   })
   .partial()
   .passthrough()
@@ -953,9 +1057,9 @@ const ArchivedJobsComplianceResponse = z
     checked_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
-const JobCreateRequest = z
+const JobCreateRequestRequest = z
   .object({
-    name: z.string().max(255),
+    name: z.string().min(1).max(255),
     client_id: z.string().uuid(),
     description: z.string().optional(),
     order_number: z.string().optional(),
@@ -1152,29 +1256,29 @@ const JobData = z
 const JobDetailResponse = z
   .object({ success: z.boolean().optional().default(true), data: JobData })
   .passthrough()
-const JobDeltaEnvelope = z
+const JobDeltaEnvelopeRequest = z
   .object({
     change_id: z.string().uuid(),
     actor_id: z.string().uuid().nullish(),
     made_at: z.string().datetime({ offset: true }).nullish(),
     job_id: z.string().uuid().nullish(),
-    fields: z.array(z.string()).min(1),
+    fields: z.array(z.string().min(1)).min(1),
     before: z.unknown(),
     after: z.unknown(),
-    before_checksum: z.string(),
+    before_checksum: z.string().min(1),
     etag: z.string().nullish(),
   })
   .passthrough()
-const PatchedJobDeltaEnvelope = z
+const PatchedJobDeltaEnvelopeRequest = z
   .object({
     change_id: z.string().uuid(),
     actor_id: z.string().uuid().nullable(),
     made_at: z.string().datetime({ offset: true }).nullable(),
     job_id: z.string().uuid().nullable(),
-    fields: z.array(z.string()).min(1),
+    fields: z.array(z.string().min(1)).min(1),
     before: z.unknown(),
     after: z.unknown(),
-    before_checksum: z.string(),
+    before_checksum: z.string().min(1),
     etag: z.string().nullable(),
   })
   .partial()
@@ -1193,6 +1297,18 @@ const JobBasicInformationResponse = z
     notes: z.string().nullable(),
   })
   .passthrough()
+const CostLineCreateUpdateRequest = z
+  .object({
+    kind: Kind332Enum,
+    desc: z.string().max(255).optional(),
+    quantity: z.number().gt(-10000000).lt(10000000).optional(),
+    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
+    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
+    accounting_date: z.string(),
+    ext_refs: z.unknown().optional(),
+    meta: z.unknown().optional(),
+  })
+  .passthrough()
 const QuoteRevisionsList = z
   .object({
     job_id: z.string(),
@@ -1202,8 +1318,8 @@ const QuoteRevisionsList = z
     revisions: z.array(z.object({}).partial().passthrough()),
   })
   .passthrough()
-const QuoteRevisionRequest = z
-  .object({ reason: z.string().max(500) })
+const QuoteRevisionRequestRequest = z
+  .object({ reason: z.string().min(1).max(500) })
   .partial()
   .passthrough()
 const QuoteRevisionResponse = z
@@ -1257,7 +1373,9 @@ const JobDeltaRejectionListResponse = z
   })
   .passthrough()
 const JobEventsResponse = z.object({ events: z.array(JobEvent) }).passthrough()
-const JobEventCreateRequest = z.object({ description: z.string().max(500) }).passthrough()
+const JobEventCreateRequestRequest = z
+  .object({ description: z.string().min(1).max(500) })
+  .passthrough()
 const JobEventCreateResponse = z.object({ success: z.boolean(), event: JobEvent }).passthrough()
 const JobFileErrorResponse = z
   .object({
@@ -1265,9 +1383,9 @@ const JobFileErrorResponse = z
     message: z.string(),
   })
   .passthrough()
-const JobFileUploadRequest = z
+const JobFileUploadRequestRequest = z
   .object({
-    files: z.array(z.string().url()),
+    files: z.array(z.instanceof(File)),
     print_on_jobsheet: z.boolean().optional().default(true),
   })
   .passthrough()
@@ -1291,6 +1409,15 @@ const JobFileUploadPartialResponse = z
     status: z.string(),
     uploaded: z.array(UploadedFile),
     errors: z.array(z.string()),
+  })
+  .passthrough()
+const JobFileRequest = z
+  .object({
+    id: z.string().uuid(),
+    filename: z.string().min(1).max(255),
+    mime_type: z.string().max(100).optional(),
+    print_on_jobsheet: z.boolean().optional(),
+    status: JobFileStatusEnum.optional(),
   })
   .passthrough()
 const JobFileUpdateSuccessResponse = z
@@ -1323,6 +1450,14 @@ const JobHeaderResponse = z
   })
   .passthrough()
 const JobInvoicesResponse = z.object({ invoices: z.array(Invoice) }).passthrough()
+const JobQuoteAcceptanceRequest = z
+  .object({
+    success: z.boolean(),
+    job_id: z.string().uuid(),
+    quote_acceptance_date: z.string().min(1),
+    message: z.string().min(1),
+  })
+  .passthrough()
 const JobQuoteAcceptance = z
   .object({
     success: z.boolean(),
@@ -1370,10 +1505,36 @@ const TimelineEntry = z
   })
   .passthrough()
 const JobTimelineResponse = z.object({ timeline: z.array(TimelineEntry) }).passthrough()
-const JobUndoRequest = z
+const JobUndoRequestRequest = z
   .object({
     change_id: z.string().uuid(),
     undo_change_id: z.string().uuid().nullish(),
+  })
+  .passthrough()
+const DraftLineRequest = z
+  .object({
+    kind: z.string().min(1),
+    desc: z.string().min(1),
+    quantity: z.number().gt(-100000000).lt(100000000),
+    unit_cost: z.number().gt(-100000000).lt(100000000),
+    unit_rev: z.number().gt(-100000000).lt(100000000),
+    total_cost: z.number().gt(-100000000).lt(100000000),
+    total_rev: z.number().gt(-100000000).lt(100000000),
+  })
+  .passthrough()
+const QuoteChangesRequest = z
+  .object({
+    additions: z.array(DraftLineRequest),
+    updates: z.array(DraftLineRequest),
+    deletions: z.array(DraftLineRequest),
+  })
+  .passthrough()
+const ApplyQuoteResponseRequest = z
+  .object({
+    success: z.boolean(),
+    draft_lines: z.array(DraftLineRequest).optional(),
+    changes: QuoteChangesRequest.optional(),
+    error: z.string().min(1).optional(),
   })
   .passthrough()
 const DraftLine = z
@@ -1403,7 +1564,40 @@ const ApplyQuoteResponse = z
     error: z.string().optional(),
   })
   .passthrough()
+const LinkQuoteSheetRequestRequest = z
+  .object({ template_url: z.string().url() })
+  .partial()
+  .passthrough()
 const LinkQuoteSheetRequest = z.object({ template_url: z.string().url() }).partial().passthrough()
+const ValidationReportRequest = z
+  .object({
+    warnings: z.array(z.string().min(1)),
+    errors: z.array(z.string().min(1)),
+  })
+  .partial()
+  .passthrough()
+const DiffPreviewRequest = z
+  .object({
+    additions_count: z.number().int(),
+    updates_count: z.number().int(),
+    deletions_count: z.number().int(),
+    total_changes: z.number().int(),
+    next_revision: z.number().int().optional(),
+    current_revision: z.number().int().nullish(),
+  })
+  .passthrough()
+const PreviewQuoteResponseRequest = z
+  .object({
+    success: z.boolean(),
+    draft_lines: z.array(DraftLineRequest),
+    changes: QuoteChangesRequest,
+    message: z.string().min(1),
+    can_proceed: z.boolean().default(false),
+    validation_report: ValidationReportRequest.nullable(),
+    diff_preview: DiffPreviewRequest.nullable(),
+  })
+  .partial()
+  .passthrough()
 const ValidationReport = z
   .object({ warnings: z.array(z.string()), errors: z.array(z.string()) })
   .partial()
@@ -1483,7 +1677,7 @@ const MonthEndStockJob = z
 const MonthEndGetResponse = z
   .object({ jobs: z.array(MonthEndJob), stock_job: MonthEndStockJob })
   .passthrough()
-const MonthEndPostRequest = z.object({ job_ids: z.array(z.string().uuid()) }).passthrough()
+const MonthEndPostRequestRequest = z.object({ job_ids: z.array(z.string().uuid()) }).passthrough()
 const MonthEndPostResponse = z
   .object({
     processed: z.array(z.string().uuid()),
@@ -1540,13 +1734,13 @@ const ModernTimesheetEntryGetResponse = z
   })
   .passthrough()
 const ModernTimesheetErrorResponse = z.object({ error: z.string() }).passthrough()
-const ModernTimesheetEntryPostRequest = z
+const ModernTimesheetEntryPostRequestRequest = z
   .object({
     job_id: z.string().uuid(),
     staff_id: z.string().uuid(),
     date: z.string(),
     hours: z.number().gte(0),
-    description: z.string().max(500),
+    description: z.string().min(1).max(500),
     is_billable: z.boolean().optional().default(true),
     hourly_rate: z.number().gte(0).optional(),
   })
@@ -1596,7 +1790,7 @@ const AllJobsResponse = z
     stock_holding_job_id: z.string(),
   })
   .passthrough()
-const DeliveryReceiptAllocation = z
+const DeliveryReceiptAllocationRequest = z
   .object({
     job_id: z.string().uuid(),
     quantity: z.number().gt(-100000000).lt(100000000),
@@ -1604,16 +1798,16 @@ const DeliveryReceiptAllocation = z
     metadata: z.object({}).partial().passthrough().optional(),
   })
   .passthrough()
-const DeliveryReceiptLine = z
+const DeliveryReceiptLineRequest = z
   .object({
     total_received: z.number().gt(-100000000).lt(100000000),
-    allocations: z.array(DeliveryReceiptAllocation),
+    allocations: z.array(DeliveryReceiptAllocationRequest),
   })
   .passthrough()
-const DeliveryReceiptRequest = z
+const DeliveryReceiptRequestRequest = z
   .object({
     purchase_order_id: z.string().uuid(),
-    allocations: z.record(DeliveryReceiptLine),
+    allocations: z.record(DeliveryReceiptLineRequest),
   })
   .passthrough()
 const DeliveryReceiptResponse = z
@@ -1653,7 +1847,7 @@ const ProductMappingListResponse = z
     unvalidated_count: z.number().int(),
   })
   .passthrough()
-const ProductMappingValidateRequest = z
+const ProductMappingValidateRequestRequest = z
   .object({
     mapped_item_code: z.string(),
     mapped_description: z.string(),
@@ -1683,6 +1877,32 @@ const PurchaseOrderList = z
     supplier: z.string(),
     supplier_id: z.string().uuid().nullable(),
   })
+  .passthrough()
+const PurchaseOrderLineCreateRequest = z
+  .object({
+    job_id: z.string().uuid().nullable(),
+    description: z.string().max(255),
+    quantity: z.number().gt(-100000000).lt(100000000).default(0),
+    unit_cost: z.number().gt(-100000000).lt(100000000).nullable(),
+    price_tbc: z.boolean().default(false),
+    item_code: z.string().max(100),
+    metal_type: z.string().max(100),
+    alloy: z.string().max(100),
+    specifics: z.string().max(255),
+    location: z.string().max(255),
+    dimensions: z.string().max(255),
+  })
+  .partial()
+  .passthrough()
+const PurchaseOrderCreateRequest = z
+  .object({
+    supplier_id: z.string().uuid().nullable(),
+    reference: z.string().max(255),
+    order_date: z.string().nullable(),
+    expected_delivery: z.string().nullable(),
+    lines: z.array(PurchaseOrderLineCreateRequest),
+  })
+  .partial()
   .passthrough()
 const PurchaseOrderLineCreate = z
   .object({
@@ -1764,7 +1984,7 @@ const PurchaseOrderDetail = z
     xero_id: z.string().uuid().nullish(),
   })
   .passthrough()
-const PurchaseOrderLineUpdate = z
+const PurchaseOrderLineUpdateRequest = z
   .object({
     id: z.string().uuid().nullable(),
     job_id: z.string().uuid().nullable(),
@@ -1781,14 +2001,31 @@ const PurchaseOrderLineUpdate = z
   })
   .partial()
   .passthrough()
-const PatchedPurchaseOrderUpdate = z
+const PatchedPurchaseOrderUpdateRequest = z
   .object({
     supplier_id: z.string().uuid().nullable(),
     reference: z.string().max(255),
     expected_delivery: z.string().nullable(),
     status: z.string().max(50),
     lines_to_delete: z.array(z.string().uuid()),
-    lines: z.array(PurchaseOrderLineUpdate),
+    lines: z.array(PurchaseOrderLineUpdateRequest),
+  })
+  .partial()
+  .passthrough()
+const PurchaseOrderLineUpdate = z
+  .object({
+    id: z.string().uuid().nullable(),
+    job_id: z.string().uuid().nullable(),
+    description: z.string().max(255),
+    quantity: z.number().gt(-100000000).lt(100000000).default(0),
+    unit_cost: z.number().gt(-100000000).lt(100000000).nullable(),
+    price_tbc: z.boolean().default(false),
+    item_code: z.string().max(100),
+    metal_type: z.string().max(100),
+    alloy: z.string().max(100),
+    specifics: z.string().max(255),
+    location: z.string().max(255),
+    dimensions: z.string().max(255),
   })
   .partial()
   .passthrough()
@@ -1841,9 +2078,9 @@ const AllocationDetailsResponse = z
     unit_revenue: z.number().optional(),
   })
   .passthrough()
-const PurchaseOrderEmailRequest = z
+const PurchaseOrderEmailRequestRequest = z
   .object({
-    recipient_email: z.string().email(),
+    recipient_email: z.string().min(1).email(),
     message: z.string().max(1000),
   })
   .partial()
@@ -1858,7 +2095,7 @@ const PurchaseOrderEmailResponse = z
   })
   .passthrough()
 const AllocationTypeEnum = z.enum(['job', 'stock'])
-const AllocationDeleteRequest = z
+const AllocationDeleteRequestRequest = z
   .object({
     allocation_type: AllocationTypeEnum,
     allocation_id: z.string().uuid(),
@@ -1898,6 +2135,20 @@ const StockItem = z
 const StockList = z
   .object({ items: z.array(StockItem), total_count: z.number().int() })
   .passthrough()
+const StockCreateRequest = z
+  .object({
+    description: z.string().min(1).max(255),
+    quantity: z.number().gt(-100000000).lt(100000000),
+    unit_cost: z.number().gt(-100000000).lt(100000000),
+    source: z.string().min(1).max(100),
+    notes: z.string().max(500).optional(),
+    metal_type: z.string().max(100).optional(),
+    alloy: z.string().max(100).optional(),
+    specifics: z.string().max(255).optional(),
+    location: z.string().max(255).optional(),
+    dimensions: z.string().max(255).optional(),
+  })
+  .passthrough()
 const StockCreate = z
   .object({
     description: z.string().max(255),
@@ -1912,7 +2163,7 @@ const StockCreate = z
     dimensions: z.string().max(255).optional(),
   })
   .passthrough()
-const StockConsumeRequest = z
+const StockConsumeRequestRequest = z
   .object({
     job_id: z.string().uuid(),
     quantity: z.number().gte(0).lt(100000000),
@@ -1978,11 +2229,16 @@ const DjangoJob = z
     job_state: z.string(),
   })
   .passthrough()
-const PatchedDjangoJob = z
+const DjangoJobRequest = z
   .object({
-    id: z.string().max(255),
+    id: z.string().min(1).max(255),
+    next_run_time: z.string().datetime({ offset: true }).nullish(),
+  })
+  .passthrough()
+const PatchedDjangoJobRequest = z
+  .object({
+    id: z.string().min(1).max(255),
     next_run_time: z.string().datetime({ offset: true }).nullable(),
-    job_state: z.string(),
   })
   .partial()
   .passthrough()
@@ -2096,7 +2352,7 @@ const PayRunForWeekResponse = z
     warning: z.string().nullish(),
   })
   .passthrough()
-const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
+const CreatePayRunRequestRequest = z.object({ week_start_date: z.string() }).passthrough()
 const CreatePayRunResponse = z
   .object({
     pay_run_id: z.string(),
@@ -2106,6 +2362,13 @@ const CreatePayRunResponse = z
     payment_date: z.string(),
   })
   .passthrough()
+const PayRunSyncResponseRequest = z
+  .object({
+    fetched: z.number().int(),
+    created: z.number().int(),
+    updated: z.number().int(),
+  })
+  .passthrough()
 const PayRunSyncResponse = z
   .object({
     fetched: z.number().int(),
@@ -2113,7 +2376,7 @@ const PayRunSyncResponse = z
     updated: z.number().int(),
   })
   .passthrough()
-const PostWeekToXeroRequest = z
+const PostWeekToXeroRequestRequest = z
   .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
   .passthrough()
 const PostWeekToXeroResponse = z
@@ -2257,66 +2520,73 @@ export const schemas = {
   StaffPerformanceStaffData,
   StaffPerformancePeriodSummary,
   StaffPerformanceResponse,
-  BearerTokenRequest,
+  BearerTokenRequestRequest,
   BearerTokenResponse,
   Staff,
-  StaffCreate,
-  PatchedStaff,
+  StaffCreateRequest,
+  StaffRequest,
+  PatchedStaffRequest,
   KanbanStaff,
-  CustomTokenObtainPair,
+  CustomTokenObtainPairRequest,
   TokenObtainPairResponse,
-  TokenRefresh,
+  TokenRefreshRequest,
   TokenRefreshResponse,
-  TokenVerify,
+  TokenVerifyRequest,
   UserProfile,
   AWSInstanceStatusResponse,
   CompanyDefaults,
-  PatchedCompanyDefaults,
+  CompanyDefaultsRequest,
+  PatchedCompanyDefaultsRequest,
   ProviderTypeEnum,
   AIProvider,
+  AIProviderCreateUpdateRequest,
   AIProviderCreateUpdate,
-  PatchedAIProviderCreateUpdate,
+  PatchedAIProviderCreateUpdateRequest,
+  AIProviderRequest,
   AppError,
   PaginatedAppErrorList,
+  AppErrorRequest,
   XeroDocumentSuccessResponse,
   XeroDocumentErrorResponse,
-  XeroQuoteCreateRequest,
+  XeroQuoteCreateRequestRequest,
   ClientDetailResponse,
   ClientErrorResponse,
   ClientJobHeader,
   ClientJobsResponse,
-  ClientUpdateRequest,
+  ClientUpdateRequestRequest,
   ClientUpdateResponse,
-  PatchedClientUpdateRequest,
+  PatchedClientUpdateRequestRequest,
   ClientNameOnly,
   ClientContact,
-  PatchedClientContact,
-  ClientCreateRequest,
+  ClientContactRequest,
+  PatchedClientContactRequest,
+  ClientCreateRequestRequest,
   ClientSearchResult,
   ClientCreateResponse,
   ClientDuplicateErrorResponse,
   JobContactResponse,
-  JobContactUpdateRequest,
+  JobContactUpdateRequestRequest,
   ClientSearchResponse,
-  AssignJobRequest,
+  AssignJobRequestRequest,
   AssignJobResponse,
   CompleteJob,
   PaginatedCompleteJobList,
+  ArchiveJobsRequestRequest,
   ArchiveJobsRequest,
   JobQuoteChatHistoryResponse,
   RoleEnum,
-  JobQuoteChatCreate,
+  JobQuoteChatCreateRequest,
   JobQuoteChat,
   JobQuoteChatInteractionSuccessResponse,
-  PatchedJobQuoteChatUpdate,
+  PatchedJobQuoteChatUpdateRequest,
   JobQuoteChatUpdate,
   ModeEnum,
-  JobQuoteChatInteractionRequest,
+  JobQuoteChatInteractionRequestRequest,
   JobQuoteChatInteractionErrorResponse,
-  JobReorderRequest,
+  JobReorderRequestRequest,
   KanbanSuccessResponse,
   KanbanErrorResponse,
-  JobStatusUpdateRequest,
+  JobStatusUpdateRequestRequest,
   KanbanJobPerson,
   KanbanJob,
   AdvancedSearchResponse,
@@ -2327,7 +2597,7 @@ export const schemas = {
   FetchStatusValuesResponse,
   WorkshopPDFResponse,
   Kind332Enum,
-  PatchedCostLineCreateUpdate,
+  PatchedCostLineCreateUpdateRequest,
   CostLineCreateUpdate,
   CostLineErrorResponse,
   BrokenFKReference,
@@ -2338,7 +2608,7 @@ export const schemas = {
   ArchivedJobIssue,
   ComplianceSummary,
   ArchivedJobsComplianceResponse,
-  JobCreateRequest,
+  JobCreateRequestRequest,
   JobCreateResponse,
   JobRestErrorResponse,
   CostSetKindEnum,
@@ -2361,39 +2631,49 @@ export const schemas = {
   CompanyDefaultsJobDetail,
   JobData,
   JobDetailResponse,
-  JobDeltaEnvelope,
-  PatchedJobDeltaEnvelope,
+  JobDeltaEnvelopeRequest,
+  PatchedJobDeltaEnvelopeRequest,
   JobDeleteResponse,
   JobBasicInformationResponse,
+  CostLineCreateUpdateRequest,
   QuoteRevisionsList,
-  QuoteRevisionRequest,
+  QuoteRevisionRequestRequest,
   QuoteRevisionResponse,
   JobCostSetSummary,
   JobCostSummaryResponse,
   JobDeltaRejection,
   JobDeltaRejectionListResponse,
   JobEventsResponse,
-  JobEventCreateRequest,
+  JobEventCreateRequestRequest,
   JobEventCreateResponse,
   JobFileErrorResponse,
-  JobFileUploadRequest,
+  JobFileUploadRequestRequest,
   UploadedFile,
   JobFileUploadSuccessResponse,
   JobFileUploadPartialResponse,
+  JobFileRequest,
   JobFileUpdateSuccessResponse,
   JobFileThumbnailErrorResponse,
   JobClientHeader,
   JobHeaderResponse,
   JobInvoicesResponse,
+  JobQuoteAcceptanceRequest,
   JobQuoteAcceptance,
   QuoteImportStatusResponse,
   TimelineEntry,
   JobTimelineResponse,
-  JobUndoRequest,
+  JobUndoRequestRequest,
+  DraftLineRequest,
+  QuoteChangesRequest,
+  ApplyQuoteResponseRequest,
   DraftLine,
   QuoteChanges,
   ApplyQuoteResponse,
+  LinkQuoteSheetRequestRequest,
   LinkQuoteSheetRequest,
+  ValidationReportRequest,
+  DiffPreviewRequest,
+  PreviewQuoteResponseRequest,
   ValidationReport,
   DiffPreview,
   PreviewQuoteResponse,
@@ -2404,30 +2684,32 @@ export const schemas = {
   MonthEndStockHistory,
   MonthEndStockJob,
   MonthEndGetResponse,
-  MonthEndPostRequest,
+  MonthEndPostRequestRequest,
   MonthEndPostResponse,
   TimesheetCostLine,
   ModernTimesheetStaff,
   ModernTimesheetSummary,
   ModernTimesheetEntryGetResponse,
   ModernTimesheetErrorResponse,
-  ModernTimesheetEntryPostRequest,
+  ModernTimesheetEntryPostRequestRequest,
   ModernTimesheetEntryPostResponse,
   ModernTimesheetJobGetResponse,
   ModernTimesheetDayGetResponse,
   Status7b9Enum,
   JobForPurchasing,
   AllJobsResponse,
-  DeliveryReceiptAllocation,
-  DeliveryReceiptLine,
-  DeliveryReceiptRequest,
+  DeliveryReceiptAllocationRequest,
+  DeliveryReceiptLineRequest,
+  DeliveryReceiptRequestRequest,
   DeliveryReceiptResponse,
   PurchasingJobsResponse,
   ProductMapping,
   ProductMappingListResponse,
-  ProductMappingValidateRequest,
+  ProductMappingValidateRequestRequest,
   ProductMappingValidateResponse,
   PurchaseOrderList,
+  PurchaseOrderLineCreateRequest,
+  PurchaseOrderCreateRequest,
   PurchaseOrderLineCreate,
   PurchaseOrderCreate,
   PurchaseOrderDetailStatusEnum,
@@ -2436,24 +2718,26 @@ export const schemas = {
   NullEnum,
   PurchaseOrderLine,
   PurchaseOrderDetail,
+  PurchaseOrderLineUpdateRequest,
+  PatchedPurchaseOrderUpdateRequest,
   PurchaseOrderLineUpdate,
-  PatchedPurchaseOrderUpdate,
   PurchaseOrderUpdate,
   TypeC98Enum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
   TypeD09Enum,
   AllocationDetailsResponse,
-  PurchaseOrderEmailRequest,
+  PurchaseOrderEmailRequestRequest,
   PurchaseOrderEmailResponse,
   AllocationTypeEnum,
-  AllocationDeleteRequest,
+  AllocationDeleteRequestRequest,
   AllocationDeleteResponse,
   PurchasingErrorResponse,
   StockItem,
   StockList,
+  StockCreateRequest,
   StockCreate,
-  StockConsumeRequest,
+  StockConsumeRequestRequest,
   StockConsumeResponse,
   SupplierPriceStatusItem,
   SupplierPriceStatusResponse,
@@ -2462,7 +2746,8 @@ export const schemas = {
   DjangoJobExecutionStatusEnum,
   DjangoJobExecution,
   DjangoJob,
-  PatchedDjangoJob,
+  DjangoJobRequest,
+  PatchedDjangoJobRequest,
   AppErrorListResponse,
   JobBreakdown,
   StaffDailyData,
@@ -2473,10 +2758,11 @@ export const schemas = {
   JobsListResponse,
   PayRunDetails,
   PayRunForWeekResponse,
-  CreatePayRunRequest,
+  CreatePayRunRequestRequest,
   CreatePayRunResponse,
+  PayRunSyncResponseRequest,
   PayRunSyncResponse,
-  PostWeekToXeroRequest,
+  PostWeekToXeroRequestRequest,
   PostWeekToXeroResponse,
   ModernStaff,
   StaffListResponse,
@@ -2614,7 +2900,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: BearerTokenRequest,
+        schema: BearerTokenRequestRequest,
       },
     ],
     response: z.object({ token: z.string() }).passthrough(),
@@ -2649,7 +2935,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: StaffCreate,
+        schema: StaffCreateRequest,
       },
     ],
     response: Staff,
@@ -2679,7 +2965,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: Staff,
+        schema: StaffRequest,
       },
       {
         name: 'id',
@@ -2699,7 +2985,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedStaff,
+        schema: PatchedStaffRequest,
       },
       {
         name: 'id',
@@ -2745,7 +3031,7 @@ based on the &#x27;actual_users&#x27; query parameter.`,
       {
         name: 'body',
         type: 'Body',
-        schema: CustomTokenObtainPair,
+        schema: CustomTokenObtainPairRequest,
       },
     ],
     response: TokenObtainPairResponse,
@@ -2767,7 +3053,7 @@ based on the &#x27;actual_users&#x27; query parameter.`,
       {
         name: 'body',
         type: 'Body',
-        schema: TokenRefresh,
+        schema: z.object({ refresh: z.string().min(1) }).passthrough(),
       },
     ],
     response: z.object({ access: z.string() }).partial().passthrough(),
@@ -2790,10 +3076,10 @@ information about a token&#x27;s fitness for a particular use.`,
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ token: z.string() }).passthrough(),
+        schema: z.object({ token: z.string().min(1) }).passthrough(),
       },
     ],
-    response: z.object({ token: z.string() }).passthrough(),
+    response: z.void(),
   },
   {
     method: 'post',
@@ -2897,7 +3183,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: CompanyDefaults,
+        schema: CompanyDefaultsRequest,
       },
     ],
     response: CompanyDefaults,
@@ -2927,7 +3213,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedCompanyDefaults,
+        schema: PatchedCompanyDefaultsRequest,
       },
     ],
     response: CompanyDefaults,
@@ -2956,7 +3242,7 @@ provider as the default for the company.`,
       {
         name: 'body',
         type: 'Body',
-        schema: AIProviderCreateUpdate,
+        schema: AIProviderCreateUpdateRequest,
       },
     ],
     response: AIProviderCreateUpdate,
@@ -2992,7 +3278,7 @@ provider as the default for the company.`,
       {
         name: 'body',
         type: 'Body',
-        schema: AIProviderCreateUpdate,
+        schema: AIProviderCreateUpdateRequest,
       },
       {
         name: 'id',
@@ -3015,7 +3301,7 @@ provider as the default for the company.`,
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedAIProviderCreateUpdate,
+        schema: PatchedAIProviderCreateUpdateRequest,
       },
       {
         name: 'id',
@@ -3054,7 +3340,7 @@ This will atomically unset any other provider that is currently the default.`,
       {
         name: 'body',
         type: 'Body',
-        schema: AIProvider,
+        schema: AIProviderRequest,
       },
       {
         name: 'id',
@@ -3202,7 +3488,7 @@ Endpoints:
       {
         name: 'body',
         type: 'Body',
-        schema: AppError,
+        schema: AppErrorRequest,
       },
       {
         name: 'id',
@@ -3222,7 +3508,7 @@ Endpoints:
       {
         name: 'body',
         type: 'Body',
-        schema: AppError,
+        schema: AppErrorRequest,
       },
       {
         name: 'id',
@@ -3540,7 +3826,7 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
       {
         name: 'body',
         type: 'Body',
-        schema: ClientUpdateRequest,
+        schema: ClientUpdateRequestRequest,
       },
       {
         name: 'client_id',
@@ -3574,7 +3860,7 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedClientUpdateRequest,
+        schema: PatchedClientUpdateRequestRequest,
       },
       {
         name: 'client_id',
@@ -3652,7 +3938,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: ClientContact,
+        schema: ClientContactRequest,
       },
     ],
     response: ClientContact,
@@ -3704,7 +3990,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: ClientContact,
+        schema: ClientContactRequest,
       },
       {
         name: 'id',
@@ -3735,7 +4021,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedClientContact,
+        schema: PatchedClientContactRequest,
       },
       {
         name: 'id',
@@ -3781,7 +4067,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: ClientCreateRequest,
+        schema: ClientCreateRequestRequest,
       },
     ],
     response: ClientCreateResponse,
@@ -3839,7 +4125,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: JobContactUpdateRequest,
+        schema: JobContactUpdateRequestRequest,
       },
       {
         name: 'job_id',
@@ -3899,7 +4185,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: AssignJobRequest,
+        schema: AssignJobRequestRequest,
       },
       {
         name: 'job_id',
@@ -3954,7 +4240,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: ArchiveJobsRequest,
+        schema: ArchiveJobsRequestRequest,
       },
     ],
     response: ArchiveJobsRequest,
@@ -3986,7 +4272,7 @@ Response format matches job_quote_chat_plan.md specification.`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobQuoteChatCreate,
+        schema: JobQuoteChatCreateRequest,
       },
       {
         name: 'job_id',
@@ -4027,7 +4313,10 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ content: z.string(), metadata: z.unknown() }).partial().passthrough(),
+        schema: z
+          .object({ content: z.string().min(1), metadata: z.unknown() })
+          .partial()
+          .passthrough(),
       },
       {
         name: 'job_id',
@@ -4052,7 +4341,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: JobQuoteChatInteractionRequest,
+        schema: JobQuoteChatInteractionRequestRequest,
       },
       {
         name: 'job_id',
@@ -4089,7 +4378,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: JobReorderRequest,
+        schema: JobReorderRequestRequest,
       },
       {
         name: 'job_id',
@@ -4123,7 +4412,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ status: z.string() }).passthrough(),
+        schema: z.object({ status: z.string().min(1) }).passthrough(),
       },
       {
         name: 'job_id',
@@ -4289,7 +4578,7 @@ Dynamically infers the stock adjustment based on quantity change`,
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedCostLineCreateUpdate,
+        schema: PatchedCostLineCreateUpdateRequest,
       },
       {
         name: 'cost_line_id',
@@ -4362,7 +4651,7 @@ Dynamically infers the stock adjustment based on quantity change`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobCreateRequest,
+        schema: JobCreateRequestRequest,
       },
     ],
     response: JobCreateResponse,
@@ -4412,7 +4701,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/apply/`,
       {
         name: 'body',
         type: 'Body',
-        schema: ApplyQuoteResponse,
+        schema: ApplyQuoteResponseRequest,
       },
       {
         name: 'id',
@@ -4456,7 +4745,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: PreviewQuoteResponse,
+        schema: PreviewQuoteResponseRequest,
       },
       {
         name: 'id',
@@ -4491,7 +4780,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobDeltaEnvelope,
+        schema: JobDeltaEnvelopeRequest,
       },
       {
         name: 'job_id',
@@ -4517,7 +4806,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedJobDeltaEnvelope,
+        schema: PatchedJobDeltaEnvelopeRequest,
       },
       {
         name: 'job_id',
@@ -4585,7 +4874,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: CostLineCreateUpdate,
+        schema: CostLineCreateUpdateRequest,
       },
       {
         name: 'job_id',
@@ -4610,7 +4899,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: CostLineCreateUpdate,
+        schema: CostLineCreateUpdateRequest,
       },
       {
         name: 'job_id',
@@ -4646,7 +4935,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         name: 'body',
         type: 'Body',
         schema: z
-          .object({ reason: z.string().max(500) })
+          .object({ reason: z.string().min(1).max(500) })
           .partial()
           .passthrough(),
       },
@@ -4756,7 +5045,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ description: z.string().max(500) }).passthrough(),
+        schema: z.object({ description: z.string().min(1).max(500) }).passthrough(),
       },
       {
         name: 'job_id',
@@ -4811,7 +5100,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUploadRequest,
+        schema: JobFileUploadRequestRequest,
       },
       {
         name: 'job_id',
@@ -4868,7 +5157,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobFile,
+        schema: JobFileRequest,
       },
       {
         name: 'file_id',
@@ -5032,7 +5321,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobQuoteAcceptance,
+        schema: JobQuoteAcceptanceRequest,
       },
       {
         name: 'job_id',
@@ -5094,7 +5383,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobUndoRequest,
+        schema: JobUndoRequestRequest,
       },
       {
         name: 'job_id',
@@ -5203,7 +5492,7 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       {
         name: 'body',
         type: 'Body',
-        schema: MonthEndPostRequest,
+        schema: MonthEndPostRequestRequest,
       },
     ],
     response: MonthEndPostResponse,
@@ -5240,7 +5529,7 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       {
         name: 'body',
         type: 'Body',
-        schema: ModernTimesheetEntryPostRequest,
+        schema: ModernTimesheetEntryPostRequestRequest,
       },
     ],
     response: ModernTimesheetEntryPostResponse,
@@ -5315,7 +5604,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: DeliveryReceiptRequest,
+        schema: DeliveryReceiptRequestRequest,
       },
     ],
     response: DeliveryReceiptResponse,
@@ -5352,7 +5641,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: ProductMappingValidateRequest,
+        schema: ProductMappingValidateRequestRequest,
       },
       {
         name: 'mapping_id',
@@ -5390,7 +5679,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: PurchaseOrderCreate,
+        schema: PurchaseOrderCreateRequest,
       },
     ],
     response: PurchaseOrderCreate,
@@ -5422,7 +5711,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedPurchaseOrderUpdate,
+        schema: PatchedPurchaseOrderUpdateRequest,
       },
       {
         name: 'id',
@@ -5482,7 +5771,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: PurchaseOrderEmailRequest,
+        schema: PurchaseOrderEmailRequestRequest,
       },
       {
         name: 'po_id',
@@ -5508,7 +5797,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: AllocationDeleteRequest,
+        schema: AllocationDeleteRequestRequest,
       },
       {
         name: 'line_id',
@@ -5572,7 +5861,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: StockCreate,
+        schema: StockCreateRequest,
       },
     ],
     response: StockCreate,
@@ -5604,7 +5893,7 @@ DELETE: Marks a stock item as inactive instead of deleting it`,
       {
         name: 'body',
         type: 'Body',
-        schema: StockConsumeRequest,
+        schema: StockConsumeRequestRequest,
       },
       {
         name: 'stock_id',
@@ -5684,7 +5973,7 @@ models. No migrations required.`,
       {
         name: 'body',
         type: 'Body',
-        schema: DjangoJob,
+        schema: DjangoJobRequest,
       },
     ],
     response: DjangoJob,
@@ -5712,7 +6001,7 @@ models. No migrations required.`,
       {
         name: 'body',
         type: 'Body',
-        schema: DjangoJob,
+        schema: DjangoJobRequest,
       },
       {
         name: 'id',
@@ -5731,7 +6020,7 @@ models. No migrations required.`,
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedDjangoJob,
+        schema: PatchedDjangoJobRequest,
       },
       {
         name: 'id',
@@ -5862,7 +6151,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: PayRunSyncResponse,
+        schema: PayRunSyncResponseRequest,
       },
     ],
     response: PayRunSyncResponse,
@@ -5883,7 +6172,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: PostWeekToXeroRequest,
+        schema: PostWeekToXeroRequestRequest,
       },
     ],
     response: PostWeekToXeroResponse,

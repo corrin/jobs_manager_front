@@ -5,8 +5,8 @@ import { z } from 'zod'
 import type { ClientContact } from '@/composables/useClientLookup'
 import { debugLog } from '@/utils/debug'
 
-type ContactCreateRequest = z.infer<typeof schemas.ClientContactCreateRequest>
-type NewContactData = Omit<ContactCreateRequest, 'client_id'>
+type ContactCreateRequest = z.infer<typeof schemas.ClientContactRequest>
+type NewContactData = Omit<ContactCreateRequest, 'client'>
 
 /**
  * Composable for managing client contacts
@@ -181,8 +181,8 @@ export function useContactManagement() {
       // If this is the first contact for the client, automatically make it primary
       const shouldBePrimary = newContactForm.value.is_primary || contacts.value.length === 0
 
-      const contactData: ContactCreateRequest = {
-        client_id: currentClientId.value,
+      const contactData: Partial<ContactCreateRequest> = {
+        client: currentClientId.value,
         name: newContactForm.value.name.trim(),
         is_primary: shouldBePrimary,
       }
@@ -212,11 +212,11 @@ export function useContactManagement() {
 
       const response = await api.clients_contacts_create(contactData)
 
-      if (!response || !('contact' in response) || !response.contact) {
+      if (!response || !response.id) {
         throw new Error('Invalid response from server')
       }
 
-      const newContact = response.contact as ClientContact
+      const newContact = response as ClientContact
 
       debugLog('Contact created successfully:', newContact)
 
