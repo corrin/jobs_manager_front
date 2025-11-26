@@ -15,7 +15,7 @@ export default defineConfig({
   reporter: 'html',
 
   use: {
-    baseURL: process.env.VITE_FRONTEND_BASE_URL || 'http://localhost:5173',
+    baseURL: process.env.VITE_FRONTEND_BASE_URL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 30000,
