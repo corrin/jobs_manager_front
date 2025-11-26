@@ -6,6 +6,7 @@ import { Checkbox } from '../ui/checkbox'
 import { ArrowDown, ArrowDownToLine } from 'lucide-vue-next'
 import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
+import { formatCurrency } from '@/utils/string-formatting'
 
 // Use generated types from API schema
 type PendingLine = z.infer<typeof schemas.PurchaseOrderLine> & {
@@ -98,7 +99,7 @@ const columns = computed(() => [
     header: 'Unit Cost',
     cell: ({ row }: DataTableRowContext) => {
       const unitCost = row.original.unit_cost
-      return unitCost ? `$${unitCost.toFixed(2)}` : 'N/A'
+      return unitCost ? formatCurrency(unitCost) : 'N/A'
     },
   },
 ])

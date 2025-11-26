@@ -9,6 +9,7 @@ import { ArrowUp, ArrowUpToLine } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
+import { formatCurrency } from '@/utils/string-formatting'
 
 // Use generated types from API schema
 type Job = z.infer<typeof schemas.Job>
@@ -220,7 +221,7 @@ const columns = computed(() => [
     id: 'unit_cost',
     header: 'Unit Cost',
     cell: ({ row }: DataTableRowContext) =>
-      row.original.unit_cost ? `$${row.original.unit_cost.toFixed(2)}` : 'N/A',
+      row.original.unit_cost ? formatCurrency(row.original.unit_cost) : 'N/A',
   },
   {
     id: 'retail_rate',

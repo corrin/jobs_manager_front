@@ -44,7 +44,7 @@
                   <div class="min-w-0">
                     <p class="text-xs md:text-sm text-gray-600">Total Bill</p>
                     <p class="text-base md:text-lg font-semibold">
-                      ${{ consolidatedSummary.totalBill.toFixed(2) }}
+                      {{ formatCurrency(consolidatedSummary.totalBill) }}
                     </p>
                   </div>
                 </div>
@@ -144,7 +144,9 @@
                     <div class="flex justify-between items-center pt-2 border-t border-gray-100">
                       <div class="text-sm">
                         <span class="text-gray-600">Total Bill:</span>
-                        <span class="font-semibold ml-1">${{ jobData.totalBill.toFixed(2) }}</span>
+                        <span class="font-semibold ml-1">{{
+                          formatCurrency(jobData.totalBill)
+                        }}</span>
                       </div>
                       <ExternalLink class="h-4 w-4 text-gray-400" />
                     </div>
@@ -195,6 +197,7 @@ import { api } from '@/api/client'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 import { debugLog } from '../../utils/debug'
 import { z } from 'zod'
+import { formatCurrency } from '@/utils/string-formatting'
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type FullJob = z.infer<typeof schemas.Job>

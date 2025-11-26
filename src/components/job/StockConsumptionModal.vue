@@ -125,13 +125,13 @@
             <span class="flex items-center gap-2 text-blue-700">
               <Package class="w-7 h-7 text-blue-500" />
               <span>Total cost:</span>
-              <span class="text-blue-700">${{ totalCost.toFixed(2) }}</span>
+              <span class="text-blue-700">{{ formatCurrency(totalCost) }}</span>
             </span>
             <span class="mx-6 h-10 border-l border-gray-300"></span>
             <span class="flex items-center gap-2 text-green-700">
               <DollarSign class="w-7 h-7 text-green-500" />
               <span>Total revenue:</span>
-              <span class="text-green-700">${{ totalRevenue.toFixed(2) }}</span>
+              <span class="text-green-700">{{ formatCurrency(totalRevenue) }}</span>
             </span>
           </div>
         </div>
