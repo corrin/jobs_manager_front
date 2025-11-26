@@ -12,7 +12,7 @@
             <div class="flex items-center gap-2">
               <Button
                 variant="outline"
-                @click="exportToCsv"
+                @click="exportReport"
                 :disabled="loading || !issues.length"
                 class="text-sm px-4 py-2"
               >
@@ -278,7 +278,7 @@ import {
   Clock,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, exportToCsv } from '@/utils/string-formatting'
 
 interface ValidationIssue {
   id: string
@@ -459,7 +459,7 @@ const refreshData = async () => {
   }
 }
 
-const exportToCsv = () => {
+const exportReport = () => {
   if (!issues.value.length) return
 
   const headers = ['Job Number', 'Client', 'Issue', 'Archived Date', 'Job Value']
@@ -471,19 +471,7 @@ const exportToCsv = () => {
     formatCurrency(issue.jobValue),
   ])
 
-  const csvContent = [
-    headers.join(','),
-    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
-  ].join('\n')
-
-  const blob = new Blob([csvContent], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `archived-jobs-validation-${new Date().toISOString().split('T')[0]}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
-
+  exportToCsv(headers, rows, `archived-jobs-validation-${new Date().toISOString().split('T')[0]}`)
   toast.success('Report exported successfully')
 }
 

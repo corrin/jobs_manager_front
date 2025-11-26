@@ -159,7 +159,7 @@ import {
 } from '@/components/ui/dialog'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-import { kpiService } from '@/services/kpi.service'
+import { formatCurrency } from '@/utils/string-formatting'
 
 // Use generated API types
 type KPIDayData = z.infer<typeof schemas.KPIDayData>
@@ -214,13 +214,6 @@ const adjustmentProfit = computed(() => {
   if (!props.dayData) return 0
   return adjustmentRevenue.value - adjustmentCost.value
 })
-
-function formatCurrency(value: number): string {
-  if (typeof value !== 'number' || isNaN(value)) {
-    return '$0.00'
-  }
-  return kpiService.formatCurrency(value)
-}
 
 function formatDateTitle(dateString: string | undefined): string {
   if (!dateString) return ''

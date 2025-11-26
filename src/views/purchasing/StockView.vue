@@ -260,6 +260,7 @@ import { jobService } from '@/services/job.service'
 import { onMounted, ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { formatMetalType } from '@/utils/metalType'
+import { formatCurrency } from '@/utils/string-formatting'
 
 const stockStore = useStockStore()
 const jobsStore = useJobsStore()
@@ -340,10 +341,6 @@ const addForm = ref({
 })
 
 function formatQuantity(value: number): string {
-  return isNaN(value) ? '0.00' : value.toFixed(2)
-}
-
-function formatCurrency(value: number): string {
   return isNaN(value) ? '0.00' : value.toFixed(2)
 }
 

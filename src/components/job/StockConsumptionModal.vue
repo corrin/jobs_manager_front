@@ -35,7 +35,7 @@
                 >
                   <div class="font-medium text-sm">{{ item.description }}</div>
                   <div class="text-xs text-gray-500">
-                    Stock: {{ item.quantity }} | Unit Cost: ${{ formatCurrency(item.unit_cost) }}
+                    Stock: {{ item.quantity }} | Unit Cost: {{ formatCurrency(item.unit_cost) }}
                   </div>
                 </div>
               </div>
@@ -162,6 +162,7 @@ import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
 import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import { debugLog } from '../../utils/debug'
+import { formatCurrency } from '@/utils/string-formatting'
 import { z } from 'zod'
 
 type StockItem = z.infer<typeof schemas.StockList>
@@ -206,10 +207,6 @@ const canSubmit = computed(() => {
 
 const totalRevenue = computed(() => formData.value.unit_rev * formData.value.quantity)
 const totalCost = computed(() => formData.value.unit_cost * formData.value.quantity)
-
-function formatCurrency(value: number): string {
-  return value.toFixed(2)
-}
 
 async function loadStockItems() {
   isLoading.value = true

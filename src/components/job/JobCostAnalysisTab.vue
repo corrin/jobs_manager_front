@@ -156,6 +156,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { ArrowUp, ArrowDown, CheckCircle, AlertTriangle, XCircle } from 'lucide-vue-next'
 import { api } from '../../api/client'
+import { formatCurrency } from '@/utils/string-formatting'
 import { schemas } from '../../api/generated/api'
 import { z } from 'zod'
 
@@ -319,13 +320,6 @@ const quoteAccuracyDisplayValue = computed(() => {
   return percentDiff(actual.value.cost, quote.value.cost)
 })
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  }).format(value)
-}
 function formatPercent(value: number): string {
   return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`
 }

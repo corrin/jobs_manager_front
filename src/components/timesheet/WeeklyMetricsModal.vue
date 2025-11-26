@@ -265,6 +265,7 @@ import DialogTitle from '../ui/dialog/DialogTitle.vue'
 import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
 import { z } from 'zod'
+import { formatCurrency } from '../../utils/string-formatting'
 
 type WeeklyJobs = z.infer<typeof schemas.WeeklyMetrics>
 type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
@@ -388,13 +389,6 @@ const toggleDetailedMode = () => {
   if (detailedMode.value && jobs.value.length === 0) {
     loadJobs()
   }
-}
-
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
 }
 
 const loadJobs = async () => {

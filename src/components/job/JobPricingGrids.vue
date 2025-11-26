@@ -22,7 +22,7 @@
           <div class="pt-2 border-t">
             <div class="flex justify-between font-semibold">
               <span>Total:</span>
-              <span>${{ formatCurrency(estimates.total) }}</span>
+              <span>{{ formatCurrency(estimates.total) }}</span>
             </div>
           </div>
         </div>
@@ -49,7 +49,7 @@
           <div class="pt-2 border-t">
             <div class="flex justify-between font-semibold">
               <span>Total:</span>
-              <span>${{ formatCurrency(quotes.total) }}</span>
+              <span>{{ formatCurrency(quotes.total) }}</span>
             </div>
           </div>
         </div>
@@ -76,7 +76,7 @@
           <div class="pt-2 border-t">
             <div class="flex justify-between font-semibold">
               <span>Total:</span>
-              <span>${{ formatCurrency(reality.total) }}</span>
+              <span>{{ formatCurrency(reality.total) }}</span>
             </div>
           </div>
         </div>
@@ -87,6 +87,7 @@
 
 <script setup lang="ts">
 import { debugLog } from '@/utils/debug'
+import { formatCurrency } from '@/utils/string-formatting'
 
 import { ref, watch } from 'vue'
 import SimpleTotalTable from './SimpleTotalTable.vue'
@@ -166,13 +167,6 @@ const emitDataChanged = () => {
     quotes: quotes.value,
     reality: reality.value,
   })
-}
-
-const formatCurrency = (amount: number | undefined | null): string => {
-  if (amount === null || amount === undefined || isNaN(amount)) {
-    return '0.00'
-  }
-  return amount.toFixed(2)
 }
 
 watch(

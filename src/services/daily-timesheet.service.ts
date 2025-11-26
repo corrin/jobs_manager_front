@@ -2,6 +2,7 @@ import { schemas } from '../api/generated/api'
 import { api } from '../api/client'
 import { today } from './date.service'
 import type { z } from 'zod'
+import { formatCurrency as formatCurrencyUtil } from '@/utils/string-formatting'
 
 // Use inferred types from Zod schemas
 type DailyTimesheetSummary = z.infer<typeof schemas.DailyTimesheetSummary>
@@ -43,7 +44,7 @@ export const formatHours = (hours: number): string => {
 }
 
 export const formatCurrency = (amount: number): string => {
-  return `$${amount.toFixed(2)}`
+  return formatCurrencyUtil(amount)
 }
 
 export const getStatusVariant = (statusClass: string): string => {

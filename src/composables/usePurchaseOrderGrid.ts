@@ -11,6 +11,7 @@ import { customTheme } from '@/plugins/ag-grid'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 import { PurchaseOrderJobCellEditor } from '@/components/purchasing/PurchaseOrderJobCellEditor'
+import { formatCurrency } from '@/utils/string-formatting'
 
 type PurchaseOrderLineUI = z.infer<typeof schemas.PurchaseOrderLine>
 
@@ -63,7 +64,7 @@ export function usePurchaseOrderGrid(lines: Ref<PurchaseOrderLineUI[]>) {
       width: 120,
       editable: true,
       type: 'numericColumn',
-      valueFormatter: (params: ValueFormatterParams) => `$${(params.value || 0).toFixed(2)}`,
+      valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.value || 0),
     },
     {
       headerName: 'Total',
@@ -74,7 +75,7 @@ export function usePurchaseOrderGrid(lines: Ref<PurchaseOrderLineUI[]>) {
         const data = params.data as PurchaseOrderLineUI
         return (data.quantity || 0) * (data.unit_price || 0)
       },
-      valueFormatter: (params: ValueFormatterParams) => `$${(params.value || 0).toFixed(2)}`,
+      valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.value || 0),
       editable: false,
     },
     {

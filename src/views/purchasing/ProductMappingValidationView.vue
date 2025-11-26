@@ -270,6 +270,7 @@ import { Package, Search, Edit, Loader2, CheckCircle, XCircle } from 'lucide-vue
 import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
+import { formatCurrency } from '@/utils/string-formatting'
 
 type ProductMapping = z.infer<typeof schemas.ProductMapping>
 type ProductMappingValidateRequest = z.infer<typeof schemas.ProductMappingValidateRequest>
@@ -303,13 +304,6 @@ const formatInputData = (data: unknown): string => {
   if (typeof data === 'string') return data
   if (typeof data === 'object') return JSON.stringify(data)
   return String(data)
-}
-
-const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('en-NZ', {
-    style: 'currency',
-    currency: 'NZD',
-  }).format(value)
 }
 
 const loadMappings = async () => {

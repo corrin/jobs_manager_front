@@ -344,6 +344,13 @@ const CompanyDefaults = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
     gdrive_quotes_folder_id: z.string().max(100).nullish(),
     xero_tenant_id: z.string().max(100).nullish(),
+    xero_annual_leave_type_id: z.string().max(100).nullish(),
+    xero_sick_leave_type_id: z.string().max(100).nullish(),
+    xero_other_leave_type_id: z.string().max(100).nullish(),
+    xero_unpaid_leave_type_id: z.string().max(100).nullish(),
+    xero_ordinary_earnings_rate_id: z.string().max(100).nullish(),
+    xero_time_half_earnings_rate_id: z.string().max(100).nullish(),
+    xero_double_time_earnings_rate_id: z.string().max(100).nullish(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -359,6 +366,7 @@ const CompanyDefaults = z
     last_xero_sync: z.string().datetime({ offset: true }).nullish(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
     shop_client_name: z.string().max(255).nullish(),
+    test_client_name: z.string().max(255).nullish(),
     billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
     billable_threshold_amber: z.number().gt(-1000).lt(1000).optional(),
     daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
@@ -381,6 +389,13 @@ const PatchedCompanyDefaults = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullable(),
     gdrive_quotes_folder_id: z.string().max(100).nullable(),
     xero_tenant_id: z.string().max(100).nullable(),
+    xero_annual_leave_type_id: z.string().max(100).nullable(),
+    xero_sick_leave_type_id: z.string().max(100).nullable(),
+    xero_other_leave_type_id: z.string().max(100).nullable(),
+    xero_unpaid_leave_type_id: z.string().max(100).nullable(),
+    xero_ordinary_earnings_rate_id: z.string().max(100).nullable(),
+    xero_time_half_earnings_rate_id: z.string().max(100).nullable(),
+    xero_double_time_earnings_rate_id: z.string().max(100).nullable(),
     mon_start: z.string(),
     mon_end: z.string(),
     tue_start: z.string(),
@@ -396,6 +411,7 @@ const PatchedCompanyDefaults = z
     last_xero_sync: z.string().datetime({ offset: true }).nullable(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
     shop_client_name: z.string().max(255).nullable(),
+    test_client_name: z.string().max(255).nullable(),
     billable_threshold_green: z.number().gt(-1000).lt(1000),
     billable_threshold_amber: z.number().gt(-1000).lt(1000),
     daily_gp_target: z.number().gt(-100000000).lt(100000000),
@@ -512,17 +528,6 @@ const ClientErrorResponse = z
     details: z.string().optional(),
   })
   .passthrough()
-const ClientContactResult = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    position: z.string(),
-    is_primary: z.boolean(),
-  })
-  .passthrough()
-const ClientContactResponse = z.object({ results: z.array(ClientContactResult) }).passthrough()
 const ClientJobHeader = z
   .object({
     job_id: z.string().uuid(),
@@ -568,23 +573,36 @@ const PatchedClientUpdateRequest = z
   .partial()
   .passthrough()
 const ClientNameOnly = z.object({ id: z.string().uuid(), name: z.string() }).passthrough()
-const ClientContactCreateRequest = z
+const ClientContact = z
   .object({
-    client_id: z.string().uuid(),
+    id: z.string().uuid(),
+    client: z.string().uuid(),
     name: z.string().max(255),
-    email: z.string().email().optional(),
-    phone: z.string().max(50).optional(),
-    position: z.string().max(255).optional(),
-    is_primary: z.boolean().optional().default(false),
-    notes: z.string().optional(),
+    email: z.string().max(254).email().nullish(),
+    phone: z.string().max(150).nullish(),
+    position: z.string().max(255).nullish(),
+    is_primary: z.boolean().optional(),
+    notes: z.string().nullish(),
+    is_active: z.boolean(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
-const ClientContactCreateResponse = z
+const PatchedClientContact = z
   .object({
-    success: z.boolean(),
-    contact: ClientContactResult,
-    message: z.string(),
+    id: z.string().uuid(),
+    client: z.string().uuid(),
+    name: z.string().max(255),
+    email: z.string().max(254).email().nullable(),
+    phone: z.string().max(150).nullable(),
+    position: z.string().max(255).nullable(),
+    is_primary: z.boolean(),
+    notes: z.string().nullable(),
+    is_active: z.boolean(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
   })
+  .partial()
   .passthrough()
 const ClientCreateRequest = z
   .object({
@@ -857,6 +875,55 @@ const CostLineCreateUpdate = z
   })
   .passthrough()
 const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
+const BrokenFKReference = z
+  .object({
+    model: z.string(),
+    record_id: z.string(),
+    field: z.string(),
+    target_model: z.string(),
+    target_id: z.string(),
+  })
+  .passthrough()
+const BrokenJSONReference = z
+  .object({
+    model: z.string(),
+    record_id: z.string(),
+    field: z.string(),
+    staff_id: z.string().nullish(),
+    stock_id: z.string().nullish(),
+    purchase_order_line_id: z.string().nullish(),
+    issue: z.string().nullish(),
+  })
+  .passthrough()
+const BusinessRuleViolation = z
+  .object({
+    model: z.string(),
+    record_id: z.string(),
+    field: z.string(),
+    rule: z.string(),
+    expected: z.string().nullish(),
+    actual: z.string().nullish(),
+    path: z.array(z.string()).nullish(),
+    expected_path: z.string().nullish(),
+  })
+  .passthrough()
+const DataIntegritySummary = z
+  .object({
+    total_broken_fks: z.number().int(),
+    total_broken_json_refs: z.number().int(),
+    total_business_rule_violations: z.number().int(),
+    total_issues: z.number().int(),
+  })
+  .passthrough()
+const DataIntegrityResponse = z
+  .object({
+    scanned_at: z.string().datetime({ offset: true }),
+    broken_fk_references: z.array(BrokenFKReference),
+    broken_json_references: z.array(BrokenJSONReference),
+    business_rule_violations: z.array(BusinessRuleViolation),
+    summary: DataIntegritySummary,
+  })
+  .passthrough()
 const ArchivedJobIssue = z
   .object({
     job_id: z.string(),
@@ -2005,10 +2072,62 @@ const ModernTimesheetJob = z
     status: Status7b9Enum.optional(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     has_actual_costset: z.boolean(),
+    leave_type: z.string(),
   })
   .passthrough()
 const JobsListResponse = z
   .object({ jobs: z.array(ModernTimesheetJob), total_count: z.number().int() })
+  .passthrough()
+const PayRunDetails = z
+  .object({
+    pay_run_id: z.string(),
+    payroll_calendar_id: z.string().nullable(),
+    period_start_date: z.string(),
+    period_end_date: z.string(),
+    payment_date: z.string(),
+    pay_run_status: z.string(),
+    pay_run_type: z.string().nullable(),
+  })
+  .passthrough()
+const PayRunForWeekResponse = z
+  .object({
+    exists: z.boolean(),
+    pay_run: PayRunDetails.nullable(),
+    warning: z.string().nullish(),
+  })
+  .passthrough()
+const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
+const CreatePayRunResponse = z
+  .object({
+    pay_run_id: z.string(),
+    status: z.string(),
+    period_start_date: z.string(),
+    period_end_date: z.string(),
+    payment_date: z.string(),
+  })
+  .passthrough()
+const PayRunSyncResponse = z
+  .object({
+    fetched: z.number().int(),
+    created: z.number().int(),
+    updated: z.number().int(),
+  })
+  .passthrough()
+const PostWeekToXeroRequest = z
+  .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
+  .passthrough()
+const PostWeekToXeroResponse = z
+  .object({
+    success: z.boolean(),
+    xero_timesheet_id: z.string().nullable(),
+    xero_leave_ids: z.array(z.string()).nullish(),
+    entries_posted: z.number().int(),
+    work_hours: z.number().gt(-100000000).lt(100000000),
+    other_leave_hours: z.number().gt(-100000000).lt(100000000),
+    annual_sick_hours: z.number().gt(-100000000).lt(100000000),
+    unpaid_hours: z.number().gt(-100000000).lt(100000000),
+    errors: z.array(z.string()),
+  })
   .passthrough()
 const ModernStaff = z
   .object({
@@ -2032,7 +2151,14 @@ const WeeklyStaffDataWeeklyHours = z
     scheduled_hours: z.number().gt(-1000).lt(1000),
     status: z.string(),
     leave_type: z.string().nullish(),
-    has_leave: z.boolean(),
+    has_leave: z.boolean().optional().default(false),
+    billed_hours: z.number().gt(-100000000).lt(100000000),
+    unbilled_hours: z.number().gt(-100000000).lt(100000000),
+    overtime_1_5x_hours: z.number().gt(-100000000).lt(100000000),
+    overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
+    sick_leave_hours: z.number().gt(-100000000).lt(100000000),
+    annual_leave_hours: z.number().gt(-100000000).lt(100000000),
+    other_leave_hours: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklyStaffData = z
@@ -2042,8 +2168,16 @@ const WeeklyStaffData = z
     weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
     total_hours: z.number().gt(-100000000).lt(100000000),
     total_billable_hours: z.number().gt(-100000000).lt(100000000),
+    total_scheduled_hours: z.number().gt(-100000000).lt(100000000),
     billable_percentage: z.number().gt(-1000).lt(1000),
     status: z.string(),
+    total_billed_hours: z.number().gt(-100000000).lt(100000000),
+    total_unbilled_hours: z.number().gt(-100000000).lt(100000000),
+    total_overtime_1_5x_hours: z.number().gt(-100000000).lt(100000000),
+    total_overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
+    total_sick_leave_hours: z.number().gt(-100000000).lt(100000000),
+    total_annual_leave_hours: z.number().gt(-100000000).lt(100000000),
+    total_other_leave_hours: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklySummary = z
@@ -2068,59 +2202,11 @@ const WeeklyTimesheetData = z
     staff_data: z.array(WeeklyStaffData),
     weekly_summary: WeeklySummary,
     job_metrics: JobMetrics,
-    summary_stats: z.object({}).partial().passthrough(),
+    summary_stats: SummaryStats,
     export_mode: z.string(),
     is_current_week: z.boolean(),
-    navigation: z.object({}).partial().passthrough().optional(),
-    weekend_enabled: z.boolean().optional().default(false),
-    week_type: z.string().optional(),
-  })
-  .passthrough()
-const IMSWeeklyStaffDataWeeklyHours = z
-  .object({
-    day: z.string(),
-    hours: z.number().gt(-1000).lt(1000),
-    billable_hours: z.number().gt(-1000).lt(1000),
-    scheduled_hours: z.number().gt(-1000).lt(1000),
-    status: z.string(),
-    leave_type: z.string().nullish(),
-    has_leave: z.boolean().optional().default(false),
-    standard_hours: z.number().gt(-100000000).lt(100000000),
-    time_and_half_hours: z.number().gt(-100000000).lt(100000000),
-    double_time_hours: z.number().gt(-100000000).lt(100000000),
-    unpaid_hours: z.number().gt(-100000000).lt(100000000),
-    overtime: z.number().gt(-100000000).lt(100000000),
-    leave_hours: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const IMSWeeklyStaffData = z
-  .object({
-    staff_id: z.string().uuid(),
-    name: z.string(),
-    weekly_hours: z.array(IMSWeeklyStaffDataWeeklyHours),
-    total_hours: z.number().gt(-100000000).lt(100000000),
-    total_billable_hours: z.number().gt(-100000000).lt(100000000),
-    billable_percentage: z.number().gt(-1000).lt(1000),
-    status: z.string(),
-    total_standard_hours: z.number().gt(-100000000).lt(100000000),
-    total_time_and_half_hours: z.number().gt(-100000000).lt(100000000),
-    total_double_time_hours: z.number().gt(-100000000).lt(100000000),
-    total_overtime: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const IMSWeeklyTimesheetData = z
-  .object({
-    start_date: z.string(),
-    end_date: z.string(),
-    week_days: z.array(z.string()),
-    staff_data: z.array(IMSWeeklyStaffData),
-    weekly_summary: WeeklySummary,
-    job_metrics: JobMetrics,
-    summary_stats: z.object({}).partial().passthrough(),
-    export_mode: z.string(),
-    is_current_week: z.boolean(),
-    navigation: z.object({}).partial().passthrough().optional(),
-    weekend_enabled: z.boolean().optional().default(false),
+    navigation: z.object({}).partial().passthrough().nullish(),
+    weekend_enabled: z.boolean().optional(),
     week_type: z.string().optional(),
   })
   .passthrough()
@@ -2197,16 +2283,14 @@ export const schemas = {
   XeroQuoteCreateRequest,
   ClientDetailResponse,
   ClientErrorResponse,
-  ClientContactResult,
-  ClientContactResponse,
   ClientJobHeader,
   ClientJobsResponse,
   ClientUpdateRequest,
   ClientUpdateResponse,
   PatchedClientUpdateRequest,
   ClientNameOnly,
-  ClientContactCreateRequest,
-  ClientContactCreateResponse,
+  ClientContact,
+  PatchedClientContact,
   ClientCreateRequest,
   ClientSearchResult,
   ClientCreateResponse,
@@ -2246,6 +2330,11 @@ export const schemas = {
   PatchedCostLineCreateUpdate,
   CostLineCreateUpdate,
   CostLineErrorResponse,
+  BrokenFKReference,
+  BrokenJSONReference,
+  BusinessRuleViolation,
+  DataIntegritySummary,
+  DataIntegrityResponse,
   ArchivedJobIssue,
   ComplianceSummary,
   ArchivedJobsComplianceResponse,
@@ -2382,6 +2471,13 @@ export const schemas = {
   DailyTimesheetSummary,
   ModernTimesheetJob,
   JobsListResponse,
+  PayRunDetails,
+  PayRunForWeekResponse,
+  CreatePayRunRequest,
+  CreatePayRunResponse,
+  PayRunSyncResponse,
+  PostWeekToXeroRequest,
+  PostWeekToXeroResponse,
   ModernStaff,
   StaffListResponse,
   WeeklyStaffDataWeeklyHours,
@@ -2389,9 +2485,6 @@ export const schemas = {
   WeeklySummary,
   JobMetrics,
   WeeklyTimesheetData,
-  IMSWeeklyStaffDataWeeklyHours,
-  IMSWeeklyStaffData,
-  IMSWeeklyTimesheetData,
   XeroError,
   PaginatedXeroErrorList,
 }
@@ -2441,6 +2534,14 @@ Returns:
     JSON response with job aging data structure`,
     requestFormat: 'json',
     response: JobAgingResponse,
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/job-movement/',
+    alias: 'accounting_api_reports_job_movement_retrieve',
+    description: `Handle GET request for job movement metrics.`,
+    requestFormat: 'json',
+    response: z.void(),
   },
   {
     method: 'get',
@@ -3406,35 +3507,6 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
   },
   {
     method: 'get',
-    path: '/clients/:client_id/contacts/',
-    alias: 'clients_contacts_retrieve',
-    description: `Retrieve all contacts for a specific client.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'client_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ClientContactResponse,
-    errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
-      {
-        status: 404,
-        schema: ClientErrorResponse,
-      },
-      {
-        status: 500,
-        schema: ClientErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'get',
     path: '/clients/:client_id/jobs/',
     alias: 'clients_jobs_retrieve',
     description: `Retrieve all jobs for a specific client.`,
@@ -3541,40 +3613,163 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
     ],
   },
   {
+    method: 'get',
+    path: '/clients/contacts/',
+    alias: 'clients_contacts_list',
+    description: `ViewSet for ClientContact CRUD operations.
+
+Endpoints:
+- GET    /api/clients/contacts/           - list all contacts
+- POST   /api/clients/contacts/           - create contact
+- GET    /api/clients/contacts/&lt;id&gt;/      - retrieve contact
+- PUT    /api/clients/contacts/&lt;id&gt;/      - full update
+- PATCH  /api/clients/contacts/&lt;id&gt;/      - partial update
+- DELETE /api/clients/contacts/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- client_id: Filter contacts by client UUID`,
+    requestFormat: 'json',
+    response: z.array(ClientContact),
+  },
+  {
     method: 'post',
     path: '/clients/contacts/',
     alias: 'clients_contacts_create',
-    description: `Create a new client contact.
+    description: `ViewSet for ClientContact CRUD operations.
 
-Expected JSON:
-{
-    &quot;client_id&quot;: &quot;uuid-of-client&quot;,
-    &quot;name&quot;: &quot;Contact Name&quot;,
-    &quot;email&quot;: &quot;contact@example.com&quot;,
-    &quot;phone&quot;: &quot;123-456-7890&quot;,
-    &quot;position&quot;: &quot;Job Title&quot;,
-    &quot;is_primary&quot;: false,
-    &quot;notes&quot;: &quot;Additional notes&quot;
-}`,
+Endpoints:
+- GET    /api/clients/contacts/           - list all contacts
+- POST   /api/clients/contacts/           - create contact
+- GET    /api/clients/contacts/&lt;id&gt;/      - retrieve contact
+- PUT    /api/clients/contacts/&lt;id&gt;/      - full update
+- PATCH  /api/clients/contacts/&lt;id&gt;/      - partial update
+- DELETE /api/clients/contacts/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- client_id: Filter contacts by client UUID`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: ClientContactCreateRequest,
+        schema: ClientContact,
       },
     ],
-    response: ClientContactCreateResponse,
-    errors: [
+    response: ClientContact,
+  },
+  {
+    method: 'get',
+    path: '/clients/contacts/:id/',
+    alias: 'clients_contacts_retrieve',
+    description: `ViewSet for ClientContact CRUD operations.
+
+Endpoints:
+- GET    /api/clients/contacts/           - list all contacts
+- POST   /api/clients/contacts/           - create contact
+- GET    /api/clients/contacts/&lt;id&gt;/      - retrieve contact
+- PUT    /api/clients/contacts/&lt;id&gt;/      - full update
+- PATCH  /api/clients/contacts/&lt;id&gt;/      - partial update
+- DELETE /api/clients/contacts/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- client_id: Filter contacts by client UUID`,
+    requestFormat: 'json',
+    parameters: [
       {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
-      {
-        status: 500,
-        schema: ClientErrorResponse,
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
       },
     ],
+    response: ClientContact,
+  },
+  {
+    method: 'put',
+    path: '/clients/contacts/:id/',
+    alias: 'clients_contacts_update',
+    description: `ViewSet for ClientContact CRUD operations.
+
+Endpoints:
+- GET    /api/clients/contacts/           - list all contacts
+- POST   /api/clients/contacts/           - create contact
+- GET    /api/clients/contacts/&lt;id&gt;/      - retrieve contact
+- PUT    /api/clients/contacts/&lt;id&gt;/      - full update
+- PATCH  /api/clients/contacts/&lt;id&gt;/      - partial update
+- DELETE /api/clients/contacts/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- client_id: Filter contacts by client UUID`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ClientContact,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ClientContact,
+  },
+  {
+    method: 'patch',
+    path: '/clients/contacts/:id/',
+    alias: 'clients_contacts_partial_update',
+    description: `ViewSet for ClientContact CRUD operations.
+
+Endpoints:
+- GET    /api/clients/contacts/           - list all contacts
+- POST   /api/clients/contacts/           - create contact
+- GET    /api/clients/contacts/&lt;id&gt;/      - retrieve contact
+- PUT    /api/clients/contacts/&lt;id&gt;/      - full update
+- PATCH  /api/clients/contacts/&lt;id&gt;/      - partial update
+- DELETE /api/clients/contacts/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- client_id: Filter contacts by client UUID`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedClientContact,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ClientContact,
+  },
+  {
+    method: 'delete',
+    path: '/clients/contacts/:id/',
+    alias: 'clients_contacts_destroy',
+    description: `ViewSet for ClientContact CRUD operations.
+
+Endpoints:
+- GET    /api/clients/contacts/           - list all contacts
+- POST   /api/clients/contacts/           - create contact
+- GET    /api/clients/contacts/&lt;id&gt;/      - retrieve contact
+- PUT    /api/clients/contacts/&lt;id&gt;/      - full update
+- PATCH  /api/clients/contacts/&lt;id&gt;/      - partial update
+- DELETE /api/clients/contacts/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- client_id: Filter contacts by client UUID`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
   },
   {
     method: 'post',
@@ -4126,6 +4321,20 @@ Dynamically infers the stock adjustment based on quantity change`,
       {
         status: 500,
         schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/job/rest/data-integrity/scan/',
+    alias: 'scan_data_integrity',
+    description: `Check all foreign key relationships, JSON references, and business rules for violations.`,
+    requestFormat: 'json',
+    response: DataIntegrityResponse,
+    errors: [
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
       },
     ],
   },
@@ -5591,6 +5800,106 @@ Returns:
   },
   {
     method: 'get',
+    path: '/timesheets/api/payroll/pay-runs/',
+    alias: 'timesheets_api_payroll_pay_runs_retrieve',
+    description: `Return pay run data for the requested week if it exists.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'week_start_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: PayRunForWeekResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/timesheets/api/payroll/pay-runs/create',
+    alias: 'timesheets_api_payroll_pay_runs_create_create',
+    description: `Create a new pay run for the specified week.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ week_start_date: z.string() }).passthrough(),
+      },
+    ],
+    response: CreatePayRunResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 409,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/timesheets/api/payroll/pay-runs/refresh',
+    alias: 'timesheets_api_payroll_pay_runs_refresh_create',
+    description: `Synchronize local pay run cache with Xero.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PayRunSyncResponse,
+      },
+    ],
+    response: PayRunSyncResponse,
+    errors: [
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/timesheets/api/payroll/post-staff-week/',
+    alias: 'timesheets_api_payroll_post_staff_week_create',
+    description: `Post a week&#x27;s timesheet to Xero Payroll.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PostWeekToXeroRequest,
+      },
+    ],
+    response: PostWeekToXeroResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/timesheets/api/staff/',
     alias: 'timesheets_api_staff_retrieve',
     description: `Get filtered list of staff members for a specific date.`,
@@ -5635,7 +5944,7 @@ Returns:
     method: 'get',
     path: '/timesheets/api/weekly/',
     alias: 'timesheets_api_weekly_retrieve',
-    description: `Return weekly timesheet data (5 or 7 days based on feature flag).`,
+    description: `Return weekly timesheet data with payroll fields (5/7 days).`,
     requestFormat: 'json',
     parameters: [
       {
@@ -5680,31 +5989,6 @@ Expected payload:
       },
     ],
     response: z.object({}).partial().passthrough(),
-    errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
-      {
-        status: 500,
-        schema: ClientErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'get',
-    path: '/timesheets/api/weekly/ims/',
-    alias: 'timesheets_api_weekly_ims_retrieve',
-    description: `Return IMS-formatted weekly timesheet data.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'start_date',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-    ],
-    response: IMSWeeklyTimesheetData,
     errors: [
       {
         status: 400,

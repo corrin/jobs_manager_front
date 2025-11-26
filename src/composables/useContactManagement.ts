@@ -33,6 +33,15 @@ export function useContactManagement() {
     is_primary: false,
   })
 
+  // Edit mode state
+  const editingContact = ref<ClientContact | null>(null)
+  const isEditing = computed(() => editingContact.value !== null)
+
+  // Filter out inactive contacts for display
+  const activeContacts = computed(() =>
+    contacts.value.filter((contact) => contact.is_active !== false),
+  )
+
   const hasContacts = computed(() => contacts.value.length > 0)
 
   const displayValue = {
@@ -91,6 +100,7 @@ export function useContactManagement() {
    */
   const closeModal = () => {
     isModalOpen.value = false
+    editingContact.value = null
     resetNewContactForm()
   }
 
@@ -108,12 +118,12 @@ export function useContactManagement() {
 
     isLoading.value = true
     try {
-      const response = await api.clients_contacts_retrieve({
-        params: { client_id: clientId },
+      const response = await api.clients_contacts_list({
+        queries: { client_id: clientId },
       })
 
-      if (response && response.results && Array.isArray(response.results)) {
-        contacts.value = response.results
+      if (response && Array.isArray(response)) {
+        contacts.value = response
       } else {
         contacts.value = []
       }
@@ -248,6 +258,135 @@ export function useContactManagement() {
   }
 
   /**
+   * Starts editing an existing contact
+   * Populates the form with the contact's current data
+   *
+   * @param contact - The contact to edit
+   */
+  const startEditContact = (contact: ClientContact) => {
+    editingContact.value = contact
+    newContactForm.value = {
+      name: contact.name,
+      position: contact.position || '',
+      email: contact.email || '',
+      phone: contact.phone || '',
+      notes: contact.notes || '',
+      is_primary: contact.is_primary || false,
+    }
+  }
+
+  /**
+   * Cancels the current edit operation and resets the form
+   */
+  const cancelEdit = () => {
+    editingContact.value = null
+    resetNewContactForm()
+  }
+
+  /**
+   * Updates an existing contact with the current form data
+   *
+   * @returns Promise<boolean> - True if update was successful, false otherwise
+   */
+  const updateContact = async (): Promise<boolean> => {
+    if (!editingContact.value?.id) {
+      debugLog('Cannot update contact without ID')
+      return false
+    }
+
+    if (!newContactForm.value.name.trim()) {
+      debugLog('Contact name is required')
+      return false
+    }
+
+    isLoading.value = true
+
+    try {
+      const contactData = {
+        name: newContactForm.value.name.trim(),
+        is_primary: newContactForm.value.is_primary,
+        position: newContactForm.value.position?.trim() || null,
+        email: newContactForm.value.email?.trim() || null,
+        phone: newContactForm.value.phone?.trim() || null,
+        notes: newContactForm.value.notes?.trim() || null,
+      }
+
+      debugLog('Updating contact:', editingContact.value.id, contactData)
+
+      await api.clients_contacts_partial_update(contactData, {
+        params: { id: editingContact.value.id },
+      })
+
+      debugLog('Contact updated successfully')
+
+      // Reload contacts to get updated list
+      await loadContacts(currentClientId.value)
+
+      // If the updated contact was selected, update the selection
+      if (selectedContact.value?.id === editingContact.value.id) {
+        const updated = contacts.value.find((c) => c.id === editingContact.value!.id)
+        if (updated) {
+          selectedContact.value = updated
+        }
+      }
+
+      cancelEdit()
+      closeModal()
+      return true
+    } catch (error) {
+      debugLog('Error updating contact:', error)
+      return false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
+   * Soft deletes a contact (sets is_active=false)
+   *
+   * @param contactId - The ID of the contact to delete
+   * @returns Promise<boolean> - True if delete was successful, false otherwise
+   */
+  const deleteContact = async (contactId: string): Promise<boolean> => {
+    if (!contactId) {
+      debugLog('Cannot delete contact without ID')
+      return false
+    }
+
+    isLoading.value = true
+
+    try {
+      debugLog('Deleting contact:', contactId)
+
+      await api.clients_contacts_destroy(undefined, {
+        params: { id: contactId },
+      })
+
+      debugLog('Contact deleted successfully')
+
+      // Reload contacts to get updated list (inactive contacts filtered out)
+      await loadContacts(currentClientId.value)
+
+      // Clear selection if deleted contact was selected
+      if (selectedContact.value?.id === contactId) {
+        selectedContact.value = null
+      }
+
+      // Clear editing state if we were editing the deleted contact
+      if (editingContact.value?.id === contactId) {
+        cancelEdit()
+      }
+
+      return true
+    } catch (error) {
+      debugLog('Error deleting contact:', error)
+      return false
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  /**
    * Saves the contact based on current form state
    *
    * If new contact data is provided, creates a new contact.
@@ -309,6 +448,11 @@ export function useContactManagement() {
     currentClientName,
     newContactForm,
 
+    // Edit mode state
+    editingContact,
+    isEditing,
+    activeContacts,
+
     hasContacts,
     displayValue,
 
@@ -323,5 +467,11 @@ export function useContactManagement() {
     updateContactsList,
     findPrimaryContact,
     resetNewContactForm,
+
+    // Edit/delete functions
+    startEditContact,
+    cancelEdit,
+    updateContact,
+    deleteContact,
   }
 }

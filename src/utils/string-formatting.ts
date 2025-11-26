@@ -93,3 +93,54 @@ export function formatCurrency(value: number | null | undefined): string {
     currency: 'NZD',
   }).format(value)
 }
+
+/**
+ * Escapes a cell value for CSV format
+ * Wraps in quotes and escapes internal quotes
+ */
+function escapeCsvCell(cell: unknown): string {
+  const str = cell === null || cell === undefined ? '' : String(cell)
+  // Escape quotes by doubling them, wrap in quotes
+  return `"${str.replace(/"/g, '""')}"`
+}
+
+/**
+ * Converts rows of data to CSV string format
+ * @param headers - Array of column headers
+ * @param rows - Array of row data (each row is an array of cell values)
+ * @returns CSV formatted string
+ */
+export function toCsvString(headers: string[], rows: unknown[][]): string {
+  const headerRow = headers.map(escapeCsvCell).join(',')
+  const dataRows = rows.map((row) => row.map(escapeCsvCell).join(','))
+  return [headerRow, ...dataRows].join('\n')
+}
+
+/**
+ * Triggers a browser download of CSV content
+ * @param csvContent - The CSV string content
+ * @param filename - The filename (without .csv extension)
+ */
+export function downloadCsv(csvContent: string, filename: string): void {
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.setAttribute('href', url)
+  link.setAttribute('download', `${filename}.csv`)
+  link.style.visibility = 'hidden'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+/**
+ * Exports data as a CSV file download
+ * @param headers - Array of column headers
+ * @param rows - Array of row data
+ * @param filename - The filename (without .csv extension)
+ */
+export function exportToCsv(headers: string[], rows: unknown[][], filename: string): void {
+  const csvContent = toCsvString(headers, rows)
+  downloadCsv(csvContent, filename)
+}

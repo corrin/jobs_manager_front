@@ -305,6 +305,7 @@ import {
 } from 'lucide-vue-next'
 import { jobAgingReportService } from '@/services/job-aging-report.service'
 import type { JobAgingData, JobAgingFilters, JobAgingTableColumn } from '@/types/job-aging.types'
+import { formatCurrency } from '@/utils/string-formatting'
 
 // Reactive state
 const jobs = ref<JobAgingData[]>([])
@@ -450,16 +451,7 @@ const sortBy = (column: string) => {
 }
 
 const exportToCsv = () => {
-  jobAgingReportService.exportToCsv(sortedAndFilteredJobs.value)
-}
-
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-NZ', {
-    style: 'currency',
-    currency: 'NZD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
+  jobAgingReportService.exportToFile(sortedAndFilteredJobs.value)
 }
 
 const getStatusBadgeClass = (status: string): string => {
