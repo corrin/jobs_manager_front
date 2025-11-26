@@ -448,9 +448,9 @@
                       <div class="flex justify-between items-center pt-2 border-t border-gray-100">
                         <div class="text-xs">
                           <span class="text-gray-600">Bill:</span>
-                          <span class="font-semibold ml-1"
-                            >${{ jobData.totalBill.toFixed(2) }}</span
-                          >
+                          <span class="font-semibold ml-1">{{
+                            formatCurrency(jobData.totalBill)
+                          }}</span>
                         </div>
                         <ExternalLink class="h-3 w-3 text-gray-400" />
                       </div>
@@ -489,7 +489,7 @@
                           <div class="min-w-0">
                             <p class="text-sm text-gray-600">Total Bill</p>
                             <p class="text-lg font-semibold">
-                              ${{ consolidatedSummary.totalBill.toFixed(2) }}
+                              {{ formatCurrency(consolidatedSummary.totalBill) }}
                             </p>
                           </div>
                         </div>
@@ -569,6 +569,7 @@ import {
 import { useTimesheetAutosave } from '@/composables/useTimesheetAutosave'
 import { useTimesheetSummary } from '@/composables/useTimesheetSummary'
 import { toast } from 'vue-sonner'
+import { formatCurrency } from '@/utils/string-formatting'
 
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
 import { useTimesheetStore } from '@/stores/timesheet'

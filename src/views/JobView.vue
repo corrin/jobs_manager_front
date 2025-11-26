@@ -330,6 +330,7 @@ import { useJobFinancials } from '../composables/useJobFinancials'
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { api } from '../api/client'
 import { ArrowLeft, Printer, Download } from 'lucide-vue-next'
+import { formatCurrency } from '@/utils/string-formatting'
 import { JOB_STATUS_CHOICES } from '../constants/job-status'
 import { jobService } from '../services/job.service'
 import { toast } from 'vue-sonner'
@@ -458,7 +459,7 @@ const handleRejectedChange = async () => {
       if (financials.toBeInvoiced > 0) {
         // Show warning but allow proceeding
         const confirmed = confirm(
-          `Warning: Job has $${financials.toBeInvoiced.toFixed(2)} still to be invoiced. Are you sure you want to reject?`,
+          `Warning: Job has ${formatCurrency(financials.toBeInvoiced)} still to be invoiced. Are you sure you want to reject?`,
         )
 
         if (!confirmed) {

@@ -205,10 +205,10 @@
                     <td class="px-3 py-2 text-gray-900">{{ line.desc }}</td>
                     <td class="px-3 py-2 text-right text-gray-900">{{ line.quantity }}</td>
                     <td class="px-3 py-2 text-right text-gray-900">
-                      ${{ line.unit_cost.toFixed(2) }}
+                      {{ formatCurrency(line.unit_cost) }}
                     </td>
                     <td class="px-3 py-2 text-right font-medium text-gray-900">
-                      ${{ line.total_cost.toFixed(2) }}
+                      {{ formatCurrency(line.total_cost) }}
                     </td>
                   </tr>
                 </tbody>
@@ -325,6 +325,7 @@ import { ref, computed } from 'vue'
 import { useQuoteImport } from '@/composables/useQuoteImport'
 import { z } from 'zod'
 import { schemas } from '@/api/generated/schemas'
+import { formatCurrency } from '@/utils/string-formatting'
 
 type ApplyQuoteResponse = z.infer<typeof schemas.ApplyQuoteResponse>
 
