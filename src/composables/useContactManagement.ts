@@ -147,7 +147,18 @@ export function useContactManagement() {
   }
 
   /**
+   * Sets the selected contact without closing the modal
+   * Use this for programmatic/auto-selection (e.g., selecting primary contact on load)
+   *
+   * @param contact - The contact to select
+   */
+  const setSelectedContact = (contact: ClientContact) => {
+    selectedContact.value = contact
+  }
+
+  /**
    * Selects an existing contact and closes the modal
+   * Use this for explicit user selection from the modal UI
    *
    * @param contact - The contact to select
    */
@@ -460,6 +471,7 @@ export function useContactManagement() {
     closeModal,
     loadContacts,
     loadContactsOnly,
+    setSelectedContact,
     selectExistingContact,
     createNewContact,
     saveContact,

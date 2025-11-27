@@ -50,9 +50,9 @@ test.describe.serial('create job', () => {
       const jobName = `Test Job ${tc.name} ${timestamp}`
 
       await test.step('navigate to create job page', async () => {
-        await page.click('text=Create Job')
+        await autoId(page, 'nav-create-job').click()
         await page.waitForURL('**/jobs/create')
-        await expect(page.locator('h1')).toContainText('Create New Job')
+        await expect(autoId(page, 'page-title')).toContainText('Create New Job')
       })
 
       await test.step('search and select client', async () => {
@@ -72,7 +72,7 @@ test.describe.serial('create job', () => {
       })
 
       await test.step('enter job name', async () => {
-        await page.fill('input[placeholder="Enter job name"]', jobName)
+        await autoId(page, 'job-name-input').fill(jobName)
       })
 
       await test.step('select or create contact person', async () => {
@@ -87,9 +87,22 @@ test.describe.serial('create job', () => {
         if (tc.createContact && tc.contactToCreate) {
           console.log(`Creating new contact: ${tc.contactToCreate.name}`)
 
-          // Wait for the form to be ready (button should show "Create Contact" not "Saving...")
+          // Debug: capture button state
           const submitButton = autoId(page, 'contact-form-submit')
-          await expect(submitButton).toHaveText('Create Contact', { timeout: 30000 })
+          const buttonText = await submitButton.textContent()
+          const buttonDisabled = await submitButton.isDisabled()
+          console.log(`Button text: "${buttonText}", disabled: ${buttonDisabled}`)
+
+          // Wait for form to be ready - button should show "Create Contact" not "Saving..."
+          try {
+            await expect(submitButton).toHaveText('Create Contact', { timeout: 10000 })
+          } catch (e) {
+            // Capture state on failure
+            const finalText = await submitButton.textContent()
+            console.log(`TIMEOUT - button still shows: "${finalText}"`)
+            await page.screenshot({ path: `test-results/debug-button-${Date.now()}.png` })
+            throw e
+          }
 
           // Fill the Create New Contact form
           await autoId(page, 'contact-form-name').fill(tc.contactToCreate.name)
@@ -116,18 +129,28 @@ test.describe.serial('create job', () => {
       })
 
       await test.step('set ballpark estimates', async () => {
-        await page.fill('#estimated_materials', tc.ballparkMaterials)
-        await page.fill('#estimated_time', tc.ballparkHours)
+        await autoId(page, 'estimated-materials-input').fill(tc.ballparkMaterials)
+        await autoId(page, 'estimated-time-input').fill(tc.ballparkHours)
       })
 
       await test.step('select pricing method', async () => {
-        await page.selectOption('#pricing_methodology', tc.pricingValue)
+        await autoId(page, 'pricing-method-select').selectOption(tc.pricingValue)
       })
 
       await test.step('submit and verify job created', async () => {
         const startTime = Date.now()
         console.log(`[${new Date().toISOString()}] Submitting job...`)
-        await page.click('button:has-text("Create Job")')
+
+        // Dismiss any toast notifications that might block the button
+        const toastCloseButton = page.locator(
+          '[data-sonner-toast] button[aria-label="Close toast"]',
+        )
+        if (await toastCloseButton.count()) {
+          await toastCloseButton.first().click()
+          await page.waitForTimeout(200)
+        }
+
+        await autoId(page, 'create-job-submit').click()
         console.log(
           `[${new Date().toISOString()}] Clicked Create Job button (${Date.now() - startTime}ms)`,
         )

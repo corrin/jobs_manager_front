@@ -111,6 +111,7 @@ const {
   openModal,
   closeModal,
   loadContactsOnly,
+  setSelectedContact,
   selectExistingContact: selectFromComposable,
   saveContact,
   clearSelection: clearFromComposable,
@@ -249,11 +250,11 @@ const selectPrimaryContact = async () => {
     await loadContactsOnly(props.clientId)
   }
 
-  // Find and select the primary contact
+  // Find and select the primary contact (without closing modal)
   const primaryContact = findPrimaryContact()
   if (primaryContact) {
     debugLog('Found primary contact:', primaryContact)
-    selectFromComposable(primaryContact)
+    setSelectedContact(primaryContact)
   } else {
     debugLog('No primary contact found', {
       totalContacts: contacts.value.length,
@@ -324,7 +325,8 @@ watch(
 
       suppressEmit.value = true
       if (choose) {
-        selectFromComposable(choose)
+        // Use setSelectedContact to avoid closing modal during auto-selection
+        setSelectedContact(choose)
       } else {
         clearFromComposable()
       }
