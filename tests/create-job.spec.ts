@@ -87,9 +87,22 @@ test.describe.serial('create job', () => {
         if (tc.createContact && tc.contactToCreate) {
           console.log(`Creating new contact: ${tc.contactToCreate.name}`)
 
-          // Wait for the form to be ready (button should show "Create Contact" not "Saving...")
+          // Debug: capture button state
           const submitButton = autoId(page, 'contact-form-submit')
-          await expect(submitButton).toHaveText('Create Contact', { timeout: 30000 })
+          const buttonText = await submitButton.textContent()
+          const buttonDisabled = await submitButton.isDisabled()
+          console.log(`Button text: "${buttonText}", disabled: ${buttonDisabled}`)
+
+          // Wait for form to be ready - button should show "Create Contact" not "Saving..."
+          try {
+            await expect(submitButton).toHaveText('Create Contact', { timeout: 10000 })
+          } catch (e) {
+            // Capture state on failure
+            const finalText = await submitButton.textContent()
+            console.log(`TIMEOUT - button still shows: "${finalText}"`)
+            await page.screenshot({ path: `test-results/debug-button-${Date.now()}.png` })
+            throw e
+          }
 
           // Fill the Create New Contact form
           await autoId(page, 'contact-form-name').fill(tc.contactToCreate.name)
@@ -127,6 +140,16 @@ test.describe.serial('create job', () => {
       await test.step('submit and verify job created', async () => {
         const startTime = Date.now()
         console.log(`[${new Date().toISOString()}] Submitting job...`)
+
+        // Dismiss any toast notifications that might block the button
+        const toastCloseButton = page.locator(
+          '[data-sonner-toast] button[aria-label="Close toast"]',
+        )
+        if (await toastCloseButton.isVisible({ timeout: 500 }).catch(() => false)) {
+          await toastCloseButton.click()
+          await page.waitForTimeout(200)
+        }
+
         await page.click('button:has-text("Create Job")')
         console.log(
           `[${new Date().toISOString()}] Clicked Create Job button (${Date.now() - startTime}ms)`,
