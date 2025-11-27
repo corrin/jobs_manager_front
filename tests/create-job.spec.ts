@@ -145,8 +145,8 @@ test.describe.serial('create job', () => {
         const toastCloseButton = page.locator(
           '[data-sonner-toast] button[aria-label="Close toast"]',
         )
-        if (await toastCloseButton.isVisible({ timeout: 500 }).catch(() => false)) {
-          await toastCloseButton.click()
+        if (await toastCloseButton.count()) {
+          await toastCloseButton.first().click()
           await page.waitForTimeout(200)
         }
 
