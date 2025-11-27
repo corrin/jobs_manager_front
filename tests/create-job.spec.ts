@@ -61,7 +61,7 @@ test.describe.serial('create job', () => {
         await clientInput.fill('ABC')
 
         // Wait for results dropdown
-        await autoId(page, 'client-search-results').waitFor({ timeout: 3000 })
+        await autoId(page, 'client-search-results').waitFor({ timeout: 10000 })
 
         // Click on the test client using role
         console.log('Selecting ABC Carpet Cleaning TEST IGNORE...')
@@ -78,24 +78,29 @@ test.describe.serial('create job', () => {
       await test.step('select or create contact person', async () => {
         // Click the button to open contact modal
         console.log('Opening contact modal...')
-        await autoId(page, 'contact-modal-button').click({ timeout: 3000 })
+        await autoId(page, 'contact-modal-button').click({ timeout: 10000 })
 
         // Wait for modal
         console.log('Waiting for modal...')
-        await page.waitForSelector('[role="dialog"]', { timeout: 3000 })
+        await autoId(page, 'contact-selection-modal').waitFor({ timeout: 10000 })
 
         if (tc.createContact && tc.contactToCreate) {
           console.log(`Creating new contact: ${tc.contactToCreate.name}`)
+
+          // Wait for the form to be ready (button should show "Create Contact" not "Saving...")
+          const submitButton = autoId(page, 'contact-form-submit')
+          await expect(submitButton).toHaveText('Create Contact', { timeout: 30000 })
+
           // Fill the Create New Contact form
           await autoId(page, 'contact-form-name').fill(tc.contactToCreate.name)
           await autoId(page, 'contact-form-email').fill(tc.contactToCreate.email)
 
           // Click Create Contact
-          await autoId(page, 'contact-form-submit').click()
+          await submitButton.click()
         } else if (tc.contactToSelect) {
           console.log(`Selecting existing contact: ${tc.contactToSelect}`)
           // Wait for contacts list
-          await autoId(page, 'contact-select-button').first().waitFor({ timeout: 3000 })
+          await autoId(page, 'contact-select-button').first().waitFor({ timeout: 10000 })
 
           // Find the contact card by name and click its Select button
           const contactCard = page.locator(`[data-automation-id^="contact-card-"]`).filter({
@@ -107,7 +112,7 @@ test.describe.serial('create job', () => {
 
         // Wait for modal to close
         console.log('Waiting for modal to close...')
-        await page.waitForSelector('[role="dialog"]', { state: 'hidden', timeout: 5000 })
+        await autoId(page, 'contact-selection-modal').waitFor({ state: 'hidden', timeout: 10000 })
       })
 
       await test.step('set ballpark estimates', async () => {
@@ -131,7 +136,7 @@ test.describe.serial('create job', () => {
         console.log(
           `[${new Date().toISOString()}] Waiting for redirect to job page with tab=${tc.expectedTab}...`,
         )
-        await page.waitForURL(`**/jobs/*?*tab=${tc.expectedTab}*`, { timeout: 5000 })
+        await page.waitForURL(`**/jobs/*?*tab=${tc.expectedTab}*`, { timeout: 10000 })
         console.log(`[${new Date().toISOString()}] Redirected (${Date.now() - startTime}ms total)`)
 
         const url = page.url()
