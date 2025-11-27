@@ -14,6 +14,7 @@
           type="text"
           :placeholder="placeholder"
           readonly
+          data-automation-id="contact-display-input"
           class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           @click="handleOpenModal"
         />
@@ -21,6 +22,7 @@
 
       <button
         type="button"
+        data-automation-id="contact-modal-button"
         class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
         @click="handleOpenModal"
         :disabled="!clientId"
@@ -31,6 +33,7 @@
       <button
         v-if="selectedContact"
         type="button"
+        data-automation-id="contact-clear-button"
         class="px-2 py-2 text-gray-400 hover:text-red-600 transition-colors"
         @click="clearSelection"
         title="Clear selection"

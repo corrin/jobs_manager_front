@@ -14,6 +14,7 @@
           type="text"
           :placeholder="placeholder"
           :required="required"
+          data-automation-id="client-search-input"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           @input="handleInput"
           @focus="handleFocus"
@@ -31,11 +32,14 @@
 
         <div
           v-if="showSuggestions && (suggestions.length > 0 || searchQuery.length >= 3)"
+          data-automation-id="client-search-results"
           class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
         >
           <div
             v-for="client in suggestions"
             :key="client.id"
+            role="option"
+            :data-automation-id="`client-option-${client.id}`"
             class="px-4 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
             @mousedown.prevent="selectClient(client)"
           >

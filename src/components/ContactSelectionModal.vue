@@ -74,6 +74,7 @@
                   <div
                     v-for="contact in contacts || []"
                     :key="contact?.id || ''"
+                    :data-automation-id="`contact-card-${contact?.id}`"
                     class="group relative bg-white border border-gray-200 rounded-lg p-2 cursor-pointer transition-all duration-200 hover:shadow-md hover:border-blue-300 hover:-translate-y-0.5"
                     :class="{
                       'ring-2 ring-blue-500 bg-blue-50 border-blue-500 shadow-md mt-1':
@@ -146,6 +147,7 @@
                     >
                       <button
                         class="px-2.5 py-1 text-xs font-medium bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700 transition-colors"
+                        data-automation-id="contact-select-button"
                         @click.stop="selectContact(contact)"
                         title="Select this contact"
                       >
@@ -207,6 +209,7 @@
               <input
                 v-model="localContactForm.name"
                 type="text"
+                data-automation-id="contact-form-name"
                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 placeholder="Contact name"
               />
@@ -237,6 +240,7 @@
               <input
                 v-model="localContactForm.email"
                 type="email"
+                data-automation-id="contact-form-email"
                 class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                 placeholder="Email address"
               />
@@ -282,6 +286,7 @@
         </button>
         <button
           type="button"
+          data-automation-id="contact-form-submit"
           class="ml-3 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           @click="handleSave"
           :disabled="isLoading || !localContactForm.name.trim()"

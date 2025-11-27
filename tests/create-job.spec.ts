@@ -1,4 +1,8 @@
 import { test, expect } from './fixtures/auth'
+import type { Page } from '@playwright/test'
+
+// Helper to find elements by data-automation-id
+const autoId = (page: Page, id: string) => page.locator(`[data-automation-id="${id}"]`)
 
 /**
  * Sequential test cases for job creation.
@@ -53,20 +57,18 @@ test.describe.serial('create job', () => {
 
       await test.step('search and select client', async () => {
         console.log('Searching for client ABC...')
-        const clientInput = page.locator('input[placeholder="Search for a client..."]')
+        const clientInput = autoId(page, 'client-search-input')
         await clientInput.fill('ABC')
 
-        // Wait for autocomplete dropdown
-        await page.waitForSelector('.z-50', { timeout: 3000 })
+        // Wait for results dropdown
+        await autoId(page, 'client-search-results').waitFor({ timeout: 3000 })
 
-        // Click on the test client
+        // Click on the test client using role
         console.log('Selecting ABC Carpet Cleaning TEST IGNORE...')
-        await page.click('text=ABC Carpet Cleaning TEST IGNORE')
+        await page.getByRole('option', { name: /ABC Carpet Cleaning TEST IGNORE/ }).click()
 
         // Verify selection
-        await expect(page.locator('input[placeholder="Search for a client..."]')).toHaveValue(
-          'ABC Carpet Cleaning TEST IGNORE',
-        )
+        await expect(clientInput).toHaveValue('ABC Carpet Cleaning TEST IGNORE')
       })
 
       await test.step('enter job name', async () => {
@@ -74,10 +76,9 @@ test.describe.serial('create job', () => {
       })
 
       await test.step('select or create contact person', async () => {
-        // Click the blue button next to contact input to open modal
-        const blueButton = page.locator('button.bg-blue-600').filter({ has: page.locator('svg') })
-        console.log('Looking for blue button with svg...')
-        await blueButton.click({ timeout: 3000 })
+        // Click the button to open contact modal
+        console.log('Opening contact modal...')
+        await autoId(page, 'contact-modal-button').click({ timeout: 3000 })
 
         // Wait for modal
         console.log('Waiting for modal...')
@@ -86,31 +87,22 @@ test.describe.serial('create job', () => {
         if (tc.createContact && tc.contactToCreate) {
           console.log(`Creating new contact: ${tc.contactToCreate.name}`)
           // Fill the Create New Contact form
-          await page.fill(
-            '[role="dialog"] input[placeholder="Contact name"]',
-            tc.contactToCreate.name,
-          )
-          await page.fill(
-            '[role="dialog"] input[placeholder="Email address"]',
-            tc.contactToCreate.email,
-          )
+          await autoId(page, 'contact-form-name').fill(tc.contactToCreate.name)
+          await autoId(page, 'contact-form-email').fill(tc.contactToCreate.email)
 
           // Click Create Contact
-          await page.click('[role="dialog"] button:has-text("Create Contact")')
+          await autoId(page, 'contact-form-submit').click()
         } else if (tc.contactToSelect) {
           console.log(`Selecting existing contact: ${tc.contactToSelect}`)
           // Wait for contacts list
-          await page.waitForSelector('[role="dialog"] button:has-text("Select")', { timeout: 3000 })
+          await autoId(page, 'contact-select-button').first().waitFor({ timeout: 3000 })
 
-          // Hover over contact card to reveal Select button, then click
-          const contactCard = page
-            .locator('[role="dialog"]')
-            .locator(`text=${tc.contactToSelect}`)
-            .first()
+          // Find the contact card by name and click its Select button
+          const contactCard = page.locator(`[data-automation-id^="contact-card-"]`).filter({
+            hasText: tc.contactToSelect,
+          })
           await contactCard.hover()
-          await page.click(
-            `[role="dialog"] button:has-text("Select"):near(:text("${tc.contactToSelect}"))`,
-          )
+          await contactCard.locator('[data-automation-id="contact-select-button"]').click()
         }
 
         // Wait for modal to close
