@@ -50,9 +50,9 @@ test.describe.serial('create job', () => {
       const jobName = `Test Job ${tc.name} ${timestamp}`
 
       await test.step('navigate to create job page', async () => {
-        await page.click('text=Create Job')
+        await autoId(page, 'nav-create-job').click()
         await page.waitForURL('**/jobs/create')
-        await expect(page.locator('h1')).toContainText('Create New Job')
+        await expect(autoId(page, 'page-title')).toContainText('Create New Job')
       })
 
       await test.step('search and select client', async () => {
@@ -72,7 +72,7 @@ test.describe.serial('create job', () => {
       })
 
       await test.step('enter job name', async () => {
-        await page.fill('input[placeholder="Enter job name"]', jobName)
+        await autoId(page, 'job-name-input').fill(jobName)
       })
 
       await test.step('select or create contact person', async () => {
@@ -129,12 +129,12 @@ test.describe.serial('create job', () => {
       })
 
       await test.step('set ballpark estimates', async () => {
-        await page.fill('#estimated_materials', tc.ballparkMaterials)
-        await page.fill('#estimated_time', tc.ballparkHours)
+        await autoId(page, 'estimated-materials-input').fill(tc.ballparkMaterials)
+        await autoId(page, 'estimated-time-input').fill(tc.ballparkHours)
       })
 
       await test.step('select pricing method', async () => {
-        await page.selectOption('#pricing_methodology', tc.pricingValue)
+        await autoId(page, 'pricing-method-select').selectOption(tc.pricingValue)
       })
 
       await test.step('submit and verify job created', async () => {
@@ -150,7 +150,7 @@ test.describe.serial('create job', () => {
           await page.waitForTimeout(200)
         }
 
-        await page.click('button:has-text("Create Job")')
+        await autoId(page, 'create-job-submit').click()
         console.log(
           `[${new Date().toISOString()}] Clicked Create Job button (${Date.now() - startTime}ms)`,
         )
