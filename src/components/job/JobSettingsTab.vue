@@ -48,7 +48,8 @@
                 v-model="localJobData.name"
                 type="text"
                 data-automation-id="settings-job-name"
-                @blur="handleBlurFlush"
+                @input="handleFieldInput('name', ($event.target as HTMLInputElement).value)"
+                @blur="handleFieldBlur"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Enter job name"
               />
@@ -492,7 +493,9 @@ const handleFieldInput = (field: string, value: string) => {
   }, TYPING_TIMEOUT_MS)
 
   // Type-safe field assignment
-  if (field === 'description') {
+  if (field === 'name') {
+    localJobData.value.name = newValue
+  } else if (field === 'description') {
     localJobData.value.description = newValue
   } else if (field === 'delivery_date') {
     localJobData.value.delivery_date = newValue

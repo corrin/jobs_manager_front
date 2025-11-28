@@ -244,12 +244,6 @@
             </button>
             <button
               class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-gray-100 text-gray-700 border border-gray-300 text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-              @click="downloadJobSheet"
-            >
-              <Download class="w-4 h-4 mr-1" /> Download Sheet
-            </button>
-            <button
-              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-gray-100 text-gray-700 border border-gray-300 text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
               @click="printDeliveryDocket"
             >
               <Printer class="w-4 h-4 mr-1" /> Print Delivery Docket
@@ -329,7 +323,7 @@ import { useJobHeaderAutosave } from '../composables/useJobHeaderAutosave'
 import { useJobFinancials } from '../composables/useJobFinancials'
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { api } from '../api/client'
-import { ArrowLeft, Printer, Download } from 'lucide-vue-next'
+import { ArrowLeft, Printer } from 'lucide-vue-next'
 import { formatCurrency } from '@/utils/string-formatting'
 import { JOB_STATUS_CHOICES } from '../constants/job-status'
 import { jobService } from '../services/job.service'
@@ -605,28 +599,6 @@ async function printJob() {
   } catch (error) {
     toast.error('Error generating PDF for printing')
     debugLog('Error printing job:', error)
-  }
-}
-
-async function downloadJobSheet() {
-  if (!jobDataWithPaid.value?.id) {
-    toast.error('Job ID not available')
-    return
-  }
-  try {
-    const blob = await jobService.getWorkshopPdf(jobDataWithPaid.value.id)
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `job_${jobDataWithPaid.value.job_number}_sheet.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    toast.success('Job sheet download started')
-  } catch (error) {
-    toast.error('Error generating PDF for download')
-    debugLog('Error downloading job sheet:', error)
   }
 }
 
