@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures/auth'
+import { getCompanyDefaults } from './fixtures/api'
 import type { Page } from '@playwright/test'
 
 // Helper to find elements by data-automation-id
@@ -186,7 +187,9 @@ test.describe.serial('edit job', () => {
 
     await test.step('change the job name', async () => {
       const jobNameInput = autoId(page, 'settings-job-name')
-      await jobNameInput.fill(newJobName)
+      // Use clear + pressSequentially to ensure @input events fire (fill() doesn't always trigger them)
+      await jobNameInput.clear()
+      await jobNameInput.pressSequentially(newJobName, { delay: 10 })
       await jobNameInput.blur() // Trigger autosave
     })
 
@@ -262,16 +265,20 @@ test.describe.serial('edit job', () => {
     })
 
     await test.step('verify contact was updated', async () => {
-      // The contact display input should show the new contact name
       const contactDisplay = autoId(page, 'contact-display-input')
-      const contactValue = await contactDisplay.inputValue()
-      expect(contactValue).toContain('New Contact')
+      await expect(contactDisplay).toHaveValue(/New Contact/, { timeout: 10000 })
     })
   })
 
   test('change client', async ({ authenticatedPage: page }) => {
     await page.goto(createdJobUrl)
     await page.waitForLoadState('networkidle')
+
+    // Get the shop client name from company defaults
+    const companyDefaults = await getCompanyDefaults(page)
+    const shopClientName = companyDefaults.shop_client_name as string
+    expect(shopClientName).toBeTruthy()
+    console.log(`Using shop client name: ${shopClientName}`)
 
     // Navigate to Job Settings tab
     await autoId(page, 'tab-jobSettings').click()
@@ -284,32 +291,26 @@ test.describe.serial('edit job', () => {
     })
 
     await test.step('search for and select a different client', async () => {
-      // Find the client lookup input within the change panel
       const clientChangePanel = autoId(page, 'settings-client-change-panel')
       const clientInput = clientChangePanel.locator('input[type="text"]')
 
-      await clientInput.fill('Morris')
+      // Search using first word of shop client name
+      await clientInput.fill(shopClientName.split(' ')[0])
+      await page.waitForTimeout(1000) // Allow debounce
 
-      // Wait for dropdown results
-      await page.waitForTimeout(1000) // Allow debounce to complete
-
-      // Look for Morris Sheet Metal in results
-      const morrisOption = page.getByRole('option', { name: /Morris Sheet Metal/ })
-      await morrisOption.waitFor({ timeout: 10000 })
-      await morrisOption.click()
+      const clientOption = page.getByRole('option', { name: new RegExp(shopClientName) })
+      await clientOption.waitFor({ timeout: 10000 })
+      await clientOption.click()
     })
 
     await test.step('confirm the client change', async () => {
       await autoId(page, 'settings-confirm-client-btn').click()
-
-      // Wait for the change to be processed
       await waitForAutosave(page)
     })
 
     await test.step('verify client was changed', async () => {
-      // The client name input should now show Morris Sheet Metal
       const clientNameInput = autoId(page, 'settings-client-name')
-      await expect(clientNameInput).toHaveValue(/Morris Sheet Metal/)
+      await expect(clientNameInput).toHaveValue(new RegExp(shopClientName))
     })
 
     await test.step('verify change persists after refresh', async () => {
@@ -318,7 +319,7 @@ test.describe.serial('edit job', () => {
       await autoId(page, 'settings-client-name').waitFor({ timeout: 10000 })
 
       const clientNameInput = autoId(page, 'settings-client-name')
-      await expect(clientNameInput).toHaveValue(/Morris Sheet Metal/)
+      await expect(clientNameInput).toHaveValue(new RegExp(shopClientName))
     })
   })
 })

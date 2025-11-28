@@ -825,18 +825,22 @@ const confirmClientChange = () => {
     return
   }
 
+  // Capture values before reset
+  const clientId = newClientId.value
+  const clientName = selectedNewClient.value.name
+
   localJobData.value.client = {
-    id: newClientId.value,
-    name: selectedNewClient.value.name,
+    id: clientId,
+    name: clientName,
   }
 
   contactDisplayValue.value = ''
 
   resetClientChangeState()
 
-  // Queue autosave for client change
+  // Queue autosave for client change (use captured clientId, not the now-reset ref)
   if (!isInitializing.value && !isHydratingBasicInfo.value && !isSyncingFromStore.value) {
-    autosave.queueChange('client_id', newClientId.value)
+    autosave.queueChange('client_id', clientId)
   }
 
   // Update header immediately for instant reactivity
