@@ -525,4 +525,53 @@ test.describe.serial('edit job', () => {
       await expect(clientNameInput).toHaveValue(new RegExp(shopClientName))
     })
   })
+
+  test('reload stability - values unchanged after multiple reloads', async ({
+    authenticatedPage: page,
+  }) => {
+    // This test verifies that reloading the page doesn't cause any data drift
+    // (i.e., values stay the same and aren't accidentally modified on load)
+    await page.goto(createdJobUrl)
+    await page.waitForLoadState('networkidle')
+
+    await autoId(page, 'tab-jobSettings').click()
+    await autoId(page, 'settings-job-name').waitFor({ timeout: 10000 })
+    await waitForSettingsInitialized(page)
+
+    // Capture all field values before reload
+    const valuesBefore = await test.step('capture values before reload', async () => {
+      return {
+        jobName: await autoId(page, 'settings-job-name').inputValue(),
+        description: await autoId(page, 'settings-description').inputValue(),
+        orderNumber: await autoId(page, 'settings-order-number').inputValue(),
+        pricingMethod: await autoId(page, 'settings-pricing-method').inputValue(),
+        speedQuality: await autoId(page, 'settings-speed-quality').inputValue(),
+        clientName: await autoId(page, 'settings-client-name').inputValue(),
+      }
+    })
+
+    console.log('Values before reload:', valuesBefore)
+
+    // Reload multiple times to ensure stability
+    for (let i = 1; i <= 3; i++) {
+      await test.step(`reload #${i} and verify values unchanged`, async () => {
+        await page.reload()
+        await autoId(page, 'tab-jobSettings').click()
+        await autoId(page, 'settings-job-name').waitFor({ timeout: 10000 })
+        await waitForSettingsInitialized(page)
+
+        // Verify all values match
+        await expect(autoId(page, 'settings-job-name')).toHaveValue(valuesBefore.jobName)
+        await expect(autoId(page, 'settings-description')).toHaveValue(valuesBefore.description)
+        await expect(autoId(page, 'settings-order-number')).toHaveValue(valuesBefore.orderNumber)
+        await expect(autoId(page, 'settings-pricing-method')).toHaveValue(
+          valuesBefore.pricingMethod,
+        )
+        await expect(autoId(page, 'settings-speed-quality')).toHaveValue(valuesBefore.speedQuality)
+        await expect(autoId(page, 'settings-client-name')).toHaveValue(valuesBefore.clientName)
+      })
+    }
+
+    console.log('All 3 reloads completed with no data drift')
+  })
 })
