@@ -24,6 +24,11 @@ async function dismissToasts(page: Page) {
   }
 }
 
+// Helper to wait for JobSettingsTab to finish initializing
+async function waitForSettingsInitialized(page: Page) {
+  await page.waitForSelector('[data-initialized="true"]', { timeout: 15000 })
+}
+
 // Helper to wait for autosave to complete
 async function waitForAutosave(page: Page) {
   // Wait for save status to show "Saved" or success toast
@@ -174,6 +179,9 @@ test.describe.serial('edit job', () => {
     await autoId(page, 'tab-jobSettings').click()
     await autoId(page, 'settings-job-name').waitFor({ timeout: 10000 })
 
+    // Wait for component initialization to complete (so autosave can work)
+    await waitForSettingsInitialized(page)
+
     const newJobName = `Updated Job Name ${Date.now()}`
 
     await test.step('change the job name', async () => {
@@ -203,6 +211,7 @@ test.describe.serial('edit job', () => {
     // Navigate to Job Settings tab
     await autoId(page, 'tab-jobSettings').click()
     await autoId(page, 'settings-pricing-method').waitFor({ timeout: 10000 })
+    await waitForSettingsInitialized(page)
 
     await test.step('change pricing method to Time & Materials', async () => {
       const pricingSelect = autoId(page, 'settings-pricing-method')
@@ -231,6 +240,7 @@ test.describe.serial('edit job', () => {
     // Navigate to Job Settings tab
     await autoId(page, 'tab-jobSettings').click()
     await autoId(page, 'contact-modal-button').waitFor({ timeout: 10000 })
+    await waitForSettingsInitialized(page)
 
     await test.step('open contact selection modal', async () => {
       await autoId(page, 'contact-modal-button').click()
@@ -266,6 +276,7 @@ test.describe.serial('edit job', () => {
     // Navigate to Job Settings tab
     await autoId(page, 'tab-jobSettings').click()
     await autoId(page, 'settings-change-client-btn').waitFor({ timeout: 10000 })
+    await waitForSettingsInitialized(page)
 
     await test.step('click Change Client button', async () => {
       await autoId(page, 'settings-change-client-btn').click()

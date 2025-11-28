@@ -388,27 +388,28 @@ const titleKey = computed(() => {
     : 'none'
 })
 
-let headerAutosave: ReturnType<typeof useJobHeaderAutosave> | null = null
+// Call composable in setup (not in watcher) - it handles null header internally
+const headerAutosave = useJobHeaderAutosave(jobHeader)
 
 const handleNameUpdate = (newName: string) => {
   localJobName.value = newName
-  headerAutosave?.handleNameUpdate(newName)
+  headerAutosave.handleNameUpdate(newName)
 }
 
 const handleClientUpdate = (client: { id: string; name: string }) => {
   localClientName.value = client.name
   localClientId.value = client.id
-  headerAutosave?.handleClientUpdate(client)
+  headerAutosave.handleClientUpdate(client)
 }
 
 const handleStatusUpdate = (newStatus: string) => {
   localJobStatus.value = newStatus
-  headerAutosave?.handleStatusUpdate(newStatus)
+  headerAutosave.handleStatusUpdate(newStatus)
 }
 
 const handlePricingMethodologyUpdate = (newMethod: string) => {
   localPricingMethodology.value = newMethod
-  headerAutosave?.handlePricingMethodologyUpdate(newMethod)
+  headerAutosave.handlePricingMethodologyUpdate(newMethod)
 }
 
 // Initialize the job financials composable
@@ -429,9 +430,9 @@ const handleRejectedChange = async () => {
 
     try {
       // Use header autosave for consistency
-      headerAutosave?.handleRejectedUpdate(false)
-      headerAutosave?.handleStatusUpdate('draft')
-      void headerAutosave?.retrySave() // Force immediate save
+      headerAutosave.handleRejectedUpdate(false)
+      headerAutosave.handleStatusUpdate('draft')
+      void headerAutosave.retrySave() // Force immediate save
 
       // Update local status
       localJobStatus.value = 'draft'
@@ -465,9 +466,9 @@ const handleRejectedChange = async () => {
       }
 
       // Use header autosave for consistency
-      headerAutosave?.handleRejectedUpdate(true)
-      headerAutosave?.handleStatusUpdate('recently_completed')
-      void headerAutosave?.retrySave() // Force immediate save
+      headerAutosave.handleRejectedUpdate(true)
+      headerAutosave.handleStatusUpdate('recently_completed')
+      void headerAutosave.retrySave() // Force immediate save
 
       // Update local status
       localJobStatus.value = 'recently_completed'
@@ -503,15 +504,11 @@ const jobDataWithPaid = computed(() => {
   }
 })
 
+// Sync local UI values from header (store → local only, no queuing)
 watch(
   jobHeader,
   (h) => {
     if (!h) return
-    if (!headerAutosave) {
-      headerAutosave = useJobHeaderAutosave(h)
-    }
-
-    // locals (for the InlineEdit... existing components)
     localJobName.value = h.name
     localClientName.value = h.client?.name ?? ''
     localClientId.value = h.client?.id ?? ''

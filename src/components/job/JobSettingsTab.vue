@@ -1,5 +1,8 @@
 <template>
-  <div class="p-4 sm:p-6 lg:px-4 lg:py-0 h-full overflow-y-auto bg-gray-50/50">
+  <div
+    class="p-4 sm:p-6 lg:px-4 lg:py-0 h-full overflow-y-auto bg-gray-50/50"
+    :data-initialized="!isInitializing"
+  >
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-6 flex justify-between items-center">
@@ -200,6 +203,12 @@
               <select
                 v-model="localJobData.pricing_methodology"
                 data-automation-id="settings-pricing-method"
+                @change="
+                  handleFieldInput(
+                    'pricing_methodology',
+                    ($event.target as HTMLSelectElement).value,
+                  )
+                "
                 @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
@@ -213,6 +222,12 @@
               <select
                 v-model="localJobData.speed_quality_tradeoff"
                 data-automation-id="settings-speed-quality"
+                @change="
+                  handleFieldInput(
+                    'speed_quality_tradeoff',
+                    ($event.target as HTMLSelectElement).value,
+                  )
+                "
                 @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
@@ -475,6 +490,7 @@ const resetClientChangeState = () => {
 
 // Handle field input changes
 const handleFieldInput = (field: string, value: string) => {
+  debugLog('[handleFieldInput] called', { field, value, isInitializing: isInitializing.value })
   if (!localJobData.value) return
 
   const newValue = value || ''
@@ -817,6 +833,11 @@ const confirmClientChange = () => {
   contactDisplayValue.value = ''
 
   resetClientChangeState()
+
+  // Queue autosave for client change
+  if (!isInitializing.value && !isHydratingBasicInfo.value && !isSyncingFromStore.value) {
+    autosave.queueChange('client_id', newClientId.value)
+  }
 
   // Update header immediately for instant reactivity
   if (jobHeader.value) {
@@ -1393,55 +1414,19 @@ const enqueueIfNotInitializing = (key: string, value: unknown) => {
   }
 }
 
+// Watchers for store → local sync only (no queuing - handlers own queuing)
 watch(
   () => localJobData.value.name,
   (v, oldV) => {
     if (v === oldV) return
-    if (!isSyncingFromStore.value) {
-      enqueueIfNotInitializing('name', v)
-      // Sync with store for immediate reactivity
-      if (jobHeader.value) {
-        jobsStore.patchHeader(jobHeader.value.job_id, { name: v ?? '' })
-      }
+    // Sync with store for immediate reactivity (no queuing - handleFieldInput does that)
+    if (!isSyncingFromStore.value && jobHeader.value) {
+      jobsStore.patchHeader(jobHeader.value.job_id, { name: v ?? '' })
     }
   },
 )
-watch(
-  () => localJobData.value.pricing_methodology,
-  (v, oldV) => {
-    if (v === oldV) return
-    if (!isSyncingFromStore.value) {
-      enqueueIfNotInitializing('pricing_methodology', v)
-    }
-  },
-)
-watch(
-  () => localJobData.value.speed_quality_tradeoff,
-  (v, oldV) => {
-    if (v === oldV) return
-    if (!isSyncingFromStore.value) {
-      enqueueIfNotInitializing('speed_quality_tradeoff', v)
-    }
-  },
-)
-watch(
-  () => localJobData.value.client,
-  (v, oldV) => {
-    if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
-      // Only enqueue if this is a real user change, not initial loading or hydration
-      const oldId = oldV?.id ?? null
-      const newId = v?.id ?? null
-
-      if (oldId !== newId) {
-        enqueueIfNotInitializing('client_id', newId)
-        // Clear contact when client changes
-        enqueueIfNotInitializing('contact_id', null)
-        enqueueIfNotInitializing('contact_name', null)
-      }
-    }
-  },
-  { deep: true },
-)
+// pricing_methodology and speed_quality_tradeoff: handlers queue via @change, no watcher queuing needed
+// client: confirmClientChange queues, no watcher queuing needed
 
 // Watchers for basic info fields
 watch(
@@ -1466,19 +1451,7 @@ watch(
     }
   },
 )
-watch(
-  () => localJobData.value?.order_number,
-  (v, oldV) => {
-    if (
-      !isSyncingFromStore.value &&
-      !isInitializing.value &&
-      !isHydratingBasicInfo.value &&
-      v !== oldV
-    ) {
-      enqueueIfNotInitializing('order_number', v)
-    }
-  },
-)
+// order_number: handler queues via @input, no watcher queuing needed
 watch(
   () => localJobData.value?.notes,
   (v, oldV) => {
