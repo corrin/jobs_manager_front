@@ -388,6 +388,7 @@ export function useTimesheetEntryGrid(
     if (!isApiAlive(api)) {
       return
     }
+    selectedRowIndex.value = node.rowIndex
     switch (event.key) {
       case 'Escape':
         if (!column.getColDef().editable) {
@@ -395,7 +396,7 @@ export function useTimesheetEntryGrid(
         }
         api.stopEditing(true)
         break
-      case 'Enter':
+      case 'Enter': {
         if (event.shiftKey) {
           if (column.getColId() === 'billable') {
             event.preventDefault()
@@ -410,7 +411,33 @@ export function useTimesheetEntryGrid(
           }
           break
         }
+        const rowData = node.data as TimesheetEntryGridRow | undefined
+        if (!rowData) break
+
+        api.stopEditing()
+
+        const staffData =
+          options?.resolveStaffById?.(rowData.staffId || '') || currentStaffRef.value || undefined
+        if (!staffData) {
+          console.error('Cannot add new row on Enter without staff data')
+          break
+        }
+
+        event.preventDefault()
+        addNewRow(rowData.staffId, rowData.date, staffData)
+        nextTick(() => {
+          const newRowIndex = gridData.value.length - 1
+          selectedRowIndex.value = newRowIndex
+          if (!isApiAlive(api)) return
+          api.ensureIndexVisible(newRowIndex)
+          api.setFocusedCell(newRowIndex, 'jobNumber')
+          api.startEditingCell({
+            rowIndex: newRowIndex,
+            colKey: 'jobNumber',
+          })
+        })
         break
+      }
       default:
         break
     }
