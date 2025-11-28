@@ -1,5 +1,8 @@
 <template>
-  <div class="p-4 sm:p-6 lg:px-4 lg:py-0 h-full overflow-y-auto bg-gray-50/50">
+  <div
+    class="p-4 sm:p-6 lg:px-4 lg:py-0 h-full overflow-y-auto bg-gray-50/50"
+    :data-initialized="!isInitializing"
+  >
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-6 flex justify-between items-center">
@@ -47,7 +50,9 @@
               <input
                 v-model="localJobData.name"
                 type="text"
-                @blur="handleBlurFlush"
+                data-automation-id="settings-job-name"
+                @input="handleFieldInput('name', ($event.target as HTMLInputElement).value)"
+                @blur="handleFieldBlur"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Enter job name"
               />
@@ -58,6 +63,7 @@
               <textarea
                 v-model="localJobData.description"
                 rows="4"
+                data-automation-id="settings-description"
                 @input="handleFieldInput('description', $event.target.value)"
                 @blur="handleFieldBlur"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
@@ -70,6 +76,7 @@
               <input
                 v-model="localJobData.delivery_date"
                 type="date"
+                data-automation-id="settings-delivery-date"
                 @input="handleFieldInput('delivery_date', $event.target.value)"
                 @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -92,6 +99,7 @@
                   <input
                     :value="localJobData.client?.name"
                     type="text"
+                    data-automation-id="settings-client-name"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-600"
                     readonly
                   />
@@ -99,6 +107,7 @@
                     <button
                       @click="startClientChange"
                       type="button"
+                      data-automation-id="settings-change-client-btn"
                       class="flex-1 px-3 py-2 border border-blue-300 rounded-md text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
                     >
                       Change Client
@@ -106,6 +115,7 @@
                     <button
                       @click="editCurrentClient"
                       type="button"
+                      data-automation-id="settings-edit-client-btn"
                       class="flex-1 px-3 py-2 border border-green-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-700 transition-colors"
                     >
                       Edit Client
@@ -113,7 +123,7 @@
                   </div>
                 </div>
 
-                <div v-else class="space-y-3">
+                <div v-else class="space-y-3" data-automation-id="settings-client-change-panel">
                   <ClientLookup
                     id="clientChange"
                     label=""
@@ -127,6 +137,7 @@
                     <button
                       @click="confirmClientChange"
                       type="button"
+                      data-automation-id="settings-confirm-client-btn"
                       class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
                       :disabled="!newClientId"
                     >
@@ -135,6 +146,7 @@
                     <button
                       @click="cancelClientChange"
                       type="button"
+                      data-automation-id="settings-cancel-client-btn"
                       class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 transition-colors"
                     >
                       Cancel
@@ -170,6 +182,7 @@
               <input
                 v-model="localJobData.order_number"
                 type="text"
+                data-automation-id="settings-order-number"
                 @input="handleFieldInput('order_number', $event.target.value)"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Customer order number (optional)"
@@ -189,6 +202,13 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Pricing Method</label>
               <select
                 v-model="localJobData.pricing_methodology"
+                data-automation-id="settings-pricing-method"
+                @change="
+                  handleFieldInput(
+                    'pricing_methodology',
+                    ($event.target as HTMLSelectElement).value,
+                  )
+                "
                 @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
@@ -201,6 +221,13 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Speed vs Quality</label>
               <select
                 v-model="localJobData.speed_quality_tradeoff"
+                data-automation-id="settings-speed-quality"
+                @change="
+                  handleFieldInput(
+                    'speed_quality_tradeoff',
+                    ($event.target as HTMLSelectElement).value,
+                  )
+                "
                 @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               >
@@ -216,6 +243,7 @@
                 label="Internal Notes"
                 placeholder="Add internal notes about this job..."
                 :required="false"
+                automation-id="settings-internal-notes"
                 @blur="handleFieldBlur"
               />
             </div>
@@ -463,6 +491,7 @@ const resetClientChangeState = () => {
 
 // Handle field input changes
 const handleFieldInput = (field: string, value: string) => {
+  debugLog('[handleFieldInput] called', { field, value, isInitializing: isInitializing.value })
   if (!localJobData.value) return
 
   const newValue = value || ''
@@ -481,7 +510,9 @@ const handleFieldInput = (field: string, value: string) => {
   }, TYPING_TIMEOUT_MS)
 
   // Type-safe field assignment
-  if (field === 'description') {
+  if (field === 'name') {
+    localJobData.value.name = newValue
+  } else if (field === 'description') {
     localJobData.value.description = newValue
   } else if (field === 'delivery_date') {
     localJobData.value.delivery_date = newValue
@@ -795,14 +826,23 @@ const confirmClientChange = () => {
     return
   }
 
+  // Capture values before reset
+  const clientId = newClientId.value
+  const clientName = selectedNewClient.value.name
+
   localJobData.value.client = {
-    id: newClientId.value,
-    name: selectedNewClient.value.name,
+    id: clientId,
+    name: clientName,
   }
 
   contactDisplayValue.value = ''
 
   resetClientChangeState()
+
+  // Queue autosave for client change (use captured clientId, not the now-reset ref)
+  if (!isInitializing.value && !isHydratingBasicInfo.value && !isSyncingFromStore.value) {
+    autosave.queueChange('client_id', clientId)
+  }
 
   // Update header immediately for instant reactivity
   if (jobHeader.value) {
@@ -1379,55 +1419,19 @@ const enqueueIfNotInitializing = (key: string, value: unknown) => {
   }
 }
 
+// Watchers for store → local sync only (no queuing - handlers own queuing)
 watch(
   () => localJobData.value.name,
   (v, oldV) => {
     if (v === oldV) return
-    if (!isSyncingFromStore.value) {
-      enqueueIfNotInitializing('name', v)
-      // Sync with store for immediate reactivity
-      if (jobHeader.value) {
-        jobsStore.patchHeader(jobHeader.value.job_id, { name: v ?? '' })
-      }
+    // Sync with store for immediate reactivity (no queuing - handleFieldInput does that)
+    if (!isSyncingFromStore.value && jobHeader.value) {
+      jobsStore.patchHeader(jobHeader.value.job_id, { name: v ?? '' })
     }
   },
 )
-watch(
-  () => localJobData.value.pricing_methodology,
-  (v, oldV) => {
-    if (v === oldV) return
-    if (!isSyncingFromStore.value) {
-      enqueueIfNotInitializing('pricing_methodology', v)
-    }
-  },
-)
-watch(
-  () => localJobData.value.speed_quality_tradeoff,
-  (v, oldV) => {
-    if (v === oldV) return
-    if (!isSyncingFromStore.value) {
-      enqueueIfNotInitializing('speed_quality_tradeoff', v)
-    }
-  },
-)
-watch(
-  () => localJobData.value.client,
-  (v, oldV) => {
-    if (!isSyncingFromStore.value && !isInitializing.value && !isHydratingBasicInfo.value) {
-      // Only enqueue if this is a real user change, not initial loading or hydration
-      const oldId = oldV?.id ?? null
-      const newId = v?.id ?? null
-
-      if (oldId !== newId) {
-        enqueueIfNotInitializing('client_id', newId)
-        // Clear contact when client changes
-        enqueueIfNotInitializing('contact_id', null)
-        enqueueIfNotInitializing('contact_name', null)
-      }
-    }
-  },
-  { deep: true },
-)
+// pricing_methodology and speed_quality_tradeoff: handlers queue via @change, no watcher queuing needed
+// client: confirmClientChange queues, no watcher queuing needed
 
 // Watchers for basic info fields
 watch(
@@ -1452,19 +1456,7 @@ watch(
     }
   },
 )
-watch(
-  () => localJobData.value?.order_number,
-  (v, oldV) => {
-    if (
-      !isSyncingFromStore.value &&
-      !isInitializing.value &&
-      !isHydratingBasicInfo.value &&
-      v !== oldV
-    ) {
-      enqueueIfNotInitializing('order_number', v)
-    }
-  },
-)
+// order_number: handler queues via @input, no watcher queuing needed
 watch(
   () => localJobData.value?.notes,
   (v, oldV) => {

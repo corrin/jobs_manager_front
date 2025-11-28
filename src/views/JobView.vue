@@ -53,6 +53,7 @@
                   :options="JOB_STATUS_CHOICES"
                   @update:value="handleStatusUpdate"
                   placeholder="Status"
+                  automation-id="header-job-status"
                 />
               </div>
               <span>•</span>
@@ -62,6 +63,7 @@
                   :value="localPricingMethodology"
                   :options="pricingMethodologyOptions"
                   @update:value="handlePricingMethodologyUpdate"
+                  automation-id="header-pricing-method"
                 />
               </div>
               <template v-if="jobDataWithPaid?.quoted">
@@ -170,6 +172,7 @@
                     :options="JOB_STATUS_CHOICES"
                     @update:value="handleStatusUpdate"
                     placeholder="Select Status"
+                    automation-id="header-job-status-mobile"
                   />
                 </div>
                 <span>•</span>
@@ -180,6 +183,7 @@
                     :options="pricingMethodologyOptions"
                     @update:value="handlePricingMethodologyUpdate"
                     placeholder="Select methodology"
+                    automation-id="header-pricing-method-mobile"
                   />
                 </div>
                 <template v-if="jobDataWithPaid?.quoted">
@@ -241,12 +245,6 @@
               @click="printJob"
             >
               <Printer class="w-4 h-4 mr-1" /> Print
-            </button>
-            <button
-              class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-gray-100 text-gray-700 border border-gray-300 text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-              @click="downloadJobSheet"
-            >
-              <Download class="w-4 h-4 mr-1" /> Download Sheet
             </button>
             <button
               class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-gray-100 text-gray-700 border border-gray-300 text-sm font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
@@ -329,7 +327,7 @@ import { useJobHeaderAutosave } from '../composables/useJobHeaderAutosave'
 import { useJobFinancials } from '../composables/useJobFinancials'
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
 import { api } from '../api/client'
-import { ArrowLeft, Printer, Download } from 'lucide-vue-next'
+import { ArrowLeft, Printer } from 'lucide-vue-next'
 import { formatCurrency } from '@/utils/string-formatting'
 import { JOB_STATUS_CHOICES } from '../constants/job-status'
 import { jobService } from '../services/job.service'
@@ -394,27 +392,28 @@ const titleKey = computed(() => {
     : 'none'
 })
 
-let headerAutosave: ReturnType<typeof useJobHeaderAutosave> | null = null
+// Call composable in setup (not in watcher) - it handles null header internally
+const headerAutosave = useJobHeaderAutosave(jobHeader)
 
 const handleNameUpdate = (newName: string) => {
   localJobName.value = newName
-  headerAutosave?.handleNameUpdate(newName)
+  headerAutosave.handleNameUpdate(newName)
 }
 
 const handleClientUpdate = (client: { id: string; name: string }) => {
   localClientName.value = client.name
   localClientId.value = client.id
-  headerAutosave?.handleClientUpdate(client)
+  headerAutosave.handleClientUpdate(client)
 }
 
 const handleStatusUpdate = (newStatus: string) => {
   localJobStatus.value = newStatus
-  headerAutosave?.handleStatusUpdate(newStatus)
+  headerAutosave.handleStatusUpdate(newStatus)
 }
 
 const handlePricingMethodologyUpdate = (newMethod: string) => {
   localPricingMethodology.value = newMethod
-  headerAutosave?.handlePricingMethodologyUpdate(newMethod)
+  headerAutosave.handlePricingMethodologyUpdate(newMethod)
 }
 
 // Initialize the job financials composable
@@ -435,9 +434,9 @@ const handleRejectedChange = async () => {
 
     try {
       // Use header autosave for consistency
-      headerAutosave?.handleRejectedUpdate(false)
-      headerAutosave?.handleStatusUpdate('draft')
-      void headerAutosave?.retrySave() // Force immediate save
+      headerAutosave.handleRejectedUpdate(false)
+      headerAutosave.handleStatusUpdate('draft')
+      void headerAutosave.retrySave() // Force immediate save
 
       // Update local status
       localJobStatus.value = 'draft'
@@ -471,9 +470,9 @@ const handleRejectedChange = async () => {
       }
 
       // Use header autosave for consistency
-      headerAutosave?.handleRejectedUpdate(true)
-      headerAutosave?.handleStatusUpdate('recently_completed')
-      void headerAutosave?.retrySave() // Force immediate save
+      headerAutosave.handleRejectedUpdate(true)
+      headerAutosave.handleStatusUpdate('recently_completed')
+      void headerAutosave.retrySave() // Force immediate save
 
       // Update local status
       localJobStatus.value = 'recently_completed'
@@ -509,15 +508,11 @@ const jobDataWithPaid = computed(() => {
   }
 })
 
+// Sync local UI values from header (store → local only, no queuing)
 watch(
   jobHeader,
   (h) => {
     if (!h) return
-    if (!headerAutosave) {
-      headerAutosave = useJobHeaderAutosave(h)
-    }
-
-    // locals (for the InlineEdit... existing components)
     localJobName.value = h.name
     localClientName.value = h.client?.name ?? ''
     localClientId.value = h.client?.id ?? ''
@@ -605,28 +600,6 @@ async function printJob() {
   } catch (error) {
     toast.error('Error generating PDF for printing')
     debugLog('Error printing job:', error)
-  }
-}
-
-async function downloadJobSheet() {
-  if (!jobDataWithPaid.value?.id) {
-    toast.error('Job ID not available')
-    return
-  }
-  try {
-    const blob = await jobService.getWorkshopPdf(jobDataWithPaid.value.id)
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `job_${jobDataWithPaid.value.job_number}_sheet.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    toast.success('Job sheet download started')
-  } catch (error) {
-    toast.error('Error generating PDF for download')
-    debugLog('Error downloading job sheet:', error)
   }
 }
 

@@ -3,7 +3,7 @@ import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 import { computeJobDeltaChecksum } from '@/utils/deltaChecksum'
 
-type JobDeltaEnvelope = z.infer<typeof schemas.JobDeltaEnvelope>
+type JobDeltaEnvelope = z.infer<typeof schemas.JobDeltaEnvelopeRequest>
 
 /**
  * Compute SHA-256 hash of HTML/content for telemetry/debugging purposes.
@@ -135,5 +135,5 @@ export async function buildJobDeltaEnvelope(input: EnvelopeInput): Promise<JobDe
     telemetry_after_hash,
   }
 
-  return schemas.JobDeltaEnvelope.parse(envelope) as JobDeltaEnvelope
+  return schemas.JobDeltaEnvelopeRequest.parse(envelope) as JobDeltaEnvelope
 }

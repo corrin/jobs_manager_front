@@ -1,4 +1,4 @@
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, type Ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createJobAutosave, type SaveResult } from './useJobAutosave'
 import { useJobsStore } from '../stores/jobs'
@@ -19,13 +19,28 @@ type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
  * Composable for autosave based on lightweight HEADER (JobHeaderResponse).
  * - Does not use getJob (avoids large payload)
  * - Maps header -> Job fields only when saving
+ * - Accepts a nullable ref so it can be called in setup() before header loads
  */
-export function useJobHeaderAutosave(header: JobHeaderResponse) {
+export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
+  // These must be called synchronously in setup()
   const router = useRouter()
   const jobsStore = useJobsStore()
   const authStore = useAuthStore()
   const etagStore = useJobETags()
-  const deltaQueue = useJobDeltaQueue(header.job_id)
+
+  // Track one-time initialization
+  const isInitialized = ref(false)
+  const isInitializing = ref(false)
+
+  // Header-dependent state (initialized in watcher)
+  let localHeader: Ref<JobHeaderResponse> | null = null
+  let originalHeader: Ref<JobHeaderResponse> | null = null
+  let deltaQueue: ReturnType<typeof useJobDeltaQueue> | null = null
+  let autosave: ReturnType<typeof createJobAutosave> | null = null
+  let jobId: string | null = null
+
+  let unbindRouteGuard: () => void = () => {}
+  let unbindConcurrencyRetry: () => void = () => {}
 
   const headerToPartialHeaderPatch = (patch: Partial<Job>): Partial<JobHeaderResponse> => {
     const p: Partial<JobHeaderResponse> = {}
@@ -48,24 +63,12 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     return p
   }
 
-  // Local state and original snapshot (always based on header)
-  const localHeader = ref<JobHeaderResponse>(header)
-  const originalHeader = ref<JobHeaderResponse>(header)
-
-  const isInitializing = ref(false)
-  let unbindRouteGuard: () => void = () => {}
-  let unbindConcurrencyRetry: () => void = () => {}
-
   /**
    * Applies a patch (based on "local" fields reflected from header) to the header snapshot.
    * Accepts keys: name, client_id, client_name, job_status, pricing_methodology, quoted, fully_invoiced, paid.
    * Here we do the inverse mapping (local fields -> header).
    */
-  const applyPatchToHeader = (
-    base: JobHeaderResponse,
-    patch: Partial<Job>, // we use Partial<Job> because it's the format of local keys after mapping
-  ): JobHeaderResponse => {
-    // Update client (Header uses client:{id,name})
+  const applyPatchToHeader = (base: JobHeaderResponse, patch: Partial<Job>): JobHeaderResponse => {
     const client =
       'client_id' in patch || 'client_name' in patch
         ? {
@@ -80,7 +83,6 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
           }
         : base.client
 
-    // status <- job_status
     const status =
       patch.job_status !== undefined && patch.job_status !== null
         ? String(patch.job_status)
@@ -102,169 +104,178 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     }
   }
 
-  // ---- Autosave ----
-  const autosave = createJobAutosave({
-    jobId: header.job_id,
-    getSnapshot: () => {
-      // Snapshot always in shape of HEADER; we will map to Job when saving
-      return { ...originalHeader.value }
-    },
-    applyOptimistic: (patch) => {
-      // patch comes in "local" format (Partial<Job>), so first convert to header
-      localHeader.value = applyPatchToHeader(localHeader.value, patch as Partial<Job>)
-      // Update store for immediate reactivity across app
-      jobsStore.patchHeader(header.job_id, headerToPartialHeaderPatch(patch as Partial<Job>))
-    },
-    rollbackOptimistic: (previous) => {
-      localHeader.value = applyPatchToHeader(localHeader.value, previous as Partial<Job>)
-      jobsStore.patchHeader(header.job_id, headerToPartialHeaderPatch(previous as Partial<Job>))
-    },
-    saveAdapter: async (patch): Promise<SaveResult> => {
-      try {
-        const jobId = header.job_id
-        if (!jobId) {
-          return { success: false, error: 'Missing job id' }
-        }
-        const actorId = authStore.user?.id ?? null
-        if (!actorId) {
-          return { success: false, error: 'Missing actor id' }
-        }
+  // One-time initialization watcher
+  watch(
+    headerRef,
+    (header) => {
+      if (!header || isInitialized.value) return
 
-        // Only allow header fields to be updated here to prevent cross-job contamination
-        const allowedHeaderKeys = [
-          'name',
-          'client_id',
-          'job_status',
-          'pricing_methodology',
-          'quoted',
-          'fully_invoiced',
-          'paid',
-          'quote_acceptance_date',
-          'rejected_flag',
-        ] as const
+      // One-time init using header
+      jobId = header.job_id
+      localHeader = ref<JobHeaderResponse>(header)
+      originalHeader = ref<JobHeaderResponse>(header)
+      deltaQueue = useJobDeltaQueue(header.job_id)
 
-        // Filter incoming patch down to allowed header keys only
-        const filteredPatch: Partial<Job> = {}
-        Object.entries(patch as Partial<Job>).forEach(([k, v]) => {
-          if ((allowedHeaderKeys as readonly string[]).includes(k as string)) {
-            ;(filteredPatch as Record<string, unknown>)[k] = v as unknown
-          }
-        })
+      autosave = createJobAutosave({
+        jobId: header.job_id,
+        getSnapshot: () => {
+          return { ...originalHeader!.value }
+        },
+        applyOptimistic: (patch) => {
+          localHeader!.value = applyPatchToHeader(localHeader!.value, patch as Partial<Job>)
+          jobsStore.patchHeader(jobId!, headerToPartialHeaderPatch(patch as Partial<Job>))
+        },
+        rollbackOptimistic: (previous) => {
+          localHeader!.value = applyPatchToHeader(localHeader!.value, previous as Partial<Job>)
+          jobsStore.patchHeader(jobId!, headerToPartialHeaderPatch(previous as Partial<Job>))
+        },
+        saveAdapter: async (patch): Promise<SaveResult> => {
+          try {
+            if (!jobId) {
+              return { success: false, error: 'Missing job id' }
+            }
+            const actorId = authStore.user?.id ?? null
+            if (!actorId) {
+              return { success: false, error: 'Missing actor id' }
+            }
 
-        if (Object.keys(filteredPatch).length === 0) {
-          return { success: true }
-        }
+            const allowedHeaderKeys = [
+              'name',
+              'client_id',
+              'job_status',
+              'pricing_methodology',
+              'quoted',
+              'fully_invoiced',
+              'paid',
+              'quote_acceptance_date',
+              'rejected_flag',
+            ] as const
 
-        // Build payload strictly from filteredPatch (no base/header merge)
-        const payloadJob: Record<string, unknown> = { ...filteredPatch }
+            const filteredPatch: Partial<Job> = {}
+            Object.entries(patch as Partial<Job>).forEach(([k, v]) => {
+              if ((allowedHeaderKeys as readonly string[]).includes(k as string)) {
+                ;(filteredPatch as Record<string, unknown>)[k] = v as unknown
+              }
+            })
 
-        // If client changed, clear contact fields
-        if ('client_id' in (filteredPatch as Partial<Job>)) {
-          payloadJob.contact_id = null
-          payloadJob.contact_name = null
-        }
+            if (Object.keys(filteredPatch).length === 0) {
+              return { success: true }
+            }
 
-        const fields = Object.keys(payloadJob)
+            const payloadJob: Record<string, unknown> = { ...filteredPatch }
 
-        const detail = jobsStore.getJobById(jobId)
-        const beforeValues: Record<string, unknown> = {}
-        const headerSnapshot = originalHeader.value
-        for (const field of fields) {
-          switch (field) {
-            case 'name':
-              beforeValues[field] = headerSnapshot.name
-              break
-            case 'client_id':
-              beforeValues[field] = headerSnapshot.client?.id ?? null
-              break
-            case 'rejected_flag':
-              beforeValues[field] = headerSnapshot.rejected_flag ?? false
-              break
-            case 'job_status':
-              beforeValues[field] = headerSnapshot.status
-              break
-            case 'pricing_methodology':
-              beforeValues[field] = headerSnapshot.pricing_methodology
-              break
-            case 'quoted':
-              beforeValues[field] = headerSnapshot.quoted
-              break
-            case 'fully_invoiced':
-              beforeValues[field] = headerSnapshot.fully_invoiced
-              break
-            case 'paid':
-              beforeValues[field] = headerSnapshot.paid
-              break
-            case 'quote_acceptance_date':
-              beforeValues[field] = headerSnapshot.quote_acceptance_date
-              break
-            case 'contact_id':
-              beforeValues[field] = detail?.job?.contact_id ?? null
-              break
-            case 'contact_name':
-              beforeValues[field] = detail?.job?.contact_name ?? null
-              break
-            default:
-              beforeValues[field] = detail?.job
-                ? (detail.job as Record<string, unknown>)[field]
-                : undefined
-          }
-        }
+            if ('client_id' in (filteredPatch as Partial<Job>)) {
+              payloadJob.contact_id = null
+              payloadJob.contact_name = null
+            }
 
-        const changeId = deltaQueue.getOrCreateChangeId(payloadJob)
-        const etag = etagStore.getETag(jobId)
-        const envelope = await buildJobDeltaEnvelope({
-          job_id: jobId,
-          change_id: changeId,
-          actor_id: actorId,
-          made_at: new Date().toISOString(),
-          etag,
-          before: beforeValues,
-          after: payloadJob,
-          fields,
-        })
+            const fields = Object.keys(payloadJob)
 
-        const res = await submitJobDelta(jobId, envelope)
-        if (!res.success) {
-          const msg = res.error
-          const conflict =
-            /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
-              msg,
+            const detail = jobsStore.getJobById(jobId)
+            const beforeValues: Record<string, unknown> = {}
+            const headerSnapshot = originalHeader!.value
+            for (const field of fields) {
+              switch (field) {
+                case 'name':
+                  beforeValues[field] = headerSnapshot.name
+                  break
+                case 'client_id':
+                  beforeValues[field] = headerSnapshot.client?.id ?? null
+                  break
+                case 'rejected_flag':
+                  beforeValues[field] = headerSnapshot.rejected_flag ?? false
+                  break
+                case 'job_status':
+                  beforeValues[field] = headerSnapshot.status
+                  break
+                case 'pricing_methodology':
+                  beforeValues[field] = headerSnapshot.pricing_methodology
+                  break
+                case 'quoted':
+                  beforeValues[field] = headerSnapshot.quoted
+                  break
+                case 'fully_invoiced':
+                  beforeValues[field] = headerSnapshot.fully_invoiced
+                  break
+                case 'paid':
+                  beforeValues[field] = headerSnapshot.paid
+                  break
+                case 'quote_acceptance_date':
+                  beforeValues[field] = headerSnapshot.quote_acceptance_date
+                  break
+                case 'contact_id':
+                  beforeValues[field] = detail?.job?.contact_id ?? null
+                  break
+                case 'contact_name':
+                  beforeValues[field] = detail?.job?.contact_name ?? null
+                  break
+                default:
+                  beforeValues[field] = detail?.job
+                    ? (detail.job as Record<string, unknown>)[field]
+                    : undefined
+              }
+            }
+
+            const changeId = deltaQueue!.getOrCreateChangeId(payloadJob)
+            const etag = etagStore.getETag(jobId)
+            const envelope = await buildJobDeltaEnvelope({
+              job_id: jobId,
+              change_id: changeId,
+              actor_id: actorId,
+              made_at: new Date().toISOString(),
+              etag,
+              before: beforeValues,
+              after: payloadJob,
+              fields,
+            })
+
+            const res = await submitJobDelta(jobId, envelope)
+            if (!res.success) {
+              const msg = res.error
+              const conflict =
+                /precondition|if-?match|etag|412|428|updated by another user|data reloaded|concurrent modification|missing version/i.test(
+                  msg,
+                )
+              return { success: false, error: msg, conflict }
+            }
+
+            deltaQueue!.clearChangeId()
+
+            if (res.data?.data) {
+              jobsStore.setDetailedJob(res.data.data)
+            }
+
+            const updatedHeader = applyPatchToHeader(
+              originalHeader!.value,
+              payloadJob as Partial<Job>,
             )
-          return { success: false, error: msg, conflict }
-        }
+            originalHeader!.value = updatedHeader
+            localHeader!.value = updatedHeader
 
-        deltaQueue.clearChangeId()
+            jobsStore.patchHeader(jobId, headerToPartialHeaderPatch(payloadJob as Partial<Job>))
 
-        if (res.data?.data) {
-          jobsStore.setDetailedJob(res.data.data)
-        }
+            toast.success('Job updated successfully')
+            return { success: true, serverData: res.data }
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e)
+            const conflict = isConcurrencyError(e)
+            return { success: false, error: msg, conflict }
+          }
+        },
+        devLogging: true,
+      })
 
-        const updatedHeader = applyPatchToHeader(originalHeader.value, payloadJob as Partial<Job>)
-        originalHeader.value = updatedHeader
-        localHeader.value = updatedHeader
-
-        jobsStore.patchHeader(header.job_id, headerToPartialHeaderPatch(payloadJob as Partial<Job>))
-
-        toast.success('Job updated successfully')
-        return { success: true, serverData: res.data }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e)
-        const conflict = isConcurrencyError(e)
-        return { success: false, error: msg, conflict }
-      }
+      isInitialized.value = true
     },
-    devLogging: true,
-  })
+    { immediate: true },
+  )
 
   // Sync header UI with store after a conflict-triggered reload (or any store update)
-  const storeHeader = computed(() => jobsStore.getHeaderById(header.job_id))
+  const storeHeader = computed(() => (jobId ? jobsStore.getHeaderById(jobId) : null))
   watch(
     storeHeader,
     (newHeader) => {
-      if (!newHeader) return
-      // Update both local and original snapshots so the UI reflects the latest server data
-      // Preserve object shape (especially client) to avoid partial merging issues
+      if (!newHeader || !localHeader || !originalHeader) return
       localHeader.value = {
         ...localHeader.value,
         ...newHeader,
@@ -277,14 +288,14 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
 
   // Helpers
   const enqueue = (key: keyof Partial<Job>, value: unknown) => {
-    if (!isInitializing.value) {
-      autosave.queueChange(key as string, value)
-    }
+    if (!headerRef.value || !autosave || isInitializing.value) return
+    autosave.queueChange(key as string, value)
   }
 
   // Handlers that UI uses (everything in terms of "local" fields that map well to Job)
   const handleNameUpdate = (name: string) => enqueue('name', name)
   const handleClientUpdate = (client: { id: string; name: string }) => {
+    if (!headerRef.value || !autosave) return
     autosave.queueChanges({
       client_id: client.id,
       client_name: client.name,
@@ -300,9 +311,10 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
   const handlePaidUpdate = (v: boolean) => enqueue('paid', v)
   const handleRejectedUpdate = (v: boolean) => enqueue('rejected_flag', v)
 
-  // Status indicators
-  const saveHasError = computed(() => !!autosave.error.value)
+  // Status indicators - return safe defaults when not initialized
+  const saveHasError = computed(() => (autosave?.error.value ? true : false))
   const saveStatusText = computed(() => {
+    if (!autosave) return ''
     if (autosave.isSaving.value) return 'Saving...'
     if (autosave.error.value) return 'Save failed'
     if (autosave.lastSavedAt.value) {
@@ -314,33 +326,39 @@ export function useJobHeaderAutosave(header: JobHeaderResponse) {
     }
     return ''
   })
-  const retrySave = () => void autosave.flush('retry-click')
+  const retrySave = () => {
+    if (autosave) void autosave.flush('retry-click')
+  }
 
   onMounted(() => {
+    if (!autosave || !jobId) return
     isInitializing.value = true
-    // binds
     autosave.onBeforeUnloadBind()
     autosave.onVisibilityBind()
     unbindRouteGuard = autosave.onRouteLeaveBind({
       beforeEach: (guard: any) => router.beforeEach(guard), // eslint-disable-line @typescript-eslint/no-explicit-any
     })
-    // Listen for global "Retry" from concurrency toast for this job
-    unbindConcurrencyRetry = onConcurrencyRetry(header.job_id, () => {
-      void autosave.flush('retry-click')
+    unbindConcurrencyRetry = onConcurrencyRetry(jobId, () => {
+      void autosave!.flush('retry-click')
     })
     isInitializing.value = false
   })
 
   onUnmounted(() => {
-    autosave.onBeforeUnloadUnbind()
-    autosave.onVisibilityUnbind()
+    if (autosave) {
+      autosave.onBeforeUnloadUnbind()
+      autosave.onVisibilityUnbind()
+    }
     unbindRouteGuard()
     unbindConcurrencyRetry()
   })
 
+  // Return a computed for localHeader that handles null case
+  const localHeaderComputed = computed(() => localHeader?.value ?? null)
+
   return {
     // "local" header reactive (for UI)
-    localHeader,
+    localHeader: localHeaderComputed,
     // setters
     handleNameUpdate,
     handleClientUpdate,

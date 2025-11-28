@@ -1,10 +1,11 @@
 <template>
-  <div class="inline-edit-select group">
+  <div class="inline-edit-select group" :data-automation-id="automationId || undefined">
     <div
       v-if="!isEditing"
       @click="startEdit"
       class="cursor-pointer hover:bg-gray-50 rounded px-1 py-1 transition-colors flex items-center"
       :class="displayClass"
+      :data-automation-id="automationId ? `${automationId}-display` : undefined"
     >
       <span>{{ displayValue || placeholder }}</span>
       <PencilIcon class="w-3 h-3 ml-1 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -19,8 +20,8 @@
         @keydown.escape="cancel"
         class="border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         :class="selectClass"
+        :data-automation-id="automationId ? `${automationId}-select` : undefined"
       >
-        <option value="" disabled>{{ placeholder }}</option>
         <option v-for="option in options" :key="option.key" :value="option.key">
           {{ option.label }}
         </option>
@@ -29,10 +30,15 @@
         @click="confirm"
         class="p-1 text-green-600 hover:text-green-700 transition-colors"
         :disabled="!canConfirm"
+        :data-automation-id="automationId ? `${automationId}-confirm` : undefined"
       >
         <CheckIcon class="w-4 h-4" />
       </button>
-      <button @click="cancel" class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+      <button
+        @click="cancel"
+        class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+        :data-automation-id="automationId ? `${automationId}-cancel` : undefined"
+      >
         <XIcon class="w-4 h-4" />
       </button>
     </div>
@@ -56,6 +62,7 @@ interface Props {
   displayClass?: string
   selectClass?: string
   required?: boolean
+  automationId?: string
 }
 
 interface Emits {
@@ -68,6 +75,7 @@ const props = withDefaults(defineProps<Props>(), {
   displayClass: '',
   selectClass: '',
   required: false,
+  automationId: '',
 })
 
 const emit = defineEmits<Emits>()
