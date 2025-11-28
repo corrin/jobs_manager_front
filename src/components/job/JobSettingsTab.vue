@@ -243,6 +243,7 @@
                 label="Internal Notes"
                 placeholder="Add internal notes about this job..."
                 :required="false"
+                automation-id="settings-internal-notes"
                 @blur="handleFieldBlur"
               />
             </div>

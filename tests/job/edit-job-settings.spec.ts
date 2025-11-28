@@ -167,6 +167,164 @@ test.describe.serial('edit job', () => {
     })
   })
 
+  test('change description', async ({ authenticatedPage: page }) => {
+    await page.goto(createdJobUrl)
+    await page.waitForLoadState('networkidle')
+
+    await autoId(page, 'tab-jobSettings').click()
+    await autoId(page, 'settings-description').waitFor({ timeout: 10000 })
+    await waitForSettingsInitialized(page)
+
+    const newDescription = `Updated description ${Date.now()}`
+
+    await test.step('change the description', async () => {
+      const descInput = autoId(page, 'settings-description')
+      await descInput.clear()
+      await descInput.pressSequentially(newDescription, { delay: 10 })
+      await descInput.blur()
+    })
+
+    await test.step('wait for autosave', async () => {
+      await waitForAutosave(page)
+    })
+
+    await test.step('verify description was saved', async () => {
+      await page.reload()
+      await autoId(page, 'tab-jobSettings').click()
+      await autoId(page, 'settings-description').waitFor({ timeout: 10000 })
+
+      const descInput = autoId(page, 'settings-description')
+      await expect(descInput).toHaveValue(newDescription)
+    })
+  })
+
+  test('change delivery date', async ({ authenticatedPage: page }) => {
+    await page.goto(createdJobUrl)
+    await page.waitForLoadState('networkidle')
+
+    await autoId(page, 'tab-jobSettings').click()
+    await autoId(page, 'settings-delivery-date').waitFor({ timeout: 10000 })
+    await waitForSettingsInitialized(page)
+
+    // Set delivery date to 30 days from now
+    const futureDate = new Date()
+    futureDate.setDate(futureDate.getDate() + 30)
+    const dateString = futureDate.toISOString().split('T')[0] // YYYY-MM-DD format
+
+    await test.step('set delivery date', async () => {
+      const dateInput = autoId(page, 'settings-delivery-date')
+      await dateInput.fill(dateString)
+      await dateInput.blur()
+    })
+
+    await test.step('wait for autosave', async () => {
+      await waitForAutosave(page)
+    })
+
+    await test.step('verify delivery date was saved', async () => {
+      await page.reload()
+      await autoId(page, 'tab-jobSettings').click()
+      await autoId(page, 'settings-delivery-date').waitFor({ timeout: 10000 })
+
+      const dateInput = autoId(page, 'settings-delivery-date')
+      await expect(dateInput).toHaveValue(dateString)
+    })
+  })
+
+  test('change order number', async ({ authenticatedPage: page }) => {
+    await page.goto(createdJobUrl)
+    await page.waitForLoadState('networkidle')
+
+    await autoId(page, 'tab-jobSettings').click()
+    await autoId(page, 'settings-order-number').waitFor({ timeout: 10000 })
+    await waitForSettingsInitialized(page)
+
+    const newOrderNumber = `ORD-${Date.now()}`
+
+    await test.step('set order number', async () => {
+      const orderInput = autoId(page, 'settings-order-number')
+      await orderInput.clear()
+      await orderInput.pressSequentially(newOrderNumber, { delay: 10 })
+      await orderInput.blur()
+    })
+
+    await test.step('wait for autosave', async () => {
+      await waitForAutosave(page)
+    })
+
+    await test.step('verify order number was saved', async () => {
+      await page.reload()
+      await autoId(page, 'tab-jobSettings').click()
+      await autoId(page, 'settings-order-number').waitFor({ timeout: 10000 })
+
+      const orderInput = autoId(page, 'settings-order-number')
+      await expect(orderInput).toHaveValue(newOrderNumber)
+    })
+  })
+
+  test('change speed vs quality', async ({ authenticatedPage: page }) => {
+    await page.goto(createdJobUrl)
+    await page.waitForLoadState('networkidle')
+
+    await autoId(page, 'tab-jobSettings').click()
+    await autoId(page, 'settings-speed-quality').waitFor({ timeout: 10000 })
+    await waitForSettingsInitialized(page)
+
+    await test.step('change to quality-focused', async () => {
+      const speedQualitySelect = autoId(page, 'settings-speed-quality')
+      await speedQualitySelect.selectOption('quality')
+      await speedQualitySelect.blur()
+    })
+
+    await test.step('wait for autosave', async () => {
+      await waitForAutosave(page)
+    })
+
+    await test.step('verify speed vs quality was saved', async () => {
+      await page.reload()
+      await autoId(page, 'tab-jobSettings').click()
+      await autoId(page, 'settings-speed-quality').waitFor({ timeout: 10000 })
+
+      const speedQualitySelect = autoId(page, 'settings-speed-quality')
+      await expect(speedQualitySelect).toHaveValue('quality')
+    })
+  })
+
+  test('change internal notes', async ({ authenticatedPage: page }) => {
+    await page.goto(createdJobUrl)
+    await page.waitForLoadState('networkidle')
+
+    await autoId(page, 'tab-jobSettings').click()
+    await autoId(page, 'settings-internal-notes').waitFor({ timeout: 10000 })
+    await waitForSettingsInitialized(page)
+
+    const newNotes = `Test internal notes ${Date.now()}`
+
+    await test.step('add internal notes', async () => {
+      // Quill editor uses a contenteditable div with class 'ql-editor'
+      const notesContainer = autoId(page, 'settings-internal-notes')
+      const quillEditor = notesContainer.locator('.ql-editor')
+      await quillEditor.click()
+      await quillEditor.fill(newNotes)
+      // Blur to trigger save
+      await page.click('body')
+    })
+
+    await test.step('wait for autosave', async () => {
+      await waitForAutosave(page)
+    })
+
+    await test.step('verify internal notes were saved', async () => {
+      await page.reload()
+      await autoId(page, 'tab-jobSettings').click()
+      await autoId(page, 'settings-internal-notes').waitFor({ timeout: 10000 })
+
+      const notesContainer = autoId(page, 'settings-internal-notes')
+      const quillEditor = notesContainer.locator('.ql-editor')
+      await expect(quillEditor).toContainText(newNotes)
+    })
+  })
+
   test('change pricing method from Fixed Price to T&M', async ({ authenticatedPage: page }) => {
     await page.goto(createdJobUrl)
     await page.waitForLoadState('networkidle')
@@ -193,6 +351,91 @@ test.describe.serial('edit job', () => {
 
       const pricingSelect = autoId(page, 'settings-pricing-method')
       await expect(pricingSelect).toHaveValue('time_materials')
+    })
+  })
+
+  test('change pricing method from header (T&M back to Fixed Price)', async ({
+    authenticatedPage: page,
+  }) => {
+    // This test uses the InlineEditSelect in the job header area
+    // (different UI than the settings tab select)
+    await page.goto(createdJobUrl)
+    await page.waitForLoadState('networkidle')
+
+    await test.step('click on pricing method in header to edit', async () => {
+      // Click the display text to enter edit mode
+      const pricingDisplay = autoId(page, 'header-pricing-method-display')
+      await pricingDisplay.waitFor({ timeout: 10000 })
+      await pricingDisplay.click()
+    })
+
+    await test.step('select Fixed Price from dropdown', async () => {
+      const pricingSelect = autoId(page, 'header-pricing-method-select')
+      await pricingSelect.waitFor({ timeout: 5000 })
+      await pricingSelect.selectOption('fixed_price')
+
+      // Click confirm button to save
+      const confirmBtn = autoId(page, 'header-pricing-method-confirm')
+      await confirmBtn.click()
+    })
+
+    await test.step('wait for autosave', async () => {
+      await waitForAutosave(page)
+    })
+
+    await test.step('verify pricing method was saved', async () => {
+      await page.reload()
+
+      // Verify in header display
+      const pricingDisplay = autoId(page, 'header-pricing-method-display')
+      await expect(pricingDisplay).toContainText('Fixed Price', { timeout: 10000 })
+
+      // Also verify in Job Settings tab
+      await autoId(page, 'tab-jobSettings').click()
+      await autoId(page, 'settings-pricing-method').waitFor({ timeout: 10000 })
+
+      const pricingSelect = autoId(page, 'settings-pricing-method')
+      await expect(pricingSelect).toHaveValue('fixed_price')
+    })
+  })
+
+  test('change job status from header (Draft to In Progress)', async ({
+    authenticatedPage: page,
+  }) => {
+    // Job status is only editable from the header (not in settings tab)
+    await page.goto(createdJobUrl)
+    await page.waitForLoadState('networkidle')
+
+    await test.step('verify initial status is Draft', async () => {
+      const statusDisplay = autoId(page, 'header-job-status-display')
+      await expect(statusDisplay).toContainText('Draft', { timeout: 10000 })
+    })
+
+    await test.step('click on status in header to edit', async () => {
+      const statusDisplay = autoId(page, 'header-job-status-display')
+      await statusDisplay.click()
+    })
+
+    await test.step('select In Progress from dropdown', async () => {
+      const statusSelect = autoId(page, 'header-job-status-select')
+      await statusSelect.waitFor({ timeout: 5000 })
+      await statusSelect.selectOption('in_progress')
+
+      // Click confirm button to save
+      const confirmBtn = autoId(page, 'header-job-status-confirm')
+      await confirmBtn.click()
+    })
+
+    await test.step('wait for autosave', async () => {
+      await waitForAutosave(page)
+    })
+
+    await test.step('verify status was saved', async () => {
+      await page.reload()
+
+      // Verify in header display
+      const statusDisplay = autoId(page, 'header-job-status-display')
+      await expect(statusDisplay).toContainText('In Progress', { timeout: 10000 })
     })
   })
 
