@@ -1,8 +1,5 @@
-import { test, expect } from './fixtures/auth'
-import type { Page } from '@playwright/test'
-
-// Helper to find elements by data-automation-id
-const autoId = (page: Page, id: string) => page.locator(`[data-automation-id="${id}"]`)
+import { test, expect } from '../fixtures/auth'
+import { autoId, dismissToasts } from '../fixtures/helpers'
 
 /**
  * Sequential test cases for job creation.
@@ -142,27 +139,7 @@ test.describe.serial('create job', () => {
         console.log(`[${new Date().toISOString()}] Submitting job...`)
 
         // Dismiss any toast notifications that might block the button
-        // First try the close button, then try clicking the toast itself to dismiss
-        const toasts = page.locator('[data-sonner-toast]')
-        const toastCount = await toasts.count()
-        if (toastCount > 0) {
-          console.log(`Found ${toastCount} toast(s), dismissing...`)
-          // Try to dismiss each toast
-          for (let i = 0; i < toastCount; i++) {
-            const toast = toasts.nth(i)
-            // Try close button first
-            const closeBtn = toast.locator('button[aria-label="Close toast"]')
-            if (await closeBtn.count()) {
-              await closeBtn.click()
-            } else {
-              // Click the toast itself to dismiss
-              await toast.click()
-            }
-            await page.waitForTimeout(100)
-          }
-          // Wait for toasts to clear
-          await page.waitForTimeout(300)
-        }
+        await dismissToasts(page)
 
         await autoId(page, 'create-job-submit').click({ force: true })
         console.log(
