@@ -1,8 +1,5 @@
-import { test, expect } from './fixtures/auth'
-import type { Page } from '@playwright/test'
-
-// Helper to find elements by data-automation-id
-const autoId = (page: Page, id: string) => page.locator(`[data-automation-id="${id}"]`)
+import { test, expect } from '../fixtures/auth'
+import { autoId, dismissToasts } from '../fixtures/helpers'
 
 /**
  * Sequential test cases for job creation.
@@ -142,15 +139,9 @@ test.describe.serial('create job', () => {
         console.log(`[${new Date().toISOString()}] Submitting job...`)
 
         // Dismiss any toast notifications that might block the button
-        const toastCloseButton = page.locator(
-          '[data-sonner-toast] button[aria-label="Close toast"]',
-        )
-        if (await toastCloseButton.count()) {
-          await toastCloseButton.first().click()
-          await page.waitForTimeout(200)
-        }
+        await dismissToasts(page)
 
-        await autoId(page, 'create-job-submit').click()
+        await autoId(page, 'create-job-submit').click({ force: true })
         console.log(
           `[${new Date().toISOString()}] Clicked Create Job button (${Date.now() - startTime}ms)`,
         )

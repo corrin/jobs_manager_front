@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :data-automation-id="automationId || undefined">
     <label v-if="label" :for="id" class="block text-sm font-medium text-gray-700 mb-1">
       {{ label }}
       <span v-if="required" class="text-red-500">*</span>
@@ -29,6 +29,7 @@ interface Props {
   helpText?: string
   readonly?: boolean
   height?: string
+  automationId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -38,6 +39,7 @@ const props = withDefaults(defineProps<Props>(), {
   required: false,
   readonly: false,
   height: '120px',
+  automationId: '',
 })
 
 const emit = defineEmits<{

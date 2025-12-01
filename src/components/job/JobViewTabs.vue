@@ -6,6 +6,7 @@
           <button
             v-for="tab in tabs"
             :key="tab.key"
+            :data-automation-id="`tab-${tab.key}-mobile`"
             @click="handleTabChange(tab.key as JobTabKey)"
             :class="[
               'flex-1 py-3 px-2 text-sm font-medium text-center border-b-2 transition-colors',
@@ -23,6 +24,7 @@
           <button
             v-for="tab in tabs"
             :key="tab.key"
+            :data-automation-id="`tab-${tab.key}`"
             @click="handleTabChange(tab.key as JobTabKey)"
             :class="[
               'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
