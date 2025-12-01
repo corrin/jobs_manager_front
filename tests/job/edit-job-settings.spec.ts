@@ -263,6 +263,18 @@ test.describe.serial('edit job', () => {
   })
 
   test('change speed vs quality', async ({ authenticatedPage: page }) => {
+    // Capture browser console logs for autosave debugging
+    page.on('console', (msg) => {
+      const text = msg.text()
+      if (
+        text.includes('JobAutosave') ||
+        text.includes('DEBUG') ||
+        text.includes('handleFieldInput')
+      ) {
+        console.log(`[Browser] ${text}`)
+      }
+    })
+
     await page.goto(createdJobUrl)
     await page.waitForLoadState('networkidle')
 
@@ -272,7 +284,16 @@ test.describe.serial('edit job', () => {
 
     await test.step('change to quality-focused', async () => {
       const speedQualitySelect = autoId(page, 'settings-speed-quality')
+      // Log current value before change
+      const beforeValue = await speedQualitySelect.inputValue()
+      console.log(`Speed/Quality before change: ${beforeValue}`)
+
       await speedQualitySelect.selectOption('quality')
+
+      // Log value after change
+      const afterValue = await speedQualitySelect.inputValue()
+      console.log(`Speed/Quality after change: ${afterValue}`)
+
       await speedQualitySelect.blur()
     })
 

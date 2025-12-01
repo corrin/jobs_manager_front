@@ -6297,7 +6297,7 @@ components:
         - error
     ClientJobHeader:
       type: object
-      description: Serializer for job header in client jobs list
+      description: Serializer for job header in client jobs list.
       properties:
         job_id:
           type: string
@@ -6315,6 +6315,8 @@ components:
         pricing_methodology:
           type: string
           nullable: true
+        speed_quality_tradeoff:
+          type: string
         fully_invoiced:
           type: boolean
         has_quote_in_xero:
@@ -6341,6 +6343,7 @@ components:
         - pricing_methodology
         - quote_acceptance_date
         - rejected_flag
+        - speed_quality_tradeoff
         - status
     ClientJobsResponse:
       type: object
@@ -6391,6 +6394,8 @@ components:
           type: string
         is_account_customer:
           type: boolean
+        is_supplier:
+          type: boolean
         xero_contact_id:
           type: string
         last_invoice_date:
@@ -6404,6 +6409,7 @@ components:
         - email
         - id
         - is_account_customer
+        - is_supplier
         - last_invoice_date
         - name
         - phone
@@ -6974,20 +6980,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        total_cost:
-          type: number
-          format: double
-          description: Get total cost (quantity * unit_cost)
-          readOnly: true
-        total_rev:
-          type: number
-          format: double
-          description: Get total revenue (quantity * unit_rev)
-          readOnly: true
-        accounting_date:
-          type: string
-          format: date
-          description: The date this cost should be attributed to for accounting purposes
         ext_refs:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
@@ -6999,6 +6991,36 @@ components:
         updated_at:
           type: string
           format: date-time
+          readOnly: true
+        accounting_date:
+          type: string
+          format: date
+          description: The date this cost should be attributed to for accounting purposes
+        xero_time_id:
+          type: string
+          nullable: true
+          maxLength: 255
+        xero_expense_id:
+          type: string
+          nullable: true
+          maxLength: 255
+        xero_last_modified:
+          type: string
+          format: date-time
+          nullable: true
+        xero_last_synced:
+          type: string
+          format: date-time
+          nullable: true
+        total_cost:
+          type: number
+          format: double
+          description: Get total cost (quantity * unit_cost)
+          readOnly: true
+        total_rev:
+          type: number
+          format: double
+          description: Get total revenue (quantity * unit_rev)
           readOnly: true
       required:
         - accounting_date
@@ -7141,14 +7163,30 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        accounting_date:
-          type: string
-          format: date
-          description: The date this cost should be attributed to for accounting purposes
         ext_refs:
           description: External references (e.g., time entry IDs, material IDs)
         meta:
           description: Additional metadata - structure varies by kind (see class docstring)
+        accounting_date:
+          type: string
+          format: date
+          description: The date this cost should be attributed to for accounting purposes
+        xero_time_id:
+          type: string
+          nullable: true
+          maxLength: 255
+        xero_expense_id:
+          type: string
+          nullable: true
+          maxLength: 255
+        xero_last_modified:
+          type: string
+          format: date-time
+          nullable: true
+        xero_last_synced:
+          type: string
+          format: date-time
+          nullable: true
       required:
         - accounting_date
         - kind
@@ -7158,6 +7196,10 @@ components:
       properties:
         id:
           type: string
+          readOnly: true
+        job:
+          type: string
+          format: uuid
           readOnly: true
         kind:
           allOf:
@@ -7183,6 +7225,7 @@ components:
         - cost_lines
         - created
         - id
+        - job
         - kind
         - rev
         - summary
@@ -8575,11 +8618,6 @@ components:
         filename:
           type: string
           maxLength: 255
-        size:
-          type: integer
-          nullable: true
-          description: Get file size in bytes
-          readOnly: true
         mime_type:
           type: string
           maxLength: 100
@@ -8587,8 +8625,15 @@ components:
           type: string
           format: date-time
           readOnly: true
+        status:
+          $ref: '#/components/schemas/JobFileStatusEnum'
         print_on_jobsheet:
           type: boolean
+        size:
+          type: integer
+          nullable: true
+          description: Get file size in bytes
+          readOnly: true
         download_url:
           type: string
           readOnly: true
@@ -8596,8 +8641,6 @@ components:
           type: string
           nullable: true
           readOnly: true
-        status:
-          $ref: '#/components/schemas/JobFileStatusEnum'
       required:
         - download_url
         - filename
@@ -8629,10 +8672,10 @@ components:
         mime_type:
           type: string
           maxLength: 100
-        print_on_jobsheet:
-          type: boolean
         status:
           $ref: '#/components/schemas/JobFileStatusEnum'
+        print_on_jobsheet:
+          type: boolean
       required:
         - filename
         - id
@@ -8755,26 +8798,45 @@ components:
     JobHeaderResponse:
       type: object
       description: Serializer for job header response - essential job data for fast
-        loading
+        loading.
       properties:
         job_id:
           type: string
           format: uuid
-        job_number:
-          type: integer
-        name:
-          type: string
         client:
           $ref: '#/components/schemas/JobClientHeader'
-        status:
-          type: string
-        pricing_methodology:
-          type: string
-          nullable: true
-        fully_invoiced:
-          type: boolean
         quoted:
           type: boolean
+        job_number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        name:
+          type: string
+          maxLength: 100
+        status:
+          $ref: '#/components/schemas/Status7b9Enum'
+        pricing_methodology:
+          allOf:
+            - $ref: '#/components/schemas/PricingMethodologyEnum'
+          description: |-
+            Determines whether job uses quotes or time and materials pricing type.
+
+            * `time_materials` - Time & Materials
+            * `fixed_price` - Fixed Price
+        speed_quality_tradeoff:
+          allOf:
+            - $ref: '#/components/schemas/SpeedQualityTradeoffEnum'
+          description: |-
+            Speed vs quality tradeoff for workshop execution
+
+            * `fast` - Fast - Prioritize Speed
+            * `normal` - Normal - Balanced
+            * `quality` - Quality - Prioritize Quality
+        fully_invoiced:
+          type: boolean
+          description: The total value of invoices for this job matches the total
+            value of the job.
         quote_acceptance_date:
           type: string
           format: date-time
@@ -8783,18 +8845,14 @@ components:
           type: boolean
         rejected_flag:
           type: boolean
+          description: Indicates if this job was rejected (shown in Recently Completed
+            with rejected styling)
       required:
         - client
-        - fully_invoiced
         - job_id
         - job_number
         - name
-        - paid
-        - pricing_methodology
-        - quote_acceptance_date
         - quoted
-        - rejected_flag
-        - status
     JobInvoicesResponse:
       type: object
       description: Serializer for job invoices response
@@ -9393,7 +9451,7 @@ components:
       type: object
       description: |-
         Serializer for job data in kanban column context
-        (from get_jobs_by_kanban_column).
+        (from get_jobs_by_kanban_column - uses serialize_job_for_api).
       properties:
         id:
           type: string
@@ -9416,8 +9474,14 @@ components:
           type: string
         status_key:
           type: string
+        rejected_flag:
+          type: boolean
         paid:
           type: boolean
+        fully_invoiced:
+          type: boolean
+        speed_quality_tradeoff:
+          type: string
         created_by_id:
           type: string
           nullable: true
@@ -9439,12 +9503,15 @@ components:
         - created_at
         - created_by_id
         - description
+        - fully_invoiced
         - id
         - job_number
         - name
         - paid
         - people
         - priority
+        - rejected_flag
+        - speed_quality_tradeoff
         - status
         - status_key
     KanbanErrorResponse:
@@ -9490,6 +9557,10 @@ components:
           type: boolean
         paid:
           type: boolean
+        fully_invoiced:
+          type: boolean
+        speed_quality_tradeoff:
+          type: string
         created_by_id:
           type: string
           format: uuid
@@ -9506,6 +9577,7 @@ components:
         - created_at
         - created_by_id
         - description
+        - fully_invoiced
         - id
         - job_number
         - name
@@ -9513,6 +9585,7 @@ components:
         - people
         - priority
         - rejected_flag
+        - speed_quality_tradeoff
         - status
         - status_key
     KanbanJobPerson:
@@ -9643,7 +9716,7 @@ components:
           type: string
         email:
           type: string
-        avatarUrl:
+        icon:
           type: string
           nullable: true
         wageRate:
@@ -9654,9 +9727,9 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
       required:
-        - avatarUrl
         - email
         - firstName
+        - icon
         - id
         - lastName
         - name
@@ -10482,6 +10555,11 @@ components:
           format: email
           minLength: 1
           maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
         first_name:
           type: string
           minLength: 1
@@ -10494,11 +10572,6 @@ components:
           type: string
           nullable: true
           maxLength: 30
-        password:
-          type: string
-          writeOnly: true
-          minLength: 1
-          maxLength: 128
         wage_rate:
           type: number
           format: double
@@ -10510,12 +10583,6 @@ components:
           type: string
           nullable: true
           maxLength: 100
-        icon:
-          type: string
-          format: binary
-          nullable: true
-        raw_ims_data:
-          nullable: true
         xero_user_id:
           type: string
           nullable: true
@@ -10532,17 +10599,14 @@ components:
           title: Superuser status
           description: Designates that this user has all permissions without explicitly
             assigning them.
-        groups:
-          type: array
-          items:
-            type: integer
-          description: The groups this user belongs to. A user will get all permissions
-            granted to each of their groups.
-        user_permissions:
-          type: array
-          items:
-            type: integer
-          description: Specific permissions for this user.
+        password_needs_reset:
+          type: boolean
+        icon:
+          type: string
+          format: binary
+          nullable: true
+        raw_ims_data:
+          nullable: true
         hours_mon:
           type: number
           format: double
@@ -10599,6 +10663,17 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           description: Standard hours for Sunday, 0 for non-working day
+        groups:
+          type: array
+          items:
+            type: integer
+          description: The groups this user belongs to. A user will get all permissions
+            granted to each of their groups.
+        user_permissions:
+          type: array
+          items:
+            type: integer
+          description: Specific permissions for this user.
     PayRunDetails:
       type: object
       description: Serializer representing details from a Xero pay run.
@@ -11042,6 +11117,24 @@ components:
           nullable: true
           description: Optional reference for the purchase order
           maxLength: 100
+        status:
+          $ref: '#/components/schemas/PurchaseOrderDetailStatusEnum'
+        order_date:
+          type: string
+          format: date
+        expected_delivery:
+          type: string
+          format: date
+          nullable: true
+        online_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 500
+        xero_id:
+          type: string
+          format: uuid
+          nullable: true
         supplier:
           type: string
           readOnly: true
@@ -11052,28 +11145,10 @@ components:
         supplier_has_xero_id:
           type: boolean
           readOnly: true
-        status:
-          $ref: '#/components/schemas/PurchaseOrderDetailStatusEnum'
-        order_date:
-          type: string
-          format: date
-        expected_delivery:
-          type: string
-          format: date
-          nullable: true
         lines:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderLine'
-        online_url:
-          type: string
-          format: uri
-          nullable: true
-          maxLength: 500
-        xero_id:
-          type: string
-          format: uuid
-          nullable: true
       required:
         - id
         - lines
@@ -11130,11 +11205,6 @@ components:
           type: string
           format: uuid
           readOnly: true
-        item_code:
-          type: string
-          nullable: true
-          description: Internal item code for Xero integration
-          maxLength: 50
         description:
           type: string
           maxLength: 200
@@ -11145,14 +11215,11 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        received_quantity:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          description: Total quantity received against this line
+        dimensions:
+          type: string
+          nullable: true
+          description: Dimensions such as length, width, height, etc.
+          maxLength: 255
         unit_cost:
           type: number
           format: double
@@ -11165,6 +11232,24 @@ components:
           type: boolean
           description: If true, the price is to be confirmed and unit cost will be
             None
+        supplier_item_code:
+          type: string
+          nullable: true
+          description: Supplier's own item code/SKU
+          maxLength: 50
+        item_code:
+          type: string
+          nullable: true
+          description: Internal item code for Xero integration
+          maxLength: 50
+        received_quantity:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Total quantity received against this line
         metal_type:
           nullable: true
           oneOf:
@@ -11186,18 +11271,15 @@ components:
           nullable: true
           description: Where this item will be stored
           maxLength: 255
-        dimensions:
-          type: string
-          nullable: true
-          description: Dimensions such as length, width, height, etc.
-          maxLength: 255
         job_id:
           type: string
           format: uuid
+          readOnly: true
           nullable: true
       required:
         - description
         - id
+        - job_id
         - quantity
     PurchaseOrderLineCreate:
       type: object
@@ -11676,6 +11758,16 @@ components:
       description: |-
         * `user` - User
         * `assistant` - Assistant
+    SourceEnum:
+      enum:
+        - purchase_order
+        - split_from_stock
+        - manual
+      type: string
+      description: |-
+        * `purchase_order` - Purchase Order Receipt
+        * `split_from_stock` - Split/Offcut from Stock
+        * `manual` - Manual Adjustment/Stocktake
     SpeedQualityTradeoffEnum:
       enum:
         - fast
@@ -11720,12 +11812,6 @@ components:
           type: string
           nullable: true
           maxLength: 100
-        icon:
-          type: string
-          format: uri
-          nullable: true
-        raw_ims_data:
-          nullable: true
         xero_user_id:
           type: string
           nullable: true
@@ -11742,17 +11828,14 @@ components:
           title: Superuser status
           description: Designates that this user has all permissions without explicitly
             assigning them.
-        groups:
-          type: array
-          items:
-            type: integer
-          description: The groups this user belongs to. A user will get all permissions
-            granted to each of their groups.
-        user_permissions:
-          type: array
-          items:
-            type: integer
-          description: Specific permissions for this user.
+        password_needs_reset:
+          type: boolean
+        icon:
+          type: string
+          format: uri
+          nullable: true
+        raw_ims_data:
+          nullable: true
         hours_mon:
           type: number
           format: double
@@ -11809,11 +11892,6 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           description: Standard hours for Sunday, 0 for non-working day
-        last_login:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
         date_joined:
           type: string
           format: date-time
@@ -11826,6 +11904,22 @@ components:
           type: string
           format: date-time
           readOnly: true
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        groups:
+          type: array
+          items:
+            type: integer
+          description: The groups this user belongs to. A user will get all permissions
+            granted to each of their groups.
+        user_permissions:
+          type: array
+          items:
+            type: integer
+          description: Specific permissions for this user.
       required:
         - created_at
         - date_joined
@@ -11840,6 +11934,16 @@ components:
       description: Base serializer for Staff model with shared logic for create and
         update operations.
       properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
         first_name:
           type: string
           minLength: 1
@@ -11852,16 +11956,6 @@ components:
           type: string
           nullable: true
           maxLength: 30
-        email:
-          type: string
-          format: email
-          minLength: 1
-          maxLength: 254
-        password:
-          type: string
-          writeOnly: true
-          minLength: 1
-          maxLength: 128
         wage_rate:
           type: number
           format: double
@@ -11873,9 +11967,29 @@ components:
           type: string
           nullable: true
           maxLength: 100
+        xero_user_id:
+          type: string
+          nullable: true
+          maxLength: 255
+        date_left:
+          type: string
+          format: date
+          nullable: true
+          description: Date staff member left employment (null for current employees)
+        is_staff:
+          type: boolean
+        is_superuser:
+          type: boolean
+          title: Superuser status
+          description: Designates that this user has all permissions without explicitly
+            assigning them.
+        password_needs_reset:
+          type: boolean
         icon:
           type: string
           format: binary
+          nullable: true
+        raw_ims_data:
           nullable: true
         hours_mon:
           type: number
@@ -11933,13 +12047,16 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           description: Standard hours for Sunday, 0 for non-working day
-        is_staff:
-          type: boolean
-        is_superuser:
-          type: boolean
-          title: Superuser status
-          description: Designates that this user has all permissions without explicitly
-            assigning them.
+        date_joined:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        last_login:
+          type: string
+          format: date-time
+          nullable: true
         groups:
           type: array
           items:
@@ -11966,7 +12083,7 @@ components:
           type: string
         staff_initials:
           type: string
-        avatar_url:
+        icon:
           type: string
           nullable: true
         scheduled_hours:
@@ -12016,11 +12133,11 @@ components:
       required:
         - actual_hours
         - alerts
-        - avatar_url
         - billable_hours
         - billable_percentage
         - completion_percentage
         - entry_count
+        - icon
         - job_breakdown
         - non_billable_hours
         - scheduled_hours
@@ -12221,6 +12338,11 @@ components:
           format: email
           minLength: 1
           maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
         first_name:
           type: string
           minLength: 1
@@ -12233,11 +12355,6 @@ components:
           type: string
           nullable: true
           maxLength: 30
-        password:
-          type: string
-          writeOnly: true
-          minLength: 1
-          maxLength: 128
         wage_rate:
           type: number
           format: double
@@ -12249,12 +12366,6 @@ components:
           type: string
           nullable: true
           maxLength: 100
-        icon:
-          type: string
-          format: binary
-          nullable: true
-        raw_ims_data:
-          nullable: true
         xero_user_id:
           type: string
           nullable: true
@@ -12271,17 +12382,14 @@ components:
           title: Superuser status
           description: Designates that this user has all permissions without explicitly
             assigning them.
-        groups:
-          type: array
-          items:
-            type: integer
-          description: The groups this user belongs to. A user will get all permissions
-            granted to each of their groups.
-        user_permissions:
-          type: array
-          items:
-            type: integer
-          description: Specific permissions for this user.
+        password_needs_reset:
+          type: boolean
+        icon:
+          type: string
+          format: binary
+          nullable: true
+        raw_ims_data:
+          nullable: true
         hours_mon:
           type: number
           format: double
@@ -12338,6 +12446,17 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           description: Standard hours for Sunday, 0 for non-working day
+        groups:
+          type: array
+          items:
+            type: integer
+          description: The groups this user belongs to. A user will get all permissions
+            granted to each of their groups.
+        user_permissions:
+          type: array
+          items:
+            type: integer
+          description: Specific permissions for this user.
       required:
         - email
         - first_name
@@ -12558,47 +12677,102 @@ components:
         id:
           type: string
           format: uuid
-          nullable: true
-        description:
-          type: string
-          nullable: true
-        quantity:
-          type: number
-          format: double
-          nullable: true
-        unit_cost:
-          type: number
-          format: double
-          nullable: true
-        metal_type:
-          type: string
-          nullable: true
-        alloy:
-          type: string
-          nullable: true
-        specifics:
-          type: string
-          nullable: true
-        location:
-          type: string
-          nullable: true
-        source:
-          type: string
-          nullable: true
-        date:
-          type: string
-          format: date-time
-          nullable: true
-        job_id:
-          type: string
-          format: uuid
-          nullable: true
-        notes:
-          type: string
-          nullable: true
+          readOnly: true
         item_code:
           type: string
           nullable: true
+          description: Xero Item Code
+          maxLength: 255
+        description:
+          type: string
+          description: Description of the stock item
+          maxLength: 255
+        quantity:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Current quantity of the stock item
+        unit_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Cost per unit of the stock item
+        unit_revenue:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Revenue per unit (what customer pays)
+        date:
+          type: string
+          format: date-time
+          description: Date the stock item was created
+        source:
+          allOf:
+            - $ref: '#/components/schemas/SourceEnum'
+          description: |-
+            Origin of this stock item
+
+            * `purchase_order` - Purchase Order Receipt
+            * `split_from_stock` - Split/Offcut from Stock
+            * `manual` - Manual Adjustment/Stocktake
+        location:
+          type: string
+          description: Where we are keeping this
+        notes:
+          type: string
+          description: Additional notes about the stock item
+        metal_type:
+          description: |-
+            Type of metal
+
+            * `stainless_steel` - Stainless Steel
+            * `mild_steel` - Mild Steel
+            * `aluminum` - Aluminum
+            * `brass` - Brass
+            * `copper` - Copper
+            * `titanium` - Titanium
+            * `zinc` - Zinc
+            * `galvanized` - Galvanized
+            * `unspecified` - Unspecified
+            * `other` - Other
+          oneOf:
+            - $ref: '#/components/schemas/MetalTypeEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+        alloy:
+          type: string
+          nullable: true
+          description: Alloy specification (e.g., 304, 6061)
+          maxLength: 50
+        specifics:
+          type: string
+          nullable: true
+          description: Specific details (e.g., m8 countersunk socket screw)
+          maxLength: 255
+        is_active:
+          type: boolean
+          description: False when quantity reaches zero or item is fully consumed/transformed
+        job_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+      required:
+        - description
+        - id
+        - job_id
+        - quantity
+        - source
+        - unit_cost
     StockList:
       type: object
       description: Serializer for listing stock items from service data.
@@ -12836,21 +13010,6 @@ components:
           exclusiveMaximum: true
           exclusiveMinimum: true
           readOnly: true
-        total_cost:
-          type: number
-          format: double
-          description: Get total cost (quantity * unit_cost)
-          readOnly: true
-        total_rev:
-          type: number
-          format: double
-          description: Get total revenue (quantity * unit_rev)
-          readOnly: true
-        accounting_date:
-          type: string
-          format: date
-          readOnly: true
-          description: The date this cost should be attributed to for accounting purposes
         ext_refs:
           readOnly: true
           description: External references (e.g., time entry IDs, material IDs)
@@ -12864,6 +13023,39 @@ components:
         updated_at:
           type: string
           format: date-time
+          readOnly: true
+        accounting_date:
+          type: string
+          format: date
+          readOnly: true
+          description: The date this cost should be attributed to for accounting purposes
+        xero_time_id:
+          type: string
+          readOnly: true
+          nullable: true
+        xero_expense_id:
+          type: string
+          readOnly: true
+          nullable: true
+        xero_last_modified:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        xero_last_synced:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        total_cost:
+          type: number
+          format: double
+          description: Get total cost (quantity * unit_cost)
+          readOnly: true
+        total_rev:
+          type: number
+          format: double
+          description: Get total revenue (quantity * unit_rev)
           readOnly: true
         job_id:
           type: string
@@ -12911,6 +13103,10 @@ components:
         - unit_rev
         - updated_at
         - wage_rate
+        - xero_expense_id
+        - xero_last_modified
+        - xero_last_synced
+        - xero_time_id
     TokenObtainPairResponse:
       type: object
       description: |-
