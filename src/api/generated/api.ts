@@ -2430,7 +2430,7 @@ const ModernStaff = z
     firstName: z.string(),
     lastName: z.string(),
     email: z.string(),
-    icon: z.string().nullable(),
+    icon: z.string().nullish(),
     wageRate: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()

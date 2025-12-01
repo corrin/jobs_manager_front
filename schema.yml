@@ -9729,7 +9729,6 @@ components:
       required:
         - email
         - firstName
-        - icon
         - id
         - lastName
         - name
