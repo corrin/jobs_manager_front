@@ -55,9 +55,10 @@ const colCount = computed(() => props.columns.length)
       <TableBody class="overflow-y-auto">
         <template v-if="table.getRowModel().rows.length">
           <TableRow
-            v-for="row in table.getRowModel().rows"
+            v-for="(row, rowIndex) in table.getRowModel().rows"
             :key="row.id"
             class="hover:bg-slate-50 cursor-pointer"
+            :data-automation-id="`cost-line-row-${rowIndex}`"
             @click="emit('rowClick', row.original)"
           >
             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" class="p-1">

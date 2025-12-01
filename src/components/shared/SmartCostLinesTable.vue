@@ -25,6 +25,7 @@ import ItemSelect from '../../views/purchasing/ItemSelect.vue'
 import type { DataTableRowContext } from '../../utils/data-table-types'
 import { toast } from 'vue-sonner'
 import { debugLog } from '../../utils/debug'
+import { formatCurrency } from '../../utils/string-formatting'
 import { HelpCircle, Trash2, Plus, AlertTriangle } from 'lucide-vue-next'
 import {
   Dialog,
@@ -264,14 +265,6 @@ function getKindBadge(line: CostLine) {
     default:
       return { label: kind, class: 'bg-gray-100 text-gray-800' }
   }
-}
-
-function formatMoney(n: number | undefined | null) {
-  const val = Number(n ?? 0)
-  return new Intl.NumberFormat('en-NZ', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(val)
 }
 
 function formatModifiedDate(dateString: string): string {
@@ -957,7 +950,7 @@ const columns = computed(() => {
         return h(
           'div',
           { class: 'col-12ch text-right font-medium numeric-text' },
-          `$${formatMoney(totalCost)}`,
+          formatCurrency(totalCost),
         )
       },
       meta: { editable: false },
@@ -975,7 +968,7 @@ const columns = computed(() => {
         return h(
           'div',
           { class: 'col-12ch text-right font-medium numeric-text' },
-          `$${formatMoney(totalRev)}`,
+          formatCurrency(totalRev),
         )
       },
       meta: { editable: false },
@@ -1267,7 +1260,13 @@ const shortcutsTitle = computed(
     </div>
 
     <div v-if="!props.readOnly" class="px-4 py-2">
-      <Button variant="default" size="sm" @click="handleAddLine" aria-label="Add Row">
+      <Button
+        variant="default"
+        size="sm"
+        @click="handleAddLine"
+        aria-label="Add Row"
+        data-automation-id="cost-lines-add-row"
+      >
         <Plus class="w-4 h-4 mr-1" /> Add row
       </Button>
     </div>
