@@ -461,8 +461,10 @@ test.describe.serial('change material code', () => {
 
     await test.step('click on item selector and change to a different material', async () => {
       const itemCell = autoId(page, `cost-line-item-${materialRowIndex}`)
-      const itemTrigger = itemCell.locator('.item-select-trigger')
-      await itemTrigger.click()
+      // When row is inactive, item cell shows a Button with item code
+      // Click it to activate the row and open the ItemSelect
+      const itemButton = itemCell.locator('button')
+      await itemButton.click()
 
       const searchInput = page.getByPlaceholder('Search items by description, code, or type...')
       await searchInput.waitFor({ timeout: 10000 })

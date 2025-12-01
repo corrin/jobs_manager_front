@@ -42,7 +42,6 @@ import { useCostLineCalculations } from '../../composables/useCostLineCalculatio
 import { useCostLineAutosave } from '../../composables/useCostLineAutosave'
 import { useGridKeyboardNav } from '../../composables/useGridKeyboardNav'
 import { costlineService } from '../../services/costline.service'
-import { api } from '../../api/client'
 
 import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
@@ -53,7 +52,7 @@ type CostLine = z.infer<typeof schemas.CostLine> & {
   created_at?: string
   updated_at?: string
 }
-type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdate>
+type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdateRequest>
 
 type TabKind = 'estimate' | 'quote' | 'actual'
 export type KindOption = 'material' | 'time' | 'adjust'
@@ -385,7 +384,9 @@ const columns = computed(() => {
             const isActualTab = props.tabKind === 'actual'
 
             const lockedByDeliveryReceipt = isDeliveryReceipt(line)
-            const lockedStockExisting = !!line.id && isStockLine(line)
+            // Only lock existing stock lines on actual tab (where inventory is consumed)
+            // Estimate/quote tabs should allow changing material selection
+            const lockedStockExisting = isActualTab && !!line.id && isStockLine(line)
             const enabled =
               kind !== 'time' && !props.readOnly && !lockedByDeliveryReceipt && !lockedStockExisting
 
@@ -393,72 +394,82 @@ const columns = computed(() => {
 
             // Lazy mount: render lightweight control until row is active (selected)
             if (!isActive) {
-              return h('div', { class: 'col-item flex items-center' }, [
-                h(
-                  Button,
-                  {
-                    variant: 'outline',
-                    size: 'sm',
-                    disabled: !enabled,
-                    onClick: (e: Event) => {
-                      e.stopPropagation()
-                      selectedRowIndex.value = row.index
+              return h(
+                'div',
+                {
+                  class: 'col-item flex items-center',
+                  'data-automation-id': `cost-line-item-${row.index}`,
+                },
+                [
+                  h(
+                    Button,
+                    {
+                      variant: 'outline',
+                      size: 'sm',
+                      disabled: !enabled,
+                      onClick: (e: Event) => {
+                        e.stopPropagation()
+                        selectedRowIndex.value = row.index
+                        // Also open the ItemSelect dropdown immediately
+                        openItemSelect.value = true
+                      },
+                      class: 'font-mono uppercase tracking-wide',
                     },
-                    class: 'font-mono uppercase tracking-wide',
-                  },
-                  () => {
-                    if (!model) {
-                      // Check if this is a time line without stock_id (labour)
-                      const stockId = (line.ext_refs as Record<string, unknown>)?.stock_id as string
-                      if (!stockId && String(line.kind) === 'time') {
+                    () => {
+                      if (!model) {
+                        // Check if this is a time line without stock_id (labour)
+                        const stockId = (line.ext_refs as Record<string, unknown>)
+                          ?.stock_id as string
+                        if (!stockId && String(line.kind) === 'time') {
+                          return 'LABOUR'
+                        }
+
+                        // Check if this is an existing line with stock selected
+                        if (stockId) {
+                          // Try to find the item in the stock store by ID
+                          const stockItem = store.items.find((item) => item.id === stockId)
+                          if (stockItem?.item_code) {
+                            return stockItem.item_code
+                          }
+                        }
+
+                        // If no stock_id or item not found by ID, try to find by description
+                        if (line.desc) {
+                          const stockItemByDesc = store.items.find(
+                            (item) => item.description?.toLowerCase() === line.desc?.toLowerCase(),
+                          )
+                          if (stockItemByDesc?.item_code) {
+                            return stockItemByDesc.item_code
+                          }
+                        }
+
+                        // If no valid item found, prompt user to select a valid item
+                        return 'Select Item'
+                      }
+
+                      // Handle labour items specially
+                      if (model === '__labour__') {
                         return 'LABOUR'
                       }
 
-                      // Check if this is an existing line with stock selected
-                      if (stockId) {
-                        // Try to find the item in the stock store by ID
-                        const stockItem = store.items.find((item) => item.id === stockId)
+                      // If we have selectedItem, use its code
+                      if (selectedItem?.item_code) {
+                        return selectedItem.item_code
+                      }
+
+                      // If no selectedItem but we have a model (stock_id), find the item in store
+                      if (model && model !== '__labour__') {
+                        const stockItem = store.items.find((item) => item.id === model)
                         if (stockItem?.item_code) {
                           return stockItem.item_code
                         }
                       }
 
-                      // If no stock_id or item not found by ID, try to find by description
-                      if (line.desc) {
-                        const stockItemByDesc = store.items.find(
-                          (item) => item.description?.toLowerCase() === line.desc?.toLowerCase(),
-                        )
-                        if (stockItemByDesc?.item_code) {
-                          return stockItemByDesc.item_code
-                        }
-                      }
-
-                      // If no valid item found, prompt user to select a valid item
-                      return 'Select Item'
-                    }
-
-                    // Handle labour items specially
-                    if (model === '__labour__') {
-                      return 'LABOUR'
-                    }
-
-                    // If we have selectedItem, use its code
-                    if (selectedItem?.item_code) {
-                      return selectedItem.item_code
-                    }
-
-                    // If no selectedItem but we have a model (stock_id), find the item in store
-                    if (model && model !== '__labour__') {
-                      const stockItem = store.items.find((item) => item.id === model)
-                      if (stockItem?.item_code) {
-                        return stockItem.item_code
-                      }
-                    }
-
-                    return 'Change item'
-                  },
-                ),
-              ])
+                      return 'Change item'
+                    },
+                  ),
+                ],
+              )
             }
 
             return h(
@@ -519,9 +530,11 @@ const columns = computed(() => {
                       props.jobId
                     ) {
                       try {
-                        const stock = await api.purchasing_rest_stock_retrieve({
-                          params: { id: val },
-                        })
+                        // Look up stock item from store (already loaded for the dropdown)
+                        const stock = store.items.find((item) => item.id === val)
+                        if (!stock) {
+                          throw new Error('Stock item not found in store')
+                        }
                         const qty = Number(line.quantity || 1)
                         const unitCost = Number(stock.unit_cost || 0)
                         const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
@@ -546,27 +559,27 @@ const columns = computed(() => {
                       selectedRowIndex.value = -1
                     }
 
-                    let found = null
-                    try {
-                      found = await api.purchasing_rest_stock_retrieve({ params: { id: val } })
-                    } catch (error) {
-                      debugLog('Failed to fetch stock item details:', error)
-                    }
+                    // Look up stock item from store (already loaded for the dropdown)
+                    const found = val ? store.items.find((item) => item.id === val) : null
                     if (found) {
-                      debugLog('✅ API returned stock item:', {
+                      debugLog('✅ Found stock item in store:', {
                         id: found.id,
                         item_code: found.item_code,
                         description: found.description,
                       })
                       Object.assign(line, { desc: found.description || '' })
                       Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
+                      // Update ext_refs.stock_id to reference the selected item
+                      Object.assign(line, {
+                        ext_refs: { ...((line.ext_refs as object) || {}), stock_id: val },
+                      })
                       // Update selectedItemMap with full data
                       selectedItemMap.set(line, {
                         id: val,
                         description: found.description || '',
                         item_code: found.item_code || '',
                       })
-                      debugLog('💾 Updated selectedItemMap with full item data:', {
+                      debugLog('💾 Updated line with stock item data:', {
                         id: val,
                         description: found.description || '',
                         item_code: found.item_code || '',
@@ -580,8 +593,8 @@ const columns = computed(() => {
                       if (!line.id && isLineReadyForSave(line)) {
                         loggedEmit('create-line', line)
                       }
-                    } else {
-                      debugLog('❌ API did not return stock item for id:', val)
+                    } else if (val) {
+                      debugLog('❌ Stock item not found in store for id:', val)
                       Object.assign(line, { desc: '' })
                       Object.assign(line, { unit_cost: 0 })
                       selectedItemMap.set(line, null)
@@ -593,6 +606,7 @@ const columns = computed(() => {
                         desc: line.desc || '',
                         unit_cost: Number(line.unit_cost ?? 0),
                         unit_rev: Number(line.unit_rev ?? 0),
+                        ext_refs: { stock_id: val },
                       }
                       const optimistic: Partial<CostLine> = { ...patch }
                       autosave.scheduleSave(line, patch, optimistic)

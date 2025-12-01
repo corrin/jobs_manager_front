@@ -2162,36 +2162,40 @@ const StockItem = z
     job_id: z.string().uuid().nullable(),
   })
   .passthrough()
-const StockList = z
-  .object({ items: z.array(StockItem), total_count: z.number().int() })
-  .passthrough()
-const StockCreateRequest = z
+const StockItemRequest = z
   .object({
+    item_code: z.string().max(255).nullish(),
     description: z.string().min(1).max(255),
     quantity: z.number().gt(-100000000).lt(100000000),
     unit_cost: z.number().gt(-100000000).lt(100000000),
-    source: z.string().min(1).max(100),
-    notes: z.string().max(500).optional(),
-    metal_type: z.string().max(100).optional(),
-    alloy: z.string().max(100).optional(),
-    specifics: z.string().max(255).optional(),
-    location: z.string().max(255).optional(),
-    dimensions: z.string().max(255).optional(),
+    unit_revenue: z.number().gt(-100000000).lt(100000000).nullish(),
+    date: z.string().datetime({ offset: true }).optional(),
+    source: SourceEnum,
+    location: z.string().optional(),
+    notes: z.string().optional(),
+    metal_type: z.union([MetalTypeEnum, BlankEnum]).optional(),
+    alloy: z.string().max(50).nullish(),
+    specifics: z.string().max(255).nullish(),
+    is_active: z.boolean().optional(),
   })
   .passthrough()
-const StockCreate = z
+const PatchedStockItemRequest = z
   .object({
-    description: z.string().max(255),
+    item_code: z.string().max(255).nullable(),
+    description: z.string().min(1).max(255),
     quantity: z.number().gt(-100000000).lt(100000000),
     unit_cost: z.number().gt(-100000000).lt(100000000),
-    source: z.string().max(100),
-    notes: z.string().max(500).optional(),
-    metal_type: z.string().max(100).optional(),
-    alloy: z.string().max(100).optional(),
-    specifics: z.string().max(255).optional(),
-    location: z.string().max(255).optional(),
-    dimensions: z.string().max(255).optional(),
+    unit_revenue: z.number().gt(-100000000).lt(100000000).nullable(),
+    date: z.string().datetime({ offset: true }),
+    source: SourceEnum,
+    location: z.string(),
+    notes: z.string(),
+    metal_type: z.union([MetalTypeEnum, BlankEnum]),
+    alloy: z.string().max(50).nullable(),
+    specifics: z.string().max(255).nullable(),
+    is_active: z.boolean(),
   })
+  .partial()
   .passthrough()
 const StockConsumeRequestRequest = z
   .object({
@@ -2765,9 +2769,8 @@ export const schemas = {
   PurchasingErrorResponse,
   SourceEnum,
   StockItem,
-  StockList,
-  StockCreateRequest,
-  StockCreate,
+  StockItemRequest,
+  PatchedStockItemRequest,
   StockConsumeRequestRequest,
   StockConsumeResponse,
   SupplierPriceStatusItem,
@@ -5877,37 +5880,156 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
   {
     method: 'get',
     path: '/purchasing/rest/stock/',
-    alias: 'purchasing_rest_stock_retrieve',
-    description: `Get list of all active stock items.`,
+    alias: 'purchasing_rest_stock_list',
+    description: `ViewSet for Stock CRUD operations.
+
+Endpoints:
+- GET    /purchasing/rest/stock/              - list all active stock
+- POST   /purchasing/rest/stock/              - create stock item
+- GET    /purchasing/rest/stock/&lt;id&gt;/         - retrieve stock item
+- PUT    /purchasing/rest/stock/&lt;id&gt;/         - full update
+- PATCH  /purchasing/rest/stock/&lt;id&gt;/         - partial update
+- DELETE /purchasing/rest/stock/&lt;id&gt;/         - soft delete (sets is_active&#x3D;False)
+
+Custom Actions:
+- POST   /purchasing/rest/stock/&lt;id&gt;/consume/ - consume stock for a job`,
     requestFormat: 'json',
-    response: StockList,
+    response: z.array(StockItem),
   },
   {
     method: 'post',
     path: '/purchasing/rest/stock/',
     alias: 'purchasing_rest_stock_create',
-    description: `Create new stock item.`,
+    description: `ViewSet for Stock CRUD operations.
+
+Endpoints:
+- GET    /purchasing/rest/stock/              - list all active stock
+- POST   /purchasing/rest/stock/              - create stock item
+- GET    /purchasing/rest/stock/&lt;id&gt;/         - retrieve stock item
+- PUT    /purchasing/rest/stock/&lt;id&gt;/         - full update
+- PATCH  /purchasing/rest/stock/&lt;id&gt;/         - partial update
+- DELETE /purchasing/rest/stock/&lt;id&gt;/         - soft delete (sets is_active&#x3D;False)
+
+Custom Actions:
+- POST   /purchasing/rest/stock/&lt;id&gt;/consume/ - consume stock for a job`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: StockCreateRequest,
+        schema: StockItemRequest,
       },
     ],
-    response: StockCreate,
+    response: StockItem,
   },
   {
-    method: 'delete',
-    path: '/purchasing/rest/stock/:stock_id/',
-    alias: 'purchasing_rest_stock_destroy',
-    description: `REST API view for deactivating stock items.
+    method: 'get',
+    path: '/purchasing/rest/stock/:id/',
+    alias: 'purchasing_rest_stock_retrieve',
+    description: `ViewSet for Stock CRUD operations.
 
-DELETE: Marks a stock item as inactive instead of deleting it`,
+Endpoints:
+- GET    /purchasing/rest/stock/              - list all active stock
+- POST   /purchasing/rest/stock/              - create stock item
+- GET    /purchasing/rest/stock/&lt;id&gt;/         - retrieve stock item
+- PUT    /purchasing/rest/stock/&lt;id&gt;/         - full update
+- PATCH  /purchasing/rest/stock/&lt;id&gt;/         - partial update
+- DELETE /purchasing/rest/stock/&lt;id&gt;/         - soft delete (sets is_active&#x3D;False)
+
+Custom Actions:
+- POST   /purchasing/rest/stock/&lt;id&gt;/consume/ - consume stock for a job`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'stock_id',
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: StockItem,
+  },
+  {
+    method: 'put',
+    path: '/purchasing/rest/stock/:id/',
+    alias: 'purchasing_rest_stock_update',
+    description: `ViewSet for Stock CRUD operations.
+
+Endpoints:
+- GET    /purchasing/rest/stock/              - list all active stock
+- POST   /purchasing/rest/stock/              - create stock item
+- GET    /purchasing/rest/stock/&lt;id&gt;/         - retrieve stock item
+- PUT    /purchasing/rest/stock/&lt;id&gt;/         - full update
+- PATCH  /purchasing/rest/stock/&lt;id&gt;/         - partial update
+- DELETE /purchasing/rest/stock/&lt;id&gt;/         - soft delete (sets is_active&#x3D;False)
+
+Custom Actions:
+- POST   /purchasing/rest/stock/&lt;id&gt;/consume/ - consume stock for a job`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: StockItemRequest,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: StockItem,
+  },
+  {
+    method: 'patch',
+    path: '/purchasing/rest/stock/:id/',
+    alias: 'purchasing_rest_stock_partial_update',
+    description: `ViewSet for Stock CRUD operations.
+
+Endpoints:
+- GET    /purchasing/rest/stock/              - list all active stock
+- POST   /purchasing/rest/stock/              - create stock item
+- GET    /purchasing/rest/stock/&lt;id&gt;/         - retrieve stock item
+- PUT    /purchasing/rest/stock/&lt;id&gt;/         - full update
+- PATCH  /purchasing/rest/stock/&lt;id&gt;/         - partial update
+- DELETE /purchasing/rest/stock/&lt;id&gt;/         - soft delete (sets is_active&#x3D;False)
+
+Custom Actions:
+- POST   /purchasing/rest/stock/&lt;id&gt;/consume/ - consume stock for a job`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedStockItemRequest,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: StockItem,
+  },
+  {
+    method: 'delete',
+    path: '/purchasing/rest/stock/:id/',
+    alias: 'purchasing_rest_stock_destroy',
+    description: `ViewSet for Stock CRUD operations.
+
+Endpoints:
+- GET    /purchasing/rest/stock/              - list all active stock
+- POST   /purchasing/rest/stock/              - create stock item
+- GET    /purchasing/rest/stock/&lt;id&gt;/         - retrieve stock item
+- PUT    /purchasing/rest/stock/&lt;id&gt;/         - full update
+- PATCH  /purchasing/rest/stock/&lt;id&gt;/         - partial update
+- DELETE /purchasing/rest/stock/&lt;id&gt;/         - soft delete (sets is_active&#x3D;False)
+
+Custom Actions:
+- POST   /purchasing/rest/stock/&lt;id&gt;/consume/ - consume stock for a job`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
         type: 'Path',
         schema: z.string().uuid(),
       },
@@ -5916,7 +6038,7 @@ DELETE: Marks a stock item as inactive instead of deleting it`,
   },
   {
     method: 'post',
-    path: '/purchasing/rest/stock/:stock_id/consume/',
+    path: '/purchasing/rest/stock/:id/consume/',
     alias: 'consumeStock',
     description: `Consume stock for a job, reducing available quantity.`,
     requestFormat: 'json',
@@ -5927,7 +6049,7 @@ DELETE: Marks a stock item as inactive instead of deleting it`,
         schema: StockConsumeRequestRequest,
       },
       {
-        name: 'stock_id',
+        name: 'id',
         type: 'Path',
         schema: z.string().uuid(),
       },
