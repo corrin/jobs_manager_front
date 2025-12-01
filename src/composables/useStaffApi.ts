@@ -4,7 +4,7 @@ import { schemas } from '../api/generated/api'
 import { api } from '@/api/client'
 
 type Staff = z.infer<typeof schemas.Staff>
-type StaffCreate = z.infer<typeof schemas.StaffCreate>
+type StaffCreate = z.infer<typeof schemas.StaffCreateRequest>
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
 
 export function useStaffApi() {
@@ -48,7 +48,7 @@ export function useStaffApi() {
     error.value = null
     try {
       const result = await api.accounts_api_staff_partial_update(
-        data as z.infer<typeof schemas.PatchedStaff>,
+        data as z.infer<typeof schemas.PatchedStaffRequest>,
         {
           params: { id: String(id) },
         },

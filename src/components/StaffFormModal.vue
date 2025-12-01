@@ -306,29 +306,16 @@ import { toast } from 'vue-sonner'
 
 type Staff = z.infer<typeof schemas.Staff>
 
-const createStaffSchema = schemas.Staff.omit({
-  id: true,
-  last_login: true,
-  date_joined: true,
-  created_at: true,
-  updated_at: true,
-  groups: true,
-  user_permissions: true,
-  icon: true,
+const createStaffSchema = schemas.StaffCreateRequest.extend({
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password_confirmation: z.string().min(1, 'Please confirm your password'),
+}).refine((data) => data.password === data.password_confirmation, {
+  message: "Passwords don't match",
+  path: ['password_confirmation'],
 })
-  .extend({
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    password_confirmation: z.string().min(1, 'Please confirm your password'),
-    groups: z.array(z.string()).optional(),
-    user_permissions: z.array(z.string()).optional(),
-    icon: z.instanceof(File).optional().nullable(),
-  })
-  .refine((data) => data.password === data.password_confirmation, {
-    message: "Passwords don't match",
-    path: ['password_confirmation'],
-  })
 
-const updateStaffSchema = schemas.PatchedStaff.extend({
+const updateStaffSchema = schemas.PatchedStaffRequest.extend({
+  password: z.string().min(8, 'Password must be at least 8 characters').optional(),
   password_confirmation: z.string().optional(),
 }).refine(
   (data) => {
@@ -555,7 +542,7 @@ async function submitForm() {
     return
   }
   try {
-    // Prepare data for API - convert and format fields as expected by PatchedStaff schema
+    // Prepare data for API - convert and format fields as expected by PatchedStaffRequest schema
     const apiData = {
       first_name: form.value.first_name,
       last_name: form.value.last_name,
