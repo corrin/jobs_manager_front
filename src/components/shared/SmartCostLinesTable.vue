@@ -461,156 +461,161 @@ const columns = computed(() => {
               ])
             }
 
-            return h('div', { class: 'col-item' }, [
-              h(ItemSelect, {
-                modelValue: model,
-                open: openItemSelect.value,
-                'onUpdate:open': (val: boolean) => (openItemSelect.value = val),
-                disabled: !enabled,
-                lineKind: String(line.kind),
-                tabKind: props.tabKind,
-                onClick: (e: Event) => e.stopPropagation(),
-                'onUpdate:modelValue': async (val: string | null) => {
-                  if (!enabled) return
-                  if (val) {
-                    debugLog('💾 Storing item selection:', { val, lineId: line.id })
-                    // Store full item data for display
+            return h(
+              'div',
+              { class: 'col-item', 'data-automation-id': `cost-line-item-${row.index}` },
+              [
+                h(ItemSelect, {
+                  modelValue: model,
+                  open: openItemSelect.value,
+                  'onUpdate:open': (val: boolean) => (openItemSelect.value = val),
+                  disabled: !enabled,
+                  lineKind: String(line.kind),
+                  tabKind: props.tabKind,
+                  onClick: (e: Event) => e.stopPropagation(),
+                  'onUpdate:modelValue': async (val: string | null) => {
+                    if (!enabled) return
+                    if (val) {
+                      debugLog('💾 Storing item selection:', { val, lineId: line.id })
+                      // Store full item data for display
+                      if (val === '__labour__') {
+                        selectedItemMap.set(line, {
+                          id: val,
+                          description: 'Labour',
+                          item_code: 'LABOUR',
+                        })
+                        debugLog('👷 Stored labour item in selectedItemMap')
+                      } else {
+                        // For regular items, we'll fetch the data below and update
+                        selectedItemMap.set(line, { id: val, description: '', item_code: '' })
+                        debugLog('📦 Stored placeholder for stock item in selectedItemMap')
+                      }
+                    } else {
+                      selectedItemMap.set(line, null)
+                      debugLog('🗑️ Cleared selectedItemMap for line')
+                    }
+
+                    // Infer kind based on selection
+                    let newKind: KindOption = 'adjust' // Default fallback
                     if (val === '__labour__') {
+                      newKind = 'time'
+                    } else if (val) {
+                      newKind = 'material'
+                    }
+
+                    // Update kind if it changed
+                    if (String(line.kind) !== newKind) {
+                      updateLineKind(line, newKind)
+                    }
+
+                    onItemSelected(line)
+
+                    if (
+                      isActualTab &&
+                      isNewLine &&
+                      isMaterial &&
+                      val &&
+                      props.consumeStockFn &&
+                      props.jobId
+                    ) {
+                      try {
+                        const stock = await api.purchasing_rest_stock_retrieve({
+                          params: { id: val },
+                        })
+                        const qty = Number(line.quantity || 1)
+                        const unitCost = Number(stock.unit_cost || 0)
+                        const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
+                        const unitRev = unitCost * (1 + markup)
+                        await props.consumeStockFn({
+                          line,
+                          stockId: val,
+                          quantity: qty,
+                          unitCost,
+                          unitRev,
+                        })
+
+                        // to leave the active mode and show the chip/label instead of "Select Item"
+                        selectedRowIndex.value = -1
+                      } catch {
+                        toast.error('Failed to consume stock. Line not created.')
+                        selectedItemMap.set(line, null)
+                        return
+                      }
+                    } else {
+                      // For other tabs (quote, estimate), also leave active mode to show item code
+                      selectedRowIndex.value = -1
+                    }
+
+                    let found = null
+                    try {
+                      found = await api.purchasing_rest_stock_retrieve({ params: { id: val } })
+                    } catch (error) {
+                      debugLog('Failed to fetch stock item details:', error)
+                    }
+                    if (found) {
+                      debugLog('✅ API returned stock item:', {
+                        id: found.id,
+                        item_code: found.item_code,
+                        description: found.description,
+                      })
+                      Object.assign(line, { desc: found.description || '' })
+                      Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
+                      // Update selectedItemMap with full data
                       selectedItemMap.set(line, {
                         id: val,
-                        description: 'Labour',
-                        item_code: 'LABOUR',
+                        description: found.description || '',
+                        item_code: found.item_code || '',
                       })
-                      debugLog('👷 Stored labour item in selectedItemMap')
+                      debugLog('💾 Updated selectedItemMap with full item data:', {
+                        id: val,
+                        description: found.description || '',
+                        item_code: found.item_code || '',
+                      })
+                      // Ensure quantity is set for new lines
+                      if (line.quantity == null) Object.assign(line, { quantity: 1 })
+                      if (kind !== 'time')
+                        Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
+
+                      // For phantom rows (no ID), emit create-line if ready after fetch
+                      if (!line.id && isLineReadyForSave(line)) {
+                        loggedEmit('create-line', line)
+                      }
                     } else {
-                      // For regular items, we'll fetch the data below and update
-                      selectedItemMap.set(line, { id: val, description: '', item_code: '' })
-                      debugLog('📦 Stored placeholder for stock item in selectedItemMap')
-                    }
-                  } else {
-                    selectedItemMap.set(line, null)
-                    debugLog('🗑️ Cleared selectedItemMap for line')
-                  }
-
-                  // Infer kind based on selection
-                  let newKind: KindOption = 'adjust' // Default fallback
-                  if (val === '__labour__') {
-                    newKind = 'time'
-                  } else if (val) {
-                    newKind = 'material'
-                  }
-
-                  // Update kind if it changed
-                  if (String(line.kind) !== newKind) {
-                    updateLineKind(line, newKind)
-                  }
-
-                  onItemSelected(line)
-
-                  if (
-                    isActualTab &&
-                    isNewLine &&
-                    isMaterial &&
-                    val &&
-                    props.consumeStockFn &&
-                    props.jobId
-                  ) {
-                    try {
-                      const stock = await api.purchasing_rest_stock_retrieve({
-                        params: { id: val },
-                      })
-                      const qty = Number(line.quantity || 1)
-                      const unitCost = Number(stock.unit_cost || 0)
-                      const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
-                      const unitRev = unitCost * (1 + markup)
-                      await props.consumeStockFn({
-                        line,
-                        stockId: val,
-                        quantity: qty,
-                        unitCost,
-                        unitRev,
-                      })
-
-                      // to leave the active mode and show the chip/label instead of "Select Item"
-                      selectedRowIndex.value = -1
-                    } catch {
-                      toast.error('Failed to consume stock. Line not created.')
+                      debugLog('❌ API did not return stock item for id:', val)
+                      Object.assign(line, { desc: '' })
+                      Object.assign(line, { unit_cost: 0 })
                       selectedItemMap.set(line, null)
-                      return
                     }
-                  } else {
-                    // For other tabs (quote, estimate), also leave active mode to show item code
-                    selectedRowIndex.value = -1
-                  }
 
-                  let found = null
-                  try {
-                    found = await api.purchasing_rest_stock_retrieve({ params: { id: val } })
-                  } catch (error) {
-                    debugLog('Failed to fetch stock item details:', error)
-                  }
-                  if (found) {
-                    debugLog('✅ API returned stock item:', {
-                      id: found.id,
-                      item_code: found.item_code,
-                      description: found.description,
-                    })
-                    Object.assign(line, { desc: found.description || '' })
-                    Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
-                    // Update selectedItemMap with full data
-                    selectedItemMap.set(line, {
-                      id: val,
-                      description: found.description || '',
-                      item_code: found.item_code || '',
-                    })
-                    debugLog('💾 Updated selectedItemMap with full item data:', {
-                      id: val,
-                      description: found.description || '',
-                      item_code: found.item_code || '',
-                    })
-                    // Ensure quantity is set for new lines
-                    if (line.quantity == null) Object.assign(line, { quantity: 1 })
+                    // Save immediately for existing lines
+                    if (line.id && isLineReadyForSave(line)) {
+                      const patch: PatchedCostLineCreateUpdate = {
+                        desc: line.desc || '',
+                        unit_cost: Number(line.unit_cost ?? 0),
+                        unit_rev: Number(line.unit_rev ?? 0),
+                      }
+                      const optimistic: Partial<CostLine> = { ...patch }
+                      autosave.scheduleSave(line, patch, optimistic)
+                    }
+                  },
+                  'onUpdate:description': (desc: string) =>
+                    enabled && Object.assign(line, { desc }),
+                  'onUpdate:unit_cost': (cost: number | null) => {
+                    if (!enabled) return
+                    Object.assign(line, { unit_cost: Number(cost ?? 0) })
                     if (kind !== 'time')
                       Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
-
-                    // For phantom rows (no ID), emit create-line if ready after fetch
-                    if (!line.id && isLineReadyForSave(line)) {
-                      loggedEmit('create-line', line)
-                    }
-                  } else {
-                    debugLog('❌ API did not return stock item for id:', val)
-                    Object.assign(line, { desc: '' })
-                    Object.assign(line, { unit_cost: 0 })
-                    selectedItemMap.set(line, null)
-                  }
-
-                  // Save immediately for existing lines
-                  if (line.id && isLineReadyForSave(line)) {
-                    const patch: PatchedCostLineCreateUpdate = {
-                      desc: line.desc || '',
-                      unit_cost: Number(line.unit_cost ?? 0),
-                      unit_rev: Number(line.unit_rev ?? 0),
-                    }
-                    const optimistic: Partial<CostLine> = { ...patch }
-                    autosave.scheduleSave(line, patch, optimistic)
-                  }
-                },
-                'onUpdate:description': (desc: string) => enabled && Object.assign(line, { desc }),
-                'onUpdate:unit_cost': (cost: number | null) => {
-                  if (!enabled) return
-                  Object.assign(line, { unit_cost: Number(cost ?? 0) })
-                  if (kind !== 'time')
-                    Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
-                  nextTick(() => {
-                    if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
-                  })
-                },
-                'onUpdate:kind': (newKind: string | null) => {
-                  if (!enabled || !newKind) return
-                  updateLineKind(line, newKind as KindOption)
-                },
-              }),
-            ])
+                    nextTick(() => {
+                      if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
+                    })
+                  },
+                  'onUpdate:kind': (newKind: string | null) => {
+                    if (!enabled || !newKind) return
+                    updateLineKind(line, newKind as KindOption)
+                  },
+                }),
+              ],
+            )
           },
           meta: { editable: !props.readOnly },
         }
@@ -716,6 +721,7 @@ const columns = computed(() => {
               disabled: !canEditField(line, 'quantity') || isBlocked,
               class: 'w-full text-right numeric-input',
               inputmode: 'decimal',
+              'data-automation-id': `cost-line-quantity-${row.index}`,
               onClick: (e: Event) => e.stopPropagation(),
               'onUpdate:modelValue': (val: string | number) => {
                 const num = Number(val)
@@ -781,6 +787,7 @@ const columns = computed(() => {
               disabled: !editable,
               class: 'w-full text-right numeric-input',
               inputmode: 'decimal',
+              'data-automation-id': `cost-line-unit-cost-${row.index}`,
               onClick: (e: Event) => e.stopPropagation(),
               'onUpdate:modelValue': (val: string | number) => {
                 if (!editable) return
@@ -872,6 +879,7 @@ const columns = computed(() => {
               disabled: !editable,
               class: 'w-full text-right numeric-input',
               inputmode: 'decimal',
+              'data-automation-id': `cost-line-unit-rev-${row.index}`,
               onClick: (e: Event) => e.stopPropagation(),
               'onUpdate:modelValue': (val: string | number) => {
                 if (!editable) return
@@ -1094,6 +1102,7 @@ const columns = computed(() => {
                 'h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center justify-center',
               disabled,
               'aria-label': 'Delete line',
+              'data-automation-id': `cost-line-delete-${row.index}`,
               onClick: (e: Event) => {
                 e.stopPropagation()
                 if (disabled) return
