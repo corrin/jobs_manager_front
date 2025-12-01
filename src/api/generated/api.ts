@@ -2142,7 +2142,7 @@ const AllocationDeleteResponse = z
 const PurchasingErrorResponse = z
   .object({ error: z.string(), details: z.string().optional() })
   .passthrough()
-const SourceEnum = z.enum(['purchase_order', 'split_from_stock', 'manual'])
+const SourceEnum = z.enum(['purchase_order', 'split_from_stock', 'manual', 'product_catalog'])
 const StockItem = z
   .object({
     id: z.string().uuid(),

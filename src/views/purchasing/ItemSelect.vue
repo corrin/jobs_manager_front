@@ -118,7 +118,7 @@ const displayPrice = (item: StockItem) => {
       }
     "
   >
-    <SelectTrigger class="h-10 item-select-trigger">
+    <SelectTrigger class="h-10 item-select-trigger" data-automation-id="item-select-trigger">
       <SelectValue :placeholder="'Select Item'" />
     </SelectTrigger>
 
@@ -145,6 +145,7 @@ const displayPrice = (item: StockItem) => {
           :key="i.id || 'unknown'"
           :value="i.id || ''"
           class="cursor-pointer p-4 border-b border-border last:border-b-0 hover:bg-accent/50 focus:bg-accent/50 bg-background w-full"
+          :data-automation-id="`item-select-option-${i.id === '__labour__' ? 'labour' : i.item_code || i.id}`"
         >
           <div class="flex w-full items-start justify-between gap-6 !min-w-[500px]">
             <div class="flex-1 min-w-0">
@@ -166,7 +167,7 @@ const displayPrice = (item: StockItem) => {
                 variant="secondary"
                 class="text-xs font-semibold"
               >
-                ${{ displayPrice(i) }}
+                {{ displayPrice(i) }}
               </Badge>
               <Badge v-else variant="secondary" class="text-xs"> No price </Badge>
 

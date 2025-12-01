@@ -11763,11 +11763,13 @@ components:
         - purchase_order
         - split_from_stock
         - manual
+        - product_catalog
       type: string
       description: |-
         * `purchase_order` - Purchase Order Receipt
         * `split_from_stock` - Split/Offcut from Stock
         * `manual` - Manual Adjustment/Stocktake
+        * `product_catalog` - Product Catalog
     SpeedQualityTradeoffEnum:
       enum:
         - fast
@@ -12725,6 +12727,7 @@ components:
             * `purchase_order` - Purchase Order Receipt
             * `split_from_stock` - Split/Offcut from Stock
             * `manual` - Manual Adjustment/Stocktake
+            * `product_catalog` - Product Catalog
         location:
           type: string
           description: Where we are keeping this
