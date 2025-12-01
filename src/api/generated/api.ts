@@ -210,14 +210,13 @@ const Staff = z
     preferred_name: z.string().max(30).nullish(),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     ims_payroll_id: z.string().max(100).nullish(),
-    icon: z.string().url().nullish(),
-    raw_ims_data: z.unknown().nullish(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
-    groups: z.array(z.number().int()).optional(),
-    user_permissions: z.array(z.number().int()).optional(),
+    password_needs_reset: z.boolean().optional(),
+    icon: z.string().url().nullish(),
+    raw_ims_data: z.unknown().nullish(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
     hours_tue: z.number().gt(-100).lt(100).optional(),
     hours_wed: z.number().gt(-100).lt(100).optional(),
@@ -225,22 +224,30 @@ const Staff = z
     hours_fri: z.number().gt(-100).lt(100).optional(),
     hours_sat: z.number().gt(-100).lt(100).optional(),
     hours_sun: z.number().gt(-100).lt(100).optional(),
-    last_login: z.string().datetime({ offset: true }).nullable(),
     date_joined: z.string().datetime({ offset: true }),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
+    last_login: z.string().datetime({ offset: true }).nullable(),
+    groups: z.array(z.number().int()).optional(),
+    user_permissions: z.array(z.number().int()).optional(),
   })
   .passthrough()
 const StaffCreateRequest = z
   .object({
+    email: z.string().min(1).max(254).email(),
+    password: z.string().min(1).max(128),
     first_name: z.string().min(1).max(30),
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
-    email: z.string().min(1).max(254).email(),
-    password: z.string().min(1).max(128),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     ims_payroll_id: z.string().max(100).nullish(),
+    xero_user_id: z.string().max(255).nullish(),
+    date_left: z.string().nullish(),
+    is_staff: z.boolean().optional(),
+    is_superuser: z.boolean().optional(),
+    password_needs_reset: z.boolean().optional(),
     icon: z.instanceof(File).nullish(),
+    raw_ims_data: z.unknown().nullish(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
     hours_tue: z.number().gt(-100).lt(100).optional(),
     hours_wed: z.number().gt(-100).lt(100).optional(),
@@ -248,8 +255,9 @@ const StaffCreateRequest = z
     hours_fri: z.number().gt(-100).lt(100).optional(),
     hours_sat: z.number().gt(-100).lt(100).optional(),
     hours_sun: z.number().gt(-100).lt(100).optional(),
-    is_staff: z.boolean().optional(),
-    is_superuser: z.boolean().optional(),
+    date_joined: z.string().datetime({ offset: true }).optional(),
+    created_at: z.string().datetime({ offset: true }).optional(),
+    last_login: z.string().datetime({ offset: true }).nullish(),
     groups: z.array(z.number().int()).optional(),
     user_permissions: z.array(z.number().int()).optional(),
   })
@@ -257,20 +265,19 @@ const StaffCreateRequest = z
 const StaffRequest = z
   .object({
     email: z.string().min(1).max(254).email(),
+    password: z.string().min(1).max(128).optional(),
     first_name: z.string().min(1).max(30),
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
-    password: z.string().min(1).max(128).optional(),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     ims_payroll_id: z.string().max(100).nullish(),
-    icon: z.instanceof(File).nullish(),
-    raw_ims_data: z.unknown().nullish(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
-    groups: z.array(z.number().int()).optional(),
-    user_permissions: z.array(z.number().int()).optional(),
+    password_needs_reset: z.boolean().optional(),
+    icon: z.instanceof(File).nullish(),
+    raw_ims_data: z.unknown().nullish(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
     hours_tue: z.number().gt(-100).lt(100).optional(),
     hours_wed: z.number().gt(-100).lt(100).optional(),
@@ -278,25 +285,26 @@ const StaffRequest = z
     hours_fri: z.number().gt(-100).lt(100).optional(),
     hours_sat: z.number().gt(-100).lt(100).optional(),
     hours_sun: z.number().gt(-100).lt(100).optional(),
+    groups: z.array(z.number().int()).optional(),
+    user_permissions: z.array(z.number().int()).optional(),
   })
   .passthrough()
 const PatchedStaffRequest = z
   .object({
     email: z.string().min(1).max(254).email(),
+    password: z.string().min(1).max(128),
     first_name: z.string().min(1).max(30),
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullable(),
-    password: z.string().min(1).max(128),
     wage_rate: z.number().gt(-100000000).lt(100000000),
     ims_payroll_id: z.string().max(100).nullable(),
-    icon: z.instanceof(File).nullable(),
-    raw_ims_data: z.unknown().nullable(),
     xero_user_id: z.string().max(255).nullable(),
     date_left: z.string().nullable(),
     is_staff: z.boolean(),
     is_superuser: z.boolean(),
-    groups: z.array(z.number().int()),
-    user_permissions: z.array(z.number().int()),
+    password_needs_reset: z.boolean(),
+    icon: z.instanceof(File).nullable(),
+    raw_ims_data: z.unknown().nullable(),
     hours_mon: z.number().gt(-100).lt(100),
     hours_tue: z.number().gt(-100).lt(100),
     hours_wed: z.number().gt(-100).lt(100),
@@ -304,6 +312,8 @@ const PatchedStaffRequest = z
     hours_fri: z.number().gt(-100).lt(100),
     hours_sat: z.number().gt(-100).lt(100),
     hours_sun: z.number().gt(-100).lt(100),
+    groups: z.array(z.number().int()),
+    user_permissions: z.array(z.number().int()),
   })
   .partial()
   .passthrough()
@@ -632,6 +642,7 @@ const ClientJobHeader = z
     client: z.object({}).partial().passthrough().nullable(),
     status: z.string(),
     pricing_methodology: z.string().nullable(),
+    speed_quality_tradeoff: z.string(),
     fully_invoiced: z.boolean(),
     has_quote_in_xero: z.boolean(),
     is_fixed_price: z.boolean(),
@@ -724,6 +735,7 @@ const ClientSearchResult = z
     phone: z.string(),
     address: z.string(),
     is_account_customer: z.boolean(),
+    is_supplier: z.boolean(),
     xero_contact_id: z.string(),
     last_invoice_date: z.string().datetime({ offset: true }).nullable(),
     total_spend: z.string(),
@@ -874,6 +886,8 @@ const KanbanJob = z
     status_key: z.string(),
     rejected_flag: z.boolean(),
     paid: z.boolean(),
+    fully_invoiced: z.boolean(),
+    speed_quality_tradeoff: z.string(),
     created_by_id: z.string().uuid().nullable(),
     created_at: z.string().nullable(),
     priority: z.number(),
@@ -909,7 +923,10 @@ const KanbanColumnJob = z
     people: z.array(KanbanJobPerson),
     status: z.string(),
     status_key: z.string(),
+    rejected_flag: z.boolean(),
     paid: z.boolean(),
+    fully_invoiced: z.boolean(),
+    speed_quality_tradeoff: z.string(),
     created_by_id: z.string().nullable(),
     created_at: z.string().nullable(),
     priority: z.number(),
@@ -1096,18 +1113,23 @@ const CostLine = z
     quantity: z.number().gt(-10000000).lt(10000000).optional(),
     unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
-    total_cost: z.number(),
-    total_rev: z.number(),
-    accounting_date: z.string(),
     ext_refs: z.unknown().optional(),
     meta: z.unknown().optional(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
+    accounting_date: z.string(),
+    xero_time_id: z.string().max(255).nullish(),
+    xero_expense_id: z.string().max(255).nullish(),
+    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
+    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
+    total_cost: z.number(),
+    total_rev: z.number(),
   })
   .passthrough()
 const CostSet = z
   .object({
     id: z.string(),
+    job: z.string().uuid(),
     kind: CostSetKindEnum,
     rev: z.number().int(),
     summary: CostSetSummary,
@@ -1120,13 +1142,13 @@ const JobFile = z
   .object({
     id: z.string().uuid(),
     filename: z.string().max(255),
-    size: z.number().int().nullable(),
     mime_type: z.string().max(100).optional(),
     uploaded_at: z.string().datetime({ offset: true }),
+    status: JobFileStatusEnum.optional(),
     print_on_jobsheet: z.boolean().optional(),
+    size: z.number().int().nullable(),
     download_url: z.string(),
     thumbnail_url: z.string().nullable(),
-    status: JobFileStatusEnum.optional(),
   })
   .passthrough()
 const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
@@ -1416,8 +1438,8 @@ const JobFileRequest = z
     id: z.string().uuid(),
     filename: z.string().min(1).max(255),
     mime_type: z.string().max(100).optional(),
-    print_on_jobsheet: z.boolean().optional(),
     status: JobFileStatusEnum.optional(),
+    print_on_jobsheet: z.boolean().optional(),
   })
   .passthrough()
 const JobFileUpdateSuccessResponse = z
@@ -1434,19 +1456,30 @@ const JobFileThumbnailErrorResponse = z
   })
   .passthrough()
 const JobClientHeader = z.object({ id: z.string().uuid(), name: z.string() }).passthrough()
+const Status7b9Enum = z.enum([
+  'draft',
+  'awaiting_approval',
+  'approved',
+  'in_progress',
+  'unusual',
+  'recently_completed',
+  'special',
+  'archived',
+])
 const JobHeaderResponse = z
   .object({
     job_id: z.string().uuid(),
-    job_number: z.number().int(),
-    name: z.string(),
     client: JobClientHeader,
-    status: z.string(),
-    pricing_methodology: z.string().nullable(),
-    fully_invoiced: z.boolean(),
     quoted: z.boolean(),
-    quote_acceptance_date: z.string().datetime({ offset: true }).nullable(),
-    paid: z.boolean(),
-    rejected_flag: z.boolean(),
+    job_number: z.number().int().gte(-2147483648).lte(2147483647),
+    name: z.string().max(100),
+    status: Status7b9Enum.optional(),
+    pricing_methodology: PricingMethodologyEnum.optional(),
+    speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
+    fully_invoiced: z.boolean().optional(),
+    quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
+    paid: z.boolean().optional(),
+    rejected_flag: z.boolean().optional(),
   })
   .passthrough()
 const JobInvoicesResponse = z.object({ invoices: z.array(Invoice) }).passthrough()
@@ -1692,13 +1725,17 @@ const TimesheetCostLine = z
     quantity: z.number().gt(-10000000).lt(10000000),
     unit_cost: z.number().gt(-100000000).lt(100000000),
     unit_rev: z.number().gt(-100000000).lt(100000000),
-    total_cost: z.number(),
-    total_rev: z.number(),
-    accounting_date: z.string(),
     ext_refs: z.unknown(),
     meta: z.unknown(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
+    accounting_date: z.string(),
+    xero_time_id: z.string().nullable(),
+    xero_expense_id: z.string().nullable(),
+    xero_last_modified: z.string().datetime({ offset: true }).nullable(),
+    xero_last_synced: z.string().datetime({ offset: true }).nullable(),
+    total_cost: z.number(),
+    total_rev: z.number(),
     job_id: z.string(),
     job_number: z.number().int(),
     job_name: z.string(),
@@ -1762,16 +1799,6 @@ const ModernTimesheetDayGetResponse = z
     date: z.string(),
   })
   .passthrough()
-const Status7b9Enum = z.enum([
-  'draft',
-  'awaiting_approval',
-  'approved',
-  'in_progress',
-  'unusual',
-  'recently_completed',
-  'special',
-  'archived',
-])
 const JobForPurchasing = z
   .object({
     id: z.string().uuid(),
@@ -1954,18 +1981,19 @@ const NullEnum = z.unknown()
 const PurchaseOrderLine = z
   .object({
     id: z.string().uuid(),
-    item_code: z.string().max(50).nullish(),
     description: z.string().max(200),
     quantity: z.number().gt(-100000000).lt(100000000),
-    received_quantity: z.number().gt(-100000000).lt(100000000).optional(),
+    dimensions: z.string().max(255).nullish(),
     unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
     price_tbc: z.boolean().optional(),
+    supplier_item_code: z.string().max(50).nullish(),
+    item_code: z.string().max(50).nullish(),
+    received_quantity: z.number().gt(-100000000).lt(100000000).optional(),
     metal_type: z.union([MetalTypeEnum, BlankEnum, NullEnum]).nullish(),
     alloy: z.string().max(50).nullish(),
     specifics: z.string().max(255).nullish(),
     location: z.string().max(255).nullish(),
-    dimensions: z.string().max(255).nullish(),
-    job_id: z.string().uuid().nullish(),
+    job_id: z.string().uuid().nullable(),
   })
   .passthrough()
 const PurchaseOrderDetail = z
@@ -1973,15 +2001,15 @@ const PurchaseOrderDetail = z
     id: z.string().uuid(),
     po_number: z.string().max(50),
     reference: z.string().max(100).nullish(),
-    supplier: z.string(),
-    supplier_id: z.string().nullable(),
-    supplier_has_xero_id: z.boolean(),
     status: PurchaseOrderDetailStatusEnum.optional(),
     order_date: z.string().optional(),
     expected_delivery: z.string().nullish(),
-    lines: z.array(PurchaseOrderLine),
     online_url: z.string().max(500).url().nullish(),
     xero_id: z.string().uuid().nullish(),
+    supplier: z.string(),
+    supplier_id: z.string().nullable(),
+    supplier_has_xero_id: z.boolean(),
+    lines: z.array(PurchaseOrderLine),
   })
   .passthrough()
 const PurchaseOrderLineUpdateRequest = z
@@ -2114,23 +2142,25 @@ const AllocationDeleteResponse = z
 const PurchasingErrorResponse = z
   .object({ error: z.string(), details: z.string().optional() })
   .passthrough()
+const SourceEnum = z.enum(['purchase_order', 'split_from_stock', 'manual'])
 const StockItem = z
   .object({
-    id: z.string().uuid().nullable(),
-    description: z.string().nullable(),
-    quantity: z.number().nullable(),
-    unit_cost: z.number().nullable(),
-    metal_type: z.string().nullable(),
-    alloy: z.string().nullable(),
-    specifics: z.string().nullable(),
-    location: z.string().nullable(),
-    source: z.string().nullable(),
-    date: z.string().datetime({ offset: true }).nullable(),
+    id: z.string().uuid(),
+    item_code: z.string().max(255).nullish(),
+    description: z.string().max(255),
+    quantity: z.number().gt(-100000000).lt(100000000),
+    unit_cost: z.number().gt(-100000000).lt(100000000),
+    unit_revenue: z.number().gt(-100000000).lt(100000000).nullish(),
+    date: z.string().datetime({ offset: true }).optional(),
+    source: SourceEnum,
+    location: z.string().optional(),
+    notes: z.string().optional(),
+    metal_type: z.union([MetalTypeEnum, BlankEnum]).optional(),
+    alloy: z.string().max(50).nullish(),
+    specifics: z.string().max(255).nullish(),
+    is_active: z.boolean().optional(),
     job_id: z.string().uuid().nullable(),
-    notes: z.string().nullable(),
-    item_code: z.string().nullable(),
   })
-  .partial()
   .passthrough()
 const StockList = z
   .object({ items: z.array(StockItem), total_count: z.number().int() })
@@ -2267,7 +2297,7 @@ const StaffDailyData = z
     staff_id: z.string(),
     staff_name: z.string(),
     staff_initials: z.string(),
-    avatar_url: z.string().nullable(),
+    icon: z.string().nullable(),
     scheduled_hours: z.number(),
     actual_hours: z.number(),
     billable_hours: z.number(),
@@ -2399,7 +2429,7 @@ const ModernStaff = z
     firstName: z.string(),
     lastName: z.string(),
     email: z.string(),
-    avatarUrl: z.string().nullable(),
+    icon: z.string().nullable(),
     wageRate: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
@@ -2655,6 +2685,7 @@ export const schemas = {
   JobFileUpdateSuccessResponse,
   JobFileThumbnailErrorResponse,
   JobClientHeader,
+  Status7b9Enum,
   JobHeaderResponse,
   JobInvoicesResponse,
   JobQuoteAcceptanceRequest,
@@ -2695,7 +2726,6 @@ export const schemas = {
   ModernTimesheetEntryPostResponse,
   ModernTimesheetJobGetResponse,
   ModernTimesheetDayGetResponse,
-  Status7b9Enum,
   JobForPurchasing,
   AllJobsResponse,
   DeliveryReceiptAllocationRequest,
@@ -2733,6 +2763,7 @@ export const schemas = {
   AllocationDeleteRequestRequest,
   AllocationDeleteResponse,
   PurchasingErrorResponse,
+  SourceEnum,
   StockItem,
   StockList,
   StockCreateRequest,
