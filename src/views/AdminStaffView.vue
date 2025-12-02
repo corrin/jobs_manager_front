@@ -54,9 +54,9 @@
                     <div
                       class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-lg font-bold text-indigo-700 border-2 border-indigo-300 overflow-hidden"
                     >
-                      <template v-if="staff.icon">
+                      <template v-if="staff.icon_url">
                         <img
-                          :src="staff.icon"
+                          :src="staff.icon_url"
                           alt="Profile image"
                           class="object-cover w-full h-full"
                         />

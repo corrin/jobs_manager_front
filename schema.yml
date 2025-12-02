@@ -9775,13 +9775,13 @@ components:
           format: uuid
         display_name:
           type: string
-        icon:
+        icon_url:
           type: string
           format: uri
           nullable: true
       required:
         - display_name
-        - icon
+        - icon_url
         - id
     KanbanStaff:
       type: object
@@ -9796,7 +9796,7 @@ components:
         last_name:
           type: string
           maxLength: 30
-        icon:
+        icon_url:
           type: string
           nullable: true
           readOnly: true
@@ -9806,7 +9806,7 @@ components:
       required:
         - display_name
         - first_name
-        - icon
+        - icon_url
         - id
         - last_name
     KanbanSuccessResponse:
@@ -9894,7 +9894,7 @@ components:
           type: string
         email:
           type: string
-        icon:
+        icon_url:
           type: string
           nullable: true
         wageRate:
@@ -9907,7 +9907,6 @@ components:
       required:
         - email
         - firstName
-        - icon
         - id
         - lastName
         - name
@@ -10733,11 +10732,6 @@ components:
           format: email
           minLength: 1
           maxLength: 254
-        password:
-          type: string
-          writeOnly: true
-          minLength: 1
-          maxLength: 128
         first_name:
           type: string
           minLength: 1
@@ -10779,12 +10773,6 @@ components:
             assigning them.
         password_needs_reset:
           type: boolean
-        icon:
-          type: string
-          format: binary
-          nullable: true
-        raw_ims_data:
-          nullable: true
         hours_mon:
           type: number
           format: double
@@ -10852,6 +10840,18 @@ components:
           items:
             type: integer
           description: Specific permissions for this user.
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+        icon:
+          type: string
+          format: binary
+          writeOnly: true
+          nullable: true
+        raw_ims_data:
+          nullable: true
     PatchedStockItemRequest:
       type: object
       description: Serializer for individual stock items.
@@ -12099,12 +12099,6 @@ components:
             assigning them.
         password_needs_reset:
           type: boolean
-        icon:
-          type: string
-          format: uri
-          nullable: true
-        raw_ims_data:
-          nullable: true
         hours_mon:
           type: number
           format: double
@@ -12189,11 +12183,18 @@ components:
           items:
             type: integer
           description: Specific permissions for this user.
+        raw_ims_data:
+          nullable: true
+        icon_url:
+          type: string
+          nullable: true
+          readOnly: true
       required:
         - created_at
         - date_joined
         - email
         - first_name
+        - icon_url
         - id
         - last_login
         - last_name
@@ -12208,11 +12209,6 @@ components:
           format: email
           minLength: 1
           maxLength: 254
-        password:
-          type: string
-          writeOnly: true
-          minLength: 1
-          maxLength: 128
         first_name:
           type: string
           minLength: 1
@@ -12254,12 +12250,6 @@ components:
             assigning them.
         password_needs_reset:
           type: boolean
-        icon:
-          type: string
-          format: binary
-          nullable: true
-        raw_ims_data:
-          nullable: true
         hours_mon:
           type: number
           format: double
@@ -12337,6 +12327,18 @@ components:
           items:
             type: integer
           description: Specific permissions for this user.
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+        icon:
+          type: string
+          format: binary
+          writeOnly: true
+          nullable: true
+        raw_ims_data:
+          nullable: true
       required:
         - email
         - first_name
@@ -12352,7 +12354,7 @@ components:
           type: string
         staff_initials:
           type: string
-        icon:
+        icon_url:
           type: string
           nullable: true
         scheduled_hours:
@@ -12406,7 +12408,7 @@ components:
         - billable_percentage
         - completion_percentage
         - entry_count
-        - icon
+        - icon_url
         - job_breakdown
         - non_billable_hours
         - scheduled_hours
@@ -12607,11 +12609,6 @@ components:
           format: email
           minLength: 1
           maxLength: 254
-        password:
-          type: string
-          writeOnly: true
-          minLength: 1
-          maxLength: 128
         first_name:
           type: string
           minLength: 1
@@ -12653,12 +12650,6 @@ components:
             assigning them.
         password_needs_reset:
           type: boolean
-        icon:
-          type: string
-          format: binary
-          nullable: true
-        raw_ims_data:
-          nullable: true
         hours_mon:
           type: number
           format: double
@@ -12726,6 +12717,18 @@ components:
           items:
             type: integer
           description: Specific permissions for this user.
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+        icon:
+          type: string
+          format: binary
+          writeOnly: true
+          nullable: true
+        raw_ims_data:
+          nullable: true
       required:
         - email
         - first_name

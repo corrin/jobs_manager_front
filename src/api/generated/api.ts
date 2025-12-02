@@ -215,8 +215,6 @@ const Staff = z
     is_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
     password_needs_reset: z.boolean().optional(),
-    icon: z.string().url().nullish(),
-    raw_ims_data: z.unknown().nullish(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
     hours_tue: z.number().gt(-100).lt(100).optional(),
     hours_wed: z.number().gt(-100).lt(100).optional(),
@@ -230,12 +228,13 @@ const Staff = z
     last_login: z.string().datetime({ offset: true }).nullable(),
     groups: z.array(z.number().int()).optional(),
     user_permissions: z.array(z.number().int()).optional(),
+    raw_ims_data: z.unknown().nullish(),
+    icon_url: z.string().nullable(),
   })
   .passthrough()
 const StaffCreateRequest = z
   .object({
     email: z.string().min(1).max(254).email(),
-    password: z.string().min(1).max(128),
     first_name: z.string().min(1).max(30),
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
@@ -246,8 +245,6 @@ const StaffCreateRequest = z
     is_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
     password_needs_reset: z.boolean().optional(),
-    icon: z.instanceof(File).nullish(),
-    raw_ims_data: z.unknown().nullish(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
     hours_tue: z.number().gt(-100).lt(100).optional(),
     hours_wed: z.number().gt(-100).lt(100).optional(),
@@ -260,12 +257,14 @@ const StaffCreateRequest = z
     last_login: z.string().datetime({ offset: true }).nullish(),
     groups: z.array(z.number().int()).optional(),
     user_permissions: z.array(z.number().int()).optional(),
+    password: z.string().min(1).max(128),
+    icon: z.instanceof(File).nullish(),
+    raw_ims_data: z.unknown().nullish(),
   })
   .passthrough()
 const StaffRequest = z
   .object({
     email: z.string().min(1).max(254).email(),
-    password: z.string().min(1).max(128).optional(),
     first_name: z.string().min(1).max(30),
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
@@ -276,8 +275,6 @@ const StaffRequest = z
     is_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
     password_needs_reset: z.boolean().optional(),
-    icon: z.instanceof(File).nullish(),
-    raw_ims_data: z.unknown().nullish(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
     hours_tue: z.number().gt(-100).lt(100).optional(),
     hours_wed: z.number().gt(-100).lt(100).optional(),
@@ -287,12 +284,14 @@ const StaffRequest = z
     hours_sun: z.number().gt(-100).lt(100).optional(),
     groups: z.array(z.number().int()).optional(),
     user_permissions: z.array(z.number().int()).optional(),
+    password: z.string().min(1).max(128).optional(),
+    icon: z.instanceof(File).nullish(),
+    raw_ims_data: z.unknown().nullish(),
   })
   .passthrough()
 const PatchedStaffRequest = z
   .object({
     email: z.string().min(1).max(254).email(),
-    password: z.string().min(1).max(128),
     first_name: z.string().min(1).max(30),
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullable(),
@@ -303,8 +302,6 @@ const PatchedStaffRequest = z
     is_staff: z.boolean(),
     is_superuser: z.boolean(),
     password_needs_reset: z.boolean(),
-    icon: z.instanceof(File).nullable(),
-    raw_ims_data: z.unknown().nullable(),
     hours_mon: z.number().gt(-100).lt(100),
     hours_tue: z.number().gt(-100).lt(100),
     hours_wed: z.number().gt(-100).lt(100),
@@ -314,6 +311,9 @@ const PatchedStaffRequest = z
     hours_sun: z.number().gt(-100).lt(100),
     groups: z.array(z.number().int()),
     user_permissions: z.array(z.number().int()),
+    password: z.string().min(1).max(128),
+    icon: z.instanceof(File).nullable(),
+    raw_ims_data: z.unknown().nullable(),
   })
   .partial()
   .passthrough()
@@ -322,7 +322,7 @@ const KanbanStaff = z
     id: z.string().uuid(),
     first_name: z.string().max(30),
     last_name: z.string().max(30),
-    icon: z.string().nullable(),
+    icon_url: z.string().nullable(),
     display_name: z.string(),
   })
   .passthrough()
@@ -870,7 +870,7 @@ const KanbanJobPerson = z
   .object({
     id: z.string().uuid(),
     display_name: z.string(),
-    icon: z.string().url().nullable(),
+    icon_url: z.string().url().nullable(),
   })
   .passthrough()
 const KanbanJob = z
@@ -2303,7 +2303,7 @@ const StaffDailyData = z
     staff_id: z.string(),
     staff_name: z.string(),
     staff_initials: z.string(),
-    icon: z.string().nullable(),
+    icon_url: z.string().nullable(),
     scheduled_hours: z.number(),
     actual_hours: z.number(),
     billable_hours: z.number(),
@@ -2435,7 +2435,7 @@ const ModernStaff = z
     firstName: z.string(),
     lastName: z.string(),
     email: z.string(),
-    icon: z.string().nullable(),
+    icon_url: z.string().nullish(),
     wageRate: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
