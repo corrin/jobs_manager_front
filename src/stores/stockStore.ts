@@ -30,7 +30,7 @@ export const useStockStore = defineStore('stock', () => {
   function startStockFetch({ signal, timeout }: { signal?: AbortSignal; timeout?: number }) {
     return (async () => {
       try {
-        // API now returns array directly (not wrapped in {items: []})
+        // Use the list endpoint to fetch all active stock items
         const response = await api.purchasing_rest_stock_list({ signal, timeout })
         items.value = response || []
         return items.value
@@ -39,9 +39,9 @@ export const useStockStore = defineStore('stock', () => {
         if (hasReceivedPayload(error)) {
           try {
             const receivedData = error.cause?.received
-            // New format: array directly
             if (Array.isArray(receivedData)) {
-              items.value = receivedData as StockItem[]
+              // If backend returned a raw list despite validation, coerce it
+              items.value = schemas.StockList.parse({ items: receivedData }).items || []
               return items.value
             }
           } catch (parseError) {
@@ -99,7 +99,7 @@ export const useStockStore = defineStore('stock', () => {
       quantity: payload.quantity,
     }
     return await api.consumeStock(consumePayload, {
-      params: { id },
+      params: { stock_id: id },
     })
   }
 
@@ -109,7 +109,7 @@ export const useStockStore = defineStore('stock', () => {
   }
 
   async function deactivate(id: string) {
-    await api.purchasing_rest_stock_destroy(undefined, { params: { id } })
+    await api.purchasing_rest_stock_destroy(undefined, { params: { stock_id: id } })
   }
 
   return { items, loading, fetchStock, fetchStockSafe, consumeStock, create, deactivate }

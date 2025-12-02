@@ -53,7 +53,7 @@ export class TimesheetService {
             staff.fullName ||
             staff.full_name ||
             `${staff.firstName || staff.first_name || 'Unknown'} ${staff.lastName || staff.last_name || ''}`.trim(),
-          icon_url: staff.icon_url ?? staff.icon ?? null,
+          icon_url: staff.icon_url ?? null,
         }),
       )
 
