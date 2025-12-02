@@ -42,7 +42,6 @@ import { useCostLineCalculations } from '../../composables/useCostLineCalculatio
 import { useCostLineAutosave } from '../../composables/useCostLineAutosave'
 import { useGridKeyboardNav } from '../../composables/useGridKeyboardNav'
 import { costlineService } from '../../services/costline.service'
-import { api } from '../../api/client'
 
 import { schemas } from '../../api/generated/api'
 import type { z } from 'zod'
@@ -53,7 +52,7 @@ type CostLine = z.infer<typeof schemas.CostLine> & {
   created_at?: string
   updated_at?: string
 }
-type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdate>
+type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdateRequest>
 
 type TabKind = 'estimate' | 'quote' | 'actual'
 export type KindOption = 'material' | 'time' | 'adjust'
@@ -385,7 +384,9 @@ const columns = computed(() => {
             const isActualTab = props.tabKind === 'actual'
 
             const lockedByDeliveryReceipt = isDeliveryReceipt(line)
-            const lockedStockExisting = !!line.id && isStockLine(line)
+            // Only lock existing stock lines on actual tab (where inventory is consumed)
+            // Estimate/quote tabs should allow changing material selection
+            const lockedStockExisting = isActualTab && !!line.id && isStockLine(line)
             const enabled =
               kind !== 'time' && !props.readOnly && !lockedByDeliveryReceipt && !lockedStockExisting
 
@@ -393,224 +394,242 @@ const columns = computed(() => {
 
             // Lazy mount: render lightweight control until row is active (selected)
             if (!isActive) {
-              return h('div', { class: 'col-item flex items-center' }, [
-                h(
-                  Button,
-                  {
-                    variant: 'outline',
-                    size: 'sm',
-                    disabled: !enabled,
-                    onClick: (e: Event) => {
-                      e.stopPropagation()
-                      selectedRowIndex.value = row.index
+              return h(
+                'div',
+                {
+                  class: 'col-item flex items-center',
+                  'data-automation-id': `cost-line-item-${row.index}`,
+                },
+                [
+                  h(
+                    Button,
+                    {
+                      variant: 'outline',
+                      size: 'sm',
+                      disabled: !enabled,
+                      onClick: (e: Event) => {
+                        e.stopPropagation()
+                        selectedRowIndex.value = row.index
+                        // Also open the ItemSelect dropdown immediately
+                        openItemSelect.value = true
+                      },
+                      class: 'font-mono uppercase tracking-wide',
                     },
-                    class: 'font-mono uppercase tracking-wide',
-                  },
-                  () => {
-                    if (!model) {
-                      // Check if this is a time line without stock_id (labour)
-                      const stockId = (line.ext_refs as Record<string, unknown>)?.stock_id as string
-                      if (!stockId && String(line.kind) === 'time') {
+                    () => {
+                      if (!model) {
+                        // Check if this is a time line without stock_id (labour)
+                        const stockId = (line.ext_refs as Record<string, unknown>)
+                          ?.stock_id as string
+                        if (!stockId && String(line.kind) === 'time') {
+                          return 'LABOUR'
+                        }
+
+                        // Check if this is an existing line with stock selected
+                        if (stockId) {
+                          // Try to find the item in the stock store by ID
+                          const stockItem = store.items.find((item) => item.id === stockId)
+                          if (stockItem?.item_code) {
+                            return stockItem.item_code
+                          }
+                        }
+
+                        // If no stock_id or item not found by ID, try to find by description
+                        if (line.desc) {
+                          const stockItemByDesc = store.items.find(
+                            (item) => item.description?.toLowerCase() === line.desc?.toLowerCase(),
+                          )
+                          if (stockItemByDesc?.item_code) {
+                            return stockItemByDesc.item_code
+                          }
+                        }
+
+                        // If no valid item found, prompt user to select a valid item
+                        return 'Select Item'
+                      }
+
+                      // Handle labour items specially
+                      if (model === '__labour__') {
                         return 'LABOUR'
                       }
 
-                      // Check if this is an existing line with stock selected
-                      if (stockId) {
-                        // Try to find the item in the stock store by ID
-                        const stockItem = store.items.find((item) => item.id === stockId)
+                      // If we have selectedItem, use its code
+                      if (selectedItem?.item_code) {
+                        return selectedItem.item_code
+                      }
+
+                      // If no selectedItem but we have a model (stock_id), find the item in store
+                      if (model && model !== '__labour__') {
+                        const stockItem = store.items.find((item) => item.id === model)
                         if (stockItem?.item_code) {
                           return stockItem.item_code
                         }
                       }
 
-                      // If no stock_id or item not found by ID, try to find by description
-                      if (line.desc) {
-                        const stockItemByDesc = store.items.find(
-                          (item) => item.description?.toLowerCase() === line.desc?.toLowerCase(),
-                        )
-                        if (stockItemByDesc?.item_code) {
-                          return stockItemByDesc.item_code
-                        }
-                      }
-
-                      // If no valid item found, prompt user to select a valid item
-                      return 'Select Item'
-                    }
-
-                    // Handle labour items specially
-                    if (model === '__labour__') {
-                      return 'LABOUR'
-                    }
-
-                    // If we have selectedItem, use its code
-                    if (selectedItem?.item_code) {
-                      return selectedItem.item_code
-                    }
-
-                    // If no selectedItem but we have a model (stock_id), find the item in store
-                    if (model && model !== '__labour__') {
-                      const stockItem = store.items.find((item) => item.id === model)
-                      if (stockItem?.item_code) {
-                        return stockItem.item_code
-                      }
-                    }
-
-                    return 'Change item'
-                  },
-                ),
-              ])
+                      return 'Change item'
+                    },
+                  ),
+                ],
+              )
             }
 
-            return h('div', { class: 'col-item' }, [
-              h(ItemSelect, {
-                modelValue: model,
-                open: openItemSelect.value,
-                'onUpdate:open': (val: boolean) => (openItemSelect.value = val),
-                disabled: !enabled,
-                lineKind: String(line.kind),
-                tabKind: props.tabKind,
-                onClick: (e: Event) => e.stopPropagation(),
-                'onUpdate:modelValue': async (val: string | null) => {
-                  if (!enabled) return
-                  if (val) {
-                    debugLog('💾 Storing item selection:', { val, lineId: line.id })
-                    // Store full item data for display
+            return h(
+              'div',
+              { class: 'col-item', 'data-automation-id': `cost-line-item-${row.index}` },
+              [
+                h(ItemSelect, {
+                  modelValue: model,
+                  open: openItemSelect.value,
+                  'onUpdate:open': (val: boolean) => (openItemSelect.value = val),
+                  disabled: !enabled,
+                  lineKind: String(line.kind),
+                  tabKind: props.tabKind,
+                  onClick: (e: Event) => e.stopPropagation(),
+                  'onUpdate:modelValue': async (val: string | null) => {
+                    if (!enabled) return
+                    if (val) {
+                      debugLog('💾 Storing item selection:', { val, lineId: line.id })
+                      // Store full item data for display
+                      if (val === '__labour__') {
+                        selectedItemMap.set(line, {
+                          id: val,
+                          description: 'Labour',
+                          item_code: 'LABOUR',
+                        })
+                        debugLog('👷 Stored labour item in selectedItemMap')
+                      } else {
+                        // For regular items, we'll fetch the data below and update
+                        selectedItemMap.set(line, { id: val, description: '', item_code: '' })
+                        debugLog('📦 Stored placeholder for stock item in selectedItemMap')
+                      }
+                    } else {
+                      selectedItemMap.set(line, null)
+                      debugLog('🗑️ Cleared selectedItemMap for line')
+                    }
+
+                    // Infer kind based on selection
+                    let newKind: KindOption = 'adjust' // Default fallback
                     if (val === '__labour__') {
+                      newKind = 'time'
+                    } else if (val) {
+                      newKind = 'material'
+                    }
+
+                    // Update kind if it changed
+                    if (String(line.kind) !== newKind) {
+                      updateLineKind(line, newKind)
+                    }
+
+                    onItemSelected(line)
+
+                    if (
+                      isActualTab &&
+                      isNewLine &&
+                      isMaterial &&
+                      val &&
+                      props.consumeStockFn &&
+                      props.jobId
+                    ) {
+                      try {
+                        // Look up stock item from store (already loaded for the dropdown)
+                        const stock = store.items.find((item) => item.id === val)
+                        if (!stock) {
+                          throw new Error('Stock item not found in store')
+                        }
+                        const qty = Number(line.quantity || 1)
+                        const unitCost = Number(stock.unit_cost || 0)
+                        const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
+                        const unitRev = unitCost * (1 + markup)
+                        await props.consumeStockFn({
+                          line,
+                          stockId: val,
+                          quantity: qty,
+                          unitCost,
+                          unitRev,
+                        })
+
+                        // to leave the active mode and show the chip/label instead of "Select Item"
+                        selectedRowIndex.value = -1
+                      } catch {
+                        toast.error('Failed to consume stock. Line not created.')
+                        selectedItemMap.set(line, null)
+                        return
+                      }
+                    } else {
+                      // For other tabs (quote, estimate), also leave active mode to show item code
+                      selectedRowIndex.value = -1
+                    }
+
+                    // Look up stock item from store (already loaded for the dropdown)
+                    const found = val ? store.items.find((item) => item.id === val) : null
+                    if (found) {
+                      debugLog('✅ Found stock item in store:', {
+                        id: found.id,
+                        item_code: found.item_code,
+                        description: found.description,
+                      })
+                      Object.assign(line, { desc: found.description || '' })
+                      Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
+                      // Update ext_refs.stock_id to reference the selected item
+                      Object.assign(line, {
+                        ext_refs: { ...((line.ext_refs as object) || {}), stock_id: val },
+                      })
+                      // Update selectedItemMap with full data
                       selectedItemMap.set(line, {
                         id: val,
-                        description: 'Labour',
-                        item_code: 'LABOUR',
+                        description: found.description || '',
+                        item_code: found.item_code || '',
                       })
-                      debugLog('👷 Stored labour item in selectedItemMap')
-                    } else {
-                      // For regular items, we'll fetch the data below and update
-                      selectedItemMap.set(line, { id: val, description: '', item_code: '' })
-                      debugLog('📦 Stored placeholder for stock item in selectedItemMap')
-                    }
-                  } else {
-                    selectedItemMap.set(line, null)
-                    debugLog('🗑️ Cleared selectedItemMap for line')
-                  }
-
-                  // Infer kind based on selection
-                  let newKind: KindOption = 'adjust' // Default fallback
-                  if (val === '__labour__') {
-                    newKind = 'time'
-                  } else if (val) {
-                    newKind = 'material'
-                  }
-
-                  // Update kind if it changed
-                  if (String(line.kind) !== newKind) {
-                    updateLineKind(line, newKind)
-                  }
-
-                  onItemSelected(line)
-
-                  if (
-                    isActualTab &&
-                    isNewLine &&
-                    isMaterial &&
-                    val &&
-                    props.consumeStockFn &&
-                    props.jobId
-                  ) {
-                    try {
-                      const stock = await api.purchasing_rest_stock_retrieve({
-                        params: { id: val },
+                      debugLog('💾 Updated line with stock item data:', {
+                        id: val,
+                        description: found.description || '',
+                        item_code: found.item_code || '',
                       })
-                      const qty = Number(line.quantity || 1)
-                      const unitCost = Number(stock.unit_cost || 0)
-                      const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
-                      const unitRev = unitCost * (1 + markup)
-                      await props.consumeStockFn({
-                        line,
-                        stockId: val,
-                        quantity: qty,
-                        unitCost,
-                        unitRev,
-                      })
+                      // Ensure quantity is set for new lines
+                      if (line.quantity == null) Object.assign(line, { quantity: 1 })
+                      if (kind !== 'time')
+                        Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
 
-                      // to leave the active mode and show the chip/label instead of "Select Item"
-                      selectedRowIndex.value = -1
-                    } catch {
-                      toast.error('Failed to consume stock. Line not created.')
+                      // For phantom rows (no ID), emit create-line if ready after fetch
+                      if (!line.id && isLineReadyForSave(line)) {
+                        loggedEmit('create-line', line)
+                      }
+                    } else if (val) {
+                      debugLog('❌ Stock item not found in store for id:', val)
+                      Object.assign(line, { desc: '' })
+                      Object.assign(line, { unit_cost: 0 })
                       selectedItemMap.set(line, null)
-                      return
                     }
-                  } else {
-                    // For other tabs (quote, estimate), also leave active mode to show item code
-                    selectedRowIndex.value = -1
-                  }
 
-                  let found = null
-                  try {
-                    found = await api.purchasing_rest_stock_retrieve({ params: { id: val } })
-                  } catch (error) {
-                    debugLog('Failed to fetch stock item details:', error)
-                  }
-                  if (found) {
-                    debugLog('✅ API returned stock item:', {
-                      id: found.id,
-                      item_code: found.item_code,
-                      description: found.description,
-                    })
-                    Object.assign(line, { desc: found.description || '' })
-                    Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
-                    // Update selectedItemMap with full data
-                    selectedItemMap.set(line, {
-                      id: val,
-                      description: found.description || '',
-                      item_code: found.item_code || '',
-                    })
-                    debugLog('💾 Updated selectedItemMap with full item data:', {
-                      id: val,
-                      description: found.description || '',
-                      item_code: found.item_code || '',
-                    })
-                    // Ensure quantity is set for new lines
-                    if (line.quantity == null) Object.assign(line, { quantity: 1 })
+                    // Save immediately for existing lines
+                    if (line.id && isLineReadyForSave(line)) {
+                      const patch: PatchedCostLineCreateUpdate = {
+                        desc: line.desc || '',
+                        unit_cost: Number(line.unit_cost ?? 0),
+                        unit_rev: Number(line.unit_rev ?? 0),
+                        ext_refs: { stock_id: val },
+                      }
+                      const optimistic: Partial<CostLine> = { ...patch }
+                      autosave.scheduleSave(line, patch, optimistic)
+                    }
+                  },
+                  'onUpdate:description': (desc: string) =>
+                    enabled && Object.assign(line, { desc }),
+                  'onUpdate:unit_cost': (cost: number | null) => {
+                    if (!enabled) return
+                    Object.assign(line, { unit_cost: Number(cost ?? 0) })
                     if (kind !== 'time')
                       Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
-
-                    // For phantom rows (no ID), emit create-line if ready after fetch
-                    if (!line.id && isLineReadyForSave(line)) {
-                      loggedEmit('create-line', line)
-                    }
-                  } else {
-                    debugLog('❌ API did not return stock item for id:', val)
-                    Object.assign(line, { desc: '' })
-                    Object.assign(line, { unit_cost: 0 })
-                    selectedItemMap.set(line, null)
-                  }
-
-                  // Save immediately for existing lines
-                  if (line.id && isLineReadyForSave(line)) {
-                    const patch: PatchedCostLineCreateUpdate = {
-                      desc: line.desc || '',
-                      unit_cost: Number(line.unit_cost ?? 0),
-                      unit_rev: Number(line.unit_rev ?? 0),
-                    }
-                    const optimistic: Partial<CostLine> = { ...patch }
-                    autosave.scheduleSave(line, patch, optimistic)
-                  }
-                },
-                'onUpdate:description': (desc: string) => enabled && Object.assign(line, { desc }),
-                'onUpdate:unit_cost': (cost: number | null) => {
-                  if (!enabled) return
-                  Object.assign(line, { unit_cost: Number(cost ?? 0) })
-                  if (kind !== 'time')
-                    Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
-                  nextTick(() => {
-                    if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
-                  })
-                },
-                'onUpdate:kind': (newKind: string | null) => {
-                  if (!enabled || !newKind) return
-                  updateLineKind(line, newKind as KindOption)
-                },
-              }),
-            ])
+                    nextTick(() => {
+                      if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
+                    })
+                  },
+                  'onUpdate:kind': (newKind: string | null) => {
+                    if (!enabled || !newKind) return
+                    updateLineKind(line, newKind as KindOption)
+                  },
+                }),
+              ],
+            )
           },
           meta: { editable: !props.readOnly },
         }
@@ -716,6 +735,7 @@ const columns = computed(() => {
               disabled: !canEditField(line, 'quantity') || isBlocked,
               class: 'w-full text-right numeric-input',
               inputmode: 'decimal',
+              'data-automation-id': `cost-line-quantity-${row.index}`,
               onClick: (e: Event) => e.stopPropagation(),
               'onUpdate:modelValue': (val: string | number) => {
                 const num = Number(val)
@@ -781,6 +801,7 @@ const columns = computed(() => {
               disabled: !editable,
               class: 'w-full text-right numeric-input',
               inputmode: 'decimal',
+              'data-automation-id': `cost-line-unit-cost-${row.index}`,
               onClick: (e: Event) => e.stopPropagation(),
               'onUpdate:modelValue': (val: string | number) => {
                 if (!editable) return
@@ -872,6 +893,7 @@ const columns = computed(() => {
               disabled: !editable,
               class: 'w-full text-right numeric-input',
               inputmode: 'decimal',
+              'data-automation-id': `cost-line-unit-rev-${row.index}`,
               onClick: (e: Event) => e.stopPropagation(),
               'onUpdate:modelValue': (val: string | number) => {
                 if (!editable) return
@@ -1094,6 +1116,7 @@ const columns = computed(() => {
                 'h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center justify-center',
               disabled,
               'aria-label': 'Delete line',
+              'data-automation-id': `cost-line-delete-${row.index}`,
               onClick: (e: Event) => {
                 e.stopPropagation()
                 if (disabled) return

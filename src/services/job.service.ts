@@ -28,6 +28,7 @@ async function updateJobHeaderPartial(
       'notes',
       'delivery_date',
       'quote_acceptance_date',
+      'price_cap',
       // include 'contact_name' if ever present
       'contact_name',
     ])
@@ -94,6 +95,9 @@ async function updateJobHeaderPartial(
             break
           case 'notes':
             beforeValues[field] = currentJob.data.job.notes
+            break
+          case 'price_cap':
+            beforeValues[field] = currentJob.data.job.price_cap
             break
           default:
             beforeValues[field] = (currentJob.data.job as Record<string, unknown>)[field]

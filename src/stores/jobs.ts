@@ -341,6 +341,7 @@ export const useJobsStore = defineStore('jobs', () => {
       quoted: job.quoted,
       quote_acceptance_date: job.quote_acceptance_date ?? null,
       paid: Boolean(job.paid),
+      price_cap: job.price_cap ?? null,
     }
   }
 

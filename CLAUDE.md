@@ -20,6 +20,7 @@ This is a jobs management application with multi-user editing, autosave, and opt
 4. **If an endpoint doesn't exist in the schema** - Stop work and request backend implementation
 5. **After backend updates schema** - Run `npm run update-schema && npm run gen:api`
 6. **Never edit `/src/api/generated/api.ts`** - It's auto-generated
+7. **Never work around backend issues** - Refuse to do anything until the backend is fixed.
 
 ### State Management
 

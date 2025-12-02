@@ -30,17 +30,18 @@ export const useStockStore = defineStore('stock', () => {
   function startStockFetch({ signal, timeout }: { signal?: AbortSignal; timeout?: number }) {
     return (async () => {
       try {
-        const response = await api.purchasing_rest_stock_retrieve({ signal, timeout })
-        items.value = response.items || []
+        // API now returns array directly (not wrapped in {items: []})
+        const response = await api.purchasing_rest_stock_list({ signal, timeout })
+        items.value = response || []
         return items.value
       } catch (error: unknown) {
         // Handle zodios validation error and extract the actual data
         if (hasReceivedPayload(error)) {
           try {
             const receivedData = error.cause?.received
-            if (receivedData && typeof receivedData === 'object' && 'items' in receivedData) {
-              const stockList = schemas.StockList.parse(receivedData)
-              items.value = stockList.items || []
+            // New format: array directly
+            if (Array.isArray(receivedData)) {
+              items.value = receivedData as StockItem[]
               return items.value
             }
           } catch (parseError) {
@@ -98,7 +99,7 @@ export const useStockStore = defineStore('stock', () => {
       quantity: payload.quantity,
     }
     return await api.consumeStock(consumePayload, {
-      params: { stock_id: id },
+      params: { id },
     })
   }
 
@@ -108,7 +109,7 @@ export const useStockStore = defineStore('stock', () => {
   }
 
   async function deactivate(id: string) {
-    await api.purchasing_rest_stock_destroy(undefined, { params: { stock_id: id } })
+    await api.purchasing_rest_stock_destroy(undefined, { params: { id } })
   }
 
   return { items, loading, fetchStock, fetchStockSafe, consumeStock, create, deactivate }

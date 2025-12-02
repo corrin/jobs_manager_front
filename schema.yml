@@ -4579,79 +4579,238 @@ paths:
           description: ''
   /purchasing/rest/stock/:
     get:
-      operationId: purchasing_rest_stock_retrieve
-      description: Get list of all active stock items.
+      operationId: purchasing_rest_stock_list
+      description: |-
+        ViewSet for Stock CRUD operations.
+
+        Endpoints:
+        - GET    /purchasing/rest/stock/              - list all active stock
+        - POST   /purchasing/rest/stock/              - create stock item
+        - GET    /purchasing/rest/stock/<id>/         - retrieve stock item
+        - PUT    /purchasing/rest/stock/<id>/         - full update
+        - PATCH  /purchasing/rest/stock/<id>/         - partial update
+        - DELETE /purchasing/rest/stock/<id>/         - soft delete (sets is_active=False)
+
+        Custom Actions:
+        - POST   /purchasing/rest/stock/<id>/consume/ - consume stock for a job
       tags:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockList'
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockItem'
           description: ''
     post:
       operationId: purchasing_rest_stock_create
-      description: Create new stock item.
+      description: |-
+        ViewSet for Stock CRUD operations.
+
+        Endpoints:
+        - GET    /purchasing/rest/stock/              - list all active stock
+        - POST   /purchasing/rest/stock/              - create stock item
+        - GET    /purchasing/rest/stock/<id>/         - retrieve stock item
+        - PUT    /purchasing/rest/stock/<id>/         - full update
+        - PATCH  /purchasing/rest/stock/<id>/         - partial update
+        - DELETE /purchasing/rest/stock/<id>/         - soft delete (sets is_active=False)
+
+        Custom Actions:
+        - POST   /purchasing/rest/stock/<id>/consume/ - consume stock for a job
       tags:
         - purchasing
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StockCreateRequest'
+              $ref: '#/components/schemas/StockItemRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/StockCreateRequest'
+              $ref: '#/components/schemas/StockItemRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/StockCreateRequest'
+              $ref: '#/components/schemas/StockItemRequest'
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockCreate'
+                $ref: '#/components/schemas/StockItem'
           description: ''
-  /purchasing/rest/stock/{stock_id}/:
-    delete:
-      operationId: purchasing_rest_stock_destroy
+  /purchasing/rest/stock/{id}/:
+    get:
+      operationId: purchasing_rest_stock_retrieve
       description: |-
-        REST API view for deactivating stock items.
+        ViewSet for Stock CRUD operations.
 
-        DELETE: Marks a stock item as inactive instead of deleting it
+        Endpoints:
+        - GET    /purchasing/rest/stock/              - list all active stock
+        - POST   /purchasing/rest/stock/              - create stock item
+        - GET    /purchasing/rest/stock/<id>/         - retrieve stock item
+        - PUT    /purchasing/rest/stock/<id>/         - full update
+        - PATCH  /purchasing/rest/stock/<id>/         - partial update
+        - DELETE /purchasing/rest/stock/<id>/         - soft delete (sets is_active=False)
+
+        Custom Actions:
+        - POST   /purchasing/rest/stock/<id>/consume/ - consume stock for a job
       parameters:
         - in: path
-          name: stock_id
+          name: id
           schema:
             type: string
             format: uuid
+          description: A UUID string identifying this stock.
           required: true
       tags:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockItem'
+          description: ''
+    put:
+      operationId: purchasing_rest_stock_update
+      description: |-
+        ViewSet for Stock CRUD operations.
+
+        Endpoints:
+        - GET    /purchasing/rest/stock/              - list all active stock
+        - POST   /purchasing/rest/stock/              - create stock item
+        - GET    /purchasing/rest/stock/<id>/         - retrieve stock item
+        - PUT    /purchasing/rest/stock/<id>/         - full update
+        - PATCH  /purchasing/rest/stock/<id>/         - partial update
+        - DELETE /purchasing/rest/stock/<id>/         - soft delete (sets is_active=False)
+
+        Custom Actions:
+        - POST   /purchasing/rest/stock/<id>/consume/ - consume stock for a job
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this stock.
+          required: true
+      tags:
+        - purchasing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StockItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StockItemRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockItem'
+          description: ''
+    patch:
+      operationId: purchasing_rest_stock_partial_update
+      description: |-
+        ViewSet for Stock CRUD operations.
+
+        Endpoints:
+        - GET    /purchasing/rest/stock/              - list all active stock
+        - POST   /purchasing/rest/stock/              - create stock item
+        - GET    /purchasing/rest/stock/<id>/         - retrieve stock item
+        - PUT    /purchasing/rest/stock/<id>/         - full update
+        - PATCH  /purchasing/rest/stock/<id>/         - partial update
+        - DELETE /purchasing/rest/stock/<id>/         - soft delete (sets is_active=False)
+
+        Custom Actions:
+        - POST   /purchasing/rest/stock/<id>/consume/ - consume stock for a job
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this stock.
+          required: true
+      tags:
+        - purchasing
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStockItemRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStockItemRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStockItemRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockItem'
+          description: ''
+    delete:
+      operationId: purchasing_rest_stock_destroy
+      description: |-
+        ViewSet for Stock CRUD operations.
+
+        Endpoints:
+        - GET    /purchasing/rest/stock/              - list all active stock
+        - POST   /purchasing/rest/stock/              - create stock item
+        - GET    /purchasing/rest/stock/<id>/         - retrieve stock item
+        - PUT    /purchasing/rest/stock/<id>/         - full update
+        - PATCH  /purchasing/rest/stock/<id>/         - partial update
+        - DELETE /purchasing/rest/stock/<id>/         - soft delete (sets is_active=False)
+
+        Custom Actions:
+        - POST   /purchasing/rest/stock/<id>/consume/ - consume stock for a job
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this stock.
+          required: true
+      tags:
+        - purchasing
+      security:
+        - cookieAuth: []
       responses:
         '204':
           description: No response body
-  /purchasing/rest/stock/{stock_id}/consume/:
+  /purchasing/rest/stock/{id}/consume/:
     post:
       operationId: consumeStock
       description: Consume stock for a job, reducing available quantity.
       parameters:
         - in: path
-          name: stock_id
+          name: id
           schema:
             type: string
             format: uuid
+          description: A UUID string identifying this stock.
           required: true
       tags:
         - purchasing
@@ -4669,7 +4828,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -7968,6 +8126,16 @@ components:
 
             * `time_materials` - Time & Materials
             * `fixed_price` - Fixed Price
+        price_cap:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Maximum amount to invoice for T&M jobs (do not exceed). For
+            quoted jobs it is set to the quote.
         speed_quality_tradeoff:
           allOf:
             - $ref: '#/components/schemas/SpeedQualityTradeoffEnum'
@@ -8824,6 +8992,16 @@ components:
 
             * `time_materials` - Time & Materials
             * `fixed_price` - Fixed Price
+        price_cap:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Maximum amount to invoice for T&M jobs (do not exceed). For
+            quoted jobs it is set to the quote.
         speed_quality_tradeoff:
           allOf:
             - $ref: '#/components/schemas/SpeedQualityTradeoffEnum'
@@ -10674,6 +10852,95 @@ components:
           items:
             type: integer
           description: Specific permissions for this user.
+    PatchedStockItemRequest:
+      type: object
+      description: Serializer for individual stock items.
+      properties:
+        item_code:
+          type: string
+          nullable: true
+          description: Xero Item Code
+          maxLength: 255
+        description:
+          type: string
+          minLength: 1
+          description: Description of the stock item
+          maxLength: 255
+        quantity:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Current quantity of the stock item
+        unit_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Cost per unit of the stock item
+        unit_revenue:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Revenue per unit (what customer pays)
+        date:
+          type: string
+          format: date-time
+          description: Date the stock item was created
+        source:
+          allOf:
+            - $ref: '#/components/schemas/SourceEnum'
+          description: |-
+            Origin of this stock item
+
+            * `purchase_order` - Purchase Order Receipt
+            * `split_from_stock` - Split/Offcut from Stock
+            * `manual` - Manual Adjustment/Stocktake
+            * `product_catalog` - Product Catalog
+        location:
+          type: string
+          description: Where we are keeping this
+        notes:
+          type: string
+          description: Additional notes about the stock item
+        metal_type:
+          description: |-
+            Type of metal
+
+            * `stainless_steel` - Stainless Steel
+            * `mild_steel` - Mild Steel
+            * `aluminum` - Aluminum
+            * `brass` - Brass
+            * `copper` - Copper
+            * `titanium` - Titanium
+            * `zinc` - Zinc
+            * `galvanized` - Galvanized
+            * `unspecified` - Unspecified
+            * `other` - Other
+          oneOf:
+            - $ref: '#/components/schemas/MetalTypeEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+        alloy:
+          type: string
+          nullable: true
+          description: Alloy specification (e.g., 304, 6061)
+          maxLength: 50
+        specifics:
+          type: string
+          nullable: true
+          description: Specific details (e.g., m8 countersunk socket screw)
+          maxLength: 255
+        is_active:
+          type: boolean
+          description: False when quantity reaches zero or item is fully consumed/transformed
     PayRunDetails:
       type: object
       description: Serializer representing details from a Xero pay run.
@@ -12576,102 +12843,6 @@ components:
       required:
         - line
         - success
-    StockCreate:
-      type: object
-      description: Serializer for creating stock items.
-      properties:
-        description:
-          type: string
-          maxLength: 255
-        quantity:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        unit_cost:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        source:
-          type: string
-          maxLength: 100
-        notes:
-          type: string
-          maxLength: 500
-        metal_type:
-          type: string
-          maxLength: 100
-        alloy:
-          type: string
-          maxLength: 100
-        specifics:
-          type: string
-          maxLength: 255
-        location:
-          type: string
-          maxLength: 255
-        dimensions:
-          type: string
-          maxLength: 255
-      required:
-        - description
-        - quantity
-        - source
-        - unit_cost
-    StockCreateRequest:
-      type: object
-      description: Serializer for creating stock items.
-      properties:
-        description:
-          type: string
-          minLength: 1
-          maxLength: 255
-        quantity:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        unit_cost:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        source:
-          type: string
-          minLength: 1
-          maxLength: 100
-        notes:
-          type: string
-          maxLength: 500
-        metal_type:
-          type: string
-          maxLength: 100
-        alloy:
-          type: string
-          maxLength: 100
-        specifics:
-          type: string
-          maxLength: 255
-        location:
-          type: string
-          maxLength: 255
-        dimensions:
-          type: string
-          maxLength: 255
-      required:
-        - description
-        - quantity
-        - source
-        - unit_cost
     StockItem:
       type: object
       description: Serializer for individual stock items.
@@ -12776,19 +12947,100 @@ components:
         - quantity
         - source
         - unit_cost
-    StockList:
+    StockItemRequest:
       type: object
-      description: Serializer for listing stock items from service data.
+      description: Serializer for individual stock items.
       properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/StockItem'
-        total_count:
-          type: integer
+        item_code:
+          type: string
+          nullable: true
+          description: Xero Item Code
+          maxLength: 255
+        description:
+          type: string
+          minLength: 1
+          description: Description of the stock item
+          maxLength: 255
+        quantity:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Current quantity of the stock item
+        unit_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Cost per unit of the stock item
+        unit_revenue:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Revenue per unit (what customer pays)
+        date:
+          type: string
+          format: date-time
+          description: Date the stock item was created
+        source:
+          allOf:
+            - $ref: '#/components/schemas/SourceEnum'
+          description: |-
+            Origin of this stock item
+
+            * `purchase_order` - Purchase Order Receipt
+            * `split_from_stock` - Split/Offcut from Stock
+            * `manual` - Manual Adjustment/Stocktake
+            * `product_catalog` - Product Catalog
+        location:
+          type: string
+          description: Where we are keeping this
+        notes:
+          type: string
+          description: Additional notes about the stock item
+        metal_type:
+          description: |-
+            Type of metal
+
+            * `stainless_steel` - Stainless Steel
+            * `mild_steel` - Mild Steel
+            * `aluminum` - Aluminum
+            * `brass` - Brass
+            * `copper` - Copper
+            * `titanium` - Titanium
+            * `zinc` - Zinc
+            * `galvanized` - Galvanized
+            * `unspecified` - Unspecified
+            * `other` - Other
+          oneOf:
+            - $ref: '#/components/schemas/MetalTypeEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+        alloy:
+          type: string
+          nullable: true
+          description: Alloy specification (e.g., 304, 6061)
+          maxLength: 50
+        specifics:
+          type: string
+          nullable: true
+          description: Specific details (e.g., m8 countersunk socket screw)
+          maxLength: 255
+        is_active:
+          type: boolean
+          description: False when quantity reaches zero or item is fully consumed/transformed
       required:
-        - items
-        - total_count
+        - description
+        - quantity
+        - source
+        - unit_cost
     SummaryStats:
       type: object
       description: Serializer for summary statistics

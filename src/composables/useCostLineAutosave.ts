@@ -55,6 +55,7 @@ export function useCostLineAutosave(opts: Options) {
   const status = new WeakMap<CostLine, SaveStatus>()
   const lastError = new WeakMap<CostLine, string>()
   const prevSnapshot = new WeakMap<CostLine, Partial<CostLine>>() // for rollback
+  const pendingPatches = new WeakMap<CostLine, PatchedCostLineCreateUpdate>() // accumulated patches
 
   /**
    * Read current status for a line (defaults to 'idle')
@@ -95,16 +96,23 @@ export function useCostLineAutosave(opts: Options) {
     // No id => cannot save (new/unsaved rows should be handled outside)
     if (!line.id) return
 
+    // Merge with any pending patch (so rapid edits to multiple fields accumulate)
+    const existingPatch = pendingPatches.get(line) || {}
+    const mergedPatch = { ...existingPatch, ...apiPatch }
+    pendingPatches.set(line, mergedPatch)
+
     // Take a shallow snapshot for rollback of only fields we plan to patch
     if (optimisticPatch && Object.keys(optimisticPatch).length > 0) {
-      const snap: Partial<CostLine> = {}
+      const existingSnap = prevSnapshot.get(line) || {}
+      const snap: Partial<CostLine> = { ...existingSnap }
       Object.keys(optimisticPatch).forEach((k) => {
         const key = k as keyof CostLine
-        snap[key] = line[key]
+        // Only snapshot if we haven't already captured this field
+        if (!(key in existingSnap)) {
+          snap[key] = line[key]
+        }
       })
       prevSnapshot.set(line, snap)
-    } else {
-      prevSnapshot.delete(line)
     }
 
     // Apply optimistic patch immediately for snappy UI
@@ -118,9 +126,11 @@ export function useCostLineAutosave(opts: Options) {
     lastError.delete(line)
 
     const timer = window.setTimeout(async () => {
+      // Get the accumulated patch to save
+      const patchToSave = pendingPatches.get(line) || mergedPatch
       try {
-        console.log('🔄 Autosave: Starting save for line', line.id, apiPatch)
-        const result = await opts.saveFn(String(line.id), apiPatch)
+        console.log('🔄 Autosave: Starting save for line', line.id, patchToSave)
+        const result = await opts.saveFn(String(line.id), patchToSave)
 
         // Sync timestamps from the server response (if available)
         if (result && typeof result === 'object') {
@@ -136,6 +146,7 @@ export function useCostLineAutosave(opts: Options) {
         status.set(line, 'saved')
         lastError.delete(line)
         prevSnapshot.delete(line)
+        pendingPatches.delete(line)
         console.log('✅ Autosave: Successfully saved line', line.id)
 
         // Show success notification
@@ -156,6 +167,7 @@ export function useCostLineAutosave(opts: Options) {
         if (snap && opts.onRollback) {
           opts.onRollback(line, snap)
         }
+        pendingPatches.delete(line)
       } finally {
         // Clear timer handle
         timers.delete(line)
