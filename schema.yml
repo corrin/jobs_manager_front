@@ -10822,10 +10822,6 @@ components:
         location:
           type: string
           description: Where we are keeping this
-        notes:
-          type: string
-          nullable: true
-          description: Additional notes about the stock item
         metal_type:
           description: |-
             Type of metal
@@ -12820,10 +12816,6 @@ components:
         location:
           type: string
           description: Where we are keeping this
-        notes:
-          type: string
-          nullable: true
-          description: Additional notes about the stock item
         metal_type:
           description: |-
             Type of metal
@@ -12922,10 +12914,6 @@ components:
         location:
           type: string
           description: Where we are keeping this
-        notes:
-          type: string
-          nullable: true
-          description: Additional notes about the stock item
         metal_type:
           description: |-
             Type of metal
