@@ -168,7 +168,7 @@ function maybeEmitCreate(line: CostLine) {
   createdOnce.add(line)
 
   const payload = line
-  emit('create-line', payload)
+  loggedEmit('create-line', payload)
 
   if (line === emptyLine.value) resetEmptyLine(line.kind as KindOption)
 }
@@ -591,7 +591,8 @@ const columns = computed(() => {
 
                       // For phantom rows (no ID), emit create-line if ready after fetch
                       if (!line.id && isLineReadyForSave(line)) {
-                        loggedEmit('create-line', line)
+                        // Use guarded emitter so the phantom row resets and does not duplicate
+                        maybeEmitCreate(line)
                       }
                     } else if (val) {
                       debugLog('❌ Stock item not found in store for id:', val)
