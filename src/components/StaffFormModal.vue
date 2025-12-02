@@ -122,8 +122,8 @@
                 <div
                   class="avatar-upload flex items-center justify-center rounded-full bg-indigo-100 border-2 border-indigo-300 w-16 h-16 text-xl font-bold text-indigo-700 overflow-hidden transition-all duration-150 group-hover:ring-4 group-hover:ring-indigo-300 group-hover:opacity-90 mx-auto"
                 >
-                  <template v-if="avatarUrl">
-                    <img :src="avatarUrl" alt="Profile image" class="object-cover w-full h-full" />
+                  <template v-if="iconUrl">
+                    <img :src="iconUrl" alt="Profile image" class="object-cover w-full h-full" />
                   </template>
                   <template v-else>
                     {{ initials }}
@@ -368,7 +368,7 @@ const form = ref({
 })
 const error = ref('')
 
-const avatarUrl = computed(() => {
+const iconUrl = computed(() => {
   if (form.value.icon) {
     return URL.createObjectURL(form.value.icon)
   }

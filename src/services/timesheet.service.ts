@@ -37,6 +37,7 @@ export class TimesheetService {
           fullName?: string
           full_name?: string
           name?: string
+          icon_url?: string | null
           icon?: string | null
         }) => ({
           id: staff.id,
@@ -52,7 +53,7 @@ export class TimesheetService {
             staff.fullName ||
             staff.full_name ||
             `${staff.firstName || staff.first_name || 'Unknown'} ${staff.lastName || staff.last_name || ''}`.trim(),
-          icon: staff.icon || null,
+          icon_url: staff.icon_url ?? staff.icon ?? null,
         }),
       )
 

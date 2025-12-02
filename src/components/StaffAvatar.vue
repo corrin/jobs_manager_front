@@ -56,8 +56,10 @@ defineEmits<{
 }>()
 
 const iconUrl = computed(() => {
-  const icon = props.staff.icon
-  return icon?.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL}${icon}` : icon
+  const icon =
+    props.staff.icon_url ?? (props.staff as Partial<Staff> & { icon?: string | null }).icon
+  if (!icon) return null
+  return icon.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL}${icon}` : icon
 })
 
 const getInitials = (staff: Staff): string => {

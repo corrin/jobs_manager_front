@@ -179,7 +179,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
           const optimisticStaff = {
             id: payload.staffId,
             display_name: payload.staffName,
-            icon: null,
+            icon_url: null,
           }
           if (job.people) {
             job.people.push(optimisticStaff)
