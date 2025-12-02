@@ -27,7 +27,10 @@
           <span class="text-[11px] uppercase tracking-wide text-slate-600">Quote</span>
           <strong class="tabular-nums text-slate-900">{{ formatCurrency(quoteTotal) }}</strong>
         </li>
-        <li class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2">
+        <li
+          data-automation-id="actual-time-expenses"
+          class="h-10 px-3 rounded-lg border border-slate-200 bg-white flex items-center gap-2"
+        >
           <span class="w-1.5 h-6 rounded-full bg-emerald-500"></span>
           <span class="text-[11px] uppercase tracking-wide text-slate-600">Time & Expenses</span>
           <strong class="tabular-nums text-slate-900">{{ formatCurrency(timeAndExpenses) }}</strong>
