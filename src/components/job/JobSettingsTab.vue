@@ -237,6 +237,21 @@
               </select>
             </div>
 
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Price Cap</label>
+              <input
+                v-model.number="localJobData.price_cap"
+                type="number"
+                step="0.01"
+                data-automation-id="settings-price-cap"
+                @input="handlePriceCapInput($event)"
+                @blur="handleBlurFlush"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder="Maximum price (optional)"
+                title="For T&M jobs - the maximum amount the customer has approved"
+              />
+            </div>
+
             <div class="flex-grow">
               <RichTextEditor
                 v-model="localJobData.notes"
@@ -528,6 +543,30 @@ const handleFieldInput = (field: string, value: string) => {
   }
 }
 
+// Handle price cap input (numeric field that can be null)
+const handlePriceCapInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const value = target.value
+
+  // Mark user as actively typing
+  isUserTyping.value = true
+  if (typingTimeout.value) {
+    clearTimeout(typingTimeout.value)
+  }
+  typingTimeout.value = setTimeout(() => {
+    isUserTyping.value = false
+  }, TYPING_TIMEOUT_MS)
+
+  // Convert to number or null
+  const numericValue = value === '' ? null : Number(value)
+  localJobData.value.price_cap = numericValue
+
+  // Queue autosave change
+  if (!isInitializing.value) {
+    autosave.queueChange('price_cap', numericValue)
+  }
+}
+
 watch(
   () => jobData.value,
   async (newJobData) => {
@@ -548,6 +587,7 @@ watch(
         quote_acceptance_date: undefined,
         paid: false,
         rejected_flag: false,
+        price_cap: null,
         // Include basic info fields - will be updated when basicInfo loads
         description: null,
         delivery_date: null,
@@ -577,6 +617,7 @@ watch(
       quoted: newJobData.quoted,
       quote_acceptance_date: newJobData.quote_acceptance_date,
       paid: newJobData.paid,
+      price_cap: newJobData.price_cap ?? null,
     }
 
     // Preserve existing basic info fields when updating with header data
@@ -595,6 +636,7 @@ watch(
       delivery_date: normalizeNullable(localJobData.value.delivery_date),
       order_number: normalizeNullable(localJobData.value.order_number),
       notes: normalizeNullable(localJobData.value.notes),
+      price_cap: localJobData.value.price_cap ?? null,
       // Include separated fields for delta consistency (only id fields, not name)
       client_id: localJobData.value.client?.id ?? null,
       contact_id: localJobData.value.contact_id ?? null,
@@ -782,6 +824,7 @@ watch(
       localJobData.value.quoted = newHeader.quoted
       localJobData.value.fully_invoiced = newHeader.fully_invoiced
       localJobData.value.paid = newHeader.paid
+      localJobData.value.price_cap = newHeader.price_cap ?? null
 
       // Restore preserved basic info fields
       localJobData.value.description = preservedBasicInfo.description
@@ -970,6 +1013,7 @@ const autosave = createJobAutosave({
       quoted: data.quoted,
       quote_acceptance_date: data.quote_acceptance_date,
       paid: data.paid,
+      price_cap: data.price_cap ?? null,
       description: data.description || null,
       order_number: data.order_number || null,
       notes: data.notes || null,
@@ -1078,6 +1122,7 @@ const autosave = createJobAutosave({
           if ('order_number' in payload)
             next.order_number = (payload.order_number as string | null) ?? null
           if ('notes' in payload) next.notes = (payload.notes as string | null) ?? null
+          if ('price_cap' in payload) next.price_cap = (payload.price_cap as number | null) ?? null
           return next
         }
 
@@ -1155,6 +1200,11 @@ const autosave = createJobAutosave({
             localJobData.value.quote_acceptance_date =
               serverJobDetail.quote_acceptance_date ?? undefined
             headerPatch.quote_acceptance_date = serverJobDetail.quote_acceptance_date ?? undefined
+          }
+          if (touchedKeys.includes('price_cap')) {
+            nextBaseline.price_cap = serverJobDetail.price_cap ?? null
+            localJobData.value.price_cap = serverJobDetail.price_cap ?? null
+            headerPatch.price_cap = serverJobDetail.price_cap ?? null
           }
           if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
             nextBaseline.client = {
@@ -1253,6 +1303,12 @@ const autosave = createJobAutosave({
             nextBaseline.quote_acceptance_date = quoteDate ?? undefined
             localJobData.value.quote_acceptance_date = quoteDate ?? undefined
             headerPatch.quote_acceptance_date = quoteDate ?? undefined
+          }
+          if (touchedKeys.includes('price_cap')) {
+            const priceCapVal = partialPayload.price_cap as number | null
+            nextBaseline.price_cap = priceCapVal
+            localJobData.value.price_cap = priceCapVal
+            headerPatch.price_cap = priceCapVal
           }
           if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
             const clientId = coerceNullableString(partialPayload.client_id) ?? ''

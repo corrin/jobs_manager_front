@@ -1,127 +1,63 @@
 import { test, expect } from '../fixtures/auth'
 import type { Page, Locator } from '@playwright/test'
-import { autoId, dismissToasts, waitForAutosave } from '../fixtures/helpers'
+import { autoId, waitForAutosave, createTestJob } from '../fixtures/helpers'
 
 /**
- * Tests for creating estimate entries on the Estimate tab.
- * These tests verify:
- * - Adding Labour entries
- * - Adding Material entries (using search)
- * - Adding Adjustment entries
- * - Editing quantity, unit cost, unit revenue
- * - Changing material codes
- * - Deleting costlines
+ * Tests for estimate operations on the Estimate tab.
+ * All tests share ONE job and run serially.
  */
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
-/**
- * Find a row by exact description match in textarea
- */
+/** Iterate over cost line rows and return matches based on description */
+async function findRowsByDescription(
+  page: Page,
+  description: string,
+  matcher: 'exact' | 'includes' = 'exact',
+): Promise<{ rows: Locator[]; indices: number[] }> {
+  const allRows = page.locator('[data-automation-id^="cost-line-row-"]')
+  const rowCount = await allRows.count()
+  const rows: Locator[] = []
+  const indices: number[] = []
+
+  for (let i = 0; i < rowCount; i++) {
+    const row = allRows.nth(i)
+    const textarea = row.locator('textarea').first()
+    const value = await textarea.inputValue().catch(() => '')
+    const matches = matcher === 'exact' ? value === description : value.includes(description)
+    if (matches) {
+      rows.push(row)
+      indices.push(i)
+    }
+  }
+  return { rows, indices }
+}
+
 async function findRowByDescription(page: Page, description: string): Promise<Locator | null> {
-  const rows = page.locator('[data-automation-id^="cost-line-row-"]')
-  const rowCount = await rows.count()
-  for (let i = 0; i < rowCount; i++) {
-    const row = rows.nth(i)
-    const textarea = row.locator('textarea').first()
-    const value = await textarea.inputValue().catch(() => '')
-    if (value === description) {
-      return row
-    }
-  }
-  return null
+  const { rows } = await findRowsByDescription(page, description)
+  return rows[0] ?? null
 }
 
-/**
- * Find a row index by exact description match
- */
 async function findRowIndexByDescription(page: Page, description: string): Promise<number> {
-  const rows = page.locator('[data-automation-id^="cost-line-row-"]')
-  const rowCount = await rows.count()
-  for (let i = 0; i < rowCount; i++) {
-    const row = rows.nth(i)
-    const textarea = row.locator('textarea').first()
-    const value = await textarea.inputValue().catch(() => '')
-    if (value === description) {
-      return i
-    }
-  }
-  return -1
+  const { indices } = await findRowsByDescription(page, description)
+  return indices[0] ?? -1
 }
 
-/**
- * Navigate to job and ensure we're on the Estimate tab
- */
 async function navigateToEstimateTab(page: Page, jobUrl: string): Promise<void> {
   await page.goto(jobUrl)
   await page.waitForLoadState('networkidle')
   await autoId(page, 'tab-estimate').click()
-  await page.waitForTimeout(1000)
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(2000)
 }
 
-/**
- * Add a new row by clicking Add Row button
- */
 async function clickAddRow(page: Page): Promise<void> {
   await autoId(page, 'cost-lines-add-row').waitFor({ timeout: 10000 })
   await autoId(page, 'cost-lines-add-row').click()
 }
 
-/**
- * Create a new job for testing and return its URL
- */
-async function createTestJob(page: Page, jobNameSuffix: string): Promise<string> {
-  const timestamp = Date.now()
-  const jobName = `Estimate Test Job ${jobNameSuffix} ${timestamp}`
-
-  await autoId(page, 'nav-create-job').click()
-  await page.waitForURL('**/jobs/create')
-
-  // Search and select client
-  const clientInput = autoId(page, 'client-search-input')
-  await clientInput.fill('ABC')
-  await autoId(page, 'client-search-results').waitFor({ timeout: 10000 })
-  await page.getByRole('option', { name: /ABC Carpet Cleaning TEST IGNORE/ }).click()
-  await expect(clientInput).toHaveValue('ABC Carpet Cleaning TEST IGNORE')
-
-  // Enter job details
-  await autoId(page, 'job-name-input').fill(jobName)
-  await autoId(page, 'estimated-materials-input').fill('0')
-  await autoId(page, 'estimated-time-input').fill('0')
-
-  // Select contact
-  await autoId(page, 'contact-modal-button').click({ timeout: 10000 })
-  await autoId(page, 'contact-selection-modal').waitFor({ timeout: 10000 })
-
-  const selectButtons = autoId(page, 'contact-select-button')
-  const selectButtonCount = await selectButtons.count()
-
-  if (selectButtonCount > 0) {
-    await selectButtons.first().click()
-  } else {
-    const submitButton = autoId(page, 'contact-form-submit')
-    await expect(submitButton).toHaveText('Create Contact', { timeout: 10000 })
-    await autoId(page, 'contact-form-name').fill(`Test Contact ${timestamp}`)
-    await autoId(page, 'contact-form-email').fill(`test${timestamp}@example.com`)
-    await submitButton.click()
-  }
-
-  await autoId(page, 'contact-selection-modal').waitFor({ state: 'hidden', timeout: 10000 })
-
-  // Set pricing method to T&M and submit
-  await autoId(page, 'pricing-method-select').selectOption('time_materials')
-  await dismissToasts(page)
-  await autoId(page, 'create-job-submit').click({ force: true })
-  await page.waitForURL('**/jobs/*?*tab=estimate*', { timeout: 15000 })
-
-  return page.url()
-}
-
-/**
- * Add an Adjustment entry with specified values
- */
 async function addAdjustmentEntry(
   page: Page,
   description: string,
@@ -130,30 +66,23 @@ async function addAdjustmentEntry(
   unitRev: string,
 ): Promise<void> {
   await clickAddRow(page)
-
-  // Press Escape to close the auto-opened dropdown
   await page.keyboard.press('Escape')
   await page.waitForTimeout(500)
 
-  // Find the newly added row (should be the last one)
   const rows = page.locator('[data-automation-id^="cost-line-row-"]')
   const newRow = rows.last()
 
-  // Fill description
   const descInput = newRow.locator('textarea').first()
   await descInput.click()
   await descInput.fill(description)
   await page.keyboard.press('Tab')
 
-  // Fill quantity
   await page.keyboard.type(quantity)
   await page.keyboard.press('Tab')
 
-  // Fill unit cost
   await page.keyboard.type(unitCost)
   await page.keyboard.press('Tab')
 
-  // Fill unit revenue
   await page.keyboard.type(unitRev)
   await page.keyboard.press('Tab')
 
@@ -161,280 +90,63 @@ async function addAdjustmentEntry(
 }
 
 // ============================================================================
-// Test Suite: Create Entries (Serial - shares a single job)
+// Test Suite: Estimate Operations (all tests share ONE job)
 // ============================================================================
 
-test.describe.serial('create estimate entries', () => {
-  let createdJobUrl: string
+test.describe.serial('estimate operations', () => {
+  let jobUrl: string
 
-  test('create a job for estimate testing', async ({ authenticatedPage: page }) => {
-    createdJobUrl = await createTestJob(page, 'Create')
-    console.log(`Created job at: ${createdJobUrl}`)
+  test.beforeAll(async ({ browser }) => {
+    const context = await browser.newContext()
+    const page = await context.newPage()
+
+    // Login
+    const username = process.env.E2E_TEST_USERNAME
+    const password = process.env.E2E_TEST_PASSWORD
+    await page.goto('/login')
+    await page.locator('#username').fill(username!)
+    await page.locator('#password').fill(password!)
+    await page.getByRole('button', { name: 'Sign In' }).click()
+    await page.waitForURL('**/kanban')
+
+    // Create ONE job for all tests
+    jobUrl = await createTestJob(page, 'Estimate')
+    console.log(`Created job at: ${jobUrl}`)
+
+    await context.close()
   })
 
   test('add Labour entry', async ({ authenticatedPage: page }) => {
-    await navigateToEstimateTab(page, createdJobUrl)
+    await navigateToEstimateTab(page, jobUrl)
 
-    await test.step('click Add row button', async () => {
-      await clickAddRow(page)
-    })
+    await clickAddRow(page)
 
-    await test.step('select Labour from item dropdown', async () => {
-      const labourOption = autoId(page, 'item-select-option-labour')
-      await labourOption.waitFor({ timeout: 10000 })
-      await labourOption.click()
-    })
+    const labourOption = autoId(page, 'item-select-option-labour')
+    await labourOption.waitFor({ timeout: 10000 })
+    await labourOption.click()
 
-    await test.step('verify Labour was selected and update quantity', async () => {
-      await page.waitForTimeout(1000)
-
-      const labourRow = await findRowByDescription(page, 'Labour')
-      expect(labourRow).not.toBeNull()
-      console.log('Found Labour row with exact description match')
-
-      await labourRow!.click()
-
-      const qtyInput = labourRow!.locator('input').first()
-      await qtyInput.click()
-      await qtyInput.fill('2')
-      await page.keyboard.press('Tab')
-    })
-
-    await test.step('wait for autosave', async () => {
-      await waitForAutosave(page)
-    })
-
-    await test.step('verify Labour entry was saved', async () => {
-      await page.reload()
-      await autoId(page, 'tab-estimate').click()
-      await page.waitForTimeout(1000)
-
-      const labourRow = await findRowByDescription(page, 'Labour')
-      expect(labourRow).not.toBeNull()
-    })
-  })
-
-  test('add Material entry using search', async ({ authenticatedPage: page }) => {
-    await navigateToEstimateTab(page, createdJobUrl)
-
-    await test.step('click Add row button', async () => {
-      await clickAddRow(page)
-    })
-
-    await test.step('search for M8 ZINC and select the wing nut', async () => {
-      const searchInput = page.getByPlaceholder('Search items by description, code, or type...')
-      await searchInput.waitFor({ timeout: 10000 })
-      await searchInput.click()
-      await searchInput.fill('M8 ZINC')
-
-      const wingNutOption = page
-        .locator('[data-automation-id^="item-select-option-"]')
-        .filter({ hasText: 'M8 ZINC WING NUT' })
-      await wingNutOption.waitFor({ timeout: 10000 })
-      await wingNutOption.click()
-    })
-
-    await test.step('verify material was selected and update quantity', async () => {
-      await page.waitForTimeout(2000)
-
-      const materialRow = await findRowByDescription(page, 'M8 ZINC WING NUT')
-      expect(materialRow).not.toBeNull()
-      console.log('Found M8 ZINC WING NUT row with exact description match')
-
-      const qtyInput = materialRow!.locator('input').first()
-      await qtyInput.click()
-      await qtyInput.fill('10')
-      await page.keyboard.press('Tab')
-    })
-
-    await test.step('wait for autosave', async () => {
-      await waitForAutosave(page)
-    })
-
-    await test.step('verify Material entry was saved', async () => {
-      await page.reload()
-      await autoId(page, 'tab-estimate').click()
-      await page.waitForTimeout(1000)
-
-      const materialRow = await findRowByDescription(page, 'M8 ZINC WING NUT')
-      expect(materialRow).not.toBeNull()
-    })
-  })
-
-  test('add Adjustment entry', async ({ authenticatedPage: page }) => {
-    await navigateToEstimateTab(page, createdJobUrl)
-
-    const rowsBefore = await page.locator('[data-automation-id^="cost-line-row-"]').count()
-    console.log(`Rows before adding adjustment: ${rowsBefore}`)
-
-    await addAdjustmentEntry(page, 'Discount - repeat customer', '1', '-50', '-50')
-
-    await test.step('verify Adjustment entry was saved', async () => {
-      await page.reload()
-      await autoId(page, 'tab-estimate').click()
-      await page.waitForTimeout(1000)
-
-      const adjustmentRow = await findRowByDescription(page, 'Discount - repeat customer')
-      expect(adjustmentRow).not.toBeNull()
-    })
-  })
-
-  test('verify all entries persist after reload', async ({ authenticatedPage: page }) => {
-    await navigateToEstimateTab(page, createdJobUrl)
-
-    await test.step('verify all 3 entry types exist', async () => {
-      const labourRow = await findRowByDescription(page, 'Labour')
-      const materialRow = await findRowByDescription(page, 'M8 ZINC WING NUT')
-      const adjustmentRow = await findRowByDescription(page, 'Discount - repeat customer')
-
-      expect(labourRow).not.toBeNull()
-      expect(materialRow).not.toBeNull()
-      expect(adjustmentRow).not.toBeNull()
-
-      console.log('All 3 entry types verified with exact description matches:')
-      console.log('  - Labour')
-      console.log('  - M8 ZINC WING NUT')
-      console.log('  - Discount - repeat customer')
-    })
-  })
-})
-
-// ============================================================================
-// Test Suite: Edit Costlines (Serial - shares a single job)
-// ============================================================================
-
-test.describe.serial('edit costline values', () => {
-  let createdJobUrl: string
-  const adjustmentDescription = 'Test Adjustment for Editing'
-
-  test('create a job with an adjustment entry for editing tests', async ({
-    authenticatedPage: page,
-  }) => {
-    createdJobUrl = await createTestJob(page, 'Edit')
-    console.log(`Created job at: ${createdJobUrl}`)
-
-    // Add an adjustment entry to edit
-    await autoId(page, 'tab-estimate').click()
     await page.waitForTimeout(1000)
-    await addAdjustmentEntry(page, adjustmentDescription, '1', '10', '10')
+
+    const labourRow = await findRowByDescription(page, 'Labour')
+    expect(labourRow).not.toBeNull()
+
+    await labourRow!.click()
+    const qtyInput = labourRow!.locator('input').first()
+    await qtyInput.click()
+    await qtyInput.fill('2')
+    await page.keyboard.press('Tab')
+
+    await waitForAutosave(page)
+
+    // Verify persistence
+    await navigateToEstimateTab(page, jobUrl)
+
+    const labourRowAfter = await findRowByDescription(page, 'Labour')
+    expect(labourRowAfter).not.toBeNull()
   })
 
-  test('edit quantity and verify unit cost auto-calculates unit revenue', async ({
-    authenticatedPage: page,
-  }) => {
-    await navigateToEstimateTab(page, createdJobUrl)
-
-    const adjustmentRowIndex = await findRowIndexByDescription(page, adjustmentDescription)
-    expect(adjustmentRowIndex).toBeGreaterThanOrEqual(0)
-    console.log(`Found Adjustment row at index ${adjustmentRowIndex}`)
-
-    await test.step('change quantity to 3', async () => {
-      const qtyInput = autoId(page, `cost-line-quantity-${adjustmentRowIndex}`)
-      await qtyInput.dblclick()
-      await page.keyboard.type('3')
-      await page.keyboard.press('Tab')
-    })
-
-    await test.step('change unit cost to 25 and verify unit revenue auto-updates', async () => {
-      const unitCostInput = autoId(page, `cost-line-unit-cost-${adjustmentRowIndex}`)
-      await unitCostInput.dblclick()
-      await page.keyboard.type('25')
-      await page.keyboard.press('Tab')
-
-      await page.waitForTimeout(500)
-
-      const unitRevInput = autoId(page, `cost-line-unit-rev-${adjustmentRowIndex}`)
-      const unitRevValue = await unitRevInput.inputValue()
-      console.log(`After setting unit_cost=25, unit_rev=${unitRevValue}`)
-    })
-
-    await test.step('wait for autosave', async () => {
-      await waitForAutosave(page)
-    })
-
-    await test.step('verify changes persisted after reload', async () => {
-      await page.reload()
-      await autoId(page, 'tab-estimate').click()
-      await page.waitForTimeout(1000)
-
-      const newAdjustmentRowIndex = await findRowIndexByDescription(page, adjustmentDescription)
-      expect(newAdjustmentRowIndex).toBeGreaterThanOrEqual(0)
-
-      const qtyInput = autoId(page, `cost-line-quantity-${newAdjustmentRowIndex}`)
-      await expect(qtyInput).toHaveValue('3')
-
-      const unitCostInput = autoId(page, `cost-line-unit-cost-${newAdjustmentRowIndex}`)
-      await expect(unitCostInput).toHaveValue('25')
-
-      console.log('Verified: quantity=3, unit_cost=25')
-    })
-  })
-
-  test('manually override unit revenue independent of unit cost', async ({
-    authenticatedPage: page,
-  }) => {
-    await navigateToEstimateTab(page, createdJobUrl)
-
-    const adjustmentRowIndex = await findRowIndexByDescription(page, adjustmentDescription)
-    expect(adjustmentRowIndex).toBeGreaterThanOrEqual(0)
-    console.log(`Found Adjustment row at index ${adjustmentRowIndex}`)
-
-    const unitCostInput = autoId(page, `cost-line-unit-cost-${adjustmentRowIndex}`)
-    const originalUnitCost = await unitCostInput.inputValue()
-    console.log(`Original unit_cost: ${originalUnitCost}`)
-
-    await test.step('change unit revenue to 99 (independent of unit cost)', async () => {
-      const unitRevInput = autoId(page, `cost-line-unit-rev-${adjustmentRowIndex}`)
-      await unitRevInput.click()
-      await unitRevInput.fill('99')
-      await page.keyboard.press('Tab')
-    })
-
-    await test.step('verify unit cost unchanged', async () => {
-      const currentUnitCost = await unitCostInput.inputValue()
-      expect(currentUnitCost).toBe(originalUnitCost)
-      console.log(`Unit cost after changing unit_rev: ${currentUnitCost} (unchanged)`)
-    })
-
-    await test.step('wait for autosave', async () => {
-      await waitForAutosave(page)
-    })
-
-    await test.step('verify unit revenue override persisted after reload', async () => {
-      await page.reload()
-      await autoId(page, 'tab-estimate').click()
-      await page.waitForTimeout(1000)
-
-      const newAdjustmentRowIndex = await findRowIndexByDescription(page, adjustmentDescription)
-      expect(newAdjustmentRowIndex).toBeGreaterThanOrEqual(0)
-
-      const unitRevInput = autoId(page, `cost-line-unit-rev-${newAdjustmentRowIndex}`)
-      await expect(unitRevInput).toHaveValue('99')
-
-      const reloadedUnitCostInput = autoId(page, `cost-line-unit-cost-${newAdjustmentRowIndex}`)
-      await expect(reloadedUnitCostInput).toHaveValue(originalUnitCost)
-
-      console.log(
-        `Verified: unit_rev=99 (manual override), unit_cost=${originalUnitCost} (unchanged)`,
-      )
-    })
-  })
-})
-
-// ============================================================================
-// Test Suite: Change Material Code (Isolated - creates own job)
-// ============================================================================
-
-test.describe.serial('change material code', () => {
-  let createdJobUrl: string
-
-  test('create a job with a material entry', async ({ authenticatedPage: page }) => {
-    createdJobUrl = await createTestJob(page, 'MaterialChange')
-    console.log(`Created job at: ${createdJobUrl}`)
-
-    // Add a material entry
-    await autoId(page, 'tab-estimate').click()
-    await page.waitForTimeout(1000)
+  test('add Material entry', async ({ authenticatedPage: page }) => {
+    await navigateToEstimateTab(page, jobUrl)
 
     await clickAddRow(page)
 
@@ -449,132 +161,180 @@ test.describe.serial('change material code', () => {
     await wingNutOption.waitFor({ timeout: 10000 })
     await wingNutOption.click()
 
+    await page.waitForTimeout(2000)
+
+    const materialRow = await findRowByDescription(page, 'M8 ZINC WING NUT')
+    expect(materialRow).not.toBeNull()
+
+    const qtyInput = materialRow!.locator('input').first()
+    await qtyInput.click()
+    await qtyInput.fill('10')
+    await page.keyboard.press('Tab')
+
     await waitForAutosave(page)
+
+    // Verify persistence
+    await navigateToEstimateTab(page, jobUrl)
+
+    const materialRowAfter = await findRowByDescription(page, 'M8 ZINC WING NUT')
+    expect(materialRowAfter).not.toBeNull()
   })
 
-  test('change material code for a costline', async ({ authenticatedPage: page }) => {
-    await navigateToEstimateTab(page, createdJobUrl)
+  test('add Adjustment entry', async ({ authenticatedPage: page }) => {
+    await navigateToEstimateTab(page, jobUrl)
 
-    const materialRowIndex = await findRowIndexByDescription(page, 'M8 ZINC WING NUT')
-    expect(materialRowIndex).toBeGreaterThanOrEqual(0)
-    console.log(`Found M8 ZINC WING NUT row at index ${materialRowIndex}`)
+    await addAdjustmentEntry(page, 'Discount - repeat customer', '1', '-50', '-50')
 
-    await test.step('click on item selector and change to a different material', async () => {
-      const itemCell = autoId(page, `cost-line-item-${materialRowIndex}`)
-      // When row is inactive, item cell shows a Button with item code
-      // Click it to activate the row and open the ItemSelect
-      const itemButton = itemCell.locator('button')
-      await itemButton.click()
+    // Verify persistence
+    await navigateToEstimateTab(page, jobUrl)
 
-      const searchInput = page.getByPlaceholder('Search items by description, code, or type...')
-      await searchInput.waitFor({ timeout: 10000 })
-      await searchInput.click()
-      await searchInput.fill('M10')
-
-      const newItemOption = page
-        .locator('[data-automation-id^="item-select-option-"]')
-        .filter({ hasText: 'M10' })
-        .first()
-      await newItemOption.waitFor({ timeout: 10000 })
-
-      const optionText = await newItemOption.textContent()
-      console.log(`Selecting new item: ${optionText}`)
-
-      await newItemOption.click()
-    })
-
-    await test.step('wait for autosave', async () => {
-      await waitForAutosave(page)
-    })
-
-    await test.step('verify material change persisted after reload', async () => {
-      await page.reload()
-      await autoId(page, 'tab-estimate').click()
-      await page.waitForTimeout(1000)
-
-      const oldMaterialRow = await findRowByDescription(page, 'M8 ZINC WING NUT')
-      expect(oldMaterialRow).toBeNull()
-
-      const rows = page.locator('[data-automation-id^="cost-line-row-"]')
-      const rowCount = await rows.count()
-      let foundM10 = false
-
-      for (let i = 0; i < rowCount; i++) {
-        const row = rows.nth(i)
-        const textarea = row.locator('textarea').first()
-        const value = await textarea.inputValue().catch(() => '')
-        if (value.includes('M10')) {
-          foundM10 = true
-          console.log(`Found new material row with description: ${value}`)
-          break
-        }
-      }
-
-      expect(foundM10).toBe(true)
-    })
-  })
-})
-
-// ============================================================================
-// Test Suite: Delete Costline (Isolated - creates and deletes its own row)
-// ============================================================================
-
-test.describe.serial('delete costline', () => {
-  let createdJobUrl: string
-  const deleteTestDescription = 'Row to be deleted'
-
-  test('create a job with an adjustment entry to delete', async ({ authenticatedPage: page }) => {
-    createdJobUrl = await createTestJob(page, 'Delete')
-    console.log(`Created job at: ${createdJobUrl}`)
-
-    // Add an adjustment entry specifically for deletion
-    await autoId(page, 'tab-estimate').click()
-    await page.waitForTimeout(1000)
-    await addAdjustmentEntry(page, deleteTestDescription, '1', '100', '100')
-
-    // Verify it was created
-    const row = await findRowByDescription(page, deleteTestDescription)
-    expect(row).not.toBeNull()
-    console.log('Created row for deletion test')
+    const adjustmentRow = await findRowByDescription(page, 'Discount - repeat customer')
+    expect(adjustmentRow).not.toBeNull()
   })
 
-  test('delete a costline', async ({ authenticatedPage: page }) => {
-    await navigateToEstimateTab(page, createdJobUrl)
+  test('verify all entries persist', async ({ authenticatedPage: page }) => {
+    await navigateToEstimateTab(page, jobUrl)
+
+    const labourRow = await findRowByDescription(page, 'Labour')
+    const materialRow = await findRowByDescription(page, 'M8 ZINC WING NUT')
+    const adjustmentRow = await findRowByDescription(page, 'Discount - repeat customer')
+
+    expect(labourRow).not.toBeNull()
+    expect(materialRow).not.toBeNull()
+    expect(adjustmentRow).not.toBeNull()
+
+    console.log('All 3 entry types verified')
+  })
+
+  test('edit quantity and unit cost', async ({ authenticatedPage: page }) => {
+    await navigateToEstimateTab(page, jobUrl)
+
+    // Add a new adjustment for editing tests
+    await addAdjustmentEntry(page, 'Test Adjustment for Editing', '1', '10', '10')
+
+    const rowIndex = await findRowIndexByDescription(page, 'Test Adjustment for Editing')
+    expect(rowIndex).toBeGreaterThanOrEqual(0)
+
+    // Change quantity to 3
+    const qtyInput = autoId(page, `cost-line-quantity-${rowIndex}`)
+    await qtyInput.dblclick()
+    await page.keyboard.type('3')
+    await page.keyboard.press('Tab')
+
+    // Change unit cost to 25
+    const unitCostInput = autoId(page, `cost-line-unit-cost-${rowIndex}`)
+    await unitCostInput.dblclick()
+    await page.keyboard.type('25')
+    await page.keyboard.press('Tab')
+
+    await waitForAutosave(page)
+
+    // Verify persistence
+    await navigateToEstimateTab(page, jobUrl)
+
+    const newRowIndex = await findRowIndexByDescription(page, 'Test Adjustment for Editing')
+    expect(newRowIndex).toBeGreaterThanOrEqual(0)
+
+    await expect(autoId(page, `cost-line-quantity-${newRowIndex}`)).toHaveValue('3')
+    await expect(autoId(page, `cost-line-unit-cost-${newRowIndex}`)).toHaveValue('25')
+  })
+
+  test('override unit revenue', async ({ authenticatedPage: page }) => {
+    await navigateToEstimateTab(page, jobUrl)
+
+    const rowIndex = await findRowIndexByDescription(page, 'Test Adjustment for Editing')
+    expect(rowIndex).toBeGreaterThanOrEqual(0)
+
+    const unitCostInput = autoId(page, `cost-line-unit-cost-${rowIndex}`)
+    const originalUnitCost = await unitCostInput.inputValue()
+
+    // Change unit revenue to 99
+    const unitRevInput = autoId(page, `cost-line-unit-rev-${rowIndex}`)
+    await unitRevInput.click()
+    await unitRevInput.fill('99')
+    await page.keyboard.press('Tab')
+
+    // Verify unit cost unchanged
+    const currentUnitCost = await unitCostInput.inputValue()
+    expect(currentUnitCost).toBe(originalUnitCost)
+
+    await waitForAutosave(page)
+
+    // Verify persistence
+    await navigateToEstimateTab(page, jobUrl)
+
+    const newRowIndex = await findRowIndexByDescription(page, 'Test Adjustment for Editing')
+    await expect(autoId(page, `cost-line-unit-rev-${newRowIndex}`)).toHaveValue('99')
+    await expect(autoId(page, `cost-line-unit-cost-${newRowIndex}`)).toHaveValue(originalUnitCost)
+  })
+
+  test('change material code', async ({ authenticatedPage: page }) => {
+    await navigateToEstimateTab(page, jobUrl)
+
+    // Count M8 ZINC rows before change
+    const { indices: m8IndicesBefore } = await findRowsByDescription(page, 'M8 ZINC WING NUT')
+    console.log(`M8 ZINC rows before: ${m8IndicesBefore.length}`)
+    expect(m8IndicesBefore.length).toBeGreaterThan(0)
+
+    const materialRowIndex = m8IndicesBefore[0]
+
+    // Click the item cell button to open selector
+    const itemCell = autoId(page, `cost-line-item-${materialRowIndex}`)
+    const itemButton = itemCell.locator('button')
+    await itemButton.click()
+
+    const searchInput = page.getByPlaceholder('Search items by description, code, or type...')
+    await searchInput.waitFor({ timeout: 10000 })
+    await searchInput.click()
+    await searchInput.fill('M10')
+
+    const newItemOption = page
+      .locator('[data-automation-id^="item-select-option-"]')
+      .filter({ hasText: 'M10' })
+      .first()
+    await newItemOption.waitFor({ timeout: 10000 })
+    await newItemOption.click()
+
+    await waitForAutosave(page)
+
+    // Verify persistence
+    await navigateToEstimateTab(page, jobUrl)
+
+    // Count M8 ZINC rows after - should be one less
+    const { indices: m8IndicesAfter } = await findRowsByDescription(page, 'M8 ZINC WING NUT')
+    console.log(`M8 ZINC rows after: ${m8IndicesAfter.length}`)
+    expect(m8IndicesAfter.length).toBe(m8IndicesBefore.length - 1)
+
+    // Check for M10 row using the helper with 'includes' matcher
+    const { rows: m10Rows } = await findRowsByDescription(page, 'M10', 'includes')
+    expect(m10Rows.length).toBeGreaterThan(0)
+  })
+
+  test('delete costline', async ({ authenticatedPage: page }) => {
+    await navigateToEstimateTab(page, jobUrl)
+
+    // Add a row specifically for deletion
+    await addAdjustmentEntry(page, 'Row to be deleted', '1', '100', '100')
 
     const rowsBefore = await page.locator('[data-automation-id^="cost-line-row-"]').count()
-    console.log(`Rows before deletion: ${rowsBefore}`)
+    const deleteRowIndex = await findRowIndexByDescription(page, 'Row to be deleted')
+    expect(deleteRowIndex).toBeGreaterThanOrEqual(0)
 
-    const adjustmentRowIndex = await findRowIndexByDescription(page, deleteTestDescription)
-    expect(adjustmentRowIndex).toBeGreaterThanOrEqual(0)
-    console.log(`Found row to delete at index ${adjustmentRowIndex}`)
+    // Set up dialog handler and click delete
+    page.on('dialog', (dialog) => dialog.accept())
 
-    await test.step('click delete button and confirm', async () => {
-      page.on('dialog', async (dialog) => {
-        console.log(`Dialog message: ${dialog.message()}`)
-        await dialog.accept()
-      })
+    const deleteButton = autoId(page, `cost-line-delete-${deleteRowIndex}`)
+    await deleteButton.click()
 
-      const deleteButton = autoId(page, `cost-line-delete-${adjustmentRowIndex}`)
-      await deleteButton.click()
-    })
+    await waitForAutosave(page)
 
-    await test.step('wait for deletion to complete', async () => {
-      await page.waitForTimeout(2000)
-    })
+    // Verify deletion persisted
+    await navigateToEstimateTab(page, jobUrl)
 
-    await test.step('verify row was deleted after reload', async () => {
-      await page.reload()
-      await autoId(page, 'tab-estimate').click()
-      await page.waitForTimeout(1000)
+    const deletedRow = await findRowByDescription(page, 'Row to be deleted')
+    expect(deletedRow).toBeNull()
 
-      const deletedRow = await findRowByDescription(page, deleteTestDescription)
-      expect(deletedRow).toBeNull()
-
-      const rowsAfter = await page.locator('[data-automation-id^="cost-line-row-"]').count()
-      console.log(`Rows after deletion: ${rowsAfter}`)
-      expect(rowsAfter).toBeLessThan(rowsBefore)
-
-      console.log('Verified: Row was successfully deleted')
-    })
+    const rowsAfter = await page.locator('[data-automation-id^="cost-line-row-"]').count()
+    expect(rowsAfter).toBeLessThan(rowsBefore)
   })
 })

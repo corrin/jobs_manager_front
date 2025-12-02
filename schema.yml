@@ -8126,6 +8126,16 @@ components:
 
             * `time_materials` - Time & Materials
             * `fixed_price` - Fixed Price
+        price_cap:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Maximum amount to invoice for T&M jobs (do not exceed). For
+            quoted jobs it is set to the quote.
         speed_quality_tradeoff:
           allOf:
             - $ref: '#/components/schemas/SpeedQualityTradeoffEnum'
@@ -8982,6 +8992,16 @@ components:
 
             * `time_materials` - Time & Materials
             * `fixed_price` - Fixed Price
+        price_cap:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Maximum amount to invoice for T&M jobs (do not exceed). For
+            quoted jobs it is set to the quote.
         speed_quality_tradeoff:
           allOf:
             - $ref: '#/components/schemas/SpeedQualityTradeoffEnum'
