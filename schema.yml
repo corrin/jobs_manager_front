@@ -23,7 +23,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -59,7 +58,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -75,7 +73,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           description: No response body
@@ -86,7 +83,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           description: No response body
@@ -100,7 +96,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -149,7 +144,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -172,7 +166,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -990,7 +983,6 @@ paths:
         - api
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1024,7 +1016,6 @@ paths:
         - api
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1060,7 +1051,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1096,7 +1086,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1119,7 +1108,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1160,7 +1148,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1213,7 +1200,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1259,7 +1245,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1300,7 +1285,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1335,7 +1319,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1405,7 +1388,6 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1435,7 +1417,6 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2171,7 +2152,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2206,7 +2186,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -2228,7 +2207,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -2270,7 +2248,6 @@ paths:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2306,7 +2283,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -2597,7 +2573,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2680,7 +2655,6 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2705,7 +2679,6 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2740,7 +2713,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -2770,7 +2742,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2805,7 +2776,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2845,7 +2815,6 @@ paths:
               $ref: '#/components/schemas/PatchedJobDeltaEnvelopeRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2874,7 +2843,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2904,7 +2872,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3009,7 +2976,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3045,7 +3011,6 @@ paths:
               $ref: '#/components/schemas/QuoteRevisionRequestRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3069,7 +3034,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3098,7 +3062,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3131,7 +3094,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3161,7 +3123,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3203,7 +3164,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3244,7 +3204,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3283,7 +3242,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3331,7 +3289,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3392,7 +3349,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3448,7 +3404,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -3491,7 +3446,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3522,7 +3476,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3552,7 +3505,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3581,7 +3533,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3623,7 +3574,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3674,7 +3624,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3716,7 +3665,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3745,7 +3693,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3781,7 +3728,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3923,7 +3869,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3946,7 +3891,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3969,7 +3913,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3991,7 +3934,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4023,7 +3965,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4169,7 +4110,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4201,7 +4141,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4223,7 +4162,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4239,7 +4177,6 @@ paths:
         - Product Mapping
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4273,7 +4210,6 @@ paths:
               $ref: '#/components/schemas/ProductMappingValidateRequestRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4301,7 +4237,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4329,7 +4264,6 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderCreateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4352,7 +4286,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4388,7 +4321,6 @@ paths:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4411,7 +4343,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4445,7 +4376,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4479,7 +4409,6 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderEmailRequestRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4527,7 +4456,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4556,7 +4484,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4847,7 +4774,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4863,7 +4789,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4885,7 +4810,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4909,7 +4833,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4931,7 +4854,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4959,7 +4881,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -4981,7 +4902,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5014,7 +4934,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5046,7 +4965,6 @@ paths:
               $ref: '#/components/schemas/PatchedDjangoJobRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5067,7 +4985,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -5086,7 +5003,6 @@ paths:
         - rest
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5460,7 +5376,6 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5490,7 +5405,6 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -10908,9 +10822,6 @@ components:
         location:
           type: string
           description: Where we are keeping this
-        notes:
-          type: string
-          description: Additional notes about the stock item
         metal_type:
           description: |-
             Type of metal
@@ -12905,9 +12816,6 @@ components:
         location:
           type: string
           description: Where we are keeping this
-        notes:
-          type: string
-          description: Additional notes about the stock item
         metal_type:
           description: |-
             Type of metal
@@ -13006,9 +12914,6 @@ components:
         location:
           type: string
           description: Where we are keeping this
-        notes:
-          type: string
-          description: Additional notes about the stock item
         metal_type:
           description: |-
             Type of metal
