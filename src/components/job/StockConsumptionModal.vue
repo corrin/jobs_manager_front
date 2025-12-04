@@ -35,7 +35,7 @@
                 >
                   <div class="font-medium text-sm">{{ item.description }}</div>
                   <div class="text-xs text-gray-500">
-                    Stock: {{ item.quantity }} | Unit Cost: {{ formatCurrency(item.unit_cost) }}
+                    Stock: {{ item.quantity }} | Charge: {{ formatCurrency(item.unit_revenue) }}
                   </div>
                 </div>
               </div>

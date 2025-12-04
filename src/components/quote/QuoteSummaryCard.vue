@@ -205,8 +205,9 @@
                       <div class="font-medium">{{ item.desc }}</div>
                       <div class="text-sm text-gray-600">
                         {{ item.kind }} • Qty: {{ item.quantity }} • Cost:
-                        {{ formatCurrency(item.unit_cost) }} • Total:
-                        {{ formatCurrency(item.total_cost) }}
+                        {{ formatCurrency(item.unit_cost) }} • Revenue:
+                        {{ formatCurrency(item.unit_rev) }} • Total:
+                        {{ formatCurrency(item.total_rev) }}
                       </div>
                     </div>
                     <span class="text-green-600 font-bold text-xs px-2 py-1 bg-green-100 rounded"
@@ -237,8 +238,9 @@
                       <div class="font-medium">{{ item.desc }}</div>
                       <div class="text-sm text-gray-600">
                         {{ item.kind }} • Qty: {{ item.quantity }} • Cost:
-                        {{ formatCurrency(item.unit_cost) }} • Total:
-                        {{ formatCurrency(item.total_cost) }}
+                        {{ formatCurrency(item.unit_cost) }} • Revenue:
+                        {{ formatCurrency(item.unit_rev) }} • Total:
+                        {{ formatCurrency(item.total_rev) }}
                       </div>
                     </div>
                     <span class="text-blue-600 font-bold text-xs px-2 py-1 bg-blue-100 rounded"

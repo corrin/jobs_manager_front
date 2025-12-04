@@ -18,28 +18,21 @@
         <table class="min-w-full text-sm">
           <thead class="bg-slate-50 border-b">
             <tr>
+              <th class="p-3 text-left font-semibold">Item Code</th>
               <th class="p-3 text-left font-semibold">Description</th>
               <th class="p-3 text-left font-semibold">Quantity</th>
               <th class="p-3 text-left font-semibold">Unit Cost</th>
-              <th class="p-3 text-left font-semibold">Metal Type</th>
-              <th class="p-3 text-left font-semibold">Alloy</th>
-              <th class="p-3 text-left font-semibold">Specifics</th>
-              <th class="p-3 text-left font-semibold">Location</th>
+              <th class="p-3 text-left font-semibold">Unit Revenue</th>
               <th class="p-3 w-24 text-center font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in pagedItems" :key="item.id" class="border-b hover:bg-slate-50">
+              <td class="p-3">{{ item.item_code || '-' }}</td>
               <td class="p-3">{{ item.description }}</td>
-              <td class="p-3">
-                {{ formatQuantity(item.quantity) }}
-                <!-- Debug: raw={{ item.quantity }} -->
-              </td>
-              <td class="p-3">${{ formatCurrency(item.unit_cost) }}</td>
-              <td class="p-3">{{ formatMetalType(item.metal_type) || '-' }}</td>
-              <td class="p-3">{{ item.alloy || '-' }}</td>
-              <td class="p-3">{{ item.specifics || '-' }}</td>
-              <td class="p-3">{{ item.location || '-' }}</td>
+              <td class="p-3">{{ formatQuantity(item.quantity) }}</td>
+              <td class="p-3">{{ formatCurrency(item.unit_cost) }}</td>
+              <td class="p-3">{{ formatCurrency(item.unit_revenue) }}</td>
               <td class="p-3 flex justify-center gap-2">
                 <Button
                   size="sm"
@@ -62,10 +55,10 @@
               </td>
             </tr>
             <tr v-if="filteredItems.length === 0 && !isLoading">
-              <td colspan="8" class="p-8 text-center text-gray-500">No stock items found</td>
+              <td colspan="6" class="p-8 text-center text-gray-500">No stock items found</td>
             </tr>
             <tr v-if="filteredItems.length === 0 && isLoading">
-              <td colspan="8" class="p-8 text-center text-gray-500">
+              <td colspan="6" class="p-8 text-center text-gray-500">
                 <div class="flex items-center justify-center gap-2">
                   <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
                   Stock items are still loading, please wait
@@ -259,7 +252,6 @@ import { useJobsStore } from '@/stores/jobs'
 import { jobService } from '@/services/job.service'
 import { onMounted, ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import { formatMetalType } from '@/utils/metalType'
 import { formatCurrency } from '@/utils/string-formatting'
 
 const stockStore = useStockStore()

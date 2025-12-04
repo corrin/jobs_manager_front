@@ -196,7 +196,9 @@
                     <th class="px-3 py-2 text-left font-medium text-gray-900">Description</th>
                     <th class="px-3 py-2 text-right font-medium text-gray-900">Qty</th>
                     <th class="px-3 py-2 text-right font-medium text-gray-900">Unit Cost</th>
-                    <th class="px-3 py-2 text-right font-medium text-gray-900">Total</th>
+                    <th class="px-3 py-2 text-right font-medium text-gray-900">Unit Revenue</th>
+                    <th class="px-3 py-2 text-right font-medium text-gray-900">Total Cost</th>
+                    <th class="px-3 py-2 text-right font-medium text-gray-900">Total Revenue</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -207,8 +209,14 @@
                     <td class="px-3 py-2 text-right text-gray-900">
                       {{ formatCurrency(line.unit_cost) }}
                     </td>
+                    <td class="px-3 py-2 text-right text-gray-900">
+                      {{ formatCurrency(line.unit_rev) }}
+                    </td>
                     <td class="px-3 py-2 text-right font-medium text-gray-900">
                       {{ formatCurrency(line.total_cost) }}
+                    </td>
+                    <td class="px-3 py-2 text-right font-medium text-gray-900">
+                      {{ formatCurrency(line.total_rev) }}
                     </td>
                   </tr>
                 </tbody>
