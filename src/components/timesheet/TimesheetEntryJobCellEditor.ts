@@ -85,6 +85,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
 
     this.input = document.createElement('input')
     this.input.type = 'text'
+    this.input.setAttribute('data-automation-id', 'timesheet-job-search')
     // Show job number if a job is selected, otherwise show the raw value
     this.input.value = this.selectedJob ? String(this.selectedJob.job_number) : this.value
     this.input.placeholder = 'Search jobs... (start typing job number or name)'
@@ -102,6 +103,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
 
     this.dropdown = document.createElement('div')
     this.dropdown.className = 'job-dropdown'
+    this.dropdown.setAttribute('data-automation-id', 'timesheet-job-dropdown')
     this.dropdown.style.cssText = `
       position: fixed;
       max-height: 300px;
@@ -203,6 +205,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       const item = document.createElement('div')
       item.className = 'job-dropdown-item'
       item.dataset.index = String(index)
+      item.setAttribute('data-automation-id', `timesheet-job-option-${job.job_number}`)
 
       const searchTerm = this.input.value.toLowerCase()
 

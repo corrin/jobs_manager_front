@@ -13,7 +13,9 @@
           </div>
           <div class="mb-3">
             <div class="flex items-center gap-2 mb-1" :key="titleKey">
-              <span class="text-xl font-bold text-gray-900">Job #{{ jobHeader?.job_number }}</span>
+              <span data-automation-id="job-number-mobile" class="text-xl font-bold text-gray-900"
+                >Job #{{ jobHeader?.job_number }}</span
+              >
               <div class="group">
                 <InlineEditText
                   v-if="jobDataWithPaid"
@@ -131,7 +133,7 @@
             </button>
             <div class="flex flex-col justify-center h-full">
               <div class="flex items-center" :key="titleKey">
-                <span class="text-xl font-bold text-gray-900"
+                <span data-automation-id="job-number" class="text-xl font-bold text-gray-900"
                   >Job #{{ jobHeader?.job_number }} -</span
                 >
                 <div class="group">

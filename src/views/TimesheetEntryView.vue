@@ -244,6 +244,7 @@
             </div>
 
             <Button
+              data-automation-id="timesheet-add-entry"
               @click="addNewEntry"
               size="sm"
               variant="default"
