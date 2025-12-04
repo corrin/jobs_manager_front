@@ -320,8 +320,8 @@ import {
 } from '../components/ui/dialog'
 
 // Type aliases for schema-based types
-type ClientContact = z.infer<typeof schemas.ClientContactResult>
-type NewContactData = z.infer<typeof schemas.ClientContactCreateRequest>
+type ClientContact = z.infer<typeof schemas.ClientContact>
+type NewContactData = z.infer<typeof schemas.ClientContactRequest>
 
 const props = defineProps<{
   isOpen: boolean

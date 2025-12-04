@@ -10,21 +10,21 @@ The `tsconfig.app.json` had an incorrect include pattern (`"src*"` instead of `"
 
 ---
 
-## All Errors (601)
+## All Errors (601 initially, 591 remaining)
 
-- [ ] `src/components/AIProvidersDialog.vue(17,12):TS2322` - Type '{}' is not assignable to type 'PropertyKey | undefined'.
-- [ ] `src/components/AIProvidersDialog.vue(252,43):TS2339` - Property 'length' does not exist on type '{}'.
-- [ ] `src/components/AppNavbar.vue(276,72):TS2339` - Property 'split' does not exist on type '{}'.
-- [ ] `src/components/AppNavbar.vue(296,77):TS2339` - Property 'split' does not exist on type '{}'.
-- [ ] `src/components/ClientDropdown.vue(38,38):TS2339` - Property 'Client' does not exist on type '{ KPIProfitBreakdown
-- [ ] `src/components/ClientDropdown.vue(70,28):TS2551` - Property 'clients_all_retrieve' does not exist on type 'ZodiosInstance<[{ method
-- [ ] `src/components/ClientDropdown.vue(82,44):TS7006` - Parameter 'c' implicitly has an 'any' type.
-- [ ] `src/components/ClientDropdown.vue(87,46):TS7006` - Parameter 'x' implicitly has an 'any' type.
+- [x] `src/components/AIProvidersDialog.vue(17,12):TS2322` - Type '{}' is not assignable to type 'PropertyKey | undefined'.
+- [x] `src/components/AIProvidersDialog.vue(252,43):TS2339` - Property 'length' does not exist on type '{}'.
+- [x] `src/components/AppNavbar.vue(276,72):TS2339` - Property 'split' does not exist on type '{}'.
+- [x] `src/components/AppNavbar.vue(296,77):TS2339` - Property 'split' does not exist on type '{}'.
+- [x] `src/components/ClientDropdown.vue(38,38):TS2339` - Property 'Client' does not exist on type '{ KPIProfitBreakdown
+- [x] `src/components/ClientDropdown.vue(70,28):TS2551` - Property 'clients_all_retrieve' does not exist on type 'ZodiosInstance<[{ method
+- [x] `src/components/ClientDropdown.vue(82,44):TS7006` - Parameter 'c' implicitly has an 'any' type.
+- [x] `src/components/ClientDropdown.vue(87,46):TS7006` - Parameter 'x' implicitly has an 'any' type.
 - [ ] `src/components/ClientLookup.vue(261,13):TS2322` - Type '{ id
 - [ ] `src/components/ClientLookup.vue(276,23):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
-- [ ] `src/components/ContactSelectionModal.vue(323,45):TS2551` - Property 'ClientContactResult' does not exist on type '{ KPIProfitBreakdown
-- [ ] `src/components/ContactSelectionModal.vue(324,46):TS2551` - Property 'ClientContactCreateRequest' does not exist on type '{ KPIProfitBreakdown
-- [ ] `src/components/ContactSelector.vue(78,45):TS2551` - Property 'ClientContactResult' does not exist on type '{ KPIProfitBreakdown
+- [x] `src/components/ContactSelectionModal.vue(323,45):TS2551` - Property 'ClientContactResult' does not exist on type '{ KPIProfitBreakdown
+- [x] `src/components/ContactSelectionModal.vue(324,46):TS2551` - Property 'ClientContactCreateRequest' does not exist on type '{ KPIProfitBreakdown
+- [x] `src/components/ContactSelector.vue(78,45):TS2551` - Property 'ClientContactResult' does not exist on type '{ KPIProfitBreakdown
 - [ ] `src/components/ContactSelector.vue(170,51):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
 - [ ] `src/components/CreateClientModal.vue(314,48):TS2345` - Argument of type 'objectOutputType<{ name
 - [ ] `src/components/CreateClientModal.vue(325,60):TS2339` - Property 'xero_contact_id' does not exist on type '{}'.

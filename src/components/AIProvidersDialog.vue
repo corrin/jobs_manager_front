@@ -123,17 +123,26 @@ import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 
 type AIProvider = z.infer<typeof schemas.AIProvider>
-type AIProviderCreateUpdate = z.infer<typeof schemas.AIProviderCreateUpdate>
+
+// Local type for provider management that includes all needed fields
+type LocalAIProvider = z.infer<typeof schemas.AIProviderCreateUpdateRequest> & {
+  id?: number
+  company?: string
+}
 
 const props = defineProps<{ providers?: AIProvider[] }>()
 const emit = defineEmits(['close', 'update:providers'])
 
 const safeProviders = props.providers || []
-const localProviders = ref<AIProviderCreateUpdate[]>(
+const localProviders = ref<LocalAIProvider[]>(
   safeProviders.map((p) => ({
-    ...p,
-    api_key: typeof p.api_key === 'string' ? p.api_key.trim() : '',
-    company: p.company || '',
+    id: p.id,
+    name: p.name,
+    provider_type: p.provider_type,
+    model_name: p.model_name,
+    default: p.default,
+    api_key: '',
+    company: '',
   })),
 )
 
@@ -151,9 +160,13 @@ watch(
   (newVal) => {
     if (newVal && JSON.stringify(newVal) !== JSON.stringify(localProviders.value)) {
       localProviders.value = newVal.map((p) => ({
-        ...p,
-        api_key: p.api_key || '',
-        company: p.company || '',
+        id: p.id,
+        name: p.name,
+        provider_type: p.provider_type,
+        model_name: p.model_name,
+        default: p.default,
+        api_key: '',
+        company: '',
       }))
     }
   },

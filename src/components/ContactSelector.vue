@@ -75,7 +75,7 @@ import ContactSelectionModal from './ContactSelectionModal.vue'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 
-type ClientContact = z.infer<typeof schemas.ClientContactResult>
+type ClientContact = z.infer<typeof schemas.ClientContact>
 
 const props = withDefaults(
   defineProps<{
