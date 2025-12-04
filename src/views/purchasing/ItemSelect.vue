@@ -77,15 +77,11 @@ const filteredItems = computed(() => {
 })
 
 const displayPrice = (item: StockItem) => {
-  let price = '0.00'
   if (item.id === '__labour__') {
-    price = formatCurrency(item.unit_rev || 0)
-  } else {
-    price = formatCurrency(
-      (item.unit_cost || 0) * (1 + (companyDefaultsStore.companyDefaults?.materials_markup || 0)),
-    )
+    return formatCurrency(item.unit_rev || 0)
   }
-  return price
+  // Use unit_revenue for customer-facing prices (what we charge)
+  return formatCurrency(item.unit_revenue || 0)
 }
 </script>
 
@@ -162,7 +158,7 @@ const displayPrice = (item: StockItem) => {
                 v-if="
                   i.id === '__labour__'
                     ? i.unit_rev || i.unit_rev === 0
-                    : i.unit_cost || i.unit_cost === 0
+                    : i.unit_revenue || i.unit_revenue === 0
                 "
                 variant="secondary"
                 class="text-xs font-semibold"
