@@ -596,7 +596,7 @@ async function consumeStockForNewLine(payload: {
     }
 
     const response = await api.consumeStock(request, {
-      params: { stock_id: payload.stockId },
+      params: { id: payload.stockId },
     })
 
     // Replace the temp line with the created one
