@@ -1,11 +1,11 @@
 import { api } from '../api/client'
 import { debugLog } from '../utils/debug'
-import { schemas } from '../api/generated/api'
 import { z } from 'zod'
+import { schemas } from '../api/generated/api'
 
 // Use generated schemas
 export type Client = z.infer<typeof schemas.ClientSearchResult>
-export type CreateClientData = z.infer<typeof schemas.ClientCreateRequest>
+export type CreateClientData = z.infer<typeof schemas.ClientCreateRequestRequest>
 import type { CreateClientResponse } from '@/constants/client-wrapper'
 
 export class ClientService {

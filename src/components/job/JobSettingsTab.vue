@@ -535,6 +535,10 @@ const handleFieldInput = (field: string, value: string) => {
     localJobData.value.order_number = newValue
   } else if (field === 'notes') {
     localJobData.value.notes = newValue
+  } else if (field === 'pricing_methodology') {
+    localJobData.value.pricing_methodology = newValue
+  } else if (field === 'speed_quality_tradeoff') {
+    localJobData.value.speed_quality_tradeoff = newValue as Job['speed_quality_tradeoff']
   }
 
   // Queue autosave change

@@ -170,15 +170,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { z } from 'zod'
 import type { Client } from '@/composables/useClientLookup'
+import { schemas } from '@/api/generated/api'
 
 // Use generated types from Zodios API
-type ClientCreateRequest = z.infer<typeof schemas.ClientCreateRequest>
+type ClientCreateRequestSchema = typeof schemas.ClientCreateRequestRequest
+type ClientCreateRequest = z.infer<ClientCreateRequestSchema>
 type ClientCreateResponse = z.infer<typeof schemas.ClientCreateResponse>
 type ClientUpdateResponse = z.infer<typeof schemas.ClientUpdateResponse>
+const clientSchema: ClientCreateRequestSchema = schemas.ClientCreateRequestRequest
 
 interface Props {
   isOpen: boolean
@@ -250,7 +252,7 @@ const validateForm = (): boolean => {
     const cleanedData = cleanOptionalFields(plainFormData)
     console.log('🧹 Cleaned data for validation:', cleanedData)
 
-    schemas.ClientCreateRequest.parse(cleanedData)
+    clientSchema.parse(cleanedData)
     console.log('✅ Schema validation passed')
     return true
   } catch (error: unknown) {
@@ -300,7 +302,7 @@ const handleSubmit = async () => {
 
     // Validate the cleaned data manually first
     try {
-      schemas.ClientCreateRequest.parse(cleanedData)
+      clientSchema.parse(cleanedData)
       console.log('✅ Manual validation passed')
     } catch (validationError) {
       console.log('❌ Manual validation failed:', validationError)
