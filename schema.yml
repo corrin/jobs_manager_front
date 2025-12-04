@@ -23,6 +23,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -58,6 +59,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -73,6 +75,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           description: No response body
@@ -83,6 +86,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           description: No response body
@@ -96,6 +100,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -144,6 +149,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -166,6 +172,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -183,13 +190,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BearerTokenRequestRequest'
+              $ref: '#/components/schemas/BearerTokenRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/BearerTokenRequestRequest'
+              $ref: '#/components/schemas/BearerTokenRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BearerTokenRequestRequest'
+              $ref: '#/components/schemas/BearerTokenRequest'
         required: true
       responses:
         '200':
@@ -983,6 +990,7 @@ paths:
         - api
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1016,6 +1024,7 @@ paths:
         - api
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1051,6 +1060,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1086,6 +1096,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1108,6 +1119,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1148,6 +1160,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1190,16 +1203,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/XeroQuoteCreateRequestRequest'
+              $ref: '#/components/schemas/XeroQuoteCreateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/XeroQuoteCreateRequestRequest'
+              $ref: '#/components/schemas/XeroQuoteCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/XeroQuoteCreateRequestRequest'
+              $ref: '#/components/schemas/XeroQuoteCreateRequest'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1245,6 +1259,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1285,6 +1300,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1319,6 +1335,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1388,6 +1405,7 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1417,6 +1435,7 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1515,13 +1534,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientUpdateRequestRequest'
+              $ref: '#/components/schemas/ClientUpdateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ClientUpdateRequestRequest'
+              $ref: '#/components/schemas/ClientUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ClientUpdateRequestRequest'
+              $ref: '#/components/schemas/ClientUpdateRequest'
       security:
         - cookieAuth: []
       responses:
@@ -1567,13 +1586,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedClientUpdateRequestRequest'
+              $ref: '#/components/schemas/PatchedClientUpdateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedClientUpdateRequestRequest'
+              $ref: '#/components/schemas/PatchedClientUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedClientUpdateRequestRequest'
+              $ref: '#/components/schemas/PatchedClientUpdateRequest'
       security:
         - cookieAuth: []
       responses:
@@ -1861,13 +1880,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientCreateRequestRequest'
+              $ref: '#/components/schemas/ClientCreateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ClientCreateRequestRequest'
+              $ref: '#/components/schemas/ClientCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ClientCreateRequestRequest'
+              $ref: '#/components/schemas/ClientCreateRequest'
         required: true
       security:
         - cookieAuth: []
@@ -1956,13 +1975,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobContactUpdateRequestRequest'
+              $ref: '#/components/schemas/JobContactUpdateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobContactUpdateRequestRequest'
+              $ref: '#/components/schemas/JobContactUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobContactUpdateRequestRequest'
+              $ref: '#/components/schemas/JobContactUpdateRequest'
         required: true
       security:
         - cookieAuth: []
@@ -2041,13 +2060,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AssignJobRequestRequest'
+              $ref: '#/components/schemas/AssignJobRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/AssignJobRequestRequest'
+              $ref: '#/components/schemas/AssignJobRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AssignJobRequestRequest'
+              $ref: '#/components/schemas/AssignJobRequest'
         required: true
       security:
         - cookieAuth: []
@@ -2117,13 +2136,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ArchiveJobsRequestRequest'
+              $ref: '#/components/schemas/ArchiveJobsRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ArchiveJobsRequestRequest'
+              $ref: '#/components/schemas/ArchiveJobsRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ArchiveJobsRequestRequest'
+              $ref: '#/components/schemas/ArchiveJobsRequest'
         required: true
       security:
         - cookieAuth: []
@@ -2132,7 +2151,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ArchiveJobsRequest'
+                $ref: '#/components/schemas/ArchiveJobs'
           description: ''
   /job/api/jobs/{job_id}/quote-chat/:
     get:
@@ -2152,6 +2171,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2186,6 +2206,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -2207,6 +2228,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -2248,6 +2270,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2273,16 +2296,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobQuoteChatInteractionRequestRequest'
+              $ref: '#/components/schemas/JobQuoteChatInteractionRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobQuoteChatInteractionRequestRequest'
+              $ref: '#/components/schemas/JobQuoteChatInteractionRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobQuoteChatInteractionRequestRequest'
+              $ref: '#/components/schemas/JobQuoteChatInteractionRequest'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -2325,13 +2349,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobReorderRequestRequest'
+              $ref: '#/components/schemas/JobReorderRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobReorderRequestRequest'
+              $ref: '#/components/schemas/JobReorderRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobReorderRequestRequest'
+              $ref: '#/components/schemas/JobReorderRequest'
       security:
         - cookieAuth: []
       responses:
@@ -2375,13 +2399,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobStatusUpdateRequestRequest'
+              $ref: '#/components/schemas/JobStatusUpdateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobStatusUpdateRequestRequest'
+              $ref: '#/components/schemas/JobStatusUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobStatusUpdateRequestRequest'
+              $ref: '#/components/schemas/JobStatusUpdateRequest'
         required: true
       security:
         - cookieAuth: []
@@ -2573,6 +2597,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2655,6 +2680,7 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2679,6 +2705,7 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2703,16 +2730,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobCreateRequestRequest'
+              $ref: '#/components/schemas/JobCreateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobCreateRequestRequest'
+              $ref: '#/components/schemas/JobCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobCreateRequestRequest'
+              $ref: '#/components/schemas/JobCreateRequest'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -2742,6 +2770,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2776,6 +2805,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2815,6 +2845,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobDeltaEnvelopeRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2843,6 +2874,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2872,6 +2904,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2976,6 +3009,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3002,15 +3036,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/QuoteRevisionRequestRequest'
+              $ref: '#/components/schemas/QuoteRevisionRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/QuoteRevisionRequestRequest'
+              $ref: '#/components/schemas/QuoteRevisionRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/QuoteRevisionRequestRequest'
+              $ref: '#/components/schemas/QuoteRevisionRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3034,6 +3069,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3062,6 +3098,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3094,6 +3131,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3123,6 +3161,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3154,16 +3193,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobEventCreateRequestRequest'
+              $ref: '#/components/schemas/JobEventCreateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobEventCreateRequestRequest'
+              $ref: '#/components/schemas/JobEventCreateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobEventCreateRequestRequest'
+              $ref: '#/components/schemas/JobEventCreateRequest'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3204,6 +3244,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3235,13 +3276,14 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobFileUploadRequestRequest'
+              $ref: '#/components/schemas/JobFileUploadRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobFileUploadRequestRequest'
+              $ref: '#/components/schemas/JobFileUploadRequest'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3289,6 +3331,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3349,6 +3392,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3404,6 +3448,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -3446,6 +3491,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3476,6 +3522,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3505,6 +3552,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3533,6 +3581,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3574,6 +3623,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3624,6 +3674,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3655,16 +3706,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/JobUndoRequestRequest'
+              $ref: '#/components/schemas/JobUndoRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/JobUndoRequestRequest'
+              $ref: '#/components/schemas/JobUndoRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/JobUndoRequestRequest'
+              $ref: '#/components/schemas/JobUndoRequest'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3693,6 +3745,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3728,6 +3781,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3792,13 +3846,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LinkQuoteSheetRequestRequest'
+              $ref: '#/components/schemas/LinkQuoteSheetRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LinkQuoteSheetRequestRequest'
+              $ref: '#/components/schemas/LinkQuoteSheetRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LinkQuoteSheetRequestRequest'
+              $ref: '#/components/schemas/LinkQuoteSheetRequest'
       security:
         - cookieAuth: []
       responses:
@@ -3806,7 +3860,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LinkQuoteSheetRequest'
+                $ref: '#/components/schemas/LinkQuoteSheet'
           description: ''
   /job/rest/jobs/{id}/quote/preview/:
     post:
@@ -3869,6 +3923,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3891,6 +3946,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3913,6 +3969,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3934,6 +3991,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3955,16 +4013,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MonthEndPostRequestRequest'
+              $ref: '#/components/schemas/MonthEndPostRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/MonthEndPostRequestRequest'
+              $ref: '#/components/schemas/MonthEndPostRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/MonthEndPostRequestRequest'
+              $ref: '#/components/schemas/MonthEndPostRequest'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4018,13 +4077,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ModernTimesheetEntryPostRequestRequest'
+              $ref: '#/components/schemas/ModernTimesheetEntryPostRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ModernTimesheetEntryPostRequestRequest'
+              $ref: '#/components/schemas/ModernTimesheetEntryPostRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ModernTimesheetEntryPostRequestRequest'
+              $ref: '#/components/schemas/ModernTimesheetEntryPostRequest'
         required: true
       security:
         - cookieAuth: []
@@ -4110,6 +4169,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4131,16 +4191,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DeliveryReceiptRequestRequest'
+              $ref: '#/components/schemas/DeliveryReceiptRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/DeliveryReceiptRequestRequest'
+              $ref: '#/components/schemas/DeliveryReceiptRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/DeliveryReceiptRequestRequest'
+              $ref: '#/components/schemas/DeliveryReceiptRequest'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4162,6 +4223,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4177,6 +4239,7 @@ paths:
         - Product Mapping
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4201,15 +4264,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProductMappingValidateRequestRequest'
+              $ref: '#/components/schemas/ProductMappingValidateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ProductMappingValidateRequestRequest'
+              $ref: '#/components/schemas/ProductMappingValidateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ProductMappingValidateRequestRequest'
+              $ref: '#/components/schemas/ProductMappingValidateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4237,6 +4301,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4264,6 +4329,7 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderCreateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4286,6 +4352,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4321,6 +4388,7 @@ paths:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4343,6 +4411,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4376,6 +4445,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4400,15 +4470,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PurchaseOrderEmailRequestRequest'
+              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PurchaseOrderEmailRequestRequest'
+              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PurchaseOrderEmailRequestRequest'
+              $ref: '#/components/schemas/PurchaseOrderEmailRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4446,16 +4517,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AllocationDeleteRequestRequest'
+              $ref: '#/components/schemas/AllocationDeleteRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/AllocationDeleteRequestRequest'
+              $ref: '#/components/schemas/AllocationDeleteRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AllocationDeleteRequestRequest'
+              $ref: '#/components/schemas/AllocationDeleteRequest'
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4484,6 +4556,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4745,13 +4818,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StockConsumeRequestRequest'
+              $ref: '#/components/schemas/StockConsumeRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/StockConsumeRequestRequest'
+              $ref: '#/components/schemas/StockConsumeRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/StockConsumeRequestRequest'
+              $ref: '#/components/schemas/StockConsumeRequest'
         required: true
       security:
         - cookieAuth: []
@@ -4774,6 +4847,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4789,6 +4863,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4810,6 +4885,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4833,6 +4909,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4854,6 +4931,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4881,6 +4959,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -4902,6 +4981,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4934,6 +5014,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4965,6 +5046,7 @@ paths:
               $ref: '#/components/schemas/PatchedDjangoJobRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4985,6 +5067,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -5003,6 +5086,7 @@ paths:
         - rest
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5100,13 +5184,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreatePayRunRequestRequest'
+              $ref: '#/components/schemas/CreatePayRunRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CreatePayRunRequestRequest'
+              $ref: '#/components/schemas/CreatePayRunRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CreatePayRunRequestRequest'
+              $ref: '#/components/schemas/CreatePayRunRequest'
         required: true
       security:
         - cookieAuth: []
@@ -5180,13 +5264,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PostWeekToXeroRequestRequest'
+              $ref: '#/components/schemas/PostWeekToXeroRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PostWeekToXeroRequestRequest'
+              $ref: '#/components/schemas/PostWeekToXeroRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PostWeekToXeroRequestRequest'
+              $ref: '#/components/schemas/PostWeekToXeroRequest'
         required: true
       security:
         - cookieAuth: []
@@ -5376,6 +5460,7 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5405,6 +5490,7 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5586,7 +5672,7 @@ components:
         - jobs
         - stock_holding_job_id
         - success
-    AllocationDeleteRequestRequest:
+    AllocationDeleteRequest:
       type: object
       description: Serializer for allocation deletion request
       properties:
@@ -5871,7 +5957,7 @@ components:
           minLength: 1
       required:
         - success
-    ArchiveJobsRequest:
+    ArchiveJobs:
       type: object
       description: Serialiser for job archiving request
       properties:
@@ -5882,7 +5968,7 @@ components:
           description: List of job IDs to archive
       required:
         - ids
-    ArchiveJobsRequestRequest:
+    ArchiveJobsRequest:
       type: object
       description: Serialiser for job archiving request
       properties:
@@ -5972,7 +6058,7 @@ components:
         - non_compliant_jobs
         - summary
         - total_archived_jobs
-    AssignJobRequestRequest:
+    AssignJobRequest:
       type: object
       description: Serialiser for job assignment request
       properties:
@@ -5998,7 +6084,7 @@ components:
       required:
         - message
         - success
-    BearerTokenRequestRequest:
+    BearerTokenRequest:
       type: object
       description: Serializer for bearer token generation request.
       properties:
@@ -6221,7 +6307,7 @@ components:
       required:
         - client
         - name
-    ClientCreateRequestRequest:
+    ClientCreateRequest:
       type: object
       description: Serializer for client creation request
       properties:
@@ -6487,7 +6573,7 @@ components:
         - phone
         - total_spend
         - xero_contact_id
-    ClientUpdateRequestRequest:
+    ClientUpdateRequest:
       type: object
       description: Serializer for client update request
       properties:
@@ -7337,7 +7423,7 @@ components:
         - hours
         - profitMargin
         - rev
-    CreatePayRunRequestRequest:
+    CreatePayRunRequest:
       type: object
       description: Request serializer for creating a pay run
       properties:
@@ -7560,7 +7646,7 @@ components:
       required:
         - allocations
         - total_received
-    DeliveryReceiptRequestRequest:
+    DeliveryReceiptRequest:
       type: object
       description: Serializer for delivery receipt request data.
       properties:
@@ -8302,7 +8388,7 @@ components:
         - notes
         - phone
         - position
-    JobContactUpdateRequestRequest:
+    JobContactUpdateRequest:
       type: object
       description: Serializer for job contact update request
       properties:
@@ -8376,7 +8462,7 @@ components:
         - actual
         - estimate
         - quote
-    JobCreateRequestRequest:
+    JobCreateRequest:
       type: object
       description: Serializer for job creation request data.
       properties:
@@ -8660,7 +8746,7 @@ components:
         - staff
         - timestamp
         - undo_description
-    JobEventCreateRequestRequest:
+    JobEventCreateRequest:
       type: object
       description: Serializer for job event creation request
       properties:
@@ -8812,7 +8898,7 @@ components:
         - errors
         - status
         - uploaded
-    JobFileUploadRequestRequest:
+    JobFileUploadRequest:
       type: object
       description: Serializer for job file upload requests.
       properties:
@@ -9095,7 +9181,7 @@ components:
           description: Error code for specific error types
       required:
         - error
-    JobQuoteChatInteractionRequestRequest:
+    JobQuoteChatInteractionRequest:
       type: object
       description: Serializer for chat interaction request data.
       properties:
@@ -9138,7 +9224,7 @@ components:
           type: string
         metadata:
           description: Extra data like streaming status, processing time, etc.
-    JobReorderRequestRequest:
+    JobReorderRequest:
       type: object
       description: Serializer for job reorder request data.
       properties:
@@ -9174,7 +9260,7 @@ components:
           additionalProperties: {}
       required:
         - statuses
-    JobStatusUpdateRequestRequest:
+    JobStatusUpdateRequest:
       type: object
       description: Serializer for job status update request data.
       properties:
@@ -9194,7 +9280,7 @@ components:
             $ref: '#/components/schemas/TimelineEntry'
       required:
         - timeline
-    JobUndoRequestRequest:
+    JobUndoRequest:
       type: object
       description: Request serializer for undoing a job delta.
       properties:
@@ -9744,14 +9830,14 @@ components:
         * `time` - Time
         * `material` - Material
         * `adjust` - Adjustment
-    LinkQuoteSheetRequest:
+    LinkQuoteSheet:
       type: object
       description: Serializer for link quote sheet request data.
       properties:
         template_url:
           type: string
           format: uri
-    LinkQuoteSheetRequestRequest:
+    LinkQuoteSheetRequest:
       type: object
       description: Serializer for link quote sheet request data.
       properties:
@@ -9862,7 +9948,7 @@ components:
         - date
         - staff
         - summary
-    ModernTimesheetEntryPostRequestRequest:
+    ModernTimesheetEntryPostRequest:
       type: object
       description: Serializer for timesheet entry POST request
       properties:
@@ -10082,7 +10168,7 @@ components:
         - date
         - total_dollars
         - total_hours
-    MonthEndPostRequestRequest:
+    MonthEndPostRequest:
       type: object
       description: Serializer for month-end POST request
       properties:
@@ -10288,7 +10374,7 @@ components:
           type: string
           nullable: true
           description: Additional notes about this contact
-    PatchedClientUpdateRequestRequest:
+    PatchedClientUpdateRequest:
       type: object
       description: Serializer for client update request
       properties:
@@ -10927,7 +11013,7 @@ components:
         - created
         - fetched
         - updated
-    PostWeekToXeroRequestRequest:
+    PostWeekToXeroRequest:
       type: object
       description: Request serializer for posting weekly timesheet to Xero
       properties:
@@ -11164,7 +11250,7 @@ components:
         - total_count
         - unvalidated_count
         - validated_count
-    ProductMappingValidateRequestRequest:
+    ProductMappingValidateRequest:
       type: object
       description: Serializer for product mapping validation request.
       properties:
@@ -11348,7 +11434,7 @@ components:
         * `partially_received` - Partially Received
         * `fully_received` - Fully Received
         * `deleted` - Deleted
-    PurchaseOrderEmailRequestRequest:
+    PurchaseOrderEmailRequest:
       type: object
       description: Serializer for purchase order email generation request
       properties:
@@ -11833,7 +11919,7 @@ components:
         - has_quote
         - job_id
         - job_name
-    QuoteRevisionRequestRequest:
+    QuoteRevisionRequest:
       type: object
       description: Serializer for quote revision request - validates input data
       properties:
@@ -12705,7 +12791,7 @@ components:
         * `recently_completed` - Recently Completed
         * `special` - Special
         * `archived` - Archived
-    StockConsumeRequestRequest:
+    StockConsumeRequest:
       type: object
       description: Serializer for stock consumption request
       properties:
@@ -13946,7 +14032,7 @@ components:
           format: uri
           nullable: true
           maxLength: 200
-    XeroQuoteCreateRequestRequest:
+    XeroQuoteCreateRequest:
       type: object
       description: |-
         Request serializer for creating a Xero quote.

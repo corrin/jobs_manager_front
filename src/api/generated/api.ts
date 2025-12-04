@@ -197,7 +197,7 @@ const StaffPerformanceResponse = z
     period_summary: StaffPerformancePeriodSummary,
   })
   .passthrough()
-const BearerTokenRequestRequest = z
+const BearerTokenRequest = z
   .object({ username: z.string().min(1), password: z.string().min(1) })
   .passthrough()
 const BearerTokenResponse = z.object({ token: z.string() }).passthrough()
@@ -600,7 +600,7 @@ const XeroDocumentErrorResponse = z
     redirect_to_auth: z.boolean().optional(),
   })
   .passthrough()
-const XeroQuoteCreateRequestRequest = z.object({ breakdown: z.boolean() }).passthrough()
+const XeroQuoteCreateRequest = z.object({ breakdown: z.boolean() }).passthrough()
 const ClientDetailResponse = z
   .object({
     id: z.string(),
@@ -652,7 +652,7 @@ const ClientJobHeader = z
   })
   .passthrough()
 const ClientJobsResponse = z.object({ results: z.array(ClientJobHeader) }).passthrough()
-const ClientUpdateRequestRequest = z
+const ClientUpdateRequest = z
   .object({
     name: z.string().min(1).max(255),
     email: z.string().email(),
@@ -669,7 +669,7 @@ const ClientUpdateResponse = z
     message: z.string(),
   })
   .passthrough()
-const PatchedClientUpdateRequestRequest = z
+const PatchedClientUpdateRequest = z
   .object({
     name: z.string().min(1).max(255),
     email: z.string().email(),
@@ -718,7 +718,7 @@ const PatchedClientContactRequest = z
   })
   .partial()
   .passthrough()
-const ClientCreateRequestRequest = z
+const ClientCreateRequest = z
   .object({
     name: z.string().min(1).max(255),
     email: z.string().email().nullish(),
@@ -766,7 +766,7 @@ const JobContactResponse = z
     notes: z.string().nullable(),
   })
   .passthrough()
-const JobContactUpdateRequestRequest = z
+const JobContactUpdateRequest = z
   .object({
     id: z.string().uuid(),
     name: z.string().min(1),
@@ -778,7 +778,7 @@ const JobContactUpdateRequestRequest = z
   })
   .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
-const AssignJobRequestRequest = z
+const AssignJobRequest = z
   .object({ job_id: z.string().min(1), staff_id: z.string().min(1) })
   .passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
@@ -800,8 +800,8 @@ const PaginatedCompleteJobList = z
     results: z.array(CompleteJob),
   })
   .passthrough()
-const ArchiveJobsRequestRequest = z.object({ ids: z.array(z.string().min(1)) }).passthrough()
-const ArchiveJobsRequest = z.object({ ids: z.array(z.string()) }).passthrough()
+const ArchiveJobsRequest = z.object({ ids: z.array(z.string().min(1)) }).passthrough()
+const ArchiveJobs = z.object({ ids: z.array(z.string()) }).passthrough()
 const JobQuoteChatHistoryResponse = z
   .object({ success: z.boolean(), data: z.object({}).partial().passthrough() })
   .passthrough()
@@ -835,7 +835,7 @@ const JobQuoteChatUpdate = z
   .partial()
   .passthrough()
 const ModeEnum = z.enum(['CALC', 'PRICE', 'TABLE', 'AUTO'])
-const JobQuoteChatInteractionRequestRequest = z
+const JobQuoteChatInteractionRequest = z
   .object({
     message: z.string().min(1).max(5000),
     mode: ModeEnum.optional().default('AUTO'),
@@ -848,7 +848,7 @@ const JobQuoteChatInteractionErrorResponse = z
     code: z.string().optional(),
   })
   .passthrough()
-const JobReorderRequestRequest = z
+const JobReorderRequest = z
   .object({
     before_id: z.string().uuid().nullable(),
     after_id: z.string().uuid().nullable(),
@@ -865,7 +865,7 @@ const KanbanSuccessResponse = z
 const KanbanErrorResponse = z
   .object({ success: z.boolean().optional().default(false), error: z.string() })
   .passthrough()
-const JobStatusUpdateRequestRequest = z.object({ status: z.string().min(1) }).passthrough()
+const JobStatusUpdateRequest = z.object({ status: z.string().min(1) }).passthrough()
 const KanbanJobPerson = z
   .object({
     id: z.string().uuid(),
@@ -1074,7 +1074,7 @@ const ArchivedJobsComplianceResponse = z
     checked_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
-const JobCreateRequestRequest = z
+const JobCreateRequest = z
   .object({
     name: z.string().min(1).max(255),
     client_id: z.string().uuid(),
@@ -1341,7 +1341,7 @@ const QuoteRevisionsList = z
     revisions: z.array(z.object({}).partial().passthrough()),
   })
   .passthrough()
-const QuoteRevisionRequestRequest = z
+const QuoteRevisionRequest = z
   .object({ reason: z.string().min(1).max(500) })
   .partial()
   .passthrough()
@@ -1396,9 +1396,7 @@ const JobDeltaRejectionListResponse = z
   })
   .passthrough()
 const JobEventsResponse = z.object({ events: z.array(JobEvent) }).passthrough()
-const JobEventCreateRequestRequest = z
-  .object({ description: z.string().min(1).max(500) })
-  .passthrough()
+const JobEventCreateRequest = z.object({ description: z.string().min(1).max(500) }).passthrough()
 const JobEventCreateResponse = z.object({ success: z.boolean(), event: JobEvent }).passthrough()
 const JobFileErrorResponse = z
   .object({
@@ -1406,7 +1404,7 @@ const JobFileErrorResponse = z
     message: z.string(),
   })
   .passthrough()
-const JobFileUploadRequestRequest = z
+const JobFileUploadRequest = z
   .object({
     files: z.array(z.instanceof(File)),
     print_on_jobsheet: z.boolean().optional().default(true),
@@ -1540,7 +1538,7 @@ const TimelineEntry = z
   })
   .passthrough()
 const JobTimelineResponse = z.object({ timeline: z.array(TimelineEntry) }).passthrough()
-const JobUndoRequestRequest = z
+const JobUndoRequest = z
   .object({
     change_id: z.string().uuid(),
     undo_change_id: z.string().uuid().nullish(),
@@ -1599,11 +1597,8 @@ const ApplyQuoteResponse = z
     error: z.string().optional(),
   })
   .passthrough()
-const LinkQuoteSheetRequestRequest = z
-  .object({ template_url: z.string().url() })
-  .partial()
-  .passthrough()
 const LinkQuoteSheetRequest = z.object({ template_url: z.string().url() }).partial().passthrough()
+const LinkQuoteSheet = z.object({ template_url: z.string().url() }).partial().passthrough()
 const ValidationReportRequest = z
   .object({
     warnings: z.array(z.string().min(1)),
@@ -1712,7 +1707,7 @@ const MonthEndStockJob = z
 const MonthEndGetResponse = z
   .object({ jobs: z.array(MonthEndJob), stock_job: MonthEndStockJob })
   .passthrough()
-const MonthEndPostRequestRequest = z.object({ job_ids: z.array(z.string().uuid()) }).passthrough()
+const MonthEndPostRequest = z.object({ job_ids: z.array(z.string().uuid()) }).passthrough()
 const MonthEndPostResponse = z
   .object({
     processed: z.array(z.string().uuid()),
@@ -1773,7 +1768,7 @@ const ModernTimesheetEntryGetResponse = z
   })
   .passthrough()
 const ModernTimesheetErrorResponse = z.object({ error: z.string() }).passthrough()
-const ModernTimesheetEntryPostRequestRequest = z
+const ModernTimesheetEntryPostRequest = z
   .object({
     job_id: z.string().uuid(),
     staff_id: z.string().uuid(),
@@ -1833,7 +1828,7 @@ const DeliveryReceiptLineRequest = z
     allocations: z.array(DeliveryReceiptAllocationRequest),
   })
   .passthrough()
-const DeliveryReceiptRequestRequest = z
+const DeliveryReceiptRequest = z
   .object({
     purchase_order_id: z.string().uuid(),
     allocations: z.record(DeliveryReceiptLineRequest),
@@ -1876,7 +1871,7 @@ const ProductMappingListResponse = z
     unvalidated_count: z.number().int(),
   })
   .passthrough()
-const ProductMappingValidateRequestRequest = z
+const ProductMappingValidateRequest = z
   .object({
     mapped_item_code: z.string(),
     mapped_description: z.string(),
@@ -2108,7 +2103,7 @@ const AllocationDetailsResponse = z
     unit_revenue: z.number().optional(),
   })
   .passthrough()
-const PurchaseOrderEmailRequestRequest = z
+const PurchaseOrderEmailRequest = z
   .object({
     recipient_email: z.string().min(1).email(),
     message: z.string().max(1000),
@@ -2125,7 +2120,7 @@ const PurchaseOrderEmailResponse = z
   })
   .passthrough()
 const AllocationTypeEnum = z.enum(['job', 'stock'])
-const AllocationDeleteRequestRequest = z
+const AllocationDeleteRequest = z
   .object({
     allocation_type: AllocationTypeEnum,
     allocation_id: z.string().uuid(),
@@ -2196,7 +2191,7 @@ const PatchedStockItemRequest = z
   })
   .partial()
   .passthrough()
-const StockConsumeRequestRequest = z
+const StockConsumeRequest = z
   .object({
     job_id: z.string().uuid(),
     quantity: z.number().gte(0).lt(100000000),
@@ -2385,7 +2380,7 @@ const PayRunForWeekResponse = z
     warning: z.string().nullish(),
   })
   .passthrough()
-const CreatePayRunRequestRequest = z.object({ week_start_date: z.string() }).passthrough()
+const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
 const CreatePayRunResponse = z
   .object({
     pay_run_id: z.string(),
@@ -2409,7 +2404,7 @@ const PayRunSyncResponse = z
     updated: z.number().int(),
   })
   .passthrough()
-const PostWeekToXeroRequestRequest = z
+const PostWeekToXeroRequest = z
   .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
   .passthrough()
 const PostWeekToXeroResponse = z
@@ -2553,7 +2548,7 @@ export const schemas = {
   StaffPerformanceStaffData,
   StaffPerformancePeriodSummary,
   StaffPerformanceResponse,
-  BearerTokenRequestRequest,
+  BearerTokenRequest,
   BearerTokenResponse,
   Staff,
   StaffCreateRequest,
@@ -2581,31 +2576,31 @@ export const schemas = {
   AppErrorRequest,
   XeroDocumentSuccessResponse,
   XeroDocumentErrorResponse,
-  XeroQuoteCreateRequestRequest,
+  XeroQuoteCreateRequest,
   ClientDetailResponse,
   ClientErrorResponse,
   ClientJobHeader,
   ClientJobsResponse,
-  ClientUpdateRequestRequest,
+  ClientUpdateRequest,
   ClientUpdateResponse,
-  PatchedClientUpdateRequestRequest,
+  PatchedClientUpdateRequest,
   ClientNameOnly,
   ClientContact,
   ClientContactRequest,
   PatchedClientContactRequest,
-  ClientCreateRequestRequest,
+  ClientCreateRequest,
   ClientSearchResult,
   ClientCreateResponse,
   ClientDuplicateErrorResponse,
   JobContactResponse,
-  JobContactUpdateRequestRequest,
+  JobContactUpdateRequest,
   ClientSearchResponse,
-  AssignJobRequestRequest,
+  AssignJobRequest,
   AssignJobResponse,
   CompleteJob,
   PaginatedCompleteJobList,
-  ArchiveJobsRequestRequest,
   ArchiveJobsRequest,
+  ArchiveJobs,
   JobQuoteChatHistoryResponse,
   RoleEnum,
   JobQuoteChatCreateRequest,
@@ -2614,12 +2609,12 @@ export const schemas = {
   PatchedJobQuoteChatUpdateRequest,
   JobQuoteChatUpdate,
   ModeEnum,
-  JobQuoteChatInteractionRequestRequest,
+  JobQuoteChatInteractionRequest,
   JobQuoteChatInteractionErrorResponse,
-  JobReorderRequestRequest,
+  JobReorderRequest,
   KanbanSuccessResponse,
   KanbanErrorResponse,
-  JobStatusUpdateRequestRequest,
+  JobStatusUpdateRequest,
   KanbanJobPerson,
   KanbanJob,
   AdvancedSearchResponse,
@@ -2641,7 +2636,7 @@ export const schemas = {
   ArchivedJobIssue,
   ComplianceSummary,
   ArchivedJobsComplianceResponse,
-  JobCreateRequestRequest,
+  JobCreateRequest,
   JobCreateResponse,
   JobRestErrorResponse,
   CostSetKindEnum,
@@ -2670,17 +2665,17 @@ export const schemas = {
   JobBasicInformationResponse,
   CostLineCreateUpdateRequest,
   QuoteRevisionsList,
-  QuoteRevisionRequestRequest,
+  QuoteRevisionRequest,
   QuoteRevisionResponse,
   JobCostSetSummary,
   JobCostSummaryResponse,
   JobDeltaRejection,
   JobDeltaRejectionListResponse,
   JobEventsResponse,
-  JobEventCreateRequestRequest,
+  JobEventCreateRequest,
   JobEventCreateResponse,
   JobFileErrorResponse,
-  JobFileUploadRequestRequest,
+  JobFileUploadRequest,
   UploadedFile,
   JobFileUploadSuccessResponse,
   JobFileUploadPartialResponse,
@@ -2696,15 +2691,15 @@ export const schemas = {
   QuoteImportStatusResponse,
   TimelineEntry,
   JobTimelineResponse,
-  JobUndoRequestRequest,
+  JobUndoRequest,
   DraftLineRequest,
   QuoteChangesRequest,
   ApplyQuoteResponseRequest,
   DraftLine,
   QuoteChanges,
   ApplyQuoteResponse,
-  LinkQuoteSheetRequestRequest,
   LinkQuoteSheetRequest,
+  LinkQuoteSheet,
   ValidationReportRequest,
   DiffPreviewRequest,
   PreviewQuoteResponseRequest,
@@ -2718,14 +2713,14 @@ export const schemas = {
   MonthEndStockHistory,
   MonthEndStockJob,
   MonthEndGetResponse,
-  MonthEndPostRequestRequest,
+  MonthEndPostRequest,
   MonthEndPostResponse,
   TimesheetCostLine,
   ModernTimesheetStaff,
   ModernTimesheetSummary,
   ModernTimesheetEntryGetResponse,
   ModernTimesheetErrorResponse,
-  ModernTimesheetEntryPostRequestRequest,
+  ModernTimesheetEntryPostRequest,
   ModernTimesheetEntryPostResponse,
   ModernTimesheetJobGetResponse,
   ModernTimesheetDayGetResponse,
@@ -2733,12 +2728,12 @@ export const schemas = {
   AllJobsResponse,
   DeliveryReceiptAllocationRequest,
   DeliveryReceiptLineRequest,
-  DeliveryReceiptRequestRequest,
+  DeliveryReceiptRequest,
   DeliveryReceiptResponse,
   PurchasingJobsResponse,
   ProductMapping,
   ProductMappingListResponse,
-  ProductMappingValidateRequestRequest,
+  ProductMappingValidateRequest,
   ProductMappingValidateResponse,
   PurchaseOrderList,
   PurchaseOrderLineCreateRequest,
@@ -2760,17 +2755,17 @@ export const schemas = {
   PurchaseOrderAllocationsResponse,
   TypeD09Enum,
   AllocationDetailsResponse,
-  PurchaseOrderEmailRequestRequest,
+  PurchaseOrderEmailRequest,
   PurchaseOrderEmailResponse,
   AllocationTypeEnum,
-  AllocationDeleteRequestRequest,
+  AllocationDeleteRequest,
   AllocationDeleteResponse,
   PurchasingErrorResponse,
   SourceEnum,
   StockItem,
   StockItemRequest,
   PatchedStockItemRequest,
-  StockConsumeRequestRequest,
+  StockConsumeRequest,
   StockConsumeResponse,
   SupplierPriceStatusItem,
   SupplierPriceStatusResponse,
@@ -2791,11 +2786,11 @@ export const schemas = {
   JobsListResponse,
   PayRunDetails,
   PayRunForWeekResponse,
-  CreatePayRunRequestRequest,
+  CreatePayRunRequest,
   CreatePayRunResponse,
   PayRunSyncResponseRequest,
   PayRunSyncResponse,
-  PostWeekToXeroRequestRequest,
+  PostWeekToXeroRequest,
   PostWeekToXeroResponse,
   ModernStaff,
   StaffListResponse,
@@ -2933,7 +2928,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: BearerTokenRequestRequest,
+        schema: BearerTokenRequest,
       },
     ],
     response: z.object({ token: z.string() }).passthrough(),
@@ -3859,7 +3854,7 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
       {
         name: 'body',
         type: 'Body',
-        schema: ClientUpdateRequestRequest,
+        schema: ClientUpdateRequest,
       },
       {
         name: 'client_id',
@@ -3893,7 +3888,7 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
       {
         name: 'body',
         type: 'Body',
-        schema: PatchedClientUpdateRequestRequest,
+        schema: PatchedClientUpdateRequest,
       },
       {
         name: 'client_id',
@@ -4100,7 +4095,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: ClientCreateRequestRequest,
+        schema: ClientCreateRequest,
       },
     ],
     response: ClientCreateResponse,
@@ -4158,7 +4153,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: JobContactUpdateRequestRequest,
+        schema: JobContactUpdateRequest,
       },
       {
         name: 'job_id',
@@ -4218,7 +4213,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: AssignJobRequestRequest,
+        schema: AssignJobRequest,
       },
       {
         name: 'job_id',
@@ -4273,10 +4268,10 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: ArchiveJobsRequestRequest,
+        schema: ArchiveJobsRequest,
       },
     ],
-    response: ArchiveJobsRequest,
+    response: ArchiveJobs,
   },
   {
     method: 'get',
@@ -4374,7 +4369,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: JobQuoteChatInteractionRequestRequest,
+        schema: JobQuoteChatInteractionRequest,
       },
       {
         name: 'job_id',
@@ -4411,7 +4406,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: JobReorderRequestRequest,
+        schema: JobReorderRequest,
       },
       {
         name: 'job_id',
@@ -4684,7 +4679,7 @@ Dynamically infers the stock adjustment based on quantity change`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobCreateRequestRequest,
+        schema: JobCreateRequest,
       },
     ],
     response: JobCreateResponse,
@@ -5133,7 +5128,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobFileUploadRequestRequest,
+        schema: JobFileUploadRequest,
       },
       {
         name: 'job_id',
@@ -5416,7 +5411,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: JobUndoRequestRequest,
+        schema: JobUndoRequest,
       },
       {
         name: 'job_id',
@@ -5525,7 +5520,7 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       {
         name: 'body',
         type: 'Body',
-        schema: MonthEndPostRequestRequest,
+        schema: MonthEndPostRequest,
       },
     ],
     response: MonthEndPostResponse,
@@ -5562,7 +5557,7 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       {
         name: 'body',
         type: 'Body',
-        schema: ModernTimesheetEntryPostRequestRequest,
+        schema: ModernTimesheetEntryPostRequest,
       },
     ],
     response: ModernTimesheetEntryPostResponse,
@@ -5637,7 +5632,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: DeliveryReceiptRequestRequest,
+        schema: DeliveryReceiptRequest,
       },
     ],
     response: DeliveryReceiptResponse,
@@ -5674,7 +5669,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: ProductMappingValidateRequestRequest,
+        schema: ProductMappingValidateRequest,
       },
       {
         name: 'mapping_id',
@@ -5804,7 +5799,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: PurchaseOrderEmailRequestRequest,
+        schema: PurchaseOrderEmailRequest,
       },
       {
         name: 'po_id',
@@ -5830,7 +5825,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: AllocationDeleteRequestRequest,
+        schema: AllocationDeleteRequest,
       },
       {
         name: 'line_id',
@@ -6045,7 +6040,7 @@ Custom Actions:
       {
         name: 'body',
         type: 'Body',
-        schema: StockConsumeRequestRequest,
+        schema: StockConsumeRequest,
       },
       {
         name: 'id',
@@ -6324,7 +6319,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: PostWeekToXeroRequestRequest,
+        schema: PostWeekToXeroRequest,
       },
     ],
     response: PostWeekToXeroResponse,
