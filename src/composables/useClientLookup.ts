@@ -6,7 +6,7 @@ import { debugLog } from '@/utils/debug'
 
 // Use generated schemas
 export type Client = z.infer<typeof schemas.ClientSearchResult>
-export type ClientContact = z.infer<typeof schemas.ClientContactResult>
+export type ClientContact = z.infer<typeof schemas.ClientContact>
 
 export function useClientLookup() {
   const searchQuery = ref('')

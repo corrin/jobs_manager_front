@@ -5,7 +5,7 @@ import { schemas } from '../api/generated/api'
 import type { z } from 'zod'
 
 // Use the existing CustomTokenObtainPair schema for login credentials
-type LoginCredentials = z.infer<typeof schemas.CustomTokenObtainPair>
+type LoginCredentials = z.infer<typeof schemas.CustomTokenObtainPairRequest>
 
 export function useLogin() {
   const router = useRouter()

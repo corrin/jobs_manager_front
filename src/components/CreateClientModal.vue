@@ -176,11 +176,11 @@ import type { Client } from '@/composables/useClientLookup'
 import { schemas } from '@/api/generated/api'
 
 // Use generated types from Zodios API
-type ClientCreateRequestSchema = typeof schemas.ClientCreateRequestRequest
+type ClientCreateRequestSchema = typeof schemas.ClientCreateRequest
 type ClientCreateRequest = z.infer<ClientCreateRequestSchema>
 type ClientCreateResponse = z.infer<typeof schemas.ClientCreateResponse>
 type ClientUpdateResponse = z.infer<typeof schemas.ClientUpdateResponse>
-const clientSchema: ClientCreateRequestSchema = schemas.ClientCreateRequestRequest
+const clientSchema: ClientCreateRequestSchema = schemas.ClientCreateRequest
 
 interface Props {
   isOpen: boolean
