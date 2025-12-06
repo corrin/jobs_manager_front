@@ -304,6 +304,7 @@ import { toast } from 'vue-sonner'
 import { z } from 'zod'
 
 type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
+type WeeklyStaffData = z.infer<typeof schemas.WeeklyStaffData>
 type WeekDaySeed = { idx: number; dow: number; date: string }
 type DisplayDay = WeekDaySeed & {
   name: string
@@ -430,9 +431,9 @@ const visibleDayIndexes = computed<number[]>(() => {
 const sortedStaffData = computed(() => {
   if (!weeklyData.value?.staff_data) return []
 
-  return [...weeklyData.value.staff_data].sort((a, b) => {
-    const nameA = a.staff_name || ''
-    const nameB = b.staff_name || ''
+  return [...weeklyData.value.staff_data].sort((a: WeeklyStaffData, b: WeeklyStaffData) => {
+    const nameA = (a.staff_name as string) || ''
+    const nameB = (b.staff_name as string) || ''
     return nameA.localeCompare(nameB)
   })
 })

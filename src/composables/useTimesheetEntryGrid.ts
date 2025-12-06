@@ -3,7 +3,7 @@ import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 
 // Using generated schemas where possible
-type TimesheetEntryStaffMember = z.infer<typeof schemas.Staff>
+type TimesheetEntryStaffMember = z.infer<typeof schemas.ModernStaff>
 import type {
   GridApi,
   ColDef,

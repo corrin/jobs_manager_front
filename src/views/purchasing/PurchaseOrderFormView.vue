@@ -151,6 +151,7 @@ import { api } from '@/api/client'
 import { transformDeliveryReceiptForAPI } from '@/utils/delivery-receipt'
 import { schemas } from '@/api/generated/api'
 import { onPoConcurrencyRetry } from '@/composables/usePoConcurrencyEvents'
+import { openGmailCompose } from '@/utils/email'
 import type { z } from 'zod'
 
 // Import types from generated API schemas
@@ -160,6 +161,8 @@ type Job = z.infer<typeof schemas.JobForPurchasing>
 type AllocationItem = z.infer<typeof schemas.AllocationItem>
 type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocation>
 type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailResponse>
+type ClientContact = z.infer<typeof schemas.ClientContact>
+type PurchaseOrderEmailResponseWithLegacy = PurchaseOrderEmailResponse & { email?: string }
 
 const route = useRoute()
 const router = useRouter()
@@ -191,6 +194,7 @@ const po = ref<PurchaseOrder>({
 } as PurchaseOrder)
 
 const linesToDelete = ref<string[]>([])
+const supplierEmailCache = ref<Record<string, string | null>>({})
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 const isPoDeleted = computed(() => po.value.status === 'deleted')
@@ -755,6 +759,42 @@ function emailPo() {
   emailPurchaseOrder()
 }
 
+async function resolveSupplierEmail(): Promise<string | null> {
+  const supplierId = po.value.supplier_id
+  if (!supplierId) {
+    return null
+  }
+
+  if (supplierEmailCache.value[supplierId] !== undefined) {
+    return supplierEmailCache.value[supplierId]
+  }
+
+  try {
+    const contacts = await api.clients_contacts_list({
+      queries: { client_id: supplierId },
+    })
+
+    const contactsArray: ClientContact[] = Array.isArray(contacts) ? contacts : []
+    const primaryContact = contactsArray.find((contact) => contact.is_primary && !!contact.email)
+    const fallbackContact = contactsArray.find((contact) => !!contact.email)
+    const resolvedEmail = primaryContact?.email ?? fallbackContact?.email ?? null
+
+    supplierEmailCache.value = {
+      ...supplierEmailCache.value,
+      [supplierId]: resolvedEmail,
+    }
+
+    return resolvedEmail
+  } catch (err) {
+    debugLog('Failed to resolve supplier contacts for email:', err)
+    supplierEmailCache.value = {
+      ...supplierEmailCache.value,
+      [supplierId]: null,
+    }
+    return null
+  }
+}
+
 async function emailPurchaseOrder() {
   if (isPoDeleted.value) {
     toast.error('Cannot email - this purchase order has been deleted')
@@ -763,21 +803,29 @@ async function emailPurchaseOrder() {
   try {
     toast.info('Preparing email...', { id: 'po-email-loading' })
 
-    const emailData: PurchaseOrderEmailResponse = await store.emailPurchaseOrder(orderId)
+    const recipientEmail = await resolveSupplierEmail()
+    const emailData: PurchaseOrderEmailResponse = await store.emailPurchaseOrder(
+      orderId,
+      recipientEmail ?? undefined,
+    )
 
     if (!emailData.success) {
       throw new Error(emailData.message || 'Failed to prepare email')
     }
 
-    const subject =
-      emailData.email_subject || `Purchase Order ${po.value.po_number || orderId}`
-    const body = emailData.email_body || ''
-    const gmailParams = new URLSearchParams({
-      su: subject,
-      body,
+    const recipientAddress =
+      recipientEmail ?? (emailData as PurchaseOrderEmailResponseWithLegacy).email ?? ''
+    if (!recipientAddress) {
+      toast.warning(
+        'No supplier email could be resolved. Please enter the recipient address manually inside Gmail.',
+      )
+    }
+
+    openGmailCompose({
+      to: recipientAddress,
+      subject: emailData.email_subject || `Purchase Order ${po.value.po_number || orderId}`,
+      body: emailData.email_body || '',
     })
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&${gmailParams.toString()}`
-    window.open(gmailUrl, '_blank', 'noopener,noreferrer')
 
     toast.dismiss('po-email-loading')
     toast.success('Gmail opened with the prepared draft')

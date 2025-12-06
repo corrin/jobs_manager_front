@@ -39,3 +39,20 @@ export function createErrorToast() {
     },
   }
 }
+
+export function isAuthenticationError(error: unknown): boolean {
+  const possibleErrorObject = typeof error === 'object' && error !== null ? error : null
+  const responseStatus =
+    possibleErrorObject && 'response' in possibleErrorObject
+      ? (possibleErrorObject as { response?: { status?: number } }).response?.status
+      : undefined
+  const messageValue =
+    typeof error === 'string'
+      ? error
+      : possibleErrorObject && 'message' in possibleErrorObject
+        ? (possibleErrorObject as { message?: unknown }).message
+        : undefined
+  const messageText = typeof messageValue === 'string' ? messageValue : undefined
+
+  return responseStatus === 401 || messageText?.includes('auth') || false
+}

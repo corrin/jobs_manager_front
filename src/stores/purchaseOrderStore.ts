@@ -129,16 +129,19 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     }
   }
 
-  async function emailPurchaseOrder(id: string): Promise<PurchaseOrderEmailResponse> {
+  async function emailPurchaseOrder(
+    id: string,
+    recipientEmail?: string,
+  ): Promise<PurchaseOrderEmailResponse> {
     if (!id) {
       throw new Error('Purchase order ID is required')
     }
 
     try {
-      const response = await api.getPurchaseOrderEmail(
-        {}, // Empty body as required by the schema
-        { params: { po_id: id } },
-      )
+      const requestBody = recipientEmail ? { recipient_email: recipientEmail } : {}
+      const response = await api.getPurchaseOrderEmail(requestBody, {
+        params: { po_id: id },
+      })
       return response
     } catch (err) {
       debugLog(`Error emailing purchase order ${id}:`, err)

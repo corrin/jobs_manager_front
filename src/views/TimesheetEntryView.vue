@@ -586,7 +586,7 @@ import { z } from 'zod'
 import { debugLog } from '@/utils/debug'
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
-type Staff = z.infer<typeof schemas.Staff>
+type Staff = z.infer<typeof schemas.ModernStaff>
 type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
 type CostLine = z.infer<typeof schemas.CostLine>
 type Job = z.infer<typeof schemas.Job>
@@ -710,7 +710,7 @@ const availableJobs = computed(() => {
 })
 
 const currentStaff = computed(() => {
-  const staff = timesheetStore.staff.find((s) => s.id === selectedStaffId.value) || null
+  const staff = timesheetStore.staff.find((s: Staff) => s.id === selectedStaffId.value) || null
   setCurrentStaff(staff)
   return staff
 })
