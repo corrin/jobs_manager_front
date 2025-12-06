@@ -738,17 +738,15 @@ function resolveSource(
     isDeliveryReceiptExtRefs(line.ext_refs)
   ) {
     const label = line.meta.po_number || 'Delivery Receipt'
-    const extRefs = line.ext_refs
     return {
       visible: true,
       label,
-      onClick: () => navigateToDeliveryReceipt(extRefs.purchase_order_id),
+      onClick: () => navigateToDeliveryReceipt(line.ext_refs.purchase_order_id),
     }
   }
 
   // Material from Stock
   if (String(line.kind) === 'material' && isStockExtRefs(line.ext_refs)) {
-    const extRefs = line.ext_refs
     return {
       visible: true,
       label: 'Stock',

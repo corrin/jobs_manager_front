@@ -120,7 +120,7 @@
             <div>
               <ContactSelector id="contact" label="Contact Person" :optional="true"
                 :client-id="localJobData.client?.id || ''" :client-name="localJobData.client?.name || ''"
-                :initial-contact-id="localJobData.contact_id as string | undefined" v-model="contactDisplayValue"
+                :initial-contact-id="localJobData.contact_id ?? undefined" v-model="contactDisplayValue"
                 @update:selected-contact="handleContactSelected" />
             </div>
 

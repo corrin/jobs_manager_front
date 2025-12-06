@@ -178,7 +178,6 @@ import { isAxiosError } from 'axios'
 
 // Use generated types from Zodios API
 type ClientCreateRequestSchema = typeof schemas.ClientCreateRequest
-type ClientCreateRequest = z.input<ClientCreateRequestSchema>
 type ClientUpdateRequest = z.input<typeof schemas.ClientUpdateRequest>
 type ClientCreateInput = z.input<typeof schemas.ClientCreateRequest>
 type ClientUpdateInput = z.input<typeof schemas.ClientUpdateRequest>
