@@ -142,7 +142,9 @@ import { debugLog } from '@/utils/debug'
 import { ref, onMounted } from 'vue'
 import { Send, Paperclip, RotateCcw } from 'lucide-vue-next'
 import McpToolDetails from '@/components/chat/McpToolDetails.vue'
-import { QuoteChatService, type VueChatMessage } from '@/services/quote-chat.service'
+import { QuoteChatService } from '@/services/quote-chat.service'
+import type { VueChatMessage } from '@/constants/vue-chat-message'
+import { schemas } from '@/api/generated/api'
 import { toast } from 'vue-sonner'
 
 interface Props {
@@ -164,6 +166,15 @@ const isLoading = ref(false)
 const fileInput = ref<HTMLInputElement>()
 
 const messages = ref<VueChatMessage[]>([])
+
+const buildWelcomeMessage = (): VueChatMessage => ({
+  _id: `welcome-${Date.now()}`,
+  content: `Hi! I'll help you create a quote for ${props.jobName || 'this job'}.\n\nPlease describe what you need fabricated.\n\nExample: "3 stainless steel boxes, 700Į-700Į-400mm, welded seams"`,
+  senderId: 'assistant-1',
+  username: 'Quoting Assistant',
+  timestamp: new Date().toISOString(),
+  system: false,
+})
 
 const handleSendMessage = async () => {
   if (!currentInput.value.trim() || isLoading.value) return
@@ -241,22 +252,21 @@ const loadChatHistory = async () => {
     const response = await quoteChatService.getChatHistory(props.jobId)
 
     if (response.success) {
-      if (response.data.messages.length > 0) {
-        const vueMessages = response.data.messages.map((msg) =>
-          quoteChatService.convertToVueMessage(msg),
-        )
-        messages.value = vueMessages
+      const rawMessages = Array.isArray(response.data?.messages)
+        ? response.data.messages
+        : []
+
+      if (rawMessages.length > 0) {
+        const vueMessages: VueChatMessage[] = []
+        for (const rawMessage of rawMessages) {
+          const parsed = schemas.JobQuoteChat.safeParse(rawMessage)
+          if (parsed.success) {
+            vueMessages.push(quoteChatService.convertToVueMessage(parsed.data))
+          }
+        }
+        messages.value = vueMessages.length > 0 ? vueMessages : [buildWelcomeMessage()]
       } else {
-        messages.value = [
-          {
-            _id: 'welcome-1',
-            content: `Hi! I'll help you create a quote for ${props.jobName || 'this job'}.\n\nPlease describe what you need fabricated.\n\nExample: "3 stainless steel boxes, 700×700×400mm, welded seams"`,
-            senderId: 'assistant-1',
-            username: 'Quoting Assistant',
-            timestamp: new Date().toISOString(),
-            system: false,
-          },
-        ]
+        messages.value = [buildWelcomeMessage()]
       }
     }
   } catch (error) {

@@ -4,13 +4,13 @@ import type { z } from 'zod'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 
-export interface CostSummary {
+export type CostSummary = {
   cost: number
   rev: number
   hours: number
   profitMargin: number
   created?: string | null
-}
+} & Record<string, unknown>
 
 export interface UseCostSummaryOptions {
   costLines: Ref<CostLine[]>

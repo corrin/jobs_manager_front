@@ -24,7 +24,7 @@ type CostLine = z.infer<typeof schemas.CostLine> & {
   created_at?: string
   updated_at?: string
 }
-type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdate>
+type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdateRequest>
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 

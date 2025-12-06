@@ -56,7 +56,8 @@ import DialogTitle from '@/components/ui/dialog/DialogTitle.vue'
 import Button from '@/components/ui/button/Button.vue'
 import { ListChecks } from 'lucide-vue-next'
 import { ref, computed, onMounted } from 'vue'
-import { getDjangoJobExecutions, DjangoJobExecution } from '@/services/django-jobs-service'
+import { getDjangoJobExecutions } from '@/services/django-jobs-service'
+import type { DjangoJobExecution } from '@/services/django-jobs-service'
 
 const executions = ref<DjangoJobExecution[]>([])
 const page = ref(1)

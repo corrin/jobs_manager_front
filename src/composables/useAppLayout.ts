@@ -2,7 +2,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { debugLog } from '../utils/debug'
-import { NavigationItem } from '@/constants/navigation-item'
+import type { NavigationItem } from '@/constants/navigation-item'
 import { z } from 'zod'
 import { schemas } from '../api/generated/api'
 
@@ -30,13 +30,12 @@ export function useAppLayout() {
     if (!user) {
       return {
         displayName: 'Guest',
-        username: 'guest',
+        email: '',
         is_staff: false,
         is_active: false,
         first_name: '',
         last_name: '',
         preferred_name: '',
-        email: '',
         id: '',
         fullName: '',
       }
@@ -44,14 +43,13 @@ export function useAppLayout() {
 
     const fullName = authStore.fullName
     return {
-      displayName: fullName || user.username,
-      username: user.username,
+      displayName: fullName,
+      email: user.email || '',
       is_staff: typeof user.is_staff === 'boolean' ? user.is_staff : false,
       is_active: typeof user.is_active === 'boolean' ? user.is_active : false,
       first_name: user.first_name || '',
       last_name: user.last_name || '',
       preferred_name: user.preferred_name || '',
-      email: user.email || '',
       id: user.id || '',
       fullName: fullName || '',
     }

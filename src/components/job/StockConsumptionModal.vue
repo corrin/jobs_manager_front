@@ -13,26 +13,12 @@
           <label class="block">
             <span class="block text-sm font-medium text-gray-700 mb-1">Stock Item</span>
             <div class="relative dropdown-container">
-              <input
-                v-model="searchTerm"
-                @focus="handleInputFocus"
-                @input="filterStock"
-                @keydown.enter.prevent=""
-                class="input"
-                placeholder="Search for stock items..."
-                autocomplete="off"
-                ref="stockSearchInput"
-              />
-              <div
-                v-if="showDropdown && filteredStock.length > 0"
-                class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
-              >
-                <div
-                  v-for="item in filteredStock"
-                  :key="item.id"
-                  @click.stop="selectStockItem(item)"
-                  class="px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
-                >
+              <input v-model="searchTerm" @focus="handleInputFocus" @input="filterStock" @keydown.enter.prevent=""
+                class="input" placeholder="Search for stock items..." autocomplete="off" ref="stockSearchInput" />
+              <div v-if="showDropdown && filteredStock.length > 0"
+                class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                <div v-for="item in filteredStock" :key="item.id" @click.stop="selectStockItem(item)"
+                  class="px-3 py-2 cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0">
                   <div class="font-medium text-sm">{{ item.description }}</div>
                   <div class="text-xs text-gray-500">
                     Stock: {{ item.quantity }} | Charge: {{ formatCurrency(item.unit_revenue) }}
@@ -50,33 +36,15 @@
         <!-- Quantity -->
         <label class="block">
           <span class="block text-sm font-medium text-gray-700 mb-1">Quantity to Consume</span>
-          <input
-            v-model.number="formData.quantity"
-            type="number"
-            step="0.001"
-            min="0.001"
-            class="input"
-            :class="{ 'border-amber-300 bg-amber-50': hasStockWarning }"
-            placeholder="0.000"
-            required
-          />
+          <input v-model.number="formData.quantity" type="number" step="0.001" min="0.001" class="input"
+            :class="{ 'border-amber-300 bg-amber-50': hasStockWarning }" placeholder="0.000" required />
           <!-- Stock Warning (Non-blocking) -->
-          <div
-            v-if="hasStockWarning"
-            class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2"
-          >
-            <svg
-              class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z"
-              />
+          <div v-if="hasStockWarning"
+            class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start gap-2">
+            <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
             <div class="flex-1">
               <div class="text-sm font-medium text-amber-800">Stock Warning</div>
@@ -93,34 +61,19 @@
         <div class="flex gap-3">
           <label class="flex-1">
             <span class="block text-sm font-medium text-gray-700 mb-1">Unit cost</span>
-            <input
-              v-model.number="formData.unit_cost"
-              type="number"
-              step="0.01"
-              min="0"
-              class="input"
-              placeholder="0.00"
-              required
-            />
+            <input v-model.number="formData.unit_cost" type="number" step="0.01" min="0" class="input"
+              placeholder="0.00" required />
           </label>
           <label class="flex-1">
             <span class="block text-sm font-medium text-gray-700 mb-1">Unit revenue</span>
-            <input
-              v-model.number="formData.unit_rev"
-              type="number"
-              step="0.01"
-              min="0"
-              class="input"
-              placeholder="0.00"
-              required
-            />
+            <input v-model.number="formData.unit_rev" type="number" step="0.01" min="0" class="input" placeholder="0.00"
+              required />
           </label>
         </div>
 
         <!-- Summary -->
         <div
-          class="summary-card bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-4 flex flex-col gap-2 shadow-sm"
-        >
+          class="summary-card bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-xl p-4 flex flex-col gap-2 shadow-sm">
           <div class="flex items-center justify-center gap-0 text-base font-semibold">
             <span class="flex items-center gap-2 text-blue-700">
               <Package class="w-7 h-7 text-blue-500" />
@@ -138,12 +91,8 @@
 
         <DialogFooter class="flex gap-2 justify-end mt-2">
           <Button type="button" variant="outline" @click="$emit('close')"> Cancel </Button>
-          <Button
-            type="submit"
-            :variant="hasStockWarning ? 'destructive' : 'default'"
-            :disabled="!canSubmit"
-            :class="{ 'bg-amber-600 hover:bg-amber-700 border-amber-600': hasStockWarning }"
-          >
+          <Button type="submit" :variant="hasStockWarning ? 'destructive' : 'default'" :disabled="!canSubmit"
+            :class="{ 'bg-amber-600 hover:bg-amber-700 border-amber-600': hasStockWarning }">
             <Plus class="w-4 h-4 mr-1" />
             {{ hasStockWarning ? 'Add Material (Warning)' : 'Add Material' }}
           </Button>
@@ -165,7 +114,7 @@ import { debugLog } from '../../utils/debug'
 import { formatCurrency } from '@/utils/string-formatting'
 import { z } from 'zod'
 
-type StockItem = z.infer<typeof schemas.StockList>
+type StockItem = z.infer<typeof schemas.StockItem>
 
 const emit = defineEmits<{
   close: []
@@ -211,9 +160,9 @@ const totalCost = computed(() => formData.value.unit_cost * formData.value.quant
 async function loadStockItems() {
   isLoading.value = true
   try {
-    const response = await api.purchasing_rest_stock_retrieve()
-    stockItems.value = response.items
-    filteredStock.value = response.items
+    const response = await api.purchasing_rest_stock_list()
+    stockItems.value = response
+    filteredStock.value = response
   } catch (error) {
     debugLog('Failed to load stock items:', error)
   } finally {
@@ -226,13 +175,13 @@ function filterStock() {
 
   // Filter by search term
   if (searchTerm.value.trim()) {
-    items = items.filter((item) =>
+    items = items.filter((item: StockItem) =>
       item.description?.toLowerCase().includes(searchTerm.value.toLowerCase()),
     )
   }
 
   // Filter out items with zero or negative quantity
-  filteredStock.value = items.filter((item) => {
+  filteredStock.value = items.filter((item: StockItem) => {
     const quantity = item.quantity
     return quantity > 0
   })
@@ -378,10 +327,12 @@ onBeforeUnmount(() => {
   transition: border 0.2s;
   background: #fff;
 }
+
 .input:focus {
   border-color: #2563eb;
   background: #f0f6ff;
 }
+
 .summary-card {
   margin-top: 0.5rem;
 }

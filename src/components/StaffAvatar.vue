@@ -1,30 +1,17 @@
 <template>
-  <div
-    :class="[
-      'rounded-full overflow-hidden flex items-center justify-center cursor-pointer shadow-sm transition-all duration-200 relative',
-      'hover:scale-110 hover:shadow-md',
-      size === 'sm' ? 'w-5 h-5 text-xs' : 'w-10 h-10',
-      isActive
-        ? 'border-2 border-blue-500 scale-110 shadow-blue-200 shadow-md ring-2 ring-blue-300 ring-offset-1'
-        : '',
-      isDragging ? 'opacity-80 rotate-1 scale-105 shadow-lg' : '',
-      'staff-avatar-draggable',
-    ]"
-    :title="staff.display_name"
-    :data-staff-id="staff.id"
-  >
-    <img
-      v-if="iconUrl"
-      :src="iconUrl"
-      :alt="staff.display_name"
-      class="w-full h-full object-cover"
-    />
-    <div
-      v-else
-      class="w-full h-full flex items-center justify-center text-white font-bold"
-      :class="size === 'sm' ? 'text-xs' : 'text-sm'"
-      :style="{ backgroundColor: backgroundColor }"
-    >
+  <div :class="[
+    'rounded-full overflow-hidden flex items-center justify-center cursor-pointer shadow-sm transition-all duration-200 relative',
+    'hover:scale-110 hover:shadow-md',
+    size === 'sm' ? 'w-5 h-5 text-xs' : 'w-10 h-10',
+    isActive
+      ? 'border-2 border-blue-500 scale-110 shadow-blue-200 shadow-md ring-2 ring-blue-300 ring-offset-1'
+      : '',
+    isDragging ? 'opacity-80 rotate-1 scale-105 shadow-lg' : '',
+    'staff-avatar-draggable',
+  ]" :title="staff.display_name" :data-staff-id="staff.id">
+    <img v-if="iconUrl" :src="iconUrl" :alt="staff.display_name" class="w-full h-full object-cover" />
+    <div v-else class="w-full h-full flex items-center justify-center text-white font-bold"
+      :class="size === 'sm' ? 'text-xs' : 'text-sm'" :style="{ backgroundColor: backgroundColor }">
       {{ getInitials(staff) }}
     </div>
   </div>
@@ -36,10 +23,14 @@ import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 
 type Staff = z.infer<typeof schemas.Staff>
+type KanbanJobPerson = z.infer<typeof schemas.KanbanJobPerson>
+
+// Union type to handle both Staff and KanbanJobPerson
+type StaffOrKanbanPerson = Staff | KanbanJobPerson
 
 const props = withDefaults(
   defineProps<{
-    staff: Staff
+    staff: StaffOrKanbanPerson
     size?: 'normal' | 'small' | 'large'
     isActive?: boolean
     isDragging?: boolean
@@ -61,19 +52,31 @@ const iconUrl = computed(() => {
   return icon.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL}${icon}` : icon
 })
 
-const getInitials = (staff: Staff): string => {
-  if (staff.initials) {
-    return staff.initials
+const getInitials = (staff: StaffOrKanbanPerson): string => {
+  // For KanbanJobPerson, use display_name
+  if ('display_name' in staff && staff.display_name) {
+    const words = staff.display_name.trim().split(/\s+/)
+    if (words.length >= 2) {
+      return words[0].charAt(0).toUpperCase() + words[words.length - 1].charAt(0).toUpperCase()
+    } else if (words.length === 1 && words[0].length >= 2) {
+      return words[0].substring(0, 2).toUpperCase()
+    } else if (words[0].length === 1) {
+      return words[0].charAt(0).toUpperCase() + words[0].charAt(0).toUpperCase()
+    }
   }
 
-  const firstInitial = staff.firstName?.charAt(0)?.toUpperCase() || ''
-  const lastInitial = staff.lastName?.charAt(0)?.toUpperCase() || ''
+  // For full Staff object, try firstName/lastName first
+  if ('firstName' in staff && 'lastName' in staff) {
+    const firstInitial = staff.firstName?.charAt(0)?.toUpperCase() || ''
+    const lastInitial = staff.lastName?.charAt(0)?.toUpperCase() || ''
 
-  if (firstInitial || lastInitial) {
-    return firstInitial + lastInitial
+    if (firstInitial || lastInitial) {
+      return firstInitial + lastInitial
+    }
   }
 
-  if (staff.display_name) {
+  // Fallback to display_name for Staff objects too
+  if ('display_name' in staff && staff.display_name) {
     const words = staff.display_name.trim().split(/\s+/)
     if (words.length >= 2) {
       return words[0].charAt(0).toUpperCase() + words[words.length - 1].charAt(0).toUpperCase()

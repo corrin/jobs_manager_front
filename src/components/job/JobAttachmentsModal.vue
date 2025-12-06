@@ -294,7 +294,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  'file-uploaded': [file: JobFile]
+  'file-uploaded': []
   'file-deleted': [fileId: string]
 }>()
 
@@ -457,13 +457,11 @@ const uploadFile = async (file: File) => {
   uploading.value = true
 
   try {
-    const uploaded = await jobService.uploadJobFiles(props.jobId, [file])
-
-    if (uploaded.length > 0) {
-      files.value.push(...uploaded)
-      emit('file-uploaded', uploaded[0])
+    const uploadResult = await jobService.uploadJobFiles(props.jobId, [file])
+    if (uploadResult.uploaded.length > 0) {
+      debugLog('Uploaded files:', uploadResult.uploaded)
+      emit('file-uploaded')
     }
-
     await loadFiles()
   } catch (err) {
     debugLog('Error uploading file:', err)

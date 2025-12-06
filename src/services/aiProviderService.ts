@@ -3,8 +3,8 @@ import { api } from '@/api/client'
 import { debugLog } from '@/utils/debug'
 import { z } from 'zod'
 
-type AIProvider = z.infer<typeof schemas.AIProvider>
-type AIProviderCreateUpdate = z.infer<typeof schemas.AIProviderCreateUpdate>
+export type AIProvider = z.infer<typeof schemas.AIProvider>
+export type AIProviderCreateUpdate = z.infer<typeof schemas.AIProviderCreateUpdate>
 
 export class AIProviderService {
   private static instance: AIProviderService

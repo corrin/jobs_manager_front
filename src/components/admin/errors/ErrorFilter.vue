@@ -2,7 +2,11 @@
 import Input from '@/components/ui/input/Input.vue'
 import { CustomDatePicker } from '@/components/ui/custom-date-picker'
 import { useVModel } from '@vueuse/core'
-import { type DateRange } from '@/constants/date-range'
+
+type DateRange = {
+  start: string | null
+  end: string | null
+}
 
 interface FilterState {
   search: string

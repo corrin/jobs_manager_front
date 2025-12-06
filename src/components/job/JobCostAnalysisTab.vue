@@ -153,14 +153,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, reactive } from 'vue'
 import { ArrowUp, ArrowDown, CheckCircle, AlertTriangle, XCircle } from 'lucide-vue-next'
 import { api } from '../../api/client'
 import { formatCurrency } from '@/utils/string-formatting'
 import { schemas } from '../../api/generated/api'
 import { z } from 'zod'
 
-type JobCostSetSummary = z.infer<typeof schemas.JobCostSetSummary>
+type JobCostSetSummaryOutput = z.infer<typeof schemas.JobCostSetSummary>
+type NumericField<K extends keyof JobCostSetSummaryOutput> = Extract<
+  JobCostSetSummaryOutput[K],
+  number
+>
+type NormalizedCostSummary = {
+  cost: NumericField<'cost'>
+  rev: NumericField<'rev'>
+  hours: NumericField<'hours'>
+  profitMargin: number
+}
 type JobCostSummaryResponse = z.infer<typeof schemas.JobCostSummaryResponse>
 
 const props = defineProps<{
@@ -171,18 +181,18 @@ const props = defineProps<{
 const loading = ref(true)
 const hasValidQuoteData = ref(false)
 
-const zeroSummary = (): JobCostSetSummary => ({
+const zeroSummary = (): NormalizedCostSummary => ({
   cost: 0,
   rev: 0,
   hours: 0,
   profitMargin: 0,
 })
 
-const estimate = ref<JobCostSetSummary>(zeroSummary())
-const quote = ref<JobCostSetSummary>(zeroSummary())
-const actual = ref<JobCostSetSummary>(zeroSummary())
+const estimate = reactive<NormalizedCostSummary>(zeroSummary())
+const quote = reactive<NormalizedCostSummary>(zeroSummary())
+const actual = reactive<NormalizedCostSummary>(zeroSummary())
 
-const ensureSummary = (s?: JobCostSetSummary | null): JobCostSetSummary => ({
+const ensureSummary = (s?: JobCostSetSummaryOutput | null): NormalizedCostSummary => ({
   cost: s?.cost ?? 0,
   rev: s?.rev ?? 0,
   hours: s?.hours ?? 0,
@@ -196,17 +206,17 @@ async function loadAll() {
       params: { job_id: props.jobId },
     })
 
-    estimate.value = ensureSummary(resp.estimate)
-    quote.value = ensureSummary(resp.quote)
-    actual.value = ensureSummary(resp.actual)
+    Object.assign(estimate, ensureSummary(resp.estimate))
+    Object.assign(quote, ensureSummary(resp.quote))
+    Object.assign(actual, ensureSummary(resp.actual))
 
     hasValidQuoteData.value =
       !!resp.quote && ((resp.quote.cost ?? 0) > 0 || (resp.quote.rev ?? 0) > 0)
   } catch (error) {
     console.error('Failed to load cost summary:', error)
-    estimate.value = zeroSummary()
-    quote.value = zeroSummary()
-    actual.value = zeroSummary()
+    Object.assign(estimate, zeroSummary())
+    Object.assign(quote, zeroSummary())
+    Object.assign(actual, zeroSummary())
     hasValidQuoteData.value = false
   } finally {
     loading.value = false
@@ -217,7 +227,7 @@ onMounted(loadAll)
 
 const showQuoteColumn = computed(() => {
   if (props.pricingMethodology === 'time_materials') return false
-  return hasValidQuoteData.value || quote.value.cost > 0 || quote.value.rev > 0
+  return hasValidQuoteData.value || quote.cost > 0 || quote.rev > 0
 })
 
 function percentDiff(actualNum: number, refNum: number): number {
@@ -227,29 +237,29 @@ function percentDiff(actualNum: number, refNum: number): number {
 
 const costRef = computed(() =>
   props.pricingMethodology === 'time_materials' || !showQuoteColumn.value
-    ? estimate.value.cost
-    : quote.value.cost,
+    ? estimate.cost
+    : quote.cost,
 )
 const revRef = computed(() =>
   props.pricingMethodology === 'time_materials' || !showQuoteColumn.value
-    ? estimate.value.rev
-    : quote.value.rev,
+    ? estimate.rev
+    : quote.rev,
 )
 const pmRef = computed(() =>
   props.pricingMethodology === 'time_materials' || !showQuoteColumn.value
-    ? estimate.value.profitMargin
-    : quote.value.profitMargin,
+    ? estimate.profitMargin
+    : quote.profitMargin,
 )
 const hoursRef = computed(() =>
   props.pricingMethodology === 'time_materials' || !showQuoteColumn.value
-    ? estimate.value.hours
-    : quote.value.hours,
+    ? estimate.hours
+    : quote.hours,
 )
 
-const costDiff = computed(() => percentDiff(actual.value.cost, costRef.value))
-const revenueDiff = computed(() => percentDiff(actual.value.rev, revRef.value))
-const profitDiff = computed(() => percentDiff(actual.value.profitMargin!, pmRef.value!))
-const hoursDiff = computed(() => percentDiff(actual.value.hours, hoursRef.value))
+const costDiff = computed(() => percentDiff(actual.cost, costRef.value))
+const revenueDiff = computed(() => percentDiff(actual.rev, revRef.value))
+const profitDiff = computed(() => percentDiff(actual.profitMargin, pmRef.value))
+const hoursDiff = computed(() => percentDiff(actual.hours, hoursRef.value))
 
 const costClass = computed(() =>
   costDiff.value > 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold',
@@ -280,10 +290,10 @@ const hoursIcon = computed(() =>
 )
 
 const quotePerformance = computed(() => {
-  if (!showQuoteColumn.value || !hasValidQuoteData.value || quote.value.cost === 0) {
+  if (!showQuoteColumn.value || !hasValidQuoteData.value || quote.cost === 0) {
     return { status: 'nodata' as const, deviation: 0 }
   }
-  const deviation = Math.abs(percentDiff(actual.value.cost, quote.value.cost))
+  const deviation = Math.abs(percentDiff(actual.cost, quote.cost))
   if (deviation <= 20) return { status: 'good' as const, deviation }
   if (deviation <= 40) return { status: 'amber' as const, deviation }
   return { status: 'red' as const, deviation }
@@ -317,7 +327,7 @@ const quoteAccuracyClass = computed(() => {
 
 const quoteAccuracyDisplayValue = computed(() => {
   if (quotePerformance.value.status === 'nodata') return 0
-  return percentDiff(actual.value.cost, quote.value.cost)
+  return percentDiff(actual.cost, quote.cost)
 })
 
 function formatPercent(value: number): string {

@@ -259,12 +259,11 @@ const createQuickClient = async (clientName: string) => {
       }
 
       const newClient: Client = {
-        id: result.client.id,
-        name: result.client.name,
-        email: result.client.email || '',
-        phone: result.client.phone || '',
-        address: result.client.address || '',
-        xero_contact_id: result.client.xero_contact_id || '',
+        ...result.client,
+        email: result.client.email ?? '',
+        phone: result.client.phone ?? '',
+        address: result.client.address ?? '',
+        xero_contact_id: result.client.xero_contact_id ?? '',
       }
 
       selectClient(newClient)
@@ -273,7 +272,7 @@ const createQuickClient = async (clientName: string) => {
 
       toast.success(`Client "${clientName}" created successfully!`)
     } else {
-      throw new Error(result.error || 'Failed to create client')
+      throw new Error(result.message || 'Failed to create client')
     }
   } catch (error) {
     toast.error(`Failed to create client: ${error instanceof Error ? error.message : error}`)

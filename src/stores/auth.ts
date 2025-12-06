@@ -7,7 +7,7 @@ import { debugLog } from '@/utils/debug'
 import type { z } from 'zod'
 
 type User = z.infer<typeof schemas.UserProfile>
-type LoginCredentials = z.infer<typeof schemas.CustomTokenObtainPair>
+type LoginCredentials = z.infer<typeof schemas.CustomTokenObtainPairRequest>
 
 interface ErrorResponse {
   detail?: string

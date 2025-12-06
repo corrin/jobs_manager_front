@@ -5,7 +5,7 @@ import { schemas } from '../api/generated/api'
 
 // Use generated schemas
 export type Client = z.infer<typeof schemas.ClientSearchResult>
-export type CreateClientData = z.infer<typeof schemas.ClientCreateRequestRequest>
+export type CreateClientData = z.infer<typeof schemas.ClientCreateRequest>
 import type { CreateClientResponse } from '@/constants/client-wrapper'
 
 export class ClientService {
@@ -36,7 +36,7 @@ export class ClientService {
 
   async getAllClients(): Promise<Client[]> {
     try {
-      const response = await api.clients_all_retrieve()
+      const response = await api.clients_all_list()
       return Array.isArray(response) ? response : []
     } catch (error) {
       debugLog('Error fetching clients:', error)
