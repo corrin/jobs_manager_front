@@ -167,7 +167,9 @@ const handleSaveContact = async () => {
   })
 
   // Validate email format before saving
-  if (newContactForm.value.email && !isValidEmail(newContactForm.value.email)) {
+  const rawEmail = newContactForm.value.email
+  const emailInput = typeof rawEmail === 'string' ? rawEmail.trim() : ''
+  if (emailInput && !isValidEmail(emailInput)) {
     toast.error('Please enter a valid email address')
     return
   }

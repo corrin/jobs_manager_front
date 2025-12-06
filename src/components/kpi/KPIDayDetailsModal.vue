@@ -4,9 +4,7 @@
       <DialogHeader>
         <DialogTitle class="text-xl font-semibold">
           {{ formatDateTitle(dayData?.date) }}
-          <span v-if="dayData?.holiday" class="text-sm font-normal text-gray-500 ml-2"
-            >(Holiday)</span
-          >
+          <span v-if="dayData?.holiday" class="text-sm font-normal text-gray-500 ml-2">(Holiday)</span>
         </DialogTitle>
         <DialogDescription>
           <span v-if="dayData?.holiday"> Holiday wage costs and staff breakdown </span>
@@ -28,7 +26,7 @@
               <span class="text-gray-700">Material Revenue</span>
               <span class="font-medium">{{
                 formatCurrency(dayData.details.material_revenue)
-              }}</span>
+                }}</span>
             </div>
             <div class="flex justify-between items-center text-xs">
               <span class="text-gray-700">Adjustment Revenue</span>
@@ -91,10 +89,7 @@
       </div>
 
       <!-- Profit by Job Section -->
-      <div
-        v-if="dayData && dayData.details.job_breakdown.length > 0"
-        class="bg-gray-50 p-4 rounded-lg"
-      >
+      <div v-if="dayData && dayData.details.job_breakdown.length > 0" class="bg-gray-50 p-4 rounded-lg">
         <h3 class="font-semibold text-lg mb-4">Profit by Job</h3>
         <div class="overflow-x-auto">
           <table class="w-full">
@@ -108,24 +103,19 @@
               </tr>
             </thead>
             <tbody>
-              <tr
-                v-for="job in dayData.details.job_breakdown"
-                :key="job.job_number"
-                class="border-b border-gray-200 hover:bg-gray-100 text-xs"
-              >
+              <tr v-for="job in dayData.details.job_breakdown" :key="job.job_number"
+                class="border-b border-gray-200 hover:bg-gray-100 text-xs">
                 <td class="py-1.5 px-2">
-                  <button
-                    @click="handleJobClick(job.job_id)"
-                    class="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                  >
+                  <button @click="handleJobClick(job.job_id)"
+                    class="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer">
                     {{ job.job_number }}
                   </button>
                 </td>
-                <td class="py-1.5 px-2 text-right">{{ formatCurrency(job.labour_profit) }}</td>
-                <td class="py-1.5 px-2 text-right">{{ formatCurrency(job.material_profit) }}</td>
-                <td class="py-1.5 px-2 text-right">{{ formatCurrency(job.adjustment_profit) }}</td>
+                <td class="py-1.5 px-2 text-right">{{ formatCurrency(job.labour_profit as number) }}</td>
+                <td class="py-1.5 px-2 text-right">{{ formatCurrency(job.material_profit as number) }}</td>
+                <td class="py-1.5 px-2 text-right">{{ formatCurrency(job.adjustment_profit as number) }}</td>
                 <td class="py-1.5 px-2 text-right font-medium">
-                  {{ formatCurrency(job.total_profit) }}
+                  {{ formatCurrency(job.total_profit as number) }}
                 </td>
               </tr>
             </tbody>

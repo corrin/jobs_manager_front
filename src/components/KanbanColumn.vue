@@ -14,37 +14,23 @@
         </div>
       </div>
 
-      <div
-        ref="jobListRef"
-        :data-status="normalizedStatus.key"
-        class="p-3 transition-colors duration-200 relative h-[calc(90vh-12.5rem)] overflow-y-auto"
-        :class="{
+      <div ref="jobListRef" :data-status="normalizedStatus.key"
+        class="p-3 transition-colors duration-200 relative h-[calc(90vh-12.5rem)] overflow-y-auto" :class="{
           'bg-blue-50 border-blue-200': isDragging,
           // Single column layout with Tailwind - option to toggle back to 2-column by changing 'grid-cols-1' to 'grid-cols-2'
           'space-y-3': jobs.length > 0,
           'min-h-32': normalizedStatus.key === 'draft' && jobs.length === 0,
-        }"
-      >
-        <JobCard
-          v-for="job in jobs"
-          :key="job.id"
-          :job="job"
-          :is-dragging="isDragging"
+        }">
+        <JobCard v-for="job in jobs" :key="job.id" :job="job" :is-dragging="isDragging"
           :is-movement-mode-active="isMovementModeActive"
-          :is-job-selected-for-movement="isJobSelectedForMovement?.(job.id) ?? false"
-          @click="$emit('job-click', job)"
-          @job-ready="$emit('job-ready', $event)"
-          @card-ready="$emit('card-ready', $event)"
+          :is-job-selected-for-movement="isJobSelectedForMovement?.(job.id) ?? false" @click="$emit('job-click', job)"
+          @job-ready="$emit('job-ready', $event)" @card-ready="$emit('card-ready', $event)"
           @job-selected-for-movement="$emit('job-selected-for-movement', $event)"
-          @staff-assigned="$emit('staff-assigned', $event)"
-          @staff-unassigned="$emit('staff-unassigned', $event)"
-        />
+          @staff-assigned="$emit('staff-assigned', $event)" @staff-unassigned="$emit('staff-unassigned', $event)" />
 
         <!-- Only show empty state for non-draft columns or when not loading -->
-        <div
-          v-if="jobs.length === 0 && !isLoading && normalizedStatus.key !== 'draft'"
-          class="flex items-center justify-center text-gray-500 h-32"
-        >
+        <div v-if="jobs.length === 0 && !isLoading && normalizedStatus.key !== 'draft'"
+          class="flex items-center justify-center text-gray-500 h-32">
           <div class="text-center">
             <div class="text-sm">No jobs in {{ normalizedStatus.label.toLowerCase() }}</div>
             <div class="text-xs mt-1">Drag jobs here to update status</div>
@@ -53,14 +39,9 @@
 
         <!-- No empty state for draft column to prevent SortableJS interference -->
 
-        <div
-          v-if="jobs.length === 0 && isLoading"
-          class="flex items-center justify-center text-gray-500 h-32"
-        >
+        <div v-if="jobs.length === 0 && isLoading" class="flex items-center justify-center text-gray-500 h-32">
           <div class="text-center">
-            <div
-              class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"
-            ></div>
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
             <div class="text-sm">
               Jobs in {{ normalizedStatus.label.toLowerCase() }} status are still loading, please
               wait
@@ -68,46 +49,27 @@
           </div>
         </div>
 
-        <div
-          v-if="showLoadMore && !isLoading"
-          :class="jobs.length > 0 ? 'col-span-2' : ''"
-          class="mt-4 text-center"
-        >
-          <button
-            @click="$emit('load-more')"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
-          >
+        <div v-if="showLoadMore && !isLoading" :class="jobs.length > 0 ? 'col-span-2' : ''" class="mt-4 text-center">
+          <button @click="$emit('load-more')"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors">
             Load More
           </button>
         </div>
 
-        <div
-          v-if="isLoading && jobs.length > 0"
-          :class="jobs.length > 0 ? 'col-span-2' : ''"
-          class="mt-4 text-center"
-        >
+        <div v-if="isLoading && jobs.length > 0" :class="jobs.length > 0 ? 'col-span-2' : ''" class="mt-4 text-center">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
         </div>
       </div>
     </div>
 
     <div v-else class="w-full">
-      <div
-        ref="jobListRef"
-        :data-status="normalizedStatus.key"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-      >
-        <div
-          v-for="job in jobs"
-          :key="job.id"
-          :data-id="job.id"
-          class="job-item bg-gray-50 p-3 rounded-md border border-gray-200 opacity-75"
-        >
+      <div ref="jobListRef" :data-status="normalizedStatus.key"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div v-for="job in jobs" :key="job.id" :data-id="job.id"
+          class="job-item bg-gray-50 p-3 rounded-md border border-gray-200 opacity-75">
           <div class="flex justify-between items-start mb-2">
             <span class="text-xs font-medium text-gray-500">#{{ job.job_number }}</span>
-            <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-600"
-              >Archived</span
-            >
+            <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-600">Archived</span>
           </div>
           <h4 class="font-medium text-gray-700 text-sm mb-1">{{ job.name }}</h4>
           <p class="text-xs text-gray-500 mb-2">{{ job.description }}</p>
@@ -122,10 +84,8 @@
         </div>
 
         <div v-if="showLoadMore && !isLoading" class="col-span-full text-center">
-          <button
-            @click="$emit('load-more')"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors"
-          >
+          <button @click="$emit('load-more')"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors">
             Load More Archived
           </button>
         </div>
@@ -146,12 +106,12 @@ import JobCard from '@/components/JobCard.vue'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 
-type Job = z.infer<typeof schemas.Job>
+type KanbanJob = z.infer<typeof schemas.KanbanJob>
 type StatusChoice = z.infer<typeof schemas.Status7b9Enum>
 
 interface KanbanColumnProps {
   status: StatusChoice | { key: string; label: string; tooltip?: string }
-  jobs: Job[]
+  jobs: KanbanJob[]
   showLoadMore?: boolean
   isLoading?: boolean
   isDragging?: boolean
@@ -161,12 +121,12 @@ interface KanbanColumnProps {
 }
 
 interface KanbanColumnEmits {
-  (e: 'job-click', job: Job): void
+  (e: 'job-click', job: KanbanJob): void
   (e: 'load-more'): void
   (e: 'sortable-ready', element: HTMLElement, status: string): void
   (e: 'job-ready', payload: { jobId: string; element: HTMLElement }): void
   (e: 'card-ready', payload: { jobId: string; element: HTMLElement }): void
-  (e: 'job-selected-for-movement', job: Job): void
+  (e: 'job-selected-for-movement', job: KanbanJob): void
   (e: 'staff-assigned', payload: { staffId: string; jobId: string }): void
   (e: 'staff-unassigned', payload: { staffId: string; jobId: string }): void
 }

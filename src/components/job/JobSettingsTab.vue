@@ -1,29 +1,19 @@
 <template>
-  <div
-    class="p-4 sm:p-6 lg:px-4 lg:py-0 h-full overflow-y-auto bg-gray-50/50"
-    :data-initialized="!isInitializing"
-  >
+  <div class="p-4 sm:p-6 lg:px-4 lg:py-0 h-full overflow-y-auto bg-gray-50/50" :data-initialized="!isInitializing">
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-6 flex justify-between items-center">
         <div class="flex items-center gap-3">
           <span v-if="saveStatusText" class="text-xs text-gray-500">{{ saveStatusText }}</span>
-          <button
-            v-if="saveHasError"
-            type="button"
-            class="text-xs text-red-600 hover:text-red-700 underline"
-            @click="retrySave"
-          >
+          <button v-if="saveHasError" type="button" class="text-xs text-red-600 hover:text-red-700 underline"
+            @click="retrySave">
             Retry
           </button>
         </div>
       </div>
 
       <!-- Error Messages -->
-      <div
-        v-if="errorMessages.length > 0"
-        class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4"
-      >
+      <div v-if="errorMessages.length > 0" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
         <div class="flex">
           <div class="ml-3">
             <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
@@ -47,40 +37,29 @@
           <CardContent class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Job Name</label>
-              <input
-                v-model="localJobData.name"
-                type="text"
-                data-automation-id="settings-job-name"
-                @input="handleFieldInput('name', ($event.target as HTMLInputElement).value)"
-                @blur="handleFieldBlur"
+              <input :value="(localJobData.name as string) || ''" type="text" data-automation-id="settings-job-name"
+                @input="handleFieldInput('name', ($event.target as HTMLInputElement).value)" @blur="handleFieldBlur"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter job name"
-              />
+                placeholder="Enter job name" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                v-model="localJobData.description"
-                rows="4"
+              <textarea :value="(localJobData.description as string) || ''" rows="4"
                 data-automation-id="settings-description"
-                @input="handleFieldInput('description', $event.target.value)"
+                @input="handleFieldInput('description', ($event.target as HTMLTextAreaElement).value)"
                 @blur="handleFieldBlur"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                placeholder="Describe the job requirements and scope..."
-              ></textarea>
+                placeholder="Describe the job requirements and scope..."></textarea>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Date</label>
-              <input
-                v-model="localJobData.delivery_date"
-                type="date"
+              <input :value="(localJobData.delivery_date as string) || ''" type="date"
                 data-automation-id="settings-delivery-date"
-                @input="handleFieldInput('delivery_date', $event.target.value)"
+                @input="handleFieldInput('delivery_date', ($event.target as HTMLInputElement).value)"
                 @blur="handleBlurFlush"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
             </div>
           </CardContent>
         </Card>
@@ -96,59 +75,33 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Client</label>
               <div class="space-y-3">
                 <div v-if="!isChangingClient" class="space-y-2">
-                  <input
-                    :value="localJobData.client?.name"
-                    type="text"
-                    data-automation-id="settings-client-name"
+                  <input :value="localJobData.client?.name" type="text" data-automation-id="settings-client-name"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-600"
-                    readonly
-                  />
+                    readonly />
                   <div class="flex gap-2">
-                    <button
-                      @click="startClientChange"
-                      type="button"
-                      data-automation-id="settings-change-client-btn"
-                      class="flex-1 px-3 py-2 border border-blue-300 rounded-md text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
-                    >
+                    <button @click="startClientChange" type="button" data-automation-id="settings-change-client-btn"
+                      class="flex-1 px-3 py-2 border border-blue-300 rounded-md text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors">
                       Change Client
                     </button>
-                    <button
-                      @click="editCurrentClient"
-                      type="button"
-                      data-automation-id="settings-edit-client-btn"
-                      class="flex-1 px-3 py-2 border border-green-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-700 transition-colors"
-                    >
+                    <button @click="editCurrentClient" type="button" data-automation-id="settings-edit-client-btn"
+                      class="flex-1 px-3 py-2 border border-green-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-700 transition-colors">
                       Edit Client
                     </button>
                   </div>
                 </div>
 
                 <div v-else class="space-y-3" data-automation-id="settings-client-change-panel">
-                  <ClientLookup
-                    id="clientChange"
-                    label=""
-                    placeholder="Search for a new client..."
-                    :required="false"
-                    v-model="newClientName"
-                    @update:selected-id="handleNewClientSelected"
-                    @update:selected-client="handleClientLookupSelected"
-                  />
+                  <ClientLookup id="clientChange" label="" placeholder="Search for a new client..." :required="false"
+                    v-model="newClientName" @update:selected-id="handleNewClientSelected"
+                    @update:selected-client="handleClientLookupSelected" />
                   <div class="flex gap-2">
-                    <button
-                      @click="confirmClientChange"
-                      type="button"
-                      data-automation-id="settings-confirm-client-btn"
+                    <button @click="confirmClientChange" type="button" data-automation-id="settings-confirm-client-btn"
                       class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
-                      :disabled="!newClientId"
-                    >
+                      :disabled="!newClientId">
                       Confirm
                     </button>
-                    <button
-                      @click="cancelClientChange"
-                      type="button"
-                      data-automation-id="settings-cancel-client-btn"
-                      class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 transition-colors"
-                    >
+                    <button @click="cancelClientChange" type="button" data-automation-id="settings-cancel-client-btn"
+                      class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 transition-colors">
                       Cancel
                     </button>
                   </div>
@@ -165,28 +118,19 @@
             </div>
 
             <div>
-              <ContactSelector
-                id="contact"
-                label="Contact Person"
-                :optional="true"
-                :client-id="localJobData.client?.id || ''"
-                :client-name="localJobData.client?.name || ''"
-                :initial-contact-id="localJobData.contact_id"
-                v-model="contactDisplayValue"
-                @update:selected-contact="handleContactSelected"
-              />
+              <ContactSelector id="contact" label="Contact Person" :optional="true"
+                :client-id="localJobData.client?.id || ''" :client-name="localJobData.client?.name || ''"
+                :initial-contact-id="localJobData.contact_id as string | undefined" v-model="contactDisplayValue"
+                @update:selected-contact="handleContactSelected" />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Order Number</label>
-              <input
-                v-model="localJobData.order_number"
-                type="text"
+              <input :value="(localJobData.order_number as string) || ''" type="text"
                 data-automation-id="settings-order-number"
-                @input="handleFieldInput('order_number', $event.target.value)"
+                @input="handleFieldInput('order_number', ($event.target as HTMLInputElement).value)"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Customer order number (optional)"
-              />
+                placeholder="Customer order number (optional)" />
             </div>
           </CardContent>
         </Card>
@@ -200,18 +144,13 @@
           <CardContent class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Pricing Method</label>
-              <select
-                v-model="localJobData.pricing_methodology"
-                data-automation-id="settings-pricing-method"
-                @change="
-                  handleFieldInput(
-                    'pricing_methodology',
-                    ($event.target as HTMLSelectElement).value,
-                  )
-                "
-                @blur="handleBlurFlush"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              >
+              <select v-model="localJobData.pricing_methodology" data-automation-id="settings-pricing-method" @change="
+                handleFieldInput(
+                  'pricing_methodology',
+                  ($event.target as HTMLSelectElement).value,
+                )
+                " @blur="handleBlurFlush"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                 <option value="fixed_price">Fixed Price</option>
                 <option value="time_materials">Time & Materials</option>
               </select>
@@ -219,18 +158,13 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Speed vs Quality</label>
-              <select
-                v-model="localJobData.speed_quality_tradeoff"
-                data-automation-id="settings-speed-quality"
-                @change="
-                  handleFieldInput(
-                    'speed_quality_tradeoff',
-                    ($event.target as HTMLSelectElement).value,
-                  )
-                "
-                @blur="handleBlurFlush"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              >
+              <select v-model="localJobData.speed_quality_tradeoff" data-automation-id="settings-speed-quality" @change="
+                handleFieldInput(
+                  'speed_quality_tradeoff',
+                  ($event.target as HTMLSelectElement).value,
+                )
+                " @blur="handleBlurFlush"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
                 <option value="fast">Fast - Prioritize Speed</option>
                 <option value="normal">Normal - Balanced</option>
                 <option value="quality">Quality - Prioritize Quality</option>
@@ -239,28 +173,17 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Price Cap</label>
-              <input
-                v-model.number="localJobData.price_cap"
-                type="number"
-                step="0.01"
-                data-automation-id="settings-price-cap"
-                @input="handlePriceCapInput($event)"
-                @blur="handleBlurFlush"
+              <input v-model.number="localJobData.price_cap" type="number" step="0.01"
+                data-automation-id="settings-price-cap" @input="handlePriceCapInput($event)" @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Maximum price (optional)"
-                title="For T&M jobs - the maximum amount the customer has approved"
-              />
+                title="For T&M jobs - the maximum amount the customer has approved" />
             </div>
 
             <div class="flex-grow">
-              <RichTextEditor
-                v-model="localJobData.notes"
-                label="Internal Notes"
-                placeholder="Add internal notes about this job..."
-                :required="false"
-                automation-id="settings-internal-notes"
-                @blur="handleFieldBlur"
-              />
+              <RichTextEditor :model-value="(localJobData.notes as string) || ''" label="Internal Notes"
+                placeholder="Add internal notes about this job..." :required="false"
+                automation-id="settings-internal-notes" @blur="handleFieldBlur" />
             </div>
           </CardContent>
         </Card>
@@ -268,14 +191,9 @@
     </div>
 
     <!-- Client Edit Modal -->
-    <CreateClientModal
-      :is-open="showEditClientModal"
-      :edit-mode="true"
-      :client-id="jobData?.client.id || ''"
-      :client-data="currentClientData"
-      @update:is-open="showEditClientModal = $event"
-      @client-created="handleClientUpdated"
-    />
+    <CreateClientModal :is-open="showEditClientModal" :edit-mode="true" :client-id="jobData?.client.id || ''"
+      :client-data="currentClientData" @update:is-open="showEditClientModal = $event"
+      @client-created="handleClientUpdated" />
   </div>
 </template>
 
@@ -298,7 +216,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../..
 import { api } from '../../api/client'
 import { onConcurrencyRetry } from '@/composables/useConcurrencyEvents'
 
-type ClientContact = z.infer<typeof schemas.JobContactUpdateRequest>
+type ClientContact = z.infer<typeof schemas.ClientContact>
 
 // Use the existing JobHeaderResponse schema from generated API
 type Job = z.infer<typeof schemas.JobHeaderResponse>
@@ -379,25 +297,25 @@ async function loadBasicInfo() {
 
       // Only update fields that are empty or don't have user input, and server has data
       if (
-        (!localJobData.value.description || !localJobData.value.description.trim()) &&
+        (!localJobData.value.description || !(localJobData.value.description as string)?.trim()) &&
         basicInfo.description !== undefined
       ) {
         localJobData.value.description = basicInfo.description || ''
       }
       if (
-        (!localJobData.value.delivery_date || !localJobData.value.delivery_date.trim()) &&
+        (!localJobData.value.delivery_date || !(localJobData.value.delivery_date as string)?.trim()) &&
         basicInfo.delivery_date !== undefined
       ) {
         localJobData.value.delivery_date = basicInfo.delivery_date || ''
       }
       if (
-        (!localJobData.value.order_number || !localJobData.value.order_number.trim()) &&
+        (!localJobData.value.order_number || !(localJobData.value.order_number as string)?.trim()) &&
         basicInfo.order_number !== undefined
       ) {
         localJobData.value.order_number = basicInfo.order_number || ''
       }
       if (
-        (!localJobData.value.notes || !localJobData.value.notes.trim()) &&
+        (!localJobData.value.notes || !(localJobData.value.notes as string)?.trim()) &&
         basicInfo.notes !== undefined
       ) {
         localJobData.value.notes = basicInfo.notes || ''
@@ -477,7 +395,7 @@ const NOTIFICATION_DEBOUNCE_MS = 2000 // 2 seconds minimum between notifications
 
 // Typing state tracking to prevent interruption
 const isUserTyping = ref(false)
-const typingTimeout = ref<NodeJS.Timeout | null>(null)
+const typingTimeout = ref<number | null>(null)
 const TYPING_TIMEOUT_MS = 1000 // Consider user stopped typing after 1 second
 
 // Status choices are now loaded in the combined onMounted hook above
@@ -536,7 +454,7 @@ const handleFieldInput = (field: string, value: string) => {
   } else if (field === 'notes') {
     localJobData.value.notes = newValue
   } else if (field === 'pricing_methodology') {
-    localJobData.value.pricing_methodology = newValue
+    localJobData.value.pricing_methodology = newValue as Job['pricing_methodology']
   } else if (field === 'speed_quality_tradeoff') {
     localJobData.value.speed_quality_tradeoff = newValue as Job['speed_quality_tradeoff']
   }
@@ -576,15 +494,15 @@ watch(
   async (newJobData) => {
     if (!newJobData || !newJobData.job_id) {
       // Initialize with default values when jobData is null
-      const defaultJobData = {
+      const defaultJobData: Partial<Job> = {
         job_id: props.jobId || '',
         job_number: props.jobNumber ? Number(props.jobNumber) : 0,
         name: '',
-        client: null,
+        client: undefined,
         contact_id: undefined,
         contact_name: undefined,
-        status: '',
-        pricing_methodology: props.pricingMethodology || 'time_materials',
+        status: '' as Job['status'],
+        pricing_methodology: (props.pricingMethodology || 'time_materials') as Job['pricing_methodology'],
         speed_quality_tradeoff: 'normal' as const,
         fully_invoiced: false,
         quoted: false,
@@ -601,6 +519,9 @@ watch(
 
       localJobData.value = { ...defaultJobData }
       serverBaseline.value = { ...defaultJobData }
+      // Ensure client is properly typed
+      localJobData.value.client = undefined
+      serverBaseline.value.client = undefined
       contactDisplayValue.value = ''
       return
     }
@@ -690,10 +611,10 @@ watch(
 
       // Always update from server data if we have it, but preserve user input if they started typing
       const hasUserInput =
-        (localJobData.value.description && localJobData.value.description.trim()) ||
-        (localJobData.value.delivery_date && localJobData.value.delivery_date.trim()) ||
-        (localJobData.value.order_number && localJobData.value.order_number.trim()) ||
-        (localJobData.value.notes && localJobData.value.notes.trim())
+        (localJobData.value.description && (localJobData.value.description as string).trim()) ||
+        (localJobData.value.delivery_date && (localJobData.value.delivery_date as string).trim()) ||
+        (localJobData.value.order_number && (localJobData.value.order_number as string).trim()) ||
+        (localJobData.value.notes && (localJobData.value.notes as string).trim())
 
       if (!hasUserInput) {
         // No user input yet, safe to update from server
@@ -963,7 +884,7 @@ const handleContactSelected = async (contact: ClientContact | null) => {
       phone: contact.phone ?? null,
       position: contact.position ?? null,
       notes: contact.notes ?? null,
-      is_primary: contact.is_primary,
+      is_primary: contact.is_primary ?? false,
     }
 
     // Save contact directly (not through header autosave)
@@ -990,8 +911,8 @@ const handleContactSelected = async (contact: ClientContact | null) => {
 
 const router = useRouter()
 
-let unbindRouteGuard: () => void = () => {}
-let unbindConcurrencyRetry: () => void = () => {}
+let unbindRouteGuard: () => void = () => { }
+let unbindConcurrencyRetry: () => void = () => { }
 
 /** Instance */
 const autosave = createJobAutosave({
@@ -1027,13 +948,13 @@ const autosave = createJobAutosave({
   applyOptimistic: (patch) => {
     Object.entries(patch).forEach(([k, v]) => {
       // Apply all fields including separated client/contact fields
-      ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
+      ; (localJobData.value as Record<string, unknown>)[k] = v as unknown
     })
   },
   rollbackOptimistic: (previous) => {
     Object.entries(previous).forEach(([k, v]) => {
       // Rollback all fields including separated client/contact fields
-      ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
+      ; (localJobData.value as Record<string, unknown>)[k] = v as unknown
     })
   },
   saveAdapter: async (patch) => {
@@ -1089,11 +1010,11 @@ const autosave = createJobAutosave({
         const applyPayloadToBaseline = (base: Partial<Job>, payload: Record<string, unknown>) => {
           const next = { ...base }
           if ('name' in payload) next.name = payload.name as string
-          if ('job_status' in payload) next.status = String(payload.job_status)
+          if ('job_status' in payload) next.status = String(payload.job_status) as Job['status']
           if ('pricing_methodology' in payload)
-            next.pricing_methodology = payload.pricing_methodology as string
+            next.pricing_methodology = payload.pricing_methodology as Job['pricing_methodology']
           if ('speed_quality_tradeoff' in payload)
-            next.speed_quality_tradeoff = payload.speed_quality_tradeoff as string
+            next.speed_quality_tradeoff = payload.speed_quality_tradeoff as Job['speed_quality_tradeoff']
           if ('quoted' in payload) next.quoted = !!payload.quoted
           if ('fully_invoiced' in payload) next.fully_invoiced = !!payload.fully_invoiced
           if ('paid' in payload) next.paid = !!payload.paid
@@ -1170,9 +1091,9 @@ const autosave = createJobAutosave({
             headerPatch.name = serverJobDetail.name
           }
           if (touchedKeys.includes('job_status')) {
-            nextBaseline.status = serverJobDetail.job_status
-            localJobData.value.status = serverJobDetail.job_status
-            headerPatch.status = serverJobDetail.job_status
+            nextBaseline.status = serverJobDetail.job_status as Job['status']
+            localJobData.value.status = serverJobDetail.job_status as Job['status']
+            headerPatch.status = serverJobDetail.job_status as Job['status']
           }
           if (touchedKeys.includes('pricing_methodology')) {
             nextBaseline.pricing_methodology = serverJobDetail.pricing_methodology
@@ -1267,22 +1188,22 @@ const autosave = createJobAutosave({
           }
           if (touchedKeys.includes('job_status')) {
             const statusVal = coerceNullableString(partialPayload.job_status) ?? ''
-            nextBaseline.status = statusVal
-            localJobData.value.status = statusVal
-            headerPatch.status = statusVal
+            nextBaseline.status = statusVal as Job['status']
+            localJobData.value.status = statusVal as Job['status']
+            headerPatch.status = statusVal as Job['status']
           }
           if (touchedKeys.includes('pricing_methodology')) {
             const pricingVal = coerceNullableString(partialPayload.pricing_methodology) ?? ''
-            nextBaseline.pricing_methodology = pricingVal
-            localJobData.value.pricing_methodology = pricingVal
-            headerPatch.pricing_methodology = pricingVal
+            nextBaseline.pricing_methodology = pricingVal as Job['pricing_methodology']
+            localJobData.value.pricing_methodology = pricingVal as Job['pricing_methodology']
+            headerPatch.pricing_methodology = pricingVal as Job['pricing_methodology']
           }
           if (touchedKeys.includes('speed_quality_tradeoff')) {
             const tradeoffVal =
               coerceNullableString(partialPayload.speed_quality_tradeoff) ?? 'normal'
-            nextBaseline.speed_quality_tradeoff = tradeoffVal
-            localJobData.value.speed_quality_tradeoff = tradeoffVal
-            headerPatch.speed_quality_tradeoff = tradeoffVal
+            nextBaseline.speed_quality_tradeoff = tradeoffVal as Job['speed_quality_tradeoff']
+            localJobData.value.speed_quality_tradeoff = tradeoffVal as Job['speed_quality_tradeoff']
+            headerPatch.speed_quality_tradeoff = tradeoffVal as Job['speed_quality_tradeoff']
           }
           if (touchedKeys.includes('quoted')) {
             const quotedVal = !!partialPayload.quoted
@@ -1379,8 +1300,8 @@ const autosave = createJobAutosave({
         return { success: true, serverData: result.data }
       }
 
-      return { success: false, error: result.error || 'Update failed' }
-    } catch (e) {
+      return { success: false, error: (result as any).error || 'Update failed' } // eslint-disable-line @typescript-eslint/no-explicit-any
+    } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       // Detect concurrency by robust regex (no auto-retry)
       const isConcurrencyError =
@@ -1398,7 +1319,7 @@ onMounted(() => {
   autosave.onBeforeUnloadBind()
   autosave.onVisibilityBind()
   unbindRouteGuard = autosave.onRouteLeaveBind({
-    beforeEach: (to, from, next) => router.beforeEach(to, from, next),
+    beforeEach: (guard: any) => router.beforeEach(guard), // eslint-disable-line @typescript-eslint/no-explicit-any
   })
   // Listen to global "Retry" click from the concurrency toast for this Job
   unbindConcurrencyRetry = onConcurrencyRetry(props.jobId, async () => {

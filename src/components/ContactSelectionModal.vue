@@ -306,10 +306,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, reactive } from 'vue'
 import { Users, PencilLine, Trash2, AlertTriangle } from 'lucide-vue-next'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
+import type { ContactFormData } from '@/composables/useContactManagement'
 import {
   Dialog,
   DialogContent,
@@ -321,7 +322,6 @@ import {
 
 // Type aliases for schema-based types
 type ClientContact = z.infer<typeof schemas.ClientContact>
-type NewContactData = z.infer<typeof schemas.ClientContactRequest>
 
 const props = defineProps<{
   isOpen: boolean
@@ -330,14 +330,14 @@ const props = defineProps<{
   contacts: ClientContact[]
   selectedContact: ClientContact | null
   isLoading: boolean
-  newContactForm: NewContactData
+  newContactForm: ContactFormData
   editingContact: ClientContact | null
   isEditing: boolean
 }>()
 const emit = defineEmits<{
   close: []
   'select-contact': [contact: ClientContact]
-  'save-contact': [newContact: NewContactData]
+  'save-contact': [newContact: ContactFormData]
   'edit-contact': [contact: ClientContact]
   'delete-contact': [contactId: string]
   'cancel-edit': []
@@ -345,13 +345,13 @@ const emit = defineEmits<{
 
 const nameError = ref('')
 
-type ContactForm = NewContactData
-const localContactForm = ref<ContactForm>({ ...props.newContactForm })
+type ContactForm = ContactFormData
+const localContactForm = reactive<ContactForm>({ ...props.newContactForm })
 
 watch(
   () => props.newContactForm,
   (val) => {
-    localContactForm.value = { ...val }
+    Object.assign(localContactForm, val)
   },
   { deep: true, immediate: true },
 )
@@ -362,7 +362,7 @@ watch(
   (contactsLength) => {
     if (contactsLength === 0) {
       // Automatically set as primary if this is the first contact
-      localContactForm.value.is_primary = true
+      localContactForm.is_primary = true
     }
   },
   { immediate: true },
@@ -383,12 +383,12 @@ watch(
 )
 
 const handleSave = () => {
-  if (!localContactForm.value.name?.trim()) {
+  if (!localContactForm.name?.trim()) {
     nameError.value = 'Name is required.'
     return
   }
   nameError.value = ''
-  emit('save-contact', { ...localContactForm.value })
+  emit('save-contact', { ...localContactForm })
 }
 
 const selectContact = (contact: ClientContact) => {

@@ -310,11 +310,11 @@ const timelineItems = computed(() => {
         : 'job_event',
     description: entry.description,
     staff: entry.staff || null,
-    eventType: entry.event_type,
+    eventType: entry.event_type ?? '',
     costlineDesc: entry.cost_set_kind
       ? `${entry.cost_set_kind.charAt(0).toUpperCase() + entry.cost_set_kind.slice(1)} - ${entry.costline_kind || ''}`
       : undefined,
-    costlineKind: entry.costline_kind || undefined,
+    costlineKind: entry.costline_kind ?? null,
     // Include original entry data for undo functionality
     originalEntry: entry,
     canUndo: entry.schema_version === 1 && entry.can_undo,
@@ -368,7 +368,7 @@ async function addEvent() {
   }
 }
 
-function getCostlineTypeColor(type: 'time' | 'material' | 'adjust' | null): string {
+function getCostlineTypeColor(type: string | null | undefined): string {
   switch (type) {
     case 'time':
       return 'bg-purple-100 text-purple-700'
@@ -407,9 +407,9 @@ function toggleExpanded(itemId: string) {
   expandedItems.value = newExpanded
 }
 
-function formatDelta(delta: Record<string, unknown> | null): string {
-  if (!delta) return 'No data'
-  return Object.entries(delta)
+function formatDelta(delta: unknown): string {
+  if (!delta || typeof delta !== 'object') return 'No data'
+  return Object.entries(delta as Record<string, unknown>)
     .map(([key, value]) => `${key}: ${String(value)}`)
     .join('\n')
 }

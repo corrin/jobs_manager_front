@@ -98,6 +98,7 @@ import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
 
 type JobEvent = z.infer<typeof schemas.JobEvent>
+type JobEventCreateRequest = z.infer<typeof schemas.JobEventCreateRequest>
 
 interface Props {
   jobId: string
@@ -111,7 +112,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   close: []
-  'event-added': [event: JobEvent]
+  'event-added': [event: JobEventCreateRequest]
 }>()
 
 const showAddEventForm = ref(false)
@@ -123,8 +124,9 @@ const closeModal = () => {
 }
 
 const addEvent = async () => {
-  if (!newEventDescription.value.trim() || isAdding.value) return
-  emit('event-added', { description: newEventDescription.value })
+  const description = newEventDescription.value.trim()
+  if (!description || isAdding.value) return
+  emit('event-added', { description })
 }
 
 const cancelAddEvent = () => {

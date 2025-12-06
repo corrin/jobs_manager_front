@@ -208,9 +208,14 @@
     :selected-contact="selectedContact"
     :is-loading="isContactLoading"
     :new-contact-form="newContactForm"
+    :editing-contact="editingContact"
+    :is-editing="isEditing"
     @close="handleCloseContactModal"
     @select-contact="handleContactSelected"
     @save-contact="handleSaveContact"
+    @edit-contact="startEditContact"
+    @delete-contact="handleDeleteContact"
+    @cancel-edit="cancelEdit"
   />
 </template>
 
@@ -234,11 +239,23 @@ import {
 } from '@/components/ui/dialog'
 
 // Use generated types from Zodios API
-type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
-type JobUpdateRequest = z.infer<typeof schemas.JobUpdateRequest>
+type JobRecord = z.infer<typeof schemas.Job>
+type JobDeltaPatchPayload = z.input<typeof schemas.PatchedJobDeltaEnvelopeRequest>
+
+type EditableJobData = {
+  name: JobRecord['name']
+  order_number: string
+  job_status: JobRecord['job_status']
+  client_id: string
+  client_name: string
+  contact_id: JobRecord['contact_id']
+  contact_name: JobRecord['contact_name']
+  description: JobRecord['description']
+  notes: JobRecord['notes']
+}
 
 interface Props {
-  jobData: JobDetailResponse | null
+  jobData: JobRecord | null
   isOpen: boolean
 }
 
@@ -246,10 +263,34 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   close: []
-  'job-updated': [job: JobDetailResponse]
+  'job-updated': [job: JobRecord]
 }>()
 
-const localJobData = ref<Partial<JobDetailResponse>>({})
+const createEmptyJobData = (): EditableJobData => ({
+  name: '',
+  order_number: '',
+  job_status: 'draft',
+  client_id: '',
+  client_name: '',
+  contact_id: null,
+  contact_name: null,
+  description: null,
+  notes: null,
+})
+
+const mapJobToEditableData = (job: JobRecord): EditableJobData => ({
+  name: job.name ?? '',
+  order_number: job.order_number ?? '',
+  job_status: job.job_status ?? 'draft',
+  client_id: job.client_id ?? '',
+  client_name: job.client_name ?? '',
+  contact_id: job.contact_id ?? null,
+  contact_name: job.contact_name ?? null,
+  description: job.description ?? null,
+  notes: job.notes ?? null,
+})
+
+const localJobData = ref<EditableJobData>(createEmptyJobData())
 const isLoading = ref(false)
 const isClientChanged = ref(false)
 const selectedClient = ref<Client | null>(null)
@@ -259,12 +300,19 @@ const {
   contacts,
   selectedContact,
   isLoading: isContactLoading,
-  newContactForm,
+  newContactForm: newContactFormRef,
   openModal: openContactModal,
   closeModal: closeContactModal,
   selectExistingContact,
   saveContact,
+  editingContact,
+  isEditing,
+  startEditContact,
+  cancelEdit,
+  deleteContact,
 } = useContactManagement()
+
+const newContactForm = computed(() => newContactFormRef.value)
 
 const currentClientId = computed(() => {
   return isClientChanged.value && selectedClient.value
@@ -280,15 +328,14 @@ const currentClientName = computed(() => {
 
 const clientDisplayName = computed({
   get: () => currentClientName.value,
-  set: () => {},
+  set: (value: string) => {
+    if (selectedClient.value) {
+      selectedClient.value = { ...selectedClient.value, name: value }
+    }
+  },
 })
 
-const contactDisplayName = computed(() => {
-  if (localJobData.value.contact_name) {
-    return localJobData.value.contact_name
-  }
-  return ''
-})
+const contactDisplayName = computed(() => localJobData.value.contact_name ?? '')
 
 const jobDescription = computed({
   get: () => localJobData.value.description || '',
@@ -305,9 +352,7 @@ const jobNotes = computed({
 })
 
 const isFormValid = computed(() => {
-  if (!localJobData.value) return false
-
-  const hasName = Boolean(localJobData.value.name?.trim())
+  const hasName = Boolean(localJobData.value.name.trim())
   const hasClient = Boolean(localJobData.value.client_id)
 
   return hasName && hasClient
@@ -317,9 +362,11 @@ watch(
   () => props.jobData,
   (newJobData) => {
     if (newJobData) {
-      localJobData.value = { ...newJobData }
+      localJobData.value = mapJobToEditableData(newJobData)
       isClientChanged.value = false
       selectedClient.value = null
+    } else {
+      localJobData.value = createEmptyJobData()
     }
   },
   { immediate: true },
@@ -337,6 +384,7 @@ const handleClientSelected = (client: Client | null) => {
   selectedClient.value = client
   if (client) {
     localJobData.value.client_name = client.name
+    localJobData.value.client_id = client.id
   }
 }
 
@@ -366,9 +414,16 @@ const handleSaveContact = async () => {
   }
 }
 
+const handleDeleteContact = async (contactId: string) => {
+  const success = await deleteContact(contactId)
+  if (success && localJobData.value.contact_id === contactId) {
+    clearContact()
+  }
+}
+
 const clearContact = () => {
-  localJobData.value.contact_id = undefined
-  localJobData.value.contact_name = undefined
+  localJobData.value.contact_id = null
+  localJobData.value.contact_name = null
 }
 
 const handleSave = async () => {
@@ -379,23 +434,45 @@ const handleSave = async () => {
   isLoading.value = true
 
   try {
-    const updateData: JobUpdateRequest = {
-      name: localJobData.value.name?.trim() || '',
-      client_id: currentClientId.value,
-      contact_id: localJobData.value.contact_id || null,
+    const updatedJobRecord: JobRecord = {
+      ...props.jobData,
+      name: localJobData.value.name.trim(),
+      client_id: currentClientId.value || null,
+      client_name: currentClientName.value || null,
+      contact_id: localJobData.value.contact_id ?? null,
+      contact_name: localJobData.value.contact_name ?? null,
       order_number: localJobData.value.order_number || null,
-      job_status: localJobData.value.job_status || 'draft',
-      description: localJobData.value.description || null,
-      notes: localJobData.value.notes || null,
+      job_status: localJobData.value.job_status || props.jobData.job_status,
+      description: localJobData.value.description ?? null,
+      notes: localJobData.value.notes ?? null,
     }
 
-    // Use Zodios API to update the job
-    const updatedJob = await api.job_rest_jobs_update({
+    const fields: JobDeltaPatchPayload['fields'] = [
+      'name',
+      'client_id',
+      'client_name',
+      'contact_id',
+      'contact_name',
+      'order_number',
+      'job_status',
+      'description',
+      'notes',
+    ]
+
+    const updateEnvelope: JobDeltaPatchPayload = {
+      fields,
+      after: updatedJobRecord,
+    }
+
+    const updatedJob = await api.job_rest_jobs_partial_update(updateEnvelope, {
       params: { job_id: props.jobData.id },
-      body: updateData,
     })
 
-    emit('job-updated', updatedJob)
+    const parsedJob =
+      (updatedJob?.data?.job && schemas.Job.parse(updatedJob.data.job)) ||
+      updatedJobRecord
+
+    emit('job-updated', parsedJob)
     emit('close')
   } catch (error) {
     console.error('Error saving job:', error)

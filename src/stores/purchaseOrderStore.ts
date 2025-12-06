@@ -10,6 +10,7 @@ import type { z } from 'zod'
 type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderList>
 type PurchaseOrderCreate = z.infer<typeof schemas.PurchaseOrderCreate>
 type PurchaseOrderUpdate = z.infer<typeof schemas.PatchedPurchaseOrderUpdate>
+type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailResponse>
 
 export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
   const orders = ref<PurchaseOrder[]>([])
@@ -128,7 +129,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     }
   }
 
-  async function emailPurchaseOrder(id: string) {
+  async function emailPurchaseOrder(id: string): Promise<PurchaseOrderEmailResponse> {
     if (!id) {
       throw new Error('Purchase order ID is required')
     }

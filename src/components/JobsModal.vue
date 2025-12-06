@@ -11,9 +11,7 @@
           <Input v-model="search" placeholder="Search jobs..." class="w-64" />
           <Button class="ml-auto" @click="openCreate">+ Add Django Job</Button>
         </div>
-        <div
-          class="overflow-x-auto rounded-lg shadow bg-white max-h-[60vh] w-full flex justify-center"
-        >
+        <div class="overflow-x-auto rounded-lg shadow bg-white max-h-[60vh] w-full flex justify-center">
           <table class="w-full text-sm whitespace-nowrap">
             <thead>
               <tr class="bg-indigo-50 text-indigo-700">
@@ -80,7 +78,7 @@ const filteredJobs = computed(() => {
   return jobs.value.filter((j) => j.id.toLowerCase().includes(search.value.toLowerCase()))
 })
 
-function formatDate(val: string | null) {
+function formatDate(val: string | null | undefined) {
   if (!val) return '-'
   return new Date(val).toLocaleString('en-NZ')
 }

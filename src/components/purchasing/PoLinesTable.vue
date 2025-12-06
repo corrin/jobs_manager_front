@@ -79,11 +79,11 @@ const openAdditionalFieldsModal = (lineIndex: number) => {
   const line = props.lines[lineIndex]
 
   additionalFields.value = {
-    metal_type: line.metal_type || '',
-    alloy: line.alloy || '',
-    specifics: line.specifics || '',
-    location: line.location || '',
-    dimensions: line.dimensions || '',
+    metal_type: String(line.metal_type || ''),
+    alloy: String(line.alloy || ''),
+    specifics: String(line.specifics || ''),
+    location: String(line.location || ''),
+    dimensions: String(line.dimensions || ''),
   }
 
   showAdditionalFieldsModal.value = true
@@ -95,13 +95,13 @@ const saveAdditionalFields = () => {
   const updated = props.lines.map((line, idx) =>
     idx === editingLineIndex.value
       ? {
-          ...line,
-          metal_type: additionalFields.value.metal_type || undefined,
-          alloy: additionalFields.value.alloy || undefined,
-          specifics: additionalFields.value.specifics || undefined,
-          location: additionalFields.value.location || undefined,
-          dimensions: additionalFields.value.dimensions || undefined,
-        }
+        ...line,
+        metal_type: additionalFields.value.metal_type || undefined,
+        alloy: additionalFields.value.alloy || undefined,
+        specifics: additionalFields.value.specifics || undefined,
+        location: additionalFields.value.location || undefined,
+        dimensions: additionalFields.value.dimensions || undefined,
+      }
       : line,
   )
 
@@ -160,36 +160,36 @@ const columns = computed(() =>
             'onUpdate:modelValue': isColumnDisabled.value
               ? undefined
               : (val: string | null) => {
-                  debugLog('🔄 PoLinesTable: Received modelValue update:', val)
-                  debugLog('📦 PoLinesTable: Available stock items:', stockStore.items.length)
+                debugLog('🔄 PoLinesTable: Received modelValue update:', val)
+                debugLog('📦 PoLinesTable: Available stock items:', stockStore.items.length)
 
-                  const found = stockStore.items.find((i: StockItem) => i.id === val)
-                  debugLog('🎯 PoLinesTable: Found stock item:', found)
+                const found = stockStore.items.find((i: StockItem) => i.id === val)
+                debugLog('🎯 PoLinesTable: Found stock item:', found)
 
-                  const updated = props.lines.map((l, idx) =>
-                    idx === row.index
-                      ? {
-                          ...l,
-                          // Auto-populate all fields from stock item when selected
-                          ...(found && {
-                            description: found.description || l.description,
-                            unit_cost: found.unit_cost || l.unit_cost,
-                            metal_type: found.metal_type || l.metal_type,
-                            alloy: found.alloy || l.alloy,
-                            specifics: found.specifics || l.specifics,
-                            location: found.location || l.location,
-                            item_code: found.item_code || null,
-                          }),
-                        }
-                      : l,
-                  )
+                const updated = props.lines.map((l, idx) =>
+                  idx === row.index
+                    ? {
+                      ...l,
+                      // Auto-populate all fields from stock item when selected
+                      ...(found && {
+                        description: found.description || l.description,
+                        unit_cost: found.unit_cost || l.unit_cost,
+                        metal_type: found.metal_type || l.metal_type,
+                        alloy: found.alloy || l.alloy,
+                        specifics: found.specifics || l.specifics,
+                        location: found.location || l.location,
+                        item_code: found.item_code || null,
+                      }),
+                    }
+                    : l,
+                )
 
-                  debugLog('📝 PoLinesTable: Updated line:', updated[row.index])
-                  emit('update:lines', updated)
+                debugLog('📝 PoLinesTable: Updated line:', updated[row.index])
+                emit('update:lines', updated)
 
-                  // Exit edit mode after selection
-                  editingItemIndex.value = -1
-                },
+                // Exit edit mode after selection
+                editingItemIndex.value = -1
+              },
           })
         } else {
           // Show item code button when not editing
@@ -206,9 +206,9 @@ const columns = computed(() =>
                 onClick: isColumnDisabled.value
                   ? undefined
                   : (e: Event) => {
-                      e.stopPropagation()
-                      editingItemIndex.value = row.index
-                    },
+                    e.stopPropagation()
+                    editingItemIndex.value = row.index
+                  },
                 class: 'font-mono uppercase tracking-wide',
               },
               displayText,
@@ -230,11 +230,11 @@ const columns = computed(() =>
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
             : (val: string) => {
-                const updated = props.lines.map((l, idx) =>
-                  idx === row.index ? { ...l, description: val } : l,
-                )
-                emit('update:lines', updated)
-              },
+              const updated = props.lines.map((l, idx) =>
+                idx === row.index ? { ...l, description: val } : l,
+              )
+              emit('update:lines', updated)
+            },
         }),
     },
     {
@@ -251,30 +251,30 @@ const columns = computed(() =>
             (props.jobsReadOnly ?? isColumnDisabled.value)
               ? undefined
               : (val: string | null) => {
-                  const updated = props.lines.map((l, idx) =>
-                    idx === row.index ? { ...l, job_id: val || undefined } : l,
-                  )
-                  emit('update:lines', updated)
-                },
+                const updated = props.lines.map((l, idx) =>
+                  idx === row.index ? { ...l, job_id: val || undefined } : l,
+                )
+                emit('update:lines', updated)
+              },
           onJobSelected:
             (props.jobsReadOnly ?? isColumnDisabled.value)
               ? undefined
               : (job: JobForPurchasing | null) => {
-                  if (job) {
-                    const updated = props.lines.map((l, idx) =>
-                      idx === row.index
-                        ? {
-                            ...l,
-                            job_id: job.id,
-                            job_number: job.job_number?.toString(),
-                            job_name: job.name,
-                            client_name: job.client_name,
-                          }
-                        : l,
-                    )
-                    emit('update:lines', updated)
-                  }
-                },
+                if (job) {
+                  const updated = props.lines.map((l, idx) =>
+                    idx === row.index
+                      ? {
+                        ...l,
+                        job_id: job.id,
+                        job_number: job.job_number?.toString(),
+                        job_name: job.name,
+                        client_name: job.client_name,
+                      }
+                      : l,
+                  )
+                  emit('update:lines', updated)
+                }
+              },
         }),
       meta: { editable: !(props.jobsReadOnly ?? isColumnDisabled.value) },
     },
@@ -293,14 +293,14 @@ const columns = computed(() =>
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
             : (val: string | number) => {
-                const num = Number(val)
-                if (!Number.isNaN(num)) {
-                  const updated = props.lines.map((l, idx) =>
-                    idx === row.index ? { ...l, quantity: num } : l,
-                  )
-                  emit('update:lines', updated)
-                }
-              },
+              const num = Number(val)
+              if (!Number.isNaN(num)) {
+                const updated = props.lines.map((l, idx) =>
+                  idx === row.index ? { ...l, quantity: num } : l,
+                )
+                emit('update:lines', updated)
+              }
+            },
         }),
     },
     {
@@ -318,12 +318,12 @@ const columns = computed(() =>
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
             : (val: string | number) => {
-                const cost = val === '' ? null : Number(val)
-                const updated = props.lines.map((l, idx) =>
-                  idx === row.index ? { ...l, unit_cost: cost } : l,
-                )
-                emit('update:lines', updated)
-              },
+              const cost = val === '' ? null : Number(val)
+              const updated = props.lines.map((l, idx) =>
+                idx === row.index ? { ...l, unit_cost: cost } : l,
+              )
+              emit('update:lines', updated)
+            },
         }),
     },
     {
@@ -338,11 +338,11 @@ const columns = computed(() =>
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
             : (checked: boolean) => {
-                const updated = props.lines.map((l, idx) =>
-                  idx === row.index ? { ...l, price_tbc: checked } : l,
-                )
-                emit('update:lines', updated)
-              },
+              const updated = props.lines.map((l, idx) =>
+                idx === row.index ? { ...l, price_tbc: checked } : l,
+              )
+              emit('update:lines', updated)
+            },
           class: 'mx-auto',
         }),
       meta: { editable: !isColumnDisabled.value },
@@ -415,12 +415,12 @@ const columns = computed(() =>
             onClick: isColumnDisabled.value
               ? undefined
               : () => {
-                  if (row.original.id) {
-                    emit('delete-line', row.original.id)
-                  } else {
-                    emit('delete-line', row.index)
-                  }
-                },
+                if (row.original.id) {
+                  emit('delete-line', row.original.id)
+                } else {
+                  emit('delete-line', row.index)
+                }
+              },
           },
           () => h(Trash2, { class: 'w-4 h-4' }),
         ),
@@ -443,13 +443,7 @@ onMounted(() => {
 <template>
   <div class="flex flex-col h-full">
     <div class="flex-1 overflow-y-auto max-h-[60vh]">
-      <DataTable
-        :columns="columns"
-        :data="props.lines"
-        @rowClick="() => {}"
-        :page-size="1000"
-        :hide-footer="true"
-      />
+      <DataTable :columns="columns" :data="props.lines" @rowClick="() => { }" :page-size="1000" :hide-footer="true" />
     </div>
     <div class="sticky bottom-0 bg-white z-10 p-2 border-t">
       <Button class="w-full" :disabled="isColumnDisabled" @click="handleAddLine">
@@ -471,10 +465,8 @@ onMounted(() => {
           <!-- Metal Type -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1"> Metal Type </label>
-            <select
-              v-model="additionalFields.metal_type"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+            <select v-model="additionalFields.metal_type"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">Select metal type...</option>
               <option v-for="option in metalTypeOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
@@ -491,31 +483,19 @@ onMounted(() => {
           <!-- Specifics -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1"> Specifics </label>
-            <Input
-              v-model="additionalFields.specifics"
-              type="text"
-              placeholder="e.g., m8 countersunk socket screw"
-            />
+            <Input v-model="additionalFields.specifics" type="text" placeholder="e.g., m8 countersunk socket screw" />
           </div>
 
           <!-- Location -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1"> Location </label>
-            <Input
-              v-model="additionalFields.location"
-              type="text"
-              placeholder="Where this item will be stored"
-            />
+            <Input v-model="additionalFields.location" type="text" placeholder="Where this item will be stored" />
           </div>
 
           <!-- Dimensions -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1"> Dimensions </label>
-            <Input
-              v-model="additionalFields.dimensions"
-              type="text"
-              placeholder="Product dimensions"
-            />
+            <Input v-model="additionalFields.dimensions" type="text" placeholder="Product dimensions" />
           </div>
         </div>
 
