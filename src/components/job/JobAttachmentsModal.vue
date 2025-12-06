@@ -285,6 +285,7 @@ import { jobService } from '@/services/job.service'
 import { z } from 'zod'
 
 type JobFile = z.infer<typeof schemas.JobFile>
+type UploadedFileSummary = z.infer<typeof schemas.UploadedFile>
 
 const props = defineProps<{
   jobId: string
@@ -294,7 +295,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  'file-uploaded': []
+  'file-uploaded': [file: JobFile]
   'file-deleted': [fileId: string]
 }>()
 
@@ -458,11 +459,12 @@ const uploadFile = async (file: File) => {
 
   try {
     const uploadResult = await jobService.uploadJobFiles(props.jobId, [file])
-    if (uploadResult.uploaded.length > 0) {
-      debugLog('Uploaded files:', uploadResult.uploaded)
-      emit('file-uploaded')
-    }
     await loadFiles()
+    if (uploadResult.uploaded.length > 0) {
+      const uploadedDescriptor = uploadResult.uploaded[0]
+      const jobFile = files.value.find((f) => f.id === uploadedDescriptor.id)
+      emit('file-uploaded', jobFile ?? mapUploadedToJobFile(uploadedDescriptor))
+    }
   } catch (err) {
     debugLog('Error uploading file:', err)
   } finally {
@@ -555,6 +557,18 @@ const formatFileSize = (bytes: number) => {
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
 }
+
+const mapUploadedToJobFile = (uploaded: UploadedFileSummary): JobFile => ({
+  id: uploaded.id,
+  filename: uploaded.filename,
+  mime_type: undefined,
+  uploaded_at: new Date().toISOString(),
+  print_on_jobsheet: uploaded.print_on_jobsheet,
+  size: null,
+  download_url: '',
+  thumbnail_url: null,
+  status: undefined,
+})
 
 // Helper functions for file types
 const isImageJobFile = (file: JobFile): boolean => {
