@@ -2,12 +2,17 @@
   <div class="flex items-center space-x-2">
     <Select :model-value="selectedValue" @update:model-value="handleMonthChange">
       <SelectTrigger
-        class="h-8 w-auto min-w-[120px] text-xs bg-slate-800/50 border-blue-500/30 text-white hover:bg-slate-800/70">
+        class="h-8 w-auto min-w-[120px] text-xs bg-slate-800/50 border-blue-500/30 text-white hover:bg-slate-800/70"
+      >
         <SelectValue :placeholder="displayValue" />
       </SelectTrigger>
       <SelectContent class="bg-slate-800 border-blue-500/30 max-h-60 overflow-y-auto">
-        <SelectItem v-for="option in monthOptions" :key="option.value" :value="option.value"
-          class="text-white hover:bg-blue-500/20 focus:bg-blue-500/30">
+        <SelectItem
+          v-for="option in monthOptions"
+          :key="option.value"
+          :value="option.value"
+          class="text-white hover:bg-blue-500/20 focus:bg-blue-500/30"
+        >
           {{ option.label }}
         </SelectItem>
       </SelectContent>
@@ -91,12 +96,10 @@ const monthOptions = computed(() => {
   return options
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function handleMonthChange(value: any) {
-  if (typeof value === 'string') {
-    const [year, month] = value.split('-')
-    emit('update:year', parseInt(year))
-    emit('update:month', parseInt(month))
-  }
+function handleMonthChange(value: string) {
+  if (typeof value !== 'string') return
+  const [year, month] = value.split('-')
+  emit('update:year', parseInt(year))
+  emit('update:month', parseInt(month))
 }
 </script>
