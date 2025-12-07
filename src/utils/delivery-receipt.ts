@@ -9,11 +9,11 @@ import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 
 // Generated API types
-type DeliveryReceiptLine = z.infer<typeof schemas.DeliveryReceiptLine>
+type DeliveryReceiptLine = z.infer<typeof schemas.DeliveryReceiptLineRequest>
 type DeliveryReceiptRequest = z.infer<typeof schemas.DeliveryReceiptRequest>
 
 // Use generated API types only
-export type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocation>
+export type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocationRequest>
 // SCheduled for deletion but kept for reference
 
 /**

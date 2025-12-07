@@ -36,17 +36,13 @@ import { useErrorApi } from '@/composables/useErrorApi'
 import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
 import type { SystemErrorFilterState, JobErrorFilterState } from '@/types/errorFilters'
+import type { FilterState } from '@/constants/date-range'
 
 // Use generated types from Zodios API
 type XeroError = z.infer<typeof schemas.XeroError>
 type AppError = z.infer<typeof schemas.AppError>
 type JobDeltaRejection = z.infer<typeof schemas.JobDeltaRejection>
 type ErrorTab = 'xero' | 'system' | 'job'
-
-interface DateRange {
-  start: string | null
-  end: string | null
-}
 
 type RawErrorRecord =
   | { type: 'xero'; record: XeroError }
@@ -70,9 +66,9 @@ const page = ref(1)
 const pageCount = ref(1)
 const activeTab = ref<ErrorTab>('xero')
 const selectedError = ref<DisplayErrorRow | null>(null)
-const xeroFilter = ref({
+const xeroFilter = ref<FilterState>({
   search: '',
-  range: { start: null, end: null } as DateRange,
+  range: { from: undefined, to: undefined },
 })
 const systemFilter = ref<SystemErrorFilterState>({
   app: '',
@@ -102,7 +98,10 @@ async function loadErrors() {
     if (activeTab.value === 'xero') {
       res = await fetchErrors('xero', page.value, {
         search: xeroFilter.value.search,
-        range: xeroFilter.value.range,
+        range: {
+          start: xeroFilter.value.range.from ?? null,
+          end: xeroFilter.value.range.to ?? null,
+        },
       })
     } else if (activeTab.value === 'system') {
       res = await fetchErrors('system', page.value, buildSystemFilterPayload())
@@ -116,7 +115,10 @@ async function loadErrors() {
   }
 }
 
-function mapResultsToRows(type: ErrorTab, rows: XeroError[] | AppError[] | JobDeltaRejection[]) {
+function mapResultsToRows(
+  type: ErrorTab,
+  rows: XeroError[] | AppError[] | JobDeltaRejection[],
+): DisplayErrorRow[] {
   if (type === 'xero') {
     return (rows as XeroError[]).map((row) => ({
       id: row.id,

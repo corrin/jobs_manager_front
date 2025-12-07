@@ -14,7 +14,7 @@
       <div v-else class="flex flex-row gap-8 items-start">
         <div class="flex-1 min-w-[450px] max-w-full">
           <JobTable
-            :data="jobs"
+            :data="jobRows"
             :columns="columns"
             v-model:selectedIds="selectedLeft"
             title="Completed Jobs"
@@ -31,7 +31,7 @@
         </div>
         <div class="flex-1 min-w-[450px] max-w-full">
           <JobTable
-            :data="toArchive"
+            :data="archiveRows"
             :columns="columns"
             v-model:selectedIds="selectedRight"
             title="To Archive"
@@ -40,7 +40,7 @@
       </div>
       <div class="flex justify-center mt-8">
         <Button
-          variant="success"
+          variant="destructive"
           size="lg"
           class="flex items-center gap-2 px-8 py-3 text-lg font-bold"
           @click="saveArchive"
@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import Button from '@/components/ui/button/Button.vue'
 import { Archive, ArrowRight, Save } from 'lucide-vue-next'
@@ -67,18 +67,35 @@ import { api } from '../api/client'
 import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 
-type Job = z.infer<typeof schemas.Job>
+type Job = z.infer<typeof schemas.CompleteJob>
 
 const jobs = ref<Job[]>([])
 const toArchive = ref<Job[]>([])
-const selectedLeft = ref<string[]>([])
-const selectedRight = ref<string[]>([])
+const selectedLeft = ref<number[]>([])
+const selectedRight = ref<number[]>([])
 const loading = ref(true)
 const archiving = ref(false)
 const message = ref('')
 const error = ref('')
 
-watch([jobs, toArchive, selectedLeft, selectedRight], () => {}, { deep: true })
+interface ArchiveTableRow {
+  id: number
+  name: string
+  client_name: string
+  updated_at?: string | null
+  jobId: string
+}
+
+const toTableRow = (job: Job): ArchiveTableRow => ({
+  id: job.job_number,
+  jobId: job.id,
+  name: job.name,
+  client_name: job.client_name ?? '',
+  updated_at: job.updated_at ?? null,
+})
+
+const jobRows = computed<ArchiveTableRow[]>(() => jobs.value.map(toTableRow))
+const archiveRows = computed<ArchiveTableRow[]>(() => toArchive.value.map(toTableRow))
 
 async function fetchJobs() {
   loading.value = true
@@ -96,12 +113,12 @@ async function fetchJobs() {
 }
 
 function moveSelected() {
-  const selected = jobs.value.filter((j) => selectedLeft.value.includes(j.id))
+  const selected = jobs.value.filter((j) => selectedLeft.value.includes(j.job_number))
   toArchive.value = [
     ...toArchive.value,
     ...selected.filter((j) => !toArchive.value.some((t) => t.id === j.id)),
   ]
-  jobs.value = jobs.value.filter((j) => !selectedLeft.value.includes(j.id))
+  jobs.value = jobs.value.filter((j) => !selectedLeft.value.includes(j.job_number))
   selectedLeft.value = []
   selectedRight.value = []
 }
@@ -126,14 +143,21 @@ async function saveArchive() {
     const response = await api.job_api_job_completed_archive_create({
       ids: toArchive.value.map((j) => j.id),
     })
+    const archiveResult = response as {
+      success?: boolean
+      message?: string
+      error?: string
+    }
     toast.dismiss(toastId)
-    if (response.success) {
-      toast.success(response.message || 'Jobs archived successfully.')
-      message.value = response.message || 'Jobs archived successfully.'
-      fetchJobs()
+    if (archiveResult.success === false) {
+      const errorMessage = archiveResult.error || "Some jobs couldn't be archived."
+      toast.error(errorMessage)
+      error.value = errorMessage
     } else {
-      toast.error(response.error || "Some jobs couldn't be archived.")
-      error.value = response.error || "Some jobs couldn't be archived."
+      const successMessage = archiveResult.message || 'Jobs archived successfully.'
+      toast.success(successMessage)
+      message.value = successMessage
+      fetchJobs()
     }
   } catch (e) {
     toast.dismiss(toastId)
