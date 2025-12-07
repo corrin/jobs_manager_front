@@ -1,19 +1,29 @@
 <template>
-  <div class="p-4 sm:p-6 lg:px-4 lg:py-0 h-full overflow-y-auto bg-gray-50/50" :data-initialized="!isInitializing">
+  <div
+    class="p-4 sm:p-6 lg:px-4 lg:py-0 h-full overflow-y-auto bg-gray-50/50"
+    :data-initialized="!isInitializing"
+  >
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-6 flex justify-between items-center">
         <div class="flex items-center gap-3">
           <span v-if="saveStatusText" class="text-xs text-gray-500">{{ saveStatusText }}</span>
-          <button v-if="saveHasError" type="button" class="text-xs text-red-600 hover:text-red-700 underline"
-            @click="retrySave">
+          <button
+            v-if="saveHasError"
+            type="button"
+            class="text-xs text-red-600 hover:text-red-700 underline"
+            @click="retrySave"
+          >
             Retry
           </button>
         </div>
       </div>
 
       <!-- Error Messages -->
-      <div v-if="errorMessages.length > 0" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+      <div
+        v-if="errorMessages.length > 0"
+        class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4"
+      >
         <div class="flex">
           <div class="ml-3">
             <h3 class="text-sm font-medium text-red-800">There were errors with your submission</h3>
@@ -37,29 +47,44 @@
           <CardContent class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Job Name</label>
-              <input :value="(localJobData.name as string) || ''" type="text" data-automation-id="settings-job-name"
-                @input="handleFieldInput('name', ($event.target as HTMLInputElement).value)" @blur="handleFieldBlur"
+              <input
+                :value="(localJobData.name as string) || ''"
+                type="text"
+                data-automation-id="settings-job-name"
+                @input="handleFieldInput('name', ($event.target as HTMLInputElement).value)"
+                @blur="handleFieldBlur"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter job name" />
+                placeholder="Enter job name"
+              />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea :value="(localJobData.description as string) || ''" rows="4"
+              <textarea
+                :value="(localJobData.description as string) || ''"
+                rows="4"
                 data-automation-id="settings-description"
-                @input="handleFieldInput('description', ($event.target as HTMLTextAreaElement).value)"
+                @input="
+                  handleFieldInput('description', ($event.target as HTMLTextAreaElement).value)
+                "
                 @blur="handleFieldBlur"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                placeholder="Describe the job requirements and scope..."></textarea>
+                placeholder="Describe the job requirements and scope..."
+              ></textarea>
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Date</label>
-              <input :value="(localJobData.delivery_date as string) || ''" type="date"
+              <input
+                :value="(localJobData.delivery_date as string) || ''"
+                type="date"
                 data-automation-id="settings-delivery-date"
-                @input="handleFieldInput('delivery_date', ($event.target as HTMLInputElement).value)"
+                @input="
+                  handleFieldInput('delivery_date', ($event.target as HTMLInputElement).value)
+                "
                 @blur="handleBlurFlush"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
             </div>
           </CardContent>
         </Card>
@@ -75,33 +100,59 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Client</label>
               <div class="space-y-3">
                 <div v-if="!isChangingClient" class="space-y-2">
-                  <input :value="localJobData.client?.name" type="text" data-automation-id="settings-client-name"
+                  <input
+                    :value="localJobData.client?.name"
+                    type="text"
+                    data-automation-id="settings-client-name"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-600"
-                    readonly />
+                    readonly
+                  />
                   <div class="flex gap-2">
-                    <button @click="startClientChange" type="button" data-automation-id="settings-change-client-btn"
-                      class="flex-1 px-3 py-2 border border-blue-300 rounded-md text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors">
+                    <button
+                      @click="startClientChange"
+                      type="button"
+                      data-automation-id="settings-change-client-btn"
+                      class="flex-1 px-3 py-2 border border-blue-300 rounded-md text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
+                    >
                       Change Client
                     </button>
-                    <button @click="editCurrentClient" type="button" data-automation-id="settings-edit-client-btn"
-                      class="flex-1 px-3 py-2 border border-green-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-700 transition-colors">
+                    <button
+                      @click="editCurrentClient"
+                      type="button"
+                      data-automation-id="settings-edit-client-btn"
+                      class="flex-1 px-3 py-2 border border-green-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-700 transition-colors"
+                    >
                       Edit Client
                     </button>
                   </div>
                 </div>
 
                 <div v-else class="space-y-3" data-automation-id="settings-client-change-panel">
-                  <ClientLookup id="clientChange" label="" placeholder="Search for a new client..." :required="false"
-                    v-model="newClientName" @update:selected-id="handleNewClientSelected"
-                    @update:selected-client="handleClientLookupSelected" />
+                  <ClientLookup
+                    id="clientChange"
+                    label=""
+                    placeholder="Search for a new client..."
+                    :required="false"
+                    v-model="newClientName"
+                    @update:selected-id="handleNewClientSelected"
+                    @update:selected-client="handleClientLookupSelected"
+                  />
                   <div class="flex gap-2">
-                    <button @click="confirmClientChange" type="button" data-automation-id="settings-confirm-client-btn"
+                    <button
+                      @click="confirmClientChange"
+                      type="button"
+                      data-automation-id="settings-confirm-client-btn"
                       class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
-                      :disabled="!newClientId">
+                      :disabled="!newClientId"
+                    >
                       Confirm
                     </button>
-                    <button @click="cancelClientChange" type="button" data-automation-id="settings-cancel-client-btn"
-                      class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 transition-colors">
+                    <button
+                      @click="cancelClientChange"
+                      type="button"
+                      data-automation-id="settings-cancel-client-btn"
+                      class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 transition-colors"
+                    >
                       Cancel
                     </button>
                   </div>
@@ -118,19 +169,28 @@
             </div>
 
             <div>
-              <ContactSelector id="contact" label="Contact Person" :optional="true"
-                :client-id="localJobData.client?.id || ''" :client-name="localJobData.client?.name || ''"
-                :initial-contact-id="localJobData.contact_id ?? undefined" v-model="contactDisplayValue"
-                @update:selected-contact="handleContactSelected" />
+              <ContactSelector
+                id="contact"
+                label="Contact Person"
+                :optional="true"
+                :client-id="localJobData.client?.id || ''"
+                :client-name="localJobData.client?.name || ''"
+                :initial-contact-id="localJobData.contact_id ?? undefined"
+                v-model="contactDisplayValue"
+                @update:selected-contact="handleContactSelected"
+              />
             </div>
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Order Number</label>
-              <input :value="(localJobData.order_number as string) || ''" type="text"
+              <input
+                :value="(localJobData.order_number as string) || ''"
+                type="text"
                 data-automation-id="settings-order-number"
                 @input="handleFieldInput('order_number', ($event.target as HTMLInputElement).value)"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Customer order number (optional)" />
+                placeholder="Customer order number (optional)"
+              />
             </div>
           </CardContent>
         </Card>
@@ -144,13 +204,18 @@
           <CardContent class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Pricing Method</label>
-              <select v-model="localJobData.pricing_methodology" data-automation-id="settings-pricing-method" @change="
-                handleFieldInput(
-                  'pricing_methodology',
-                  ($event.target as HTMLSelectElement).value,
-                )
-                " @blur="handleBlurFlush"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+              <select
+                v-model="localJobData.pricing_methodology"
+                data-automation-id="settings-pricing-method"
+                @change="
+                  handleFieldInput(
+                    'pricing_methodology',
+                    ($event.target as HTMLSelectElement).value,
+                  )
+                "
+                @blur="handleBlurFlush"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
                 <option value="fixed_price">Fixed Price</option>
                 <option value="time_materials">Time & Materials</option>
               </select>
@@ -158,13 +223,18 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Speed vs Quality</label>
-              <select v-model="localJobData.speed_quality_tradeoff" data-automation-id="settings-speed-quality" @change="
-                handleFieldInput(
-                  'speed_quality_tradeoff',
-                  ($event.target as HTMLSelectElement).value,
-                )
-                " @blur="handleBlurFlush"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+              <select
+                v-model="localJobData.speed_quality_tradeoff"
+                data-automation-id="settings-speed-quality"
+                @change="
+                  handleFieldInput(
+                    'speed_quality_tradeoff',
+                    ($event.target as HTMLSelectElement).value,
+                  )
+                "
+                @blur="handleBlurFlush"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
                 <option value="fast">Fast - Prioritize Speed</option>
                 <option value="normal">Normal - Balanced</option>
                 <option value="quality">Quality - Prioritize Quality</option>
@@ -173,17 +243,28 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Price Cap</label>
-              <input v-model.number="localJobData.price_cap" type="number" step="0.01"
-                data-automation-id="settings-price-cap" @input="handlePriceCapInput($event)" @blur="handleBlurFlush"
+              <input
+                v-model.number="localJobData.price_cap"
+                type="number"
+                step="0.01"
+                data-automation-id="settings-price-cap"
+                @input="handlePriceCapInput($event)"
+                @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Maximum price (optional)"
-                title="For T&M jobs - the maximum amount the customer has approved" />
+                title="For T&M jobs - the maximum amount the customer has approved"
+              />
             </div>
 
             <div class="flex-grow">
-              <RichTextEditor :model-value="(localJobData.notes as string) || ''" label="Internal Notes"
-                placeholder="Add internal notes about this job..." :required="false"
-                automation-id="settings-internal-notes" @blur="handleFieldBlur" />
+              <RichTextEditor
+                :model-value="(localJobData.notes as string) || ''"
+                label="Internal Notes"
+                placeholder="Add internal notes about this job..."
+                :required="false"
+                automation-id="settings-internal-notes"
+                @blur="handleFieldBlur"
+              />
             </div>
           </CardContent>
         </Card>
@@ -191,9 +272,14 @@
     </div>
 
     <!-- Client Edit Modal -->
-    <CreateClientModal :is-open="showEditClientModal" :edit-mode="true" :client-id="jobData?.client.id || ''"
-      :client-data="currentClientData" @update:is-open="showEditClientModal = $event"
-      @client-created="handleClientUpdated" />
+    <CreateClientModal
+      :is-open="showEditClientModal"
+      :edit-mode="true"
+      :client-id="jobData?.client.id || ''"
+      :client-data="currentClientData"
+      @update:is-open="showEditClientModal = $event"
+      @client-created="handleClientUpdated"
+    />
   </div>
 </template>
 
@@ -303,13 +389,15 @@ async function loadBasicInfo() {
         localJobData.value.description = basicInfo.description || ''
       }
       if (
-        (!localJobData.value.delivery_date || !(localJobData.value.delivery_date as string)?.trim()) &&
+        (!localJobData.value.delivery_date ||
+          !(localJobData.value.delivery_date as string)?.trim()) &&
         basicInfo.delivery_date !== undefined
       ) {
         localJobData.value.delivery_date = basicInfo.delivery_date || ''
       }
       if (
-        (!localJobData.value.order_number || !(localJobData.value.order_number as string)?.trim()) &&
+        (!localJobData.value.order_number ||
+          !(localJobData.value.order_number as string)?.trim()) &&
         basicInfo.order_number !== undefined
       ) {
         localJobData.value.order_number = basicInfo.order_number || ''
@@ -502,7 +590,8 @@ watch(
         contact_id: undefined,
         contact_name: undefined,
         status: '' as Job['status'],
-        pricing_methodology: (props.pricingMethodology || 'time_materials') as Job['pricing_methodology'],
+        pricing_methodology: (props.pricingMethodology ||
+          'time_materials') as Job['pricing_methodology'],
         speed_quality_tradeoff: 'normal' as const,
         fully_invoiced: false,
         quoted: false,
@@ -910,9 +999,10 @@ const handleContactSelected = async (contact: ClientContact | null) => {
 ------------------------------ */
 
 const router = useRouter()
+type RouterBeforeEachGuard = Parameters<typeof router.beforeEach>[0]
 
-let unbindRouteGuard: () => void = () => { }
-let unbindConcurrencyRetry: () => void = () => { }
+let unbindRouteGuard: () => void = () => {}
+let unbindConcurrencyRetry: () => void = () => {}
 
 /** Instance */
 const autosave = createJobAutosave({
@@ -948,13 +1038,13 @@ const autosave = createJobAutosave({
   applyOptimistic: (patch) => {
     Object.entries(patch).forEach(([k, v]) => {
       // Apply all fields including separated client/contact fields
-      ; (localJobData.value as Record<string, unknown>)[k] = v as unknown
+      ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
     })
   },
   rollbackOptimistic: (previous) => {
     Object.entries(previous).forEach(([k, v]) => {
       // Rollback all fields including separated client/contact fields
-      ; (localJobData.value as Record<string, unknown>)[k] = v as unknown
+      ;(localJobData.value as Record<string, unknown>)[k] = v as unknown
     })
   },
   saveAdapter: async (patch) => {
@@ -995,312 +1085,307 @@ const autosave = createJobAutosave({
         return { success: false, error: result.error, conflict: isConcurrencyError }
       }
 
-      if (result.success) {
-        const touchedKeys = Object.keys(partialPayload)
-        const serverJobDetail = result.data?.data?.job
+      const touchedKeys = Object.keys(partialPayload)
+      const serverJobDetail = result.data?.data?.job
 
-        if (serverJobDetail?.id && serverJobDetail.id !== props.jobId) {
-          debugLog('Ignoring stale response for different job', {
-            expected: props.jobId,
-            received: serverJobDetail.id,
-          })
-          return { success: false, error: 'Stale response for different job' }
-        }
-
-        const applyPayloadToBaseline = (base: Partial<Job>, payload: Record<string, unknown>) => {
-          const next = { ...base }
-          if ('name' in payload) next.name = payload.name as string
-          if ('job_status' in payload) next.status = String(payload.job_status) as Job['status']
-          if ('pricing_methodology' in payload)
-            next.pricing_methodology = payload.pricing_methodology as Job['pricing_methodology']
-          if ('speed_quality_tradeoff' in payload)
-            next.speed_quality_tradeoff = payload.speed_quality_tradeoff as Job['speed_quality_tradeoff']
-          if ('quoted' in payload) next.quoted = !!payload.quoted
-          if ('fully_invoiced' in payload) next.fully_invoiced = !!payload.fully_invoiced
-          if ('paid' in payload) next.paid = !!payload.paid
-          if ('rejected_flag' in payload) next.rejected_flag = !!payload.rejected_flag
-          if ('quote_acceptance_date' in payload) {
-            next.quote_acceptance_date =
-              (payload.quote_acceptance_date as string | null) ?? undefined
-          }
-          if ('client_id' in payload || 'client_name' in payload) {
-            const newId =
-              ('client_id' in payload ? (payload.client_id as string | null) : next.client?.id) ??
-              next.client?.id ??
-              ''
-            const newName =
-              ('client_name' in payload
-                ? ((payload.client_name as string | null) ?? '')
-                : undefined) ??
-              localJobData.value.client?.name ??
-              next.client?.name ??
-              ''
-            next.client = {
-              id: newId,
-              name: newName,
-            }
-          }
-          if ('description' in payload)
-            next.description = (payload.description as string | null) ?? null
-          if ('delivery_date' in payload)
-            next.delivery_date = (payload.delivery_date as string | null) ?? null
-          if ('order_number' in payload)
-            next.order_number = (payload.order_number as string | null) ?? null
-          if ('notes' in payload) next.notes = (payload.notes as string | null) ?? null
-          if ('price_cap' in payload) next.price_cap = (payload.price_cap as number | null) ?? null
-          return next
-        }
-
-        const nextBaseline = applyPayloadToBaseline(serverBaseline.value, partialPayload)
-        const headerPatch: Partial<Job> = {}
-        const basicInfoPatch: Partial<z.infer<typeof schemas.JobBasicInformationResponse>> = {}
-
-        const coerceNullableString = (value: unknown): string | null => {
-          if (value == null) return null
-          return typeof value === 'string' ? value : String(value)
-        }
-
-        if (serverJobDetail) {
-          if (touchedKeys.includes('description')) {
-            const desc = serverJobDetail.description ?? null
-            nextBaseline.description = normalizeNullable(desc)
-            localJobData.value.description = desc ?? ''
-            basicInfoPatch.description = desc
-          }
-          if (touchedKeys.includes('delivery_date')) {
-            const delivery = serverJobDetail.delivery_date ?? null
-            nextBaseline.delivery_date = normalizeNullable(delivery)
-            localJobData.value.delivery_date = delivery ?? ''
-            basicInfoPatch.delivery_date = delivery
-          }
-          if (touchedKeys.includes('order_number')) {
-            const order = serverJobDetail.order_number ?? null
-            nextBaseline.order_number = normalizeNullable(order)
-            localJobData.value.order_number = order ?? ''
-            basicInfoPatch.order_number = order
-          }
-          if (touchedKeys.includes('notes')) {
-            const notesVal = serverJobDetail.notes ?? null
-            nextBaseline.notes = normalizeNullable(notesVal)
-            localJobData.value.notes = notesVal ?? ''
-            basicInfoPatch.notes = notesVal
-          }
-          if (touchedKeys.includes('name')) {
-            nextBaseline.name = serverJobDetail.name
-            localJobData.value.name = serverJobDetail.name
-            headerPatch.name = serverJobDetail.name
-          }
-          if (touchedKeys.includes('job_status')) {
-            nextBaseline.status = serverJobDetail.job_status as Job['status']
-            localJobData.value.status = serverJobDetail.job_status as Job['status']
-            headerPatch.status = serverJobDetail.job_status as Job['status']
-          }
-          if (touchedKeys.includes('pricing_methodology')) {
-            nextBaseline.pricing_methodology = serverJobDetail.pricing_methodology
-            localJobData.value.pricing_methodology = serverJobDetail.pricing_methodology
-            headerPatch.pricing_methodology = serverJobDetail.pricing_methodology
-          }
-          if (touchedKeys.includes('speed_quality_tradeoff')) {
-            nextBaseline.speed_quality_tradeoff = serverJobDetail.speed_quality_tradeoff
-            localJobData.value.speed_quality_tradeoff = serverJobDetail.speed_quality_tradeoff
-            headerPatch.speed_quality_tradeoff = serverJobDetail.speed_quality_tradeoff
-          }
-          if (touchedKeys.includes('quoted')) {
-            nextBaseline.quoted = !!serverJobDetail.quoted
-            localJobData.value.quoted = !!serverJobDetail.quoted
-            headerPatch.quoted = !!serverJobDetail.quoted
-          }
-          if (touchedKeys.includes('fully_invoiced')) {
-            nextBaseline.fully_invoiced = !!serverJobDetail.fully_invoiced
-            localJobData.value.fully_invoiced = !!serverJobDetail.fully_invoiced
-            headerPatch.fully_invoiced = !!serverJobDetail.fully_invoiced
-          }
-          if (touchedKeys.includes('paid')) {
-            nextBaseline.paid = !!serverJobDetail.paid
-            localJobData.value.paid = !!serverJobDetail.paid
-            headerPatch.paid = !!serverJobDetail.paid
-          }
-          if (touchedKeys.includes('quote_acceptance_date')) {
-            nextBaseline.quote_acceptance_date = serverJobDetail.quote_acceptance_date ?? undefined
-            localJobData.value.quote_acceptance_date =
-              serverJobDetail.quote_acceptance_date ?? undefined
-            headerPatch.quote_acceptance_date = serverJobDetail.quote_acceptance_date ?? undefined
-          }
-          if (touchedKeys.includes('price_cap')) {
-            nextBaseline.price_cap = serverJobDetail.price_cap ?? null
-            localJobData.value.price_cap = serverJobDetail.price_cap ?? null
-            headerPatch.price_cap = serverJobDetail.price_cap ?? null
-          }
-          if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
-            nextBaseline.client = {
-              id: serverJobDetail.client_id ?? '',
-              name: serverJobDetail.client_name ?? '',
-            }
-            nextBaseline.client_id = serverJobDetail.client_id ?? null
-            nextBaseline.client_name = serverJobDetail.client_name ?? null
-            localJobData.value.client = {
-              id: serverJobDetail.client_id ?? '',
-              name: serverJobDetail.client_name ?? '',
-            }
-            headerPatch.client = {
-              id: serverJobDetail.client_id ?? '',
-              name: serverJobDetail.client_name ?? '',
-            }
-          }
-          if (touchedKeys.includes('contact_id')) {
-            nextBaseline.contact_id = serverJobDetail.contact_id ?? null
-            localJobData.value.contact_id = serverJobDetail.contact_id ?? null
-          }
-          if (touchedKeys.includes('contact_name')) {
-            nextBaseline.contact_name = serverJobDetail.contact_name ?? null
-            localJobData.value.contact_name = serverJobDetail.contact_name ?? null
-          }
-        } else {
-          if (touchedKeys.includes('description')) {
-            const desc = coerceNullableString(partialPayload.description)
-            nextBaseline.description = normalizeNullable(desc)
-            localJobData.value.description = desc ?? ''
-            basicInfoPatch.description = desc
-          }
-          if (touchedKeys.includes('delivery_date')) {
-            const delivery = coerceNullableString(partialPayload.delivery_date)
-            nextBaseline.delivery_date = normalizeNullable(delivery)
-            localJobData.value.delivery_date = delivery ?? ''
-            basicInfoPatch.delivery_date = delivery
-          }
-          if (touchedKeys.includes('order_number')) {
-            const order = coerceNullableString(partialPayload.order_number)
-            nextBaseline.order_number = normalizeNullable(order)
-            localJobData.value.order_number = order ?? ''
-            basicInfoPatch.order_number = order
-          }
-          if (touchedKeys.includes('notes')) {
-            const notesVal = coerceNullableString(partialPayload.notes)
-            nextBaseline.notes = normalizeNullable(notesVal)
-            localJobData.value.notes = notesVal ?? ''
-            basicInfoPatch.notes = notesVal
-          }
-          if (touchedKeys.includes('name')) {
-            const nameVal = coerceNullableString(partialPayload.name) ?? ''
-            nextBaseline.name = nameVal
-            localJobData.value.name = nameVal
-            headerPatch.name = nameVal
-          }
-          if (touchedKeys.includes('job_status')) {
-            const statusVal = coerceNullableString(partialPayload.job_status) ?? ''
-            nextBaseline.status = statusVal as Job['status']
-            localJobData.value.status = statusVal as Job['status']
-            headerPatch.status = statusVal as Job['status']
-          }
-          if (touchedKeys.includes('pricing_methodology')) {
-            const pricingVal = coerceNullableString(partialPayload.pricing_methodology) ?? ''
-            nextBaseline.pricing_methodology = pricingVal as Job['pricing_methodology']
-            localJobData.value.pricing_methodology = pricingVal as Job['pricing_methodology']
-            headerPatch.pricing_methodology = pricingVal as Job['pricing_methodology']
-          }
-          if (touchedKeys.includes('speed_quality_tradeoff')) {
-            const tradeoffVal =
-              coerceNullableString(partialPayload.speed_quality_tradeoff) ?? 'normal'
-            nextBaseline.speed_quality_tradeoff = tradeoffVal as Job['speed_quality_tradeoff']
-            localJobData.value.speed_quality_tradeoff = tradeoffVal as Job['speed_quality_tradeoff']
-            headerPatch.speed_quality_tradeoff = tradeoffVal as Job['speed_quality_tradeoff']
-          }
-          if (touchedKeys.includes('quoted')) {
-            const quotedVal = !!partialPayload.quoted
-            nextBaseline.quoted = quotedVal
-            localJobData.value.quoted = quotedVal
-            headerPatch.quoted = quotedVal
-          }
-          if (touchedKeys.includes('fully_invoiced')) {
-            const invoicedVal = !!partialPayload.fully_invoiced
-            nextBaseline.fully_invoiced = invoicedVal
-            localJobData.value.fully_invoiced = invoicedVal
-            headerPatch.fully_invoiced = invoicedVal
-          }
-          if (touchedKeys.includes('paid')) {
-            const paidVal = !!partialPayload.paid
-            nextBaseline.paid = paidVal
-            localJobData.value.paid = paidVal
-            headerPatch.paid = paidVal
-          }
-          if (touchedKeys.includes('quote_acceptance_date')) {
-            const quoteDate = coerceNullableString(partialPayload.quote_acceptance_date)
-            nextBaseline.quote_acceptance_date = quoteDate ?? undefined
-            localJobData.value.quote_acceptance_date = quoteDate ?? undefined
-            headerPatch.quote_acceptance_date = quoteDate ?? undefined
-          }
-          if (touchedKeys.includes('price_cap')) {
-            const priceCapVal = partialPayload.price_cap as number | null
-            nextBaseline.price_cap = priceCapVal
-            localJobData.value.price_cap = priceCapVal
-            headerPatch.price_cap = priceCapVal
-          }
-          if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
-            const clientId = coerceNullableString(partialPayload.client_id) ?? ''
-            const clientName = coerceNullableString(partialPayload.client_name) ?? ''
-            nextBaseline.client = { id: clientId, name: clientName }
-            nextBaseline.client_id = clientId
-            nextBaseline.client_name = clientName
-            localJobData.value.client = { id: clientId, name: clientName }
-            headerPatch.client = { id: clientId, name: clientName }
-          }
-          if (touchedKeys.includes('contact_id')) {
-            const contactId = coerceNullableString(partialPayload.contact_id)
-            nextBaseline.contact_id = contactId
-            localJobData.value.contact_id = contactId
-          }
-          if (touchedKeys.includes('contact_name')) {
-            const contactName = coerceNullableString(partialPayload.contact_name)
-            nextBaseline.contact_name = contactName
-            localJobData.value.contact_name = contactName
-          }
-        }
-
-        serverBaseline.value = nextBaseline
-
-        if (props.jobId) {
-          if (Object.keys(headerPatch).length) {
-            jobsStore.patchHeader(props.jobId, headerPatch)
-          }
-
-          if (Object.keys(basicInfoPatch).length) {
-            const basicInfoStorePatch: Partial<
-              z.infer<typeof schemas.JobBasicInformationResponse>
-            > = {}
-            if ('description' in basicInfoPatch) {
-              const value = basicInfoPatch.description ?? null
-              basicInfoStorePatch.description = value
-            }
-            if ('delivery_date' in basicInfoPatch) {
-              const value = basicInfoPatch.delivery_date ?? null
-              basicInfoStorePatch.delivery_date = value
-            }
-            if ('order_number' in basicInfoPatch) {
-              const value = basicInfoPatch.order_number ?? null
-              basicInfoStorePatch.order_number = value
-            }
-            if ('notes' in basicInfoPatch) {
-              const value = basicInfoPatch.notes ?? null
-              basicInfoStorePatch.notes = value
-            }
-
-            if (Object.keys(basicInfoStorePatch).length) {
-              jobsStore.commitJobBasicInfoFromServer(props.jobId, basicInfoStorePatch)
-            }
-          }
-        }
-
-        // Debounced success notification
-        const now = Date.now()
-        if (now - lastNotificationTime.value >= NOTIFICATION_DEBOUNCE_MS) {
-          toast.success('Job updated successfully')
-          lastNotificationTime.value = now
-        }
-
-        return { success: true, serverData: result.data }
+      if (serverJobDetail?.id && serverJobDetail.id !== props.jobId) {
+        debugLog('Ignoring stale response for different job', {
+          expected: props.jobId,
+          received: serverJobDetail.id,
+        })
+        return { success: false, error: 'Stale response for different job' }
       }
 
-      return { success: false, error: (result as any).error || 'Update failed' } // eslint-disable-line @typescript-eslint/no-explicit-any
+      const applyPayloadToBaseline = (base: Partial<Job>, payload: Record<string, unknown>) => {
+        const next = { ...base }
+        if ('name' in payload) next.name = payload.name as string
+        if ('job_status' in payload) next.status = String(payload.job_status) as Job['status']
+        if ('pricing_methodology' in payload)
+          next.pricing_methodology = payload.pricing_methodology as Job['pricing_methodology']
+        if ('speed_quality_tradeoff' in payload)
+          next.speed_quality_tradeoff =
+            payload.speed_quality_tradeoff as Job['speed_quality_tradeoff']
+        if ('quoted' in payload) next.quoted = !!payload.quoted
+        if ('fully_invoiced' in payload) next.fully_invoiced = !!payload.fully_invoiced
+        if ('paid' in payload) next.paid = !!payload.paid
+        if ('rejected_flag' in payload) next.rejected_flag = !!payload.rejected_flag
+        if ('quote_acceptance_date' in payload) {
+          next.quote_acceptance_date = (payload.quote_acceptance_date as string | null) ?? undefined
+        }
+        if ('client_id' in payload || 'client_name' in payload) {
+          const newId =
+            ('client_id' in payload ? (payload.client_id as string | null) : next.client?.id) ??
+            next.client?.id ??
+            ''
+          const newName =
+            ('client_name' in payload
+              ? ((payload.client_name as string | null) ?? '')
+              : undefined) ??
+            localJobData.value.client?.name ??
+            next.client?.name ??
+            ''
+          next.client = {
+            id: newId,
+            name: newName,
+          }
+        }
+        if ('description' in payload)
+          next.description = (payload.description as string | null) ?? null
+        if ('delivery_date' in payload)
+          next.delivery_date = (payload.delivery_date as string | null) ?? null
+        if ('order_number' in payload)
+          next.order_number = (payload.order_number as string | null) ?? null
+        if ('notes' in payload) next.notes = (payload.notes as string | null) ?? null
+        if ('price_cap' in payload) next.price_cap = (payload.price_cap as number | null) ?? null
+        return next
+      }
+
+      const nextBaseline = applyPayloadToBaseline(serverBaseline.value, partialPayload)
+      const headerPatch: Partial<Job> = {}
+      const basicInfoPatch: Partial<z.infer<typeof schemas.JobBasicInformationResponse>> = {}
+
+      const coerceNullableString = (value: unknown): string | null => {
+        if (value == null) return null
+        return typeof value === 'string' ? value : String(value)
+      }
+
+      if (serverJobDetail) {
+        if (touchedKeys.includes('description')) {
+          const desc = serverJobDetail.description ?? null
+          nextBaseline.description = normalizeNullable(desc)
+          localJobData.value.description = desc ?? ''
+          basicInfoPatch.description = desc
+        }
+        if (touchedKeys.includes('delivery_date')) {
+          const delivery = serverJobDetail.delivery_date ?? null
+          nextBaseline.delivery_date = normalizeNullable(delivery)
+          localJobData.value.delivery_date = delivery ?? ''
+          basicInfoPatch.delivery_date = delivery
+        }
+        if (touchedKeys.includes('order_number')) {
+          const order = serverJobDetail.order_number ?? null
+          nextBaseline.order_number = normalizeNullable(order)
+          localJobData.value.order_number = order ?? ''
+          basicInfoPatch.order_number = order
+        }
+        if (touchedKeys.includes('notes')) {
+          const notesVal = serverJobDetail.notes ?? null
+          nextBaseline.notes = normalizeNullable(notesVal)
+          localJobData.value.notes = notesVal ?? ''
+          basicInfoPatch.notes = notesVal
+        }
+        if (touchedKeys.includes('name')) {
+          nextBaseline.name = serverJobDetail.name
+          localJobData.value.name = serverJobDetail.name
+          headerPatch.name = serverJobDetail.name
+        }
+        if (touchedKeys.includes('job_status')) {
+          nextBaseline.status = serverJobDetail.job_status as Job['status']
+          localJobData.value.status = serverJobDetail.job_status as Job['status']
+          headerPatch.status = serverJobDetail.job_status as Job['status']
+        }
+        if (touchedKeys.includes('pricing_methodology')) {
+          nextBaseline.pricing_methodology = serverJobDetail.pricing_methodology
+          localJobData.value.pricing_methodology = serverJobDetail.pricing_methodology
+          headerPatch.pricing_methodology = serverJobDetail.pricing_methodology
+        }
+        if (touchedKeys.includes('speed_quality_tradeoff')) {
+          nextBaseline.speed_quality_tradeoff = serverJobDetail.speed_quality_tradeoff
+          localJobData.value.speed_quality_tradeoff = serverJobDetail.speed_quality_tradeoff
+          headerPatch.speed_quality_tradeoff = serverJobDetail.speed_quality_tradeoff
+        }
+        if (touchedKeys.includes('quoted')) {
+          nextBaseline.quoted = !!serverJobDetail.quoted
+          localJobData.value.quoted = !!serverJobDetail.quoted
+          headerPatch.quoted = !!serverJobDetail.quoted
+        }
+        if (touchedKeys.includes('fully_invoiced')) {
+          nextBaseline.fully_invoiced = !!serverJobDetail.fully_invoiced
+          localJobData.value.fully_invoiced = !!serverJobDetail.fully_invoiced
+          headerPatch.fully_invoiced = !!serverJobDetail.fully_invoiced
+        }
+        if (touchedKeys.includes('paid')) {
+          nextBaseline.paid = !!serverJobDetail.paid
+          localJobData.value.paid = !!serverJobDetail.paid
+          headerPatch.paid = !!serverJobDetail.paid
+        }
+        if (touchedKeys.includes('quote_acceptance_date')) {
+          nextBaseline.quote_acceptance_date = serverJobDetail.quote_acceptance_date ?? undefined
+          localJobData.value.quote_acceptance_date =
+            serverJobDetail.quote_acceptance_date ?? undefined
+          headerPatch.quote_acceptance_date = serverJobDetail.quote_acceptance_date ?? undefined
+        }
+        if (touchedKeys.includes('price_cap')) {
+          nextBaseline.price_cap = serverJobDetail.price_cap ?? null
+          localJobData.value.price_cap = serverJobDetail.price_cap ?? null
+          headerPatch.price_cap = serverJobDetail.price_cap ?? null
+        }
+        if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
+          nextBaseline.client = {
+            id: serverJobDetail.client_id ?? '',
+            name: serverJobDetail.client_name ?? '',
+          }
+          nextBaseline.client_id = serverJobDetail.client_id ?? null
+          nextBaseline.client_name = serverJobDetail.client_name ?? null
+          localJobData.value.client = {
+            id: serverJobDetail.client_id ?? '',
+            name: serverJobDetail.client_name ?? '',
+          }
+          headerPatch.client = {
+            id: serverJobDetail.client_id ?? '',
+            name: serverJobDetail.client_name ?? '',
+          }
+        }
+        if (touchedKeys.includes('contact_id')) {
+          nextBaseline.contact_id = serverJobDetail.contact_id ?? null
+          localJobData.value.contact_id = serverJobDetail.contact_id ?? null
+        }
+        if (touchedKeys.includes('contact_name')) {
+          nextBaseline.contact_name = serverJobDetail.contact_name ?? null
+          localJobData.value.contact_name = serverJobDetail.contact_name ?? null
+        }
+      } else {
+        if (touchedKeys.includes('description')) {
+          const desc = coerceNullableString(partialPayload.description)
+          nextBaseline.description = normalizeNullable(desc)
+          localJobData.value.description = desc ?? ''
+          basicInfoPatch.description = desc
+        }
+        if (touchedKeys.includes('delivery_date')) {
+          const delivery = coerceNullableString(partialPayload.delivery_date)
+          nextBaseline.delivery_date = normalizeNullable(delivery)
+          localJobData.value.delivery_date = delivery ?? ''
+          basicInfoPatch.delivery_date = delivery
+        }
+        if (touchedKeys.includes('order_number')) {
+          const order = coerceNullableString(partialPayload.order_number)
+          nextBaseline.order_number = normalizeNullable(order)
+          localJobData.value.order_number = order ?? ''
+          basicInfoPatch.order_number = order
+        }
+        if (touchedKeys.includes('notes')) {
+          const notesVal = coerceNullableString(partialPayload.notes)
+          nextBaseline.notes = normalizeNullable(notesVal)
+          localJobData.value.notes = notesVal ?? ''
+          basicInfoPatch.notes = notesVal
+        }
+        if (touchedKeys.includes('name')) {
+          const nameVal = coerceNullableString(partialPayload.name) ?? ''
+          nextBaseline.name = nameVal
+          localJobData.value.name = nameVal
+          headerPatch.name = nameVal
+        }
+        if (touchedKeys.includes('job_status')) {
+          const statusVal = coerceNullableString(partialPayload.job_status) ?? ''
+          nextBaseline.status = statusVal as Job['status']
+          localJobData.value.status = statusVal as Job['status']
+          headerPatch.status = statusVal as Job['status']
+        }
+        if (touchedKeys.includes('pricing_methodology')) {
+          const pricingVal = coerceNullableString(partialPayload.pricing_methodology) ?? ''
+          nextBaseline.pricing_methodology = pricingVal as Job['pricing_methodology']
+          localJobData.value.pricing_methodology = pricingVal as Job['pricing_methodology']
+          headerPatch.pricing_methodology = pricingVal as Job['pricing_methodology']
+        }
+        if (touchedKeys.includes('speed_quality_tradeoff')) {
+          const tradeoffVal =
+            coerceNullableString(partialPayload.speed_quality_tradeoff) ?? 'normal'
+          nextBaseline.speed_quality_tradeoff = tradeoffVal as Job['speed_quality_tradeoff']
+          localJobData.value.speed_quality_tradeoff = tradeoffVal as Job['speed_quality_tradeoff']
+          headerPatch.speed_quality_tradeoff = tradeoffVal as Job['speed_quality_tradeoff']
+        }
+        if (touchedKeys.includes('quoted')) {
+          const quotedVal = !!partialPayload.quoted
+          nextBaseline.quoted = quotedVal
+          localJobData.value.quoted = quotedVal
+          headerPatch.quoted = quotedVal
+        }
+        if (touchedKeys.includes('fully_invoiced')) {
+          const invoicedVal = !!partialPayload.fully_invoiced
+          nextBaseline.fully_invoiced = invoicedVal
+          localJobData.value.fully_invoiced = invoicedVal
+          headerPatch.fully_invoiced = invoicedVal
+        }
+        if (touchedKeys.includes('paid')) {
+          const paidVal = !!partialPayload.paid
+          nextBaseline.paid = paidVal
+          localJobData.value.paid = paidVal
+          headerPatch.paid = paidVal
+        }
+        if (touchedKeys.includes('quote_acceptance_date')) {
+          const quoteDate = coerceNullableString(partialPayload.quote_acceptance_date)
+          nextBaseline.quote_acceptance_date = quoteDate ?? undefined
+          localJobData.value.quote_acceptance_date = quoteDate ?? undefined
+          headerPatch.quote_acceptance_date = quoteDate ?? undefined
+        }
+        if (touchedKeys.includes('price_cap')) {
+          const priceCapVal = partialPayload.price_cap as number | null
+          nextBaseline.price_cap = priceCapVal
+          localJobData.value.price_cap = priceCapVal
+          headerPatch.price_cap = priceCapVal
+        }
+        if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
+          const clientId = coerceNullableString(partialPayload.client_id) ?? ''
+          const clientName = coerceNullableString(partialPayload.client_name) ?? ''
+          nextBaseline.client = { id: clientId, name: clientName }
+          nextBaseline.client_id = clientId
+          nextBaseline.client_name = clientName
+          localJobData.value.client = { id: clientId, name: clientName }
+          headerPatch.client = { id: clientId, name: clientName }
+        }
+        if (touchedKeys.includes('contact_id')) {
+          const contactId = coerceNullableString(partialPayload.contact_id)
+          nextBaseline.contact_id = contactId
+          localJobData.value.contact_id = contactId
+        }
+        if (touchedKeys.includes('contact_name')) {
+          const contactName = coerceNullableString(partialPayload.contact_name)
+          nextBaseline.contact_name = contactName
+          localJobData.value.contact_name = contactName
+        }
+      }
+
+      serverBaseline.value = nextBaseline
+
+      if (props.jobId) {
+        if (Object.keys(headerPatch).length) {
+          jobsStore.patchHeader(props.jobId, headerPatch)
+        }
+
+        if (Object.keys(basicInfoPatch).length) {
+          const basicInfoStorePatch: Partial<z.infer<typeof schemas.JobBasicInformationResponse>> =
+            {}
+          if ('description' in basicInfoPatch) {
+            const value = basicInfoPatch.description ?? null
+            basicInfoStorePatch.description = value
+          }
+          if ('delivery_date' in basicInfoPatch) {
+            const value = basicInfoPatch.delivery_date ?? null
+            basicInfoStorePatch.delivery_date = value
+          }
+          if ('order_number' in basicInfoPatch) {
+            const value = basicInfoPatch.order_number ?? null
+            basicInfoStorePatch.order_number = value
+          }
+          if ('notes' in basicInfoPatch) {
+            const value = basicInfoPatch.notes ?? null
+            basicInfoStorePatch.notes = value
+          }
+
+          if (Object.keys(basicInfoStorePatch).length) {
+            jobsStore.commitJobBasicInfoFromServer(props.jobId, basicInfoStorePatch)
+          }
+        }
+      }
+
+      // Debounced success notification
+      const now = Date.now()
+      if (now - lastNotificationTime.value >= NOTIFICATION_DEBOUNCE_MS) {
+        toast.success('Job updated successfully')
+        lastNotificationTime.value = now
+      }
+
+      return { success: true, serverData: result.data }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
       // Detect concurrency by robust regex (no auto-retry)
@@ -1319,7 +1404,7 @@ onMounted(() => {
   autosave.onBeforeUnloadBind()
   autosave.onVisibilityBind()
   unbindRouteGuard = autosave.onRouteLeaveBind({
-    beforeEach: (guard: any) => router.beforeEach(guard), // eslint-disable-line @typescript-eslint/no-explicit-any
+    beforeEach: (guard: RouterBeforeEachGuard) => router.beforeEach(guard),
   })
   // Listen to global "Retry" click from the concurrency toast for this Job
   unbindConcurrencyRetry = onConcurrencyRetry(props.jobId, async () => {
