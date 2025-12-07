@@ -168,6 +168,10 @@ import McpToolDetails from '@/components/chat/McpToolDetails.vue'
 import { QuoteChatService } from '@/services/quote-chat.service'
 import type { VueChatMessage } from '@/constants/vue-chat-message'
 import { toast } from 'vue-sonner'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
+
+type JobQuoteChat = z.infer<typeof schemas.JobQuoteChat>
 
 const route = useRoute()
 const router = useRouter()
@@ -268,6 +272,20 @@ const getLoadingMessage = (mode: Mode): string => {
 
 const quoteChatService = QuoteChatService.getInstance()
 
+const extractChatMessages = (payload: unknown): JobQuoteChat[] => {
+  if (!payload || typeof payload !== 'object') return []
+  const messages = (payload as Record<string, unknown>).messages
+  if (!Array.isArray(messages)) return []
+
+  const parsed = schemas.JobQuoteChat.array().safeParse(messages)
+  if (!parsed.success) {
+    debugLog('Invalid chat history payload:', parsed.error)
+    return []
+  }
+
+  return parsed.data
+}
+
 const loadChatHistory = async () => {
   if (!jobContext.value?.jobId) return
 
@@ -275,10 +293,9 @@ const loadChatHistory = async () => {
     const response = await quoteChatService.getChatHistory(jobContext.value.jobId)
 
     if (response.success) {
-      if (response.data.messages.length > 0) {
-        const vueMessages = response.data.messages.map((msg) =>
-          quoteChatService.convertToVueMessage(msg),
-        )
+      const parsedMessages = extractChatMessages(response.data)
+      if (parsedMessages.length > 0) {
+        const vueMessages = parsedMessages.map((msg) => quoteChatService.convertToVueMessage(msg))
         messages.value = vueMessages
       } else {
         messages.value = [

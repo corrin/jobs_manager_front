@@ -88,7 +88,7 @@ export class QuoteChatService {
   convertFromVueMessage(
     vueMessage: VueChatMessage,
     role: 'user' | 'assistant',
-  ): Omit<JobQuoteChat, 'id'> {
+  ): JobQuoteChatCreateRequest {
     return {
       message_id: vueMessage._id,
       role,
