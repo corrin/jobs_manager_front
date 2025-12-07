@@ -454,7 +454,10 @@ export const jobService = {
   // Note: Using axios directly because openapi-zod-client incorrectly maps format: binary
   // to z.string().url() instead of z.instanceof(File). The generator doesn't properly
   // handle multipart/form-data file uploads. This is a known limitation.
-  async uploadJobFiles(jobId: string, files: File[]): Promise<unknown> {
+  async uploadJobFiles(
+    jobId: string,
+    files: File[],
+  ): Promise<z.infer<typeof schemas.JobFileUploadSuccessResponse>> {
     try {
       const formData = new FormData()
       files.forEach((file) => {
@@ -468,7 +471,7 @@ export const jobService = {
         },
       })
 
-      return response.data
+      return schemas.JobFileUploadSuccessResponse.parse(response.data)
     } catch (error) {
       console.error('Error uploading job files:', error)
       if (axios.isAxiosError(error) && error.response) {

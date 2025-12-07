@@ -98,7 +98,7 @@
         <JobAttachmentsTab
           :job-id="jobId"
           :job-number="jobNumber"
-          @file-uploaded="$emit('file-uploaded')"
+          @file-uploaded="$emit('file-uploaded', $event)"
           @file-deleted="$emit('file-deleted')"
         />
       </div>
@@ -120,6 +120,8 @@ import JobHistoryTab from './JobHistoryTab.vue'
 import JobAttachmentsTab from './JobAttachmentsTab.vue'
 import JobQuotingChatTab from './JobQuotingChatTab.vue'
 import { watch, computed } from 'vue'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 // Define JobTabKey type locally as it's UI-specific
 type JobTabKey =
   | 'estimate'
@@ -133,6 +135,8 @@ type JobTabKey =
   | 'quotingChat'
 
 // Removed Job type as it's no longer needed
+
+type JobFile = z.infer<typeof schemas.JobFile>
 
 const emit = defineEmits<{
   (e: 'change-tab', tab: JobTabKey): void
@@ -151,7 +155,7 @@ const emit = defineEmits<{
   (e: 'reload-job'): void
   (e: 'job-updated', job: unknown): void
   (e: 'event-added', event: unknown): void
-  (e: 'file-uploaded'): void
+  (e: 'file-uploaded', file: JobFile): void
   (e: 'file-deleted'): void
 }>()
 

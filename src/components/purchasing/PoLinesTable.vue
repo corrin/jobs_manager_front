@@ -79,11 +79,11 @@ const openAdditionalFieldsModal = (lineIndex: number) => {
   const line = props.lines[lineIndex]
 
   additionalFields.value = {
-    metal_type: line.metal_type || '',
-    alloy: line.alloy || '',
-    specifics: line.specifics || '',
-    location: line.location || '',
-    dimensions: line.dimensions || '',
+    metal_type: String(line.metal_type || ''),
+    alloy: String(line.alloy || ''),
+    specifics: String(line.specifics || ''),
+    location: String(line.location || ''),
+    dimensions: String(line.dimensions || ''),
   }
 
   showAdditionalFieldsModal.value = true
@@ -119,6 +119,11 @@ const closeAdditionalFieldsModal = () => {
     location: '',
     dimensions: '',
   }
+}
+
+const updateLine = (index: number, updates: Partial<PurchaseOrderLine>) => {
+  const updated = props.lines.map((line, idx) => (idx === index ? { ...line, ...updates } : line))
+  emit('update:lines', updated)
 }
 
 const handleAddLine = () => {
@@ -166,26 +171,18 @@ const columns = computed(() =>
                   const found = stockStore.items.find((i: StockItem) => i.id === val)
                   debugLog('🎯 PoLinesTable: Found stock item:', found)
 
-                  const updated = props.lines.map((l, idx) =>
-                    idx === row.index
-                      ? {
-                          ...l,
-                          // Auto-populate all fields from stock item when selected
-                          ...(found && {
-                            description: found.description || l.description,
-                            unit_cost: found.unit_cost || l.unit_cost,
-                            metal_type: found.metal_type || l.metal_type,
-                            alloy: found.alloy || l.alloy,
-                            specifics: found.specifics || l.specifics,
-                            location: found.location || l.location,
-                            item_code: found.item_code || null,
-                          }),
-                        }
-                      : l,
-                  )
-
-                  debugLog('📝 PoLinesTable: Updated line:', updated[row.index])
-                  emit('update:lines', updated)
+                  updateLine(row.index, {
+                    // Auto-populate all fields from stock item when selected
+                    ...(found && {
+                      description: found.description,
+                      unit_cost: found.unit_cost,
+                      metal_type: found.metal_type,
+                      alloy: found.alloy,
+                      specifics: found.specifics,
+                      location: found.location,
+                      item_code: found.item_code || null,
+                    }),
+                  })
 
                   // Exit edit mode after selection
                   editingItemIndex.value = -1
@@ -230,10 +227,7 @@ const columns = computed(() =>
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
             : (val: string) => {
-                const updated = props.lines.map((l, idx) =>
-                  idx === row.index ? { ...l, description: val } : l,
-                )
-                emit('update:lines', updated)
+                updateLine(row.index, { description: val })
               },
         }),
     },
@@ -251,28 +245,19 @@ const columns = computed(() =>
             (props.jobsReadOnly ?? isColumnDisabled.value)
               ? undefined
               : (val: string | null) => {
-                  const updated = props.lines.map((l, idx) =>
-                    idx === row.index ? { ...l, job_id: val || undefined } : l,
-                  )
-                  emit('update:lines', updated)
+                  updateLine(row.index, { job_id: val || undefined })
                 },
           onJobSelected:
             (props.jobsReadOnly ?? isColumnDisabled.value)
               ? undefined
               : (job: JobForPurchasing | null) => {
                   if (job) {
-                    const updated = props.lines.map((l, idx) =>
-                      idx === row.index
-                        ? {
-                            ...l,
-                            job_id: job.id,
-                            job_number: job.job_number?.toString(),
-                            job_name: job.name,
-                            client_name: job.client_name,
-                          }
-                        : l,
-                    )
-                    emit('update:lines', updated)
+                    updateLine(row.index, {
+                      job_id: job.id,
+                      job_number: job.job_number?.toString(),
+                      job_name: job.name,
+                      client_name: job.client_name,
+                    })
                   }
                 },
         }),
@@ -295,10 +280,7 @@ const columns = computed(() =>
             : (val: string | number) => {
                 const num = Number(val)
                 if (!Number.isNaN(num)) {
-                  const updated = props.lines.map((l, idx) =>
-                    idx === row.index ? { ...l, quantity: num } : l,
-                  )
-                  emit('update:lines', updated)
+                  updateLine(row.index, { quantity: num })
                 }
               },
         }),
@@ -319,10 +301,7 @@ const columns = computed(() =>
             ? undefined
             : (val: string | number) => {
                 const cost = val === '' ? null : Number(val)
-                const updated = props.lines.map((l, idx) =>
-                  idx === row.index ? { ...l, unit_cost: cost } : l,
-                )
-                emit('update:lines', updated)
+                updateLine(row.index, { unit_cost: cost })
               },
         }),
     },
@@ -338,10 +317,7 @@ const columns = computed(() =>
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
             : (checked: boolean) => {
-                const updated = props.lines.map((l, idx) =>
-                  idx === row.index ? { ...l, price_tbc: checked } : l,
-                )
-                emit('update:lines', updated)
+                updateLine(row.index, { price_tbc: checked })
               },
           class: 'mx-auto',
         }),

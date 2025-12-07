@@ -10,6 +10,7 @@ import type { z } from 'zod'
 type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderList>
 type PurchaseOrderCreate = z.infer<typeof schemas.PurchaseOrderCreate>
 type PurchaseOrderUpdate = z.infer<typeof schemas.PatchedPurchaseOrderUpdate>
+type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailResponse>
 
 export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
   const orders = ref<PurchaseOrder[]>([])
@@ -128,16 +129,19 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     }
   }
 
-  async function emailPurchaseOrder(id: string) {
+  async function emailPurchaseOrder(
+    id: string,
+    recipientEmail?: string,
+  ): Promise<PurchaseOrderEmailResponse> {
     if (!id) {
       throw new Error('Purchase order ID is required')
     }
 
     try {
-      const response = await api.getPurchaseOrderEmail(
-        {}, // Empty body as required by the schema
-        { params: { po_id: id } },
-      )
+      const requestBody = recipientEmail ? { recipient_email: recipientEmail } : {}
+      const response = await api.getPurchaseOrderEmail(requestBody, {
+        params: { po_id: id },
+      })
       return response
     } catch (err) {
       debugLog(`Error emailing purchase order ${id}:`, err)

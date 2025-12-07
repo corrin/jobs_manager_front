@@ -222,7 +222,7 @@
                       v-for="staff in sortedStaffData"
                       :key="staff.staff_id"
                       :staff="staff"
-                      :visible-indexes="displayDays.map((d) => d.idx)"
+                      :visible-indexes="displayDayIndexes"
                     />
                   </template>
                   <template v-else>
@@ -232,7 +232,7 @@
                       :staff="staff"
                       :payroll-mode="payrollMode"
                       :week-days="displayDays"
-                      :visible-indexes="displayDays.map((d) => d.idx)"
+                      :visible-indexes="displayDayIndexes"
                       class="hover:bg-blue-50/50 transition-colors duration-150 border-b border-gray-100"
                     />
                   </template>
@@ -297,10 +297,20 @@ import {
   fetchPayRunForWeek,
   refreshPayRuns,
 } from '@/services/payroll.service'
-import type { WeeklyTimesheetData } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
 import { debugLog } from '../utils/debug'
 import { useTimesheetStore } from '@/stores/timesheet'
 import { toast } from 'vue-sonner'
+import { z } from 'zod'
+
+type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
+type WeeklyStaffData = z.infer<typeof schemas.WeeklyStaffData>
+type WeekDaySeed = { idx: number; dow: number; date: string }
+type DisplayDay = WeekDaySeed & {
+  name: string
+  short: string
+  isWeekend: boolean
+}
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -394,58 +404,68 @@ const weekendEnabled = computed(() => {
   return import.meta.env.VITE_WEEKEND_TIMESHEETS_ENABLED === 'true'
 })
 
-const visibleDayIndexes = computed(() => {
+const visibleDayIndexes = computed<number[]>(() => {
   if (!weeklyData.value?.week_days) return []
-  const raw = weeklyData.value.week_days.map((d, idx) => ({
+  const weekDays = weeklyData.value.week_days
+  const raw: WeekDaySeed[] = weekDays.map((day, idx) => ({
     idx,
-    dow: createLocalDate(d).getDay(),
-    date: d,
+    dow: createLocalDate(day).getDay(),
+    date: day,
   }))
 
   if (payrollMode.value) {
     return raw
-      .filter((d) => d.dow >= 1 && d.dow <= 5)
+      .filter((seed) => seed.dow >= 1 && seed.dow <= 5)
       .sort((a, b) => a.dow - b.dow)
-      .map((d) => d.idx)
+      .map((seed) => seed.idx)
   }
 
   if (!weekendEnabled.value) {
-    return raw.filter((d) => d.dow >= 1 && d.dow <= 5).map((d) => d.idx)
+    return raw.filter((seed) => seed.dow >= 1 && seed.dow <= 5).map((seed) => seed.idx)
   }
 
-  return raw.map((d) => d.idx)
+  return raw.map((seed) => seed.idx)
 })
 
 // Sort staff data alphabetically by first name for consistent display
 const sortedStaffData = computed(() => {
   if (!weeklyData.value?.staff_data) return []
 
-  return [...weeklyData.value.staff_data].sort((a, b) => {
-    const nameA = a.staff_name || ''
-    const nameB = b.staff_name || ''
+  return [...weeklyData.value.staff_data].sort((a: WeeklyStaffData, b: WeeklyStaffData) => {
+    const nameA = (a.staff_name as string) || ''
+    const nameB = (b.staff_name as string) || ''
     return nameA.localeCompare(nameB)
   })
 })
-const displayDays = computed(() => {
+const displayDays = computed<DisplayDay[]>(() => {
   if (!weeklyData.value?.week_days || !Array.isArray(weeklyData.value.week_days)) {
     debugLog('⚠️ No valid weekly data available for displayDays computation')
     return []
   }
 
-  return visibleDayIndexes.value.map((idx) => {
-    const d = weeklyData.value!.week_days[idx]
-    const date = createLocalDate(d)
-    const dow = date.getDay()
-    return {
-      idx,
-      date: d,
-      name: dateService.getDayName(d, true),
-      short: dateService.getDayNumber(d),
-      dow,
-      isWeekend: dow === 0 || dow === 6,
-    }
-  })
+  const weekDays = weeklyData.value.week_days
+  return visibleDayIndexes.value
+    .map((idx) => {
+      const dayValue = weekDays[idx]
+      if (!dayValue) {
+        return null
+      }
+
+      const date = createLocalDate(dayValue)
+      const dow = date.getDay()
+      return {
+        idx,
+        date: dayValue,
+        name: dateService.getDayName(dayValue, true),
+        short: dateService.getDayNumber(dayValue),
+        dow,
+        isWeekend: dow === 0 || dow === 6,
+      }
+    })
+    .filter((entry): entry is DisplayDay => entry !== null)
 })
+
+const displayDayIndexes = computed<number[]>(() => displayDays.value.map((day) => day.idx))
 
 watch(
   () => payrollMode.value,

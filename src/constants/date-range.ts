@@ -17,6 +17,11 @@ export const DateRangeSchema = z.object({
 
 export type DateRange = z.infer<typeof DateRangeSchema>
 
+export type FilterState = {
+  search: string
+  range: DateRange
+}
+
 /**
  * Default empty date range state
  */

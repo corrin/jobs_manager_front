@@ -151,16 +151,18 @@ import { api } from '@/api/client'
 import { transformDeliveryReceiptForAPI } from '@/utils/delivery-receipt'
 import { schemas } from '@/api/generated/api'
 import { onPoConcurrencyRetry } from '@/composables/usePoConcurrencyEvents'
+import { openGmailCompose } from '@/utils/email'
 import type { z } from 'zod'
 
 // Import types from generated API schemas
-import type { PurchaseOrderLine, PurchaseOrderDetail, JobForPurchasing } from '@/api/generated/api'
-
-// Use the generated interface instead of local type
-type PurchaseOrder = PurchaseOrderDetail
-type Job = JobForPurchasing
+type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
+type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
+type Job = z.infer<typeof schemas.JobForPurchasing>
 type AllocationItem = z.infer<typeof schemas.AllocationItem>
 type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocation>
+type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailResponse>
+type ClientContact = z.infer<typeof schemas.ClientContact>
+type PurchaseOrderEmailResponseWithLegacy = PurchaseOrderEmailResponse & { email?: string }
 
 const route = useRoute()
 const router = useRouter()
@@ -189,9 +191,10 @@ const po = ref<PurchaseOrder>({
   expected_delivery: '',
   status: 'draft',
   lines: [],
-})
+} as PurchaseOrder)
 
 const linesToDelete = ref<string[]>([])
+const supplierEmailCache = ref<Record<string, string | null>>({})
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 const isPoDeleted = computed(() => po.value.status === 'deleted')
@@ -756,6 +759,42 @@ function emailPo() {
   emailPurchaseOrder()
 }
 
+async function resolveSupplierEmail(): Promise<string | null> {
+  const supplierId = po.value.supplier_id
+  if (!supplierId) {
+    return null
+  }
+
+  if (supplierEmailCache.value[supplierId] !== undefined) {
+    return supplierEmailCache.value[supplierId]
+  }
+
+  try {
+    const contacts = await api.clients_contacts_list({
+      queries: { client_id: supplierId },
+    })
+
+    const contactsArray: ClientContact[] = Array.isArray(contacts) ? contacts : []
+    const primaryContact = contactsArray.find((contact) => contact.is_primary && !!contact.email)
+    const fallbackContact = contactsArray.find((contact) => !!contact.email)
+    const resolvedEmail = primaryContact?.email ?? fallbackContact?.email ?? null
+
+    supplierEmailCache.value = {
+      ...supplierEmailCache.value,
+      [supplierId]: resolvedEmail,
+    }
+
+    return resolvedEmail
+  } catch (err) {
+    debugLog('Failed to resolve supplier contacts for email:', err)
+    supplierEmailCache.value = {
+      ...supplierEmailCache.value,
+      [supplierId]: null,
+    }
+    return null
+  }
+}
+
 async function emailPurchaseOrder() {
   if (isPoDeleted.value) {
     toast.error('Cannot email - this purchase order has been deleted')
@@ -764,19 +803,32 @@ async function emailPurchaseOrder() {
   try {
     toast.info('Preparing email...', { id: 'po-email-loading' })
 
-    const emailData = await store.emailPurchaseOrder(orderId)
+    const recipientEmail = await resolveSupplierEmail()
+    const emailData: PurchaseOrderEmailResponse = await store.emailPurchaseOrder(
+      orderId,
+      recipientEmail ?? undefined,
+    )
 
-    if (emailData.success && emailData.mailto_url) {
-      // Open Gmail compose in new tab
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(emailData.email)}&su=${encodeURIComponent(emailData.subject)}&body=${encodeURIComponent(emailData.body)}`
-      window.open(gmailUrl, '_blank', 'noopener,noreferrer')
-
-      toast.dismiss('po-email-loading')
-      toast.success(`Gmail opened for ${emailData.email}`)
-    } else {
-      toast.dismiss('po-email-loading')
-      throw new Error(emailData.error || 'Failed to prepare email')
+    if (!emailData.success) {
+      throw new Error(emailData.message || 'Failed to prepare email')
     }
+
+    const recipientAddress =
+      recipientEmail ?? (emailData as PurchaseOrderEmailResponseWithLegacy).email ?? ''
+    if (!recipientAddress) {
+      toast.warning(
+        'No supplier email could be resolved. Please enter the recipient address manually inside Gmail.',
+      )
+    }
+
+    openGmailCompose({
+      to: recipientAddress,
+      subject: emailData.email_subject || `Purchase Order ${po.value.po_number || orderId}`,
+      body: emailData.email_body || '',
+    })
+
+    toast.dismiss('po-email-loading')
+    toast.success('Gmail opened with the prepared draft')
   } catch (error) {
     toast.dismiss('po-email-loading')
     const errorMessage = extractErrorMessage(error, 'Failed to prepare email')
@@ -818,10 +870,20 @@ async function close() {
     debugLog('❌ Error during autosave on close:', error)
 
     // Check if it's an authentication error
-    const isAuthError =
-      error?.response?.status === 401 ||
-      (typeof error === 'object' && error?.message?.includes('auth')) ||
-      (typeof error === 'string' && error.includes('auth'))
+    const possibleErrorObject = typeof error === 'object' && error !== null ? error : null
+    const responseStatus =
+      possibleErrorObject && 'response' in possibleErrorObject
+        ? (possibleErrorObject as { response?: { status?: number } }).response?.status
+        : undefined
+    const messageValue =
+      typeof error === 'string'
+        ? error
+        : possibleErrorObject && 'message' in possibleErrorObject
+          ? (possibleErrorObject as { message?: unknown }).message
+          : undefined
+    const messageText = typeof messageValue === 'string' ? messageValue : undefined
+
+    const isAuthError = responseStatus === 401 || messageText?.includes('auth')
 
     if (isAuthError) {
       debugLog('🔒 Authentication error detected during save')

@@ -1,0 +1,615 @@
+# TypeScript Type Errors Fix Plan
+
+**Created:** 2025-12-05
+**Branch:** fix/xero-new-client
+**Total Errors:** 601
+
+## Background
+
+The `tsconfig.app.json` had an incorrect include pattern (`"src*"` instead of `"src/**/*.ts"`), which meant most source files were never type-checked. After fixing this, 601 pre-existing type errors were exposed.
+
+---
+
+## All Errors (601 initially, 591 remaining)
+
+- [x] `src/components/AIProvidersDialog.vue(17,12):TS2322` - Type '{}' is not assignable to type 'PropertyKey | undefined'.
+- [x] `src/components/AIProvidersDialog.vue(252,43):TS2339` - Property 'length' does not exist on type '{}'.
+- [x] `src/components/AppNavbar.vue(276,72):TS2339` - Property 'split' does not exist on type '{}'.
+- [x] `src/components/AppNavbar.vue(296,77):TS2339` - Property 'split' does not exist on type '{}'.
+- [x] `src/components/ClientDropdown.vue(38,38):TS2339` - Property 'Client' does not exist on type '{ KPIProfitBreakdown
+- [x] `src/components/ClientDropdown.vue(70,28):TS2551` - Property 'clients_all_retrieve' does not exist on type 'ZodiosInstance<[{ method
+- [x] `src/components/ClientDropdown.vue(82,44):TS7006` - Parameter 'c' implicitly has an 'any' type.
+- [x] `src/components/ClientDropdown.vue(87,46):TS7006` - Parameter 'x' implicitly has an 'any' type.
+- [x] `src/components/ClientLookup.vue(261,13):TS2322` - Type '{ id
+- [x] `src/components/ClientLookup.vue(276,23):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [x] `src/components/ContactSelectionModal.vue(323,45):TS2551` - Property 'ClientContactResult' does not exist on type '{ KPIProfitBreakdown
+- [x] `src/components/ContactSelectionModal.vue(324,46):TS2551` - Property 'ClientContactCreateRequest' does not exist on type '{ KPIProfitBreakdown
+- [x] `src/components/ContactSelector.vue(78,45):TS2551` - Property 'ClientContactResult' does not exist on type '{ KPIProfitBreakdown
+- [x] `src/components/ContactSelector.vue(170,51):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [x] `src/components/CreateClientModal.vue(314,48):TS2345` - Argument of type 'objectOutputType<{ name
+- [x] `src/components/CreateClientModal.vue(325,60):TS2339` - Property 'xero_contact_id' does not exist on type '{}'.
+- [x] `src/components/CreateClientModal.vue(326,9):TS2322` - Type '{}' is not assignable to type '{ name
+- [x] `src/components/CreateClientModal.vue(327,9):TS2322` - Type '{}' is not assignable to type 'string'.
+- [x] `src/components/CreateClientModal.vue(330,23):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [x] `src/components/CreateClientModal.vue(341,13):TS2322` - Type '{ id
+- [x] `src/components/DataTable.vue(74,61):TS2339` - Property 'editable' does not exist on type 'ColumnMeta<any, unknown>'.
+- [x] `src/components/ExecutionsModal.vue(59,34):TS2724` - '"@/services/django-jobs-service"' has no exported member named 'DjangoJobExecution'. Did you mean 'getDjangoJobExecutions'?
+- [ ] `src/components/JobCard.vue(93,14):TS2322` - Type 'objectOutputType<{ id
+- [ ] `src/components/JobCard.vue(94,13):TS2322` - Type '"sm"' is not assignable to type '"normal" | "small" | "large" | undefined'.
+- [ ] `src/components/JobCard.vue(288,48):TS2345` - Argument of type 'objectOutputType<{ job_id
+- [ ] `src/components/JobsModal.vue(29,53):TS2345` - Argument of type 'string | null | undefined' is not assignable to parameter of type 'string | null'.
+- [ ] `src/components/KanbanColumn.vue(31,12):TS2322` - Type 'objectOutputType<{ id
+- [ ] `src/components/KanbanColumn.vue(38,45):TS2769` - No overload matches this call.
+- [ ] `src/components/QuoteImportDialog.vue(335,25):TS2307` - Cannot find module '@/api/generated/schemas' or its corresponding type declarations.
+- [ ] `src/components/SectionModal.vue(22,19):TS2322` - Type 'unknown' is not assignable to type 'string | number | undefined'.
+- [ ] `src/components/SectionModal.vue(32,19):TS2322` - Type 'unknown' is not assignable to type 'string | number | undefined'.
+- [ ] `src/components/SectionModal.vue(48,17):TS2322` - Type 'unknown' is not assignable to type 'string | number | undefined'.
+- [ ] `src/components/SectionModal.vue(63,62):TS2322` - Type 'unknown' is not assignable to type 'boolean | "indeterminate" | null | undefined'.
+- [ ] `src/components/SectionModal.vue(66,47):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string | Date | null'.
+- [ ] `src/components/SectionModal.vue(80,24):TS2322` - Type 'CalendarDateTime | null' is not assignable to type 'DateValue | DateValue[] | undefined'.
+- [ ] `src/components/SectionModal.vue(81,38):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string | Date | null'.
+- [ ] `src/components/SectionModal.vue(81,76):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string | Date | null'.
+- [ ] `src/components/SectionModal.vue(83,81):TS2345` - Argument of type 'DateValue | undefined' is not assignable to parameter of type 'CalendarDateTime | null'.
+- [ ] `src/components/SectionModal.vue(350,37):TS7053` - Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ general
+- [ ] `src/components/SectionModal.vue(351,36):TS7053` - Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ general
+- [ ] `src/components/SectionModal.vue(352,38):TS7053` - Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ general
+- [ ] `src/components/StaffAvatar.vue(6,7):TS2367` - This comparison appears to be unintentional because the types '"normal" | "small" | "large"' and '"sm"' have no overlap.
+- [ ] `src/components/StaffAvatar.vue(13,6):TS2322` - Type 'unknown' is not assignable to type 'string | undefined'.
+- [ ] `src/components/StaffAvatar.vue(19,8):TS2322` - Type 'unknown' is not assignable to type 'string | undefined'.
+- [ ] `src/components/StaffAvatar.vue(25,15):TS2367` - This comparison appears to be unintentional because the types '"normal" | "small" | "large"' and '"sm"' have no overlap.
+- [ ] `src/components/StaffAvatar.vue(66,5):TS2322` - Type '{}' is not assignable to type 'string'.
+- [ ] `src/components/StaffAvatar.vue(69,41):TS2339` - Property 'charAt' does not exist on type '{}'.
+- [ ] `src/components/StaffAvatar.vue(70,39):TS2339` - Property 'charAt' does not exist on type '{}'.
+- [ ] `src/components/StaffAvatar.vue(77,38):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/StaffAvatar.vue(111,7):TS18046` - 'props.staff.display_name' is of type 'unknown'.
+- [ ] `src/components/StaffAvatar.vue(111,50):TS7006` - Parameter 'acc' implicitly has an 'any' type.
+- [ ] `src/components/StaffAvatar.vue(111,55):TS7006` - Parameter 'char' implicitly has an 'any' type.
+- [ ] `src/components/StaffDropdown.vue(83,52):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/StaffDropdown.vue(84,33):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/StaffDropdown.vue(97,5):TS2322` - Type '{}' is not assignable to type 'string'.
+- [ ] `src/components/StaffFormModal.vue(115,41):TS18046` - '\_\_VLS_ctx.$refs.avatarInput' is of type 'unknown'.
+- [ ] `src/components/StaffFormModal.vue(592,25):TS2345` - Argument of type '{ date_joined
+- [ ] `src/components/StaffPanel.vue(34,17):TS18046` - 'staff.display_name' is of type 'unknown'.
+- [ ] `src/components/StaffPanel.vue(86,5):TS2322` - Type '{ display_name
+- [x] `src/components/admin/AIProviderFormModal.vue(119,15):TS2459` - Module '"@/services/aiProviderService"' declares 'AIProvider' locally, but it is not exported.
+- [x] `src/components/admin/errors/ErrorFilter.vue(21,23):TS2739` - Type '{ from?
+- [x] `src/components/job/JobActualTab.vue(110,16):TS2322` - Type 'CostSummary' is not assignable to type '{ cost
+- [x] `src/components/job/JobActualTab.vue(261,14):TS2322` - Type 'CostSummary' is not assignable to type '{ cost
+- [x] `src/components/job/JobActualTab.vue(486,63):TS2345` - Argument of type '{ material
+- [ ] `src/components/job/JobActualTab.vue(599,17):TS2353` - Object literal may only specify known properties, and 'stock_id' does not exist in type 'DeepReadonlyObject<{ id
+- [x] `src/components/job/JobActualTab.vue(743,48):TS18046` - 'line.ext_refs' is of type 'unknown'.
+- [x] `src/components/job/JobActualTab.vue(763,42):TS18046` - 'line.meta' is of type 'unknown'.
+- [x] `src/components/job/JobAttachmentsModal.vue(462,9):TS18046` - 'uploaded' is of type 'unknown'.
+- [x] `src/components/job/JobAttachmentsModal.vue(463,27):TS2488` - Type 'unknown' must have a '[Symbol.iterator]()' method that returns an iterator.
+- [x] `src/components/job/JobAttachmentsModal.vue(464,29):TS18046` - 'uploaded' is of type 'unknown'.
+- [x] `src/components/job/JobCostAnalysisTab.vue(80,64):TS2345` - Argument of type 'number | null' is not assignable to parameter of type 'number'.
+- [x] `src/components/job/JobCostAnalysisTab.vue(82,32):TS2345` - Argument of type 'number | null' is not assignable to parameter of type 'number'.
+- [x] `src/components/job/JobCostAnalysisTab.vue(86,34):TS2345` - Argument of type 'number | null' is not assignable to parameter of type 'number'.
+- [x] `src/components/job/JobEditModal.vue(70,17):TS2322` - Type '{}' is not assignable to type 'string'.
+- [x] `src/components/job/JobEditModal.vue(140,17):TS2322` - Type '{}' is not assignable to type 'string'.
+- [x] `src/components/job/JobEditModal.vue(150,17):TS2322` - Type '{}' is not assignable to type 'string'.
+- [x] `src/components/job/JobEditModal.vue(205,6):TS2322` - Type '{}' is not assignable to type 'string'.
+- [x] `src/components/job/JobEditModal.vue(206,6):TS2322` - Type '{}' is not assignable to type 'string'.
+- [x] `src/components/job/JobEditModal.vue(238,48):TS2551` - Property 'JobUpdateRequest' does not exist on type '{ KPIProfitBreakdown
+- [x] `src/components/job/JobEditModal.vue(310,52):TS2339` - Property 'trim' does not exist on type '{}'.
+- [x] `src/components/job/JobEditModal.vue(348,26):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [ ] `src/components/job/JobEditModal.vue(383,38):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/job/JobEditModal.vue(393,34):TS2554` - Expected 2 arguments, but got 1.
+- [ ] `src/components/job/JobEstimateTab.vue(57,16):TS2322` - Type 'CostSummary' is not assignable to type '{ cost
+- [ ] `src/components/job/JobEstimateTab.vue(78,14):TS2322` - Type 'CostSummary' is not assignable to type '{ cost
+- [x] `src/components/job/JobHistoryModal.vue(127,23):TS2345` - Argument of type '{ description
+- [x] `src/components/job/JobHistoryTab.vue(124,49):TS2345` - Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'.
+- [x] `src/components/job/JobHistoryTab.vue(135,52):TS2345` - Argument of type 'string' is not assignable to parameter of type '"time" | "material" | "adjust" | null'.
+- [x] `src/components/job/JobHistoryTab.vue(191,51):TS2345` - Argument of type '{}' is not assignable to parameter of type 'Record<string, unknown>'.
+- [x] `src/components/job/JobHistoryTab.vue(201,51):TS2345` - Argument of type '{}' is not assignable to parameter of type 'Record<string, unknown>'.
+- [ ] `src/components/job/JobQuoteTab.vue(364,18):TS2322` - Type 'unknown' is not assignable to type 'PropertyKey | undefined'.
+- [ ] `src/components/job/JobQuoteTab.vue(378,62):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [ ] `src/components/job/JobQuoteTab.vue(397,41):TS18046` - 'revision.summary' is of type 'unknown'.
+- [ ] `src/components/job/JobQuoteTab.vue(405,41):TS18046` - 'revision.summary' is of type 'unknown'.
+- [ ] `src/components/job/JobQuoteTab.vue(411,39):TS18046` - 'revision.summary' is of type 'unknown'.
+- [ ] `src/components/job/JobQuoteTab.vue(420,38):TS18046` - 'revision.cost_lines' is of type 'unknown'.
+- [ ] `src/components/job/JobQuoteTab.vue(427,34):TS2339` - Property 'id' does not exist on type 'never'.
+- [ ] `src/components/job/JobQuoteTab.vue(436,36):TS2339` - Property 'kind' does not exist on type 'never'.
+- [ ] `src/components/job/JobQuoteTab.vue(438,40):TS2339` - Property 'kind' does not exist on type 'never'.
+- [ ] `src/components/job/JobQuoteTab.vue(443,37):TS2339` - Property 'kind' does not exist on type 'never'.
+- [ ] `src/components/job/JobQuoteTab.vue(446,37):TS2339` - Property 'desc' does not exist on type 'never'.
+- [ ] `src/components/job/JobQuoteTab.vue(456,73):TS2339` - Property 'quantity' does not exist on type 'never'.
+- [ ] `src/components/job/JobQuoteTab.vue(463,52):TS2339` - Property 'total_cost' does not exist on type 'never'.
+- [ ] `src/components/job/JobQuoteTab.vue(471,52):TS2339` - Property 'total_rev' does not exist on type 'never'.
+- [ ] `src/components/job/JobQuoteTab.vue(901,66):TS2345` - Argument of type 'undefined' is not assignable to parameter of type 'DeepReadonlyObject<objectInputType<{ success
+- [ ] `src/components/job/JobQuotingChatTab.vue(145,33):TS2459` - Module '"@/services/quote-chat.service"' declares 'VueChatMessage' locally, but it is not exported.
+- [ ] `src/components/job/JobQuotingChatTab.vue(245,57):TS7006` - Parameter 'msg' implicitly has an 'any' type.
+- [ ] `src/components/job/JobSettingsTab.vue(64,17):TS2322` - Type 'unknown' is not assignable to type 'string | number | readonly string[] | null | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(67,57):TS18047` - '$event.target' is possibly 'null'.
+- [ ] `src/components/job/JobSettingsTab.vue(67,71):TS2339` - Property 'value' does not exist on type 'EventTarget'.
+- [ ] `src/components/job/JobSettingsTab.vue(80,59):TS18047` - '$event.target' is possibly 'null'.
+- [ ] `src/components/job/JobSettingsTab.vue(80,73):TS2339` - Property 'value' does not exist on type 'EventTarget'.
+- [ ] `src/components/job/JobSettingsTab.vue(174,18):TS2322` - Type 'unknown' is not assignable to type 'string | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(186,58):TS18047` - '$event.target' is possibly 'null'.
+- [ ] `src/components/job/JobSettingsTab.vue(186,72):TS2339` - Property 'value' does not exist on type 'EventTarget'.
+- [ ] `src/components/job/JobSettingsTab.vue(257,17):TS2322` - Type 'unknown' is not assignable to type 'string | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(382,77):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/job/JobSettingsTab.vue(388,81):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/job/JobSettingsTab.vue(394,79):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/job/JobSettingsTab.vue(400,65):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/job/JobSettingsTab.vue(480,27):TS2503` - Cannot find namespace 'NodeJS'.
+- [ ] `src/components/job/JobSettingsTab.vue(598,7):TS2322` - Type '{ job_id
+- [ ] `src/components/job/JobSettingsTab.vue(599,7):TS2322` - Type '{ job_id
+- [ ] `src/components/job/JobSettingsTab.vue(689,75):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/job/JobSettingsTab.vue(690,79):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/job/JobSettingsTab.vue(691,77):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/job/JobSettingsTab.vue(692,63):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/components/job/JobSettingsTab.vue(1088,40):TS2322` - Type 'string' is not assignable to type '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "special" | "archived" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1090,13):TS2322` - Type 'string' is not assignable to type '"time_materials" | "fixed_price" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1092,13):TS2322` - Type 'string' is not assignable to type '"fast" | "normal" | "quality" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1169,13):TS2322` - Type 'string' is not assignable to type '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "special" | "archived" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1170,13):TS2322` - Type 'string' is not assignable to type '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "special" | "archived" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1171,13):TS2322` - Type 'string' is not assignable to type '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "special" | "archived" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1266,13):TS2322` - Type 'string' is not assignable to type '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "special" | "archived" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1267,13):TS2322` - Type 'string' is not assignable to type '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "special" | "archived" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1268,13):TS2322` - Type 'string' is not assignable to type '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "special" | "archived" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1272,13):TS2322` - Type 'string' is not assignable to type '"time_materials" | "fixed_price" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1273,13):TS2322` - Type 'string' is not assignable to type '"time_materials" | "fixed_price" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1274,13):TS2322` - Type 'string' is not assignable to type '"time_materials" | "fixed_price" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1279,13):TS2322` - Type 'string' is not assignable to type '"fast" | "normal" | "quality" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1280,13):TS2322` - Type 'string' is not assignable to type '"fast" | "normal" | "quality" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1281,13):TS2322` - Type 'string' is not assignable to type '"fast" | "normal" | "quality" | undefined'.
+- [ ] `src/components/job/JobSettingsTab.vue(1378,46):TS2339` - Property 'error' does not exist on type 'never'.
+- [ ] `src/components/job/JobSettingsTab.vue(1397,17):TS2322` - Type '(to
+- [ ] `src/components/job/JobSettingsTab.vue(1397,18):TS7006` - Parameter 'to' implicitly has an 'any' type.
+- [ ] `src/components/job/JobSettingsTab.vue(1397,22):TS7006` - Parameter 'from' implicitly has an 'any' type.
+- [ ] `src/components/job/JobSettingsTab.vue(1397,28):TS7006` - Parameter 'next' implicitly has an 'any' type.
+- [ ] `src/components/job/JobSettingsTab.vue(1397,59):TS2554` - Expected 1 arguments, but got 3.
+- [ ] `src/components/job/StockConsumptionModal.vue(168,41):TS2339` - Property 'StockList' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/components/job/StockConsumptionModal.vue(214,32):TS2554` - Expected 1 arguments, but got 0.
+- [ ] `src/components/job/StockConsumptionModal.vue(229,27):TS7006` - Parameter 'item' implicitly has an 'any' type.
+- [ ] `src/components/job/StockConsumptionModal.vue(235,39):TS7006` - Parameter 'item' implicitly has an 'any' type.
+- [ ] `src/components/kpi/KPIDayDetailsModal.vue(124,70):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'number | null | undefined'.
+- [ ] `src/components/kpi/KPIDayDetailsModal.vue(125,70):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'number | null | undefined'.
+- [ ] `src/components/kpi/KPIDayDetailsModal.vue(126,70):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'number | null | undefined'.
+- [ ] `src/components/kpi/KPIDayDetailsModal.vue(128,37):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'number | null | undefined'.
+- [ ] `src/components/kpi/MonthSelector.vue(3,43):TS2322` - Type '(value
+- [ ] `src/components/purchasing/AllocationCellEditor.vue(134,14):TS2352` - Conversion of type 'Record<string, unknown>' to type 'EditorRow' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+- [ ] `src/components/purchasing/AllocationCellEditor.vue(244,13):TS2322` - Type '"xs"' is not assignable to type '"icon" | "default" | "sm" | "lg" | null | undefined'.
+- [ ] `src/components/purchasing/AllocationCellEditor.vue(273,16):TS2322` - Type 'string | null | undefined' is not assignable to type 'PropertyKey | undefined'.
+- [ ] `src/components/purchasing/AllocationCellEditor.vue(281,17):TS2322` - Type '"xs"' is not assignable to type '"icon" | "default" | "sm" | "lg" | null | undefined'.
+- [ ] `src/components/purchasing/AllocationCellEditor.vue(284,36):TS2345` - Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'.
+- [ ] `src/components/purchasing/AllocationCellEditor.vue(304,20):TS2322` - Type '{ isStockHolding
+- [ ] `src/components/purchasing/AllocationCellEditor.vue(305,66):TS2345` - Argument of type 'objectOutputType<{ id
+- [ ] `src/components/purchasing/AllocationCellEditor.vue(319,17):TS2322` - Type '"icon-sm"' is not assignable to type '"icon" | "default" | "sm" | "lg" | null | undefined'.
+- [ ] `src/components/purchasing/DeliveryReceiptLinesTable.vue(19,15):TS2459` - Module '"@/utils/delivery-receipt"' declares 'DeliveryAllocation' locally, but it is not exported.
+- [ ] `src/components/purchasing/DeliveryReceiptLinesTable.vue(170,14):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/DeliveryReceiptLinesTable.vue(189,14):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/DeliveryReceiptLinesTable.vue(224,14):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/DeliveryReceiptLinesTable.vue(343,10):TS2322` - Type '({ id
+- [ ] `src/components/purchasing/PoLinesTable.vue(82,5):TS2322` - Type '{}' is not assignable to type 'string'.
+- [ ] `src/components/purchasing/PoLinesTable.vue(151,16):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/PoLinesTable.vue(224,16):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/PoLinesTable.vue(230,11):TS2769` - No overload matches this call.
+- [ ] `src/components/purchasing/PoLinesTable.vue(243,16):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/PoLinesTable.vue(248,11):TS2769` - No overload matches this call.
+- [ ] `src/components/purchasing/PoLinesTable.vue(257,24):TS2769` - No overload matches this call.
+- [ ] `src/components/purchasing/PoLinesTable.vue(259,11):TS2769` - No overload matches this call.
+- [ ] `src/components/purchasing/PoLinesTable.vue(284,16):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/PoLinesTable.vue(309,16):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/PoLinesTable.vue(332,16):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/PoLinesTable.vue(338,11):TS2769` - No overload matches this call.
+- [ ] `src/components/purchasing/PoLinesTable.vue(353,16):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/PoLinesTable.vue(380,16):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/PoLinesTable.vue(398,11):TS2769` - No overload matches this call.
+- [ ] `src/components/purchasing/PoLinesTable.vue(408,16):TS2339` - Property 'row' does not exist on type 'DataTableRowContext'.
+- [ ] `src/components/purchasing/PoLinesTable.vue(447,10):TS2322` - Type '({ id
+- [ ] `src/components/purchasing/PoSummaryCard.vue(167,12):TS2322` - Type 'string | null | undefined' is not assignable to type 'string | number | undefined'.
+- [ ] `src/components/purchasing/PoSummaryCard.vue(168,37):TS2769` - No overload matches this call.
+- [ ] `src/components/purchasing/PoSummaryCard.vue(179,29):TS2345` - Argument of type 'string | undefined' is not assignable to parameter of type 'string | null'.
+- [ ] `src/components/purchasing/PoSummaryCard.vue(186,14):TS2322` - Type 'string | null | undefined' is not assignable to type 'string | null'.
+- [ ] `src/components/purchasing/PoSummaryCard.vue(187,14):TS2322` - Type '(value
+- [ ] `src/components/purchasing/PoSummaryCard.vue(195,56):TS2322` - Type '(value
+- [ ] `src/components/purchasing/PurchaseOrderJobCellEditor.ts(4,25):TS2307` - Cannot find module '@/api/generated/schemas' or its corresponding type declarations.
+- [ ] `src/components/purchasing/ReceivedItemsTable.vue(18,44):TS2339` - Property 'DeliveryReceiptLine' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/components/purchasing/ReceivedItemsTable.vue(152,11):TS2769` - No overload matches this call.
+- [ ] `src/components/quote/QuoteCostLinesGrid.vue(115,33):TS2345` - Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+- [ ] `src/components/quote/QuoteCostLinesGrid.vue(125,35):TS18048` - 'line.quantity' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteCostLinesGrid.vue(125,51):TS18048` - 'line.unit_cost' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteCostLinesGrid.vue(128,35):TS18048` - 'line.quantity' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteCostLinesGrid.vue(128,51):TS18048` - 'line.unit_rev' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(346,15):TS2305` - Module '"@/services/quote.service"' has no exported member 'QuotePreview'.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(346,29):TS2305` - Module '"@/services/quote.service"' has no exported member 'QuoteApplyResult'.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(347,33):TS2307` - Cannot find module '@/schemas/job.schemas' or its corresponding type declarations.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(406,27):TS18048` - 'line.quantity' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(406,44):TS18048` - 'line.unit_cost' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(407,33):TS18048` - 'line.quantity' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(407,50):TS18048` - 'line.unit_rev' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(418,27):TS18048` - 'line.quantity' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(418,44):TS18048` - 'line.unit_cost' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(419,33):TS18048` - 'line.quantity' is possibly 'undefined'.
+- [ ] `src/components/quote/QuoteSummaryCard.vue(419,50):TS18048` - 'line.unit_rev' is possibly 'undefined'.
+- [ ] `src/components/shared/SmartCostLinesTable.vue(159,5):TS2322` - Type 'null' is not assignable to type 'number | undefined'.
+- [ ] `src/components/shared/SmartCostLinesTable.vue(160,5):TS2322` - Type 'null' is not assignable to type 'number | undefined'.
+- [ ] `src/components/shared/SmartCostLinesTable.vue(287,58):TS2339` - Property 'stock_id' does not exist on type '{}'.
+- [ ] `src/components/shared/SmartCostLinesTable.vue(314,5):TS2322` - Type 'string | boolean' is not assignable to type 'boolean'.
+- [ ] `src/components/shared/SmartCostLinesTable.vue(338,33):TS2345` - Argument of type '{ id
+- [ ] `src/components/shared/SmartCostLinesTable.vue(480,19):TS2769` - No overload matches this call.
+- [ ] `src/components/shared/SmartCostLinesTable.vue(578,25):TS2322` - Type 'string | null' is not assignable to type 'string'.
+- [ ] `src/components/timesheet/MetricsModal.vue(138,8):TS2724` - '"@/services/daily-timesheet.service"' has no exported member named 'DailyTimesheetSummary'. Did you mean 'getDailyTimesheetSummary'?
+- [ ] `src/components/timesheet/SummaryDrawer.vue(109,52):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string'.
+- [ ] `src/components/timesheet/SummaryDrawer.vue(111,43):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string'.
+- [ ] `src/components/timesheet/SummaryDrawer.vue(360,48):TS2345` - Argument of type 'objectOutputType<{ id
+- [ ] `src/components/timesheet/TimesheetEntryJobCellEditor.ts(227,72):TS2345` - Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+- [ ] `src/components/timesheet/TimesheetEntryJobCellEditor.ts(228,43):TS2345` - Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+- [ ] `src/components/timesheet/TimesheetEntryJobCellEditor.ts(419,50):TS2367` - This comparison appears to be unintentional because the types '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "archived" | undefined' and '"rejected"' have no overlap.
+- [ ] `src/components/timesheet/TimesheetEntryJobCellEditor.ts(518,8):TS2322` - Type '{ job_number
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(272,54):TS2551` - Property 'IMSWeeklyTimesheetData' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(290,30):TS2345` - Argument of type 'never[]' is not assignable to parameter of type 'objectOutputType<{ job_id
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(296,10):TS18046` - 'jobs.value.filter' is of type 'unknown'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(297,11):TS2304` - Cannot find name 'Job'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(310,10):TS18046` - 'job' is of type 'unknown'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(310,29):TS18046` - 'job' is of type 'unknown'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(310,48):TS18046` - 'job' is of type 'unknown'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(314,29):TS18046` - 'job' is of type 'unknown'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(315,26):TS18046` - 'job' is of type 'unknown'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(315,45):TS18046` - 'job' is of type 'unknown'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(325,7):TS18046` - 'job' is of type 'unknown'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(328,7):TS18046` - 'job' is of type 'unknown'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(328,26):TS18046` - 'job' is of type 'unknown'.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(362,40):TS7006` - Parameter 'staff' implicitly has an 'any' type.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(363,52):TS7006` - Parameter 'sum' implicitly has an 'any' type.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(363,57):TS7006` - Parameter 'day' implicitly has an 'any' type.
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(401,5):TS2322` - Type 'objectOutputType<{ job_id
+- [ ] `src/components/timesheet/WeeklyMetricsModal.vue(405,5):TS2322` - Type 'never[]' is not assignable to type 'objectOutputType<{ job_id
+- [ ] `src/components/ui/custom-date-picker/CustomDatePicker.vue(36,24):TS2322` - Type 'string | null' is not assignable to type 'string | number | undefined'.
+- [ ] `src/components/ui/custom-date-picker/CustomDatePicker.vue(38,24):TS2322` - Type 'string | null' is not assignable to type 'string | number | undefined'.
+- [ ] `src/components/ui/drawer/Drawer.vue(17,42):TS2698` - Spread types may only be created from object types.
+- [ ] `src/composables/useAppLayout.ts(5,10):TS1484` - 'NavigationItem' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+- [ ] `src/composables/useClientLookup.ts(9,52):TS2551` - Property 'ClientContactResult' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/composables/useClientLookup.ts(68,9):TS2353` - Object literal may only specify known properties, and 'queries' does not exist in type 'DeepReadonlyObject<{ auth?
+- [ ] `src/composables/useClientLookup.ts(82,49):TS7006` - Parameter 'contact' implicitly has an 'any' type.
+- [ ] `src/composables/useContactManagement.ts(42,28):TS7006` - Parameter 'contact' implicitly has an 'any' type.
+- [ ] `src/composables/useContactManagement.ts(122,9):TS2353` - Object literal may only specify known properties, and 'queries' does not exist in type 'DeepReadonlyObject<{ auth?
+- [ ] `src/composables/useContactManagement.ts(184,10):TS18046` - 'newContactForm.value.name' is of type 'unknown'.
+- [ ] `src/composables/useContactManagement.ts(197,15):TS18046` - 'newContactForm.value.name' is of type 'unknown'.
+- [ ] `src/composables/useContactManagement.ts(198,9):TS2322` - Type '{}' is not assignable to type 'boolean | undefined'.
+- [ ] `src/composables/useContactManagement.ts(202,62):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/composables/useContactManagement.ts(207,56):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/composables/useContactManagement.ts(212,56):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/composables/useContactManagement.ts(217,56):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/composables/useContactManagement.ts(224,58):TS2345` - Argument of type 'Partial<objectOutputType<{ client
+- [ ] `src/composables/useContactManagement.ts(238,51):TS7006` - Parameter 'contact' implicitly has an 'any' type.
+- [ ] `src/composables/useContactManagement.ts(308,10):TS18046` - 'newContactForm.value.name' is of type 'unknown'.
+- [ ] `src/composables/useContactManagement.ts(317,15):TS18046` - 'newContactForm.value.name' is of type 'unknown'.
+- [ ] `src/composables/useContactManagement.ts(319,50):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/composables/useContactManagement.ts(320,44):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/composables/useContactManagement.ts(321,44):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/composables/useContactManagement.ts(322,44):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/composables/useContactManagement.ts(327,49):TS2345` - Argument of type '{ name
+- [ ] `src/composables/useContactManagement.ts(338,46):TS7006` - Parameter 'c' implicitly has an 'any' type.
+- [ ] `src/composables/useContactManagement.ts(409,31):TS18046` - 'newContactForm.value.name' is of type 'unknown'.
+- [ ] `src/composables/useContactManagement.ts(451,33):TS7006` - Parameter 'contact' implicitly has an 'any' type.
+- [ ] `src/composables/useCostLineAutosave.ts(27,59):TS2551` - Property 'PatchedCostLineCreateUpdate' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/composables/useErrorApi.ts(85,21):TS2339` - Property 'app' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(85,48):TS2339` - Property 'app' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(86,28):TS2339` - Property 'severity' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(86,77):TS2339` - Property 'severity' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(87,38):TS2339` - Property 'severity' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(89,28):TS2339` - Property 'resolved' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(90,38):TS2339` - Property 'resolved' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(92,21):TS2339` - Property 'jobId' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(92,53):TS2339` - Property 'jobId' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(93,21):TS2339` - Property 'userId' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(93,55):TS2339` - Property 'userId' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(96,11):TS2353` - Object literal may only specify known properties, and 'queries' does not exist in type 'DeepReadonlyObject<{ auth?
+- [ ] `src/composables/useErrorApi.ts(110,21):TS2339` - Property 'jobId' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useErrorApi.ts(111,36):TS2339` - Property 'jobId' does not exist on type 'XeroErrorFilters | SystemErrorFilters | JobErrorFilters'.
+- [ ] `src/composables/useJobCache.ts(2,15):TS2459` - Module '"@/api/generated/api"' declares 'JobDetailResponse' locally, but it is not exported.
+- [ ] `src/composables/useJobCache.ts(14,23):TS18046` - 'entry.timestamp' is of type 'unknown'.
+- [ ] `src/composables/useJobCache.ts(70,29):TS2698` - Spread types may only be created from object types.
+- [ ] `src/composables/useJobEvents.ts(28,7):TS2322` - Type 'objectOutputType<{ events
+- [ ] `src/composables/useJobEvents.ts(57,25):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [ ] `src/composables/useJobFiles.ts(4,45):TS2304` - Cannot find name 'Ref'.
+- [ ] `src/composables/useJobHeaderAutosave.ts(54,32):TS2322` - Type 'string' is not assignable to type '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "special" | "archived" | undefined'.
+- [ ] `src/composables/useJobHeaderAutosave.ts(56,7):TS2322` - Type '"time_materials" | "fixed_price" | null' is not assignable to type '"time_materials" | "fixed_price" | undefined'.
+- [ ] `src/composables/useJobHeaderAutosave.ts(95,7):TS2322` - Type 'string | undefined' is not assignable to type '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "special" | "archived" | undefined'.
+- [ ] `src/composables/useLogin.ts(8,48):TS2551` - Property 'CustomTokenObtainPair' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/composables/useMonthEnd.ts(3,3):TS2459` - Module '"@/api/generated/api"' declares 'MonthEndJob' locally, but it is not exported.
+- [ ] `src/composables/useMonthEnd.ts(4,3):TS2459` - Module '"@/api/generated/api"' declares 'MonthEndStockJob' locally, but it is not exported.
+- [ ] `src/composables/useMonthEnd.ts(5,3):TS2459` - Module '"@/api/generated/api"' declares 'MonthEndGetResponse' locally, but it is not exported.
+- [ ] `src/composables/useMonthEnd.ts(6,3):TS2459` - Module '"@/api/generated/api"' declares 'MonthEndPostResponse' locally, but it is not exported.
+- [ ] `src/composables/useOptimizedDragAndDrop.ts(127,47):TS2345` - Argument of type '{ group
+- [ ] `src/composables/useOptimizedKanban.ts(115,90):TS2554` - Expected 1 arguments, but got 2.
+- [ ] `src/composables/useOptimizedKanban.ts(417,7):TS2322` - Type '{ key
+- [ ] `src/composables/useOptimizedKanban.ts(575,7):TS18046` - 'error' is of type 'unknown'.
+- [ ] `src/composables/usePurchaseOrderGrid.ts(76,39):TS2363` - The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+- [ ] `src/composables/usePurchaseOrderGrid.ts(122,54):TS2322` - Type 'objectOutputType<{ id
+- [ ] `src/composables/usePurchaseOrderGrid.ts(131,11):TS2322` - Type '{ id
+- [ ] `src/composables/useQuoteImport.ts(5,25):TS2307` - Cannot find module '@/api/generated/schemas' or its corresponding type declarations.
+- [ ] `src/composables/useQuoteImport.ts(29,35):TS7006` - Parameter 'issue' implicitly has an 'any' type.
+- [ ] `src/composables/useQuoteImport.ts(34,35):TS7006` - Parameter 'issue' implicitly has an 'any' type.
+- [ ] `src/composables/useStaffApi.ts(84,62):TS2353` - Object literal may only specify known properties, and 'queries' does not exist in type 'DeepReadonlyObject<{ auth?
+- [ ] `src/composables/useTimesheetAutosave.ts(203,50):TS2554` - Expected 1 arguments, but got 2.
+- [ ] `src/composables/useTimesheetEntryCalculations.ts(118,7):TS2322` - Type 'null' is not assignable to type 'string'.
+- [ ] `src/composables/useTimesheetEntryCalculations.ts(292,5):TS2322` - Type '{ id
+- [ ] `src/composables/useTimesheetEntryGrid.ts(23,10):TS1484` - 'TimesheetEntryJobSelectionItem' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(302,9):TS18046` - 'row.description' is of type 'unknown'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(302,36):TS18046` - 'entry.description' is of type 'unknown'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(375,30):TS2339` - Property 'column' does not exist on type 'RowDoubleClickedEvent<any, any>'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(420,39):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(427,19):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string | undefined'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(448,9):TS2365` - Operator '>' cannot be applied to types '{}' and 'number'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(448,24):TS2322` - Type '{}' is not assignable to type 'number'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(449,61):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(451,33):TS2365` - Operator '>' cannot be applied to types '{}' and 'number'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(451,58):TS2322` - Type '{}' is not assignable to type 'number'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(453,44):TS2365` - Operator '>' cannot be applied to types '{}' and 'number'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(454,7):TS2322` - Type '{}' is not assignable to type 'number'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(465,59):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(469,9):TS2365` - Operator '>' cannot be applied to types '{}' and 'number'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(470,35):TS2362` - The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(473,21):TS2365` - Operator '>' cannot be applied to types '{}' and 'number'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(473,34):TS2365` - Operator '>' cannot be applied to types '{}' and 'number'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(474,35):TS2362` - The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(474,43):TS2363` - The right-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(485,5):TS2322` - Type '{ id
+- [ ] `src/composables/useTimesheetEntryGrid.ts(520,34):TS18046` - 'entry.hours' is of type 'unknown'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(527,48):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(567,29):TS2345` - Argument of type 'string' is not assignable to parameter of type 'number'.
+- [ ] `src/composables/useTimesheetEntryGrid.ts(598,10):TS2352` - Conversion of type '{ id
+- [ ] `src/composables/useTimesheetEntryGrid.ts(625,59):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [ ] `src/composables/useTimesheetSummary.ts(59,54):TS2339` - Property 'is_billable' does not exist on type '{}'.
+- [ ] `src/composables/useTimesheetSummary.ts(63,54):TS2339` - Property 'is_billable' does not exist on type '{}'.
+- [ ] `src/composables/useUATManagement.ts(19,30):TS2503` - Cannot find namespace 'NodeJS'.
+- [ ] `src/composables/useXeroAuth.ts(10,44):TS2339` - Property 'XeroSseEvent' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/constants/client-wrapper.ts(8,25):TS2307` - Cannot find module '@/api/generated/schemas' or its corresponding type declarations.
+- [ ] `src/constants/job-cache.ts(9,25):TS2307` - Cannot find module '@/api/generated/schemas' or its corresponding type declarations.
+- [ ] `src/services/admin-company-defaults-service.ts(7,61):TS2551` - Property 'PatchedCompanyDefaults' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/services/aiProviderService.ts(32,7):TS2322` - Type 'objectOutputType<{ name
+- [ ] `src/services/aiProviderService.ts(44,7):TS2322` - Type 'objectOutputType<{ name
+- [ ] `src/services/clientService.ts(39,34):TS2551` - Property 'clients_all_retrieve' does not exist on type 'ZodiosInstance<[{ method
+- [ ] `src/services/clientService.ts(57,32):TS2339` - Property 'toLowerCase' does not exist on type '{}'.
+- [ ] `src/services/company-defaults.service.ts(2,15):TS2459` - Module '"@/api/generated/api"' declares 'CompanyDefaults' locally, but it is not exported.
+- [ ] `src/services/costline.service.ts(3,3):TS2459` - Module '"@/api/generated/api"' declares 'CostLineCreateUpdate' locally, but it is not exported.
+- [ ] `src/services/costline.service.ts(4,3):TS2305` - Module '"@/api/generated/api"' has no exported member 'PatchedCostLineCreateUpdate'.
+- [ ] `src/services/costline.service.ts(5,3):TS2459` - Module '"@/api/generated/api"' declares 'ModernTimesheetEntryGetResponse' locally, but it is not exported.
+- [ ] `src/services/costline.service.ts(18,7):TS2353` - Object literal may only specify known properties, and 'queries' does not exist in type 'DeepReadonlyObject<{ auth?
+- [ ] `src/services/delta.service.ts(6,48):TS2339` - Property 'JobDeltaEnvelope' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/services/django-jobs-service.ts(2,15):TS2459` - Module '"@/api/generated/api"' declares 'DjangoJob' locally, but it is not exported.
+- [ ] `src/services/django-jobs-service.ts(2,26):TS2459` - Module '"@/api/generated/api"' declares 'DjangoJobExecution' locally, but it is not exported.
+- [ ] `src/services/django-jobs-service.ts(13,20):TS2554` - Expected 2 arguments, but got 1.
+- [ ] `src/services/django-jobs-service.ts(17,13):TS2554` - Expected 2 arguments, but got 1.
+- [ ] `src/services/django-jobs-service.ts(21,70):TS2345` - Argument of type '{ search
+- [ ] `src/services/job.service.ts(5,10):TS1484` - 'AdvancedFilters' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+- [ ] `src/services/job.service.ts(331,5):TS2322` - Type 'Promise<objectOutputType<{ success
+- [ ] `src/services/job.service.ts(367,55):TS2345` - Argument of type '{ data
+- [ ] `src/services/job.service.ts(508,31):TS2345` - Argument of type '{ filename?
+- [ ] `src/services/kpi.service.ts(3,3):TS2459` - Module '"@/api/generated/api"' declares 'KPICalendarData' locally, but it is not exported.
+- [ ] `src/services/kpi.service.ts(4,3):TS2459` - Module '"@/api/generated/api"' declares 'KPIDayData' locally, but it is not exported.
+- [ ] `src/services/kpi.service.ts(5,3):TS2459` - Module '"@/api/generated/api"' declares 'KPIDetails' locally, but it is not exported.
+- [ ] `src/services/kpi.service.ts(6,3):TS2459` - Module '"@/api/generated/api"' declares 'KPIJobBreakdown' locally, but it is not exported.
+- [ ] `src/services/kpi.service.ts(7,3):TS2459` - Module '"@/api/generated/api"' declares 'KPIMonthlyTotals' locally, but it is not exported.
+- [ ] `src/services/kpi.service.ts(8,3):TS2459` - Module '"@/api/generated/api"' declares 'KPIThresholds' locally, but it is not exported.
+- [ ] `src/services/kpi.service.ts(41,9):TS2353` - Object literal may only specify known properties, and 'start_date' does not exist in type 'DeepReadonlyObject<{ queries?
+- [ ] `src/services/payroll.service.ts(22,76):TS2345` - Argument of type '{ body
+- [ ] `src/services/quote-chat.service.ts(3,3):TS2459` - Module '"@/api/generated/api"' declares 'JobQuoteChat' locally, but it is not exported.
+- [ ] `src/services/quote-chat.service.ts(4,3):TS2459` - Module '"@/api/generated/api"' declares 'JobQuoteChatHistoryResponse' locally, but it is not exported.
+- [ ] `src/services/quote-chat.service.ts(5,3):TS2459` - Module '"@/api/generated/api"' declares 'JobQuoteChatInteractionRequest' locally, but it is not exported.
+- [ ] `src/services/quote-chat.service.ts(31,55):TS2345` - Argument of type 'Omit<JobQuoteChat, "id">' is not assignable to parameter of type 'DeepReadonlyObject<objectInputType<{ message_id
+- [ ] `src/services/quote-chat.service.ts(55,49):TS2345` - Argument of type '{}' is not assignable to parameter of type 'undefined'.
+- [ ] `src/services/quote.service.ts(3,3):TS2459` - Module '"@/api/generated/api"' declares 'QuoteSpreadsheet' locally, but it is not exported.
+- [ ] `src/services/quote.service.ts(4,3):TS2459` - Module '"@/api/generated/api"' declares 'PreviewQuoteResponse' locally, but it is not exported.
+- [ ] `src/services/quote.service.ts(5,3):TS2459` - Module '"@/api/generated/api"' declares 'ApplyQuoteResponse' locally, but it is not exported.
+- [ ] `src/services/quote.service.ts(6,3):TS2459` - Module '"@/api/generated/api"' declares 'Job' locally, but it is not exported.
+- [ ] `src/services/quote.service.ts(7,3):TS2459` - Module '"@/api/generated/api"' declares 'LinkQuoteSheetRequest' locally, but it is not exported.
+- [ ] `src/services/quote.service.ts(8,3):TS2459` - Module '"@/api/generated/api"' declares 'QuoteImportStatusResponse' locally, but it is not exported.
+- [ ] `src/services/quote.service.ts(19,9):TS2353` - Object literal may only specify known properties, and 'pk' does not exist in type 'DeepReadonlyObject<{ id
+- [ ] `src/services/quote.service.ts(25,50):TS2554` - Expected 1 arguments, but got 2.
+- [ ] `src/services/quote.service.ts(34,11):TS2353` - Object literal may only specify known properties, and 'pk' does not exist in type 'DeepReadonlyObject<{ id
+- [ ] `src/services/quote.service.ts(42,7):TS2345` - Argument of type '{}' is not assignable to parameter of type 'DeepReadonlyObject<objectInputType<{ success
+- [ ] `src/services/quote.service.ts(64,32):TS2341` - Property 'axiosInstance' is private and only accessible within class 'ZodiosClass<Api>'.
+- [ ] `src/services/quote.service.ts(88,32):TS2341` - Property 'axiosInstance' is private and only accessible within class 'ZodiosClass<Api>'.
+- [ ] `src/services/timesheet.service.ts(16,63):TS2559` - Type 'string' has no properties in common with type 'DeepReadonlyObject<{ date?
+- [ ] `src/services/timesheet.service.ts(21,9):TS2322` - Type 'number | undefined' is not assignable to type 'number'.
+- [ ] `src/services/timesheet.service.ts(28,31):TS18046` - 'staff.map' is of type 'unknown'.
+- [ ] `src/services/timesheet.service.ts(78,34):TS2551` - Property 'job_rest_timesheet_day_retrieve' does not exist on type 'ZodiosInstance<[{ method
+- [ ] `src/services/timesheet.service.ts(92,7):TS2740` - Type 'objectOutputType<{ jobs
+- [ ] `src/services/timesheet.service.ts(101,34):TS2551` - Property 'job_rest_timesheet_weekly_retrieve' does not exist on type 'ZodiosInstance<[{ method
+- [ ] `src/services/weekly-timesheet.service.ts(4,15):TS2459` - Module '"@/api/generated/api"' declares 'WeeklyTimesheetData' locally, but it is not exported.
+- [ ] `src/stores/auth.ts(10,48):TS2551` - Property 'CustomTokenObtainPair' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/stores/clientStore.ts(10,45):TS2551` - Property 'ClientContactResult' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/stores/clientStore.ts(41,7):TS2322` - Type 'objectOutputType<{ id
+- [ ] `src/stores/clientStore.ts(110,19):TS2353` - Object literal may only specify known properties, and 'client_id' does not exist in type 'DeepReadonlyObject<{ id
+- [ ] `src/stores/clientStore.ts(112,7):TS2740` - Type '{}' is missing the following properties from type 'any[]'
+- [ ] `src/stores/clientStore.ts(142,5):TS2740` - Type '{}' is missing the following properties from type 'any[]'
+- [ ] `src/stores/costing.ts(105,43):TS2339` - Property 'category' does not exist on type '{}'.
+- [ ] `src/stores/costing.ts(159,18):TS2339` - Property 'category' does not exist on type '{}'.
+- [ ] `src/stores/costing.ts(162,39):TS2339` - Property 'labour_minutes' does not exist on type '{}'.
+- [ ] `src/stores/costing.ts(163,26):TS2339` - Property 'labour_minutes' does not exist on type '{}'.
+- [ ] `src/stores/deliveryReceiptStore.ts(14,51):TS2339` - Property 'DeliveryReceiptLine' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/stores/deliveryReceiptStore.ts(70,25):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [ ] `src/stores/jobs.ts(338,7):TS2322` - Type 'string' is not assignable to type '"draft" | "awaiting_approval" | "approved" | "in_progress" | "unusual" | "recently_completed" | "special" | "archived" | undefined'.
+- [ ] `src/stores/jobs.ts(339,7):TS2322` - Type '"time_materials" | "fixed_price" | null' is not assignable to type '"time_materials" | "fixed_price" | undefined'.
+- [ ] `src/stores/purchaseOrderStore.ts(12,51):TS2551` - Property 'PatchedPurchaseOrderUpdate' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/stores/stockStore.ts(10,43):TS2339` - Property 'StockCreate' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/stores/stockStore.ts(12,10):TS1205` - Re-exporting a type when 'verbatimModuleSyntax' is enabled requires using 'export type'.
+- [ ] `src/stores/stockStore.ts(44,37):TS2339` - Property 'StockList' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/stores/stockStore.ts(102,17):TS2353` - Object literal may only specify known properties, and 'stock_id' does not exist in type 'DeepReadonlyObject<{ id
+- [ ] `src/stores/stockStore.ts(112,68):TS2353` - Object literal may only specify known properties, and 'stock_id' does not exist in type 'DeepReadonlyObject<{ id
+- [ ] `src/stores/timesheet.ts(15,59):TS2551` - Property 'PatchedCostLineCreateUpdate' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/stores/timesheet.ts(45,41):TS2339` - Property 'date' does not exist on type '{}'.
+- [ ] `src/stores/timesheet.ts(61,49):TS18048` - 'line.quantity' is possibly 'undefined'.
+- [ ] `src/stores/timesheet.ts(77,20):TS2339` - Property 'date' does not exist on type '{}'.
+- [ ] `src/stores/timesheet.ts(78,20):TS2339` - Property 'staff_id' does not exist on type '{}'.
+- [ ] `src/stores/timesheet.ts(84,46):TS18048` - 'line.quantity' is possibly 'undefined'.
+- [ ] `src/stores/timesheet.ts(91,46):TS2339` - Property 'is_billable' does not exist on type '{}'.
+- [ ] `src/stores/timesheet.ts(92,54):TS18048` - 'line.quantity' is possibly 'undefined'.
+- [ ] `src/stores/timesheet.ts(123,33):TS2554` - Expected 1 arguments, but got 0.
+- [ ] `src/stores/timesheet.ts(149,33):TS2554` - Expected 2 arguments, but got 1.
+- [ ] `src/stores/timesheet.ts(155,24):TS2345` - Argument of type 'objectOutputType<{ kind
+- [ ] `src/stores/timesheet.ts(174,37):TS2554` - Expected 2 arguments, but got 1.
+- [ ] `src/stores/timesheet.ts(204,17):TS2554` - Expected 2 arguments, but got 1.
+- [ ] `src/stores/timesheet.ts(289,43):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'ExternalToast<Component> | undefined'.
+- [ ] `src/stores/timesheet.ts(322,20):TS2353` - Object literal may only specify known properties, and 'date' does not exist in type 'DeepReadonlyObject<{ start_date?
+- [ ] `src/stores/timesheet.ts(378,37):TS2554` - Expected 2 arguments, but got 1.
+- [ ] `src/stores/timesheet.ts(386,28):TS2345` - Argument of type 'objectOutputType<{ kind
+- [ ] `src/stores/timesheet.ts(436,11):TS2698` - Spread types may only be created from object types.
+- [ ] `src/stores/timesheet.ts(442,41):TS2554` - Expected 2 arguments, but got 1.
+- [ ] `src/stores/timesheet.ts(451,11):TS2739` - Type 'objectOutputType<{ kind
+- [ ] `src/utils/delivery-receipt.ts(12,51):TS2339` - Property 'DeliveryReceiptLine' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/utils/delivery-receipt.ts(16,50):TS2551` - Property 'DeliveryReceiptAllocation' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/utils/errorHandler.ts(11,27):TS2339` - Property 'error' does not exist on type '{}'.
+- [ ] `src/utils/errorHandler.ts(11,49):TS2339` - Property 'message' does not exist on type '{}'.
+- [ ] `src/utils/errorHandler.ts(11,73):TS2339` - Property 'details' does not exist on type '{}'.
+- [ ] `src/views/AdminArchiveJobsView.vue(43,11):TS2322` - Type '"success"' is not assignable to type '"default" | "link" | "secondary" | "outline" | "destructive" | "ghost" | null | undefined'.
+- [ ] `src/views/AdminArchiveJobsView.vue(88,5):TS2322` - Type 'objectOutputType<{ id
+- [ ] `src/views/AdminArchiveJobsView.vue(132,7):TS2322` - Type '{}' is not assignable to type 'string'.
+- [ ] `src/views/AdminArchiveJobsView.vue(136,7):TS2322` - Type '{}' is not assignable to type 'string'.
+- [ ] `src/views/AdminCompanyView.vue(73,10):TS2740` - Type '{}' is missing the following properties from type 'objectOutputType<{ id
+- [ ] `src/views/AdminCompanyView.vue(103,3):TS1484` - 'CompanyDefaults' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+- [ ] `src/views/AdminCompanyView.vue(104,3):TS1484` - 'PatchedCompanyDefaults' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+- [ ] `src/views/AdminErrorView.vue(6,48):TS2322` - Type '{ search
+- [ ] `src/views/AdminErrorView.vue(112,5):TS2322` - Type '{ id
+- [ ] `src/views/AdminMonthEnd.vue(38,18):TS2322` - Type '{ material_line_count
+- [ ] `src/views/AdminMonthEnd.vue(66,16):TS2322` - Type '{ material_line_count
+- [ ] `src/views/AdminMonthEnd.vue(144,67):TS7006` - Parameter 'h' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(199,44):TS7006` - Parameter 'j' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(203,43):TS7006` - Parameter 'j' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(243,15):TS2459` - Module '"@/api/generated/api"' declares 'MonthEndJob' locally, but it is not exported.
+- [ ] `src/views/AdminMonthEnd.vue(243,28):TS2459` - Module '"@/api/generated/api"' declares 'MonthEndStockJob' locally, but it is not exported.
+- [ ] `src/views/AdminMonthEnd.vue(268,54):TS7006` - Parameter 'a' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(268,57):TS7006` - Parameter 'j' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(269,56):TS7006` - Parameter 'a' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(269,59):TS7006` - Parameter 'j' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(283,57):TS7006` - Parameter 'a' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(283,60):TS7006` - Parameter 'h' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(284,51):TS7006` - Parameter 'a' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(284,54):TS7006` - Parameter 'h' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(307,49):TS7006` - Parameter 'j' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(311,30):TS7006` - Parameter 'j' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(361,18):TS7006` - Parameter 'a' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(361,21):TS7006` - Parameter 'h' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(364,60):TS7006` - Parameter 'a' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(364,63):TS7006` - Parameter 'h' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(387,18):TS7006` - Parameter 'a' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(387,21):TS7006` - Parameter 'h' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(390,60):TS7006` - Parameter 'a' implicitly has an 'any' type.
+- [ ] `src/views/AdminMonthEnd.vue(390,63):TS7006` - Parameter 'h' implicitly has an 'any' type.
+- [ ] `src/views/AdminStaffView.vue(80,55):TS2345` - Argument of type 'string | null' is not assignable to parameter of type 'string'.
+- [ ] `src/views/AdminStaffView.vue(215,37):TS2554` - Expected 0 arguments, but got 1.
+- [ ] `src/views/AdminView.vue(63,5):TS18046` - 'userInfo.value.displayName' is of type 'unknown'.
+- [ ] `src/views/ClientDetailView.vue(104,26):TS2339` - Property 'isLoadingContacts' does not exist on type 'CreateComponentPublicInstanceWithMixins<ToResolvedProps<Props, {}>, { AppLayout
+- [ ] `src/views/DailyTimesheetView.vue(209,8):TS2724` - '"@/services/daily-timesheet.service"' has no exported member named 'DailyTimesheetSummary'. Did you mean 'getDailyTimesheetSummary'?
+- [ ] `src/views/DailyTimesheetView.vue(210,8):TS2614` - Module '"@/services/daily-timesheet.service"' has no exported member 'StaffDailyData'. Did you mean to use 'import StaffDailyData from "@/services/daily-timesheet.service"' instead?
+- [ ] `src/views/DataQualityArchivedJobsView.vue(389,7):TS2322` - Type '{ id
+- [ ] `src/views/DataQualityArchivedJobsView.vue(390,9):TS2345` - Argument of type '(job
+- [ ] `src/views/JobAgingReportView.vue(428,5):TS2322` - Type 'JobAgingData[]' is not assignable to type 'JobAgingData[] | { id
+- [ ] `src/views/JobAgingReportView.vue(454,38):TS2345` - Argument of type '{ id
+- [ ] `src/views/JobCreateView.vue(257,45):TS2551` - Property 'ClientContactResult' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/views/JobTable.vue(26,92):TS2339` - Property 'id' does not exist on type 'TData'.
+- [ ] `src/views/JobTable.vue(29,66):TS2339` - Property 'id' does not exist on type 'TData'.
+- [ ] `src/views/JobTable.vue(34,53):TS2339` - Property 'id' does not exist on type 'TData'.
+- [ ] `src/views/JobTable.vue(101,60):TS2339` - Property 'id' does not exist on type 'TData'.
+- [ ] `src/views/JobView.vue(55,20):TS4104` - The type 'readonly [{ readonly key
+- [ ] `src/views/JobView.vue(174,22):TS4104` - The type 'readonly [{ readonly key
+- [ ] `src/views/JobView.vue(271,12):TS2322` - Type '"actual" | "estimate" | "quote" | "costAnalysis" | "financial"' is not assignable to type 'JobTabKey'.
+- [ ] `src/views/JobView.vue(372,42):TS2345` - Argument of type 'string' is not assignable to parameter of type '"actual" | "estimate" | "quote" | "costAnalysis" | "financial" | undefined'.
+- [ ] `src/views/JobView.vue(521,5):TS2322` - Type 'string | undefined' is not assignable to type 'string'.
+- [ ] `src/views/JobView.vue(524,5):TS2322` - Type 'boolean | undefined' is not assignable to type 'boolean'.
+- [ ] `src/views/JobView.vue(525,5):TS2322` - Type 'boolean | undefined' is not assignable to type 'boolean'.
+- [ ] `src/views/JobView.vue(574,33):TS7006` - Parameter 'event' implicitly has an 'any' type.
+- [ ] `src/views/KPIReportsView.vue(226,46):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'number | null | undefined'.
+- [ ] `src/views/KPIReportsView.vue(229,56):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'number | null | undefined'.
+- [ ] `src/views/KPIReportsView.vue(418,24):TS2339` - Property 'details' does not exist on type '{}'.
+- [ ] `src/views/KPIReportsView.vue(425,24):TS2339` - Property 'details' does not exist on type '{}'.
+- [ ] `src/views/KPIReportsView.vue(431,22):TS18046` - 'materialRevenue.value' is of type 'unknown'.
+- [ ] `src/views/KPIReportsView.vue(431,46):TS18046` - 'totalRevenue.value' is of type 'unknown'.
+- [ ] `src/views/KanbanView.vue(69,20):TS2322` - Type 'objectOutputType<{ id
+- [ ] `src/views/KanbanView.vue(72,20):TS2322` - Type '(job
+- [ ] `src/views/KanbanView.vue(100,24):TS2322` - Type 'objectOutputType<{ id
+- [ ] `src/views/KanbanView.vue(103,24):TS2322` - Type '(job
+- [ ] `src/views/KanbanView.vue(124,24):TS2322` - Type 'objectOutputType<{ id
+- [ ] `src/views/KanbanView.vue(127,24):TS2322` - Type '(job
+- [ ] `src/views/QuotingChatView.vue(168,33):TS2459` - Module '"@/services/quote-chat.service"' declares 'VueChatMessage' locally, but it is not exported.
+- [ ] `src/views/QuotingChatView.vue(278,57):TS7006` - Parameter 'msg' implicitly has an 'any' type.
+- [ ] `src/views/TimesheetEntryView.vue(19,39):TS2345` - Argument of type '{ [x
+- [ ] `src/views/TimesheetEntryView.vue(151,37):TS2345` - Argument of type '{ [x
+- [ ] `src/views/TimesheetEntryView.vue(390,54):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string'.
+- [ ] `src/views/TimesheetEntryView.vue(393,45):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string'.
+- [ ] `src/views/TimesheetEntryView.vue(543,26):TS7016` - Could not find a declaration file for module 'lodash-es'. '/home/corrin/src/jobs_manager_front/node_modules/lodash-es/lodash.js' implicitly has an 'any' type.
+- [ ] `src/views/TimesheetEntryView.vue(714,19):TS2345` - Argument of type '{ [x
+- [ ] `src/views/TimesheetEntryView.vue(722,45):TS18046` - 'entry.hours' is of type 'unknown'.
+- [ ] `src/views/TimesheetEntryView.vue(725,86):TS18046` - 'entry.bill' is of type 'unknown'.
+- [ ] `src/views/TimesheetEntryView.vue(801,68):TS2339` - Property 'summary' does not exist on type '{}'.
+- [ ] `src/views/TimesheetEntryView.vue(802,62):TS2339` - Property 'summary' does not exist on type '{}'.
+- [ ] `src/views/TimesheetEntryView.vue(821,29):TS2345` - Argument of type '{ id
+- [ ] `src/views/TimesheetEntryView.vue(822,27):TS2345` - Argument of type '{ id
+- [ ] `src/views/TimesheetEntryView.vue(823,39):TS2345` - Argument of type '{ id
+- [ ] `src/views/TimesheetEntryView.vue(824,45):TS2345` - Argument of type '{ id
+- [ ] `src/views/TimesheetEntryView.vue(860,17):TS2352` - Conversion of type '{ id
+- [ ] `src/views/TimesheetEntryView.vue(864,50):TS2339` - Property 'has_actual_costset' does not exist on type '{ id
+- [ ] `src/views/TimesheetEntryView.vue(884,48):TS2345` - Argument of type '{ [x
+- [ ] `src/views/TimesheetEntryView.vue(885,36):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string'.
+- [ ] `src/views/TimesheetEntryView.vue(940,3):TS2345` - Argument of type '{ [x
+- [ ] `src/views/TimesheetEntryView.vue(1124,17):TS7053` - Element implicitly has an 'any' type because expression of type '0' can't be used to index type '{}'.
+- [ ] `src/views/TimesheetEntryView.vue(1125,16):TS7053` - Element implicitly has an 'any' type because expression of type '0' can't be used to index type '{}'.
+- [ ] `src/views/TimesheetEntryView.vue(1165,65):TS2339` - Property 'trim' does not exist on type '{}'.
+- [ ] `src/views/TimesheetEntryView.vue(1166,20):TS18046` - 'entry.hours' is of type 'unknown'.
+- [ ] `src/views/TimesheetEntryView.vue(1304,11):TS2322` - Type '{ id
+- [ ] `src/views/TimesheetEntryView.vue(1391,42):TS2345` - Argument of type 'number' is not assignable to parameter of type 'string'.
+- [ ] `src/views/TimesheetEntryView.vue(1432,55):TS2345` - Argument of type '{ [x
+- [ ] `src/views/TimesheetEntryView.vue(1572,56):TS2345` - Argument of type '{ [x
+- [ ] `src/views/TimesheetEntryView.vue(1609,60):TS2345` - Argument of type '{ [x
+- [ ] `src/views/TimesheetEntryView.vue(1653,52):TS2769` - No overload matches this call.
+- [ ] `src/views/TimesheetEntryView.vue(1658,58):TS2769` - No overload matches this call.
+- [ ] `src/views/TimesheetEntryView.vue(1664,56):TS2769` - No overload matches this call.
+- [ ] `src/views/TimesheetEntryView.vue(1727,21):TS2345` - Argument of type '{ [x
+- [ ] `src/views/TimesheetEntryView.vue(1760,53):TS2769` - No overload matches this call.
+- [x] `src/views/WeeklyTimesheetView.vue(225,58):TS7006` - Parameter 'd' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(235,58):TS7006` - Parameter 'd' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(300,15):TS2459` - Module '"@/api/generated/api"' declares 'WeeklyTimesheetData' locally, but it is not exported.
+- [x] `src/views/WeeklyTimesheetView.vue(399,47):TS7006` - Parameter 'd' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(399,50):TS7006` - Parameter 'idx' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(407,16):TS7006` - Parameter 'd' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(408,14):TS7006` - Parameter 'a' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(408,17):TS7006` - Parameter 'b' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(409,13):TS7006` - Parameter 'd' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(413,24):TS7006` - Parameter 'd' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(413,61):TS7006` - Parameter 'd' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(416,19):TS7006` - Parameter 'd' implicitly has an 'any' type.
+- [x] `src/views/WeeklyTimesheetView.vue(435,39):TS7006` - Parameter 'idx' implicitly has an 'any' type.
+- [ ] `src/views/jobColumns.ts(7,16):TS7031` - Binding element 'table' implicitly has an 'any' type.
+- [ ] `src/views/jobColumns.ts(11,9):TS2769` - No overload matches this call.
+- [ ] `src/views/jobColumns.ts(13,14):TS7031` - Binding element 'row' implicitly has an 'any' type.
+- [ ] `src/views/jobColumns.ts(13,19):TS7031` - Binding element 'table' implicitly has an 'any' type.
+- [ ] `src/views/jobColumns.ts(16,9):TS2769` - No overload matches this call.
+- [ ] `src/views/jobColumns.ts(27,14):TS7031` - Binding element 'row' implicitly has an 'any' type.
+- [ ] `src/views/jobColumns.ts(33,14):TS7031` - Binding element 'row' implicitly has an 'any' type.
+- [ ] `src/views/jobColumns.ts(39,14):TS7031` - Binding element 'row' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/ItemSelect.vue(81,27):TS2345` - Argument of type '{}' is not assignable to parameter of type 'number'.
+- [ ] `src/views/purchasing/ItemSelect.vue(161,25):TS2551` - Property 'unit_revenue' does not exist on type '{ [x
+- [ ] `src/views/purchasing/ItemSelect.vue(161,43):TS2551` - Property 'unit_revenue' does not exist on type '{ [x
+- [ ] `src/views/purchasing/ItemSelect.vue(166,33):TS2345` - Argument of type '{ [x
+- [ ] `src/views/purchasing/PoCreateView.vue(41,15):TS2459` - Module '"@/api/generated/api"' declares 'PurchaseOrderCreate' locally, but it is not exported.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(157,15):TS2459` - Module '"@/api/generated/api"' declares 'PurchaseOrderLine' locally, but it is not exported.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(157,34):TS2459` - Module '"@/api/generated/api"' declares 'PurchaseOrderDetail' locally, but it is not exported.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(157,55):TS2459` - Module '"@/api/generated/api"' declares 'JobForPurchasing' locally, but it is not exported.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(163,50):TS2551` - Property 'DeliveryReceiptAllocation' does not exist on type '{ KPIProfitBreakdown
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(496,42):TS7006` - Parameter 'o' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(557,30):TS7006` - Parameter 'line' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(562,52):TS7006` - Parameter 'line' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(571,10):TS7006` - Parameter 'line' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(600,44):TS7006` - Parameter 'l' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(604,46):TS7006` - Parameter 'line' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(663,44):TS7006` - Parameter 'line' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(698,7):TS2345` - Argument of type '{}' is not assignable to parameter of type 'undefined'.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(771,92):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string | number | boolean'.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(771,134):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string | number | boolean'.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(771,180):TS2345` - Argument of type 'unknown' is not assignable to parameter of type 'string | number | boolean'.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(778,23):TS2345` - Argument of type '{}' is not assignable to parameter of type 'string'.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(822,14):TS2339` - Property 'response' does not exist on type '{}'.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(823,44):TS2339` - Property 'message' does not exist on type 'object'.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(920,40):TS7006` - Parameter 'l' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(921,40):TS7006` - Parameter 'l' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(1062,43):TS7006` - Parameter 'newLine' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderFormView.vue(1062,52):TS7006` - Parameter 'index' implicitly has an 'any' type.
+- [ ] `src/views/purchasing/PurchaseOrderView.vue(129,5):TS2769` - No overload matches this call.
+- [ ] `src/views/purchasing/PurchaseOrderView.vue(201,32):TS2769` - No overload matches this call.
+- [ ] `src/views/purchasing/StockView.vue(276,24):TS2339` - Property 'toLowerCase' does not exist on type '{}'.
+- [ ] `src/views/purchasing/StockView.vue(479,29):TS2345` - Argument of type '{ id

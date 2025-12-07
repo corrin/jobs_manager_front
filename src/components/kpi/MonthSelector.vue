@@ -97,6 +97,7 @@ const monthOptions = computed(() => {
 })
 
 function handleMonthChange(value: string) {
+  if (typeof value !== 'string') return
   const [year, month] = value.split('-')
   emit('update:year', parseInt(year))
   emit('update:month', parseInt(month))

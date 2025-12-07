@@ -158,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, toRaw } from 'vue'
+import { ref, computed, watch, toRaw, reactive } from 'vue'
 import { XCircle } from 'lucide-vue-next'
 import { ZodError } from 'zod'
 import {
@@ -174,13 +174,23 @@ import { api } from '@/api/client'
 import { z } from 'zod'
 import type { Client } from '@/composables/useClientLookup'
 import { schemas } from '@/api/generated/api'
+import { isAxiosError } from 'axios'
 
 // Use generated types from Zodios API
-type ClientCreateRequestSchema = typeof schemas.ClientCreateRequestRequest
-type ClientCreateRequest = z.infer<ClientCreateRequestSchema>
+type ClientCreateRequestSchema = typeof schemas.ClientCreateRequest
+type ClientUpdateRequest = z.input<typeof schemas.ClientUpdateRequest>
+type ClientCreateInput = z.input<typeof schemas.ClientCreateRequest>
+type ClientUpdateInput = z.input<typeof schemas.ClientUpdateRequest>
 type ClientCreateResponse = z.infer<typeof schemas.ClientCreateResponse>
 type ClientUpdateResponse = z.infer<typeof schemas.ClientUpdateResponse>
-const clientSchema: ClientCreateRequestSchema = schemas.ClientCreateRequestRequest
+const clientSchema: ClientCreateRequestSchema = schemas.ClientCreateRequest
+type ClientFormPayload = {
+  name: ClientCreateInput['name']
+  email?: ClientUpdateInput['email']
+  phone?: ClientUpdateInput['phone']
+  address?: ClientUpdateInput['address']
+  is_account_customer: NonNullable<ClientCreateInput['is_account_customer']>
+}
 
 interface Props {
   isOpen: boolean
@@ -214,7 +224,7 @@ const emit = defineEmits<{
   'client-created': [client: Client]
 }>()
 
-const formData = ref<ClientCreateRequest>({
+const formData = reactive<ClientFormPayload>({
   name: '',
   email: '',
   phone: '',
@@ -229,7 +239,7 @@ const blockedNoXeroId = ref(false)
 const duplicateClientInfo = ref<{ name: string; xero_contact_id: string } | null>(null)
 
 const isFormValid = computed(() => {
-  if (!formData.value.name.trim()) return false
+  if (!formData.name.trim()) return false
   if (Object.keys(fieldErrors.value).length > 0) return false
   return true
 })
@@ -240,12 +250,12 @@ const handleDialogChange = (open: boolean) => {
 
 const validateForm = (): boolean => {
   console.log('🔍 validateForm called')
-  console.log('📋 formData before validation:', formData.value)
+  console.log('📋 formData before validation:', formData)
 
   fieldErrors.value = {}
   try {
     // Convert reactive object to plain object for validation
-    const plainFormData = toRaw(formData.value)
+    const plainFormData = toRaw(formData)
     console.log('🔧 Plain object for validation:', plainFormData)
 
     // Clean optional fields before validation
@@ -271,18 +281,18 @@ const validateForm = (): boolean => {
 }
 
 const handleSubmit = async () => {
-  console.log('🚀 handleSubmit called')
-  console.log('📝 formData.value:', formData.value)
-  console.log('📝 formData.value.name:', formData.value.name)
-  console.log('📝 typeof formData.value.name:', typeof formData.value.name)
-  console.log('📝 formData.value.name.trim():', formData.value.name?.trim())
+  console.log('handleSubmit called')
+  console.log('formData.value:', formData)
+  console.log('formData.value.name:', formData.name)
+  console.log('typeof formData.name:', typeof formData.name)
+  console.log('formData.value.name.trim():', formData.name?.trim())
 
   if (!validateForm()) {
-    console.log('❌ Form validation failed')
+    console.log('Form validation failed')
     return
   }
 
-  console.log('✅ Form validation passed')
+  console.log('Form validation passed')
 
   isLoading.value = true
   errorMessage.value = ''
@@ -291,73 +301,47 @@ const handleSubmit = async () => {
 
   try {
     // Convert reactive object to plain object for Zodios
-    const plainFormData = toRaw(formData.value)
-    console.log('🌐 About to call API with body:', formData.value)
-    console.log('🔧 Plain object for API:', plainFormData)
+    const plainFormData = toRaw(formData)
+    console.log('About to call API with body:', formData)
+    console.log('Plain object for API:', plainFormData)
 
     // Clean optional fields before API call
     const cleanedData = cleanOptionalFields(plainFormData)
-    console.log('🧹 Cleaned data for API call:', cleanedData)
-    console.log('🔧 JSON stringified:', JSON.stringify(cleanedData))
+    console.log('Cleaned data for API call:', cleanedData)
+    console.log('JSON stringified:', JSON.stringify(cleanedData))
 
     // Validate the cleaned data manually first
     try {
       clientSchema.parse(cleanedData)
-      console.log('✅ Manual validation passed')
+      console.log('Manual validation passed')
     } catch (validationError) {
-      console.log('❌ Manual validation failed:', validationError)
+      console.log('Manual validation failed:', validationError)
       throw validationError
     }
 
-    let result: ClientCreateResponse | ClientUpdateResponse
-
     if (props.editMode && props.clientId) {
       // Update existing client
-      result = await api.clients_update_update(cleanedData, {
+      const updatePayload: ClientUpdateRequest = { ...cleanedData }
+      const result = await api.clients_update_update(updatePayload, {
         params: { client_id: props.clientId },
       })
+      handleClientResponse(result, true)
     } else {
       // Create new client
-      result = await api.clients_create_create(cleanedData)
-    }
-
-    console.log('📡 API response:', result)
-
-    if (!result.success) {
-      if (result.existing_client && result.existing_client.xero_contact_id) {
-        duplicateClientInfo.value = result.existing_client
-        errorMessage.value = result.error || 'Client already exists in Xero.'
-        return
-      }
-      throw new Error(result.error || `Failed to ${props.editMode ? 'update' : 'create'} client`)
-    }
-
-    if (result.client) {
-      if (!props.editMode && !result.client.xero_contact_id) {
-        blockedNoXeroId.value = true
-        errorMessage.value =
-          'Client was created but does not have a Xero ID. Please try again or contact support.'
-        return
-      }
-
-      const clientData: Client = {
-        id: result.client.id,
-        name: result.client.name,
-        email: result.client.email || '',
-        phone: result.client.phone || '',
-        address: result.client.address || '',
-        xero_contact_id: result.client.xero_contact_id || '',
-      }
-      emit('client-created', clientData)
-      emit('update:isOpen', false)
+      const result = await api.clients_create_create(cleanedData)
+      handleClientResponse(result, false)
     }
   } catch (error) {
     console.error('Error creating client:', error)
+    if (handleDuplicateClientError(error)) {
+      return
+    }
     errorMessage.value = error instanceof Error ? error.message : 'An unexpected error occurred'
   } finally {
     isLoading.value = false
   }
 }
+
 
 const handleAddOther = () => {
   resetForm()
@@ -369,7 +353,7 @@ const handleCancel = () => {
   emit('update:isOpen', false)
 }
 
-const cleanOptionalFields = (data: ClientCreateRequest): ClientCreateRequest => {
+const cleanOptionalFields = (data: ClientFormPayload): ClientFormPayload => {
   return {
     ...data,
     email: data.email?.trim() || undefined,
@@ -377,20 +361,85 @@ const cleanOptionalFields = (data: ClientCreateRequest): ClientCreateRequest => 
     address: data.address?.trim() || undefined,
   }
 }
+const handleClientResponse = (
+  result: ClientCreateResponse | ClientUpdateResponse,
+  isEditMode: boolean,
+) => {
+  console.log('?Y"? API response:', result)
+
+  if (!result.success) {
+    throw new Error(result.message || `Failed to ${isEditMode ? 'update' : 'create'} client`)
+  }
+
+  if (!result.client) {
+    throw new Error('Missing client in response')
+  }
+
+  if (!isEditMode && !result.client.xero_contact_id) {
+    blockedNoXeroId.value = true
+    errorMessage.value =
+      'Client was created but does not have a Xero ID. Please try again or contact support.'
+    return
+  }
+
+  const clientData = normalizeClientResult(result.client)
+  emit('client-created', clientData)
+  emit('update:isOpen', false)
+}
+
+const normalizeClientResult = (
+  clientPayload: ClientCreateResponse['client'] | ClientUpdateResponse['client'],
+): Client => {
+  return schemas.ClientSearchResult.parse({
+    ...clientPayload,
+    email: clientPayload.email ?? '',
+    phone: clientPayload.phone ?? '',
+    address: clientPayload.address ?? '',
+    xero_contact_id: clientPayload.xero_contact_id ?? '',
+  })
+}
+
+const handleDuplicateClientError = (error: unknown): boolean => {
+  if (!isAxiosError(error)) {
+    return false
+  }
+
+  const payload = error.response?.data
+  const parsedDuplicate = schemas.ClientDuplicateErrorResponse.safeParse(payload)
+
+  if (!parsedDuplicate.success) {
+    return false
+  }
+
+  const existingClient = parsedDuplicate.data.existing_client as Record<string, unknown> | undefined
+  const nameValue = typeof existingClient?.name === 'string' ? existingClient.name : 'Existing client'
+  const xeroIdValue =
+    typeof existingClient?.xero_contact_id === 'string' ? existingClient.xero_contact_id : ''
+
+  duplicateClientInfo.value = {
+    name: nameValue,
+    xero_contact_id: xeroIdValue,
+  }
+  errorMessage.value = parsedDuplicate.data.error || 'Client already exists in Xero.'
+
+  return true
+}
+
+
 
 const resetForm = () => {
   console.log('🔄 resetForm called')
-  console.log('📋 formData before reset:', formData.value)
+  console.log('📋 formData before reset:', formData)
 
-  formData.value = {
+  Object.assign(formData, {
     name: '',
     email: '',
     phone: '',
     address: '',
     is_account_customer: false,
-  }
+  })
 
-  console.log('📋 formData after reset:', formData.value)
+  console.log('📋 formData after reset:', formData)
 
   errorMessage.value = ''
   fieldErrors.value = {}
@@ -408,24 +457,24 @@ watch(
       console.log('🔄 Resetting form...')
       // Reset form first
       resetForm()
-      console.log('📋 Form after reset:', formData.value)
+      console.log('📋 Form after reset:', formData)
 
       if (props.editMode && props.clientData) {
         // Pre-populate with existing client data
         console.log('✏️ Edit mode: Pre-populating with client data')
-        formData.value = {
+        Object.assign(formData, {
           name: props.clientData.name,
           email: props.clientData.email,
           phone: props.clientData.phone,
           address: props.clientData.address,
           is_account_customer: props.clientData.is_account_customer,
-        }
-        console.log('📋 Form after pre-population:', formData.value)
+        })
+        console.log('📋 Form after pre-population:', formData)
       } else if (props.initialName) {
         // Create mode with initial name
         console.log('🏷️ Setting initial name:', props.initialName)
-        formData.value.name = props.initialName
-        console.log('📋 Form after setting name:', formData.value)
+        formData.name = props.initialName
+        console.log('📋 Form after setting name:', formData)
       }
     }
   },

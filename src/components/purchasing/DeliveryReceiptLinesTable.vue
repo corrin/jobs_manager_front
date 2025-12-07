@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, h, ref } from 'vue'
 import DataTable from '@/components/DataTable.vue'
+import type { ColumnDef } from '@tanstack/vue-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -19,7 +20,12 @@ import type { z } from 'zod'
 import type { DeliveryAllocation } from '@/utils/delivery-receipt'
 import type { DataTableRowContext } from '@/utils/data-table-types'
 
-type DeliveryDataTableRowContext = DataTableRowContext
+interface DeliveryDataTableRowContext extends DataTableRowContext {
+  row: {
+    original: PurchaseOrderLine
+    index: number
+  }
+}
 
 // Use generated API types
 type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
@@ -162,7 +168,7 @@ const removeAllocation = (lineId: string, index: number) => {
   emit('update:allocations', newAllocations)
 }
 
-const columns = computed(() => [
+const columns = computed((): ColumnDef<PurchaseOrderLine>[] => [
   {
     id: 'description',
     header: 'Description',
@@ -174,10 +180,10 @@ const columns = computed(() => [
         line.part_no ? h('div', { class: 'text-sm text-gray-500' }, `Part: ${line.part_no}`) : null,
         line.metal_type || line.alloy
           ? h(
-              'div',
-              { class: 'text-sm text-gray-500' },
-              [formatMetalType(line.metal_type), line.alloy].filter(Boolean).join(' - '),
-            )
+            'div',
+            { class: 'text-sm text-gray-500' },
+            [formatMetalType(line.metal_type), line.alloy].filter(Boolean).join(' - '),
+          )
           : null,
       ])
     },
@@ -209,10 +215,10 @@ const columns = computed(() => [
         ]),
         totalReceived > 0
           ? h('div', { class: 'flex items-center justify-center gap-2 mt-2 pt-2 border-t' }, [
-              h(Package, { class: 'w-4 h-4 text-purple-500' }),
-              h('span', { class: 'text-sm font-medium' }, 'This Receipt:'),
-              h('span', { class: 'font-bold text-purple-600' }, totalReceived),
-            ])
+            h(Package, { class: 'w-4 h-4 text-purple-500' }),
+            h('span', { class: 'text-sm font-medium' }, 'This Receipt:'),
+            h('span', { class: 'font-bold text-purple-600' }, totalReceived),
+          ])
           : null,
       ])
     },
@@ -229,15 +235,15 @@ const columns = computed(() => [
       return h('div', { class: 'space-y-2 max-w-sm' }, [
         existingAllocations.length > 0
           ? h('div', { class: 'p-2 border rounded-lg bg-blue-50 border-blue-200' }, [
-              h('div', { class: 'flex items-center gap-1 mb-1' }, [
-                h(History, { class: 'w-3 h-3 text-blue-600 flex-shrink-0' }),
-                h('span', { class: 'text-xs font-medium text-blue-800' }, 'Previous Allocations'),
-              ]),
-              h('div', { class: 'text-xs text-blue-700' }, [
-                `${existingAllocations.length} allocation${existingAllocations.length > 1 ? 's' : ''} • `,
-                `Total: ${existingAllocations.reduce((sum, alloc) => sum + alloc.quantity, 0)} units`,
-              ]),
-            ])
+            h('div', { class: 'flex items-center gap-1 mb-1' }, [
+              h(History, { class: 'w-3 h-3 text-blue-600 flex-shrink-0' }),
+              h('span', { class: 'text-xs font-medium text-blue-800' }, 'Previous Allocations'),
+            ]),
+            h('div', { class: 'text-xs text-blue-700' }, [
+              `${existingAllocations.length} allocation${existingAllocations.length > 1 ? 's' : ''} • `,
+              `Total: ${existingAllocations.reduce((sum, alloc) => sum + alloc.quantity, 0)} units`,
+            ]),
+          ])
           : null,
 
         existingAllocations.length > 0 && allocations.length > 0
@@ -298,17 +304,17 @@ const columns = computed(() => [
 
         remaining > 0
           ? h('div', { class: 'flex justify-center' }, [
-              h(
-                Button,
-                {
-                  variant: 'outline',
-                  size: 'sm',
-                  class: 'border-dashed border-2 hover:border-solid text-xs',
-                  onClick: () => openModal(row.original.id),
-                },
-                () => [h(Plus, { class: 'w-3 h-3 mr-1' }), 'Add'],
-              ),
-            ])
+            h(
+              Button,
+              {
+                variant: 'outline',
+                size: 'sm',
+                class: 'border-dashed border-2 hover:border-solid text-xs',
+                onClick: () => openModal(row.original.id),
+              },
+              () => [h(Plus, { class: 'w-3 h-3 mr-1' }), 'Add'],
+            ),
+          ])
           : null,
 
         // Check if current total allocations exceed what's available (ordered - already received)
@@ -320,10 +326,10 @@ const columns = computed(() => [
           )
           return totalCurrentAllocations > maxAvailable
             ? h(
-                'div',
-                { class: 'p-1 bg-red-50 border border-red-200 rounded text-xs text-red-700' },
-                ['Warning: Exceeds remaining'],
-              )
+              'div',
+              { class: 'p-1 bg-red-50 border border-red-200 rounded text-xs text-red-700' },
+              ['Warning: Exceeds remaining'],
+            )
             : null
         })(),
       ])
@@ -335,29 +341,18 @@ const columns = computed(() => [
 
 <template>
   <div class="flex flex-col h-full">
-    <div
-      class="flex-1 overflow-auto"
-      :style="`max-height: ${Math.min(400, Math.max(200, props.lines.length * 120 + 100))}px`"
-    >
-      <DataTable
-        :columns="columns"
-        :data="props.lines"
-        @rowClick="() => {}"
-        :page-size="1000"
-        :hide-footer="true"
-        class="w-full"
-      />
+    <div class="flex-1 overflow-auto"
+      :style="`max-height: ${Math.min(400, Math.max(200, props.lines.length * 120 + 100))}px`">
+      <DataTable :columns="columns" :data="props.lines" @rowClick="() => { }" :page-size="1000" :hide-footer="true"
+        class="w-full" />
     </div>
 
     <!-- Allocation Modal using shadcn-vue Dialog -->
-    <Dialog
-      :open="isModalOpen"
-      @update:open="
-        (open) => {
-          if (!open) closeModal()
-        }
-      "
-    >
+    <Dialog :open="isModalOpen" @update:open="
+      (open) => {
+        if (!open) closeModal()
+      }
+    ">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -380,11 +375,7 @@ const columns = computed(() => [
                     Stock Holding
                   </div>
                 </SelectItem>
-                <SelectItem
-                  v-for="job in props.jobs.filter((j) => !j.is_stock_holding)"
-                  :key="job.id"
-                  :value="job.id"
-                >
+                <SelectItem v-for="job in props.jobs.filter((j) => !j.is_stock_holding)" :key="job.id" :value="job.id">
                   <div class="flex items-center gap-2">
                     <Package class="w-4 h-4 text-blue-500" />
                     {{ job.name }}
@@ -397,16 +388,8 @@ const columns = computed(() => [
           <!-- Quantity -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2"> Quantity Received </label>
-            <Input
-              v-model.number="modalData.quantity"
-              type="number"
-              step="1"
-              min="0"
-              :max="
-                editingLineId ? getRemaining(props.lines.find((l) => l.id === editingLineId)!) : 0
-              "
-              placeholder="Enter quantity"
-            />
+            <Input v-model.number="modalData.quantity" type="number" step="1" min="0" :max="editingLineId ? getRemaining(props.lines.find((l) => l.id === editingLineId)!) : 0
+              " placeholder="Enter quantity" />
           </div>
 
           <!-- Conditional Fields -->
@@ -417,14 +400,8 @@ const columns = computed(() => [
                 Retail Rate (%)
               </div>
             </label>
-            <Input
-              v-model.number="modalData.retail_rate"
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              placeholder="e.g., 20.5"
-            />
+            <Input v-model.number="modalData.retail_rate" type="number" step="0.01" min="0" max="100"
+              placeholder="e.g., 20.5" />
           </div>
 
           <div v-if="!modalData.job_id">
@@ -434,10 +411,7 @@ const columns = computed(() => [
                 Stock Location
               </div>
             </label>
-            <Input
-              v-model="modalData.stock_location"
-              placeholder="e.g., Pallet 12 - Rack D, Shelf 3 etc."
-            />
+            <Input v-model="modalData.stock_location" placeholder="e.g., Pallet 12 - Rack D, Shelf 3 etc." />
           </div>
         </div>
 

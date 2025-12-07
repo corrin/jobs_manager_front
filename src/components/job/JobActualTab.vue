@@ -486,6 +486,7 @@ const showDetailedSummary = ref(false)
 const blockedFieldsByKind = ref<Record<KindOption, string[]>>({
   material: ['quantity', 'unit_cost', 'unit_rev'], // Allow desc editing for material items
   adjust: [],
+  time: [],
 })
 
 const negativeStockSet = reactive(new Set<string>())
@@ -740,7 +741,7 @@ function resolveSource(
     return {
       visible: true,
       label,
-      onClick: () => navigateToDeliveryReceipt(line.ext_refs.purchase_order_id as string),
+      onClick: () => navigateToDeliveryReceipt(line.ext_refs.purchase_order_id),
     }
   }
 
@@ -749,18 +750,19 @@ function resolveSource(
     return {
       visible: true,
       label: 'Stock',
-      onClick: () => navigateToStock(/* line.ext_refs.stock_id as string */),
+      onClick: () => navigateToStock(/* extRefs.stock_id */),
     }
   }
 
   // Time from Timesheet
   if (String(line.kind) === 'time' && isTimesheetMeta(line.meta)) {
-    const staffName = staffMap.value[line.meta.staff_id]?.display_name || 'Timesheet'
-    const date = line.meta.date
+    const meta = line.meta
+    const staffName = staffMap.value[meta.staff_id]?.display_name || 'Timesheet'
+    const date = meta.date
     return {
       visible: true,
       label: staffName,
-      onClick: () => navigateToTimesheet(line.meta.staff_id as string, date),
+      onClick: () => navigateToTimesheet(meta.staff_id, date),
     }
   }
 

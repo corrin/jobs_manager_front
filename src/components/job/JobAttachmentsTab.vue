@@ -245,6 +245,7 @@ type JobFile = z.infer<typeof schemas.JobFile> & {
   thumbnailError?: boolean
   downloadError?: boolean
 }
+type UploadedFileSummary = z.infer<typeof schemas.UploadedFile>
 
 interface Props {
   jobId: string
@@ -254,7 +255,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  'file-uploaded': []
+  'file-uploaded': [file: JobFile]
   'file-deleted': [fileId: string]
 }>()
 
@@ -474,8 +475,13 @@ const uploadFile = async (file: File) => {
     debugLog('✅ File uploaded successfully:', response)
     toast.success(`File "${file.name}" uploaded successfully`)
 
-    emit('file-uploaded')
     await loadFiles()
+
+    if (response.uploaded.length > 0) {
+      const uploadedDescriptor = response.uploaded[0]
+      const jobFile = files.value.find((f) => f.id === uploadedDescriptor.id)
+      emit('file-uploaded', jobFile ?? mapUploadedToJobFile(uploadedDescriptor))
+    }
 
     // Reset progress after a short delay
     setTimeout(() => {
@@ -659,6 +665,20 @@ const openPdfPreview = (file: JobFile) => {
     window.open(file.download_url, '_blank', 'noopener,noreferrer')
   }
 }
+
+const mapUploadedToJobFile = (uploaded: UploadedFileSummary): JobFile => ({
+  id: uploaded.id,
+  filename: uploaded.filename,
+  mime_type: undefined,
+  uploaded_at: new Date().toISOString(),
+  status: undefined,
+  print_on_jobsheet: uploaded.print_on_jobsheet,
+  size: null,
+  download_url: '',
+  thumbnail_url: null,
+  thumbnailError: false,
+  downloadError: false,
+})
 
 // Lifecycle
 onMounted(() => {

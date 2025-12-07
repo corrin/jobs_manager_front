@@ -13,7 +13,7 @@ type DeliveryReceiptLine = z.infer<typeof schemas.DeliveryReceiptLine>
 type DeliveryReceiptRequest = z.infer<typeof schemas.DeliveryReceiptRequest>
 
 // Use generated API types only
-type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocation>
+export type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocation>
 // SCheduled for deletion but kept for reference
 
 /**

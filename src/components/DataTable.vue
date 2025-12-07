@@ -1,5 +1,11 @@
 <script setup lang="ts" generic="TData">
-import { getCoreRowModel, useVueTable, FlexRender, type ColumnDef } from '@tanstack/vue-table'
+import {
+  getCoreRowModel,
+  useVueTable,
+  FlexRender,
+  type ColumnDef,
+  type Column,
+} from '@tanstack/vue-table'
 import {
   Table,
   TableBody,
@@ -37,6 +43,15 @@ const table = useVueTable({
 })
 
 const colCount = computed(() => props.columns.length)
+
+type EditableColumnMeta = {
+  editable?: boolean
+}
+
+const isReadOnlyColumn = (column: Column<TData, unknown>) => {
+  const meta = column.columnDef.meta as EditableColumnMeta | undefined
+  return meta?.editable === false
+}
 </script>
 <template>
   <div class="space-y-2">
@@ -71,7 +86,7 @@ const colCount = computed(() => props.columns.length)
 
               <!-- simple fallback for columns without a renderer -->
               <template v-else>
-                <template v-if="cell.column.columnDef.meta?.editable === false">
+                <template v-if="isReadOnlyColumn(cell.column)">
                   {{ cell.getValue() }}
                 </template>
                 <template v-else-if="typeof cell.getValue() === 'boolean'">

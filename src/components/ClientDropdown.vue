@@ -35,7 +35,7 @@ import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { z } from 'zod'
 
-type Client = z.infer<typeof schemas.Client>
+type Client = z.infer<typeof schemas.ClientNameOnly>
 
 interface Props {
   id: string
@@ -67,7 +67,7 @@ const loadClientOptions = async (): Promise<void> => {
   try {
     isLoading.value = true
     error.value = null
-    const data = await api.clients_all_retrieve()
+    const data = await api.clients_all_list()
     clientOptions.value = data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load client options'
@@ -79,12 +79,12 @@ const loadClientOptions = async (): Promise<void> => {
 
 const handleChange = (): void => {
   emit('update:modelValue', selectedValue.value)
-  const client = clientOptions.value.find((c) => c.id === selectedValue.value) || null
+  const client = clientOptions.value.find((c: Client) => c.id === selectedValue.value) || null
   emit('selected-client', client)
 }
 
 function upsertClientInOptions(c: Client) {
-  const idx = clientOptions.value.findIndex((x) => x.id === c.id)
+  const idx = clientOptions.value.findIndex((x: Client) => x.id === c.id)
   if (idx === -1) {
     clientOptions.value = [c, ...clientOptions.value]
   } else {

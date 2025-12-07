@@ -126,25 +126,26 @@ const emit = defineEmits(['close', 'save'])
 
 const isEditing = computed(() => !!props.provider)
 
-const formSchema = toTypedSchema(
-  z
-    .object({
-      id: z.number().optional().nullable(),
-      name: z.string().min(1, 'Name is required'),
-      provider_type: z.enum(['Claude', 'Gemini', 'Mistral'], {
-        required_error: 'Provider type is required',
-      }),
-      model_name: z.string().optional(),
-      api_key: z.string().optional(),
-      default: z.boolean().default(false),
-    })
-    .refine((data) => (!isEditing.value ? !!data.api_key : true), {
-      message: 'API Key is required for new providers',
-      path: ['api_key'],
+const baseSchema = z
+  .object({
+    id: z.number().optional().nullable(),
+    name: z.string().min(1, 'Name is required'),
+    provider_type: z.enum(['Claude', 'Gemini', 'Mistral'], {
+      required_error: 'Provider type is required',
     }),
-)
+    model_name: z.string().optional(),
+    api_key: z.string().optional(),
+    default: z.boolean().default(false),
+  })
+  .refine((data) => (!isEditing.value ? !!data.api_key : true), {
+    message: 'API Key is required for new providers',
+    path: ['api_key'],
+  })
 
-const { handleSubmit, defineField, errors, isSubmitting } = useForm<AIProvider>({
+type FormValues = z.input<typeof baseSchema>
+const formSchema = toTypedSchema(baseSchema)
+
+const { handleSubmit, defineField, errors, isSubmitting } = useForm<FormValues>({
   validationSchema: formSchema,
   initialValues: {
     id: props.provider?.id ?? null,
@@ -153,7 +154,7 @@ const { handleSubmit, defineField, errors, isSubmitting } = useForm<AIProvider>(
     model_name: props.provider?.model_name ?? '',
     api_key: '',
     default: props.provider?.default ?? false,
-  },
+  } satisfies FormValues,
 })
 
 const [name] = defineField('name')

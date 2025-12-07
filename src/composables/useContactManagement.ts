@@ -2,11 +2,21 @@ import { ref, computed } from 'vue'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { z } from 'zod'
-import type { ClientContact } from '@/composables/useClientLookup'
 import { debugLog } from '@/utils/debug'
 
-type ContactCreateRequest = z.infer<typeof schemas.ClientContactRequest>
-type NewContactData = Omit<ContactCreateRequest, 'client'>
+// Schema-derived types (no custom interfaces)
+type ClientContact = z.infer<typeof schemas.ClientContact>
+type ContactCreateRequest = z.input<typeof schemas.ClientContactRequest>
+type ContactUpdateRequest = z.input<typeof schemas.PatchedClientContactRequest>
+type ContactFormFields = {
+  name: ContactCreateRequest['name']
+  position: ContactCreateRequest['position']
+  email: ContactCreateRequest['email']
+  phone: ContactCreateRequest['phone']
+  notes: ContactCreateRequest['notes']
+  is_primary: boolean
+}
+export type ContactFormData = ContactFormFields
 
 /**
  * Composable for managing client contacts
@@ -24,7 +34,7 @@ export function useContactManagement() {
   const currentClientId = ref<string>('')
   const currentClientName = ref<string>('')
 
-  const newContactForm = ref<NewContactData>({
+  const newContactForm = ref<ContactFormData>({
     name: '',
     position: '',
     email: '',
@@ -57,18 +67,18 @@ export function useContactManagement() {
       // Expecting format: "name - phone - email"
       const [name, phone, email] = val.split(' - ')
       if (selectedContact.value) {
-        selectedContact.value.name = name
-        selectedContact.value.phone = phone || ''
-        selectedContact.value.email = email || ''
-      } else {
-        // If no contact is selected, create a new empty one
         selectedContact.value = {
-          name: name,
+          ...selectedContact.value,
+          name,
           phone: phone || '',
           email: email || '',
-          position: '',
-          notes: '',
-          is_primary: false,
+        }
+      } else {
+        newContactForm.value = {
+          ...newContactForm.value,
+          name,
+          phone: phone || '',
+          email: email || '',
         }
       }
     },
@@ -192,31 +202,19 @@ export function useContactManagement() {
       // If this is the first contact for the client, automatically make it primary
       const shouldBePrimary = newContactForm.value.is_primary || contacts.value.length === 0
 
-      const contactData: Partial<ContactCreateRequest> = {
+      const trimmedPosition = newContactForm.value.position?.trim()
+      const trimmedEmail = newContactForm.value.email?.trim()
+      const trimmedPhone = newContactForm.value.phone?.trim()
+      const trimmedNotes = newContactForm.value.notes?.trim()
+
+      const contactData: ContactCreateRequest = {
         client: currentClientId.value,
         name: newContactForm.value.name.trim(),
         is_primary: shouldBePrimary,
-      }
-
-      // Only include optional fields when they contain data to match API validation rules.
-      const trimmedPosition = newContactForm.value.position?.trim()
-      if (trimmedPosition) {
-        contactData.position = trimmedPosition
-      }
-
-      const trimmedEmail = newContactForm.value.email?.trim()
-      if (trimmedEmail) {
-        contactData.email = trimmedEmail
-      }
-
-      const trimmedPhone = newContactForm.value.phone?.trim()
-      if (trimmedPhone) {
-        contactData.phone = trimmedPhone
-      }
-
-      const trimmedNotes = newContactForm.value.notes?.trim()
-      if (trimmedNotes) {
-        contactData.notes = trimmedNotes
+        position: trimmedPosition || undefined,
+        email: trimmedEmail || undefined,
+        phone: trimmedPhone || undefined,
+        notes: trimmedNotes || undefined,
       }
 
       debugLog('Creating new contact:', contactData)
@@ -313,7 +311,7 @@ export function useContactManagement() {
     isLoading.value = true
 
     try {
-      const contactData = {
+      const contactData: ContactUpdateRequest = {
         name: newContactForm.value.name.trim(),
         is_primary: newContactForm.value.is_primary,
         position: newContactForm.value.position?.trim() || null,

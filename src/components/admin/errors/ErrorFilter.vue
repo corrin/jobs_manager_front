@@ -2,12 +2,7 @@
 import Input from '@/components/ui/input/Input.vue'
 import { CustomDatePicker } from '@/components/ui/custom-date-picker'
 import { useVModel } from '@vueuse/core'
-import { type DateRange } from '@/constants/date-range'
-
-interface FilterState {
-  search: string
-  range: DateRange
-}
+import { type FilterState } from '@/constants/date-range'
 
 const props = defineProps<{ modelValue: FilterState }>()
 const emit = defineEmits<{ 'update:modelValue': [FilterState] }>()
