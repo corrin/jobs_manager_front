@@ -122,24 +122,21 @@ import JobQuotingChatTab from './JobQuotingChatTab.vue'
 import { watch, computed } from 'vue'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-// Define JobTabKey type locally as it's UI-specific
-type JobTabKey =
-  | 'estimate'
-  | 'quote'
-  | 'actual'
-  | 'costAnalysis'
+import type { JobTabKey as BaseJobTabKey } from '@/constants/job-tabs'
+
+// Removed Job type as it's no longer needed
+
+type JobFile = z.infer<typeof schemas.JobFile>
+type JobViewTabKey =
+  | BaseJobTabKey
   | 'jobSettings'
   | 'workflow'
   | 'history'
   | 'attachments'
   | 'quotingChat'
 
-// Removed Job type as it's no longer needed
-
-type JobFile = z.infer<typeof schemas.JobFile>
-
 const emit = defineEmits<{
-  (e: 'change-tab', tab: JobTabKey): void
+  (e: 'change-tab', tab: JobViewTabKey): void
   (e: 'open-settings'): void
   (e: 'open-workflow'): void
   (e: 'open-history'): void
@@ -159,7 +156,7 @@ const emit = defineEmits<{
   (e: 'file-deleted'): void
 }>()
 
-const allTabs = [
+const allTabs: { key: JobViewTabKey; label: string }[] = [
   { key: 'estimate', label: 'Estimate' },
   { key: 'quote', label: 'Quote' },
   { key: 'actual', label: 'Actual' },
@@ -178,12 +175,12 @@ const tabs = computed(() => {
   return allTabs
 })
 
-function handleTabChange(tab: JobTabKey) {
+function handleTabChange(tab: JobViewTabKey) {
   emit('change-tab', tab)
 }
 
 const props = defineProps<{
-  activeTab: JobTabKey
+  activeTab: JobViewTabKey
   jobId: string
   jobNumber: number
   jobStatus?: string

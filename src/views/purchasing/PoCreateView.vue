@@ -37,34 +37,40 @@ import { useRouter } from 'vue-router'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { toast } from 'vue-sonner'
 
-// Import types from generated API schemas
-import type { PurchaseOrderCreate } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 
-// Use the generated type instead of local interface
-type PurchaseOrderForm = PurchaseOrderCreate
+type PurchaseOrderDetail = z.infer<typeof schemas.PurchaseOrderDetail>
+type PurchaseOrderCreatePayload = z.infer<typeof schemas.PurchaseOrderCreate>
 
 const router = useRouter()
 const store = usePurchaseOrderStore()
 const saving = ref(false)
 
-const po = ref<PurchaseOrderForm>({
+const po = ref<PurchaseOrderDetail>({
   po_number: '',
   supplier: '',
-  supplier_name: '',
   supplier_has_xero_id: false,
   supplier_id: null,
   reference: '',
   expected_delivery: '',
   status: 'draft',
+  id: '',
+  order_date: '',
+  lines: [],
+  online_url: undefined,
+  xero_id: undefined,
 })
 
 const save = async () => {
   saving.value = true
   try {
-    const payload = {
-      ...po.value,
-      expected_delivery: po.value.expected_delivery || null,
+    const payload: PurchaseOrderCreatePayload = {
       supplier_id: po.value.supplier_id || null,
+      reference: po.value.reference ?? '',
+      order_date: po.value.order_date || null,
+      expected_delivery: po.value.expected_delivery || null,
+      lines: [],
     }
     const res = await store.createOrder(payload)
     toast.success('PO created')

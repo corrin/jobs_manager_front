@@ -13,6 +13,18 @@ import { useCompanyDefaultsStore } from '../../stores/companyDefaults'
 import { onMounted, computed, ref } from 'vue'
 import { formatCurrency } from '@/utils/string-formatting'
 
+type LabourItem = {
+  id: '__labour__'
+  description: string
+  item_code: string
+  unit_cost: number
+  unit_rev: number
+  unit_revenue: number
+  quantity: null
+}
+
+type DisplayItem = StockItem | LabourItem
+
 const props = withDefaults(
   defineProps<{
     modelValue: string | null
@@ -41,12 +53,13 @@ const companyDefaultsStore = useCompanyDefaultsStore()
 const searchTerm = ref('')
 
 // Mocked Labour item for time entries
-const mockedLabourItem = computed(() => ({
+const mockedLabourItem = computed<LabourItem>(() => ({
   id: '__labour__',
   description: 'Labour',
   item_code: 'LABOUR',
   unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
   unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
+  unit_revenue: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
   quantity: null,
 }))
 
@@ -57,7 +70,7 @@ onMounted(async () => {
   }
 })
 
-const filteredItems = computed(() => {
+const filteredItems = computed<DisplayItem[]>(() => {
   const stockItems = store.items
   // Only show labour items in job-related contexts (estimate, quote, actual tabs)
   // Don't show labour in purchasing contexts
@@ -76,12 +89,8 @@ const filteredItems = computed(() => {
   })
 })
 
-const displayPrice = (item: StockItem) => {
-  if (item.id === '__labour__') {
-    return formatCurrency(item.unit_rev || 0)
-  }
-  // Use unit_revenue for customer-facing prices (what we charge)
-  return formatCurrency(item.unit_revenue || 0)
+const displayPrice = (item: DisplayItem) => {
+  return formatCurrency(item.unit_revenue ?? 0)
 }
 </script>
 
@@ -155,11 +164,7 @@ const displayPrice = (item: StockItem) => {
 
             <div class="flex flex-col items-end gap-1 shrink-0">
               <Badge
-                v-if="
-                  i.id === '__labour__'
-                    ? i.unit_rev || i.unit_rev === 0
-                    : i.unit_revenue || i.unit_revenue === 0
-                "
+                v-if="i.unit_revenue || i.unit_revenue === 0"
                 variant="secondary"
                 class="text-xs font-semibold"
               >

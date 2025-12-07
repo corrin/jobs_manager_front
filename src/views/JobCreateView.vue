@@ -254,7 +254,7 @@ import { z } from 'zod'
 import { debugLog } from '../utils/debug'
 
 type ClientSearchResult = z.infer<typeof schemas.ClientSearchResult>
-type ClientContact = z.infer<typeof schemas.ClientContactResult>
+type ClientContact = z.infer<typeof schemas.ClientContact>
 import { toast } from 'vue-sonner'
 
 const contactSelectorRef = ref<InstanceType<typeof ContactSelector> | null>(null)
