@@ -186,7 +186,7 @@
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-gray-200">
-                    <tr v-for="staff in staffData" :key="staff.id" class="hover:bg-gray-50">
+                    <tr v-for="staff in staffData" :key="staff.staff_id" class="hover:bg-gray-50">
                       <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                           <div>

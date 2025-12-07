@@ -159,10 +159,11 @@ type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
 type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
 type Job = z.infer<typeof schemas.JobForPurchasing>
 type AllocationItem = z.infer<typeof schemas.AllocationItem>
-type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocation>
+type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocationRequest>
 type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailResponse>
 type ClientContact = z.infer<typeof schemas.ClientContact>
 type PurchaseOrderEmailResponseWithLegacy = PurchaseOrderEmailResponse & { email?: string }
+type PurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
 
 const route = useRoute()
 const router = useRouter()
@@ -182,15 +183,18 @@ const stockHoldingJobId = ref<string | null>(null)
 const isSavingReceipt = ref(false)
 
 const po = ref<PurchaseOrder>({
+  id: '',
   po_number: '',
   supplier: '',
-  supplier_id: undefined,
+  supplier_id: null,
   supplier_has_xero_id: false,
   reference: '',
   order_date: '',
   expected_delivery: '',
   status: 'draft',
   lines: [],
+  online_url: undefined,
+  xero_id: undefined,
 } as PurchaseOrder)
 
 const linesToDelete = ref<string[]>([])
@@ -408,18 +412,21 @@ function addLine() {
     return
   }
 
-  const newLine = {
-    item_code: '',
+  const newLine: PurchaseOrderLine = {
+    id: '',
     description: '',
     quantity: 1,
+    dimensions: undefined,
     unit_cost: 0,
     price_tbc: false,
-    job_id: '',
+    supplier_item_code: undefined,
+    item_code: '',
+    received_quantity: undefined,
     metal_type: undefined,
     alloy: undefined,
     specifics: undefined,
     location: undefined,
-    dimensions: undefined,
+    job_id: null,
   }
 
   debugLog('➕ Adding new line:', newLine)
@@ -605,10 +612,13 @@ async function saveLines() {
 
   // Transform lines to match API schema requirements
   const transformedLines = changedLines.map((line) => {
+    const sanitizedId =
+      line.id && typeof line.id === 'string' && line.id.trim() !== '' ? line.id : null
+
     // If PO is submitted, only send job_id and id (minimal update)
     if (isPoSubmitted.value) {
       const transformed = {
-        id: line.id, // Explicitly preserve the ID
+        id: sanitizedId, // Explicitly preserve the ID
         job_id: line.job_id && line.job_id.trim() !== '' ? line.job_id : null,
       }
 
@@ -623,7 +633,7 @@ async function saveLines() {
 
     // For draft/other statuses, send all fields
     const transformed = {
-      id: line.id, // Explicitly preserve the ID
+      id: sanitizedId, // Explicitly preserve the ID
       job_id: line.job_id && line.job_id.trim() !== '' ? line.job_id : null,
       description: line.description,
       quantity: line.quantity,
@@ -697,12 +707,9 @@ async function syncWithXero() {
   toast.info('Syncing with Xero…', { id: 'po-sync-loading' })
 
   try {
-    const data = await api.api_xero_create_purchase_order_create(
-      {},
-      {
-        params: { purchase_order_id: orderId },
-      },
-    )
+    const data = await api.api_xero_create_purchase_order_create(undefined, {
+      params: { purchase_order_id: orderId },
+    })
 
     switch (true) {
       case data.success:
@@ -770,13 +777,12 @@ async function resolveSupplierEmail(): Promise<string | null> {
   }
 
   try {
-    const contacts = await api.clients_contacts_list({
-      queries: { client_id: supplierId },
-    })
+    const contacts = await api.clients_contacts_list()
 
     const contactsArray: ClientContact[] = Array.isArray(contacts) ? contacts : []
-    const primaryContact = contactsArray.find((contact) => contact.is_primary && !!contact.email)
-    const fallbackContact = contactsArray.find((contact) => !!contact.email)
+    const clientContacts = contactsArray.filter((contact) => contact.client === supplierId)
+    const primaryContact = clientContacts.find((contact) => contact.is_primary && !!contact.email)
+    const fallbackContact = clientContacts.find((contact) => !!contact.email)
     const resolvedEmail = primaryContact?.email ?? fallbackContact?.email ?? null
 
     supplierEmailCache.value = {
@@ -936,7 +942,9 @@ const handleReceiptSave = async (payload: {
     'fully_received',
   ]
 
-  if (!allowedStatuses.includes(po.value.status)) {
+  const currentStatus = po.value.status ?? 'draft'
+
+  if (!allowedStatuses.includes(currentStatus)) {
     toast.error('The purchase order must be sent to the supplier before creating receipts')
     return
   }
@@ -1053,7 +1061,8 @@ const updatePoStatusAfterReceipt = async () => {
     }
 
     // Determine new status
-    let newStatus = po.value.status
+    const currentStatus = (po.value.status ?? 'draft') as PurchaseOrderStatus
+    let newStatus: PurchaseOrderStatus = currentStatus
     if (totalReceived >= totalOrdered) {
       newStatus = 'fully_received'
     } else if (totalReceived > 0) {
@@ -1061,7 +1070,7 @@ const updatePoStatusAfterReceipt = async () => {
     }
 
     // Update status if it changed
-    if (newStatus !== po.value.status) {
+    if (newStatus !== currentStatus) {
       await store.patch(orderId, { status: newStatus })
       po.value.status = newStatus
       toast.success(`Purchase order status updated to ${newStatus.replace('_', ' ')}`)
@@ -1154,8 +1163,7 @@ onMounted(async () => {
         debounceTimer = setTimeout(async () => {
           try {
             await store.patch(orderId, {
-              supplier: po.value.supplier,
-              supplier_id: po.value.supplier_id,
+              supplier_id: po.value.supplier_id ?? null,
             })
             toast.success('Supplier updated')
             await load()
