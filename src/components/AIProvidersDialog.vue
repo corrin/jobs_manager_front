@@ -14,12 +14,12 @@
       <div class="space-y-4 ai-providers-scroll">
         <div
           v-for="(provider, idx) in localProviders"
-          :key="provider.id || idx"
+          :key="providerKey(provider, idx)"
           class="ai-provider-inline mx-auto"
         >
           <div class="flex flex-wrap gap-2 items-center w-full justify-center">
             <input
-              v-model="localProviders[idx].name"
+              v-model.trim="provider.name"
               @input="emitProviders"
               class="input ai-input"
               placeholder="Provider Name"
@@ -28,7 +28,7 @@
               spellcheck="false"
             />
             <input
-              v-model="localProviders[idx].model_name"
+              v-model.trim="provider.model_name"
               @input="emitProviders"
               class="input ai-input"
               placeholder="Model"
@@ -37,26 +37,20 @@
               spellcheck="false"
             />
             <select
-              v-model="localProviders[idx].provider_type"
+              v-model="provider.provider_type"
               @change="emitProviders"
               class="input ai-input"
               autocomplete="off"
             >
-              <option value="Claude">Claude</option>
-              <option value="Gemini">Gemini</option>
-              <option value="Mistral">Mistral</option>
+              <option v-for="option in providerTypeOptions" :key="option" :value="option">
+                {{ option }}
+              </option>
             </select>
             <input
-              v-model="localProviders[idx].api_key"
-              @input="
-                (event) => {
-                  const value = (event.target as HTMLInputElement).value
-                  localProviders[idx].api_key = value.trim()
-                  emitProviders()
-                }
-              "
+              :value="provider.api_key ?? ''"
+              @input="onApiKeyInput(idx, $event)"
               class="input ai-input"
-              :placeholder="localProviders[idx].id ? 'Leave blank to keep current' : 'API Key *'"
+              :placeholder="provider.id ? 'Leave blank to keep current' : 'API Key *'"
               type="password"
               autocomplete="new-password"
               autocorrect="off"
@@ -65,26 +59,18 @@
             <label class="flex items-center gap-1 whitespace-nowrap">
               <input
                 type="checkbox"
-                :checked="localProviders[idx].default"
-                @change="
-                  (event) => {
-                    const checked = (event.target as HTMLInputElement).checked
-                    debugLog(
-                      `[AIProvidersDialog] Native checkbox clicked for idx ${idx}, new value:`,
-                      checked,
-                    )
-                    debugLog(
-                      `[AIProvidersDialog] Current provider before setDefault:`,
-                      localProviders[idx],
-                    )
-                    setDefault(idx, checked)
-                  }
-                "
+                :checked="!!provider.default"
+                @change="onDefaultChange(idx, $event)"
                 class="mr-1"
               />
               Default
             </label>
-            <Button variant="ghost" size="sm" class="ai-remove-btn" @click="removeProvider(idx)"
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              class="ai-remove-btn"
+              @click="removeProvider(idx)"
               >Remove</Button
             >
           </div>
@@ -123,31 +109,30 @@ import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 
 type AIProvider = z.infer<typeof schemas.AIProvider>
-
-// Local type for provider management that includes all needed fields
-type LocalAIProvider = z.infer<typeof schemas.AIProviderCreateUpdateRequest> & {
-  id?: number
-  company?: string
+type ProviderForm = z.infer<typeof schemas.AIProviderCreateUpdateRequest> & {
+  id?: AIProvider['id']
 }
 
 const props = defineProps<{ providers?: AIProvider[] }>()
 const emit = defineEmits(['close', 'update:providers'])
 
-const safeProviders = props.providers || []
-const localProviders = ref<LocalAIProvider[]>(
-  safeProviders.map((p) => ({
-    id: p.id,
-    name: p.name,
-    provider_type: p.provider_type,
-    model_name: p.model_name,
-    default: p.default,
-    api_key: '',
-    company: '',
-  })),
-)
+const providerTypeOptions = schemas.ProviderTypeEnum.options
+
+const createLocalProvider = (provider?: AIProvider): ProviderForm => ({
+  id: provider?.id,
+  name: provider?.name ?? '',
+  provider_type: provider?.provider_type ?? providerTypeOptions[0],
+  model_name: provider?.model_name ?? '',
+  default: provider?.default ?? false,
+  api_key: '',
+})
+
+const toLocalProviders = (providers?: AIProvider[]) =>
+  (providers ?? []).map((provider) => createLocalProvider(provider))
+
+const localProviders = ref<ProviderForm[]>(toLocalProviders(props.providers))
 
 debugLog('[AIProvidersDialog] props.providers:', props.providers)
-debugLog('[AIProvidersDialog] safe providers:', safeProviders)
 debugLog('[AIProvidersDialog] local providers:', localProviders.value)
 debugLog('[AIProvidersDialog] localProviders.value.length:', localProviders.value.length)
 
@@ -158,20 +143,29 @@ if (props.providers && props.providers.length > 0) {
 watch(
   () => props.providers,
   (newVal) => {
-    if (newVal && JSON.stringify(newVal) !== JSON.stringify(localProviders.value)) {
-      localProviders.value = newVal.map((p) => ({
-        id: p.id,
-        name: p.name,
-        provider_type: p.provider_type,
-        model_name: p.model_name,
-        default: p.default,
-        api_key: '',
-        company: '',
-      }))
-    }
+    localProviders.value = toLocalProviders(newVal)
   },
   { deep: true },
 )
+
+const providerKey = (provider: ProviderForm, idx: number) => provider.id ?? idx
+
+const onApiKeyInput = (idx: number, event: Event) => {
+  const input = event.target as HTMLInputElement | null
+  const provider = localProviders.value[idx]
+  if (!input || !provider) return
+
+  const trimmed = input.value.trim()
+  input.value = trimmed
+  provider.api_key = trimmed
+  emitProviders()
+}
+
+const onDefaultChange = (idx: number, event: Event) => {
+  const checkbox = event.target as HTMLInputElement | null
+  if (!checkbox) return
+  setDefault(idx, checkbox.checked)
+}
 
 function handleClose() {
   debugLog(
@@ -188,30 +182,25 @@ function handleClose() {
 }
 
 function addProvider() {
-  localProviders.value.push({
-    id: 0, // Temporary ID for new provider
-    name: '',
-    provider_type: 'Claude',
-    model_name: '',
-    api_key: '',
-    default: false,
-    company: '',
-  })
+  localProviders.value.push(createLocalProvider())
   debugLog('[AIProvidersDialog] addProvider - new provider added')
   emitProviders()
 }
 
 function removeProvider(idx: number) {
+  if (!localProviders.value[idx]) return
   localProviders.value.splice(idx, 1)
   debugLog('[AIProvidersDialog] removeProvider - provider removed at index:', idx)
   emitProviders()
 }
 
 function setDefault(idx: number, checked: boolean) {
+  const provider = localProviders.value[idx]
+  if (!provider) return
   debugLog(`[AIProvidersDialog] setDefault called for idx: ${idx}, checked: ${checked}`)
   debugLog(`[AIProvidersDialog] Provider BEFORE setDefault:`, {
-    name: localProviders.value[idx].name,
-    default: localProviders.value[idx].default,
+    name: provider.name,
+    default: provider.default,
   })
 
   if (checked) {
@@ -221,12 +210,12 @@ function setDefault(idx: number, checked: boolean) {
     })
   } else {
     debugLog(`[AIProvidersDialog] Unchecking provider ${idx}`)
-    localProviders.value[idx].default = false
+    provider.default = false
   }
 
   debugLog(`[AIProvidersDialog] Provider AFTER setDefault:`, {
-    name: localProviders.value[idx].name,
-    default: localProviders.value[idx].default,
+    name: provider.name,
+    default: provider.default,
   })
   debugLog(
     '[AIProvidersDialog] All providers after setDefault:',
@@ -236,23 +225,32 @@ function setDefault(idx: number, checked: boolean) {
   emitProviders()
 }
 
+const getTrimmedApiKey = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed.length ? trimmed : undefined
+}
+
 function emitProviders() {
-  const providersToSend = localProviders.value.map((p) => {
-    const provider = { ...p }
-
-    if (provider.api_key && typeof provider.api_key === 'string') {
-      provider.api_key = provider.api_key.trim()
+  const providersToSend = localProviders.value.map((provider) => {
+    const payload: ProviderForm = {
+      ...provider,
+      default: !!provider.default,
     }
 
-    if (!provider.id && !provider.api_key) {
-      console.warn('New provider without API key:', provider)
+    const apiKey = getTrimmedApiKey(provider.api_key)
+
+    if (!payload.id && !apiKey) {
+      console.warn('New provider without API key:', payload)
     }
 
-    if (provider.id && !provider.api_key) {
-      delete provider.api_key
+    if (apiKey) {
+      payload.api_key = apiKey
+    } else {
+      delete payload.api_key
     }
 
-    return provider
+    return payload
   })
 
   debugLog('[AIProvidersDialog] emitProviders, sending providers count:', providersToSend.length)
@@ -262,7 +260,7 @@ function emitProviders() {
       name: p.name,
       default: p.default,
       hasApiKey: !!p.api_key,
-      apiKeyLength: p.api_key ? p.api_key.length : 0,
+      apiKeyLength: p.api_key?.length ?? 0,
     })),
   )
 
