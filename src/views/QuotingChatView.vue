@@ -165,7 +165,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Send, Paperclip, RotateCcw } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import McpToolDetails from '@/components/chat/McpToolDetails.vue'
-import { QuoteChatService, type VueChatMessage } from '@/services/quote-chat.service'
+import { QuoteChatService } from '@/services/quote-chat.service'
+import type { VueChatMessage } from '@/constants/vue-chat-message'
 import { toast } from 'vue-sonner'
 
 const route = useRoute()

@@ -1,11 +1,17 @@
 import { api } from '@/api/client'
-import type {
-  JobQuoteChat,
-  JobQuoteChatHistoryResponse,
-  JobQuoteChatInteractionRequest,
-} from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
 import type { VueChatMessage } from '@/constants/vue-chat-message'
 import { debugLog } from '@/utils/debug'
+import { z } from 'zod'
+
+type JobQuoteChat = z.infer<typeof schemas.JobQuoteChat>
+type JobQuoteChatCreateRequest = z.infer<typeof schemas.JobQuoteChatCreateRequest>
+type JobQuoteChatUpdate = z.infer<typeof schemas.JobQuoteChatUpdate>
+type JobQuoteChatInteractionSuccessResponse = z.infer<
+  typeof schemas.JobQuoteChatInteractionSuccessResponse
+>
+type JobQuoteChatHistoryResponse = z.infer<typeof schemas.JobQuoteChatHistoryResponse>
+type JobQuoteChatInteractionRequest = z.infer<typeof schemas.JobQuoteChatInteractionRequest>
 
 export class QuoteChatService {
   private static instance: QuoteChatService
@@ -26,7 +32,10 @@ export class QuoteChatService {
     }
   }
 
-  async saveMessage(jobId: string, message: Omit<JobQuoteChat, 'id'>): Promise<JobQuoteChat> {
+  async saveMessage(
+    jobId: string,
+    message: JobQuoteChatCreateRequest,
+  ): Promise<JobQuoteChatInteractionSuccessResponse> {
     try {
       return await api.job_api_jobs_quote_chat_create(message, { params: { job_id: jobId } })
     } catch (error) {
@@ -39,9 +48,13 @@ export class QuoteChatService {
     jobId: string,
     messageId: string,
     updates: Partial<JobQuoteChat>,
-  ): Promise<JobQuoteChat> {
+  ): Promise<JobQuoteChatUpdate> {
     try {
-      return await api.job_api_jobs_quote_chat_partial_update(updates, {
+      const payload = {
+        content: updates.content,
+        metadata: updates.metadata,
+      }
+      return await api.job_api_jobs_quote_chat_partial_update(payload, {
         params: { job_id: jobId, message_id: messageId },
       })
     } catch (error) {
@@ -52,7 +65,7 @@ export class QuoteChatService {
 
   async clearChatHistory(jobId: string): Promise<void> {
     try {
-      await api.job_api_jobs_quote_chat_destroy({}, { params: { job_id: jobId } })
+      await api.job_api_jobs_quote_chat_destroy(undefined, { params: { job_id: jobId } })
     } catch (error) {
       debugLog('Failed to clear chat history:', error)
       throw error
@@ -65,9 +78,10 @@ export class QuoteChatService {
       content: message.content || '',
       senderId: message.role === 'user' ? 'user-1' : 'assistant-1',
       username: message.role === 'user' ? 'You' : 'Quoting Assistant',
-      timestamp: message.created_at || new Date().toISOString(),
+      timestamp:
+        (message['created_at' as keyof JobQuoteChat] as string) || new Date().toISOString(),
       system: false,
-      metadata: message.metadata,
+      metadata: (message.metadata as Record<string, unknown>) || undefined,
     }
   }
 
@@ -86,7 +100,7 @@ export class QuoteChatService {
   async getAssistantResponse(
     jobId: string,
     message: string,
-    mode: string = 'AUTO',
+    mode: 'CALC' | 'PRICE' | 'TABLE' | 'AUTO' = 'AUTO',
   ): Promise<JobQuoteChat> {
     try {
       const request: JobQuoteChatInteractionRequest = { message, mode }

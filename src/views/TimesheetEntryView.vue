@@ -387,10 +387,10 @@
                           </p>
                         </div>
                         <Badge
-                          :variant="getStatusVariant(jobData.job.job_status || jobData.job.status)"
+                          :variant="getStatusVariant(resolveJobStatus(jobData.job))"
                           class="text-xs"
                         >
-                          {{ getStatusLabel(jobData.job.job_status || jobData.job.status) }}
+                          {{ getStatusLabel(resolveJobStatus(jobData.job)) }}
                         </Badge>
                       </div>
 
@@ -588,8 +588,43 @@ import { debugLog } from '@/utils/debug'
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type Staff = z.infer<typeof schemas.ModernStaff>
 type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
-type CostLine = z.infer<typeof schemas.CostLine>
 type Job = z.infer<typeof schemas.Job>
+
+type TimesheetEntryViewRow = TimesheetEntryWithMeta & {
+  jobId: string
+  jobNumber: string
+  jobName: string
+  client: string
+  description: string
+  hours: number
+  bill: number
+  billable: boolean
+  wage: number
+  wageRate: number
+  chargeOutRate: number
+  rateMultiplier: number
+  staffId: string
+  date: string
+}
+
+type ActiveJobWithData = {
+  job: Job | ModernTimesheetJob
+  actualHours: number
+  estimatedHours: number
+  totalBill: number
+  completionPercentage: number
+  isOverBudget: boolean
+}
+
+const resolveJobStatus = (job: Job | ModernTimesheetJob): string => {
+  if ('job_status' in job && typeof job.job_status === 'string' && job.job_status) {
+    return job.job_status
+  }
+  if ('status' in job && typeof job.status === 'string' && job.status) {
+    return job.status
+  }
+  return 'draft'
+}
 
 // Type for autosave callback
 type TimesheetEntryGridRowWithSaving = TimesheetCostLine & {
@@ -652,7 +687,7 @@ const selectedStaffId = ref<string>(initialStaffId)
 const isInitializing = ref(true)
 const isLoadingData = ref(false) // ✅ Add loading flag to prevent duplicate calls
 
-const timeEntries = ref<TimesheetEntryWithMeta[]>([])
+const timeEntries = ref<TimesheetEntryViewRow[]>([])
 
 // Adapter to convert TimesheetEntryView data format to TimesheetCostLine format
 const adaptedTimeEntries = computed(() => {
@@ -718,11 +753,8 @@ const currentStaff = computed(() => {
 const hasUnsavedChanges = ref(false)
 
 const todayStats = computed(() => {
-  const totalHours = timeEntries.value.reduce(
-    (sum: number, entry: CostLine) => sum + entry.hours,
-    0,
-  )
-  const totalBill = timeEntries.value.reduce((sum: number, entry: CostLine) => sum + entry.bill, 0)
+  const totalHours = timeEntries.value.reduce((sum, entry) => sum + entry.hours, 0)
+  const totalBill = timeEntries.value.reduce((sum, entry) => sum + entry.bill, 0)
   const entryCount = timeEntries.value.length
 
   return {
@@ -750,31 +782,42 @@ const {
   getEstimatedHours,
 } = useTimesheetSummary()
 
-const getJobHours = (jobId: string, timeEntries: Record<string, unknown>[]) => {
+const getEntryHours = (entry: TimesheetEntryWithMeta | TimesheetEntryViewRow): number => {
+  if ('hours' in entry && typeof entry.hours === 'number') {
+    return entry.hours
+  }
+  if (typeof entry.quantity === 'number') {
+    return entry.quantity
+  }
+  return 0
+}
+
+const getJobHours = (
+  jobId: string,
+  timeEntries: (TimesheetEntryWithMeta | TimesheetEntryViewRow)[],
+) => {
   const jobEntries = timeEntries.filter((entry) => {
-    // Try multiple ways to identify the job
-    return entry.job_id === jobId || entry.jobId === jobId
+    return (
+      entry.job_id === jobId ||
+      ('jobId' in entry && typeof entry.jobId === 'string' && entry.jobId === jobId)
+    )
   })
 
-  const hours = jobEntries.reduce((sum, entry) => {
-    // Try multiple ways to get the hours
-    const entryHours = (entry.quantity as number) || (entry.hours as number) || 0
-    return sum + entryHours
-  }, 0)
+  const hours = jobEntries.reduce((sum, entry) => sum + getEntryHours(entry), 0)
 
   console.log(`[DEBUG] getJobHours (local) for jobId ${jobId}:`, {
     jobId,
     totalEntries: timeEntries.length,
     matchingEntries: jobEntries.length,
-    allJobIds: timeEntries.map((e) => e.job_id || e.jobId),
-    matchingJobIds: jobEntries.map((e) => e.job_id || e.jobId),
+    allJobIds: timeEntries.map((e) => e.job_id || ('jobId' in e ? e.jobId : undefined)),
+    matchingJobIds: jobEntries.map((e) => e.job_id || ('jobId' in e ? e.jobId : undefined)),
     hours,
     entriesDetails: jobEntries.map((e) => ({
       id: e.id,
       job_id: e.job_id,
-      jobId: e.jobId,
+      jobId: 'jobId' in e ? e.jobId : undefined,
       quantity: e.quantity,
-      hours: e.hours,
+      hours: 'hours' in e ? e.hours : undefined,
     })),
   })
 
@@ -798,8 +841,8 @@ const loadEnhancedJobData = async (jobIds: string[]) => {
           debugLog('✅ Loaded enhanced job data:', {
             jobId,
             jobNumber: fullJob.job_number,
-            latest_estimate: fullJobResponse.data.latest_estimate?.summary,
-            latest_quote: fullJobResponse.data.latest_quote?.summary,
+            latest_estimate: fullJob.latest_estimate?.summary,
+            latest_quote: fullJob.latest_quote?.summary,
             estimated_hours: fullJob.estimated_hours,
           })
         } catch (err) {
@@ -817,17 +860,23 @@ const activeJobs = computed(() => {
   return getActiveJobs(availableJobs.value)
 })
 
-const consolidatedSummary = computed(() => ({
-  totalHours: getTotalHours(adaptedTimeEntries.value),
-  totalBill: getTotalBill(adaptedTimeEntries.value),
-  billableEntries: getBillableEntries(adaptedTimeEntries.value),
-  nonBillableEntries: getNonBillableEntries(adaptedTimeEntries.value),
-  activeJobs: activeJobs.value.length,
-}))
+const consolidatedSummary = computed(() => {
+  const costLineEntries = adaptedTimeEntries.value as unknown as TimesheetEntryWithMeta[]
+  return {
+    totalHours: getTotalHours(costLineEntries),
+    totalBill: getTotalBill(costLineEntries),
+    billableEntries: getBillableEntries(costLineEntries),
+    nonBillableEntries: getNonBillableEntries(costLineEntries),
+    activeJobs: activeJobs.value.length,
+  }
+})
 
-const activeJobsWithData = computed(() => {
+const activeJobsWithData = computed<ActiveJobWithData[]>(() => {
+  const costLineEntries = adaptedTimeEntries.value as unknown as TimesheetEntryWithMeta[]
   const uniqueJobIds = [
-    ...new Set(adaptedTimeEntries.value.map((entry) => entry.job_id).filter(Boolean)),
+    ...new Set(
+      costLineEntries.map((entry) => entry.job_id).filter((id): id is string => Boolean(id)),
+    ),
   ]
 
   debugLog('🔍 DEBUG activeJobsWithData:', {
@@ -838,9 +887,9 @@ const activeJobsWithData = computed(() => {
     mismatch: uniqueJobIds.some((id) => !activeJobs.value.find((job) => job.id === id)),
   })
 
-  const jobsWithData = uniqueJobIds
+  const jobsWithData: ActiveJobWithData[] = uniqueJobIds
     .map((jobId) => {
-      const actualHours = getJobHours(jobId as string, adaptedTimeEntries.value)
+      const actualHours = getJobHours(jobId, costLineEntries)
 
       // Skip jobs without timesheet entries (shouldn't happen since we're filtering by entries)
       if (actualHours === 0) {
@@ -855,19 +904,23 @@ const activeJobsWithData = computed(() => {
 
       if (!job) {
         // Create a minimal job object from timesheet entry data
-        const entryWithJobData = adaptedTimeEntries.value.find((entry) => entry.job_id === jobId)
+        const entryWithJobData = costLineEntries.find((entry) => entry.job_id === jobId)
         if (entryWithJobData) {
+          const metaLeaveType =
+            entryWithJobData.meta &&
+            typeof entryWithJobData.meta === 'object' &&
+            'leave_type' in entryWithJobData.meta
+              ? (entryWithJobData.meta as Record<string, unknown>).leave_type
+              : undefined
           job = {
             id: jobId,
-            job_number: entryWithJobData.job_number || 'Unknown',
+            job_number: Number(entryWithJobData.job_number) || 0,
             name: entryWithJobData.job_name || 'Unknown Job',
             has_actual_costset: entryWithJobData.has_actual_costset || true,
             client_name: entryWithJobData.client_name || 'Unknown Client',
             status: 'draft',
-            estimated_hours: 0,
-            estimated_labour_hours: 0,
-            labour_hours: 0,
             charge_out_rate: entryWithJobData.charge_out_rate || 0,
+            leave_type: typeof metaLeaveType === 'string' ? metaLeaveType : 'time',
           } as ModernTimesheetJob
 
           debugLog(`🔧 Created minimal job object for ${jobId}:`, job)
@@ -878,11 +931,10 @@ const activeJobsWithData = computed(() => {
       }
 
       // Use enhanced job data if available, otherwise use basic job data
-      const enhancedJob = enhancedJobs.value.get(jobId as string)
-      const jobForCalculations = enhancedJob
+      const enhancedJob = enhancedJobs.value.get(jobId)
 
-      const estimatedHours = getEstimatedHours(jobForCalculations)
-      const totalBill = getJobBill(jobId, adaptedTimeEntries.value)
+      const estimatedHours = enhancedJob ? getEstimatedHours(enhancedJob) : 0
+      const totalBill = getJobBill(jobId, costLineEntries)
       const completionPercentage = getCompletionPercentage(actualHours, estimatedHours)
       const isOverBudget = isJobOverBudget(actualHours, estimatedHours)
 
@@ -903,7 +955,7 @@ const activeJobsWithData = computed(() => {
         isOverBudget,
       }
     })
-    .filter((jobData) => jobData !== null) // Remove null entries
+    .filter((jobData): jobData is ActiveJobWithData => jobData !== null) // Remove null entries
     .sort((a, b) => b.actualHours - a.actualHours) // Sort by hours worked (descending)
 
   debugLog('🔍 Active jobs with data (FIXED):', jobsWithData.length, jobsWithData)
@@ -925,6 +977,9 @@ watch(
   },
   { immediate: false }, // Don't run immediately to avoid circular dependency
 )
+const jobsForGrid = computed<Record<string, unknown>[]>(() =>
+  timesheetStore.jobs.map((job) => job as Record<string, unknown>),
+)
 
 const {
   gridData,
@@ -937,7 +992,7 @@ const {
   setCurrentStaff,
 } = useTimesheetEntryGrid(
   companyDefaultsRef,
-  timesheetStore.jobs, // Pass jobs from timesheet store
+  jobsForGrid, // Pass jobs from timesheet store
   handleSaveEntry,
   handleDeleteEntry,
   {
@@ -946,7 +1001,7 @@ const {
       setDescriptionEditingState(entry, isEditing)
     },
     onScheduleAutosave: (entry: TimesheetEntryGridRowWithSaving) => {
-      const rows = gridData.value as TimesheetEntryWithMeta[]
+      const rows = gridData.value as TimesheetEntryViewRow[]
 
       if (entry.id != null && String(entry.id) !== '') {
         autosave.schedule(String(entry.id))
@@ -968,12 +1023,12 @@ const {
   },
 )
 
-const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
+const autosave = useTimesheetAutosave<TimesheetEntryViewRow>({
   getRowKey: (entry) => {
     if (entry.id != null && String(entry.id) !== '') return String(entry.id)
 
     if (entry.tempId) {
-      const rows = gridData.value as TimesheetEntryWithMeta[]
+      const rows = gridData.value as TimesheetEntryViewRow[]
       const found = rows.find((r) => r.tempId === entry.tempId)
       if (found?.id != null && String(found.id) !== '') return String(found.id)
       return entry.tempId
@@ -982,7 +1037,7 @@ const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
     return undefined
   },
   getEntry: (rowKey) => {
-    const rows = gridData.value as unknown as TimesheetEntryWithMeta[]
+    const rows = gridData.value as unknown as TimesheetEntryViewRow[]
 
     const byId = rows.find(
       (r) => r.id !== null && r.id !== undefined && String(r.id) === String(rowKey),
@@ -1002,7 +1057,7 @@ const autosave = useTimesheetAutosave<TimesheetEntryWithMeta>({
   },
   isDuplicate: (e) => {
     if (e.id) return false
-    const rows = gridData.value as TimesheetEntryWithMeta[]
+    const rows = gridData.value as TimesheetEntryViewRow[]
     return rows.some(
       (row) =>
         !!row.id &&
@@ -1161,19 +1216,20 @@ const formatShortDate = (date: string): string => {
 }
 
 async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
-  const hasJob = entry.jobId || entry.jobNumber
-  const hasDescription = entry.description && entry.description.trim().length > 0
-  const hasHours = entry.hours > 0
-  const isEditingDescription = isDescriptionBeingEdited(entry)
+  const entryRow = entry as TimesheetEntryViewRow
+  const hasJob = entryRow.jobId || entryRow.jobNumber
+  const hasDescription = entryRow.description && entryRow.description.trim().length > 0
+  const hasHours = entryRow.hours > 0
+  const isEditingDescription = isDescriptionBeingEdited(entryRow)
 
   debugLog('🔍 VALIDATION CHECK:', {
-    entryId: entry.id,
-    jobId: entry.jobId,
-    jobNumber: entry.jobNumber,
+    entryId: entryRow.id,
+    jobId: entryRow.jobId,
+    jobNumber: entryRow.jobNumber,
     hasJob,
-    description: entry.description,
+    description: entryRow.description,
     hasDescription,
-    hours: entry.hours,
+    hours: entryRow.hours,
     hasHours,
     isEditingDescription,
     validationPassed: hasJob && hasHours && !isEditingDescription,
@@ -1193,88 +1249,93 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
       hasDescription,
       hasHours,
       entry: {
-        id: entry.id,
-        jobId: entry.jobId,
-        jobNumber: entry.jobNumber,
-        description: entry.description,
-        hours: entry.hours,
+        id: entryRow.id,
+        jobId: entryRow.jobId,
+        jobNumber: entryRow.jobNumber,
+        description: entryRow.description,
+        hours: entryRow.hours,
       },
     })
     return
   }
 
-  if (entry._isSaving) return
+  if (entryRow._isSaving) return
 
   try {
-    entry._isSaving = true
+    entryRow._isSaving = true
 
-    if (!entry.id && !entry.tempId) {
-      entry.tempId = uuidv4()
+    if (!entryRow.id && !entryRow.tempId) {
+      entryRow.tempId = uuidv4()
     }
 
     const staffId = selectedStaffId.value
     const date = currentDate.value
 
-    let targetJobId = entry.jobId
-    if (!targetJobId && entry.jobNumber) {
-      const jobNumber = entry.jobNumber
+    let targetJobId = entryRow.jobId
+    if (!targetJobId && entryRow.jobNumber) {
+      const jobNumber = Number(entryRow.jobNumber)
       const jobByNumber = timesheetStore.jobs.find(
         (j: ModernTimesheetJob) => j.job_number === jobNumber,
       )
       if (jobByNumber) {
         targetJobId = jobByNumber.id
-        entry.jobId = targetJobId
-        entry.client = jobByNumber.client_name || ''
-        entry.jobName = jobByNumber.name || ''
-        entry.chargeOutRate = jobByNumber.charge_out_rate || 0
+        entryRow.jobId = targetJobId
+        entryRow.client = jobByNumber.client_name || ''
+        entryRow.jobName = jobByNumber.name || ''
+        entryRow.chargeOutRate = jobByNumber.charge_out_rate || 0
       }
     }
 
     const costLinePayload = {
       kind: 'time' as const,
-      desc: entry.description,
-      quantity: entry.hours,
-      unit_cost: entry.wageRate,
-      unit_rev: entry.chargeOutRate,
+      desc: entryRow.description,
+      quantity: entryRow.hours,
+      unit_cost: entryRow.wageRate,
+      unit_rev: entryRow.chargeOutRate,
       accounting_date: date,
       meta: {
         staff_id: staffId,
         date: date,
-        is_billable: entry.billable,
-        rate_multiplier: entry.rateMultiplier,
+        is_billable: entryRow.billable,
+        rate_multiplier: entryRow.rateMultiplier,
         created_from_timesheet: true,
       },
     }
 
     let savedLine
     // ✅ FIXED: Always check for existing ID first, including string IDs
-    if (entry.id && (typeof entry.id === 'number' || typeof entry.id === 'string')) {
-      debugLog('🔄 UPDATING existing entry:', entry.id)
-      savedLine = await costlineService.updateCostLine(entry.id, costLinePayload)
+    if (entryRow.id && String(entryRow.id) !== '') {
+      debugLog('🔄 UPDATING existing entry:', entryRow.id)
+      savedLine = await costlineService.updateCostLine(entryRow.id, costLinePayload)
     } else {
       debugLog('➕ CREATING new entry')
       const job = timesheetStore.jobs.find((j: ModernTimesheetJob) => j.id === targetJobId)
       if (!job) throw new Error('Job not found')
       savedLine = await costlineService.createCostLine(job.id, 'actual', costLinePayload)
-      entry.id = savedLine.id
-      delete entry.tempId
+      entryRow.id = savedLine.id
+      delete entryRow.tempId
     }
 
-    const entryIndex = timeEntries.value.findIndex((e: TimesheetEntryWithMeta) => {
-      if (entry.id && e.id === entry.id) return true
-      if (entry.tempId && e.tempId === entry.tempId) return true
+    const entryIndex = timeEntries.value.findIndex((e: TimesheetEntryViewRow) => {
+      if (entryRow.id && e.id === entryRow.id) return true
+      if (entryRow.tempId && e.tempId === entryRow.tempId) return true
       return false
     })
     if (entryIndex >= 0) {
-      timeEntries.value[entryIndex] = { ...entry, ...savedLine, isNewRow: false, isModified: false }
+      timeEntries.value[entryIndex] = {
+        ...entryRow,
+        ...savedLine,
+        isNewRow: false,
+        isModified: false,
+      }
     } else {
-      timeEntries.value.push({ ...entry, ...savedLine, isNewRow: false, isModified: false })
+      timeEntries.value.push({ ...entryRow, ...savedLine, isNewRow: false, isModified: false })
     }
   } catch (err) {
     debugLog('❌ Error saving entry:', err)
     error.value = 'Failed to save entry'
   } finally {
-    entry._isSaving = false
+    entryRow._isSaving = false
   }
 }
 
@@ -1283,7 +1344,7 @@ async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
  * - Searches for current entries in the backend for (staffId, date)
  * - Locates the saved row by ID and applies an authoritative merge to the grid data and timeEntries
  */
-async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
+async function softRefreshRow(entry: TimesheetEntryViewRow): Promise<void> {
   try {
     const resp = await costlineService.getTimesheetEntries(selectedStaffId.value, currentDate.value)
     const line = resp.cost_lines.find((l: TimesheetCostLine) => String(l.id) === String(entry.id))
@@ -1301,7 +1362,7 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
         ? Math.round(hours * rateMultiplier * staffWageRate * 100) / 100
         : 0
 
-    const merged: TimesheetEntryWithMeta = {
+    const merged = {
       id: line.id,
       jobId: line.job_id || '',
       jobNumber: line.job_number || '',
@@ -1323,10 +1384,10 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
       rateMultiplier,
       isNewRow: false,
       isModified: false,
-    }
+    } as unknown as TimesheetEntryViewRow
 
     // Update the grid
-    const rows = gridData.value as unknown as TimesheetEntryWithMeta[]
+    const rows = gridData.value as unknown as TimesheetEntryViewRow[]
     const idx = rows.findIndex(
       (r) =>
         (merged.id && String(r.id) === String(merged.id)) ||
@@ -1347,7 +1408,7 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
       if (api) {
         let targetNode: RowNode | null = null
         api.forEachNode((node: RowNode) => {
-          const data = (node as unknown as { data?: TimesheetEntryWithMeta }).data
+          const data = (node as unknown as { data?: TimesheetEntryViewRow }).data
           if (data && String(data.id) === String(merged.id)) targetNode = node
         })
         if (targetNode) {
@@ -1370,7 +1431,7 @@ async function softRefreshRow(entry: TimesheetEntryWithMeta): Promise<void> {
     }
 
     // Update entries to reflect state
-    const tRows = timeEntries.value as TimesheetEntryWithMeta[]
+    const tRows = timeEntries.value as TimesheetEntryViewRow[]
     const tIdx = tRows.findIndex((r) => r?.id && String(r.id) === String(merged.id))
     if (tIdx !== -1) {
       const prevTE = tRows[tIdx]
@@ -1388,10 +1449,10 @@ async function handleDeleteEntry(id: number): Promise<void> {
     // Keep loading for deletion since it's a critical operation
     loading.value = true
 
-    await costlineService.deleteCostLine(id)
+    await costlineService.deleteCostLine(String(id))
 
     timeEntries.value = timeEntries.value.filter(
-      (e: TimesheetEntryWithMeta) => String(e.id) !== String(id),
+      (e: TimesheetEntryViewRow) => String(e.id) !== String(id),
     )
 
     hasUnsavedChanges.value = false
@@ -1681,8 +1742,9 @@ onMounted(async () => {
     await loadTimesheetData()
 
     // Load enhanced job data for jobs with timesheet entries
+    const costLineEntries = adaptedTimeEntries.value as unknown as TimesheetEntryWithMeta[]
     const jobsWithEntries = activeJobs.value.filter(
-      (job) => getJobHours(job.id, adaptedTimeEntries.value) > 0,
+      (job) => getJobHours(job.id, costLineEntries) > 0,
     )
     if (jobsWithEntries.length > 0) {
       await loadEnhancedJobData(jobsWithEntries.map((job) => job.id))
