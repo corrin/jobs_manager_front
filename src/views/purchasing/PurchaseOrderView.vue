@@ -46,14 +46,14 @@
               v-for="po in pagedOrders"
               :key="po.id"
               class="border-b hover:bg-slate-50"
-              :class="{ 'opacity-60 bg-red-50': isPoDeleted(po.status) }"
+              :class="{ 'opacity-60 bg-red-50': isPoDeleted(normalizeStatus(po.status)) }"
             >
               <td class="p-3">{{ po.po_number }}</td>
               <td class="p-3">{{ po.supplier }}</td>
               <td class="p-3">{{ formatDate(po.order_date) }}</td>
               <td class="p-3">
-                <span :class="getStatusClass(po.status)">
-                  {{ formatStatus(po.status) }}
+                <span :class="getStatusClass(normalizeStatus(po.status))">
+                  {{ formatStatus(normalizeStatus(po.status)) }}
                 </span>
               </td>
               <td class="p-3 flex justify-center gap-2">
@@ -70,7 +70,7 @@
                   size="sm"
                   variant="outline"
                   @click="deletePo(po.id)"
-                  :disabled="isPoDeleted(po.status)"
+                  :disabled="isPoDeleted(normalizeStatus(po.status))"
                   class="w-8 h-8 p-0"
                   aria-label="Delete Purchase Order"
                 >
@@ -107,9 +107,9 @@ import { useRouter } from 'vue-router'
 import Pagination from '@/components/ui/pagination/Pagination.vue'
 import { toast } from 'vue-sonner'
 import { schemas } from '@/api/generated/api'
-import { z } from 'zod'
 
-type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
+const statusOptions = schemas.PurchaseOrderDetailStatusEnum.options
+type PurchaseOrderStatus = (typeof statusOptions)[number]
 
 const router = useRouter()
 const store = usePurchaseOrderStore()
@@ -119,18 +119,27 @@ const page = ref(1)
 const pageSize = 11
 const searchTerm = ref('')
 
+const normalizeStatus = (status?: string): PurchaseOrderStatus => {
+  if (status && statusOptions.includes(status as PurchaseOrderStatus)) {
+    return status as PurchaseOrderStatus
+  }
+  return 'draft'
+}
+
 const filteredOrders = computed(() => {
   if (!searchTerm.value.trim()) {
     return orders.value
   }
 
   const term = searchTerm.value.toLowerCase()
-  return orders.value.filter(
-    (po: PurchaseOrder) =>
+  return orders.value.filter((po) => {
+    const statusValue = normalizeStatus(po.status)
+    return (
       po.po_number.toLowerCase().includes(term) ||
       po.supplier.toLowerCase().includes(term) ||
-      formatStatus(po.status!).toLowerCase().includes(term),
-  )
+      formatStatus(statusValue).toLowerCase().includes(term)
+    )
+  })
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredOrders.value.length / pageSize)))
@@ -151,39 +160,25 @@ watch(searchTerm, () => {
   page.value = 1
 })
 
-const formatStatus = (status: string) => {
-  switch (status) {
-    case 'draft':
-      return 'Draft'
-    case 'submitted':
-      return 'Submitted to Supplier'
-    case 'partially_received':
-      return 'Partially Received'
-    case 'fully_received':
-      return 'Fully Received'
-    case 'deleted':
-      return 'Deleted'
-    default:
-      return status.charAt(0).toUpperCase() + status.slice(1)
-  }
+const statusLabels: Record<PurchaseOrderStatus, string> = {
+  draft: 'Draft',
+  submitted: 'Submitted to Supplier',
+  partially_received: 'Partially Received',
+  fully_received: 'Fully Received',
+  deleted: 'Deleted',
 }
 
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case 'draft':
-      return 'px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
-    case 'submitted':
-      return 'px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800'
-    case 'partially_received':
-      return 'px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800'
-    case 'fully_received':
-      return 'px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800'
-    case 'deleted':
-      return 'px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800'
-    default:
-      return 'px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800'
-  }
+const statusClasses: Record<PurchaseOrderStatus, string> = {
+  draft: 'px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800',
+  submitted: 'px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800',
+  partially_received: 'px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800',
+  fully_received: 'px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800',
+  deleted: 'px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800',
 }
+
+const formatStatus = (status: PurchaseOrderStatus) => statusLabels[status] ?? status
+
+const getStatusClass = (status: PurchaseOrderStatus) => statusClasses[status] ?? statusClasses.draft
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-NZ', {
@@ -198,14 +193,16 @@ const goToCreate = () => router.push('/purchasing/po/create')
 const createFromQuote = () => router.push('/purchasing/po/create-from-quote')
 
 const deletePo = async (id: string) => {
-  const po = orders.value.find((p: PurchaseOrder) => p.id === id)
-  if (!po || isPoDeleted(po.status!)) {
+  const purchaseOrder = orders.value.find((p) => p.id === id)
+  const statusValue = normalizeStatus(purchaseOrder?.status)
+
+  if (!purchaseOrder || isPoDeleted(statusValue)) {
     toast.warning('This purchase order is already deleted')
     return
   }
 
   const confirmed = confirm(
-    `Are you sure you want to delete Purchase Order ${po.po_number}? This action will mark it as deleted but preserve the record.`,
+    `Are you sure you want to delete Purchase Order ${purchaseOrder.po_number}? This action will mark it as deleted but preserve the record.`,
   )
   if (!confirmed) return
 
@@ -221,7 +218,7 @@ const deletePo = async (id: string) => {
   }
 }
 
-const isPoDeleted = (status: string) => status === 'deleted'
+const isPoDeleted = (status: PurchaseOrderStatus) => status === 'deleted'
 
 onMounted(() => {
   store.fetchOrders()

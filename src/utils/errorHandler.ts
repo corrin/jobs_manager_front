@@ -3,12 +3,17 @@ export function extractErrorMessage(error: unknown, fallbackMessage = 'An error 
     return fallbackMessage
   }
 
-  if (typeof error === 'object' && 'response' in error) {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
     const apiError = error as { response?: { data?: unknown } }
     const responseData = apiError.response?.data
 
-    if (responseData) {
-      return responseData.error || responseData.message || responseData.details || fallbackMessage
+    if (responseData && typeof responseData === 'object') {
+      const data = responseData as Record<string, unknown>
+      const text =
+        (data.error as string | undefined) ||
+        (data.message as string | undefined) ||
+        (data.details as string | undefined)
+      if (typeof text === 'string') return text
     }
   }
 

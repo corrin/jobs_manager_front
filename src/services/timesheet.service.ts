@@ -1,3 +1,4 @@
+import axios from '@/plugins/axios'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { debugLog } from '../utils/debug'
@@ -11,53 +12,18 @@ type CostLine = z.infer<typeof schemas.CostLine>
 export class TimesheetService {
   static async getStaff(): Promise<Staff[]> {
     try {
-      // Mount date parameter to send to API in format YYYY-MM-DD
-      const date_param = new Date().toISOString().substring(0, 10)
-      const staff = await api.timesheets_api_staff_retrieve({ queries: date_param })
+      const staffResponse = await api.timesheets_api_staff_retrieve()
+      const staffList = staffResponse.staff ?? []
 
-      let defaultWageRate = 0
-      try {
-        const defaults = await api.api_company_defaults_retrieve()
-        defaultWageRate = defaults.wage_rate
-      } catch {
-        debugLog('Could not fetch company defaults')
-        throw Error('Could not fetch company defaults')
-      }
+      const defaults = await api.api_company_defaults_retrieve()
+      const defaultWageRate = defaults.wage_rate ?? 0
 
-      // Normalize staff data to ensure consistent field names
-      const normalizedStaff = staff.map(
-        (staff: {
-          id: string
-          firstName?: string
-          first_name?: string
-          lastName?: string
-          last_name?: string
-          wageRate?: number
-          wage_rate?: number
-          fullName?: string
-          full_name?: string
-          name?: string
-          icon_url?: string | null
-          icon?: string | null
-        }) => ({
-          id: staff.id,
-          firstName: staff.firstName || staff.first_name || 'Unknown',
-          lastName: staff.lastName || staff.last_name || '',
-          wageRate: staff.wageRate || staff.wage_rate || defaultWageRate,
-          fullName:
-            staff.fullName ||
-            staff.full_name ||
-            `${staff.firstName || staff.first_name || 'Unknown'} ${staff.lastName || staff.last_name || ''}`.trim(),
-          name:
-            staff.name ||
-            staff.fullName ||
-            staff.full_name ||
-            `${staff.firstName || staff.first_name || 'Unknown'} ${staff.lastName || staff.last_name || ''}`.trim(),
-          icon_url: staff.icon_url ?? null,
-        }),
-      )
+      const normalizedStaff = staffList.map((staff) => ({
+        ...staff,
+        wageRate: staff.wageRate ?? defaultWageRate,
+      }))
 
-      debugLog('👥 Staff normalized for timesheet:', {
+      debugLog('Staff normalized for timesheet:', {
         count: normalizedStaff.length,
         sample: normalizedStaff[0],
         defaultWageRate,
@@ -74,12 +40,11 @@ export class TimesheetService {
   // Legacy method - use CostLine queries instead
   static async getTimeEntries(staffId: string, date: string): Promise<CostLine[]> {
     try {
-      // Use generated API to get timesheet entries
-      const response = await api.job_rest_timesheet_day_retrieve({
-        staff_id: staffId,
-        date: date,
+      const response = await axios.get('/job/rest/timesheet/entries/', {
+        params: { staff_id: staffId, date },
       })
-      return response.entries || []
+      const parsed = schemas.ModernTimesheetEntryGetResponse.parse(response.data)
+      return parsed.cost_lines || []
     } catch (error) {
       debugLog('Error fetching cost lines:', error)
       throw error
@@ -88,8 +53,8 @@ export class TimesheetService {
 
   static async getJobs(): Promise<Job[]> {
     try {
-      const jobs = await api.timesheets_api_jobs_retrieve()
-      return jobs
+      const jobsResponse = await api.timesheets_api_jobs_retrieve()
+      return jobsResponse.jobs || []
     } catch (error) {
       debugLog('Error fetching jobs:', error)
       throw error
@@ -98,8 +63,10 @@ export class TimesheetService {
 
   static async getWeeklyOverview(startDate: string): Promise<WeeklyOverviewData> {
     try {
-      const response = await api.job_rest_timesheet_weekly_retrieve({ date: startDate })
-      return response
+      const response = await axios.get('/timesheets/api/weekly/', {
+        params: { start_date: startDate },
+      })
+      return schemas.WeeklyTimesheetData.parse(response.data)
     } catch (error) {
       debugLog('Error fetching weekly overview:', error)
       throw error

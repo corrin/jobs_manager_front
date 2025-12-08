@@ -439,6 +439,9 @@ async function handleLinkQuote() {
   try {
     debugLog('📞 Calling quoteService.linkQuote with job ID:', props.job.id)
     const result = await quoteService.linkQuote(props.job.id)
+    if (!result) {
+      throw new Error('Unable to load linked spreadsheet details')
+    }
     debugLog('✅ Quote link result:', result)
 
     debugLog('🍞 Showing success toast for quote link')

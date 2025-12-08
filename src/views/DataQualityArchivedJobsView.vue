@@ -368,6 +368,16 @@ const formatDate = (dateString: string): string => {
   })
 }
 
+const mapIssueLabelToType = (issue?: string): ValidationIssue['type'] => {
+  const normalized = issue?.toLowerCase() ?? ''
+  if (normalized.includes('timesheet')) return 'open_timesheets'
+  if (normalized.includes('cost')) return 'incomplete_costs'
+  if (normalized.includes('invoice')) return 'missing_invoices'
+  if (normalized.includes('status')) return 'invalid_status'
+  if (normalized.includes('task')) return 'open_tasks'
+  return 'invalid_status'
+}
+
 const refreshData = async () => {
   loading.value = true
   error.value = null
@@ -394,19 +404,15 @@ const refreshData = async () => {
           issue?: string
           archived_date: string
           job_value: number
-          invoice_status?: string
-          outstanding_amount?: number
         }) => ({
           id: job.job_id,
           jobId: job.job_id,
           jobNumber: job.job_number,
           clientName: job.client_name,
-          type: job.issue?.toLowerCase().replace(/ /g, '_') || 'unknown',
-          details: job.issue,
+          type: mapIssueLabelToType(job.issue),
+          details: job.issue || 'Issue details unavailable',
           archivedDate: job.archived_date,
           jobValue: job.job_value,
-          invoiceStatus: job.invoice_status,
-          outstandingAmount: job.outstanding_amount,
         }),
       )
 

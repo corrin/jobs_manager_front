@@ -141,7 +141,9 @@
                   <TableCell>
                     <svg class="w-24 h-6">
                       <polyline
-                        :points="sparklinePoints(job.history.map((h) => h.total_hours))"
+                        :points="
+                          sparklinePoints(job.history.map((h: MonthEndJobHistory) => h.total_hours))
+                        "
                         fill="none"
                         stroke="currentColor"
                         stroke-width="1"
@@ -196,11 +198,18 @@
             >
               <span class="font-mono text-sm">{{ jobNumber(id) }}</span>
               <span class="text-xs text-gray-500 truncate">
-                {{ (getCurrentJobs().find((j) => j.job_id === id)?.job_name || '').slice(0, 32) }}
+                {{
+                  (
+                    getCurrentJobs().find((j: MonthEndJobType) => j.job_id === id)?.job_name || ''
+                  ).slice(0, 32)
+                }}
               </span>
               <span class="ml-2 text-xs text-blue-700 whitespace-nowrap">
                 ${{
-                  (getCurrentJobs().find((j) => j.job_id === id)?.total_dollars ?? 0).toFixed(2)
+                  (
+                    getCurrentJobs().find((j: MonthEndJobType) => j.job_id === id)?.total_dollars ??
+                    0
+                  ).toFixed(2)
                 }}
               </span>
             </div>
@@ -240,7 +249,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { fetchMonthEnd, runMonthEnd } from '@/composables/useMonthEnd'
-import type { MonthEndJob, MonthEndStockJob } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import MonthEndSummary from '@/components/admin/MonthEndSummary.vue'
@@ -261,27 +271,42 @@ const showDialog = ref(false)
 const loading = ref(false)
 const progress = ref(0)
 
-const jobs = ref<MonthEndJob[]>([])
-const stockJob = ref<MonthEndStockJob | null>(null)
+type MonthEndJobHistory = z.infer<typeof schemas.MonthEndJobHistory>
+type MonthEndJobType = z.infer<typeof schemas.MonthEndJob>
+type MonthEndStockHistory = z.infer<typeof schemas.MonthEndStockHistory>
+type MonthEndStockJobType = z.infer<typeof schemas.MonthEndStockJob>
+
+const jobs = ref<MonthEndJobType[]>([])
+const stockJob = ref<MonthEndStockJobType | null>(null)
 const isLoading = computed(() => loading.value)
 
-const totalHours = computed(() => jobs.value.reduce((a, j) => a + j.total_hours, 0))
-const totalDollars = computed(() => jobs.value.reduce((a, j) => a + j.total_dollars, 0))
+const totalHours = computed(() =>
+  jobs.value.reduce((total: number, job: MonthEndJobType) => total + job.total_hours, 0),
+)
+const totalDollars = computed(() =>
+  jobs.value.reduce((total: number, job: MonthEndJobType) => total + job.total_dollars, 0),
+)
 const allSelected = computed(
   () => jobs.value.length > 0 && selectedIds.value.length === jobs.value.length,
 )
 
 const customMonthLoaded = ref(false)
 const customMonthData = ref<{
-  jobs: MonthEndJob[]
-  stockSummary: { material_line_count: number; material_cost: number }
+  jobs: MonthEndJobType[]
+  stockSummary: MonthEndStockJobType
 } | null>(null)
 
 const stockSummary = computed(() => {
   if (!stockJob.value) return { material_line_count: 0, material_cost: 0 }
   return {
-    material_line_count: stockJob.value.history.reduce((a, h) => a + h.material_line_count, 0),
-    material_cost: stockJob.value.history.reduce((a, h) => a + h.material_cost, 0),
+    material_line_count: stockJob.value.history.reduce(
+      (total: number, entry: MonthEndStockHistory) => total + entry.material_line_count,
+      0,
+    ),
+    material_cost: stockJob.value.history.reduce(
+      (total: number, entry: MonthEndStockHistory) => total + entry.material_cost,
+      0,
+    ),
   }
 })
 
@@ -304,12 +329,12 @@ function sparklinePoints(values: number[]): string {
 
 function toggleAll(e: Event) {
   const checked = (e.target as HTMLInputElement).checked
-  selectedIds.value = checked ? jobs.value.map((j) => j.job_id) : []
+  selectedIds.value = checked ? jobs.value.map((job: MonthEndJobType) => job.job_id) : []
 }
 
 function jobNumber(id: string) {
-  const j = jobs.value.find((j) => j.job_id === id)
-  return j ? j.job_number : id
+  const job = jobs.value.find((job: MonthEndJobType) => job.job_id === id)
+  return job ? job.job_number : id
 }
 
 async function fetchMonthEndData() {
@@ -341,10 +366,7 @@ const lastSixMonths = computed<MonthTab[]>(() => {
 })
 
 const monthData = ref<
-  Record<
-    string,
-    { jobs: MonthEndJob[]; stockSummary: { material_line_count: number; material_cost: number } }
-  >
+  Record<string, { jobs: MonthEndJobType[]; stockSummary: MonthEndStockJobType }>
 >({})
 
 function loadMonthData(month: MonthTab) {
@@ -355,15 +377,7 @@ function loadMonthData(month: MonthTab) {
     .then((data) => {
       monthData.value[month.key] = {
         jobs: data.jobs,
-        stockSummary: data.stockJob
-          ? {
-              material_line_count: data.stockJob.history.reduce(
-                (a, h) => a + h.material_line_count,
-                0,
-              ),
-              material_cost: data.stockJob.history.reduce((a, h) => a + h.material_cost, 0),
-            }
-          : { material_line_count: 0, material_cost: 0 },
+        stockSummary: data.stockJob,
       }
       toast.success('Month-End data loaded successfully')
     })
@@ -381,15 +395,7 @@ function loadCustomMonth() {
     .then((data) => {
       customMonthData.value = {
         jobs: data.jobs,
-        stockSummary: data.stockJob
-          ? {
-              material_line_count: data.stockJob.history.reduce(
-                (a, h) => a + h.material_line_count,
-                0,
-              ),
-              material_cost: data.stockJob.history.reduce((a, h) => a + h.material_cost, 0),
-            }
-          : { material_line_count: 0, material_cost: 0 },
+        stockSummary: data.stockJob,
       }
       customMonthLoaded.value = true
       activeTab.value = 'custom'

@@ -1,14 +1,8 @@
 import { api } from '@/api/client'
-import type {
-  KPICalendarData,
-  KPIDayData,
-  KPIDetails,
-  KPIJobBreakdown,
-  KPIMonthlyTotals,
-  KPIThresholds,
-} from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
 import { formatCurrency } from '@/utils/string-formatting'
+import type { z } from 'zod'
 
 // Types for params - keeping as local since they're for input validation
 export interface KPICalendarParams {
@@ -22,13 +16,14 @@ export interface KPIAccountingParams {
 }
 
 // Type aliases for generated types (for backward compatibility)
-export type KPIDay = KPIDayData
-export type DayKPI = KPIDayData
-export type DayDetails = KPIDetails
-export type JobBreakdown = KPIJobBreakdown
-export type MonthlyTotals = KPIMonthlyTotals
-export type Thresholds = KPIThresholds
-export type KPICalendarResponse = KPICalendarData
+export type KPIDay = z.infer<typeof schemas.KPIDayData>
+export type DayKPI = KPIDay
+export type DayDetails = z.infer<typeof schemas.KPIDetails>
+export type JobBreakdown = z.infer<typeof schemas.KPIJobBreakdown>
+export type MonthlyTotals = z.infer<typeof schemas.KPIMonthlyTotals>
+export type Thresholds = z.infer<typeof schemas.KPIThresholds>
+export type KPICalendarResponse = z.infer<typeof schemas.KPICalendarData>
+export type KPICalendarData = KPICalendarResponse
 
 class KPIService {
   private baseUrl = '/timesheet/api'
@@ -37,9 +32,12 @@ class KPIService {
   async getKPICalendarData(params: KPICalendarParams): Promise<KPICalendarData> {
     try {
       // Use the generated API
+      const lookupDate = new Date(params.start_date)
       return await api.accounting_api_reports_calendar_retrieve({
-        start_date: params.start_date,
-        mode: params.mode,
+        queries: {
+          month: lookupDate.getMonth() + 1,
+          year: lookupDate.getFullYear(),
+        },
       })
     } catch (error) {
       debugLog('❌ Error fetching KPI calendar data:', error)

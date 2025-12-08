@@ -70,7 +70,7 @@
       </div>
       <AIProvidersDialog
         v-if="showAIProvidersDialog"
-        :providers="form.ai_providers || []"
+        :providers="aiProviders"
         @close="closeAIProvidersDialog"
         @update:providers="onProvidersUpdate"
       />
@@ -100,6 +100,8 @@ import SectionModal from '../components/SectionModal.vue'
 import {
   getCompanyDefaults,
   updateCompanyDefaults,
+} from '../services/admin-company-defaults-service'
+import type {
   CompanyDefaults,
   PatchedCompanyDefaults,
 } from '../services/admin-company-defaults-service'
@@ -107,6 +109,7 @@ import { toast } from 'vue-sonner'
 
 const companyDefaults = ref<CompanyDefaults>({} as CompanyDefaults)
 const form = ref<CompanyDefaults>({} as CompanyDefaults)
+const aiProviders = ref<AIProvider[]>([])
 const loading = ref(true)
 const showAIProvidersDialog = ref(false)
 const modalSection = ref<string | null>(null)
@@ -115,11 +118,7 @@ debugLog('[AdminCompanyView] companyDefaults:', companyDefaults.value)
 debugLog('[AdminCompanyView] form:', form.value)
 
 function openAIProvidersDialog() {
-  // Guard clause para garantir que ai_providers existe
-  if (!form.value.ai_providers) {
-    form.value.ai_providers = []
-  }
-  debugLog('[AdminCompanyView] openAIProvidersDialog, form.ai_providers:', form.value.ai_providers)
+  debugLog('[AdminCompanyView] openAIProvidersDialog, providers:', aiProviders.value)
   showAIProvidersDialog.value = true
 }
 function closeAIProvidersDialog() {
@@ -131,6 +130,7 @@ async function fetchDefaults() {
   debugLog('[AdminCompanyView] getCompanyDefaults() result:', data)
   companyDefaults.value = data
   form.value = JSON.parse(JSON.stringify(data))
+  aiProviders.value = (data as { ai_providers?: AIProvider[] }).ai_providers ?? aiProviders.value
   debugLog('[AdminCompanyView] form after fetch:', form.value)
   loading.value = false
 }
@@ -138,12 +138,12 @@ async function saveAll() {
   loading.value = true
   try {
     debugLog('[AdminCompanyView] saveAll() called with form.value:', form.value)
-    debugLog('[AdminCompanyView] saveAll() AI providers specifically:', form.value.ai_providers)
+    debugLog('[AdminCompanyView] saveAll() AI providers specifically:', aiProviders.value)
 
     // Create a clean payload excluding read-only fields
     const payload: Partial<PatchedCompanyDefaults> = {
       company_name: form.value.company_name,
-      ai_providers: form.value.ai_providers || [],
+      ai_providers: aiProviders.value,
       is_primary: form.value.is_primary,
       time_markup: form.value.time_markup,
       materials_markup: form.value.materials_markup,
@@ -198,8 +198,8 @@ function onProvidersUpdate(providers: AIProvider[]) {
     })),
   )
 
-  form.value.ai_providers = providers
-  debugLog('[AdminCompanyView] form.value.ai_providers updated to:', form.value.ai_providers)
+  aiProviders.value = providers
+  debugLog('[AdminCompanyView] aiProviders updated to:', aiProviders.value)
 }
 function openSection(section: string) {
   modalSection.value = section

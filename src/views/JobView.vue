@@ -52,7 +52,7 @@
                 <InlineEditSelect
                   v-if="jobDataWithPaid"
                   :value="localJobStatus"
-                  :options="JOB_STATUS_CHOICES"
+                  :options="jobStatusSelectOptions"
                   @update:value="handleStatusUpdate"
                   placeholder="Status"
                   automation-id="header-job-status-mobile"
@@ -171,7 +171,7 @@
                   <InlineEditSelect
                     v-if="jobDataWithPaid"
                     :value="localJobStatus"
-                    :options="JOB_STATUS_CHOICES"
+                    :options="jobStatusSelectOptions"
                     @update:value="handleStatusUpdate"
                     placeholder="Select Status"
                     automation-id="header-job-status"
@@ -282,22 +282,6 @@
         />
       </template>
 
-      <JobHistoryModal
-        v-if="showHistoryModal && jobDataWithPaid"
-        :job-id="jobId"
-        :events="jobEvents"
-        :is-open="showHistoryModal"
-        :loading="loadingJob || jobEventsLoading"
-        @close="showHistoryModal = false"
-        @event-added="handleEventAdded"
-      />
-      <JobAttachmentsModal
-        v-if="showAttachmentsModal && jobDataWithPaid"
-        :job-id="jobId"
-        :job-number="jobDataWithPaid.job_number"
-        :is-open="showAttachmentsModal"
-        @close="showAttachmentsModal = false"
-      />
       <JobPdfDialog
         v-if="showPdfDialog && jobDataWithPaid"
         :job-id="jobId"
@@ -314,8 +298,6 @@ import { debugLog } from '../utils/debug'
 import { ref, computed, onMounted, watch } from 'vue'
 import AppLayout from '../components/AppLayout.vue'
 import JobViewTabs from '../components/job/JobViewTabs.vue'
-import JobHistoryModal from '../components/job/JobHistoryModal.vue'
-import JobAttachmentsModal from '../components/job/JobAttachmentsModal.vue'
 import JobPdfDialog from '../components/job/JobPdfDialog.vue'
 import InlineEditText from '../components/shared/InlineEditText.vue'
 import InlineEditClient from '../components/shared/InlineEditClient.vue'
@@ -323,8 +305,6 @@ import InlineEditSelect from '../components/shared/InlineEditSelect.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useJobsStore } from '../stores/jobs'
 import { useJobTabs } from '../composables/useJobTabs'
-import { useJobNotifications } from '../composables/useJobNotifications'
-import { useJobEvents } from '../composables/useJobEvents'
 import { useJobHeaderAutosave } from '../composables/useJobHeaderAutosave'
 import { useJobFinancials } from '../composables/useJobFinancials'
 import { useCompanyDefaultsStore } from '../stores/companyDefaults'
@@ -332,6 +312,8 @@ import { api } from '../api/client'
 import { ArrowLeft, Printer } from 'lucide-vue-next'
 import { formatCurrency } from '@/utils/string-formatting'
 import { JOB_STATUS_CHOICES } from '../constants/job-status'
+import type { JobTabKey } from '../constants/job-tabs'
+import { JobTabsSchema } from '../constants/job-tabs'
 import { jobService } from '../services/job.service'
 import { toast } from 'vue-sonner'
 
@@ -360,17 +342,21 @@ onMounted(async () => {
   await companyDefaultsStore.loadCompanyDefaults()
 })
 
-const { jobEvents, addEvent, loading: jobEventsLoading } = useJobEvents(jobId)
 // Check if this is a newly created job (redirected from creation)
 const isNewJob = computed(() => route.query.new === 'true')
-const queryTab = computed(() => route.query.tab as string)
-const defaultTab = computed(() => {
+const parseJobTab = (value: unknown): JobTabKey | undefined => {
+  const normalized = Array.isArray(value) ? value[0] : value
+  const safeParse = JobTabsSchema.safeParse(normalized)
+  return safeParse.success ? safeParse.data : undefined
+}
+
+const queryTab = computed<JobTabKey | undefined>(() => parseJobTab(route.query.tab))
+const defaultTab = computed<JobTabKey>(() => {
   if (queryTab.value) return queryTab.value
   if (isNewJob.value) return 'quote'
   return 'actual'
 })
 const { activeTab, setTab } = useJobTabs(defaultTab.value)
-const notifications = useJobNotifications()
 
 const localJobName = ref('')
 const localClientName = ref('')
@@ -385,6 +371,18 @@ const pricingMethodologyOptions = [
   { key: 'time_materials', label: 'Time & Materials' },
   { key: 'fixed_price', label: 'Fixed Price' },
 ]
+
+type InlineSelectOption = {
+  key: string
+  label: string
+  tooltip?: string
+}
+
+const jobStatusSelectOptions: InlineSelectOption[] = JOB_STATUS_CHOICES.map((choice) => ({
+  key: choice.key,
+  label: choice.label,
+  tooltip: choice.tooltip,
+}))
 
 // Force re-render of header title block when header data changes
 const titleKey = computed(() => {
@@ -518,11 +516,11 @@ watch(
     localJobName.value = h.name
     localClientName.value = h.client?.name ?? ''
     localClientId.value = h.client?.id ?? ''
-    localJobStatus.value = h.status
+    localJobStatus.value = h.status ?? ''
     localPricingMethodology.value = h.pricing_methodology ?? ''
-    localQuoted.value = h.quoted
-    localFullyInvoiced.value = h.fully_invoiced
-    localRejected.value = h.rejected_flag
+    localQuoted.value = Boolean(h.quoted)
+    localFullyInvoiced.value = Boolean(h.fully_invoiced)
+    localRejected.value = Boolean(h.rejected_flag)
   },
   { immediate: true },
 )
@@ -567,16 +565,7 @@ const formatDate = (dateString: string) => {
   })
 }
 
-const showHistoryModal = ref(false)
-const showAttachmentsModal = ref(false)
 const showPdfDialog = ref(false)
-
-async function handleEventAdded(event) {
-  if (event?.description) {
-    await addEvent(event.description)
-    notifications.notifyEventAdded(event.event_type || 'Event')
-  }
-}
 
 function navigateBack() {
   router.push({ name: 'kanban' })

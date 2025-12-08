@@ -265,6 +265,8 @@ const searchQuery = ref('')
 const page = ref(1)
 const pageSize = 25
 
+const normalizeForSearch = (value?: string | null): string => (value ?? '').toLowerCase()
+
 const filteredItems = computed(() => {
   if (!searchQuery.value.trim()) {
     return items.value
@@ -272,11 +274,11 @@ const filteredItems = computed(() => {
   const query = searchQuery.value.toLowerCase()
   return items.value.filter(
     (item) =>
-      item.description.toLowerCase().includes(query) ||
-      item.metal_type?.toLowerCase().includes(query) ||
-      item.alloy?.toLowerCase().includes(query) ||
-      item.specifics?.toLowerCase().includes(query) ||
-      item.location?.toLowerCase().includes(query),
+      normalizeForSearch(item.description).includes(query) ||
+      normalizeForSearch(item.metal_type as string).includes(query) ||
+      normalizeForSearch(item.alloy).includes(query) ||
+      normalizeForSearch(item.specifics).includes(query) ||
+      normalizeForSearch(item.location).includes(query),
   )
 })
 
@@ -460,23 +462,7 @@ async function loadJobs() {
     // Use the correct property names from FetchAllJobsResponse schema
     const activeJobs = data.active_jobs || []
     const archivedJobs = data.archived_jobs || []
-    const kanbanJobs = [...activeJobs, ...archivedJobs].map((job) => ({
-      id: job.id,
-      name: job.name,
-      description: job.description,
-      job_number: job.job_number,
-      client_name: job.client_name,
-      contact_person: job.contact_person,
-      people: job.people || [],
-      status: job.status_key || '',
-      status_key: job.status_key || '',
-      job_status: job.status_key || '',
-      paid: job.paid,
-      created_by_id: job.created_by_id,
-      created_at: job.created_at,
-      priority: job.priority,
-    }))
-    jobsStore.setKanbanJobs(kanbanJobs)
+    jobsStore.setKanbanJobs([...activeJobs, ...archivedJobs])
   } catch (error) {
     debugLog('Error loading jobs:', error)
     toast.error('Failed to load jobs')

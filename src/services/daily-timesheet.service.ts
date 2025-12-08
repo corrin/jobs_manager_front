@@ -5,8 +5,8 @@ import type { z } from 'zod'
 import { formatCurrency as formatCurrencyUtil } from '@/utils/string-formatting'
 
 // Use inferred types from Zod schemas
-type DailyTimesheetSummary = z.infer<typeof schemas.DailyTimesheetSummary>
-type StaffDailyData = z.infer<typeof schemas.StaffDailyData>
+export type DailyTimesheetSummary = z.infer<typeof schemas.DailyTimesheetSummary>
+export type StaffDailyData = z.infer<typeof schemas.StaffDailyData>
 
 // All interfaces migrated to generated types from ../api/generated/api
 // - JobBreakdown (now from generated API)

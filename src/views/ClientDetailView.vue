@@ -101,7 +101,10 @@
               <CardTitle>Contact Persons</CardTitle>
             </CardHeader>
             <CardContent>
-              <div v-if="isLoadingContacts" class="flex items-center justify-center py-8">
+              <div
+                v-if="clientStore.isLoadingContacts"
+                class="flex items-center justify-center py-8"
+              >
                 <Loader2 class="w-6 h-6 animate-spin text-indigo-600" />
               </div>
               <div v-else-if="contacts.length === 0" class="text-center py-8 text-gray-500">

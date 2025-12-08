@@ -212,13 +212,13 @@ async function deleteStaff() {
 async function fetchStaff() {
   loading.value = true
   // For admin view, show all staff including those without valid IMS IDs
-  staffList.value = await listStaff(false) // false = show all staff
+  staffList.value = await listStaff()
   console.log('AdminStaffView - Staff data received from API:', staffList.value)
   loading.value = false
 }
 onMounted(fetchStaff)
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
   return date.toLocaleString('en-NZ', {

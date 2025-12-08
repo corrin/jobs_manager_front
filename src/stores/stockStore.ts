@@ -4,12 +4,12 @@ import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { z } from 'zod'
 
-type StockItem = z.infer<typeof schemas.StockItem>
+const stockArraySchema = z.array(schemas.StockItem)
+
+export type StockItem = z.infer<typeof schemas.StockItem>
 type StockConsumeRequest = z.infer<typeof schemas.StockConsumeRequest>
 type StockConsumeResponse = z.infer<typeof schemas.StockConsumeResponse>
-type StockCreate = z.infer<typeof schemas.StockCreate>
-
-export { StockItem }
+type StockCreateRequest = z.infer<typeof schemas.StockItemRequest>
 
 // Narrow Zodios error shape where response is available at error.cause.received
 type ZodiosErrorWithReceived = { cause?: { received?: unknown } }
@@ -41,7 +41,8 @@ export const useStockStore = defineStore('stock', () => {
             const receivedData = error.cause?.received
             if (Array.isArray(receivedData)) {
               // If backend returned a raw list despite validation, coerce it
-              items.value = schemas.StockList.parse({ items: receivedData }).items || []
+              const parsed = stockArraySchema.parse(receivedData)
+              items.value = parsed
               return items.value
             }
           } catch (parseError) {
@@ -99,17 +100,17 @@ export const useStockStore = defineStore('stock', () => {
       quantity: payload.quantity,
     }
     return await api.consumeStock(consumePayload, {
-      params: { stock_id: id },
+      params: { id },
     })
   }
 
-  async function create(payload: StockCreate) {
+  async function create(payload: StockCreateRequest) {
     const response = await api.purchasing_rest_stock_create(payload)
     return response
   }
 
   async function deactivate(id: string) {
-    await api.purchasing_rest_stock_destroy(undefined, { params: { stock_id: id } })
+    await api.purchasing_rest_stock_destroy(undefined, { params: { id } })
   }
 
   return { items, loading, fetchStock, fetchStockSafe, consumeStock, create, deactivate }

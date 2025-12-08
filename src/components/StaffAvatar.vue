@@ -1,17 +1,30 @@
 <template>
-  <div :class="[
-    'rounded-full overflow-hidden flex items-center justify-center cursor-pointer shadow-sm transition-all duration-200 relative',
-    'hover:scale-110 hover:shadow-md',
-    size === 'sm' ? 'w-5 h-5 text-xs' : 'w-10 h-10',
-    isActive
-      ? 'border-2 border-blue-500 scale-110 shadow-blue-200 shadow-md ring-2 ring-blue-300 ring-offset-1'
-      : '',
-    isDragging ? 'opacity-80 rotate-1 scale-105 shadow-lg' : '',
-    'staff-avatar-draggable',
-  ]" :title="staff.display_name" :data-staff-id="staff.id">
-    <img v-if="iconUrl" :src="iconUrl" :alt="staff.display_name" class="w-full h-full object-cover" />
-    <div v-else class="w-full h-full flex items-center justify-center text-white font-bold"
-      :class="size === 'sm' ? 'text-xs' : 'text-sm'" :style="{ backgroundColor: backgroundColor }">
+  <div
+    :class="[
+      'rounded-full overflow-hidden flex items-center justify-center cursor-pointer shadow-sm transition-all duration-200 relative',
+      'hover:scale-110 hover:shadow-md',
+      size === 'sm' ? 'w-5 h-5 text-xs' : 'w-10 h-10',
+      isActive
+        ? 'border-2 border-blue-500 scale-110 shadow-blue-200 shadow-md ring-2 ring-blue-300 ring-offset-1'
+        : '',
+      isDragging ? 'opacity-80 rotate-1 scale-105 shadow-lg' : '',
+      'staff-avatar-draggable',
+    ]"
+    :title="staff.display_name"
+    :data-staff-id="staff.id"
+  >
+    <img
+      v-if="iconUrl"
+      :src="iconUrl"
+      :alt="staff.display_name"
+      class="w-full h-full object-cover"
+    />
+    <div
+      v-else
+      class="w-full h-full flex items-center justify-center text-white font-bold"
+      :class="size === 'sm' ? 'text-xs' : 'text-sm'"
+      :style="{ backgroundColor: backgroundColor }"
+    >
       {{ getInitials(staff) }}
     </div>
   </div>
@@ -26,6 +39,7 @@ type Staff = z.infer<typeof schemas.Staff>
 type KanbanJobPerson = z.infer<typeof schemas.KanbanJobPerson>
 
 // Union type to handle both Staff and KanbanJobPerson
+// This is needed due to the utilisation of StaffAvatar in both StaffPanel and KanbanColumn (through JobCard)
 type StaffOrKanbanPerson = Staff | KanbanJobPerson
 
 const props = withDefaults(
