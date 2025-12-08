@@ -149,13 +149,17 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       companyDefaults: companyDefaults.value,
     })
 
+    const nowIso = new Date().toISOString()
+    const accountingDate = date || nowIso.split('T')[0]
+    const tempId = `temp_${Date.now()}`
+
     return {
-      // Provide a dummy UUID to satisfy schema; real id will come from backend
-      id: null,
+      id: '',
       kind: 'time' as const,
       desc: '',
+      description: '',
       quantity: hours,
-      // This is the hourly rate, not the total wage
+      hours,
       unit_cost: staffWageRate,
       unit_rev: defaultChargeOutRate,
       total_cost: calculatedWage,
@@ -167,6 +171,10 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
         rate_type: 'Ord',
         rate_multiplier: rateMultiplier,
         is_billable: true,
+        job_id: '',
+        job_number: 0,
+        job_name: '',
+        client_name: '',
       },
       job_id: '',
       jobId: '',
@@ -178,23 +186,28 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       client: '',
       charge_out_rate: defaultChargeOutRate,
       chargeOutRate: defaultChargeOutRate,
-      // Add UI-specific metadata fields
-      tempId: `temp_${Date.now()}`,
+      accounting_date: accountingDate,
+      created_at: nowIso,
+      updated_at: nowIso,
+      xero_time_id: null,
+      xero_expense_id: null,
+      xero_last_modified: null,
+      xero_last_synced: null,
+      tempId,
       _isSaving: false,
+      isSaving: false,
       isNewRow: true,
       isModified: false,
-      // Include staff wage rate for grid calculations
       wage_rate: staffWageRate,
+      wageRate: staffWageRate,
       staffId: staffMember.id,
       staffName: resolveStaffName(staffMember),
       date,
-      hours,
-      description: '',
       rate: 'Ord',
+      rateMultiplier,
       wage: calculatedWage,
       bill: 0,
       billable: true,
-      rateMultiplier,
     }
   }
 
@@ -293,6 +306,10 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     // Extract wage rate from unit_cost (which should be the staff wage rate)
     const wageRate = costLine.unit_cost ?? 0
     const staffWageRate = staffData ? resolveStaffWageRate(staffData) || wageRate : wageRate
+    const normalizedWageRate =
+      typeof costLine.wage_rate === 'number' && costLine.wage_rate > 0
+        ? costLine.wage_rate
+        : staffWageRate
     const metaJobNumber = metaRec['job_number']
     const normalizedJobNumber =
       typeof metaJobNumber === 'number'
@@ -304,6 +321,22 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       typeof metaJobNumber === 'number' || typeof metaJobNumber === 'string'
         ? String(metaJobNumber)
         : ''
+    const resolvedJobId =
+      costLine.job_id ||
+      (typeof metaRec['job_id'] === 'string' ? (metaRec['job_id'] as string) : '')
+    const resolvedJobNumber =
+      typeof costLine.job_number === 'number' ? costLine.job_number : normalizedJobNumber
+    const resolvedJobNumberString =
+      typeof resolvedJobNumber === 'number' ? String(resolvedJobNumber) : normalizedJobNumberString
+    const resolvedJobName =
+      costLine.job_name ||
+      (typeof metaRec['job_name'] === 'string' ? (metaRec['job_name'] as string) : '')
+    const resolvedClientName =
+      costLine.client_name ||
+      (typeof metaRec['client_name'] === 'string' ? (metaRec['client_name'] as string) : '')
+    const resolvedChargeOutRate = costLine.charge_out_rate ?? costLine.unit_rev ?? 0
+    const dateValue =
+      typeof metaRec['date'] === 'string' ? (metaRec['date'] as string) : costLine.accounting_date
 
     // Get rate multiplier from backend data (rate_multiplier in meta)
     const backendRateMultiplier =
@@ -344,47 +377,56 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       id: costLine.id,
       kind: 'time' as const,
       desc: costLine.desc || '',
-      // Use native numeric values
+      description: costLine.desc || '',
       quantity: costLine.quantity ?? 0,
-      unit_cost: costLine.unit_cost ?? 0,
-      unit_rev: costLine.unit_rev ?? 0,
-      total_cost: calculatedWage, // ✅ ALWAYS use calculated wage
+      hours: hours,
+      unit_cost: costLine.unit_cost ?? normalizedWageRate,
+      unit_rev: costLine.unit_rev ?? resolvedChargeOutRate,
+      total_cost: calculatedWage,
       total_rev: costLine.total_rev || 0,
       ext_refs: costLine.ext_refs || {},
       meta: {
         ...metaObj,
         staff_id: staffId,
         rate_multiplier: backendRateMultiplier,
+        job_id: resolvedJobId,
+        job_number: resolvedJobNumber,
+        job_name: resolvedJobName,
+        client_name: resolvedClientName,
       },
-      job_id: typeof metaRec['job_id'] === 'string' ? (metaRec['job_id'] as string) : '',
-      jobId: typeof metaRec['job_id'] === 'string' ? (metaRec['job_id'] as string) : '',
-      job_number: normalizedJobNumber,
-      jobNumber: normalizedJobNumberString,
-      job_name: typeof metaRec['job_name'] === 'string' ? (metaRec['job_name'] as string) : '',
-      jobName: typeof metaRec['job_name'] === 'string' ? (metaRec['job_name'] as string) : '',
-      client_name:
-        typeof metaRec['client_name'] === 'string' ? (metaRec['client_name'] as string) : '',
-      client: typeof metaRec['client_name'] === 'string' ? (metaRec['client_name'] as string) : '',
-      charge_out_rate: costLine.unit_rev ?? 0,
-      chargeOutRate: costLine.unit_rev ?? 0,
-      // Add UI-specific metadata fields
+      job_id: resolvedJobId,
+      jobId: resolvedJobId,
+      job_number: resolvedJobNumber,
+      jobNumber: resolvedJobNumberString,
+      job_name: resolvedJobName,
+      jobName: resolvedJobName,
+      client_name: resolvedClientName,
+      client: resolvedClientName,
+      charge_out_rate: resolvedChargeOutRate,
+      chargeOutRate: resolvedChargeOutRate,
+      accounting_date: costLine.accounting_date,
+      created_at: costLine.created_at,
+      updated_at: costLine.updated_at,
+      xero_time_id: costLine.xero_time_id,
+      xero_expense_id: costLine.xero_expense_id,
+      xero_last_modified: costLine.xero_last_modified,
+      xero_last_synced: costLine.xero_last_synced,
       tempId: undefined,
       _isSaving: false,
+      isSaving: false,
       isNewRow: false,
       isModified: false,
-      // Include staff wage rate for consistent grid calculations
-      wage_rate: staffWageRate,
+      wage_rate: normalizedWageRate,
+      wageRate: normalizedWageRate,
       staffId: staffId,
       staffName: staffData ? resolveStaffName(staffData) : '',
-      date: typeof metaRec['date'] === 'string' ? (metaRec['date'] as string) : '',
-      hours: hours,
-      description: costLine.desc || '',
+      date: dateValue || '',
       rate: rateType,
+      rateMultiplier: backendRateMultiplier,
       wage: calculatedWage,
       bill: costLine.total_rev || 0,
       billable:
         typeof metaRec['is_billable'] === 'boolean' ? (metaRec['is_billable'] as boolean) : true,
-      rateMultiplier: backendRateMultiplier,
     }
   }
 

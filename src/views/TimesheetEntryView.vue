@@ -583,32 +583,14 @@ import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 
 import { debugLog } from '@/utils/debug'
+import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type Staff = z.infer<typeof schemas.ModernStaff>
 type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
 type Job = z.infer<typeof schemas.Job>
 
-type TimesheetEntryViewRow = TimesheetCostLine & {
-  jobId?: string
-  jobNumber?: string
-  jobName?: string
-  client?: string
-  description?: string
-  hours?: number
-  bill?: number
-  billable?: boolean
-  wage?: number
-  wageRate?: number
-  chargeOutRate?: number
-  rateMultiplier?: number
-  staffId?: string
-  date?: string
-  tempId?: string
-  _isSaving?: boolean
-  isNewRow?: boolean
-  isModified?: boolean
-}
+type TimesheetEntryViewRow = TimesheetEntryWithMeta
 
 type ActiveJobWithData = {
   job: Job | ModernTimesheetJob
@@ -630,12 +612,7 @@ const resolveJobStatus = (job: Job | ModernTimesheetJob): string => {
 }
 
 // Type for autosave callback
-type TimesheetEntryGridRowWithSaving = TimesheetCostLine & {
-  tempId?: string
-  isModified?: boolean
-  isNewRow?: boolean
-  isSaving?: boolean
-}
+type TimesheetEntryGridRowWithSaving = TimesheetEntryWithMeta
 
 const router = useRouter()
 const route = useRoute()
@@ -1442,7 +1419,7 @@ async function softRefreshRow(entry: TimesheetEntryViewRow): Promise<void> {
   }
 }
 
-async function handleDeleteEntry(id: number): Promise<void> {
+async function handleDeleteEntry(id: string): Promise<void> {
   try {
     // Keep loading for deletion since it's a critical operation
     loading.value = true
