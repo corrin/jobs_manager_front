@@ -226,7 +226,8 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
   // Get jobs for a specific column with staff filtering
   const getJobsByStatus = computed(() => (columnId: string) => {
-    if (filteredJobs.value.length > 0 || searchQuery.value.trim() !== '') {
+    // Show filtered results when: we have results, there's a search query, OR we're loading a search
+    if (filteredJobs.value.length > 0 || searchQuery.value.trim() !== '' || isLoading.value) {
       // When searching, group filteredJobs by column
       const grouped: Record<string, KanbanJob[]> = {}
       filteredJobs.value.forEach((job) => {
@@ -441,51 +442,36 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
     try {
       isLoading.value = true
 
-      // Check if search query is a job number (numeric)
-      const isJobNumber = /^\d+$/.test(searchQuery.value.trim())
+      // First search locally in loaded jobs
+      const allJobs: KanbanJob[] = []
+      Object.values(columnStates).forEach((columnState) => {
+        allJobs.push(...columnState.jobs)
+      })
 
-      if (isJobNumber) {
-        // For job numbers, use advanced search to query backend
+      const query = searchQuery.value.toLowerCase()
+      const localResults = allJobs.filter((job) => {
+        return (
+          job.name?.toLowerCase().includes(query) ||
+          job.description?.toLowerCase().includes(query) ||
+          job.client_name?.toLowerCase().includes(query) ||
+          String(job.job_number).toLowerCase().includes(query) ||
+          job.contact_person?.toLowerCase().includes(query)
+        )
+      })
+
+      if (localResults.length > 0) {
+        // Use local results if found
+        filteredJobs.value = localResults
+      } else {
+        // If no local results, search backend using universal search parameter
         const searchFilters: AdvancedFilters = {
           ...DEFAULT_ADVANCED_FILTERS,
-          job_number: searchQuery.value.trim(),
+          q: searchQuery.value.trim(),
         }
 
         const response: AdvancedSearchResponse =
           await jobService.performAdvancedSearch(searchFilters)
         filteredJobs.value = response.jobs || []
-      } else {
-        // For text searches, first search locally in loaded jobs
-        const allJobs: KanbanJob[] = []
-        Object.values(columnStates).forEach((columnState) => {
-          allJobs.push(...columnState.jobs)
-        })
-
-        const query = searchQuery.value.toLowerCase()
-        const localResults = allJobs.filter((job) => {
-          return (
-            job.name?.toLowerCase().includes(query) ||
-            job.description?.toLowerCase().includes(query) ||
-            job.client_name?.toLowerCase().includes(query) ||
-            String(job.job_number).toLowerCase().includes(query) ||
-            job.contact_person?.toLowerCase().includes(query)
-          )
-        })
-
-        if (localResults.length > 0) {
-          // Use local results if found
-          filteredJobs.value = localResults
-        } else {
-          // If no local results, search backend
-          const searchFilters: AdvancedFilters = {
-            ...DEFAULT_ADVANCED_FILTERS,
-            name: searchQuery.value.trim().toLowerCase(),
-          }
-
-          const response: AdvancedSearchResponse =
-            await jobService.performAdvancedSearch(searchFilters)
-          filteredJobs.value = response.jobs || []
-        }
       }
 
       debugLog(

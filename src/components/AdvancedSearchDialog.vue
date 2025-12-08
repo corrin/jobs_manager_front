@@ -7,6 +7,27 @@
       </DialogHeader>
 
       <div class="space-y-4">
+        <!-- Universal Search -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <label class="block text-sm font-medium text-blue-800 mb-1">
+            Search All Fields
+          </label>
+          <input
+            v-model="localFilters.q"
+            type="text"
+            class="w-full px-3 py-2 border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            placeholder="Search job number, name, description, or client..."
+          />
+          <p class="mt-1 text-xs text-blue-600">
+            Searches across job number, name, description, and client name
+          </p>
+        </div>
+
+        <!-- Individual Field Filters -->
+        <div class="border-t pt-4">
+          <p class="text-xs text-gray-500 mb-3">Or filter by specific fields:</p>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Job Number</label>
