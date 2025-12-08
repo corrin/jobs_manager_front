@@ -1483,6 +1483,65 @@ const JobHeaderResponse = z
   })
   .passthrough()
 const JobInvoicesResponse = z.object({ invoices: z.array(Invoice) }).passthrough()
+const DocumentTypeEnum = z.enum(['jsa', 'swp'])
+const Status6b5Enum = z.enum(['draft', 'final'])
+const SafetyDocumentList = z
+  .object({
+    id: z.string().uuid(),
+    document_type: DocumentTypeEnum,
+    job_number: z.string().nullable(),
+    status: Status6b5Enum.optional(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+    title: z.string().max(255),
+    site_location: z.string().max(500).optional(),
+    task_count: z.number().int(),
+    has_pdf: z.boolean(),
+  })
+  .passthrough()
+const SafetyDocumentErrorResponse = z
+  .object({
+    status: z.string().optional().default('error'),
+    message: z.string(),
+  })
+  .passthrough()
+const InitialRiskRatingEnum = z.enum(['Low', 'Moderate', 'High', 'Extreme'])
+const ControlMeasure = z
+  .object({ measure: z.string(), associated_hazard: z.string().optional() })
+  .passthrough()
+const RevisedRiskRatingEnum = z.enum(['Low', 'Moderate', 'High', 'Extreme'])
+const SafetyTask = z
+  .object({
+    step_number: z.number().int().gte(1),
+    description: z.string(),
+    summary: z.string().optional(),
+    potential_hazards: z.array(z.string()),
+    initial_risk_rating: InitialRiskRatingEnum,
+    control_measures: z.array(ControlMeasure),
+    revised_risk_rating: RevisedRiskRatingEnum,
+  })
+  .passthrough()
+const SafetyDocument = z
+  .object({
+    id: z.string().uuid(),
+    document_type: DocumentTypeEnum,
+    job_id: z.string().uuid().nullable(),
+    job_number: z.string().nullable(),
+    status: Status6b5Enum.optional(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+    title: z.string().max(255),
+    company_name: z.string().max(255),
+    site_location: z.string().max(500).optional(),
+    description: z.string(),
+    ppe_requirements: z.unknown().optional(),
+    tasks: z.array(SafetyTask),
+    additional_notes: z.string().optional(),
+    pdf_file_path: z.string(),
+    pdf_url: z.string().nullable(),
+    context_document_ids: z.unknown(),
+  })
+  .passthrough()
 const JobQuoteAcceptanceRequest = z
   .object({
     success: z.boolean(),
@@ -1712,6 +1771,57 @@ const MonthEndPostResponse = z
   .object({
     processed: z.array(z.string().uuid()),
     errors: z.array(z.string()),
+  })
+  .passthrough()
+const ControlMeasureRequest = z
+  .object({
+    measure: z.string().min(1),
+    associated_hazard: z.string().optional(),
+  })
+  .passthrough()
+const SafetyTaskRequest = z
+  .object({
+    step_number: z.number().int().gte(1),
+    description: z.string().min(1),
+    summary: z.string().optional(),
+    potential_hazards: z.array(z.string().min(1)),
+    initial_risk_rating: InitialRiskRatingEnum,
+    control_measures: z.array(ControlMeasureRequest),
+    revised_risk_rating: RevisedRiskRatingEnum,
+  })
+  .passthrough()
+const SafetyDocumentRequest = z
+  .object({
+    document_type: DocumentTypeEnum,
+    status: Status6b5Enum.optional(),
+    title: z.string().min(1).max(255),
+    company_name: z.string().min(1).max(255),
+    site_location: z.string().max(500).optional(),
+    description: z.string().min(1),
+    ppe_requirements: z.unknown().optional(),
+    tasks: z.array(SafetyTaskRequest),
+    additional_notes: z.string().optional(),
+  })
+  .passthrough()
+const PatchedSafetyDocumentRequest = z
+  .object({
+    document_type: DocumentTypeEnum,
+    status: Status6b5Enum,
+    title: z.string().min(1).max(255),
+    company_name: z.string().min(1).max(255),
+    site_location: z.string().max(500),
+    description: z.string().min(1),
+    ppe_requirements: z.unknown(),
+    tasks: z.array(SafetyTaskRequest),
+    additional_notes: z.string(),
+  })
+  .partial()
+  .passthrough()
+const SWPGenerateRequestRequest = z
+  .object({
+    title: z.string().min(1).max(255),
+    description: z.string().min(1),
+    site_location: z.string().optional(),
   })
   .passthrough()
 const TimesheetCostLine = z
@@ -2686,6 +2796,15 @@ export const schemas = {
   Status7b9Enum,
   JobHeaderResponse,
   JobInvoicesResponse,
+  DocumentTypeEnum,
+  Status6b5Enum,
+  SafetyDocumentList,
+  SafetyDocumentErrorResponse,
+  InitialRiskRatingEnum,
+  ControlMeasure,
+  RevisedRiskRatingEnum,
+  SafetyTask,
+  SafetyDocument,
   JobQuoteAcceptanceRequest,
   JobQuoteAcceptance,
   QuoteImportStatusResponse,
@@ -2715,6 +2834,11 @@ export const schemas = {
   MonthEndGetResponse,
   MonthEndPostRequest,
   MonthEndPostResponse,
+  ControlMeasureRequest,
+  SafetyTaskRequest,
+  SafetyDocumentRequest,
+  PatchedSafetyDocumentRequest,
+  SWPGenerateRequestRequest,
   TimesheetCostLine,
   ModernTimesheetStaff,
   ModernTimesheetSummary,
@@ -4517,6 +4641,11 @@ Expected JSON:
         schema: z.string().optional(),
       },
       {
+        name: 'q',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
         name: 'rejected_flag',
         type: 'Query',
         schema: z.string().optional(),
@@ -5320,6 +5449,52 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   },
   {
     method: 'get',
+    path: '/job/rest/jobs/:job_id/jsa/',
+    alias: 'listJobJSAs',
+    description: `List all JSAs for a specific job`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.array(SafetyDocumentList),
+    errors: [
+      {
+        status: 404,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/job/rest/jobs/:job_id/jsa/generate/',
+    alias: 'generateJobJSA',
+    description: `Generate a new draft JSA for a job using AI`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: SafetyDocument,
+    errors: [
+      {
+        status: 404,
+        schema: SafetyDocumentErrorResponse,
+      },
+      {
+        status: 500,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/job/rest/jobs/:job_id/quote/',
     alias: 'job_rest_jobs_quote_retrieve',
     description: `Fetch job quote. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
@@ -5524,6 +5699,269 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       },
     ],
     response: MonthEndPostResponse,
+  },
+  {
+    method: 'get',
+    path: '/job/rest/safety-documents/',
+    alias: 'listSafetyDocuments',
+    description: `List all safety documents with optional filtering`,
+    requestFormat: 'json',
+    response: z.array(SafetyDocumentList),
+  },
+  {
+    method: 'get',
+    path: '/job/rest/safety-documents/:doc_id/',
+    alias: 'getSafetyDocument',
+    description: `Retrieve a specific safety document`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'doc_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: SafetyDocument,
+    errors: [
+      {
+        status: 404,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'put',
+    path: '/job/rest/safety-documents/:doc_id/',
+    alias: 'updateSafetyDocument',
+    description: `Full update of a draft safety document`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: SafetyDocumentRequest,
+      },
+      {
+        name: 'doc_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: SafetyDocument,
+    errors: [
+      {
+        status: 400,
+        schema: SafetyDocumentErrorResponse,
+      },
+      {
+        status: 404,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/job/rest/safety-documents/:doc_id/',
+    alias: 'partialUpdateSafetyDocument',
+    description: `Partial update of a draft safety document`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedSafetyDocumentRequest,
+      },
+      {
+        name: 'doc_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: SafetyDocument,
+    errors: [
+      {
+        status: 400,
+        schema: SafetyDocumentErrorResponse,
+      },
+      {
+        status: 404,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/job/rest/safety-documents/:doc_id/',
+    alias: 'deleteSafetyDocument',
+    description: `Delete a draft safety document`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'doc_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
+    errors: [
+      {
+        status: 400,
+        schema: SafetyDocumentErrorResponse,
+      },
+      {
+        status: 404,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/job/rest/safety-documents/:doc_id/finalize/',
+    alias: 'finalizeSafetyDocument',
+    description: `Finalize a draft safety document by generating PDF`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'doc_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: SafetyDocument,
+    errors: [
+      {
+        status: 400,
+        schema: SafetyDocumentErrorResponse,
+      },
+      {
+        status: 404,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/job/rest/safety-documents/:doc_id/pdf/',
+    alias: 'getSafetyDocumentPDF',
+    description: `Download the PDF for a finalized safety document`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'doc_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.instanceof(File),
+    errors: [
+      {
+        status: 400,
+        schema: SafetyDocumentErrorResponse,
+      },
+      {
+        status: 404,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/job/rest/safety-documents/:doc_id/tasks/:task_num/generate-controls/',
+    alias: 'generateTaskControls',
+    description: `Generate control measures for a task&#x27;s hazards using AI`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'doc_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'task_num',
+        type: 'Path',
+        schema: z.number().int(),
+      },
+    ],
+    response: z
+      .object({ controls: z.array(z.any()) })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        schema: SafetyDocumentErrorResponse,
+      },
+      {
+        status: 404,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/job/rest/safety-documents/:doc_id/tasks/:task_num/generate-hazards/',
+    alias: 'generateTaskHazards',
+    description: `Generate hazards for a specific task using AI`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'doc_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'task_num',
+        type: 'Path',
+        schema: z.number().int(),
+      },
+    ],
+    response: z
+      .object({ hazards: z.array(z.any()) })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        schema: SafetyDocumentErrorResponse,
+      },
+      {
+        status: 404,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/job/rest/swp/',
+    alias: 'listSWPs',
+    description: `List all Safe Work Procedures`,
+    requestFormat: 'json',
+    response: z.array(SafetyDocumentList),
+  },
+  {
+    method: 'post',
+    path: '/job/rest/swp/generate/',
+    alias: 'generateSWP',
+    description: `Generate a new draft SWP using AI`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: SWPGenerateRequestRequest,
+      },
+    ],
+    response: SafetyDocument,
+    errors: [
+      {
+        status: 400,
+        schema: SafetyDocumentErrorResponse,
+      },
+      {
+        status: 500,
+        schema: SafetyDocumentErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
