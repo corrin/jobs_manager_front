@@ -682,6 +682,13 @@ function isDescriptionBeingEdited(
   return key ? descriptionEditingRows.has(key) : false
 }
 
+function toMetaRecord(meta: unknown): Record<string, unknown> | null {
+  if (meta && typeof meta === 'object') {
+    return meta as Record<string, unknown>
+  }
+  return null
+}
+
 debugLog('🔗 URL params:', { date: route.query.date, staffId: route.query.staffId })
 debugLog('📊 Using initial values:', { date: initialDate, staffId: initialStaffId })
 
@@ -1282,7 +1289,14 @@ async function handleSaveEntry(entry: TimesheetEntryViewRow): Promise<void> {
       const job = timesheetStore.jobs.find((j: ModernTimesheetJob) => j.id === targetJobId)
       if (!job) throw new Error('Job not found')
       savedLine = await costlineService.createCostLine(job.id, 'actual', costLinePayload)
-      entryRow.id = savedLine.id
+    }
+
+    const savedId =
+      savedLine && typeof savedLine === 'object' && 'id' in savedLine
+        ? String((savedLine as { id?: string | number }).id ?? '')
+        : ''
+    if (savedId) {
+      entryRow.id = savedId
       delete entryRow.tempId
     }
 
@@ -1322,9 +1336,10 @@ async function softRefreshRow(entry: TimesheetEntryViewRow): Promise<void> {
 
     const hours = line.quantity
     const staffWageRate = line.wage_rate || line.unit_cost
+    const metaRecord = toMetaRecord(line.meta)
     const rateMultiplier =
-      line.meta && 'rate_multiplier' in line.meta && typeof line.meta.rate_multiplier === 'number'
-        ? line.meta.rate_multiplier
+      typeof metaRecord?.['rate_multiplier'] === 'number'
+        ? (metaRecord['rate_multiplier'] as number)
         : 1.0
 
     const calculatedWage =
@@ -1352,8 +1367,8 @@ async function softRefreshRow(entry: TimesheetEntryViewRow): Promise<void> {
       job_name: normalizedJobName,
       hours,
       billable:
-        line.meta && 'is_billable' in line.meta && typeof line.meta.is_billable === 'boolean'
-          ? line.meta.is_billable
+        typeof metaRecord?.['is_billable'] === 'boolean'
+          ? (metaRecord['is_billable'] as boolean)
           : true,
       description: line.desc,
       rate: getRateTypeFromMultiplier(rateMultiplier),
@@ -1558,13 +1573,10 @@ const loadTimesheetData = async () => {
     timeEntries.value = response.cost_lines.map((line: TimesheetCostLine) => {
       const hours = line.quantity
       const staffWageRate = line.wage_rate || line.unit_cost
+      const metaRecord = toMetaRecord(line.meta)
       const rateMultiplier =
-        line.meta &&
-        typeof line.meta === 'object' &&
-        line.meta !== null &&
-        'rate_multiplier' in line.meta &&
-        typeof (line.meta as Record<string, unknown>).rate_multiplier === 'number'
-          ? ((line.meta as Record<string, unknown>).rate_multiplier as number)
+        typeof metaRecord?.['rate_multiplier'] === 'number'
+          ? (metaRecord['rate_multiplier'] as number)
           : 1.0
 
       // Always calculate wage with correct formula: hours * rate_multiplier * staff_wage_rate
@@ -1603,12 +1615,8 @@ const loadTimesheetData = async () => {
         job_name: normalizedJobName,
         hours,
         billable:
-          line.meta &&
-          typeof line.meta === 'object' &&
-          line.meta !== null &&
-          'is_billable' in line.meta &&
-          typeof (line.meta as Record<string, unknown>).is_billable === 'boolean'
-            ? ((line.meta as Record<string, unknown>).is_billable as boolean)
+          typeof metaRecord?.['is_billable'] === 'boolean'
+            ? (metaRecord['is_billable'] as boolean)
             : true,
         description: line.desc,
         rate: getRateTypeFromMultiplier(rateMultiplier),

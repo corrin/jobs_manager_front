@@ -157,9 +157,10 @@ type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
 type JobCreateResponse = z.infer<typeof schemas.JobCreateResponse>
 type JobDeleteResponse = z.infer<typeof schemas.JobDeleteResponse>
 type QuoteImportStatusResponse = z.infer<typeof schemas.QuoteImportStatusResponse>
-type JobStatusUpdate = z.infer<typeof schemas.JobStatusUpdateRequest>
+type JobStatusUpdateResponse = z.infer<typeof schemas.KanbanSuccessResponse>
 type ArchiveJobsRequest = z.infer<typeof schemas.ArchiveJobsRequest>
 type JobFile = z.infer<typeof schemas.JobFile>
+type JobFileRequest = z.infer<typeof schemas.JobFileRequest>
 type FetchAllJobsResponse = z.infer<typeof schemas.FetchAllJobsResponse>
 type FetchJobsResponse = z.infer<typeof schemas.FetchJobsResponse>
 type FetchJobsByColumnResponse = z.infer<typeof schemas.FetchJobsByColumnResponse>
@@ -326,7 +327,7 @@ export const jobService = {
   },
 
   // Update job status
-  updateJobStatus(jobId: string, newStatus: string): Promise<JobStatusUpdate> {
+  updateJobStatus(jobId: string, newStatus: string): Promise<JobStatusUpdateResponse> {
     debugLog('[jobService.updateJobStatus] →', { jobId, newStatus })
     return api
       .job_api_jobs_update_status_create({ status: newStatus }, { params: { job_id: jobId } })
@@ -339,45 +340,6 @@ export const jobService = {
         debugLog('[jobService.updateJobStatus] ✖ error', { jobId, newStatus, error: msg })
         throw e
       })
-  },
-
-  // Update job data
-  async updateJob(
-    jobId: string,
-    jobDetailResponse: JobDetailResponse,
-  ): Promise<{ success: boolean; data?: JobDetailResponse; error?: string }> {
-    try {
-      // Sanitize data to ensure undefined values become null for nullable fields
-      const sanitizedData = {
-        ...jobDetailResponse,
-        data: {
-          ...jobDetailResponse.data,
-          job: {
-            ...jobDetailResponse.data.job,
-            // Convert undefined to null for nullable fields that don't accept undefined
-            contact_name: jobDetailResponse.data.job.contact_name ?? null,
-            notes: jobDetailResponse.data.job.notes ?? null,
-            order_number: jobDetailResponse.data.job.order_number ?? null,
-            description: jobDetailResponse.data.job.description ?? null,
-            delivery_date: jobDetailResponse.data.job.delivery_date ?? null,
-          },
-        },
-      }
-
-      const response = await api.job_rest_jobs_update(sanitizedData, {
-        params: { job_id: jobId },
-      })
-      return {
-        success: true,
-        data: response,
-      }
-    } catch (error) {
-      console.error('Error updating job:', error)
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error updating job',
-      }
-    }
   },
 
   // Reorder job
@@ -505,10 +467,19 @@ export const jobService = {
   async updateJobFile(
     jobId: string,
     fileId: string,
-    updates: { filename?: string; print_on_jobsheet?: boolean },
+    updates: { filename: string; print_on_jobsheet?: boolean; mime_type?: string },
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      await api.updateJobFile(updates, {
+      const payload: JobFileRequest = {
+        id: fileId,
+        filename: updates.filename,
+        ...(updates.mime_type ? { mime_type: updates.mime_type } : {}),
+        ...(typeof updates.print_on_jobsheet === 'boolean'
+          ? { print_on_jobsheet: updates.print_on_jobsheet }
+          : {}),
+      }
+
+      await api.updateJobFile(payload, {
         params: { job_id: jobId, file_id: fileId },
       })
 

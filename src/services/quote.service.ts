@@ -19,7 +19,7 @@ class QuoteService {
 
     await api.job_rest_jobs_quote_link_create(payload, { params: { id: jobId } })
 
-    const jobResponse: JobDetailResponse = await api.getFullJob({ job_id: jobId })
+    const jobResponse: JobDetailResponse = await api.getFullJob({ params: { job_id: jobId } })
     return jobResponse.data?.job?.quote_sheet ?? null
   }
 

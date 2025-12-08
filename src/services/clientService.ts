@@ -3,8 +3,9 @@ import { debugLog } from '../utils/debug'
 import { z } from 'zod'
 import { schemas } from '../api/generated/api'
 
-// Use generated schemas
-export type Client = z.infer<typeof schemas.ClientSearchResult>
+type ClientSummary = z.infer<typeof schemas.ClientNameOnly>
+type ClientSearchResult = z.infer<typeof schemas.ClientSearchResult>
+export type Client = ClientSummary | ClientSearchResult
 export type CreateClientData = z.infer<typeof schemas.ClientCreateRequest>
 import type { CreateClientResponse } from '@/constants/client-wrapper'
 
@@ -34,7 +35,7 @@ export class ClientService {
     }
   }
 
-  async getAllClients(): Promise<Client[]> {
+  async getAllClients(): Promise<ClientSummary[]> {
     try {
       const response = await api.clients_all_list()
       return Array.isArray(response) ? response : []
@@ -50,12 +51,18 @@ export class ClientService {
     }
 
     const term = searchTerm.toLowerCase()
-    return clientList.filter(
-      (client) =>
-        client.name.toLowerCase().includes(term) ||
-        client.email?.toLowerCase().includes(term) ||
-        client.contact_person?.toLowerCase().includes(term),
-    )
+    return clientList.filter((client) => {
+      const nameMatch = client.name.toLowerCase().includes(term)
+      const emailMatch =
+        'email' in client && typeof client.email === 'string'
+          ? client.email.toLowerCase().includes(term)
+          : false
+      const phoneMatch =
+        'phone' in client && typeof client.phone === 'string'
+          ? client.phone.toLowerCase().includes(term)
+          : false
+      return nameMatch || emailMatch || phoneMatch
+    })
   }
 }
 

@@ -589,6 +589,7 @@ async function updatePrintSetting(file: JobFile) {
     })
 
     const result = await jobService.updateJobFile(props.jobId, file.id, {
+      filename: file.filename,
       print_on_jobsheet: file.print_on_jobsheet,
     })
 
