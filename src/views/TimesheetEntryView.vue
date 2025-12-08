@@ -826,8 +826,8 @@ const activeJobs = computed(() => {
   return getActiveJobs(availableJobs.value)
 })
 
-  const consolidatedSummary = computed(() => {
-    const costLineEntries = adaptedTimeEntries.value as TimesheetEntryViewRow[]
+const consolidatedSummary = computed(() => {
+  const costLineEntries = adaptedTimeEntries.value as TimesheetEntryViewRow[]
   return {
     totalHours: getTotalHours(costLineEntries),
     totalBill: getTotalBill(costLineEntries),
@@ -837,8 +837,8 @@ const activeJobs = computed(() => {
   }
 })
 
-  const activeJobsWithData = computed<ActiveJobWithData[]>(() => {
-    const costLineEntries = adaptedTimeEntries.value as TimesheetEntryViewRow[]
+const activeJobsWithData = computed<ActiveJobWithData[]>(() => {
+  const costLineEntries = adaptedTimeEntries.value as TimesheetEntryViewRow[]
   const uniqueJobIds = [
     ...new Set(
       costLineEntries.map((entry) => entry.job_id).filter((id): id is string => Boolean(id)),
@@ -1032,7 +1032,8 @@ const autosave = useTimesheetAutosave<TimesheetEntryViewRow>({
         row.meta &&
         typeof row.meta === 'object' &&
         typeof e.meta === 'object' &&
-        (row.meta as Record<string, unknown>).staff_id === (e.meta as Record<string, unknown>).staff_id &&
+        (row.meta as Record<string, unknown>).staff_id ===
+          (e.meta as Record<string, unknown>).staff_id &&
         String(row.desc || '').trim() === String(e.desc || '').trim(),
     )
   },
@@ -1331,12 +1332,24 @@ async function softRefreshRow(entry: TimesheetEntryViewRow): Promise<void> {
         ? Math.round(hours * rateMultiplier * staffWageRate * 100) / 100
         : 0
 
+    const normalizedJobId = line.job_id || ''
+    const normalizedJobNumber =
+      typeof line.job_number === 'number' ? line.job_number : Number(line.job_number) || 0
+    const normalizedJobNumberString = line.job_number != null ? String(line.job_number) : ''
+    const normalizedClientName = line.client_name || ''
+    const normalizedJobName = line.job_name || ''
+    const normalizedChargeOutRate = line.charge_out_rate || 0
+
     const merged = {
       id: line.id,
-      jobId: line.job_id || '',
-      jobNumber: line.job_number || '',
-      client: line.client_name || '',
-      jobName: line.job_name || '',
+      jobId: normalizedJobId,
+      job_id: normalizedJobId,
+      jobNumber: normalizedJobNumberString,
+      job_number: normalizedJobNumber,
+      client: normalizedClientName,
+      client_name: normalizedClientName,
+      jobName: normalizedJobName,
+      job_name: normalizedJobName,
       hours,
       billable:
         line.meta && 'is_billable' in line.meta && typeof line.meta.is_billable === 'boolean'
@@ -1349,7 +1362,8 @@ async function softRefreshRow(entry: TimesheetEntryViewRow): Promise<void> {
       staffId: selectedStaffId.value,
       date: currentDate.value,
       wageRate: staffWageRate,
-      chargeOutRate: line.charge_out_rate,
+      chargeOutRate: normalizedChargeOutRate,
+      charge_out_rate: normalizedChargeOutRate,
       rateMultiplier,
       isNewRow: false,
       isModified: false,
@@ -1553,28 +1567,40 @@ const loadTimesheetData = async () => {
           ? ((line.meta as Record<string, unknown>).rate_multiplier as number)
           : 1.0
 
-      // ✅ ALWAYS CALCULATE WAGE WITH CORRECT FORMULA: hours × rate_multiplier × staff_wage_rate
+      // Always calculate wage with correct formula: hours * rate_multiplier * staff_wage_rate
       const calculatedWage =
         hours > 0 && staffWageRate > 0
           ? Math.round(hours * rateMultiplier * staffWageRate * 100) / 100
           : 0
 
-      debugLog('📊 Loading entry with correct wage calculation:', {
+      debugLog('[Timesheet] Loading entry with correct wage calculation:', {
         id: line.id,
         hours,
         staffWageRate,
         rateMultiplier,
         calculatedWage,
         backendWage: line.total_cost,
-        formula: `${hours} × ${rateMultiplier} × ${staffWageRate} = ${calculatedWage}`,
+        formula: `${hours} * ${rateMultiplier} * ${staffWageRate} = ${calculatedWage}`,
       })
 
-    return {
-      ...line,
-      jobId: line.job_id || '',
-        jobNumber: line.job_number || '',
-        client: line.client_name || '',
-        jobName: line.job_name || '',
+      const normalizedJobId = line.job_id || ''
+      const normalizedJobNumber =
+        typeof line.job_number === 'number' ? line.job_number : Number(line.job_number) || 0
+      const normalizedJobNumberString = line.job_number != null ? String(line.job_number) : ''
+      const normalizedClientName = line.client_name || ''
+      const normalizedJobName = line.job_name || ''
+      const normalizedChargeOutRate = line.charge_out_rate || 0
+
+      return {
+        ...line,
+        jobId: normalizedJobId,
+        job_id: normalizedJobId,
+        jobNumber: normalizedJobNumberString,
+        job_number: normalizedJobNumber,
+        client: normalizedClientName,
+        client_name: normalizedClientName,
+        jobName: normalizedJobName,
+        job_name: normalizedJobName,
         hours,
         billable:
           line.meta &&
@@ -1586,12 +1612,13 @@ const loadTimesheetData = async () => {
             : true,
         description: line.desc,
         rate: getRateTypeFromMultiplier(rateMultiplier),
-        wage: calculatedWage, // ✅ ALWAYS use calculated wage
+        wage: calculatedWage,
         bill: line.total_rev,
         staffId: selectedStaffId.value,
         date: currentDate.value,
         wageRate: staffWageRate,
-        chargeOutRate: line.charge_out_rate,
+        chargeOutRate: normalizedChargeOutRate,
+        charge_out_rate: normalizedChargeOutRate,
         rateMultiplier,
         isNewRow: false,
         isModified: false,

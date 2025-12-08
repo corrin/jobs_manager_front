@@ -410,11 +410,23 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       const rowData = this.params.node.data
       debugLog('🔄 Updating row data with job info:', normalizedJob)
 
-      rowData.jobId = jobId
-      rowData.jobNumber = String(jobNumber)
-      rowData.client = clientName
-      rowData.jobName = jobName
-      rowData.chargeOutRate = chargeOutRate
+      const normalizedJobId = jobId || ''
+      const normalizedJobNumberString = jobNumber != null ? String(jobNumber) : ''
+      const normalizedJobNumber = jobNumber ?? 0
+      const normalizedClientName = clientName || ''
+      const normalizedJobName = jobName || ''
+      const normalizedChargeOutRate = chargeOutRate ?? 0
+
+      rowData.jobId = normalizedJobId
+      rowData.job_id = normalizedJobId
+      rowData.jobNumber = normalizedJobNumberString
+      rowData.job_number = normalizedJobNumber
+      rowData.client = normalizedClientName
+      rowData.client_name = normalizedClientName
+      rowData.jobName = normalizedJobName
+      rowData.job_name = normalizedJobName
+      rowData.chargeOutRate = normalizedChargeOutRate
+      rowData.charge_out_rate = normalizedChargeOutRate
       // Based on backend Job model: special jobs are shop jobs (non-billable), rejected jobs are not billable
       rowData.billable = status !== 'special' && status !== 'rejected'
 
@@ -449,7 +461,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         )
       }
 
-      const chargeOutRateNum = chargeOutRate || 0
+      const chargeOutRateNum = normalizedChargeOutRate
       rowData.bill =
         rowData.billable && hours > 0 && chargeOutRateNum > 0
           ? Math.round(hours * chargeOutRateNum * 100) / 100

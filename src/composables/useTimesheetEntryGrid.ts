@@ -20,7 +20,7 @@ import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
 import { formatCurrency } from '@/utils/string-formatting'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
-import { TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
+import { type TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
 
 type TimesheetEntryGridRowWithSaving = z.infer<typeof schemas.TimesheetCostLine> & {
   isSaving?: boolean
@@ -464,6 +464,16 @@ export function useTimesheetEntryGrid(
     const rate = rowData.rate || 'Ord'
     const rateMultiplier = calculations.getRateMultiplier(rate)
     const billable = rowData.billable ?? true
+    const jobNumberString =
+      rowData.jobNumber != null && rowData.jobNumber !== ''
+        ? String(rowData.jobNumber)
+        : rowData.job_number
+          ? String(rowData.job_number)
+          : ''
+    const jobNumberNumeric = jobNumberString ? Number(jobNumberString) : 0
+    const jobId = rowData.jobId || rowData.job_id || ''
+    const clientName = rowData.client || rowData.client_name || ''
+    const jobName = rowData.jobName || rowData.job_name || ''
 
     let calculatedWage = 0
     if (hours > 0 && wageRate > 0)
@@ -484,10 +494,15 @@ export function useTimesheetEntryGrid(
 
     return {
       id: rowData.id,
-      jobId: rowData.jobId || '',
-      jobNumber: rowData.jobNumber || '',
-      client: rowData.client || '',
-      jobName: rowData.jobName || '',
+      jobId,
+      job_id: jobId,
+      jobNumber: jobNumberString,
+      job_number: jobNumberNumeric,
+      client: clientName,
+      client_name: clientName,
+      jobName,
+      job_name: jobName,
+      quantity: hours,
       hours,
       billable,
       description: rowData.description || '',
@@ -498,6 +513,7 @@ export function useTimesheetEntryGrid(
       date: rowData.date || '',
       wageRate,
       chargeOutRate,
+      charge_out_rate: chargeOutRate,
       rateMultiplier,
       isNewRow: rowData.isNewRow,
     }

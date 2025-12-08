@@ -60,14 +60,26 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       job: job,
     })
 
+    const normalizedJobId = job.id ?? ''
+    const normalizedJobNumber = job.job_number ?? 0
+    const normalizedJobNumberString = job.job_number != null ? String(job.job_number) : ''
+    const normalizedClientName = job.client_name ?? ''
+    const normalizedJobName = job.name ?? ''
+    const normalizedChargeOutRate = job.charge_out_rate ?? 0
+
     // Convert job selection item to the expected format for TimesheetEntryWithMeta
     const result = {
       ...entry,
-      job_id: job.id,
-      job_number: job.job_number,
-      client_name: job.client_name ?? '',
-      job_name: job.name,
-      charge_out_rate: job.charge_out_rate,
+      job_id: normalizedJobId,
+      jobId: normalizedJobId,
+      job_number: normalizedJobNumber,
+      jobNumber: normalizedJobNumberString,
+      client_name: normalizedClientName,
+      client: normalizedClientName,
+      job_name: normalizedJobName,
+      jobName: normalizedJobName,
+      charge_out_rate: normalizedChargeOutRate,
+      chargeOutRate: normalizedChargeOutRate,
     }
 
     debugLog('✨ Populated job fields result:', result)
@@ -133,10 +145,15 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
         is_billable: true,
       },
       job_id: '',
+      jobId: '',
       job_number: 0,
+      jobNumber: '',
       job_name: '',
+      jobName: '',
       client_name: '',
+      client: '',
       charge_out_rate: defaultChargeOutRate,
+      chargeOutRate: defaultChargeOutRate,
       // Add UI-specific metadata fields
       tempId: `temp_${Date.now()}`,
       _isSaving: false,
@@ -153,7 +170,6 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       wage: calculatedWage,
       bill: 0,
       billable: true,
-      chargeOutRate: defaultChargeOutRate,
       rateMultiplier,
     }
   }
@@ -253,6 +269,17 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     // Extract wage rate from unit_cost (which should be the staff wage rate)
     const wageRate = costLine.unit_cost ?? 0
     const staffWageRate = staffData?.wage_rate ?? wageRate
+    const metaJobNumber = metaRec['job_number']
+    const normalizedJobNumber =
+      typeof metaJobNumber === 'number'
+        ? metaJobNumber
+        : typeof metaJobNumber === 'string'
+          ? Number(metaJobNumber) || 0
+          : 0
+    const normalizedJobNumberString =
+      typeof metaJobNumber === 'number' || typeof metaJobNumber === 'string'
+        ? String(metaJobNumber)
+        : ''
 
     // Get rate multiplier from backend data (rate_multiplier in meta)
     const backendRateMultiplier =
@@ -306,11 +333,16 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
         rate_multiplier: backendRateMultiplier,
       },
       job_id: typeof metaRec['job_id'] === 'string' ? (metaRec['job_id'] as string) : '',
-      job_number: typeof metaRec['job_number'] === 'number' ? (metaRec['job_number'] as number) : 0,
+      jobId: typeof metaRec['job_id'] === 'string' ? (metaRec['job_id'] as string) : '',
+      job_number: normalizedJobNumber,
+      jobNumber: normalizedJobNumberString,
       job_name: typeof metaRec['job_name'] === 'string' ? (metaRec['job_name'] as string) : '',
+      jobName: typeof metaRec['job_name'] === 'string' ? (metaRec['job_name'] as string) : '',
       client_name:
         typeof metaRec['client_name'] === 'string' ? (metaRec['client_name'] as string) : '',
+      client: typeof metaRec['client_name'] === 'string' ? (metaRec['client_name'] as string) : '',
       charge_out_rate: costLine.unit_rev ?? 0,
+      chargeOutRate: costLine.unit_rev ?? 0,
       // Add UI-specific metadata fields
       tempId: undefined,
       _isSaving: false,
@@ -328,7 +360,6 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       bill: costLine.total_rev || 0,
       billable:
         typeof metaRec['is_billable'] === 'boolean' ? (metaRec['is_billable'] as boolean) : true,
-      chargeOutRate: costLine.unit_rev ?? 0,
       rateMultiplier: backendRateMultiplier,
     }
   }
