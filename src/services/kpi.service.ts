@@ -32,9 +32,12 @@ class KPIService {
   async getKPICalendarData(params: KPICalendarParams): Promise<KPICalendarData> {
     try {
       // Use the generated API
+      const lookupDate = new Date(params.start_date)
       return await api.accounting_api_reports_calendar_retrieve({
-        start_date: params.start_date,
-        mode: params.mode,
+        queries: {
+          month: lookupDate.getMonth() + 1,
+          year: lookupDate.getFullYear(),
+        },
       })
     } catch (error) {
       debugLog('❌ Error fetching KPI calendar data:', error)

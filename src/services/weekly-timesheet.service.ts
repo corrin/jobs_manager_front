@@ -1,8 +1,11 @@
 // src/services/weekly-timesheet.service.ts
 
 import { api } from '@/api/client'
-import type { WeeklyTimesheetData } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 import { dateService } from '@/services/date.service'
+
+type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
 
 /**
  * Fetch weekly timesheet overview.
@@ -14,7 +17,7 @@ export async function fetchWeeklyOverview(startDate?: string): Promise<WeeklyTim
     queries.start_date = startDate
   }
   const response = await api.timesheets_api_weekly_retrieve({ queries })
-  return response as WeeklyTimesheetData
+  return response
 }
 
 /**

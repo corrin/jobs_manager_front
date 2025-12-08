@@ -9,7 +9,7 @@ import type { z } from 'zod'
 // Type definitions
 type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderList>
 type PurchaseOrderCreate = z.infer<typeof schemas.PurchaseOrderCreate>
-type PurchaseOrderUpdate = z.infer<typeof schemas.PatchedPurchaseOrderUpdate>
+type PurchaseOrderUpdate = z.infer<typeof schemas.PatchedPurchaseOrderUpdateRequest>
 type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailResponse>
 
 export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {

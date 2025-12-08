@@ -6,8 +6,10 @@ import type { z } from 'zod'
 
 // Type definitions
 type ClientSearchResult = z.infer<typeof schemas.ClientSearchResult>
+type ClientSearchResponse = z.infer<typeof schemas.ClientSearchResponse>
 type ClientDetail = z.infer<typeof schemas.ClientDetailResponse>
-type ClientContact = z.infer<typeof schemas.ClientContactResult>
+type ClientContact = z.infer<typeof schemas.ClientContact>
+type ClientJobsResponse = z.infer<typeof schemas.ClientJobsResponse>
 
 // Type for client jobs - inferred from generated schema
 type ClientJob = z.infer<typeof schemas.ClientJobHeader>
@@ -37,8 +39,8 @@ export const useClientStore = defineStore('clients', () => {
     isLoading.value = true
 
     try {
-      const response = await api.clients_all_list()
-      allClients.value = response
+      const response: ClientSearchResponse = await api.clients_search_retrieve({ queries: { limit: 500 } })
+      allClients.value = response.results || []
     } catch (error) {
       console.error('Failed to fetch all clients:', error)
       allClients.value = []
@@ -64,7 +66,7 @@ export const useClientStore = defineStore('clients', () => {
     lastSearchQuery.value = query
 
     try {
-      const response = await api.clients_search_retrieve({
+      const response: ClientSearchResponse = await api.clients_search_retrieve({
         queries: { q: query, limit },
       })
       searchResults.value = response.results || []
@@ -106,11 +108,10 @@ export const useClientStore = defineStore('clients', () => {
     isLoadingContacts.value = true
 
     try {
-      const response = await api.clients_contacts_retrieve({
-        params: { client_id: clientId },
-      })
-      clientContacts.value[clientId] = response.results || []
-      return response.results || []
+      const response = await api.clients_contacts_list()
+      const filtered = (response || []).filter((contact) => contact.client === clientId)
+      clientContacts.value[clientId] = filtered
+      return filtered
     } catch (error) {
       console.error('Failed to fetch client contacts:', error)
       clientContacts.value[clientId] = []
@@ -150,7 +151,7 @@ export const useClientStore = defineStore('clients', () => {
     isLoadingJobs.value = true
 
     try {
-      const response = await api.clients_jobs_retrieve({
+      const response: ClientJobsResponse = await api.clients_jobs_retrieve({
         params: { client_id: clientId },
       })
       clientJobs.value[clientId] = response.results || []

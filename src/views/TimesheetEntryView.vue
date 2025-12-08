@@ -579,8 +579,7 @@ import * as costlineService from '@/services/costline.service'
 import { jobService } from '@/services/job.service'
 
 // Import types from generated API schemas
-import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
-import { schemas } from '../api/generated/api'
+import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 
 import { debugLog } from '@/utils/debug'
@@ -590,21 +589,25 @@ type Staff = z.infer<typeof schemas.ModernStaff>
 type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
 type Job = z.infer<typeof schemas.Job>
 
-type TimesheetEntryViewRow = TimesheetEntryWithMeta & {
-  jobId: string
-  jobNumber: string
-  jobName: string
-  client: string
-  description: string
-  hours: number
-  bill: number
-  billable: boolean
-  wage: number
-  wageRate: number
-  chargeOutRate: number
-  rateMultiplier: number
-  staffId: string
-  date: string
+type TimesheetEntryViewRow = TimesheetCostLine & {
+  jobId?: string
+  jobNumber?: string
+  jobName?: string
+  client?: string
+  description?: string
+  hours?: number
+  bill?: number
+  billable?: boolean
+  wage?: number
+  wageRate?: number
+  chargeOutRate?: number
+  rateMultiplier?: number
+  staffId?: string
+  date?: string
+  tempId?: string
+  _isSaving?: boolean
+  isNewRow?: boolean
+  isModified?: boolean
 }
 
 type ActiveJobWithData = {
@@ -692,31 +695,7 @@ const timeEntries = ref<TimesheetEntryViewRow[]>([])
 // Adapter to convert TimesheetEntryView data format to TimesheetCostLine format
 const adaptedTimeEntries = computed(() => {
   const adapted = timeEntries.value.map((entry) => ({
-    id: entry.id,
-    job_id: entry.jobId,
-    job_number: entry.jobNumber,
-    job_name: entry.jobName,
-    client_name: entry.client,
-    desc: entry.description,
-    quantity: entry.hours,
-    unit_cost: entry.wageRate,
-    unit_rev: entry.chargeOutRate,
-    total_cost: entry.wage,
-    total_rev: entry.bill,
-    charge_out_rate: entry.chargeOutRate,
-    wage_rate: entry.wageRate,
-    meta: {
-      staff_id: entry.staffId,
-      date: entry.date,
-      is_billable: entry.billable,
-      rate_multiplier: entry.rateMultiplier,
-      created_from_timesheet: true,
-    },
-    // Include UI metadata
-    tempId: entry.tempId,
-    _isSaving: entry._isSaving,
-    isNewRow: entry.isNewRow,
-    isModified: entry.isModified,
+    ...entry,
   }))
 
   console.log('[DEBUG] adaptedTimeEntries:', {
@@ -724,8 +703,8 @@ const adaptedTimeEntries = computed(() => {
     adaptedCount: adapted.length,
     originalSample: timeEntries.value.slice(0, 2).map((e) => ({
       id: e.id,
-      jobId: e.jobId,
-      jobNumber: e.jobNumber,
+      job_id: e.job_id,
+      job_number: e.job_number,
     })),
     adaptedSample: adapted.slice(0, 2).map((e) => ({
       id: e.id,
@@ -753,8 +732,11 @@ const currentStaff = computed(() => {
 const hasUnsavedChanges = ref(false)
 
 const todayStats = computed(() => {
-  const totalHours = timeEntries.value.reduce((sum, entry) => sum + entry.hours, 0)
-  const totalBill = timeEntries.value.reduce((sum, entry) => sum + entry.bill, 0)
+  const totalHours = timeEntries.value.reduce((sum, entry) => sum + getEntryHours(entry), 0)
+  const totalBill = timeEntries.value.reduce(
+    (sum, entry) => sum + (entry.bill ?? entry.total_rev ?? 0),
+    0,
+  )
   const entryCount = timeEntries.value.length
 
   return {
@@ -782,26 +764,12 @@ const {
   getEstimatedHours,
 } = useTimesheetSummary()
 
-const getEntryHours = (entry: TimesheetEntryWithMeta | TimesheetEntryViewRow): number => {
-  if ('hours' in entry && typeof entry.hours === 'number') {
-    return entry.hours
-  }
-  if (typeof entry.quantity === 'number') {
-    return entry.quantity
-  }
-  return 0
+const getEntryHours = (entry: TimesheetEntryViewRow): number => {
+  return entry.hours ?? entry.quantity ?? 0
 }
 
-const getJobHours = (
-  jobId: string,
-  timeEntries: (TimesheetEntryWithMeta | TimesheetEntryViewRow)[],
-) => {
-  const jobEntries = timeEntries.filter((entry) => {
-    return (
-      entry.job_id === jobId ||
-      ('jobId' in entry && typeof entry.jobId === 'string' && entry.jobId === jobId)
-    )
-  })
+const getJobHours = (jobId: string, timeEntries: TimesheetEntryViewRow[]) => {
+  const jobEntries = timeEntries.filter((entry) => entry.job_id === jobId)
 
   const hours = jobEntries.reduce((sum, entry) => sum + getEntryHours(entry), 0)
 
@@ -809,15 +777,13 @@ const getJobHours = (
     jobId,
     totalEntries: timeEntries.length,
     matchingEntries: jobEntries.length,
-    allJobIds: timeEntries.map((e) => e.job_id || ('jobId' in e ? e.jobId : undefined)),
-    matchingJobIds: jobEntries.map((e) => e.job_id || ('jobId' in e ? e.jobId : undefined)),
+    allJobIds: timeEntries.map((e) => e.job_id),
+    matchingJobIds: jobEntries.map((e) => e.job_id),
     hours,
     entriesDetails: jobEntries.map((e) => ({
       id: e.id,
       job_id: e.job_id,
-      jobId: 'jobId' in e ? e.jobId : undefined,
       quantity: e.quantity,
-      hours: 'hours' in e ? e.hours : undefined,
     })),
   })
 
@@ -860,8 +826,8 @@ const activeJobs = computed(() => {
   return getActiveJobs(availableJobs.value)
 })
 
-const consolidatedSummary = computed(() => {
-  const costLineEntries = adaptedTimeEntries.value as unknown as TimesheetEntryWithMeta[]
+  const consolidatedSummary = computed(() => {
+    const costLineEntries = adaptedTimeEntries.value as TimesheetEntryViewRow[]
   return {
     totalHours: getTotalHours(costLineEntries),
     totalBill: getTotalBill(costLineEntries),
@@ -871,8 +837,8 @@ const consolidatedSummary = computed(() => {
   }
 })
 
-const activeJobsWithData = computed<ActiveJobWithData[]>(() => {
-  const costLineEntries = adaptedTimeEntries.value as unknown as TimesheetEntryWithMeta[]
+  const activeJobsWithData = computed<ActiveJobWithData[]>(() => {
+    const costLineEntries = adaptedTimeEntries.value as TimesheetEntryViewRow[]
   const uniqueJobIds = [
     ...new Set(
       costLineEntries.map((entry) => entry.job_id).filter((id): id is string => Boolean(id)),
@@ -1050,8 +1016,8 @@ const autosave = useTimesheetAutosave<TimesheetEntryViewRow>({
     return byTemp || null
   },
   isRowComplete: (e) => {
-    const hasJob = !!(e.jobId || e.jobNumber)
-    const hasHours = Number(e.hours) > 0
+    const hasJob = Boolean(e.job_id || e.job_number)
+    const hasHours = Number(e.quantity ?? 0) > 0
     const isEditingDescription = isDescriptionBeingEdited(e)
     return hasJob && hasHours && !isEditingDescription
   },
@@ -1061,10 +1027,13 @@ const autosave = useTimesheetAutosave<TimesheetEntryViewRow>({
     return rows.some(
       (row) =>
         !!row.id &&
-        row.jobNumber === e.jobNumber &&
+        row.job_number === e.job_number &&
         row.date === e.date &&
-        row.staffId === e.staffId &&
-        String(row.description || '').trim() === String(e.description || '').trim(),
+        row.meta &&
+        typeof row.meta === 'object' &&
+        typeof e.meta === 'object' &&
+        (row.meta as Record<string, unknown>).staff_id === (e.meta as Record<string, unknown>).staff_id &&
+        String(row.desc || '').trim() === String(e.desc || '').trim(),
     )
   },
   save: async (e) => {
@@ -1215,17 +1184,17 @@ const formatShortDate = (date: string): string => {
   return formatted
 }
 
-async function handleSaveEntry(entry: TimesheetEntryWithMeta): Promise<void> {
-  const entryRow = entry as TimesheetEntryViewRow
-  const hasJob = entryRow.jobId || entryRow.jobNumber
-  const hasDescription = entryRow.description && entryRow.description.trim().length > 0
-  const hasHours = entryRow.hours > 0
+async function handleSaveEntry(entry: TimesheetEntryViewRow): Promise<void> {
+  const entryRow = entry
+  const hasJob = Boolean(entryRow.job_id || entryRow.job_number)
+  const hasDescription = entryRow.desc && entryRow.desc.trim().length > 0
+  const hasHours = Number(entryRow.quantity ?? 0) > 0
   const isEditingDescription = isDescriptionBeingEdited(entryRow)
 
   debugLog('🔍 VALIDATION CHECK:', {
     entryId: entryRow.id,
-    jobId: entryRow.jobId,
-    jobNumber: entryRow.jobNumber,
+    jobId: entryRow.job_id,
+    jobNumber: entryRow.job_number,
     hasJob,
     description: entryRow.description,
     hasDescription,
@@ -1600,9 +1569,9 @@ const loadTimesheetData = async () => {
         formula: `${hours} × ${rateMultiplier} × ${staffWageRate} = ${calculatedWage}`,
       })
 
-      return {
-        id: line.id,
-        jobId: line.job_id || '',
+    return {
+      ...line,
+      jobId: line.job_id || '',
         jobNumber: line.job_number || '',
         client: line.client_name || '',
         jobName: line.job_name || '',
@@ -1742,7 +1711,7 @@ onMounted(async () => {
     await loadTimesheetData()
 
     // Load enhanced job data for jobs with timesheet entries
-    const costLineEntries = adaptedTimeEntries.value as unknown as TimesheetEntryWithMeta[]
+    const costLineEntries = adaptedTimeEntries.value as TimesheetEntryViewRow[]
     const jobsWithEntries = activeJobs.value.filter(
       (job) => getJobHours(job.id, costLineEntries) > 0,
     )

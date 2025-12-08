@@ -7,6 +7,10 @@ import type { z } from 'zod'
 
 type CostSet = z.infer<typeof schemas.CostSet>
 type CostLine = z.infer<typeof schemas.CostLine>
+type CostLineMeta = {
+  category?: string
+  labour_minutes?: number
+}
 
 function createEmptyGrouping() {
   return {
@@ -102,7 +106,8 @@ export const useCostingStore = defineStore('costing', () => {
     }
     return costSet.value.cost_lines.reduce((groups, costLine) => {
       const kind = costLine.kind || ''
-      const metaCategory = costLine.meta?.category
+      const meta = costLine.meta as CostLineMeta | undefined
+      const metaCategory = meta?.category
 
       const category = getCategoryFromKind(kind, metaCategory)
       groups[category].push(costLine)
@@ -155,13 +160,14 @@ export const useCostingStore = defineStore('costing', () => {
     }
 
     return sumCostLines((cl) => {
-      const isTimeEntry =
-        cl.meta?.category === 'fabrication' || String(cl.kind || '').toLowerCase() === 'time'
+        const meta = cl.meta as CostLineMeta | undefined
+        const isTimeEntry =
+          meta?.category === 'fabrication' || String(cl.kind || '').toLowerCase() === 'time'
 
-      if (isTimeEntry) {
-        if (cl.meta && typeof cl.meta.labour_minutes === 'number') {
-          return cl.meta.labour_minutes / 60
-        }
+        if (isTimeEntry) {
+          if (typeof meta?.labour_minutes === 'number') {
+            return meta.labour_minutes / 60
+          }
 
         return cl.quantity || 0
       }

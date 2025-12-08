@@ -124,8 +124,6 @@ import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 import type { JobTabKey as BaseJobTabKey } from '@/constants/job-tabs'
 
-// Removed Job type as it's no longer needed
-
 type JobFile = z.infer<typeof schemas.JobFile>
 type JobViewTabKey =
   | BaseJobTabKey

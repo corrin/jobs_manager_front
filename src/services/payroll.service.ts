@@ -20,9 +20,7 @@ export type PayRunSyncResult = z.infer<typeof schemas.PayRunSyncResponse>
  */
 export async function createPayRun(weekStartDate: string): Promise<CreatePayRunResponse> {
   const response = await api.timesheets_api_payroll_pay_runs_create_create({
-    body: {
-      week_start_date: weekStartDate,
-    },
+    week_start_date: weekStartDate,
   })
   return response as CreatePayRunResponse
 }

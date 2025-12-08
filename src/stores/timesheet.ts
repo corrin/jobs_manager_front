@@ -7,12 +7,18 @@ import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import { FeatureFlagsService } from '@/services/feature-flags.service'
 
+type CostLineMeta = {
+  date?: string
+  staff_id?: string
+  is_billable?: boolean
+  rate_multiplier?: number
+}
 type CostLine = z.infer<typeof schemas.CostLine>
 type Staff = z.infer<typeof schemas.ModernStaff>
 type Job = z.infer<typeof schemas.ModernTimesheetJob>
 type WeeklyOverviewData = z.infer<typeof schemas.WeeklyTimesheetData>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
-type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdate>
+type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdateRequest>
 
 export const useTimesheetStore = defineStore('timesheet', () => {
   const lines = ref<CostLine[]>([])
@@ -42,7 +48,8 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
     const groups: Record<string, CostLine[]> = {}
     for (const line of lines.value) {
-      const dateKey = String(line.meta?.date || selectedDate.value)
+      const meta = line.meta as CostLineMeta | undefined
+      const dateKey = String(meta?.date ?? selectedDate.value)
       if (!groups[dateKey]) {
         groups[dateKey] = []
       }
@@ -57,11 +64,9 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     return Object.entries(byDate.value as Record<string, CostLine[]>).reduce(
       (totals, [date, dayLines]) => {
         totals[date] = {
-          hours: dayLines.reduce((sum, line) => {
-            return line.kind === 'time' ? sum + line.quantity || 0 : sum
-          }, 0),
-          cost: dayLines.reduce((sum, line) => sum + line.total_cost, 0),
-          revenue: dayLines.reduce((sum, line) => sum + line.total_rev, 0),
+          hours: dayLines.reduce((sum, line) => sum + (line.kind === 'time' ? line.quantity ?? 0 : 0), 0),
+          cost: dayLines.reduce((sum, line) => sum + (line.total_cost ?? 0), 0),
+          revenue: dayLines.reduce((sum, line) => sum + (line.total_rev ?? 0), 0),
         }
         return totals
       },
@@ -72,24 +77,28 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   // Time-based computed properties - using CostLine data
   const timeLinesForSelectedDate = computed(() =>
     lines.value.filter(
-      (line: CostLine) =>
-        line.kind === 'time' &&
-        line.meta?.date === selectedDate.value &&
-        line.meta?.staff_id === selectedStaffId.value,
+        (line: CostLine) => {
+          const meta = line.meta as CostLineMeta | undefined
+          return (
+            line.kind === 'time' &&
+            meta?.date === selectedDate.value &&
+            meta?.staff_id === selectedStaffId.value
+          )
+        },
     ),
   )
 
   const totalHoursForDate = computed(() =>
     timeLinesForSelectedDate.value.reduce(
-      (sum: number, line: CostLine) => sum + line.quantity || 0,
+      (sum: number, line: CostLine) => sum + (line.quantity ?? 0),
       0,
     ),
   )
 
   const billableHoursForDate = computed(() =>
     timeLinesForSelectedDate.value
-      .filter((line: CostLine) => line.meta?.is_billable)
-      .reduce((sum: number, line: CostLine) => sum + line.quantity || 0, 0),
+      .filter((line: CostLine) => (line.meta as CostLineMeta | undefined)?.is_billable)
+      .reduce((sum: number, line: CostLine) => sum + (line.quantity ?? 0), 0),
   )
 
   // Weekend timesheets computed properties
@@ -120,7 +129,12 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       debugLog(`Loading cost lines for job ${targetJobId}, kind: ${targetKind}`)
 
-      const costSet = await api.job_rest_jobs_cost_sets_retrieve()
+      const costSet = await api.job_rest_jobs_cost_sets_retrieve({
+        params: {
+          id: targetJobId,
+          kind: targetKind,
+        },
+      })
 
       lines.value = costSet.cost_lines
       jobId.value = targetJobId
@@ -146,11 +160,12 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      const newLine = await api.job_rest_jobs_cost_sets_cost_lines_create({
-        job_id: jobId.value,
-        kind: kind.value,
-        body: payload,
-      })
+      const newLine = (await api.job_rest_jobs_cost_sets_cost_lines_create(payload, {
+        params: {
+          job_id: jobId.value,
+          kind: kind.value,
+        },
+      })) as CostLine
 
       lines.value.push(newLine)
 
@@ -171,10 +186,9 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      const updatedLine = await api.job_rest_cost_lines_partial_update({
-        cost_line_id: id,
-        body: payload,
-      })
+      const updatedLine = (await api.job_rest_cost_lines_partial_update(payload, {
+        params: { cost_line_id: id },
+      })) as CostLine
 
       const lineIndex = lines.value.findIndex((line) => line.id === id)
 
@@ -201,7 +215,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      await api.job_rest_cost_lines_delete_destroy({ cost_line_id: id })
+      await api.job_rest_cost_lines_delete_destroy(undefined, { params: { cost_line_id: id } })
 
       lines.value = lines.value.filter((line) => line.id !== id)
 
@@ -286,7 +300,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       error.value = 'Failed to load jobs'
       debugLog('Error loading jobs:', err)
       jobs.value = []
-      toast.error('Error loading jobs: ', err)
+      toast.error('Error loading jobs: ' + ((err as Error)?.message ?? 'Unknown error'))
     } finally {
       loading.value = false
     }
@@ -319,7 +333,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       debugLog('📊 Loading weekly overview for:', weekStart)
 
       currentWeekData.value = await api.timesheets_api_weekly_retrieve({
-        queries: { date: weekStart },
+        queries: { start_date: weekStart },
       })
 
       debugLog('✅ Weekly overview loaded successfully:', {
@@ -375,10 +389,10 @@ export const useTimesheetStore = defineStore('timesheet', () => {
         },
       }
 
-      const newCostLine = await api.job_rest_jobs_cost_sets_actual_cost_lines_create({
-        job_id: entryData.jobId,
-        body: costLineData,
-      })
+      const newCostLine = (await api.job_rest_jobs_cost_sets_actual_cost_lines_create(
+        costLineData,
+        { params: { job_id: entryData.jobId } },
+      )) as CostLine
 
       if (newCostLine) {
         // Add to lines if we're viewing the same job
@@ -430,19 +444,18 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       if (updates.chargeOutRate !== undefined) updatePayload.unit_rev = updates.chargeOutRate
 
       if (updates.isBillable !== undefined || updates.rateMultiplier !== undefined) {
-        // Need to preserve existing meta and update specific fields
         const existingLine = lines.value.find((line) => line.id === entryId)
+        const existingMeta = existingLine?.meta as CostLineMeta | undefined
         updatePayload.meta = {
-          ...existingLine?.meta,
+          ...existingMeta,
           ...(updates.isBillable !== undefined && { is_billable: updates.isBillable }),
           ...(updates.rateMultiplier !== undefined && { rate_multiplier: updates.rateMultiplier }),
         }
       }
 
-      const updatedCostLine = await api.job_rest_cost_lines_partial_update({
-        cost_line_id: entryId,
-        body: updatePayload,
-      })
+      const updatedCostLine = (await api.job_rest_cost_lines_partial_update(updatePayload, {
+        params: { cost_line_id: entryId },
+      })) as CostLine
 
       if (updatedCostLine) {
         // Update in local state

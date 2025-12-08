@@ -11,7 +11,7 @@ import type { z } from 'zod'
 type Job = z.infer<typeof schemas.JobForPurchasing>
 type PurchaseOrderDetail = z.infer<typeof schemas.PurchaseOrderDetail>
 type DeliveryReceiptRequest = z.infer<typeof schemas.DeliveryReceiptRequest>
-type DeliveryReceiptLine = z.infer<typeof schemas.DeliveryReceiptLine>
+type DeliveryReceiptAllocations = DeliveryReceiptRequest['allocations']
 type AllJobsResponse = z.infer<typeof schemas.AllJobsResponse>
 type PurchaseOrderAllocationsResponse = z.infer<typeof schemas.PurchaseOrderAllocationsResponse>
 
@@ -67,7 +67,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
       const data = response as AllJobsResponse
 
       if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch jobs')
+        throw new Error('Failed to fetch jobs')
       }
 
       const allJobs = data.jobs || []
@@ -97,15 +97,15 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
 
   async function submitDeliveryReceipt(
     purchaseOrderId: string,
-    receiptData: DeliveryReceiptLine,
+    receiptData: DeliveryReceiptAllocations,
   ): Promise<void> {
     if (!purchaseOrderId) {
       throw new Error('Purchase order ID is required')
     }
 
-    if (!receiptData || Object.keys(receiptData).length === 0) {
-      throw new Error('Receipt data is required')
-    }
+      if (!receiptData || Object.keys(receiptData).length === 0) {
+        throw new Error('Receipt data is required')
+      }
 
     loading.value = true
     error.value = null
