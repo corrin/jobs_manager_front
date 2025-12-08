@@ -49,3 +49,9 @@ tests/backups/
 docs_screens/
 test-results/
 playwright-report/
+
+# Training manual (auto-generated)
+manual/public/screenshots/
+manual/.vitepress/cache/
+manual/.vitepress/dist/
+dist-manual/
