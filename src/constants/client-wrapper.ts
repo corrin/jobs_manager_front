@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod'
-import { schemas } from '@/api/generated/schemas'
+import { schemas } from '@/api/generated/api'
 
 export const CreateClientResponseSchema = z.object({
   success: z.boolean(),

@@ -24,7 +24,7 @@ export class ClientService {
       const response = await api.clients_create_create(data)
       return {
         success: true,
-        client: response,
+        client: response?.client,
       }
     } catch (error: unknown) {
       debugLog('Error creating client:', error)

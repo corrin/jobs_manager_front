@@ -16,7 +16,7 @@ export function useUATManagement() {
   const instanceStatus = ref<InstanceStatus | null>(null)
   const isLoading = ref(false)
   const error = ref<string>('')
-  const statusInterval = ref<NodeJS.Timeout | null>(null)
+  const statusInterval = ref<ReturnType<typeof setInterval> | null>(null)
   const isPolling = ref(false)
 
   const uatUrl = import.meta.env.VITE_UAT_URL

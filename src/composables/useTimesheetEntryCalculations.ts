@@ -10,9 +10,32 @@ import { toast } from 'vue-sonner'
 // Use the generated schemas
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 type CostLine = z.infer<typeof schemas.CostLine>
-type Staff = z.infer<typeof schemas.Staff>
+
+type StaffLike = {
+  id: string
+  name?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  preferred_name?: string | null
+  wageRate?: number | null
+  wage_rate?: number | null
+}
 
 export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaults | null>) {
+  const resolveStaffWageRate = (staff: StaffLike): number => {
+    const value = staff.wageRate ?? staff.wage_rate
+    return typeof value === 'number' ? value : 0
+  }
+
+  const resolveStaffName = (staff: StaffLike): string => {
+    if (staff.name && staff.name.trim()) return staff.name
+    const first = staff.preferred_name ?? staff.firstName ?? staff.first_name ?? ''
+    const last = staff.lastName ?? staff.last_name ?? ''
+    return `${first} ${last}`.trim()
+  }
+
   const getRateMultiplier = (rateType: string): number => {
     switch (rateType) {
       case '1.5':
@@ -86,7 +109,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     return result
   }
 
-  const createNewRow = (staffMember: Staff, date: string): TimesheetEntryWithMeta => {
+  const createNewRow = (staffMember: StaffLike, date: string): TimesheetEntryWithMeta => {
     if (
       companyDefaults.value?.charge_out_rate == null ||
       companyDefaults.value.charge_out_rate <= 0
@@ -99,13 +122,14 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       throw new Error('Invalid data detected when creating new row! Please contact Corrin.')
     }
 
-    if (staffMember.wageRate == undefined || (staffMember.wageRate as number) <= 0) {
+    const staffWageRate = resolveStaffWageRate(staffMember)
+
+    if (staffWageRate <= 0) {
       debugLog('Invalid Staff Data value when trying to create new row: ', staffMember)
       toast.error('Invalid data detected when creating new row! Please contact Corrin.')
       throw new Error('Invalid data detected when creating new row! Please contact Corrin.')
     }
 
-    const staffWageRate = staffMember.wageRate as number
     const defaultChargeOutRate = companyDefaults.value.charge_out_rate as number
     const hours = 0
     const rateMultiplier = 1.0 // Default 'Ord' rate
@@ -162,7 +186,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       // Include staff wage rate for grid calculations
       wage_rate: staffWageRate,
       staffId: staffMember.id,
-      staffName: staffMember.name || '',
+      staffName: resolveStaffName(staffMember),
       date,
       hours,
       description: '',
@@ -256,7 +280,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
   const fromCostLine = (
     costLine: CostLine,
     staffId: string,
-    staffData?: Staff,
+    staffData?: StaffLike,
   ): TimesheetEntryWithMeta => {
     if (!costLine || costLine.kind !== 'time') {
       throw new Error('Invalid cost line for time entry conversion')
@@ -268,7 +292,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
 
     // Extract wage rate from unit_cost (which should be the staff wage rate)
     const wageRate = costLine.unit_cost ?? 0
-    const staffWageRate = staffData?.wage_rate ?? wageRate
+    const staffWageRate = staffData ? resolveStaffWageRate(staffData) || wageRate : wageRate
     const metaJobNumber = metaRec['job_number']
     const normalizedJobNumber =
       typeof metaJobNumber === 'number'
@@ -351,7 +375,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       // Include staff wage rate for consistent grid calculations
       wage_rate: staffWageRate,
       staffId: staffId,
-      staffName: staffData?.name || '',
+      staffName: staffData ? resolveStaffName(staffData) : '',
       date: typeof metaRec['date'] === 'string' ? (metaRec['date'] as string) : '',
       hours: hours,
       description: costLine.desc || '',

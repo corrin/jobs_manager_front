@@ -2,8 +2,16 @@ import { ref, computed, nextTick, type Ref } from 'vue'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 
-// Using generated schemas where possible
-type TimesheetEntryStaffMember = z.infer<typeof schemas.ModernStaff>
+type TimesheetEntryStaffMember = {
+  id: string
+  name?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  wageRate?: number | null
+  wage_rate?: number | null
+}
 import type {
   GridApi,
   ColDef,

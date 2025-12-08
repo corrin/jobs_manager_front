@@ -4,10 +4,20 @@ import axios from 'axios'
 import { getApiBaseUrl } from '../plugins/axios'
 import { toast } from 'vue-sonner'
 import { debugLog } from '../utils/debug'
-import { z } from 'zod'
-import { schemas } from '../api/generated/api'
 
-type XeroSseEvent = z.infer<typeof schemas.XeroSseEvent>
+type XeroSseEvent = {
+  datetime: string
+  message: string
+  severity?: string
+  entity?: string
+  entity_progress?: number
+  records_updated?: number
+  status?: string
+  sync_status?: string
+  error_messages?: string[]
+  missing_fields?: string[]
+  overall_progress?: number
+}
 
 export function useXeroAuth() {
   const router = useRouter()
