@@ -312,6 +312,7 @@ import { api } from '../api/client'
 import { ArrowLeft, Printer } from 'lucide-vue-next'
 import { formatCurrency } from '@/utils/string-formatting'
 import { JOB_STATUS_CHOICES } from '../constants/job-status'
+import type { JobStatusKey } from '../constants/job-status'
 import type { JobTabKey } from '../constants/job-tabs'
 import { JobTabsSchema } from '../constants/job-tabs'
 import { jobService } from '../services/job.service'
@@ -361,8 +362,9 @@ const { activeTab, setTab } = useJobTabs(defaultTab.value)
 const localJobName = ref('')
 const localClientName = ref('')
 const localClientId = ref('')
-const localJobStatus = ref('')
-const localPricingMethodology = ref('')
+const localJobStatus = ref<JobStatusKey | ''>('')
+type PricingMethodology = 'time_materials' | 'fixed_price'
+const localPricingMethodology = ref<PricingMethodology | ''>('')
 const localQuoted = ref(false)
 const localFullyInvoiced = ref(false)
 const localRejected = ref(false)
@@ -406,12 +408,24 @@ const handleClientUpdate = (client: { id: string; name: string }) => {
   headerAutosave.handleClientUpdate(client)
 }
 
+const isValidStatus = (value: string): value is JobStatusKey =>
+  JOB_STATUS_CHOICES.some((choice) => choice.key === value)
+
 const handleStatusUpdate = (newStatus: string) => {
+  if (!isValidStatus(newStatus)) return
   localJobStatus.value = newStatus
   headerAutosave.handleStatusUpdate(newStatus)
 }
 
+const isValidPricingMethodology = (value: string): value is PricingMethodology =>
+  pricingMethodologyOptions.some((option) => option.key === value)
+
 const handlePricingMethodologyUpdate = (newMethod: string) => {
+  if (!isValidPricingMethodology(newMethod)) {
+    localPricingMethodology.value = ''
+    headerAutosave.handlePricingMethodologyUpdate(null)
+    return
+  }
   localPricingMethodology.value = newMethod
   headerAutosave.handlePricingMethodologyUpdate(newMethod)
 }

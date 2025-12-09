@@ -14,6 +14,8 @@ import { isConcurrencyError } from '@/types/concurrency'
 
 type Job = z.infer<typeof schemas.Job>
 type JobHeaderResponse = z.infer<typeof schemas.JobHeaderResponse>
+type JobStatusKey = NonNullable<JobHeaderResponse['status']>
+type PricingMethodology = NonNullable<Job['pricing_methodology']>
 
 /**
  * Composable for autosave based on lightweight HEADER (JobHeaderResponse).
@@ -51,9 +53,11 @@ export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
         name: (patch.client_name as string | null | undefined) ?? undefined,
       } as JobHeaderResponse['client']
     }
-    if ('job_status' in patch) p.status = String(patch.job_status)
+    if ('job_status' in patch)
+      p.status = (patch.job_status as JobStatusKey | undefined) ?? undefined
     if ('pricing_methodology' in patch)
-      p.pricing_methodology = (patch.pricing_methodology as Job['pricing_methodology']) ?? null
+      p.pricing_methodology =
+        (patch.pricing_methodology as PricingMethodology | undefined) ?? undefined
     if ('quoted' in patch) p.quoted = Boolean(patch.quoted)
     if ('fully_invoiced' in patch) p.fully_invoiced = Boolean(patch.fully_invoiced)
     if ('paid' in patch) p.paid = Boolean(patch.paid)
@@ -85,7 +89,7 @@ export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
 
     const status =
       patch.job_status !== undefined && patch.job_status !== null
-        ? String(patch.job_status)
+        ? (patch.job_status as JobStatusKey)
         : base.status
 
     return {
@@ -94,7 +98,7 @@ export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
       client: client,
       status,
       pricing_methodology:
-        (patch.pricing_methodology as Job['pricing_methodology']) ?? base.pricing_methodology,
+        (patch.pricing_methodology as PricingMethodology | undefined) ?? base.pricing_methodology,
       quoted: patch.quoted ?? base.quoted,
       fully_invoiced: patch.fully_invoiced ?? base.fully_invoiced,
       paid: patch.paid ?? base.paid,
@@ -304,8 +308,9 @@ export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
     })
     void autosave.flush('client-change')
   }
-  const handleStatusUpdate = (newStatus: string) => enqueue('job_status', newStatus)
-  const handlePricingMethodologyUpdate = (method: string) => enqueue('pricing_methodology', method)
+  const handleStatusUpdate = (newStatus: JobStatusKey) => enqueue('job_status', newStatus)
+  const handlePricingMethodologyUpdate = (method: PricingMethodology | null) =>
+    enqueue('pricing_methodology', method ?? undefined)
   const handleQuotedUpdate = (v: boolean) => enqueue('quoted', v)
   const handleFullyInvoicedUpdate = (v: boolean) => enqueue('fully_invoiced', v)
   const handlePaidUpdate = (v: boolean) => enqueue('paid', v)

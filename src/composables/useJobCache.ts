@@ -1,7 +1,10 @@
 import { ref, computed } from 'vue'
-import type { JobDetailResponse } from '@/api/generated/api'
+import { z } from 'zod'
+import { schemas } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
 import type { JobCacheEntry } from '@/constants/job-cache'
+
+type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
 
 export function useJobCache() {
   const cache = ref<Map<string, JobCacheEntry>>(new Map())

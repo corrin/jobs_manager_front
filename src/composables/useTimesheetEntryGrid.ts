@@ -629,7 +629,8 @@ export function useTimesheetEntryGrid(
     const hasJob =
       Boolean(entry.jobNumber && entry.jobNumber !== '') ||
       (typeof entry.job_number === 'number' && entry.job_number > 0)
-    return hasJob && entry.hours > 0
+    const hours = typeof entry.hours === 'number' ? entry.hours : toNumber(entry.quantity, 0)
+    return hasJob && hours > 0
   }
 
   function isRowEmpty(entry: TimesheetEntry): boolean {

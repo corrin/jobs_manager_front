@@ -9,7 +9,7 @@ import { toast } from 'vue-sonner'
 
 // Use the generated schemas
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
-type CostLine = z.infer<typeof schemas.CostLine>
+type CostLine = z.infer<typeof schemas.TimesheetCostLine>
 
 type StaffLike = {
   id: string

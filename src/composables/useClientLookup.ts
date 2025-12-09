@@ -64,10 +64,9 @@ export function useClientLookup() {
 
   const loadClientContacts = async (clientId: string) => {
     try {
-      const response = await api.clients_contacts_list({
-        queries: { client_id: clientId },
-      })
-      contacts.value = Array.isArray(response) ? response : []
+      const response = await api.clients_contacts_list()
+      const filteredContacts = (response || []).filter((contact) => contact.client === clientId)
+      contacts.value = filteredContacts
     } catch (error) {
       console.error('Error loading client contacts:', error)
       contacts.value = []

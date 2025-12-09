@@ -79,23 +79,8 @@ const handleChange = (): void => {
 }
 
 const getDisplayName = (staff: KanbanStaff): string => {
-  // If preferred_name exists, use it, otherwise construct from first_name + last_name
-  if (staff.preferred_name && staff.preferred_name.trim()) {
-    return staff.preferred_name.trim()
-  }
-
-  const firstName = staff.first_name?.trim() || ''
-  const lastName = staff.last_name?.trim() || ''
-
-  if (firstName && lastName) {
-    return `${firstName} ${lastName}`
-  } else if (firstName) {
-    return firstName
-  } else if (lastName) {
-    return lastName
-  } else {
-    return staff.email || 'Unknown User'
-  }
+  // KanbanStaff has display_name which is already constructed
+  return staff.display_name || 'Unknown User'
 }
 
 watch(

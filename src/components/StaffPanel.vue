@@ -49,7 +49,6 @@ import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 
 // Use generated types from Zodios API
-type Staff = z.infer<typeof schemas.Staff>
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
 
 interface Props {
@@ -67,7 +66,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-const staffMembers = ref<Staff[]>([])
+const staffMembers = ref<KanbanStaff[]>([])
 const activeFilters = ref<string[]>([...props.activeFilters])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -85,8 +84,7 @@ const loadStaffMembers = async (): Promise<void> => {
     // Use the Staff data directly from Zodios API (already validated)
     staffMembers.value = data.map((staffData: KanbanStaff) => ({
       ...staffData,
-      display_name:
-        staffData.display_name || `${staffData.first_name} ${staffData.last_name}`.trim(),
+      display_name: staffData.display_name,
     }))
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load staff members'

@@ -267,7 +267,7 @@ import { api } from '../../api/client'
 import { z } from 'zod'
 import { formatCurrency } from '../../utils/string-formatting'
 
-type WeeklyJobs = z.infer<typeof schemas.WeeklyMetrics>
+type WeeklyJob = z.infer<typeof schemas.WeeklyMetrics>
 type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
 type IMSWeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
 
@@ -287,17 +287,17 @@ const searchQuery = ref('')
 const loading = ref(false)
 const isLoading = ref(false)
 
-const jobs = ref<WeeklyJobs>([])
+const jobs = ref<WeeklyJob[]>([])
 
-const filteredJobs = computed(() => {
+const filteredJobs = computed<WeeklyJob[]>(() => {
   if (!searchQuery.value.trim()) return jobs.value
 
   const query = searchQuery.value.toLowerCase()
   return jobs.value.filter(
-    (job: Job) =>
+    (job) =>
       job.name.toLowerCase().includes(query) ||
       (job.client && job.client.toLowerCase().includes(query)) ||
-      (job as Record<string, number>).job_number.toString().toLowerCase().includes(query) ||
+      job.job_number.toString().toLowerCase().includes(query) ||
       (job.description && job.description.toLowerCase().includes(query)),
   )
 })
@@ -306,11 +306,11 @@ const filteredJobs = computed(() => {
 const activeJobsCount = computed(() => jobs.value.length)
 
 // Helper functions for job status analysis
-const hasJobIssues = (job: WeeklyJobs[0]) => {
+const hasJobIssues = (job: WeeklyJob) => {
   return job.profit <= 0 || job.actual_hours > job.estimated_hours
 }
 
-const getJobCardClass = (job: WeeklyJobs[0]) => {
+const getJobCardClass = (job: WeeklyJob) => {
   const hasNegativeProfit = job.profit <= 0
   const isOverEstimate = job.actual_hours > job.estimated_hours
 
@@ -320,7 +320,7 @@ const getJobCardClass = (job: WeeklyJobs[0]) => {
   return 'bg-green-50 border-green-200'
 }
 
-const getJobIssuesText = (job: WeeklyJobs[0]) => {
+const getJobIssuesText = (job: WeeklyJob) => {
   const issues = []
   if (job.profit <= 0) {
     issues.push('No profit')
