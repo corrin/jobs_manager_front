@@ -92,7 +92,7 @@ function onStatusUpdate(value: Status) {
   emit('update:status', value)
 }
 
-function formatDate(dateString: string | null): string {
+function formatDate(dateString: string | null | undefined): string {
   if (!dateString) return ''
   try {
     const date = new Date(dateString)
@@ -164,8 +164,8 @@ const statusOptions: { value: Status; label: string }[] = [
         <Label for="reference">Reference</Label>
         <Input
           id="reference"
-          :model-value="po.reference"
-          @update:model-value="emit('update:reference', $event)"
+          :model-value="po.reference || ''"
+          @update:model-value="emit('update:reference', $event || '')"
           class="w-full"
         />
       </div>
@@ -183,8 +183,8 @@ const statusOptions: { value: Status; label: string }[] = [
         <div class="flex flex-col gap-2">
           <DatePicker
             label="Expected Delivery"
-            :modelValue="po.expected_delivery"
-            @update:modelValue="onExpectedDeliveryUpdate"
+            :modelValue="po.expected_delivery || null"
+            @update:modelValue="(value) => onExpectedDeliveryUpdate(value || '')"
           />
         </div>
       </div>
@@ -192,7 +192,11 @@ const statusOptions: { value: Status; label: string }[] = [
       <div class="flex flex-col gap-2 mt-4" v-if="!isCreateMode">
         <div class="flex flex-col items-center gap-1">
           <Label for="status">Status</Label>
-          <Select id="status" :modelValue="po.status" @update:modelValue="onStatusUpdate">
+          <Select
+            id="status"
+            :modelValue="po.status || null"
+            @update:modelValue="(value) => onStatusUpdate(value as Status)"
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>

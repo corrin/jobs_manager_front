@@ -226,9 +226,9 @@ function updateLineKind(line: CostLine, newKind: KindOption) {
       kind: newKind,
       ...(newKind === 'time'
         ? {
-          unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
-          unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
-        }
+            unit_cost: companyDefaultsStore.companyDefaults?.wage_rate ?? 0,
+            unit_rev: companyDefaultsStore.companyDefaults?.charge_out_rate ?? 0,
+          }
         : { unit_rev: Number(line.unit_rev) }),
     }
     const optimistic: Partial<CostLine> = { ...patch }
@@ -314,7 +314,14 @@ function isStockLine(line: CostLine): boolean {
 function isNegativeStock(line: CostLine): boolean {
   if (!line?.id || !isStockLine(line)) return false
   const stockId = (line.ext_refs as Record<string, unknown>)?.stock_id
-  console.log('DEBUG: isNegativeStock - stockId:', stockId, 'type:', typeof stockId, 'negativeStockIds:', props.negativeStockIds)
+  console.log(
+    'DEBUG: isNegativeStock - stockId:',
+    stockId,
+    'type:',
+    typeof stockId,
+    'negativeStockIds:',
+    props.negativeStockIds,
+  )
   return props.negativeStockIds?.includes(stockId as string) ?? false
 }
 
@@ -362,10 +369,6 @@ function isLineReadyForSave(line: CostLine): boolean {
   if (line.unit_rev === undefined || line.unit_rev === null) return false
   return true
 }
-
-
-
-
 
 /**
  * Keyboard navigation
@@ -448,9 +451,825 @@ const shortcutsTitle = computed(
     'Shortcuts: Enter/F2 edit • Enter confirm • Esc cancel • Tab/Shift+Tab move • ↑/↓ row • Ctrl/Cmd+Enter add • Ctrl/Cmd+D duplicate • Ctrl/Cmd+Backspace delete • Alt+↑/↓ move row',
 )
 
-// Placeholder for columns - will be defined later
-const columns = computed(() => [])
+/**
+ * Build the column defs for DataTable
+ */
+const columns = computed(() => {
+  void negativeIdsSig.value
+  return [
+    // Type / Kind - Now readonly badge only
+    {
+      id: 'kind',
+      header: 'Type',
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        const badge = getKindBadge(line)
+        return h(Badge, { class: `text-xs font-medium ${badge.class}` }, () => badge.label)
+      },
+      meta: { editable: false }, // Always readonly
+    },
 
+    // Item
+    props.showItemColumn
+      ? {
+          id: 'item',
+          header: () => h('div', { class: 'col-item text-left' }, 'Item'),
+          cell: ({ row }: RowCtx) => {
+            const line = displayLines.value[row.index]
+            const selectedItem = selectedItemMap.get(line)
+            const model =
+              selectedItem?.id ||
+              ((line.ext_refs as Record<string, unknown>)?.stock_id as string) ||
+              null
+            const kind = String(line.kind)
+            const isMaterial = kind === 'material'
+            const isNewLine = !line.id
+            const isActualTab = props.tabKind === 'actual'
+
+            const lockedByDeliveryReceipt = isDeliveryReceipt(line)
+            // Only lock existing stock lines on actual tab (where inventory is consumed)
+            // Estimate/quote tabs should allow changing material selection
+            const lockedStockExisting = isActualTab && !!line.id && isStockLine(line)
+            const enabled =
+              kind !== 'time' && !props.readOnly && !lockedByDeliveryReceipt && !lockedStockExisting
+
+            const isActive = selectedRowIndex.value === row.index
+
+            // Lazy mount: render lightweight control until row is active (selected)
+            if (!isActive) {
+              return h(
+                'div',
+                {
+                  class: 'col-item flex items-center',
+                  'data-automation-id': `cost-line-item-${row.index}`,
+                },
+                [
+                  h(
+                    Button,
+                    {
+                      variant: 'outline',
+                      size: 'sm',
+                      disabled: !enabled,
+                      onClick: (e: Event) => {
+                        e.stopPropagation()
+                        selectedRowIndex.value = row.index
+                        // Also open the ItemSelect dropdown immediately
+                        openItemSelect.value = true
+                      },
+                      class: 'font-mono uppercase tracking-wide',
+                    },
+                    () => {
+                      if (!model) {
+                        // Check if this is a time line without stock_id (labour)
+                        const stockId = (line.ext_refs as Record<string, unknown>)
+                          ?.stock_id as string
+                        if (!stockId && String(line.kind) === 'time') {
+                          return 'LABOUR'
+                        }
+
+                        // Check if this is an existing line with stock selected
+                        if (stockId) {
+                          // Try to find the item in the stock store by ID
+                          const stockItem = store.items.find((item) => item.id === stockId)
+                          if (stockItem?.item_code) {
+                            return stockItem.item_code
+                          }
+                        }
+
+                        // If no stock_id or item not found by ID, try to find by description
+                        if (line.desc) {
+                          const stockItemByDesc = store.items.find(
+                            (item) => item.description?.toLowerCase() === line.desc?.toLowerCase(),
+                          )
+                          if (stockItemByDesc?.item_code) {
+                            return stockItemByDesc.item_code
+                          }
+                        }
+
+                        // If no valid item found, prompt user to select a valid item
+                        return 'Select Item'
+                      }
+
+                      // Handle labour items specially
+                      if (model === '__labour__') {
+                        return 'LABOUR'
+                      }
+
+                      // If we have selectedItem, use its code
+                      if (selectedItem?.item_code) {
+                        return selectedItem.item_code
+                      }
+
+                      // If no selectedItem but we have a model (stock_id), find the item in store
+                      if (model && model !== '__labour__') {
+                        const stockItem = store.items.find((item) => item.id === model)
+                        if (stockItem?.item_code) {
+                          return stockItem.item_code
+                        }
+                      }
+
+                      return 'Change item'
+                    },
+                  ),
+                ],
+              )
+            }
+
+            return h(
+              'div',
+              { class: 'col-item', 'data-automation-id': `cost-line-item-${row.index}` },
+              [
+                h(ItemSelect, {
+                  modelValue: model,
+                  open: openItemSelect.value,
+                  'onUpdate:open': (val: boolean) => (openItemSelect.value = val),
+                  disabled: !enabled,
+                  lineKind: String(line.kind),
+                  tabKind: props.tabKind,
+                  onClick: (e: Event) => e.stopPropagation(),
+                  'onUpdate:modelValue': async (val: string | null) => {
+                    if (!enabled) return
+                    if (val) {
+                      debugLog('💾 Storing item selection:', { val, lineId: line.id })
+                      // Store full item data for display
+                      if (val === '__labour__') {
+                        selectedItemMap.set(line, {
+                          id: val,
+                          description: 'Labour',
+                          item_code: 'LABOUR',
+                        })
+                        debugLog('👷 Stored labour item in selectedItemMap')
+                      } else {
+                        // For regular items, we'll fetch the data below and update
+                        selectedItemMap.set(line, { id: val, description: '', item_code: '' })
+                        debugLog('📦 Stored placeholder for stock item in selectedItemMap')
+                      }
+                    } else {
+                      selectedItemMap.set(line, null)
+                      debugLog('🗑️ Cleared selectedItemMap for line')
+                    }
+
+                    // Infer kind based on selection
+                    let newKind: KindOption = 'adjust' // Default fallback
+                    if (val === '__labour__') {
+                      newKind = 'time'
+                    } else if (val) {
+                      newKind = 'material'
+                    }
+
+                    // Update kind if it changed
+                    if (String(line.kind) !== newKind) {
+                      updateLineKind(line, newKind)
+                    }
+
+                    onItemSelected(line)
+
+                    if (
+                      isActualTab &&
+                      isNewLine &&
+                      isMaterial &&
+                      val &&
+                      props.consumeStockFn &&
+                      props.jobId
+                    ) {
+                      try {
+                        // Look up stock item from store (already loaded for the dropdown)
+                        const stock = store.items.find((item) => item.id === val)
+                        if (!stock) {
+                          throw new Error('Stock item not found in store')
+                        }
+                        const qty = Number(line.quantity || 1)
+                        const unitCost = Number(stock.unit_cost || 0)
+                        const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
+                        const unitRev = unitCost * (1 + markup)
+                        await props.consumeStockFn({
+                          line,
+                          stockId: val,
+                          quantity: qty,
+                          unitCost,
+                          unitRev,
+                        })
+
+                        // to leave the active mode and show the chip/label instead of "Select Item"
+                        selectedRowIndex.value = -1
+                      } catch {
+                        toast.error('Failed to consume stock. Line not created.')
+                        selectedItemMap.set(line, null)
+                        return
+                      }
+                    } else {
+                      // For other tabs (quote, estimate), also leave active mode to show item code
+                      selectedRowIndex.value = -1
+                    }
+
+                    // Look up stock item from store (already loaded for the dropdown)
+                    const found = val ? store.items.find((item) => item.id === val) : null
+                    if (found) {
+                      debugLog('✅ Found stock item in store:', {
+                        id: found.id,
+                        item_code: found.item_code,
+                        description: found.description,
+                      })
+                      Object.assign(line, { desc: found.description || '' })
+                      Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
+                      // Update ext_refs.stock_id to reference the selected item
+                      Object.assign(line, {
+                        ext_refs: { ...((line.ext_refs as object) || {}), stock_id: val },
+                      })
+                      // Update selectedItemMap with full data
+                      selectedItemMap.set(line, {
+                        id: val as string,
+                        description: found.description || '',
+                        item_code: found.item_code || '',
+                      })
+                      debugLog('💾 Updated line with stock item data:', {
+                        id: val,
+                        description: found.description || '',
+                        item_code: found.item_code || '',
+                      })
+                      // Ensure quantity is set for new lines
+                      if (line.quantity == null) Object.assign(line, { quantity: 1 })
+                      if (kind !== 'time')
+                        Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
+
+                      // For phantom rows (no ID), emit create-line if ready after fetch
+                      if (!line.id && isLineReadyForSave(line)) {
+                        // Use guarded emitter so the phantom row resets and does not duplicate
+                        maybeEmitCreate(line)
+                      }
+                    } else if (val) {
+                      debugLog('❌ Stock item not found in store for id:', val)
+                      Object.assign(line, { desc: '' })
+                      Object.assign(line, { unit_cost: 0 })
+                      selectedItemMap.set(line, null)
+                    }
+
+                    // Save immediately for existing lines
+                    if (line.id && isLineReadyForSave(line)) {
+                      const patch: PatchedCostLineCreateUpdate = {
+                        desc: line.desc || '',
+                        unit_cost: Number(line.unit_cost ?? 0),
+                        unit_rev: Number(line.unit_rev ?? 0),
+                        ext_refs: { stock_id: val },
+                      }
+                      const optimistic: Partial<CostLine> = { ...patch }
+                      autosave.scheduleSave(line, patch, optimistic)
+                    }
+                  },
+                  'onUpdate:description': (desc: string) =>
+                    enabled && Object.assign(line, { desc }),
+                  'onUpdate:unit_cost': (cost: number | null) => {
+                    if (!enabled) return
+                    Object.assign(line, { unit_cost: Number(cost ?? 0) })
+                    if (kind !== 'time')
+                      Object.assign(line, { unit_rev: apply(line).derived.unit_rev })
+                    nextTick(() => {
+                      if (!line.id && isLineReadyForSave(line)) maybeEmitCreate(line)
+                    })
+                  },
+                  'onUpdate:kind': (newKind: string | null) => {
+                    if (!enabled || !newKind) return
+                    updateLineKind(line, newKind as KindOption)
+                  },
+                }),
+              ],
+            )
+          },
+          meta: { editable: !props.readOnly },
+        }
+      : null,
+
+    // Description
+    {
+      id: 'desc',
+      header: () => h('div', { class: 'desc-col text-left' }, 'Description'),
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        const kind = String(line.kind)
+        const isNewLine = !line.id
+        const isActualTab = props.tabKind === 'actual'
+        const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
+        const isFieldBlocked = blockedFields.includes('desc')
+        const hasStockSelected = !!selectedItemMap.get(line)
+        const isBlocked =
+          isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
+        const canEdit = canEditField(line, 'desc') && !isBlocked
+
+        return h('div', { class: 'desc-cell w-full flex items-start gap-2' }, [
+          h(Textarea, {
+            modelValue: line.desc || '',
+            disabled: !canEdit,
+            class: 'w-full min-h-[2.25rem] text-sm',
+            rows: 1,
+            onClick: (e: Event) => {
+              // Stop propagation to grid; fully inline editing
+              e.stopPropagation()
+            },
+            onKeydown: (e: KeyboardEvent) => {
+              const ctrlOrCmd = e.metaKey || e.ctrlKey
+              if (e.key === 'Enter' && ctrlOrCmd) {
+                e.preventDefault()
+                e.stopPropagation()
+                loggedEmit('add-line')
+                return
+              }
+              // Allow line breaks in textarea and prevent bubbling to the grid
+              e.stopPropagation()
+            },
+            'onUpdate:modelValue': (v: string | number) => {
+              const val = typeof v === 'string' ? v : String(v)
+              Object.assign(line, { desc: val })
+              // Infer "adjust" when user starts typing without a selected item
+              const hasSelectedItemLocal = !!selectedItemMap.get(line)
+              const isLabour = line.kind === 'time'
+              const isAdjust = line.kind === 'adjust'
+              if (!hasSelectedItemLocal && val.trim() && !isAdjust && !isLabour) {
+                updateLineKind(line, 'adjust')
+              }
+            },
+            onBlur: () => {
+              if (!canEdit) return
+              // Create from phantom row if baseline is satisfied
+              if (!line.id && isLineReadyForSave(line)) {
+                maybeEmitCreate(line)
+                return
+              }
+              // Save inline for existing lines
+              if (!line.id || !isLineReadyForSave(line)) return
+              const patch: PatchedCostLineCreateUpdate = { desc: line.desc || '' }
+              const optimistic: Partial<CostLine> = { desc: line.desc || '' }
+              autosave.onBlurSave(line, patch, optimistic)
+            },
+          }),
+          ...(isBlocked
+            ? [
+                h(
+                  Badge,
+                  { variant: 'secondary', class: 'mt-1 text-xs' },
+                  () => 'Select stock first',
+                ),
+              ]
+            : []),
+        ])
+      },
+    },
+
+    // Quantity
+    {
+      id: 'quantity',
+      header: () => h('div', { class: 'col-8ch text-center' }, 'Quantity'),
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        const kind = String(line.kind)
+        const isNewLine = !line.id
+        const isActualTab = props.tabKind === 'actual'
+        const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
+        const isFieldBlocked = blockedFields.includes('quantity')
+        const hasStockSelected = !!selectedItemMap.get(line)
+        const isBlocked =
+          isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
+
+        return [
+          h('div', { class: 'col-10ch' }, [
+            h(Input, {
+              type: 'number',
+              step: String(kind === 'time' ? 0.25 : 1),
+              ...(kind === 'adjust' ? {} : { min: '0.0000001' }),
+              modelValue: line.quantity,
+              disabled: !canEditField(line, 'quantity') || isBlocked,
+              class: 'w-full text-right numeric-input',
+              inputmode: 'decimal',
+              'data-automation-id': `cost-line-quantity-${row.index}`,
+              onClick: (e: Event) => e.stopPropagation(),
+              'onUpdate:modelValue': (val: string | number) => {
+                const num = Number(val)
+                if (!Number.isNaN(num)) Object.assign(line, { quantity: num })
+              },
+              onBlur: () => {
+                const validation = validateLine(line)
+                if (!validation.isValid) {
+                  toast.error(validation.issues[0]?.message || 'Invalid quantity')
+                  return
+                }
+                if (!line.id && isLineReadyForSave(line)) {
+                  maybeEmitCreate(line)
+                  return
+                }
+                if (!line.id || !isLineReadyForSave(line)) return
+                const qtyNum = Number(line.quantity || 0)
+                const patch: PatchedCostLineCreateUpdate = { quantity: qtyNum }
+                const optimistic: Partial<CostLine> = { quantity: qtyNum }
+                autosave.onBlurSave(line, patch, optimistic)
+              },
+            }),
+          ]),
+          ...(isBlocked
+            ? [
+                h(
+                  Badge,
+                  { variant: 'secondary', class: 'mt-1 text-xs' },
+                  () => 'Select stock first',
+                ),
+              ]
+            : []),
+        ]
+      },
+    },
+
+    // Unit Cost
+    {
+      id: 'unit_cost',
+      header: () => h('div', { class: 'col-10ch text-center' }, 'Unit Cost'),
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        const kind = String(line.kind)
+        const isNewLine = !line.id
+        const isActualTab = props.tabKind === 'actual'
+        const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
+        const isFieldBlocked = blockedFields.includes('unit_cost')
+        const hasStockSelected = !!selectedItemMap.get(line)
+        const isBlocked =
+          isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
+        const editable = canEditField(line, 'unit_cost') && !isBlocked
+        const isTime = kind === 'time'
+        const resolved = apply(line).derived
+        return [
+          h('div', { class: 'col-10ch' }, [
+            h(Input, {
+              type: 'number',
+              step: '0.01',
+              min: '0',
+              modelValue: isTime
+                ? (line.unit_cost ?? resolved.unit_cost ?? '')
+                : (line.unit_cost ?? ''),
+              disabled: !editable,
+              class: 'w-full text-right numeric-input',
+              inputmode: 'decimal',
+              'data-automation-id': `cost-line-unit-cost-${row.index}`,
+              onClick: (e: Event) => e.stopPropagation(),
+              'onUpdate:modelValue': (val: string | number) => {
+                if (!editable) return
+                if (val === '') {
+                  Object.assign(line, { unit_cost: 0 })
+                } else {
+                  const num = Number(val)
+                  if (!Number.isNaN(num)) {
+                    Object.assign(line, { unit_cost: num })
+
+                    // Auto-recalculate unit_rev for material/adjust unless overridden
+                    if (kind !== 'time') {
+                      const derived = apply(line).derived
+                      Object.assign(line, { unit_rev: derived.unit_rev })
+                    }
+                  }
+                }
+              },
+              onBlur: () => {
+                if (!editable) return
+
+                // Create new line if it doesn't have an ID yet and meets baseline criteria
+                if (!line.id && isLineReadyForSave(line)) {
+                  debugLog('Creating new line from unit_cost edit:', line)
+                  maybeEmitCreate(line)
+                  return
+                }
+
+                if (!line.id || !isLineReadyForSave(line)) {
+                  debugLog('Skipping unit_cost save:', {
+                    editable,
+                    id: line.id,
+                    ready: isLineReadyForSave(line),
+                  })
+                  return
+                }
+
+                debugLog('Saving unit_cost change:', line.id, line.unit_cost)
+                // For material/adjust, unit_rev may be auto recalculated unless overridden
+                const derived = apply(line).derived
+                const patch: PatchedCostLineCreateUpdate = {
+                  unit_cost: Number(line.unit_cost ?? 0),
+                  ...(kind !== 'time' ? { unit_rev: Number(derived.unit_rev) } : {}),
+                }
+                const optimistic: Partial<CostLine> = { ...patch }
+                autosave.onBlurSave(line, patch, optimistic)
+              },
+            }),
+          ]),
+          ...(isBlocked
+            ? [
+                h(
+                  Badge,
+                  { variant: 'secondary', class: 'mt-1 text-xs' },
+                  () => 'Select stock first',
+                ),
+              ]
+            : []),
+        ]
+      },
+    },
+
+    // Unit Revenue
+    {
+      id: 'unit_rev',
+      header: () => h('div', { class: 'col-10ch text-center' }, 'Unit Rev'),
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        const kind = String(line.kind)
+        const isNewLine = !line.id
+        const isActualTab = props.tabKind === 'actual'
+        const blockedFields = props.blockedFieldsByKind?.[kind as KindOption] || []
+        const isFieldBlocked = blockedFields.includes('unit_rev')
+        const hasStockSelected = !!selectedItemMap.get(line)
+        const isBlocked =
+          isActualTab && isNewLine && kind === 'material' && isFieldBlocked && !hasStockSelected
+        const editable = canEditField(line, 'unit_rev') && !isBlocked
+        const isTime = kind === 'time'
+        const resolved = apply(line).derived
+        return [
+          h('div', { class: 'col-10ch' }, [
+            h(Input, {
+              type: 'number',
+              step: '0.01',
+              min: '0',
+              modelValue: isTime
+                ? (line.unit_rev ?? resolved.unit_rev ?? '')
+                : (line.unit_rev ?? ''),
+              disabled: !editable,
+              class: 'w-full text-right numeric-input',
+              inputmode: 'decimal',
+              'data-automation-id': `cost-line-unit-rev-${row.index}`,
+              onClick: (e: Event) => e.stopPropagation(),
+              'onUpdate:modelValue': (val: string | number) => {
+                if (!editable) return
+                if (val === '') {
+                  Object.assign(line, { unit_rev: 0 })
+                } else {
+                  const num = Number(val)
+                  if (!Number.isNaN(num)) {
+                    Object.assign(line, { unit_rev: num })
+                  }
+                }
+                // Mark override when user types in unit_rev
+                onUnitRevenueManuallyEdited(line)
+              },
+              onKeydown: (e: KeyboardEvent) => {
+                if (
+                  (e.key === 'Tab' || e.key === 'Enter') &&
+                  row.index === displayLines.value.length - 1
+                ) {
+                  e.preventDefault()
+                  if (isLineReadyForSave(line)) {
+                    maybeEmitCreate(line)
+                  }
+                }
+              },
+              onBlur: () => {
+                if (!editable) return
+
+                // Create new line if it doesn't have an ID yet and meets baseline criteria
+                if (!line.id && isLineReadyForSave(line)) {
+                  debugLog('Creating new line from unit_rev edit:', line)
+                  maybeEmitCreate(line)
+                  return
+                }
+
+                if (!line.id || !isLineReadyForSave(line)) {
+                  debugLog('Skipping unit_rev save:', {
+                    editable,
+                    id: line.id,
+                    ready: isLineReadyForSave(line),
+                  })
+                  return
+                }
+
+                debugLog('Saving unit_rev change:', line.id, line.unit_rev)
+                const patch: PatchedCostLineCreateUpdate = {
+                  unit_rev: Number(line.unit_rev ?? 0),
+                }
+                const optimistic: Partial<CostLine> = { unit_rev: Number(line.unit_rev ?? 0) }
+                autosave.onBlurSave(line, patch, optimistic)
+              },
+            }),
+          ]),
+          ...(isBlocked
+            ? [
+                h(
+                  Badge,
+                  { variant: 'secondary', class: 'mt-1 text-xs' },
+                  () => 'Select stock first',
+                ),
+              ]
+            : []),
+        ]
+      },
+    },
+
+    // Total Cost
+    {
+      id: 'total_cost',
+      header: () => h('div', { class: 'col-12ch text-center' }, 'Total Cost'),
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        const qty = Number(line.quantity || 0)
+        const umc = Number(line.unit_cost ?? apply(line).derived.unit_cost ?? 0)
+        const totalCost = String(line.kind) === 'time' ? qty * umc : qty * umc
+        return h(
+          'div',
+          { class: 'col-12ch text-right font-medium numeric-text' },
+          formatCurrency(totalCost),
+        )
+      },
+      meta: { editable: false },
+    },
+
+    // Total Revenue
+    {
+      id: 'total_rev',
+      header: () => h('div', { class: 'col-12ch text-center' }, 'Total Revenue'),
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        const qty = Number(line.quantity ?? 0)
+        const umr = Number(line.unit_rev ?? apply(line).derived.unit_rev ?? 0)
+        const totalRev = qty * umr
+        return h(
+          'div',
+          { class: 'col-12ch text-right font-medium numeric-text' },
+          formatCurrency(totalRev),
+        )
+      },
+      meta: { editable: false },
+    },
+
+    // Source (optional)
+    props.showSourceColumn
+      ? {
+          id: 'source',
+          header: () => h('div', { class: 'source-col' }, 'Source'),
+          cell: ({ row }: RowCtx) => {
+            const line = displayLines.value[row.index]
+            if (!props.sourceResolver)
+              return h(
+                'div',
+                { class: 'source-cell text-gray-400 text-sm flex justify-center items-center' },
+                '-',
+              )
+            const resolved = props.sourceResolver(line)
+            if (!resolved || !resolved.visible)
+              return h(
+                'div',
+                { class: 'source-cell flex justify-center items-center text-gray-400 text-sm' },
+                '-',
+              )
+
+            const neg = isNegativeStock(line)
+            return h('div', { class: 'source-cell flex flex-col gap-1 items-center' }, [
+              h(
+                'span',
+                {
+                  class:
+                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 cursor-pointer select-none truncate',
+                  role: resolved.onClick ? 'button' : undefined,
+                  tabindex: resolved.onClick ? 0 : -1,
+                  onClick: resolved.onClick
+                    ? () => resolved.onClick && resolved.onClick()
+                    : undefined,
+                  onKeydown: (e: KeyboardEvent) => {
+                    if ((e.key === 'Enter' || e.key === ' ') && resolved.onClick) {
+                      e.preventDefault()
+                      resolved.onClick()
+                    }
+                  },
+                  title: resolved.label,
+                },
+                resolved.label,
+              ),
+              ...(neg
+                ? [
+                    h(
+                      'span',
+                      {
+                        class:
+                          'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200 truncate',
+                        title: 'Stock level for this item is negative',
+                      },
+                      [h(AlertTriangle, { class: 'w-3.5 h-3.5 mr-1' }), 'Negative'],
+                    ),
+                  ]
+                : []),
+            ])
+          },
+          meta: { editable: false },
+        }
+      : null,
+
+    // Last Modified (most recent of created_at or updated_at) - compact
+    {
+      id: 'last_modified',
+      header: () => h('div', { class: 'col-10ch text-center' }, 'Modified'),
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        const mostRecentDate = line.updated_at || line.created_at
+
+        if (!mostRecentDate) {
+          return h('div', { class: 'col-8ch text-left text-gray-400 text-xs' }, '-')
+        }
+
+        const formattedDate = formatModifiedDate(mostRecentDate)
+        const fullDateTime = new Date(mostRecentDate).toLocaleString('en-NZ', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+
+        return h(
+          'div',
+          {
+            class: 'col-10ch text-center text-gray-500 text-xs hover:text-gray-700',
+            style: 'cursor: default;',
+            title: `Full date/time: ${fullDateTime}`,
+            onMouseenter: (e: MouseEvent) => {
+              ;(e.target as HTMLElement).style.cursor = 'pointer'
+            },
+            onMouseleave: (e: MouseEvent) => {
+              ;(e.target as HTMLElement).style.cursor = 'default'
+            },
+          },
+          formattedDate,
+        )
+      },
+      meta: { editable: false },
+    },
+
+    // Actions (delete only)
+    {
+      id: 'actions',
+      header: () => h('div', { class: 'w-full text-center' }, 'Actions'),
+      cell: ({ row }: RowCtx) => {
+        const line = displayLines.value[row.index]
+        const disabled = !!props.readOnly
+        return h('div', { class: 'flex items-center justify-center w-full' }, [
+          h(
+            Button,
+            {
+              variant: 'outline',
+              size: 'icon',
+              class:
+                'h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center justify-center',
+              disabled,
+              'aria-label': 'Delete line',
+              'data-automation-id': `cost-line-delete-${row.index}`,
+              onClick: (e: Event) => {
+                e.stopPropagation()
+                if (disabled) return
+
+                debugLog('🗑️ Delete button clicked for line:', {
+                  lineId: line.id,
+                  rowIndex: row.index,
+                  lineDesc: line.desc,
+                  isLocalLine: !line.id,
+                  totalDisplayLines: displayLines.value.length,
+                  totalPropsLines: props.lines.length,
+                })
+
+                // For local lines (no ID), delete immediately without confirmation
+                if (!line.id) {
+                  // Find the actual index in the original props.lines array
+                  const actualIndex = props.lines.findIndex((l) => l === line)
+                  debugLog('🔍 Looking for local line in props.lines:', {
+                    actualIndex,
+                    foundLine: actualIndex >= 0 ? props.lines[actualIndex] : null,
+                    searchedLine: line,
+                  })
+
+                  if (actualIndex >= 0) {
+                    debugLog('✅ Emitting delete-line with actualIndex:', actualIndex)
+                    loggedEmit('delete-line', actualIndex)
+                  } else {
+                    // This is the auto-generated empty line - don't delete it, just clear it
+                    debugLog('⚠️ Auto-generated empty line - cannot delete, ignoring')
+                    return
+                  }
+                  return
+                }
+
+                // For saved lines, ask for confirmation
+                const confirmed = window.confirm('Delete this line? This action cannot be undone.')
+                if (!confirmed) return
+                debugLog('✅ Emitting delete-line with line.id:', line.id)
+                loggedEmit('delete-line', line.id as string)
+              },
+            },
+            () => h(Trash2, { class: 'w-4 h-4' }),
+          ),
+        ])
+      },
+      meta: { editable: !props.readOnly },
+    },
+  ].filter(Boolean)
+})
 </script>
 
 <template>
@@ -458,23 +1277,42 @@ const columns = computed(() => [])
     <div class="flex items-center justify-between px-4 py-2">
       <button
         class="inline-flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1"
-        type="button" aria-haspopup="dialog" :aria-expanded="showShortcuts ? 'true' : 'false'"
-        @click="showShortcuts = true" :title="shortcutsTitle">
+        type="button"
+        aria-haspopup="dialog"
+        :aria-expanded="showShortcuts ? 'true' : 'false'"
+        @click="showShortcuts = true"
+        :title="shortcutsTitle"
+      >
         <HelpCircle class="w-4 h-4" />
         <span>Shortcuts</span>
       </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto overflow-x-hidden" tabindex="0" @keydown="onKeydown" ref="containerRef">
-      <DataTable class="smart-costlines-table" :columns="columns as any" :data="displayLines" :hide-footer="true"
+    <div
+      class="flex-1 overflow-y-auto overflow-x-hidden"
+      tabindex="0"
+      @keydown="onKeydown"
+      ref="containerRef"
+    >
+      <DataTable
+        class="smart-costlines-table"
+        :columns="columns as any"
+        :data="displayLines"
+        :hide-footer="true"
         @rowClick="
           (row: any) => handleRowClick(row as CostLine, (displayLines as any).indexOf(row))
-        " />
+        "
+      />
     </div>
 
     <div v-if="!props.readOnly" class="px-4 py-2">
-      <Button variant="default" size="sm" @click="handleAddLine" aria-label="Add Row"
-        data-automation-id="cost-lines-add-row">
+      <Button
+        variant="default"
+        size="sm"
+        @click="handleAddLine"
+        aria-label="Add Row"
+        data-automation-id="cost-lines-add-row"
+      >
         <Plus class="w-4 h-4 mr-1" /> Add row
       </Button>
     </div>
