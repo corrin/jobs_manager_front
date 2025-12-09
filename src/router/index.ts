@@ -289,6 +289,18 @@ const router = createRouter({
       component: () => import('@/views/DataQualityArchivedJobsView.vue'),
       meta: { requiresAuth: true, title: 'Archived Jobs Validation - Jobs Manager' },
     },
+    {
+      path: '/safety/jsa',
+      name: 'safety-jsa',
+      component: () => import('@/views/SafetyJsaView.vue'),
+      meta: { requiresAuth: true, title: 'Job Safety Analyses - Jobs Manager' },
+    },
+    {
+      path: '/safety/swp',
+      name: 'safety-swp',
+      component: () => import('@/views/SafetySwpView.vue'),
+      meta: { requiresAuth: true, title: 'Safe Work Procedures - Jobs Manager' },
+    },
   ],
 })
 
