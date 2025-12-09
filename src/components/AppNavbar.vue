@@ -154,6 +154,19 @@
               >
                 <ClipboardList class="w-4 h-4 mr-2" /> Safe Work Procedures
               </RouterLink>
+              <div class="border-t border-gray-200 my-1"></div>
+              <button
+                @click="showNotImplemented('Machine Maintenance Schedule')"
+                class="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 font-medium transition-all"
+              >
+                <Wrench class="w-4 h-4 mr-2" /> Machine Maintenance
+              </button>
+              <button
+                @click="showNotImplemented('Staff Training')"
+                class="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 font-medium transition-all"
+              >
+                <GraduationCap class="w-4 h-4 mr-2" /> Staff Training
+              </button>
             </div>
           </Transition>
         </div>
@@ -473,6 +486,19 @@
                         @click="closeMobileMenu"
                         >Safe Work Procedures</RouterLink
                       >
+                      <div class="border-t border-gray-200 my-1"></div>
+                      <button
+                        @click="showNotImplemented('Machine Maintenance Schedule'); closeMobileMenu()"
+                        class="block w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
+                      >
+                        Machine Maintenance
+                      </button>
+                      <button
+                        @click="showNotImplemented('Staff Training'); closeMobileMenu()"
+                        class="block w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
+                      >
+                        Staff Training
+                      </button>
                     </div>
                   </div>
                 </Transition>
@@ -666,7 +692,10 @@ import {
   TrendingUp,
   ShieldCheck,
   ClipboardList,
+  Wrench,
+  GraduationCap,
 } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import { useAppLayout } from '@/composables/useAppLayout'
 
 const activeDropdown = ref<string | null>(null)
@@ -708,6 +737,11 @@ const closeMobileMenu = () => {
 
 const toggleMobileSection = (section: 'purchases' | 'safety' | 'reports' | 'admin') => {
   mobileSections.value[section] = !mobileSections.value[section]
+}
+
+const showNotImplemented = (feature: string) => {
+  toast.info(`${feature} is not yet implemented`)
+  activeDropdown.value = null
 }
 
 let clickHandler: ((e: MouseEvent) => void) | null = null
