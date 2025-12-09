@@ -78,7 +78,12 @@ paths:
         - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /accounting/api/reports/profit-and-loss/:
     get:
       operationId: accounting_api_reports_profit_and_loss_retrieve
@@ -89,7 +94,12 @@ paths:
         - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /accounting/api/reports/sales-forecast/:
     get:
       operationId: accounting_api_reports_sales_forecast_retrieve
@@ -2485,12 +2495,6 @@ paths:
             type: string
           description: Filter by paid status
         - in: query
-          name: q
-          schema:
-            type: string
-          description: Universal search - searches across job number, name, description,
-            and client name with OR logic
-        - in: query
           name: rejected_flag
           schema:
             type: string
@@ -3574,8 +3578,8 @@ paths:
           description: ''
   /job/rest/jobs/{job_id}/jsa/:
     get:
-      operationId: listJobJSAs
-      description: List all JSAs for a specific job
+      operationId: job_rest_jobs_jsa_list
+      description: List all JSAs for a job.
       parameters:
         - in: path
           name: job_id
@@ -3587,7 +3591,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3597,16 +3600,10 @@ paths:
                 items:
                   $ref: '#/components/schemas/SafetyDocumentList'
           description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
   /job/rest/jobs/{job_id}/jsa/generate/:
     post:
-      operationId: generateJobJSA
-      description: Generate a new draft JSA for a job using AI
+      operationId: job_rest_jobs_jsa_generate_create
+      description: Generate a new JSA for a job.
       parameters:
         - in: path
           name: job_id
@@ -3618,25 +3615,12 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
-        '201':
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SafetyDocument'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
           description: ''
   /job/rest/jobs/{job_id}/quote/:
     get:
@@ -4103,15 +4087,141 @@ paths:
               schema:
                 $ref: '#/components/schemas/MonthEndPostResponse'
           description: ''
+  /job/rest/safety-ai/generate-controls/:
+    post:
+      operationId: job_rest_safety_ai_generate_controls_create
+      description: Generate controls for hazards using AI.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateControlsRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GenerateControlsRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GenerateControlsRequestRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateControlsResponse'
+          description: ''
+  /job/rest/safety-ai/generate-hazards/:
+    post:
+      operationId: job_rest_safety_ai_generate_hazards_create
+      description: Generate hazards for a task description using AI.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateHazardsRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GenerateHazardsRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GenerateHazardsRequestRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateHazardsResponse'
+          description: ''
+  /job/rest/safety-ai/improve-document/:
+    post:
+      operationId: job_rest_safety_ai_improve_document_create
+      description: Improve an entire document using AI.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImproveDocumentRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ImproveDocumentRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImproveDocumentRequestRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImproveDocumentResponse'
+          description: ''
+  /job/rest/safety-ai/improve-section/:
+    post:
+      operationId: job_rest_safety_ai_improve_section_create
+      description: Improve a section of text using AI.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImproveSectionRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ImproveSectionRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImproveSectionRequestRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImproveSectionResponse'
+          description: ''
   /job/rest/safety-documents/:
     get:
-      operationId: listSafetyDocuments
-      description: List all safety documents with optional filtering
+      operationId: job_rest_safety_documents_list
+      description: |-
+        ViewSet for SafetyDocument CRUD operations.
+
+        Endpoints:
+        - GET    /rest/safety-documents/              - list all documents
+        - GET    /rest/safety-documents/<id>/         - retrieve document
+        - DELETE /rest/safety-documents/<id>/         - delete document
+
+        Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Search by title
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Filter by document type (jsa/swp/sop)
       tags:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4121,163 +4231,74 @@ paths:
                 items:
                   $ref: '#/components/schemas/SafetyDocumentList'
           description: ''
-  /job/rest/safety-documents/{doc_id}/:
+  /job/rest/safety-documents/{id}/:
     get:
-      operationId: getSafetyDocument
-      description: Retrieve a specific safety document
+      operationId: job_rest_safety_documents_retrieve
+      description: |-
+        ViewSet for SafetyDocument CRUD operations.
+
+        Endpoints:
+        - GET    /rest/safety-documents/              - list all documents
+        - GET    /rest/safety-documents/<id>/         - retrieve document
+        - DELETE /rest/safety-documents/<id>/         - delete document
+
+        Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.
       parameters:
         - in: path
-          name: doc_id
+          name: id
           schema:
             type: string
             format: uuid
+          description: A UUID string identifying this Safety Document.
           required: true
       tags:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SafetyDocument'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-    put:
-      operationId: updateSafetyDocument
-      description: Full update of a draft safety document
-      parameters:
-        - in: path
-          name: doc_id
-          schema:
-            type: string
-            format: uuid
-          required: true
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SafetyDocumentRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SafetyDocumentRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SafetyDocumentRequest'
-        required: true
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocument'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-    patch:
-      operationId: partialUpdateSafetyDocument
-      description: Partial update of a draft safety document
-      parameters:
-        - in: path
-          name: doc_id
-          schema:
-            type: string
-            format: uuid
-          required: true
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedSafetyDocumentRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedSafetyDocumentRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedSafetyDocumentRequest'
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocument'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
           description: ''
     delete:
-      operationId: deleteSafetyDocument
-      description: Delete a draft safety document
+      operationId: job_rest_safety_documents_destroy
+      description: |-
+        ViewSet for SafetyDocument CRUD operations.
+
+        Endpoints:
+        - GET    /rest/safety-documents/              - list all documents
+        - GET    /rest/safety-documents/<id>/         - retrieve document
+        - DELETE /rest/safety-documents/<id>/         - delete document
+
+        Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.
       parameters:
         - in: path
-          name: doc_id
+          name: id
           schema:
             type: string
             format: uuid
+          description: A UUID string identifying this Safety Document.
           required: true
       tags:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-  /job/rest/safety-documents/{doc_id}/finalize/:
-    post:
-      operationId: finalizeSafetyDocument
-      description: Finalize a draft safety document by generating PDF
+  /job/rest/safety-documents/{id}/content/:
+    get:
+      operationId: job_rest_safety_documents_content_retrieve
+      description: |-
+        GET/PUT content for a safety document stored in Google Docs.
+
+        - GET: Fetch current content from Google Docs
+        - PUT: Push updated content to Google Docs
       parameters:
         - in: path
-          name: doc_id
+          name: id
           schema:
             type: string
             format: uuid
@@ -4286,7 +4307,42 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafetyDocumentContentResponse'
+          description: ''
+    put:
+      operationId: job_rest_safety_documents_content_update
+      description: |-
+        GET/PUT content for a safety document stored in Google Docs.
+
+        - GET: Fetch current content from Google Docs
+        - PUT: Push updated content to Google Docs
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SafetyDocumentContentUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SafetyDocumentContentUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SafetyDocumentContentUpdateRequest'
+      security:
+        - cookieAuth: []
       responses:
         '200':
           content:
@@ -4294,149 +4350,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/SafetyDocument'
           description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-  /job/rest/safety-documents/{doc_id}/pdf/:
+  /job/rest/sop/:
     get:
-      operationId: getSafetyDocumentPDF
-      description: Download the PDF for a finalized safety document
-      parameters:
-        - in: path
-          name: doc_id
-          schema:
-            type: string
-            format: uuid
-          required: true
+      operationId: job_rest_sop_list
+      description: List all Standard Operating Procedures.
       tags:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                type: string
-                format: binary
+                type: array
+                items:
+                  $ref: '#/components/schemas/SafetyDocumentList'
           description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-  /job/rest/safety-documents/{doc_id}/tasks/{task_num}/generate-controls/:
+  /job/rest/sop/generate/:
     post:
-      operationId: generateTaskControls
-      description: Generate control measures for a task's hazards using AI
-      parameters:
-        - in: path
-          name: doc_id
-          schema:
-            type: string
-            format: uuid
-          required: true
-        - in: path
-          name: task_num
-          schema:
-            type: integer
-          required: true
+      operationId: job_rest_sop_generate_create
+      description: Generate a new Standard Operating Procedure.
       tags:
         - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SOPGenerateRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SOPGenerateRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SOPGenerateRequestRequest'
+        required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  controls:
-                    type: array
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-  /job/rest/safety-documents/{doc_id}/tasks/{task_num}/generate-hazards/:
-    post:
-      operationId: generateTaskHazards
-      description: Generate hazards for a specific task using AI
-      parameters:
-        - in: path
-          name: doc_id
-          schema:
-            type: string
-            format: uuid
-          required: true
-        - in: path
-          name: task_num
-          schema:
-            type: integer
-          required: true
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-        - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  hazards:
-                    type: array
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
+                $ref: '#/components/schemas/SafetyDocument'
           description: ''
   /job/rest/swp/:
     get:
-      operationId: listSWPs
-      description: List all Safe Work Procedures
+      operationId: job_rest_swp_list
+      description: List all Safe Work Procedures.
       tags:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4448,8 +4413,8 @@ paths:
           description: ''
   /job/rest/swp/generate/:
     post:
-      operationId: generateSWP
-      description: Generate a new draft SWP using AI
+      operationId: job_rest_swp_generate_create
+      description: Generate a new Safe Work Procedure.
       tags:
         - job
       requestBody:
@@ -4466,25 +4431,12 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
-        '201':
+        '200':
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SafetyDocument'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentErrorResponse'
           description: ''
   /job/rest/timesheet/entries/:
     get:
@@ -6172,7 +6124,7 @@ components:
       description: Serializer for allocation details response
       properties:
         type:
-          $ref: '#/components/schemas/TypeD09Enum'
+          $ref: '#/components/schemas/TypeC98Enum'
         id:
           type: string
           format: uuid
@@ -7558,31 +7510,6 @@ components:
         - not_cancelled
         - not_invoiced
         - not_paid
-    ControlMeasure:
-      type: object
-      description: Serializer for individual control measures within a task.
-      properties:
-        measure:
-          type: string
-          description: The control measure description
-        associated_hazard:
-          type: string
-          description: The hazard this control addresses
-      required:
-        - measure
-    ControlMeasureRequest:
-      type: object
-      description: Serializer for individual control measures within a task.
-      properties:
-        measure:
-          type: string
-          minLength: 1
-          description: The control measure description
-        associated_hazard:
-          type: string
-          description: The hazard this control addresses
-      required:
-        - measure
     CostLine:
       type: object
       description: Serializer for CostLine model - read-only with basic depth
@@ -8294,10 +8221,12 @@ components:
       enum:
         - jsa
         - swp
+        - sop
       type: string
       description: |-
         * `jsa` - Job Safety Analysis
         * `swp` - Safe Work Procedure
+        * `sop` - Standard Operating Procedure
     DraftLine:
       type: object
       description: Serializer for draft line data.
@@ -8472,18 +8401,106 @@ components:
             type: string
         error:
           type: string
-    InitialRiskRatingEnum:
-      enum:
-        - Low
-        - Moderate
-        - High
-        - Extreme
-      type: string
-      description: |-
-        * `Low` - Low
-        * `Moderate` - Moderate
-        * `High` - High
-        * `Extreme` - Extreme
+    GenerateControlsRequestRequest:
+      type: object
+      properties:
+        hazards:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        task_description:
+          type: string
+          minLength: 1
+          default: ''
+      required:
+        - hazards
+    GenerateControlsResponse:
+      type: object
+      properties:
+        controls:
+          type: array
+          items:
+            type: string
+      required:
+        - controls
+    GenerateHazardsRequestRequest:
+      type: object
+      properties:
+        task_description:
+          type: string
+          minLength: 1
+      required:
+        - task_description
+    GenerateHazardsResponse:
+      type: object
+      properties:
+        hazards:
+          type: array
+          items:
+            type: string
+      required:
+        - hazards
+    ImproveDocumentRequestRequest:
+      type: object
+      properties:
+        raw_text:
+          type: string
+          minLength: 1
+        document_type:
+          type: string
+          minLength: 1
+          default: swp
+      required:
+        - raw_text
+    ImproveDocumentResponse:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        site_location:
+          type: string
+        ppe_requirements:
+          type: array
+          items:
+            type: string
+        tasks:
+          type: array
+          items: {}
+        additional_notes:
+          type: string
+      required:
+        - additional_notes
+        - description
+        - ppe_requirements
+        - site_location
+        - tasks
+        - title
+    ImproveSectionRequestRequest:
+      type: object
+      properties:
+        section_text:
+          type: string
+          minLength: 1
+        section_type:
+          type: string
+          minLength: 1
+        context:
+          type: string
+          minLength: 1
+          default: ''
+      required:
+        - section_text
+        - section_type
+    ImproveSectionResponse:
+      type: object
+      properties:
+        improved_text:
+          type: string
+      required:
+        - improved_text
     Invoice:
       type: object
       properties:
@@ -11222,55 +11239,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderLineUpdateRequest'
-    PatchedSafetyDocumentRequest:
-      type: object
-      description: |-
-        Main serializer for SafetyDocument model.
-
-        Used for CRUD operations on existing documents.
-      properties:
-        document_type:
-          allOf:
-            - $ref: '#/components/schemas/DocumentTypeEnum'
-          description: |-
-            Type of safety document (JSA or SWP)
-
-            * `jsa` - Job Safety Analysis
-            * `swp` - Safe Work Procedure
-        status:
-          allOf:
-            - $ref: '#/components/schemas/Status6b5Enum'
-          description: |-
-            Draft = editable, Final = PDF generated
-
-            * `draft` - Draft
-            * `final` - Final
-        title:
-          type: string
-          minLength: 1
-          description: Job name for JSA, procedure name for SWP
-          maxLength: 255
-        company_name:
-          type: string
-          minLength: 1
-          maxLength: 255
-        site_location:
-          type: string
-          description: Work site location (optional for SWPs)
-          maxLength: 500
-        description:
-          type: string
-          minLength: 1
-          description: Job description for JSA, procedure scope for SWP
-        ppe_requirements:
-          description: List of required PPE items, e.g. ["Hard hat", "Safety glasses"]
-        tasks:
-          type: array
-          items:
-            $ref: '#/components/schemas/SafetyTaskRequest'
-        additional_notes:
-          type: string
-          description: Additional safety notes or site-specific requirements
     PatchedStaffRequest:
       type: object
       description: Base serializer for Staff model with shared logic for create and
@@ -12563,18 +12531,6 @@ components:
         - job_name
         - job_number
         - sheet_id
-    RevisedRiskRatingEnum:
-      enum:
-        - Low
-        - Moderate
-        - High
-        - Extreme
-      type: string
-      description: |-
-        * `Low` - Low
-        * `Moderate` - Moderate
-        * `High` - High
-        * `Extreme` - Extreme
     RoleEnum:
       enum:
         - user
@@ -12583,10 +12539,31 @@ components:
       description: |-
         * `user` - User
         * `assistant` - Assistant
+    SOPGenerateRequestRequest:
+      type: object
+      description: Request body for generating a new SOP.
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+          default: ''
+        document_number:
+          type: string
+          minLength: 1
+          default: ''
+      required:
+        - title
     SWPGenerateRequestRequest:
       type: object
       description: Request serializer for generating a new SWP (standalone).
       properties:
+        document_number:
+          type: string
+          description: Document number (e.g., '307' for section 3, doc 7)
+          maxLength: 50
         title:
           type: string
           minLength: 1
@@ -12607,7 +12584,7 @@ components:
       description: |-
         Main serializer for SafetyDocument model.
 
-        Used for CRUD operations on existing documents.
+        Returns document metadata and Google Docs URL for editing.
       properties:
         id:
           type: string
@@ -12616,11 +12593,18 @@ components:
         document_type:
           allOf:
             - $ref: '#/components/schemas/DocumentTypeEnum'
+          readOnly: true
           description: |-
             Type of safety document (JSA or SWP)
 
             * `jsa` - Job Safety Analysis
             * `swp` - Safe Work Procedure
+            * `sop` - Standard Operating Procedure
+        document_number:
+          type: string
+          nullable: true
+          description: Document number for SWPs (e.g., '307' for section 3, doc 7)
+          maxLength: 50
         job_id:
           type: string
           format: uuid
@@ -12632,14 +12616,6 @@ components:
           readOnly: true
           nullable: true
           description: Linked job number (null for SWPs)
-        status:
-          allOf:
-            - $ref: '#/components/schemas/Status6b5Enum'
-          description: |-
-            Draft = editable, Final = PDF generated
-
-            * `draft` - Draft
-            * `final` - Final
         created_at:
           type: string
           format: date-time
@@ -12659,61 +12635,85 @@ components:
           type: string
           description: Work site location (optional for SWPs)
           maxLength: 500
-        description:
-          type: string
-          description: Job description for JSA, procedure scope for SWP
-        ppe_requirements:
-          description: List of required PPE items, e.g. ["Hard hat", "Safety glasses"]
-        tasks:
-          type: array
-          items:
-            $ref: '#/components/schemas/SafetyTask'
-        additional_notes:
-          type: string
-          description: Additional safety notes or site-specific requirements
-        pdf_file_path:
+        google_doc_id:
           type: string
           readOnly: true
-          description: Relative path from DROPBOX_WORKFLOW_FOLDER to generated PDF
-        pdf_url:
+          description: Google Docs document ID
+        google_doc_url:
           type: string
-          nullable: true
-          description: Generate URL for PDF download if available.
+          format: uri
           readOnly: true
-        context_document_ids:
-          readOnly: true
-          description: UUIDs of documents used as context during generation
+          description: URL to edit the document in Google Docs
       required:
         - company_name
-        - context_document_ids
         - created_at
-        - description
         - document_type
+        - google_doc_id
+        - google_doc_url
         - id
         - job_id
         - job_number
-        - pdf_file_path
-        - pdf_url
-        - tasks
         - title
         - updated_at
-    SafetyDocumentErrorResponse:
+    SafetyDocumentContentResponse:
       type: object
-      description: Serializer for error responses.
+      description: Response when reading safety document content from Google Docs.
       properties:
-        status:
+        title:
           type: string
-          default: error
-        message:
+        document_type:
+          type: string
+        description:
+          type: string
+        site_location:
+          type: string
+        ppe_requirements:
+          type: array
+          items:
+            type: string
+        tasks:
+          type: array
+          items: {}
+        additional_notes:
+          type: string
+        raw_text:
           type: string
       required:
-        - message
+        - additional_notes
+        - description
+        - document_type
+        - ppe_requirements
+        - raw_text
+        - site_location
+        - tasks
+        - title
+    SafetyDocumentContentUpdateRequest:
+      type: object
+      description: Request body for updating safety document content in Google Docs.
+      properties:
+        title:
+          type: string
+          minLength: 1
+        site_location:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        ppe_requirements:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        tasks:
+          type: array
+          items: {}
+        additional_notes:
+          type: string
+          minLength: 1
     SafetyDocumentList:
       type: object
-      description: |-
-        Lightweight serializer for listing safety documents.
-
-        Excludes full task details for performance.
+      description: Lightweight serializer for listing safety documents.
       properties:
         id:
           type: string
@@ -12727,18 +12727,16 @@ components:
 
             * `jsa` - Job Safety Analysis
             * `swp` - Safe Work Procedure
+            * `sop` - Standard Operating Procedure
+        document_number:
+          type: string
+          nullable: true
+          description: Document number for SWPs (e.g., '307' for section 3, doc 7)
+          maxLength: 50
         job_number:
           type: string
           readOnly: true
           nullable: true
-        status:
-          allOf:
-            - $ref: '#/components/schemas/Status6b5Enum'
-          description: |-
-            Draft = editable, Final = PDF generated
-
-            * `draft` - Draft
-            * `final` - Final
         created_at:
           type: string
           format: date-time
@@ -12755,178 +12753,18 @@ components:
           type: string
           description: Work site location (optional for SWPs)
           maxLength: 500
-        task_count:
-          type: integer
-          description: Get number of tasks in the document.
-          readOnly: true
-        has_pdf:
-          type: boolean
-          description: Check if document has a generated PDF.
-          readOnly: true
+        google_doc_url:
+          type: string
+          format: uri
+          description: URL to edit the document in Google Docs
+          maxLength: 200
       required:
         - created_at
         - document_type
-        - has_pdf
         - id
         - job_number
-        - task_count
         - title
         - updated_at
-    SafetyDocumentRequest:
-      type: object
-      description: |-
-        Main serializer for SafetyDocument model.
-
-        Used for CRUD operations on existing documents.
-      properties:
-        document_type:
-          allOf:
-            - $ref: '#/components/schemas/DocumentTypeEnum'
-          description: |-
-            Type of safety document (JSA or SWP)
-
-            * `jsa` - Job Safety Analysis
-            * `swp` - Safe Work Procedure
-        status:
-          allOf:
-            - $ref: '#/components/schemas/Status6b5Enum'
-          description: |-
-            Draft = editable, Final = PDF generated
-
-            * `draft` - Draft
-            * `final` - Final
-        title:
-          type: string
-          minLength: 1
-          description: Job name for JSA, procedure name for SWP
-          maxLength: 255
-        company_name:
-          type: string
-          minLength: 1
-          maxLength: 255
-        site_location:
-          type: string
-          description: Work site location (optional for SWPs)
-          maxLength: 500
-        description:
-          type: string
-          minLength: 1
-          description: Job description for JSA, procedure scope for SWP
-        ppe_requirements:
-          description: List of required PPE items, e.g. ["Hard hat", "Safety glasses"]
-        tasks:
-          type: array
-          items:
-            $ref: '#/components/schemas/SafetyTaskRequest'
-        additional_notes:
-          type: string
-          description: Additional safety notes or site-specific requirements
-      required:
-        - company_name
-        - description
-        - document_type
-        - tasks
-        - title
-    SafetyTask:
-      type: object
-      description: Serializer for individual tasks within a safety document.
-      properties:
-        step_number:
-          type: integer
-          minimum: 1
-        description:
-          type: string
-        summary:
-          type: string
-          description: 1-3 word summary of the task
-        potential_hazards:
-          type: array
-          items:
-            type: string
-          description: List of potential hazards for this task
-        initial_risk_rating:
-          allOf:
-            - $ref: '#/components/schemas/InitialRiskRatingEnum'
-          description: |-
-            Risk rating before controls are applied
-
-            * `Low` - Low
-            * `Moderate` - Moderate
-            * `High` - High
-            * `Extreme` - Extreme
-        control_measures:
-          type: array
-          items:
-            $ref: '#/components/schemas/ControlMeasure'
-          description: List of control measures to mitigate hazards
-        revised_risk_rating:
-          allOf:
-            - $ref: '#/components/schemas/RevisedRiskRatingEnum'
-          description: |-
-            Risk rating after controls are applied
-
-            * `Low` - Low
-            * `Moderate` - Moderate
-            * `High` - High
-            * `Extreme` - Extreme
-      required:
-        - control_measures
-        - description
-        - initial_risk_rating
-        - potential_hazards
-        - revised_risk_rating
-        - step_number
-    SafetyTaskRequest:
-      type: object
-      description: Serializer for individual tasks within a safety document.
-      properties:
-        step_number:
-          type: integer
-          minimum: 1
-        description:
-          type: string
-          minLength: 1
-        summary:
-          type: string
-          description: 1-3 word summary of the task
-        potential_hazards:
-          type: array
-          items:
-            type: string
-            minLength: 1
-          description: List of potential hazards for this task
-        initial_risk_rating:
-          allOf:
-            - $ref: '#/components/schemas/InitialRiskRatingEnum'
-          description: |-
-            Risk rating before controls are applied
-
-            * `Low` - Low
-            * `Moderate` - Moderate
-            * `High` - High
-            * `Extreme` - Extreme
-        control_measures:
-          type: array
-          items:
-            $ref: '#/components/schemas/ControlMeasureRequest'
-          description: List of control measures to mitigate hazards
-        revised_risk_rating:
-          allOf:
-            - $ref: '#/components/schemas/RevisedRiskRatingEnum'
-          description: |-
-            Risk rating after controls are applied
-
-            * `Low` - Low
-            * `Moderate` - Moderate
-            * `High` - High
-            * `Extreme` - Extreme
-      required:
-        - control_measures
-        - description
-        - initial_risk_rating
-        - potential_hazards
-        - revised_risk_rating
-        - step_number
     SourceEnum:
       enum:
         - purchase_order
@@ -13660,14 +13498,6 @@ components:
         * `DELETED` - Deleted
         * `VOIDED` - Voided
         * `PAID` - Paid
-    Status6b5Enum:
-      enum:
-        - draft
-        - final
-      type: string
-      description: |-
-        * `draft` - Draft
-        * `final` - Final
     Status7aeEnum:
       enum:
         - DRAFT
@@ -14330,14 +14160,6 @@ components:
       description: |-
         * `stock` - Stock
         * `job` - Job
-    TypeD09Enum:
-      enum:
-        - job
-        - stock
-      type: string
-      description: |-
-        * `job` - Job
-        * `stock` - Stock
     UploadedFile:
       type: object
       description: Serializer for file upload response.
