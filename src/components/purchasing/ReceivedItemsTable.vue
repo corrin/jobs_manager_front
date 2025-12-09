@@ -14,8 +14,8 @@ import { formatCurrency } from '@/utils/string-formatting'
 // Use generated types from API schema
 type Job = z.infer<typeof schemas.Job>
 
-// Extend DeliveryReceiptLine with additional fields used in the UI
-type ReceivedLine = z.infer<typeof schemas.DeliveryReceiptLine> & {
+// Define ReceivedLine type since DeliveryReceiptLine doesn't exist in API schema
+type ReceivedLine = {
   id: string
   job_name?: string
   description: string
@@ -27,6 +27,7 @@ type ReceivedLine = z.infer<typeof schemas.DeliveryReceiptLine> & {
   allocated_job_id: string
   retail_rate: number
   selected?: boolean
+  total_received?: number
 }
 
 interface DataTableRowContext {
@@ -149,8 +150,8 @@ const columns = computed(() => [
         Select,
         {
           modelValue: row.original.allocated_job_id,
-          'onUpdate:modelValue': (val: string | undefined) => {
-            emit('update:line', row.original.id, 'allocated_job_id', String(val || ''))
+          'onUpdate:modelValue': (val: string) => {
+            emit('update:line', row.original.id, 'allocated_job_id', val)
           },
         },
         {
@@ -250,21 +251,13 @@ const columns = computed(() => [
   <div class="space-y-4">
     <!-- Action Buttons -->
     <div class="flex gap-2 justify-center">
-      <Button
-        @click="emit('move-selected-to-pending')"
-        :disabled="selectedLines.length === 0"
-        variant="secondary"
-        class="flex items-center gap-2"
-      >
+      <Button @click="emit('move-selected-to-pending')" :disabled="selectedLines.length === 0" variant="secondary"
+        class="flex items-center gap-2">
         <ArrowUp class="w-4 h-4" />
         Move Selected to Pending
       </Button>
-      <Button
-        @click="emit('move-all-to-pending')"
-        variant="secondary"
-        :disabled="lines.length === 0"
-        class="flex items-center gap-2"
-      >
+      <Button @click="emit('move-all-to-pending')" variant="secondary" :disabled="lines.length === 0"
+        class="flex items-center gap-2">
         <ArrowUpToLine class="w-4 h-4" />
         Move All to Pending
       </Button>
@@ -272,14 +265,8 @@ const columns = computed(() => [
 
     <!-- Data Table -->
     <div class="border rounded-lg">
-      <DataTable
-        :columns="columns"
-        :data="lines"
-        @rowClick="() => {}"
-        :page-size="1000"
-        :hide-footer="true"
-        class="min-h-[200px]"
-      />
+      <DataTable :columns="columns" :data="lines" @rowClick="() => { }" :page-size="1000" :hide-footer="true"
+        class="min-h-[200px]" />
 
       <!-- Loading State -->
       <div v-if="lines.length === 0 && isLoading" class="p-8 text-center text-gray-500">

@@ -145,75 +145,6 @@
       </aside>
     </div>
 
-    <Dialog :open="showPreviewModal" @update:open="showPreviewModal = $event">
-      <DialogContent class="sm:max-w-4xl max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle>Quote Refresh Preview</DialogTitle>
-          <DialogDescription>
-            Review the changes that will be applied to your quote
-          </DialogDescription>
-        </DialogHeader>
-        <div v-if="previewData" class="space-y-6">
-          <div class="bg-blue-50 rounded-lg p-4">
-            <h4 class="font-medium text-blue-900 mb-3">Summary of Changes</h4>
-            <div v-if="
-              previewData.changes &&
-              (previewData.changes.additions?.length ||
-                previewData.changes.updates?.length ||
-                previewData.changes.deletions?.length)
-            " class="grid grid-cols-3 gap-4 text-sm">
-              <div class="text-center">
-                <div class="text-lg font-bold text-green-600">
-                  {{ previewData.changes.additions?.length || 0 }}
-                </div>
-                <div class="text-gray-600">Additions</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-bold text-blue-600">
-                  {{ previewData.changes.updates?.length || 0 }}
-                </div>
-                <div class="text-gray-600">Updates</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-bold text-red-600">
-                  {{ previewData.changes.deletions?.length || 0 }}
-                </div>
-                <div class="text-gray-600">Deletions</div>
-              </div>
-            </div>
-            <div v-else class="text-center">
-              <div class="text-lg font-bold text-gray-600">0</div>
-              <div class="text-gray-600">No changes detected</div>
-              <div class="text-sm text-gray-500 mt-1">
-                The spreadsheet is in sync with the system
-              </div>
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <button class="px-4 py-2 bg-gray-200 rounded-md mr-2" @click="showPreviewModal = false">
-            Cancel
-          </button>
-          <button class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium" :disabled="!previewData?.changes ||
-            (!previewData.changes.additions?.length &&
-              !previewData.changes.updates?.length &&
-              !previewData.changes.deletions?.length)
-            " @click="onApplySpreadsheetChanges">
-            {{
-              !previewData?.changes ||
-                (!previewData.changes.additions?.length &&
-                  !previewData.changes.updates?.length &&
-                  !previewData.changes.deletions?.length)
-                ? 'No Changes to Apply'
-                : `Apply ${(previewData.changes.additions?.length || 0) +
-                (previewData.changes.updates?.length || 0) +
-                (previewData.changes.deletions?.length || 0)
-                } Changes`
-            }}
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
 
     <!-- Quote Revisions Modal -->
     <Dialog :open="showQuoteRevisionsModal" @update:open="showQuoteRevisionsModal = $event">
@@ -331,10 +262,10 @@
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
                           <Badge variant="secondary" class="text-xs" :class="line.kind === 'time'
-                              ? 'bg-blue-100 text-blue-800'
-                              : line.kind === 'material'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-orange-100 text-orange-800'
+                            ? 'bg-blue-100 text-blue-800'
+                            : line.kind === 'material'
+                              ? 'bg-purple-100 text-purple-800'
+                              : 'bg-orange-100 text-orange-800'
                             ">
                             {{ line.kind }}
                           </Badge>
@@ -450,7 +381,6 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { BookOpen, PlusCircle, RotateCcw, FileX, Copy, ExternalLink } from 'lucide-vue-next'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
-import { quoteService } from '../../services/quote.service'
 import { toast } from 'vue-sonner'
 import { formatCurrency } from '@/utils/string-formatting'
 import { schemas } from '../../api/generated/api'
@@ -474,7 +404,6 @@ import { Card, CardHeader, CardContent, CardDescription, CardTitle } from '../ui
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostSet = z.infer<typeof schemas.CostSet>
-type PreviewQuoteResponse = z.infer<typeof schemas.PreviewQuoteResponse>
 type QuoteRevisionsListResponse = z.infer<typeof schemas.QuoteRevisionsList>
 type Quote = z.infer<typeof schemas.Quote>
 type JobQuoteAcceptancePayload = z.input<typeof schemas.JobQuoteAcceptanceRequest>
@@ -542,11 +471,9 @@ const currentQuote = computed(() => {
 })
 
 const isLoading = ref(false)
-const showPreviewModal = ref(false)
 const showQuoteRevisionsModal = ref(false)
 const quoteRevisionsData = ref<QuoteRevisionsListResponse | null>(null)
 const isCreatingRevision = ref(false)
-const previewData = ref<PreviewQuoteResponse | null>(null)
 const costLines = ref<CostLine[]>([])
 const quoteKey = ref(0) // Force reactivity key
 const showDetailedSummary = ref(false)
@@ -697,24 +624,6 @@ async function refreshQuoteData() {
   }
 }
 
-async function onApplySpreadsheetChanges() {
-  if (!props.jobId) return
-  toast.info('Applying changes...', { id: 'quote-apply' })
-  try {
-    const result = await quoteService.applyQuote(props.jobId)
-    if (result.success) {
-      toast.success('Changes applied successfully!')
-      await refreshQuoteData()
-      showPreviewModal.value = false
-    } else {
-      toast.error('Failed to apply changes')
-    }
-  } catch {
-    toast.error('Error applying changes', { id: 'quote-apply' })
-  } finally {
-    toast.dismiss('quote-apply')
-  }
-}
 
 function onShowQuoteRevisions() {
   showQuoteRevisionsModal.value = true
