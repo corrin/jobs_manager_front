@@ -1,6 +1,9 @@
 import { api } from '@/api/client'
-import type { CompanyDefaults } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
+import { z } from 'zod'
+
+type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 
 let cachedDefaults: CompanyDefaults | null = null
 

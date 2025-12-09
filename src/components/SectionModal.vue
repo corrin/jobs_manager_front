@@ -18,22 +18,14 @@
             <div class="flex gap-2 items-center mt-1">
               <label class="flex items-center gap-1 text-xs font-medium">
                 Start
-                <Input
-                  v-model="localForm[day.startKey]"
-                  type="text"
-                  class="h-8 w-40 text-xs"
-                  placeholder="08:00"
-                />
+                <Input v-model="localForm[day.startKey] as string" type="text" class="h-8 w-40 text-xs"
+                  placeholder="08:00" />
               </label>
               <span class="text-gray-400">-</span>
               <label class="flex items-center gap-1 text-xs font-medium">
                 End
-                <Input
-                  v-model="localForm[day.endKey]"
-                  type="text"
-                  class="h-8 w-40 text-xs"
-                  placeholder="17:00"
-                />
+                <Input v-model="localForm[day.endKey] as string" type="text" class="h-8 w-40 text-xs"
+                  placeholder="17:00" />
               </label>
             </div>
           </div>
@@ -43,45 +35,27 @@
             <label class="flex items-center gap-2 text-sm font-medium">
               <component :is="field.icon" class="w-4 h-4 text-indigo-400" />
               <span class="w-36">{{ field.label }}</span>
-              <Input
-                v-if="field.type === 'text' || field.type === 'number'"
-                v-model="localForm[field.key]"
-                :type="field.type"
-                class="flex-1 h-8 text-xs"
-                :step="
-                  field.key === 'time_markup' || field.key === 'materials_markup'
-                    ? 'any'
-                    : undefined
-                "
-                :min="
-                  field.key === 'time_markup' || field.key === 'materials_markup' ? 0 : undefined
-                "
-                :max="
-                  field.key === 'time_markup' || field.key === 'materials_markup' ? 1 : undefined
-                "
-              />
-              <Checkbox v-else-if="field.type === 'boolean'" v-model="localForm[field.key]" />
+              <Input v-if="field.type === 'text' || field.type === 'number'"
+                v-model="localForm[field.key] as string | number | undefined" :type="field.type"
+                class="flex-1 h-8 text-xs" :step="field.key === 'time_markup' || field.key === 'materials_markup'
+                  ? 'any'
+                  : undefined
+                  " :min="field.key === 'time_markup' || field.key === 'materials_markup' ? 0 : undefined
+                    " :max="field.key === 'time_markup' || field.key === 'materials_markup' ? 1 : undefined
+                      " />
+              <Checkbox v-else-if="field.type === 'boolean'"
+                v-model="localForm[field.key] as boolean | null | undefined" />
               <div v-else-if="field.type === 'date'" class="flex-1 relative">
-                <Input
-                  :modelValue="formatDateTime(localForm[field.key])"
-                  type="text"
-                  class="h-8 text-xs cursor-pointer bg-white"
-                  readonly
-                  @focus="openCalendar(field.key)"
-                  @click="openCalendar(field.key)"
-                />
+                <Input :modelValue="formatDateTime(localForm[field.key] as string | Date | null)" type="text"
+                  class="h-8 text-xs cursor-pointer bg-white" readonly @focus="openCalendar(field.key)"
+                  @click="openCalendar(field.key)" />
                 <transition name="fade">
-                  <div
-                    v-if="calendarField === field.key"
+                  <div v-if="calendarField === field.key"
                     class="absolute z-50 left-0 bottom-10 w-max min-w-[260px] bg-white border border-gray-200 rounded-lg shadow-lg p-4"
-                    @click.stop
-                  >
+                    @click.stop>
                     <Calendar
-                      :modelValue="
-                        getValidDate(localForm[field.key]) || getValidDate(props.form[field.key])
-                      "
-                      @update:modelValue="(date) => onCalendarSelect(field.key, date)"
-                    />
+                      :modelValue="(getValidDate(localForm[field.key] as string | Date | null) || getValidDate(props.form[field.key] as string | Date | null)) as any"
+                      @update:modelValue="(date) => onCalendarSelect(field.key, date as CalendarDateTime | null)" />
                     <div class="flex justify-end mt-2">
                       <Button size="sm" variant="outline" @click="closeCalendar">Close</Button>
                     </div>
@@ -93,12 +67,7 @@
         </template>
         <p v-if="error" class="text-red-600 text-xs mt-1">{{ error }}</p>
         <div class="flex justify-end gap-2 mt-2">
-          <Button
-            type="button"
-            variant="outline"
-            @click="emit('close')"
-            class="flex items-center gap-1"
-          >
+          <Button type="button" variant="outline" @click="emit('close')" class="flex items-center gap-1">
             <ArrowLeft class="w-4 h-4" /> Close
           </Button>
         </div>
@@ -138,9 +107,15 @@ import {
 import { ref, computed, watch } from 'vue'
 import { CalendarDateTime, parseDateTime } from '@internationalized/date'
 
-const props = defineProps<{ section: string; form: Record<string, unknown> }>()
+type SectionKey = keyof typeof sectionMap
+const props = defineProps<{ section: SectionKey; form: Record<string, unknown> }>()
 const emit = defineEmits(['close', 'update'])
 const localForm = ref({ ...props.form })
+
+// Debug logging for type issues
+console.log('DEBUG: SectionModal props.section:', props.section, 'type:', typeof props.section)
+console.log('DEBUG: SectionModal props.form:', props.form)
+console.log('DEBUG: SectionModal localForm initial:', localForm.value)
 
 watch(
   () => props.form,
@@ -373,18 +348,22 @@ const workingDays = [
 label {
   gap: 0.5rem;
 }
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
+
 [data-calendar-popup] {
   bottom: 2.5rem !important;
   top: auto !important;
 }
+
 .working-hours-day-wrapper {
   background: linear-gradient(90deg, #eef2ff 0%, #f8fafc 100%);
   border-radius: 0.75rem;
@@ -395,6 +374,7 @@ label {
   flex-direction: column;
   gap: 0.15rem;
 }
+
 .working-hours-day-label {
   display: flex;
   align-items: center;

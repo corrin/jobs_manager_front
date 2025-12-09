@@ -2,44 +2,78 @@ import { ref, computed } from 'vue'
 import { quoteService } from '@/services/quote.service'
 import { debugLog } from '@/utils/debug'
 import { z } from 'zod'
-import { schemas } from '@/api/generated/schemas'
+import { schemas } from '@/api/generated/api'
 
 type PreviewQuoteResponse = z.infer<typeof schemas.PreviewQuoteResponse>
 type ApplyQuoteResponse = z.infer<typeof schemas.ApplyQuoteResponse>
 type QuoteImportStatusResponse = z.infer<typeof schemas.QuoteImportStatusResponse>
 
+type ValidationIssue = {
+  severity?: string | null
+}
+
+type QuotePreviewValidation = {
+  issues?: ValidationIssue[] | null
+} | null
+
+type QuotePreviewDiff = {
+  total_changes?: number | null
+  next_revision?: number | null
+} | null
+
+type QuotePreviewDetails = {
+  can_proceed?: boolean
+  validation_report?: QuotePreviewValidation
+  diff_preview?: QuotePreviewDiff
+  error?: string | null
+} | null
+
+type PreviewQuoteResponseWithDetails = PreviewQuoteResponse & {
+  preview?: QuotePreviewDetails
+}
+
+function toValidationIssues(value: QuotePreviewValidation): ValidationIssue[] {
+  if (Array.isArray(value?.issues)) {
+    return value?.issues ?? []
+  }
+  return []
+}
+
 export function useQuoteImport() {
   const isLoading = ref(false)
-  const previewData = ref<PreviewQuoteResponse | null>(null)
+  const previewData = ref<PreviewQuoteResponseWithDetails | null>(null)
   const importResult = ref<ApplyQuoteResponse | null>(null)
   const currentQuote = ref<QuoteImportStatusResponse | null>(null)
   const error = ref<string | null>(null)
 
+  const previewDetails = computed(() => previewData.value?.preview ?? null)
+  const validationIssues = computed(() =>
+    toValidationIssues(previewDetails.value?.validation_report ?? null),
+  )
+  const diffPreview = computed(() => previewDetails.value?.diff_preview ?? null)
+
   const canProceed = computed(() => {
-    return previewData.value?.preview?.can_proceed === true
+    return previewDetails.value?.can_proceed === true
   })
 
   const hasValidationIssues = computed(() => {
-    const issues = previewData.value?.preview?.validation_report?.issues
-    return issues && issues.length > 0
+    return validationIssues.value.length > 0
   })
 
   const hasErrors = computed(() => {
-    const issues = previewData.value?.preview?.validation_report?.issues
-    return issues && issues.some((issue) => issue.severity === 'error')
+    return validationIssues.value.some((issue) => issue.severity === 'error')
   })
 
   const hasWarnings = computed(() => {
-    const issues = previewData.value?.preview?.validation_report?.issues
-    return issues && issues.some((issue) => issue.severity === 'warning')
+    return validationIssues.value.some((issue) => issue.severity === 'warning')
   })
 
   const totalChanges = computed(() => {
-    return previewData.value?.preview?.diff_preview?.total_changes || 0
+    return diffPreview.value?.total_changes ?? 0
   })
 
   const nextRevision = computed(() => {
-    return previewData.value?.preview?.diff_preview?.next_revision || 1
+    return diffPreview.value?.next_revision ?? 1
   })
 
   const importWasSuccessful = computed(() => {
@@ -68,10 +102,14 @@ export function useQuoteImport() {
     previewData.value = null
 
     try {
-      previewData.value = await quoteService.previewQuoteImport(jobId, file)
+      previewData.value = (await quoteService.previewQuoteImport(
+        jobId,
+        file,
+      )) as PreviewQuoteResponseWithDetails
 
-      if (previewData.value.preview.error) {
-        error.value = previewData.value.preview.error
+      const preview = previewDetails.value
+      if (preview?.error) {
+        error.value = preview.error
       }
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Preview failed'

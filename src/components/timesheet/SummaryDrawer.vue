@@ -1,5 +1,5 @@
 <template>
-  <Drawer v-model:open="isOpen">
+  <Drawer :open="isOpen" @update:open="isOpen = $event">
     <DrawerContent class="max-h-[85vh]">
       <div class="mx-auto w-full max-w-4xl">
         <DrawerHeader>
@@ -106,9 +106,17 @@
                         <p class="text-xs text-gray-500 truncate">{{ jobData.job.client_name }}</p>
                       </div>
                       <Badge
-                        :variant="getStatusVariant(jobData.job.job_status || jobData.job.status)"
+                        :variant="
+                          getStatusVariant(
+                            (jobData.job as any).job_status || (jobData.job as any).status,
+                          )
+                        "
                       >
-                        {{ getStatusLabel(jobData.job.job_status || jobData.job.status) }}
+                        {{
+                          getStatusLabel(
+                            (jobData.job as any).job_status || (jobData.job as any).status,
+                          )
+                        }}
                       </Badge>
                     </div>
 
@@ -355,9 +363,8 @@ const activeJobsWithData = computed(() => {
 
       // Use enhanced job data if available, otherwise use basic job data
       const enhancedJob = enhancedJobs.value.get(job.id)
-      const jobForCalculations = enhancedJob || job
 
-      const estimatedHours = getEstimatedHours(jobForCalculations)
+      const estimatedHours = enhancedJob ? getEstimatedHours(enhancedJob) : 0
       const totalBill = getJobBill(job.id, props.timeEntries)
       const completionPercentage = getCompletionPercentage(actualHours, estimatedHours)
       const isOverBudget = isJobOverBudget(actualHours, estimatedHours)

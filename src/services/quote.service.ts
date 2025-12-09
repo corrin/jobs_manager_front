@@ -3,13 +3,13 @@ import axios from 'axios'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 
-type QuoteSpreadsheet = z.infer<typeof schemas.QuoteSpreadsheet>
-type PreviewQuoteResponse = z.infer<typeof schemas.PreviewQuoteResponse>
-type ApplyQuoteResponse = z.infer<typeof schemas.ApplyQuoteResponse>
-type Job = z.infer<typeof schemas.Job>
-type LinkQuoteSheetRequest = z.infer<typeof schemas.LinkQuoteSheetRequest>
-type QuoteImportStatusResponse = z.infer<typeof schemas.QuoteImportStatusResponse>
-type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
+export type QuoteSpreadsheet = z.infer<typeof schemas.QuoteSpreadsheet>
+export type PreviewQuoteResponse = z.infer<typeof schemas.PreviewQuoteResponse>
+export type ApplyQuoteResponse = z.infer<typeof schemas.ApplyQuoteResponse>
+export type Job = z.infer<typeof schemas.Job>
+export type LinkQuoteSheetRequest = z.infer<typeof schemas.LinkQuoteSheetRequest>
+export type QuoteImportStatusResponse = z.infer<typeof schemas.QuoteImportStatusResponse>
+export type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
 // QuoteImportPreviewResponse -> PreviewQuoteResponse (new quote sync system)
 // QuoteImportResponse -> ApplyQuoteResponse (new quote sync system)
 
@@ -19,7 +19,7 @@ class QuoteService {
 
     await api.job_rest_jobs_quote_link_create(payload, { params: { id: jobId } })
 
-    const jobResponse: JobDetailResponse = await api.getFullJob({ job_id: jobId })
+    const jobResponse: JobDetailResponse = await api.getFullJob({ params: { job_id: jobId } })
     return jobResponse.data?.job?.quote_sheet ?? null
   }
 

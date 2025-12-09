@@ -112,7 +112,7 @@
               <label
                 class="relative group cursor-pointer"
                 tabindex="0"
-                @keydown.enter.prevent="$refs.avatarInput.click()"
+                @keydown.enter.prevent="avatarInput?.click()"
                 :aria-label="
                   form.first_name || form.last_name
                     ? `${form.first_name} ${form.last_name}`
@@ -341,6 +341,7 @@ const props = defineProps<{ staff: Staff | null }>()
 const emit = defineEmits(['close', 'saved'])
 
 const isLoading = ref(false)
+const avatarInput = ref<HTMLInputElement | null>(null)
 const { createStaff, updateStaff } = useStaffApi()
 const form = ref({
   first_name: '',
@@ -542,13 +543,12 @@ async function submitForm() {
     return
   }
   try {
-    // Prepare data for API - convert and format fields as expected by PatchedStaffRequest schema
-    const apiData = {
+    // Prepare data for API - convert and format fields as expected by updateStaff function
+    const apiData: Record<string, unknown> = {
       first_name: form.value.first_name,
       last_name: form.value.last_name,
       preferred_name: form.value.preferred_name || null,
       email: form.value.email,
-      ...(form.value.password && { password: form.value.password }), // Include password if provided
       wage_rate: form.value.wage_rate,
       ims_payroll_id: form.value.ims_payroll_id || null,
       is_staff: form.value.is_staff,
@@ -583,13 +583,23 @@ async function submitForm() {
       // Icon is handled separately via multipart/form-data if needed
     }
 
+    // Include password only if provided
+    if (form.value.password) {
+      apiData.password = form.value.password
+    }
+
+    // Include icon for create operations
+    if (!props.staff && form.value.icon) {
+      apiData.icon = form.value.icon
+    }
+
     console.log('StaffFormModal - API data being sent:', apiData)
 
     if (props.staff) {
       await updateStaff(props.staff.id, apiData)
       toast.success('Staff member updated successfully!')
     } else {
-      await createStaff(apiData)
+      await createStaff(apiData as z.infer<typeof schemas.StaffCreateRequest>)
       toast.success('Staff member created successfully!')
     }
     emit('saved')
@@ -629,16 +639,19 @@ async function submitForm() {
 .animate-in {
   animation: fadeInZoom 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 @keyframes fadeInZoom {
   from {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
   }
 }
+
 .avatar-upload {
   position: relative;
   width: 6rem;
@@ -655,11 +668,13 @@ async function submitForm() {
     border 0.2s;
   cursor: pointer;
 }
+
 .avatar-upload img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .avatar-upload:focus {
   outline: 2px solid #6366f1;
   outline-offset: 2px;

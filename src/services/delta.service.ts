@@ -3,7 +3,7 @@ import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 
-type JobDeltaEnvelope = z.infer<typeof schemas.JobDeltaEnvelope>
+type JobDeltaEnvelope = z.infer<typeof schemas.PatchedJobDeltaEnvelopeRequest>
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
 
 function extractErrorMessage(err: unknown): string {

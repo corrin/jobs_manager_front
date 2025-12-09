@@ -5,6 +5,7 @@ import { api } from '@/api/client'
 
 type XeroError = z.infer<typeof schemas.XeroError>
 type AppError = z.infer<typeof schemas.AppError>
+type AppErrorListResponse = z.infer<typeof schemas.AppErrorListResponse>
 type JobDeltaRejection = z.infer<typeof schemas.JobDeltaRejection>
 
 interface DateRange {
@@ -57,62 +58,58 @@ export function useErrorApi() {
       if (type === 'xero') {
         // Use Zodios API for xero errors
         // Note: search and date filtering not available in current API, would need backend update
-        if (page > 1) {
-          const response = await api.xero_errors_list({ queries: { page } })
-          return {
-            results: response.results || [],
-            pageCount: response.count
-              ? Math.ceil(response.count / (response.results?.length || 50))
-              : 0,
-          } as { results: ErrorResultMap[T][]; pageCount: number }
-        } else {
-          const response = await api.xero_errors_list()
-          return {
-            results: response.results || [],
-            pageCount: response.count
-              ? Math.ceil(response.count / (response.results?.length || 50))
-              : 0,
-          } as { results: ErrorResultMap[T][]; pageCount: number }
-        }
+        const response = await api.xero_errors_list(page > 1 ? { queries: { page } } : {})
+        return {
+          results: response.results || [],
+          pageCount: response.count
+            ? Math.ceil(response.count / (response.results?.length || 50))
+            : 0,
+        } as { results: ErrorResultMap[T][]; pageCount: number }
       }
 
       if (type === 'system') {
+        const systemFilters = filters as SystemErrorFilters
         const offset = Math.max(page - 1, 0) * PAGE_SIZE
-        const queries: Record<string, unknown> = {
+        const params: Record<string, unknown> = {
           limit: PAGE_SIZE,
           offset,
         }
-        if (filters.app) queries.app = filters.app
-        if (typeof filters.severity === 'number' && Number.isFinite(filters.severity)) {
-          queries.severity = filters.severity
+        if (systemFilters?.app) params.app = systemFilters.app
+        if (
+          typeof systemFilters?.severity === 'number' &&
+          Number.isFinite(systemFilters.severity)
+        ) {
+          params.severity = systemFilters.severity
         }
-        if (typeof filters.resolved === 'boolean') {
-          queries.resolved = filters.resolved
+        if (typeof systemFilters?.resolved === 'boolean') {
+          params.resolved = systemFilters.resolved
         }
-        if (filters.jobId) queries.job_id = filters.jobId
-        if (filters.userId) queries.user_id = filters.userId
+        if (systemFilters?.jobId) params.job_id = systemFilters.jobId
+        if (systemFilters?.userId) params.user_id = systemFilters.userId
 
-        const response = await api.rest_app_errors_retrieve({
-          queries,
+        const response = await api.axios.get<AppErrorListResponse>('/rest/app-errors/', {
+          params,
         })
+        const payload = response.data
         return {
-          results: response.results || [],
-          pageCount: response.count ? Math.ceil(response.count / PAGE_SIZE) : 0,
+          results: payload.results || [],
+          pageCount: payload.count ? Math.ceil(payload.count / PAGE_SIZE) : 0,
         } as { results: ErrorResultMap[T][]; pageCount: number }
       }
 
       if (type === 'job') {
+        const jobFilters = filters as JobErrorFilters
         const offset = Math.max(page - 1, 0) * PAGE_SIZE
-        const queries: Record<string, unknown> = {
+        const params: Record<string, unknown> = {
           limit: PAGE_SIZE,
           offset,
         }
-        if (filters.jobId) {
-          queries.job_id = filters.jobId
+        if (jobFilters?.jobId) {
+          params.job_id = jobFilters.jobId
         }
 
         const response = await api.job_rest_jobs_delta_rejections_admin_list({
-          queries,
+          queries: params,
         })
         return {
           results: response.results || [],

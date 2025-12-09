@@ -1,6 +1,6 @@
 import { ref, type Ref } from 'vue'
 import Sortable from 'sortablejs'
-import type { SortableEvent } from 'sortablejs'
+import type { SortableEvent, MoveEvent } from 'sortablejs'
 import { debugLog } from '../utils/debug'
 
 export interface OptimizedDragEventPayload {
@@ -60,7 +60,7 @@ export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler)
         isDragging.value = true
         document.body.classList.add('is-dragging')
       },
-      onMove: (evt: SortableEvent) => {
+      onMove: (evt: MoveEvent) => {
         const toColumn = (evt.to.closest('[data-status]') as HTMLElement | null)?.dataset.status
         if (status === 'draft' || toColumn === 'draft') {
           debugLog(`🎯 DRAFT COLUMN: Moving from ${status} to: ${toColumn}`)

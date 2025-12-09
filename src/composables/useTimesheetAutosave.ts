@@ -200,7 +200,7 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
       migrateRowKeyIfChanged(rowKey, entry)
       opts.onAfterSuccess?.(entry)
     } catch (error) {
-      const message = extractErrorMessage(error, 'Save failed')
+      const message = extractErrorMessage(error) || 'Save failed'
       toast.dismiss(toastId)
       toast.error(`Save failed: ${message}`)
       debugLog('❌ [Autosave] save error', { rowKey, error, message })

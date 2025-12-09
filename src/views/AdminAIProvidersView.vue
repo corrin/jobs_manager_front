@@ -163,10 +163,11 @@ const handleSave = async (providerData: AIProvider) => {
   try {
     if (providerData.id) {
       // For update, we need to convert to the update format
+      const apiKey = typeof providerData.api_key === 'string' ? providerData.api_key : undefined
       const updateData = {
         name: providerData.name,
         provider_type: providerData.provider_type,
-        api_key: providerData.api_key,
+        api_key: apiKey,
         model_name: providerData.model_name,
         default: providerData.default,
       }
@@ -174,10 +175,11 @@ const handleSave = async (providerData: AIProvider) => {
       toast.success('Provider updated successfully.')
     } else {
       // For create, use the create format
+      const apiKey = typeof providerData.api_key === 'string' ? providerData.api_key : undefined
       const createData = {
         name: providerData.name,
         provider_type: providerData.provider_type,
-        api_key: providerData.api_key,
+        api_key: apiKey,
         model_name: providerData.model_name,
         default: providerData.default || false,
       }

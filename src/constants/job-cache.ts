@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod'
-import { schemas } from '@/api/generated/schemas'
+import { schemas } from '@/api/generated/api'
 
 /**
  * Schema for job cache entry

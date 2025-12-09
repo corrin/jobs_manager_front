@@ -132,11 +132,7 @@ import { Button } from '@/components/ui/button'
 import { BarChart3, Clock, Users } from 'lucide-vue-next'
 
 import SummaryCard from './SummaryCard.vue'
-import {
-  formatHours,
-  formatCurrency,
-  type DailyTimesheetSummary,
-} from '@/services/daily-timesheet.service'
+import { formatHours, formatCurrency } from '@/services/daily-timesheet.service'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 

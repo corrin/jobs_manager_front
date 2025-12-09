@@ -224,8 +224,8 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         <div style="display: flex; flex-direction: column; gap: 2px;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
             <span style="font-weight: 600; color: #1F2937; flex-shrink: 0;">#${highlightedJobNumber}</span>
-            <span style="font-size: 11px; color: ${this.getStatusColor(status)}; font-weight: 500; text-align: right; line-height: 1.2; flex-shrink: 1; min-width: 0; word-wrap: break-word;">
-              ${this.getStatusDisplayName(status)}
+            <span style="font-size: 11px; color: ${this.getStatusColor(status || '')}; font-weight: 500; text-align: right; line-height: 1.2; flex-shrink: 1; min-width: 0; word-wrap: break-word;">
+              ${this.getStatusDisplayName(status || '')}
             </span>
           </div>
           <div style="font-size: 14px; color: #374151; font-weight: 500; line-height: 1.3; word-wrap: break-word;">${highlightedJobName}</div>
@@ -427,8 +427,8 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       rowData.job_name = normalizedJobName
       rowData.chargeOutRate = normalizedChargeOutRate
       rowData.charge_out_rate = normalizedChargeOutRate
-      // Based on backend Job model: special jobs are shop jobs (non-billable), rejected jobs are not billable
-      rowData.billable = status !== 'special' && status !== 'rejected'
+      // Based on backend Job model: special jobs are shop jobs (non-billable)
+      rowData.billable = status !== 'special'
 
       const hours = rowData.hours || 0
       const rate = rowData.rate || 'Ord'
@@ -519,7 +519,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       // Store normalized job data
       const normalizedJob = {
         ...this.selectedJob,
-        job_number: String(jobNumber),
+        job_number: jobNumber,
         name: this.selectedJob.name,
         client_name: this.selectedJob.client_name,
         charge_out_rate: this.selectedJob.charge_out_rate,

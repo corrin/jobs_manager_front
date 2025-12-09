@@ -3,26 +3,21 @@
     :class="[
       'rounded-full overflow-hidden flex items-center justify-center cursor-pointer shadow-sm transition-all duration-200 relative',
       'hover:scale-110 hover:shadow-md',
-      size === 'sm' ? 'w-5 h-5 text-xs' : 'w-10 h-10',
+      size === 'small' ? 'w-5 h-5 text-xs' : 'w-10 h-10',
       isActive
         ? 'border-2 border-blue-500 scale-110 shadow-blue-200 shadow-md ring-2 ring-blue-300 ring-offset-1'
         : '',
       isDragging ? 'opacity-80 rotate-1 scale-105 shadow-lg' : '',
       'staff-avatar-draggable',
     ]"
-    :title="staff.display_name"
+    :title="displayName"
     :data-staff-id="staff.id"
   >
-    <img
-      v-if="iconUrl"
-      :src="iconUrl"
-      :alt="staff.display_name"
-      class="w-full h-full object-cover"
-    />
+    <img v-if="iconUrl" :src="iconUrl" :alt="displayName" class="w-full h-full object-cover" />
     <div
       v-else
       class="w-full h-full flex items-center justify-center text-white font-bold"
-      :class="size === 'sm' ? 'text-xs' : 'text-sm'"
+      :class="size === 'small' ? 'text-xs' : 'text-sm'"
       :style="{ backgroundColor: backgroundColor }"
     >
       {{ getInitials(staff) }}
@@ -66,10 +61,29 @@ const iconUrl = computed(() => {
   return icon.startsWith('/') ? `${import.meta.env.VITE_API_BASE_URL}${icon}` : icon
 })
 
+const displayName = computed((): string => {
+  // For KanbanJobPerson, use display_name directly
+  if ('display_name' in props.staff && (props.staff as KanbanJobPerson).display_name) {
+    return (props.staff as KanbanJobPerson).display_name
+  }
+
+  // For Staff objects, construct display name from first_name and last_name
+  if ('first_name' in props.staff && 'last_name' in props.staff) {
+    const staff = props.staff as Staff
+    const firstName = staff.first_name || ''
+    const lastName = staff.last_name || ''
+    const fullName = `${firstName} ${lastName}`.trim()
+    return fullName || staff.email || 'Unknown'
+  }
+
+  return 'Unknown'
+})
+
 const getInitials = (staff: StaffOrKanbanPerson): string => {
   // For KanbanJobPerson, use display_name
-  if ('display_name' in staff && staff.display_name) {
-    const words = staff.display_name.trim().split(/\s+/)
+  if ('display_name' in staff && (staff as KanbanJobPerson).display_name) {
+    const displayName = (staff as KanbanJobPerson).display_name
+    const words = displayName.trim().split(/\s+/)
     if (words.length >= 2) {
       return words[0].charAt(0).toUpperCase() + words[words.length - 1].charAt(0).toUpperCase()
     } else if (words.length === 1 && words[0].length >= 2) {
@@ -79,19 +93,21 @@ const getInitials = (staff: StaffOrKanbanPerson): string => {
     }
   }
 
-  // For full Staff object, try firstName/lastName first
-  if ('firstName' in staff && 'lastName' in staff) {
-    const firstInitial = staff.firstName?.charAt(0)?.toUpperCase() || ''
-    const lastInitial = staff.lastName?.charAt(0)?.toUpperCase() || ''
+  // For full Staff object, try first_name/last_name first
+  if ('first_name' in staff && 'last_name' in staff) {
+    const staffObj = staff as Staff
+    const firstInitial = staffObj.first_name?.charAt(0)?.toUpperCase() || ''
+    const lastInitial = staffObj.last_name?.charAt(0)?.toUpperCase() || ''
 
     if (firstInitial || lastInitial) {
       return firstInitial + lastInitial
     }
   }
 
-  // Fallback to display_name for Staff objects too
-  if ('display_name' in staff && staff.display_name) {
-    const words = staff.display_name.trim().split(/\s+/)
+  // Fallback to display_name for KanbanJobPerson objects
+  if ('display_name' in staff && (staff as KanbanJobPerson).display_name) {
+    const displayName = (staff as KanbanJobPerson).display_name
+    const words = displayName.trim().split(/\s+/)
     if (words.length >= 2) {
       return words[0].charAt(0).toUpperCase() + words[words.length - 1].charAt(0).toUpperCase()
     } else if (words.length === 1 && words[0].length >= 2) {
@@ -123,10 +139,10 @@ const backgroundColor = computed(() => {
     '#34495e',
   ]
 
+  const name = displayName.value
   const colorIndex =
-    Math.abs(
-      props.staff.display_name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0),
-    ) % predefinedColors.length
+    Math.abs(name.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)) %
+    predefinedColors.length
   return predefinedColors[colorIndex]
 })
 </script>
