@@ -171,13 +171,6 @@
           </Transition>
         </div>
 
-        <router-link
-          to="/xero"
-          class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium"
-        >
-          <Link2 class="w-4 h-4 mr-1" /> Xero
-        </router-link>
-
         <div class="relative" @click.stop>
           <button
             @click="toggleDropdown('reports')"
@@ -268,6 +261,13 @@
               v-if="activeDropdown === 'admin'"
               class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
             >
+              <router-link
+                to="/xero"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Link2 class="w-4 h-4 mr-2" /> Xero
+              </router-link>
+              <div class="border-t border-gray-200 my-1"></div>
               <router-link
                 to="/admin/staff"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
@@ -387,12 +387,6 @@
                 class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
                 @click="closeMobileMenu"
                 >Daily Overview</router-link
-              >
-              <router-link
-                to="/xero"
-                class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
-                @click="closeMobileMenu"
-                >Xero</router-link
               >
             </div>
 
@@ -596,6 +590,14 @@
                   leave-to-class="opacity-0 max-h-0"
                 >
                   <div v-if="mobileSections.admin" class="overflow-hidden">
+                    <router-link
+                      to="/xero"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      @click="closeMobileMenu"
+                    >
+                      Xero
+                    </router-link>
+                    <div class="border-t border-gray-200 my-1 mx-2"></div>
                     <router-link
                       to="/admin/staff"
                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
