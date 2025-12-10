@@ -27,6 +27,12 @@ main() {
         echo "Using existing schema (backend unavailable)"
     fi
 
+    # Ensure previous dependencies don't cause permission issues when npm ci prunes node_modules
+    if [ -d node_modules ]; then
+        echo "Cleaning existing node_modules with sudo to avoid permission errors..."
+        sudo rm -rf node_modules
+    fi
+
     # Install dependencies and build
     npm ci
     npm run build
