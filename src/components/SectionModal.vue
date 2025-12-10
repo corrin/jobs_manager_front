@@ -79,6 +79,7 @@
                     class="absolute z-50 left-0 bottom-10 w-max min-w-[260px] bg-white border border-gray-200 rounded-lg shadow-lg p-4"
                     @click.stop
                   >
+                    <!-- 'as any' needed: Calendar expects specific date type, getValidDate returns CalendarDateTime | null -->
                     <Calendar
                       :modelValue="
                         (getValidDate(localForm[field.key] as string | Date | null) ||

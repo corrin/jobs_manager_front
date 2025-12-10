@@ -106,8 +106,9 @@ const emit = defineEmits<{
 }>()
 
 // Add logging to track emit calls
+// 'as any' needed: Vue's defineEmits doesn't support dynamic event names
 const loggedEmit = (event: string, ...args: unknown[]) => {
-  debugLog(`📤 SmartCostLinesTable emitting event: ${event}`, args)
+  debugLog(`SmartCostLinesTable emitting event: ${event}`, args)
   return (emit as any)(event, ...args) // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
@@ -1294,6 +1295,7 @@ const columns = computed(() => {
       @keydown="onKeydown"
       ref="containerRef"
     >
+      <!-- 'as any' needed: DataTable generic TData doesn't match our CostLine columns/row types -->
       <DataTable
         class="smart-costlines-table"
         :columns="columns as any"

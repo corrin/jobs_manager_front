@@ -105,6 +105,9 @@
                         <p class="text-sm text-gray-600 truncate">{{ jobData.job.name }}</p>
                         <p class="text-xs text-gray-500 truncate">{{ jobData.job.client_name }}</p>
                       </div>
+                      <!-- TODO: Backend inconsistency - Job uses 'job_status', ModernTimesheetJob uses 'status'.
+                           jobData.job is FullJob | ModernTimesheetJob union due to enhancedJob || job fallback.
+                           Backend should normalize to single field name. -->
                       <Badge
                         :variant="
                           getStatusVariant(
