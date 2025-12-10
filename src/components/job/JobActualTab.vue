@@ -745,10 +745,11 @@ function resolveSource(
     isDeliveryReceiptExtRefs(line.ext_refs)
   ) {
     const label = line.meta.po_number || 'Delivery Receipt'
+    const deliveryExtRefs = line.ext_refs
     return {
       visible: true,
       label,
-      onClick: () => navigateToDeliveryReceipt(line.ext_refs.purchase_order_id),
+      onClick: () => navigateToDeliveryReceipt(deliveryExtRefs.purchase_order_id),
     }
   }
 

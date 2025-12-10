@@ -94,7 +94,6 @@ import { schemas } from '../../api/generated/api'
 
 type Job = z.infer<typeof schemas.JobForPurchasing> & {
   description?: string | null
-  isStockHolding?: boolean
 }
 
 const props = defineProps<{
@@ -232,7 +231,7 @@ const onKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const isStockHoldingJob = (job: Job) => job.isStockHolding ?? job.is_stock_holding ?? false
+const isStockHoldingJob = (job: Job) => Boolean(job.is_stock_holding)
 
 const selectJob = (job: Job) => {
   if (props.disabled) return
