@@ -2502,6 +2502,12 @@ paths:
             type: string
           description: Filter by paid status
         - in: query
+          name: q
+          schema:
+            type: string
+          description: Universal search - searches across job number, name, description,
+            and client name with OR logic
+        - in: query
           name: rejected_flag
           schema:
             type: string

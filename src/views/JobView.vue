@@ -13,7 +13,9 @@
           </div>
           <div class="mb-3">
             <div class="flex items-center gap-2 mb-1" :key="titleKey">
-              <span data-automation-id="job-number-mobile" class="text-xl font-bold text-gray-900"
+              <span
+                data-automation-id="JobView-job-number-mobile"
+                class="text-xl font-bold text-gray-900"
                 >Job #{{ jobHeader?.job_number }}</span
               >
               <div class="group">
@@ -55,7 +57,7 @@
                   :options="jobStatusSelectOptions"
                   @update:value="handleStatusUpdate"
                   placeholder="Status"
-                  automation-id="header-job-status-mobile"
+                  automation-id="JobView-status-mobile"
                 />
               </div>
               <span>•</span>
@@ -65,7 +67,7 @@
                   :value="localPricingMethodology"
                   :options="pricingMethodologyOptions"
                   @update:value="handlePricingMethodologyUpdate"
-                  automation-id="header-pricing-method-mobile"
+                  automation-id="JobView-pricing-method-mobile"
                 />
               </div>
               <template v-if="jobDataWithPaid?.quoted">
@@ -133,7 +135,9 @@
             </button>
             <div class="flex flex-col justify-center h-full">
               <div class="flex items-center" :key="titleKey">
-                <span data-automation-id="job-number" class="text-xl font-bold text-gray-900"
+                <span
+                  data-automation-id="JobView-job-number"
+                  class="text-xl font-bold text-gray-900"
                   >Job #{{ jobHeader?.job_number }} -</span
                 >
                 <div class="group">
@@ -174,7 +178,7 @@
                     :options="jobStatusSelectOptions"
                     @update:value="handleStatusUpdate"
                     placeholder="Select Status"
-                    automation-id="header-job-status"
+                    automation-id="JobView-status"
                   />
                 </div>
                 <span>•</span>
@@ -185,7 +189,7 @@
                     :options="pricingMethodologyOptions"
                     @update:value="handlePricingMethodologyUpdate"
                     placeholder="Select methodology"
-                    automation-id="header-pricing-method"
+                    automation-id="JobView-pricing-method"
                   />
                 </div>
                 <template v-if="jobDataWithPaid?.quoted">

@@ -25,30 +25,30 @@ test.describe.serial('edit job', () => {
     const jobName = `Edit Test Job ${timestamp}`
 
     await test.step('navigate to create job page', async () => {
-      await autoId(page, 'nav-create-job').click()
+      await autoId(page, 'AppNavbar-create-job').click()
       await page.waitForURL('**/jobs/create')
     })
 
     await test.step('search and select client', async () => {
-      const clientInput = autoId(page, 'client-search-input')
+      const clientInput = autoId(page, 'ClientLookup-input')
       await clientInput.fill('ABC')
-      await autoId(page, 'client-search-results').waitFor({ timeout: 10000 })
+      await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
       await page.getByRole('option', { name: /ABC Carpet Cleaning TEST IGNORE/ }).click()
       await expect(clientInput).toHaveValue('ABC Carpet Cleaning TEST IGNORE')
     })
 
     await test.step('enter job details', async () => {
-      await autoId(page, 'job-name-input').fill(jobName)
-      await autoId(page, 'estimated-materials-input').fill('1000')
-      await autoId(page, 'estimated-time-input').fill('8')
+      await autoId(page, 'JobCreateView-name-input').fill(jobName)
+      await autoId(page, 'JobCreateView-estimated-materials').fill('1000')
+      await autoId(page, 'JobCreateView-estimated-time').fill('8')
     })
 
     await test.step('select or create contact', async () => {
-      await autoId(page, 'contact-modal-button').click({ timeout: 10000 })
-      await autoId(page, 'contact-selection-modal').waitFor({ timeout: 10000 })
+      await autoId(page, 'ContactSelector-modal-button').click({ timeout: 10000 })
+      await autoId(page, 'ContactSelectionModal-container').waitFor({ timeout: 10000 })
 
       // Check if we have existing contacts - if so, select one; otherwise create one
-      const selectButtons = autoId(page, 'contact-select-button')
+      const selectButtons = autoId(page, 'ContactSelectionModal-select-button')
       const selectButtonCount = await selectButtons.count()
 
       if (selectButtonCount > 0) {
@@ -56,23 +56,26 @@ test.describe.serial('edit job', () => {
         await selectButtons.first().click()
       } else {
         // Create a new contact
-        const submitButton = autoId(page, 'contact-form-submit')
+        const submitButton = autoId(page, 'ContactSelectionModal-submit')
         await expect(submitButton).toHaveText('Create Contact', { timeout: 10000 })
-        await autoId(page, 'contact-form-name').fill(`Test Contact ${timestamp}`)
-        await autoId(page, 'contact-form-email').fill(`test${timestamp}@example.com`)
+        await autoId(page, 'ContactSelectionModal-name-input').fill(`Test Contact ${timestamp}`)
+        await autoId(page, 'ContactSelectionModal-email-input').fill(`test${timestamp}@example.com`)
         await submitButton.click()
       }
 
-      await autoId(page, 'contact-selection-modal').waitFor({ state: 'hidden', timeout: 10000 })
+      await autoId(page, 'ContactSelectionModal-container').waitFor({
+        state: 'hidden',
+        timeout: 10000,
+      })
     })
 
     await test.step('set pricing method and submit', async () => {
-      await autoId(page, 'pricing-method-select').selectOption('fixed_price')
+      await autoId(page, 'JobCreateView-pricing-method').selectOption('fixed_price')
 
       // Dismiss any toast notifications that might block the button
       await dismissToasts(page)
 
-      await autoId(page, 'create-job-submit').click({ force: true })
+      await autoId(page, 'JobCreateView-submit').click({ force: true })
       await page.waitForURL('**/jobs/*?*tab=quote*', { timeout: 15000 })
 
       // Store the job URL for subsequent tests
@@ -88,14 +91,14 @@ test.describe.serial('edit job', () => {
 
     await test.step('navigate to Job Settings tab', async () => {
       // Click on Job Settings tab
-      await autoId(page, 'tab-jobSettings').click()
+      await autoId(page, 'JobViewTabs-jobSettings').click()
 
       // Wait for the tab content to load
-      await autoId(page, 'settings-job-name').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobSettingsTab-job-name').waitFor({ timeout: 10000 })
 
       // Wait for job data to actually populate the fields
       // The field should have a value (not just be empty placeholder)
-      const jobNameInput = autoId(page, 'settings-job-name')
+      const jobNameInput = autoId(page, 'JobSettingsTab-job-name')
       try {
         await expect(jobNameInput).not.toHaveValue('', { timeout: 10000 })
       } catch {
@@ -107,19 +110,19 @@ test.describe.serial('edit job', () => {
     })
 
     await test.step('verify job name contains test identifier', async () => {
-      const jobNameInput = autoId(page, 'settings-job-name')
+      const jobNameInput = autoId(page, 'JobSettingsTab-job-name')
       const jobName = await jobNameInput.inputValue()
       console.log('Job name value:', jobName)
       expect(jobName).toContain('Edit Test Job')
     })
 
     await test.step('verify client is ABC Carpet Cleaning', async () => {
-      const clientNameInput = autoId(page, 'settings-client-name')
+      const clientNameInput = autoId(page, 'JobSettingsTab-client-name')
       await expect(clientNameInput).toHaveValue('ABC Carpet Cleaning TEST IGNORE')
     })
 
     await test.step('verify pricing method is Fixed Price', async () => {
-      const pricingSelect = autoId(page, 'settings-pricing-method')
+      const pricingSelect = autoId(page, 'JobSettingsTab-pricing-method')
       await expect(pricingSelect).toHaveValue('fixed_price')
     })
   })
@@ -137,8 +140,8 @@ test.describe.serial('edit job', () => {
     await page.waitForLoadState('networkidle')
 
     // Navigate to Job Settings tab
-    await autoId(page, 'tab-jobSettings').click()
-    await autoId(page, 'settings-job-name').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'JobSettingsTab-job-name').waitFor({ timeout: 10000 })
 
     // Wait for component initialization to complete (so autosave can work)
     await waitForSettingsInitialized(page)
@@ -146,7 +149,7 @@ test.describe.serial('edit job', () => {
     const newJobName = `Updated Job Name ${Date.now()}`
 
     await test.step('change the job name', async () => {
-      const jobNameInput = autoId(page, 'settings-job-name')
+      const jobNameInput = autoId(page, 'JobSettingsTab-job-name')
       // Use clear + pressSequentially to ensure @input events fire (fill() doesn't always trigger them)
       await jobNameInput.clear()
       await jobNameInput.pressSequentially(newJobName, { delay: 10 })
@@ -159,10 +162,10 @@ test.describe.serial('edit job', () => {
 
     await test.step('verify the name was saved by refreshing', async () => {
       await page.reload()
-      await autoId(page, 'tab-jobSettings').click()
-      await autoId(page, 'settings-job-name').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-job-name').waitFor({ timeout: 10000 })
 
-      const jobNameInput = autoId(page, 'settings-job-name')
+      const jobNameInput = autoId(page, 'JobSettingsTab-job-name')
       await expect(jobNameInput).toHaveValue(newJobName)
     })
   })
@@ -171,14 +174,14 @@ test.describe.serial('edit job', () => {
     await page.goto(createdJobUrl)
     await page.waitForLoadState('networkidle')
 
-    await autoId(page, 'tab-jobSettings').click()
-    await autoId(page, 'settings-description').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'JobSettingsTab-description').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     const newDescription = `Updated description ${Date.now()}`
 
     await test.step('change the description', async () => {
-      const descInput = autoId(page, 'settings-description')
+      const descInput = autoId(page, 'JobSettingsTab-description')
       await descInput.clear()
       await descInput.pressSequentially(newDescription, { delay: 10 })
       await descInput.blur()
@@ -190,10 +193,10 @@ test.describe.serial('edit job', () => {
 
     await test.step('verify description was saved', async () => {
       await page.reload()
-      await autoId(page, 'tab-jobSettings').click()
-      await autoId(page, 'settings-description').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-description').waitFor({ timeout: 10000 })
 
-      const descInput = autoId(page, 'settings-description')
+      const descInput = autoId(page, 'JobSettingsTab-description')
       await expect(descInput).toHaveValue(newDescription)
     })
   })
@@ -202,8 +205,8 @@ test.describe.serial('edit job', () => {
     await page.goto(createdJobUrl)
     await page.waitForLoadState('networkidle')
 
-    await autoId(page, 'tab-jobSettings').click()
-    await autoId(page, 'settings-delivery-date').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'JobSettingsTab-delivery-date').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     // Set delivery date to 30 days from now
@@ -212,7 +215,7 @@ test.describe.serial('edit job', () => {
     const dateString = futureDate.toISOString().split('T')[0] // YYYY-MM-DD format
 
     await test.step('set delivery date', async () => {
-      const dateInput = autoId(page, 'settings-delivery-date')
+      const dateInput = autoId(page, 'JobSettingsTab-delivery-date')
       await dateInput.fill(dateString)
       await dateInput.blur()
     })
@@ -223,10 +226,10 @@ test.describe.serial('edit job', () => {
 
     await test.step('verify delivery date was saved', async () => {
       await page.reload()
-      await autoId(page, 'tab-jobSettings').click()
-      await autoId(page, 'settings-delivery-date').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-delivery-date').waitFor({ timeout: 10000 })
 
-      const dateInput = autoId(page, 'settings-delivery-date')
+      const dateInput = autoId(page, 'JobSettingsTab-delivery-date')
       await expect(dateInput).toHaveValue(dateString)
     })
   })
@@ -235,14 +238,14 @@ test.describe.serial('edit job', () => {
     await page.goto(createdJobUrl)
     await page.waitForLoadState('networkidle')
 
-    await autoId(page, 'tab-jobSettings').click()
-    await autoId(page, 'settings-order-number').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'JobSettingsTab-order-number').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     const newOrderNumber = `ORD-${Date.now()}`
 
     await test.step('set order number', async () => {
-      const orderInput = autoId(page, 'settings-order-number')
+      const orderInput = autoId(page, 'JobSettingsTab-order-number')
       await orderInput.clear()
       await orderInput.pressSequentially(newOrderNumber, { delay: 10 })
       await orderInput.blur()
@@ -254,10 +257,10 @@ test.describe.serial('edit job', () => {
 
     await test.step('verify order number was saved', async () => {
       await page.reload()
-      await autoId(page, 'tab-jobSettings').click()
-      await autoId(page, 'settings-order-number').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-order-number').waitFor({ timeout: 10000 })
 
-      const orderInput = autoId(page, 'settings-order-number')
+      const orderInput = autoId(page, 'JobSettingsTab-order-number')
       await expect(orderInput).toHaveValue(newOrderNumber)
     })
   })
@@ -278,12 +281,12 @@ test.describe.serial('edit job', () => {
     await page.goto(createdJobUrl)
     await page.waitForLoadState('networkidle')
 
-    await autoId(page, 'tab-jobSettings').click()
-    await autoId(page, 'settings-speed-quality').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'JobSettingsTab-speed-quality').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     await test.step('change to quality-focused', async () => {
-      const speedQualitySelect = autoId(page, 'settings-speed-quality')
+      const speedQualitySelect = autoId(page, 'JobSettingsTab-speed-quality')
       // Log current value before change
       const beforeValue = await speedQualitySelect.inputValue()
       console.log(`Speed/Quality before change: ${beforeValue}`)
@@ -303,10 +306,10 @@ test.describe.serial('edit job', () => {
 
     await test.step('verify speed vs quality was saved', async () => {
       await page.reload()
-      await autoId(page, 'tab-jobSettings').click()
-      await autoId(page, 'settings-speed-quality').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-speed-quality').waitFor({ timeout: 10000 })
 
-      const speedQualitySelect = autoId(page, 'settings-speed-quality')
+      const speedQualitySelect = autoId(page, 'JobSettingsTab-speed-quality')
       await expect(speedQualitySelect).toHaveValue('quality')
     })
   })
@@ -315,15 +318,15 @@ test.describe.serial('edit job', () => {
     await page.goto(createdJobUrl)
     await page.waitForLoadState('networkidle')
 
-    await autoId(page, 'tab-jobSettings').click()
-    await autoId(page, 'settings-internal-notes').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'JobSettingsTab-internal-notes').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     const newNotes = `Test internal notes ${Date.now()}`
 
     await test.step('add internal notes', async () => {
       // Quill editor uses a contenteditable div with class 'ql-editor'
-      const notesContainer = autoId(page, 'settings-internal-notes')
+      const notesContainer = autoId(page, 'JobSettingsTab-internal-notes')
       const quillEditor = notesContainer.locator('.ql-editor')
       await quillEditor.click()
       await quillEditor.fill(newNotes)
@@ -337,10 +340,10 @@ test.describe.serial('edit job', () => {
 
     await test.step('verify internal notes were saved', async () => {
       await page.reload()
-      await autoId(page, 'tab-jobSettings').click()
-      await autoId(page, 'settings-internal-notes').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-internal-notes').waitFor({ timeout: 10000 })
 
-      const notesContainer = autoId(page, 'settings-internal-notes')
+      const notesContainer = autoId(page, 'JobSettingsTab-internal-notes')
       const quillEditor = notesContainer.locator('.ql-editor')
       await expect(quillEditor).toContainText(newNotes)
     })
@@ -351,12 +354,12 @@ test.describe.serial('edit job', () => {
     await page.waitForLoadState('networkidle')
 
     // Navigate to Job Settings tab
-    await autoId(page, 'tab-jobSettings').click()
-    await autoId(page, 'settings-pricing-method').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'JobSettingsTab-pricing-method').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     await test.step('change pricing method to Time & Materials', async () => {
-      const pricingSelect = autoId(page, 'settings-pricing-method')
+      const pricingSelect = autoId(page, 'JobSettingsTab-pricing-method')
       await pricingSelect.selectOption('time_materials')
       await pricingSelect.blur() // Trigger autosave
     })
@@ -367,10 +370,10 @@ test.describe.serial('edit job', () => {
 
     await test.step('verify pricing method was saved', async () => {
       await page.reload()
-      await autoId(page, 'tab-jobSettings').click()
-      await autoId(page, 'settings-pricing-method').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-pricing-method').waitFor({ timeout: 10000 })
 
-      const pricingSelect = autoId(page, 'settings-pricing-method')
+      const pricingSelect = autoId(page, 'JobSettingsTab-pricing-method')
       await expect(pricingSelect).toHaveValue('time_materials')
     })
   })
@@ -385,18 +388,18 @@ test.describe.serial('edit job', () => {
 
     await test.step('click on pricing method in header to edit', async () => {
       // Click the display text to enter edit mode
-      const pricingDisplay = autoId(page, 'header-pricing-method-display')
+      const pricingDisplay = autoId(page, 'JobView-pricing-method-display')
       await pricingDisplay.waitFor({ timeout: 10000 })
       await pricingDisplay.click()
     })
 
     await test.step('select Fixed Price from dropdown', async () => {
-      const pricingSelect = autoId(page, 'header-pricing-method-select')
+      const pricingSelect = autoId(page, 'JobView-pricing-method-select')
       await pricingSelect.waitFor({ timeout: 5000 })
       await pricingSelect.selectOption('fixed_price')
 
       // Click confirm button to save
-      const confirmBtn = autoId(page, 'header-pricing-method-confirm')
+      const confirmBtn = autoId(page, 'JobView-pricing-method-confirm')
       await confirmBtn.click()
     })
 
@@ -408,14 +411,14 @@ test.describe.serial('edit job', () => {
       await page.reload()
 
       // Verify in header display
-      const pricingDisplay = autoId(page, 'header-pricing-method-display')
+      const pricingDisplay = autoId(page, 'JobView-pricing-method-display')
       await expect(pricingDisplay).toContainText('Fixed Price', { timeout: 10000 })
 
       // Also verify in Job Settings tab
-      await autoId(page, 'tab-jobSettings').click()
-      await autoId(page, 'settings-pricing-method').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-pricing-method').waitFor({ timeout: 10000 })
 
-      const pricingSelect = autoId(page, 'settings-pricing-method')
+      const pricingSelect = autoId(page, 'JobSettingsTab-pricing-method')
       await expect(pricingSelect).toHaveValue('fixed_price')
     })
   })
@@ -428,22 +431,22 @@ test.describe.serial('edit job', () => {
     await page.waitForLoadState('networkidle')
 
     await test.step('verify initial status is Draft', async () => {
-      const statusDisplay = autoId(page, 'header-job-status-display')
+      const statusDisplay = autoId(page, 'JobView-status-display')
       await expect(statusDisplay).toContainText('Draft', { timeout: 10000 })
     })
 
     await test.step('click on status in header to edit', async () => {
-      const statusDisplay = autoId(page, 'header-job-status-display')
+      const statusDisplay = autoId(page, 'JobView-status-display')
       await statusDisplay.click()
     })
 
     await test.step('select In Progress from dropdown', async () => {
-      const statusSelect = autoId(page, 'header-job-status-select')
+      const statusSelect = autoId(page, 'JobView-status-select')
       await statusSelect.waitFor({ timeout: 5000 })
       await statusSelect.selectOption('in_progress')
 
       // Click confirm button to save
-      const confirmBtn = autoId(page, 'header-job-status-confirm')
+      const confirmBtn = autoId(page, 'JobView-status-confirm')
       await confirmBtn.click()
     })
 
@@ -455,7 +458,7 @@ test.describe.serial('edit job', () => {
       await page.reload()
 
       // Verify in header display
-      const statusDisplay = autoId(page, 'header-job-status-display')
+      const statusDisplay = autoId(page, 'JobView-status-display')
       await expect(statusDisplay).toContainText('In Progress', { timeout: 10000 })
     })
   })
@@ -465,31 +468,36 @@ test.describe.serial('edit job', () => {
     await page.waitForLoadState('networkidle')
 
     // Navigate to Job Settings tab
-    await autoId(page, 'tab-jobSettings').click()
-    await autoId(page, 'contact-modal-button').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'ContactSelector-modal-button').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     await test.step('open contact selection modal', async () => {
-      await autoId(page, 'contact-modal-button').click()
-      await autoId(page, 'contact-selection-modal').waitFor({ timeout: 10000 })
+      await autoId(page, 'ContactSelector-modal-button').click()
+      await autoId(page, 'ContactSelectionModal-container').waitFor({ timeout: 10000 })
     })
 
     await test.step('create a new contact to switch to', async () => {
       // Wait for the form to be ready
-      const submitButton = autoId(page, 'contact-form-submit')
+      const submitButton = autoId(page, 'ContactSelectionModal-submit')
       await expect(submitButton).toHaveText('Create Contact', { timeout: 10000 })
 
       const timestamp = Date.now()
-      await autoId(page, 'contact-form-name').fill(`New Contact ${timestamp}`)
-      await autoId(page, 'contact-form-email').fill(`newcontact${timestamp}@example.com`)
+      await autoId(page, 'ContactSelectionModal-name-input').fill(`New Contact ${timestamp}`)
+      await autoId(page, 'ContactSelectionModal-email-input').fill(
+        `newcontact${timestamp}@example.com`,
+      )
       await submitButton.click()
 
       // Wait for modal to close
-      await autoId(page, 'contact-selection-modal').waitFor({ state: 'hidden', timeout: 10000 })
+      await autoId(page, 'ContactSelectionModal-container').waitFor({
+        state: 'hidden',
+        timeout: 10000,
+      })
     })
 
     await test.step('verify contact was updated', async () => {
-      const contactDisplay = autoId(page, 'contact-display-input')
+      const contactDisplay = autoId(page, 'ContactSelector-display')
       await expect(contactDisplay).toHaveValue(/New Contact/, { timeout: 10000 })
     })
   })
@@ -505,17 +513,17 @@ test.describe.serial('edit job', () => {
     console.log(`Using shop client name: ${shopClientName}`)
 
     // Navigate to Job Settings tab
-    await autoId(page, 'tab-jobSettings').click()
-    await autoId(page, 'settings-change-client-btn').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'JobSettingsTab-change-client-btn').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     await test.step('click Change Client button', async () => {
-      await autoId(page, 'settings-change-client-btn').click()
-      await autoId(page, 'settings-client-change-panel').waitFor({ timeout: 5000 })
+      await autoId(page, 'JobSettingsTab-change-client-btn').click()
+      await autoId(page, 'JobSettingsTab-client-change-panel').waitFor({ timeout: 5000 })
     })
 
     await test.step('search for and select a different client', async () => {
-      const clientChangePanel = autoId(page, 'settings-client-change-panel')
+      const clientChangePanel = autoId(page, 'JobSettingsTab-client-change-panel')
       const clientInput = clientChangePanel.locator('input[type="text"]')
 
       // Search using first word of shop client name
@@ -528,21 +536,21 @@ test.describe.serial('edit job', () => {
     })
 
     await test.step('confirm the client change', async () => {
-      await autoId(page, 'settings-confirm-client-btn').click()
+      await autoId(page, 'JobSettingsTab-confirm-client-btn').click()
       await waitForAutosave(page)
     })
 
     await test.step('verify client was changed', async () => {
-      const clientNameInput = autoId(page, 'settings-client-name')
+      const clientNameInput = autoId(page, 'JobSettingsTab-client-name')
       await expect(clientNameInput).toHaveValue(new RegExp(shopClientName))
     })
 
     await test.step('verify change persists after refresh', async () => {
       await page.reload()
-      await autoId(page, 'tab-jobSettings').click()
-      await autoId(page, 'settings-client-name').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-client-name').waitFor({ timeout: 10000 })
 
-      const clientNameInput = autoId(page, 'settings-client-name')
+      const clientNameInput = autoId(page, 'JobSettingsTab-client-name')
       await expect(clientNameInput).toHaveValue(new RegExp(shopClientName))
     })
   })
@@ -555,19 +563,19 @@ test.describe.serial('edit job', () => {
     await page.goto(createdJobUrl)
     await page.waitForLoadState('networkidle')
 
-    await autoId(page, 'tab-jobSettings').click()
-    await autoId(page, 'settings-job-name').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'JobSettingsTab-job-name').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     // Capture all field values before reload
     const valuesBefore = await test.step('capture values before reload', async () => {
       return {
-        jobName: await autoId(page, 'settings-job-name').inputValue(),
-        description: await autoId(page, 'settings-description').inputValue(),
-        orderNumber: await autoId(page, 'settings-order-number').inputValue(),
-        pricingMethod: await autoId(page, 'settings-pricing-method').inputValue(),
-        speedQuality: await autoId(page, 'settings-speed-quality').inputValue(),
-        clientName: await autoId(page, 'settings-client-name').inputValue(),
+        jobName: await autoId(page, 'JobSettingsTab-job-name').inputValue(),
+        description: await autoId(page, 'JobSettingsTab-description').inputValue(),
+        orderNumber: await autoId(page, 'JobSettingsTab-order-number').inputValue(),
+        pricingMethod: await autoId(page, 'JobSettingsTab-pricing-method').inputValue(),
+        speedQuality: await autoId(page, 'JobSettingsTab-speed-quality').inputValue(),
+        clientName: await autoId(page, 'JobSettingsTab-client-name').inputValue(),
       }
     })
 
@@ -577,19 +585,27 @@ test.describe.serial('edit job', () => {
     for (let i = 1; i <= 3; i++) {
       await test.step(`reload #${i} and verify values unchanged`, async () => {
         await page.reload()
-        await autoId(page, 'tab-jobSettings').click()
-        await autoId(page, 'settings-job-name').waitFor({ timeout: 10000 })
+        await autoId(page, 'JobViewTabs-jobSettings').click()
+        await autoId(page, 'JobSettingsTab-job-name').waitFor({ timeout: 10000 })
         await waitForSettingsInitialized(page)
 
         // Verify all values match
-        await expect(autoId(page, 'settings-job-name')).toHaveValue(valuesBefore.jobName)
-        await expect(autoId(page, 'settings-description')).toHaveValue(valuesBefore.description)
-        await expect(autoId(page, 'settings-order-number')).toHaveValue(valuesBefore.orderNumber)
-        await expect(autoId(page, 'settings-pricing-method')).toHaveValue(
+        await expect(autoId(page, 'JobSettingsTab-job-name')).toHaveValue(valuesBefore.jobName)
+        await expect(autoId(page, 'JobSettingsTab-description')).toHaveValue(
+          valuesBefore.description,
+        )
+        await expect(autoId(page, 'JobSettingsTab-order-number')).toHaveValue(
+          valuesBefore.orderNumber,
+        )
+        await expect(autoId(page, 'JobSettingsTab-pricing-method')).toHaveValue(
           valuesBefore.pricingMethod,
         )
-        await expect(autoId(page, 'settings-speed-quality')).toHaveValue(valuesBefore.speedQuality)
-        await expect(autoId(page, 'settings-client-name')).toHaveValue(valuesBefore.clientName)
+        await expect(autoId(page, 'JobSettingsTab-speed-quality')).toHaveValue(
+          valuesBefore.speedQuality,
+        )
+        await expect(autoId(page, 'JobSettingsTab-client-name')).toHaveValue(
+          valuesBefore.clientName,
+        )
       })
     }
 
