@@ -67,14 +67,9 @@ function scheduleSave() {
   }, 750)
 }
 
+// Supplier changes are patched separately in the parent view to avoid firing saves mid-lookup
 watch(
-  () => [
-    props.po.supplier,
-    props.po.supplier_id,
-    props.po.reference,
-    props.po.expected_delivery,
-    props.po.status,
-  ],
+  () => [props.po.reference, props.po.expected_delivery, props.po.status],
   (newValues, oldValues) => {
     // Trigger autosave only on changes after the initial load, and not in create mode
     if (oldValues && !props.isCreateMode) {
