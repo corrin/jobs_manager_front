@@ -778,9 +778,7 @@ const JobContactUpdateRequest = z
   })
   .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
-const AssignJobRequest = z
-  .object({ job_id: z.string().min(1), staff_id: z.string().min(1) })
-  .passthrough()
+const AssignJobRequest = z.object({ staff_id: z.string().uuid() }).passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
   .object({
@@ -4323,13 +4321,13 @@ Query Parameters:
     method: 'post',
     path: '/job/api/job/:job_id/assignment',
     alias: 'job_api_job_assignment_create',
-    description: `API Endpoint for activities related to job assignment`,
+    description: `API Endpoint to assign staff to a job (POST /api/job/&lt;job_id&gt;/assignment)`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: AssignJobRequest,
+        schema: z.object({ staff_id: z.string().uuid() }).passthrough(),
       },
       {
         name: 'job_id',
@@ -4341,13 +4339,18 @@ Query Parameters:
   },
   {
     method: 'delete',
-    path: '/job/api/job/:job_id/assignment',
+    path: '/job/api/job/:job_id/assignment/:staff_id',
     alias: 'job_api_job_assignment_destroy',
-    description: `API Endpoint for activities related to job assignment`,
+    description: `API Endpoint to remove staff from a job (DELETE /api/job/&lt;job_id&gt;/assignment/&lt;staff_id&gt;)`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'staff_id',
         type: 'Path',
         schema: z.string().uuid(),
       },
@@ -4629,6 +4632,11 @@ Expected JSON:
       },
       {
         name: 'paid',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'q',
         type: 'Query',
         schema: z.string().optional(),
       },
