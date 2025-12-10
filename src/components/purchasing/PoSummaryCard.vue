@@ -165,7 +165,7 @@ const statusOptions: { value: Status; label: string }[] = [
         <Input
           id="reference"
           :model-value="po.reference || ''"
-          @update:model-value="emit('update:reference', $event || '')"
+          @update:model-value="(v) => emit('update:reference', String(v ?? ''))"
           class="w-full"
         />
       </div>

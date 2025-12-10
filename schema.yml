@@ -2056,7 +2056,7 @@ paths:
   /job/api/job/{job_id}/assignment:
     post:
       operationId: job_api_job_assignment_create
-      description: API Endpoint for activities related to job assignment
+      description: API Endpoint to assign staff to a job (POST /api/job/<job_id>/assignment)
       parameters:
         - in: path
           name: job_id
@@ -2087,12 +2087,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/AssignJobResponse'
           description: ''
+  /job/api/job/{job_id}/assignment/{staff_id}:
     delete:
       operationId: job_api_job_assignment_destroy
-      description: API Endpoint for activities related to job assignment
+      description: API Endpoint to remove staff from a job (DELETE /api/job/<job_id>/assignment/<staff_id>)
       parameters:
         - in: path
           name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: staff_id
           schema:
             type: string
             format: uuid
@@ -6467,18 +6474,13 @@ components:
         - total_archived_jobs
     AssignJobRequest:
       type: object
-      description: Serialiser for job assignment request
+      description: Serialiser for job assignment request (job_id comes from URL)
       properties:
-        job_id:
-          type: string
-          minLength: 1
-          description: Job ID
         staff_id:
           type: string
-          minLength: 1
-          description: Staff ID
+          format: uuid
+          description: Staff ID to assign to the job
       required:
-        - job_id
         - staff_id
     AssignJobResponse:
       type: object

@@ -35,6 +35,8 @@
             <!-- spinner -->
           </div>
           <template v-else>
+            <!-- BUG: @duplicate-line only works for 'material' lines. 'time'/'adjust' silently ignored.
+                 Need handleDuplicateLine() that respects original kind. -->
             <SmartCostLinesTable
               v-if="hasCostSetQuote"
               :jobId="jobId"
@@ -45,7 +47,7 @@
               :showSourceColumn="false"
               @delete-line="handleSmartDelete"
               @add-line="handleAddEmptyLine"
-              @duplicate-line="(line) => handleAddMaterial(line)"
+              @duplicate-line="(line) => handleAddMaterial(line as any)"
               @create-line="handleCreateFromEmpty"
             />
             <div v-else class="text-center py-8 text-gray-500">No quote data available</div>
@@ -932,7 +934,7 @@ async function onCopyFromEstimate() {
     }
 
     // Copy each estimate line to quote
-    const createdLines: CostLine[] = []
+    const createdLines: z.infer<typeof schemas.CostLineCreateUpdate>[] = []
     for (const estimateLine of estimateLines) {
       const createPayload = {
         kind: estimateLine.kind as 'material' | 'time' | 'adjust',
@@ -949,10 +951,10 @@ async function onCopyFromEstimate() {
       createdLines.push(created)
     }
 
-    // Update local state
-    costLines.value = createdLines
+    // Update local state temporarily until refresh completes
+    costLines.value = createdLines as CostLine[]
 
-    // Refresh quote data to get updated summary
+    // Refresh quote data to get updated summary (will fetch full CostLine objects)
     await refreshQuoteData()
 
     toast.success(`Copied ${createdLines.length} lines from estimate!`)

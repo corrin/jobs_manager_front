@@ -1,6 +1,9 @@
 <template>
   <div class="flex items-center space-x-2">
-    <Select :model-value="selectedValue" @update:model-value="handleMonthChange">
+    <Select
+      :model-value="selectedValue"
+      @update:model-value="(v) => handleMonthChange(v as string)"
+    >
       <SelectTrigger
         class="h-8 w-auto min-w-[120px] text-xs bg-slate-800/50 border-blue-500/30 text-white hover:bg-slate-800/70"
       >
@@ -97,7 +100,6 @@ const monthOptions = computed(() => {
 })
 
 function handleMonthChange(value: string) {
-  if (typeof value !== 'string') return
   const [year, month] = value.split('-')
   emit('update:year', parseInt(year))
   emit('update:month', parseInt(month))

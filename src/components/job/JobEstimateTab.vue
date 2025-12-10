@@ -32,6 +32,8 @@
             </svg>
             <span>Loading estimate...</span>
           </div>
+          <!-- BUG: @duplicate-line only works for 'material' lines. 'time'/'adjust' silently ignored.
+               Need handleDuplicateLine() that respects original kind. -->
           <SmartCostLinesTable
             v-else
             :jobId="jobId"
@@ -42,7 +44,7 @@
             :showSourceColumn="false"
             @delete-line="handleSmartDelete"
             @add-line="handleAddEmptyLine"
-            @duplicate-line="(line) => handleAddMaterial(line)"
+            @duplicate-line="(line) => handleAddMaterial(line as any)"
             @move-line="(index, direction) => {}"
             @create-line="handleCreateFromEmpty"
           />
@@ -205,7 +207,8 @@ async function handleAddMaterial(line: CostLine) {
     return
   }
 
-  await addMaterialInternal(line)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await addMaterialInternal(line as any) // BUG: needs generic handleDuplicateLine, not material-only
 }
 
 async function handleCreateFromEmpty(line: CostLine) {
