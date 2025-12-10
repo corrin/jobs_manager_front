@@ -13,19 +13,14 @@ main() {
     echo "Starting frontend deployment..."
 
     cd "$PROJECT_PATH"
+    CURRENT_USER="$(whoami)"
 
     # Update code from git
     git switch main
     git fetch origin main
     git reset --hard origin/main
     chmod +x scripts/deploy_frontend.sh
-
-    # Update schema (graceful fallback if backend unavailable)
-    if npm run update-schema 2>/dev/null; then
-        echo "API schema updated"
-    else
-        echo "Using existing schema (backend unavailable)"
-    fi
+    sudo chown -R "$CURRENT_USER:$CURRENT_USER" "$PROJECT_PATH"
 
     # Ensure previous dependencies don't cause permission issues when npm ci prunes node_modules
     if [ -d node_modules ]; then
@@ -35,6 +30,14 @@ main() {
 
     # Install dependencies and build
     npm ci
+
+    # Update schema (graceful fallback if backend unavailable)
+    if npm run update-schema 2>/dev/null; then
+        echo "API schema updated"
+    else
+        echo "Using existing schema (backend unavailable)"
+    fi
+
     npm run build
 
     # Reload nginx to serve new build
