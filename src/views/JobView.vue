@@ -57,7 +57,7 @@
                   :options="jobStatusSelectOptions"
                   @update:value="handleStatusUpdate"
                   placeholder="Status"
-                  automation-id="header-job-status-mobile"
+                  automation-id="JobView-status-mobile"
                 />
               </div>
               <span>•</span>
@@ -67,7 +67,7 @@
                   :value="localPricingMethodology"
                   :options="pricingMethodologyOptions"
                   @update:value="handlePricingMethodologyUpdate"
-                  automation-id="header-pricing-method-mobile"
+                  automation-id="JobView-pricing-method-mobile"
                 />
               </div>
               <template v-if="jobDataWithPaid?.quoted">
@@ -178,7 +178,7 @@
                     :options="jobStatusSelectOptions"
                     @update:value="handleStatusUpdate"
                     placeholder="Select Status"
-                    automation-id="header-job-status"
+                    automation-id="JobView-status"
                   />
                 </div>
                 <span>•</span>
@@ -189,7 +189,7 @@
                     :options="pricingMethodologyOptions"
                     @update:value="handlePricingMethodologyUpdate"
                     placeholder="Select methodology"
-                    automation-id="header-pricing-method"
+                    automation-id="JobView-pricing-method"
                   />
                 </div>
                 <template v-if="jobDataWithPaid?.quoted">

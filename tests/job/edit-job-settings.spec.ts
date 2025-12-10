@@ -282,11 +282,11 @@ test.describe.serial('edit job', () => {
     await page.waitForLoadState('networkidle')
 
     await autoId(page, 'JobViewTabs-jobSettings').click()
-    await autoId(page, 'settings-speed-quality').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobSettingsTab-speed-quality').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     await test.step('change to quality-focused', async () => {
-      const speedQualitySelect = autoId(page, 'settings-speed-quality')
+      const speedQualitySelect = autoId(page, 'JobSettingsTab-speed-quality')
       // Log current value before change
       const beforeValue = await speedQualitySelect.inputValue()
       console.log(`Speed/Quality before change: ${beforeValue}`)
@@ -307,9 +307,9 @@ test.describe.serial('edit job', () => {
     await test.step('verify speed vs quality was saved', async () => {
       await page.reload()
       await autoId(page, 'JobViewTabs-jobSettings').click()
-      await autoId(page, 'settings-speed-quality').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobSettingsTab-speed-quality').waitFor({ timeout: 10000 })
 
-      const speedQualitySelect = autoId(page, 'settings-speed-quality')
+      const speedQualitySelect = autoId(page, 'JobSettingsTab-speed-quality')
       await expect(speedQualitySelect).toHaveValue('quality')
     })
   })
@@ -319,14 +319,14 @@ test.describe.serial('edit job', () => {
     await page.waitForLoadState('networkidle')
 
     await autoId(page, 'JobViewTabs-jobSettings').click()
-    await autoId(page, 'settings-internal-notes').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobSettingsTab-internal-notes').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     const newNotes = `Test internal notes ${Date.now()}`
 
     await test.step('add internal notes', async () => {
       // Quill editor uses a contenteditable div with class 'ql-editor'
-      const notesContainer = autoId(page, 'settings-internal-notes')
+      const notesContainer = autoId(page, 'JobSettingsTab-internal-notes')
       const quillEditor = notesContainer.locator('.ql-editor')
       await quillEditor.click()
       await quillEditor.fill(newNotes)
@@ -341,9 +341,9 @@ test.describe.serial('edit job', () => {
     await test.step('verify internal notes were saved', async () => {
       await page.reload()
       await autoId(page, 'JobViewTabs-jobSettings').click()
-      await autoId(page, 'settings-internal-notes').waitFor({ timeout: 10000 })
+      await autoId(page, 'JobSettingsTab-internal-notes').waitFor({ timeout: 10000 })
 
-      const notesContainer = autoId(page, 'settings-internal-notes')
+      const notesContainer = autoId(page, 'JobSettingsTab-internal-notes')
       const quillEditor = notesContainer.locator('.ql-editor')
       await expect(quillEditor).toContainText(newNotes)
     })
@@ -388,18 +388,18 @@ test.describe.serial('edit job', () => {
 
     await test.step('click on pricing method in header to edit', async () => {
       // Click the display text to enter edit mode
-      const pricingDisplay = autoId(page, 'header-pricing-method-display')
+      const pricingDisplay = autoId(page, 'JobView-pricing-method-display')
       await pricingDisplay.waitFor({ timeout: 10000 })
       await pricingDisplay.click()
     })
 
     await test.step('select Fixed Price from dropdown', async () => {
-      const pricingSelect = autoId(page, 'header-pricing-method-select')
+      const pricingSelect = autoId(page, 'JobView-pricing-method-select')
       await pricingSelect.waitFor({ timeout: 5000 })
       await pricingSelect.selectOption('fixed_price')
 
       // Click confirm button to save
-      const confirmBtn = autoId(page, 'header-pricing-method-confirm')
+      const confirmBtn = autoId(page, 'JobView-pricing-method-confirm')
       await confirmBtn.click()
     })
 
@@ -411,7 +411,7 @@ test.describe.serial('edit job', () => {
       await page.reload()
 
       // Verify in header display
-      const pricingDisplay = autoId(page, 'header-pricing-method-display')
+      const pricingDisplay = autoId(page, 'JobView-pricing-method-display')
       await expect(pricingDisplay).toContainText('Fixed Price', { timeout: 10000 })
 
       // Also verify in Job Settings tab
@@ -431,22 +431,22 @@ test.describe.serial('edit job', () => {
     await page.waitForLoadState('networkidle')
 
     await test.step('verify initial status is Draft', async () => {
-      const statusDisplay = autoId(page, 'header-job-status-display')
+      const statusDisplay = autoId(page, 'JobView-status-display')
       await expect(statusDisplay).toContainText('Draft', { timeout: 10000 })
     })
 
     await test.step('click on status in header to edit', async () => {
-      const statusDisplay = autoId(page, 'header-job-status-display')
+      const statusDisplay = autoId(page, 'JobView-status-display')
       await statusDisplay.click()
     })
 
     await test.step('select In Progress from dropdown', async () => {
-      const statusSelect = autoId(page, 'header-job-status-select')
+      const statusSelect = autoId(page, 'JobView-status-select')
       await statusSelect.waitFor({ timeout: 5000 })
       await statusSelect.selectOption('in_progress')
 
       // Click confirm button to save
-      const confirmBtn = autoId(page, 'header-job-status-confirm')
+      const confirmBtn = autoId(page, 'JobView-status-confirm')
       await confirmBtn.click()
     })
 
@@ -458,7 +458,7 @@ test.describe.serial('edit job', () => {
       await page.reload()
 
       // Verify in header display
-      const statusDisplay = autoId(page, 'header-job-status-display')
+      const statusDisplay = autoId(page, 'JobView-status-display')
       await expect(statusDisplay).toContainText('In Progress', { timeout: 10000 })
     })
   })
@@ -497,7 +497,7 @@ test.describe.serial('edit job', () => {
     })
 
     await test.step('verify contact was updated', async () => {
-      const contactDisplay = autoId(page, 'contact-display-input')
+      const contactDisplay = autoId(page, 'ContactSelector-display')
       await expect(contactDisplay).toHaveValue(/New Contact/, { timeout: 10000 })
     })
   })
@@ -514,16 +514,16 @@ test.describe.serial('edit job', () => {
 
     // Navigate to Job Settings tab
     await autoId(page, 'JobViewTabs-jobSettings').click()
-    await autoId(page, 'settings-change-client-btn').waitFor({ timeout: 10000 })
+    await autoId(page, 'JobSettingsTab-change-client-btn').waitFor({ timeout: 10000 })
     await waitForSettingsInitialized(page)
 
     await test.step('click Change Client button', async () => {
-      await autoId(page, 'settings-change-client-btn').click()
-      await autoId(page, 'settings-client-change-panel').waitFor({ timeout: 5000 })
+      await autoId(page, 'JobSettingsTab-change-client-btn').click()
+      await autoId(page, 'JobSettingsTab-client-change-panel').waitFor({ timeout: 5000 })
     })
 
     await test.step('search for and select a different client', async () => {
-      const clientChangePanel = autoId(page, 'settings-client-change-panel')
+      const clientChangePanel = autoId(page, 'JobSettingsTab-client-change-panel')
       const clientInput = clientChangePanel.locator('input[type="text"]')
 
       // Search using first word of shop client name
@@ -536,7 +536,7 @@ test.describe.serial('edit job', () => {
     })
 
     await test.step('confirm the client change', async () => {
-      await autoId(page, 'settings-confirm-client-btn').click()
+      await autoId(page, 'JobSettingsTab-confirm-client-btn').click()
       await waitForAutosave(page)
     })
 
@@ -574,7 +574,7 @@ test.describe.serial('edit job', () => {
         description: await autoId(page, 'JobSettingsTab-description').inputValue(),
         orderNumber: await autoId(page, 'JobSettingsTab-order-number').inputValue(),
         pricingMethod: await autoId(page, 'JobSettingsTab-pricing-method').inputValue(),
-        speedQuality: await autoId(page, 'settings-speed-quality').inputValue(),
+        speedQuality: await autoId(page, 'JobSettingsTab-speed-quality').inputValue(),
         clientName: await autoId(page, 'JobSettingsTab-client-name').inputValue(),
       }
     })
@@ -600,7 +600,9 @@ test.describe.serial('edit job', () => {
         await expect(autoId(page, 'JobSettingsTab-pricing-method')).toHaveValue(
           valuesBefore.pricingMethod,
         )
-        await expect(autoId(page, 'settings-speed-quality')).toHaveValue(valuesBefore.speedQuality)
+        await expect(autoId(page, 'JobSettingsTab-speed-quality')).toHaveValue(
+          valuesBefore.speedQuality,
+        )
         await expect(autoId(page, 'JobSettingsTab-client-name')).toHaveValue(
           valuesBefore.clientName,
         )

@@ -841,7 +841,7 @@ const columns = computed(() => {
               disabled: !canEditField(line, 'quantity') || isBlocked,
               class: 'w-full text-right numeric-input',
               inputmode: 'decimal',
-              'data-automation-id': `cost-line-quantity-${row.index}`,
+              'data-automation-id': `SmartCostLinesTable-quantity-${row.index}`,
               onClick: (e: Event) => e.stopPropagation(),
               'onUpdate:modelValue': (val: string | number) => {
                 const num = Number(val)

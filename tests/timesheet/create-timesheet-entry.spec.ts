@@ -15,13 +15,13 @@ async function navigateToActualsTab(page: Page, jobUrl: string): Promise<void> {
   const baseUrl = jobUrl.split('?')[0]
   await page.goto(baseUrl)
   await page.waitForLoadState('networkidle')
-  await autoId(page, 'tab-actual').click()
+  await autoId(page, 'JobViewTabs-actual').click()
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(2000)
 }
 
 async function getTimeAndExpensesValue(page: Page): Promise<number> {
-  const chip = autoId(page, 'actual-time-expenses')
+  const chip = autoId(page, 'JobActualTab-time-expenses')
   const text = await chip.innerText()
   // Extract number from text like "$123.45"
   const match = text.match(/\$?([\d,]+\.?\d*)/)
@@ -56,7 +56,7 @@ test.describe.serial('timesheet entry operations', () => {
     // Extract job number from the page
     await page.goto(jobUrl.split('?')[0])
     await page.waitForLoadState('networkidle')
-    const jobNumberElement = autoId(page, 'job-number').first()
+    const jobNumberElement = autoId(page, 'JobView-job-number').first()
     await jobNumberElement.waitFor({ timeout: 10000 })
     const jobNumberText = await jobNumberElement.innerText()
     const match = jobNumberText.match(/#(\d+)/)
@@ -83,9 +83,7 @@ test.describe.serial('timesheet entry operations', () => {
     await page.waitForLoadState('networkidle')
 
     // Click first staff name to open their timesheet entry view
-    const firstStaffName = page
-      .locator('[data-automation-id^="daily-timesheet-staff-name-"]')
-      .first()
+    const firstStaffName = page.locator('[data-automation-id^="StaffRow-name-"]').first()
     await firstStaffName.waitFor({ timeout: 10000 })
     await firstStaffName.click()
 
@@ -95,7 +93,7 @@ test.describe.serial('timesheet entry operations', () => {
     await page.waitForTimeout(1000)
 
     // Click Add Entry button
-    await autoId(page, 'timesheet-add-entry').click()
+    await autoId(page, 'TimesheetEntryView-add-entry').click()
     await page.waitForTimeout(500)
 
     // Click on the job cell (col-id="jobNumber") to open the job selector
@@ -104,13 +102,13 @@ test.describe.serial('timesheet entry operations', () => {
     await page.waitForTimeout(300)
 
     // Type the job number in the search input
-    const jobSearchInput = autoId(page, 'timesheet-job-search')
+    const jobSearchInput = autoId(page, 'TimesheetEntryJobCellEditor-job-search')
     await jobSearchInput.waitFor({ timeout: 5000 })
     await jobSearchInput.fill(jobNumber)
     await page.waitForTimeout(500)
 
     // Select the job from the dropdown
-    const jobOption = autoId(page, `timesheet-job-option-${jobNumber}`)
+    const jobOption = autoId(page, `TimesheetEntryJobCellEditor-option-${jobNumber}`)
     await jobOption.waitFor({ timeout: 5000 })
     await jobOption.click()
     await page.waitForTimeout(500)

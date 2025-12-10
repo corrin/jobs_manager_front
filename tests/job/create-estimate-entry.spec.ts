@@ -17,7 +17,7 @@ async function findRowsByDescription(
   description: string,
   matcher: 'exact' | 'includes' = 'exact',
 ): Promise<{ rows: Locator[]; indices: number[] }> {
-  const allRows = page.locator('[data-automation-id^="cost-line-row-"]')
+  const allRows = page.locator('[data-automation-id^="DataTable-row-"]')
   const rowCount = await allRows.count()
   const rows: Locator[] = []
   const indices: number[] = []
@@ -48,14 +48,14 @@ async function findRowIndexByDescription(page: Page, description: string): Promi
 async function navigateToEstimateTab(page: Page, jobUrl: string): Promise<void> {
   await page.goto(jobUrl)
   await page.waitForLoadState('networkidle')
-  await autoId(page, 'tab-estimate').click()
+  await autoId(page, 'JobViewTabs-estimate').click()
   await page.waitForLoadState('networkidle')
   await page.waitForTimeout(2000)
 }
 
 async function clickAddRow(page: Page): Promise<void> {
-  await autoId(page, 'cost-lines-add-row').waitFor({ timeout: 10000 })
-  await autoId(page, 'cost-lines-add-row').click()
+  await autoId(page, 'SmartCostLinesTable-add-row').waitFor({ timeout: 10000 })
+  await autoId(page, 'SmartCostLinesTable-add-row').click()
 }
 
 async function addAdjustmentEntry(
@@ -69,7 +69,7 @@ async function addAdjustmentEntry(
   await page.keyboard.press('Escape')
   await page.waitForTimeout(500)
 
-  const rows = page.locator('[data-automation-id^="cost-line-row-"]')
+  const rows = page.locator('[data-automation-id^="DataTable-row-"]')
   const newRow = rows.last()
 
   const descInput = newRow.locator('textarea').first()
@@ -121,7 +121,7 @@ test.describe.serial('estimate operations', () => {
 
     await clickAddRow(page)
 
-    const labourOption = autoId(page, 'item-select-option-labour')
+    const labourOption = autoId(page, 'ItemSelect-option-labour')
     await labourOption.waitFor({ timeout: 10000 })
     await labourOption.click()
 
@@ -156,7 +156,7 @@ test.describe.serial('estimate operations', () => {
     await searchInput.fill('M8 ZINC')
 
     const wingNutOption = page
-      .locator('[data-automation-id^="item-select-option-"]')
+      .locator('[data-automation-id^="ItemSelect-option-"]')
       .filter({ hasText: 'M8 ZINC WING NUT' })
     await wingNutOption.waitFor({ timeout: 10000 })
     await wingNutOption.click()
@@ -289,7 +289,7 @@ test.describe.serial('estimate operations', () => {
     await searchInput.fill('M10')
 
     const newItemOption = page
-      .locator('[data-automation-id^="item-select-option-"]')
+      .locator('[data-automation-id^="ItemSelect-option-"]')
       .filter({ hasText: 'M10' })
       .first()
     await newItemOption.waitFor({ timeout: 10000 })
@@ -316,7 +316,7 @@ test.describe.serial('estimate operations', () => {
     // Add a row specifically for deletion
     await addAdjustmentEntry(page, 'Row to be deleted', '1', '100', '100')
 
-    const rowsBefore = await page.locator('[data-automation-id^="cost-line-row-"]').count()
+    const rowsBefore = await page.locator('[data-automation-id^="DataTable-row-"]').count()
     const deleteRowIndex = await findRowIndexByDescription(page, 'Row to be deleted')
     expect(deleteRowIndex).toBeGreaterThanOrEqual(0)
 
@@ -334,7 +334,7 @@ test.describe.serial('estimate operations', () => {
     const deletedRow = await findRowByDescription(page, 'Row to be deleted')
     expect(deletedRow).toBeNull()
 
-    const rowsAfter = await page.locator('[data-automation-id^="cost-line-row-"]').count()
+    const rowsAfter = await page.locator('[data-automation-id^="DataTable-row-"]').count()
     expect(rowsAfter).toBeLessThan(rowsBefore)
   })
 })
