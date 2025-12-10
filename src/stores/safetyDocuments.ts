@@ -261,7 +261,11 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   /**
    * Delete a document
    */
-  async function deleteDocument(docId: string, documentType: DocumentType, jobId?: string): Promise<void> {
+  async function deleteDocument(
+    docId: string,
+    documentType: DocumentType,
+    jobId?: string,
+  ): Promise<void> {
     isLoading.value = true
     error.value = null
 

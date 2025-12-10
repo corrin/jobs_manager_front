@@ -6,7 +6,7 @@ import { debugLog } from '@/utils/debug'
 
 type CostLineRequest = z.infer<typeof schemas.CostLineCreateUpdateRequest>
 type PatchedCostLineRequest = z.infer<typeof schemas.PatchedCostLineCreateUpdateRequest>
-type CostLineResponse = z.infer<typeof schemas.CostLineCreateUpdate>
+type CostLineResponse = z.infer<typeof schemas.CostLine>
 export type TimesheetEntriesResponse = z.infer<typeof schemas.ModernTimesheetEntryGetResponse>
 
 export const getTimesheetEntries = async (
@@ -56,16 +56,17 @@ export const createCostLine = async (
         })
 
   debugLog('COSTLINE SERVICE - Created cost line result:', result)
-  return result
+  return schemas.CostLine.parse(result)
 }
 
 export const updateCostLine = async (
   id: string,
   payload: PatchedCostLineRequest,
 ): Promise<CostLineResponse> => {
-  return await api.job_rest_cost_lines_partial_update(payload, {
+  const result = await api.job_rest_cost_lines_partial_update(payload, {
     params: { cost_line_id: id },
   })
+  return schemas.CostLine.parse(result)
 }
 
 export const deleteCostLine = async (id: string): Promise<void> => {

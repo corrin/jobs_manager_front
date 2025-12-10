@@ -18,7 +18,10 @@
           <X class="w-4 h-4" />
         </Button>
       </div>
-      <div v-if="controls.length === 0" class="p-4 text-center text-sm text-gray-500 bg-gray-50 rounded-md">
+      <div
+        v-if="controls.length === 0"
+        class="p-4 text-center text-sm text-gray-500 bg-gray-50 rounded-md"
+      >
         No control measures added yet.
       </div>
     </div>

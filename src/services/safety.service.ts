@@ -150,7 +150,10 @@ class SafetyService {
   /**
    * Improve an entire document using AI
    */
-  async improveDocument(rawText: string, documentType: DocumentType): Promise<SafetyDocumentContent> {
+  async improveDocument(
+    rawText: string,
+    documentType: DocumentType,
+  ): Promise<SafetyDocumentContent> {
     const response = await api.job_rest_safety_ai_improve_document_create({
       raw_text: rawText,
       document_type: documentType,

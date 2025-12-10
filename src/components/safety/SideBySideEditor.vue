@@ -43,12 +43,7 @@
             <Button variant="ghost" size="sm" @click="emit('reject')" class="text-red-600 h-7">
               <X class="w-4 h-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              @click="emit('accept')"
-              class="text-green-600 h-7"
-            >
+            <Button variant="ghost" size="sm" @click="emit('accept')" class="text-green-600 h-7">
               <Check class="w-4 h-4" />
             </Button>
           </div>

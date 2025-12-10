@@ -16,6 +16,7 @@ import JobSelect from './JobSelect.vue'
 import AllocationCellEditor from '@/components/purchasing/AllocationCellEditor.vue'
 import { schemas } from '@/api/generated/api'
 import type { DataTableRowContext } from '@/utils/data-table-types'
+import type { ColumnDef } from '@tanstack/vue-table'
 import { z } from 'zod'
 import { debugLog } from '../../utils/debug'
 import { useStockStore } from '@/stores/stockStore'
@@ -45,14 +46,28 @@ type Emits = {
   (e: 'allocation-deleted', data: { allocationId: string; allocationType: string }): void
 }
 
+type AllocationEditorRow = {
+  job_id: string
+  quantity: number
+  retail_rate?: number
+  stock_location?: string
+  metal_type?: string
+  alloy?: string
+  specifics?: string
+  dimensions?: string
+}
+
 interface LineEditorState {
   rows: {
     target: 'job' | 'stock'
     job_id?: string
     quantity: number
-    retail_rate?: number // UI-only today
-    stock_location?: string // UI-only today
-    po_id: string
+    retail_rate?: number
+    stock_location?: string
+    metal_type?: string
+    alloy?: string
+    specifics?: string
+    dimensions?: string
   }[]
 }
 
@@ -60,6 +75,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const stockStore = useStockStore()
+type RowContext = DataTableRowContext<PurchaseOrderLine>
 
 const showAdditionalFieldsModal = ref(false)
 const editingLineIndex = ref<number>(-1)
@@ -148,18 +164,18 @@ const isReceiptColumnVisible = computed(() => {
   return validStatuses.includes(props.poStatus || '')
 })
 
-const columns = computed(() =>
-  [
+const columns = computed<ColumnDef<PurchaseOrderLine>[]>(() => {
+  const columnDefs: ColumnDef<PurchaseOrderLine>[] = [
     {
       id: 'item_code',
       header: 'Item',
-      cell: ({ row }: DataTableRowContext) => {
-        const isEditing = editingItemIndex.value === row.index
+      cell: (context: RowContext) => {
+        const isEditing = editingItemIndex.value === context.row.index
 
         if (isEditing) {
           // Show ItemSelect when editing
           return h(ItemSelect, {
-            modelValue: row.original.item_code,
+            modelValue: context.row.original.item_code ?? null,
             disabled: isColumnDisabled.value,
             showQuantity: false,
             'onUpdate:modelValue': isColumnDisabled.value
@@ -171,7 +187,7 @@ const columns = computed(() =>
                   const found = stockStore.items.find((i: StockItem) => i.id === val)
                   debugLog('PoLinesTable: Found stock item:', found)
 
-                  updateLine(row.index, {
+                  updateLine(context.row.index, {
                     // Auto-populate all fields from stock item when selected
                     ...(found && {
                       description: found.description,
@@ -190,7 +206,7 @@ const columns = computed(() =>
           })
         } else {
           // Show item code button when not editing
-          const itemCode = row.original.item_code
+          const itemCode = context.row.original.item_code
           const displayText = itemCode || 'Select Item'
 
           return h('div', { class: 'col-item flex items-center' }, [
@@ -204,7 +220,7 @@ const columns = computed(() =>
                   ? undefined
                   : (e: Event) => {
                       e.stopPropagation()
-                      editingItemIndex.value = row.index
+                      editingItemIndex.value = context.row.index
                     },
                 class: 'font-mono uppercase tracking-wide',
               },
@@ -218,25 +234,27 @@ const columns = computed(() =>
     {
       id: 'description',
       header: 'Description',
-      cell: ({ row }: DataTableRowContext) =>
+      cell: (context: RowContext) =>
         h(Input, {
-          modelValue: row.original.description,
+          modelValue: context.row.original.description,
           disabled: isColumnDisabled.value,
           class: 'w-full',
           onClick: (e: Event) => e.stopPropagation(),
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
-            : (val: string) => {
-                updateLine(row.index, { description: val })
+            : (val: string | number) => {
+                if (typeof val === 'string') {
+                  updateLine(context.row.index, { description: val })
+                }
               },
         }),
     },
     {
       id: 'job_id',
       header: 'Job',
-      cell: ({ row }: DataTableRowContext) =>
+      cell: (context: RowContext) =>
         h(JobSelect, {
-          modelValue: row.original.job_id || '',
+          modelValue: context.row.original.job_id || '',
           required: false,
           placeholder: 'Select Job (Optional)',
           jobs: props.jobs,
@@ -245,14 +263,14 @@ const columns = computed(() =>
             (props.jobsReadOnly ?? isColumnDisabled.value)
               ? undefined
               : (val: string | null) => {
-                  updateLine(row.index, { job_id: val || undefined })
+                  updateLine(context.row.index, { job_id: val || undefined })
                 },
           onJobSelected:
             (props.jobsReadOnly ?? isColumnDisabled.value)
               ? undefined
               : (job: JobForPurchasing | null) => {
                   if (job) {
-                    updateLine(row.index, {
+                    updateLine(context.row.index, {
                       job_id: job.id,
                       job_number: job.job_number?.toString(),
                       job_name: job.name,
@@ -266,12 +284,12 @@ const columns = computed(() =>
     {
       id: 'quantity',
       header: 'Qty',
-      cell: ({ row }: DataTableRowContext) =>
+      cell: (context: RowContext) =>
         h(Input, {
           type: 'number',
           step: '1',
           min: '0',
-          modelValue: row.original.quantity,
+          modelValue: context.row.original.quantity,
           disabled: isColumnDisabled.value,
           class: 'w-20 text-right',
           onClick: (e: Event) => e.stopPropagation(),
@@ -280,7 +298,7 @@ const columns = computed(() =>
             : (val: string | number) => {
                 const num = Number(val)
                 if (!Number.isNaN(num)) {
-                  updateLine(row.index, { quantity: num })
+                  updateLine(context.row.index, { quantity: num })
                 }
               },
         }),
@@ -288,36 +306,39 @@ const columns = computed(() =>
     {
       id: 'unit_cost',
       header: 'Unit Cost',
-      cell: ({ row }: DataTableRowContext) =>
+      cell: (context: RowContext) =>
         h(Input, {
           type: 'number',
           step: '0.01',
           min: '0',
-          modelValue: row.original.unit_cost ?? '',
-          disabled: row.original.price_tbc || isColumnDisabled.value,
+          modelValue: context.row.original.unit_cost ?? '',
+          disabled: context.row.original.price_tbc || isColumnDisabled.value,
           class: 'w-24 text-right',
           onClick: (e: Event) => e.stopPropagation(),
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
             : (val: string | number) => {
                 const cost = val === '' ? null : Number(val)
-                updateLine(row.index, { unit_cost: cost })
+                updateLine(context.row.index, { unit_cost: cost })
               },
         }),
     },
     {
       id: 'price_tbc',
       header: 'Price TBC',
-      cell: ({ row }: DataTableRowContext) =>
+      cell: (context: RowContext) =>
         h(Checkbox, {
-          modelValue: row.original.price_tbc,
+          modelValue: context.row.original.price_tbc,
           disabled:
-            (row.original.unit_cost !== null && Number(row.original.unit_cost) > 0) ||
+            (context.row.original.unit_cost !== null &&
+              Number(context.row.original.unit_cost) > 0) ||
             isColumnDisabled.value,
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
-            : (checked: boolean) => {
-                updateLine(row.index, { price_tbc: checked })
+            : (checked: boolean | 'indeterminate') => {
+                if (typeof checked === 'boolean') {
+                  updateLine(context.row.index, { price_tbc: checked })
+                }
               },
           class: 'mx-auto',
         }),
@@ -326,13 +347,13 @@ const columns = computed(() =>
     {
       id: 'additional_fields',
       header: 'Additional Fields',
-      cell: ({ row }: DataTableRowContext) => {
+      cell: (context: RowContext) => {
         const hasAdditionalData = !!(
-          row.original.metal_type ||
-          row.original.alloy ||
-          row.original.specifics ||
-          row.original.location ||
-          row.original.dimensions
+          context.row.original.metal_type ||
+          context.row.original.alloy ||
+          context.row.original.specifics ||
+          context.row.original.location ||
+          context.row.original.dimensions
         )
 
         return h(
@@ -343,7 +364,7 @@ const columns = computed(() =>
             disabled: isColumnDisabled.value,
             onClick: isColumnDisabled.value
               ? undefined
-              : () => openAdditionalFieldsModal(row.index),
+              : () => openAdditionalFieldsModal(context.row.index),
           },
           () => [h(Settings2, { class: 'w-4 h-4 mr-1' }), hasAdditionalData ? 'Edit' : 'Add'],
         )
@@ -353,8 +374,8 @@ const columns = computed(() =>
     {
       id: 'receipt',
       header: 'Receipt',
-      cell: ({ row }: DataTableRowContext) => {
-        const line = row.original
+      cell: (context: RowContext) => {
+        const line = context.row.original
         const lineId = line.id as string
 
         // Only show receipt editor for lines that have been saved (have an ID)
@@ -371,7 +392,15 @@ const columns = computed(() =>
           stockHoldingJobId: props.stockHoldingJobId,
           poStatus: props.poStatus,
           poId: props.poId,
-          onSave: (editorState: LineEditorState) => emit('receipt:save', { lineId, editorState }),
+          onSave: (editorState: { rows: AllocationEditorRow[] }) => {
+            const normalized: LineEditorState = {
+              rows: editorState.rows.map((row) => ({
+                ...row,
+                target: row.job_id === props.stockHoldingJobId ? 'stock' : 'job',
+              })),
+            }
+            emit('receipt:save', { lineId, editorState: normalized })
+          },
           onAllocationDeleted: (data: { allocationId: string; allocationType: string }) =>
             emit('allocation-deleted', data),
         })
@@ -381,7 +410,7 @@ const columns = computed(() =>
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }: DataTableRowContext) =>
+      cell: (context: RowContext) =>
         h(
           Button,
           {
@@ -391,10 +420,10 @@ const columns = computed(() =>
             onClick: isColumnDisabled.value
               ? undefined
               : () => {
-                  if (row.original.id) {
-                    emit('delete-line', row.original.id)
+                  if (context.row.original.id) {
+                    emit('delete-line', context.row.original.id)
                   } else {
-                    emit('delete-line', row.index)
+                    emit('delete-line', context.row.index)
                   }
                 },
           },
@@ -402,14 +431,15 @@ const columns = computed(() =>
         ),
       meta: { editable: !isColumnDisabled.value },
     },
-  ].filter((column) => {
+  ]
+  return columnDefs.filter((column) => {
     // Hide Receipt column when PO status doesn't allow receipts
     if (column.id === 'receipt' && !isReceiptColumnVisible.value) {
       return false
     }
     return true
-  }),
-)
+  })
+})
 
 onMounted(() => {
   debugLog('Props ', props)

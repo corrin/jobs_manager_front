@@ -7,7 +7,8 @@
           AI-Assisted Document Editor
         </DialogTitle>
         <DialogDescription>
-          Step {{ currentStepIndex + 1 }} of {{ WIZARD_STEPS.length }}: {{ stepLabels[currentStep] }}
+          Step {{ currentStepIndex + 1 }} of {{ WIZARD_STEPS.length }}:
+          {{ stepLabels[currentStep] }}
         </DialogDescription>
       </DialogHeader>
 
@@ -98,10 +99,7 @@
                 :disabled="generatingHazardsIndex === index"
                 class="gap-1"
               >
-                <Loader2
-                  v-if="generatingHazardsIndex === index"
-                  class="w-4 h-4 animate-spin"
-                />
+                <Loader2 v-if="generatingHazardsIndex === index" class="w-4 h-4 animate-spin" />
                 <Sparkles v-else class="w-4 h-4" />
                 Generate Hazards
               </Button>
@@ -130,10 +128,7 @@
                 :disabled="generatingControlsIndex === index || task.potential_hazards.length === 0"
                 class="gap-1"
               >
-                <Loader2
-                  v-if="generatingControlsIndex === index"
-                  class="w-4 h-4 animate-spin"
-                />
+                <Loader2 v-if="generatingControlsIndex === index" class="w-4 h-4 animate-spin" />
                 <Sparkles v-else class="w-4 h-4" />
                 Generate Controls
               </Button>
@@ -241,14 +236,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
-import {
-  Sparkles,
-  Loader2,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  Save,
-} from 'lucide-vue-next'
+import { Sparkles, Loader2, AlertCircle, ChevronLeft, ChevronRight, Save } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -555,7 +543,11 @@ async function generatePPEImprovement() {
   isGeneratingPPE.value = true
   try {
     const currentPPE = content.value.ppe_requirements.join(', ')
-    const improved = await safetyService.improveSection(currentPPE, 'ppe', content.value.description)
+    const improved = await safetyService.improveSection(
+      currentPPE,
+      'ppe',
+      content.value.description,
+    )
     // Parse improved text into array (assuming comma-separated)
     const newItems = improved
       .split(/[,\n]/)

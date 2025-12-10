@@ -7,7 +7,8 @@
           <div>
             <h1 class="text-2xl font-semibold text-gray-900">Job Safety Analyses</h1>
             <p class="text-sm text-gray-500 mt-1">
-              View all JSAs across jobs. To create a new JSA, go to the Safety tab on a specific job.
+              View all JSAs across jobs. To create a new JSA, go to the Safety tab on a specific
+              job.
             </p>
           </div>
         </div>
@@ -44,8 +45,8 @@
             <ShieldCheck class="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 class="text-lg font-medium text-gray-900 mb-2">No Job Safety Analyses</h3>
             <p class="text-sm text-gray-500 mb-6 max-w-md mx-auto">
-              JSAs are created from the Safety tab on individual jobs. Open a job and navigate to the
-              Safety tab to create a JSA.
+              JSAs are created from the Safety tab on individual jobs. Open a job and navigate to
+              the Safety tab to create a JSA.
             </p>
             <Button @click="goToKanban" class="gap-2">
               <LayoutDashboard class="w-4 h-4" />

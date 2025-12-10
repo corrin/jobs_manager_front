@@ -20,11 +20,7 @@
         <div class="mt-4 max-w-md">
           <div class="relative">
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              v-model="searchQuery"
-              placeholder="Search procedures..."
-              class="pl-9"
-            />
+            <Input v-model="searchQuery" placeholder="Search procedures..." class="pl-9" />
           </div>
         </div>
       </div>
@@ -48,8 +44,8 @@
             <FileText class="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 class="text-lg font-medium text-gray-900 mb-2">No Safe Work Procedures</h3>
             <p class="text-sm text-gray-500 mb-6 max-w-md mx-auto">
-              Create your first Safe Work Procedure (SWP) for machinery or equipment to
-              standardize safe operations across your workshop.
+              Create your first Safe Work Procedure (SWP) for machinery or equipment to standardize
+              safe operations across your workshop.
             </p>
             <Button @click="openCreateDialog" class="gap-2">
               <Plus class="w-4 h-4" />
@@ -200,9 +196,7 @@
 
         <!-- Step 2: Equipment Name -->
         <div v-if="createForm.equipment_type" class="space-y-2">
-          <Label for="equipment_name">
-            {{ equipmentLabel }} Name *
-          </Label>
+          <Label for="equipment_name"> {{ equipmentLabel }} Name * </Label>
           <Input
             id="equipment_name"
             v-model="createForm.equipment_name"
@@ -381,8 +375,7 @@ const filteredDocuments = computed(() => {
   const query = searchQuery.value.toLowerCase()
   return documents.value.filter(
     (doc) =>
-      doc.title.toLowerCase().includes(query) ||
-      doc.site_location?.toLowerCase().includes(query),
+      doc.title.toLowerCase().includes(query) || doc.site_location?.toLowerCase().includes(query),
   )
 })
 
@@ -428,7 +421,8 @@ async function handleCreate() {
     ? `${createForm.value.document_number} `
     : ''
   const title = `${docNumPrefix}${createForm.value.equipment_name} Safe Work Procedure`
-  const description = `Safe work procedure for ${createForm.value.equipment_name} (${equipmentTypeLabel}). ${createForm.value.additional_details || ''}`.trim()
+  const description =
+    `Safe work procedure for ${createForm.value.equipment_name} (${equipmentTypeLabel}). ${createForm.value.additional_details || ''}`.trim()
 
   try {
     const doc = await store.generateSWP({

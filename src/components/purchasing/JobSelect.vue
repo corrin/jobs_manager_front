@@ -44,16 +44,19 @@
           @mouseenter="highlightedIndex = index"
         >
           <div class="font-medium text-gray-900">
-            <span v-if="job.isStockHolding" class="mr-1">📦</span>
+            <span v-if="isStockHoldingJob(job)" class="mr-1">📦</span>
             {{ job.job_number }}
           </div>
           <div class="text-sm text-gray-600 truncate">
-            {{ job.description || job.name }}
+            {{ job.description || job.name || job.job_display_name }}
           </div>
-          <div v-if="job.client_name && !job.isStockHolding" class="text-xs text-gray-500 truncate">
+          <div
+            v-if="job.client_name && !isStockHoldingJob(job)"
+            class="text-xs text-gray-500 truncate"
+          >
             Client: {{ job.client_name }}
           </div>
-          <div v-if="job.isStockHolding" class="text-xs text-orange-600 truncate">
+          <div v-if="isStockHoldingJob(job)" class="text-xs text-orange-600 truncate">
             Stock Holding Job
           </div>
         </div>
@@ -89,7 +92,9 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { z } from 'zod'
 import { schemas } from '../../api/generated/api'
 
-type Job = z.infer<typeof schemas.KanbanJob & { isStockHolding: boolean }>
+type Job = z.infer<typeof schemas.JobForPurchasing> & {
+  description?: string | null
+}
 
 const props = defineProps<{
   modelValue?: string | number | null
@@ -225,6 +230,8 @@ const onKeydown = (event: KeyboardEvent) => {
       break
   }
 }
+
+const isStockHoldingJob = (job: Job) => Boolean(job.is_stock_holding)
 
 const selectJob = (job: Job) => {
   if (props.disabled) return

@@ -88,8 +88,20 @@ function onExpectedDeliveryUpdate(value: string) {
   emit('update:expected_delivery', value)
 }
 
+function onReferenceUpdate(value: string | number) {
+  emit('update:reference', typeof value === 'number' ? String(value) : value)
+}
+
 function onStatusUpdate(value: Status) {
   emit('update:status', value)
+}
+
+function onSupplierSelected(client: { name?: string } | null) {
+  emit('update:supplier', client?.name || '')
+}
+
+function onSupplierIdUpdate(id: string | null) {
+  emit('update:supplier_id', id ?? '')
 }
 
 function formatDate(dateString: string | null | undefined): string {
@@ -130,8 +142,8 @@ const statusOptions: { value: Status; label: string }[] = [
             :model-value="po.supplier"
             required
             placeholder="Search supplier…"
-            @update:selected-client="(c) => emit('update:supplier', c?.name || '')"
-            @update:selected-id="(id) => emit('update:supplier_id', id)"
+            @update:selected-client="onSupplierSelected"
+            @update:selected-id="onSupplierIdUpdate"
             :label="'Supplier'"
           />
         </template>
@@ -165,7 +177,7 @@ const statusOptions: { value: Status; label: string }[] = [
         <Input
           id="reference"
           :model-value="po.reference || ''"
-          @update:model-value="(v) => emit('update:reference', String(v ?? ''))"
+          @update:model-value="onReferenceUpdate"
           class="w-full"
         />
       </div>

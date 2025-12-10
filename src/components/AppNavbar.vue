@@ -482,13 +482,19 @@
                       >
                       <div class="border-t border-gray-200 my-1"></div>
                       <button
-                        @click="showNotImplemented('Machine Maintenance Schedule'); closeMobileMenu()"
+                        @click="
+                          showNotImplemented('Machine Maintenance Schedule')
+                          closeMobileMenu()
+                        "
                         class="block w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
                       >
                         Machine Maintenance
                       </button>
                       <button
-                        @click="showNotImplemented('Staff Training'); closeMobileMenu()"
+                        @click="
+                          showNotImplemented('Staff Training')
+                          closeMobileMenu()
+                        "
                         class="block w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
                       >
                         Staff Training

@@ -173,8 +173,8 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
         <div style="display: flex; flex-direction: column; gap: 2px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-weight: 600; color: #1F2937;">#${jobNumber}</span>
-            <span style="font-size: 12px; color: ${this.getStatusColor(job.status || 'unknown')}; font-weight: 500;">
-              ${(job.status || 'unknown').toUpperCase()}
+            <span style="font-size: 12px; color: ${this.getStatusColor(String(job.status) || 'unknown')}; font-weight: 500;">
+              ${String(job.status || 'unknown').toUpperCase()}
             </span>
           </div>
           <div style="font-size: 14px; color: #374151; font-weight: 500;">${jobName}</div>

@@ -26,6 +26,7 @@ import type { DataTableRowContext } from '../../utils/data-table-types'
 import { toast } from 'vue-sonner'
 import { debugLog } from '../../utils/debug'
 import { formatCurrency } from '../../utils/string-formatting'
+import { roundToDecimalPlaces } from '@/utils/number'
 import { HelpCircle, Trash2, Plus, AlertTriangle } from 'lucide-vue-next'
 import {
   Dialog,
@@ -642,7 +643,7 @@ const columns = computed(() => {
                         const qty = Number(line.quantity || 1)
                         const unitCost = Number(stock.unit_cost || 0)
                         const markup = companyDefaultsStore.companyDefaults?.materials_markup || 0
-                        const unitRev = unitCost * (1 + markup)
+                        const unitRev = roundToDecimalPlaces(unitCost * (1 + markup), 2)
                         await props.consumeStockFn({
                           line,
                           stockId: val,

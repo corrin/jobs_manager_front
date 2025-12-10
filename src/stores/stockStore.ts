@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { z } from 'zod'
+import { normalizeOptionalDecimal } from '@/utils/number'
 
 const stockArraySchema = z.array(schemas.StockItem)
 
@@ -93,11 +94,25 @@ export const useStockStore = defineStore('stock', () => {
 
   async function consumeStock(
     id: string,
-    payload: { job_id: string; quantity: number },
+    payload: {
+      job_id: string
+      quantity: number
+      unit_cost?: number | string | null
+      unit_rev?: number | string | null
+    },
   ): Promise<StockConsumeResponse> {
+    const normalizedUnitCost = normalizeOptionalDecimal(payload.unit_cost, {
+      decimalPlaces: 2,
+    })
+    const normalizedUnitRev = normalizeOptionalDecimal(payload.unit_rev, {
+      decimalPlaces: 2,
+    })
+
     const consumePayload: StockConsumeRequest = {
       job_id: payload.job_id,
       quantity: payload.quantity,
+      ...(normalizedUnitCost !== undefined ? { unit_cost: normalizedUnitCost } : {}),
+      ...(normalizedUnitRev !== undefined ? { unit_rev: normalizedUnitRev } : {}),
     }
     return await api.consumeStock(consumePayload, {
       params: { id },

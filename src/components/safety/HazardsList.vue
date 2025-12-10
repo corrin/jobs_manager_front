@@ -19,7 +19,10 @@
         </Button>
       </div>
 
-      <div v-if="hazards.length === 0" class="p-4 text-center text-sm text-gray-500 bg-gray-50 rounded-md">
+      <div
+        v-if="hazards.length === 0"
+        class="p-4 text-center text-sm text-gray-500 bg-gray-50 rounded-md"
+      >
         No hazards identified yet. Click "Generate Hazards" to get AI suggestions.
       </div>
     </div>

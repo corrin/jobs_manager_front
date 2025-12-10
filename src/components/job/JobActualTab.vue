@@ -275,7 +275,7 @@
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
 import { formatCurrency } from '@/utils/string-formatting'
-
+import { normalizeOptionalDecimal } from '@/utils/number'
 import { onMounted, ref, computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
@@ -589,11 +589,18 @@ async function consumeStockForNewLine(payload: {
   try {
     toast.info('Consuming stock...', { id: 'consume-stock' })
 
+    const normalizedUnitCost = normalizeOptionalDecimal(payload.unitCost, {
+      decimalPlaces: 2,
+    })
+    const normalizedUnitRev = normalizeOptionalDecimal(payload.unitRev, {
+      decimalPlaces: 2,
+    })
+
     const request: StockConsumeRequest = {
       job_id: props.jobId,
       quantity: payload.quantity,
-      unit_cost: payload.unitCost,
-      unit_rev: payload.unitRev,
+      ...(normalizedUnitCost !== undefined ? { unit_cost: normalizedUnitCost } : {}),
+      ...(normalizedUnitRev !== undefined ? { unit_rev: normalizedUnitRev } : {}),
     }
 
     const response = await api.consumeStock(request, {
@@ -738,10 +745,11 @@ function resolveSource(
     isDeliveryReceiptExtRefs(line.ext_refs)
   ) {
     const label = line.meta.po_number || 'Delivery Receipt'
+    const deliveryExtRefs = line.ext_refs
     return {
       visible: true,
       label,
-      onClick: () => navigateToDeliveryReceipt(line.ext_refs.purchase_order_id),
+      onClick: () => navigateToDeliveryReceipt(deliveryExtRefs.purchase_order_id),
     }
   }
 
