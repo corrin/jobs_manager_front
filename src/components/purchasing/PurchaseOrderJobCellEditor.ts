@@ -283,11 +283,11 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
     this.value = String(job.job_number)
     this.input.value = String(job.job_number)
 
-    debugLog('🎯 Job selected in PO editor:', job)
+    debugLog('Job selected in PO editor:', job)
 
     if (this.params.node) {
       const rowData = this.params.node.data
-      debugLog('🔄 Updating PO line with job info:', job)
+      debugLog('Updating PO line with job info:', job)
 
       rowData.job_id = job.id
       rowData.job_number = job.job_number
@@ -299,7 +299,7 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
         force: true,
       })
 
-      debugLog('✅ PO line updated with job data')
+      debugLog('PO line updated with job data')
     }
 
     this.hideDropdown()
@@ -321,7 +321,7 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
 
   getValue(): string {
     if (this.selectedJob) {
-      debugLog('🎯 Returning job ID from PO editor:', this.selectedJob.id)
+      debugLog('Returning job ID from PO editor:', this.selectedJob.id)
       return this.selectedJob.id
     }
     return this.value

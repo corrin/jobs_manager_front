@@ -19,7 +19,7 @@ async function updateJobHeaderPartial(
 ): Promise<{ success: true; data: JobDetailResponse } | { success: false; error: string }> {
   try {
     const keys = Object.keys(payload || {})
-    debugLog('[jobService.updateJobHeaderPartial] → request', { jobId, keys })
+    debugLog('[jobService.updateJobHeaderPartial] request', { jobId, keys })
 
     // normalizer to ensure checksum parity with backend (nullable fields use null, not '')
     const nullableKeys = new Set([
@@ -49,7 +49,7 @@ async function updateJobHeaderPartial(
       debugLog('[jobService.updateJobHeaderPartial] using client snapshot', { jobId, keys })
     } else {
       // Fallback: get from server (should not happen in normal delta flow)
-      debugLog('[jobService.updateJobHeaderPartial] ⚠️ FALLBACK: fetching from server', {
+      debugLog('[jobService.updateJobHeaderPartial] FALLBACK: fetching from server', {
         jobId,
         keys,
       })
@@ -137,7 +137,7 @@ async function updateJobHeaderPartial(
 
     deltaQueue.clearChangeId()
 
-    debugLog('[jobService.updateJobHeaderPartial] ← response', {
+    debugLog('[jobService.updateJobHeaderPartial] response', {
       jobId,
       keys,
       ok: true,
@@ -145,7 +145,7 @@ async function updateJobHeaderPartial(
     return { success: true, data: res }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error updating job header'
-    debugLog('[jobService.updateJobHeaderPartial] ✖ error', { jobId, error: msg })
+    debugLog('[jobService.updateJobHeaderPartial] error', { jobId, error: msg })
     return { success: false, error: msg }
   }
 }
@@ -322,22 +322,22 @@ export const jobService = {
         Array.isArray(filters.status) && filters.status.length > 0 ? filters.status.join(',') : '',
     }
 
-    console.log('🔍 Advanced search filters:', processedFilters)
+    console.log('Advanced search filters:', processedFilters)
     return api.job_api_jobs_advanced_search_retrieve({ queries: processedFilters })
   },
 
   // Update job status
   updateJobStatus(jobId: string, newStatus: string): Promise<JobStatusUpdateResponse> {
-    debugLog('[jobService.updateJobStatus] →', { jobId, newStatus })
+    debugLog('[jobService.updateJobStatus] ->', { jobId, newStatus })
     return api
       .job_api_jobs_update_status_create({ status: newStatus }, { params: { job_id: jobId } })
       .then((r) => {
-        debugLog('[jobService.updateJobStatus] ← ok', { jobId, newStatus })
+        debugLog('[jobService.updateJobStatus] ok', { jobId, newStatus })
         return r
       })
       .catch((e) => {
         const msg = e instanceof Error ? e.message : String(e)
-        debugLog('[jobService.updateJobStatus] ✖ error', { jobId, newStatus, error: msg })
+        debugLog('[jobService.updateJobStatus] error', { jobId, newStatus, error: msg })
         throw e
       })
   },
@@ -383,16 +383,16 @@ export const jobService = {
     if (afterId) payload.after_id = afterId
     if (status) payload.status = status
 
-    debugLog('[jobService.reorderJob] →', { jobId, payload })
+    debugLog('[jobService.reorderJob] ->', { jobId, payload })
     return api
       .job_api_jobs_reorder_create(payload, { params: { job_id: jobId } })
       .then((r) => {
-        debugLog('[jobService.reorderJob] ← ok', { jobId })
+        debugLog('[jobService.reorderJob] ok', { jobId })
         return r
       })
       .catch((e) => {
         const msg = e instanceof Error ? e.message : String(e)
-        debugLog('[jobService.reorderJob] ✖ error', { jobId, payload, error: msg })
+        debugLog('[jobService.reorderJob] error', { jobId, payload, error: msg })
         throw e
       })
   },

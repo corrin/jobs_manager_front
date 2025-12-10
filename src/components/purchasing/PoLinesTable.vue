@@ -165,11 +165,11 @@ const columns = computed(() =>
             'onUpdate:modelValue': isColumnDisabled.value
               ? undefined
               : (val: string | null) => {
-                  debugLog('🔄 PoLinesTable: Received modelValue update:', val)
-                  debugLog('📦 PoLinesTable: Available stock items:', stockStore.items.length)
+                  debugLog('PoLinesTable: Received modelValue update:', val)
+                  debugLog('PoLinesTable: Available stock items:', stockStore.items.length)
 
                   const found = stockStore.items.find((i: StockItem) => i.id === val)
-                  debugLog('🎯 PoLinesTable: Found stock item:', found)
+                  debugLog('PoLinesTable: Found stock item:', found)
 
                   updateLine(row.index, {
                     // Auto-populate all fields from stock item when selected

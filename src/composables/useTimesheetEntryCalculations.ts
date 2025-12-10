@@ -56,7 +56,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
 
     const calculatedWage = Math.round(hours * multiplier * wageRate * 100) / 100
 
-    debugLog('💰 Calculating wage:', {
+    debugLog('Calculating wage:', {
       hours,
       rateType,
       multiplier,
@@ -78,7 +78,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     entry: TimesheetEntryWithMeta,
     job: TimesheetEntryJobSelectionItem,
   ): TimesheetEntryWithMeta => {
-    debugLog('🔧 Populating job fields:', {
+    debugLog('Populating job fields:', {
       entry: entry,
       job: job,
     })
@@ -105,7 +105,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       chargeOutRate: normalizedChargeOutRate,
     }
 
-    debugLog('✨ Populated job fields result:', result)
+    debugLog('Populated job fields result:', result)
     return result
   }
 
@@ -138,7 +138,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     if (hours > 0 && staffWageRate > 0)
       calculatedWage = Math.round(hours * rateMultiplier * staffWageRate * 100) / 100
 
-    debugLog('🏗️ Creating new row with correct wage calculation:', {
+    debugLog('Creating new row with correct wage calculation:', {
       staffId: staffMember.id,
       staffWageRate,
       hours,
@@ -349,7 +349,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
         ? Math.round(hours * backendRateMultiplier * staffWageRate * 100) / 100
         : 0
 
-    debugLog('🔄 Converting from CostLine with correct wage calculation:', {
+    debugLog('Converting from CostLine with correct wage calculation:', {
       costLineId: costLine.id,
       hours,
       staffWageRate,

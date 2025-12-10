@@ -85,12 +85,12 @@ export function useQuoteImport() {
     error.value = null
 
     try {
-      debugLog('🔍 [useQuoteImport] Loading quote status for jobId:', jobId)
+      debugLog('[useQuoteImport] Loading quote status for jobId:', jobId)
       currentQuote.value = await quoteService.getQuoteStatus(jobId)
-      debugLog('✅ [useQuoteImport] Quote status loaded:', currentQuote.value)
+      debugLog('[useQuoteImport] Quote status loaded:', currentQuote.value)
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Failed to load quote status'
-      debugLog('❌ [useQuoteImport] Failed to load quote status:', err)
+      debugLog('[useQuoteImport] Failed to load quote status:', err)
     } finally {
       isLoading.value = false
     }
