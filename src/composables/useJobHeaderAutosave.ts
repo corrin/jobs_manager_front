@@ -340,9 +340,7 @@ export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
     isInitializing.value = true
     autosave.onBeforeUnloadBind()
     autosave.onVisibilityBind()
-    unbindRouteGuard = autosave.onRouteLeaveBind({
-      beforeEach: (guard: any) => router.beforeEach(guard), // eslint-disable-line @typescript-eslint/no-explicit-any
-    })
+    unbindRouteGuard = autosave.onRouteLeaveBind(router)
     unbindConcurrencyRetry = onConcurrencyRetry(jobId, () => {
       void autosave!.flush('retry-click')
     })

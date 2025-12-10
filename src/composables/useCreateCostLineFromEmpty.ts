@@ -63,7 +63,7 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
       }
 
       toast.success('Cost line created!')
-      debugLog('✅ Successfully created cost line:', created)
+      debugLog('Successfully created cost line:', created)
 
       // Call success callback if provided
       if (onSuccess) {

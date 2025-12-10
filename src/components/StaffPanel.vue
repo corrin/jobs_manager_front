@@ -97,7 +97,7 @@ const loadStaffMembers = async (): Promise<void> => {
 const toggleStaffFilter = (staffId: string): void => {
   const index = activeFilters.value.indexOf(staffId)
 
-  debugLog('[STAFF PANEL DEBUG] Toggle staff filter:', {
+  debugLog('StaffPanel - Toggle staff filter:', {
     staffId,
     currentFilters: activeFilters.value,
     index,
@@ -110,7 +110,7 @@ const toggleStaffFilter = (staffId: string): void => {
     activeFilters.value.push(staffId)
   }
 
-  debugLog('[STAFF PANEL DEBUG] After toggle:', {
+  debugLog('StaffPanel - After toggle:', {
     newFilters: activeFilters.value,
   })
 

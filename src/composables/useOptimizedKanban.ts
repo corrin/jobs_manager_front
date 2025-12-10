@@ -548,12 +548,12 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
   // Initialize
   onMounted(async () => {
     try {
-      debugLog('🚀 Initializing Kanban...')
+      debugLog('Initializing Kanban...')
       initializeColumnStates()
       await Promise.all([loadAllColumns(), loadStatusChoices()])
-      debugLog('✅ Kanban initialization complete')
+      debugLog('Kanban initialization complete')
     } catch (err) {
-      debugLog('❌ Error during Kanban initialization:', err)
+      debugLog('Error during Kanban initialization:', err)
       error.value = err instanceof Error ? err.message : 'Failed to initialize kanban'
     }
   })

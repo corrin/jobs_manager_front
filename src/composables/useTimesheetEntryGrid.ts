@@ -366,7 +366,7 @@ export function useTimesheetEntryGrid(
       // Handle existing row updates - mark as modified and schedule autosave
       if (!data.isNewRow && updatedEntry.id && !isRowEmpty(updatedEntry)) {
         data.isModified = true
-        console.log('🔄 Existing row marked as modified:', updatedEntry.id)
+        console.log('Existing row marked as modified:', updatedEntry.id)
         options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
       }
 
@@ -377,7 +377,7 @@ export function useTimesheetEntryGrid(
         }
         data.isModified = true
         data.isNewRow = false // Convert to regular row but don't save yet
-        console.log('✏️ New row marked as modified:', updatedEntry.description || '')
+        console.log('New row marked as modified:', updatedEntry.description || '')
         options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
 
         // Ensure there's always an empty row at the end

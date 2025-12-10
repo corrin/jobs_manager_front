@@ -224,8 +224,8 @@ const selectedStaff = ref<StaffDailyData | null>(null)
 const showStaffModal = ref(false)
 const showMetricsModal = ref(false)
 
-debugLog('🔗 DailyTimesheetView URL params:', { date: route.query.date })
-debugLog('📊 Using initial date:', initialDate)
+debugLog('DailyTimesheetView URL params:', { date: route.query.date })
+debugLog('Using initial date:', initialDate)
 
 const formatDisplayDate = (date: string): string => {
   return dateService.formatDisplayDate(date, {
@@ -305,7 +305,7 @@ watch(
   () => route.query.date,
   (newDate) => {
     if (newDate && newDate !== selectedDate.value) {
-      debugLog('📅 Updating date from URL:', newDate)
+      debugLog('Updating date from URL:', newDate)
       selectedDate.value = newDate as string
       loadData()
     }
@@ -315,7 +315,7 @@ watch(
 
 watch(selectedDate, (newDate) => {
   if (newDate && newDate !== route.query.date) {
-    debugLog('📅 Updating URL from date change:', newDate)
+    debugLog('Updating URL from date change:', newDate)
     updateRoute()
   }
 })

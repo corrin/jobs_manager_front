@@ -21,14 +21,14 @@
                 :month="selectedMonth"
                 @update:year="
                   (year) => {
-                    debugLog('📅 Year changed to:', year)
+                    debugLog('Year changed to:', year)
                     selectedYear = year
                     fetchKPIData()
                   }
                 "
                 @update:month="
                   (month) => {
-                    debugLog('📅 Month changed to:', month)
+                    debugLog('Month changed to:', month)
                     selectedMonth = month
                     fetchKPIData()
                   }
@@ -361,7 +361,7 @@ async function fetchKPIData() {
     kpiLoading.value = true
     kpiError.value = null
 
-    debugLog('🔍 Fetching KPI data for:', {
+    debugLog('Fetching KPI data for:', {
       year: selectedYear.value,
       month: selectedMonth.value,
     })
@@ -371,7 +371,7 @@ async function fetchKPIData() {
       month: selectedMonth.value,
     })
 
-    debugLog('✅ KPI data received:', {
+    debugLog('KPI data received:', {
       year: response.year,
       month: response.month,
       daysCount: Object.keys(response.calendar_data).length,
@@ -379,7 +379,7 @@ async function fetchKPIData() {
 
     kpiData.value = response
   } catch (error) {
-    debugLog('❌ Error fetching KPI data:', error)
+    debugLog('Error fetching KPI data:', error)
     kpiError.value = error instanceof Error ? error.message : 'Failed to load KPI data'
   } finally {
     kpiLoading.value = false

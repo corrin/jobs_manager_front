@@ -103,9 +103,9 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
       throw new Error('Purchase order ID is required')
     }
 
-      if (!receiptData || Object.keys(receiptData).length === 0) {
-        throw new Error('Receipt data is required')
-      }
+    if (!receiptData || Object.keys(receiptData).length === 0) {
+      throw new Error('Receipt data is required')
+    }
 
     loading.value = true
     error.value = null
@@ -134,7 +134,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
         errorMessage.includes('updated elsewhere') ||
         errorMessage.includes('Data reloaded')
       ) {
-        debugLog('🔄 Concurrency conflict detected in delivery receipt store')
+        debugLog('Concurrency conflict detected in delivery receipt store')
 
         // Show persistent user notification with retry option IMMEDIATELY
         toast.error('This purchase order was updated elsewhere. Data reloaded.', {
@@ -150,9 +150,9 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
         // Immediately reload data so user can see what changed
         try {
           await reloadPoOnConflict(purchaseOrderId)
-          debugLog('✅ Reloaded PO data after concurrency conflict')
+          debugLog('Reloaded PO data after concurrency conflict')
         } catch (reloadError) {
-          debugLog('❌ Failed to reload PO data:', reloadError)
+          debugLog('Failed to reload PO data:', reloadError)
         }
 
         // Create and throw ConcurrencyError
@@ -174,15 +174,15 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
    * @param poId - The purchase order ID to reload
    */
   async function reloadPoOnConflict(poId: string): Promise<void> {
-    debugLog('🔄 Delivery Receipt Store - reloadPoOnConflict called:', { poId })
+    debugLog('Delivery Receipt Store - reloadPoOnConflict called:', { poId })
 
     try {
       // Fetch full PO detail (captures new ETag via interceptor)
       await fetchPurchaseOrder(poId)
 
-      debugLog('✅ Delivery Receipt Store - reloadPoOnConflict success:', { poId })
+      debugLog('Delivery Receipt Store - reloadPoOnConflict success:', { poId })
     } catch (error) {
-      debugLog('❌ Delivery Receipt Store - reloadPoOnConflict error:', { poId, error })
+      debugLog('Delivery Receipt Store - reloadPoOnConflict error:', { poId, error })
       throw error
     }
   }
@@ -198,11 +198,11 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     error.value = null
 
     try {
-      debugLog(`🔍 Fetching existing allocations for PO: ${purchaseOrderId}`)
+      debugLog(`Fetching existing allocations for PO: ${purchaseOrderId}`)
       const response = await api.purchasing_rest_purchase_orders_allocations_retrieve({
         params: { po_id: purchaseOrderId },
       })
-      debugLog('📦 Existing allocations response:', response)
+      debugLog('Existing allocations response:', response)
       return response
     } catch (err) {
       const errorMessage = handleApiError(

@@ -319,7 +319,7 @@ const allocateForm = ref({
 watch(
   allocateForm,
   (newValue) => {
-    debugLog('📝 allocateForm changed:', newValue)
+    debugLog('allocateForm changed:', newValue)
   },
   { deep: true },
 )

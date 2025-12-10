@@ -32,10 +32,10 @@ export const createCostLine = async (
   kind: 'estimate' | 'quote' | 'actual',
   payload: CostLineRequest,
 ): Promise<CostLineResponse> => {
-  debugLog('?Y"? COSTLINE SERVICE DEBUG - Creating cost line:')
-  debugLog('  - Job ID:', jobId)
-  debugLog('  - Kind:', kind)
-  debugLog('  - Payload:', payload)
+  debugLog('COSTLINE SERVICE - Creating cost line:')
+  debugLog(' - Job ID:', jobId)
+  debugLog(' - Kind:', kind)
+  debugLog(' - Payload:', payload)
 
   const now = new Date().toISOString()
   const body: CostLineRequest = {
@@ -55,7 +55,7 @@ export const createCostLine = async (
           params: { job_id: String(jobId), kind },
         })
 
-  debugLog('?Y"? COSTLINE SERVICE DEBUG - Created cost line result:', result)
+  debugLog('COSTLINE SERVICE - Created cost line result:', result)
   return result
 }
 
@@ -69,18 +69,18 @@ export const updateCostLine = async (
 }
 
 export const deleteCostLine = async (id: string): Promise<void> => {
-  debugLog('?Ys? SERVICE: Starting DELETE request for cost line ID:', id)
-  debugLog('?Y"? COSTLINE SERVICE DEBUG - Deleting cost line:', id)
+  debugLog('SERVICE: Starting DELETE request for cost line ID:', id)
+  debugLog('COSTLINE SERVICE - Deleting cost line:', id)
 
   try {
     await api.job_rest_cost_lines_delete_destroy(undefined, {
       params: { cost_line_id: id },
     })
-    debugLog('?o. SERVICE: DELETE request completed successfully')
-    debugLog('?Y"? COSTLINE SERVICE DEBUG - Successfully deleted cost line:', id)
+    debugLog('SERVICE: DELETE request completed successfully')
+    debugLog('COSTLINE SERVICE - Successfully deleted cost line:', id)
   } catch (error) {
-    debugLog('??O SERVICE: DELETE request failed:', error)
-    debugLog('?Y"? COSTLINE SERVICE DEBUG - Delete failed:', error)
+    debugLog('SERVICE: DELETE request failed:', error)
+    debugLog('COSTLINE SERVICE - Delete failed:', error)
     throw error
   }
 }

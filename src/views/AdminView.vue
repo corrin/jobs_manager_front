@@ -66,7 +66,7 @@ const username = computed(() => {
   )
 })
 
-debugLog('[DEBUG] UserInfo in AdminView:', userInfo.value)
+debugLog('UserInfo in AdminView:', userInfo.value)
 
 const today = new Date().toLocaleDateString('en-NZ', {
   weekday: 'long',

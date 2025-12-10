@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { schemas } from '../api/generated/api'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 import { z } from 'zod'
+import { debugLog } from '@/utils/debug'
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type FullJob = z.infer<typeof schemas.Job>
@@ -21,7 +22,7 @@ export function useTimesheetSummary() {
   const getJobHours = (jobId: string, timeEntries: TimesheetEntryWithMeta[]) => {
     const jobEntries = timeEntries.filter((entry) => entry.job_id === jobId)
 
-    console.log(`[DEBUG] getJobHours for jobId ${jobId}:`, {
+    debugLog(`getJobHours for jobId ${jobId}:`, {
       jobId,
       totalEntries: timeEntries.length,
       matchingEntries: jobEntries.length,
@@ -112,7 +113,7 @@ export function useTimesheetSummary() {
   }
 
   const getEstimatedHours = (job: FullJob) => {
-    console.log('Received job: ', job)
+    debugLog('Received job:', job)
     if (!job) return 0
     return job.latest_estimate.cost_lines.reduce((sum, line) => sum + (line.quantity || 0), 0)
   }

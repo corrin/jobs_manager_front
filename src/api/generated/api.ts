@@ -778,9 +778,7 @@ const JobContactUpdateRequest = z
   })
   .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
-const AssignJobRequest = z
-  .object({ job_id: z.string().min(1), staff_id: z.string().min(1) })
-  .passthrough()
+const AssignJobRequest = z.object({ staff_id: z.string().uuid() }).passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
   .object({
@@ -1483,63 +1481,34 @@ const JobHeaderResponse = z
   })
   .passthrough()
 const JobInvoicesResponse = z.object({ invoices: z.array(Invoice) }).passthrough()
-const DocumentTypeEnum = z.enum(['jsa', 'swp'])
-const Status6b5Enum = z.enum(['draft', 'final'])
+const DocumentTypeEnum = z.enum(['jsa', 'swp', 'sop'])
 const SafetyDocumentList = z
   .object({
     id: z.string().uuid(),
     document_type: DocumentTypeEnum,
+    document_number: z.string().max(50).nullish(),
     job_number: z.string().nullable(),
-    status: Status6b5Enum.optional(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
     title: z.string().max(255),
     site_location: z.string().max(500).optional(),
-    task_count: z.number().int(),
-    has_pdf: z.boolean(),
-  })
-  .passthrough()
-const SafetyDocumentErrorResponse = z
-  .object({
-    status: z.string().optional().default('error'),
-    message: z.string(),
-  })
-  .passthrough()
-const InitialRiskRatingEnum = z.enum(['Low', 'Moderate', 'High', 'Extreme'])
-const ControlMeasure = z
-  .object({ measure: z.string(), associated_hazard: z.string().optional() })
-  .passthrough()
-const RevisedRiskRatingEnum = z.enum(['Low', 'Moderate', 'High', 'Extreme'])
-const SafetyTask = z
-  .object({
-    step_number: z.number().int().gte(1),
-    description: z.string(),
-    summary: z.string().optional(),
-    potential_hazards: z.array(z.string()),
-    initial_risk_rating: InitialRiskRatingEnum,
-    control_measures: z.array(ControlMeasure),
-    revised_risk_rating: RevisedRiskRatingEnum,
+    google_doc_url: z.string().max(200).url().optional(),
   })
   .passthrough()
 const SafetyDocument = z
   .object({
     id: z.string().uuid(),
     document_type: DocumentTypeEnum,
+    document_number: z.string().max(50).nullish(),
     job_id: z.string().uuid().nullable(),
     job_number: z.string().nullable(),
-    status: Status6b5Enum.optional(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
     title: z.string().max(255),
     company_name: z.string().max(255),
     site_location: z.string().max(500).optional(),
-    description: z.string(),
-    ppe_requirements: z.unknown().optional(),
-    tasks: z.array(SafetyTask),
-    additional_notes: z.string().optional(),
-    pdf_file_path: z.string(),
-    pdf_url: z.string().nullable(),
-    context_document_ids: z.unknown(),
+    google_doc_id: z.string(),
+    google_doc_url: z.string().url(),
   })
   .passthrough()
 const JobQuoteAcceptanceRequest = z
@@ -1773,52 +1742,74 @@ const MonthEndPostResponse = z
     errors: z.array(z.string()),
   })
   .passthrough()
-const ControlMeasureRequest = z
+const GenerateControlsRequestRequest = z
   .object({
-    measure: z.string().min(1),
-    associated_hazard: z.string().optional(),
+    hazards: z.array(z.string().min(1)),
+    task_description: z.string().min(1).optional().default(''),
   })
   .passthrough()
-const SafetyTaskRequest = z
+const GenerateControlsResponse = z.object({ controls: z.array(z.string()) }).passthrough()
+const GenerateHazardsRequestRequest = z
+  .object({ task_description: z.string().min(1) })
+  .passthrough()
+const GenerateHazardsResponse = z.object({ hazards: z.array(z.string()) }).passthrough()
+const ImproveDocumentRequestRequest = z
   .object({
-    step_number: z.number().int().gte(1),
-    description: z.string().min(1),
-    summary: z.string().optional(),
-    potential_hazards: z.array(z.string().min(1)),
-    initial_risk_rating: InitialRiskRatingEnum,
-    control_measures: z.array(ControlMeasureRequest),
-    revised_risk_rating: RevisedRiskRatingEnum,
+    raw_text: z.string().min(1),
+    document_type: z.string().min(1).optional().default('swp'),
   })
   .passthrough()
-const SafetyDocumentRequest = z
+const ImproveDocumentResponse = z
   .object({
-    document_type: DocumentTypeEnum,
-    status: Status6b5Enum.optional(),
-    title: z.string().min(1).max(255),
-    company_name: z.string().min(1).max(255),
-    site_location: z.string().max(500).optional(),
-    description: z.string().min(1),
-    ppe_requirements: z.unknown().optional(),
-    tasks: z.array(SafetyTaskRequest),
-    additional_notes: z.string().optional(),
-  })
-  .passthrough()
-const PatchedSafetyDocumentRequest = z
-  .object({
-    document_type: DocumentTypeEnum,
-    status: Status6b5Enum,
-    title: z.string().min(1).max(255),
-    company_name: z.string().min(1).max(255),
-    site_location: z.string().max(500),
-    description: z.string().min(1),
-    ppe_requirements: z.unknown(),
-    tasks: z.array(SafetyTaskRequest),
+    title: z.string(),
+    description: z.string(),
+    site_location: z.string(),
+    ppe_requirements: z.array(z.string()),
+    tasks: z.array(z.unknown()),
     additional_notes: z.string(),
+  })
+  .passthrough()
+const ImproveSectionRequestRequest = z
+  .object({
+    section_text: z.string().min(1),
+    section_type: z.string().min(1),
+    context: z.string().min(1).optional().default(''),
+  })
+  .passthrough()
+const ImproveSectionResponse = z.object({ improved_text: z.string() }).passthrough()
+const SafetyDocumentContentResponse = z
+  .object({
+    title: z.string(),
+    document_type: z.string(),
+    description: z.string(),
+    site_location: z.string(),
+    ppe_requirements: z.array(z.string()),
+    tasks: z.array(z.unknown()),
+    additional_notes: z.string(),
+    raw_text: z.string(),
+  })
+  .passthrough()
+const SafetyDocumentContentUpdateRequest = z
+  .object({
+    title: z.string().min(1),
+    site_location: z.string().min(1),
+    description: z.string().min(1),
+    ppe_requirements: z.array(z.string().min(1)),
+    tasks: z.array(z.unknown()),
+    additional_notes: z.string().min(1),
   })
   .partial()
   .passthrough()
+const SOPGenerateRequestRequest = z
+  .object({
+    title: z.string().min(1),
+    description: z.string().min(1).optional().default(''),
+    document_number: z.string().min(1).optional().default(''),
+  })
+  .passthrough()
 const SWPGenerateRequestRequest = z
   .object({
+    document_number: z.string().max(50).optional(),
     title: z.string().min(1).max(255),
     description: z.string().min(1),
     site_location: z.string().optional(),
@@ -2198,10 +2189,9 @@ const PurchaseOrderAllocationsResponse = z
     allocations: z.record(z.array(AllocationItem)),
   })
   .passthrough()
-const TypeD09Enum = z.enum(['job', 'stock'])
 const AllocationDetailsResponse = z
   .object({
-    type: TypeD09Enum,
+    type: TypeC98Enum,
     id: z.string().uuid(),
     description: z.string(),
     quantity: z.number(),
@@ -2797,13 +2787,7 @@ export const schemas = {
   JobHeaderResponse,
   JobInvoicesResponse,
   DocumentTypeEnum,
-  Status6b5Enum,
   SafetyDocumentList,
-  SafetyDocumentErrorResponse,
-  InitialRiskRatingEnum,
-  ControlMeasure,
-  RevisedRiskRatingEnum,
-  SafetyTask,
   SafetyDocument,
   JobQuoteAcceptanceRequest,
   JobQuoteAcceptance,
@@ -2834,10 +2818,17 @@ export const schemas = {
   MonthEndGetResponse,
   MonthEndPostRequest,
   MonthEndPostResponse,
-  ControlMeasureRequest,
-  SafetyTaskRequest,
-  SafetyDocumentRequest,
-  PatchedSafetyDocumentRequest,
+  GenerateControlsRequestRequest,
+  GenerateControlsResponse,
+  GenerateHazardsRequestRequest,
+  GenerateHazardsResponse,
+  ImproveDocumentRequestRequest,
+  ImproveDocumentResponse,
+  ImproveSectionRequestRequest,
+  ImproveSectionResponse,
+  SafetyDocumentContentResponse,
+  SafetyDocumentContentUpdateRequest,
+  SOPGenerateRequestRequest,
   SWPGenerateRequestRequest,
   TimesheetCostLine,
   ModernTimesheetStaff,
@@ -2877,7 +2868,6 @@ export const schemas = {
   TypeC98Enum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
-  TypeD09Enum,
   AllocationDetailsResponse,
   PurchaseOrderEmailRequest,
   PurchaseOrderEmailResponse,
@@ -2979,14 +2969,14 @@ Returns:
     alias: 'accounting_api_reports_job_movement_retrieve',
     description: `Handle GET request for job movement metrics.`,
     requestFormat: 'json',
-    response: z.void(),
+    response: z.object({}).partial().passthrough(),
   },
   {
     method: 'get',
     path: '/accounting/api/reports/profit-and-loss/',
     alias: 'accounting_api_reports_profit_and_loss_retrieve',
     requestFormat: 'json',
-    response: z.void(),
+    response: z.object({}).partial().passthrough(),
   },
   {
     method: 'get',
@@ -4331,13 +4321,13 @@ Query Parameters:
     method: 'post',
     path: '/job/api/job/:job_id/assignment',
     alias: 'job_api_job_assignment_create',
-    description: `API Endpoint for activities related to job assignment`,
+    description: `API Endpoint to assign staff to a job (POST /api/job/&lt;job_id&gt;/assignment)`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'body',
         type: 'Body',
-        schema: AssignJobRequest,
+        schema: z.object({ staff_id: z.string().uuid() }).passthrough(),
       },
       {
         name: 'job_id',
@@ -4349,13 +4339,18 @@ Query Parameters:
   },
   {
     method: 'delete',
-    path: '/job/api/job/:job_id/assignment',
+    path: '/job/api/job/:job_id/assignment/:staff_id',
     alias: 'job_api_job_assignment_destroy',
-    description: `API Endpoint for activities related to job assignment`,
+    description: `API Endpoint to remove staff from a job (DELETE /api/job/&lt;job_id&gt;/assignment/&lt;staff_id&gt;)`,
     requestFormat: 'json',
     parameters: [
       {
         name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'staff_id',
         type: 'Path',
         schema: z.string().uuid(),
       },
@@ -5450,8 +5445,8 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   {
     method: 'get',
     path: '/job/rest/jobs/:job_id/jsa/',
-    alias: 'listJobJSAs',
-    description: `List all JSAs for a specific job`,
+    alias: 'job_rest_jobs_jsa_list',
+    description: `List all JSAs for a job.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -5461,18 +5456,12 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
     ],
     response: z.array(SafetyDocumentList),
-    errors: [
-      {
-        status: 404,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
   },
   {
     method: 'post',
     path: '/job/rest/jobs/:job_id/jsa/generate/',
-    alias: 'generateJobJSA',
-    description: `Generate a new draft JSA for a job using AI`,
+    alias: 'job_rest_jobs_jsa_generate_create',
+    description: `Generate a new JSA for a job.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -5482,16 +5471,6 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
     ],
     response: SafetyDocument,
-    errors: [
-      {
-        status: 404,
-        schema: SafetyDocumentErrorResponse,
-      },
-      {
-        status: 500,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
   },
   {
     method: 'get',
@@ -5701,248 +5680,213 @@ POST: Processes selected jobs for month-end archiving and status updates`,
     response: MonthEndPostResponse,
   },
   {
+    method: 'post',
+    path: '/job/rest/safety-ai/generate-controls/',
+    alias: 'job_rest_safety_ai_generate_controls_create',
+    description: `Generate controls for hazards using AI.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: GenerateControlsRequestRequest,
+      },
+    ],
+    response: GenerateControlsResponse,
+  },
+  {
+    method: 'post',
+    path: '/job/rest/safety-ai/generate-hazards/',
+    alias: 'job_rest_safety_ai_generate_hazards_create',
+    description: `Generate hazards for a task description using AI.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ task_description: z.string().min(1) }).passthrough(),
+      },
+    ],
+    response: GenerateHazardsResponse,
+  },
+  {
+    method: 'post',
+    path: '/job/rest/safety-ai/improve-document/',
+    alias: 'job_rest_safety_ai_improve_document_create',
+    description: `Improve an entire document using AI.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ImproveDocumentRequestRequest,
+      },
+    ],
+    response: ImproveDocumentResponse,
+  },
+  {
+    method: 'post',
+    path: '/job/rest/safety-ai/improve-section/',
+    alias: 'job_rest_safety_ai_improve_section_create',
+    description: `Improve a section of text using AI.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ImproveSectionRequestRequest,
+      },
+    ],
+    response: z.object({ improved_text: z.string() }).passthrough(),
+  },
+  {
     method: 'get',
     path: '/job/rest/safety-documents/',
-    alias: 'listSafetyDocuments',
-    description: `List all safety documents with optional filtering`,
+    alias: 'job_rest_safety_documents_list',
+    description: `ViewSet for SafetyDocument CRUD operations.
+
+Endpoints:
+- GET    /rest/safety-documents/              - list all documents
+- GET    /rest/safety-documents/&lt;id&gt;/         - retrieve document
+- DELETE /rest/safety-documents/&lt;id&gt;/         - delete document
+
+Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'q',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'type',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
     response: z.array(SafetyDocumentList),
   },
   {
     method: 'get',
-    path: '/job/rest/safety-documents/:doc_id/',
-    alias: 'getSafetyDocument',
-    description: `Retrieve a specific safety document`,
+    path: '/job/rest/safety-documents/:id/',
+    alias: 'job_rest_safety_documents_retrieve',
+    description: `ViewSet for SafetyDocument CRUD operations.
+
+Endpoints:
+- GET    /rest/safety-documents/              - list all documents
+- GET    /rest/safety-documents/&lt;id&gt;/         - retrieve document
+- DELETE /rest/safety-documents/&lt;id&gt;/         - delete document
+
+Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'doc_id',
+        name: 'id',
         type: 'Path',
         schema: z.string().uuid(),
       },
     ],
     response: SafetyDocument,
-    errors: [
-      {
-        status: 404,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'put',
-    path: '/job/rest/safety-documents/:doc_id/',
-    alias: 'updateSafetyDocument',
-    description: `Full update of a draft safety document`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: SafetyDocumentRequest,
-      },
-      {
-        name: 'doc_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: SafetyDocument,
-    errors: [
-      {
-        status: 400,
-        schema: SafetyDocumentErrorResponse,
-      },
-      {
-        status: 404,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'patch',
-    path: '/job/rest/safety-documents/:doc_id/',
-    alias: 'partialUpdateSafetyDocument',
-    description: `Partial update of a draft safety document`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: PatchedSafetyDocumentRequest,
-      },
-      {
-        name: 'doc_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: SafetyDocument,
-    errors: [
-      {
-        status: 400,
-        schema: SafetyDocumentErrorResponse,
-      },
-      {
-        status: 404,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
   },
   {
     method: 'delete',
-    path: '/job/rest/safety-documents/:doc_id/',
-    alias: 'deleteSafetyDocument',
-    description: `Delete a draft safety document`,
+    path: '/job/rest/safety-documents/:id/',
+    alias: 'job_rest_safety_documents_destroy',
+    description: `ViewSet for SafetyDocument CRUD operations.
+
+Endpoints:
+- GET    /rest/safety-documents/              - list all documents
+- GET    /rest/safety-documents/&lt;id&gt;/         - retrieve document
+- DELETE /rest/safety-documents/&lt;id&gt;/         - delete document
+
+Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'doc_id',
+        name: 'id',
         type: 'Path',
         schema: z.string().uuid(),
       },
     ],
     response: z.void(),
-    errors: [
-      {
-        status: 400,
-        schema: SafetyDocumentErrorResponse,
-      },
-      {
-        status: 404,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
   },
   {
-    method: 'post',
-    path: '/job/rest/safety-documents/:doc_id/finalize/',
-    alias: 'finalizeSafetyDocument',
-    description: `Finalize a draft safety document by generating PDF`,
+    method: 'get',
+    path: '/job/rest/safety-documents/:id/content/',
+    alias: 'job_rest_safety_documents_content_retrieve',
+    description: `GET/PUT content for a safety document stored in Google Docs.
+
+- GET: Fetch current content from Google Docs
+- PUT: Push updated content to Google Docs`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'doc_id',
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: SafetyDocumentContentResponse,
+  },
+  {
+    method: 'put',
+    path: '/job/rest/safety-documents/:id/content/',
+    alias: 'job_rest_safety_documents_content_update',
+    description: `GET/PUT content for a safety document stored in Google Docs.
+
+- GET: Fetch current content from Google Docs
+- PUT: Push updated content to Google Docs`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: SafetyDocumentContentUpdateRequest,
+      },
+      {
+        name: 'id',
         type: 'Path',
         schema: z.string().uuid(),
       },
     ],
     response: SafetyDocument,
-    errors: [
-      {
-        status: 400,
-        schema: SafetyDocumentErrorResponse,
-      },
-      {
-        status: 404,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
   },
   {
     method: 'get',
-    path: '/job/rest/safety-documents/:doc_id/pdf/',
-    alias: 'getSafetyDocumentPDF',
-    description: `Download the PDF for a finalized safety document`,
+    path: '/job/rest/sop/',
+    alias: 'job_rest_sop_list',
+    description: `List all Standard Operating Procedures.`,
     requestFormat: 'json',
-    parameters: [
-      {
-        name: 'doc_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: z.instanceof(File),
-    errors: [
-      {
-        status: 400,
-        schema: SafetyDocumentErrorResponse,
-      },
-      {
-        status: 404,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
+    response: z.array(SafetyDocumentList),
   },
   {
     method: 'post',
-    path: '/job/rest/safety-documents/:doc_id/tasks/:task_num/generate-controls/',
-    alias: 'generateTaskControls',
-    description: `Generate control measures for a task&#x27;s hazards using AI`,
+    path: '/job/rest/sop/generate/',
+    alias: 'job_rest_sop_generate_create',
+    description: `Generate a new Standard Operating Procedure.`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'doc_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-      {
-        name: 'task_num',
-        type: 'Path',
-        schema: z.number().int(),
+        name: 'body',
+        type: 'Body',
+        schema: SOPGenerateRequestRequest,
       },
     ],
-    response: z
-      .object({ controls: z.array(z.any()) })
-      .partial()
-      .passthrough(),
-    errors: [
-      {
-        status: 400,
-        schema: SafetyDocumentErrorResponse,
-      },
-      {
-        status: 404,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/job/rest/safety-documents/:doc_id/tasks/:task_num/generate-hazards/',
-    alias: 'generateTaskHazards',
-    description: `Generate hazards for a specific task using AI`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'doc_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-      {
-        name: 'task_num',
-        type: 'Path',
-        schema: z.number().int(),
-      },
-    ],
-    response: z
-      .object({ hazards: z.array(z.any()) })
-      .partial()
-      .passthrough(),
-    errors: [
-      {
-        status: 400,
-        schema: SafetyDocumentErrorResponse,
-      },
-      {
-        status: 404,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
+    response: SafetyDocument,
   },
   {
     method: 'get',
     path: '/job/rest/swp/',
-    alias: 'listSWPs',
-    description: `List all Safe Work Procedures`,
+    alias: 'job_rest_swp_list',
+    description: `List all Safe Work Procedures.`,
     requestFormat: 'json',
     response: z.array(SafetyDocumentList),
   },
   {
     method: 'post',
     path: '/job/rest/swp/generate/',
-    alias: 'generateSWP',
-    description: `Generate a new draft SWP using AI`,
+    alias: 'job_rest_swp_generate_create',
+    description: `Generate a new Safe Work Procedure.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -5952,16 +5896,6 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       },
     ],
     response: SafetyDocument,
-    errors: [
-      {
-        status: 400,
-        schema: SafetyDocumentErrorResponse,
-      },
-      {
-        status: 500,
-        schema: SafetyDocumentErrorResponse,
-      },
-    ],
   },
   {
     method: 'get',

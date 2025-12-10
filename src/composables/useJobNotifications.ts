@@ -61,7 +61,7 @@ export function useJobNotifications() {
 
   const notifyPricingUpdated = () => {
     // Reduced verbosity - only debug log for pricing updates
-    debugLog('💰 Pricing data updated automatically')
+    debugLog('Pricing data updated automatically')
   }
 
   const notifyQuoteLinkStart = () => {

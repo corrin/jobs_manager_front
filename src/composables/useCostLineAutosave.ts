@@ -129,7 +129,7 @@ export function useCostLineAutosave(opts: Options) {
       // Get the accumulated patch to save
       const patchToSave = pendingPatches.get(line) || mergedPatch
       try {
-        console.log('🔄 Autosave: Starting save for line', line.id, patchToSave)
+        console.log('Autosave: Starting save for line', line.id, patchToSave)
         const result = await opts.saveFn(String(line.id), patchToSave)
 
         // Sync timestamps from the server response (if available)
@@ -147,7 +147,7 @@ export function useCostLineAutosave(opts: Options) {
         lastError.delete(line)
         prevSnapshot.delete(line)
         pendingPatches.delete(line)
-        console.log('✅ Autosave: Successfully saved line', line.id)
+        console.log('Autosave: Successfully saved line', line.id)
 
         // Show success notification
         const { toast } = await import('vue-sonner')

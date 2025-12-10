@@ -1,36 +1,63 @@
 <template>
-  <div ref="jobCardRef" class="job-card" :class="{
-    'cursor-grabbing': isDragging,
-    'opacity-50': isDragging && false,
-    'ring-2 ring-blue-500 bg-blue-50': isMovementModeActive && isJobSelectedForMovement,
-    'border-blue-400 hover:border-blue-500': isMovementModeActive && !isJobSelectedForMovement,
-    'cursor-pointer': isMovementModeActive,
-    'cursor-grab': !isDragging && !isMovementModeActive,
-    'staff-drop-target': isStaffDragOver,
-    'staff-operation-loading': isAssigningStaff || isUnassigningStaff,
-    'staff-operation-success': operationSuccess,
-  }" :data-id="job.id || ''" :data-job-id="job.id || ''" @click="handleClick" @dragover="handleDragOver"
-    @drop="handleDrop" @dragenter="handleDragEnter" @dragleave="handleDragLeave">
-    <div v-if="isMovementModeActive" class="absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-200"
-      :class="isJobSelectedForMovement ? 'bg-blue-500' : 'bg-blue-300 opacity-60'"></div>
+  <div
+    ref="jobCardRef"
+    class="job-card"
+    :class="{
+      'cursor-grabbing': isDragging,
+      'opacity-50': isDragging && false,
+      'ring-2 ring-blue-500 bg-blue-50': isMovementModeActive && isJobSelectedForMovement,
+      'border-blue-400 hover:border-blue-500': isMovementModeActive && !isJobSelectedForMovement,
+      'cursor-pointer': isMovementModeActive,
+      'cursor-grab': !isDragging && !isMovementModeActive,
+      'staff-drop-target': isStaffDragOver,
+      'staff-operation-loading': isAssigningStaff || isUnassigningStaff,
+      'staff-operation-success': operationSuccess,
+    }"
+    :data-id="job.id || ''"
+    :data-job-id="job.id || ''"
+    @click="handleClick"
+    @dragover="handleDragOver"
+    @drop="handleDrop"
+    @dragenter="handleDragEnter"
+    @dragleave="handleDragLeave"
+  >
+    <div
+      v-if="isMovementModeActive"
+      class="absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-200"
+      :class="isJobSelectedForMovement ? 'bg-blue-500' : 'bg-blue-300 opacity-60'"
+    ></div>
 
     <!-- Loading/Success indicator for staff operations -->
-    <div v-if="isAssigningStaff || isUnassigningStaff || operationSuccess"
+    <div
+      v-if="isAssigningStaff || isUnassigningStaff || operationSuccess"
       class="absolute top-1 left-1 flex items-center justify-center w-5 h-5 rounded-full transition-all duration-300"
       :class="{
         'bg-blue-500': isAssigningStaff || isUnassigningStaff,
         'bg-green-500': operationSuccess,
-      }">
+      }"
+    >
       <!-- Loading spinner -->
-      <svg v-if="isAssigningStaff || isUnassigningStaff" class="w-3 h-3 text-white animate-spin" fill="none"
-        viewBox="0 0 24 24">
+      <svg
+        v-if="isAssigningStaff || isUnassigningStaff"
+        class="w-3 h-3 text-white animate-spin"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-        <path class="opacity-75" fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-        </path>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
       </svg>
       <!-- Success checkmark -->
-      <svg v-if="operationSuccess" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg
+        v-if="operationSuccess"
+        class="w-3 h-3 text-white"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
       </svg>
     </div>
@@ -40,29 +67,61 @@
       <!-- Bigger, high-contrast job number -->
       <span
         class="inline-flex items-center rounded-md bg-blue-600 text-white px-2 py-1 text-[0.82rem] font-semibold tracking-wide"
-        style="font-variant-numeric: tabular-nums">
+        style="font-variant-numeric: tabular-nums"
+      >
         #{{ job.job_number }}
       </span>
 
       <!-- Staff avatars next to job number (unchanged behavior) -->
-      <div ref="jobStaffContainerRef" class="flex gap-1 items-center min-h-[20px] p-1 rounded transition-colors" :class="{
-        'bg-blue-50 border border-blue-300': isStaffDragTarget,
-        'bg-gray-50 border border-dashed border-gray-300':
-          (!job.people || job.people.length === 0) && !isStaffDragTarget,
-      }">
-        <div v-for="staff in job.people || []" :key="staff.id" class="relative staff-avatar-container"
-          @mouseenter="hoveredStaffId = staff.id" @mouseleave="hoveredStaffId = null">
-          <StaffAvatar :staff="staff" size="small" :title="staff.display_name" :data-staff-id="staff.id"
+      <div
+        ref="jobStaffContainerRef"
+        class="flex gap-1 items-center min-h-[20px] p-1 rounded transition-colors"
+        :class="{
+          'bg-blue-50 border border-blue-300': isStaffDragTarget,
+          'bg-gray-50 border border-dashed border-gray-300':
+            (!job.people || job.people.length === 0) && !isStaffDragTarget,
+        }"
+      >
+        <div
+          v-for="staff in job.people || []"
+          :key="staff.id"
+          class="relative staff-avatar-container"
+          @mouseenter="hoveredStaffId = staff.id"
+          @mouseleave="hoveredStaffId = null"
+        >
+          <StaffAvatar
+            :staff="staff"
+            size="small"
+            :title="staff.display_name"
+            :data-staff-id="staff.id"
             class="cursor-pointer transition-all duration-200"
-            :class="{ 'opacity-75 scale-95': hoveredStaffId === staff.id }" />
+            :class="{ 'opacity-75 scale-95': hoveredStaffId === staff.id }"
+          />
           <!-- X indicator on hover -->
-          <div v-if="hoveredStaffId === staff.id" @click="(event) => handleStaffClick(staff, event)"
-            @mousedown.stop.prevent @mouseup.stop.prevent @dragstart.stop.prevent @drag.stop.prevent
+          <div
+            v-if="hoveredStaffId === staff.id"
+            @click="(event) => handleStaffClick(staff, event)"
+            @mousedown.stop.prevent
+            @mouseup.stop.prevent
+            @dragstart.stop.prevent
+            @drag.stop.prevent
             class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md z-10"
-            :title="`Remove ${staff.display_name} from job`" style="pointer-events: auto; user-select: none">
-            <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+            :title="`Remove ${staff.display_name} from job`"
+            style="pointer-events: auto; user-select: none"
+          >
+            <svg
+              class="w-2.5 h-2.5 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="3"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </div>
         </div>
@@ -78,8 +137,11 @@
     </h4>
 
     <!-- Description (kept line-clamp-2 to avoid tall cards in columns) -->
-    <p class="text-[0.84rem] text-gray-700 mb-2 leading-snug whitespace-pre-wrap"
-      :class="isRealDescription ? 'line-clamp-2' : 'line-clamp-1'" :title="!isRealDescription ? job.name : undefined">
+    <p
+      class="text-[0.84rem] text-gray-700 mb-2 leading-snug whitespace-pre-wrap"
+      :class="isRealDescription ? 'line-clamp-2' : 'line-clamp-1'"
+      :title="!isRealDescription ? job.name : undefined"
+    >
       {{ descriptionOrName }}
     </p>
 
@@ -219,7 +281,9 @@ const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<
     operationSuccess.value = false
 
     try {
-      await api.job_api_job_assignment_destroy(props.job.id, { staff_id: staff.id })
+      await api.job_api_job_assignment_destroy(undefined, {
+        params: { job_id: props.job.id, staff_id: staff.id },
+      })
 
       // Show success indicator
       isUnassigningStaff.value = false
