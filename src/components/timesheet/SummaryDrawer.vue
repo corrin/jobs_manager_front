@@ -1,5 +1,5 @@
 <template>
-  <Drawer v-model:open="isOpen">
+  <Drawer :open="isOpen" @update:open="isOpen = $event">
     <DrawerContent class="max-h-[85vh]">
       <div class="mx-auto w-full max-w-4xl">
         <DrawerHeader>
@@ -105,10 +105,21 @@
                         <p class="text-sm text-gray-600 truncate">{{ jobData.job.name }}</p>
                         <p class="text-xs text-gray-500 truncate">{{ jobData.job.client_name }}</p>
                       </div>
+                      <!-- TODO: Backend inconsistency - Job uses 'job_status', ModernTimesheetJob uses 'status'.
+                           jobData.job is FullJob | ModernTimesheetJob union due to enhancedJob || job fallback.
+                           Backend should normalize to single field name. -->
                       <Badge
-                        :variant="getStatusVariant(jobData.job.job_status || jobData.job.status)"
+                        :variant="
+                          getStatusVariant(
+                            (jobData.job as any).job_status || (jobData.job as any).status,
+                          )
+                        "
                       >
-                        {{ getStatusLabel(jobData.job.job_status || jobData.job.status) }}
+                        {{
+                          getStatusLabel(
+                            (jobData.job as any).job_status || (jobData.job as any).status,
+                          )
+                        }}
                       </Badge>
                     </div>
 
@@ -257,7 +268,7 @@ const loadJobDetails = async () => {
   if (jobIdsWithEntries.value.length === 0) return
 
   loadingJobDetails.value = true
-  debugLog('🔍 Loading job details for jobs with entries:', jobIdsWithEntries.value)
+  debugLog('Loading job details for jobs with entries:', jobIdsWithEntries.value)
 
   try {
     const jobPromises = jobIdsWithEntries.value.map(async (jobId) => {
@@ -266,7 +277,7 @@ const loadJobDetails = async () => {
         debugLog('Job detail: ', jobDetail)
         return { jobId, job: jobDetail.data.job }
       } catch (err) {
-        debugLog('❌ Failed to load job details for:', jobId, err)
+        debugLog('Failed to load job details for:', jobId, err)
         return null
       }
     })
@@ -281,9 +292,9 @@ const loadJobDetails = async () => {
     })
 
     enhancedJobs.value = newEnhancedJobs
-    debugLog('✅ Loaded enhanced job details:', enhancedJobs.value.size)
+    debugLog('Loaded enhanced job details:', enhancedJobs.value.size)
   } catch (err) {
-    debugLog('❌ Error loading job details:', err)
+    debugLog('Error loading job details:', err)
   } finally {
     loadingJobDetails.value = false
   }
@@ -312,14 +323,14 @@ watch(
 
 // Computed properties
 const activeJobs = computed(() => {
-  debugLog('🔍 SummaryDrawer - Computing active jobs:', {
+  debugLog('SummaryDrawer - Computing active jobs:', {
     totalJobs: props.jobs.length,
     jobs: props.jobs
       .slice(0, 3)
       .map((j) => ({ id: j.id, job_number: j.job_number, status: j.status })),
   })
   const active = getActiveJobs(props.jobs)
-  debugLog('🔍 SummaryDrawer - Active jobs result:', {
+  debugLog('SummaryDrawer - Active jobs result:', {
     activeJobsCount: active.length,
     activeJobs: active
       .slice(0, 3)
@@ -337,7 +348,7 @@ const consolidatedSummary = computed(() => ({
 }))
 
 const activeJobsWithData = computed(() => {
-  debugLog('🔍 SummaryDrawer - Computing jobs with data:', {
+  debugLog('SummaryDrawer - Computing jobs with data:', {
     activeJobsCount: activeJobs.value.length,
     timeEntriesCount: props.timeEntries.length,
     enhancedJobsCount: enhancedJobs.value.size,
@@ -355,14 +366,13 @@ const activeJobsWithData = computed(() => {
 
       // Use enhanced job data if available, otherwise use basic job data
       const enhancedJob = enhancedJobs.value.get(job.id)
-      const jobForCalculations = enhancedJob || job
 
-      const estimatedHours = getEstimatedHours(jobForCalculations)
+      const estimatedHours = enhancedJob ? getEstimatedHours(enhancedJob) : 0
       const totalBill = getJobBill(job.id, props.timeEntries)
       const completionPercentage = getCompletionPercentage(actualHours, estimatedHours)
       const isOverBudget = isJobOverBudget(actualHours, estimatedHours)
 
-      debugLog(`🔍 Job ${job.job_number} data:`, {
+      debugLog(`Job ${job.job_number} data:`, {
         jobId: job.id,
         actualHours,
         estimatedHours,
@@ -383,7 +393,7 @@ const activeJobsWithData = computed(() => {
     .filter((jobData) => jobData !== null) // Remove null entries
     .sort((a, b) => b.actualHours - a.actualHours) // Sort by hours worked (descending)
 
-  debugLog('🔍 SummaryDrawer - Final jobs with data:', {
+  debugLog('SummaryDrawer - Final jobs with data:', {
     filteredJobsCount: jobsWithData.length,
     jobs: jobsWithData.map((jd) => ({
       job_number: jd.job.job_number,

@@ -4,7 +4,7 @@ import type { z } from 'zod'
 
 // Generate TypeScript types from Zod schemas
 export type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
-export type PatchedCompanyDefaults = z.infer<typeof schemas.PatchedCompanyDefaults>
+export type PatchedCompanyDefaults = z.infer<typeof schemas.PatchedCompanyDefaultsRequest>
 export type AIProvider = z.infer<typeof schemas.AIProvider>
 
 export async function getCompanyDefaults(): Promise<CompanyDefaults> {

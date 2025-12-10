@@ -92,7 +92,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
    * @param poId - The purchase order ID to reload
    */
   async function reloadPoOnConflict(poId: string): Promise<void> {
-    debugLog('🔄 PO Store - reloadPoOnConflict called:', { poId })
+    debugLog('PO Store - reloadPoOnConflict called:', { poId })
 
     try {
       // Fetch full PO detail (captures new ETag via interceptor)
@@ -104,9 +104,9 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
         [poId]: Date.now(),
       }
 
-      debugLog('✅ PO Store - reloadPoOnConflict success:', { poId })
+      debugLog('PO Store - reloadPoOnConflict success:', { poId })
     } catch (error) {
-      debugLog('❌ PO Store - reloadPoOnConflict error:', { poId, error })
+      debugLog('PO Store - reloadPoOnConflict error:', { poId, error })
       throw error
     }
   }

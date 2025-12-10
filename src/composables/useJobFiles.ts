@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, type Ref } from 'vue'
 import { useJobsStore } from '@/stores/jobs'
 
 export function useJobFiles(jobId: string | Ref<string | null>) {

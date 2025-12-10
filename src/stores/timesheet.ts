@@ -64,7 +64,10 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     return Object.entries(byDate.value as Record<string, CostLine[]>).reduce(
       (totals, [date, dayLines]) => {
         totals[date] = {
-          hours: dayLines.reduce((sum, line) => sum + (line.kind === 'time' ? line.quantity ?? 0 : 0), 0),
+          hours: dayLines.reduce(
+            (sum, line) => sum + (line.kind === 'time' ? (line.quantity ?? 0) : 0),
+            0,
+          ),
           cost: dayLines.reduce((sum, line) => sum + (line.total_cost ?? 0), 0),
           revenue: dayLines.reduce((sum, line) => sum + (line.total_rev ?? 0), 0),
         }
@@ -76,16 +79,14 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
   // Time-based computed properties - using CostLine data
   const timeLinesForSelectedDate = computed(() =>
-    lines.value.filter(
-        (line: CostLine) => {
-          const meta = line.meta as CostLineMeta | undefined
-          return (
-            line.kind === 'time' &&
-            meta?.date === selectedDate.value &&
-            meta?.staff_id === selectedStaffId.value
-          )
-        },
-    ),
+    lines.value.filter((line: CostLine) => {
+      const meta = line.meta as CostLineMeta | undefined
+      return (
+        line.kind === 'time' &&
+        meta?.date === selectedDate.value &&
+        meta?.staff_id === selectedStaffId.value
+      )
+    }),
   )
 
   const totalHoursForDate = computed(() =>
@@ -330,20 +331,20 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     try {
       // Use current date if no start date provided
       const weekStart = startDate || new Date().toISOString().split('T')[0]
-      debugLog('📊 Loading weekly overview for:', weekStart)
+      debugLog('Loading weekly overview for:', weekStart)
 
       currentWeekData.value = await api.timesheets_api_weekly_retrieve({
         queries: { start_date: weekStart },
       })
 
-      debugLog('✅ Weekly overview loaded successfully:', {
+      debugLog('Weekly overview loaded successfully:', {
         staffCount: currentWeekData.value?.staff_data?.length || 0,
         startDate: currentWeekData.value?.start_date,
         endDate: currentWeekData.value?.end_date,
       })
     } catch (err) {
       error.value = 'Failed to load weekly overview'
-      debugLog('❌ Error loading weekly overview:', err)
+      debugLog('Error loading weekly overview:', err)
       throw err
     } finally {
       loading.value = false
@@ -370,7 +371,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      debugLog('📝 Creating new time entry:', entryData)
+      debugLog('Creating new time entry:', entryData)
 
       // Use generated API to create time entry
       const accountingDate = selectedDate.value || new Date().toISOString().split('T')[0]
@@ -400,14 +401,14 @@ export const useTimesheetStore = defineStore('timesheet', () => {
           lines.value.push(newCostLine)
         }
 
-        debugLog('✅ Time entry created successfully:', newCostLine)
+        debugLog('Time entry created successfully:', newCostLine)
 
         // Reload cost lines to get updated data
         await loadTimeLines()
       }
     } catch (err) {
       error.value = 'Failed to create time entry'
-      debugLog('❌ Error creating time entry:', err)
+      debugLog('Error creating time entry:', err)
       throw err
     } finally {
       loading.value = false
@@ -433,7 +434,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     error.value = null
 
     try {
-      debugLog('🔄 Updating time entry:', entryId, updates)
+      debugLog('Updating time entry:', entryId, updates)
 
       // Use generated API to update time entry
       const updatePayload: PatchedCostLineCreateUpdate = {}
@@ -464,7 +465,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
           lines.value[index] = updatedCostLine
         }
 
-        debugLog('✅ Time entry updated successfully:', updatedCostLine)
+        debugLog('Time entry updated successfully:', updatedCostLine)
 
         // Reload cost lines to get updated data
         await loadTimeLines()
@@ -473,7 +474,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       }
     } catch (err) {
       error.value = 'Failed to update time entry'
-      debugLog('❌ Error updating time entry:', err)
+      debugLog('Error updating time entry:', err)
       throw err
     } finally {
       loading.value = false

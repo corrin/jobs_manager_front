@@ -81,7 +81,7 @@ export function useStaffApi() {
   async function listStaffForKanban(): Promise<KanbanStaff[]> {
     error.value = null
     try {
-      const result = await api.accounts_api_staff_all_list({ queries: { actual_users: 'true' } })
+      const result = await api.accounts_api_staff_all_list()
       return result
     } catch (e: unknown) {
       if (e instanceof Error) {

@@ -1,10 +1,11 @@
 import { api } from '@/api/client'
-import type {
-  MonthEndJob,
-  MonthEndStockJob,
-  MonthEndGetResponse,
-  MonthEndPostResponse,
-} from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
+
+type MonthEndJob = z.infer<typeof schemas.MonthEndJob>
+type MonthEndStockJob = z.infer<typeof schemas.MonthEndStockJob>
+type MonthEndGetResponse = z.infer<typeof schemas.MonthEndGetResponse>
+type MonthEndPostResponse = z.infer<typeof schemas.MonthEndPostResponse>
 
 export async function fetchMonthEnd(): Promise<{
   jobs: MonthEndJob[]

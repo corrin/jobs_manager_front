@@ -25,7 +25,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     const editorParams = params as ICellEditorParams & { jobs?: { value: JobSelectionItem[] } }
     if (editorParams.jobs && Array.isArray(editorParams.jobs.value)) {
       this.jobs = editorParams.jobs.value as JobSelectionItem[]
-      debugLog('📋 Jobs loaded from cell editor params:', {
+      debugLog('Jobs loaded from cell editor params:', {
         count: this.jobs.length,
         sample: this.jobs[0]
           ? {
@@ -39,7 +39,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       const timesheetStore = useTimesheetStore()
       if (timesheetStore.jobs && Array.isArray(timesheetStore.jobs)) {
         this.jobs = timesheetStore.jobs as JobSelectionItem[]
-        debugLog('📋 Jobs loaded from timesheet store:', {
+        debugLog('Jobs loaded from timesheet store:', {
           count: this.jobs.length,
           sample: this.jobs[0]
             ? {
@@ -50,7 +50,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         })
       } else {
         this.jobs = []
-        debugLog('⚠️ No jobs found in cell editor params or timesheet store:', {
+        debugLog('No jobs found in cell editor params or timesheet store:', {
           paramsJobs: editorParams.jobs,
           storeJobs: timesheetStore.jobs,
         })
@@ -224,8 +224,8 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
         <div style="display: flex; flex-direction: column; gap: 2px;">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
             <span style="font-weight: 600; color: #1F2937; flex-shrink: 0;">#${highlightedJobNumber}</span>
-            <span style="font-size: 11px; color: ${this.getStatusColor(status)}; font-weight: 500; text-align: right; line-height: 1.2; flex-shrink: 1; min-width: 0; word-wrap: break-word;">
-              ${this.getStatusDisplayName(status)}
+            <span style="font-size: 11px; color: ${this.getStatusColor(status || '')}; font-weight: 500; text-align: right; line-height: 1.2; flex-shrink: 1; min-width: 0; word-wrap: break-word;">
+              ${this.getStatusDisplayName(status || '')}
             </span>
           </div>
           <div style="font-size: 14px; color: #374151; font-weight: 500; line-height: 1.3; word-wrap: break-word;">${highlightedJobName}</div>
@@ -388,7 +388,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
     this.value = String(jobNumber)
     this.input.value = String(jobNumber)
 
-    debugLog('🎯 Job selected in editor:', {
+    debugLog('Job selected in editor:', {
       original: job,
       normalized: { jobNumber, jobName, clientName, chargeOutRate, jobId, status },
     })
@@ -408,7 +408,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
 
     if (this.params.node) {
       const rowData = this.params.node.data
-      debugLog('🔄 Updating row data with job info:', normalizedJob)
+      debugLog('Updating row data with job info:', normalizedJob)
 
       const normalizedJobId = jobId || ''
       const normalizedJobNumberString = jobNumber != null ? String(jobNumber) : ''
@@ -427,8 +427,8 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       rowData.job_name = normalizedJobName
       rowData.chargeOutRate = normalizedChargeOutRate
       rowData.charge_out_rate = normalizedChargeOutRate
-      // Based on backend Job model: special jobs are shop jobs (non-billable), rejected jobs are not billable
-      rowData.billable = status !== 'special' && status !== 'rejected'
+      // Based on backend Job model: special jobs are shop jobs (non-billable)
+      rowData.billable = status !== 'special'
 
       const hours = rowData.hours || 0
       const rate = rowData.rate || 'Ord'
@@ -452,11 +452,11 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       // If no wageRate in rowData, DO NOT calculate wage - let the grid composable handle it
       if (wageRate > 0) {
         rowData.wage = hours > 0 ? Math.round(hours * wageRate * multiplier * 100) / 100 : 0
-        debugLog('💰 Using wage rate:', wageRate, 'for', hours, 'hours with multiplier', multiplier)
+        debugLog('Using wage rate:', wageRate, 'for', hours, 'hours with multiplier', multiplier)
       } else {
         // Do not set wage to 0 - leave it undefined so grid composable can calculate it
         debugLog(
-          '⚠️ No wageRate in rowData - leaving wage calculation to grid composable. RowData wageRate:',
+          'No wageRate in rowData - leaving wage calculation to grid composable. RowData wageRate:',
           rowData.wageRate,
         )
       }
@@ -467,14 +467,14 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
           ? Math.round(hours * chargeOutRateNum * 100) / 100
           : 0
 
-      debugLog('💰 Calculated wage:', rowData.wage, 'and bill:', rowData.bill)
+      debugLog('Calculated wage:', rowData.wage, 'and bill:', rowData.bill)
 
       this.params.api?.refreshCells({
         rowNodes: [this.params.node],
         force: true,
       })
 
-      debugLog('✅ Row updated with job data')
+      debugLog('Row updated with job data')
     }
 
     this.hideDropdown()
@@ -519,7 +519,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       // Store normalized job data
       const normalizedJob = {
         ...this.selectedJob,
-        job_number: String(jobNumber),
+        job_number: jobNumber,
         name: this.selectedJob.name,
         client_name: this.selectedJob.client_name,
         charge_out_rate: this.selectedJob.charge_out_rate,
@@ -528,7 +528,7 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       }
 
       ;(window as unknown as { lastSelectedJob: JobSelectionItem }).lastSelectedJob = normalizedJob
-      debugLog('🎯 Returning job number from editor:', jobNumber)
+      debugLog('Returning job number from editor:', jobNumber)
       return String(jobNumber)
     }
     return this.value

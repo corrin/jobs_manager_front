@@ -1,9 +1,6 @@
 import { ref, computed, nextTick, type Ref } from 'vue'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-
-// Using generated schemas where possible
-type TimesheetEntryStaffMember = z.infer<typeof schemas.ModernStaff>
 import type {
   GridApi,
   ColDef,
@@ -21,17 +18,22 @@ import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEnt
 import { formatCurrency } from '@/utils/string-formatting'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
 import { type TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
+import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 
-type TimesheetEntryGridRowWithSaving = z.infer<typeof schemas.TimesheetCostLine> & {
-  isSaving?: boolean
-  isModified?: boolean
-  isNewRow?: boolean
-  tempId?: string
+type TimesheetEntryStaffMember = {
+  id: string
+  name?: string | null
+  first_name?: string | null
+  last_name?: string | null
+  firstName?: string | null
+  lastName?: string | null
+  wageRate?: number | null
+  wage_rate?: number | null
 }
 
-// Type aliases for compatibility with existing code
-type TimesheetEntry = z.infer<typeof schemas.TimesheetCostLine>
-type TimesheetEntryGridRow = z.infer<typeof schemas.TimesheetCostLine>
+type TimesheetEntry = TimesheetEntryWithMeta
+type TimesheetEntryGridRow = TimesheetEntryWithMeta
+type TimesheetEntryGridRowWithSaving = TimesheetEntryWithMeta & { isSaving?: boolean }
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 
 type ResolveStaffById = (id: string) => TimesheetEntryStaffMember | undefined
@@ -40,7 +42,7 @@ export function useTimesheetEntryGrid(
   companyDefaults: Ref<CompanyDefaults | null>,
   jobs: Ref<Record<string, unknown>[]>,
   onSaveEntry: (entry: TimesheetEntry) => Promise<void>,
-  onDeleteEntry: (id: number) => Promise<void>,
+  onDeleteEntry: (id: string) => Promise<void>,
   options?: {
     resolveStaffById?: ResolveStaffById
     onScheduleAutosave?: (entry: TimesheetEntryGridRowWithSaving) => void
@@ -64,7 +66,7 @@ export function useTimesheetEntryGrid(
       },
       valueFormatter: (params) => {
         if (!params.value) return ''
-        const job = jobs.value?.find((j) => j.job_number === params.value)
+        const job = jobs.value?.find((j) => String(j.job_number) === String(params.value))
         return job ? `#${job.job_number} - ${job.name}` : `#${params.value}`
       },
       cellStyle: {
@@ -231,6 +233,31 @@ export function useTimesheetEntryGrid(
     },
   }))
 
+  const toNumber = (value: unknown, fallback = 0): number => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value
+    if (typeof value === 'string') {
+      const parsed = Number(value)
+      return Number.isFinite(parsed) ? parsed : fallback
+    }
+    return fallback
+  }
+
+  const toStringSafe = (value: unknown, fallback = ''): string => {
+    if (typeof value === 'string') return value
+    if (value == null) return fallback
+    return String(value)
+  }
+
+  const toBoolean = (value: unknown, fallback = false): boolean => {
+    if (typeof value === 'boolean') return value
+    return fallback
+  }
+
+  const currentIsoTimestamp = () => new Date().toISOString()
+  const currentIsoDate = () => currentIsoTimestamp().split('T')[0]
+  const normalizeDescription = (value?: string | null) =>
+    typeof value === 'string' ? value.trim() : ''
+
   // AG Grid API guards
   function isApiAlive(api?: GridApi | null): api is GridApi {
     const typed = api as unknown as GridApi & { isDestroyed?: () => boolean }
@@ -299,7 +326,8 @@ export function useTimesheetEntryGrid(
         row.jobNumber === entry.jobNumber &&
         row.date === entry.date &&
         row.staffId === entry.staffId &&
-        row.description.trim() === entry.description.trim() &&
+        normalizeDescription(row.description ?? row.desc) ===
+          normalizeDescription(entry.description ?? entry.desc) &&
         !row.isSaving &&
         row.id // Only compare against existing entries that have IDs
       )
@@ -338,7 +366,7 @@ export function useTimesheetEntryGrid(
       // Handle existing row updates - mark as modified and schedule autosave
       if (!data.isNewRow && updatedEntry.id && !isRowEmpty(updatedEntry)) {
         data.isModified = true
-        console.log('🔄 Existing row marked as modified:', updatedEntry.id)
+        console.log('Existing row marked as modified:', updatedEntry.id)
         options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
       }
 
@@ -349,7 +377,7 @@ export function useTimesheetEntryGrid(
         }
         data.isModified = true
         data.isNewRow = false // Convert to regular row but don't save yet
-        console.log('✏️ New row marked as modified:', updatedEntry.description || '')
+        console.log('New row marked as modified:', updatedEntry.description || '')
         options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
 
         // Ensure there's always an empty row at the end
@@ -372,7 +400,10 @@ export function useTimesheetEntryGrid(
     if (event.rowIndex === null) return
     if (!isApiAlive(event.api)) return
     // Focus on the cell that was double-clicked
-    const clickedCol = event.column?.getColDef()
+    const typedEvent = event as RowDoubleClickedEvent & {
+      column?: { getColDef: () => ColDef | undefined } | null
+    }
+    const clickedCol = typedEvent.column?.getColDef()
     if (!clickedCol || !clickedCol.editable || typeof clickedCol.field !== 'string') return
     event.api.startEditingCell({
       rowIndex: event.rowIndex,
@@ -444,78 +475,140 @@ export function useTimesheetEntryGrid(
   }
 
   function effectiveWageRateForRow(rowData: TimesheetEntryGridRow): number {
-    const candidate = rowData.wageRate ?? 0
-    if (candidate > 0) return candidate
+    const rowCandidates = [rowData.wageRate, rowData.wage_rate, rowData.unit_cost]
+    for (const candidate of rowCandidates) {
+      if (typeof candidate === 'number' && candidate > 0) {
+        return candidate
+      }
+    }
     const byRowStaff = rowData.staffId ? resolveStaffById?.(rowData.staffId) : undefined
 
-    if (byRowStaff?.wageRate && byRowStaff.wageRate > 0) return byRowStaff.wageRate
-
-    if (currentStaffRef.value?.wageRate && currentStaffRef.value.wageRate > 0) {
-      return currentStaffRef.value.wageRate
+    const staffCandidates = [
+      byRowStaff?.wageRate,
+      byRowStaff?.wage_rate,
+      currentStaffRef.value?.wageRate,
+      currentStaffRef.value?.wage_rate,
+    ]
+    for (const candidate of staffCandidates) {
+      if (typeof candidate === 'number' && candidate > 0) {
+        return candidate
+      }
     }
 
     return 0
   }
 
   function createEntryFromRowData(rowData: TimesheetEntryGridRow): TimesheetEntry {
-    const hours = rowData.hours || 0
+    const meta =
+      rowData.meta && typeof rowData.meta === 'object'
+        ? { ...(rowData.meta as Record<string, unknown>) }
+        : ({} as Record<string, unknown>)
+
+    const hours = toNumber(rowData.hours ?? rowData.quantity, 0)
     const wageRate = effectiveWageRateForRow(rowData)
-    const chargeOutRate = rowData.chargeOutRate || 0
-    const rate = rowData.rate || 'Ord'
-    const rateMultiplier = calculations.getRateMultiplier(rate)
-    const billable = rowData.billable ?? true
-    const jobNumberString =
-      rowData.jobNumber != null && rowData.jobNumber !== ''
-        ? String(rowData.jobNumber)
-        : rowData.job_number
-          ? String(rowData.job_number)
-          : ''
-    const jobNumberNumeric = jobNumberString ? Number(jobNumberString) : 0
-    const jobId = rowData.jobId || rowData.job_id || ''
-    const clientName = rowData.client || rowData.client_name || ''
-    const jobName = rowData.jobName || rowData.job_name || ''
-
-    let calculatedWage = 0
-    if (hours > 0 && wageRate > 0)
-      calculatedWage = Math.round(hours * rateMultiplier * wageRate * 100) / 100
-
-    let calculatedBill = 0
-    if (billable && hours > 0 && chargeOutRate > 0) {
-      calculatedBill = Math.round(hours * chargeOutRate * 100) / 100
+    const chargeOutRate = toNumber(
+      rowData.chargeOutRate ?? rowData.charge_out_rate ?? rowData.unit_rev,
+      0,
+    )
+    const rawJobId = rowData.jobId ?? rowData.job_id ?? meta.job_id
+    const jobId = toStringSafe(rawJobId, '')
+    const jobNumberString = (() => {
+      if (rowData.jobNumber && rowData.jobNumber !== '') return String(rowData.jobNumber)
+      if (rowData.job_number != null) return String(rowData.job_number)
+      if (meta.job_number != null) return String(meta.job_number)
+      return ''
+    })()
+    const jobNumberNumeric = jobNumberString ? toNumber(jobNumberString, 0) : 0
+    const jobName = toStringSafe(rowData.jobName ?? rowData.job_name ?? meta.job_name, '')
+    const clientName = toStringSafe(rowData.client ?? rowData.client_name ?? meta.client_name, '')
+    const rawDescription = rowData.description ?? rowData.desc ?? ''
+    const description = toStringSafe(rawDescription, '').trim()
+    const billable = rowData.billable ?? toBoolean(meta.is_billable, true)
+    const rate = (rowData.rate ?? toStringSafe(meta.rate_type, 'Ord')) || 'Ord'
+    let rateMultiplier =
+      typeof rowData.rateMultiplier === 'number' ? rowData.rateMultiplier : undefined
+    if (!rateMultiplier || Number.isNaN(rateMultiplier)) {
+      const metaMultiplier = toNumber(meta.rate_multiplier, NaN)
+      rateMultiplier = Number.isNaN(metaMultiplier)
+        ? calculations.getRateMultiplier(rate)
+        : metaMultiplier
     }
+    const staffIdCandidate =
+      rowData.staffId ?? toStringSafe(meta.staff_id, '') ?? currentStaffRef.value?.id ?? ''
+    const staffId = staffIdCandidate || ''
+    const staffName = rowData.staffName ?? currentStaffRef.value?.name ?? ''
+    const dateValue = (rowData.date ?? toStringSafe(meta.date, '')) || currentIsoDate()
 
-    console.log('🧮 Grid wage calculation:', {
+    const calculatedWage =
+      hours > 0 && wageRate > 0 ? Math.round(hours * rateMultiplier * wageRate * 100) / 100 : 0
+    const calculatedBill =
+      billable && hours > 0 && chargeOutRate > 0 ? Math.round(hours * chargeOutRate * 100) / 100 : 0
+
+    console.log('Grid wage calculation:', {
       hours,
       rateMultiplier,
       wageRate,
       calculatedWage,
-      formula: `${hours} × ${rateMultiplier} × ${wageRate} = ${calculatedWage}`,
+      formula: `${hours} x ${rateMultiplier} x ${wageRate} = ${calculatedWage}`,
     })
 
+    meta.staff_id = staffId
+    meta.rate_type = rate
+    meta.rate_multiplier = rateMultiplier
+    meta.is_billable = billable
+    meta.date = dateValue
+    meta.job_id = jobId
+    meta.job_number = jobNumberNumeric
+    meta.job_name = jobName
+    meta.client_name = clientName
+
+    const extRefs = rowData.ext_refs && typeof rowData.ext_refs === 'object' ? rowData.ext_refs : {}
+    const createdAt = rowData.created_at ?? currentIsoTimestamp()
+    const updatedAt = rowData.updated_at ?? createdAt
+    const accountingDate = rowData.accounting_date ?? dateValue
+    const normalizedId = typeof rowData.id === 'string' && rowData.id.length > 0 ? rowData.id : ''
+
     return {
-      id: rowData.id,
-      jobId,
-      job_id: jobId,
-      jobNumber: jobNumberString,
-      job_number: jobNumberNumeric,
-      client: clientName,
-      client_name: clientName,
-      jobName,
-      job_name: jobName,
+      ...rowData,
+      id: normalizedId,
+      kind: 'time',
+      desc: description,
+      description,
       quantity: hours,
       hours,
-      billable,
-      description: rowData.description || '',
-      rate,
+      unit_cost: wageRate,
+      unit_rev: chargeOutRate,
+      total_cost: calculatedWage,
+      total_rev: calculatedBill,
       wage: calculatedWage,
-      bill: calculatedBill,
-      staffId: rowData.staffId || '',
-      date: rowData.date || '',
+      wage_rate: wageRate,
       wageRate,
-      chargeOutRate,
-      charge_out_rate: chargeOutRate,
+      bill: calculatedBill,
+      billable,
+      job_id: jobId,
+      jobId,
+      job_number: jobNumberNumeric,
+      jobNumber: jobNumberString,
+      job_name: jobName,
+      jobName,
+      client_name: clientName,
+      client: clientName,
+      rate,
       rateMultiplier,
-      isNewRow: rowData.isNewRow,
+      staffId,
+      staffName,
+      date: dateValue,
+      charge_out_rate: chargeOutRate,
+      chargeOutRate,
+      ext_refs: extRefs,
+      meta,
+      created_at: createdAt,
+      updated_at: updatedAt,
+      accounting_date: accountingDate,
+      xero_time_id: rowData.xero_time_id ?? null,
+      xero_expense_id: rowData.xero_expense_id ?? null,
+      xero_last_modified: rowData.xero_last_modified ?? null,
+      xero_last_synced: rowData.xero_last_synced ?? null,
     }
   }
 
@@ -533,15 +626,16 @@ export function useTimesheetEntryGrid(
   }
 
   function isRowComplete(entry: TimesheetEntry): boolean {
-    return !!(entry.jobNumber && entry.hours > 0)
+    const hasJob =
+      Boolean(entry.jobNumber && entry.jobNumber !== '') ||
+      (typeof entry.job_number === 'number' && entry.job_number > 0)
+    const hours = typeof entry.hours === 'number' ? entry.hours : toNumber(entry.quantity, 0)
+    return hasJob && hours > 0
   }
 
   function isRowEmpty(entry: TimesheetEntry): boolean {
-    return (
-      !entry.jobNumber &&
-      entry.hours === 0 &&
-      (!entry.description || entry.description.trim() === '')
-    )
+    const description = normalizeDescription(entry.description ?? entry.desc)
+    return !entry.jobNumber && entry.hours === 0 && description === ''
   }
 
   function ensureEmptyRow(staffId?: string, staffData?: TimesheetEntryStaffMember): void {
@@ -580,7 +674,7 @@ export function useTimesheetEntryGrid(
     try {
       loading.value = true
       if (rowDataToRemove && rowDataToRemove.id) {
-        await onDeleteEntry(rowDataToRemove.id)
+        await onDeleteEntry(String(rowDataToRemove.id))
       }
     } catch (error) {
       gridData.value.splice(rowIndex, 0, rowDataToRemove)
@@ -640,10 +734,23 @@ export function useTimesheetEntryGrid(
     const rows: TimesheetEntryGridRow[] = entries.map((entry) => {
       const resolved = entry.staffId ? resolveStaffById?.(entry.staffId) : undefined
       const wage = (staffData?.wageRate ?? entry.wageRate ?? resolved?.wageRate ?? 0) || 0
+      const meta =
+        entry.meta && typeof entry.meta === 'object' ? (entry.meta as Record<string, unknown>) : {}
       return {
         ...entry,
+        jobNumber:
+          entry.jobNumber ?? (entry.job_number != null ? String(entry.job_number) : '') ?? '',
+        jobId: entry.jobId ?? entry.job_id,
+        jobName: entry.jobName ?? entry.job_name,
+        client: entry.client ?? entry.client_name,
+        description: entry.description ?? entry.desc,
+        hours: entry.hours ?? entry.quantity,
+        chargeOutRate: entry.chargeOutRate ?? entry.charge_out_rate ?? entry.unit_rev,
         wageRate: wage,
-        staffId: staffData?.id || entry.staffId || staffId,
+        staffId:
+          staffData?.id ||
+          entry.staffId ||
+          (typeof meta.staff_id === 'string' ? (meta.staff_id as string) : staffId),
         staffName: staffData?.name || entry.staffName,
       }
     })

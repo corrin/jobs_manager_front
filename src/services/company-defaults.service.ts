@@ -1,6 +1,9 @@
 import { api } from '@/api/client'
-import type { CompanyDefaults } from '@/api/generated/api'
+import { schemas } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
+import { z } from 'zod'
+
+type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 
 let cachedDefaults: CompanyDefaults | null = null
 
@@ -10,12 +13,12 @@ export const CompanyDefaultsService = {
       return cachedDefaults
     }
     try {
-      debugLog('🔄 Loading company defaults from API...')
+      debugLog('Loading company defaults from API...')
       cachedDefaults = await api.api_company_defaults_retrieve()
-      debugLog('✅ Company defaults loaded successfully:', cachedDefaults)
+      debugLog('Company defaults loaded successfully:', cachedDefaults)
       return cachedDefaults
     } catch (error) {
-      debugLog('❌ Failed to load company defaults:', error)
+      debugLog('Failed to load company defaults:', error)
       throw error
     }
   },

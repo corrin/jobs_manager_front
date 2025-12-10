@@ -8,6 +8,10 @@ import { debugLog } from '../utils/debug'
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
 type CostSetKind = 'estimate' | 'quote' | 'actual'
+type CostLineInput = Pick<
+  CostLine,
+  'kind' | 'desc' | 'quantity' | 'unit_cost' | 'unit_rev' | 'ext_refs' | 'meta'
+>
 
 export interface UseCreateCostLineFromEmptyOptions {
   costLines: Ref<CostLine[]>
@@ -23,7 +27,7 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
   /**
    * Create a cost line from an empty line that meets baseline criteria
    */
-  async function handleCreateFromEmpty(line: CostLine) {
+  async function handleCreateFromEmpty(line: CostLineInput) {
     // Run pre-creation check if provided
     if (beforeCreate && !beforeCreate()) {
       return
@@ -52,18 +56,18 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
       // Insert created line into costLines; replace if the source line exists, otherwise push (phantom row case)
       const index = costLines.value.findIndex((l) => l === line)
       if (index !== -1) {
-        costLines.value[index] = created
+        costLines.value[index] = created as CostLine
       } else {
         // When creating from the table's phantom row (not present in costLines), append it
-        costLines.value.push(created)
+        costLines.value.push(created as CostLine)
       }
 
       toast.success('Cost line created!')
-      debugLog('✅ Successfully created cost line:', created)
+      debugLog('Successfully created cost line:', created)
 
       // Call success callback if provided
       if (onSuccess) {
-        await onSuccess(created)
+        await onSuccess(created as CostLine)
       }
 
       return created

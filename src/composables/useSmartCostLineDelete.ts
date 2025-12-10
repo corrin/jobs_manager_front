@@ -46,7 +46,7 @@ export function useSmartCostLineDelete(options: UseSmartCostLineDeleteOptions) {
    * Handles both saved lines (with ID) and local lines (without ID)
    */
   async function handleSmartDelete(idOrIndex: string | number) {
-    console.log('🎯 useSmartCostLineDelete handleSmartDelete called with:', {
+    console.log('useSmartCostLineDelete handleSmartDelete called with:', {
       idOrIndex,
       type: typeof idOrIndex,
       costLinesLength: costLines.value.length,
@@ -57,17 +57,17 @@ export function useSmartCostLineDelete(options: UseSmartCostLineDeleteOptions) {
         ? (costLines.value.find((l) => l.id === idOrIndex) ?? null)
         : (costLines.value[idOrIndex] ?? null)
 
-    console.log('🔍 useSmartCostLineDelete found line:', {
+    console.log('useSmartCostLineDelete found line:', {
       line: line ? { id: line.id, desc: line.desc } : null,
       hasId: !!line?.id,
     })
 
     if (line) {
       if (line.id) {
-        console.log('✅ useSmartCostLineDelete calling handleDeleteCostLine for saved line')
+        console.log('useSmartCostLineDelete calling handleDeleteCostLine for saved line')
         await handleDeleteCostLine(line as CostLine)
       } else {
-        console.log('🗑️ useSmartCostLineDelete removing local line from array')
+        console.log('useSmartCostLineDelete removing local line from array')
         // For local lines without ID, just remove from array
         const index = typeof idOrIndex === 'number' ? idOrIndex : costLines.value.indexOf(line)
         if (index >= 0) {
@@ -79,7 +79,7 @@ export function useSmartCostLineDelete(options: UseSmartCostLineDeleteOptions) {
         }
       }
     } else {
-      console.log('⚠️ useSmartCostLineDelete: No line found for deletion')
+      console.log('useSmartCostLineDelete: No line found for deletion')
     }
   }
 

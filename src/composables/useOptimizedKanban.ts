@@ -98,7 +98,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
   }
 
   // Load jobs for a specific column
-  const loadColumnJobs = async (columnId: string, maxJobs: number = 50): Promise<void> => {
+  const loadColumnJobs = async (columnId: string): Promise<void> => {
     if (!columnStates[columnId]) {
       initializeColumnStates()
     }
@@ -112,7 +112,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
       debugLog(`🔄 Loading jobs for column: ${columnId}`)
 
-      const data: FetchJobsByColumnResponse = await jobService.getJobsByColumn(columnId, maxJobs)
+      const data: FetchJobsByColumnResponse = await jobService.getJobsByColumn(columnId)
 
       const jobs = data.jobs || []
       columnState.jobs = jobs as unknown as KanbanJob[]
@@ -357,16 +357,20 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
     }
   }
 
+  const formatStatusLabel = (statusKey: string): string => {
+    return statusKey
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
   // Visible status choices
   const visibleStatusChoices = computed(() => {
     const mainColumns = KanbanCategorizationService.getAllColumns().map((col) => ({
-      key: col.columnId,
+      key: col.statusKey as StatusChoice['key'],
       label: col.columnTitle,
-      tooltip: `Status: ${col.statusKey
-        .replace(/_/g, ' ')
-        .split(' ')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')}`,
+      tooltip: `Status: ${formatStatusLabel(col.statusKey)}`,
     }))
 
     // Add special column if it has jobs during search
@@ -379,13 +383,9 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
         const specialCol = KanbanCategorizationService.getColumnInfo('special')
         if (specialCol) {
           mainColumns.push({
-            key: specialCol.columnId,
+            key: specialCol.statusKey as StatusChoice['key'],
             label: specialCol.columnTitle,
-            tooltip: `Status: ${specialCol.statusKey
-              .replace(/_/g, ' ')
-              .split(' ')
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(' ')}`,
+            tooltip: `Status: ${formatStatusLabel(specialCol.statusKey)}`,
           })
         }
       }
@@ -416,18 +416,14 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
       const columns = KanbanCategorizationService.getAllColumns()
       statusChoices.value = columns.map((col) => ({
-        key: col.columnId,
+        key: col.statusKey as StatusChoice['key'],
         label: col.columnTitle,
-        tooltip: `Status: ${col.statusKey
-          .replace(/_/g, ' ')
-          .split(' ')
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ')}`,
+        tooltip: `Status: ${formatStatusLabel(col.statusKey)}`,
       }))
 
       if (!selectedMobileStatus.value) {
         selectedMobileStatus.value =
-          columns.find((c) => c.columnId !== 'archived')?.columnId || 'draft'
+          columns.find((c) => c.statusKey !== 'archived')?.statusKey || 'draft'
       }
     }
   }
@@ -552,13 +548,13 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
   // Initialize
   onMounted(async () => {
     try {
-      debugLog('🚀 Initializing Kanban...')
+      debugLog('Initializing Kanban...')
       initializeColumnStates()
       await Promise.all([loadAllColumns(), loadStatusChoices()])
-      debugLog('✅ Kanban initialization complete')
-    } catch (error) {
-      debugLog('❌ Error during Kanban initialization:', error)
-      error.value = error instanceof Error ? error.message : 'Failed to initialize kanban'
+      debugLog('Kanban initialization complete')
+    } catch (err) {
+      debugLog('Error during Kanban initialization:', err)
+      error.value = err instanceof Error ? err.message : 'Failed to initialize kanban'
     }
   })
 

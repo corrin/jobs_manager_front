@@ -18,9 +18,14 @@
       <main class="bg-white rounded-xl border border-slate-200 flex flex-col min-h-0">
         <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
           <h3 class="text-lg font-semibold text-gray-900">Quote Details</h3>
-          <button v-if="costLines.length === 0"
+          <button
+            v-if="costLines.length === 0"
             class="inline-flex items-center justify-center h-9 px-3 rounded-md bg-blue-600 text-white border border-blue-700 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style="min-width: 0" @click="onCopyFromEstimate" :disabled="isLoading" :title="'Copy from Estimate'">
+            style="min-width: 0"
+            @click="onCopyFromEstimate"
+            :disabled="isLoading"
+            :title="'Copy from Estimate'"
+          >
             <Copy class="w-4 h-4 mr-1" /> Copy from Estimate
           </button>
         </div>
@@ -30,10 +35,19 @@
             <!-- spinner -->
           </div>
           <template v-else>
-            <SmartCostLinesTable v-if="hasCostSetQuote" :jobId="jobId" :tabKind="'quote'" :lines="costLines"
-              :readOnly="isLoading || areEditsBlocked" :showItemColumn="true" :showSourceColumn="false"
-              @delete-line="handleSmartDelete" @add-line="handleAddEmptyLine"
-              @duplicate-line="(line) => handleAddMaterial(line)" @create-line="handleCreateFromEmpty" />
+            <SmartCostLinesTable
+              v-if="hasCostSetQuote"
+              :jobId="jobId"
+              :tabKind="'quote'"
+              :lines="costLines"
+              :readOnly="isLoading || areEditsBlocked"
+              :showItemColumn="true"
+              :showSourceColumn="false"
+              @delete-line="handleSmartDelete"
+              @add-line="handleAddEmptyLine"
+              @duplicate-line="(line) => handleAddMaterial(line)"
+              @create-line="handleCreateFromEmpty"
+            />
             <div v-else class="text-center py-8 text-gray-500">No quote data available</div>
           </template>
         </div>
@@ -44,9 +58,16 @@
         <!-- Summary -->
         <div class="bg-white rounded-xl border border-slate-200">
           <div class="p-3 w-full">
-            <CompactSummaryCard :key="`quote-summary-compact-${quoteKey}`" title="Quote Summary" class="w-full"
-              :summary="currentQuote.quote?.summary" :costLines="quoteCostLines" :isLoading="isLoading"
-              :revision="currentQuote.quote?.rev" @expand="showDetailedSummary = true" />
+            <CompactSummaryCard
+              :key="`quote-summary-compact-${quoteKey}`"
+              title="Quote Summary"
+              class="w-full"
+              :summary="currentQuote.quote?.summary"
+              :costLines="quoteCostLines"
+              :isLoading="isLoading"
+              :revision="currentQuote.quote?.rev"
+              @expand="showDetailedSummary = true"
+            />
           </div>
         </div>
 
@@ -80,22 +101,59 @@
                       <div class="h-px bg-slate-200 flex-1"></div>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                      <Button class="mr-10" variant="outline" size="sm" @click="goToQuoteOnXero"
-                        :disabled="!localQuote?.online_url">
+                      <Button
+                        class="mr-10"
+                        variant="outline"
+                        size="sm"
+                        @click="goToQuoteOnXero"
+                        :disabled="!localQuote?.online_url"
+                      >
                         <ExternalLink class="h-4 w-4 mr-1" /> Open in Xero
                       </Button>
 
-                      <Button v-if="!isQuoteAccepted" size="sm" class="bg-emerald-600 hover:bg-emerald-700 text-white"
-                        :disabled="isAcceptingQuote || !canAcceptQuote" @click="acceptQuote">
-                        <svg v-if="isAcceptingQuote" class="animate-spin h-4 w-4 mr-1" viewBox="0 0 24 24">
-                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                      <Button
+                        v-if="!isQuoteAccepted"
+                        size="sm"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        :disabled="isAcceptingQuote || !canAcceptQuote"
+                        @click="acceptQuote"
+                      >
+                        <svg
+                          v-if="isAcceptingQuote"
+                          class="animate-spin h-4 w-4 mr-1"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                          />
                         </svg>
                         {{ isAcceptingQuote ? 'Accepting…' : 'Accept Quote' }}
                       </Button>
 
-                      <Button variant="destructive" size="sm" :disabled="isDeletingQuote" @click="deleteQuoteOnXero">
-                        <svg v-if="isDeletingQuote" class="animate-spin h-4 w-4 mr-1" viewBox="0 0 24 24">
-                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        :disabled="isDeletingQuote"
+                        @click="deleteQuoteOnXero"
+                      >
+                        <svg
+                          v-if="isDeletingQuote"
+                          class="animate-spin h-4 w-4 mr-1"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                          />
                         </svg>
                         {{ isDeletingQuote ? 'Deleting…' : 'Delete' }}
                       </Button>
@@ -108,7 +166,12 @@
                       <div class="h-px bg-slate-200 flex-1"></div>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                      <Button class="mr-50" variant="outline" size="sm" @click="onShowQuoteRevisions">
+                      <Button
+                        class="mr-50"
+                        variant="outline"
+                        size="sm"
+                        @click="onShowQuoteRevisions"
+                      >
                         <BookOpen class="h-4 w-4 mr-1" /> Revisions
                       </Button>
                     </div>
@@ -119,10 +182,24 @@
               <template v-else>
                 <div class="flex flex-col items-center text-center py-8">
                   <div class="text-gray-500 mb-4">No quotes for this project</div>
-                  <button @click="createQuote" :disabled="isCreatingQuote"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center gap-2">
-                    <svg v-if="isCreatingQuote" class="animate-spin -ml-1 mr-1 h-4 w-4" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                  <button
+                    @click="createQuote"
+                    :disabled="isCreatingQuote"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <svg
+                      v-if="isCreatingQuote"
+                      class="animate-spin -ml-1 mr-1 h-4 w-4"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      />
                     </svg>
                     {{ isCreatingQuote ? 'Creating...' : 'Create Quote' }}
                   </button>
@@ -132,7 +209,12 @@
                       <div class="h-px bg-slate-200 flex-1"></div>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                      <Button class="mr-50" variant="outline" size="sm" @click="onShowQuoteRevisions">
+                      <Button
+                        class="mr-50"
+                        variant="outline"
+                        size="sm"
+                        @click="onShowQuoteRevisions"
+                      >
                         <BookOpen class="h-4 w-4 mr-1" /> Revisions
                       </Button>
                     </div>
@@ -144,76 +226,6 @@
         </div>
       </aside>
     </div>
-
-    <Dialog :open="showPreviewModal" @update:open="showPreviewModal = $event">
-      <DialogContent class="sm:max-w-4xl max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle>Quote Refresh Preview</DialogTitle>
-          <DialogDescription>
-            Review the changes that will be applied to your quote
-          </DialogDescription>
-        </DialogHeader>
-        <div v-if="previewData" class="space-y-6">
-          <div class="bg-blue-50 rounded-lg p-4">
-            <h4 class="font-medium text-blue-900 mb-3">Summary of Changes</h4>
-            <div v-if="
-              previewData.changes &&
-              (previewData.changes.additions?.length ||
-                previewData.changes.updates?.length ||
-                previewData.changes.deletions?.length)
-            " class="grid grid-cols-3 gap-4 text-sm">
-              <div class="text-center">
-                <div class="text-lg font-bold text-green-600">
-                  {{ previewData.changes.additions?.length || 0 }}
-                </div>
-                <div class="text-gray-600">Additions</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-bold text-blue-600">
-                  {{ previewData.changes.updates?.length || 0 }}
-                </div>
-                <div class="text-gray-600">Updates</div>
-              </div>
-              <div class="text-center">
-                <div class="text-lg font-bold text-red-600">
-                  {{ previewData.changes.deletions?.length || 0 }}
-                </div>
-                <div class="text-gray-600">Deletions</div>
-              </div>
-            </div>
-            <div v-else class="text-center">
-              <div class="text-lg font-bold text-gray-600">0</div>
-              <div class="text-gray-600">No changes detected</div>
-              <div class="text-sm text-gray-500 mt-1">
-                The spreadsheet is in sync with the system
-              </div>
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <button class="px-4 py-2 bg-gray-200 rounded-md mr-2" @click="showPreviewModal = false">
-            Cancel
-          </button>
-          <button class="px-4 py-2 bg-blue-600 text-white rounded-md font-medium" :disabled="!previewData?.changes ||
-            (!previewData.changes.additions?.length &&
-              !previewData.changes.updates?.length &&
-              !previewData.changes.deletions?.length)
-            " @click="onApplySpreadsheetChanges">
-            {{
-              !previewData?.changes ||
-                (!previewData.changes.additions?.length &&
-                  !previewData.changes.updates?.length &&
-                  !previewData.changes.deletions?.length)
-                ? 'No Changes to Apply'
-                : `Apply ${(previewData.changes.additions?.length || 0) +
-                (previewData.changes.updates?.length || 0) +
-                (previewData.changes.deletions?.length || 0)
-                } Changes`
-            }}
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
 
     <!-- Quote Revisions Modal -->
     <Dialog :open="showQuoteRevisionsModal" @update:open="showQuoteRevisionsModal = $event">
@@ -268,8 +280,11 @@
           <div v-if="quoteRevisions.length > 0" class="flex-1 flex flex-col min-h-0">
             <h5 class="flex-shrink-0 font-medium text-foreground mb-3">Previous Revisions</h5>
             <div class="flex-1 overflow-y-auto space-y-3 pr-2">
-              <div v-for="revision in quoteRevisions" :key="revision.quote_revision"
-                class="bg-card border rounded-lg p-4 shadow-sm">
+              <div
+                v-for="revision in quoteRevisions"
+                :key="revision.quote_revision"
+                class="bg-card border rounded-lg p-4 shadow-sm"
+              >
                 <!-- HEADER -->
                 <div class="flex items-start justify-between mb-3">
                   <div class="flex-1">
@@ -304,7 +319,9 @@
                     </span>
                   </div>
                   <div class="flex flex-col">
-                    <span class="text-muted-foreground text-xs uppercase tracking-wide">Revenue</span>
+                    <span class="text-muted-foreground text-xs uppercase tracking-wide"
+                      >Revenue</span
+                    >
                     <span class="font-semibold text-green-600">
                       {{ formatCurrency(revision.summary?.rev ?? 0) }}
                     </span>
@@ -326,16 +343,24 @@
                   </div>
 
                   <div class="space-y-2 max-h-40 overflow-y-auto">
-                    <div v-for="line in revision.cost_lines" :key="line.id"
-                      class="flex items-center justify-between text-sm bg-muted/30 rounded-md p-3">
+                    <div
+                      v-for="line in revision.cost_lines"
+                      :key="line.id"
+                      class="flex items-center justify-between text-sm bg-muted/30 rounded-md p-3"
+                    >
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
-                          <Badge variant="secondary" class="text-xs" :class="line.kind === 'time'
-                              ? 'bg-blue-100 text-blue-800'
-                              : line.kind === 'material'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-orange-100 text-orange-800'
-                            ">
+                          <Badge
+                            variant="secondary"
+                            class="text-xs"
+                            :class="
+                              line.kind === 'time'
+                                ? 'bg-blue-100 text-blue-800'
+                                : line.kind === 'material'
+                                  ? 'bg-purple-100 text-purple-800'
+                                  : 'bg-orange-100 text-orange-800'
+                            "
+                          >
                             {{ line.kind }}
                           </Badge>
                           <span class="font-medium text-foreground truncate">
@@ -400,9 +425,14 @@
           <DialogDescription>Complete breakdown of quote costs and revenue</DialogDescription>
         </DialogHeader>
         <div class="max-h-[60vh] overflow-y-auto">
-          <CostSetSummaryCard :key="`quote-summary-detailed-${quoteKey}`" title="Quote Summary"
-            :summary="currentQuote.quote?.summary" :costLines="quoteCostLines" :isLoading="isLoading"
-            :revision="currentQuote.quote?.rev" />
+          <CostSetSummaryCard
+            :key="`quote-summary-detailed-${quoteKey}`"
+            title="Quote Summary"
+            :summary="currentQuote.quote?.summary"
+            :costLines="quoteCostLines"
+            :isLoading="isLoading"
+            :revision="currentQuote.quote?.rev"
+          />
         </div>
         <DialogFooter>
           <Button variant="outline" @click="showDetailedSummary = false">Close</Button>
@@ -419,15 +449,21 @@
         </DialogHeader>
         <div class="space-y-4 py-4">
           <div class="space-y-3">
-            <Button class="w-full h-auto py-4 px-4 flex flex-col items-start gap-1" variant="default"
-              @click="executeCreateQuote(false)">
+            <Button
+              class="w-full h-auto py-4 px-4 flex flex-col items-start gap-1"
+              variant="default"
+              @click="executeCreateQuote(false)"
+            >
               <span class="font-semibold">Send Total Only</span>
               <span class="text-xs font-normal opacity-90">
                 Export as a single line item with the total amount (Default)
               </span>
             </Button>
-            <Button class="w-full h-auto py-4 px-4 flex flex-col items-start gap-1" variant="outline"
-              @click="executeCreateQuote(true)">
+            <Button
+              class="w-full h-auto py-4 px-4 flex flex-col items-start gap-1"
+              variant="outline"
+              @click="executeCreateQuote(true)"
+            >
               <span class="font-semibold">Send Breakdown</span>
               <span class="text-xs font-normal opacity-70">
                 Export with all individual line items
@@ -450,7 +486,6 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { BookOpen, PlusCircle, RotateCcw, FileX, Copy, ExternalLink } from 'lucide-vue-next'
 import SmartCostLinesTable from '../shared/SmartCostLinesTable.vue'
 import CostSetSummaryCard from '../shared/CostSetSummaryCard.vue'
-import { quoteService } from '../../services/quote.service'
 import { toast } from 'vue-sonner'
 import { formatCurrency } from '@/utils/string-formatting'
 import { schemas } from '../../api/generated/api'
@@ -474,7 +509,6 @@ import { Card, CardHeader, CardContent, CardDescription, CardTitle } from '../ui
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostSet = z.infer<typeof schemas.CostSet>
-type PreviewQuoteResponse = z.infer<typeof schemas.PreviewQuoteResponse>
 type QuoteRevisionsListResponse = z.infer<typeof schemas.QuoteRevisionsList>
 type Quote = z.infer<typeof schemas.Quote>
 type JobQuoteAcceptancePayload = z.input<typeof schemas.JobQuoteAcceptanceRequest>
@@ -542,11 +576,9 @@ const currentQuote = computed(() => {
 })
 
 const isLoading = ref(false)
-const showPreviewModal = ref(false)
 const showQuoteRevisionsModal = ref(false)
 const quoteRevisionsData = ref<QuoteRevisionsListResponse | null>(null)
 const isCreatingRevision = ref(false)
-const previewData = ref<PreviewQuoteResponse | null>(null)
 const costLines = ref<CostLine[]>([])
 const quoteKey = ref(0) // Force reactivity key
 const showDetailedSummary = ref(false)
@@ -617,8 +649,7 @@ const quoteRevisions = computed<QuoteRevisionListItem[]>(() => {
     }
 
     return {
-      quote_revision:
-        typeof revision.quote_revision === 'number' ? revision.quote_revision : 0,
+      quote_revision: typeof revision.quote_revision === 'number' ? revision.quote_revision : 0,
       archived_at: typeof revision.archived_at === 'string' ? revision.archived_at : null,
       reason: typeof revision.reason === 'string' ? revision.reason : null,
       summary,
@@ -661,10 +692,10 @@ async function refreshQuoteData() {
   if (!props.jobId) return
   isLoading.value = true
 
-  // 🔍 DEBUG: Log before refresh
-  console.log('🔍 REFRESH QUOTE DEBUG - BEFORE:')
-  console.log('  - Current quote rev:', currentQuote.value?.quote?.rev)
-  console.log('  - Current cost lines count:', costLines.value.length)
+  // DEBUG: Log before refresh
+  debugLog('REFRESH QUOTE - BEFORE:')
+  debugLog('  - Current quote rev:', currentQuote.value?.quote?.rev)
+  debugLog('  - Current cost lines count:', costLines.value.length)
 
   try {
     const response = await fetchCostSet(props.jobId, 'quote')
@@ -694,25 +725,6 @@ async function refreshQuoteData() {
     console.error('🔍 REFRESH QUOTE DEBUG - ERROR:', error)
   } finally {
     isLoading.value = false
-  }
-}
-
-async function onApplySpreadsheetChanges() {
-  if (!props.jobId) return
-  toast.info('Applying changes...', { id: 'quote-apply' })
-  try {
-    const result = await quoteService.applyQuote(props.jobId)
-    if (result.success) {
-      toast.success('Changes applied successfully!')
-      await refreshQuoteData()
-      showPreviewModal.value = false
-    } else {
-      toast.error('Failed to apply changes')
-    }
-  } catch {
-    toast.error('Error applying changes', { id: 'quote-apply' })
-  } finally {
-    toast.dismiss('quote-apply')
   }
 }
 

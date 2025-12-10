@@ -25,7 +25,7 @@ export function useJobEvents(jobId: string | Ref<string | null>) {
       const response = await api.job_rest_jobs_events_retrieve({
         params: { job_id: id },
       })
-      jobEvents.value = response || []
+      jobEvents.value = response?.events || []
     } catch (err) {
       error.value = 'Failed to load job events: ' + (err as Error).message
       toast.error('Failed to load job events')
@@ -44,17 +44,15 @@ export function useJobEvents(jobId: string | Ref<string | null>) {
     try {
       const response = await api.job_rest_jobs_events_create(
         { description },
-        {
-          params: { job_id: id },
-        },
+        { params: { job_id: id } },
       )
 
-      if (response.success) {
+      if (response.success && response.event) {
         // Reload events after adding
         await loadEvents()
         toast.success('Event added successfully')
       } else {
-        throw new Error(response.error || 'Failed to add event')
+        throw new Error('Failed to add event')
       }
     } catch (err: unknown) {
       const e = err as Error

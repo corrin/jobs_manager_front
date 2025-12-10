@@ -1,7 +1,7 @@
 import type { ICellEditor, ICellEditorParams } from 'ag-grid-community'
 import { debugLog } from '@/utils/debug'
 import { z } from 'zod'
-import { schemas } from '@/api/generated/schemas'
+import { schemas } from '@/api/generated/api'
 
 /**
  * This type represents a job selection item in the purchase order context.
@@ -131,9 +131,9 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
       this.filteredJobs = this.jobs
         .filter(
           (job) =>
-            job.job_number.toLowerCase().includes(term) ||
+            String(job.job_number).toLowerCase().includes(term) ||
             job.name.toLowerCase().includes(term) ||
-            job.client_name.toLowerCase().includes(term),
+            (job.client_name?.toLowerCase().includes(term) ?? false),
         )
         .slice(0, 15)
     }
@@ -165,16 +165,16 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
       item.dataset.index = index.toString()
 
       const searchTerm = this.input.value.toLowerCase()
-      const jobNumber = this.highlightText(job.job_number, searchTerm)
+      const jobNumber = this.highlightText(String(job.job_number), searchTerm)
       const jobName = this.highlightText(job.name, searchTerm)
-      const clientName = this.highlightText(job.client_name, searchTerm)
+      const clientName = this.highlightText(job.client_name || '', searchTerm)
 
       item.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 2px;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-weight: 600; color: #1F2937;">#${jobNumber}</span>
-            <span style="font-size: 12px; color: ${this.getStatusColor(job.status)}; font-weight: 500;">
-              ${job.status.toUpperCase()}
+            <span style="font-size: 12px; color: ${this.getStatusColor(job.status || 'unknown')}; font-weight: 500;">
+              ${(job.status || 'unknown').toUpperCase()}
             </span>
           </div>
           <div style="font-size: 14px; color: #374151; font-weight: 500;">${jobName}</div>
@@ -280,14 +280,14 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
 
   private selectJob(job: POJobSelectionItem): void {
     this.selectedJob = job
-    this.value = job.job_number
-    this.input.value = job.job_number
+    this.value = String(job.job_number)
+    this.input.value = String(job.job_number)
 
-    debugLog('🎯 Job selected in PO editor:', job)
+    debugLog('Job selected in PO editor:', job)
 
     if (this.params.node) {
       const rowData = this.params.node.data
-      debugLog('🔄 Updating PO line with job info:', job)
+      debugLog('Updating PO line with job info:', job)
 
       rowData.job_id = job.id
       rowData.job_number = job.job_number
@@ -299,7 +299,7 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
         force: true,
       })
 
-      debugLog('✅ PO line updated with job data')
+      debugLog('PO line updated with job data')
     }
 
     this.hideDropdown()
@@ -321,7 +321,7 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
 
   getValue(): string {
     if (this.selectedJob) {
-      debugLog('🎯 Returning job ID from PO editor:', this.selectedJob.id)
+      debugLog('Returning job ID from PO editor:', this.selectedJob.id)
       return this.selectedJob.id
     }
     return this.value

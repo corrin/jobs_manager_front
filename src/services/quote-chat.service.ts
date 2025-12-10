@@ -108,7 +108,7 @@ export class QuoteChatService {
         params: { job_id: jobId },
         timeout: 120000, // 2 minutes for AI processing
       })
-      console.log('🔍 DEBUG: assistant response =', response)
+      debugLog('Assistant response:', response)
       return response.data
     } catch (error) {
       debugLog('Failed to get assistant response:', error)

@@ -85,6 +85,7 @@ const isReadOnlyColumn = (column: Column<TData, unknown>) => {
               />
 
               <!-- simple fallback for columns without a renderer -->
+              <!-- 'as any' needed: dynamic property access on generic TData can't be verified at compile time -->
               <template v-else>
                 <template v-if="isReadOnlyColumn(cell.column)">
                   {{ cell.getValue() }}

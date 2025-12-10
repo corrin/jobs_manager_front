@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { schemas } from '../api/generated/api'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 import { z } from 'zod'
+import { debugLog } from '@/utils/debug'
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type FullJob = z.infer<typeof schemas.Job>
@@ -21,7 +22,7 @@ export function useTimesheetSummary() {
   const getJobHours = (jobId: string, timeEntries: TimesheetEntryWithMeta[]) => {
     const jobEntries = timeEntries.filter((entry) => entry.job_id === jobId)
 
-    console.log(`[DEBUG] getJobHours for jobId ${jobId}:`, {
+    debugLog(`getJobHours for jobId ${jobId}:`, {
       jobId,
       totalEntries: timeEntries.length,
       matchingEntries: jobEntries.length,
@@ -55,12 +56,23 @@ export function useTimesheetSummary() {
     return timeEntries.reduce((sum, entry) => sum + (entry.total_rev || 0), 0)
   }
 
+  const getBillableFlag = (entry: TimesheetEntryWithMeta): boolean | null => {
+    const meta = entry.meta
+    if (meta && typeof meta === 'object') {
+      const record = meta as Record<string, unknown>
+      if (typeof record['is_billable'] === 'boolean') {
+        return record['is_billable'] as boolean
+      }
+    }
+    return null
+  }
+
   const getBillableEntries = (timeEntries: TimesheetEntryWithMeta[]) => {
-    return timeEntries.filter((entry) => entry.meta?.is_billable === true).length
+    return timeEntries.filter((entry) => getBillableFlag(entry) === true).length
   }
 
   const getNonBillableEntries = (timeEntries: TimesheetEntryWithMeta[]) => {
-    return timeEntries.filter((entry) => entry.meta?.is_billable === false).length
+    return timeEntries.filter((entry) => getBillableFlag(entry) === false).length
   }
 
   const navigateToJob = (jobId: string) => {
@@ -101,7 +113,7 @@ export function useTimesheetSummary() {
   }
 
   const getEstimatedHours = (job: FullJob) => {
-    console.log('Received job: ', job)
+    debugLog('Received job:', job)
     if (!job) return 0
     return job.latest_estimate.cost_lines.reduce((sum, line) => sum + (line.quantity || 0), 0)
   }

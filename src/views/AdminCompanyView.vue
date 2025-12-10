@@ -9,11 +9,7 @@
               Company Defaults
             </h1>
           </div>
-          <div
-            v-if="loading"
-            class="flex flex-col items-center justify-center"
-            style="height: 60vh"
-          >
+          <div v-if="loading" class="flex flex-col items-center justify-center" style="height: 60vh">
             <div class="flex items-center justify-center gap-2">
               <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
               Company defaults are still loading, please wait
@@ -50,30 +46,18 @@
             </div>
           </div>
           <div class="flex justify-center mt-8">
-            <Button
-              type="button"
-              variant="default"
+            <Button type="button" variant="default"
               class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 flex items-center gap-2 text-base font-semibold rounded shadow"
-              @click="saveAll"
-            >
+              @click="saveAll">
               <Save class="w-5 h-5" /> Save All
             </Button>
           </div>
-          <SectionModal
-            v-if="modalSection"
-            :section="modalSection"
-            :form="form"
-            @close="closeSection"
-            @update="onSectionUpdate"
-          />
+          <SectionModal v-if="modalSection" :section="modalSection" :form="form" @close="closeSection"
+            @update="onSectionUpdate" />
         </div>
       </div>
-      <AIProvidersDialog
-        v-if="showAIProvidersDialog"
-        :providers="aiProviders"
-        @close="closeAIProvidersDialog"
-        @update:providers="onProvidersUpdate"
-      />
+      <AIProvidersDialog v-if="showAIProvidersDialog" :providers="aiProviders" @close="closeAIProvidersDialog"
+        @update:providers="onProvidersUpdate" />
     </div>
   </AppLayout>
 </template>
@@ -107,12 +91,14 @@ import type {
 } from '../services/admin-company-defaults-service'
 import { toast } from 'vue-sonner'
 
+type SectionKey = 'xero' | 'general' | 'google' | 'kpi' | 'ai' | 'working_hours'
+
 const companyDefaults = ref<CompanyDefaults>({} as CompanyDefaults)
 const form = ref<CompanyDefaults>({} as CompanyDefaults)
 const aiProviders = ref<AIProvider[]>([])
 const loading = ref(true)
 const showAIProvidersDialog = ref(false)
-const modalSection = ref<string | null>(null)
+const modalSection = ref<SectionKey | null>(null)
 
 debugLog('[AdminCompanyView] companyDefaults:', companyDefaults.value)
 debugLog('[AdminCompanyView] form:', form.value)
@@ -202,7 +188,7 @@ function onProvidersUpdate(providers: AIProvider[]) {
   debugLog('[AdminCompanyView] aiProviders updated to:', aiProviders.value)
 }
 function openSection(section: string) {
-  modalSection.value = section
+  modalSection.value = section as SectionKey
 }
 function closeSection() {
   modalSection.value = null
@@ -235,6 +221,7 @@ onMounted(fetchDefaults)
   outline: none;
   cursor: pointer;
 }
+
 .section-btn:hover,
 .section-btn:focus {
   background: linear-gradient(135deg, #c7d2fe 0%, #e0e7ff 100%);

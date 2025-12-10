@@ -106,8 +106,9 @@ const emit = defineEmits<{
 }>()
 
 // Add logging to track emit calls
+// 'as any' needed: Vue's defineEmits doesn't support dynamic event names
 const loggedEmit = (event: string, ...args: unknown[]) => {
-  debugLog(`📤 SmartCostLinesTable emitting event: ${event}`, args)
+  debugLog(`SmartCostLinesTable emitting event: ${event}`, args)
   return (emit as any)(event, ...args) // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
@@ -150,16 +151,45 @@ const selectedItemMap = new WeakMap<
 
 const createdOnce = new WeakSet<CostLine>()
 
+/**
+ * Ensure there's always at least one empty line for editing
+ */
+const emptyLine = ref<CostLine>({
+  id: '',
+  kind: 'material',
+  desc: '',
+  quantity: 1,
+  unit_cost: undefined,
+  unit_rev: undefined,
+  ext_refs: {},
+  meta: {},
+  total_cost: 0,
+  created_at: '',
+  updated_at: '',
+  accounting_date: '',
+  total_rev: 0,
+})
+
+const displayLines = computed(() => [...props.lines, emptyLine.value])
+
+const negativeIdsSig = computed(() => props.negativeStockIds?.slice().sort().join('|') || '')
+
 function resetEmptyLine(kind: KindOption = 'material') {
+  debugLog('resetEmptyLine called with kind:', kind)
   emptyLine.value = {
     id: '',
     kind,
     desc: '',
     quantity: 1,
-    unit_cost: null,
-    unit_rev: null,
+    unit_cost: undefined,
+    unit_rev: undefined,
     ext_refs: {},
     meta: {},
+    total_cost: 0,
+    created_at: '',
+    updated_at: '',
+    accounting_date: '',
+    total_rev: 0,
   }
 }
 
@@ -284,7 +314,16 @@ function isStockLine(line: CostLine): boolean {
 
 function isNegativeStock(line: CostLine): boolean {
   if (!line?.id || !isStockLine(line)) return false
-  return props.negativeStockIds?.includes(line.ext_refs?.stock_id as string) ?? false
+  const stockId = (line.ext_refs as Record<string, unknown>)?.stock_id
+  console.log(
+    'DEBUG: isNegativeStock - stockId:',
+    stockId,
+    'type:',
+    typeof stockId,
+    'negativeStockIds:',
+    props.negativeStockIds,
+  )
+  return props.negativeStockIds?.includes(stockId as string) ?? false
 }
 
 function canEditField(
@@ -311,7 +350,7 @@ function canEditField(
   }
   if (field === 'desc' && props.tabKind === 'actual') {
     // only allow description editing for adjustments and materials
-    return kind === 'adjust' || 'material'
+    return kind === 'adjust' || kind === 'material'
   }
 
   // desc & quantity in non-actual tabs
@@ -333,22 +372,85 @@ function isLineReadyForSave(line: CostLine): boolean {
 }
 
 /**
- * Ensure there's always at least one empty line for editing
+ * Keyboard navigation
  */
-const emptyLine = ref<CostLine>({
-  id: '',
-  kind: 'material',
-  desc: '',
-  quantity: 1,
-  unit_cost: undefined,
-  unit_rev: undefined,
-  ext_refs: {},
-  meta: {},
+const { onKeydown } = useGridKeyboardNav({
+  getRowCount: () => displayLines.value.length,
+  getSelectedIndex: () => selectedRowIndex.value,
+  setSelectedIndex: (i) => (selectedRowIndex.value = i),
+
+  startEdit: () => {
+    // No-op here; inputs are directly focusable. Could focus first editable input in selected row if needed.
+  },
+  commitEdit: () => {
+    // Inputs save on blur; pressing Enter can just move focus outward (handled by browser).
+  },
+  cancelEdit: () => {
+    // No stateful edit buffers here; UI uses immediate binding. Intentionally no-op.
+  },
+
+  addLine: () => emit('add-line'),
+  duplicateSelected: () => {
+    const i = selectedRowIndex.value
+    if (i >= 0 && i < displayLines.value.length) {
+      const line = displayLines.value[i]
+      // Only duplicate actual lines, not auto-generated empty ones
+      if (line.id || props.lines.includes(line)) {
+        loggedEmit('duplicate-line', line)
+      }
+    }
+  },
+  deleteSelected: () => {
+    const i = selectedRowIndex.value
+    debugLog('Keyboard delete triggered for selectedRowIndex:', i)
+
+    if (i >= 0 && i < displayLines.value.length) {
+      const line = displayLines.value[i]
+      debugLog('Keyboard delete for line:', {
+        lineId: line.id,
+        selectedIndex: i,
+        lineDesc: line.desc,
+        isLocalLine: !line.id,
+      })
+
+      if (line.id) {
+        debugLog('Keyboard emitting delete-line with line.id:', line.id)
+        loggedEmit('delete-line', line.id as string)
+      } else {
+        // Find the actual index in the original props.lines array
+        const actualIndex = props.lines.findIndex((l) => l === line)
+        debugLog('Keyboard looking for local line in props.lines:', {
+          actualIndex,
+          foundLine: actualIndex >= 0 ? props.lines[actualIndex] : null,
+        })
+
+        if (actualIndex >= 0) {
+          debugLog('Keyboard emitting delete-line with actualIndex:', actualIndex)
+          loggedEmit('delete-line', actualIndex)
+        } else {
+          debugLog('Keyboard: Auto-generated empty line - cannot delete, ignoring')
+        }
+      }
+    }
+  },
+  moveSelectedUp: () => {
+    const i = selectedRowIndex.value
+    if (i > 0) emit('move-line', i, 'up')
+  },
+  moveSelectedDown: () => {
+    const i = selectedRowIndex.value
+    if (i >= 0 && i < displayLines.value.length - 1) emit('move-line', i, 'down')
+  },
 })
 
-const displayLines = computed(() => [...props.lines, emptyLine.value])
+function handleRowClick(line: CostLine, index: number) {
+  selectedRowIndex.value = index
+}
 
-const negativeIdsSig = computed(() => props.negativeStockIds?.slice().sort().join('|') || '')
+const shortcutsTitle = computed(
+  () =>
+    'Shortcuts: Enter/F2 edit • Enter confirm • Esc cancel • Tab/Shift+Tab move • ↑/↓ row • Ctrl/Cmd+Enter add • Ctrl/Cmd+D duplicate • Ctrl/Cmd+Backspace delete • Alt+↑/↓ move row',
+)
 
 /**
  * Build the column defs for DataTable
@@ -377,7 +479,9 @@ const columns = computed(() => {
             const line = displayLines.value[row.index]
             const selectedItem = selectedItemMap.get(line)
             const model =
-              selectedItem?.id || (line.ext_refs as Record<string, unknown>)?.stock_id || null
+              selectedItem?.id ||
+              ((line.ext_refs as Record<string, unknown>)?.stock_id as string) ||
+              null
             const kind = String(line.kind)
             const isMaterial = kind === 'material'
             const isNewLine = !line.id
@@ -487,7 +591,7 @@ const columns = computed(() => {
                   'onUpdate:modelValue': async (val: string | null) => {
                     if (!enabled) return
                     if (val) {
-                      debugLog('💾 Storing item selection:', { val, lineId: line.id })
+                      debugLog('Storing item selection:', { val, lineId: line.id })
                       // Store full item data for display
                       if (val === '__labour__') {
                         selectedItemMap.set(line, {
@@ -495,15 +599,15 @@ const columns = computed(() => {
                           description: 'Labour',
                           item_code: 'LABOUR',
                         })
-                        debugLog('👷 Stored labour item in selectedItemMap')
+                        debugLog('Stored labour item in selectedItemMap')
                       } else {
                         // For regular items, we'll fetch the data below and update
                         selectedItemMap.set(line, { id: val, description: '', item_code: '' })
-                        debugLog('📦 Stored placeholder for stock item in selectedItemMap')
+                        debugLog('Stored placeholder for stock item in selectedItemMap')
                       }
                     } else {
                       selectedItemMap.set(line, null)
-                      debugLog('🗑️ Cleared selectedItemMap for line')
+                      debugLog('Cleared selectedItemMap for line')
                     }
 
                     // Infer kind based on selection
@@ -562,7 +666,7 @@ const columns = computed(() => {
                     // Look up stock item from store (already loaded for the dropdown)
                     const found = val ? store.items.find((item) => item.id === val) : null
                     if (found) {
-                      debugLog('✅ Found stock item in store:', {
+                      debugLog('Found stock item in store:', {
                         id: found.id,
                         item_code: found.item_code,
                         description: found.description,
@@ -575,11 +679,11 @@ const columns = computed(() => {
                       })
                       // Update selectedItemMap with full data
                       selectedItemMap.set(line, {
-                        id: val,
+                        id: val as string,
                         description: found.description || '',
                         item_code: found.item_code || '',
                       })
-                      debugLog('💾 Updated line with stock item data:', {
+                      debugLog('Updated line with stock item data:', {
                         id: val,
                         description: found.description || '',
                         item_code: found.item_code || '',
@@ -595,7 +699,7 @@ const columns = computed(() => {
                         maybeEmitCreate(line)
                       }
                     } else if (val) {
-                      debugLog('❌ Stock item not found in store for id:', val)
+                      debugLog('Stock item not found in store for id:', val)
                       Object.assign(line, { desc: '' })
                       Object.assign(line, { unit_cost: 0 })
                       selectedItemMap.set(line, null)
@@ -1122,7 +1226,7 @@ const columns = computed(() => {
                 e.stopPropagation()
                 if (disabled) return
 
-                debugLog('🗑️ Delete button clicked for line:', {
+                debugLog('Delete button clicked for line:', {
                   lineId: line.id,
                   rowIndex: row.index,
                   lineDesc: line.desc,
@@ -1135,18 +1239,18 @@ const columns = computed(() => {
                 if (!line.id) {
                   // Find the actual index in the original props.lines array
                   const actualIndex = props.lines.findIndex((l) => l === line)
-                  debugLog('🔍 Looking for local line in props.lines:', {
+                  debugLog('Looking for local line in props.lines:', {
                     actualIndex,
                     foundLine: actualIndex >= 0 ? props.lines[actualIndex] : null,
                     searchedLine: line,
                   })
 
                   if (actualIndex >= 0) {
-                    debugLog('✅ Emitting delete-line with actualIndex:', actualIndex)
+                    debugLog('Emitting delete-line with actualIndex:', actualIndex)
                     loggedEmit('delete-line', actualIndex)
                   } else {
                     // This is the auto-generated empty line - don't delete it, just clear it
-                    debugLog('⚠️ Auto-generated empty line - cannot delete, ignoring')
+                    debugLog('Auto-generated empty line - cannot delete, ignoring')
                     return
                   }
                   return
@@ -1155,7 +1259,7 @@ const columns = computed(() => {
                 // For saved lines, ask for confirmation
                 const confirmed = window.confirm('Delete this line? This action cannot be undone.')
                 if (!confirmed) return
-                debugLog('✅ Emitting delete-line with line.id:', line.id)
+                debugLog('Emitting delete-line with line.id:', line.id)
                 loggedEmit('delete-line', line.id as string)
               },
             },
@@ -1167,87 +1271,6 @@ const columns = computed(() => {
     },
   ].filter(Boolean)
 })
-
-/**
- * Keyboard navigation
- */
-const { onKeydown } = useGridKeyboardNav({
-  getRowCount: () => displayLines.value.length,
-  getSelectedIndex: () => selectedRowIndex.value,
-  setSelectedIndex: (i) => (selectedRowIndex.value = i),
-
-  startEdit: () => {
-    // No-op here; inputs are directly focusable. Could focus first editable input in selected row if needed.
-  },
-  commitEdit: () => {
-    // Inputs save on blur; pressing Enter can just move focus outward (handled by browser).
-  },
-  cancelEdit: () => {
-    // No stateful edit buffers here; UI uses immediate binding. Intentionally no-op.
-  },
-
-  addLine: () => emit('add-line'),
-  duplicateSelected: () => {
-    const i = selectedRowIndex.value
-    if (i >= 0 && i < displayLines.value.length) {
-      const line = displayLines.value[i]
-      // Only duplicate actual lines, not auto-generated empty ones
-      if (line.id || props.lines.includes(line)) {
-        loggedEmit('duplicate-line', line)
-      }
-    }
-  },
-  deleteSelected: () => {
-    const i = selectedRowIndex.value
-    debugLog('⌨️ Keyboard delete triggered for selectedRowIndex:', i)
-
-    if (i >= 0 && i < displayLines.value.length) {
-      const line = displayLines.value[i]
-      debugLog('🗑️ Keyboard delete for line:', {
-        lineId: line.id,
-        selectedIndex: i,
-        lineDesc: line.desc,
-        isLocalLine: !line.id,
-      })
-
-      if (line.id) {
-        debugLog('✅ Keyboard emitting delete-line with line.id:', line.id)
-        loggedEmit('delete-line', line.id as string)
-      } else {
-        // Find the actual index in the original props.lines array
-        const actualIndex = props.lines.findIndex((l) => l === line)
-        debugLog('🔍 Keyboard looking for local line in props.lines:', {
-          actualIndex,
-          foundLine: actualIndex >= 0 ? props.lines[actualIndex] : null,
-        })
-
-        if (actualIndex >= 0) {
-          debugLog('✅ Keyboard emitting delete-line with actualIndex:', actualIndex)
-          loggedEmit('delete-line', actualIndex)
-        } else {
-          debugLog('⚠️ Keyboard: Auto-generated empty line - cannot delete, ignoring')
-        }
-      }
-    }
-  },
-  moveSelectedUp: () => {
-    const i = selectedRowIndex.value
-    if (i > 0) emit('move-line', i, 'up')
-  },
-  moveSelectedDown: () => {
-    const i = selectedRowIndex.value
-    if (i >= 0 && i < displayLines.value.length - 1) emit('move-line', i, 'down')
-  },
-})
-
-function handleRowClick(line: CostLine, index: number) {
-  selectedRowIndex.value = index
-}
-
-const shortcutsTitle = computed(
-  () =>
-    'Shortcuts: Enter/F2 edit • Enter confirm • Esc cancel • Tab/Shift+Tab move • ↑/↓ row • Ctrl/Cmd+Enter add • Ctrl/Cmd+D duplicate • Ctrl/Cmd+Backspace delete • Alt+↑/↓ move row',
-)
 </script>
 
 <template>
@@ -1272,6 +1295,7 @@ const shortcutsTitle = computed(
       @keydown="onKeydown"
       ref="containerRef"
     >
+      <!-- 'as any' needed: DataTable generic TData doesn't match our CostLine columns/row types -->
       <DataTable
         class="smart-costlines-table"
         :columns="columns as any"

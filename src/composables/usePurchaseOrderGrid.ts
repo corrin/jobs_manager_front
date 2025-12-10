@@ -13,7 +13,12 @@ import { z } from 'zod'
 import { PurchaseOrderJobCellEditor } from '@/components/purchasing/PurchaseOrderJobCellEditor'
 import { formatCurrency } from '@/utils/string-formatting'
 
-type PurchaseOrderLineUI = z.infer<typeof schemas.PurchaseOrderLine>
+type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
+type PurchaseOrderLineUI = PurchaseOrderLine & {
+  item_name?: string
+  unit_price?: number | null
+  total_price?: number | null
+}
 
 export function usePurchaseOrderGrid(lines: Ref<PurchaseOrderLineUI[]>) {
   const gridApi = ref<GridApi | null>(null)
@@ -73,7 +78,9 @@ export function usePurchaseOrderGrid(lines: Ref<PurchaseOrderLineUI[]>) {
       type: 'numericColumn',
       valueGetter: (params) => {
         const data = params.data as PurchaseOrderLineUI
-        return (data.quantity || 0) * (data.unit_price || 0)
+        const quantity = typeof data.quantity === 'number' ? data.quantity : 0
+        const unitPrice = typeof data.unit_price === 'number' ? data.unit_price : 0
+        return quantity * unitPrice
       },
       valueFormatter: (params: ValueFormatterParams) => formatCurrency(params.value || 0),
       editable: false,
@@ -118,8 +125,9 @@ export function usePurchaseOrderGrid(lines: Ref<PurchaseOrderLineUI[]>) {
           const nodeId = target.getAttribute('data-node-id')
           if (nodeId) {
             const rowNode = params.api.getRowNode(nodeId)
-            if (rowNode) {
-              params.api.applyTransaction({ remove: [rowNode.data] })
+            const rowData = rowNode?.data as PurchaseOrderLineUI | undefined
+            if (rowData) {
+              params.api.applyTransaction({ remove: [rowData] })
             }
           }
         }
@@ -130,9 +138,12 @@ export function usePurchaseOrderGrid(lines: Ref<PurchaseOrderLineUI[]>) {
   const addLine = () => {
     const newLine: PurchaseOrderLineUI = {
       id: `temp-${Date.now()}`,
-      item_name: '',
       description: '',
       quantity: 1,
+      unit_cost: 0,
+      price_tbc: false,
+      job_id: null,
+      item_name: '',
       unit_price: 0,
       total_price: 0,
     }

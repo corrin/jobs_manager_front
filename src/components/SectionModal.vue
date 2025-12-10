@@ -19,7 +19,7 @@
               <label class="flex items-center gap-1 text-xs font-medium">
                 Start
                 <Input
-                  v-model="localForm[day.startKey]"
+                  v-model="localForm[day.startKey] as string"
                   type="text"
                   class="h-8 w-40 text-xs"
                   placeholder="08:00"
@@ -29,7 +29,7 @@
               <label class="flex items-center gap-1 text-xs font-medium">
                 End
                 <Input
-                  v-model="localForm[day.endKey]"
+                  v-model="localForm[day.endKey] as string"
                   type="text"
                   class="h-8 w-40 text-xs"
                   placeholder="17:00"
@@ -45,7 +45,7 @@
               <span class="w-36">{{ field.label }}</span>
               <Input
                 v-if="field.type === 'text' || field.type === 'number'"
-                v-model="localForm[field.key]"
+                v-model="localForm[field.key] as string | number | undefined"
                 :type="field.type"
                 class="flex-1 h-8 text-xs"
                 :step="
@@ -60,10 +60,13 @@
                   field.key === 'time_markup' || field.key === 'materials_markup' ? 1 : undefined
                 "
               />
-              <Checkbox v-else-if="field.type === 'boolean'" v-model="localForm[field.key]" />
+              <Checkbox
+                v-else-if="field.type === 'boolean'"
+                v-model="localForm[field.key] as boolean | null | undefined"
+              />
               <div v-else-if="field.type === 'date'" class="flex-1 relative">
                 <Input
-                  :modelValue="formatDateTime(localForm[field.key])"
+                  :modelValue="formatDateTime(localForm[field.key] as string | Date | null)"
                   type="text"
                   class="h-8 text-xs cursor-pointer bg-white"
                   readonly
@@ -76,11 +79,15 @@
                     class="absolute z-50 left-0 bottom-10 w-max min-w-[260px] bg-white border border-gray-200 rounded-lg shadow-lg p-4"
                     @click.stop
                   >
+                    <!-- 'as any' needed: Calendar expects specific date type, getValidDate returns CalendarDateTime | null -->
                     <Calendar
                       :modelValue="
-                        getValidDate(localForm[field.key]) || getValidDate(props.form[field.key])
+                        (getValidDate(localForm[field.key] as string | Date | null) ||
+                          getValidDate(props.form[field.key] as string | Date | null)) as any
                       "
-                      @update:modelValue="(date) => onCalendarSelect(field.key, date)"
+                      @update:modelValue="
+                        (date) => onCalendarSelect(field.key, date as CalendarDateTime | null)
+                      "
                     />
                     <div class="flex justify-end mt-2">
                       <Button size="sm" variant="outline" @click="closeCalendar">Close</Button>
@@ -137,10 +144,17 @@ import {
 } from 'lucide-vue-next'
 import { ref, computed, watch } from 'vue'
 import { CalendarDateTime, parseDateTime } from '@internationalized/date'
+import { debugLog } from '@/utils/debug'
 
-const props = defineProps<{ section: string; form: Record<string, unknown> }>()
+type SectionKey = keyof typeof sectionMap
+const props = defineProps<{ section: SectionKey; form: Record<string, unknown> }>()
 const emit = defineEmits(['close', 'update'])
 const localForm = ref({ ...props.form })
+
+// Debug logging for type issues
+debugLog('SectionModal props.section:', props.section, 'type:', typeof props.section)
+debugLog('SectionModal props.form:', props.form)
+debugLog('SectionModal localForm initial:', localForm.value)
 
 watch(
   () => props.form,
@@ -373,18 +387,22 @@ const workingDays = [
 label {
   gap: 0.5rem;
 }
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
+
 [data-calendar-popup] {
   bottom: 2.5rem !important;
   top: auto !important;
 }
+
 .working-hours-day-wrapper {
   background: linear-gradient(90deg, #eef2ff 0%, #f8fafc 100%);
   border-radius: 0.75rem;
@@ -395,6 +413,7 @@ label {
   flex-direction: column;
   gap: 0.15rem;
 }
+
 .working-hours-day-label {
   display: flex;
   align-items: center;

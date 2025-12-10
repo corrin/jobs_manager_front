@@ -7,6 +7,10 @@ import type { z } from 'zod'
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
 type CostSetKind = 'estimate' | 'quote' | 'actual'
+type MaterialCostLineInput = Pick<
+  CostLine,
+  'kind' | 'desc' | 'quantity' | 'unit_cost' | 'unit_rev' | 'ext_refs' | 'meta'
+> & { kind: 'material' }
 
 export interface UseAddMaterialCostLineOptions {
   costLines: Ref<CostLine[]>
@@ -23,7 +27,7 @@ export function useAddMaterialCostLine(options: UseAddMaterialCostLineOptions) {
   /**
    * Add a material cost line
    */
-  async function handleAddMaterial(payload: CostLine) {
+  async function handleAddMaterial(payload: MaterialCostLineInput) {
     // Run pre-add check if provided
     if (beforeAdd && !beforeAdd()) {
       return
@@ -54,13 +58,13 @@ export function useAddMaterialCostLine(options: UseAddMaterialCostLineOptions) {
       const created = await costlineService.createCostLine(jobId, costSetKind, createPayload)
 
       // Add to cost lines array
-      costLines.value = [...costLines.value, created]
+      costLines.value = [...costLines.value, created as CostLine]
 
       toast.success('Material cost line added!')
 
       // Call success callback if provided
       if (onSuccess) {
-        await onSuccess(created)
+        await onSuccess(created as CostLine)
       }
 
       return created

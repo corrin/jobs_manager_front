@@ -280,7 +280,7 @@ async function loadFiles() {
   try {
     const response = await jobService.listJobFiles(props.jobId)
     files.value = Array.isArray(response) ? response : []
-    debugLog('✅ Files loaded successfully:', files.value.length, 'files')
+    debugLog('Files loaded successfully:', files.value.length, 'files')
   } catch (error) {
     console.error('❌ Failed to load files:', error)
     toast.error('Failed to load attachments')
@@ -458,7 +458,7 @@ const uploadFile = async (file: File) => {
   isUploading.value = true
 
   try {
-    debugLog('📤 Uploading file:', file.name)
+    debugLog('Uploading file:', file.name)
 
     // Simulate upload progress for better UX
     const progressInterval = setInterval(() => {
@@ -472,7 +472,7 @@ const uploadFile = async (file: File) => {
     clearInterval(progressInterval)
     uploadProgress.value = 100
 
-    debugLog('✅ File uploaded successfully:', response)
+    debugLog('File uploaded successfully:', response)
     toast.success(`File "${file.name}" uploaded successfully`)
 
     await loadFiles()
@@ -488,7 +488,7 @@ const uploadFile = async (file: File) => {
       uploadProgress.value = 0
     }, 1000)
   } catch (error) {
-    debugLog('❌ Error uploading file:', error)
+    debugLog('Error uploading file:', error)
     toast.error(`Failed to upload ${file.name}`)
     throw error
   } finally {
@@ -538,7 +538,7 @@ async function downloadFile(file: JobFile) {
       window.URL.revokeObjectURL(url)
     }, 1000)
 
-    debugLog('📥 File opened for printing and download initiated:', file.filename)
+    debugLog('File opened for printing and download initiated:', file.filename)
   } catch (error) {
     console.error('❌ Error downloading file:', error)
     toast.error('Failed to download file')
@@ -558,7 +558,7 @@ async function deleteFile(id: string) {
   files.value = files.value.filter((f) => f.id !== id)
 
   try {
-    debugLog('🗑️ Deleting file:', file.filename)
+    debugLog('Deleting file:', file.filename)
 
     const result = await jobService.deleteJobFile(props.jobId, id)
 
@@ -582,13 +582,14 @@ async function updatePrintSetting(file: JobFile) {
   const originalValue = file.print_on_jobsheet
 
   try {
-    debugLog('🖨️ Updating print setting for file:', {
+    debugLog('Updating print setting for file:', {
       filename: file.filename,
       print_on_jobsheet: file.print_on_jobsheet,
       job_id: props.jobId,
     })
 
     const result = await jobService.updateJobFile(props.jobId, file.id, {
+      filename: file.filename,
       print_on_jobsheet: file.print_on_jobsheet,
     })
 
@@ -617,7 +618,7 @@ const closeCameraModal = () => {
 
 const handlePhotoCaptured = async (photo: File) => {
   try {
-    debugLog('📸 Photo captured:', {
+    debugLog('Photo captured:', {
       name: photo.name,
       size: formatFileSize(photo.size),
       type: photo.type,
@@ -626,7 +627,7 @@ const handlePhotoCaptured = async (photo: File) => {
     await processAndUploadFile(photo)
     toast.success('Photo uploaded successfully!')
   } catch (error) {
-    debugLog('❌ Error uploading captured photo:', error)
+    debugLog('Error uploading captured photo:', error)
     toast.error('Failed to upload photo')
   }
 }

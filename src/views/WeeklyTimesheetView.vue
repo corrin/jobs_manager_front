@@ -439,7 +439,7 @@ const sortedStaffData = computed(() => {
 })
 const displayDays = computed<DisplayDay[]>(() => {
   if (!weeklyData.value?.week_days || !Array.isArray(weeklyData.value.week_days)) {
-    debugLog('⚠️ No valid weekly data available for displayDays computation')
+    debugLog('No valid weekly data available for displayDays computation')
     return []
   }
 
@@ -530,7 +530,7 @@ async function loadData(): Promise<void> {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     error.value = `Failed to load weekly timesheet data. Please try again. ${errorMessage}`
 
-    debugLog('❌ Error while loading weekly timesheet data:', {
+    debugLog('Error while loading weekly timesheet data:', {
       error: err,
       payrollMode: payrollMode.value,
       weekendEnabled: weekendEnabled.value,

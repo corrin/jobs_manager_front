@@ -13,8 +13,25 @@ import { schemas } from '../api/generated/api'
 export const TimesheetEntryWithMetaSchema = schemas.TimesheetCostLine.extend({
   tempId: z.string().optional(),
   _isSaving: z.boolean().optional(),
+  isSaving: z.boolean().optional(),
   isNewRow: z.boolean().optional(),
   isModified: z.boolean().optional(),
+  jobId: z.string().optional(),
+  jobNumber: z.string().optional(),
+  jobName: z.string().optional(),
+  client: z.string().optional(),
+  description: z.string().optional(),
+  hours: z.number().optional(),
+  bill: z.number().optional(),
+  billable: z.boolean().optional(),
+  wage: z.number().optional(),
+  wageRate: z.number().optional(),
+  chargeOutRate: z.number().optional(),
+  rateMultiplier: z.number().optional(),
+  rate: z.string().optional(),
+  staffId: z.string().optional(),
+  staffName: z.string().optional(),
+  date: z.string().optional(),
 })
 
 export type TimesheetEntryWithMeta = z.infer<typeof TimesheetEntryWithMetaSchema>

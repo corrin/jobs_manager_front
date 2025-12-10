@@ -219,26 +219,26 @@ async function fetchJobs() {
   error.value = null
 
   try {
-    debugLog('📊 Loading jobs for purchase order...')
+    debugLog('Loading jobs for purchase order...')
     // Use the all-jobs endpoint which returns the expected format with jobs array
     const response = await api.purchasing_rest_all_jobs_retrieve()
-    debugLog('📊 Zodios response:', response)
+    debugLog('Zodios response:', response)
 
     if (!response.success) {
       throw new Error('Failed to fetch jobs from server')
     }
 
     jobs.value = response.jobs || []
-    debugLog(`✅ Loaded ${jobs.value.length} jobs for purchase order`)
+    debugLog(`Loaded ${jobs.value.length} jobs for purchase order`)
 
     if (jobs.value.length === 0) {
       toast.warning('No jobs available for purchase order creation')
     } else {
-      debugLog('🔧 First job sample:', jobs.value[0])
+      debugLog('First job sample:', jobs.value[0])
     }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Failed to load jobs'
-    debugLog('❌ Error loading jobs for purchasing:', err)
+    debugLog('Error loading jobs for purchasing:', err)
     toast.error(
       `Failed to load jobs: ${errorMessage}. Job selection is required for purchase orders.`,
     )
@@ -279,7 +279,7 @@ async function load() {
     return
   }
 
-  debugLog('🔄 Loading PO data...')
+  debugLog('Loading PO data...')
   isLoading.value = true
   isReloading.value = true
   error.value = null
@@ -287,7 +287,7 @@ async function load() {
   if (debounceTimer) {
     clearTimeout(debounceTimer)
     debounceTimer = null
-    debugLog('⏰ Cancelled pending autosave during reload')
+    debugLog('Cancelled pending autosave during reload')
   }
 
   try {
@@ -295,7 +295,7 @@ async function load() {
     po.value = data
     originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
 
-    debugLog('✅ PO loaded successfully. Lines:', po.value.lines.length)
+    debugLog('PO loaded successfully. Lines:', po.value.lines.length)
 
     if (po.value.status === 'deleted') {
       toast.warning('This purchase order has been deleted and cannot be edited', {
@@ -320,7 +320,7 @@ async function load() {
     isLoading.value = false
     setTimeout(() => {
       isReloading.value = false
-      debugLog('🔓 Reload complete, watchers re-enabled')
+      debugLog('Reload complete, watchers re-enabled')
     }, 200)
   }
 }
@@ -384,11 +384,11 @@ async function saveSummary() {
 }
 
 const handleAddLineEvent = () => {
-  debugLog('🎯 handleAddLineEvent triggered from PoLinesTable')
-  debugLog('🔑 canEditLineItems:', canEditLineItems.value)
+  debugLog('handleAddLineEvent triggered from PoLinesTable')
+  debugLog('canEditLineItems:', canEditLineItems.value)
 
   if (!canEditLineItems.value) {
-    debugLog('❌ Cannot edit line items - permission denied')
+    debugLog('Cannot edit line items - permission denied')
     return
   }
 
@@ -396,18 +396,18 @@ const handleAddLineEvent = () => {
 }
 
 function addLine() {
-  debugLog('🏗️ addLine function called')
-  debugLog('📊 Current PO lines:', po.value.lines.length)
-  debugLog('🔒 Is PO deleted:', isPoDeleted.value)
-  debugLog('📤 Is PO submitted:', isPoSubmitted.value)
+  debugLog('addLine function called')
+  debugLog('Current PO lines:', po.value.lines.length)
+  debugLog('Is PO deleted:', isPoDeleted.value)
+  debugLog('Is PO submitted:', isPoSubmitted.value)
 
   if (isPoDeleted.value) {
-    debugLog('❌ Blocked: PO is deleted')
+    debugLog('Blocked: PO is deleted')
     toast.error('Cannot add lines - this purchase order has been deleted')
     return
   }
   if (isPoSubmitted.value) {
-    debugLog('❌ Blocked: PO is submitted')
+    debugLog('Blocked: PO is submitted')
     toast.error('Cannot add lines - this purchase order has been submitted to supplier')
     return
   }
@@ -429,13 +429,13 @@ function addLine() {
     job_id: null,
   }
 
-  debugLog('➕ Adding new line:', newLine)
+  debugLog('Adding new line:', newLine)
 
   try {
     po.value.lines = [...po.value.lines, newLine]
-    debugLog('✅ Line added successfully. New count:', po.value.lines.length)
+    debugLog('Line added successfully. New count:', po.value.lines.length)
   } catch (error) {
-    debugLog('❌ Error adding line:', error)
+    debugLog('Error adding line:', error)
     toast.error('Failed to add line: ' + error)
   }
 }
@@ -450,12 +450,12 @@ function deleteLine(idOrIdx: string | number) {
     return
   }
 
-  debugLog('🗑️ Deleting line:', idOrIdx)
+  debugLog('Deleting line:', idOrIdx)
 
   if (debounceTimer) {
     clearTimeout(debounceTimer)
     debounceTimer = null
-    debugLog('⏰ Cancelled pending autosave timer')
+    debugLog('Cancelled pending autosave timer')
   }
 
   isDeletingLine.value = true
@@ -466,7 +466,7 @@ function deleteLine(idOrIdx: string | number) {
 
       if (lineToDelete && hasAnyContent(lineToDelete)) {
         linesToDelete.value.push(idOrIdx)
-        debugLog('📝 Added line to delete list:', idOrIdx)
+        debugLog('Added line to delete list:', idOrIdx)
       }
 
       po.value.lines = po.value.lines.filter((l: PurchaseOrderLine) => l.id !== idOrIdx)
@@ -474,15 +474,15 @@ function deleteLine(idOrIdx: string | number) {
       po.value.lines = po.value.lines.filter((_: PurchaseOrderLine, idx: number) => idx !== idOrIdx)
     }
 
-    debugLog('✅ Line deleted. Remaining lines:', po.value.lines.length)
+    debugLog('Line deleted. Remaining lines:', po.value.lines.length)
   } finally {
     setTimeout(() => {
       isDeletingLine.value = false
-      debugLog('🔓 Deletion flag cleared, autosave re-enabled')
+      debugLog('Deletion flag cleared, autosave re-enabled')
 
       // Trigger autosave after deletion if there are lines to delete
       if (linesToDelete.value.length > 0) {
-        debugLog('🗑️ Triggering save for deleted lines')
+        debugLog('Triggering save for deleted lines')
         saveLines()
       }
     }, 500)
@@ -543,13 +543,13 @@ function isValidLine(line: PurchaseOrderLine) {
 
 async function saveLines() {
   if (isPoDeleted.value) {
-    debugLog('❌ Cannot save - PO is deleted')
+    debugLog('Cannot save - PO is deleted')
     toast.error('Cannot save changes - this purchase order has been deleted')
     return
   }
 
   if (isReloading.value || isDeletingLine.value) {
-    debugLog('⏸️ Skipping save - reloading:', isReloading.value, 'deleting:', isDeletingLine.value)
+    debugLog('Skipping save - reloading:', isReloading.value, 'deleting:', isDeletingLine.value)
     return
   }
 
@@ -591,18 +591,18 @@ async function saveLines() {
   }
 
   if (!validLines.length && !linesToDelete.value.length) {
-    debugLog('⏸️ No valid lines or deletes to save')
+    debugLog('No valid lines or deletes to save')
     return
   }
 
   const changedLines = validLines.filter(lineChanged)
 
   if (!changedLines.length && !linesToDelete.value.length) {
-    debugLog('⏸️ No changes detected - skipping save')
+    debugLog('No changes detected - skipping save')
     return
   }
 
-  debugLog('💾 Saving lines...', {
+  debugLog('Saving lines...', {
     isSubmitted: isPoSubmitted.value,
     validLines: validLines.length,
     changedLines: changedLines.length,
@@ -622,7 +622,7 @@ async function saveLines() {
         job_id: line.job_id && line.job_id.trim() !== '' ? line.job_id : null,
       }
 
-      debugLog('🔧 Transformed line (submitted PO - job only):', {
+      debugLog('Transformed line (submitted PO - job only):', {
         hasId: !!transformed.id,
         id: transformed.id,
         job_id: transformed.job_id,
@@ -647,7 +647,7 @@ async function saveLines() {
       dimensions: line.dimensions || '',
     }
 
-    debugLog('🔧 Transformed line (full):', {
+    debugLog('Transformed line (full):', {
       hasId: !!transformed.id,
       id: transformed.id,
       description: transformed.description?.substring(0, 20),
@@ -676,16 +676,16 @@ async function saveLines() {
     const needsReload = changedLines.some((line) => !line.id) || linesToDeleteBackup.length > 0
 
     if (needsReload) {
-      debugLog('🔄 Reloading PO after save to ensure consistency...')
+      debugLog('Reloading PO after save to ensure consistency...')
       await load()
     } else {
       originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
-      debugLog('✅ Updated original lines without reload')
+      debugLog('Updated original lines without reload')
     }
 
     toast.success('Lines saved')
   } catch (error) {
-    debugLog('❌ Error saving lines:', error)
+    debugLog('Error saving lines:', error)
     // Rollback on error
     po.value.lines = snapshot
     toast.error(
@@ -717,18 +717,18 @@ async function syncWithXero() {
         if (data.xero_id) po.value.xero_id = data.xero_id
         toast.dismiss('po-sync-loading')
         toast.success('Purchase Order synced with Xero successfully')
-        debugLog('✅ Xero sync successful:', data)
+        debugLog('Xero sync successful:', data)
         break
       case data.error:
         toast.dismiss('po-sync-loading')
         const errorMessage = extractErrorMessage(data.error, 'Xero sync failed')
         toast.error(`Xero sync failed: ${errorMessage}`, createErrorToast())
-        debugLog('❌ Xero sync error:', data.error)
+        debugLog('Xero sync error:', data.error)
         break
       default:
         toast.dismiss('po-sync-loading')
         toast.error('Xero sync failed: Unknown response format', createErrorToast())
-        debugLog('❓ Xero sync unexpected response:', data)
+        debugLog('Xero sync unexpected response:', data)
     }
   } catch (err: unknown) {
     toast.dismiss('po-sync-loading')
@@ -845,7 +845,7 @@ async function emailPurchaseOrder() {
 
 async function close() {
   if (isPoDeleted.value) {
-    debugLog('🚪 Closing without save - PO is deleted')
+    debugLog('Closing without save - PO is deleted')
     router.push('/purchasing/po')
     return
   }
@@ -853,27 +853,27 @@ async function close() {
   let hasAuthError = false
 
   try {
-    debugLog('🚪 Closing PO form - triggering autosave...')
+    debugLog('Closing PO form - triggering autosave...')
 
     // Clear any pending debounce timers to force immediate save
     if (debounceTimer) {
       clearTimeout(debounceTimer)
       debounceTimer = null
-      debugLog('⏰ Cleared pending autosave timer for immediate save')
+      debugLog('Cleared pending autosave timer for immediate save')
     }
 
     // Always try to save lines (function will check for actual changes internally)
-    debugLog('💾 Saving line changes before close...')
+    debugLog('Saving line changes before close...')
     await saveLines()
 
     // Always try to save summary to ensure consistency
-    debugLog('💾 Saving summary changes before close...')
+    debugLog('Saving summary changes before close...')
     await saveSummary()
 
-    debugLog('✅ Autosave completed, navigating to PO list')
+    debugLog('Autosave completed, navigating to PO list')
     toast.success('Changes saved automatically')
   } catch (error) {
-    debugLog('❌ Error during autosave on close:', error)
+    debugLog('Error during autosave on close:', error)
 
     // Check if it's an authentication error
     const possibleErrorObject = typeof error === 'object' && error !== null ? error : null
@@ -892,7 +892,7 @@ async function close() {
     const isAuthError = responseStatus === 401 || messageText?.includes('auth')
 
     if (isAuthError) {
-      debugLog('🔒 Authentication error detected during save')
+      debugLog('Authentication error detected during save')
       toast.error('Session expired. Please login again.')
       hasAuthError = true
       return
@@ -903,7 +903,7 @@ async function close() {
   } finally {
     // Always navigate back to PO list unless there was an auth error
     if (!hasAuthError) {
-      debugLog('🚪 Navigating to purchase orders list')
+      debugLog('Navigating to purchase orders list')
       router.push('/purchasing/po')
     }
   }
@@ -953,7 +953,7 @@ const handleReceiptSave = async (payload: {
   const newRows = payload.editorState.rows
 
   if (!lineId || lineId === 'undefined') {
-    debugLog('❌ Invalid lineId:', lineId)
+    debugLog('Invalid lineId:', lineId)
     return
   }
 
@@ -973,7 +973,7 @@ const handleReceiptSave = async (payload: {
   })
 
   if (newApiAllocations.length === 0) {
-    debugLog('❌ No valid allocations to save.')
+    debugLog('No valid allocations to save.')
     return
   }
 
@@ -1000,7 +1000,7 @@ const handleReceiptSave = async (payload: {
   const request = transformDeliveryReceiptForAPI(po.value.id, map)
 
   try {
-    debugLog('💾 Saving receipt for line:', lineId, 'with NEW allocations:', consolidated)
+    debugLog('Saving receipt for line:', lineId, 'with NEW allocations:', consolidated)
     await receiptStore.submitDeliveryReceipt(po.value.id, request.allocations)
     toast.success('Receipt saved')
 
@@ -1125,7 +1125,7 @@ onMounted(async () => {
       }
 
       if (!newLines || newLines.length === 0) {
-        debugLog('⏸️ Skipping autosave - no lines to save')
+        debugLog('Skipping autosave - no lines to save')
         return
       }
 
@@ -1142,13 +1142,13 @@ onMounted(async () => {
         }
       }
 
-      debugLog('⏱️ Lines changed, scheduling autosave in 500ms')
+      debugLog('Lines changed, scheduling autosave in 500ms')
       if (debounceTimer) {
         clearTimeout(debounceTimer)
-        debugLog('⏰ Cleared previous timer')
+        debugLog('Cleared previous timer')
       }
       debounceTimer = setTimeout(() => {
-        debugLog('💾 Executing scheduled autosave')
+        debugLog('Executing scheduled autosave')
         saveLines()
       }, 500)
     },

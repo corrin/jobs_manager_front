@@ -86,11 +86,11 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
     const existing = timers.get(key)
     if (existing) {
       clearTimeout(existing)
-      debugLog('🔄 [Autosave] rescheduled (cleared existing timer)', { rowKey: key })
+      debugLog('[Autosave] rescheduled (cleared existing timer)', { rowKey: key })
     }
     const t = window.setTimeout(() => enqueue(key), debounceMs)
     timers.set(key, t)
-    debugLog('⏳ [Autosave] scheduled', { rowKey: key, debounceMs })
+    debugLog('[Autosave] scheduled', { rowKey: key, debounceMs })
   }
 
   function scheduleEntry(entry: T) {
@@ -106,11 +106,11 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
     if (st.isSaving) {
       st.pending = true
       state.set(key, st)
-      debugLog('⏭️ [Autosave] in-flight, marked pending', { rowKey: key, currentState: st })
+      debugLog('[Autosave] in-flight, marked pending', { rowKey: key, currentState: st })
       return
     }
     queue.push(key)
-    debugLog('📥 [Autosave] enqueued', {
+    debugLog('[Autosave] enqueued', {
       rowKey: key,
       queueSize: queue.length,
       totalInFlight: inFlight.value,
@@ -128,7 +128,7 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
       state.set(key, st)
       inFlight.value++
 
-      debugLog('🚀 [Autosave] processing', {
+      debugLog('[Autosave] processing', {
         rowKey: key,
         inFlight: inFlight.value,
         remainingQueue: queue.length,
@@ -137,7 +137,7 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
       saveRow(key)
         .catch((err) => {
           // Errors already handled in saveRow (toasts); just logging here
-          debugLog('❌ [Autosave] unhandled error in saveRow', err)
+          debugLog('[Autosave] unhandled error in saveRow', err)
         })
         .finally(() => {
           inFlight.value--
@@ -148,7 +148,7 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
 
           // If new changes occurred during the save, re-enqueue
           if (s.pending) {
-            debugLog('🔁 [Autosave] pending true, re-enqueue', { rowKey: effectiveKey })
+            debugLog('[Autosave] pending true, re-enqueue', { rowKey: effectiveKey })
             enqueue(effectiveKey)
           }
 
@@ -162,48 +162,48 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
     // Get the most recent entry
     const entry = opts.getEntry(rowKey)
     if (!entry) {
-      debugLog('⚠️ [Autosave] getEntry returned null - skipping', { rowKey })
+      debugLog('[Autosave] getEntry returned null - skipping', { rowKey })
       return
     }
 
     // Completeness validation
     if (!opts.isRowComplete(entry)) {
-      debugLog('⛔ [Autosave] row incomplete - skip save', { rowKey })
+      debugLog('[Autosave] row incomplete - skip save', { rowKey })
       return
     }
 
     // Duplication for new rows
     if (opts.isDuplicate(entry)) {
-      debugLog('⛔ [Autosave] duplicate new row - skip save', { rowKey })
+      debugLog('[Autosave] duplicate new row - skip save', { rowKey })
       toast.error('Save failed: Duplicate entry detected')
       return
     }
 
     const toastId = `timesheet-save-${rowKey}`
     try {
-      debugLog('💾 [Autosave] start save', { rowKey, entryId: entry.id || 'new' })
+      debugLog('[Autosave] start save', { rowKey, entryId: entry.id || 'new' })
       toast.dismiss(toastId)
       toast.info('Saving entry...', { id: toastId, duration: 0 })
 
       await opts.save(entry)
-      debugLog('💾 [Autosave] save completed, starting soft refresh', { rowKey })
+      debugLog('[Autosave] save completed, starting soft refresh', { rowKey })
 
       // After saving, perform a specific soft refresh
       await opts.softRefresh(entry)
-      debugLog('🔄 [Autosave] soft refresh completed', { rowKey })
+      debugLog('[Autosave] soft refresh completed', { rowKey })
 
       toast.dismiss(toastId)
       toast.success('Entry saved')
-      debugLog('✅ [Autosave] saved successfully', { rowKey, entryId: entry.id })
+      debugLog('[Autosave] saved successfully', { rowKey, entryId: entry.id })
 
       // If the id has changed (from tempId to backend id), migrate internal states
       migrateRowKeyIfChanged(rowKey, entry)
       opts.onAfterSuccess?.(entry)
     } catch (error) {
-      const message = extractErrorMessage(error, 'Save failed')
+      const message = extractErrorMessage(error) || 'Save failed'
       toast.dismiss(toastId)
       toast.error(`Save failed: ${message}`)
-      debugLog('❌ [Autosave] save error', { rowKey, error, message })
+      debugLog('[Autosave] save error', { rowKey, error, message })
     }
   }
 
@@ -227,7 +227,7 @@ export function useTimesheetAutosave<T extends Record<string, unknown>>(opts: Au
       state.set(newKey, s)
     }
 
-    debugLog('🪄 [Autosave] migrated rowKey', { from: prevKey, to: newKey })
+    debugLog('[Autosave] migrated rowKey', { from: prevKey, to: newKey })
   }
 
   return {
