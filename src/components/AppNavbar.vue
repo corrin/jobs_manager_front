@@ -482,19 +482,13 @@
                       >
                       <div class="border-t border-gray-200 my-1"></div>
                       <button
-                        @click="
-                          showNotImplemented('Machine Maintenance Schedule')
-                          closeMobileMenu()
-                        "
+                        @click="showNotImplementedMobile('Machine Maintenance Schedule')"
                         class="block w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
                       >
                         Machine Maintenance
                       </button>
                       <button
-                        @click="
-                          showNotImplemented('Staff Training')
-                          closeMobileMenu()
-                        "
+                        @click="showNotImplementedMobile('Staff Training')"
                         class="block w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
                       >
                         Staff Training
@@ -750,6 +744,11 @@ const toggleMobileSection = (section: 'purchases' | 'safety' | 'reports' | 'admi
 const showNotImplemented = (feature: string) => {
   toast.info(`${feature} is not yet implemented`)
   activeDropdown.value = null
+}
+
+const showNotImplementedMobile = (feature: string) => {
+  showNotImplemented(feature)
+  closeMobileMenu()
 }
 
 let clickHandler: ((e: MouseEvent) => void) | null = null
