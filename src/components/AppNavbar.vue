@@ -121,12 +121,55 @@
             </div>
           </Transition>
         </div>
-        <router-link
-          to="/xero"
-          class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium"
-        >
-          <Link2 class="w-4 h-4 mr-1" /> Xero
-        </router-link>
+
+        <div class="relative" @click.stop>
+          <button
+            @click="toggleDropdown('safety')"
+            class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
+          >
+            <ShieldCheck class="w-4 h-4 mr-1" /> Process
+            <ChevronDown class="ml-1 h-4 w-4" />
+          </button>
+          <Transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 -translate-y-2 scale-95"
+            enter-to-class="opacity-100 translate-y-0 scale-100"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0 scale-100"
+            leave-to-class="opacity-0 -translate-y-2 scale-95"
+          >
+            <div
+              v-if="activeDropdown === 'safety'"
+              class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
+            >
+              <RouterLink
+                to="/safety/jsa"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <ShieldCheck class="w-4 h-4 mr-2" /> Job Safety Analyses
+              </RouterLink>
+              <RouterLink
+                to="/safety/swp"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <ClipboardList class="w-4 h-4 mr-2" /> Safe Work Procedures
+              </RouterLink>
+              <div class="border-t border-gray-200 my-1"></div>
+              <button
+                @click="showNotImplemented('Machine Maintenance Schedule')"
+                class="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 font-medium transition-all"
+              >
+                <Wrench class="w-4 h-4 mr-2" /> Machine Maintenance
+              </button>
+              <button
+                @click="showNotImplemented('Staff Training')"
+                class="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 font-medium transition-all"
+              >
+                <GraduationCap class="w-4 h-4 mr-2" /> Staff Training
+              </button>
+            </div>
+          </Transition>
+        </div>
 
         <div class="relative" @click.stop>
           <button
@@ -218,6 +261,13 @@
               v-if="activeDropdown === 'admin'"
               class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
             >
+              <router-link
+                to="/xero"
+                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+              >
+                <Link2 class="w-4 h-4 mr-2" /> Xero
+              </router-link>
+              <div class="border-t border-gray-200 my-1"></div>
               <router-link
                 to="/admin/staff"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
@@ -338,12 +388,6 @@
                 @click="closeMobileMenu"
                 >Daily Overview</router-link
               >
-              <router-link
-                to="/xero"
-                class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
-                @click="closeMobileMenu"
-                >Xero</router-link
-              >
             </div>
 
             <div class="border-t border-gray-200"></div>
@@ -396,6 +440,59 @@
                         @click="closeMobileMenu"
                         >Product Mappings</RouterLink
                       >
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+
+              <div class="bg-gray-50 rounded-md">
+                <button
+                  @click="toggleMobileSection('safety')"
+                  class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
+                >
+                  Process
+                  <ChevronDown
+                    :class="[
+                      'h-4 w-4 transition-transform duration-200',
+                      mobileSections.safety ? 'rotate-180' : '',
+                    ]"
+                  />
+                </button>
+                <Transition
+                  enter-active-class="transition-all duration-200 ease-out"
+                  enter-from-class="opacity-0 max-h-0"
+                  enter-to-class="opacity-100 max-h-40"
+                  leave-active-class="transition-all duration-200 ease-in"
+                  leave-from-class="opacity-100 max-h-40"
+                  leave-to-class="opacity-0 max-h-0"
+                >
+                  <div v-if="mobileSections.safety" class="overflow-hidden">
+                    <div class="px-3 pb-2 space-y-1">
+                      <RouterLink
+                        to="/safety/jsa"
+                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                        >Job Safety Analyses</RouterLink
+                      >
+                      <RouterLink
+                        to="/safety/swp"
+                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                        >Safe Work Procedures</RouterLink
+                      >
+                      <div class="border-t border-gray-200 my-1"></div>
+                      <button
+                        @click="showNotImplemented('Machine Maintenance Schedule'); closeMobileMenu()"
+                        class="block w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
+                      >
+                        Machine Maintenance
+                      </button>
+                      <button
+                        @click="showNotImplemented('Staff Training'); closeMobileMenu()"
+                        class="block w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
+                      >
+                        Staff Training
+                      </button>
                     </div>
                   </div>
                 </Transition>
@@ -494,6 +591,14 @@
                 >
                   <div v-if="mobileSections.admin" class="overflow-hidden">
                     <router-link
+                      to="/xero"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      @click="closeMobileMenu"
+                    >
+                      Xero
+                    </router-link>
+                    <div class="border-t border-gray-200 my-1 mx-2"></div>
+                    <router-link
                       to="/admin/staff"
                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
@@ -587,13 +692,19 @@ import {
   Brain,
   AlertTriangle,
   TrendingUp,
+  ShieldCheck,
+  ClipboardList,
+  Wrench,
+  GraduationCap,
 } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 import { useAppLayout } from '@/composables/useAppLayout'
 
 const activeDropdown = ref<string | null>(null)
 const showMobileMenu = ref(false)
 const mobileSections = ref({
   purchases: false,
+  safety: false,
   reports: false,
   admin: false,
 })
@@ -609,6 +720,7 @@ const toggleMobileMenu = () => {
   if (!showMobileMenu.value) {
     mobileSections.value = {
       purchases: false,
+      safety: false,
       reports: false,
       admin: false,
     }
@@ -619,13 +731,19 @@ const closeMobileMenu = () => {
   showMobileMenu.value = false
   mobileSections.value = {
     purchases: false,
+    safety: false,
     reports: false,
     admin: false,
   }
 }
 
-const toggleMobileSection = (section: 'purchases' | 'reports' | 'admin') => {
+const toggleMobileSection = (section: 'purchases' | 'safety' | 'reports' | 'admin') => {
   mobileSections.value[section] = !mobileSections.value[section]
+}
+
+const showNotImplemented = (feature: string) => {
+  toast.info(`${feature} is not yet implemented`)
+  activeDropdown.value = null
 }
 
 let clickHandler: ((e: MouseEvent) => void) | null = null

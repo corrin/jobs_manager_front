@@ -7,7 +7,7 @@
             v-for="tab in tabs"
             :key="tab.key"
             :data-automation-id="`tab-${tab.key}-mobile`"
-            @click="handleTabChange(tab.key as JobTabKey)"
+            @click="handleTabChange(tab.key as JobViewTabKey)"
             :class="[
               'flex-1 py-3 px-2 text-sm font-medium text-center border-b-2 transition-colors',
               activeTab === tab.key
@@ -25,7 +25,7 @@
             v-for="tab in tabs"
             :key="tab.key"
             :data-automation-id="`tab-${tab.key}`"
-            @click="handleTabChange(tab.key as JobTabKey)"
+            @click="handleTabChange(tab.key as JobViewTabKey)"
             :class="[
               'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
               activeTab === tab.key
@@ -105,6 +105,9 @@
       <div v-if="activeTab === 'quotingChat'" class="h-full p-4 md:p-6">
         <JobQuotingChatTab :job-id="jobId" :job-number="jobNumberString" />
       </div>
+      <div v-if="activeTab === 'safety'" class="h-full p-4 md:p-6">
+        <JobSafetyTab :job-id="jobId" :job-number="jobNumber" />
+      </div>
     </div>
   </div>
 </template>
@@ -119,6 +122,7 @@ import JobSettingsTab from './JobSettingsTab.vue'
 import JobHistoryTab from './JobHistoryTab.vue'
 import JobAttachmentsTab from './JobAttachmentsTab.vue'
 import JobQuotingChatTab from './JobQuotingChatTab.vue'
+import JobSafetyTab from './JobSafetyTab.vue'
 import { watch, computed } from 'vue'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
@@ -132,6 +136,7 @@ type JobViewTabKey =
   | 'history'
   | 'attachments'
   | 'quotingChat'
+  | 'safety'
 
 const emit = defineEmits<{
   (e: 'change-tab', tab: JobViewTabKey): void
@@ -163,6 +168,7 @@ const allTabs: { key: JobViewTabKey; label: string }[] = [
   { key: 'history', label: 'History' },
   { key: 'attachments', label: 'Attachments' },
   { key: 'quotingChat', label: 'Quoting Chat' },
+  { key: 'safety', label: 'Safety' },
 ] as const
 
 const tabs = computed(() => {
