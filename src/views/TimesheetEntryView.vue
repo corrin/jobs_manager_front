@@ -682,7 +682,7 @@ const adaptedTimeEntries = computed(() => {
     ...entry,
   }))
 
-  console.log('[DEBUG] adaptedTimeEntries:', {
+  debugLog('adaptedTimeEntries:', {
     originalCount: timeEntries.value.length,
     adaptedCount: adapted.length,
     originalSample: timeEntries.value.slice(0, 2).map((e) => ({
@@ -757,7 +757,7 @@ const getJobHours = (jobId: string, timeEntries: TimesheetEntryViewRow[]) => {
 
   const hours = jobEntries.reduce((sum, entry) => sum + getEntryHours(entry), 0)
 
-  console.log(`[DEBUG] getJobHours (local) for jobId ${jobId}:`, {
+  debugLog(`getJobHours (local) for jobId ${jobId}:`, {
     jobId,
     totalEntries: timeEntries.length,
     matchingEntries: jobEntries.length,
@@ -829,7 +829,7 @@ const activeJobsWithData = computed<ActiveJobWithData[]>(() => {
     ),
   ]
 
-  debugLog('DEBUG activeJobsWithData:', {
+  debugLog('activeJobsWithData:', {
     adaptedEntriesCount: adaptedTimeEntries.value.length,
     uniqueJobIdsFromEntries: uniqueJobIds,
     activeJobsCount: activeJobs.value.length,

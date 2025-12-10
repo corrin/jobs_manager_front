@@ -174,7 +174,7 @@ const displayLines = computed(() => [...props.lines, emptyLine.value])
 const negativeIdsSig = computed(() => props.negativeStockIds?.slice().sort().join('|') || '')
 
 function resetEmptyLine(kind: KindOption = 'material') {
-  console.log('DEBUG: resetEmptyLine called with kind:', kind)
+  debugLog('resetEmptyLine called with kind:', kind)
   emptyLine.value = {
     id: '',
     kind,

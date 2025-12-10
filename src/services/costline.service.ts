@@ -32,7 +32,7 @@ export const createCostLine = async (
   kind: 'estimate' | 'quote' | 'actual',
   payload: CostLineRequest,
 ): Promise<CostLineResponse> => {
-  debugLog('COSTLINE SERVICE DEBUG - Creating cost line:')
+  debugLog('COSTLINE SERVICE - Creating cost line:')
   debugLog(' - Job ID:', jobId)
   debugLog(' - Kind:', kind)
   debugLog(' - Payload:', payload)
@@ -55,7 +55,7 @@ export const createCostLine = async (
           params: { job_id: String(jobId), kind },
         })
 
-  debugLog('COSTLINE SERVICE DEBUG - Created cost line result:', result)
+  debugLog('COSTLINE SERVICE - Created cost line result:', result)
   return result
 }
 
@@ -70,17 +70,17 @@ export const updateCostLine = async (
 
 export const deleteCostLine = async (id: string): Promise<void> => {
   debugLog('SERVICE: Starting DELETE request for cost line ID:', id)
-  debugLog('COSTLINE SERVICE DEBUG - Deleting cost line:', id)
+  debugLog('COSTLINE SERVICE - Deleting cost line:', id)
 
   try {
     await api.job_rest_cost_lines_delete_destroy(undefined, {
       params: { cost_line_id: id },
     })
     debugLog('SERVICE: DELETE request completed successfully')
-    debugLog('COSTLINE SERVICE DEBUG - Successfully deleted cost line:', id)
+    debugLog('COSTLINE SERVICE - Successfully deleted cost line:', id)
   } catch (error) {
     debugLog('SERVICE: DELETE request failed:', error)
-    debugLog('COSTLINE SERVICE DEBUG - Delete failed:', error)
+    debugLog('COSTLINE SERVICE - Delete failed:', error)
     throw error
   }
 }
