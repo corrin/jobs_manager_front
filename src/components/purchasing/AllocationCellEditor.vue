@@ -173,7 +173,7 @@ function removeRow(index: number) {
   rows.value.splice(index, 1)
 }
 
-function handleJobSelected(rowIndex: number, job: (JobForPurchasing & { isStockHolding: boolean; displayName: string }) | null) {
+function handleJobSelected(rowIndex: number, job: JobForPurchasing | null) {
   if (!job) return
   rows.value[rowIndex].job_id = job.id
 }
@@ -209,51 +209,81 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
   <div class="w-full">
     <Popover v-model:open="open" modal>
       <PopoverTrigger as-child>
-        <Button size="sm" variant="outline" :disabled="disabled || !isReceiptVisible" @click.stop.prevent="openEditor"
-          class="w-full text-xs min-h-[32px] hover:bg-blue-50 transition-colors">
+        <Button
+          size="sm"
+          variant="outline"
+          :disabled="disabled || !isReceiptVisible"
+          @click.stop.prevent="openEditor"
+          class="w-full text-xs min-h-[32px] hover:bg-blue-50 transition-colors"
+        >
           <div class="flex items-center justify-center gap-2 p-1">
             <Package class="w-3 h-3 text-blue-600" />
             <span class="font-medium text-blue-700">
               {{ existing.length > 0 ? 'Check Allocations' : 'Add Allocation' }}
             </span>
-            <span v-if="remaining > 0" class="text-xs text-muted-foreground">({{ remaining }} left)</span>
+            <span v-if="remaining > 0" class="text-xs text-muted-foreground"
+              >({{ remaining }} left)</span
+            >
           </div>
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent class="p-4 w-[450px] !max-h-[70vh] flex flex-col" :side="existing.length > 0 ? 'top' : 'bottom'"
-        align="center" :side-offset="4">
+      <PopoverContent
+        class="p-4 w-[450px] !max-h-[70vh] flex flex-col"
+        :side="existing.length > 0 ? 'top' : 'bottom'"
+        align="center"
+        :side-offset="4"
+      >
         <div class="flex items-center justify-between mb-3">
           <div class="text-sm font-medium flex items-center gap-2">
             <Package class="w-4 h-4 text-blue-600" />
             Receipt Allocation
           </div>
-          <Button class="p-2" size="sm" variant="ghost" :disabled="!remaining" @click="allocateRemaining"
-            title="Shift+R">
+          <Button
+            class="p-2"
+            size="sm"
+            variant="ghost"
+            :disabled="!remaining"
+            @click="allocateRemaining"
+            title="Shift+R"
+          >
             <Zap class="w-3 h-3 mr-1" />
             Allocate Remaining
           </Button>
         </div>
 
-        <div v-if="overReceipt" class="p-2 mb-2 text-xs rounded border border-red-200 bg-red-50 text-red-700">
+        <div
+          v-if="overReceipt"
+          class="p-2 mb-2 text-xs rounded border border-red-200 bg-red-50 text-red-700"
+        >
           ⚠️ Exceeds remaining quantity. Changes will not be saved.
         </div>
 
-        <div v-if="existing.length > 0" class="mb-3 p-2 border rounded-lg bg-blue-50 border-blue-200">
+        <div
+          v-if="existing.length > 0"
+          class="mb-3 p-2 border rounded-lg bg-blue-50 border-blue-200"
+        >
           <div class="flex items-center gap-1 mb-2">
             <History class="w-3 h-3 text-blue-600" />
             <span class="text-xs font-medium text-blue-800">Previous Allocations</span>
           </div>
           <div class="space-y-1">
-            <div v-for="alloc in existing" :key="alloc.allocation_id"
-              class="flex items-center justify-between text-xs bg-white rounded p-2 border">
+            <div
+              v-for="(alloc, idx) in existing"
+              :key="alloc.allocation_id ?? idx"
+              class="flex items-center justify-between text-xs bg-white rounded p-2 border"
+            >
               <div>
                 <div class="font-medium text-gray-800">{{ alloc.job_name || 'Unknown Job' }}</div>
                 <div class="text-gray-600">Qty: {{ alloc.quantity }}</div>
               </div>
-              <Button size="sm" variant="ghost" @click="
-                deleteAllocation(alloc.allocation_id!, alloc.stock_location ? 'stock' : 'job')
-                ">
+              <Button
+                size="sm"
+                variant="ghost"
+                @click="
+                  deleteAllocation(alloc.allocation_id!, alloc.stock_location ? 'stock' : 'job')
+                "
+              >
                 <Trash2 class="w-3 h-3 text-red-500" />
               </Button>
             </div>
@@ -261,28 +291,54 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
         </div>
 
         <div class="flex-1 overflow-auto pr-1 space-y-3">
-          <div v-for="(row, idx) in rows" :key="idx" class="p-3 border rounded-lg bg-gray-50 space-y-3">
+          <div
+            v-for="(row, idx) in rows"
+            :key="idx"
+            class="p-3 border rounded-lg bg-gray-50 space-y-3"
+          >
             <div class="flex items-start gap-2">
               <div class="flex-1 space-y-1">
                 <label class="text-xs font-medium text-gray-700">Job</label>
-                <JobSelect :model-value="row.job_id" :jobs="enhancedJobs"
-                  @job-selected="(job) => handleJobSelected(idx, job)" />
+                <JobSelect
+                  :model-value="row.job_id"
+                  :jobs="enhancedJobs"
+                  @job-selected="(job) => handleJobSelected(idx, job)"
+                />
               </div>
               <div class="w-24 space-y-1">
                 <label class="text-xs font-medium text-gray-700">Quantity</label>
-                <Input type="number" class="allocation-quantity-input text-right" v-model.number="row.quantity" :min="0"
-                  :max="remaining + (row.quantity || 0)" />
+                <Input
+                  type="number"
+                  class="allocation-quantity-input text-right"
+                  v-model.number="row.quantity"
+                  :min="0"
+                  :max="remaining + (row.quantity || 0)"
+                />
               </div>
-              <Button size="sm" variant="ghost" @click="removeRow(idx)"
-                class="mt-[21px] text-red-500 hover:text-red-700 hover:bg-red-50">
+              <Button
+                size="sm"
+                variant="ghost"
+                @click="removeRow(idx)"
+                class="mt-[21px] text-red-500 hover:text-red-700 hover:bg-red-50"
+              >
                 <Trash2 class="w-4 h-4" />
               </Button>
             </div>
             <div class="space-y-1">
               <label class="text-xs font-medium text-gray-700">Retail Rate (%)</label>
-              <Input type="number" v-model.number="row.retail_rate" min="0" max="100" step="0.01" placeholder="0.00" />
+              <Input
+                type="number"
+                v-model.number="row.retail_rate"
+                min="0"
+                max="100"
+                step="0.01"
+                placeholder="0.00"
+              />
             </div>
-            <div v-if="isStockHoldingJob(row.job_id)" class="text-xs text-orange-600 flex items-center gap-1">
+            <div
+              v-if="isStockHoldingJob(row.job_id)"
+              class="text-xs text-orange-600 flex items-center gap-1"
+            >
               <Package class="w-3 h-3" />
               These items will be added to stock.
             </div>
@@ -290,8 +346,13 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
         </div>
 
         <div class="flex justify-between items-center mt-4 pt-3 border-t">
-          <Button size="sm" variant="outline" @click="addRow" :disabled="!canAddRow"
-            title="Add new allocation (Shift+N)">
+          <Button
+            size="sm"
+            variant="outline"
+            @click="addRow"
+            :disabled="!canAddRow"
+            title="Add new allocation (Shift+N)"
+          >
             <Plus class="w-3 h-3 mr-1" /> Add
           </Button>
           <Button size="sm" @click="handleSaveAndClose">Done</Button>

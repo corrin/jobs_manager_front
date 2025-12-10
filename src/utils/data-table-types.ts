@@ -1,11 +1,7 @@
-/**
- * Frontend UI types for data table components
- * These are presentation-layer types for table UI state and interactions
- */
+import type { CellContext } from '@tanstack/vue-table'
 
-export interface DataTableRowContext {
-  isSelected: boolean
-  isExpanded: boolean
-  isEditing: boolean
-  index: number
-}
+/**
+ * Lightweight alias that mirrors the TanStack Table cell context so
+ * column renderers get strongly typed access to `row`, `cell`, etc.
+ */
+export type DataTableRowContext<TData = unknown, TValue = unknown> = CellContext<TData, TValue>
