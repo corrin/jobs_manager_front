@@ -503,7 +503,7 @@ const columns = computed(() => {
                 'div',
                 {
                   class: 'col-item flex items-center',
-                  'data-automation-id': `cost-line-item-${row.index}`,
+                  'data-automation-id': `SmartCostLinesTable-item-${row.index}`,
                 },
                 [
                   h(
@@ -579,7 +579,7 @@ const columns = computed(() => {
 
             return h(
               'div',
-              { class: 'col-item', 'data-automation-id': `cost-line-item-${row.index}` },
+              { class: 'col-item', 'data-automation-id': `SmartCostLinesTable-item-${row.index}` },
               [
                 h(ItemSelect, {
                   modelValue: model,
@@ -907,7 +907,7 @@ const columns = computed(() => {
               disabled: !editable,
               class: 'w-full text-right numeric-input',
               inputmode: 'decimal',
-              'data-automation-id': `cost-line-unit-cost-${row.index}`,
+              'data-automation-id': `SmartCostLinesTable-unit-cost-${row.index}`,
               onClick: (e: Event) => e.stopPropagation(),
               'onUpdate:modelValue': (val: string | number) => {
                 if (!editable) return
@@ -999,7 +999,7 @@ const columns = computed(() => {
               disabled: !editable,
               class: 'w-full text-right numeric-input',
               inputmode: 'decimal',
-              'data-automation-id': `cost-line-unit-rev-${row.index}`,
+              'data-automation-id': `SmartCostLinesTable-unit-rev-${row.index}`,
               onClick: (e: Event) => e.stopPropagation(),
               'onUpdate:modelValue': (val: string | number) => {
                 if (!editable) return
@@ -1222,7 +1222,7 @@ const columns = computed(() => {
                 'h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center justify-center',
               disabled,
               'aria-label': 'Delete line',
-              'data-automation-id': `cost-line-delete-${row.index}`,
+              'data-automation-id': `SmartCostLinesTable-delete-${row.index}`,
               onClick: (e: Event) => {
                 e.stopPropagation()
                 if (disabled) return

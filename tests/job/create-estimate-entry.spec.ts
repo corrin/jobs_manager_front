@@ -216,13 +216,13 @@ test.describe.serial('estimate operations', () => {
     expect(rowIndex).toBeGreaterThanOrEqual(0)
 
     // Change quantity to 3
-    const qtyInput = autoId(page, `cost-line-quantity-${rowIndex}`)
+    const qtyInput = autoId(page, `SmartCostLinesTable-quantity-${rowIndex}`)
     await qtyInput.dblclick()
     await page.keyboard.type('3')
     await page.keyboard.press('Tab')
 
     // Change unit cost to 25
-    const unitCostInput = autoId(page, `cost-line-unit-cost-${rowIndex}`)
+    const unitCostInput = autoId(page, `SmartCostLinesTable-unit-cost-${rowIndex}`)
     await unitCostInput.dblclick()
     await page.keyboard.type('25')
     await page.keyboard.press('Tab')
@@ -235,8 +235,8 @@ test.describe.serial('estimate operations', () => {
     const newRowIndex = await findRowIndexByDescription(page, 'Test Adjustment for Editing')
     expect(newRowIndex).toBeGreaterThanOrEqual(0)
 
-    await expect(autoId(page, `cost-line-quantity-${newRowIndex}`)).toHaveValue('3')
-    await expect(autoId(page, `cost-line-unit-cost-${newRowIndex}`)).toHaveValue('25')
+    await expect(autoId(page, `SmartCostLinesTable-quantity-${newRowIndex}`)).toHaveValue('3')
+    await expect(autoId(page, `SmartCostLinesTable-unit-cost-${newRowIndex}`)).toHaveValue('25')
   })
 
   test('override unit revenue', async ({ authenticatedPage: page }) => {
@@ -245,11 +245,11 @@ test.describe.serial('estimate operations', () => {
     const rowIndex = await findRowIndexByDescription(page, 'Test Adjustment for Editing')
     expect(rowIndex).toBeGreaterThanOrEqual(0)
 
-    const unitCostInput = autoId(page, `cost-line-unit-cost-${rowIndex}`)
+    const unitCostInput = autoId(page, `SmartCostLinesTable-unit-cost-${rowIndex}`)
     const originalUnitCost = await unitCostInput.inputValue()
 
     // Change unit revenue to 99
-    const unitRevInput = autoId(page, `cost-line-unit-rev-${rowIndex}`)
+    const unitRevInput = autoId(page, `SmartCostLinesTable-unit-rev-${rowIndex}`)
     await unitRevInput.click()
     await unitRevInput.fill('99')
     await page.keyboard.press('Tab')
@@ -264,8 +264,10 @@ test.describe.serial('estimate operations', () => {
     await navigateToEstimateTab(page, jobUrl)
 
     const newRowIndex = await findRowIndexByDescription(page, 'Test Adjustment for Editing')
-    await expect(autoId(page, `cost-line-unit-rev-${newRowIndex}`)).toHaveValue('99')
-    await expect(autoId(page, `cost-line-unit-cost-${newRowIndex}`)).toHaveValue(originalUnitCost)
+    await expect(autoId(page, `SmartCostLinesTable-unit-rev-${newRowIndex}`)).toHaveValue('99')
+    await expect(autoId(page, `SmartCostLinesTable-unit-cost-${newRowIndex}`)).toHaveValue(
+      originalUnitCost,
+    )
   })
 
   test('change material code', async ({ authenticatedPage: page }) => {
@@ -279,7 +281,7 @@ test.describe.serial('estimate operations', () => {
     const materialRowIndex = m8IndicesBefore[0]
 
     // Click the item cell button to open selector
-    const itemCell = autoId(page, `cost-line-item-${materialRowIndex}`)
+    const itemCell = autoId(page, `SmartCostLinesTable-item-${materialRowIndex}`)
     const itemButton = itemCell.locator('button')
     await itemButton.click()
 
@@ -323,7 +325,7 @@ test.describe.serial('estimate operations', () => {
     // Set up dialog handler and click delete
     page.on('dialog', (dialog) => dialog.accept())
 
-    const deleteButton = autoId(page, `cost-line-delete-${deleteRowIndex}`)
+    const deleteButton = autoId(page, `SmartCostLinesTable-delete-${deleteRowIndex}`)
     await deleteButton.click()
 
     await waitForAutosave(page)
