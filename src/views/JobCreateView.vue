@@ -2,7 +2,7 @@
   <AppLayout>
     <div class="flex flex-col min-h-screen">
       <div class="flex-shrink-0 p-4 border-b border-gray-200">
-        <h1 class="text-xl font-bold text-gray-900" data-automation-id="page-title">
+        <h1 class="text-xl font-bold text-gray-900" data-automation-id="JobCreateView-title">
           Create New Job
         </h1>
       </div>
@@ -42,7 +42,7 @@
                     v-model="formData.name"
                     type="text"
                     required
-                    data-automation-id="job-name-input"
+                    data-automation-id="JobCreateView-name-input"
                     class="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     :class="[
                       errors.name
@@ -87,7 +87,7 @@
                       step="0.01"
                       min="0"
                       v-model.number="formData.estimated_materials"
-                      data-automation-id="estimated-materials-input"
+                      data-automation-id="JobCreateView-estimated-materials"
                       class="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       :class="[
                         errors.estimated_materials
@@ -117,7 +117,7 @@
                       step="0.01"
                       min="0"
                       v-model.number="formData.estimated_time"
-                      data-automation-id="estimated-time-input"
+                      data-automation-id="JobCreateView-estimated-time"
                       class="w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       :class="[
                         errors.estimated_time
@@ -145,7 +145,7 @@
                   <select
                     id="pricing_methodology"
                     v-model="formData.pricing_methodology"
-                    data-automation-id="pricing-method-select"
+                    data-automation-id="JobCreateView-pricing-method"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="fixed_price">Fixed Price</option>
@@ -204,7 +204,7 @@
               <button
                 type="submit"
                 :disabled="isSubmitting || !canSubmit || hasCreationError"
-                data-automation-id="create-job-submit"
+                data-automation-id="JobCreateView-submit"
                 class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 :class="{ 'bg-red-600 hover:bg-red-700': hasCreationError }"
               >

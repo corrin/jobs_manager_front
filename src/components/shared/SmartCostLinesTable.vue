@@ -1314,7 +1314,7 @@ const columns = computed(() => {
         size="sm"
         @click="handleAddLine"
         aria-label="Add Row"
-        data-automation-id="cost-lines-add-row"
+        data-automation-id="SmartCostLinesTable-add-row"
       >
         <Plus class="w-4 h-4 mr-1" /> Add row
       </Button>

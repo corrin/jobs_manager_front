@@ -23,7 +23,7 @@
         <router-link
           to="/jobs/create"
           class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium"
-          data-automation-id="nav-create-job"
+          data-automation-id="AppNavbar-create-job"
         >
           <FilePlus class="w-4 h-4 mr-1" /> Create Job
         </router-link>
@@ -372,7 +372,7 @@
               <router-link
                 to="/jobs/create"
                 class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
-                data-automation-id="nav-create-job-mobile"
+                data-automation-id="AppNavbar-create-job-mobile"
                 @click="closeMobileMenu"
                 >Create Job</router-link
               >

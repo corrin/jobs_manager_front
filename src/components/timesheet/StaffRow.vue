@@ -73,7 +73,7 @@
 
   <tr
     v-else
-    :data-automation-id="`daily-timesheet-staff-row-${staff.staff_id}`"
+    :data-automation-id="`StaffRow-row-${staff.staff_id}`"
     class="hover:bg-gray-50 transition-colors duration-150"
   >
     <td class="px-1.5 lg:px-2 py-1.5 lg:py-2 whitespace-nowrap">
@@ -89,7 +89,7 @@
         </div>
         <div class="min-w-0 flex-1">
           <div
-            :data-automation-id="`daily-timesheet-staff-name-${staff.staff_id}`"
+            :data-automation-id="`StaffRow-name-${staff.staff_id}`"
             class="text-sm lg:text-base font-medium text-gray-900 truncate cursor-pointer hover:text-blue-600 transition-colors"
             @click="openTimesheet"
           >

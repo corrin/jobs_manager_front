@@ -50,7 +50,7 @@
               <input
                 :value="(localJobData.name as string) || ''"
                 type="text"
-                data-automation-id="settings-job-name"
+                data-automation-id="JobSettingsTab-job-name"
                 @input="handleFieldInput('name', ($event.target as HTMLInputElement).value)"
                 @blur="handleFieldBlur"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -63,7 +63,7 @@
               <textarea
                 :value="(localJobData.description as string) || ''"
                 rows="4"
-                data-automation-id="settings-description"
+                data-automation-id="JobSettingsTab-description"
                 @input="
                   handleFieldInput('description', ($event.target as HTMLTextAreaElement).value)
                 "
@@ -78,7 +78,7 @@
               <input
                 :value="(localJobData.delivery_date as string) || ''"
                 type="date"
-                data-automation-id="settings-delivery-date"
+                data-automation-id="JobSettingsTab-delivery-date"
                 @input="
                   handleFieldInput('delivery_date', ($event.target as HTMLInputElement).value)
                 "
@@ -103,7 +103,7 @@
                   <input
                     :value="localJobData.client?.name"
                     type="text"
-                    data-automation-id="settings-client-name"
+                    data-automation-id="JobSettingsTab-client-name"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-600"
                     readonly
                   />
@@ -111,7 +111,7 @@
                     <button
                       @click="startClientChange"
                       type="button"
-                      data-automation-id="settings-change-client-btn"
+                      data-automation-id="JobSettingsTab-change-client-btn"
                       class="flex-1 px-3 py-2 border border-blue-300 rounded-md text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
                     >
                       Change Client
@@ -119,7 +119,7 @@
                     <button
                       @click="editCurrentClient"
                       type="button"
-                      data-automation-id="settings-edit-client-btn"
+                      data-automation-id="JobSettingsTab-edit-client-btn"
                       class="flex-1 px-3 py-2 border border-green-300 rounded-md text-sm bg-green-50 hover:bg-green-100 text-green-700 transition-colors"
                     >
                       Edit Client
@@ -127,7 +127,11 @@
                   </div>
                 </div>
 
-                <div v-else class="space-y-3" data-automation-id="settings-client-change-panel">
+                <div
+                  v-else
+                  class="space-y-3"
+                  data-automation-id="JobSettingsTab-client-change-panel"
+                >
                   <ClientLookup
                     id="clientChange"
                     label=""
@@ -141,7 +145,7 @@
                     <button
                       @click="confirmClientChange"
                       type="button"
-                      data-automation-id="settings-confirm-client-btn"
+                      data-automation-id="JobSettingsTab-confirm-client-btn"
                       class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
                       :disabled="!newClientId"
                     >
@@ -150,7 +154,7 @@
                     <button
                       @click="cancelClientChange"
                       type="button"
-                      data-automation-id="settings-cancel-client-btn"
+                      data-automation-id="JobSettingsTab-cancel-client-btn"
                       class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm hover:bg-gray-50 transition-colors"
                     >
                       Cancel
@@ -188,7 +192,7 @@
               <input
                 :value="(localJobData.order_number as string) || ''"
                 type="text"
-                data-automation-id="settings-order-number"
+                data-automation-id="JobSettingsTab-order-number"
                 @input="handleFieldInput('order_number', ($event.target as HTMLInputElement).value)"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 placeholder="Customer order number (optional)"
@@ -208,7 +212,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Pricing Method</label>
               <select
                 v-model="localJobData.pricing_methodology"
-                data-automation-id="settings-pricing-method"
+                data-automation-id="JobSettingsTab-pricing-method"
                 @change="
                   handleFieldInput(
                     'pricing_methodology',
@@ -227,7 +231,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Speed vs Quality</label>
               <select
                 v-model="localJobData.speed_quality_tradeoff"
-                data-automation-id="settings-speed-quality"
+                data-automation-id="JobSettingsTab-speed-quality"
                 @change="
                   handleFieldInput(
                     'speed_quality_tradeoff',
@@ -249,7 +253,7 @@
                 v-model.number="localJobData.price_cap"
                 type="number"
                 step="0.01"
-                data-automation-id="settings-price-cap"
+                data-automation-id="JobSettingsTab-price-cap"
                 @input="handlePriceCapInput($event)"
                 @blur="handleBlurFlush"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -264,7 +268,7 @@
                 label="Internal Notes"
                 placeholder="Add internal notes about this job..."
                 :required="false"
-                automation-id="settings-internal-notes"
+                automation-id="JobSettingsTab-internal-notes"
                 @blur="handleFieldBlur"
               />
             </div>

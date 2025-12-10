@@ -9,7 +9,11 @@
               Company Defaults
             </h1>
           </div>
-          <div v-if="loading" class="flex flex-col items-center justify-center" style="height: 60vh">
+          <div
+            v-if="loading"
+            class="flex flex-col items-center justify-center"
+            style="height: 60vh"
+          >
             <div class="flex items-center justify-center gap-2">
               <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
               Company defaults are still loading, please wait
@@ -17,7 +21,11 @@
           </div>
           <div v-else class="flex flex-col items-center justify-center" style="height: 60vh">
             <div class="grid grid-cols-3 gap-6 mb-6 w-full max-w-3xl">
-              <button class="section-btn" @click="openSection('general')">
+              <button
+                class="section-btn"
+                data-automation-id="AdminCompanyView-general-button"
+                @click="openSection('general')"
+              >
                 <Settings class="w-12 h-12 mb-2" />
                 <span>General</span>
               </button>
@@ -46,18 +54,30 @@
             </div>
           </div>
           <div class="flex justify-center mt-8">
-            <Button type="button" variant="default"
+            <Button
+              type="button"
+              variant="default"
               class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 flex items-center gap-2 text-base font-semibold rounded shadow"
-              @click="saveAll">
+              @click="saveAll"
+            >
               <Save class="w-5 h-5" /> Save All
             </Button>
           </div>
-          <SectionModal v-if="modalSection" :section="modalSection" :form="form" @close="closeSection"
-            @update="onSectionUpdate" />
+          <SectionModal
+            v-if="modalSection"
+            :section="modalSection"
+            :form="form"
+            @close="closeSection"
+            @update="onSectionUpdate"
+          />
         </div>
       </div>
-      <AIProvidersDialog v-if="showAIProvidersDialog" :providers="aiProviders" @close="closeAIProvidersDialog"
-        @update:providers="onProvidersUpdate" />
+      <AIProvidersDialog
+        v-if="showAIProvidersDialog"
+        :providers="aiProviders"
+        @close="closeAIProvidersDialog"
+        @update:providers="onProvidersUpdate"
+      />
     </div>
   </AppLayout>
 </template>

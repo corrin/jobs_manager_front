@@ -47,8 +47,10 @@ test('test company defaults via app store', async ({ authenticatedPage: page }) 
   await page.goto('/admin/company')
 
   // Wait for the card-based UI to load and click on "General" to see the form
-  await page.waitForSelector('text=General', { timeout: 15000 })
-  await page.click('text=General')
+  await page.waitForSelector('[data-automation-id="AdminCompanyView-general-button"]', {
+    timeout: 15000,
+  })
+  await page.click('[data-automation-id="AdminCompanyView-general-button"]')
 
   // Wait for the General settings form to load with input fields
   await page.waitForSelector('input', { timeout: 15000 })

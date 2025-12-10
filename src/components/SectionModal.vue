@@ -1,6 +1,9 @@
 <template>
   <Dialog :open="true" @update:open="emit('close')">
-    <DialogContent class="max-w-md animate-in fade-in-0 zoom-in-95">
+    <DialogContent
+      class="max-w-md animate-in fade-in-0 zoom-in-95"
+      data-automation-id="SectionModal-content"
+    >
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2">
           <component :is="sectionIcon" class="w-6 h-6" />
