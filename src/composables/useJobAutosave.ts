@@ -1,4 +1,5 @@
 import { ref, type Ref } from 'vue'
+import type { Router } from 'vue-router'
 import { debugLog } from '../utils/debug'
 
 export type SaveResult = {
@@ -55,11 +56,7 @@ export type JobAutosaveApi = {
   onBeforeUnloadUnbind: () => void
   onVisibilityBind: () => void
   onVisibilityUnbind: () => void
-  onRouteLeaveBind: (router: {
-    beforeEach: (
-      guard: (to: unknown, from: unknown, next: (value?: unknown) => void) => unknown,
-    ) => unknown
-  }) => () => void
+  onRouteLeaveBind: (router: Pick<Router, 'beforeEach'>) => () => void
 }
 
 /**
@@ -496,11 +493,7 @@ export function createJobAutosave(opts: JobAutosaveOptions): JobAutosaveApi {
     log('🔌 unbound visibilitychange')
   }
 
-  function onRouteLeaveBind(router: {
-    beforeEach: (
-      guard: (to: unknown, from: unknown, next: (value?: unknown) => void) => unknown,
-    ) => unknown
-  }) {
+  function onRouteLeaveBind(router: Pick<Router, 'beforeEach'>) {
     const remove = router.beforeEach((_to, _from, next) => {
       if (hasPending()) {
         const snapshot = opts.getSnapshot() ?? {}

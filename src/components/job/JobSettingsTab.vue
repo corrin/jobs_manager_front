@@ -175,7 +175,9 @@
                 :optional="true"
                 :client-id="localJobData.client?.id || ''"
                 :client-name="localJobData.client?.name || ''"
-                :initial-contact-id="localJobData.contact_id ?? undefined"
+                :initial-contact-id="
+                  typeof localJobData.contact_id === 'string' ? localJobData.contact_id : undefined
+                "
                 v-model="contactDisplayValue"
                 @update:selected-contact="handleContactSelected"
               />
@@ -999,7 +1001,6 @@ const handleContactSelected = async (contact: ClientContact | null) => {
 ------------------------------ */
 
 const router = useRouter()
-type RouterBeforeEachGuard = Parameters<typeof router.beforeEach>[0]
 
 let unbindRouteGuard: () => void = () => {}
 let unbindConcurrencyRetry: () => void = () => {}
@@ -1403,9 +1404,7 @@ const autosave = createJobAutosave({
 onMounted(() => {
   autosave.onBeforeUnloadBind()
   autosave.onVisibilityBind()
-  unbindRouteGuard = autosave.onRouteLeaveBind({
-    beforeEach: (guard: RouterBeforeEachGuard) => router.beforeEach(guard),
-  })
+  unbindRouteGuard = autosave.onRouteLeaveBind(router)
   // Listen to global "Retry" click from the concurrency toast for this Job
   unbindConcurrencyRetry = onConcurrencyRetry(props.jobId, async () => {
     // Reload fresh data from server to get current ETag/version
