@@ -4636,6 +4636,11 @@ Expected JSON:
         schema: z.string().optional(),
       },
       {
+        name: 'q',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
         name: 'rejected_flag',
         type: 'Query',
         schema: z.string().optional(),
