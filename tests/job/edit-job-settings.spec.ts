@@ -1,92 +1,19 @@
 import { test, expect } from '../fixtures/auth'
 import { getCompanyDefaults } from '../fixtures/api'
-import {
-  autoId,
-  dismissToasts,
-  waitForSettingsInitialized,
-  waitForAutosave,
-} from '../fixtures/helpers'
+import { autoId, waitForSettingsInitialized, waitForAutosave } from '../fixtures/helpers'
 
 /**
  * Tests for editing a job after creation.
- * These tests run after the create-job tests and verify:
- * - Navigating to Job Settings tab
- * - Verifying job details match what was entered during creation
- * - Changing job details (name, pricing method)
- * - Changing contact person
- * - Changing client
+ * Uses the sharedEditJobUrl fixture to create a job once per worker.
+ * Each test can run independently with --grep since the fixture handles job creation.
  */
 test.describe.serial('edit job', () => {
-  // Store job URL from the first test to use in subsequent tests
-  let createdJobUrl: string
-
-  test('create a job to edit', async ({ authenticatedPage: page }) => {
-    const timestamp = Date.now()
-    const jobName = `Edit Test Job ${timestamp}`
-
-    await test.step('navigate to create job page', async () => {
-      await autoId(page, 'AppNavbar-create-job').click()
-      await page.waitForURL('**/jobs/create')
-    })
-
-    await test.step('search and select client', async () => {
-      const clientInput = autoId(page, 'ClientLookup-input')
-      await clientInput.fill('ABC')
-      await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
-      await page.getByRole('option', { name: /ABC Carpet Cleaning TEST IGNORE/ }).click()
-      await expect(clientInput).toHaveValue('ABC Carpet Cleaning TEST IGNORE')
-    })
-
-    await test.step('enter job details', async () => {
-      await autoId(page, 'JobCreateView-name-input').fill(jobName)
-      await autoId(page, 'JobCreateView-estimated-materials').fill('1000')
-      await autoId(page, 'JobCreateView-estimated-time').fill('8')
-    })
-
-    await test.step('select or create contact', async () => {
-      await autoId(page, 'ContactSelector-modal-button').click({ timeout: 10000 })
-      await autoId(page, 'ContactSelectionModal-container').waitFor({ timeout: 10000 })
-
-      // Check if we have existing contacts - if so, select one; otherwise create one
-      const selectButtons = autoId(page, 'ContactSelectionModal-select-button')
-      const selectButtonCount = await selectButtons.count()
-
-      if (selectButtonCount > 0) {
-        // Select the first available contact
-        await selectButtons.first().click()
-      } else {
-        // Create a new contact
-        const submitButton = autoId(page, 'ContactSelectionModal-submit')
-        await expect(submitButton).toHaveText('Create Contact', { timeout: 10000 })
-        await autoId(page, 'ContactSelectionModal-name-input').fill(`Test Contact ${timestamp}`)
-        await autoId(page, 'ContactSelectionModal-email-input').fill(`test${timestamp}@example.com`)
-        await submitButton.click()
-      }
-
-      await autoId(page, 'ContactSelectionModal-container').waitFor({
-        state: 'hidden',
-        timeout: 10000,
-      })
-    })
-
-    await test.step('set pricing method and submit', async () => {
-      await autoId(page, 'JobCreateView-pricing-method').selectOption('fixed_price')
-
-      // Dismiss any toast notifications that might block the button
-      await dismissToasts(page)
-
-      await autoId(page, 'JobCreateView-submit').click({ force: true })
-      await page.waitForURL('**/jobs/*?*tab=quote*', { timeout: 15000 })
-
-      // Store the job URL for subsequent tests
-      createdJobUrl = page.url()
-      console.log(`Created job at: ${createdJobUrl}`)
-    })
-  })
-
-  test('navigate to Job Settings tab and verify details', async ({ authenticatedPage: page }) => {
+  test('navigate to Job Settings tab and verify details', async ({
+    authenticatedPage: page,
+    sharedEditJobUrl,
+  }) => {
     // Go to the created job
-    await page.goto(createdJobUrl)
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     await test.step('navigate to Job Settings tab', async () => {
@@ -127,7 +54,7 @@ test.describe.serial('edit job', () => {
     })
   })
 
-  test('change job name', async ({ authenticatedPage: page }) => {
+  test('change job name', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
     // Capture browser console logs for autosave debugging
     page.on('console', (msg) => {
       const text = msg.text()
@@ -136,7 +63,7 @@ test.describe.serial('edit job', () => {
       }
     })
 
-    await page.goto(createdJobUrl)
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     // Navigate to Job Settings tab
@@ -170,8 +97,8 @@ test.describe.serial('edit job', () => {
     })
   })
 
-  test('change description', async ({ authenticatedPage: page }) => {
-    await page.goto(createdJobUrl)
+  test('change description', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     await autoId(page, 'JobViewTabs-jobSettings').click()
@@ -201,8 +128,8 @@ test.describe.serial('edit job', () => {
     })
   })
 
-  test('change delivery date', async ({ authenticatedPage: page }) => {
-    await page.goto(createdJobUrl)
+  test('change delivery date', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     await autoId(page, 'JobViewTabs-jobSettings').click()
@@ -234,8 +161,8 @@ test.describe.serial('edit job', () => {
     })
   })
 
-  test('change order number', async ({ authenticatedPage: page }) => {
-    await page.goto(createdJobUrl)
+  test('change order number', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     await autoId(page, 'JobViewTabs-jobSettings').click()
@@ -265,7 +192,7 @@ test.describe.serial('edit job', () => {
     })
   })
 
-  test('change speed vs quality', async ({ authenticatedPage: page }) => {
+  test('change speed vs quality', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
     // Capture browser console logs for autosave debugging
     page.on('console', (msg) => {
       const text = msg.text()
@@ -278,7 +205,7 @@ test.describe.serial('edit job', () => {
       }
     })
 
-    await page.goto(createdJobUrl)
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     await autoId(page, 'JobViewTabs-jobSettings').click()
@@ -314,8 +241,8 @@ test.describe.serial('edit job', () => {
     })
   })
 
-  test('change internal notes', async ({ authenticatedPage: page }) => {
-    await page.goto(createdJobUrl)
+  test('change internal notes', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     await autoId(page, 'JobViewTabs-jobSettings').click()
@@ -326,8 +253,10 @@ test.describe.serial('edit job', () => {
 
     await test.step('add internal notes', async () => {
       // Quill editor uses a contenteditable div with class 'ql-editor'
+      // Wait for Quill to initialize (it's dynamically imported)
       const notesContainer = autoId(page, 'JobSettingsTab-internal-notes')
       const quillEditor = notesContainer.locator('.ql-editor')
+      await quillEditor.waitFor({ timeout: 15000 })
       await quillEditor.click()
       await quillEditor.fill(newNotes)
       // Blur to trigger save
@@ -339,18 +268,24 @@ test.describe.serial('edit job', () => {
     })
 
     await test.step('verify internal notes were saved', async () => {
-      await page.reload()
+      await page.reload() // Note changing this to goto seems to work!?
+      await autoId(page, 'JobViewTabs-jobSettings').waitFor({ timeout: 30000 })
       await autoId(page, 'JobViewTabs-jobSettings').click()
       await autoId(page, 'JobSettingsTab-internal-notes').waitFor({ timeout: 10000 })
 
       const notesContainer = autoId(page, 'JobSettingsTab-internal-notes')
       const quillEditor = notesContainer.locator('.ql-editor')
+      // Wait for Quill editor to initialize (it loads asynchronously)
+      await quillEditor.waitFor({ timeout: 10000 })
       await expect(quillEditor).toContainText(newNotes)
     })
   })
 
-  test('change pricing method from Fixed Price to T&M', async ({ authenticatedPage: page }) => {
-    await page.goto(createdJobUrl)
+  test('change pricing method from Fixed Price to T&M', async ({
+    authenticatedPage: page,
+    sharedEditJobUrl,
+  }) => {
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     // Navigate to Job Settings tab
@@ -380,10 +315,11 @@ test.describe.serial('edit job', () => {
 
   test('change pricing method from header (T&M back to Fixed Price)', async ({
     authenticatedPage: page,
+    sharedEditJobUrl,
   }) => {
     // This test uses the InlineEditSelect in the job header area
     // (different UI than the settings tab select)
-    await page.goto(createdJobUrl)
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     await test.step('click on pricing method in header to edit', async () => {
@@ -425,9 +361,10 @@ test.describe.serial('edit job', () => {
 
   test('change job status from header (Draft to In Progress)', async ({
     authenticatedPage: page,
+    sharedEditJobUrl,
   }) => {
     // Job status is only editable from the header (not in settings tab)
-    await page.goto(createdJobUrl)
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     await test.step('verify initial status is Draft', async () => {
@@ -463,8 +400,8 @@ test.describe.serial('edit job', () => {
     })
   })
 
-  test('change contact person', async ({ authenticatedPage: page }) => {
-    await page.goto(createdJobUrl)
+  test('change contact person', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     // Navigate to Job Settings tab
@@ -502,8 +439,8 @@ test.describe.serial('edit job', () => {
     })
   })
 
-  test('change client', async ({ authenticatedPage: page }) => {
-    await page.goto(createdJobUrl)
+  test('change client', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     // Get the shop client name from company defaults
@@ -557,10 +494,11 @@ test.describe.serial('edit job', () => {
 
   test('reload stability - values unchanged after multiple reloads', async ({
     authenticatedPage: page,
+    sharedEditJobUrl,
   }) => {
     // This test verifies that reloading the page doesn't cause any data drift
     // (i.e., values stay the same and aren't accidentally modified on load)
-    await page.goto(createdJobUrl)
+    await page.goto(sharedEditJobUrl)
     await page.waitForLoadState('networkidle')
 
     await autoId(page, 'JobViewTabs-jobSettings').click()

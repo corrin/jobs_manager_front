@@ -2,6 +2,21 @@ import type { Page } from '@playwright/test'
 import { expect } from '@playwright/test'
 
 /**
+ * Helper to time and log async operations
+ */
+export async function timed<T>(label: string, fn: () => Promise<T>): Promise<T> {
+  const start = Date.now()
+  try {
+    const result = await fn()
+    console.log(`[TIMING] ${label}: ${Date.now() - start}ms`)
+    return result
+  } catch (error) {
+    console.log(`[TIMING] ${label}: FAILED after ${Date.now() - start}ms`)
+    throw error
+  }
+}
+
+/**
  * Helper to find elements by data-automation-id attribute
  */
 export const autoId = (page: Page, id: string) => page.locator(`[data-automation-id="${id}"]`)
@@ -39,9 +54,17 @@ export async function waitForSettingsInitialized(page: Page) {
  * Helper to wait for autosave to complete
  */
 export async function waitForAutosave(page: Page) {
-  // Wait for network to settle and give autosave time to complete
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(1500)
+  const start = Date.now()
+  // Try networkidle with a short timeout, fall back to fixed wait
+  try {
+    await page.waitForLoadState('networkidle', { timeout: 5000 })
+    console.log(`[TIMING] waitForAutosave networkidle: ${Date.now() - start}ms`)
+  } catch {
+    console.log(
+      `[TIMING] waitForAutosave networkidle TIMEOUT after ${Date.now() - start}ms, using fixed wait`,
+    )
+    await page.waitForTimeout(1500)
+  }
 }
 
 /**

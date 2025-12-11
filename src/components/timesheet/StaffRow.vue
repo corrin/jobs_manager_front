@@ -9,7 +9,10 @@
             {{ staff.staff_initials || getInitials(staff.staff_name) }}
           </span>
         </div>
-        <div class="text-sm lg:text-base font-medium text-gray-900">
+        <div
+          :data-automation-id="`StaffRow-name-${staff.staff_id}`"
+          class="text-sm lg:text-base font-medium text-gray-900"
+        >
           {{ staff.staff_name }}
         </div>
       </div>
