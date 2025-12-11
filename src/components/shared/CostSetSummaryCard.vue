@@ -136,45 +136,69 @@ const props = defineProps<{
   revision?: number
 }>()
 
+const summaryCreatedAt = computed(() => {
+  if (!props.summary || typeof props.summary !== 'object') {
+    return undefined
+  }
+
+  const created = (props.summary as { created?: unknown }).created
+  return typeof created === 'string' ? created : undefined
+})
+
+const summaryFromCostLines = computed(() => {
+  if (!props.costLines) {
+    return null
+  }
+
+  let cost = 0
+  let rev = 0
+  let hours = 0
+
+  for (const line of props.costLines) {
+    const quantity = Number(line.quantity) || 0
+    const unitCost = Number(line.unit_cost) || 0
+    const unitRev = Number(line.unit_rev) || 0
+
+    cost += quantity * unitCost
+    rev += quantity * unitRev
+
+    if (line.kind === 'time') {
+      hours += quantity
+    }
+  }
+
+  return {
+    cost,
+    rev,
+    hours,
+    created: summaryCreatedAt.value,
+  }
+})
+
 const typedSummary = computed(() => {
-  console.log('[CostSetSummaryCard] typedSummary computing with:', {
-    summary: props.summary,
-    summaryType: typeof props.summary,
-    isLoading: props.isLoading,
-  })
+  if (summaryFromCostLines.value) {
+    return summaryFromCostLines.value
+  }
 
   if (!props.summary || typeof props.summary !== 'object') {
-    console.log('[CostSetSummaryCard] No summary or not object, returning null')
     return null
   }
 
   const summary = props.summary as Record<string, unknown>
-  console.log('[CostSetSummaryCard] Summary object keys:', Object.keys(summary))
 
-  // Type guard to check if summary has the expected properties
   if (
     typeof summary.cost === 'number' &&
     typeof summary.rev === 'number' &&
     typeof summary.hours === 'number'
   ) {
-    const result = summary as {
+    return summary as {
       cost: number
       rev: number
       hours: number
       created?: string
     }
-    console.log('[CostSetSummaryCard] Valid summary found:', result)
-    return result
   }
 
-  console.log('[CostSetSummaryCard] Summary does not have expected number properties:', {
-    cost: summary.cost,
-    costType: typeof summary.cost,
-    rev: summary.rev,
-    revType: typeof summary.rev,
-    hours: summary.hours,
-    hoursType: typeof summary.hours,
-  })
   return null
 })
 
