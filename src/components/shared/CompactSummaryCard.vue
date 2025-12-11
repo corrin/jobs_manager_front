@@ -91,14 +91,46 @@ defineEmits<{
   expand: []
 }>()
 
+const summaryFromCostLines = computed(() => {
+  if (!props.costLines) {
+    return null
+  }
+
+  let cost = 0
+  let rev = 0
+  let hours = 0
+
+  for (const line of props.costLines) {
+    const quantity = Number(line.quantity) || 0
+    const unitCost = Number(line.unit_cost) || 0
+    const unitRev = Number(line.unit_rev) || 0
+
+    cost += quantity * unitCost
+    rev += quantity * unitRev
+
+    if (line.kind === 'time') {
+      hours += quantity
+    }
+  }
+
+  return {
+    cost,
+    rev,
+    hours,
+  }
+})
+
 const typedSummary = computed(() => {
+  if (summaryFromCostLines.value) {
+    return summaryFromCostLines.value
+  }
+
   if (!props.summary || typeof props.summary !== 'object') {
     return null
   }
 
   const summary = props.summary as Record<string, unknown>
 
-  // Type guard to check if summary has the expected properties
   if (
     typeof summary.cost === 'number' &&
     typeof summary.rev === 'number' &&

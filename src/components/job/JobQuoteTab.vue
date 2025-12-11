@@ -65,7 +65,7 @@
               title="Quote Summary"
               class="w-full"
               :summary="currentQuote.quote?.summary"
-              :costLines="quoteCostLines"
+              :costLines="costLines"
               :isLoading="isLoading"
               :revision="currentQuote.quote?.rev"
               @expand="showDetailedSummary = true"
@@ -431,7 +431,7 @@
             :key="`quote-summary-detailed-${quoteKey}`"
             title="Quote Summary"
             :summary="currentQuote.quote?.summary"
-            :costLines="quoteCostLines"
+            :costLines="costLines"
             :isLoading="isLoading"
             :revision="currentQuote.quote?.rev"
           />
@@ -591,11 +591,6 @@ const isQuoteDeleted = ref(false)
 const isDeletingQuote = ref(false)
 const isAcceptingQuote = ref(false)
 const showXeroExportModal = ref(false)
-
-const quoteCostLines = computed(() => {
-  const lines = currentQuote.value?.quote?.cost_lines || []
-  return lines
-})
 
 const hasCostSetQuote = computed(
   () => !!(currentQuote.value?.has_quote && currentQuote.value.quote),
