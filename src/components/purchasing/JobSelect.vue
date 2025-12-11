@@ -23,72 +23,69 @@
       {{ errorMessage }}
     </div>
 
-    <!-- Dropdown portal -->
-    <Teleport to="body">
+    <!-- Dropdown -->
+    <div
+      v-if="showDropdown && !disabled"
+      ref="dropdownRef"
+      class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+    >
+      <!-- Job items -->
       <div
-        v-if="showDropdown && !disabled"
-        ref="dropdownRef"
-        :style="dropdownStyle"
-        class="absolute bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto z-[9999] min-w-[200px]"
+        v-for="(job, index) in filteredJobs"
+        :key="job.id"
+        :class="{
+          'bg-blue-50': index === highlightedIndex,
+          'hover:bg-gray-50': index !== highlightedIndex,
+        }"
+        class="px-3 py-2 cursor-pointer border-b border-gray-100 last:border-b-0"
+        @click="selectJob(job)"
+        @mouseenter="highlightedIndex = index"
       >
-        <!-- Job items -->
-        <div
-          v-for="(job, index) in filteredJobs"
-          :key="job.id"
-          :class="{
-            'bg-blue-50': index === highlightedIndex,
-            'hover:bg-gray-50': index !== highlightedIndex,
-          }"
-          class="px-3 py-2 cursor-pointer border-b border-gray-100 last:border-b-0"
-          @click="selectJob(job)"
-          @mouseenter="highlightedIndex = index"
-        >
-          <div class="font-medium text-gray-900">
-            <span v-if="isStockHoldingJob(job)" class="mr-1">📦</span>
-            {{ job.job_number }}
-          </div>
-          <div class="text-sm text-gray-600 truncate">
-            {{ job.description || job.name || job.job_display_name }}
-          </div>
-          <div
-            v-if="job.client_name && !isStockHoldingJob(job)"
-            class="text-xs text-gray-500 truncate"
-          >
-            Client: {{ job.client_name }}
-          </div>
-          <div v-if="isStockHoldingJob(job)" class="text-xs text-orange-600 truncate">
-            Stock Holding Job
-          </div>
+        <div class="font-medium text-gray-900">
+          <span v-if="isStockHoldingJob(job)" class="mr-1">📦</span>
+          {{ job.job_number }}
         </div>
-
-        <!-- Loading message -->
-        <div v-if="isLoading" class="px-3 py-2 text-gray-500 text-sm flex items-center gap-2">
-          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
-          Jobs are loading, please wait
+        <div class="text-sm text-gray-600 truncate">
+          {{ job.description || job.name || job.job_display_name }}
         </div>
-
-        <!-- No results message -->
         <div
-          v-if="!isLoading && filteredJobs.length === 0 && searchTerm.trim()"
-          class="px-3 py-2 text-gray-500 text-sm"
+          v-if="job.client_name && !isStockHoldingJob(job)"
+          class="text-xs text-gray-500 truncate"
         >
-          No jobs found for "{{ searchTerm }}"
+          Client: {{ job.client_name }}
         </div>
-
-        <!-- No jobs available -->
-        <div
-          v-if="!isLoading && filteredJobs.length === 0 && !searchTerm.trim()"
-          class="px-3 py-2 text-gray-500 text-sm"
-        >
-          No jobs available
+        <div v-if="isStockHoldingJob(job)" class="text-xs text-orange-600 truncate">
+          Stock Holding Job
         </div>
       </div>
-    </Teleport>
+
+      <!-- Loading message -->
+      <div v-if="isLoading" class="px-3 py-2 text-gray-500 text-sm flex items-center gap-2">
+        <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
+        Jobs are loading, please wait
+      </div>
+
+      <!-- No results message -->
+      <div
+        v-if="!isLoading && filteredJobs.length === 0 && searchTerm.trim()"
+        class="px-3 py-2 text-gray-500 text-sm"
+      >
+        No jobs found for "{{ searchTerm }}"
+      </div>
+
+      <!-- No jobs available -->
+      <div
+        v-if="!isLoading && filteredJobs.length === 0 && !searchTerm.trim()"
+        class="px-3 py-2 text-gray-500 text-sm"
+      >
+        No jobs available
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { z } from 'zod'
 import { schemas } from '../../api/generated/api'
 
@@ -116,7 +113,6 @@ const dropdownRef = ref<HTMLDivElement | null>(null)
 const searchTerm = ref('')
 const showDropdown = ref(false)
 const highlightedIndex = ref(-1)
-const dropdownStyle = ref({})
 
 const filteredJobs = computed(() => {
   const excludedStatuses = ['rejected', 'archived', 'completed']
@@ -179,7 +175,6 @@ const onFocus = () => {
   if (props.disabled) return
   showDropdown.value = true
   highlightedIndex.value = -1
-  calculateDropdownPosition()
 }
 
 const onBlur = (event: FocusEvent) => {
@@ -196,7 +191,6 @@ const onInput = () => {
   if (props.disabled) return
   showDropdown.value = true
   highlightedIndex.value = -1
-  calculateDropdownPosition()
 
   if (props.modelValue) {
     emit('update:modelValue', null)
@@ -248,38 +242,6 @@ const selectJob = (job: Job) => {
   inputRef.value?.blur()
 }
 
-const calculateDropdownPosition = async () => {
-  await nextTick()
-
-  if (!inputRef.value) return
-
-  const inputRect = inputRef.value.getBoundingClientRect()
-  const viewportHeight = window.innerHeight
-  const dropdownHeight = 240
-
-  let top = inputRect.bottom + window.scrollY
-  let left = inputRect.left + window.scrollX
-  const width = inputRect.width
-
-  if (inputRect.bottom + dropdownHeight > viewportHeight) {
-    if (inputRect.top > dropdownHeight) {
-      top = inputRect.top + window.scrollY - dropdownHeight
-    }
-  }
-
-  const maxLeft = window.innerWidth - width - 20
-  left = Math.min(left, maxLeft)
-  left = Math.max(left, 10)
-
-  dropdownStyle.value = {
-    position: 'absolute',
-    top: `${top}px`,
-    left: `${left}px`,
-    width: `${width}px`,
-    zIndex: 9999,
-  }
-}
-
 const handleClickOutside = (event: MouseEvent) => {
   if (
     inputRef.value &&
@@ -292,22 +254,12 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 }
 
-const handleResize = () => {
-  if (showDropdown.value) {
-    calculateDropdownPosition()
-  }
-}
-
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  window.addEventListener('resize', handleResize)
-  window.addEventListener('scroll', handleResize)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
-  window.removeEventListener('resize', handleResize)
-  window.removeEventListener('scroll', handleResize)
 })
 
 defineExpose({
