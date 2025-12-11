@@ -160,14 +160,14 @@ export const useCostingStore = defineStore('costing', () => {
     }
 
     return sumCostLines((cl) => {
-        const meta = cl.meta as CostLineMeta | undefined
-        const isTimeEntry =
-          meta?.category === 'fabrication' || String(cl.kind || '').toLowerCase() === 'time'
+      const meta = cl.meta as CostLineMeta | undefined
+      const isTimeEntry =
+        meta?.category === 'fabrication' || String(cl.kind || '').toLowerCase() === 'time'
 
-        if (isTimeEntry) {
-          if (typeof meta?.labour_minutes === 'number') {
-            return meta.labour_minutes / 60
-          }
+      if (isTimeEntry) {
+        if (typeof meta?.labour_minutes === 'number') {
+          return meta.labour_minutes / 60
+        }
 
         return cl.quantity || 0
       }

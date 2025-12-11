@@ -6,12 +6,12 @@
 
 ## Progress Summary
 
-| Metric | Count |
-|--------|-------|
-| **Original Errors** | 601 |
-| **Fixed** | 401 |
-| **Remaining** | 200 |
-| **Progress** | 67% |
+| Metric              | Count |
+| ------------------- | ----- |
+| **Original Errors** | 601   |
+| **Fixed**           | 401   |
+| **Remaining**       | 200   |
+| **Progress**        | 67%   |
 
 ## Background
 
@@ -49,7 +49,7 @@ The `tsconfig.app.json` had an incorrect include pattern (`"src*"` instead of `"
 - [ ] `src/components/StaffDropdown.vue(83,52):TS2339` - Property 'trim' does not exist on type '{}'.
 - [ ] `src/components/StaffDropdown.vue(84,33):TS2339` - Property 'trim' does not exist on type '{}'.
 - [ ] `src/components/StaffDropdown.vue(97,5):TS2322` - Type '{}' is not assignable to type 'string'.
-- [ ] `src/components/StaffFormModal.vue(115,41):TS18046` - '__VLS_ctx.$refs.avatarInput' is of type 'unknown'.
+- [ ] `src/components/StaffFormModal.vue(115,41):TS18046` - '\_\_VLS_ctx.$refs.avatarInput' is of type 'unknown'.
 - [ ] `src/components/StaffFormModal.vue(592,25):TS2345` - Argument of type incompatible with parameter type.
 - [ ] `src/components/StaffPanel.vue(34,17):TS18046` - 'staff.display_name' is of type 'unknown'.
 - [ ] `src/components/StaffPanel.vue(86,5):TS2322` - Type not assignable to type.
