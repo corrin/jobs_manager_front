@@ -10,7 +10,11 @@ export const JobTabsSchema = z.enum([
   'actual',
   'financial',
   'costAnalysis',
-  // prob. a few more tabs, keeping it simple for now because that's not the scope of this task AND this needs alignment
+  'jobSettings',
+  'history',
+  'attachments',
+  'quotingChat',
+  'safety',
 ])
 
 export type JobTabKey = z.infer<typeof JobTabsSchema>

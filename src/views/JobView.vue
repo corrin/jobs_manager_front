@@ -318,7 +318,6 @@ import { formatCurrency } from '@/utils/string-formatting'
 import { JOB_STATUS_CHOICES } from '../constants/job-status'
 import type { JobStatusKey } from '../constants/job-status'
 import type { JobTabKey } from '../constants/job-tabs'
-import { JobTabsSchema } from '../constants/job-tabs'
 import { jobService } from '../services/job.service'
 import { toast } from 'vue-sonner'
 
@@ -349,19 +348,8 @@ onMounted(async () => {
 
 // Check if this is a newly created job (redirected from creation)
 const isNewJob = computed(() => route.query.new === 'true')
-const parseJobTab = (value: unknown): JobTabKey | undefined => {
-  const normalized = Array.isArray(value) ? value[0] : value
-  const safeParse = JobTabsSchema.safeParse(normalized)
-  return safeParse.success ? safeParse.data : undefined
-}
-
-const queryTab = computed<JobTabKey | undefined>(() => parseJobTab(route.query.tab))
-const defaultTab = computed<JobTabKey>(() => {
-  if (queryTab.value) return queryTab.value
-  if (isNewJob.value) return 'quote'
-  return 'actual'
-})
-const { activeTab, setTab } = useJobTabs(defaultTab.value)
+const defaultTab: JobTabKey = isNewJob.value ? 'quote' : 'actual'
+const { activeTab, setTab } = useJobTabs(defaultTab)
 
 const localJobName = ref('')
 const localClientName = ref('')
