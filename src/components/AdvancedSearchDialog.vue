@@ -9,9 +9,7 @@
       <div class="space-y-4">
         <!-- Universal Search -->
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <label class="block text-sm font-medium text-blue-800 mb-1">
-            Search All Fields
-          </label>
+          <label class="block text-sm font-medium text-blue-800 mb-1"> Search All Fields </label>
           <input
             v-model="localFilters.q"
             type="text"

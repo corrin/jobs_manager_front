@@ -342,7 +342,6 @@ const handleSubmit = async () => {
   }
 }
 
-
 const handleAddOther = () => {
   resetForm()
   blockedNoXeroId.value = false
@@ -412,7 +411,8 @@ const handleDuplicateClientError = (error: unknown): boolean => {
   }
 
   const existingClient = parsedDuplicate.data.existing_client as Record<string, unknown> | undefined
-  const nameValue = typeof existingClient?.name === 'string' ? existingClient.name : 'Existing client'
+  const nameValue =
+    typeof existingClient?.name === 'string' ? existingClient.name : 'Existing client'
   const xeroIdValue =
     typeof existingClient?.xero_contact_id === 'string' ? existingClient.xero_contact_id : ''
 
@@ -424,8 +424,6 @@ const handleDuplicateClientError = (error: unknown): boolean => {
 
   return true
 }
-
-
 
 const resetForm = () => {
   console.log('🔄 resetForm called')

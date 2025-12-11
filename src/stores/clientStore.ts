@@ -39,7 +39,9 @@ export const useClientStore = defineStore('clients', () => {
     isLoading.value = true
 
     try {
-      const response: ClientSearchResponse = await api.clients_search_retrieve({ queries: { limit: 500 } })
+      const response: ClientSearchResponse = await api.clients_search_retrieve({
+        queries: { limit: 500 },
+      })
       allClients.value = response.results || []
     } catch (error) {
       console.error('Failed to fetch all clients:', error)
