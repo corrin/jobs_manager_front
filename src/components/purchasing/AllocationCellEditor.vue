@@ -207,7 +207,7 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
 
 <template>
   <div class="w-full">
-    <Popover v-model:open="open" modal>
+    <Popover v-model:open="open">
       <PopoverTrigger as-child>
         <Button
           size="sm"
