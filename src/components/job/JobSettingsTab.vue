@@ -269,6 +269,7 @@
                 placeholder="Add internal notes about this job..."
                 :required="false"
                 automation-id="JobSettingsTab-internal-notes"
+                @update:model-value="(v: string) => handleFieldInput('notes', v)"
                 @blur="handleFieldBlur"
               />
             </div>
