@@ -1,5 +1,5 @@
 import { test as base, expect, type Page } from '@playwright/test'
-import { dismissToasts, autoId } from './helpers'
+import { dismissToasts, autoId, enableNetworkLogging } from './helpers'
 
 // Define fixture types
 type AuthFixtures = {
@@ -12,13 +12,16 @@ type WorkerFixtures = {
 }
 
 export const test = base.extend<AuthFixtures, WorkerFixtures>({
-  authenticatedPage: async ({ page }, use) => {
+  authenticatedPage: async ({ page }, use, testInfo) => {
     const username = process.env.E2E_TEST_USERNAME
     const password = process.env.E2E_TEST_PASSWORD
 
     if (!username || !password) {
       throw new Error('E2E_TEST_USERNAME and E2E_TEST_PASSWORD must be set in .env')
     }
+
+    // Enable network logging for all tests
+    enableNetworkLogging(page, testInfo.title)
 
     // Navigate to login page
     await page.goto('/login')
