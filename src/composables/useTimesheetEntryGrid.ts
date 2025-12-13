@@ -205,6 +205,10 @@ export function useTimesheetEntryGrid(
     theme: customTheme,
     columnDefs: columnDefs.value,
     rowData: gridData.value,
+    getRowId: (params: { data: TimesheetEntryGridRow }) => {
+      // Use id if available, otherwise tempId for new rows
+      return params.data.id || params.data.tempId || ''
+    },
     defaultColDef: {
       sortable: true,
       filter: false,
@@ -378,7 +382,8 @@ export function useTimesheetEntryGrid(
         data.isModified = true
         data.isNewRow = false // Convert to regular row but don't save yet
         console.log('New row marked as modified:', updatedEntry.description || '')
-        options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
+        // Pass the normalized entry with both hours and quantity fields set correctly
+        options?.onScheduleAutosave?.(updatedEntry as TimesheetEntryGridRowWithSaving)
 
         // Ensure there's always an empty row at the end
         nextTick(() => {

@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures/auth'
 import type { Page } from '@playwright/test'
-import { autoId, waitForAutosave, createTestJob } from '../fixtures/helpers'
+import { autoId, createTestJob, gridCell } from '../fixtures/helpers'
 
 /**
  * Tests for timesheet entry operations.
@@ -10,6 +10,19 @@ import { autoId, waitForAutosave, createTestJob } from '../fixtures/helpers'
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+/**
+ * Get a weekday date string (YYYY-MM-DD) - skips weekends
+ */
+function getWeekdayDate(): string {
+  const date = new Date()
+  const day = date.getDay()
+  // If Saturday (6), go back to Friday (-1 day)
+  // If Sunday (0), go back to Friday (-2 days)
+  if (day === 6) date.setDate(date.getDate() - 1)
+  if (day === 0) date.setDate(date.getDate() - 2)
+  return date.toISOString().split('T')[0]
+}
 
 async function navigateToActualsTab(page: Page, jobUrl: string): Promise<void> {
   const baseUrl = jobUrl.split('?')[0]
@@ -78,8 +91,9 @@ test.describe.serial('timesheet entry operations', () => {
   })
 
   test('add timesheet entry for the test job', async ({ authenticatedPage: page }) => {
-    // Navigate to daily timesheet
-    await page.goto('/timesheets/daily')
+    // Navigate to daily timesheet with a weekday date (weekends may be disabled)
+    const weekday = getWeekdayDate()
+    await page.goto(`/timesheets/daily?date=${weekday}`)
     await page.waitForLoadState('networkidle')
 
     // Click first staff name to open their timesheet entry view
@@ -92,13 +106,19 @@ test.describe.serial('timesheet entry operations', () => {
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(1000)
 
-    // Click Add Entry button
+    // Click Add Entry button and wait for new row
     await autoId(page, 'TimesheetEntryView-add-entry').click()
     await page.waitForTimeout(500)
 
-    // Click on the job cell (col-id="jobNumber") to open the job selector
-    const jobCell = page.locator('.ag-row').last().locator('[col-id="jobNumber"]')
-    await jobCell.click()
+    // Capture the new row's ID (tempId starts with "temp_")
+    const newRow = page.locator('.ag-row[row-id^="temp_"]').first()
+    await newRow.waitFor({ timeout: 10000 })
+    const rowId = await newRow.getAttribute('row-id')
+    if (!rowId) throw new Error('Failed to get row-id from new row')
+    console.log(`New row created with ID: ${rowId}`)
+
+    // Click on the job cell to open the job selector
+    await gridCell(page, rowId, 'jobNumber').click()
     await page.waitForTimeout(300)
 
     // Type the job number in the search input
@@ -113,14 +133,19 @@ test.describe.serial('timesheet entry operations', () => {
     await jobOption.click()
     await page.waitForTimeout(500)
 
-    // Enter hours in the hours cell (col-id="hours")
-    const hoursCell = page.locator('.ag-row').last().locator('[col-id="hours"]')
-    await hoursCell.click()
+    // Enter hours in the same row
+    await gridCell(page, rowId, 'hours').click()
     await page.waitForTimeout(200)
     await page.keyboard.type('2')
     await page.keyboard.press('Tab')
 
-    await waitForAutosave(page)
+    // Wait for autosave debounce (800ms) + save time
+    // The UI shows the data immediately, but we need to wait for the backend save
+    await page.waitForTimeout(2000)
+
+    // Verify the hours were entered by checking the cell value
+    const hoursText = await gridCell(page, rowId, 'hours').textContent()
+    expect(hoursText).toContain('2')
     console.log(`Added 2 hours to job ${jobNumber}`)
   })
 

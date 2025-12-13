@@ -113,6 +113,17 @@ export async function timed<T>(label: string, fn: () => Promise<T>): Promise<T> 
 export const autoId = (page: Page, id: string) => page.locator(`[data-automation-id="${id}"]`)
 
 /**
+ * Helper to find AG Grid row by row-id attribute
+ */
+export const gridRow = (page: Page, rowId: string) => page.locator(`[row-id="${rowId}"]`)
+
+/**
+ * Helper to find AG Grid cell by row-id and col-id
+ */
+export const gridCell = (page: Page, rowId: string, colId: string) =>
+  page.locator(`[row-id="${rowId}"] [col-id="${colId}"]`)
+
+/**
  * Helper to dismiss any toast notifications that might block interactions
  */
 export async function dismissToasts(page: Page) {
