@@ -8,12 +8,22 @@ let networkRunId: string | null = null
 let networkRunDate: string | null = null
 const networkCsvPath = path.join(process.cwd(), 'test-results', 'network-aggregate.csv')
 
+// Default max response size (100KB) - catches bugs like missing filters
+const DEFAULT_MAX_RESPONSE_KB = 100
+
 /**
- * Helper to log all API network traffic with sizes
+ * Helper to log all API network traffic with sizes and assert on response size
  * Appends to test-results/network-aggregate.csv for later analysis
+ * Fails test if any API response exceeds maxResponseKB (default 100KB)
  * Call once at start of test to enable logging for that page
  */
-export function enableNetworkLogging(page: Page, testName?: string) {
+export function enableNetworkLogging(
+  page: Page,
+  testName?: string,
+  options?: { maxResponseKB?: number },
+) {
+  const maxResponseKB = options?.maxResponseKB ?? DEFAULT_MAX_RESPONSE_KB
+
   // Initialize run ID once per test run
   if (!networkRunId) {
     networkRunId = Math.random().toString(36).substring(2, 10)
@@ -32,18 +42,25 @@ export function enableNetworkLogging(page: Page, testName?: string) {
 
   page.on('response', async (response: Response) => {
     const url = response.url()
+    // Strip base URL for readability
+    const shortUrl = url.replace(/^https?:\/\/[^/]+/, '')
+
+    // Skip dev server source files
+    if (shortUrl.startsWith('/src/') || shortUrl.startsWith('/@')) {
+      return
+    }
+
     // Only log API calls, skip static assets
     if (!url.includes('/api/') && !url.includes('/clients/') && !url.includes('/jobs/')) {
       return
     }
+
     try {
       const body = await response.body()
       const sizeBytes = body.length
-      const sizeKB = (sizeBytes / 1024).toFixed(2)
+      const sizeKB = sizeBytes / 1024
       const status = response.status()
       const method = response.request().method()
-      // Strip base URL for readability
-      const shortUrl = url.replace(/^https?:\/\/[^/]+/, '')
 
       // Append to CSV
       const row = [
@@ -54,11 +71,23 @@ export function enableNetworkLogging(page: Page, testName?: string) {
         `"${shortUrl.replace(/"/g, '""')}"`,
         status,
         sizeBytes,
-        sizeKB,
+        sizeKB.toFixed(2),
       ].join(',')
       appendFileSync(networkCsvPath, row + '\n')
-    } catch {
-      // Response body not available (e.g., redirects)
+
+      // Assert response size - catch bugs like missing filters returning entire tables
+      if (sizeKB > maxResponseKB) {
+        throw new Error(
+          `API response too large: ${method} ${shortUrl} returned ${sizeKB.toFixed(1)}KB (max: ${maxResponseKB}KB). ` +
+            `This may indicate a missing filter or pagination bug.`,
+        )
+      }
+    } catch (e) {
+      // Re-throw size assertion errors
+      if (e instanceof Error && e.message.includes('API response too large')) {
+        throw e
+      }
+      // Ignore other errors (response body not available, e.g., redirects)
     }
   })
 }
@@ -114,7 +143,7 @@ export async function waitForSettingsInitialized(page: Page) {
 
 /**
  * Helper to wait for autosave to complete
- * Handles job header saves (PATCH /job/rest/jobs/) and cost line saves (POST/PATCH)
+ * Handles job header saves, cost line creates/updates/deletes
  */
 export async function waitForAutosave(page: Page) {
   await page.waitForResponse(
@@ -145,6 +174,11 @@ export async function waitForAutosave(page: Page) {
 
       // Cost line update (PATCH, status 200)
       if (url.includes('/job/rest/cost_lines/') && method === 'PATCH' && status === 200) {
+        return true
+      }
+
+      // Cost line delete (DELETE, status 204)
+      if (url.includes('/job/rest/cost_lines/') && method === 'DELETE' && status === 204) {
         return true
       }
 
