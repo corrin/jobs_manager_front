@@ -82,8 +82,11 @@ export function useStaffApi() {
     error.value = null
     try {
       // Explicitly pass today's date to avoid backend warning
+      // Pass actual_users: 'true' to exclude system/test accounts
       const today = new Date().toISOString().split('T')[0]
-      const result = await api.accounts_api_staff_all_list({ queries: { date: today } })
+      const result = await api.accounts_api_staff_all_list({
+        queries: { date: today, actual_users: 'true' },
+      })
       return result
     } catch (e: unknown) {
       if (e instanceof Error) {
