@@ -375,8 +375,17 @@ export function useTimesheetEntryGrid(
       }
 
       // Handle new row completion - mark as modified and schedule autosave
+      console.log('DEBUG handleCellValueChanged:', {
+        isNewRow: data.isNewRow,
+        jobNumber: updatedEntry.jobNumber,
+        hours: updatedEntry.hours,
+        quantity: updatedEntry.quantity,
+        isRowComplete: isRowComplete(updatedEntry),
+        tempId: updatedEntry.tempId,
+      })
       if (data.isNewRow && isRowComplete(updatedEntry)) {
         if (isDuplicateEntry(updatedEntry)) {
+          console.log('DEBUG: isDuplicateEntry returned true, skipping save')
           return
         }
         data.isModified = true

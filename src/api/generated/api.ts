@@ -350,7 +350,6 @@ const UserProfile = z
     last_name: z.string(),
     preferred_name: z.string().nullable(),
     fullName: z.string(),
-    is_active: z.boolean(),
     is_staff: z.boolean(),
   })
   .passthrough()

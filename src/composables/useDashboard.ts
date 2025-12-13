@@ -15,7 +15,6 @@ export function useDashboard() {
       email: authStore.user.email,
       firstName: authStore.user.first_name,
       lastName: authStore.user.last_name,
-      isActive: authStore.user.is_active,
       isStaff: authStore.user.is_staff,
     }
   })
