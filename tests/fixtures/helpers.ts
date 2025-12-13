@@ -114,14 +114,42 @@ export async function waitForSettingsInitialized(page: Page) {
 
 /**
  * Helper to wait for autosave to complete
- * Waits for the PATCH request to /job/rest/jobs/ to complete with status 200
+ * Handles job header saves (PATCH /job/rest/jobs/) and cost line saves (POST/PATCH)
  */
 export async function waitForAutosave(page: Page) {
   await page.waitForResponse(
-    (response) =>
-      response.url().includes('/job/rest/jobs/') &&
-      response.request().method() === 'PATCH' &&
-      response.status() === 200,
+    (response) => {
+      const url = response.url()
+      const method = response.request().method()
+      const status = response.status()
+
+      // Job header save (PATCH, status 200)
+      if (
+        url.includes('/job/rest/jobs/') &&
+        !url.includes('/cost_sets/') &&
+        method === 'PATCH' &&
+        status === 200
+      ) {
+        return true
+      }
+
+      // Cost line create (POST, status 201)
+      if (
+        url.includes('/cost_sets/') &&
+        url.includes('/cost_lines') &&
+        method === 'POST' &&
+        status === 201
+      ) {
+        return true
+      }
+
+      // Cost line update (PATCH, status 200)
+      if (url.includes('/job/rest/cost_lines/') && method === 'PATCH' && status === 200) {
+        return true
+      }
+
+      return false
+    },
     { timeout: 10000 },
   )
 }
