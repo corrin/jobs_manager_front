@@ -137,7 +137,8 @@ test.describe.serial('timesheet entry operations', () => {
     await gridCell(page, rowId, 'hours').click()
     await page.waitForTimeout(200)
     await page.keyboard.type('2')
-    await page.keyboard.press('Tab')
+    // Press Enter to commit the value and stop editing (Tab would move to description and start editing it)
+    await page.keyboard.press('Enter')
 
     // Wait for autosave debounce (800ms) + save time
     // The UI shows the data immediately, but we need to wait for the backend save

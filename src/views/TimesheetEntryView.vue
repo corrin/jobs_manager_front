@@ -994,17 +994,51 @@ const autosave = useTimesheetAutosave<TimesheetEntryViewRow>({
       (r) => r.id !== null && r.id !== undefined && String(r.id) === String(rowKey),
     )
 
-    if (byId) return byId
+    if (byId) {
+      console.log('[DEBUG] getEntry found by id:', {
+        rowKey,
+        hours: byId.hours,
+        quantity: byId.quantity,
+        jobNumber: byId.jobNumber,
+        job_number: byId.job_number,
+      })
+      return byId
+    }
 
     const byTemp = rows.find((r) => r.tempId && String(r.tempId) === String(rowKey))
+    if (byTemp) {
+      console.log('[DEBUG] getEntry found by tempId:', {
+        rowKey,
+        hours: byTemp.hours,
+        quantity: byTemp.quantity,
+        jobNumber: byTemp.jobNumber,
+        job_number: byTemp.job_number,
+      })
+    }
 
     return byTemp || null
   },
   isRowComplete: (e) => {
-    const hasJob = Boolean(e.job_id || e.job_number)
-    const hasHours = Number(e.quantity ?? 0) > 0
+    // Check both UI field names (jobNumber, hours) and backend field names (job_id, job_number, quantity)
+    const hasJob = Boolean(e.job_id || e.job_number || e.jobNumber)
+    const hasHours = Number(e.quantity || e.hours || 0) > 0
     const isEditingDescription = isDescriptionBeingEdited(e)
-    return hasJob && hasHours && !isEditingDescription
+    const isComplete = hasJob && hasHours && !isEditingDescription
+    if (!isComplete) {
+      console.log('[DEBUG] isRowComplete FAILED:', {
+        hasJob,
+        hasHours,
+        isEditingDescription,
+        job_id: e.job_id,
+        job_number: e.job_number,
+        jobNumber: e.jobNumber,
+        quantity: e.quantity,
+        hours: e.hours,
+        tempId: e.tempId,
+        id: e.id,
+      })
+    }
+    return isComplete
   },
   isDuplicate: (e) => {
     if (e.id) return false

@@ -628,7 +628,11 @@ export function useTimesheetEntryGrid(
 
   function updateRowData(rowIndex: number | null, entry: TimesheetEntry): void {
     if (!isApiAlive(gridApi.value) || rowIndex == null) return
-    const rowNode = gridApi.value!.getRowNode(String(rowIndex))
+    // Use the entry's ID (id or tempId) to find the row node, not the row index
+    // AG Grid's getRowId returns id || tempId, so we must match that
+    const rowId = entry.id ? String(entry.id) : entry.tempId ? String(entry.tempId) : null
+    if (!rowId) return
+    const rowNode = gridApi.value!.getRowNode(rowId)
     if (rowNode) {
       Object.assign(rowNode.data, entry)
       nextTick(() => {
