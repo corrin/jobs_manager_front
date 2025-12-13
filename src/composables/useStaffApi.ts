@@ -81,7 +81,9 @@ export function useStaffApi() {
   async function listStaffForKanban(): Promise<KanbanStaff[]> {
     error.value = null
     try {
-      const result = await api.accounts_api_staff_all_list()
+      // Explicitly pass today's date to avoid backend warning
+      const today = new Date().toISOString().split('T')[0]
+      const result = await api.accounts_api_staff_all_list({ queries: { date: today } })
       return result
     } catch (e: unknown) {
       if (e instanceof Error) {
