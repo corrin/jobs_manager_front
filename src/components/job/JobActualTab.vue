@@ -508,7 +508,10 @@ async function checkAndUpdateNegativeStocks() {
 
 async function loadStaff() {
   try {
-    const staff: KanbanStaff[] = await api.accounts_api_staff_all_list()
+    // Include inactive staff since this job may have historical time entries
+    const staff: KanbanStaff[] = await api.accounts_api_staff_all_list({
+      queries: { include_inactive: 'true' },
+    })
     staffMap.value = staff.reduce(
       (acc: Record<string, KanbanStaff>, s: KanbanStaff) => {
         acc[s.id] = s

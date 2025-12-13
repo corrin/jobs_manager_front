@@ -205,6 +205,10 @@ export function useTimesheetEntryGrid(
     theme: customTheme,
     columnDefs: columnDefs.value,
     rowData: gridData.value,
+    getRowId: (params: { data: TimesheetEntryGridRow }) => {
+      // Use id if available, otherwise tempId for new rows
+      return params.data.id || params.data.tempId || ''
+    },
     defaultColDef: {
       sortable: true,
       filter: false,
@@ -371,14 +375,24 @@ export function useTimesheetEntryGrid(
       }
 
       // Handle new row completion - mark as modified and schedule autosave
+      console.log('DEBUG handleCellValueChanged:', {
+        isNewRow: data.isNewRow,
+        jobNumber: updatedEntry.jobNumber,
+        hours: updatedEntry.hours,
+        quantity: updatedEntry.quantity,
+        isRowComplete: isRowComplete(updatedEntry),
+        tempId: updatedEntry.tempId,
+      })
       if (data.isNewRow && isRowComplete(updatedEntry)) {
         if (isDuplicateEntry(updatedEntry)) {
+          console.log('DEBUG: isDuplicateEntry returned true, skipping save')
           return
         }
         data.isModified = true
         data.isNewRow = false // Convert to regular row but don't save yet
         console.log('New row marked as modified:', updatedEntry.description || '')
-        options?.onScheduleAutosave?.(data as TimesheetEntryGridRowWithSaving)
+        // Pass the normalized entry with both hours and quantity fields set correctly
+        options?.onScheduleAutosave?.(updatedEntry as TimesheetEntryGridRowWithSaving)
 
         // Ensure there's always an empty row at the end
         nextTick(() => {
@@ -614,7 +628,11 @@ export function useTimesheetEntryGrid(
 
   function updateRowData(rowIndex: number | null, entry: TimesheetEntry): void {
     if (!isApiAlive(gridApi.value) || rowIndex == null) return
-    const rowNode = gridApi.value!.getRowNode(String(rowIndex))
+    // Use the entry's ID (id or tempId) to find the row node, not the row index
+    // AG Grid's getRowId returns id || tempId, so we must match that
+    const rowId = entry.id ? String(entry.id) : entry.tempId ? String(entry.tempId) : null
+    if (!rowId) return
+    const rowNode = gridApi.value!.getRowNode(rowId)
     if (rowNode) {
       Object.assign(rowNode.data, entry)
       nextTick(() => {

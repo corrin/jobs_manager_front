@@ -385,6 +385,22 @@ paths:
 
         Supports filtering to return only actual users (excluding system/test accounts)
         based on the 'actual_users' query parameter.
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+          description: Filter staff active on specific date (YYYY-MM-DD format).
+        - in: query
+          name: include_inactive
+          schema:
+            type: string
+            enum:
+              - 'false'
+              - 'true'
+            default: 'false'
+          description: Include inactive staff. Pass "true" to include.
       tags:
         - accounts
       security:
@@ -1658,19 +1674,14 @@ paths:
   /clients/contacts/:
     get:
       operationId: clients_contacts_list
-      description: |-
-        ViewSet for ClientContact CRUD operations.
-
-        Endpoints:
-        - GET    /api/clients/contacts/           - list all contacts
-        - POST   /api/clients/contacts/           - create contact
-        - GET    /api/clients/contacts/<id>/      - retrieve contact
-        - PUT    /api/clients/contacts/<id>/      - full update
-        - PATCH  /api/clients/contacts/<id>/      - partial update
-        - DELETE /api/clients/contacts/<id>/      - soft delete (sets is_active=False)
-
-        Query Parameters:
-        - client_id: Filter contacts by client UUID
+      description: List all contacts, optionally filtered by client_id.
+      parameters:
+        - in: query
+          name: client_id
+          schema:
+            type: string
+            format: uuid
+          description: Filter contacts by client UUID
       tags:
         - clients
       security:
@@ -14214,9 +14225,6 @@ components:
         fullName:
           type: string
           readOnly: true
-        is_active:
-          type: boolean
-          readOnly: true
         is_staff:
           type: boolean
           readOnly: true
@@ -14225,7 +14233,6 @@ components:
         - first_name
         - fullName
         - id
-        - is_active
         - is_staff
         - last_name
         - preferred_name

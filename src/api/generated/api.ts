@@ -350,7 +350,6 @@ const UserProfile = z
     last_name: z.string(),
     preferred_name: z.string().nullable(),
     fullName: z.string(),
-    is_active: z.boolean(),
     is_staff: z.boolean(),
   })
   .passthrough()
@@ -3161,6 +3160,18 @@ Returns:
 Supports filtering to return only actual users (excluding system/test accounts)
 based on the &#x27;actual_users&#x27; query parameter.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'date',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'include_inactive',
+        type: 'Query',
+        schema: z.enum(['false', 'true']).optional().default('false'),
+      },
+    ],
     response: z.array(KanbanStaff),
   },
   {
@@ -4044,19 +4055,15 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
     method: 'get',
     path: '/clients/contacts/',
     alias: 'clients_contacts_list',
-    description: `ViewSet for ClientContact CRUD operations.
-
-Endpoints:
-- GET    /api/clients/contacts/           - list all contacts
-- POST   /api/clients/contacts/           - create contact
-- GET    /api/clients/contacts/&lt;id&gt;/      - retrieve contact
-- PUT    /api/clients/contacts/&lt;id&gt;/      - full update
-- PATCH  /api/clients/contacts/&lt;id&gt;/      - partial update
-- DELETE /api/clients/contacts/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
-
-Query Parameters:
-- client_id: Filter contacts by client UUID`,
+    description: `List all contacts, optionally filtered by client_id.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'client_id',
+        type: 'Query',
+        schema: z.string().uuid().optional(),
+      },
+    ],
     response: z.array(ClientContact),
   },
   {

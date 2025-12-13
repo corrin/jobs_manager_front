@@ -1,5 +1,96 @@
-import type { Page } from '@playwright/test'
+import type { Page, Response } from '@playwright/test'
 import { expect } from '@playwright/test'
+import { appendFileSync, existsSync, mkdirSync } from 'fs'
+import path from 'path'
+
+// Network logging state
+let networkRunId: string | null = null
+let networkRunDate: string | null = null
+const networkCsvPath = path.join(process.cwd(), 'test-results', 'network-aggregate.csv')
+
+// Default max response size (100KB) - catches bugs like missing filters
+const DEFAULT_MAX_RESPONSE_KB = 100
+
+/**
+ * Helper to log all API network traffic with sizes and assert on response size
+ * Appends to test-results/network-aggregate.csv for later analysis
+ * Fails test if any API response exceeds maxResponseKB (default 100KB)
+ * Call once at start of test to enable logging for that page
+ */
+export function enableNetworkLogging(
+  page: Page,
+  testName?: string,
+  options?: { maxResponseKB?: number },
+) {
+  const maxResponseKB = options?.maxResponseKB ?? DEFAULT_MAX_RESPONSE_KB
+
+  // Initialize run ID once per test run
+  if (!networkRunId) {
+    networkRunId = Math.random().toString(36).substring(2, 10)
+    networkRunDate = new Date().toISOString()
+    // Ensure test-results directory exists
+    const dir = path.dirname(networkCsvPath)
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+    // Write header if file doesn't exist
+    if (!existsSync(networkCsvPath)) {
+      appendFileSync(
+        networkCsvPath,
+        'run_id,run_date,test_name,method,url,status,size_bytes,size_kb\n',
+      )
+    }
+  }
+
+  page.on('response', async (response: Response) => {
+    const url = response.url()
+    // Strip base URL for readability
+    const shortUrl = url.replace(/^https?:\/\/[^/]+/, '')
+
+    // Skip dev server source files
+    if (shortUrl.startsWith('/src/') || shortUrl.startsWith('/@')) {
+      return
+    }
+
+    // Only log API calls, skip static assets
+    if (!url.includes('/api/') && !url.includes('/clients/') && !url.includes('/jobs/')) {
+      return
+    }
+
+    try {
+      const body = await response.body()
+      const sizeBytes = body.length
+      const sizeKB = sizeBytes / 1024
+      const status = response.status()
+      const method = response.request().method()
+
+      // Append to CSV
+      const row = [
+        networkRunId,
+        networkRunDate,
+        `"${testName || 'unknown'}"`,
+        method,
+        `"${shortUrl.replace(/"/g, '""')}"`,
+        status,
+        sizeBytes,
+        sizeKB.toFixed(2),
+      ].join(',')
+      appendFileSync(networkCsvPath, row + '\n')
+
+      // Assert response size - catch bugs like missing filters returning entire tables
+      if (sizeKB > maxResponseKB) {
+        throw new Error(
+          `API response too large: ${method} ${shortUrl} returned ${sizeKB.toFixed(1)}KB (max: ${maxResponseKB}KB). ` +
+            `This may indicate a missing filter or pagination bug.`,
+        )
+      }
+    } catch (e) {
+      // Re-throw size assertion errors
+      if (e instanceof Error && e.message.includes('API response too large')) {
+        throw e
+      }
+      // Ignore other errors (response body not available, e.g., redirects)
+    }
+  })
+}
 
 /**
  * Helper to time and log async operations
@@ -20,6 +111,17 @@ export async function timed<T>(label: string, fn: () => Promise<T>): Promise<T> 
  * Helper to find elements by data-automation-id attribute
  */
 export const autoId = (page: Page, id: string) => page.locator(`[data-automation-id="${id}"]`)
+
+/**
+ * Helper to find AG Grid row by row-id attribute
+ */
+export const gridRow = (page: Page, rowId: string) => page.locator(`[row-id="${rowId}"]`)
+
+/**
+ * Helper to find AG Grid cell by row-id and col-id
+ */
+export const gridCell = (page: Page, rowId: string, colId: string) =>
+  page.locator(`[row-id="${rowId}"] [col-id="${colId}"]`)
 
 /**
  * Helper to dismiss any toast notifications that might block interactions
@@ -52,19 +154,49 @@ export async function waitForSettingsInitialized(page: Page) {
 
 /**
  * Helper to wait for autosave to complete
+ * Handles job header saves, cost line creates/updates/deletes
  */
 export async function waitForAutosave(page: Page) {
-  const start = Date.now()
-  // Try networkidle with a short timeout, fall back to fixed wait
-  try {
-    await page.waitForLoadState('networkidle', { timeout: 5000 })
-    console.log(`[TIMING] waitForAutosave networkidle: ${Date.now() - start}ms`)
-  } catch {
-    console.log(
-      `[TIMING] waitForAutosave networkidle TIMEOUT after ${Date.now() - start}ms, using fixed wait`,
-    )
-    await page.waitForTimeout(1500)
-  }
+  await page.waitForResponse(
+    (response) => {
+      const url = response.url()
+      const method = response.request().method()
+      const status = response.status()
+
+      // Job header save (PATCH, status 200)
+      if (
+        url.includes('/job/rest/jobs/') &&
+        !url.includes('/cost_sets/') &&
+        method === 'PATCH' &&
+        status === 200
+      ) {
+        return true
+      }
+
+      // Cost line create (POST, status 201)
+      if (
+        url.includes('/cost_sets/') &&
+        url.includes('/cost_lines') &&
+        method === 'POST' &&
+        status === 201
+      ) {
+        return true
+      }
+
+      // Cost line update (PATCH, status 200)
+      if (url.includes('/job/rest/cost_lines/') && method === 'PATCH' && status === 200) {
+        return true
+      }
+
+      // Cost line delete (DELETE, status 204)
+      if (url.includes('/job/rest/cost_lines/') && method === 'DELETE' && status === 204) {
+        return true
+      }
+
+      return false
+    },
+    { timeout: 10000 },
+  )
 }
 
 /**
