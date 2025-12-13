@@ -1658,19 +1658,14 @@ paths:
   /clients/contacts/:
     get:
       operationId: clients_contacts_list
-      description: |-
-        ViewSet for ClientContact CRUD operations.
-
-        Endpoints:
-        - GET    /api/clients/contacts/           - list all contacts
-        - POST   /api/clients/contacts/           - create contact
-        - GET    /api/clients/contacts/<id>/      - retrieve contact
-        - PUT    /api/clients/contacts/<id>/      - full update
-        - PATCH  /api/clients/contacts/<id>/      - partial update
-        - DELETE /api/clients/contacts/<id>/      - soft delete (sets is_active=False)
-
-        Query Parameters:
-        - client_id: Filter contacts by client UUID
+      description: List all contacts, optionally filtered by client_id.
+      parameters:
+        - in: query
+          name: client_id
+          schema:
+            type: string
+            format: uuid
+          description: Filter contacts by client UUID
       tags:
         - clients
       security:

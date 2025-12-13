@@ -4044,19 +4044,15 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
     method: 'get',
     path: '/clients/contacts/',
     alias: 'clients_contacts_list',
-    description: `ViewSet for ClientContact CRUD operations.
-
-Endpoints:
-- GET    /api/clients/contacts/           - list all contacts
-- POST   /api/clients/contacts/           - create contact
-- GET    /api/clients/contacts/&lt;id&gt;/      - retrieve contact
-- PUT    /api/clients/contacts/&lt;id&gt;/      - full update
-- PATCH  /api/clients/contacts/&lt;id&gt;/      - partial update
-- DELETE /api/clients/contacts/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
-
-Query Parameters:
-- client_id: Filter contacts by client UUID`,
+    description: `List all contacts, optionally filtered by client_id.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'client_id',
+        type: 'Query',
+        schema: z.string().uuid().optional(),
+      },
+    ],
     response: z.array(ClientContact),
   },
   {

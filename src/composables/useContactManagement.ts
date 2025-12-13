@@ -128,10 +128,10 @@ export function useContactManagement() {
 
     isLoading.value = true
     try {
-      const response = await api.clients_contacts_list()
-      const filteredContacts = (response || []).filter((contact) => contact.client === clientId)
-
-      contacts.value = filteredContacts
+      const response = await api.clients_contacts_list({
+        queries: { client_id: clientId },
+      })
+      contacts.value = response || []
       newContactForm.value.is_primary = contacts.value.length === 0
     } catch (error) {
       debugLog('Error loading contacts:', error)
