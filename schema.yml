@@ -385,6 +385,22 @@ paths:
 
         Supports filtering to return only actual users (excluding system/test accounts)
         based on the 'actual_users' query parameter.
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+          description: Filter staff active on specific date (YYYY-MM-DD format).
+        - in: query
+          name: include_inactive
+          schema:
+            type: string
+            enum:
+              - 'false'
+              - 'true'
+            default: 'false'
+          description: Include inactive staff. Pass "true" to include.
       tags:
         - accounts
       security:

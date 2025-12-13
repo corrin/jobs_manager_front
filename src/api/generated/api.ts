@@ -3161,6 +3161,18 @@ Returns:
 Supports filtering to return only actual users (excluding system/test accounts)
 based on the &#x27;actual_users&#x27; query parameter.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'date',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'include_inactive',
+        type: 'Query',
+        schema: z.enum(['false', 'true']).optional().default('false'),
+      },
+    ],
     response: z.array(KanbanStaff),
   },
   {
