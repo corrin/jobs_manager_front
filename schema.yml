@@ -387,6 +387,15 @@ paths:
         based on the 'actual_users' query parameter.
       parameters:
         - in: query
+          name: actual_users
+          schema:
+            type: string
+            enum:
+              - 'false'
+              - 'true'
+            default: 'false'
+          description: Exclude system/test accounts. Pass "true" to exclude.
+        - in: query
           name: date
           schema:
             type: string
