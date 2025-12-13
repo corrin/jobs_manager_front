@@ -114,19 +114,16 @@ export async function waitForSettingsInitialized(page: Page) {
 
 /**
  * Helper to wait for autosave to complete
+ * Waits for the PATCH request to /job/rest/jobs/ to complete with status 200
  */
 export async function waitForAutosave(page: Page) {
-  const start = Date.now()
-  // Try networkidle with a short timeout, fall back to fixed wait
-  try {
-    await page.waitForLoadState('networkidle', { timeout: 5000 })
-    console.log(`[TIMING] waitForAutosave networkidle: ${Date.now() - start}ms`)
-  } catch {
-    console.log(
-      `[TIMING] waitForAutosave networkidle TIMEOUT after ${Date.now() - start}ms, using fixed wait`,
-    )
-    await page.waitForTimeout(1500)
-  }
+  await page.waitForResponse(
+    (response) =>
+      response.url().includes('/job/rest/jobs/') &&
+      response.request().method() === 'PATCH' &&
+      response.status() === 200,
+    { timeout: 10000 },
+  )
 }
 
 /**

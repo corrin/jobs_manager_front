@@ -8,10 +8,10 @@ export default defineConfig({
   globalSetup: './tests/scripts/global-setup.ts',
   globalTeardown: './tests/scripts/global-teardown.ts',
   testDir: './tests',
-  fullyParallel: true, // Allow parallel test suites
+  fullyParallel: false, // Run tests sequentially to avoid database conflicts
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 4, // Parallel workers for independent test suites
+  workers: 1, // Single worker to avoid parallel database conflicts
   reporter: [
     ['html'],
     ['list', { printSteps: true }], // Show steps and console output
