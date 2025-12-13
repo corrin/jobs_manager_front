@@ -110,10 +110,11 @@ export const useClientStore = defineStore('clients', () => {
     isLoadingContacts.value = true
 
     try {
-      const response = await api.clients_contacts_list()
-      const filtered = (response || []).filter((contact) => contact.client === clientId)
-      clientContacts.value[clientId] = filtered
-      return filtered
+      const response = await api.clients_contacts_list({
+        queries: { client_id: clientId },
+      })
+      clientContacts.value[clientId] = response || []
+      return response || []
     } catch (error) {
       console.error('Failed to fetch client contacts:', error)
       clientContacts.value[clientId] = []

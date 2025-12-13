@@ -6,14 +6,10 @@ test('test can call backend API directly', async ({ authenticatedPage: page }) =
     throw new Error('VITE_API_BASE_URL must be set in .env')
   }
 
-  // Get the auth token that the app stored after login
-  const authToken = await page.evaluate(() => localStorage.getItem('auth_token'))
-  expect(authToken).not.toBeNull()
-
   // Use the page's request context which shares cookies/state with the browser
+  // Cookie-based auth is handled automatically by the browser session
   const response = await page.request.get(`${apiBaseUrl}/api/company-defaults/`, {
     headers: {
-      Authorization: `Bearer ${authToken}`,
       'ngrok-skip-browser-warning': 'true',
       Accept: 'application/json',
     },

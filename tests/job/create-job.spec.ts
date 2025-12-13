@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures/auth'
-import { autoId, dismissToasts } from '../fixtures/helpers'
+import { autoId, dismissToasts, enableNetworkLogging } from '../fixtures/helpers'
 
 /**
  * Sequential test cases for job creation.
@@ -40,6 +40,10 @@ const jobTestCases = [
 
 // Use describe.serial to ensure tests run in order (they depend on each other)
 test.describe.serial('create job', () => {
+  test.beforeEach(async ({ authenticatedPage: page }, testInfo) => {
+    enableNetworkLogging(page, testInfo.title)
+  })
+
   for (const tc of jobTestCases) {
     test(`create ${tc.name} job with client and contact`, async ({ authenticatedPage: page }) => {
       // Generate unique job name to avoid conflicts

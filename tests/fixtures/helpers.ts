@@ -1,5 +1,67 @@
-import type { Page } from '@playwright/test'
+import type { Page, Response } from '@playwright/test'
 import { expect } from '@playwright/test'
+import { appendFileSync, existsSync, mkdirSync } from 'fs'
+import path from 'path'
+
+// Network logging state
+let networkRunId: string | null = null
+let networkRunDate: string | null = null
+const networkCsvPath = path.join(process.cwd(), 'test-results', 'network-aggregate.csv')
+
+/**
+ * Helper to log all API network traffic with sizes
+ * Appends to test-results/network-aggregate.csv for later analysis
+ * Call once at start of test to enable logging for that page
+ */
+export function enableNetworkLogging(page: Page, testName?: string) {
+  // Initialize run ID once per test run
+  if (!networkRunId) {
+    networkRunId = Math.random().toString(36).substring(2, 10)
+    networkRunDate = new Date().toISOString()
+    // Ensure test-results directory exists
+    const dir = path.dirname(networkCsvPath)
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
+    // Write header if file doesn't exist
+    if (!existsSync(networkCsvPath)) {
+      appendFileSync(
+        networkCsvPath,
+        'run_id,run_date,test_name,method,url,status,size_bytes,size_kb\n',
+      )
+    }
+  }
+
+  page.on('response', async (response: Response) => {
+    const url = response.url()
+    // Only log API calls, skip static assets
+    if (!url.includes('/api/') && !url.includes('/clients/') && !url.includes('/jobs/')) {
+      return
+    }
+    try {
+      const body = await response.body()
+      const sizeBytes = body.length
+      const sizeKB = (sizeBytes / 1024).toFixed(2)
+      const status = response.status()
+      const method = response.request().method()
+      // Strip base URL for readability
+      const shortUrl = url.replace(/^https?:\/\/[^/]+/, '')
+
+      // Append to CSV
+      const row = [
+        networkRunId,
+        networkRunDate,
+        `"${testName || 'unknown'}"`,
+        method,
+        `"${shortUrl.replace(/"/g, '""')}"`,
+        status,
+        sizeBytes,
+        sizeKB,
+      ].join(',')
+      appendFileSync(networkCsvPath, row + '\n')
+    } catch {
+      // Response body not available (e.g., redirects)
+    }
+  })
+}
 
 /**
  * Helper to time and log async operations

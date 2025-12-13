@@ -1,6 +1,11 @@
 import { test, expect } from '../fixtures/auth'
 import { getCompanyDefaults } from '../fixtures/api'
-import { autoId, waitForSettingsInitialized, waitForAutosave } from '../fixtures/helpers'
+import {
+  autoId,
+  waitForSettingsInitialized,
+  waitForAutosave,
+  enableNetworkLogging,
+} from '../fixtures/helpers'
 
 /**
  * Tests for editing a job after creation.
@@ -8,6 +13,10 @@ import { autoId, waitForSettingsInitialized, waitForAutosave } from '../fixtures
  * Each test can run independently with --grep since the fixture handles job creation.
  */
 test.describe.serial('edit job', () => {
+  test.beforeEach(async ({ authenticatedPage: page }, testInfo) => {
+    enableNetworkLogging(page, testInfo.title)
+  })
+
   test('navigate to Job Settings tab and verify details', async ({
     authenticatedPage: page,
     sharedEditJobUrl,

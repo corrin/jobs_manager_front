@@ -777,12 +777,13 @@ async function resolveSupplierEmail(): Promise<string | null> {
   }
 
   try {
-    const contacts = await api.clients_contacts_list()
+    const contacts = await api.clients_contacts_list({
+      queries: { client_id: supplierId },
+    })
 
     const contactsArray: ClientContact[] = Array.isArray(contacts) ? contacts : []
-    const clientContacts = contactsArray.filter((contact) => contact.client === supplierId)
-    const primaryContact = clientContacts.find((contact) => contact.is_primary && !!contact.email)
-    const fallbackContact = clientContacts.find((contact) => !!contact.email)
+    const primaryContact = contactsArray.find((contact) => contact.is_primary && !!contact.email)
+    const fallbackContact = contactsArray.find((contact) => !!contact.email)
     const resolvedEmail = primaryContact?.email ?? fallbackContact?.email ?? null
 
     supplierEmailCache.value = {
