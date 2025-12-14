@@ -109,6 +109,6 @@
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged",
-    "pre-push": "npm run lint; npm run type-check"
+    "pre-push": "npm run test:unit && npm run lint && npm run type-check"
   }
 }
