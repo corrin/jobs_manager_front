@@ -941,6 +941,7 @@ const {
   addNewRow,
   handleKeyboardShortcut,
   setCurrentStaff,
+  createEntryFromRow,
 } = useTimesheetEntryGrid(
   companyDefaultsRef,
   jobsForGrid, // Pass jobs from timesheet store
@@ -995,28 +996,37 @@ const autosave = useTimesheetAutosave<TimesheetEntryViewRow>({
     )
 
     if (byId) {
+      const normalized = createEntryFromRow(byId)
       console.log('[DEBUG] getEntry found by id:', {
         rowKey,
-        hours: byId.hours,
-        quantity: byId.quantity,
-        jobNumber: byId.jobNumber,
-        job_number: byId.job_number,
+        hours: normalized.hours,
+        quantity: normalized.quantity,
+        jobNumber: normalized.jobNumber,
+        job_number: normalized.job_number,
+        description: normalized.description,
+        rate: normalized.rate,
+        billable: normalized.billable,
       })
-      return byId
+      return normalized
     }
 
     const byTemp = rows.find((r) => r.tempId && String(r.tempId) === String(rowKey))
     if (byTemp) {
+      const normalized = createEntryFromRow(byTemp)
       console.log('[DEBUG] getEntry found by tempId:', {
         rowKey,
-        hours: byTemp.hours,
-        quantity: byTemp.quantity,
-        jobNumber: byTemp.jobNumber,
-        job_number: byTemp.job_number,
+        hours: normalized.hours,
+        quantity: normalized.quantity,
+        jobNumber: normalized.jobNumber,
+        job_number: normalized.job_number,
+        description: normalized.description,
+        rate: normalized.rate,
+        billable: normalized.billable,
       })
+      return normalized
     }
 
-    return byTemp || null
+    return null
   },
   isRowComplete: (e) => {
     // Check both UI field names (jobNumber, hours) and backend field names (job_id, job_number, quantity)

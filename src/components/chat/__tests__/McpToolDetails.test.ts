@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import McpToolDetails from '../McpToolDetails.vue'
 import type { McpMetadata } from '@/schemas/mcp-tool-metadata.schema'
@@ -107,6 +107,8 @@ describe('McpToolDetails', () => {
     })
 
     it('shows advanced details when toggled', async () => {
+      vi.useFakeTimers()
+
       const wrapper = mount(McpToolDetails, {
         props: {
           metadata: mockValidMetadata,
@@ -114,17 +116,22 @@ describe('McpToolDetails', () => {
         },
       })
 
+      // Wait for the 100ms loading delay in the component
+      await vi.advanceTimersByTimeAsync(150)
       await wrapper.vm.$nextTick()
 
-      // System prompt should be hidden initially
+      // System prompt should be hidden initially (advanced details collapsed)
       expect(wrapper.text()).not.toContain('You are a helpful assistant')
 
-      // Click show advanced
-      const advancedButton = wrapper.find('button:last-child')
+      // Click show advanced using data-automation-id
+      const advancedButton = wrapper.find('[data-automation-id="McpToolDetails-toggle-advanced"]')
       await advancedButton.trigger('click')
+      await wrapper.vm.$nextTick()
 
       // System prompt should now be visible
       expect(wrapper.text()).toContain('You are a helpful assistant')
+
+      vi.useRealTimers()
     })
   })
 
@@ -309,7 +316,9 @@ describe('McpToolDetails', () => {
       expect(wrapper.find('.tool-summary').exists()).toBe(true)
     })
 
-    it('handles Unicode characters in tool data', () => {
+    it('handles Unicode characters in tool data', async () => {
+      vi.useFakeTimers()
+
       const unicodeMetadata = {
         tool_calls: [
           {
@@ -323,11 +332,19 @@ describe('McpToolDetails', () => {
       const wrapper = mount(McpToolDetails, {
         props: {
           metadata: unicodeMetadata,
+          defaultExpanded: true,
         },
       })
 
+      // Wait for the 100ms loading delay
+      await vi.advanceTimersByTimeAsync(150)
+      await wrapper.vm.$nextTick()
+
       expect(wrapper.find('.tool-summary').exists()).toBe(true)
+      // Tool name is visible in expanded view
       expect(wrapper.text()).toContain('unicode_tool')
+
+      vi.useRealTimers()
     })
   })
 })

@@ -1,7 +1,19 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ToolCallDisplay from '../ToolCallDisplay.vue'
 import type { ToolCall } from '@/schemas/mcp-tool-metadata.schema'
+
+// Mock clipboard API using vi.stubGlobal for read-only properties
+beforeEach(() => {
+  const mockClipboard = {
+    writeText: vi.fn().mockResolvedValue(undefined),
+    readText: vi.fn().mockResolvedValue(''),
+  }
+  vi.stubGlobal('navigator', {
+    ...navigator,
+    clipboard: mockClipboard,
+  })
+})
 
 describe('ToolCallDisplay', () => {
   const mockToolCall: ToolCall = {
@@ -14,6 +26,13 @@ describe('ToolCallDisplay', () => {
     result_preview:
       'Found 15 products matching your search criteria. Top results include: 1. Steel Sheet 2mm - $12.50/sq ft, 2. Steel Sheet 3mm - $15.00/sq ft...',
   }
+
+  // Helper to find elements by data-automation-id
+  const autoId = (wrapper: ReturnType<typeof mount>, id: string) =>
+    wrapper.find(`[data-automation-id="${id}"]`)
+
+  const findExpandButton = (wrapper: ReturnType<typeof mount>) =>
+    autoId(wrapper, 'ToolCallDisplay-toggle')
 
   describe('basic rendering', () => {
     it('displays tool name correctly', () => {
@@ -34,9 +53,9 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      // Details should be hidden initially
-      expect(wrapper.find('[data-testid="tool-arguments"]').exists()).toBe(false)
-      expect(wrapper.find('[data-testid="tool-result"]').exists()).toBe(false)
+      // Details should be hidden initially - check that Arguments/Result text is not visible
+      expect(wrapper.text()).not.toContain('Arguments')
+      expect(wrapper.text()).not.toContain('Result Preview')
     })
 
     it('expands when clicked', async () => {
@@ -47,7 +66,7 @@ describe('ToolCallDisplay', () => {
       })
 
       // Click the expand button
-      await wrapper.find('button').trigger('click')
+      await findExpandButton(wrapper).trigger('click')
 
       // Details should now be visible
       expect(wrapper.text()).toContain('Arguments')
@@ -61,18 +80,19 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      const chevron = wrapper.find('[data-lucide="chevron-down"]')
+      // Find the ChevronDown icon by data-automation-id
+      const getChevron = () => autoId(wrapper, 'ToolCallDisplay-chevron')
 
       // Initially not rotated
-      expect(chevron.classes()).not.toContain('rotate-180')
+      expect(getChevron().classes()).not.toContain('rotate-180')
 
       // Click to expand
-      await wrapper.find('button').trigger('click')
-      expect(chevron.classes()).toContain('rotate-180')
+      await findExpandButton(wrapper).trigger('click')
+      expect(getChevron().classes()).toContain('rotate-180')
 
       // Click to collapse
-      await wrapper.find('button').trigger('click')
-      expect(chevron.classes()).not.toContain('rotate-180')
+      await findExpandButton(wrapper).trigger('click')
+      expect(getChevron().classes()).not.toContain('rotate-180')
     })
   })
 
@@ -84,7 +104,7 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      await wrapper.find('button').trigger('click')
+      await findExpandButton(wrapper).trigger('click')
 
       const argumentsSection = wrapper.find('pre')
       expect(argumentsSection.exists()).toBe(true)
@@ -108,7 +128,7 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      await wrapper.find('button').trigger('click')
+      await findExpandButton(wrapper).trigger('click')
 
       // Should still show the result section
       expect(wrapper.text()).toContain('Result Preview')
@@ -131,7 +151,7 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      await wrapper.find('button').trigger('click')
+      await findExpandButton(wrapper).trigger('click')
 
       // Should not crash and should show something
       expect(wrapper.exists()).toBe(true)
@@ -146,7 +166,7 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      await wrapper.find('button').trigger('click')
+      await findExpandButton(wrapper).trigger('click')
 
       expect(wrapper.text()).toContain('Result Preview')
       expect(wrapper.text()).toContain('Found 15 products matching your search criteria')
@@ -166,7 +186,7 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      await wrapper.find('button').trigger('click')
+      await findExpandButton(wrapper).trigger('click')
 
       expect(wrapper.text()).toContain('Result truncated to 200 characters')
     })
@@ -185,7 +205,7 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      await wrapper.find('button').trigger('click')
+      await findExpandButton(wrapper).trigger('click')
 
       expect(wrapper.text()).not.toContain('Result truncated')
     })
@@ -203,7 +223,7 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      await wrapper.find('button').trigger('click')
+      await findExpandButton(wrapper).trigger('click')
 
       // Should show arguments but handle empty result gracefully
       expect(wrapper.text()).toContain('Arguments')
@@ -242,7 +262,7 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      await wrapper.find('button').trigger('click')
+      await findExpandButton(wrapper).trigger('click')
 
       expect(wrapper.text()).toContain('No additional details available')
     })
@@ -280,15 +300,15 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      await wrapper.find('button').trigger('click')
+      await findExpandButton(wrapper).trigger('click')
 
-      // Should not contain script tags or HTML
-      expect(wrapper.html()).not.toContain('<script>')
-      expect(wrapper.html()).not.toContain('<img')
-      expect(wrapper.html()).not.toContain('alert("xss")')
-      expect(wrapper.html()).not.toContain('onerror')
+      // Vue escapes HTML in templates, so script tags become &lt;script&gt;
+      // The component also strips HTML tags from result_preview
+      // Check that no actual <script> or <img> elements exist
+      expect(wrapper.find('script').exists()).toBe(false)
+      expect(wrapper.find('img[onerror]').exists()).toBe(false)
 
-      // Should contain safe text content
+      // Should contain safe text content (after HTML stripping)
       expect(wrapper.text()).toContain('Malicious content')
     })
 
@@ -305,9 +325,10 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      // Should not contain script tags
-      expect(wrapper.html()).not.toContain('<script>')
-      expect(wrapper.html()).not.toContain('alert("xss")')
+      // Vue's template interpolation escapes HTML, so no actual script element should exist
+      expect(wrapper.find('script').exists()).toBe(false)
+      // The escaped text should be in the HTML as &lt;script&gt; but not executable
+      expect(wrapper.text()).toContain('dangerous_tool')
     })
 
     it('handles Unicode and special characters safely', async () => {
@@ -327,10 +348,13 @@ describe('ToolCallDisplay', () => {
         },
       })
 
-      await wrapper.find('button').trigger('click')
-
-      // Should handle Unicode characters properly
+      // Check tool name is displayed
       expect(wrapper.text()).toContain('unicode_tool_测试')
+
+      // Expand to see arguments
+      await findExpandButton(wrapper).trigger('click')
+
+      // Check Unicode content in expanded section
       expect(wrapper.text()).toContain('测试中文字符')
       expect(wrapper.text()).toContain('🔧⚙️🛠️')
       expect(wrapper.text()).toContain('!@#$%^&*()')

@@ -14,6 +14,8 @@
     "prepare": "simple-git-hooks",
     "gen:api": "node ./scripts/gen-api.js",
     "update-schema": "node ./scripts/update-schema.js && npx prettier --write schema.yml && npm run gen:api",
+    "test": "vitest",
+    "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
@@ -74,11 +76,13 @@
     "@vitejs/plugin-vue": "^5.2.3",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.5.0",
+    "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.7.0",
     "adm-zip": "^0.5.16",
     "dotenv": "^17.2.3",
     "eslint": "^9.22.0",
     "eslint-plugin-vue": "~10.0.0",
+    "happy-dom": "^20.0.11",
     "jiti": "^2.4.2",
     "lint-staged": "^16.1.2",
     "npm-run-all2": "^7.0.2",
@@ -91,6 +95,7 @@
     "vite-plugin-vue-devtools": "^7.7.2",
     "vitepress": "^1.6.4",
     "vitepress-export-pdf": "^1.0.0",
+    "vitest": "^4.0.15",
     "vue-tsc": "^2.2.8"
   },
   "lint-staged": {
@@ -104,6 +109,6 @@
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged",
-    "pre-push": "npm run lint; npm run type-check"
+    "pre-push": "npm run test:unit && npm run lint && npm run type-check"
   }
 }

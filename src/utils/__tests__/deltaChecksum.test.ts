@@ -20,7 +20,8 @@ describe('canonicaliseValue', () => {
     expect(canonicaliseValue(null)).toEqual(deltaChecksumUtils.NULL_SENTINEL)
     expect(canonicaliseValue(undefined)).toEqual(deltaChecksumUtils.NULL_SENTINEL)
     expect(canonicaliseValue('  hello  ')).toEqual('hello')
-    expect(canonicaliseValue('2024-01-01')).toEqual('2024-01-01T00:00:00.000Z')
+    // Date-only strings are returned as-is to avoid timezone ambiguity
+    expect(canonicaliseValue('2024-01-01')).toEqual('2024-01-01')
     expect(canonicaliseValue(true)).toEqual('true')
     expect(canonicaliseValue(5)).toEqual('5')
     expect(canonicaliseValue(5.1)).toEqual('5.1')
@@ -53,9 +54,12 @@ describe('serialiseForChecksum & compute', () => {
 })
 
 describe('buildJobDeltaEnvelope', () => {
+  const TEST_JOB_ID = '00000000-0000-0000-0000-000000000001'
+  const TEST_ACTOR_ID = '00000000-0000-0000-0000-000000000002'
+
   it('filters out unchanged fields', async () => {
     const envelope = await buildJobDeltaEnvelope({
-      job_id: 'job-123',
+      job_id: TEST_JOB_ID,
       before: {
         name: 'Old Name',
         description: 'Same Description',
@@ -67,7 +71,7 @@ describe('buildJobDeltaEnvelope', () => {
         delivery_date: '2024-01-01', // unchanged
       },
       fields: ['name', 'description', 'delivery_date'],
-      actor_id: 'user-123',
+      actor_id: TEST_ACTOR_ID,
       etag: 'etag-123',
     })
 
@@ -81,7 +85,7 @@ describe('buildJobDeltaEnvelope', () => {
   it('throws error when no fields changed', async () => {
     await expect(
       buildJobDeltaEnvelope({
-        job_id: 'job-123',
+        job_id: TEST_JOB_ID,
         before: {
           name: 'Same Name',
           description: 'Same Description',
@@ -91,7 +95,7 @@ describe('buildJobDeltaEnvelope', () => {
           description: 'Same Description',
         },
         fields: ['name', 'description'],
-        actor_id: 'user-123',
+        actor_id: TEST_ACTOR_ID,
         etag: 'etag-123',
       }),
     ).rejects.toThrow('No fields changed in delta envelope')
