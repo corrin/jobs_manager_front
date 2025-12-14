@@ -307,7 +307,7 @@ const formData = ref<JobCreateData>({
   contact_id: null,
   estimated_materials: 0,
   estimated_time: 0,
-  pricing_methodology: 'fixed_price',
+  pricing_methodology: 'time_materials',
 })
 
 const selectedClient = ref<ClientSearchResult | null>(null)
@@ -530,7 +530,7 @@ onMounted(() => {
     formData.value.contact_id = null
     formData.value.estimated_materials = 0
     formData.value.estimated_time = 0
-    formData.value.pricing_methodology = 'fixed_price'
+    formData.value.pricing_methodology = 'time_materials'
   }
 })
 </script>

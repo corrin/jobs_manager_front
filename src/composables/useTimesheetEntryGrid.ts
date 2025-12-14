@@ -12,6 +12,7 @@ import type {
   CellKeyDownEvent,
   CellEditingStartedEvent,
   CellEditingStoppedEvent,
+  RowNode,
 } from 'ag-grid-community'
 import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
@@ -538,14 +539,24 @@ export function useTimesheetEntryGrid(
     const rawDescription = rowData.description ?? rowData.desc ?? ''
     const description = toStringSafe(rawDescription, '').trim()
     const billable = rowData.billable ?? toBoolean(meta.is_billable, true)
-    const rate = (rowData.rate ?? toStringSafe(meta.rate_type, 'Ord')) || 'Ord'
-    let rateMultiplier =
-      typeof rowData.rateMultiplier === 'number' ? rowData.rateMultiplier : undefined
-    if (!rateMultiplier || Number.isNaN(rateMultiplier)) {
-      const metaMultiplier = toNumber(meta.rate_multiplier, NaN)
-      rateMultiplier = Number.isNaN(metaMultiplier)
-        ? calculations.getRateMultiplier(rate)
-        : metaMultiplier
+    const metaRateType = toStringSafe(meta.rate_type, '')
+    const rate = (rowData.rate ?? (metaRateType || 'Ord')) as string
+
+    const metaMultiplier = toNumber(meta.rate_multiplier, NaN)
+    const multiplierFromRate = calculations.getRateMultiplier(rate)
+
+    let rateMultiplier: number
+    if (rowData.rate != null) {
+      rateMultiplier = multiplierFromRate
+    } else if (
+      typeof rowData.rateMultiplier === 'number' &&
+      Number.isFinite(rowData.rateMultiplier)
+    ) {
+      rateMultiplier = rowData.rateMultiplier
+    } else if (!Number.isNaN(metaMultiplier)) {
+      rateMultiplier = metaMultiplier
+    } else {
+      rateMultiplier = multiplierFromRate
     }
     const staffIdCandidate =
       rowData.staffId ?? toStringSafe(meta.staff_id, '') ?? currentStaffRef.value?.id ?? ''
@@ -627,20 +638,31 @@ export function useTimesheetEntryGrid(
   }
 
   function updateRowData(rowIndex: number | null, entry: TimesheetEntry): void {
-    if (!isApiAlive(gridApi.value) || rowIndex == null) return
-    // Use the entry's ID (id or tempId) to find the row node, not the row index
-    // AG Grid's getRowId returns id || tempId, so we must match that
+    const api = gridApi.value
+    if (!isApiAlive(api) || rowIndex == null || rowIndex < 0) return
+
     const rowId = entry.id ? String(entry.id) : entry.tempId ? String(entry.tempId) : null
-    if (!rowId) return
-    const rowNode = gridApi.value!.getRowNode(rowId)
-    if (rowNode) {
-      Object.assign(rowNode.data, entry)
-      nextTick(() => {
-        if (isApiAlive(gridApi.value)) {
-          gridApi.value!.refreshCells({ rowNodes: [rowNode] })
-        }
-      })
+    let rowNode: RowNode | null = null
+
+    if (rowId) {
+      rowNode = api.getRowNode(rowId)
     }
+
+    if (!rowNode) {
+      rowNode = api.getDisplayedRowAtIndex(rowIndex) ?? null
+    }
+
+    if (!rowNode || !rowNode.data) {
+      return
+    }
+
+    Object.assign(rowNode.data, entry)
+
+    nextTick(() => {
+      if (isApiAlive(gridApi.value)) {
+        api.refreshCells({ rowNodes: [rowNode], force: true })
+      }
+    })
   }
 
   function isRowComplete(entry: TimesheetEntry): boolean {
@@ -893,5 +915,6 @@ export function useTimesheetEntryGrid(
     setCurrentStaff,
     ensureEmptyRow,
     gridPreDestroy,
+    createEntryFromRow: (row: TimesheetEntryGridRow) => createEntryFromRowData(row),
   }
 }
