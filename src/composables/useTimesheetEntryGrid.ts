@@ -645,11 +645,17 @@ export function useTimesheetEntryGrid(
     let rowNode: RowNode | null = null
 
     if (rowId) {
-      rowNode = api.getRowNode(rowId)
+      const nodeById = api.getRowNode(rowId)
+      if (nodeById) {
+        rowNode = nodeById as RowNode
+      }
     }
 
     if (!rowNode) {
-      rowNode = api.getDisplayedRowAtIndex(rowIndex) ?? null
+      const nodeByIndex = api.getDisplayedRowAtIndex(rowIndex)
+      if (nodeByIndex) {
+        rowNode = nodeByIndex as RowNode
+      }
     }
 
     if (!rowNode || !rowNode.data) {
