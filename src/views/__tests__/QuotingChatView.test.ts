@@ -95,6 +95,24 @@ vi.mock('vue-sonner', () => ({
   },
 }))
 
+// Mock the API schemas to bypass validation
+vi.mock('@/api/generated/api', () => ({
+  schemas: {
+    JobQuoteChat: {
+      array: () => ({
+        safeParse: (data: unknown) => ({ success: true, data }),
+      }),
+    },
+  },
+  endpoints: [],
+}))
+
+// Mock the API client to avoid initialization issues
+vi.mock('@/api/client', () => ({
+  api: {},
+  getApi: () => ({}),
+}))
+
 // Helper to mount with messages loaded via the service mock
 async function mountWithMessages(messages: VueChatMessage[]) {
   // Mock getChatHistory to return the messages
