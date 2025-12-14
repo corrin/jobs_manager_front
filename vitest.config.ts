@@ -12,6 +12,8 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
-    include: ['src/**/*.{test,spec}.{js,ts}', 'tests/**/*.{test,spec}.{js,ts}'],
+    // Only include unit tests in src/, exclude Playwright e2e tests in tests/
+    include: ['src/**/*.{test,spec}.{js,ts}'],
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/**'],
   },
 })
