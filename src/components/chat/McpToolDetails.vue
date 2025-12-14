@@ -7,6 +7,7 @@
         size="sm"
         @click="toggleDetails"
         class="h-8 px-2 text-xs hover:bg-gray-100"
+        data-automation-id="McpToolDetails-toggle"
       >
         <div class="flex items-center space-x-2">
           <Badge variant="secondary" class="text-xs">
@@ -135,6 +136,7 @@
                 size="sm"
                 @click="copyAllMetadata"
                 class="h-6 text-xs text-gray-500 hover:text-gray-700"
+                data-automation-id="McpToolDetails-copy-all"
               >
                 <Copy class="h-3 w-3 mr-1" />
                 Copy All
@@ -144,6 +146,7 @@
                 size="sm"
                 @click="toggleAdvanced"
                 class="h-6 text-xs text-gray-500 hover:text-gray-700"
+                data-automation-id="McpToolDetails-toggle-advanced"
               >
                 {{ showAdvanced ? 'Hide' : 'Show' }} Advanced Details
               </Button>

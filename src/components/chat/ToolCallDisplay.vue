@@ -13,11 +13,21 @@
           @click="copyToolCallData"
           class="h-6 w-6 p-0"
           title="Copy tool call data"
+          data-automation-id="ToolCallDisplay-copy"
         >
           <Copy class="h-3 w-3" />
         </Button>
-        <Button variant="ghost" size="sm" @click="toggleExpanded" class="h-6 w-6 p-0">
-          <ChevronDown :class="['h-4 w-4 transition-transform', isExpanded ? 'rotate-180' : '']" />
+        <Button
+          variant="ghost"
+          size="sm"
+          @click="toggleExpanded"
+          class="h-6 w-6 p-0"
+          data-automation-id="ToolCallDisplay-toggle"
+        >
+          <ChevronDown
+            :class="['h-4 w-4 transition-transform', isExpanded ? 'rotate-180' : '']"
+            data-automation-id="ToolCallDisplay-chevron"
+          />
         </Button>
       </div>
     </div>
