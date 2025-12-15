@@ -960,6 +960,16 @@ const FetchStatusValuesResponse = z
   })
   .partial()
   .passthrough()
+const WorkshopJob = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    description: z.string().nullable(),
+    job_number: z.number().int(),
+    client_name: z.string(),
+    contact_person: z.string(),
+  })
+  .passthrough()
 const WorkshopPDFResponse = z
   .object({ status: z.string(), message: z.string() })
   .partial()
@@ -2722,6 +2732,7 @@ export const schemas = {
   FetchJobsByColumnResponse,
   FetchJobsResponse,
   FetchStatusValuesResponse,
+  WorkshopJob,
   WorkshopPDFResponse,
   Kind332Enum,
   PatchedCostLineCreateUpdateRequest,
@@ -4715,6 +4726,13 @@ Expected JSON:
     description: `Return available status values for Kanban - API endpoint.`,
     requestFormat: 'json',
     response: FetchStatusValuesResponse,
+  },
+  {
+    method: 'get',
+    path: '/job/api/jobs/workshop',
+    alias: 'job_api_jobs_workshop_list',
+    requestFormat: 'json',
+    response: z.array(WorkshopJob),
   },
   {
     method: 'get',

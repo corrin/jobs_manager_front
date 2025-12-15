@@ -301,6 +301,12 @@ const router = createRouter({
       component: () => import('@/views/SafetySwpView.vue'),
       meta: { requiresAuth: true, title: 'Safe Work Procedures - Jobs Manager' },
     },
+    {
+      path: '/kanban/workshop',
+      name: 'workshop-kanban',
+      component: () => import('@/views/WorkshopView.vue'),
+      meta: { requiresAuth: true, title: 'Workshop Kanban - Jobs Manager' },
+    },
   ],
 })
 

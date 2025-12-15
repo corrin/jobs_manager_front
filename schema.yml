@@ -2055,7 +2055,7 @@ paths:
           name: q
           schema:
             type: string
-          description: Search query (min 3 chars, prefix match)
+          description: Search query (min 3 chars, case-insensitive substring match)
       tags:
         - Clients
       security:
@@ -2624,6 +2624,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FetchStatusValuesResponse'
+          description: ''
+  /job/api/jobs/workshop:
+    get:
+      operationId: job_api_jobs_workshop_list
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkshopJob'
           description: ''
   /job/job/{job_id}/workshop-pdf/:
     get:
@@ -14588,6 +14605,32 @@ components:
         - summary_stats
         - week_days
         - weekly_summary
+    WorkshopJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        job_number:
+          type: integer
+        client_name:
+          type: string
+          readOnly: true
+        contact_person:
+          type: string
+          readOnly: true
+      required:
+        - client_name
+        - contact_person
+        - description
+        - id
+        - job_number
+        - name
     WorkshopPDFResponse:
       type: object
       description: Serializer for workshop PDF generation response
