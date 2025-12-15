@@ -360,6 +360,7 @@ watch(
 watch(
   () => props.contacts.length,
   (contactsLength) => {
+    console.log('[CONTACTS] Modal received:', contactsLength, 'contacts')
     if (contactsLength === 0) {
       // Automatically set as primary if this is the first contact
       localContactForm.is_primary = true
