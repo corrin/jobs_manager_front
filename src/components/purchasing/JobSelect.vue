@@ -1,5 +1,5 @@
 <template>
-  <div class="relative">
+  <div class="relative" ref="containerRef">
     <!-- Input field -->
     <input
       ref="inputRef"
@@ -7,6 +7,7 @@
       type="text"
       :placeholder="placeholder"
       :disabled="disabled"
+      data-automation-id="JobSelect-job-search"
       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       :class="{
         'border-red-500': hasError,
@@ -23,64 +24,69 @@
       {{ errorMessage }}
     </div>
 
-    <!-- Dropdown -->
-    <div
-      v-if="showDropdown && !disabled"
-      ref="dropdownRef"
-      class="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
-    >
-      <!-- Job items -->
+    <!-- Dropdown - Teleported to body to avoid overflow clipping -->
+    <Teleport to="body">
       <div
-        v-for="(job, index) in filteredJobs"
-        :key="job.id"
-        :class="{
-          'bg-blue-50': index === highlightedIndex,
-          'hover:bg-gray-50': index !== highlightedIndex,
-        }"
-        class="px-3 py-2 cursor-pointer border-b border-gray-100 last:border-b-0"
-        @click="selectJob(job)"
-        @mouseenter="highlightedIndex = index"
+        v-if="showDropdown && !disabled"
+        ref="dropdownRef"
+        :style="dropdownStyle"
+        data-automation-id="JobSelect-dropdown"
+        class="fixed z-[9999] bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
       >
-        <div class="font-medium text-gray-900">
-          <span v-if="isStockHoldingJob(job)" class="mr-1">📦</span>
-          {{ job.job_number }}
-        </div>
-        <div class="text-sm text-gray-600 truncate">
-          {{ job.description || job.name || job.job_display_name }}
-        </div>
+        <!-- Job items -->
         <div
-          v-if="job.client_name && !isStockHoldingJob(job)"
-          class="text-xs text-gray-500 truncate"
+          v-for="(job, index) in filteredJobs"
+          :key="job.id"
+          :data-automation-id="`JobSelect-option-${job.job_number}`"
+          :class="{
+            'bg-blue-50': index === highlightedIndex,
+            'hover:bg-gray-50': index !== highlightedIndex,
+          }"
+          class="px-3 py-2 cursor-pointer border-b border-gray-100 last:border-b-0"
+          @click="selectJob(job)"
+          @mouseenter="highlightedIndex = index"
         >
-          Client: {{ job.client_name }}
+          <div class="font-medium text-gray-900">
+            <span v-if="isStockHoldingJob(job)" class="mr-1">📦</span>
+            {{ job.job_number }}
+          </div>
+          <div class="text-sm text-gray-600 truncate">
+            {{ job.description || job.name || job.job_display_name }}
+          </div>
+          <div
+            v-if="job.client_name && !isStockHoldingJob(job)"
+            class="text-xs text-gray-500 truncate"
+          >
+            Client: {{ job.client_name }}
+          </div>
+          <div v-if="isStockHoldingJob(job)" class="text-xs text-orange-600 truncate">
+            Stock Holding Job
+          </div>
         </div>
-        <div v-if="isStockHoldingJob(job)" class="text-xs text-orange-600 truncate">
-          Stock Holding Job
+
+        <!-- Loading message -->
+        <div v-if="isLoading" class="px-3 py-2 text-gray-500 text-sm flex items-center gap-2">
+          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
+          Jobs are loading, please wait
+        </div>
+
+        <!-- No results message -->
+        <div
+          v-if="!isLoading && filteredJobs.length === 0 && searchTerm.trim()"
+          class="px-3 py-2 text-gray-500 text-sm"
+        >
+          No jobs found for "{{ searchTerm }}"
+        </div>
+
+        <!-- No jobs available -->
+        <div
+          v-if="!isLoading && filteredJobs.length === 0 && !searchTerm.trim()"
+          class="px-3 py-2 text-gray-500 text-sm"
+        >
+          No jobs available
         </div>
       </div>
-
-      <!-- Loading message -->
-      <div v-if="isLoading" class="px-3 py-2 text-gray-500 text-sm flex items-center gap-2">
-        <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-500"></div>
-        Jobs are loading, please wait
-      </div>
-
-      <!-- No results message -->
-      <div
-        v-if="!isLoading && filteredJobs.length === 0 && searchTerm.trim()"
-        class="px-3 py-2 text-gray-500 text-sm"
-      >
-        No jobs found for "{{ searchTerm }}"
-      </div>
-
-      <!-- No jobs available -->
-      <div
-        v-if="!isLoading && filteredJobs.length === 0 && !searchTerm.trim()"
-        class="px-3 py-2 text-gray-500 text-sm"
-      >
-        No jobs available
-      </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
@@ -110,9 +116,29 @@ const emit = defineEmits<{
 
 const inputRef = ref<HTMLInputElement | null>(null)
 const dropdownRef = ref<HTMLDivElement | null>(null)
+const containerRef = ref<HTMLDivElement | null>(null)
 const searchTerm = ref('')
 const showDropdown = ref(false)
 const highlightedIndex = ref(-1)
+const dropdownPosition = ref({ top: 0, left: 0, width: 0 })
+
+// Compute dropdown style for fixed positioning
+const dropdownStyle = computed(() => ({
+  top: `${dropdownPosition.value.top}px`,
+  left: `${dropdownPosition.value.left}px`,
+  width: `${dropdownPosition.value.width}px`,
+}))
+
+// Update dropdown position based on input element
+const updateDropdownPosition = () => {
+  if (!inputRef.value) return
+  const rect = inputRef.value.getBoundingClientRect()
+  dropdownPosition.value = {
+    top: rect.bottom + 4,
+    left: rect.left,
+    width: rect.width,
+  }
+}
 
 const filteredJobs = computed(() => {
   const excludedStatuses = ['rejected', 'archived', 'completed']
@@ -173,6 +199,7 @@ watch(searchTerm, () => {}, { immediate: true })
 
 const onFocus = () => {
   if (props.disabled) return
+  updateDropdownPosition()
   showDropdown.value = true
   highlightedIndex.value = -1
 }
@@ -189,6 +216,7 @@ const onBlur = (event: FocusEvent) => {
 
 const onInput = () => {
   if (props.disabled) return
+  updateDropdownPosition()
   showDropdown.value = true
   highlightedIndex.value = -1
 

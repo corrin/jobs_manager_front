@@ -125,7 +125,9 @@ const statusOptions: { value: Status; label: string }[] = [
 <template>
   <Card class="max-w-[420px] w-full">
     <CardHeader v-if="!isCreateMode">
-      <h2 class="font-semibold">PO #{{ po.po_number }}</h2>
+      <h2 class="font-semibold" data-automation-id="PoSummaryCard-po-number">
+        PO #{{ po.po_number }}
+      </h2>
     </CardHeader>
 
     <CardContent>
@@ -140,6 +142,7 @@ const statusOptions: { value: Status; label: string }[] = [
             @update:selected-client="onSupplierSelected"
             @update:selected-id="onSupplierIdUpdate"
             :label="'Supplier'"
+            data-automation-id="PoSummaryCard-supplier-lookup"
           />
         </template>
         <template v-else>
@@ -174,6 +177,7 @@ const statusOptions: { value: Status; label: string }[] = [
           :model-value="po.reference || ''"
           @update:model-value="onReferenceUpdate"
           class="w-full"
+          data-automation-id="PoSummaryCard-reference"
         />
       </div>
 
@@ -204,11 +208,16 @@ const statusOptions: { value: Status; label: string }[] = [
             :modelValue="po.status || null"
             @update:modelValue="(value) => onStatusUpdate(value as Status)"
           >
-            <SelectTrigger>
+            <SelectTrigger data-automation-id="PoSummaryCard-status-trigger">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem v-for="option in statusOptions" :key="option.value" :value="option.value">
+              <SelectItem
+                v-for="option in statusOptions"
+                :key="option.value"
+                :value="option.value"
+                :data-automation-id="`PoSummaryCard-status-${option.value}`"
+              >
                 {{ option.label }}
               </SelectItem>
             </SelectContent>

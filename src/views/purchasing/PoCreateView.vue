@@ -1,7 +1,9 @@
 <template>
   <AppLayout>
     <div class="p-6 max-w-3xl mx-auto space-y-8">
-      <h1 class="text-xl font-bold">Create Purchase Order</h1>
+      <h1 class="text-xl font-bold" data-automation-id="PoCreateView-title">
+        Create Purchase Order
+      </h1>
 
       <PoSummaryCard
         :po="po"
@@ -15,8 +17,14 @@
       />
 
       <div class="flex justify-end gap-2">
-        <Button variant="secondary" @click="cancel" :disabled="saving">Cancel</Button>
-        <Button :disabled="saving" @click="save">
+        <Button
+          variant="secondary"
+          @click="cancel"
+          :disabled="saving"
+          data-automation-id="PoCreateView-cancel"
+          >Cancel</Button
+        >
+        <Button :disabled="saving" @click="save" data-automation-id="PoCreateView-save">
           <div v-if="saving" class="flex items-center gap-2">
             <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             Creating PO...
