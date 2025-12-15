@@ -6,8 +6,15 @@
           <FileText class="w-6 h-6 text-indigo-600" /> Purchase Orders
         </h1>
         <div class="flex gap-2">
-          <Button @click="goToCreate"> <PlusCircle class="w-4 h-4 mr-2" /> New PO </Button>
-          <Button @click="createFromQuote" variant="secondary" class="px-5 py-2 text-base">
+          <Button @click="goToCreate" data-automation-id="PurchaseOrderView-new-po">
+            <PlusCircle class="w-4 h-4 mr-2" /> New PO
+          </Button>
+          <Button
+            @click="createFromQuote"
+            variant="secondary"
+            class="px-5 py-2 text-base"
+            data-automation-id="PurchaseOrderView-from-quote"
+          >
             <FileSpreadsheet class="w-4 h-4 mr-2" />
             From Quote
           </Button>

@@ -50,6 +50,7 @@
           <div
             v-if="searchQuery.length >= 3"
             class="px-4 py-2 hover:bg-green-50 cursor-pointer border-t border-gray-200 text-green-700 font-medium"
+            data-automation-id="ClientLookup-create-new"
             @mousedown.prevent="handleCreateNew"
           >
             <div class="flex items-center justify-between">

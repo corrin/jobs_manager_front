@@ -117,7 +117,9 @@ s
       </div>
 
       <div class="flex flex-wrap gap-2 justify-end">
-        <Button aria-label="Close" @click="close">Close</Button>
+        <Button aria-label="Close" @click="close" data-automation-id="PurchaseOrderFormView-close"
+          >Close</Button
+        >
       </div>
     </div>
 

@@ -458,7 +458,12 @@ onMounted(() => {
       />
     </div>
     <div class="sticky bottom-0 bg-white z-10 p-2 border-t">
-      <Button class="w-full" :disabled="isColumnDisabled" @click="handleAddLine">
+      <Button
+        class="w-full"
+        :disabled="isColumnDisabled"
+        @click="handleAddLine"
+        data-automation-id="PoLinesTable-add-line"
+      >
         ＋ Add line
       </Button>
     </div>
