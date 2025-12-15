@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures/auth'
 import type { Page } from '@playwright/test'
-import { autoId, createTestJob } from '../fixtures/helpers'
+import { autoId, createTestJob, createTestPurchaseOrder } from '../fixtures/helpers'
 
 /**
  * Tests for purchase order operations.
@@ -10,14 +10,6 @@ import { autoId, createTestJob } from '../fixtures/helpers'
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-/**
- * Navigate to purchase orders list
- */
-async function navigateToPurchaseOrders(page: Page): Promise<void> {
-  await page.goto('/purchasing/po')
-  await page.waitForLoadState('networkidle')
-}
 
 /**
  * Wait for PO autosave to complete
@@ -50,7 +42,6 @@ async function waitForPoAutosave(page: Page): Promise<void> {
 
 test.describe.serial('purchase order operations', () => {
   let poUrl: string
-  let jobUrl: string
   let jobNumber: string
 
   test.beforeAll(async ({ browser }) => {
@@ -67,7 +58,7 @@ test.describe.serial('purchase order operations', () => {
     await page.waitForURL('**/kanban')
 
     // Create a job for PO line assignment testing
-    jobUrl = await createTestJob(page, 'PurchaseOrder')
+    const jobUrl = await createTestJob(page, 'PurchaseOrder')
     console.log(`Created job at: ${jobUrl}`)
 
     // Extract job number from the page
@@ -83,89 +74,42 @@ test.describe.serial('purchase order operations', () => {
       throw new Error(`Failed to extract job number from: "${jobNumberText}"`)
     }
 
-    await context.close()
-  })
-
-  test('create a new purchase order', async ({ authenticatedPage: page }) => {
-    // Generate unique supplier name
-    const randomSuffix = Math.floor(Math.random() * 100000)
-    const supplierName = `E2E Test Supplier ${randomSuffix}`
-
-    // Navigate to purchase orders list
-    await navigateToPurchaseOrders(page)
-
-    // Click New PO button
-    await autoId(page, 'PurchaseOrderView-new-po').click()
-    await page.waitForURL('**/purchasing/po/create')
-
-    // Verify we're on the create page
-    await expect(autoId(page, 'PoCreateView-title')).toContainText('Create Purchase Order')
-
-    // Create a new supplier using Ctrl+Enter (quick create)
-    const supplierInput = autoId(page, 'ClientLookup-input')
-    await supplierInput.fill(supplierName)
-    await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
-    await autoId(page, 'ClientLookup-create-new').waitFor({ timeout: 5000 })
-
-    // Press Ctrl+Enter to quick-create the supplier
-    await supplierInput.press('Control+Enter')
-    await page.waitForTimeout(3000)
-
-    // Verify the Xero badge shows green
-    const xeroIndicator = page.locator('.bg-green-100:has-text("Xero")')
-    await expect(xeroIndicator).toBeVisible({ timeout: 10000 })
-
-    console.log(`Created supplier: ${supplierName}`)
-
-    // Add a reference
-    await autoId(page, 'PoSummaryCard-reference').fill('E2E Test Reference')
-
-    // Save the PO
-    await autoId(page, 'PoCreateView-save').click()
-
-    // Wait for redirect to PO form
-    await page.waitForURL('**/purchasing/po/*', { timeout: 15000 })
-    // Make sure we're not on the create page anymore
-    expect(page.url()).not.toContain('/create')
-
-    poUrl = page.url()
+    // Create a purchase order using helper
+    poUrl = await createTestPurchaseOrder(page)
     console.log(`Created PO at: ${poUrl}`)
 
-    // Verify PO number is displayed
-    await autoId(page, 'PoSummaryCard-po-number').waitFor({ timeout: 10000 })
-    const poNumberText = await autoId(page, 'PoSummaryCard-po-number').innerText()
-    expect(poNumberText).toMatch(/PO #\d+/)
-    console.log(`PO created: ${poNumberText}`)
+    await context.close()
   })
 
   test('add a line item to the purchase order', async ({ authenticatedPage: page }) => {
     // Navigate to the created PO
     await page.goto(poUrl)
     await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(1000)
 
-    // Click Add Line button
+    // Click Add line button to create a new line
     await autoId(page, 'PoLinesTable-add-line').click()
-    await page.waitForTimeout(500)
+    await page.waitForTimeout(1000)
 
-    // Find the new row - look for any table row with inputs
-    const descriptionInput = page.locator('input[placeholder="Description"]').first()
-    await descriptionInput.waitFor({ timeout: 5000 })
+    // Wait for the description input to appear (indicates line was added)
+    const descriptionInput = autoId(page, 'PoLinesTable-description-0')
+    await descriptionInput.waitFor({ timeout: 10000 })
 
     // Fill in line details
     await descriptionInput.fill('Test Material Item')
-    await page.waitForTimeout(200)
+    await page.waitForTimeout(300)
 
-    // Find and fill quantity
-    const qtyInput = page.locator('input[type="number"]').first()
+    // Fill quantity
+    const qtyInput = autoId(page, 'PoLinesTable-quantity-0')
+    await qtyInput.clear()
     await qtyInput.fill('5')
-    await page.waitForTimeout(200)
+    await page.waitForTimeout(300)
 
-    // Find and fill unit cost
-    const costInputs = page.locator('input[type="number"]')
-    // Unit cost is typically the second number input
-    if ((await costInputs.count()) > 1) {
-      await costInputs.nth(1).fill('25.50')
-    }
+    // Fill unit cost
+    const costInput = autoId(page, 'PoLinesTable-unit-cost-0')
+    await costInput.clear()
+    await costInput.fill('25.50')
+    await page.waitForTimeout(300)
 
     // Wait for autosave
     await waitForPoAutosave(page)

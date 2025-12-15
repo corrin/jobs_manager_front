@@ -200,6 +200,57 @@ export async function waitForAutosave(page: Page) {
 }
 
 /**
+ * Create a new purchase order for testing and return its URL
+ */
+export async function createTestPurchaseOrder(page: Page): Promise<string> {
+  const randomSuffix = Math.floor(Math.random() * 100000)
+  const supplierName = `E2E Test Supplier ${randomSuffix}`
+
+  // Navigate to create PO page
+  await page.goto('/purchasing/po/create')
+  await page.waitForLoadState('networkidle')
+
+  // Create a new supplier using Ctrl+Enter
+  const supplierInput = autoId(page, 'ClientLookup-input')
+  await supplierInput.click()
+  await supplierInput.fill(supplierName)
+  await page.waitForTimeout(500)
+  await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
+  await autoId(page, 'ClientLookup-create-new').waitFor({ timeout: 5000 })
+  await supplierInput.press('Control+Enter')
+
+  // Wait for supplier creation
+  await page.waitForTimeout(3000)
+
+  // Verify Xero badge is green
+  const xeroIndicator = page.locator('.bg-green-100:has-text("Xero")')
+  await expect(xeroIndicator).toBeVisible({ timeout: 10000 })
+
+  // Add reference
+  await autoId(page, 'PoSummaryCard-reference').fill(`E2E Test Ref ${randomSuffix}`)
+
+  // Save the PO - wait for the API response
+  const savePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/purchasing/rest/purchase-orders') &&
+      response.request().method() === 'POST' &&
+      response.status() === 201,
+    { timeout: 30000 },
+  )
+
+  await autoId(page, 'PoCreateView-save').click()
+  await savePromise
+
+  // Wait for redirect to PO form
+  await page.waitForURL(/\/purchasing\/po\/[a-f0-9-]+$/, { timeout: 15000 })
+
+  const poUrl = page.url()
+  console.log(`Created PO at: ${poUrl}`)
+
+  return poUrl
+}
+
+/**
  * Create a new job for testing and return its URL
  */
 export async function createTestJob(page: Page, jobNameSuffix: string): Promise<string> {
@@ -208,10 +259,13 @@ export async function createTestJob(page: Page, jobNameSuffix: string): Promise<
 
   await autoId(page, 'AppNavbar-create-job').click()
   await page.waitForURL('**/jobs/create')
+  await page.waitForLoadState('networkidle')
 
   // Search and select client
   const clientInput = autoId(page, 'ClientLookup-input')
+  await clientInput.click()
   await clientInput.fill('ABC')
+  await page.waitForTimeout(500) // Give search time to trigger
   await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
   await page.getByRole('option', { name: /ABC Carpet Cleaning TEST IGNORE/ }).click()
   await expect(clientInput).toHaveValue('ABC Carpet Cleaning TEST IGNORE')

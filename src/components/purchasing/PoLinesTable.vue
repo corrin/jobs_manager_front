@@ -239,6 +239,7 @@ const columns = computed<ColumnDef<PurchaseOrderLine>[]>(() => {
           modelValue: context.row.original.description,
           disabled: isColumnDisabled.value,
           class: 'w-full',
+          'data-automation-id': `PoLinesTable-description-${context.row.index}`,
           onClick: (e: Event) => e.stopPropagation(),
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
@@ -292,6 +293,7 @@ const columns = computed<ColumnDef<PurchaseOrderLine>[]>(() => {
           modelValue: context.row.original.quantity,
           disabled: isColumnDisabled.value,
           class: 'w-20 text-right',
+          'data-automation-id': `PoLinesTable-quantity-${context.row.index}`,
           onClick: (e: Event) => e.stopPropagation(),
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
@@ -314,6 +316,7 @@ const columns = computed<ColumnDef<PurchaseOrderLine>[]>(() => {
           modelValue: context.row.original.unit_cost ?? '',
           disabled: context.row.original.price_tbc || isColumnDisabled.value,
           class: 'w-24 text-right',
+          'data-automation-id': `PoLinesTable-unit-cost-${context.row.index}`,
           onClick: (e: Event) => e.stopPropagation(),
           'onUpdate:modelValue': isColumnDisabled.value
             ? undefined
