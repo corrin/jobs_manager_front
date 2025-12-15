@@ -9,10 +9,17 @@ export function extractErrorMessage(error: unknown, fallbackMessage = 'An error 
 
     if (responseData && typeof responseData === 'object') {
       const data = responseData as Record<string, unknown>
-      const text =
-        (data.error as string | undefined) ||
-        (data.message as string | undefined) ||
-        (data.details as string | undefined)
+      // Prefer details over generic error messages
+      const details = data.details as string | undefined
+      const error = data.error as string | undefined
+      const message = data.message as string | undefined
+
+      // If we have both error and details, combine them for context
+      if (error && details) {
+        return `${error}: ${details}`
+      }
+      // Otherwise return the first available message
+      const text = details || error || message
       if (typeof text === 'string') return text
     }
   }

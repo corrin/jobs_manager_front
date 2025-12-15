@@ -29,7 +29,7 @@ s
           @update:supplier_id="canEditSupplier ? (po.supplier_id = $event) : null"
           @update:reference="!isPoDeleted ? (po.reference = $event) : null"
           @update:expected_delivery="!isPoDeleted ? (po.expected_delivery = $event) : null"
-          @update:status="canEditStatus ? (po.status = $event) : null"
+          @update:status="handleStatusChange"
           @save="saveSummary"
           @sync-xero="syncWithXero"
           @view-xero="viewInXero"
@@ -212,6 +212,11 @@ const canEditStatus = computed(() => !isPoDeleted.value) // Status can be change
 const canShowActions = computed(() => !isPoDeleted.value) // Actions available except when deleted
 const defaultRetailRate = computed(() => receiptStore.getDefaultRetailRate())
 
+// Check if any lines have TBC pricing (costs not yet confirmed)
+const hasUnknownCosts = computed(() => {
+  return po.value.lines.some((line) => line.price_tbc === true)
+})
+
 async function fetchJobs() {
   if (isLoadingJobs.value) return
 
@@ -381,6 +386,20 @@ async function saveSummary() {
     }
     throw err // Re-throw to maintain existing error handling
   }
+}
+
+function handleStatusChange(newStatus: PurchaseOrderStatus) {
+  if (!canEditStatus.value) return
+
+  // Block setting to fully_received if there are TBC items
+  if (newStatus === 'fully_received' && hasUnknownCosts.value) {
+    toast.error(
+      'Cannot mark as fully received until all costs are known. Please untick "Price TBC" on all line items first.',
+    )
+    return
+  }
+
+  po.value.status = newStatus
 }
 
 const handleAddLineEvent = () => {
@@ -1065,7 +1084,15 @@ const updatePoStatusAfterReceipt = async () => {
     const currentStatus = (po.value.status ?? 'draft') as PurchaseOrderStatus
     let newStatus: PurchaseOrderStatus = currentStatus
     if (totalReceived >= totalOrdered) {
-      newStatus = 'fully_received'
+      // Block fully_received if there are TBC items
+      if (hasUnknownCosts.value) {
+        toast.error(
+          'Cannot mark as fully received until all costs are known. Please untick "Price TBC" on all line items first.',
+        )
+        newStatus = 'partially_received'
+      } else {
+        newStatus = 'fully_received'
+      }
     } else if (totalReceived > 0) {
       newStatus = 'partially_received'
     }
