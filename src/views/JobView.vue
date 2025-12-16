@@ -574,7 +574,7 @@ const formatDate = (dateString: string) => {
 const showPdfDialog = ref(false)
 
 function navigateBack() {
-  router.push({ name: 'kanban' })
+  router.back()
 }
 
 async function printJob() {
