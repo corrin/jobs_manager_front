@@ -967,7 +967,8 @@ const WorkshopJob = z
     description: z.string().nullable(),
     job_number: z.number().int(),
     client_name: z.string(),
-    contact_person: z.string(),
+    contact_person: z.string().nullable(),
+    people: z.array(KanbanJobPerson),
   })
   .passthrough()
 const WorkshopPDFResponse = z

@@ -26,6 +26,7 @@
     "manual:screenshots": "npx tsx scripts/capture-screenshots.ts"
   },
   "dependencies": {
+    "@apidevtools/swagger-parser": "^12.1.0",
     "@internationalized/date": "^3.8.2",
     "@tailwindcss/vite": "^4.1.8",
     "@tanstack/vue-table": "^8.21.3",
@@ -45,6 +46,7 @@
     "date-fns": "^4.1.0",
     "event-source-polyfill": "^1.0.31",
     "js-cookie": "^3.0.5",
+    "lodash-es": "^4.17.21",
     "lucide-vue-next": "^0.513.0",
     "openapi-zod-client": "^1.18.3",
     "pdf-vue3": "^1.0.12",

@@ -55,3 +55,6 @@ manual/public/screenshots/
 manual/.vitepress/cache/
 manual/.vitepress/dist/
 dist-manual/
+
+# PNPM related files
+pnpm-lock.yaml
