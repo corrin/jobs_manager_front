@@ -4,14 +4,18 @@ import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { z } from 'zod'
 import { Card, CardHeader, CardTitle, CardContent, CardAction } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import AppLayout from '@/components/AppLayout.vue'
 import router from '@/router'
 import { Contact, NotebookText, Briefcase } from 'lucide-vue-next'
 import { useAppLayout } from '@/composables/useAppLayout'
 import StaffAvatar from '@/components/StaffAvatar.vue'
+import { debugLog } from '@/utils/debug'
+import { toast } from 'vue-sonner'
 
 type Job = z.infer<typeof schemas.WorkshopJob>
 const jobs = ref<Job[]>([])
+const loading = ref(false)
 
 const goToJob = (jobId: string) => {
   router.push(`/jobs/${jobId}`)
@@ -29,7 +33,15 @@ const getJobDescription = (job: Job) => {
 const { userInfo } = useAppLayout()
 
 onMounted(async () => {
-  jobs.value = await api.job_api_jobs_workshop_list()
+  loading.value = true
+  try {
+    jobs.value = await api.job_api_jobs_workshop_list()
+  } catch (error) {
+    debugLog('Error when trying to load jobs for workshop kanban: ', error)
+    toast('Failed to load jobs. Please try again and contact Corrin if the problem persists.')
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
@@ -41,7 +53,7 @@ onMounted(async () => {
       <div
         class="overflow-y-auto bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center"
       >
-        <div class="flex flex-col gap-4 p-2 md:p-4 items-center w-full max-h-200">
+        <div class="flex flex-col gap-4 p-2 md:p-4 items-center w-full max-h-200" v-if="!loading">
           <Card
             v-for="job in jobs"
             :key="job.id"
@@ -79,6 +91,40 @@ onMounted(async () => {
                 <Contact class="inline-block" />
                 Contact: <span class="text-gray font-medium text-lg">{{ job.contact_person }}</span>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+        <div class="flex flex-col gap-4 p-2 md:p-4 items-center w-full max-h-200" v-else>
+          <Card
+            class="w-md hover:ring-2 hover:ring-blue-500 cursor-pointer"
+            v-for="num in [1, 2, 3]"
+            :key="num"
+          >
+            <CardHeader>
+              <CardTitle class="rounded-md text-white text-lg font-semibold mr-auto">
+                <Skeleton class="h-4 w-30" />
+              </CardTitle>
+              <CardAction class="flex gap-1">
+                <Skeleton class="h-12 w-12 rounded-full" />
+              </CardAction>
+            </CardHeader>
+            <CardContent class="flex flex-col gap-2">
+              <!-- <div class="text-xl text-black font-semibold">
+                <Briefcase class="inline-block" />
+                Customer: <span class="text-gray font-medium text-lg">{{ job.client_name }}</span>
+              </div> -->
+              <Skeleton class="h-4 max-w-50" />
+              <!-- <div class="text-xl text-black font-semibold">
+                <NotebookText class="inline-block" />
+                Description:
+                <span class="text-gray font-medium text-lg">{{ getJobDescription(job) }}</span>
+              </div> -->
+              <Skeleton class="h-4 max-w-50" />
+              <!-- <div class="text-xl text-black font-semibold" v-if="job.contact_person">
+                <Contact class="inline-block" />
+                Contact: <span class="text-gray font-medium text-lg">{{ job.contact_person }}</span>
+              </div> -->
+              <Skeleton class="h-4 max-w-50" />
             </CardContent>
           </Card>
         </div>
