@@ -305,7 +305,10 @@ const router = createRouter({
       path: '/kanban/workshop',
       name: 'workshop-kanban',
       component: () => import('@/views/WorkshopView.vue'),
-      meta: { requiresAuth: true, title: 'Workshop Kanban - Jobs Manager' },
+      meta: {
+        requiresAuth: true,
+        title: 'Workshop Kanban - Jobs Manager',
+      },
     },
   ],
 })
