@@ -214,6 +214,7 @@ const deletePo = async (id: string) => {
   if (!confirmed) return
 
   try {
+    await store.fetchOne(id) // Fetch detail to capture ETag
     await store.patch(id, { status: 'deleted' })
 
     await store.fetchOrders()
