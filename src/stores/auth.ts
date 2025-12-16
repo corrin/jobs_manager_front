@@ -30,7 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const fullName = computed(() => {
     if (!user.value) return ''
-    return `${user.value.first_name} ${user.value.last_name}`.trim()
+    return `${user.value.preferred_name || user.value.first_name} ${user.value.last_name}`.trim()
   })
 
   const clearError = (): void => {
