@@ -8,7 +8,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import AppLayout from '@/components/AppLayout.vue'
 import router from '@/router'
 import { Contact, NotebookText, Briefcase } from 'lucide-vue-next'
-import { useAppLayout } from '@/composables/useAppLayout'
 import StaffAvatar from '@/components/StaffAvatar.vue'
 import { debugLog } from '@/utils/debug'
 import { toast } from 'vue-sonner'
@@ -30,8 +29,6 @@ const getJobDescription = (job: Job) => {
   return description.length > 25 ? description.slice(0, 25) + '...' : description
 }
 
-const { userInfo } = useAppLayout()
-
 onMounted(async () => {
   loading.value = true
   try {
@@ -48,7 +45,6 @@ onMounted(async () => {
 <template>
   <AppLayout>
     <div class="h-full w-full min-h-screen flex flex-col justify-start items-center gap-2 py-10">
-      <div class="text-2xl font-bold mb-10">Welcome, {{ userInfo.displayName }}!</div>
       <div class="text-xl font-semibold pt-4">Next jobs</div>
       <div
         class="overflow-y-auto bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center"

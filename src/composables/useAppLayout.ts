@@ -28,16 +28,8 @@ export function useAppLayout() {
   const userInfo = computed(() => {
     const user = authStore.user as Staff | null
     if (!user) {
-      return {
-        displayName: 'Guest',
-        email: '',
-        is_office_staff: false,
-        first_name: '',
-        last_name: '',
-        preferred_name: '',
-        id: '',
-        fullName: '',
-      }
+      authStore.initializeAuth()
+      return
     }
 
     const fullName = authStore.fullName
@@ -45,6 +37,7 @@ export function useAppLayout() {
       displayName: fullName,
       email: user.email || '',
       is_office_staff: typeof user.is_office_staff === 'boolean' ? user.is_office_staff : false,
+      is_superuser: user.is_superuser,
       first_name: user.first_name || '',
       last_name: user.last_name || '',
       preferred_name: user.preferred_name || '',
