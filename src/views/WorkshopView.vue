@@ -44,16 +44,23 @@ onMounted(async () => {
 
 <template>
   <AppLayout>
-    <div class="h-full w-full min-h-screen flex flex-col justify-start items-center gap-2 py-10">
-      <div class="text-xl font-semibold pt-4">Next jobs</div>
+    <div
+      class="h-full w-full min-h-screen flex flex-col justify-start items-center gap-4 py-10 px-3 sm:px-6 lg:py-14 lg:px-12 xl:px-24"
+    >
+      <div class="text-xl font-semibold pt-2 text-center w-full lg:text-2xl lg:max-w-5xl">
+        Next jobs
+      </div>
       <div
-        class="overflow-y-auto bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center"
+        class="overflow-y-auto bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center md:w-full max-w-2xl sm:max-w-3xl lg:max-w-6xl xl:max-w-7xl lg:overflow-visible"
       >
-        <div class="flex flex-col gap-4 p-2 md:p-4 items-center w-full max-h-215" v-if="!loading">
+        <div
+          class="flex flex-col gap-4 p-3 md:p-4 items-center w-full max-h-215 lg:max-h-none lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-6 xl:gap-8 lg:items-stretch"
+          v-if="!loading"
+        >
           <Card
             v-for="job in jobs"
             :key="job.id"
-            class="w-md hover:ring-2 hover:ring-blue-500 cursor-pointer"
+            class="w-full max-w-md hover:ring-2 hover:ring-blue-500 cursor-pointer lg:max-w-none lg:h-full"
             @click="goToJob(job.id)"
           >
             <CardHeader>
@@ -90,9 +97,12 @@ onMounted(async () => {
             </CardContent>
           </Card>
         </div>
-        <div class="flex flex-col gap-4 p-2 md:p-4 items-center w-full max-h-200" v-else>
+        <div
+          class="flex flex-col gap-4 p-3 md:p-4 items-center w-full max-h-200 lg:max-h-none lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-6 xl:gap-8 lg:items-stretch"
+          v-else
+        >
           <Card
-            class="w-md hover:ring-2 hover:ring-blue-500 cursor-pointer"
+            class="w-full max-w-md hover:ring-2 hover:ring-blue-500 cursor-pointer lg:max-w-none lg:h-full"
             v-for="num in [1, 2, 3]"
             :key="num"
           >
