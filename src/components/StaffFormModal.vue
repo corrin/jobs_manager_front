@@ -7,18 +7,12 @@
       <form @submit.prevent="submitForm" class="space-y-4">
         <!-- Tab Navigation -->
         <div class="flex border-b mb-2 gap-2">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            type="button"
-            :class="[
-              'px-4 py-2 font-medium',
-              activeTab === tab.key
-                ? 'border-b-2 border-indigo-600 text-indigo-700'
-                : 'text-gray-500',
-            ]"
-            @click="activeTab = tab.key"
-          >
+          <button v-for="tab in tabs" :key="tab.key" type="button" :class="[
+            'px-4 py-2 font-medium',
+            activeTab === tab.key
+              ? 'border-b-2 border-indigo-600 text-indigo-700'
+              : 'text-gray-500',
+          ]" @click="activeTab = tab.key">
             <span v-if="tab.icon" :class="'mr-2'">
               <component :is="tab.icon" class="inline w-4 h-4 align-text-bottom" />
             </span>
@@ -39,14 +33,8 @@
           </div>
           <div class="flex gap-2">
             <div class="w-1/2">
-              <label class="block text-sm font-medium mb-1" for="preferred_name"
-                >Preferred Name</label
-              >
-              <Input
-                id="preferred_name"
-                v-model="form.preferred_name"
-                placeholder="Preferred Name"
-              />
+              <label class="block text-sm font-medium mb-1" for="preferred_name">Preferred Name</label>
+              <Input id="preferred_name" v-model="form.preferred_name" placeholder="Preferred Name" />
             </div>
             <div class="w-1/2">
               <label class="block text-sm font-medium mb-1" for="email">E-mail</label>
@@ -56,26 +44,14 @@
           <div class="flex gap-2">
             <div class="w-1/2">
               <label class="block text-sm font-medium mb-1" for="password">Password</label>
-              <Input
-                id="password"
-                v-model="form.password"
-                type="password"
-                placeholder="Password"
-                :required="!props.staff"
-              />
+              <Input id="password" v-model="form.password" type="password" placeholder="Password"
+                :required="!props.staff" />
             </div>
             <div class="w-1/2">
-              <label class="block text-sm font-medium mb-1" for="password_confirmation"
-                >Confirm Password</label
-              >
-              <Input
-                id="password_confirmation"
-                v-model="form.password_confirmation"
-                type="password"
-                placeholder="Confirm Password"
-                :required="!props.staff"
-                :class="{ 'border-red-500 focus:ring-red-500': passwordMismatch }"
-              />
+              <label class="block text-sm font-medium mb-1" for="password_confirmation">Confirm Password</label>
+              <Input id="password_confirmation" v-model="form.password_confirmation" type="password"
+                placeholder="Confirm Password" :required="!props.staff"
+                :class="{ 'border-red-500 focus:ring-red-500': passwordMismatch }" />
               <p v-if="passwordMismatch" class="text-sm text-red-600 mt-1">
                 Passwords do not match
               </p>
@@ -83,45 +59,25 @@
           </div>
           <div class="flex gap-2">
             <div class="w-1/2">
-              <label class="block text-sm font-medium mb-1" for="wage_rate"
-                >Wage Rate (NZD/hour)</label
-              >
-              <Input
-                id="wage_rate"
-                v-model="form.wage_rate"
-                type="number"
-                placeholder="Wage Rate"
-                min="0"
-                step="0.01"
-              />
+              <label class="block text-sm font-medium mb-1" for="wage_rate">Wage Rate (NZD/hour)</label>
+              <Input id="wage_rate" v-model="form.wage_rate" type="number" placeholder="Wage Rate" min="0"
+                step="0.01" />
             </div>
             <div class="w-1/2">
-              <label class="block text-sm font-medium mb-1" for="ims_payroll_id"
-                >IMS Payroll ID</label
-              >
-              <Input
-                id="ims_payroll_id"
-                v-model="form.ims_payroll_id"
-                placeholder="IMS Payroll ID"
-              />
+              <label class="block text-sm font-medium mb-1" for="ims_payroll_id">IMS Payroll ID</label>
+              <Input id="ims_payroll_id" v-model="form.ims_payroll_id" placeholder="IMS Payroll ID" />
             </div>
           </div>
           <div class="flex justify-center mt-2">
             <div>
               <label class="block text-sm font-medium mb-1 text-center">Profile Icon/Image</label>
-              <label
-                class="relative group cursor-pointer"
-                tabindex="0"
-                @keydown.enter.prevent="avatarInput?.click()"
-                :aria-label="
-                  form.first_name || form.last_name
+              <label class="relative group cursor-pointer" tabindex="0" @keydown.enter.prevent="avatarInput?.click()"
+                :aria-label="form.first_name || form.last_name
                     ? `${form.first_name} ${form.last_name}`
                     : 'User avatar'
-                "
-              >
+                  ">
                 <div
-                  class="avatar-upload flex items-center justify-center rounded-full bg-indigo-100 border-2 border-indigo-300 w-16 h-16 text-xl font-bold text-indigo-700 overflow-hidden transition-all duration-150 group-hover:ring-4 group-hover:ring-indigo-300 group-hover:opacity-90 mx-auto"
-                >
+                  class="avatar-upload flex items-center justify-center rounded-full bg-indigo-100 border-2 border-indigo-300 w-16 h-16 text-xl font-bold text-indigo-700 overflow-hidden transition-all duration-150 group-hover:ring-4 group-hover:ring-indigo-300 group-hover:opacity-90 mx-auto">
                   <template v-if="iconUrl">
                     <img :src="iconUrl" alt="Profile image" class="object-cover w-full h-full" />
                   </template>
@@ -129,31 +85,15 @@
                     {{ initials }}
                   </template>
                   <div
-                    class="absolute inset-0 flex flex-col items-center justify-center bg-indigo-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10"
-                  >
-                    <svg
-                      class="w-6 h-6 text-white mb-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        d="M12 16v-4m0 0V8m0 4h4m-4 0H8"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
+                    class="absolute inset-0 flex flex-col items-center justify-center bg-indigo-900/60 opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-10">
+                    <svg class="w-6 h-6 text-white mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 16v-4m0 0V8m0 4h4m-4 0H8" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
                     </svg>
                     <span class="text-xs text-white">Change</span>
                   </div>
                 </div>
-                <input
-                  ref="avatarInput"
-                  type="file"
-                  accept="image/*"
-                  class="hidden"
-                  @change="onFileChange"
-                />
+                <input ref="avatarInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
               </label>
             </div>
           </div>
@@ -162,120 +102,61 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-sm font-medium mb-1" for="hours_mon">Monday Hours</label>
-              <Input
-                id="hours_mon"
-                v-model.number="form.hours_mon"
-                type="number"
-                min="0"
-                max="24"
-                step="0.25"
-                placeholder="Monday Hours"
-              />
+              <Input id="hours_mon" v-model.number="form.hours_mon" type="number" min="0" max="24" step="0.25"
+                placeholder="Monday Hours" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-1" for="hours_tue">Tuesday Hours</label>
-              <Input
-                id="hours_tue"
-                v-model.number="form.hours_tue"
-                type="number"
-                min="0"
-                max="24"
-                step="0.25"
-                placeholder="Tuesday Hours"
-              />
+              <Input id="hours_tue" v-model.number="form.hours_tue" type="number" min="0" max="24" step="0.25"
+                placeholder="Tuesday Hours" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-1" for="hours_wed">Wednesday Hours</label>
-              <Input
-                id="hours_wed"
-                v-model.number="form.hours_wed"
-                type="number"
-                min="0"
-                max="24"
-                step="0.25"
-                placeholder="Wednesday Hours"
-              />
+              <Input id="hours_wed" v-model.number="form.hours_wed" type="number" min="0" max="24" step="0.25"
+                placeholder="Wednesday Hours" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-1" for="hours_thu">Thursday Hours</label>
-              <Input
-                id="hours_thu"
-                v-model.number="form.hours_thu"
-                type="number"
-                min="0"
-                max="24"
-                step="0.25"
-                placeholder="Thursday Hours"
-              />
+              <Input id="hours_thu" v-model.number="form.hours_thu" type="number" min="0" max="24" step="0.25"
+                placeholder="Thursday Hours" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-1" for="hours_fri">Friday Hours</label>
-              <Input
-                id="hours_fri"
-                v-model.number="form.hours_fri"
-                type="number"
-                min="0"
-                max="24"
-                step="0.25"
-                placeholder="Friday Hours"
-              />
+              <Input id="hours_fri" v-model.number="form.hours_fri" type="number" min="0" max="24" step="0.25"
+                placeholder="Friday Hours" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-1" for="hours_sat">Saturday Hours</label>
-              <Input
-                id="hours_sat"
-                v-model.number="form.hours_sat"
-                type="number"
-                min="0"
-                max="24"
-                step="0.25"
-                placeholder="Saturday Hours"
-              />
+              <Input id="hours_sat" v-model.number="form.hours_sat" type="number" min="0" max="24" step="0.25"
+                placeholder="Saturday Hours" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-1" for="hours_sun">Sunday Hours</label>
-              <Input
-                id="hours_sun"
-                v-model.number="form.hours_sun"
-                type="number"
-                min="0"
-                max="24"
-                step="0.25"
-                placeholder="Sunday Hours"
-              />
+              <Input id="hours_sun" v-model.number="form.hours_sun" type="number" min="0" max="24" step="0.25"
+                placeholder="Sunday Hours" />
             </div>
           </div>
         </div>
         <div v-show="activeTab === 'permissions'" class="space-y-2">
           <div class="flex gap-2 items-center">
-            <label class="flex items-center gap-2"
-              ><input type="checkbox" v-model="form.is_staff" /> Staff</label
-            >
-            <label class="flex items-center gap-2"
-              ><input type="checkbox" v-model="form.is_superuser" /> Superuser</label
-            >
+            <label class="flex items-center gap-2"><input type="checkbox" v-model="form.is_office_staff" />
+              Staff</label>
+            <label class="flex items-center gap-2"><input type="checkbox" v-model="form.is_superuser" />
+              Superuser</label>
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1" for="groups"
-              >Groups (IDs, comma separated)</label
-            >
+            <label class="block text-sm font-medium mb-1" for="groups">Groups (IDs, comma separated)</label>
             <Input id="groups" v-model="form.groups" placeholder="Group IDs (comma separated)" />
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1" for="user_permissions"
-              >Permissions (IDs, comma separated)</label
-            >
-            <Input
-              id="user_permissions"
-              v-model="form.user_permissions"
-              placeholder="Permission IDs (comma separated)"
-            />
+            <label class="block text-sm font-medium mb-1" for="user_permissions">Permissions (IDs, comma
+              separated)</label>
+            <Input id="user_permissions" v-model="form.user_permissions"
+              placeholder="Permission IDs (comma separated)" />
           </div>
         </div>
         <DialogFooter class="flex gap-2 justify-end">
-          <Button variant="ghost" type="button" @click="handleClose" :disabled="isLoading"
-            >Cancel</Button
-          >
+          <Button variant="ghost" type="button" @click="handleClose" :disabled="isLoading">Cancel</Button>
           <Button type="submit" :disabled="isLoading">
             <div v-if="isLoading" class="flex items-center gap-2">
               <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -360,7 +241,7 @@ const form = ref({
   hours_fri: 0,
   hours_sat: 0,
   hours_sun: 0,
-  is_staff: false,
+  is_office_staff: false,
   is_superuser: false,
   groups: '',
   user_permissions: '',
@@ -419,7 +300,7 @@ watch(
         hours_fri: staff.hours_fri || 0,
         hours_sat: staff.hours_sat || 0,
         hours_sun: staff.hours_sun || 0,
-        is_staff: staff.is_staff || false,
+        is_office_staff: staff.is_office_staff || false,
         is_superuser: staff.is_superuser || false,
         // Convert arrays of numbers to comma-separated strings for form fields
         groups:
@@ -455,7 +336,7 @@ watch(
         hours_fri: 0,
         hours_sat: 0,
         hours_sun: 0,
-        is_staff: false,
+        is_office_staff: false,
         is_superuser: false,
         groups: '',
         user_permissions: '',
@@ -497,7 +378,7 @@ async function submitForm() {
     ...(form.value.password && { password: form.value.password }),
     wage_rate: form.value.wage_rate,
     ims_payroll_id: form.value.ims_payroll_id || null,
-    is_staff: form.value.is_staff,
+    is_office_staff: form.value.is_office_staff,
     is_superuser: form.value.is_superuser,
     hours_mon: form.value.hours_mon,
     hours_tue: form.value.hours_tue,
@@ -510,16 +391,16 @@ async function submitForm() {
     groups:
       form.value.groups && form.value.groups.trim()
         ? form.value.groups
-            .split(',')
-            .map((g) => Number(g.trim()))
-            .filter((g) => !isNaN(g))
+          .split(',')
+          .map((g) => Number(g.trim()))
+          .filter((g) => !isNaN(g))
         : [],
     user_permissions:
       form.value.user_permissions && form.value.user_permissions.trim()
         ? form.value.user_permissions
-            .split(',')
-            .map((p) => Number(p.trim()))
-            .filter((p) => !isNaN(p))
+          .split(',')
+          .map((p) => Number(p.trim()))
+          .filter((p) => !isNaN(p))
         : [],
     // Handle datetime fields - only include if valid
     ...(form.value.last_login &&
@@ -551,7 +432,7 @@ async function submitForm() {
       email: form.value.email,
       wage_rate: form.value.wage_rate,
       ims_payroll_id: form.value.ims_payroll_id || null,
-      is_staff: form.value.is_staff,
+      is_office_staff: form.value.is_office_staff,
       is_superuser: form.value.is_superuser,
       hours_mon: form.value.hours_mon,
       hours_tue: form.value.hours_tue,
@@ -564,16 +445,16 @@ async function submitForm() {
       groups:
         form.value.groups && form.value.groups.trim()
           ? form.value.groups
-              .split(',')
-              .map((g) => Number(g.trim()))
-              .filter((g) => !isNaN(g))
+            .split(',')
+            .map((g) => Number(g.trim()))
+            .filter((g) => !isNaN(g))
           : [],
       user_permissions:
         form.value.user_permissions && form.value.user_permissions.trim()
           ? form.value.user_permissions
-              .split(',')
-              .map((p) => Number(p.trim()))
-              .filter((p) => !isNaN(p))
+            .split(',')
+            .map((p) => Number(p.trim()))
+            .filter((p) => !isNaN(p))
           : [],
       // Handle datetime fields properly - omit if empty, include if valid
       ...(form.value.last_login &&

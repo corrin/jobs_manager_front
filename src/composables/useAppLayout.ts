@@ -31,7 +31,7 @@ export function useAppLayout() {
       return {
         displayName: 'Guest',
         email: '',
-        is_staff: false,
+        is_office_staff: false,
         first_name: '',
         last_name: '',
         preferred_name: '',
@@ -44,7 +44,7 @@ export function useAppLayout() {
     return {
       displayName: fullName,
       email: user.email || '',
-      is_staff: typeof user.is_staff === 'boolean' ? user.is_staff : false,
+      is_office_staff: typeof user.is_office_staff === 'boolean' ? user.is_office_staff : false,
       first_name: user.first_name || '',
       last_name: user.last_name || '',
       preferred_name: user.preferred_name || '',
