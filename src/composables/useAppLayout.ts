@@ -29,7 +29,7 @@ export function useAppLayout() {
     const user = authStore.user as Staff | null
     if (!user) {
       authStore.initializeAuth()
-      return
+      throw new Error('Could not load user information')
     }
 
     const fullName = authStore.fullName

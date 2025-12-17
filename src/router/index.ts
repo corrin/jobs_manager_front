@@ -23,6 +23,7 @@ const router = createRouter({
       component: LoginView,
       meta: {
         requiresGuest: true,
+        allowWorkshopStaff: true,
         title: 'Login - Jobs Manager',
       },
     },
@@ -32,6 +33,7 @@ const router = createRouter({
       component: KanbanView,
       meta: {
         requiresAuth: true,
+        allowWorkshopStaff: true,
         title: 'Kanban Board - Jobs Manager',
       },
     },
@@ -50,6 +52,7 @@ const router = createRouter({
       component: () => import('@/views/JobView.vue'),
       meta: {
         requiresAuth: true,
+        allowWorkshopStaff: true,
         title: 'Job - Jobs Manager',
       },
     },
@@ -314,6 +317,7 @@ const router = createRouter({
       component: () => import('@/views/WorkshopView.vue'),
       meta: {
         requiresAuth: true,
+        allowWorkshopStaff: true,
         title: 'Workshop Kanban - Jobs Manager',
       },
     },
@@ -349,7 +353,16 @@ router.beforeEach(async (to, from, next) => {
     toast.error('You are not allowed to visit this page.', {
       description: 'Please try again or contact Corrin if you think this is a mistake.',
     })
-    next({ name: 'kanban' })
+    next('/')
+    return
+  }
+
+  if (!to.meta.allowWorkshopStaff && !authStore.user?.is_office_staff) {
+    toast.error('You are not allowed to visit this page.', {
+      description: 'Please try again or contact Corrin if you think this is a mistake.',
+    })
+    next('/')
+    return
   }
 
   next()

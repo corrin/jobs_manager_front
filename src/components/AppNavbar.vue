@@ -21,6 +21,7 @@
 
       <div class="hidden lg:flex items-center space-x-6">
         <router-link
+          v-if="userInfo.is_office_staff"
           to="/jobs/create"
           class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium"
           data-automation-id="AppNavbar-create-job"
@@ -380,6 +381,7 @@
           <div class="grid grid-cols-1 gap-3">
             <div class="space-y-3">
               <router-link
+                v-if="userInfo.is_office_staff"
                 to="/jobs/create"
                 class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
                 data-automation-id="AppNavbar-create-job-mobile"
