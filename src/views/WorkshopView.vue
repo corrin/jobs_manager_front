@@ -53,7 +53,7 @@ onMounted(async () => {
       <div
         class="overflow-y-auto bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center"
       >
-        <div class="flex flex-col gap-4 p-2 md:p-4 items-center w-full max-h-200" v-if="!loading">
+        <div class="flex flex-col gap-4 p-2 md:p-4 items-center w-full max-h-215" v-if="!loading">
           <Card
             v-for="job in jobs"
             :key="job.id"

@@ -168,8 +168,19 @@ const togglePasswordVisibility = () => {
 }
 
 onMounted(async () => {
+  if (!authStore.user && !authStore.hasCheckedSession) {
+    await authStore.initializeAuth()
+  }
+
   if (authStore.isAuthenticated) {
-    await router.push({ name: 'kanban' })
+    switch (authStore.user?.is_office_staff) {
+      case true:
+        await router.push({ name: 'kanban' })
+        break
+      case false:
+        await router.push({ name: 'workshop-kanban' })
+        break
+    }
   }
 })
 </script>

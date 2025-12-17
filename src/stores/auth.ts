@@ -25,6 +25,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const hasCheckedSession = ref(false)
 
   const isAuthenticated = computed(() => !!user.value)
 
@@ -53,6 +54,8 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       user.value = null
       return false
+    } finally {
+      hasCheckedSession.value = true
     }
   }
 
@@ -139,6 +142,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     isLoading,
     error,
+    hasCheckedSession,
 
     isAuthenticated,
     fullName,

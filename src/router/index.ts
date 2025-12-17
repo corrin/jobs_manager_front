@@ -2,13 +2,20 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import LoginView from '@/views/LoginView.vue'
 import KanbanView from '@/views/KanbanView.vue'
+import { toast } from 'vue-sonner'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: '/kanban',
+      redirect: () => {
+        if (useAuthStore().user?.is_office_staff) {
+          return '/kanban'
+        } else {
+          return '/kanban/workshop'
+        }
+      },
     },
     {
       path: '/login',
@@ -320,9 +327,14 @@ router.beforeEach(async (to, from, next) => {
     document.title = to.meta.title as string
   }
 
-  if (to.name === 'login') {
-    next()
-    return
+  if (to.meta.requiresGuest) {
+    if (!authStore.user && !authStore.hasCheckedSession) {
+      await authStore.initializeAuth()
+    }
+    if (authStore.isAuthenticated) {
+      next(authStore.user?.is_office_staff ? { name: 'kanban' } : { name: 'workshop-kanban' })
+      return
+    }
   }
 
   if (to.meta.requiresAuth) {
@@ -333,9 +345,11 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  if (to.meta.requiresGuest && authStore.isAuthenticated) {
+  if (to.meta.requiresSuperUser && !authStore.user?.is_superuser) {
+    toast.error('You are not allowed to visit this page.', {
+      description: 'Please try again or contact Corrin if you think this is a mistake.',
+    })
     next({ name: 'kanban' })
-    return
   }
 
   next()
