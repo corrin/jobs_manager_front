@@ -116,6 +116,9 @@ s
         </div>
       </div>
 
+      <!-- Comments Section -->
+      <PoCommentsSection v-if="orderId" :po-id="orderId" />
+
       <div class="flex flex-wrap gap-2 justify-end">
         <Button aria-label="Close" @click="close" data-automation-id="PurchaseOrderFormView-close"
           >Close</Button
@@ -143,6 +146,7 @@ import { Button } from '@/components/ui/button'
 import PoSummaryCard from '@/components/purchasing/PoSummaryCard.vue'
 import PoLinesTable from '@/components/purchasing/PoLinesTable.vue'
 import PoPdfDialog from '@/components/purchasing/PoPdfDialog.vue'
+import PoCommentsSection from '@/components/purchasing/PoCommentsSection.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { useXeroItemStore } from '@/stores/xeroItemStore'
