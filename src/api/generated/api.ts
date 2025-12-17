@@ -1992,6 +1992,9 @@ const ProductMappingValidateResponse = z
     updated_products_count: z.number().int().optional(),
   })
   .passthrough()
+const PurchaseOrderJob = z
+  .object({ job_number: z.string(), name: z.string(), client: z.string() })
+  .passthrough()
 const PurchaseOrderList = z
   .object({
     id: z.string().uuid(),
@@ -2000,6 +2003,7 @@ const PurchaseOrderList = z
     order_date: z.string(),
     supplier: z.string(),
     supplier_id: z.string().uuid().nullable(),
+    jobs: z.array(PurchaseOrderJob),
   })
   .passthrough()
 const PurchaseOrderLineCreateRequest = z
@@ -2218,6 +2222,24 @@ const PurchaseOrderEmailResponse = z
     message: z.string().optional(),
   })
   .passthrough()
+const PurchaseOrderEvent = z
+  .object({
+    id: z.string().uuid(),
+    description: z.string(),
+    timestamp: z.string().datetime({ offset: true }).optional(),
+    staff: z.string(),
+  })
+  .passthrough()
+const PurchaseOrderEventsResponse = z.object({ events: z.array(PurchaseOrderEvent) }).passthrough()
+const PurchasingErrorResponse = z
+  .object({ error: z.string(), details: z.string().optional() })
+  .passthrough()
+const PurchaseOrderEventCreateRequest = z
+  .object({ description: z.string().min(1).max(500) })
+  .passthrough()
+const PurchaseOrderEventCreateResponse = z
+  .object({ success: z.boolean(), event: PurchaseOrderEvent })
+  .passthrough()
 const AllocationTypeEnum = z.enum(['job', 'stock'])
 const AllocationDeleteRequest = z
   .object({
@@ -2234,9 +2256,6 @@ const AllocationDeleteResponse = z
     job_name: z.string().optional(),
     updated_received_quantity: z.number().optional(),
   })
-  .passthrough()
-const PurchasingErrorResponse = z
-  .object({ error: z.string(), details: z.string().optional() })
   .passthrough()
 const SourceEnum = z.enum(['purchase_order', 'split_from_stock', 'manual', 'product_catalog'])
 const StockItem = z
@@ -2849,6 +2868,7 @@ export const schemas = {
   ProductMappingListResponse,
   ProductMappingValidateRequest,
   ProductMappingValidateResponse,
+  PurchaseOrderJob,
   PurchaseOrderList,
   PurchaseOrderLineCreateRequest,
   PurchaseOrderCreateRequest,
@@ -2870,10 +2890,14 @@ export const schemas = {
   AllocationDetailsResponse,
   PurchaseOrderEmailRequest,
   PurchaseOrderEmailResponse,
+  PurchaseOrderEvent,
+  PurchaseOrderEventsResponse,
+  PurchasingErrorResponse,
+  PurchaseOrderEventCreateRequest,
+  PurchaseOrderEventCreateResponse,
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
-  PurchasingErrorResponse,
   SourceEnum,
   StockItem,
   StockItemRequest,
@@ -6196,6 +6220,57 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         status: 400,
         schema: PurchaseOrderEmailResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/purchasing/rest/purchase-orders/:po_id/events/',
+    alias: 'listPurchaseOrderEvents',
+    description: `List all events/comments for a purchase order.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: PurchaseOrderEventsResponse,
+    errors: [
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/purchasing/rest/purchase-orders/:po_id/events/',
+    alias: 'createPurchaseOrderEvent',
+    description: `Create a new event/comment on a purchase order.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ description: z.string().min(1).max(500) }).passthrough(),
+      },
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: PurchaseOrderEventCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: PurchasingErrorResponse,
+      },
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
       },
     ],
   },

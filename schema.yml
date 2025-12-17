@@ -4933,6 +4933,81 @@ paths:
               schema:
                 $ref: '#/components/schemas/PurchaseOrderEmailResponse'
           description: ''
+  /purchasing/rest/purchase-orders/{po_id}/events/:
+    get:
+      operationId: listPurchaseOrderEvents
+      description: List all events/comments for a purchase order.
+      parameters:
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Purchase Orders
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderEventsResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+    post:
+      operationId: createPurchaseOrderEvent
+      description: Create a new event/comment on a purchase order.
+      parameters:
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Purchase Orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEventCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEventCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEventCreateRequest'
+        required: true
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderEventCreateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
   /purchasing/rest/purchase-orders/{po_id}/lines/{line_id}/allocations/delete/:
     post:
       operationId: deleteAllocation
@@ -12006,6 +12081,71 @@ components:
           type: string
       required:
         - success
+    PurchaseOrderEvent:
+      type: object
+      description: Serializer for PurchaseOrderEvent model - read-only for frontend.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        staff:
+          type: string
+          readOnly: true
+      required:
+        - description
+        - id
+        - staff
+    PurchaseOrderEventCreateRequest:
+      type: object
+      description: Serializer for purchase order event creation request.
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+        - description
+    PurchaseOrderEventCreateResponse:
+      type: object
+      description: Serializer for purchase order event creation response.
+      properties:
+        success:
+          type: boolean
+        event:
+          $ref: '#/components/schemas/PurchaseOrderEvent'
+      required:
+        - event
+        - success
+    PurchaseOrderEventsResponse:
+      type: object
+      description: Serializer for purchase order events list response.
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseOrderEvent'
+      required:
+        - events
+    PurchaseOrderJob:
+      type: object
+      description: Serializer for job info within a purchase order listing.
+      properties:
+        job_number:
+          type: string
+        name:
+          type: string
+        client:
+          type: string
+      required:
+        - client
+        - job_number
+        - name
     PurchaseOrderLine:
       type: object
       description: Serializer for PurchaseOrderLine model.
@@ -12310,8 +12450,13 @@ components:
           type: string
           format: uuid
           nullable: true
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseOrderJob'
       required:
         - id
+        - jobs
         - order_date
         - po_number
         - status

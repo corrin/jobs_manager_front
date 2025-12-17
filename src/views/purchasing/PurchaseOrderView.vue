@@ -29,7 +29,7 @@
           <input
             v-model="searchTerm"
             type="text"
-            placeholder="Search by PO #, Supplier, or Status..."
+            placeholder="Search by PO #, Job, Supplier, or Status..."
             class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
@@ -42,6 +42,7 @@
           <thead class="bg-slate-50 border-b">
             <tr>
               <th class="p-3 text-left font-semibold">PO #</th>
+              <th class="p-3 text-left font-semibold">Jobs</th>
               <th class="p-3 text-left font-semibold">Supplier</th>
               <th class="p-3 text-left font-semibold">Date</th>
               <th class="p-3 text-left font-semibold">Status</th>
@@ -55,7 +56,15 @@
               class="border-b hover:bg-slate-50"
               :class="{ 'opacity-60 bg-red-50': isPoDeleted(normalizeStatus(po.status)) }"
             >
-              <td class="p-3">{{ po.po_number }}</td>
+              <td class="p-3">
+                <a
+                  @click="openRow(po.id)"
+                  class="text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
+                >
+                  {{ po.po_number }}
+                </a>
+              </td>
+              <td class="p-3">{{ formatJobs(po.jobs) }}</td>
               <td class="p-3">{{ po.supplier }}</td>
               <td class="p-3">{{ formatDate(po.order_date) }}</td>
               <td class="p-3">
@@ -141,10 +150,12 @@ const filteredOrders = computed(() => {
   const term = searchTerm.value.toLowerCase()
   return orders.value.filter((po) => {
     const statusValue = normalizeStatus(po.status)
+    const jobsMatch = po.jobs?.some((job) => job.job_number.toLowerCase().includes(term))
     return (
       po.po_number.toLowerCase().includes(term) ||
       po.supplier.toLowerCase().includes(term) ||
-      formatStatus(statusValue).toLowerCase().includes(term)
+      formatStatus(statusValue).toLowerCase().includes(term) ||
+      jobsMatch
     )
   })
 })
@@ -193,6 +204,15 @@ const formatDate = (date: string) => {
     month: '2-digit',
     day: '2-digit',
   })
+}
+
+type PurchaseOrderJob = { job_number: string; name: string; client: string }
+
+const formatJobs = (jobs: PurchaseOrderJob[]) => {
+  if (!jobs || jobs.length === 0) return '—'
+  if (jobs.length === 1) return jobs[0].job_number
+  if (jobs.length === 2) return `${jobs[0].job_number}, ${jobs[1].job_number}`
+  return `${jobs[0].job_number} +${jobs.length - 1} others`
 }
 
 const openRow = (id: string) => router.push(`/purchasing/po/${id}`)
