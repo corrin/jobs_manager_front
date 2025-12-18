@@ -1,6 +1,7 @@
 import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
+import { toLocalDateString } from '@/utils/dateUtils'
 import { formatCurrency } from '@/utils/string-formatting'
 import type { z } from 'zod'
 
@@ -73,7 +74,7 @@ class KPIService {
   }
 
   formatDateForAPI(date: Date): string {
-    return date.toISOString().split('T')[0]
+    return toLocalDateString(date)
   }
 
   formatCurrency(value: number): string {

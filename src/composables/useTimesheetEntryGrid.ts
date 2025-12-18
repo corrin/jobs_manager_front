@@ -17,6 +17,7 @@ import type {
 import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
 import { formatCurrency } from '@/utils/string-formatting'
+import { toLocalDateString } from '@/utils/dateUtils'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
 import { type TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
@@ -746,7 +747,7 @@ export function useTimesheetEntryGrid(
     const rowNode = gridApi.value!.getRowNode(String(rowIndex))
     if (rowNode) {
       const currentStaffId = staffId || rowNode.data.staffId || ''
-      const date = rowNode.data.date || new Date().toISOString().split('T')[0]
+      const date = rowNode.data.date || toLocalDateString()
 
       // Use actual staff data if provided, otherwise create minimal staff member
       const staffMember =
@@ -820,7 +821,7 @@ export function useTimesheetEntryGrid(
   }
 
   function addNewRow(staffId?: string, date?: string, staffData?: TimesheetEntryStaffMember): void {
-    const currentDate = date || new Date().toISOString().split('T')[0]
+    const currentDate = date || toLocalDateString()
 
     // MUST use actual staff data - NO FALLBACKS
     if (!staffData) {

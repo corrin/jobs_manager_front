@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { z } from 'zod'
 import { schemas } from '../api/generated/api'
 import { api } from '@/api/client'
+import { toLocalDateString } from '@/utils/dateUtils'
 
 type Staff = z.infer<typeof schemas.Staff>
 type StaffCreate = z.infer<typeof schemas.StaffCreateRequest>
@@ -83,7 +84,7 @@ export function useStaffApi() {
     try {
       // Explicitly pass today's date to avoid backend warning
       // Pass actual_users: 'true' to exclude system/test accounts
-      const today = new Date().toISOString().split('T')[0]
+      const today = toLocalDateString()
       const result = await api.accounts_api_staff_all_list({
         queries: { date: today, actual_users: 'true' },
       })

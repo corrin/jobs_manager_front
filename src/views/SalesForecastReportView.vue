@@ -420,6 +420,23 @@
                         <ArrowUpDown v-else class="w-3 h-3 text-gray-300" />
                       </div>
                     </th>
+                    <th
+                      class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                      @click="toggleSort('variance_all_time')"
+                    >
+                      <div class="flex items-center justify-end gap-1">
+                        All-Time Δ
+                        <ArrowUp
+                          v-if="sortField === 'variance_all_time' && sortDirection === 'asc'"
+                          class="w-3 h-3"
+                        />
+                        <ArrowDown
+                          v-else-if="sortField === 'variance_all_time' && sortDirection === 'desc'"
+                          class="w-3 h-3"
+                        />
+                        <ArrowUpDown v-else class="w-3 h-3 text-gray-300" />
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -480,6 +497,18 @@
                       :class="row.variance >= 0 ? 'text-green-600' : 'text-red-600'"
                     >
                       {{ formatCurrency(row.variance) }}
+                    </td>
+                    <td
+                      class="px-4 py-3 whitespace-nowrap text-sm text-right font-medium"
+                      :class="
+                        row.variance_all_time === 0 || row.variance_all_time === null
+                          ? 'text-gray-400'
+                          : row.variance_all_time >= 0
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                      "
+                    >
+                      {{ formatCurrency(row.variance_all_time ?? 0) }}
                     </td>
                   </tr>
                 </tbody>
@@ -544,6 +573,7 @@ import type {
   SalesForecastMonth,
   SalesForecastMonthDetailResponse,
 } from '@/types/sales-forecast.types'
+import { toLocalDateString } from '@/utils/dateUtils'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -563,6 +593,7 @@ type SortField =
   | 'job_start_date'
   | 'job_revenue'
   | 'variance'
+  | 'variance_all_time'
   | 'note'
 type SortDirection = 'asc' | 'desc'
 
@@ -717,10 +748,7 @@ const exportToCsv = () => {
   const url = URL.createObjectURL(blob)
 
   link.setAttribute('href', url)
-  link.setAttribute(
-    'download',
-    `sales-forecast-report-${new Date().toISOString().split('T')[0]}.csv`,
-  )
+  link.setAttribute('download', `sales-forecast-report-${toLocalDateString()}.csv`)
   link.style.visibility = 'hidden'
   document.body.appendChild(link)
   link.click()

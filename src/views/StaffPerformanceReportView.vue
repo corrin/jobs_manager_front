@@ -284,6 +284,7 @@ import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { staffPerformanceReportService } from '@/services/staff-performance-report.service'
 import { formatCurrency } from '@/utils/string-formatting'
+import { toLocalDateString } from '@/utils/dateUtils'
 import type {
   StaffPerformanceData,
   TeamAverages,
@@ -338,17 +339,17 @@ const setDateRange = (period: 'thisMonth' | 'lastMonth' | 'thisQuarter') => {
 
   switch (period) {
     case 'thisMonth':
-      dateRange.value.startDate = new Date(year, month, 1).toISOString().split('T')[0]
-      dateRange.value.endDate = new Date(year, month + 1, 0).toISOString().split('T')[0]
+      dateRange.value.startDate = toLocalDateString(new Date(year, month, 1))
+      dateRange.value.endDate = toLocalDateString(new Date(year, month + 1, 0))
       break
     case 'lastMonth':
-      dateRange.value.startDate = new Date(year, month - 1, 1).toISOString().split('T')[0]
-      dateRange.value.endDate = new Date(year, month, 0).toISOString().split('T')[0]
+      dateRange.value.startDate = toLocalDateString(new Date(year, month - 1, 1))
+      dateRange.value.endDate = toLocalDateString(new Date(year, month, 0))
       break
     case 'thisQuarter':
       const quarterStart = Math.floor(month / 3) * 3
-      dateRange.value.startDate = new Date(year, quarterStart, 1).toISOString().split('T')[0]
-      dateRange.value.endDate = new Date(year, quarterStart + 3, 0).toISOString().split('T')[0]
+      dateRange.value.startDate = toLocalDateString(new Date(year, quarterStart, 1))
+      dateRange.value.endDate = toLocalDateString(new Date(year, quarterStart + 3, 0))
       break
   }
   loadData()

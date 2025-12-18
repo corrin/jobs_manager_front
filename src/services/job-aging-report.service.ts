@@ -1,6 +1,7 @@
 import api from '@/plugins/axios'
 import { debugLog } from '@/utils/debug'
 import { exportToCsv } from '@/utils/string-formatting'
+import { toLocalDateString } from '@/utils/dateUtils'
 
 export interface JobAgingData {
   id: string
@@ -90,7 +91,7 @@ export class JobAgingReportService {
       job.financial_data.actual_total,
     ])
 
-    exportToCsv(headers, rows, `job-aging-report-${new Date().toISOString().split('T')[0]}`)
+    exportToCsv(headers, rows, `job-aging-report-${toLocalDateString()}`)
   }
 
   getActivityAgeStatus(daysAgo: number): 'recent' | 'warning' | 'stale' {

@@ -274,6 +274,7 @@
 
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
+import { toLocalDateString } from '../../utils/dateUtils'
 import { formatCurrency } from '@/utils/string-formatting'
 import { normalizeOptionalDecimal } from '@/utils/number'
 import { onMounted, ref, computed, reactive } from 'vue'
@@ -655,7 +656,7 @@ async function handleCreateLine(line: CostLine) {
         quantity: line.quantity,
         unit_cost: line.unit_cost,
         unit_rev: line.unit_rev,
-        accounting_date: new Date().toISOString().split('T')[0],
+        accounting_date: toLocalDateString(),
         ext_refs: line.ext_refs || {},
         meta: { source: 'manual_adjustment' },
         created_at: new Date().toISOString(),

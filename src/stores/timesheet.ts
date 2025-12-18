@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { debugLog } from '@/utils/debug'
+import { toLocalDateString } from '@/utils/dateUtils'
 import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import { FeatureFlagsService } from '@/services/feature-flags.service'
@@ -29,7 +30,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   const staff = ref<Staff[]>([])
   const jobs = ref<Job[]>([])
   const currentWeekData = ref<WeeklyOverviewData | null>(null)
-  const selectedDate = ref<string>(new Date().toISOString().split('T')[0])
+  const selectedDate = ref<string>(toLocalDateString())
   const selectedStaffId = ref<string>('')
   const currentView = ref<'staff-day' | 'weekly-kanban' | 'calendar-grid'>('staff-day')
   const attachedJobs = ref<Job[]>([])
@@ -330,7 +331,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
     try {
       // Use current date if no start date provided
-      const weekStart = startDate || new Date().toISOString().split('T')[0]
+      const weekStart = startDate || toLocalDateString()
       debugLog('Loading weekly overview for:', weekStart)
 
       currentWeekData.value = await api.timesheets_api_weekly_retrieve({
@@ -374,7 +375,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       debugLog('Creating new time entry:', entryData)
 
       // Use generated API to create time entry
-      const accountingDate = selectedDate.value || new Date().toISOString().split('T')[0]
+      const accountingDate = selectedDate.value || toLocalDateString()
       const costLineData = {
         kind: 'time' as const,
         desc: entryData.description,

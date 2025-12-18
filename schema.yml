@@ -214,6 +214,15 @@ paths:
                           type: string
                           format: date
                           nullable: true
+                        total_xero_all_time:
+                          type: number
+                          nullable: true
+                        total_jm_all_time:
+                          type: number
+                          nullable: true
+                        variance_all_time:
+                          type: number
+                          nullable: true
                         note:
                           type: string
                           nullable: true

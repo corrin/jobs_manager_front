@@ -1,6 +1,7 @@
 import api from '@/plugins/axios'
 import { debugLog } from '@/utils/debug'
 import { formatCurrency, toCsvString, downloadCsv } from '@/utils/string-formatting'
+import { toLocalDateString } from '@/utils/dateUtils'
 import type {
   StaffPerformanceReportResponse,
   StaffPerformanceReportParams,
@@ -84,7 +85,7 @@ export class StaffPerformanceReportService {
     const dataContent = toCsvString(headers, rows)
     const csvContent = [titleRow, summaryRow, '', dataContent].join('\n')
 
-    downloadCsv(csvContent, `staff-performance-report-${new Date().toISOString().split('T')[0]}`)
+    downloadCsv(csvContent, `staff-performance-report-${toLocalDateString()}`)
   }
 
   getPerformanceComparison(
