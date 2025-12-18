@@ -2,6 +2,7 @@ import axios from '@/plugins/axios'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { debugLog } from '../utils/debug'
+import { toLocalDateString } from '../utils/dateUtils'
 import type { z } from 'zod'
 
 type Staff = z.infer<typeof schemas.ModernStaff>
@@ -82,8 +83,8 @@ export class TimesheetService {
     sunday.setDate(monday.getDate() + 6)
 
     return {
-      startDate: monday.toISOString().split('T')[0],
-      endDate: sunday.toISOString().split('T')[0],
+      startDate: toLocalDateString(monday),
+      endDate: toLocalDateString(sunday),
     }
   }
 

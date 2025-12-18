@@ -544,6 +544,7 @@ import type {
   SalesForecastMonth,
   SalesForecastMonthDetailResponse,
 } from '@/types/sales-forecast.types'
+import { toLocalDateString } from '@/utils/dateUtils'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -717,10 +718,7 @@ const exportToCsv = () => {
   const url = URL.createObjectURL(blob)
 
   link.setAttribute('href', url)
-  link.setAttribute(
-    'download',
-    `sales-forecast-report-${new Date().toISOString().split('T')[0]}.csv`,
-  )
+  link.setAttribute('download', `sales-forecast-report-${toLocalDateString()}.csv`)
   link.style.visibility = 'hidden'
   document.body.appendChild(link)
   link.click()

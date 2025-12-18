@@ -279,6 +279,7 @@ import {
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { formatCurrency, exportToCsv } from '@/utils/string-formatting'
+import { toLocalDateString } from '@/utils/dateUtils'
 
 interface ValidationIssue {
   id: string
@@ -477,7 +478,7 @@ const exportReport = () => {
     formatCurrency(issue.jobValue),
   ])
 
-  exportToCsv(headers, rows, `archived-jobs-validation-${new Date().toISOString().split('T')[0]}`)
+  exportToCsv(headers, rows, `archived-jobs-validation-${toLocalDateString()}`)
   toast.success('Report exported successfully')
 }
 

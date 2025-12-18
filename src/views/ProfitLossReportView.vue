@@ -521,6 +521,7 @@ import type {
   PeriodPreset,
   PeriodLength,
 } from '@/types/profit-loss.types'
+import { toLocalDateString } from '@/utils/dateUtils'
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -596,47 +597,45 @@ const setDateRange = (preset: PeriodPreset) => {
 
   switch (preset) {
     case 'thisMonth':
-      dateRange.value.startDate = new Date(year, month, 1).toISOString().split('T')[0]
-      dateRange.value.endDate = new Date(year, month + 1, 0).toISOString().split('T')[0]
+      dateRange.value.startDate = toLocalDateString(new Date(year, month, 1))
+      dateRange.value.endDate = toLocalDateString(new Date(year, month + 1, 0))
       break
     case 'lastMonth':
-      dateRange.value.startDate = new Date(year, month - 1, 1).toISOString().split('T')[0]
-      dateRange.value.endDate = new Date(year, month, 0).toISOString().split('T')[0]
+      dateRange.value.startDate = toLocalDateString(new Date(year, month - 1, 1))
+      dateRange.value.endDate = toLocalDateString(new Date(year, month, 0))
       break
     case 'thisQuarter':
       const quarterStart = Math.floor(month / 3) * 3
-      dateRange.value.startDate = new Date(year, quarterStart, 1).toISOString().split('T')[0]
-      dateRange.value.endDate = new Date(year, quarterStart + 3, 0).toISOString().split('T')[0]
+      dateRange.value.startDate = toLocalDateString(new Date(year, quarterStart, 1))
+      dateRange.value.endDate = toLocalDateString(new Date(year, quarterStart + 3, 0))
       break
     case 'lastQuarter':
       const lastQuarterStart = Math.floor((month - 3) / 3) * 3
       const lastQuarterYear = month < 3 ? year - 1 : year
-      dateRange.value.startDate = new Date(lastQuarterYear, lastQuarterStart, 1)
-        .toISOString()
-        .split('T')[0]
-      dateRange.value.endDate = new Date(lastQuarterYear, lastQuarterStart + 3, 0)
-        .toISOString()
-        .split('T')[0]
+      dateRange.value.startDate = toLocalDateString(new Date(lastQuarterYear, lastQuarterStart, 1))
+      dateRange.value.endDate = toLocalDateString(
+        new Date(lastQuarterYear, lastQuarterStart + 3, 0),
+      )
       break
     case 'thisFinancialYear':
       const fyStart = getFinancialYearStart(now)
       const fyEnd = getFinancialYearEnd(now)
-      dateRange.value.startDate = fyStart.toISOString().split('T')[0]
-      dateRange.value.endDate = fyEnd.toISOString().split('T')[0]
+      dateRange.value.startDate = toLocalDateString(fyStart)
+      dateRange.value.endDate = toLocalDateString(fyEnd)
       break
     case 'lastFinancialYear':
       const lastFyStart = getFinancialYearStart(new Date(year - 1, month, 1))
       const lastFyEnd = getFinancialYearEnd(new Date(year - 1, month, 1))
-      dateRange.value.startDate = lastFyStart.toISOString().split('T')[0]
-      dateRange.value.endDate = lastFyEnd.toISOString().split('T')[0]
+      dateRange.value.startDate = toLocalDateString(lastFyStart)
+      dateRange.value.endDate = toLocalDateString(lastFyEnd)
       break
     case 'monthToDate':
-      dateRange.value.startDate = new Date(year, month, 1).toISOString().split('T')[0]
-      dateRange.value.endDate = now.toISOString().split('T')[0]
+      dateRange.value.startDate = toLocalDateString(new Date(year, month, 1))
+      dateRange.value.endDate = toLocalDateString(now)
       break
     case 'yearToDate':
-      dateRange.value.startDate = new Date(year, 0, 1).toISOString().split('T')[0]
-      dateRange.value.endDate = now.toISOString().split('T')[0]
+      dateRange.value.startDate = toLocalDateString(new Date(year, 0, 1))
+      dateRange.value.endDate = toLocalDateString(now)
       break
   }
   loadData()
