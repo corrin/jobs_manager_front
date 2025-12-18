@@ -23,6 +23,9 @@ export interface SalesForecastDetailRow {
   job_revenue: number
   variance: number
   note: string | null
+  total_xero_all_time: number | null
+  total_jm_all_time: number | null
+  variance_all_time: number | null
 }
 
 export interface SalesForecastMonthDetailResponse {
