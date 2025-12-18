@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { execSync } from 'child_process'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -7,36 +8,32 @@ import { dirname, join } from 'path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const projectRoot = join(__dirname, '..')
+const backendPath = join(projectRoot, '..', 'jobs_manager')
 
-async function fetchSchema() {
-  // Read the API URL from .env file
-  const envPath = join(projectRoot, '.env')
-  const envContent = fs.readFileSync(envPath, 'utf-8')
-  const match = envContent.match(/^VITE_API_BASE_URL=(.+)$/m)
+function generateSchema() {
+  console.log(`Generating schema from ${backendPath}...`)
 
-  const apiUrl = match[1].trim()
-  const schemaUrl = `${apiUrl}/api/schema/`
-
-  console.log(`Fetching schema from ${schemaUrl}...`)
-  const response = await fetch(schemaUrl, {
-    signal: AbortSignal.timeout(10000), // 10 second timeout
-    headers: {
-      'User-Agent': 'jobs-manager-frontend/schema-updater',
-    },
+  const schema = execSync('poetry run python manage.py spectacular --format openapi', {
+    cwd: backendPath,
+    encoding: 'utf-8',
+    timeout: 30000,
   })
 
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-  }
-
-  const schema = await response.text()
   const schemaPath = join(projectRoot, 'schema.yml')
   fs.writeFileSync(schemaPath, schema)
-  console.log(`✅ Schema fetched successfully`)
+  console.log(`✅ Schema generated successfully`)
 }
 
-fetchSchema().catch((error) => {
-  console.log('⚠️  Could not fetch schema:', error.message)
-  // Don't fail the build - just continue with existing schema
-  process.exit(0)
-})
+try {
+  generateSchema()
+} catch (error) {
+  const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+
+  if (isCI) {
+    console.log('⚠️  Could not generate schema (CI mode - using existing schema):', error.message)
+    process.exit(0)
+  } else {
+    console.error('❌ Failed to generate schema:', error.message)
+    process.exit(1)
+  }
+}
