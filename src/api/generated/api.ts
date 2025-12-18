@@ -3034,6 +3034,51 @@ Returns:
   },
   {
     method: 'get',
+    path: '/accounting/api/reports/sales-forecast/:month/',
+    alias: 'accounting_api_reports_sales_forecast_retrieve_2',
+    description: `Returns detailed invoice and job data for a specific month, showing matched pairs and unmatched items`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'month',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z
+      .object({
+        month: z.string(),
+        month_label: z.string(),
+        rows: z.array(
+          z
+            .object({
+              date: z.string(),
+              client_name: z.string(),
+              job_number: z.number().int().nullable(),
+              job_name: z.string().nullable(),
+              invoice_numbers: z.string().nullable(),
+              total_invoiced: z.number(),
+              job_revenue: z.number(),
+              variance: z.number(),
+              job_id: z.string().uuid().nullable(),
+              job_start_date: z.string().nullable(),
+              note: z.string().nullable(),
+            })
+            .partial()
+            .passthrough(),
+        ),
+      })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/accounting/api/reports/staff-performance-summary/',
     alias: 'accounting_api_reports_staff_performance_summary_retrieve',
     description: `API endpoint for staff performance summary (all staff)`,

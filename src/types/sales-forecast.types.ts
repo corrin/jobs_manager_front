@@ -10,3 +10,23 @@ export interface SalesForecastMonth {
 export interface SalesForecastReportResponse {
   months: SalesForecastMonth[]
 }
+
+export interface SalesForecastDetailRow {
+  date: string
+  client_name: string
+  job_number: number | null
+  job_name: string | null
+  job_id: string | null
+  job_start_date: string | null
+  invoice_numbers: string | null
+  total_invoiced: number
+  job_revenue: number
+  variance: number
+  note: string | null
+}
+
+export interface SalesForecastMonthDetailResponse {
+  month: string
+  month_label: string
+  rows: SalesForecastDetailRow[]
+}
