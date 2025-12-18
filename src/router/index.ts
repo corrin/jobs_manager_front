@@ -47,6 +47,16 @@ const router = createRouter({
       },
     },
     {
+      path: '/jobs/:id/workshop',
+      name: 'job-workshop',
+      component: () => import('@/views/WorkshopJobView.vue'),
+      meta: {
+        requiresAuth: true,
+        allowWorkshopStaff: true,
+        title: 'Job (Workshop) - Jobs Manager',
+      },
+    },
+    {
       path: '/jobs/:id',
       name: 'job-edit',
       component: () => import('@/views/JobView.vue'),
@@ -314,7 +324,7 @@ const router = createRouter({
     {
       path: '/kanban/workshop',
       name: 'workshop-kanban',
-      component: () => import('@/views/WorkshopView.vue'),
+      component: () => import('@/views/WorkshopKanbanView.vue'),
       meta: {
         requiresAuth: true,
         allowWorkshopStaff: true,
