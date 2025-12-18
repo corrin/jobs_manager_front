@@ -3062,6 +3062,9 @@ Returns:
               variance: z.number(),
               job_id: z.string().uuid().nullable(),
               job_start_date: z.string().nullable(),
+              total_xero_all_time: z.number().nullable(),
+              total_jm_all_time: z.number().nullable(),
+              variance_all_time: z.number().nullable(),
               note: z.string().nullable(),
             })
             .partial()
