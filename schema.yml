@@ -151,6 +151,82 @@ paths:
                   error:
                     type: string
           description: ''
+  /accounting/api/reports/sales-forecast/{month}/:
+    get:
+      operationId: accounting_api_reports_sales_forecast_retrieve_2
+      description: Returns detailed invoice and job data for a specific month, showing
+        matched pairs and unmatched items
+      summary: Get month detail for sales forecast
+      parameters:
+        - in: path
+          name: month
+          schema:
+            type: string
+          required: true
+      tags:
+        - accounting
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  month:
+                    type: string
+                    example: 2025-01
+                  month_label:
+                    type: string
+                    example: Jan 2025
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        client_name:
+                          type: string
+                        job_number:
+                          type: integer
+                          nullable: true
+                        job_name:
+                          type: string
+                          nullable: true
+                        invoice_numbers:
+                          type: string
+                          nullable: true
+                        total_invoiced:
+                          type: number
+                        job_revenue:
+                          type: number
+                        variance:
+                          type: number
+                        job_id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        job_start_date:
+                          type: string
+                          format: date
+                          nullable: true
+                        note:
+                          type: string
+                          nullable: true
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+          description: ''
   /accounting/api/reports/staff-performance-summary/:
     get:
       operationId: accounting_api_reports_staff_performance_summary_retrieve
