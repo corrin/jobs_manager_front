@@ -23,6 +23,7 @@ import { toast } from 'vue-sonner'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 import DOMPurify from 'dompurify'
+import WorkshopMaterialsUsedTable from '@/components/workshop/WorkshopMaterialsUsedTable.vue'
 
 type Job = z.infer<typeof schemas.Job>
 
@@ -343,6 +344,10 @@ watch(jobId, () => void loadJob())
               </div>
             </CardContent>
           </Card>
+
+          <div class="lg:col-span-12">
+            <WorkshopMaterialsUsedTable :job-id="jobId" />
+          </div>
         </div>
       </main>
     </div>
