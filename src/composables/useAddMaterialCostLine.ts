@@ -3,6 +3,7 @@ import { toast } from 'vue-sonner'
 import { costlineService } from '../services/costline.service'
 import { schemas } from '../api/generated/api'
 import type { z } from 'zod'
+import { toLocalDateString } from '../utils/dateUtils'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
@@ -41,7 +42,7 @@ export function useAddMaterialCostLine(options: UseAddMaterialCostLineOptions) {
 
     try {
       const now = new Date().toISOString()
-      const accountingDate = new Date().toISOString().split('T')[0]
+      const accountingDate = toLocalDateString()
       const createPayload: CostLineCreateUpdate = {
         kind: 'material' as const,
         desc: payload.desc,

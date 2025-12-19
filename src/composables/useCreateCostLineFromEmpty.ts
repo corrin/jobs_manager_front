@@ -4,6 +4,7 @@ import { costlineService } from '../services/costline.service'
 import { schemas } from '../api/generated/api'
 import type { z } from 'zod'
 import { debugLog } from '../utils/debug'
+import { toLocalDateString } from '../utils/dateUtils'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
@@ -37,7 +38,7 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
 
     try {
       const now = new Date().toISOString()
-      const accountingDate = new Date().toISOString().split('T')[0]
+      const accountingDate = toLocalDateString()
       const createPayload: CostLineCreateUpdate = {
         kind: line.kind as 'material' | 'time' | 'adjust',
         desc: line.desc || '',

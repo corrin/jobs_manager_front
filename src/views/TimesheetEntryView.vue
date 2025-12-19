@@ -584,6 +584,7 @@ import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 
 import { debugLog } from '@/utils/debug'
+import { toLocalDateString } from '@/utils/dateUtils'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
@@ -625,7 +626,7 @@ const error = ref<string | null>(null)
 const showHelpModal = ref(false)
 const agGridRef = ref()
 
-const todayDate = new Date().toISOString().split('T')[0]
+const todayDate = toLocalDateString()
 debugLog('Today is:', todayDate, 'Day of week:', new Date().getDay())
 
 const initialDate = (route.query.date as string) || todayDate

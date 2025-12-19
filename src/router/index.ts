@@ -304,6 +304,12 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Profit & Loss Report - Jobs Manager' },
     },
     {
+      path: '/reports/job-movement',
+      name: 'job-movement-report',
+      component: () => import('@/views/JobMovementReportView.vue'),
+      meta: { requiresAuth: true, title: 'Job Movement Report - Jobs Manager' },
+    },
+    {
       path: '/reports/data-quality/archived-jobs',
       name: 'data-quality-archived-jobs',
       component: () => import('@/views/DataQualityArchivedJobsView.vue'),

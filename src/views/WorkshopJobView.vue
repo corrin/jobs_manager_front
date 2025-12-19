@@ -28,6 +28,7 @@ import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 import DOMPurify from 'dompurify'
 import WorkshopMaterialsUsedTable from '@/components/workshop/WorkshopMaterialsUsedTable.vue'
+import WorkshopTimeUsedTable from '@/components/workshop/WorkshopTimeUsedTable.vue'
 import axios from '@/plugins/axios'
 
 type Job = z.infer<typeof schemas.Job>
@@ -486,6 +487,10 @@ watch(jobId, () => void loadAttachments())
 
           <div class="lg:col-span-12">
             <WorkshopMaterialsUsedTable :job-id="jobId" />
+          </div>
+
+          <div class="lg:col-span-12">
+            <WorkshopTimeUsedTable :job-id="jobId" :workshop-hours="workshopTime.hours" />
           </div>
 
           <Card class="lg:col-span-12">

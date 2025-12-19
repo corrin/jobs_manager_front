@@ -1,5 +1,6 @@
-import { ref, computed, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useDebounceFn } from '@vueuse/core'
 import { jobService } from '../services/job.service'
 import { useJobsStore } from '../stores/jobs'
 import { KanbanCategorizationService } from '../services/kanban-categorization.service'
@@ -28,12 +29,16 @@ interface ColumnState {
 
 export function useOptimizedKanban(onJobsLoaded?: () => void) {
   const router = useRouter()
+  const route = useRoute()
   const jobsStore = useJobsStore()
 
   // Global state
   const isLoading = ref(false)
   const error = ref<string | null>(null)
-  const searchQuery = ref('')
+
+  // Initialize searchQuery from URL if present
+  const initialQuery = route.query.q
+  const searchQuery = ref(typeof initialQuery === 'string' ? initialQuery : '')
   const showAdvancedSearch = ref(false)
   const showArchived = ref(false)
   const statusChoices = ref<StatusChoice[]>([])
@@ -44,6 +49,38 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
   // Column-based state management
   const columnStates = reactive<Record<string, ColumnState>>({})
+
+  // URL sync for search query - debounced to avoid URL pollution during typing
+  const updateUrlWithSearch = useDebounceFn((query: string) => {
+    const newQuery = { ...route.query }
+    if (query.trim()) {
+      newQuery.q = query
+    } else {
+      delete newQuery.q
+    }
+    router.replace({ query: newQuery })
+  }, 500)
+
+  // Watch searchQuery and update URL
+  watch(searchQuery, (newQuery) => {
+    updateUrlWithSearch(newQuery)
+  })
+
+  // Watch URL for browser back/forward navigation
+  watch(
+    () => route.query.q,
+    (newQ) => {
+      const parsed = typeof newQ === 'string' ? newQ : ''
+      if (parsed !== searchQuery.value) {
+        searchQuery.value = parsed
+        if (parsed) {
+          handleSearch()
+        } else {
+          filteredJobs.value = []
+        }
+      }
+    },
+  )
 
   // Initialize column states
   const initializeColumnStates = () => {
@@ -551,6 +588,12 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       debugLog('Initializing Kanban...')
       initializeColumnStates()
       await Promise.all([loadAllColumns(), loadStatusChoices()])
+
+      // If URL has search query, trigger search after jobs are loaded
+      if (searchQuery.value.trim()) {
+        await handleSearch()
+      }
+
       debugLog('Kanban initialization complete')
     } catch (err) {
       debugLog('Error during Kanban initialization:', err)

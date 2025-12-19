@@ -483,6 +483,7 @@
 
 <script setup lang="ts">
 import { debugLog } from '../../utils/debug'
+import { toLocalDateString } from '../../utils/dateUtils'
 
 import { ref, computed, watch, onMounted } from 'vue'
 import { BookOpen, PlusCircle, RotateCcw, FileX, Copy, ExternalLink } from 'lucide-vue-next'
@@ -937,7 +938,7 @@ async function onCopyFromEstimate() {
         quantity: estimateLine.quantity || 0,
         unit_cost: estimateLine.unit_cost ?? 0,
         unit_rev: estimateLine.unit_rev ?? 0,
-        accounting_date: estimateLine.accounting_date || new Date().toISOString().split('T')[0],
+        accounting_date: estimateLine.accounting_date || toLocalDateString(),
         ext_refs: (estimateLine.ext_refs as Record<string, unknown>) || {},
         meta: (estimateLine.meta as Record<string, unknown>) || {},
       }

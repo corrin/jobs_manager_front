@@ -112,6 +112,7 @@
 import { ref, computed, watch } from 'vue'
 import { X, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { toLocalDateString } from '@/utils/dateUtils'
 
 interface CalendarDay {
   date: Date
@@ -197,14 +198,14 @@ function getWeekStartDate(date: Date): string {
   const dayOfWeek = date.getDay()
   const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
   monday.setDate(date.getDate() + diff)
-  return monday.toISOString().split('T')[0]
+  return toLocalDateString(monday)
 }
 
 function getWeekEnd(weekStart: string): string {
   const startDate = new Date(weekStart)
   const endDate = new Date(startDate)
   endDate.setDate(startDate.getDate() + 6)
-  return endDate.toISOString().split('T')[0]
+  return toLocalDateString(endDate)
 }
 
 function getWeekNumber(date: Date): number {
