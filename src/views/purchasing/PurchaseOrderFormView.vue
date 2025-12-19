@@ -196,7 +196,7 @@ const po = ref<PurchaseOrder>({
   supplier_id: null,
   supplier_has_xero_id: false,
   pickup_address_id: null,
-  pickup_address: {} as PurchaseOrder['pickup_address'],
+  pickup_address: null,
   reference: '',
   order_date: '',
   expected_delivery: '',
