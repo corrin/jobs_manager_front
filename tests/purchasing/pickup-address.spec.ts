@@ -209,7 +209,10 @@ test.describe('pickup address CRUD', () => {
 
     // Click submit and wait for response
     const createPromise = page.waitForResponse(
-      (r) => r.url().includes('pickup-addresses') && r.request().method() === 'POST',
+      (r) =>
+        r.url().includes('pickup-addresses') &&
+        r.request().method() === 'POST' &&
+        r.status() === 201,
       { timeout: 15000 },
     )
     await autoId(page, 'PickupAddressSelectionModal-submit').click()
@@ -229,9 +232,12 @@ test.describe('pickup address CRUD', () => {
     await expect(clearButton).toBeVisible()
     await clearButton.click()
 
-    // Wait for save
+    // Wait for save and verify success
     await page.waitForResponse(
-      (r) => r.url().includes('purchase-orders') && r.request().method() === 'PATCH',
+      (r) =>
+        r.url().includes('purchase-orders') &&
+        r.request().method() === 'PATCH' &&
+        r.status() === 200,
       { timeout: 10000 },
     )
 
@@ -295,7 +301,10 @@ test.describe('pickup address CRUD', () => {
 
     // Submit and wait for PATCH
     const updatePromise = page.waitForResponse(
-      (r) => r.url().includes('pickup-addresses') && r.request().method() === 'PATCH',
+      (r) =>
+        r.url().includes('pickup-addresses') &&
+        r.request().method() === 'PATCH' &&
+        r.status() === 200,
       { timeout: 15000 },
     )
     await autoId(page, 'PickupAddressSelectionModal-submit').click()
@@ -339,7 +348,10 @@ test.describe('pickup address CRUD', () => {
 
     // Click confirm delete
     const deletePromise = page.waitForResponse(
-      (r) => r.url().includes('pickup-addresses') && r.request().method() === 'DELETE',
+      (r) =>
+        r.url().includes('pickup-addresses') &&
+        r.request().method() === 'DELETE' &&
+        r.status() === 204,
       { timeout: 15000 },
     )
     await modal.getByRole('button', { name: 'Delete', exact: true }).click()
