@@ -27,6 +27,7 @@ s
           }"
           @update:supplier="canEditSupplier ? (po.supplier = $event) : null"
           @update:supplier_id="canEditSupplier ? (po.supplier_id = $event) : null"
+          @update:pickup_address_id="handlePickupAddressChange($event)"
           @update:reference="!isPoDeleted ? (po.reference = $event) : null"
           @update:expected_delivery="!isPoDeleted ? (po.expected_delivery = $event) : null"
           @update:status="handleStatusChange"
@@ -194,6 +195,8 @@ const po = ref<PurchaseOrder>({
   supplier: '',
   supplier_id: null,
   supplier_has_xero_id: false,
+  pickup_address_id: null,
+  pickup_address: null,
   reference: '',
   order_date: '',
   expected_delivery: '',
@@ -355,6 +358,8 @@ async function saveSummary() {
     if (po.value.supplier_id) {
       updateData.supplier_id = po.value.supplier_id
     }
+    // Include pickup_address_id (can be null to clear)
+    updateData.pickup_address_id = po.value.pickup_address_id || null
   }
 
   try {
@@ -392,6 +397,14 @@ async function saveSummary() {
     }
     throw err // Re-throw to maintain existing error handling
   }
+}
+
+function handlePickupAddressChange(addressId: string | null) {
+  // Pickup address can be changed even on submitted POs (only blocked when deleted)
+  if (isPoDeleted.value) return
+  po.value.pickup_address_id = addressId
+  // Trigger save
+  saveSummary()
 }
 
 function handleStatusChange(newStatus: PurchaseOrderStatus) {

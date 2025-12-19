@@ -5,7 +5,10 @@
         <div class="max-w-7xl mx-auto py-8 px-2 md:px-8 h-full flex flex-col gap-6">
           <!-- Header -->
           <div class="flex items-center justify-between mb-4">
-            <h1 class="text-3xl font-extrabold text-indigo-700 flex items-center gap-3">
+            <h1
+              data-automation-id="SalesForecastReport-title"
+              class="text-3xl font-extrabold text-indigo-700 flex items-center gap-3"
+            >
               <TrendingUp class="w-8 h-8 text-indigo-400" />
               Sales Forecast Report
             </h1>
@@ -60,13 +63,20 @@
           <!-- Summary Cards (hidden when month selected) -->
           <div
             v-if="summary && !selectedMonth"
+            data-automation-id="SalesForecastReport-summary-cards"
             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
           >
-            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+            <div
+              data-automation-id="SalesForecastReport-xero-sales-card"
+              class="bg-white rounded-lg shadow-sm border border-slate-200 p-4"
+            >
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium text-gray-600">Total Xero Sales</p>
-                  <p class="text-2xl font-bold text-gray-900">
+                  <p
+                    data-automation-id="SalesForecastReport-xero-sales-value"
+                    class="text-2xl font-bold text-gray-900"
+                  >
                     {{ formatCurrency(summary.totalXeroSales) }}
                   </p>
                 </div>
@@ -74,11 +84,17 @@
               </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+            <div
+              data-automation-id="SalesForecastReport-jm-sales-card"
+              class="bg-white rounded-lg shadow-sm border border-slate-200 p-4"
+            >
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium text-gray-600">Total JM Sales</p>
-                  <p class="text-2xl font-bold text-gray-900">
+                  <p
+                    data-automation-id="SalesForecastReport-jm-sales-value"
+                    class="text-2xl font-bold text-gray-900"
+                  >
                     {{ formatCurrency(summary.totalJmSales) }}
                   </p>
                 </div>
@@ -86,11 +102,15 @@
               </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+            <div
+              data-automation-id="SalesForecastReport-variance-card"
+              class="bg-white rounded-lg shadow-sm border border-slate-200 p-4"
+            >
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium text-gray-600">Total Variance</p>
                   <p
+                    data-automation-id="SalesForecastReport-variance-value"
                     class="text-2xl font-bold"
                     :class="summary.totalVariance >= 0 ? 'text-green-600' : 'text-red-600'"
                   >
@@ -104,11 +124,15 @@
               </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+            <div
+              data-automation-id="SalesForecastReport-avg-variance-card"
+              class="bg-white rounded-lg shadow-sm border border-slate-200 p-4"
+            >
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium text-gray-600">Avg Variance %</p>
                   <p
+                    data-automation-id="SalesForecastReport-avg-variance-value"
                     class="text-2xl font-bold"
                     :class="summary.avgVariancePct >= 0 ? 'text-green-600' : 'text-red-600'"
                   >
@@ -126,13 +150,17 @@
           <!-- Full Data Table (when no month selected) -->
           <div
             v-if="!loading && months.length > 0 && !selectedMonth"
+            data-automation-id="SalesForecastReport-table-container"
             class="flex-1 overflow-hidden flex flex-col"
           >
             <div
               class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col"
             >
               <div class="overflow-x-auto flex-1">
-                <table class="min-w-full divide-y divide-gray-200">
+                <table
+                  data-automation-id="SalesForecastReport-table"
+                  class="min-w-full divide-y divide-gray-200"
+                >
                   <thead class="bg-gray-50 sticky top-0">
                     <tr>
                       <th
@@ -537,6 +565,7 @@
           <!-- Loading State -->
           <div
             v-if="loading"
+            data-automation-id="SalesForecastReport-loading"
             class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 text-center"
           >
             <RefreshCw class="mx-auto h-12 w-12 text-gray-400 animate-spin" />

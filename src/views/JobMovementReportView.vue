@@ -5,7 +5,10 @@
         <div class="max-w-7xl mx-auto py-8 px-2 md:px-8 h-full flex flex-col gap-6">
           <!-- Header -->
           <div class="flex items-center justify-between mb-4">
-            <h1 class="text-3xl font-extrabold text-indigo-700 flex items-center gap-3">
+            <h1
+              data-automation-id="JobMovementReport-title"
+              class="text-3xl font-extrabold text-indigo-700 flex items-center gap-3"
+            >
               <TrendingUp class="w-8 h-8 text-indigo-400" />
               Job Movement Report
             </h1>
@@ -60,7 +63,12 @@
                 <Button variant="outline" size="sm" @click="setDateRange('thisFortnight')">
                   This Fortnight
                 </Button>
-                <Button variant="outline" size="sm" @click="setDateRange('lastFortnight')">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-automation-id="JobMovementReport-last-fortnight"
+                  @click="setDateRange('lastFortnight')"
+                >
                   Last Fortnight
                 </Button>
                 <Button variant="outline" size="sm" @click="setDateRange('lastMonth')">
@@ -98,7 +106,11 @@
           </div>
 
           <!-- Loading State -->
-          <div v-if="loading" class="flex items-center justify-center py-12">
+          <div
+            v-if="loading"
+            data-automation-id="JobMovementReport-loading"
+            class="flex items-center justify-center py-12"
+          >
             <RefreshCw class="h-8 w-8 animate-spin text-indigo-500" />
             <span class="ml-2 text-lg text-gray-600">Loading job movement data...</span>
           </div>
@@ -114,12 +126,21 @@
           <!-- Report Content -->
           <template v-else-if="reportData">
             <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+            <div
+              data-automation-id="JobMovementReport-summary-cards"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+            >
+              <div
+                data-automation-id="JobMovementReport-draft-jobs-card"
+                class="bg-white rounded-lg shadow-sm border border-slate-200 p-4"
+              >
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="text-sm font-medium text-gray-600">Draft Jobs Created</p>
-                    <p class="text-2xl font-bold text-gray-900">
+                    <p
+                      data-automation-id="JobMovementReport-draft-jobs-count"
+                      class="text-2xl font-bold text-gray-900"
+                    >
                       {{ reportData.metrics.draft_jobs_created.count }}
                     </p>
                     <p v-if="reportData.baseline" class="text-xs text-gray-500 mt-1">
@@ -131,11 +152,17 @@
                 </div>
               </div>
 
-              <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+              <div
+                data-automation-id="JobMovementReport-quotes-submitted-card"
+                class="bg-white rounded-lg shadow-sm border border-slate-200 p-4"
+              >
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="text-sm font-medium text-gray-600">Quotes Submitted</p>
-                    <p class="text-2xl font-bold text-gray-900">
+                    <p
+                      data-automation-id="JobMovementReport-quotes-submitted-count"
+                      class="text-2xl font-bold text-gray-900"
+                    >
                       {{ reportData.metrics.quotes_submitted.count }}
                     </p>
                     <p v-if="reportData.baseline" class="text-xs text-gray-500 mt-1">
@@ -147,11 +174,17 @@
                 </div>
               </div>
 
-              <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+              <div
+                data-automation-id="JobMovementReport-jobs-won-card"
+                class="bg-white rounded-lg shadow-sm border border-slate-200 p-4"
+              >
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="text-sm font-medium text-gray-600">Jobs Won</p>
-                    <p class="text-2xl font-bold text-gray-900">
+                    <p
+                      data-automation-id="JobMovementReport-jobs-won-count"
+                      class="text-2xl font-bold text-gray-900"
+                    >
                       {{ reportData.metrics.jobs_won.count }}
                     </p>
                     <p v-if="reportData.baseline" class="text-xs text-gray-500 mt-1">
@@ -162,11 +195,17 @@
                 </div>
               </div>
 
-              <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+              <div
+                data-automation-id="JobMovementReport-conversion-rate-card"
+                class="bg-white rounded-lg shadow-sm border border-slate-200 p-4"
+              >
                 <div class="flex items-center justify-between">
                   <div>
                     <p class="text-sm font-medium text-gray-600">Draft Conversion Rate</p>
-                    <p class="text-2xl font-bold text-gray-900">
+                    <p
+                      data-automation-id="JobMovementReport-conversion-rate-value"
+                      class="text-2xl font-bold text-gray-900"
+                    >
                       {{ formatPercentage(reportData.metrics.draft_conversion_rate.rate) }}
                     </p>
                     <p v-if="reportData.baseline" class="text-xs text-gray-500 mt-1">
@@ -180,7 +219,10 @@
             </div>
 
             <!-- Secondary Metrics -->
-            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <div
+              data-automation-id="JobMovementReport-additional-metrics"
+              class="bg-white rounded-lg shadow-sm border border-slate-200 p-6"
+            >
               <h3 class="text-lg font-medium text-gray-900 mb-4">Additional Metrics</h3>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Quote Acceptance -->

@@ -224,7 +224,7 @@ const columns = computed<ColumnDef<PurchaseOrderLine>[]>(() => {
                     },
                 class: 'font-mono uppercase tracking-wide',
               },
-              displayText,
+              () => displayText,
             ),
           ])
         }

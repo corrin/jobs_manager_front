@@ -21,6 +21,7 @@ import {
   CalendarIcon,
 } from 'lucide-vue-next'
 import ClientLookup from '@/components/ClientLookup.vue'
+import PickupAddressSelector from '@/components/purchasing/PickupAddressSelector.vue'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 import { reactive, watch } from 'vue' // ✅ 1. Import watch
@@ -39,6 +40,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:supplier': [v: string]
   'update:supplier_id': [v: string]
+  'update:pickup_address_id': [v: string | null]
   'update:reference': [v: string]
   'update:expected_delivery': [v: string]
   'update:status': [v: Status]
@@ -97,6 +99,10 @@ function onSupplierSelected(client: { name?: string } | null) {
 
 function onSupplierIdUpdate(id: string | null) {
   emit('update:supplier_id', id ?? '')
+}
+
+function onPickupAddressUpdate(addressId: string) {
+  emit('update:pickup_address_id', addressId || null)
 }
 
 function formatDate(dateString: string | null | undefined): string {
@@ -168,6 +174,20 @@ const statusOptions: { value: Status; label: string }[] = [
             </span>
           </div>
         </template>
+      </div>
+
+      <!-- Pickup Address Selector - shown when supplier is selected -->
+      <div v-if="po.supplier_id" class="flex flex-col gap-1 mt-4">
+        <PickupAddressSelector
+          id="pickup-address"
+          label="Pickup Address"
+          placeholder="Select pickup location"
+          :optional="true"
+          :supplier-id="po.supplier_id"
+          :supplier-name="po.supplier"
+          :initial-address-id="po.pickup_address_id || ''"
+          @update:model-value="onPickupAddressUpdate"
+        />
       </div>
 
       <div class="flex flex-col gap-1 mt-4">
