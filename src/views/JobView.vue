@@ -477,13 +477,13 @@ const handleRejectedChange = async () => {
 
       // Use header autosave for consistency
       headerAutosave.handleRejectedUpdate(true)
-      headerAutosave.handleStatusUpdate('recently_completed')
+      headerAutosave.handleStatusUpdate('archived')
       void headerAutosave.retrySave() // Force immediate save
 
       // Update local status
-      localJobStatus.value = 'recently_completed'
+      localJobStatus.value = 'archived'
 
-      toast.success('Job marked as rejected and moved to Recently Completed')
+      toast.success('Job marked as rejected and moved to Archived')
     } catch (error) {
       console.error('Failed to update rejected status:', error)
       toast.error('Failed to update job')
