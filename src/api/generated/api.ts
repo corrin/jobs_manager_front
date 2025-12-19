@@ -1004,6 +1004,36 @@ const CostLineCreateUpdate = z
     updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
+const CostLine = z
+  .object({
+    id: z.string().uuid(),
+    kind: Kind332Enum,
+    desc: z.string().max(255).optional(),
+    quantity: z.number().gt(-10000000).lt(10000000).optional(),
+    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
+    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
+    ext_refs: z.unknown().optional(),
+    meta: z.unknown().optional(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+    accounting_date: z.string(),
+    xero_time_id: z.string().max(255).nullish(),
+    xero_expense_id: z.string().max(255).nullish(),
+    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
+    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
+    approved: z.boolean().optional(),
+    total_cost: z.number(),
+    total_rev: z.number(),
+  })
+  .passthrough()
+const StockConsumeResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
+    line: CostLine,
+  })
+  .passthrough()
 const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
 const BrokenFKReference = z
   .object({
@@ -1112,27 +1142,6 @@ const CostSetSummary = z
     rev: z.number(),
     hours: z.number(),
     profitMargin: z.number(),
-  })
-  .passthrough()
-const CostLine = z
-  .object({
-    id: z.string().uuid(),
-    kind: Kind332Enum,
-    desc: z.string().max(255).optional(),
-    quantity: z.number().gt(-10000000).lt(10000000).optional(),
-    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
-    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
-    ext_refs: z.unknown().optional(),
-    meta: z.unknown().optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    accounting_date: z.string(),
-    xero_time_id: z.string().max(255).nullish(),
-    xero_expense_id: z.string().max(255).nullish(),
-    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
-    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
-    total_cost: z.number(),
-    total_rev: z.number(),
   })
   .passthrough()
 const CostSet = z
@@ -1843,6 +1852,7 @@ const TimesheetCostLine = z
     xero_expense_id: z.string().nullable(),
     xero_last_modified: z.string().datetime({ offset: true }).nullable(),
     xero_last_synced: z.string().datetime({ offset: true }).nullable(),
+    approved: z.boolean(),
     total_cost: z.number(),
     total_rev: z.number(),
     job_id: z.string(),
@@ -2004,6 +2014,9 @@ const ProductMappingValidateResponse = z
     updated_products_count: z.number().int().optional(),
   })
   .passthrough()
+const PurchaseOrderJob = z
+  .object({ job_number: z.string(), name: z.string(), client: z.string() })
+  .passthrough()
 const PurchaseOrderList = z
   .object({
     id: z.string().uuid(),
@@ -2012,6 +2025,7 @@ const PurchaseOrderList = z
     order_date: z.string(),
     supplier: z.string(),
     supplier_id: z.string().uuid().nullable(),
+    jobs: z.array(PurchaseOrderJob),
   })
   .passthrough()
 const PurchaseOrderLineCreateRequest = z
@@ -2230,6 +2244,24 @@ const PurchaseOrderEmailResponse = z
     message: z.string().optional(),
   })
   .passthrough()
+const PurchaseOrderEvent = z
+  .object({
+    id: z.string().uuid(),
+    description: z.string(),
+    timestamp: z.string().datetime({ offset: true }).optional(),
+    staff: z.string(),
+  })
+  .passthrough()
+const PurchaseOrderEventsResponse = z.object({ events: z.array(PurchaseOrderEvent) }).passthrough()
+const PurchasingErrorResponse = z
+  .object({ error: z.string(), details: z.string().optional() })
+  .passthrough()
+const PurchaseOrderEventCreateRequest = z
+  .object({ description: z.string().min(1).max(500) })
+  .passthrough()
+const PurchaseOrderEventCreateResponse = z
+  .object({ success: z.boolean(), event: PurchaseOrderEvent })
+  .passthrough()
 const AllocationTypeEnum = z.enum(['job', 'stock'])
 const AllocationDeleteRequest = z
   .object({
@@ -2246,9 +2278,6 @@ const AllocationDeleteResponse = z
     job_name: z.string().optional(),
     updated_received_quantity: z.number().optional(),
   })
-  .passthrough()
-const PurchasingErrorResponse = z
-  .object({ error: z.string(), details: z.string().optional() })
   .passthrough()
 const SourceEnum = z.enum(['purchase_order', 'split_from_stock', 'manual', 'product_catalog'])
 const StockItem = z
@@ -2308,14 +2337,6 @@ const StockConsumeRequest = z
     quantity: z.number().gte(0).lt(100000000),
     unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
     unit_rev: z.number().gt(-100000000).lt(100000000).nullish(),
-  })
-  .passthrough()
-const StockConsumeResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string().optional(),
-    remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
-    line: CostLine,
   })
   .passthrough()
 const SupplierPriceStatusItem = z
@@ -2739,6 +2760,8 @@ export const schemas = {
   Kind332Enum,
   PatchedCostLineCreateUpdateRequest,
   CostLineCreateUpdate,
+  CostLine,
+  StockConsumeResponse,
   CostLineErrorResponse,
   BrokenFKReference,
   BrokenJSONReference,
@@ -2753,7 +2776,6 @@ export const schemas = {
   JobRestErrorResponse,
   CostSetKindEnum,
   CostSetSummary,
-  CostLine,
   CostSet,
   JobFileStatusEnum,
   JobFile,
@@ -2862,6 +2884,7 @@ export const schemas = {
   ProductMappingListResponse,
   ProductMappingValidateRequest,
   ProductMappingValidateResponse,
+  PurchaseOrderJob,
   PurchaseOrderList,
   PurchaseOrderLineCreateRequest,
   PurchaseOrderCreateRequest,
@@ -2883,16 +2906,19 @@ export const schemas = {
   AllocationDetailsResponse,
   PurchaseOrderEmailRequest,
   PurchaseOrderEmailResponse,
+  PurchaseOrderEvent,
+  PurchaseOrderEventsResponse,
+  PurchasingErrorResponse,
+  PurchaseOrderEventCreateRequest,
+  PurchaseOrderEventCreateResponse,
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
-  PurchasingErrorResponse,
   SourceEnum,
   StockItem,
   StockItemRequest,
   PatchedStockItemRequest,
   StockConsumeRequest,
-  StockConsumeResponse,
   SupplierPriceStatusItem,
   SupplierPriceStatusResponse,
   XeroItem,
@@ -3017,6 +3043,54 @@ Returns:
     errors: [
       {
         status: 500,
+        schema: z.object({ error: z.string() }).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/sales-forecast/:month/',
+    alias: 'accounting_api_reports_sales_forecast_retrieve_2',
+    description: `Returns detailed invoice and job data for a specific month, showing matched pairs and unmatched items`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'month',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z
+      .object({
+        month: z.string(),
+        month_label: z.string(),
+        rows: z.array(
+          z
+            .object({
+              date: z.string(),
+              client_name: z.string(),
+              job_number: z.number().int().nullable(),
+              job_name: z.string().nullable(),
+              invoice_numbers: z.string().nullable(),
+              total_invoiced: z.number(),
+              job_revenue: z.number(),
+              variance: z.number(),
+              job_id: z.string().uuid().nullable(),
+              job_start_date: z.string().nullable(),
+              total_xero_all_time: z.number().nullable(),
+              total_jm_all_time: z.number().nullable(),
+              variance_all_time: z.number().nullable(),
+              note: z.string().nullable(),
+            })
+            .partial()
+            .passthrough(),
+        ),
+      })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
         schema: z.object({ error: z.string() }).partial().passthrough(),
       },
     ],
@@ -4773,6 +4847,33 @@ Dynamically infers the stock adjustment based on quantity change`,
     response: CostLineCreateUpdate,
   },
   {
+    method: 'post',
+    path: '/job/rest/cost_lines/:cost_line_id/approve/',
+    alias: 'approveCostLine',
+    description: `Approve an existing CostLine
+
+POST /job/rest/cost_lines/&lt;cost_line_id&gt;/approve`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cost_line_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: StockConsumeResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
+  },
+  {
     method: 'delete',
     path: '/job/rest/cost_lines/:cost_line_id/delete/',
     alias: 'job_rest_cost_lines_delete_destroy',
@@ -6216,6 +6317,57 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         status: 400,
         schema: PurchaseOrderEmailResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/purchasing/rest/purchase-orders/:po_id/events/',
+    alias: 'listPurchaseOrderEvents',
+    description: `List all events/comments for a purchase order.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: PurchaseOrderEventsResponse,
+    errors: [
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/purchasing/rest/purchase-orders/:po_id/events/',
+    alias: 'createPurchaseOrderEvent',
+    description: `Create a new event/comment on a purchase order.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ description: z.string().min(1).max(500) }).passthrough(),
+      },
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: PurchaseOrderEventCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: PurchasingErrorResponse,
+      },
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
       },
     ],
   },

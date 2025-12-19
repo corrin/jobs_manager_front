@@ -27,7 +27,7 @@ import { toast } from 'vue-sonner'
 import { debugLog } from '../../utils/debug'
 import { formatCurrency } from '../../utils/string-formatting'
 import { roundToDecimalPlaces } from '@/utils/number'
-import { HelpCircle, Trash2, Plus, AlertTriangle } from 'lucide-vue-next'
+import { HelpCircle, Trash2, Plus, AlertTriangle, Check } from 'lucide-vue-next'
 import {
   Dialog,
   DialogContent,
@@ -119,6 +119,7 @@ const containerRef = ref<HTMLElement | null>(null)
 const showShortcuts = ref(false)
 const pendingFocusNewRow = ref(false)
 const openItemSelect = ref(false)
+const approvingId = ref<string | null>(null)
 
 // Focus on ItemSelect trigger and open popover after a row has been added
 watch(
@@ -313,6 +314,10 @@ function isStockLine(line: CostLine): boolean {
   return !!(line?.ext_refs && (line.ext_refs as Record<string, unknown>).stock_id)
 }
 
+function isUnapproved(line: CostLine): boolean {
+  return line?.approved === false
+}
+
 function isNegativeStock(line: CostLine): boolean {
   if (!line?.id || !isStockLine(line)) return false
   const stockId = (line.ext_refs as Record<string, unknown>)?.stock_id
@@ -448,6 +453,25 @@ function handleRowClick(line: CostLine, index: number) {
   selectedRowIndex.value = index
 }
 
+async function approveLine(line: CostLine) {
+  if (!line.id || approvingId.value) return
+
+  const toastId = `approve-line-${line.id}`
+  approvingId.value = String(line.id)
+  toast.info('Approving line...', { id: toastId })
+
+  try {
+    const updated = await costlineService.approveCostLine(String(line.id))
+    Object.assign(line, updated)
+    toast.success('Line approved', { id: toastId })
+  } catch (error) {
+    console.error('Failed to approve cost line:', error)
+    toast.error('Failed to approve line', { id: toastId })
+  } finally {
+    approvingId.value = null
+  }
+}
+
 const shortcutsTitle = computed(
   () =>
     'Shortcuts: Enter/F2 edit • Enter confirm • Esc cancel • Tab/Shift+Tab move • ↑/↓ row • Ctrl/Cmd+Enter add • Ctrl/Cmd+D duplicate • Ctrl/Cmd+Backspace delete • Alt+↑/↓ move row',
@@ -466,7 +490,23 @@ const columns = computed(() => {
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
         const badge = getKindBadge(line)
-        return h(Badge, { class: `text-xs font-medium ${badge.class}` }, () => badge.label)
+        const pending = isUnapproved(line)
+        return h('div', { class: 'flex flex-col gap-1' }, [
+          h(Badge, { class: `text-xs font-medium ${badge.class}` }, () => badge.label),
+          ...(pending
+            ? [
+                h(
+                  Badge,
+                  {
+                    variant: 'outline',
+                    class:
+                      'text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200',
+                  },
+                  () => 'Pending approval',
+                ),
+              ]
+            : []),
+        ])
       },
       meta: { editable: false }, // Always readonly
     },
@@ -1205,14 +1245,57 @@ const columns = computed(() => {
       meta: { editable: false },
     },
 
-    // Actions (delete only)
+    // Actions
     {
       id: 'actions',
       header: () => h('div', { class: 'w-full text-center' }, 'Actions'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
-        const disabled = !!props.readOnly
-        return h('div', { class: 'flex items-center justify-center w-full' }, [
+        const approving = approvingId.value === line.id
+        const disabled = !!props.readOnly || approving
+        const canApprove =
+          props.tabKind === 'actual' && !props.readOnly && !!line.id && isUnapproved(line)
+
+        return h('div', { class: 'flex items-center justify-center w-full gap-2' }, [
+          ...(canApprove
+            ? [
+                h(
+                  Button,
+                  {
+                    variant: 'default',
+                    size: 'icon',
+                    class:
+                      'h-8 w-8 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center',
+                    disabled: approving,
+                    'aria-label': 'Approve line',
+                    onClick: (e: Event) => {
+                      e.stopPropagation()
+                      if (approving) return
+                      void approveLine(line)
+                    },
+                  },
+                  () =>
+                    approving
+                      ? h('svg', { class: 'h-4 w-4 animate-spin', viewBox: '0 0 24 24' }, [
+                          h('circle', {
+                            class: 'opacity-25',
+                            cx: '12',
+                            cy: '12',
+                            r: '10',
+                            stroke: 'currentColor',
+                            'stroke-width': '4',
+                            fill: 'none',
+                          }),
+                          h('path', {
+                            class: 'opacity-75',
+                            fill: 'currentColor',
+                            d: 'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z',
+                          }),
+                        ])
+                      : h(Check, { class: 'w-4 h-4 text-white' }),
+                ),
+              ]
+            : []),
           h(
             Button,
             {

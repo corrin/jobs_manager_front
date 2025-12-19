@@ -8,6 +8,7 @@ type CostLineRequest = z.infer<typeof schemas.CostLineCreateUpdateRequest>
 type PatchedCostLineRequest = z.infer<typeof schemas.PatchedCostLineCreateUpdateRequest>
 type CostLineResponse = z.infer<typeof schemas.CostLine>
 export type TimesheetEntriesResponse = z.infer<typeof schemas.ModernTimesheetEntryGetResponse>
+type StockConsumeResponse = z.infer<typeof schemas.StockConsumeResponse>
 
 export const getTimesheetEntries = async (
   staffId: string,
@@ -69,6 +70,12 @@ export const updateCostLine = async (
   return schemas.CostLine.parse(result)
 }
 
+export const approveCostLine = async (id: string): Promise<CostLineResponse> => {
+  const response = await api.approveCostLine(undefined, { params: { cost_line_id: id } })
+  const parsed: StockConsumeResponse = schemas.StockConsumeResponse.parse(response)
+  return schemas.CostLine.parse(parsed.line)
+}
+
 export const deleteCostLine = async (id: string): Promise<void> => {
   debugLog('SERVICE: Starting DELETE request for cost line ID:', id)
   debugLog('COSTLINE SERVICE - Deleting cost line:', id)
@@ -90,4 +97,5 @@ export const costlineService = {
   createCostLine,
   updateCostLine,
   deleteCostLine,
+  approveCostLine,
 }

@@ -125,7 +125,7 @@ async function createFromDraft(selectedStockId: string) {
       return
     }
 
-    const unitCost = Number(stock.unit_cost ?? 0)
+    const unitCost = Number(draft.value.unitCost ?? stock.unit_cost ?? 0)
     const unitRev =
       stock.unit_revenue != null
         ? Number(stock.unit_revenue)
@@ -134,18 +134,28 @@ async function createFromDraft(selectedStockId: string) {
             2,
           )
 
-    const response = await stockStore.consumeStock(selectedStockId, {
-      job_id: props.jobId,
+    const now = new Date().toISOString()
+    const description =
+      draft.value.desc?.trim() || stock.description?.trim() || stock.item_code || 'Material'
+
+    const created = await costlineService.createCostLine(props.jobId, 'actual', {
+      kind: 'material',
+      desc: description,
       quantity,
       unit_cost: unitCost,
       unit_rev: unitRev,
+      accounting_date: now.split('T')[0],
+      ext_refs: { stock_id: selectedStockId },
+      meta: { source: 'workshop_materials' },
+      created_at: now,
+      updated_at: now,
     })
 
-    materialLines.value = [...materialLines.value, response.line].filter(
+    materialLines.value = [...materialLines.value, created].filter(
       (l) => String(l.kind) === 'material',
     )
 
-    toast.success('Material added')
+    toast.success('Material logged for approval')
     resetDraft()
   } catch (error) {
     console.error('Failed to add material line:', error)
