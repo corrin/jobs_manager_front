@@ -252,6 +252,8 @@ export function usePickupAddressManagement() {
       // If this is the first address for the supplier, automatically make it primary
       const shouldBePrimary = newAddressForm.value.is_primary || addresses.value.length === 0
 
+      const trimmedCountry = newAddressForm.value.country?.trim()
+
       const addressData: AddressCreateRequest = {
         client: currentSupplierId.value,
         name: newAddressForm.value.name.trim(),
@@ -260,7 +262,7 @@ export function usePickupAddressManagement() {
         city: newAddressForm.value.city.trim(),
         state: newAddressForm.value.state || undefined,
         postal_code: newAddressForm.value.postal_code || undefined,
-        country: newAddressForm.value.country.trim(),
+        country: trimmedCountry || undefined,
         google_place_id: newAddressForm.value.google_place_id || undefined,
         latitude: newAddressForm.value.latitude || undefined,
         longitude: newAddressForm.value.longitude || undefined,
@@ -371,6 +373,8 @@ export function usePickupAddressManagement() {
     isLoading.value = true
 
     try {
+      const trimmedCountry = newAddressForm.value.country?.trim()
+
       const addressData: AddressUpdateRequest = {
         client: currentSupplierId.value,
         name: newAddressForm.value.name.trim(),
@@ -379,7 +383,7 @@ export function usePickupAddressManagement() {
         city: newAddressForm.value.city.trim(),
         state: newAddressForm.value.state || null,
         postal_code: newAddressForm.value.postal_code || null,
-        country: newAddressForm.value.country.trim(),
+        country: trimmedCountry || undefined,
         google_place_id: newAddressForm.value.google_place_id || null,
         latitude: newAddressForm.value.latitude || null,
         longitude: newAddressForm.value.longitude || null,

@@ -90,6 +90,8 @@ const isLoading = ref(false)
 const showSuggestions = ref(false)
 const highlightedIndex = ref(-1)
 
+let currentRequestId = 0
+
 let debounceTimer: number | undefined
 
 onMounted(() => {
@@ -125,18 +127,26 @@ const searchAddress = async (query: string) => {
     return
   }
 
+  const requestId = ++currentRequestId
   isLoading.value = true
   try {
     const response = await api.clients_addresses_validate_create({
       address: query,
     })
+    if (requestId !== currentRequestId) {
+      return
+    }
     suggestions.value = response.candidates || []
     debugLog('Address suggestions:', suggestions.value)
   } catch (error) {
-    debugLog('Error fetching address suggestions:', error)
-    suggestions.value = []
+    if (requestId === currentRequestId) {
+      debugLog('Error fetching address suggestions:', error)
+      suggestions.value = []
+    }
   } finally {
-    isLoading.value = false
+    if (requestId === currentRequestId) {
+      isLoading.value = false
+    }
   }
 }
 

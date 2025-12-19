@@ -145,8 +145,8 @@ test.describe('address autocomplete', () => {
     const suggestionDropdown = autoId(page, 'AddressAutocompleteInput-suggestions')
     await expect(suggestionDropdown).toBeVisible({ timeout: 5000 })
 
-    // Should contain Hillsborough in one of the suggestions
-    await expect(suggestionDropdown).toContainText('Hillsborough')
+    // Should contain the exact Hillsborough road suggestion
+    await expect(suggestionDropdown).toContainText(/7C Aldersgate.*Road/i)
 
     console.log('Autocomplete returned Hillsborough suggestion for "7C Aldersgate"')
   })
@@ -201,7 +201,11 @@ test.describe('pickup address CRUD', () => {
     // Wait for autocomplete dropdown and select the Hillsborough option
     const suggestionDropdown = autoId(page, 'AddressAutocompleteInput-suggestions')
     await expect(suggestionDropdown).toBeVisible({ timeout: 10000 })
-    await suggestionDropdown.locator('div').filter({ hasText: 'Hillsborough' }).first().click()
+    await suggestionDropdown
+      .locator('div')
+      .filter({ hasText: /7C Aldersgate.*Road/i })
+      .first()
+      .click()
 
     // Click submit and wait for response
     const createPromise = page.waitForResponse(
@@ -216,7 +220,7 @@ test.describe('pickup address CRUD', () => {
 
     // Address should be selected
     const display = autoId(page, 'PickupAddressSelector-display')
-    await expect(display).toHaveValue(/Hillsborough/, { timeout: 5000 })
+    await expect(display).toHaveValue(/7C Aldersgate.*Road/i, { timeout: 5000 })
     console.log('Created and selected new address')
 
     // --- Step 2: Clear the selection ---
@@ -246,7 +250,7 @@ test.describe('pickup address CRUD', () => {
 
     // Modal closes and address is selected
     await expect(modal).toBeHidden({ timeout: 5000 })
-    await expect(display).toHaveValue(/Hillsborough/, { timeout: 5000 })
+    await expect(display).toHaveValue(/7C Aldersgate.*Road/i, { timeout: 5000 })
     console.log('Re-selected existing address')
   })
 
@@ -338,7 +342,7 @@ test.describe('pickup address CRUD', () => {
       (r) => r.url().includes('pickup-addresses') && r.request().method() === 'DELETE',
       { timeout: 15000 },
     )
-    await modal.getByRole('button', { name: 'Delete' }).click()
+    await modal.getByRole('button', { name: 'Delete', exact: true }).click()
     await deletePromise
 
     // Modal should still be open but with one fewer address
@@ -370,7 +374,11 @@ test.describe('pickup address CRUD', () => {
     // Wait for dropdown and select Hillsborough option
     const suggestionDropdown = autoId(page, 'AddressAutocompleteInput-suggestions')
     await expect(suggestionDropdown).toBeVisible({ timeout: 10000 })
-    await suggestionDropdown.locator('div').filter({ hasText: 'Hillsborough' }).first().click()
+    await suggestionDropdown
+      .locator('div')
+      .filter({ hasText: /7C Aldersgate.*Road/i })
+      .first()
+      .click()
 
     // City field should be populated from Google data
     const cityInput = modal.locator('input[placeholder="City"]')
