@@ -475,7 +475,6 @@ const executeDelete = () => {
 /* ===== MODAL RESPONSIVE LAYOUT ===== */
 .modal-content {
   width: min(60vw, 725px) !important;
-  max-width: 60vw !important;
   max-height: min(85vh, 700px) !important;
   min-width: 320px !important;
   position: fixed !important;
@@ -513,7 +512,6 @@ const executeDelete = () => {
 @media (min-width: 641px) and (max-width: 1023px) {
   .modal-content {
     width: min(65vw, 650px) !important;
-    max-width: 650px !important;
     max-height: 85vh !important;
   }
 
@@ -540,7 +538,6 @@ const executeDelete = () => {
 @media (min-width: 1024px) {
   .modal-content {
     width: min(60vw, 700px) !important;
-    max-width: 700px !important;
     max-height: 85vh !important;
   }
 
@@ -567,7 +564,6 @@ const executeDelete = () => {
 @media (min-width: 1280px) {
   .modal-content {
     width: min(50vw, 725px) !important;
-    max-width: 725px !important;
   }
 
   .addresses-section {
@@ -588,13 +584,6 @@ const executeDelete = () => {
 }
 
 @media (min-width: 640px) {
-  .addresses-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-}
-
-@media (min-width: 768px) {
   .addresses-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
