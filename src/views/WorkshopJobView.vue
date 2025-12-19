@@ -14,18 +14,24 @@ import {
   Gauge,
   Hash,
   NotebookText,
+  Download,
   Timer,
   UserRound,
+  Eye,
+  EyeOff,
+  ArrowRightToLine,
 } from 'lucide-vue-next'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
 import DOMPurify from 'dompurify'
 import WorkshopMaterialsUsedTable from '@/components/workshop/WorkshopMaterialsUsedTable.vue'
+import axios from '@/plugins/axios'
 
 type Job = z.infer<typeof schemas.Job>
+type JobFile = z.infer<typeof schemas.JobFile>
 
 const route = useRoute()
 const router = useRouter()
@@ -105,6 +111,139 @@ function navigateBack() {
 
 onMounted(loadJob)
 watch(jobId, () => void loadJob())
+
+// Attachments (read-only list)
+const attachments = ref<JobFile[]>([])
+const attachmentsLoading = ref(false)
+const attachmentsError = ref(false)
+const expandedAttachmentIds = ref<Set<string>>(new Set())
+const previewUrls = ref<Map<string, string>>(new Map())
+const previewLoading = ref<Set<string>>(new Set())
+const previewErrors = ref<Set<string>>(new Set())
+
+async function loadAttachments() {
+  if (!jobId.value) return
+  attachmentsLoading.value = true
+  attachmentsError.value = false
+  try {
+    attachments.value = await jobService.listJobFiles(jobId.value)
+  } catch (error) {
+    console.error('Failed to load attachments:', error)
+    attachmentsError.value = true
+    toast.error('Failed to load attachments')
+  } finally {
+    attachmentsLoading.value = false
+  }
+}
+
+function formatSize(bytes?: number | null) {
+  if (!bytes || bytes <= 0) return '—'
+  const kb = bytes / 1024
+  if (kb < 1024) return `${kb.toFixed(1)} KB`
+  const mb = kb / 1024
+  return `${mb.toFixed(1)} MB`
+}
+
+function formatDateShort(dateString?: string | null) {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString('en-AU', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+function downloadAttachment(file: JobFile) {
+  if (!file.download_url) {
+    toast.error('File download unavailable')
+    return
+  }
+  // Fetch, trigger download, then open in new tab for quick viewing.
+  void (async () => {
+    try {
+      const response = await axios.get(file.download_url, { responseType: 'blob' })
+      const blob = response.data as Blob
+      const url = URL.createObjectURL(blob)
+      // Trigger download
+      const a = document.createElement('a')
+      a.href = url
+      a.download = file.filename || 'attachment'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      // Open for viewing
+      window.open(url, '_blank', 'noopener,noreferrer')
+      // Revoke after a short delay to allow the tab to load
+      setTimeout(() => URL.revokeObjectURL(url), 30000)
+    } catch (error) {
+      console.error('Download failed:', error)
+      toast.error('Failed to download file')
+    }
+  })()
+}
+
+function isImage(file: JobFile) {
+  return (file.mime_type || '').startsWith('image/')
+}
+
+function isPdf(file: JobFile) {
+  return (file.mime_type || '').includes('pdf')
+}
+
+function toggleAttachment(file: JobFile) {
+  const id = String(file.id)
+  const set = new Set(expandedAttachmentIds.value)
+  if (set.has(id)) {
+    set.delete(id)
+  } else {
+    set.add(id)
+  }
+  expandedAttachmentIds.value = set
+}
+
+async function ensurePreviewUrl(file: JobFile) {
+  const id = String(file.id)
+  if (previewUrls.value.has(id)) return
+  const loadingSet = new Set(previewLoading.value)
+  loadingSet.add(id)
+  previewLoading.value = loadingSet
+  previewErrors.value.delete(id)
+  try {
+    const response = await axios.get(file.download_url || '', { responseType: 'blob' })
+    const url = URL.createObjectURL(response.data)
+    const map = new Map(previewUrls.value)
+    map.set(id, url)
+    previewUrls.value = map
+  } catch (error) {
+    console.error('Failed to load attachment preview:', error)
+    const errSet = new Set(previewErrors.value)
+    errSet.add(id)
+    previewErrors.value = errSet
+    toast.error('Preview unavailable for this file')
+  } finally {
+    const loadingSetDone = new Set(previewLoading.value)
+    loadingSetDone.delete(id)
+    previewLoading.value = loadingSetDone
+  }
+}
+
+function previewUrlFor(file: JobFile): string | undefined {
+  return previewUrls.value.get(String(file.id))
+}
+
+function openPdfInNewTab(file: JobFile) {
+  const url = previewUrlFor(file)
+  if (url && typeof window !== 'undefined') {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+}
+
+onUnmounted(() => {
+  previewUrls.value.forEach((url) => URL.revokeObjectURL(url))
+})
+
+onMounted(loadAttachments)
+watch(jobId, () => void loadAttachments())
 </script>
 
 <template>
@@ -348,6 +487,128 @@ watch(jobId, () => void loadJob())
           <div class="lg:col-span-12">
             <WorkshopMaterialsUsedTable :job-id="jobId" />
           </div>
+
+          <Card class="lg:col-span-12">
+            <CardHeader class="flex items-center justify-between">
+              <CardTitle class="flex items-center gap-2">
+                <FileText class="h-5 w-5" />
+                Attachments
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div v-if="attachmentsLoading" class="space-y-3">
+                <Skeleton class="h-10 w-full" />
+                <Skeleton class="h-10 w-full" />
+              </div>
+              <div v-else-if="attachmentsError" class="text-sm text-muted-foreground">
+                Failed to load attachments. Please refresh.
+              </div>
+              <div v-else-if="attachments.length === 0" class="text-sm text-muted-foreground">
+                No attachments uploaded.
+              </div>
+              <div v-else class="divide-y divide-border">
+                <div v-for="file in attachments" :key="file.id" class="flex flex-col gap-2 py-3">
+                  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                      <div class="text-sm font-medium text-foreground truncate">
+                        {{ file.filename }}
+                      </div>
+                      <div class="text-xs text-muted-foreground flex flex-wrap gap-2">
+                        <span>{{ formatSize(file.size) }}</span>
+                        <span class="hidden sm:inline">•</span>
+                        <span>{{ formatDateShort(file.uploaded_at) }}</span>
+                        <span class="text-muted-foreground">• View only</span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        class="h-9 w-30 justify-center"
+                        @click="downloadAttachment(file)"
+                      >
+                        <Download class="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
+                      <Button
+                        v-if="isImage(file) || isPdf(file)"
+                        variant="secondary"
+                        size="sm"
+                        class="h-9 w-25 justify-center px-3"
+                        @click="
+                          () => {
+                            toggleAttachment(file)
+                            if (expandedAttachmentIds.has(String(file.id))) {
+                              void ensurePreviewUrl(file)
+                            }
+                          }
+                        "
+                      >
+                        <component
+                          :is="expandedAttachmentIds.has(String(file.id)) ? EyeOff : Eye"
+                          class="h-4 w-4 mr-1"
+                        />
+                        {{ expandedAttachmentIds.has(String(file.id)) ? 'Hide' : 'Show' }}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="
+                      expandedAttachmentIds.has(String(file.id)) && (isImage(file) || isPdf(file))
+                    "
+                    class="rounded-md border bg-muted/30 p-3"
+                  >
+                    <div
+                      v-if="previewLoading.has(String(file.id))"
+                      class="text-sm text-muted-foreground"
+                    >
+                      Loading preview...
+                    </div>
+                    <div
+                      v-else-if="previewErrors.has(String(file.id))"
+                      class="text-sm text-destructive"
+                    >
+                      Preview unavailable for this file.
+                    </div>
+                    <template v-else>
+                      <div v-if="isImage(file)" class="w-full overflow-auto">
+                        <img
+                          :src="previewUrlFor(file) || file.thumbnail_url || file.download_url"
+                          :alt="file.filename"
+                          class="w-full max-w-full rounded-md object-contain"
+                        />
+                      </div>
+                      <div v-else-if="isPdf(file)" class="w-full space-y-2">
+                        <object
+                          v-if="previewUrlFor(file)"
+                          :data="previewUrlFor(file)"
+                          type="application/pdf"
+                          class="w-full min-h-[70vh] sm:min-h-[520px] max-h-[80vh] rounded-md border overflow-auto"
+                        >
+                          <p class="text-sm text-muted-foreground">
+                            PDF preview is not supported in this browser.
+                          </p>
+                        </object>
+                        <div v-else class="text-sm text-muted-foreground">PDF unavailable.</div>
+                        <div class="flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            class="h-8 px-3"
+                            @click="() => openPdfInNewTab(file)"
+                          >
+                            <ArrowRightToLine class="h-4 w-4 mr-1" />
+                            Open full PDF
+                          </Button>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
