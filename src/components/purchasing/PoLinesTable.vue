@@ -77,22 +77,6 @@ const emit = defineEmits<Emits>()
 const stockStore = useStockStore()
 type RowContext = DataTableRowContext<PurchaseOrderLine>
 
-const ensureFunctionRenderers = (defs: ColumnDef<PurchaseOrderLine>[]) => {
-  defs.forEach((column) => {
-    const originalCell = column.cell
-    if (typeof originalCell === 'function') {
-      column.cell = (ctx) => {
-        const rendered = originalCell(ctx)
-        if (typeof rendered === 'function') {
-          return rendered
-        }
-        return () => rendered
-      }
-    }
-  })
-  return defs
-}
-
 const showAdditionalFieldsModal = ref(false)
 const editingLineIndex = ref<number>(-1)
 const editingItemIndex = ref<number>(-1)
@@ -451,10 +435,7 @@ const columns = computed<ColumnDef<PurchaseOrderLine>[]>(() => {
       meta: { editable: !isColumnDisabled.value },
     },
   ]
-
-  const normalizedDefs = ensureFunctionRenderers(columnDefs)
-
-  return normalizedDefs.filter((column) => {
+  return columnDefs.filter((column) => {
     // Hide Receipt column when PO status doesn't allow receipts
     if (column.id === 'receipt' && !isReceiptColumnVisible.value) {
       return false
