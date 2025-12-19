@@ -137,6 +137,10 @@ const searchAddress = async (query: string) => {
       return
     }
     suggestions.value = response.candidates || []
+    // Show suggestions dropdown when results arrive (fixes race with blur events)
+    if (suggestions.value.length > 0) {
+      showSuggestions.value = true
+    }
     debugLog('Address suggestions:', suggestions.value)
   } catch (error) {
     if (requestId === currentRequestId) {
