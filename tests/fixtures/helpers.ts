@@ -3,6 +3,9 @@ import { expect } from '@playwright/test'
 import { appendFileSync, existsSync, mkdirSync } from 'fs'
 import path from 'path'
 
+// Test data constants
+export const TEST_CLIENT_NAME = 'ABC Carpet Cleaning TEST IGNORE'
+
 // Network logging state
 let networkRunId: string | null = null
 let networkRunDate: string | null = null
@@ -267,8 +270,8 @@ export async function createTestJob(page: Page, jobNameSuffix: string): Promise<
   await clientInput.fill('ABC')
   await page.waitForTimeout(500) // Give search time to trigger
   await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
-  await page.getByRole('option', { name: /ABC Carpet Cleaning TEST IGNORE/ }).click()
-  await expect(clientInput).toHaveValue('ABC Carpet Cleaning TEST IGNORE')
+  await page.getByRole('option', { name: new RegExp(TEST_CLIENT_NAME) }).click()
+  await expect(clientInput).toHaveValue(TEST_CLIENT_NAME)
 
   // Enter job details
   await autoId(page, 'JobCreateView-name-input').fill(jobName)

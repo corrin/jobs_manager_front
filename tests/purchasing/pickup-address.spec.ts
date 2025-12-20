@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures/auth'
 import type { Page } from '@playwright/test'
-import { autoId, dismissToasts } from '../fixtures/helpers'
+import { autoId, dismissToasts, TEST_CLIENT_NAME } from '../fixtures/helpers'
 
 /**
  * Tests for pickup address functionality on purchase orders.
@@ -21,8 +21,8 @@ async function createPOWithExistingSupplier(page: Page): Promise<string> {
   await supplierInput.fill('ABC')
   await page.waitForTimeout(500)
   await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
-  await page.getByRole('option', { name: /ABC Carpet Cleaning TEST IGNORE/ }).click()
-  await expect(supplierInput).toHaveValue('ABC Carpet Cleaning TEST IGNORE')
+  await page.getByRole('option', { name: new RegExp(TEST_CLIENT_NAME) }).click()
+  await expect(supplierInput).toHaveValue(TEST_CLIENT_NAME)
 
   await autoId(page, 'PoSummaryCard-reference').fill(`E2E Pickup Test ${randomSuffix}`)
 
@@ -430,7 +430,7 @@ test.describe('pickup address without supplier', () => {
     await supplierInput.fill('ABC')
     await page.waitForTimeout(500)
     await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
-    await page.getByRole('option', { name: /ABC Carpet Cleaning TEST IGNORE/ }).click()
+    await page.getByRole('option', { name: new RegExp(TEST_CLIENT_NAME) }).click()
 
     // Now pickup address should be visible and button enabled
     const modalButton = autoId(page, 'PickupAddressSelector-modal-button')
