@@ -777,63 +777,6 @@ const JobContactUpdateRequest = z
     notes: z.string().nullable(),
   })
   .passthrough()
-const SupplierPickupAddress = z
-  .object({
-    id: z.string().uuid(),
-    client: z.string().uuid(),
-    name: z.string().max(255),
-    street: z.string().max(255),
-    suburb: z.string().max(100).nullish(),
-    city: z.string().max(100),
-    state: z.string().max(100).nullish(),
-    postal_code: z.string().max(20).nullish(),
-    country: z.string().max(100).optional(),
-    google_place_id: z.string().max(255).nullish(),
-    latitude: z.number().gt(-1000).lt(1000).nullish(),
-    longitude: z.number().gt(-1000).lt(1000).nullish(),
-    is_primary: z.boolean().optional(),
-    notes: z.string().nullish(),
-    is_active: z.boolean(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    formatted_address: z.string(),
-  })
-  .passthrough()
-const SupplierPickupAddressRequest = z
-  .object({
-    client: z.string().uuid(),
-    name: z.string().min(1).max(255),
-    street: z.string().min(1).max(255),
-    suburb: z.string().max(100).nullish(),
-    city: z.string().min(1).max(100),
-    state: z.string().max(100).nullish(),
-    postal_code: z.string().max(20).nullish(),
-    country: z.string().min(1).max(100).optional(),
-    google_place_id: z.string().max(255).nullish(),
-    latitude: z.number().gt(-1000).lt(1000).nullish(),
-    longitude: z.number().gt(-1000).lt(1000).nullish(),
-    is_primary: z.boolean().optional(),
-    notes: z.string().nullish(),
-  })
-  .passthrough()
-const PatchedSupplierPickupAddressRequest = z
-  .object({
-    client: z.string().uuid(),
-    name: z.string().min(1).max(255),
-    street: z.string().min(1).max(255),
-    suburb: z.string().max(100).nullable(),
-    city: z.string().min(1).max(100),
-    state: z.string().max(100).nullable(),
-    postal_code: z.string().max(20).nullable(),
-    country: z.string().min(1).max(100),
-    google_place_id: z.string().max(255).nullable(),
-    latitude: z.number().gt(-1000).lt(1000).nullable(),
-    longitude: z.number().gt(-1000).lt(1000).nullable(),
-    is_primary: z.boolean(),
-    notes: z.string().nullable(),
-  })
-  .partial()
-  .passthrough()
 const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
 const AssignJobRequest = z.object({ staff_id: z.string().uuid() }).passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
@@ -1028,6 +971,59 @@ const WorkshopJob = z
     contact_person: z.string().nullable(),
     people: z.array(KanbanJobPerson),
   })
+  .passthrough()
+const WorkshopTimesheetEntry = z
+  .object({
+    id: z.string().uuid(),
+    job_id: z.string().uuid(),
+    job_number: z.number().int(),
+    job_name: z.string(),
+    client_name: z.string(),
+    description: z.string(),
+    hours: z.number().gt(-100000).lt(100000),
+    accounting_date: z.string(),
+    is_billable: z.boolean(),
+    rate_multiplier: z.number().gt(-100).lt(100),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough()
+const WorkshopTimesheetSummary = z
+  .object({
+    total_hours: z.number(),
+    billable_hours: z.number(),
+    non_billable_hours: z.number(),
+    total_cost: z.number(),
+    total_revenue: z.number(),
+  })
+  .passthrough()
+const WorkshopTimesheetListResponse = z
+  .object({
+    date: z.string(),
+    entries: z.array(WorkshopTimesheetEntry),
+    summary: WorkshopTimesheetSummary,
+  })
+  .passthrough()
+const WorkshopTimesheetEntryRequestRequest = z
+  .object({
+    job_id: z.string().uuid(),
+    accounting_date: z.string(),
+    hours: z.number().gte(0.01).lt(100000),
+    description: z.string().max(255).nullish(),
+    is_billable: z.boolean().optional().default(true),
+    rate_multiplier: z.number().gte(0.1).lt(100).optional().default(1),
+  })
+  .passthrough()
+const PatchedWorkshopTimesheetEntryUpdateRequest = z
+  .object({
+    entry_id: z.string().uuid(),
+    accounting_date: z.string(),
+    hours: z.number().gte(0.01).lt(100000),
+    description: z.string().max(255).nullable(),
+    is_billable: z.boolean(),
+    rate_multiplier: z.number().gte(0.1).lt(100),
+  })
+  .partial()
   .passthrough()
 const WorkshopPDFResponse = z
   .object({ status: z.string(), message: z.string() })
@@ -2104,7 +2100,6 @@ const PurchaseOrderLineCreateRequest = z
 const PurchaseOrderCreateRequest = z
   .object({
     supplier_id: z.string().uuid().nullable(),
-    pickup_address_id: z.string().uuid().nullable(),
     reference: z.string().max(255),
     order_date: z.string().nullable(),
     expected_delivery: z.string().nullable(),
@@ -2131,7 +2126,6 @@ const PurchaseOrderLineCreate = z
 const PurchaseOrderCreate = z
   .object({
     supplier_id: z.string().uuid().nullable(),
-    pickup_address_id: z.string().uuid().nullable(),
     reference: z.string().max(255),
     order_date: z.string().nullable(),
     expected_delivery: z.string().nullable(),
@@ -2188,12 +2182,10 @@ const PurchaseOrderDetail = z
     expected_delivery: z.string().nullish(),
     online_url: z.string().max(500).url().nullish(),
     xero_id: z.string().uuid().nullish(),
-    pickup_address_id: z.string().uuid().nullable(),
     supplier: z.string(),
     supplier_id: z.string().nullable(),
     supplier_has_xero_id: z.boolean(),
     lines: z.array(PurchaseOrderLine),
-    pickup_address: SupplierPickupAddress.nullable(),
   })
   .passthrough()
 const PurchaseOrderLineUpdateRequest = z
@@ -2216,7 +2208,6 @@ const PurchaseOrderLineUpdateRequest = z
 const PatchedPurchaseOrderUpdateRequest = z
   .object({
     supplier_id: z.string().uuid().nullable(),
-    pickup_address_id: z.string().uuid().nullable(),
     reference: z.string().max(255),
     expected_delivery: z.string().nullable(),
     status: z.string().max(50),
@@ -2245,7 +2236,6 @@ const PurchaseOrderLineUpdate = z
 const PurchaseOrderUpdate = z
   .object({
     supplier_id: z.string().uuid().nullable(),
-    pickup_address_id: z.string().uuid().nullable(),
     reference: z.string().max(255),
     expected_delivery: z.string().nullable(),
     status: z.string().max(50),
@@ -2789,9 +2779,6 @@ export const schemas = {
   ClientDuplicateErrorResponse,
   JobContactResponse,
   JobContactUpdateRequest,
-  SupplierPickupAddress,
-  SupplierPickupAddressRequest,
-  PatchedSupplierPickupAddressRequest,
   ClientSearchResponse,
   AssignJobRequest,
   AssignJobResponse,
@@ -2822,6 +2809,11 @@ export const schemas = {
   FetchJobsResponse,
   FetchStatusValuesResponse,
   WorkshopJob,
+  WorkshopTimesheetEntry,
+  WorkshopTimesheetSummary,
+  WorkshopTimesheetListResponse,
+  WorkshopTimesheetEntryRequestRequest,
+  PatchedWorkshopTimesheetEntryUpdateRequest,
   WorkshopPDFResponse,
   Kind332Enum,
   PatchedCostLineCreateUpdateRequest,
@@ -4196,52 +4188,6 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
     ],
   },
   {
-    method: 'post',
-    path: '/clients/addresses/validate/',
-    alias: 'clients_addresses_validate_create',
-    description: `Validate an address and return structured candidates.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({ address: z.string() }).passthrough(),
-      },
-    ],
-    response: z
-      .object({
-        candidates: z.array(
-          z
-            .object({
-              formatted_address: z.string(),
-              street: z.string(),
-              suburb: z.string(),
-              city: z.string(),
-              state: z.string(),
-              postal_code: z.string(),
-              country: z.string(),
-              google_place_id: z.string(),
-              latitude: z.number(),
-              longitude: z.number(),
-            })
-            .partial()
-            .passthrough(),
-        ),
-      })
-      .partial()
-      .passthrough(),
-    errors: [
-      {
-        status: 400,
-        schema: z.unknown(),
-      },
-      {
-        status: 503,
-        schema: z.unknown(),
-      },
-    ],
-  },
-  {
     method: 'get',
     path: '/clients/all/',
     alias: 'clients_all_list',
@@ -4501,161 +4447,6 @@ Query Parameters:
         schema: ClientErrorResponse,
       },
     ],
-  },
-  {
-    method: 'get',
-    path: '/clients/pickup-addresses/',
-    alias: 'clients_pickup_addresses_list',
-    description: `List all pickup addresses, optionally filtered by supplier_id.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'supplier_id',
-        type: 'Query',
-        schema: z.string().uuid().optional(),
-      },
-    ],
-    response: z.array(SupplierPickupAddress),
-  },
-  {
-    method: 'post',
-    path: '/clients/pickup-addresses/',
-    alias: 'clients_pickup_addresses_create',
-    description: `ViewSet for SupplierPickupAddress CRUD operations.
-
-Endpoints:
-- GET    /api/clients/pickup-addresses/           - list all addresses
-- POST   /api/clients/pickup-addresses/           - create address
-- GET    /api/clients/pickup-addresses/&lt;id&gt;/      - retrieve address
-- PUT    /api/clients/pickup-addresses/&lt;id&gt;/      - full update
-- PATCH  /api/clients/pickup-addresses/&lt;id&gt;/      - partial update
-- DELETE /api/clients/pickup-addresses/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
-
-Query Parameters:
-- supplier_id: Filter addresses by supplier (client) UUID`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: SupplierPickupAddressRequest,
-      },
-    ],
-    response: SupplierPickupAddress,
-  },
-  {
-    method: 'get',
-    path: '/clients/pickup-addresses/:id/',
-    alias: 'clients_pickup_addresses_retrieve',
-    description: `ViewSet for SupplierPickupAddress CRUD operations.
-
-Endpoints:
-- GET    /api/clients/pickup-addresses/           - list all addresses
-- POST   /api/clients/pickup-addresses/           - create address
-- GET    /api/clients/pickup-addresses/&lt;id&gt;/      - retrieve address
-- PUT    /api/clients/pickup-addresses/&lt;id&gt;/      - full update
-- PATCH  /api/clients/pickup-addresses/&lt;id&gt;/      - partial update
-- DELETE /api/clients/pickup-addresses/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
-
-Query Parameters:
-- supplier_id: Filter addresses by supplier (client) UUID`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: SupplierPickupAddress,
-  },
-  {
-    method: 'put',
-    path: '/clients/pickup-addresses/:id/',
-    alias: 'clients_pickup_addresses_update',
-    description: `ViewSet for SupplierPickupAddress CRUD operations.
-
-Endpoints:
-- GET    /api/clients/pickup-addresses/           - list all addresses
-- POST   /api/clients/pickup-addresses/           - create address
-- GET    /api/clients/pickup-addresses/&lt;id&gt;/      - retrieve address
-- PUT    /api/clients/pickup-addresses/&lt;id&gt;/      - full update
-- PATCH  /api/clients/pickup-addresses/&lt;id&gt;/      - partial update
-- DELETE /api/clients/pickup-addresses/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
-
-Query Parameters:
-- supplier_id: Filter addresses by supplier (client) UUID`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: SupplierPickupAddressRequest,
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: SupplierPickupAddress,
-  },
-  {
-    method: 'patch',
-    path: '/clients/pickup-addresses/:id/',
-    alias: 'clients_pickup_addresses_partial_update',
-    description: `ViewSet for SupplierPickupAddress CRUD operations.
-
-Endpoints:
-- GET    /api/clients/pickup-addresses/           - list all addresses
-- POST   /api/clients/pickup-addresses/           - create address
-- GET    /api/clients/pickup-addresses/&lt;id&gt;/      - retrieve address
-- PUT    /api/clients/pickup-addresses/&lt;id&gt;/      - full update
-- PATCH  /api/clients/pickup-addresses/&lt;id&gt;/      - partial update
-- DELETE /api/clients/pickup-addresses/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
-
-Query Parameters:
-- supplier_id: Filter addresses by supplier (client) UUID`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: PatchedSupplierPickupAddressRequest,
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: SupplierPickupAddress,
-  },
-  {
-    method: 'delete',
-    path: '/clients/pickup-addresses/:id/',
-    alias: 'clients_pickup_addresses_destroy',
-    description: `ViewSet for SupplierPickupAddress CRUD operations.
-
-Endpoints:
-- GET    /api/clients/pickup-addresses/           - list all addresses
-- POST   /api/clients/pickup-addresses/           - create address
-- GET    /api/clients/pickup-addresses/&lt;id&gt;/      - retrieve address
-- PUT    /api/clients/pickup-addresses/&lt;id&gt;/      - full update
-- PATCH  /api/clients/pickup-addresses/&lt;id&gt;/      - partial update
-- DELETE /api/clients/pickup-addresses/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
-
-Query Parameters:
-- supplier_id: Filter addresses by supplier (client) UUID`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: z.void(),
   },
   {
     method: 'get',
@@ -5076,6 +4867,93 @@ Expected JSON:
     alias: 'job_api_jobs_workshop_list',
     requestFormat: 'json',
     response: z.array(WorkshopJob),
+  },
+  {
+    method: 'get',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_retrieve',
+    description: `Return all timesheet entries for the staff member on a given date.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'date',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
+    response: WorkshopTimesheetListResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_create',
+    description: `Create a new timesheet entry for the authenticated staff.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: WorkshopTimesheetEntryRequestRequest,
+      },
+    ],
+    response: WorkshopTimesheetEntry,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_partial_update',
+    description: `Update an existing timesheet entry belonging to the staff member.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedWorkshopTimesheetEntryUpdateRequest,
+      },
+    ],
+    response: WorkshopTimesheetEntry,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 403,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
   },
   {
     method: 'get',

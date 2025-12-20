@@ -1303,7 +1303,7 @@ async function handleSaveEntry(entry: TimesheetEntryViewRow): Promise<void> {
     }
 
     let savedLine
-    // ✅ FIXED: Always check for existing ID first, including string IDs
+
     if (entryRow.id && String(entryRow.id) !== '') {
       debugLog('UPDATING existing entry:', entryRow.id)
       savedLine = await costlineService.updateCostLine(entryRow.id, costLinePayload)
