@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures/auth'
-import { autoId, dismissToasts } from '../fixtures/helpers'
+import { autoId, dismissToasts, TEST_CLIENT_NAME } from '../fixtures/helpers'
 
 /**
  * Sequential test cases for job creation.
@@ -61,11 +61,11 @@ test.describe.serial('create job', () => {
         await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
 
         // Click on the test client using role
-        console.log('Selecting ABC Carpet Cleaning TEST IGNORE...')
-        await page.getByRole('option', { name: /ABC Carpet Cleaning TEST IGNORE/ }).click()
+        console.log(`Selecting ${TEST_CLIENT_NAME}...`)
+        await page.getByRole('option', { name: new RegExp(TEST_CLIENT_NAME) }).click()
 
         // Verify selection
-        await expect(clientInput).toHaveValue('ABC Carpet Cleaning TEST IGNORE')
+        await expect(clientInput).toHaveValue(TEST_CLIENT_NAME)
       })
 
       await test.step('enter job name', async () => {
