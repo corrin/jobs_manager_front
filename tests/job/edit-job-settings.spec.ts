@@ -467,7 +467,7 @@ test.describe.serial('edit job', () => {
       await clientInput.fill(shopClientName.split(' ')[0])
       await page.waitForTimeout(1000) // Allow debounce
 
-      const clientOption = page.getByRole('option', { name: new RegExp(shopClientName) })
+      const clientOption = page.getByRole('option', { name: shopClientName, exact: true })
       await clientOption.waitFor({ timeout: 10000 })
       await clientOption.click()
     })
