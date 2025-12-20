@@ -22,8 +22,7 @@ Implement frontend integration for weekend timesheets functionality based on a b
 
 - **FR-3.1**: Modify WeeklyTimesheetView to show dynamic day headers
 - **FR-3.2**: Style weekend days differently when enabled (e.g., blue background)
-- **FR-3.3**: Update IMS mode toggle to work with feature flag
-- **FR-3.4**: Ensure responsive design for both configurations
+- **FR-3.3**: Ensure responsive design for both configurations
 
 ### 4. Backend API Integration
 
@@ -60,8 +59,7 @@ Implement frontend integration for weekend timesheets functionality based on a b
 ### 3. Usability
 
 - **NFR-3.1**: Clear visual indicators for weekend days when enabled
-- **NFR-3.2**: Intuitive IMS mode toggle behavior
-- **NFR-3.3**: Consistent user experience across different configurations
+- **NFR-3.2**: Consistent user experience across different configurations
 
 ### 4. Maintainability
 
@@ -81,7 +79,6 @@ Implement frontend integration for weekend timesheets functionality based on a b
 
 - [ ] UI correctly displays 5 or 7 days based on feature flag
 - [ ] Weekend days are visually distinguished when enabled
-- [ ] IMS mode toggle works correctly with both configurations
 
 ### 3. API Integration
 

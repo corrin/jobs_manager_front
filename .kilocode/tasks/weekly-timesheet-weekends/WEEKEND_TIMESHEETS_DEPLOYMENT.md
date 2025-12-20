@@ -74,7 +74,6 @@ The weekend timesheets feature has been successfully implemented with the follow
    - [ ] Access weekly timesheet view
    - [ ] Verify correct day count (5 or 7 days)
    - [ ] Check weekend styling (blue headers for Sat/Sun)
-   - [ ] Test IMS mode toggle (when enabled)
    - [ ] Verify date navigation works correctly
 
 ### Rollback Plan
@@ -115,7 +114,6 @@ If issues arise after deployment:
 
    - [ ] Weekly view shows 7 days (Mon-Sun)
    - [ ] Weekend days have blue styling
-   - [ ] IMS toggle works (Standard ↔ IMS mode)
    - [ ] Date navigation respects weekend setting
    - [ ] "Go to Today" works correctly
 
@@ -129,7 +127,6 @@ If issues arise after deployment:
 4. **Test Scenarios**
    - [ ] Weekly view shows 5 days (Mon-Fri)
    - [ ] No weekend styling
-   - [ ] IMS toggle is hidden
    - [ ] Date navigation skips weekends
 
 ### Automated Validation

@@ -753,17 +753,6 @@ tbody tr:hover {
   animation: pulse-glow 2s infinite;
 }
 
-.ims-data-cell {
-  min-width: 120px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  background: #fafafa;
-}
-
-.ims-data-cell .border-t {
-  border-top: 1px solid #d1d5db;
-}
-
 .text-amber-600 {
   color: #d97706;
 }

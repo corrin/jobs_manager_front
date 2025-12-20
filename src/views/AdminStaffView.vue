@@ -154,7 +154,7 @@ const filteredStaff = computed(() =>
           s.preferred_name,
           s.email,
           s.wage_rate,
-          s.ims_payroll_id,
+          s.xero_user_id,
           s.hours_mon,
           s.hours_tue,
           s.hours_wed,
@@ -211,7 +211,7 @@ async function deleteStaff() {
 
 async function fetchStaff() {
   loading.value = true
-  // For admin view, show all staff including those without valid IMS IDs
+  // For admin view, show all staff including those without valid payroll IDs
   staffList.value = await listStaff()
   console.log('AdminStaffView - Staff data received from API:', staffList.value)
   loading.value = false

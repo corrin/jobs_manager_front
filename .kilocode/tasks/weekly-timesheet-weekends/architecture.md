@@ -72,7 +72,6 @@ AppLayout
 ├── WeeklyTimesheetView
 │   ├── Header Section
 │   │   ├── Title & Date Display
-│   │   ├── IMS Mode Toggle (conditional)
 │   │   ├── Action Buttons
 │   │   └── Navigation Controls
 │   ├── Table Section
@@ -92,7 +91,6 @@ AppLayout
 
 **Day Headers**: Conditionally render 5 or 7 day columns based on feature flag
 **Weekend Styling**: Apply blue background styling to Saturday/Sunday columns when enabled
-**IMS Toggle**: Show/hide based on feature flag status
 **Responsive Design**: Maintain mobile and desktop layouts for both configurations
 
 ### Data Flow Architecture
@@ -220,19 +218,6 @@ Response: {
   start_date: string
   end_date: string
   week_days: string[] // 5 or 7 dates based on feature flag
-  staff_data: StaffWeeklyData[]
-}
-```
-
-**IMS Weekly Timesheet API**:
-
-```typescript
-GET /api/timesheets/weekly/ims/
-Query Params: { start_date?: string }
-Response: {
-  start_date: string
-  end_date: string
-  week_days: string[] // Always 5 dates (Tue-Fri + next Mon)
   staff_data: StaffWeeklyData[]
 }
 ```
