@@ -269,11 +269,10 @@ import { formatCurrency } from '../../utils/string-formatting'
 
 type WeeklyJob = z.infer<typeof schemas.WeeklyMetrics>
 type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
-type IMSWeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
 
 interface Props {
   isOpen: boolean
-  weeklyData: WeeklyTimesheetData | IMSWeeklyTimesheetData | null
+  weeklyData: WeeklyTimesheetData | null
   weekDate?: string // Week date in YYYY-MM-DD format
 }
 

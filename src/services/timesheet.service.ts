@@ -108,9 +108,4 @@ export class TimesheetService {
   static async getAvailableJobs(): Promise<Job[]> {
     return this.getJobs()
   }
-
-  static async exportToIMS(weekStart: Date): Promise<string> {
-    debugLog('IMS export not yet implemented for:', weekStart)
-    return 'IMS export functionality coming soon'
-  }
 }

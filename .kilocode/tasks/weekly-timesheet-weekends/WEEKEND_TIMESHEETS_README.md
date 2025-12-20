@@ -33,23 +33,15 @@ VITE_WEEKEND_TIMESHEETS_ENABLED=true
 - Headers show day names and dates
 - Responsive design works on mobile and desktop
 
-### 2. IMS Mode Toggle
-
-When weekend timesheets are enabled, users can toggle between:
-
-- **Standard Mode**: Monday-Sunday (7 days)
-- **IMS Mode**: Monday-Friday (5 days, Tue-Fri + next Mon)
-
-### 3. Navigation
+### 2. Navigation
 
 - Date navigation respects the weekend feature flag
 - "Go to Today" button skips weekends when feature is disabled
 - Week navigation works with both 5-day and 7-day configurations
 
-### 4. Visual Indicators
+### 3. Visual Indicators
 
 - Weekend days have distinct styling (blue background)
-- Toggle switch shows current mode
 - Status messages indicate feature state
 
 ## Implementation Details
@@ -107,7 +99,6 @@ Backend API (returns appropriate day count based on feature flag)
    - Open the weekly timesheet view
    - Verify day count (5 or 7 days based on setting)
    - Check weekend styling (blue background for Sat/Sun)
-   - Test IMS mode toggle (when enabled)
    - Test date navigation
 
 3. **Console Validation**

@@ -209,7 +209,6 @@ const Staff = z
     last_name: z.string().max(30),
     preferred_name: z.string().max(30).nullish(),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
-    ims_payroll_id: z.string().max(100).nullish(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_staff: z.boolean().optional(),
@@ -228,7 +227,6 @@ const Staff = z
     last_login: z.string().datetime({ offset: true }).nullable(),
     groups: z.array(z.number().int()).optional(),
     user_permissions: z.array(z.number().int()).optional(),
-    raw_ims_data: z.unknown().nullish(),
     icon_url: z.string().nullable(),
   })
   .passthrough()
@@ -239,7 +237,6 @@ const StaffCreateRequest = z
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
-    ims_payroll_id: z.string().max(100).nullish(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_staff: z.boolean().optional(),
@@ -259,7 +256,6 @@ const StaffCreateRequest = z
     user_permissions: z.array(z.number().int()).optional(),
     password: z.string().min(1).max(128),
     icon: z.instanceof(File).nullish(),
-    raw_ims_data: z.unknown().nullish(),
   })
   .passthrough()
 const StaffRequest = z
@@ -269,7 +265,6 @@ const StaffRequest = z
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
-    ims_payroll_id: z.string().max(100).nullish(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_staff: z.boolean().optional(),
@@ -286,7 +281,6 @@ const StaffRequest = z
     user_permissions: z.array(z.number().int()).optional(),
     password: z.string().min(1).max(128).optional(),
     icon: z.instanceof(File).nullish(),
-    raw_ims_data: z.unknown().nullish(),
   })
   .passthrough()
 const PatchedStaffRequest = z
@@ -296,7 +290,6 @@ const PatchedStaffRequest = z
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullable(),
     wage_rate: z.number().gt(-100000000).lt(100000000),
-    ims_payroll_id: z.string().max(100).nullable(),
     xero_user_id: z.string().max(255).nullable(),
     date_left: z.string().nullable(),
     is_staff: z.boolean(),
@@ -313,7 +306,6 @@ const PatchedStaffRequest = z
     user_permissions: z.array(z.number().int()),
     password: z.string().min(1).max(128),
     icon: z.instanceof(File).nullable(),
-    raw_ims_data: z.unknown().nullable(),
   })
   .partial()
   .passthrough()

@@ -11742,10 +11742,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -11840,8 +11836,6 @@ components:
           type: string
           format: binary
           writeOnly: true
-          nullable: true
-        raw_ims_data:
           nullable: true
     PatchedStockItemRequest:
       type: object
@@ -13460,10 +13454,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -13566,8 +13556,6 @@ components:
           items:
             type: integer
           description: Specific permissions for this user.
-        raw_ims_data:
-          nullable: true
         icon_url:
           type: string
           nullable: true
@@ -13611,10 +13599,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -13719,8 +13703,6 @@ components:
           type: string
           format: binary
           writeOnly: true
-          nullable: true
-        raw_ims_data:
           nullable: true
       required:
         - email
@@ -14011,10 +13993,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -14109,8 +14087,6 @@ components:
           type: string
           format: binary
           writeOnly: true
-          nullable: true
-        raw_ims_data:
           nullable: true
       required:
         - email

@@ -96,14 +96,8 @@
               />
             </div>
             <div class="w-1/2">
-              <label class="block text-sm font-medium mb-1" for="ims_payroll_id"
-                >IMS Payroll ID</label
-              >
-              <Input
-                id="ims_payroll_id"
-                v-model="form.ims_payroll_id"
-                placeholder="IMS Payroll ID"
-              />
+              <label class="block text-sm font-medium mb-1" for="xero_user_id">Xero User ID</label>
+              <Input id="xero_user_id" v-model="form.xero_user_id" placeholder="Xero User ID" />
             </div>
           </div>
           <div class="flex justify-center mt-2">
@@ -351,7 +345,7 @@ const form = ref({
   password: '',
   password_confirmation: '',
   wage_rate: 0,
-  ims_payroll_id: '',
+  xero_user_id: '',
   icon: null as File | null,
   hours_mon: 0,
   hours_tue: 0,
@@ -410,7 +404,7 @@ watch(
         password: '',
         password_confirmation: '',
         wage_rate: staff.wage_rate || 0,
-        ims_payroll_id: staff.ims_payroll_id || '',
+        xero_user_id: staff.xero_user_id || '',
         icon: null,
         hours_mon: staff.hours_mon || 0,
         hours_tue: staff.hours_tue || 0,
@@ -446,7 +440,7 @@ watch(
         password: '',
         password_confirmation: '',
         wage_rate: 0,
-        ims_payroll_id: '',
+        xero_user_id: '',
         icon: null,
         hours_mon: 0,
         hours_tue: 0,
@@ -496,7 +490,7 @@ async function submitForm() {
     email: form.value.email,
     ...(form.value.password && { password: form.value.password }),
     wage_rate: form.value.wage_rate,
-    ims_payroll_id: form.value.ims_payroll_id || null,
+    xero_user_id: form.value.xero_user_id || null,
     is_staff: form.value.is_staff,
     is_superuser: form.value.is_superuser,
     hours_mon: form.value.hours_mon,
@@ -550,7 +544,7 @@ async function submitForm() {
       preferred_name: form.value.preferred_name || null,
       email: form.value.email,
       wage_rate: form.value.wage_rate,
-      ims_payroll_id: form.value.ims_payroll_id || null,
+      xero_user_id: form.value.xero_user_id || null,
       is_staff: form.value.is_staff,
       is_superuser: form.value.is_superuser,
       hours_mon: form.value.hours_mon,

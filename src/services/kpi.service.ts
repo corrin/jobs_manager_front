@@ -8,7 +8,6 @@ import type { z } from 'zod'
 // Types for params - keeping as local since they're for input validation
 export interface KPICalendarParams {
   start_date: string
-  mode?: 'timesheet' | 'ims'
 }
 
 export interface KPIAccountingParams {
@@ -131,27 +130,6 @@ class KPIService {
       day.setDate(startDate.getDate() + i)
       days.push(day)
     }
-    return days
-  }
-
-  getIMSWeekDays(startDate: Date): Date[] {
-    const days: Date[] = []
-
-    const tuesday = new Date(startDate)
-    const dayOfWeek = tuesday.getDay()
-    const daysToTuesday = dayOfWeek === 0 ? 2 : (2 - dayOfWeek + 7) % 7
-    tuesday.setDate(tuesday.getDate() + daysToTuesday)
-
-    for (let i = 0; i < 4; i++) {
-      const day = new Date(tuesday)
-      day.setDate(tuesday.getDate() + i)
-      days.push(day)
-    }
-
-    const nextMonday = new Date(tuesday)
-    nextMonday.setDate(tuesday.getDate() + 5)
-    days.push(nextMonday)
-
     return days
   }
 }
