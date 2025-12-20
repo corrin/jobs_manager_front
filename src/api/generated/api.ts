@@ -825,7 +825,15 @@ const PatchedSupplierPickupAddressRequest = z
   })
   .partial()
   .passthrough()
-const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
+const ClientSearchResponse = z
+  .object({
+    results: z.array(ClientSearchResult),
+    count: z.number().int(),
+    page: z.number().int(),
+    page_size: z.number().int(),
+    total_pages: z.number().int(),
+  })
+  .passthrough()
 const AssignJobRequest = z.object({ staff_id: z.string().uuid() }).passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
@@ -4638,16 +4646,31 @@ Query Parameters:
     method: 'get',
     path: '/clients/search/',
     alias: 'clients_search_retrieve',
-    description: `Searches clients by name following early return pattern.`,
+    description: `Lists/searches clients with pagination and sorting.`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'limit',
+        name: 'page',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'page_size',
         type: 'Query',
         schema: z.number().int().optional(),
       },
       {
         name: 'q',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'sort_dir',
         type: 'Query',
         schema: z.string().optional(),
       },
