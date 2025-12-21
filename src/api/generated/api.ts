@@ -2545,7 +2545,8 @@ const JobsListResponse = z
   .passthrough()
 const PayRunDetails = z
   .object({
-    pay_run_id: z.string(),
+    id: z.string().uuid(),
+    xero_id: z.string().uuid(),
     payroll_calendar_id: z.string().nullable(),
     period_start_date: z.string(),
     period_end_date: z.string(),
@@ -2564,7 +2565,8 @@ const PayRunForWeekResponse = z
 const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
 const CreatePayRunResponse = z
   .object({
-    pay_run_id: z.string(),
+    id: z.string().uuid(),
+    xero_id: z.string().uuid(),
     status: z.string(),
     period_start_date: z.string(),
     period_end_date: z.string(),
@@ -3070,7 +3072,7 @@ Returns:
   {
     method: 'get',
     path: '/accounting/api/reports/sales-forecast/',
-    alias: 'accounting_api_reports_sales_forecast_retrieve',
+    alias: 'sales_forecast_list',
     description: `Returns monthly sales comparison between Xero invoices and Job Manager revenue for all months with data`,
     requestFormat: 'json',
     response: z
@@ -3101,7 +3103,7 @@ Returns:
   {
     method: 'get',
     path: '/accounting/api/reports/sales-forecast/:month/',
-    alias: 'accounting_api_reports_sales_forecast_retrieve_2',
+    alias: 'sales_forecast_month_detail',
     description: `Returns detailed invoice and job data for a specific month, showing matched pairs and unmatched items`,
     requestFormat: 'json',
     parameters: [
