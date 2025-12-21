@@ -20,11 +20,7 @@
       <div class="text-center animate-fade-in-up">
         <div class="flex justify-center mb-8">
           <div class="relative">
-            <img
-              src="/logo_msm.png"
-              alt="Morris Sheetmetal Works"
-              class="h-32 w-auto animate-logo-entrance"
-            />
+            <img src="/logo.png" alt="Company Logo" class="h-32 w-auto animate-logo-entrance" />
             <div
               class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-lg blur-xl animate-glow"
             ></div>
@@ -142,7 +138,7 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center animate-fade-in-up animation-delay-1200">
-          <p class="text-xs text-gray-500">Morris Sheetmetal Works • Jobs Manager System</p>
+          <p class="text-xs text-gray-500">Jobs Manager System</p>
         </div>
       </div>
     </div>
