@@ -16,7 +16,12 @@
               </svg>
               Staff Management
             </h1>
-            <Button variant="default" class="text-lg px-6 py-3" @click="openCreate">
+            <Button
+              variant="default"
+              class="text-lg px-6 py-3"
+              data-automation-id="AdminStaffView-new-staff"
+              @click="openCreate"
+            >
               New Staff
             </Button>
           </div>

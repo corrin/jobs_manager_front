@@ -1,6 +1,9 @@
 <template>
   <Dialog :open="true" @update:open="handleClose">
-    <DialogContent class="max-w-2xl space-y-6 animate-in fade-in-0 zoom-in-95">
+    <DialogContent
+      class="max-w-2xl space-y-6 animate-in fade-in-0 zoom-in-95"
+      data-automation-id="StaffFormModal-container"
+    >
       <DialogHeader>
         <DialogTitle>{{ staff ? 'Edit Staff' : 'New Staff' }}</DialogTitle>
       </DialogHeader>
@@ -30,11 +33,23 @@
           <div class="flex gap-2">
             <div class="w-1/2">
               <label class="block text-sm font-medium mb-1" for="first_name">First Name</label>
-              <Input id="first_name" v-model="form.first_name" placeholder="First Name" required />
+              <Input
+                id="first_name"
+                v-model="form.first_name"
+                placeholder="First Name"
+                data-automation-id="StaffFormModal-first-name"
+                required
+              />
             </div>
             <div class="w-1/2">
               <label class="block text-sm font-medium mb-1" for="last_name">Last Name</label>
-              <Input id="last_name" v-model="form.last_name" placeholder="Last Name" required />
+              <Input
+                id="last_name"
+                v-model="form.last_name"
+                placeholder="Last Name"
+                data-automation-id="StaffFormModal-last-name"
+                required
+              />
             </div>
           </div>
           <div class="flex gap-2">
@@ -50,7 +65,14 @@
             </div>
             <div class="w-1/2">
               <label class="block text-sm font-medium mb-1" for="email">E-mail</label>
-              <Input id="email" v-model="form.email" type="email" placeholder="E-mail" required />
+              <Input
+                id="email"
+                v-model="form.email"
+                type="email"
+                placeholder="E-mail"
+                data-automation-id="StaffFormModal-email"
+                required
+              />
             </div>
           </div>
           <div class="flex gap-2">
@@ -61,6 +83,7 @@
                 v-model="form.password"
                 type="password"
                 placeholder="Password"
+                data-automation-id="StaffFormModal-password"
                 :required="!props.staff"
               />
             </div>
@@ -73,6 +96,7 @@
                 v-model="form.password_confirmation"
                 type="password"
                 placeholder="Confirm Password"
+                data-automation-id="StaffFormModal-password-confirm"
                 :required="!props.staff"
                 :class="{ 'border-red-500 focus:ring-red-500': passwordMismatch }"
               />
@@ -270,7 +294,7 @@
           <Button variant="ghost" type="button" @click="handleClose" :disabled="isLoading"
             >Cancel</Button
           >
-          <Button type="submit" :disabled="isLoading">
+          <Button type="submit" :disabled="isLoading" data-automation-id="StaffFormModal-submit">
             <div v-if="isLoading" class="flex items-center gap-2">
               <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               {{ staff ? 'Saving...' : 'Creating...' }}
@@ -482,13 +506,12 @@ async function submitForm() {
     typeof form.value.wage_rate,
   )
 
-  // Prepare data for validation - transform form data to match schema expectations
-  const validationData = {
+  // Prepare base data - shared between validation and API call
+  const baseData: Record<string, unknown> = {
     first_name: form.value.first_name,
     last_name: form.value.last_name,
     preferred_name: form.value.preferred_name || null,
     email: form.value.email,
-    ...(form.value.password && { password: form.value.password }),
     wage_rate: form.value.wage_rate,
     xero_user_id: form.value.xero_user_id || null,
     is_office_staff: form.value.is_office_staff,
@@ -500,7 +523,7 @@ async function submitForm() {
     hours_fri: form.value.hours_fri,
     hours_sat: form.value.hours_sat,
     hours_sun: form.value.hours_sun,
-    // Convert groups and user_permissions from strings to arrays for validation
+    // Convert groups and user_permissions from strings to arrays
     groups:
       form.value.groups && form.value.groups.trim()
         ? form.value.groups
@@ -518,8 +541,18 @@ async function submitForm() {
     // Handle datetime fields - only include if valid
     ...(form.value.last_login &&
       form.value.last_login.trim() && { last_login: form.value.last_login }),
-    date_joined: form.value.date_joined,
-    // Add password_confirmation for validation only (not for API)
+    ...(form.value.date_joined &&
+      form.value.date_joined.trim() && { date_joined: form.value.date_joined }),
+  }
+
+  // Add password if provided
+  if (form.value.password) {
+    baseData.password = form.value.password
+  }
+
+  // Validation data includes password_confirmation
+  const validationData = {
+    ...baseData,
     ...(form.value.password_confirmation && {
       password_confirmation: form.value.password_confirmation,
     }),
@@ -537,50 +570,8 @@ async function submitForm() {
     return
   }
   try {
-    // Prepare data for API - convert and format fields as expected by updateStaff function
-    const apiData: Record<string, unknown> = {
-      first_name: form.value.first_name,
-      last_name: form.value.last_name,
-      preferred_name: form.value.preferred_name || null,
-      email: form.value.email,
-      wage_rate: form.value.wage_rate,
-      xero_user_id: form.value.xero_user_id || null,
-      is_office_staff: form.value.is_office_staff,
-      is_superuser: form.value.is_superuser,
-      hours_mon: form.value.hours_mon,
-      hours_tue: form.value.hours_tue,
-      hours_wed: form.value.hours_wed,
-      hours_thu: form.value.hours_thu,
-      hours_fri: form.value.hours_fri,
-      hours_sat: form.value.hours_sat,
-      hours_sun: form.value.hours_sun,
-      // Convert groups and user_permissions from strings to arrays of numbers
-      groups:
-        form.value.groups && form.value.groups.trim()
-          ? form.value.groups
-              .split(',')
-              .map((g) => Number(g.trim()))
-              .filter((g) => !isNaN(g))
-          : [],
-      user_permissions:
-        form.value.user_permissions && form.value.user_permissions.trim()
-          ? form.value.user_permissions
-              .split(',')
-              .map((p) => Number(p.trim()))
-              .filter((p) => !isNaN(p))
-          : [],
-      // Handle datetime fields properly - omit if empty, include if valid
-      ...(form.value.last_login &&
-        form.value.last_login.trim() && { last_login: form.value.last_login }),
-      date_joined: form.value.date_joined,
-      // Don't send updated_at - it's auto-managed by backend
-      // Icon is handled separately via multipart/form-data if needed
-    }
-
-    // Include password only if provided
-    if (form.value.password) {
-      apiData.password = form.value.password
-    }
+    // API data is baseData (password already included if provided, no password_confirmation)
+    const apiData = { ...baseData }
 
     // Include icon for create operations
     if (!props.staff && form.value.icon) {
