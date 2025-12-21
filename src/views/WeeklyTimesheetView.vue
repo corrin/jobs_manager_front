@@ -127,11 +127,13 @@
           :creating="creatingPayRun"
           :posting="postingAll"
           :warning="payRunWarning"
+          :payroll-error="payrollError"
           :refreshing="refreshingPayRuns"
           :post-success="postedAllToXero"
           @create-pay-run="handleCreatePayRun"
           @post-all-to-xero="handlePostAllToXero"
           @refresh-pay-runs="handleRefreshPayRuns"
+          @dismiss-error="payrollError = null"
         />
 
         <!-- Loading Spinner -->
@@ -293,7 +295,6 @@ import { fetchWeeklyOverview } from '@/services/weekly-timesheet.service'
 import {
   createPayRun,
   postStaffWeek,
-  getPayrollErrorMessage,
   fetchPayRunForWeek,
   refreshPayRuns,
 } from '@/services/payroll.service'
@@ -340,6 +341,7 @@ const paymentDate = ref<string | null>(null)
 const creatingPayRun = ref(false)
 const postingAll = ref(false)
 const payRunWarning = ref<string | null>(null)
+const payrollError = ref<string | null>(null)
 const refreshingPayRuns = ref(false)
 const postedAllToXero = ref(false)
 let payRunLookupRequestId = 0
@@ -385,15 +387,11 @@ async function loadPayRunForCurrentWeek() {
 
     resetPayRunState()
 
-    const error = err as { response?: { data?: { message?: string } }; message?: string }
-    const errorMessage =
-      error.response?.data?.message || error.message || 'Unable to load pay run for this week'
-    const userMessage = getPayrollErrorMessage(errorMessage)
+    console.error('Pay run lookup failed:', err)
 
     toast.error('Unable to load pay run', {
-      description: userMessage,
+      description: 'Something went wrong. Please try again or contact support.',
     })
-    debugLog('Pay run lookup error:', err)
   }
 }
 
@@ -588,6 +586,7 @@ function handleWeekSelect(date: string) {
 // Payroll functions
 async function handleCreatePayRun() {
   creatingPayRun.value = true
+  payrollError.value = null
   try {
     const result = await createPayRun(weekStartDate.value)
 
@@ -600,14 +599,12 @@ async function handleCreatePayRun() {
 
     debugLog('Pay run created:', result)
   } catch (err: unknown) {
-    const error = err as { response?: { data?: { message?: string } }; message?: string }
-    const errorMessage =
-      error.response?.data?.message || error.message || 'Failed to create pay run'
-    const userMessage = getPayrollErrorMessage(errorMessage)
+    console.error('Create pay run failed:', err)
+
+    payrollError.value = 'Failed to create pay run. Please try again or contact support.'
     toast.error('Failed to create pay run', {
-      description: userMessage,
+      description: 'Something went wrong. Please try again or contact support.',
     })
-    debugLog('Create pay run error:', err)
   } finally {
     creatingPayRun.value = false
   }
@@ -617,6 +614,7 @@ async function handleRefreshPayRuns() {
   if (!weekStartDate.value) return
 
   refreshingPayRuns.value = true
+  payrollError.value = null
   try {
     const result = await refreshPayRuns(weekStartDate.value)
     toast.success('Pay runs refreshed', {
@@ -625,14 +623,12 @@ async function handleRefreshPayRuns() {
     debugLog('Pay runs synced from Xero:', result)
     await loadPayRunForCurrentWeek()
   } catch (err: unknown) {
-    const error = err as { response?: { data?: { message?: string } }; message?: string }
-    const errorMessage =
-      error.response?.data?.message || error.message || 'Failed to refresh pay runs'
-    const userMessage = getPayrollErrorMessage(errorMessage)
+    console.error('Refresh pay runs failed:', err)
+
+    payrollError.value = 'Failed to refresh pay runs. Please try again or contact support.'
     toast.error('Failed to refresh pay runs', {
-      description: userMessage,
+      description: 'Something went wrong. Please try again or contact support.',
     })
-    debugLog('Refresh pay runs error:', err)
   } finally {
     refreshingPayRuns.value = false
   }
@@ -642,6 +638,7 @@ async function handlePostAllToXero() {
   if (!weeklyData.value) return
 
   postingAll.value = true
+  payrollError.value = null
   const staffList = weeklyData.value.staff_data || []
   if (!staffList.length) {
     postingAll.value = false
@@ -694,9 +691,9 @@ async function handlePostAllToXero() {
       const result = await postStaffWeek(staffId, weekStart)
 
       if (!result.success) {
-        // Fail early - stop on first error
-        const errors = result.errors.map(getPayrollErrorMessage).join(', ')
-        throw new Error(errors || 'Failed to post staff to Xero')
+        // Log technical details and fail early
+        console.error('Post staff week failed:', result.errors)
+        throw new Error('Failed to post staff to Xero')
       }
 
       successCount++
@@ -708,13 +705,13 @@ async function handlePostAllToXero() {
     })
     postedAllToXero.value = true
   } catch (err: unknown) {
-    const error = err as { response?: { data?: { message?: string } }; message?: string }
-    const errorMessage = error.response?.data?.message || error.message || 'Failed to post to Xero'
-    const userMessage = getPayrollErrorMessage(errorMessage)
-    toast.error('Failed to post to Xero', {
-      description: userMessage,
+    // Log technical details for debugging
+    console.error('Payroll post failed:', err)
+
+    payrollError.value = 'Unable to post to Xero. Please try again or contact support.'
+    toast.error('Unable to post to Xero', {
+      description: 'Something went wrong. Please try again or contact support.',
     })
-    debugLog('Post all error:', err)
     postedAllToXero.value = false
   } finally {
     postingAll.value = false
