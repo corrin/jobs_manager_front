@@ -4956,6 +4956,32 @@ Expected JSON:
     ],
   },
   {
+    method: 'delete',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_destroy',
+    description: `Delete a timesheet entry belonging to the staff member.`,
+    requestFormat: 'json',
+    response: z.void(),
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 403,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
     method: 'get',
     path: '/job/job/:job_id/workshop-pdf/',
     alias: 'job_job_workshop_pdf_retrieve',

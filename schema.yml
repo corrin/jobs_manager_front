@@ -2862,6 +2862,44 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+    delete:
+      operationId: job_api_workshop_timesheets_destroy
+      description: Delete a timesheet entry belonging to the staff member.
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /job/job/{job_id}/workshop-pdf/:
     get:
       operationId: job_job_workshop_pdf_retrieve
