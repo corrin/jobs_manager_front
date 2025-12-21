@@ -357,6 +357,7 @@ const AWSInstanceStatusResponse = z
 const CompanyDefaults = z
   .object({
     company_name: z.string().max(255),
+    company_acronym: z.string().max(10).nullish(),
     is_primary: z.boolean().optional(),
     time_markup: z.number().gt(-1000).lt(1000).optional(),
     materials_markup: z.number().gt(-1000).lt(1000).optional(),
@@ -391,6 +392,14 @@ const CompanyDefaults = z
     updated_at: z.string().datetime({ offset: true }),
     last_xero_sync: z.string().datetime({ offset: true }).nullish(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
+    address_line1: z.string().max(255).nullish(),
+    address_line2: z.string().max(255).nullish(),
+    suburb: z.string().max(100).nullish(),
+    city: z.string().max(100).nullish(),
+    post_code: z.string().max(20).nullish(),
+    country: z.string().max(100).optional(),
+    company_email: z.string().max(254).email().nullish(),
+    company_url: z.string().max(200).url().nullish(),
     shop_client_name: z.string().max(255).nullish(),
     test_client_name: z.string().max(255).nullish(),
     billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
@@ -402,6 +411,7 @@ const CompanyDefaults = z
 const CompanyDefaultsRequest = z
   .object({
     company_name: z.string().min(1).max(255),
+    company_acronym: z.string().max(10).nullish(),
     is_primary: z.boolean().optional(),
     time_markup: z.number().gt(-1000).lt(1000).optional(),
     materials_markup: z.number().gt(-1000).lt(1000).optional(),
@@ -434,6 +444,14 @@ const CompanyDefaultsRequest = z
     fri_end: z.string().optional(),
     last_xero_sync: z.string().datetime({ offset: true }).nullish(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
+    address_line1: z.string().max(255).nullish(),
+    address_line2: z.string().max(255).nullish(),
+    suburb: z.string().max(100).nullish(),
+    city: z.string().max(100).nullish(),
+    post_code: z.string().max(20).nullish(),
+    country: z.string().min(1).max(100).optional(),
+    company_email: z.string().max(254).email().nullish(),
+    company_url: z.string().max(200).url().nullish(),
     shop_client_name: z.string().max(255).nullish(),
     test_client_name: z.string().max(255).nullish(),
     billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
@@ -445,6 +463,7 @@ const CompanyDefaultsRequest = z
 const PatchedCompanyDefaultsRequest = z
   .object({
     company_name: z.string().min(1).max(255),
+    company_acronym: z.string().max(10).nullable(),
     is_primary: z.boolean(),
     time_markup: z.number().gt(-1000).lt(1000),
     materials_markup: z.number().gt(-1000).lt(1000),
@@ -477,6 +496,14 @@ const PatchedCompanyDefaultsRequest = z
     fri_end: z.string(),
     last_xero_sync: z.string().datetime({ offset: true }).nullable(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
+    address_line1: z.string().max(255).nullable(),
+    address_line2: z.string().max(255).nullable(),
+    suburb: z.string().max(100).nullable(),
+    city: z.string().max(100).nullable(),
+    post_code: z.string().max(20).nullable(),
+    country: z.string().min(1).max(100),
+    company_email: z.string().max(254).email().nullable(),
+    company_url: z.string().max(200).url().nullable(),
     shop_client_name: z.string().max(255).nullable(),
     test_client_name: z.string().max(255).nullable(),
     billable_threshold_green: z.number().gt(-1000).lt(1000),
@@ -2649,20 +2676,8 @@ const CreatePayRunResponse = z
     payment_date: z.string(),
   })
   .passthrough()
-const PayRunSyncResponseRequest = z
-  .object({
-    fetched: z.number().int(),
-    created: z.number().int(),
-    updated: z.number().int(),
-  })
-  .passthrough()
-const PayRunSyncResponse = z
-  .object({
-    fetched: z.number().int(),
-    created: z.number().int(),
-    updated: z.number().int(),
-  })
-  .passthrough()
+const PayRunSyncResponseRequest = z.object({ synced: z.boolean() }).passthrough()
+const PayRunSyncResponse = z.object({ synced: z.boolean() }).passthrough()
 const PostWeekToXeroRequest = z
   .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
   .passthrough()
@@ -7320,10 +7335,10 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: PayRunSyncResponseRequest,
+        schema: z.object({ synced: z.boolean() }).passthrough(),
       },
     ],
-    response: PayRunSyncResponse,
+    response: z.object({ synced: z.boolean() }).passthrough(),
     errors: [
       {
         status: 500,

@@ -7654,6 +7654,11 @@ components:
         company_name:
           type: string
           maxLength: 255
+        company_acronym:
+          type: string
+          nullable: true
+          description: Short acronym for the company (e.g., 'MSM' for Morris Sheetmetal)
+          maxLength: 10
         is_primary:
           type: boolean
         time_markup:
@@ -7810,6 +7815,47 @@ components:
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
+        address_line1:
+          type: string
+          nullable: true
+          description: Street address line 1
+          maxLength: 255
+        address_line2:
+          type: string
+          nullable: true
+          description: Street address line 2 (optional)
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb (for NZ addresses)
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          description: City
+          maxLength: 100
+        post_code:
+          type: string
+          nullable: true
+          description: Postal/ZIP code
+          maxLength: 20
+        country:
+          type: string
+          description: Country name
+          maxLength: 100
+        company_email:
+          type: string
+          format: email
+          nullable: true
+          description: Company contact email address
+          maxLength: 254
+        company_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Company website URL
+          maxLength: 200
         shop_client_name:
           type: string
           nullable: true
@@ -7895,6 +7941,11 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        company_acronym:
+          type: string
+          nullable: true
+          description: Short acronym for the company (e.g., 'MSM' for Morris Sheetmetal)
+          maxLength: 10
         is_primary:
           type: boolean
         time_markup:
@@ -8044,6 +8095,48 @@ components:
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
+        address_line1:
+          type: string
+          nullable: true
+          description: Street address line 1
+          maxLength: 255
+        address_line2:
+          type: string
+          nullable: true
+          description: Street address line 2 (optional)
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb (for NZ addresses)
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          description: City
+          maxLength: 100
+        post_code:
+          type: string
+          nullable: true
+          description: Postal/ZIP code
+          maxLength: 20
+        country:
+          type: string
+          minLength: 1
+          description: Country name
+          maxLength: 100
+        company_email:
+          type: string
+          format: email
+          nullable: true
+          description: Company contact email address
+          maxLength: 254
+        company_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Company website URL
+          maxLength: 200
         shop_client_name:
           type: string
           nullable: true
@@ -11584,6 +11677,11 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        company_acronym:
+          type: string
+          nullable: true
+          description: Short acronym for the company (e.g., 'MSM' for Morris Sheetmetal)
+          maxLength: 10
         is_primary:
           type: boolean
         time_markup:
@@ -11733,6 +11831,48 @@ components:
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
+        address_line1:
+          type: string
+          nullable: true
+          description: Street address line 1
+          maxLength: 255
+        address_line2:
+          type: string
+          nullable: true
+          description: Street address line 2 (optional)
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb (for NZ addresses)
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          description: City
+          maxLength: 100
+        post_code:
+          type: string
+          nullable: true
+          description: Postal/ZIP code
+          maxLength: 20
+        country:
+          type: string
+          minLength: 1
+          description: Country name
+          maxLength: 100
+        company_email:
+          type: string
+          format: email
+          nullable: true
+          description: Company contact email address
+          maxLength: 254
+        company_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Company website URL
+          maxLength: 200
         shop_client_name:
           type: string
           nullable: true
@@ -12284,30 +12424,18 @@ components:
       type: object
       description: Response payload after refreshing cached pay runs.
       properties:
-        fetched:
-          type: integer
-        created:
-          type: integer
-        updated:
-          type: integer
+        synced:
+          type: boolean
       required:
-        - created
-        - fetched
-        - updated
+        - synced
     PayRunSyncResponseRequest:
       type: object
       description: Response payload after refreshing cached pay runs.
       properties:
-        fetched:
-          type: integer
-        created:
-          type: integer
-        updated:
-          type: integer
+        synced:
+          type: boolean
       required:
-        - created
-        - fetched
-        - updated
+        - synced
     PostWeekToXeroRequest:
       type: object
       description: Request serializer for posting weekly timesheet to Xero
