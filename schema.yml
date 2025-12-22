@@ -23,7 +23,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -59,7 +58,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -75,7 +73,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -91,7 +88,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -110,7 +106,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -167,7 +162,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -244,7 +238,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -267,7 +260,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1110,7 +1102,6 @@ paths:
         - api
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1144,7 +1135,6 @@ paths:
         - api
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1180,7 +1170,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1216,7 +1205,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1239,7 +1227,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1280,7 +1267,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1333,7 +1319,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1379,7 +1364,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1420,7 +1404,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1455,7 +1438,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1525,7 +1507,6 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1555,7 +1536,6 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1739,6 +1719,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+  /clients/addresses/validate/:
+    post:
+      operationId: clients_addresses_validate_create
+      description: Validate an address and return structured candidates.
+      tags:
+        - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  description: Freetext address to validate
+              required:
+                - address
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        formatted_address:
+                          type: string
+                        street:
+                          type: string
+                        suburb:
+                          type: string
+                        city:
+                          type: string
+                        state:
+                          type: string
+                        postal_code:
+                          type: string
+                        country:
+                          type: string
+                        google_place_id:
+                          type: string
+                        latitude:
+                          type: number
+                        longitude:
+                          type: number
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Missing or invalid address
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                description: Google API unavailable or not configured
           description: ''
   /clients/all/:
     get:
@@ -2125,6 +2169,224 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
+  /clients/pickup-addresses/:
+    get:
+      operationId: clients_pickup_addresses_list
+      description: List all pickup addresses, optionally filtered by supplier_id.
+      parameters:
+        - in: query
+          name: supplier_id
+          schema:
+            type: string
+            format: uuid
+          description: Filter addresses by supplier UUID
+      tags:
+        - clients
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SupplierPickupAddress'
+          description: ''
+    post:
+      operationId: clients_pickup_addresses_create
+      description: |-
+        ViewSet for SupplierPickupAddress CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/pickup-addresses/           - list all addresses
+        - POST   /api/clients/pickup-addresses/           - create address
+        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
+        - PUT    /api/clients/pickup-addresses/<id>/      - full update
+        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
+        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - supplier_id: Filter addresses by supplier (client) UUID
+      tags:
+        - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPickupAddress'
+          description: ''
+  /clients/pickup-addresses/{id}/:
+    get:
+      operationId: clients_pickup_addresses_retrieve
+      description: |-
+        ViewSet for SupplierPickupAddress CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/pickup-addresses/           - list all addresses
+        - POST   /api/clients/pickup-addresses/           - create address
+        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
+        - PUT    /api/clients/pickup-addresses/<id>/      - full update
+        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
+        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - supplier_id: Filter addresses by supplier (client) UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Supplier Pickup Address.
+          required: true
+      tags:
+        - clients
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPickupAddress'
+          description: ''
+    put:
+      operationId: clients_pickup_addresses_update
+      description: |-
+        ViewSet for SupplierPickupAddress CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/pickup-addresses/           - list all addresses
+        - POST   /api/clients/pickup-addresses/           - create address
+        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
+        - PUT    /api/clients/pickup-addresses/<id>/      - full update
+        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
+        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - supplier_id: Filter addresses by supplier (client) UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Supplier Pickup Address.
+          required: true
+      tags:
+        - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPickupAddress'
+          description: ''
+    patch:
+      operationId: clients_pickup_addresses_partial_update
+      description: |-
+        ViewSet for SupplierPickupAddress CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/pickup-addresses/           - list all addresses
+        - POST   /api/clients/pickup-addresses/           - create address
+        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
+        - PUT    /api/clients/pickup-addresses/<id>/      - full update
+        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
+        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - supplier_id: Filter addresses by supplier (client) UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Supplier Pickup Address.
+          required: true
+      tags:
+        - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplierPickupAddressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplierPickupAddressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplierPickupAddressRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPickupAddress'
+          description: ''
+    delete:
+      operationId: clients_pickup_addresses_destroy
+      description: |-
+        ViewSet for SupplierPickupAddress CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/pickup-addresses/           - list all addresses
+        - POST   /api/clients/pickup-addresses/           - create address
+        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
+        - PUT    /api/clients/pickup-addresses/<id>/      - full update
+        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
+        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - supplier_id: Filter addresses by supplier (client) UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Supplier Pickup Address.
+          required: true
+      tags:
+        - clients
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /clients/search/:
     get:
       operationId: clients_search_retrieve
@@ -2309,7 +2571,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2344,7 +2605,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -2366,7 +2626,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -2408,7 +2667,6 @@ paths:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2444,7 +2702,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -2931,7 +3188,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3051,7 +3307,6 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3076,7 +3331,6 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3111,7 +3365,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3141,7 +3394,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3176,7 +3428,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3216,7 +3467,6 @@ paths:
               $ref: '#/components/schemas/PatchedJobDeltaEnvelopeRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3245,7 +3495,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3275,7 +3524,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3380,7 +3628,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3416,7 +3663,6 @@ paths:
               $ref: '#/components/schemas/QuoteRevisionRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3440,7 +3686,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3469,7 +3714,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3502,7 +3746,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3532,7 +3775,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3574,7 +3816,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3615,7 +3856,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3654,7 +3894,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3702,7 +3941,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3763,7 +4001,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3819,7 +4056,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -3862,7 +4098,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3893,7 +4128,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3923,7 +4157,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3998,7 +4231,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4040,7 +4272,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4091,7 +4322,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4133,7 +4363,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4162,7 +4391,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4198,7 +4426,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4340,7 +4567,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4363,7 +4589,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4386,7 +4611,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4408,7 +4632,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4440,7 +4663,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4937,7 +5159,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4969,7 +5190,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4991,7 +5211,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5007,7 +5226,6 @@ paths:
         - Product Mapping
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5041,7 +5259,6 @@ paths:
               $ref: '#/components/schemas/ProductMappingValidateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5069,7 +5286,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5097,7 +5313,6 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderCreateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5120,7 +5335,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5156,7 +5370,6 @@ paths:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5179,7 +5392,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5213,7 +5425,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5247,7 +5458,6 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderEmailRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5276,7 +5486,6 @@ paths:
         - Purchase Orders
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5316,7 +5525,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -5370,7 +5578,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5399,7 +5606,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5690,7 +5896,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5706,7 +5911,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5728,7 +5932,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5752,7 +5955,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5774,7 +5976,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5802,7 +6003,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -5824,7 +6024,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5857,7 +6056,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5889,7 +6087,6 @@ paths:
               $ref: '#/components/schemas/PatchedDjangoJobRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5910,7 +6107,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -5929,7 +6125,6 @@ paths:
         - rest
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6196,7 +6391,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
+      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
       parameters:
         - in: query
           name: start_date
@@ -6303,7 +6498,6 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6333,7 +6527,6 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -9167,8 +9360,8 @@ components:
           readOnly: true
         rejected_flag:
           type: boolean
-          description: Indicates if this job was rejected (shown in Recently Completed
-            with rejected styling)
+          description: Indicates if this job was rejected (shown in Archived with
+            rejected styling)
       required:
         - charge_out_rate
         - client_name
@@ -10008,8 +10201,8 @@ components:
           type: boolean
         rejected_flag:
           type: boolean
-          description: Indicates if this job was rejected (shown in Recently Completed
-            with rejected styling)
+          description: Indicates if this job was rejected (shown in Archived with
+            rejected styling)
       required:
         - client
         - job_id
@@ -11687,6 +11880,10 @@ components:
           type: string
           format: uuid
           nullable: true
+        pickup_address_id:
+          type: string
+          format: uuid
+          nullable: true
         reference:
           type: string
           maxLength: 255
@@ -11917,6 +12114,80 @@ components:
         is_active:
           type: boolean
           description: False when quantity reaches zero or item is fully consumed/transformed
+    PatchedSupplierPickupAddressRequest:
+      type: object
+      description: Serializer for SupplierPickupAddress model (delivery/pickup locations).
+      properties:
+        client:
+          type: string
+          format: uuid
+          description: The supplier this pickup address belongs to
+        name:
+          type: string
+          minLength: 1
+          description: Friendly name for this address (e.g., 'Main Warehouse', 'City
+            Branch')
+          maxLength: 255
+        street:
+          type: string
+          minLength: 1
+          description: Street address including unit/suite number
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb or neighbourhood (e.g., Thorndon, Northcote Point)
+          maxLength: 100
+        city:
+          type: string
+          minLength: 1
+          description: City (e.g., Wellington, Auckland)
+          maxLength: 100
+        state:
+          type: string
+          nullable: true
+          description: State or province
+          maxLength: 100
+        postal_code:
+          type: string
+          nullable: true
+          description: Postal or ZIP code
+          maxLength: 20
+        country:
+          type: string
+          minLength: 1
+          description: Country name
+          maxLength: 100
+        google_place_id:
+          type: string
+          nullable: true
+          description: Google Place ID for this address
+          maxLength: 255
+        latitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Latitude coordinate
+        longitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Longitude coordinate
+        is_primary:
+          type: boolean
+          description: Indicates if this is the primary pickup address for the supplier
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes (e.g., opening hours, access instructions)
     PatchedWorkshopTimesheetEntryUpdateRequest:
       type: object
       description: Serializer validating workshop timesheet update (PATCH) requests.
@@ -12337,6 +12608,10 @@ components:
           type: string
           format: uuid
           nullable: true
+        pickup_address_id:
+          type: string
+          format: uuid
+          nullable: true
         reference:
           type: string
           maxLength: 255
@@ -12357,6 +12632,10 @@ components:
       description: Serializer for creating purchase orders.
       properties:
         supplier_id:
+          type: string
+          format: uuid
+          nullable: true
+        pickup_address_id:
           type: string
           format: uuid
           nullable: true
@@ -12409,6 +12688,12 @@ components:
           type: string
           format: uuid
           nullable: true
+        pickup_address_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Delivery/pickup address for this purchase order
+          readOnly: true
         supplier:
           type: string
           readOnly: true
@@ -12423,9 +12708,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderLine'
+        pickup_address:
+          allOf:
+            - $ref: '#/components/schemas/SupplierPickupAddress'
+          readOnly: true
+          nullable: true
       required:
         - id
         - lines
+        - pickup_address
+        - pickup_address_id
         - po_number
         - supplier
         - supplier_has_xero_id
@@ -12857,6 +13149,10 @@ components:
       description: Serializer for updating purchase orders.
       properties:
         supplier_id:
+          type: string
+          format: uuid
+          nullable: true
+        pickup_address_id:
           type: string
           format: uuid
           nullable: true
@@ -14344,6 +14640,185 @@ components:
         - missing_staff
         - partial_staff
         - total_staff
+    SupplierPickupAddress:
+      type: object
+      description: Serializer for SupplierPickupAddress model (delivery/pickup locations).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        client:
+          type: string
+          format: uuid
+          description: The supplier this pickup address belongs to
+        name:
+          type: string
+          description: Friendly name for this address (e.g., 'Main Warehouse', 'City
+            Branch')
+          maxLength: 255
+        street:
+          type: string
+          description: Street address including unit/suite number
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb or neighbourhood (e.g., Thorndon, Northcote Point)
+          maxLength: 100
+        city:
+          type: string
+          description: City (e.g., Wellington, Auckland)
+          maxLength: 100
+        state:
+          type: string
+          nullable: true
+          description: State or province
+          maxLength: 100
+        postal_code:
+          type: string
+          nullable: true
+          description: Postal or ZIP code
+          maxLength: 20
+        country:
+          type: string
+          description: Country name
+          maxLength: 100
+        google_place_id:
+          type: string
+          nullable: true
+          description: Google Place ID for this address
+          maxLength: 255
+        latitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Latitude coordinate
+        longitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Longitude coordinate
+        is_primary:
+          type: boolean
+          description: Indicates if this is the primary pickup address for the supplier
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes (e.g., opening hours, access instructions)
+        is_active:
+          type: boolean
+          readOnly: true
+          description: Soft delete flag - inactive addresses are hidden from normal
+            queries
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        formatted_address:
+          type: string
+          readOnly: true
+      required:
+        - city
+        - client
+        - created_at
+        - formatted_address
+        - id
+        - is_active
+        - name
+        - street
+        - updated_at
+    SupplierPickupAddressRequest:
+      type: object
+      description: Serializer for SupplierPickupAddress model (delivery/pickup locations).
+      properties:
+        client:
+          type: string
+          format: uuid
+          description: The supplier this pickup address belongs to
+        name:
+          type: string
+          minLength: 1
+          description: Friendly name for this address (e.g., 'Main Warehouse', 'City
+            Branch')
+          maxLength: 255
+        street:
+          type: string
+          minLength: 1
+          description: Street address including unit/suite number
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb or neighbourhood (e.g., Thorndon, Northcote Point)
+          maxLength: 100
+        city:
+          type: string
+          minLength: 1
+          description: City (e.g., Wellington, Auckland)
+          maxLength: 100
+        state:
+          type: string
+          nullable: true
+          description: State or province
+          maxLength: 100
+        postal_code:
+          type: string
+          nullable: true
+          description: Postal or ZIP code
+          maxLength: 20
+        country:
+          type: string
+          minLength: 1
+          description: Country name
+          maxLength: 100
+        google_place_id:
+          type: string
+          nullable: true
+          description: Google Place ID for this address
+          maxLength: 255
+        latitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Latitude coordinate
+        longitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Longitude coordinate
+        is_primary:
+          type: boolean
+          description: Indicates if this is the primary pickup address for the supplier
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes (e.g., opening hours, access instructions)
+      required:
+        - city
+        - client
+        - name
+        - street
     SupplierPriceStatusItem:
       type: object
       description: Single supplier price status row.
