@@ -28,8 +28,18 @@ export function useAppLayout() {
   const userInfo = computed(() => {
     const user = authStore.user as Staff | null
     if (!user) {
-      authStore.initializeAuth()
-      throw new Error('Could not load user information')
+      void authStore.initializeAuth()
+      return {
+        displayName: '',
+        email: '',
+        is_office_staff: false,
+        is_superuser: false,
+        first_name: '',
+        last_name: '',
+        preferred_name: '',
+        id: '',
+        fullName: '',
+      }
     }
 
     const fullName = authStore.fullName

@@ -89,6 +89,16 @@ const router = createRouter({
       },
     },
     {
+      path: '/timesheets/my-time',
+      name: 'timesheet-my-time',
+      component: () => import('@/views/WorkshopMyTimeView.vue'),
+      meta: {
+        requiresAuth: true,
+        allowWorkshopStaff: true,
+        title: 'My Time - Workshop Timesheets',
+      },
+    },
+    {
       path: '/timesheets/daily',
       name: 'timesheet-daily',
       component: () => import('@/views/DailyTimesheetView.vue'),

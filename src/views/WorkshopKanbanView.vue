@@ -51,7 +51,7 @@ onMounted(async () => {
         Next jobs
       </div>
       <div
-        class="overflow-y-auto bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center md:w-full max-w-2xl sm:max-w-3xl lg:max-w-6xl xl:max-w-7xl lg:overflow-visible"
+        class="overflow-y-auto bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col items-center md:w-full max-w-2xl sm:max-w-3xl lg:max-w-6xl xl:max-w-7xl lg:overflow-y-auto lg:max-h-[70vh]"
       >
         <div
           class="flex flex-col gap-4 p-3 md:p-4 items-center w-full max-h-215 lg:max-h-none lg:grid lg:grid-cols-2 xl:grid-cols-3 lg:gap-6 xl:gap-8 lg:items-stretch"

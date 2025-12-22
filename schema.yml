@@ -1740,70 +1740,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
-  /clients/addresses/validate/:
-    post:
-      operationId: clients_addresses_validate_create
-      description: Validate an address and return structured candidates.
-      tags:
-        - clients
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                address:
-                  type: string
-                  description: Freetext address to validate
-              required:
-                - address
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  candidates:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        formatted_address:
-                          type: string
-                        street:
-                          type: string
-                        suburb:
-                          type: string
-                        city:
-                          type: string
-                        state:
-                          type: string
-                        postal_code:
-                          type: string
-                        country:
-                          type: string
-                        google_place_id:
-                          type: string
-                        latitude:
-                          type: number
-                        longitude:
-                          type: number
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                description: Missing or invalid address
-          description: ''
-        '503':
-          content:
-            application/json:
-              schema:
-                description: Google API unavailable or not configured
-          description: ''
   /clients/all/:
     get:
       operationId: clients_all_list
@@ -2189,224 +2125,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
-  /clients/pickup-addresses/:
-    get:
-      operationId: clients_pickup_addresses_list
-      description: List all pickup addresses, optionally filtered by supplier_id.
-      parameters:
-        - in: query
-          name: supplier_id
-          schema:
-            type: string
-            format: uuid
-          description: Filter addresses by supplier UUID
-      tags:
-        - clients
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SupplierPickupAddress'
-          description: ''
-    post:
-      operationId: clients_pickup_addresses_create
-      description: |-
-        ViewSet for SupplierPickupAddress CRUD operations.
-
-        Endpoints:
-        - GET    /api/clients/pickup-addresses/           - list all addresses
-        - POST   /api/clients/pickup-addresses/           - create address
-        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
-        - PUT    /api/clients/pickup-addresses/<id>/      - full update
-        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
-        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
-
-        Query Parameters:
-        - supplier_id: Filter addresses by supplier (client) UUID
-      tags:
-        - clients
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SupplierPickupAddressRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SupplierPickupAddressRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SupplierPickupAddressRequest'
-        required: true
-      security:
-        - cookieAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SupplierPickupAddress'
-          description: ''
-  /clients/pickup-addresses/{id}/:
-    get:
-      operationId: clients_pickup_addresses_retrieve
-      description: |-
-        ViewSet for SupplierPickupAddress CRUD operations.
-
-        Endpoints:
-        - GET    /api/clients/pickup-addresses/           - list all addresses
-        - POST   /api/clients/pickup-addresses/           - create address
-        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
-        - PUT    /api/clients/pickup-addresses/<id>/      - full update
-        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
-        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
-
-        Query Parameters:
-        - supplier_id: Filter addresses by supplier (client) UUID
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          description: A UUID string identifying this Supplier Pickup Address.
-          required: true
-      tags:
-        - clients
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SupplierPickupAddress'
-          description: ''
-    put:
-      operationId: clients_pickup_addresses_update
-      description: |-
-        ViewSet for SupplierPickupAddress CRUD operations.
-
-        Endpoints:
-        - GET    /api/clients/pickup-addresses/           - list all addresses
-        - POST   /api/clients/pickup-addresses/           - create address
-        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
-        - PUT    /api/clients/pickup-addresses/<id>/      - full update
-        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
-        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
-
-        Query Parameters:
-        - supplier_id: Filter addresses by supplier (client) UUID
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          description: A UUID string identifying this Supplier Pickup Address.
-          required: true
-      tags:
-        - clients
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SupplierPickupAddressRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SupplierPickupAddressRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SupplierPickupAddressRequest'
-        required: true
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SupplierPickupAddress'
-          description: ''
-    patch:
-      operationId: clients_pickup_addresses_partial_update
-      description: |-
-        ViewSet for SupplierPickupAddress CRUD operations.
-
-        Endpoints:
-        - GET    /api/clients/pickup-addresses/           - list all addresses
-        - POST   /api/clients/pickup-addresses/           - create address
-        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
-        - PUT    /api/clients/pickup-addresses/<id>/      - full update
-        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
-        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
-
-        Query Parameters:
-        - supplier_id: Filter addresses by supplier (client) UUID
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          description: A UUID string identifying this Supplier Pickup Address.
-          required: true
-      tags:
-        - clients
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedSupplierPickupAddressRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedSupplierPickupAddressRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedSupplierPickupAddressRequest'
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SupplierPickupAddress'
-          description: ''
-    delete:
-      operationId: clients_pickup_addresses_destroy
-      description: |-
-        ViewSet for SupplierPickupAddress CRUD operations.
-
-        Endpoints:
-        - GET    /api/clients/pickup-addresses/           - list all addresses
-        - POST   /api/clients/pickup-addresses/           - create address
-        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
-        - PUT    /api/clients/pickup-addresses/<id>/      - full update
-        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
-        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
-
-        Query Parameters:
-        - supplier_id: Filter addresses by supplier (client) UUID
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          description: A UUID string identifying this Supplier Pickup Address.
-          required: true
-      tags:
-        - clients
-      security:
-        - cookieAuth: []
-      responses:
-        '204':
-          description: No response body
   /clients/search/:
     get:
       operationId: clients_search_retrieve
@@ -3015,7 +2733,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3024,6 +2741,180 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkshopJob'
+          description: ''
+  /job/api/workshop/timesheets/:
+    get:
+      operationId: job_api_workshop_timesheets_retrieve
+      description: Return all timesheet entries for the staff member on a given date.
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+          description: Optional date (YYYY-MM-DD). Defaults to today.
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopTimesheetListResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: job_api_workshop_timesheets_create
+      description: Create a new timesheet entry for the authenticated staff.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkshopTimesheetEntryRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkshopTimesheetEntryRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkshopTimesheetEntryRequestRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopTimesheetEntry'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    patch:
+      operationId: job_api_workshop_timesheets_partial_update
+      description: Update an existing timesheet entry belonging to the staff member.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkshopTimesheetEntryUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkshopTimesheetEntryUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkshopTimesheetEntryUpdateRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopTimesheetEntry'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    delete:
+      operationId: job_api_workshop_timesheets_destroy
+      description: Delete a timesheet entry belonging to the staff member.
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
   /job/job/{job_id}/workshop-pdf/:
     get:
@@ -3106,7 +2997,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockConsumeResponse'
+                $ref: '#/components/schemas/CostLineApprovalResult'
           description: ''
         '400':
           content:
@@ -8151,6 +8042,23 @@ components:
         - total_cost
         - total_rev
         - updated_at
+    CostLineApprovalResponse:
+      type: object
+      description: Serializer for non-material cost line approval responses.
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        line:
+          $ref: '#/components/schemas/CostLine'
+      required:
+        - line
+        - success
+    CostLineApprovalResult:
+      oneOf:
+        - $ref: '#/components/schemas/StockConsumeResponse'
+        - $ref: '#/components/schemas/CostLineApprovalResponse'
     CostLineCreateUpdate:
       type: object
       description: Serializer for CostLine creation and updates - full write capabilities
@@ -11779,10 +11687,6 @@ components:
           type: string
           format: uuid
           nullable: true
-        pickup_address_id:
-          type: string
-          format: uuid
-          nullable: true
         reference:
           type: string
           maxLength: 255
@@ -12013,80 +11917,37 @@ components:
         is_active:
           type: boolean
           description: False when quantity reaches zero or item is fully consumed/transformed
-    PatchedSupplierPickupAddressRequest:
+    PatchedWorkshopTimesheetEntryUpdateRequest:
       type: object
-      description: Serializer for SupplierPickupAddress model (delivery/pickup locations).
+      description: Serializer validating workshop timesheet update (PATCH) requests.
       properties:
-        client:
+        entry_id:
           type: string
           format: uuid
-          description: The supplier this pickup address belongs to
-        name:
+        job_id:
           type: string
-          minLength: 1
-          description: Friendly name for this address (e.g., 'Main Warehouse', 'City
-            Branch')
-          maxLength: 255
-        street:
+          format: uuid
+        accounting_date:
           type: string
-          minLength: 1
-          description: Street address including unit/suite number
-          maxLength: 255
-        suburb:
-          type: string
-          nullable: true
-          description: Suburb or neighbourhood (e.g., Thorndon, Northcote Point)
-          maxLength: 100
-        city:
-          type: string
-          minLength: 1
-          description: City (e.g., Wellington, Auckland)
-          maxLength: 100
-        state:
-          type: string
-          nullable: true
-          description: State or province
-          maxLength: 100
-        postal_code:
-          type: string
-          nullable: true
-          description: Postal or ZIP code
-          maxLength: 20
-        country:
-          type: string
-          minLength: 1
-          description: Country name
-          maxLength: 100
-        google_place_id:
-          type: string
-          nullable: true
-          description: Google Place ID for this address
-          maxLength: 255
-        latitude:
+          format: date
+        hours:
           type: number
           format: double
-          maximum: 1000
-          minimum: -1000
+          maximum: 100000
+          minimum: 0.01
           exclusiveMaximum: true
-          exclusiveMinimum: true
+        description:
+          type: string
           nullable: true
-          description: Latitude coordinate
-        longitude:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          nullable: true
-          description: Longitude coordinate
-        is_primary:
+          maxLength: 255
+        is_billable:
           type: boolean
-          description: Indicates if this is the primary pickup address for the supplier
-        notes:
-          type: string
-          nullable: true
-          description: Additional notes (e.g., opening hours, access instructions)
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: 0.1
+          exclusiveMaximum: true
     PayRunDetails:
       type: object
       description: Serializer representing details from a Xero pay run.
@@ -12476,10 +12337,6 @@ components:
           type: string
           format: uuid
           nullable: true
-        pickup_address_id:
-          type: string
-          format: uuid
-          nullable: true
         reference:
           type: string
           maxLength: 255
@@ -12500,10 +12357,6 @@ components:
       description: Serializer for creating purchase orders.
       properties:
         supplier_id:
-          type: string
-          format: uuid
-          nullable: true
-        pickup_address_id:
           type: string
           format: uuid
           nullable: true
@@ -12556,12 +12409,6 @@ components:
           type: string
           format: uuid
           nullable: true
-        pickup_address_id:
-          type: string
-          format: uuid
-          nullable: true
-          description: Delivery/pickup address for this purchase order
-          readOnly: true
         supplier:
           type: string
           readOnly: true
@@ -12576,16 +12423,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderLine'
-        pickup_address:
-          allOf:
-            - $ref: '#/components/schemas/SupplierPickupAddress'
-          readOnly: true
-          nullable: true
       required:
         - id
         - lines
-        - pickup_address
-        - pickup_address_id
         - po_number
         - supplier
         - supplier_has_xero_id
@@ -13017,10 +12857,6 @@ components:
       description: Serializer for updating purchase orders.
       properties:
         supplier_id:
-          type: string
-          format: uuid
-          nullable: true
-        pickup_address_id:
           type: string
           format: uuid
           nullable: true
@@ -14508,185 +14344,6 @@ components:
         - missing_staff
         - partial_staff
         - total_staff
-    SupplierPickupAddress:
-      type: object
-      description: Serializer for SupplierPickupAddress model (delivery/pickup locations).
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        client:
-          type: string
-          format: uuid
-          description: The supplier this pickup address belongs to
-        name:
-          type: string
-          description: Friendly name for this address (e.g., 'Main Warehouse', 'City
-            Branch')
-          maxLength: 255
-        street:
-          type: string
-          description: Street address including unit/suite number
-          maxLength: 255
-        suburb:
-          type: string
-          nullable: true
-          description: Suburb or neighbourhood (e.g., Thorndon, Northcote Point)
-          maxLength: 100
-        city:
-          type: string
-          description: City (e.g., Wellington, Auckland)
-          maxLength: 100
-        state:
-          type: string
-          nullable: true
-          description: State or province
-          maxLength: 100
-        postal_code:
-          type: string
-          nullable: true
-          description: Postal or ZIP code
-          maxLength: 20
-        country:
-          type: string
-          description: Country name
-          maxLength: 100
-        google_place_id:
-          type: string
-          nullable: true
-          description: Google Place ID for this address
-          maxLength: 255
-        latitude:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          nullable: true
-          description: Latitude coordinate
-        longitude:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          nullable: true
-          description: Longitude coordinate
-        is_primary:
-          type: boolean
-          description: Indicates if this is the primary pickup address for the supplier
-        notes:
-          type: string
-          nullable: true
-          description: Additional notes (e.g., opening hours, access instructions)
-        is_active:
-          type: boolean
-          readOnly: true
-          description: Soft delete flag - inactive addresses are hidden from normal
-            queries
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-        formatted_address:
-          type: string
-          readOnly: true
-      required:
-        - city
-        - client
-        - created_at
-        - formatted_address
-        - id
-        - is_active
-        - name
-        - street
-        - updated_at
-    SupplierPickupAddressRequest:
-      type: object
-      description: Serializer for SupplierPickupAddress model (delivery/pickup locations).
-      properties:
-        client:
-          type: string
-          format: uuid
-          description: The supplier this pickup address belongs to
-        name:
-          type: string
-          minLength: 1
-          description: Friendly name for this address (e.g., 'Main Warehouse', 'City
-            Branch')
-          maxLength: 255
-        street:
-          type: string
-          minLength: 1
-          description: Street address including unit/suite number
-          maxLength: 255
-        suburb:
-          type: string
-          nullable: true
-          description: Suburb or neighbourhood (e.g., Thorndon, Northcote Point)
-          maxLength: 100
-        city:
-          type: string
-          minLength: 1
-          description: City (e.g., Wellington, Auckland)
-          maxLength: 100
-        state:
-          type: string
-          nullable: true
-          description: State or province
-          maxLength: 100
-        postal_code:
-          type: string
-          nullable: true
-          description: Postal or ZIP code
-          maxLength: 20
-        country:
-          type: string
-          minLength: 1
-          description: Country name
-          maxLength: 100
-        google_place_id:
-          type: string
-          nullable: true
-          description: Google Place ID for this address
-          maxLength: 255
-        latitude:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          nullable: true
-          description: Latitude coordinate
-        longitude:
-          type: number
-          format: double
-          maximum: 1000
-          minimum: -1000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          nullable: true
-          description: Longitude coordinate
-        is_primary:
-          type: boolean
-          description: Indicates if this is the primary pickup address for the supplier
-        notes:
-          type: string
-          nullable: true
-          description: Additional notes (e.g., opening hours, access instructions)
-      required:
-        - city
-        - client
-        - name
-        - street
     SupplierPriceStatusItem:
       type: object
       description: Single supplier price status row.
@@ -15501,6 +15158,150 @@ components:
         message:
           type: string
           description: Error message if applicable
+    WorkshopTimesheetEntry:
+      type: object
+      description: Serializer used to expose simplified workshop timesheet entries.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        job_id:
+          type: string
+          format: uuid
+          readOnly: true
+        job_number:
+          type: integer
+          readOnly: true
+        job_name:
+          type: string
+          readOnly: true
+        client_name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        hours:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: -100000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+        accounting_date:
+          type: string
+          format: date
+          readOnly: true
+        is_billable:
+          type: boolean
+          readOnly: true
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - accounting_date
+        - client_name
+        - created_at
+        - description
+        - hours
+        - id
+        - is_billable
+        - job_id
+        - job_name
+        - job_number
+        - rate_multiplier
+        - updated_at
+    WorkshopTimesheetEntryRequestRequest:
+      type: object
+      description: Serializer validating workshop timesheet create requests.
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        accounting_date:
+          type: string
+          format: date
+        hours:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: 0.01
+          exclusiveMaximum: true
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        is_billable:
+          type: boolean
+          default: true
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: 0.1
+          exclusiveMaximum: true
+          default: 1.00
+      required:
+        - accounting_date
+        - hours
+        - job_id
+    WorkshopTimesheetListResponse:
+      type: object
+      description: Serializer describing the GET response payload for workshop timesheets.
+      properties:
+        date:
+          type: string
+          format: date
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkshopTimesheetEntry'
+        summary:
+          $ref: '#/components/schemas/WorkshopTimesheetSummary'
+      required:
+        - date
+        - entries
+        - summary
+    WorkshopTimesheetSummary:
+      type: object
+      description: Serializer for the aggregated summary in workshop timesheets.
+      properties:
+        total_hours:
+          type: number
+          format: double
+        billable_hours:
+          type: number
+          format: double
+        non_billable_hours:
+          type: number
+          format: double
+        total_cost:
+          type: number
+          format: double
+        total_revenue:
+          type: number
+          format: double
+      required:
+        - billable_hours
+        - non_billable_hours
+        - total_cost
+        - total_hours
+        - total_revenue
     XeroDocumentErrorResponse:
       type: object
       description: Standardized serializer for a failed Xero document operation.
