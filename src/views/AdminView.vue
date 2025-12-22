@@ -14,11 +14,7 @@
       </div>
       <ul class="tab-list">
         <li v-for="tab in tabs" :key="tab.name">
-          <RouterLink
-            :to="{ name: tab.route }"
-            class="tab-link"
-            :class="isActive(tab.key) ? 'tab-link--active' : ''"
-          >
+          <RouterLink :to="{ name: tab.route }" class="tab-link" :class="isActive(tab.key) ? 'tab-link--active' : ''">
             <span v-if="tab.icon" class="tab-icon">
               <component :is="tab.icon" />
             </span>
@@ -55,7 +51,7 @@ import {
 import { debugLog } from '../utils/debug'
 
 const { userInfo } = useAppLayout()
-const isStaff = computed(() => Boolean(userInfo.value?.is_staff))
+const isStaff = computed(() => Boolean(userInfo.value?.is_office_staff))
 const route = useRoute()
 
 const username = computed(() => {

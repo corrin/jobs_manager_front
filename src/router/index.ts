@@ -2,13 +2,20 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import LoginView from '@/views/LoginView.vue'
 import KanbanView from '@/views/KanbanView.vue'
+import { toast } from 'vue-sonner'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: '/kanban',
+      redirect: () => {
+        if (useAuthStore().user?.is_office_staff) {
+          return '/kanban'
+        } else {
+          return '/kanban/workshop'
+        }
+      },
     },
     {
       path: '/login',
@@ -16,6 +23,7 @@ const router = createRouter({
       component: LoginView,
       meta: {
         requiresGuest: true,
+        allowWorkshopStaff: true,
         title: 'Login - Jobs Manager',
       },
     },
@@ -25,6 +33,7 @@ const router = createRouter({
       component: KanbanView,
       meta: {
         requiresAuth: true,
+        allowWorkshopStaff: true,
         title: 'Kanban Board - Jobs Manager',
       },
     },
@@ -38,11 +47,22 @@ const router = createRouter({
       },
     },
     {
+      path: '/jobs/:id/workshop',
+      name: 'job-workshop',
+      component: () => import('@/views/WorkshopJobView.vue'),
+      meta: {
+        requiresAuth: true,
+        allowWorkshopStaff: true,
+        title: 'Job (Workshop) - Jobs Manager',
+      },
+    },
+    {
       path: '/jobs/:id',
       name: 'job-edit',
       component: () => import('@/views/JobView.vue'),
       meta: {
         requiresAuth: true,
+        allowWorkshopStaff: true,
         title: 'Job - Jobs Manager',
       },
     },
@@ -66,6 +86,16 @@ const router = createRouter({
       meta: {
         requiresAuth: true,
         title: 'Timesheet Entry - Jobs Manager',
+      },
+    },
+    {
+      path: '/timesheets/my-time',
+      name: 'timesheet-my-time',
+      component: () => import('@/views/WorkshopMyTimeView.vue'),
+      meta: {
+        requiresAuth: true,
+        allowWorkshopStaff: true,
+        title: 'My Time - Workshop Timesheets',
       },
     },
     {
@@ -307,6 +337,16 @@ const router = createRouter({
       component: () => import('@/views/SafetySwpView.vue'),
       meta: { requiresAuth: true, title: 'Safe Work Procedures - Jobs Manager' },
     },
+    {
+      path: '/kanban/workshop',
+      name: 'workshop-kanban',
+      component: () => import('@/views/WorkshopKanbanView.vue'),
+      meta: {
+        requiresAuth: true,
+        allowWorkshopStaff: true,
+        title: 'Workshop Kanban - Jobs Manager',
+      },
+    },
   ],
 })
 
@@ -317,9 +357,14 @@ router.beforeEach(async (to, from, next) => {
     document.title = to.meta.title as string
   }
 
-  if (to.name === 'login') {
-    next()
-    return
+  if (to.meta.requiresGuest) {
+    if (!authStore.user && !authStore.hasCheckedSession) {
+      await authStore.initializeAuth()
+    }
+    if (authStore.isAuthenticated) {
+      next(authStore.user?.is_office_staff ? { name: 'kanban' } : { name: 'workshop-kanban' })
+      return
+    }
   }
 
   if (to.meta.requiresAuth) {
@@ -330,8 +375,19 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next({ name: 'kanban' })
+  if (to.meta.requiresSuperUser && !authStore.user?.is_superuser) {
+    toast.error('You are not allowed to visit this page.', {
+      description: 'Please try again or contact Corrin if you think this is a mistake.',
+    })
+    next('/')
+    return
+  }
+
+  if (!to.meta.allowWorkshopStaff && !authStore.user?.is_office_staff) {
+    toast.error('You are not allowed to visit this page.', {
+      description: 'Please try again or contact Corrin if you think this is a mistake.',
+    })
+    next('/')
     return
   }
 

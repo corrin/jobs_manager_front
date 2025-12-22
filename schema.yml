@@ -23,7 +23,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -59,7 +58,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -75,7 +73,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -91,7 +88,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -110,7 +106,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -167,7 +162,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -244,7 +238,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -267,7 +260,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1110,7 +1102,6 @@ paths:
         - api
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1144,7 +1135,6 @@ paths:
         - api
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1180,7 +1170,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1216,7 +1205,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1239,7 +1227,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1280,7 +1267,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1333,7 +1319,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1379,7 +1364,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1420,7 +1404,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1455,7 +1438,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1525,7 +1507,6 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1555,7 +1536,6 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2591,7 +2571,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2626,7 +2605,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -2648,7 +2626,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -2690,7 +2667,6 @@ paths:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2726,7 +2702,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3008,6 +2983,196 @@ paths:
               schema:
                 $ref: '#/components/schemas/FetchStatusValuesResponse'
           description: ''
+  /job/api/jobs/workshop:
+    get:
+      operationId: job_api_jobs_workshop_list
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkshopJob'
+          description: ''
+  /job/api/workshop/timesheets/:
+    get:
+      operationId: job_api_workshop_timesheets_retrieve
+      description: Return all timesheet entries for the staff member on a given date.
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+          description: Optional date (YYYY-MM-DD). Defaults to today.
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopTimesheetListResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: job_api_workshop_timesheets_create
+      description: Create a new timesheet entry for the authenticated staff.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkshopTimesheetEntryRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkshopTimesheetEntryRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkshopTimesheetEntryRequestRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopTimesheetEntry'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    patch:
+      operationId: job_api_workshop_timesheets_partial_update
+      description: Update an existing timesheet entry belonging to the staff member.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkshopTimesheetEntryUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkshopTimesheetEntryUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkshopTimesheetEntryUpdateRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopTimesheetEntry'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    delete:
+      operationId: job_api_workshop_timesheets_destroy
+      description: Delete a timesheet entry belonging to the staff member.
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /job/job/{job_id}/workshop-pdf/:
     get:
       operationId: job_job_workshop_pdf_retrieve
@@ -3023,7 +3188,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3066,6 +3230,43 @@ paths:
               schema:
                 $ref: '#/components/schemas/CostLineCreateUpdate'
           description: ''
+  /job/rest/cost_lines/{cost_line_id}/approve/:
+    post:
+      operationId: approveCostLine
+      description: |-
+        Approve an existing CostLine
+
+        POST /job/rest/cost_lines/<cost_line_id>/approve
+      parameters:
+        - in: path
+          name: cost_line_id
+          schema:
+            type: string
+          description: ID of the CostLine to approve
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineApprovalResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
   /job/rest/cost_lines/{cost_line_id}/delete/:
     delete:
       operationId: job_rest_cost_lines_delete_destroy
@@ -3106,7 +3307,6 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3131,7 +3331,6 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3166,7 +3365,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3196,7 +3394,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3231,7 +3428,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3271,7 +3467,6 @@ paths:
               $ref: '#/components/schemas/PatchedJobDeltaEnvelopeRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3300,7 +3495,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3330,7 +3524,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3435,7 +3628,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3471,7 +3663,6 @@ paths:
               $ref: '#/components/schemas/QuoteRevisionRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3495,7 +3686,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3524,7 +3714,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3557,7 +3746,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3587,7 +3775,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3629,7 +3816,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3670,7 +3856,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3709,7 +3894,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3757,7 +3941,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3818,7 +4001,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3874,7 +4056,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -3917,7 +4098,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3948,7 +4128,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3978,7 +4157,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4053,7 +4231,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4095,7 +4272,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4146,7 +4322,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4188,7 +4363,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4217,7 +4391,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4253,7 +4426,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4395,7 +4567,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4418,7 +4589,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4441,7 +4611,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4463,7 +4632,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4495,7 +4663,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4992,7 +5159,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5024,7 +5190,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5046,7 +5211,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5062,7 +5226,6 @@ paths:
         - Product Mapping
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5096,7 +5259,6 @@ paths:
               $ref: '#/components/schemas/ProductMappingValidateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5124,7 +5286,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5152,7 +5313,6 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderCreateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5175,7 +5335,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5211,7 +5370,6 @@ paths:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5234,7 +5392,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5268,7 +5425,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5302,7 +5458,6 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderEmailRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5331,7 +5486,6 @@ paths:
         - Purchase Orders
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5371,7 +5525,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -5425,7 +5578,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5454,7 +5606,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5745,7 +5896,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5761,7 +5911,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5783,7 +5932,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5807,7 +5955,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5829,7 +5976,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5857,7 +6003,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -5879,7 +6024,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5912,7 +6056,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5944,7 +6087,6 @@ paths:
               $ref: '#/components/schemas/PatchedDjangoJobRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5965,7 +6107,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -5984,7 +6125,6 @@ paths:
         - rest
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6251,7 +6391,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
+      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
       parameters:
         - in: query
           name: start_date
@@ -6358,7 +6498,6 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6388,7 +6527,6 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -8075,6 +8213,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        approved:
+          type: boolean
+          description: Indicates whether this line is approved or not by an office
+            staff (when the line is created by a workshop worker)
         total_cost:
           type: number
           format: double
@@ -8093,6 +8235,23 @@ components:
         - total_cost
         - total_rev
         - updated_at
+    CostLineApprovalResponse:
+      type: object
+      description: Serializer for non-material cost line approval responses.
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        line:
+          $ref: '#/components/schemas/CostLine'
+      required:
+        - line
+        - success
+    CostLineApprovalResult:
+      oneOf:
+        - $ref: '#/components/schemas/StockConsumeResponse'
+        - $ref: '#/components/schemas/CostLineApprovalResponse'
     CostLineCreateUpdate:
       type: object
       description: Serializer for CostLine creation and updates - full write capabilities
@@ -8250,6 +8409,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        approved:
+          type: boolean
+          description: Indicates whether this line is approved or not by an office
+            staff (when the line is created by a workshop worker)
       required:
         - accounting_date
         - kind
@@ -9197,8 +9360,8 @@ components:
           readOnly: true
         rejected_flag:
           type: boolean
-          description: Indicates if this job was rejected (shown in Recently Completed
-            with rejected styling)
+          description: Indicates if this job was rejected (shown in Archived with
+            rejected styling)
       required:
         - charge_out_rate
         - client_name
@@ -10038,8 +10201,8 @@ components:
           type: boolean
         rejected_flag:
           type: boolean
-          description: Indicates if this job was rejected (shown in Recently Completed
-            with rejected styling)
+          description: Indicates if this job was rejected (shown in Archived with
+            rejected styling)
       required:
         - client
         - job_id
@@ -11779,7 +11942,7 @@ components:
           format: date
           nullable: true
           description: Date staff member left employment (null for current employees)
-        is_staff:
+        is_office_staff:
           type: boolean
         is_superuser:
           type: boolean
@@ -12025,6 +12188,37 @@ components:
           type: string
           nullable: true
           description: Additional notes (e.g., opening hours, access instructions)
+    PatchedWorkshopTimesheetEntryUpdateRequest:
+      type: object
+      description: Serializer validating workshop timesheet update (PATCH) requests.
+      properties:
+        entry_id:
+          type: string
+          format: uuid
+        job_id:
+          type: string
+          format: uuid
+        accounting_date:
+          type: string
+          format: date
+        hours:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: 0.01
+          exclusiveMaximum: true
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        is_billable:
+          type: boolean
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: 0.1
+          exclusiveMaximum: true
     PayRunDetails:
       type: object
       description: Serializer representing details from a Xero pay run.
@@ -13491,7 +13685,7 @@ components:
           format: date
           nullable: true
           description: Date staff member left employment (null for current employees)
-        is_staff:
+        is_office_staff:
           type: boolean
         is_superuser:
           type: boolean
@@ -13636,7 +13830,7 @@ components:
           format: date
           nullable: true
           description: Date staff member left employment (null for current employees)
-        is_staff:
+        is_office_staff:
           type: boolean
         is_superuser:
           type: boolean
@@ -14030,7 +14224,7 @@ components:
           format: date
           nullable: true
           description: Date staff member left employment (null for current employees)
-        is_staff:
+        is_office_staff:
           type: boolean
         is_superuser:
           type: boolean
@@ -14865,6 +15059,11 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        approved:
+          type: boolean
+          readOnly: true
+          description: Indicates whether this line is approved or not by an office
+            staff (when the line is created by a workshop worker)
         total_cost:
           type: number
           format: double
@@ -14903,6 +15102,7 @@ components:
           readOnly: true
       required:
         - accounting_date
+        - approved
         - charge_out_rate
         - client_name
         - created_at
@@ -15032,15 +15232,22 @@ components:
         fullName:
           type: string
           readOnly: true
-        is_staff:
+        is_office_staff:
           type: boolean
           readOnly: true
+        is_superuser:
+          type: boolean
+          readOnly: true
+          title: Superuser status
+          description: Designates that this user has all permissions without explicitly
+            assigning them.
       required:
         - email
         - first_name
         - fullName
         - id
-        - is_staff
+        - is_office_staff
+        - is_superuser
         - last_name
         - preferred_name
         - username
@@ -15386,6 +15593,36 @@ components:
         - summary_stats
         - week_days
         - weekly_summary
+    WorkshopJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        job_number:
+          type: integer
+        client_name:
+          type: string
+        contact_person:
+          type: string
+          nullable: true
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/KanbanJobPerson'
+      required:
+        - client_name
+        - contact_person
+        - description
+        - id
+        - job_number
+        - name
+        - people
     WorkshopPDFResponse:
       type: object
       description: Serializer for workshop PDF generation response
@@ -15396,6 +15633,150 @@ components:
         message:
           type: string
           description: Error message if applicable
+    WorkshopTimesheetEntry:
+      type: object
+      description: Serializer used to expose simplified workshop timesheet entries.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        job_id:
+          type: string
+          format: uuid
+          readOnly: true
+        job_number:
+          type: integer
+          readOnly: true
+        job_name:
+          type: string
+          readOnly: true
+        client_name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        hours:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: -100000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+        accounting_date:
+          type: string
+          format: date
+          readOnly: true
+        is_billable:
+          type: boolean
+          readOnly: true
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - accounting_date
+        - client_name
+        - created_at
+        - description
+        - hours
+        - id
+        - is_billable
+        - job_id
+        - job_name
+        - job_number
+        - rate_multiplier
+        - updated_at
+    WorkshopTimesheetEntryRequestRequest:
+      type: object
+      description: Serializer validating workshop timesheet create requests.
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        accounting_date:
+          type: string
+          format: date
+        hours:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: 0.01
+          exclusiveMaximum: true
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        is_billable:
+          type: boolean
+          default: true
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: 0.1
+          exclusiveMaximum: true
+          default: 1.00
+      required:
+        - accounting_date
+        - hours
+        - job_id
+    WorkshopTimesheetListResponse:
+      type: object
+      description: Serializer describing the GET response payload for workshop timesheets.
+      properties:
+        date:
+          type: string
+          format: date
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkshopTimesheetEntry'
+        summary:
+          $ref: '#/components/schemas/WorkshopTimesheetSummary'
+      required:
+        - date
+        - entries
+        - summary
+    WorkshopTimesheetSummary:
+      type: object
+      description: Serializer for the aggregated summary in workshop timesheets.
+      properties:
+        total_hours:
+          type: number
+          format: double
+        billable_hours:
+          type: number
+          format: double
+        non_billable_hours:
+          type: number
+          format: double
+        total_cost:
+          type: number
+          format: double
+        total_revenue:
+          type: number
+          format: double
+      required:
+        - billable_hours
+        - non_billable_hours
+        - total_cost
+        - total_hours
+        - total_revenue
     XeroDocumentErrorResponse:
       type: object
       description: Standardized serializer for a failed Xero document operation.

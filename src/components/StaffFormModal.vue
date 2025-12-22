@@ -243,7 +243,7 @@
         <div v-show="activeTab === 'permissions'" class="space-y-2">
           <div class="flex gap-2 items-center">
             <label class="flex items-center gap-2"
-              ><input type="checkbox" v-model="form.is_staff" /> Staff</label
+              ><input type="checkbox" v-model="form.is_office_staff" /> Staff</label
             >
             <label class="flex items-center gap-2"
               ><input type="checkbox" v-model="form.is_superuser" /> Superuser</label
@@ -354,7 +354,7 @@ const form = ref({
   hours_fri: 0,
   hours_sat: 0,
   hours_sun: 0,
-  is_staff: false,
+  is_office_staff: false,
   is_superuser: false,
   groups: '',
   user_permissions: '',
@@ -413,7 +413,7 @@ watch(
         hours_fri: staff.hours_fri || 0,
         hours_sat: staff.hours_sat || 0,
         hours_sun: staff.hours_sun || 0,
-        is_staff: staff.is_staff || false,
+        is_office_staff: staff.is_office_staff || false,
         is_superuser: staff.is_superuser || false,
         // Convert arrays of numbers to comma-separated strings for form fields
         groups:
@@ -449,7 +449,7 @@ watch(
         hours_fri: 0,
         hours_sat: 0,
         hours_sun: 0,
-        is_staff: false,
+        is_office_staff: false,
         is_superuser: false,
         groups: '',
         user_permissions: '',
@@ -491,7 +491,7 @@ async function submitForm() {
     ...(form.value.password && { password: form.value.password }),
     wage_rate: form.value.wage_rate,
     xero_user_id: form.value.xero_user_id || null,
-    is_staff: form.value.is_staff,
+    is_office_staff: form.value.is_office_staff,
     is_superuser: form.value.is_superuser,
     hours_mon: form.value.hours_mon,
     hours_tue: form.value.hours_tue,
@@ -545,7 +545,7 @@ async function submitForm() {
       email: form.value.email,
       wage_rate: form.value.wage_rate,
       xero_user_id: form.value.xero_user_id || null,
-      is_staff: form.value.is_staff,
+      is_office_staff: form.value.is_office_staff,
       is_superuser: form.value.is_superuser,
       hours_mon: form.value.hours_mon,
       hours_tue: form.value.hours_tue,

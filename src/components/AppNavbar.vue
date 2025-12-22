@@ -12,7 +12,7 @@
           <X v-else class="h-4 w-4" />
         </button>
         <router-link
-          to="/kanban"
+          to="/"
           class="text-sm md:text-sm lg:text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
         >
           <LayoutDashboard class="inline w-5 h-5 mr-1 align-text-bottom" /> Jobs Manager
@@ -21,6 +21,14 @@
 
       <div class="hidden lg:flex items-center space-x-6">
         <router-link
+          :to="kanbanNav.to"
+          class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium"
+        >
+          <Kanban class="w-4 h-4 mr-1" /> {{ kanbanNav.label }}
+        </router-link>
+
+        <router-link
+          v-if="userInfo.is_office_staff"
           to="/jobs/create"
           class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium"
           data-automation-id="AppNavbar-create-job"
@@ -29,52 +37,62 @@
         </router-link>
 
         <div class="relative group">
-          <button
-            @click="toggleDropdown('timesheets')"
-            class="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors duration-200 z-60"
-          >
-            <Calendar class="w-4 h-4" />
-            <span>Timesheets</span>
-            <ChevronDown class="w-4 h-4" />
-          </button>
-
-          <Transition
-            enter-active-class="transition-all duration-300 ease-out"
-            enter-from-class="opacity-0 -translate-y-2 scale-95"
-            enter-to-class="opacity-100 translate-y-0 scale-100"
-            leave-active-class="transition-all duration-200 ease-in"
-            leave-from-class="opacity-100 translate-y-0 scale-100"
-            leave-to-class="opacity-0 -translate-y-2 scale-95"
-          >
-            <div
-              v-if="activeDropdown === 'timesheets'"
-              class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
+          <div v-if="userInfo.is_office_staff">
+            <button
+              @click="toggleDropdown('timesheets')"
+              class="flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200 z-60"
             >
-              <div class="py-1">
-                <router-link
-                  to="/timesheets/entry"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-                >
-                  <PlusCircle class="w-4 h-4 mr-3" /> Entry & Management
-                </router-link>
-                <router-link
-                  to="/timesheets/daily"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-                >
-                  <Calendar class="w-4 h-4 mr-3" /> Daily Overview
-                </router-link>
-                <router-link
-                  to="/timesheets/weekly"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-                >
-                  <BarChart3 class="w-4 h-4 mr-3" /> Weekly Overview
-                </router-link>
+              <Calendar class="w-4 h-4" />
+              <span>Timesheets</span>
+              <ChevronDown class="w-4 h-4" />
+            </button>
+
+            <Transition
+              enter-active-class="transition-all duration-300 ease-out"
+              enter-from-class="opacity-0 -translate-y-2 scale-95"
+              enter-to-class="opacity-100 translate-y-0 scale-100"
+              leave-active-class="transition-all duration-200 ease-in"
+              leave-from-class="opacity-100 translate-y-0 scale-100"
+              leave-to-class="opacity-0 -translate-y-2 scale-95"
+            >
+              <div
+                v-if="activeDropdown === 'timesheets'"
+                class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-60"
+              >
+                <div class="py-1">
+                  <router-link
+                    to="/timesheets/entry"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                  >
+                    <PlusCircle class="w-4 h-4 mr-3" /> Entry & Management
+                  </router-link>
+                  <router-link
+                    to="/timesheets/daily"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                  >
+                    <Calendar class="w-4 h-4 mr-3" /> Daily Overview
+                  </router-link>
+                  <router-link
+                    to="/timesheets/weekly"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                  >
+                    <BarChart3 class="w-4 h-4 mr-3" /> Weekly Overview
+                  </router-link>
+                </div>
               </div>
-            </div>
-          </Transition>
+            </Transition>
+          </div>
         </div>
 
-        <div class="relative" @click.stop>
+        <router-link
+          v-if="!userInfo.is_office_staff"
+          to="/timesheets/my-time"
+          class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium"
+        >
+          <Clock3 class="w-4 h-4 mr-1" /> My Time
+        </router-link>
+
+        <div class="relative" @click.stop v-if="userInfo.is_office_staff">
           <button
             @click="toggleDropdown('purchases')"
             class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
@@ -122,7 +140,7 @@
           </Transition>
         </div>
 
-        <div class="relative" @click.stop>
+        <div class="relative" @click.stop v-if="userInfo.is_office_staff">
           <button
             @click="toggleDropdown('safety')"
             class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
@@ -171,7 +189,7 @@
           </Transition>
         </div>
 
-        <div class="relative" @click.stop>
+        <div class="relative" @click.stop v-if="userInfo.is_office_staff">
           <button
             @click="toggleDropdown('reports')"
             class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
@@ -247,7 +265,7 @@
           </Transition>
         </div>
 
-        <div class="relative" @click.stop v-if="userInfo.is_staff">
+        <div class="relative" @click.stop v-if="userInfo.is_office_staff">
           <button
             @click="toggleDropdown('admin')"
             class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
@@ -376,35 +394,95 @@
           <div class="grid grid-cols-1 gap-3">
             <div class="space-y-3">
               <router-link
+                :to="kanbanNav.to"
+                class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+                @click="closeMobileMenu"
+              >
+                <Kanban class="w-4 h-4 mr-2" /> {{ kanbanNav.label }}
+              </router-link>
+              <router-link
+                v-if="isOfficeStaff"
                 to="/jobs/create"
                 class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
                 data-automation-id="AppNavbar-create-job-mobile"
                 @click="closeMobileMenu"
-                >Create Job</router-link
               >
+                <FilePlus class="w-4 h-4 mr-2" /> Create Job
+              </router-link>
+              <div class="bg-gray-50 rounded-md" v-if="isOfficeStaff">
+                <button
+                  @click="toggleMobileSection('timesheets')"
+                  class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
+                >
+                  <span class="flex items-center space-x-2">
+                    <Calendar class="w-4 h-4" />
+                    <span>Timesheets</span>
+                  </span>
+                  <ChevronDown
+                    :class="[
+                      'h-4 w-4 transition-transform duration-200',
+                      mobileSections.timesheets ? 'rotate-180' : '',
+                    ]"
+                  />
+                </button>
+                <Transition
+                  enter-active-class="transition-all duration-200 ease-out"
+                  enter-from-class="opacity-0 max-h-0"
+                  enter-to-class="opacity-100 max-h-40"
+                  leave-active-class="transition-all duration-200 ease-in"
+                  leave-from-class="opacity-100 max-h-40"
+                  leave-to-class="opacity-0 max-h-0"
+                >
+                  <div v-if="mobileSections.timesheets" class="overflow-hidden">
+                    <div class="px-3 pb-2 space-y-1">
+                      <router-link
+                        to="/timesheets/entry"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                      >
+                        <PlusCircle class="w-4 h-4 mr-2" /> Entry & Management
+                      </router-link>
+                      <router-link
+                        to="/timesheets/daily"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                      >
+                        <Calendar class="w-4 h-4 mr-2" /> Daily Overview
+                      </router-link>
+                      <router-link
+                        to="/timesheets/weekly"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                      >
+                        <BarChart3 class="w-4 h-4 mr-2" /> Weekly Overview
+                      </router-link>
+                    </div>
+                  </div>
+                </Transition>
+              </div>
               <router-link
-                to="/timesheets/entry"
-                class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+                v-if="!isOfficeStaff"
+                to="/timesheets/my-time"
+                class="flex items-center space-x-2 w-full px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
                 @click="closeMobileMenu"
-                >Timesheet Entry</router-link
               >
-              <router-link
-                to="/timesheets/daily"
-                class="flex items-center px-3 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
-                @click="closeMobileMenu"
-                >Daily Overview</router-link
-              >
+                <Clock3 class="w-4 h-4" />
+                <span>My Time</span>
+              </router-link>
             </div>
 
-            <div class="border-t border-gray-200"></div>
+            <div class="border-t border-gray-200" v-if="userInfo.is_office_staff"></div>
 
             <div class="space-y-2">
-              <div class="bg-gray-50 rounded-md">
+              <div class="bg-gray-50 rounded-md" v-if="isOfficeStaff">
                 <button
                   @click="toggleMobileSection('purchases')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
-                  Purchases
+                  <span class="flex items-center space-x-2">
+                    <ShoppingCart class="w-4 h-4" />
+                    <span>Purchases</span>
+                  </span>
                   <ChevronDown
                     :class="[
                       'h-4 w-4 transition-transform duration-200',
@@ -424,39 +502,46 @@
                     <div class="px-3 pb-2 space-y-1">
                       <RouterLink
                         to="/purchasing/po"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Purchase Orders</RouterLink
                       >
+                        <FileText class="w-4 h-4 mr-2" /> Purchase Orders
+                      </RouterLink>
                       <RouterLink
                         to="/purchasing/stock"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Use Stock</RouterLink
                       >
+                        <Box class="w-4 h-4 mr-2" /> Use Stock
+                      </RouterLink>
                       <RouterLink
                         to="/purchasing/pricing"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Upload Supplier Pricing</RouterLink
                       >
+                        <UploadCloud class="w-4 h-4 mr-2" /> Upload Supplier Pricing
+                      </RouterLink>
                       <RouterLink
                         to="/purchasing/mappings"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Product Mappings</RouterLink
                       >
+                        <FileText class="w-4 h-4 mr-2" /> Product Mappings
+                      </RouterLink>
                     </div>
                   </div>
                 </Transition>
               </div>
 
-              <div class="bg-gray-50 rounded-md">
+              <div class="bg-gray-50 rounded-md" v-if="isOfficeStaff">
                 <button
                   @click="toggleMobileSection('safety')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
-                  Process
+                  <span class="flex items-center space-x-2">
+                    <ShieldCheck class="w-4 h-4" />
+                    <span>Process</span>
+                  </span>
                   <ChevronDown
                     :class="[
                       'h-4 w-4 transition-transform duration-200',
@@ -476,40 +561,47 @@
                     <div class="px-3 pb-2 space-y-1">
                       <RouterLink
                         to="/safety/jsa"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Job Safety Analyses</RouterLink
+                      >
+                        <ShieldCheck class="w-4 h-4 mr-2" /> Job Safety Analyses
+                      </RouterLink>
                       >
                       <RouterLink
                         to="/safety/swp"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Safe Work Procedures</RouterLink
+                      >
+                        <ClipboardList class="w-4 h-4 mr-2" /> Safe Work Procedures
+                      </RouterLink>
                       >
                       <div class="border-t border-gray-200 my-1"></div>
                       <button
                         @click="showNotImplementedMobile('Machine Maintenance Schedule')"
-                        class="block w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
+                        class="flex items-center w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
                       >
-                        Machine Maintenance
+                        <Wrench class="w-4 h-4 mr-2" /> Machine Maintenance
                       </button>
                       <button
                         @click="showNotImplementedMobile('Staff Training')"
-                        class="block w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
+                        class="flex items-center w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
                       >
-                        Staff Training
+                        <GraduationCap class="w-4 h-4 mr-2" /> Staff Training
                       </button>
                     </div>
                   </div>
                 </Transition>
               </div>
 
-              <div class="bg-gray-50 rounded-md">
+              <div class="bg-gray-50 rounded-md" v-if="isOfficeStaff">
                 <button
                   @click="toggleMobileSection('reports')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
-                  Reports
+                  <span class="flex items-center space-x-2">
+                    <BarChart3 class="w-4 h-4" />
+                    <span>Reports</span>
+                  </span>
                   <ChevronDown
                     :class="[
                       'h-4 w-4 transition-transform duration-200',
@@ -529,45 +621,53 @@
                     <div class="px-3 pb-2 space-y-1">
                       <router-link
                         to="/reports/clients"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Clients</router-link
                       >
+                        <Users class="w-4 h-4 mr-2" /> Clients
+                      </router-link>
                       <router-link
                         to="/reports/kpi"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >KPI Reports</router-link
                       >
+                        <BarChart3 class="w-4 h-4 mr-2" /> KPI Reports
+                      </router-link>
                       <router-link
                         to="/reports/job-aging"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Job Aging Report</router-link
                       >
+                        <Clock class="w-4 h-4 mr-2" /> Job Aging Report
+                      </router-link>
                       <router-link
                         to="/reports/staff-performance"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Staff Performance</router-link
                       >
+                        <Users class="w-4 h-4 mr-2" /> Staff Performance
+                      </router-link>
                       <router-link
                         to="/reports/sales-forecast"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Sales Forecast</router-link
                       >
+                        <TrendingUp class="w-4 h-4 mr-2" /> Sales Forecast
+                      </router-link>
                       <router-link
                         to="/reports/profit-and-loss"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Profit & Loss (Xero)</router-link
                       >
+                        <FileText class="w-4 h-4 mr-2" /> Profit & Loss (Xero)
+                      </router-link>
                       <router-link
                         to="/reports/job-movement"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Job Movement</router-link
+                      >
+                        <TrendingUp class="w-4 h-4 mr-2" /> Job Movement
+                      </router-link>
                       >
                       <div class="border-t border-gray-200 mt-2 mb-1"></div>
                       <div
@@ -577,21 +677,25 @@
                       </div>
                       <router-link
                         to="/reports/data-quality/archived-jobs"
-                        class="block px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
-                        >Archived Jobs Validation</router-link
                       >
+                        <AlertTriangle class="w-4 h-4 mr-2" /> Archived Jobs Validation
+                      </router-link>
                     </div>
                   </div>
                 </Transition>
               </div>
 
-              <div class="bg-gray-50 rounded-md" v-if="userInfo.is_staff">
+              <div class="bg-gray-50 rounded-md" v-if="userInfo.is_superuser">
                 <button
                   @click="toggleMobileSection('admin')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
-                  Admin
+                  <span class="flex items-center space-x-2">
+                    <Settings class="w-4 h-4" />
+                    <span>Admin</span>
+                  </span>
                   <ChevronDown :class="[mobileSections.admin ? 'rotate-180' : '']" />
                 </button>
                 <Transition
@@ -604,67 +708,67 @@
                   <div v-if="mobileSections.admin" class="overflow-hidden">
                     <router-link
                       to="/xero"
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
                     >
-                      Xero
+                      <Link2 class="w-4 h-4 mr-2" /> Xero
                     </router-link>
                     <div class="border-t border-gray-200 my-1 mx-2"></div>
                     <router-link
                       to="/admin/staff"
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
                     >
-                      Staff
+                      <Users class="w-4 h-4 mr-2" /> Staff
                     </router-link>
                     <router-link
                       to="/admin/company"
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
                     >
-                      Company
+                      <Building2 class="w-4 h-4 mr-2" /> Company
                     </router-link>
                     <router-link
                       to="/admin/archive-jobs"
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
                     >
-                      Archive Jobs
+                      <Archive class="w-4 h-4 mr-2" /> Archive Jobs
                     </router-link>
                     <router-link
                       to="/admin/month-end"
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
                     >
-                      Month-End
+                      <CalendarClock class="w-4 h-4 mr-2" /> Month-End
                     </router-link>
                     <router-link
                       to="/admin/errors"
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
                     >
-                      App Errors
+                      <X class="w-4 h-4 mr-2" /> App Errors
                     </router-link>
                     <router-link
                       to="/admin/django-jobs"
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
                     >
-                      Django Jobs
+                      <Cog class="w-4 h-4 mr-2" /> Django Jobs
                     </router-link>
                     <router-link
                       to="/admin/ai-providers"
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
                     >
-                      AI Providers
+                      <Brain class="w-4 h-4 mr-2" /> AI Providers
                     </router-link>
                     <router-link
                       to="/admin/uat"
-                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
                     >
-                      Manage UAT
+                      <Server class="w-4 h-4 mr-2" /> Manage UAT
                     </router-link>
                   </div>
                 </Transition>
@@ -678,7 +782,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import {
   ChevronDown,
   Menu,
@@ -687,6 +791,7 @@ import {
   PlusCircle,
   BarChart3,
   LayoutDashboard,
+  Kanban,
   FilePlus,
   ShoppingCart,
   FileText,
@@ -708,13 +813,16 @@ import {
   ClipboardList,
   Wrench,
   GraduationCap,
+  Clock3,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAppLayout } from '@/composables/useAppLayout'
 
 const activeDropdown = ref<string | null>(null)
 const showMobileMenu = ref(false)
-const mobileSections = ref({
+type MobileSection = 'timesheets' | 'purchases' | 'safety' | 'reports' | 'admin'
+const mobileSections = ref<Record<MobileSection, boolean>>({
+  timesheets: false,
   purchases: false,
   safety: false,
   reports: false,
@@ -722,6 +830,13 @@ const mobileSections = ref({
 })
 
 const { userInfo, handleLogout } = useAppLayout()
+const isOfficeStaff = computed(() => !!userInfo.value?.is_office_staff)
+
+const kanbanNav = computed(() =>
+  isOfficeStaff.value
+    ? { label: 'Workshop Kanban', to: '/kanban/workshop' }
+    : { label: 'Kanban', to: '/kanban' },
+)
 
 const toggleDropdown = (dropdown: string) => {
   activeDropdown.value = activeDropdown.value === dropdown ? null : dropdown
@@ -731,6 +846,7 @@ const toggleMobileMenu = () => {
   showMobileMenu.value = !showMobileMenu.value
   if (!showMobileMenu.value) {
     mobileSections.value = {
+      timesheets: false,
       purchases: false,
       safety: false,
       reports: false,
@@ -742,6 +858,7 @@ const toggleMobileMenu = () => {
 const closeMobileMenu = () => {
   showMobileMenu.value = false
   mobileSections.value = {
+    timesheets: false,
     purchases: false,
     safety: false,
     reports: false,
@@ -749,7 +866,7 @@ const closeMobileMenu = () => {
   }
 }
 
-const toggleMobileSection = (section: 'purchases' | 'safety' | 'reports' | 'admin') => {
+const toggleMobileSection = (section: MobileSection) => {
   mobileSections.value[section] = !mobileSections.value[section]
 }
 

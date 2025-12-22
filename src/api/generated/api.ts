@@ -211,7 +211,7 @@ const Staff = z
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
-    is_staff: z.boolean().optional(),
+    is_office_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
     password_needs_reset: z.boolean().optional(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
@@ -239,7 +239,7 @@ const StaffCreateRequest = z
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
-    is_staff: z.boolean().optional(),
+    is_office_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
     password_needs_reset: z.boolean().optional(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
@@ -267,7 +267,7 @@ const StaffRequest = z
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
-    is_staff: z.boolean().optional(),
+    is_office_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
     password_needs_reset: z.boolean().optional(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
@@ -292,7 +292,7 @@ const PatchedStaffRequest = z
     wage_rate: z.number().gt(-100000000).lt(100000000),
     xero_user_id: z.string().max(255).nullable(),
     date_left: z.string().nullable(),
-    is_staff: z.boolean(),
+    is_office_staff: z.boolean(),
     is_superuser: z.boolean(),
     password_needs_reset: z.boolean(),
     hours_mon: z.number().gt(-100).lt(100),
@@ -342,7 +342,8 @@ const UserProfile = z
     last_name: z.string(),
     preferred_name: z.string().nullable(),
     fullName: z.string(),
-    is_staff: z.boolean(),
+    is_office_staff: z.boolean(),
+    is_superuser: z.boolean(),
   })
   .passthrough()
 const AWSInstanceStatusResponse = z
@@ -1017,6 +1018,71 @@ const FetchStatusValuesResponse = z
   })
   .partial()
   .passthrough()
+const WorkshopJob = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    description: z.string().nullable(),
+    job_number: z.number().int(),
+    client_name: z.string(),
+    contact_person: z.string().nullable(),
+    people: z.array(KanbanJobPerson),
+  })
+  .passthrough()
+const WorkshopTimesheetEntry = z
+  .object({
+    id: z.string().uuid(),
+    job_id: z.string().uuid(),
+    job_number: z.number().int(),
+    job_name: z.string(),
+    client_name: z.string(),
+    description: z.string(),
+    hours: z.number().gt(-100000).lt(100000),
+    accounting_date: z.string(),
+    is_billable: z.boolean(),
+    rate_multiplier: z.number().gt(-100).lt(100),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough()
+const WorkshopTimesheetSummary = z
+  .object({
+    total_hours: z.number(),
+    billable_hours: z.number(),
+    non_billable_hours: z.number(),
+    total_cost: z.number(),
+    total_revenue: z.number(),
+  })
+  .passthrough()
+const WorkshopTimesheetListResponse = z
+  .object({
+    date: z.string(),
+    entries: z.array(WorkshopTimesheetEntry),
+    summary: WorkshopTimesheetSummary,
+  })
+  .passthrough()
+const WorkshopTimesheetEntryRequestRequest = z
+  .object({
+    job_id: z.string().uuid(),
+    accounting_date: z.string(),
+    hours: z.number().gte(0.01).lt(100000),
+    description: z.string().max(255).nullish(),
+    is_billable: z.boolean().optional().default(true),
+    rate_multiplier: z.number().gte(0.1).lt(100).optional().default(1),
+  })
+  .passthrough()
+const PatchedWorkshopTimesheetEntryUpdateRequest = z
+  .object({
+    entry_id: z.string().uuid(),
+    job_id: z.string().uuid(),
+    accounting_date: z.string(),
+    hours: z.number().gte(0.01).lt(100000),
+    description: z.string().max(255).nullable(),
+    is_billable: z.boolean(),
+    rate_multiplier: z.number().gte(0.1).lt(100),
+  })
+  .partial()
+  .passthrough()
 const WorkshopPDFResponse = z
   .object({ status: z.string(), message: z.string() })
   .partial()
@@ -1049,6 +1115,44 @@ const CostLineCreateUpdate = z
     updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
+const CostLine = z
+  .object({
+    id: z.string().uuid(),
+    kind: Kind332Enum,
+    desc: z.string().max(255).optional(),
+    quantity: z.number().gt(-10000000).lt(10000000).optional(),
+    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
+    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
+    ext_refs: z.unknown().optional(),
+    meta: z.unknown().optional(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+    accounting_date: z.string(),
+    xero_time_id: z.string().max(255).nullish(),
+    xero_expense_id: z.string().max(255).nullish(),
+    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
+    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
+    approved: z.boolean().optional(),
+    total_cost: z.number(),
+    total_rev: z.number(),
+  })
+  .passthrough()
+const StockConsumeResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
+    line: CostLine,
+  })
+  .passthrough()
+const CostLineApprovalResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    line: CostLine,
+  })
+  .passthrough()
+const CostLineApprovalResult = z.union([StockConsumeResponse, CostLineApprovalResponse])
 const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
 const BrokenFKReference = z
   .object({
@@ -1157,27 +1261,6 @@ const CostSetSummary = z
     rev: z.number(),
     hours: z.number(),
     profitMargin: z.number(),
-  })
-  .passthrough()
-const CostLine = z
-  .object({
-    id: z.string().uuid(),
-    kind: Kind332Enum,
-    desc: z.string().max(255).optional(),
-    quantity: z.number().gt(-10000000).lt(10000000).optional(),
-    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
-    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
-    ext_refs: z.unknown().optional(),
-    meta: z.unknown().optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    accounting_date: z.string(),
-    xero_time_id: z.string().max(255).nullish(),
-    xero_expense_id: z.string().max(255).nullish(),
-    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
-    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
-    total_cost: z.number(),
-    total_rev: z.number(),
   })
   .passthrough()
 const CostSet = z
@@ -1888,6 +1971,7 @@ const TimesheetCostLine = z
     xero_expense_id: z.string().nullable(),
     xero_last_modified: z.string().datetime({ offset: true }).nullable(),
     xero_last_synced: z.string().datetime({ offset: true }).nullable(),
+    approved: z.boolean(),
     total_cost: z.number(),
     total_rev: z.number(),
     job_id: z.string(),
@@ -2380,14 +2464,6 @@ const StockConsumeRequest = z
     unit_rev: z.number().gt(-100000000).lt(100000000).nullish(),
   })
   .passthrough()
-const StockConsumeResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string().optional(),
-    remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
-    line: CostLine,
-  })
-  .passthrough()
 const SupplierPriceStatusItem = z
   .object({
     supplier_id: z.string().uuid(),
@@ -2807,10 +2883,20 @@ export const schemas = {
   FetchJobsByColumnResponse,
   FetchJobsResponse,
   FetchStatusValuesResponse,
+  WorkshopJob,
+  WorkshopTimesheetEntry,
+  WorkshopTimesheetSummary,
+  WorkshopTimesheetListResponse,
+  WorkshopTimesheetEntryRequestRequest,
+  PatchedWorkshopTimesheetEntryUpdateRequest,
   WorkshopPDFResponse,
   Kind332Enum,
   PatchedCostLineCreateUpdateRequest,
   CostLineCreateUpdate,
+  CostLine,
+  StockConsumeResponse,
+  CostLineApprovalResponse,
+  CostLineApprovalResult,
   CostLineErrorResponse,
   BrokenFKReference,
   BrokenJSONReference,
@@ -2825,7 +2911,6 @@ export const schemas = {
   JobRestErrorResponse,
   CostSetKindEnum,
   CostSetSummary,
-  CostLine,
   CostSet,
   JobFileStatusEnum,
   JobFile,
@@ -2969,7 +3054,6 @@ export const schemas = {
   StockItemRequest,
   PatchedStockItemRequest,
   StockConsumeRequest,
-  StockConsumeResponse,
   SupplierPriceStatusItem,
   SupplierPriceStatusResponse,
   XeroItem,
@@ -5072,6 +5156,126 @@ Expected JSON:
   },
   {
     method: 'get',
+    path: '/job/api/jobs/workshop',
+    alias: 'job_api_jobs_workshop_list',
+    requestFormat: 'json',
+    response: z.array(WorkshopJob),
+  },
+  {
+    method: 'get',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_retrieve',
+    description: `Return all timesheet entries for the staff member on a given date.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'date',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
+    response: WorkshopTimesheetListResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_create',
+    description: `Create a new timesheet entry for the authenticated staff.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: WorkshopTimesheetEntryRequestRequest,
+      },
+    ],
+    response: WorkshopTimesheetEntry,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_partial_update',
+    description: `Update an existing timesheet entry belonging to the staff member.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedWorkshopTimesheetEntryUpdateRequest,
+      },
+    ],
+    response: WorkshopTimesheetEntry,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 403,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_destroy',
+    description: `Delete a timesheet entry belonging to the staff member.`,
+    requestFormat: 'json',
+    response: z.void(),
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 403,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/job/job/:job_id/workshop-pdf/',
     alias: 'job_job_workshop_pdf_retrieve',
     description: `Generate and return a workshop PDF for printing.`,
@@ -5105,6 +5309,33 @@ Dynamically infers the stock adjustment based on quantity change`,
       },
     ],
     response: CostLineCreateUpdate,
+  },
+  {
+    method: 'post',
+    path: '/job/rest/cost_lines/:cost_line_id/approve/',
+    alias: 'approveCostLine',
+    description: `Approve an existing CostLine
+
+POST /job/rest/cost_lines/&lt;cost_line_id&gt;/approve`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cost_line_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CostLineApprovalResult,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'delete',

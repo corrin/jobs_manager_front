@@ -36,8 +36,7 @@
                   <th class="px-4 py-3 font-semibold">Icon</th>
                   <th class="px-4 py-3 font-semibold">First Name</th>
                   <th class="px-4 py-3 font-semibold">Last Name</th>
-                  <th class="px-4 py-3 font-semibold">Is Staff</th>
-                  <th class="px-4 py-3 font-semibold">Is Active</th>
+                  <th class="px-4 py-3 font-semibold">Is Office Staff</th>
                   <th class="px-4 py-3 font-semibold">Is SuperUser</th>
                   <th class="px-4 py-3 font-semibold">Last Login</th>
                   <th class="px-4 py-3 font-semibold">Date Joined</th>
@@ -69,10 +68,7 @@
                   <td class="px-4 py-3">{{ staff.first_name }}</td>
                   <td class="px-4 py-3">{{ staff.last_name }}</td>
                   <td class="px-4 py-3 text-center">
-                    <span v-if="staff.is_staff" class="text-green-600">✔️</span>
-                  </td>
-                  <td class="px-4 py-3 text-center">
-                    <span v-if="staff.is_active" class="text-green-600">✔️</span>
+                    <span v-if="staff.is_office_staff" class="text-green-600">✔️</span>
                   </td>
                   <td class="px-4 py-3 text-center">
                     <span v-if="staff.is_superuser" class="text-green-600">✔️</span>
@@ -162,7 +158,7 @@ const filteredStaff = computed(() =>
           s.hours_fri,
           s.hours_sat,
           s.hours_sun,
-          s.is_staff,
+          s.is_office_staff,
           s.is_active,
           s.is_superuser,
           s.groups,
@@ -237,19 +233,23 @@ table {
   border-spacing: 0;
   width: 100%;
 }
+
 thead th {
   position: sticky;
   top: 0;
   background: #eef2ff;
   z-index: 1;
 }
+
 tbody {
   max-height: 60vh;
   overflow-y: auto;
 }
+
 tr {
   transition: background 0.15s;
 }
+
 tr:hover {
   background: #f1f5f9;
 }

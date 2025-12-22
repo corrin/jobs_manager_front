@@ -37,7 +37,8 @@ export function useLogin() {
 
   const getRedirectPath = (): string => {
     const redirectQuery = router.currentRoute.value.query.redirect as string
-    return redirectQuery || '/kanban'
+    const defaultRoute = authStore.user?.is_office_staff ? '/kanban' : '/kanban/workshop'
+    return redirectQuery || defaultRoute
   }
 
   const handleLoginSuccess = (): void => {

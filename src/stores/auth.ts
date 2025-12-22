@@ -25,12 +25,13 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const hasCheckedSession = ref(false)
 
   const isAuthenticated = computed(() => !!user.value)
 
   const fullName = computed(() => {
     if (!user.value) return ''
-    return `${user.value.first_name} ${user.value.last_name}`.trim()
+    return `${user.value.preferred_name || user.value.first_name} ${user.value.last_name}`.trim()
   })
 
   const clearError = (): void => {
@@ -53,6 +54,8 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       user.value = null
       return false
+    } finally {
+      hasCheckedSession.value = true
     }
   }
 
@@ -139,6 +142,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     isLoading,
     error,
+    hasCheckedSession,
 
     isAuthenticated,
     fullName,

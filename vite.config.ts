@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [vue(), tailwindcss()],
     resolve: {
+      dedupe: ['vue'],
       alias: {
         '@': `${path.resolve(__dirname, './src')}`,
         vue: 'vue/dist/vue.esm-bundler.js',

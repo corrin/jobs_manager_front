@@ -75,7 +75,7 @@
       <!-- Staff avatars next to job number (unchanged behavior) -->
       <div
         ref="jobStaffContainerRef"
-        class="flex gap-1 items-center min-h-[20px] p-1 rounded transition-colors"
+        class="flex gap-1 items-center min-h-5 p-1 rounded transition-colors"
         :class="{
           'bg-blue-50 border border-blue-300': isStaffDragTarget,
           'bg-gray-50 border border-dashed border-gray-300':
