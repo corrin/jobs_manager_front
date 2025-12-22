@@ -40,7 +40,7 @@
         @mousedown.prevent="selectSuggestion(suggestion)"
         @mouseenter="highlightedIndex = index"
       >
-        <div class="font-medium text-gray-900">{{ suggestion.formatted_address }}</div>
+        <div class="font-medium text-gray-900">{{ formatAddress(suggestion) }}</div>
         <div v-if="suggestion.city || suggestion.state" class="text-xs text-gray-500">
           {{ formatSubtext(suggestion) }}
         </div>
@@ -205,11 +205,16 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 }
 
+const formatAddress = (suggestion: AddressCandidate) => {
+  // Strip ", New Zealand" from the end of formatted addresses
+  const addr = suggestion.formatted_address || ''
+  return addr.replace(/, New Zealand$/i, '')
+}
+
 const formatSubtext = (suggestion: AddressCandidate) => {
   const parts = []
   if (suggestion.city) parts.push(suggestion.city)
   if (suggestion.state) parts.push(suggestion.state)
-  if (suggestion.country && suggestion.country !== 'Australia') parts.push(suggestion.country)
   return parts.join(', ')
 }
 

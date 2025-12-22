@@ -37,7 +37,6 @@
 - **Acceptance Criteria**:
   - Dynamic day headers based on feature flag
   - Weekend days styled differently (blue background)
-  - IMS mode toggle works with feature flag
   - Responsive design maintained
 
 #### Task 2.2: Update DailyTimesheetView (if needed)
@@ -68,7 +67,6 @@
   - `src/services/weekly-timesheet.service.ts`
 - **Acceptance Criteria**:
   - `fetchWeeklyOverview()` handles both 5-day and 7-day responses
-  - `fetchIMSOverview()` works correctly
   - Error handling for API failures
 
 #### Task 3.2: Update timesheet.service.ts
@@ -218,7 +216,6 @@
 
 - [ ] Users can switch between 5-day and 7-day views
 - [ ] Weekend days are visually distinguished
-- [ ] IMS mode works correctly with both configurations
 - [ ] All existing functionality is preserved
 
 ### User Experience Success

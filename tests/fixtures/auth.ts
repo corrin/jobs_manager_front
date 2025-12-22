@@ -1,5 +1,5 @@
 import { test as base, expect, type Page } from '@playwright/test'
-import { dismissToasts, autoId, enableNetworkLogging } from './helpers'
+import { dismissToasts, autoId, enableNetworkLogging, TEST_CLIENT_NAME } from './helpers'
 
 // Define fixture types
 type AuthFixtures = {
@@ -74,7 +74,7 @@ export const test = base.extend<AuthFixtures, WorkerFixtures>({
       await clientInput.waitFor({ timeout: 10000 })
       await clientInput.fill('ABC')
       await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
-      await page.getByRole('option', { name: /ABC Carpet Cleaning TEST IGNORE/ }).click()
+      await page.getByRole('option', { name: new RegExp(TEST_CLIENT_NAME) }).click()
 
       await autoId(page, 'JobCreateView-name-input').fill(jobName)
       await autoId(page, 'JobCreateView-estimated-materials').fill('1000')

@@ -14,70 +14,71 @@ type ClientJobsResponse = z.infer<typeof schemas.ClientJobsResponse>
 // Type for client jobs - inferred from generated schema
 type ClientJob = z.infer<typeof schemas.ClientJobHeader>
 
+export interface FetchClientsParams {
+  page?: number
+  pageSize?: number
+  query?: string
+  sortBy?: string
+  sortDir?: 'asc' | 'desc'
+}
+
 export const useClientStore = defineStore('clients', () => {
-  // State
-  const allClients = ref<ClientSearchResult[]>([])
-  const searchResults = ref<ClientSearchResult[]>([])
+  // State - paginated clients list
+  const clients = ref<ClientSearchResult[]>([])
+  const page = ref(1)
+  const pageSize = ref(50)
+  const totalPages = ref(0)
+  const totalCount = ref(0)
+  const searchQuery = ref('')
+  const sortBy = ref<string>('name')
+  const sortDir = ref<'asc' | 'desc'>('asc')
+
+  // State - client details and related data
   const detailedClients = ref<Record<string, ClientDetail>>({})
   const clientContacts = ref<Record<string, ClientContact[]>>({})
   const clientJobs = ref<Record<string, ClientJob[]>>({})
   const isLoading = ref(false)
-  const isSearching = ref(false)
   const isLoadingDetail = ref(false)
   const isLoadingContacts = ref(false)
   const isLoadingJobs = ref(false)
-  const lastSearchQuery = ref('')
 
   // Getters
-  const hasSearchResults = computed(() => searchResults.value.length > 0)
-  const hasClients = computed(() => allClients.value.length > 0)
+  const hasClients = computed(() => clients.value.length > 0)
 
   /**
-   * Fetch all clients
+   * Fetch clients with server-side pagination, search, and sorting
    */
-  async function fetchAllClients() {
+  async function fetchClients(params: FetchClientsParams = {}) {
     isLoading.value = true
+
+    // Update local state from params
+    if (params.page !== undefined) page.value = params.page
+    if (params.pageSize !== undefined) pageSize.value = params.pageSize
+    if (params.query !== undefined) searchQuery.value = params.query
+    if (params.sortBy !== undefined) sortBy.value = params.sortBy
+    if (params.sortDir !== undefined) sortDir.value = params.sortDir
 
     try {
       const response: ClientSearchResponse = await api.clients_search_retrieve({
-        queries: { limit: 500 },
+        queries: {
+          page: page.value,
+          page_size: pageSize.value,
+          q: searchQuery.value || undefined,
+          sort_by: sortBy.value,
+          sort_dir: sortDir.value,
+        },
       })
-      allClients.value = response.results || []
+      clients.value = response.results || []
+      totalCount.value = response.count
+      totalPages.value = response.total_pages
+      page.value = response.page
+      pageSize.value = response.page_size
     } catch (error) {
-      console.error('Failed to fetch all clients:', error)
-      allClients.value = []
+      console.error('Failed to fetch clients:', error)
+      clients.value = []
       throw error
     } finally {
       isLoading.value = false
-    }
-  }
-
-  /**
-   * Search for clients by name
-   * @param query Search query (minimum 3 characters)
-   * @param limit Maximum number of results (default: 50)
-   */
-  async function searchClients(query: string, limit: number = 50) {
-    if (query.length < 3) {
-      searchResults.value = []
-      lastSearchQuery.value = ''
-      return
-    }
-
-    isSearching.value = true
-    lastSearchQuery.value = query
-
-    try {
-      const response: ClientSearchResponse = await api.clients_search_retrieve({
-        queries: { q: query, limit },
-      })
-      searchResults.value = response.results || []
-    } catch (error) {
-      console.error('Failed to search clients:', error)
-      searchResults.value = []
-      throw error
-    } finally {
-      isSearching.value = false
     }
   }
 
@@ -180,53 +181,50 @@ export const useClientStore = defineStore('clients', () => {
   }
 
   /**
-   * Clear search results
-   */
-  function clearSearch() {
-    searchResults.value = []
-    lastSearchQuery.value = ''
-  }
-
-  /**
    * Clear all cached data
    */
   function clearCache() {
-    allClients.value = []
-    searchResults.value = []
+    clients.value = []
     detailedClients.value = {}
     clientContacts.value = {}
     clientJobs.value = {}
-    lastSearchQuery.value = ''
+    searchQuery.value = ''
+    page.value = 1
+    totalPages.value = 0
+    totalCount.value = 0
   }
 
   return {
-    // State
-    allClients,
-    searchResults,
+    // State - paginated clients
+    clients,
+    page,
+    pageSize,
+    totalPages,
+    totalCount,
+    searchQuery,
+    sortBy,
+    sortDir,
+
+    // State - other
     detailedClients,
     clientContacts,
     clientJobs,
     isLoading,
-    isSearching,
     isLoadingDetail,
     isLoadingContacts,
     isLoadingJobs,
-    lastSearchQuery,
 
     // Getters
-    hasSearchResults,
     hasClients,
 
     // Actions
-    fetchAllClients,
-    searchClients,
+    fetchClients,
     fetchClientDetail,
     fetchClientContacts,
     fetchClientJobs,
     getClientDetail,
     getClientContacts,
     getClientJobs,
-    clearSearch,
     clearCache,
   }
 })

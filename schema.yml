@@ -2410,19 +2410,35 @@ paths:
   /clients/search/:
     get:
       operationId: clients_search_retrieve
-      description: Searches clients by name following early return pattern.
+      description: Lists/searches clients with pagination and sorting.
       summary: Search clients
       parameters:
         - in: query
-          name: limit
+          name: page
           schema:
             type: integer
-          description: Max results (default 10, max 50)
+          description: Page number (default 1)
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+          description: Results per page (default 50)
         - in: query
           name: q
           schema:
             type: string
-          description: Search query (min 3 chars, case-insensitive substring match)
+          description: Search query (case-insensitive substring match). If empty, returns
+            all clients.
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+          description: Field to sort by (default 'name')
+        - in: query
+          name: sort_dir
+          schema:
+            type: string
+          description: "Sort direction: 'asc' or 'desc' (default 'asc')"
       tags:
         - Clients
       security:
@@ -7459,14 +7475,26 @@ components:
         - name
     ClientSearchResponse:
       type: object
-      description: Serializer for client search response
+      description: Serializer for paginated client search response
       properties:
         results:
           type: array
           items:
             $ref: '#/components/schemas/ClientSearchResult'
+        count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
       required:
+        - count
+        - page
+        - page_size
         - results
+        - total_pages
     ClientSearchResult:
       type: object
       description: Serializer for individual client search result
@@ -11804,10 +11832,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -11902,8 +11926,6 @@ components:
           type: string
           format: binary
           writeOnly: true
-          nullable: true
-        raw_ims_data:
           nullable: true
     PatchedStockItemRequest:
       type: object
@@ -13522,10 +13544,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -13628,8 +13646,6 @@ components:
           items:
             type: integer
           description: Specific permissions for this user.
-        raw_ims_data:
-          nullable: true
         icon_url:
           type: string
           nullable: true
@@ -13673,10 +13689,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -13781,8 +13793,6 @@ components:
           type: string
           format: binary
           writeOnly: true
-          nullable: true
-        raw_ims_data:
           nullable: true
       required:
         - email
@@ -14073,10 +14083,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -14171,8 +14177,6 @@ components:
           type: string
           format: binary
           writeOnly: true
-          nullable: true
-        raw_ims_data:
           nullable: true
       required:
         - email

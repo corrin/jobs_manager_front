@@ -17,7 +17,7 @@
       <div class="relative flex-1 max-w-md">
         <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <input
-          v-model="searchQuery"
+          v-model="searchInput"
           type="text"
           placeholder="Search clients by name, email, or phone..."
           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
@@ -32,14 +32,20 @@
       </div>
 
       <!-- No Clients -->
-      <div v-else-if="!clientStore.hasClients" class="text-center py-12 text-gray-500">
+      <div
+        v-else-if="!clientStore.hasClients && !clientStore.searchQuery"
+        class="text-center py-12 text-gray-500"
+      >
         <Users class="w-12 h-12 mx-auto mb-4 text-gray-400" />
         <p class="text-lg font-medium">No clients yet</p>
         <p class="text-sm">Click "New Client" to add your first client</p>
       </div>
 
-      <!-- No Results after filtering -->
-      <div v-else-if="filteredResults.length === 0" class="text-center py-12 text-gray-500">
+      <!-- No Results after search -->
+      <div
+        v-else-if="!clientStore.hasClients && clientStore.searchQuery"
+        class="text-center py-12 text-gray-500"
+      >
         <Search class="w-12 h-12 mx-auto mb-4 text-gray-400" />
         <p class="text-lg font-medium">No clients found</p>
         <p class="text-sm">Try a different search term</p>
@@ -49,9 +55,11 @@
       <div v-else class="space-y-4">
         <div class="text-sm text-gray-600">
           {{
-            searchQuery ? `Found ${filteredResults.length}` : `Showing ${filteredResults.length}`
+            clientStore.searchQuery
+              ? `Found ${clientStore.totalCount}`
+              : `Showing ${clientStore.totalCount}`
           }}
-          client{{ filteredResults.length !== 1 ? 's' : '' }}
+          client{{ clientStore.totalCount !== 1 ? 's' : '' }}
         </div>
 
         <div class="overflow-y-auto max-h-[70vh] rounded-2xl shadow-lg border border-gray-200">
@@ -64,8 +72,11 @@
                     class="flex items-center gap-1 font-semibold text-gray-700 hover:text-indigo-600 transition-colors cursor-pointer"
                   >
                     Client Name
-                    <ArrowUpDown v-if="sortField !== 'name'" class="w-4 h-4" />
-                    <ArrowUp v-else-if="sortDirection === 'asc'" class="w-4 h-4 text-indigo-600" />
+                    <ArrowUpDown v-if="clientStore.sortBy !== 'name'" class="w-4 h-4" />
+                    <ArrowUp
+                      v-else-if="clientStore.sortDir === 'asc'"
+                      class="w-4 h-4 text-indigo-600"
+                    />
                     <ArrowDown v-else class="w-4 h-4 text-indigo-600" />
                   </button>
                 </th>
@@ -77,8 +88,11 @@
                     class="flex items-center gap-1 font-semibold text-gray-700 hover:text-indigo-600 transition-colors cursor-pointer"
                   >
                     Total Spend
-                    <ArrowUpDown v-if="sortField !== 'total_spend'" class="w-4 h-4" />
-                    <ArrowUp v-else-if="sortDirection === 'asc'" class="w-4 h-4 text-indigo-600" />
+                    <ArrowUpDown v-if="clientStore.sortBy !== 'total_spend'" class="w-4 h-4" />
+                    <ArrowUp
+                      v-else-if="clientStore.sortDir === 'asc'"
+                      class="w-4 h-4 text-indigo-600"
+                    />
                     <ArrowDown v-else class="w-4 h-4 text-indigo-600" />
                   </button>
                 </th>
@@ -88,8 +102,14 @@
                     class="flex items-center gap-1 font-semibold text-gray-700 hover:text-indigo-600 transition-colors cursor-pointer"
                   >
                     Last Invoice
-                    <ArrowUpDown v-if="sortField !== 'last_invoice_date'" class="w-4 h-4" />
-                    <ArrowUp v-else-if="sortDirection === 'asc'" class="w-4 h-4 text-indigo-600" />
+                    <ArrowUpDown
+                      v-if="clientStore.sortBy !== 'last_invoice_date'"
+                      class="w-4 h-4"
+                    />
+                    <ArrowUp
+                      v-else-if="clientStore.sortDir === 'asc'"
+                      class="w-4 h-4 text-indigo-600"
+                    />
                     <ArrowDown v-else class="w-4 h-4 text-indigo-600" />
                   </button>
                 </th>
@@ -98,7 +118,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="client in pagedResults"
+                v-for="client in clientStore.clients"
                 :key="client.id"
                 class="border-b hover:bg-slate-50 cursor-pointer transition-colors"
                 @click="navigateToClient(client.id)"
@@ -116,7 +136,7 @@
                   {{ client.total_spend || '$0.00' }}
                 </td>
                 <td class="p-3 text-gray-600">
-                  {{ client.last_invoice_date || '-' }}
+                  {{ formatDate(client.last_invoice_date) }}
                 </td>
                 <td class="p-3">
                   <Badge :variant="client.is_account_customer ? 'default' : 'secondary'">
@@ -130,9 +150,9 @@
 
         <!-- Pagination -->
         <Pagination
-          v-if="totalPages > 1"
+          v-if="clientStore.totalPages > 1"
           v-model:page="currentPage"
-          :total="totalPages"
+          :total="clientStore.totalPages"
           :sibling-count="1"
         />
       </div>
@@ -148,9 +168,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useClientStore } from '@/stores/clientStore'
+import { useDebounceFn } from '@vueuse/core'
 import AppLayout from '@/components/AppLayout.vue'
 import CreateClientModal from '@/components/CreateClientModal.vue'
 import { Button } from '@/components/ui/button'
@@ -170,106 +191,50 @@ import { toast } from 'vue-sonner'
 const router = useRouter()
 const clientStore = useClientStore()
 
-// Search state
-const searchQuery = ref('')
-
-// Modal state
+// Local state
+const searchInput = ref('')
 const isCreateModalOpen = ref(false)
-
-// Pagination state
 const currentPage = ref(1)
-const pageSize = 11
 
-// Sorting state
-type SortField = 'name' | 'total_spend' | 'last_invoice_date'
-type SortDirection = 'asc' | 'desc' | null
-const sortField = ref<SortField | null>(null)
-const sortDirection = ref<SortDirection>(null)
-
-// Computed properties
-const filteredResults = computed(() => {
-  let results = clientStore.allClients
-
-  // Apply search filter
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase()
-    results = results.filter(
-      (client) =>
-        client.name.toLowerCase().includes(query) ||
-        client.email?.toLowerCase().includes(query) ||
-        client.phone?.toLowerCase().includes(query),
-    )
-  }
-
-  // Apply sorting
-  if (sortField.value && sortDirection.value) {
-    results = [...results].sort((a, b) => {
-      let aVal: string | number
-      let bVal: string | number
-
-      if (sortField.value === 'name') {
-        aVal = a.name.toLowerCase()
-        bVal = b.name.toLowerCase()
-      } else if (sortField.value === 'total_spend') {
-        // Parse currency string: "$1,234.56" -> 1234.56
-        aVal = parseFloat(a.total_spend?.replace(/[$,]/g, '') || '0')
-        bVal = parseFloat(b.total_spend?.replace(/[$,]/g, '') || '0')
-      } else if (sortField.value === 'last_invoice_date') {
-        // Parse datetime strings, treat null as very old date
-        aVal = a.last_invoice_date ? new Date(a.last_invoice_date).getTime() : 0
-        bVal = b.last_invoice_date ? new Date(b.last_invoice_date).getTime() : 0
-      } else {
-        return 0
-      }
-
-      if (aVal < bVal) return sortDirection.value === 'asc' ? -1 : 1
-      if (aVal > bVal) return sortDirection.value === 'asc' ? 1 : -1
-      return 0
-    })
-  }
-
-  return results
-})
-
-function toggleSort(field: SortField) {
-  if (sortField.value === field) {
-    // Same field - cycle through: asc -> desc -> null
-    if (sortDirection.value === 'asc') {
-      sortDirection.value = 'desc'
-    } else if (sortDirection.value === 'desc') {
-      sortField.value = null
-      sortDirection.value = null
-    }
-  } else {
-    // New field - start with asc
-    sortField.value = field
-    sortDirection.value = 'asc'
-  }
-}
-
-const totalPages = computed(() => {
-  return Math.ceil(filteredResults.value.length / pageSize)
-})
-
-const pagedResults = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  const end = start + pageSize
-  return filteredResults.value.slice(start, end)
-})
-
-// Methods
-async function loadClients() {
-  try {
-    await clientStore.fetchAllClients()
-  } catch (error) {
-    toast.error('Failed to load clients')
-    console.error('Load clients error:', error)
-  }
-}
+// Debounced search
+const debouncedSearch = useDebounceFn(async (query: string) => {
+  currentPage.value = 1
+  await clientStore.fetchClients({ query, page: 1 })
+}, 300)
 
 function onSearchInput() {
-  // Reset to first page on new search
+  debouncedSearch(searchInput.value)
+}
+
+// Sort handling - server-side
+type SortField = 'name' | 'total_spend' | 'last_invoice_date'
+
+async function toggleSort(field: SortField) {
+  let newDir: 'asc' | 'desc' = 'asc'
+
+  if (clientStore.sortBy === field) {
+    // Same field - toggle direction
+    newDir = clientStore.sortDir === 'asc' ? 'desc' : 'asc'
+  }
+
+  await clientStore.fetchClients({ sortBy: field, sortDir: newDir, page: 1 })
   currentPage.value = 1
+}
+
+// Page change - server-side
+watch(currentPage, async (newPage) => {
+  await clientStore.fetchClients({ page: newPage })
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+})
+
+// Format date for display
+function formatDate(dateString: string | null): string {
+  if (!dateString) return '-'
+  try {
+    return new Date(dateString).toLocaleDateString()
+  } catch {
+    return '-'
+  }
 }
 
 function navigateToClient(clientId: string) {
@@ -284,8 +249,8 @@ async function handleClientCreated(client: { id?: string }) {
   isCreateModalOpen.value = false
   toast.success('Client created successfully')
 
-  // Reload clients to include the new one
-  await loadClients()
+  // Reload current page to include the new client
+  await clientStore.fetchClients({})
 
   // Optionally navigate to the new client
   if (client?.id) {
@@ -293,13 +258,13 @@ async function handleClientCreated(client: { id?: string }) {
   }
 }
 
-// Watch for page changes to scroll to top
-watch(currentPage, () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-})
-
-// Load all clients on mount
-onMounted(() => {
-  loadClients()
+// Load first page on mount
+onMounted(async () => {
+  try {
+    await clientStore.fetchClients({ page: 1, sortBy: 'name', sortDir: 'asc' })
+  } catch (error) {
+    toast.error('Failed to load clients')
+    console.error('Load clients error:', error)
+  }
 })
 </script>

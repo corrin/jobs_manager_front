@@ -1,6 +1,11 @@
 import { test, expect } from '../fixtures/auth'
 import { getCompanyDefaults } from '../fixtures/api'
-import { autoId, waitForSettingsInitialized, waitForAutosave } from '../fixtures/helpers'
+import {
+  autoId,
+  waitForSettingsInitialized,
+  waitForAutosave,
+  TEST_CLIENT_NAME,
+} from '../fixtures/helpers'
 
 /**
  * Tests for editing a job after creation.
@@ -45,7 +50,7 @@ test.describe.serial('edit job', () => {
 
     await test.step('verify client is ABC Carpet Cleaning', async () => {
       const clientNameInput = autoId(page, 'JobSettingsTab-client-name')
-      await expect(clientNameInput).toHaveValue('ABC Carpet Cleaning TEST IGNORE')
+      await expect(clientNameInput).toHaveValue(TEST_CLIENT_NAME)
     })
 
     await test.step('verify pricing method is Fixed Price', async () => {
@@ -467,7 +472,7 @@ test.describe.serial('edit job', () => {
       await clientInput.fill(shopClientName.split(' ')[0])
       await page.waitForTimeout(1000) // Allow debounce
 
-      const clientOption = page.getByRole('option', { name: new RegExp(shopClientName) })
+      const clientOption = page.getByRole('option', { name: shopClientName, exact: true })
       await clientOption.waitFor({ timeout: 10000 })
       await clientOption.click()
     })
