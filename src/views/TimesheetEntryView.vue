@@ -578,6 +578,7 @@ import { useTimesheetStore } from '@/stores/timesheet'
 import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import * as costlineService from '@/services/costline.service'
 import { jobService } from '@/services/job.service'
+import { api } from '@/api/client'
 
 // Import types from generated API schemas
 import { schemas } from '@/api/generated/api'
@@ -752,6 +753,18 @@ const {
 
 const getEntryHours = (entry: TimesheetEntryViewRow): number => {
   return entry.hours ?? entry.quantity ?? 0
+}
+
+async function handleApproveCostLine(id: string): Promise<void> {
+  const toastId = toast.loading('Approving entry...')
+  try {
+    await api.approveCostLine(undefined, { params: { cost_line_id: id } })
+    toast.success('Entry approved', { id: toastId })
+    await loadTimesheetData()
+  } catch (error) {
+    console.error('Failed to approve cost line:', error)
+    toast.error('Failed to approve entry', { id: toastId })
+  }
 }
 
 const getJobHours = (jobId: string, timeEntries: TimesheetEntryViewRow[]) => {
@@ -972,6 +985,9 @@ const {
       } else {
         autosave.schedule(String(entry.tempId))
       }
+    },
+    approveRow: (id: string) => {
+      void handleApproveCostLine(id)
     },
   },
 )

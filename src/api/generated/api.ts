@@ -1017,6 +1017,7 @@ const WorkshopTimesheetEntryRequestRequest = z
 const PatchedWorkshopTimesheetEntryUpdateRequest = z
   .object({
     entry_id: z.string().uuid(),
+    job_id: z.string().uuid(),
     accounting_date: z.string(),
     hours: z.number().gte(0.01).lt(100000),
     description: z.string().max(255).nullable(),
@@ -1087,6 +1088,14 @@ const StockConsumeResponse = z
     line: CostLine,
   })
   .passthrough()
+const CostLineApprovalResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    line: CostLine,
+  })
+  .passthrough()
+const CostLineApprovalResult = z.union([StockConsumeResponse, CostLineApprovalResponse])
 const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
 const BrokenFKReference = z
   .object({
@@ -2820,6 +2829,8 @@ export const schemas = {
   CostLineCreateUpdate,
   CostLine,
   StockConsumeResponse,
+  CostLineApprovalResponse,
+  CostLineApprovalResult,
   CostLineErrorResponse,
   BrokenFKReference,
   BrokenJSONReference,
@@ -5032,7 +5043,7 @@ POST /job/rest/cost_lines/&lt;cost_line_id&gt;/approve`,
         schema: z.string(),
       },
     ],
-    response: StockConsumeResponse,
+    response: CostLineApprovalResult,
     errors: [
       {
         status: 400,

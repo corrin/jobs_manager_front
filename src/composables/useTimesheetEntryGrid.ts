@@ -1,4 +1,4 @@
-import { ref, computed, nextTick, type Ref } from 'vue'
+import { ref, computed, nextTick, type Ref, createApp } from 'vue'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 import type {
@@ -21,6 +21,7 @@ import { toLocalDateString } from '@/utils/dateUtils'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
 import { type TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
+import TimesheetActionsCell from '@/components/timesheet/TimesheetActionsCell.vue'
 
 type TimesheetEntryStaffMember = {
   id: string
@@ -49,6 +50,7 @@ export function useTimesheetEntryGrid(
     resolveStaffById?: ResolveStaffById
     onScheduleAutosave?: (entry: TimesheetEntryGridRowWithSaving) => void
     onDescriptionEditChange?: (entry: TimesheetEntryGridRowWithSaving, isEditing: boolean) => void
+    approveRow?: (id: string) => void
   },
 ) {
   const gridApi = ref<GridApi | null>(null)
@@ -174,32 +176,37 @@ export function useTimesheetEntryGrid(
       cellStyle: { color: '#2563EB', fontWeight: '600' },
     },
     {
-      headerName: 'Delete',
-      width: 60,
+      headerName: 'Actions',
+      width: 150,
       pinned: 'right',
-      field: 'delete' as unknown as undefined,
+      field: 'actions' as unknown as undefined,
       editable: false,
       cellRenderer: (params: AgICellRendererParams) => {
         if (!params.data || !params.data.id) return ''
-        return `
-          <button title='Delete this row' class='delete-row-btn' data-id='${params.data.id}'
-            style='background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;width:100%;height:32px;font-size:20px;line-height:1;'
-          >🗑️</button>
-        `
+        const container = document.createElement('div')
+        const app = createApp(TimesheetActionsCell, {
+          approved: params.data.approved !== false,
+          canApprove: !!options?.approveRow,
+          onApprove: () => options?.approveRow?.(String(params.data.id)),
+          onDelete: () => {
+            const rowId = params.data?.id
+            if (!rowId) return
+            const rowIndex = gridData.value.findIndex(
+              (row: TimesheetEntryGridRow) => String(row.id) === String(rowId),
+            )
+            if (rowIndex === -1) return
+            deleteRow(rowIndex)
+          },
+        })
+        app.mount(container)
+        ;(container as unknown as { __app?: ReturnType<typeof createApp> }).__app = app
+        return container
       },
       cellStyle: { textAlign: 'center' },
       sortable: false,
       filter: false,
       resizable: false,
-      onCellClicked: (params: CellClickedEvent) => {
-        const rowId = params.data?.id
-        if (!rowId) return
-        const rowIndex = gridData.value.findIndex(
-          (row: TimesheetEntryGridRow) => String(row.id) === String(rowId),
-        )
-        if (rowIndex === -1) return
-        deleteRow(rowIndex)
-      },
+      onCellClicked: () => {},
     },
   ])
 
