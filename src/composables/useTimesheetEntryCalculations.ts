@@ -208,6 +208,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       wage: calculatedWage,
       bill: 0,
       billable: true,
+      approved: false,
     }
   }
 
@@ -427,6 +428,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       bill: costLine.total_rev || 0,
       billable:
         typeof metaRec['is_billable'] === 'boolean' ? (metaRec['is_billable'] as boolean) : true,
+      approved: costLine.approved ?? false,
     }
   }
 
