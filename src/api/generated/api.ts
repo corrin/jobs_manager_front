@@ -2676,8 +2676,22 @@ const CreatePayRunResponse = z
     payment_date: z.string(),
   })
   .passthrough()
-const PayRunSyncResponseRequest = z.object({ synced: z.boolean() }).passthrough()
-const PayRunSyncResponse = z.object({ synced: z.boolean() }).passthrough()
+const PayRunSyncResponseRequest = z
+  .object({
+    synced: z.boolean(),
+    fetched: z.number().int(),
+    created: z.number().int(),
+    updated: z.number().int(),
+  })
+  .passthrough()
+const PayRunSyncResponse = z
+  .object({
+    synced: z.boolean(),
+    fetched: z.number().int(),
+    created: z.number().int(),
+    updated: z.number().int(),
+  })
+  .passthrough()
 const PostWeekToXeroRequest = z
   .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
   .passthrough()
@@ -7335,10 +7349,10 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ synced: z.boolean() }).passthrough(),
+        schema: PayRunSyncResponseRequest,
       },
     ],
-    response: z.object({ synced: z.boolean() }).passthrough(),
+    response: PayRunSyncResponse,
     errors: [
       {
         status: 500,

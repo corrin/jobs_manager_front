@@ -12426,16 +12426,40 @@ components:
       properties:
         synced:
           type: boolean
+        fetched:
+          type: integer
+          description: Number of pay runs fetched from Xero
+        created:
+          type: integer
+          description: Number of new pay runs created locally
+        updated:
+          type: integer
+          description: Number of existing pay runs updated
       required:
+        - created
+        - fetched
         - synced
+        - updated
     PayRunSyncResponseRequest:
       type: object
       description: Response payload after refreshing cached pay runs.
       properties:
         synced:
           type: boolean
+        fetched:
+          type: integer
+          description: Number of pay runs fetched from Xero
+        created:
+          type: integer
+          description: Number of new pay runs created locally
+        updated:
+          type: integer
+          description: Number of existing pay runs updated
       required:
+        - created
+        - fetched
         - synced
+        - updated
     PostWeekToXeroRequest:
       type: object
       description: Request serializer for posting weekly timesheet to Xero
