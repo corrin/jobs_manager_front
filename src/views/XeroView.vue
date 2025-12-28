@@ -239,7 +239,16 @@ watch(syncStatus, (val) => {
 })
 
 onMounted(() => {
+  console.log('[XeroView] onMounted - isAuthenticated before fetch:', isAuthenticated.value)
   fetchEntitiesAndStatus()
+  setTimeout(() => {
+    console.log(
+      '[XeroView] After 1s - isAuthenticated:',
+      isAuthenticated.value,
+      'loading:',
+      loading.value,
+    )
+  }, 1000)
 })
 onUnmounted(() => {
   if (typeof window !== 'undefined' && window.EventSource) {

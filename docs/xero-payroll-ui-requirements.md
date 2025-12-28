@@ -49,7 +49,7 @@ Pay Run Status: [Draft | Posted | Not Created]
 - Hidden when: Pay run already exists
 - Action: Calls `POST /api/payroll/create-pay-run/`
   - Request: `{ "week_start_date": "2025-11-10" }` (Monday)
-  - Response: `{ "pay_run_id": "uuid", "status": "Draft", "payment_date": "2025-11-19" }`
+  - Response: `{ "id": "uuid", "xero_id": "uuid", "status": "Draft", "payment_date": "2025-11-19" }`
 - On success: Show success message, hide button, show "Pay run created" status
 - On error:
   - If "only be one draft pay run": Tell user "A draft pay run already exists for a different week. Please post or delete it in Xero first."
@@ -153,7 +153,8 @@ Request:
 
 Response:
 {
-  "pay_run_id": "e1c308ab-da45-407f-b1ec-2433e0c6d2fa",
+  "id": "e1c308ab-da45-407f-b1ec-2433e0c6d2fa",
+  "xero_id": "a2b3c4d5-e6f7-8901-abcd-ef0123456789",
   "status": "Draft",
   "period_start_date": "2025-11-10",
   "period_end_date": "2025-11-16",
@@ -174,7 +175,8 @@ GET /api/payroll/pay-run-status/?week_start_date=2025-11-10
 Response:
 {
   "exists": true,
-  "pay_run_id": "uuid",
+  "id": "uuid",
+  "xero_id": "uuid",
   "status": "Draft",  // or "Posted"
   "period_start_date": "2025-11-10",
   "period_end_date": "2025-11-16",
@@ -265,7 +267,7 @@ Response:
 The REST API endpoints will call:
 
 - `PayrollSyncService.post_week_to_xero(staff_id, week_start_date)` → Returns dict with results
-- `create_pay_run(week_start_date)` from `apps/workflow/api/xero/payroll.py` → Returns pay_run_id
+- `create_pay_run(week_start_date)` from `apps/workflow/api/xero/payroll.py` → Returns id (Django PK) and xero_id
 
 ## Error Handling
 

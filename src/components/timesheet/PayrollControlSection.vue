@@ -46,6 +46,31 @@
       </div>
     </div>
 
+    <!-- Payroll Error Banner -->
+    <div
+      v-if="payrollError"
+      class="bg-red-50 border border-red-200 rounded-md p-3 flex items-start justify-between text-red-800"
+    >
+      <div class="flex items-start space-x-2">
+        <AlertCircle class="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-red-600">
+            Payroll Error
+          </p>
+          <p class="text-sm font-bold leading-snug">
+            {{ payrollError }}
+          </p>
+        </div>
+      </div>
+      <button
+        @click="$emit('dismissError')"
+        class="text-red-600 hover:text-red-800 p-1 -m-1 rounded hover:bg-red-100"
+        aria-label="Dismiss error"
+      >
+        <X class="h-4 w-4" />
+      </button>
+    </div>
+
     <!-- Action Buttons -->
     <div class="flex items-center space-x-2 flex-wrap gap-2">
       <!-- Create Pay Run Button -->
@@ -69,8 +94,15 @@
         variant="default"
         size="sm"
       >
-        <Send class="h-4 w-4 mr-2" />
-        {{ posting ? 'Posting...' : 'Post All to Xero' }}
+        <Send class="h-4 w-4 mr-2" :class="{ 'animate-pulse': posting }" />
+        <template v-if="posting && postingProgress">
+          Posting {{ postingProgress.current }}/{{ postingProgress.total }}
+          <span v-if="postingProgress.currentStaffName" class="ml-1 text-xs opacity-75">
+            ({{ postingProgress.currentStaffName }})
+          </span>
+        </template>
+        <template v-else-if="posting"> Posting... </template>
+        <template v-else> Post All to Xero </template>
       </Button>
 
       <!-- Continue in Xero Button -->
@@ -124,8 +156,15 @@ import {
   AlertTriangle,
   RefreshCw,
   ExternalLink,
+  X,
 } from 'lucide-vue-next'
 import { format, addDays, parseISO } from 'date-fns'
+
+interface PostingProgress {
+  current: number
+  total: number
+  currentStaffName: string | null
+}
 
 interface Props {
   weekStartDate: string // YYYY-MM-DD format (Monday)
@@ -133,7 +172,9 @@ interface Props {
   paymentDate?: string | null // YYYY-MM-DD format
   creating?: boolean
   posting?: boolean
+  postingProgress?: PostingProgress | null
   warning?: string | null
+  payrollError?: string | null
   refreshing?: boolean
   postSuccess?: boolean
 }
@@ -143,7 +184,9 @@ const props = withDefaults(defineProps<Props>(), {
   paymentDate: null,
   creating: false,
   posting: false,
+  postingProgress: null,
   warning: null,
+  payrollError: null,
   refreshing: false,
   postSuccess: false,
 })
@@ -152,6 +195,7 @@ defineEmits<{
   createPayRun: []
   postAllToXero: []
   refreshPayRuns: []
+  dismissError: []
 }>()
 
 const XERO_TIMESHEETS_URL = 'https://go.xero.com/app/timesheets'

@@ -23,6 +23,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -58,6 +59,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -73,6 +75,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -88,6 +91,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -98,7 +102,7 @@ paths:
           description: ''
   /accounting/api/reports/sales-forecast/:
     get:
-      operationId: accounting_api_reports_sales_forecast_retrieve
+      operationId: sales_forecast_list
       description: Returns monthly sales comparison between Xero invoices and Job
         Manager revenue for all months with data
       summary: Get monthly sales forecast data
@@ -106,6 +110,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -148,7 +153,7 @@ paths:
           description: ''
   /accounting/api/reports/sales-forecast/{month}/:
     get:
-      operationId: accounting_api_reports_sales_forecast_retrieve_2
+      operationId: sales_forecast_month_detail
       description: Returns detailed invoice and job data for a specific month, showing
         matched pairs and unmatched items
       summary: Get month detail for sales forecast
@@ -162,6 +167,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -238,6 +244,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -260,6 +267,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1102,6 +1110,7 @@ paths:
         - api
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1135,6 +1144,7 @@ paths:
         - api
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1170,6 +1180,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1205,6 +1216,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1227,6 +1239,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1267,6 +1280,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1319,6 +1333,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1364,6 +1379,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1404,6 +1420,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1438,6 +1455,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1507,6 +1525,7 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1536,6 +1555,7 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2571,6 +2591,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2605,6 +2626,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -2626,6 +2648,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -2667,6 +2690,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2702,6 +2726,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3188,6 +3213,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3307,6 +3333,7 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3331,6 +3358,7 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3365,6 +3393,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3394,6 +3423,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3428,6 +3458,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3467,6 +3498,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobDeltaEnvelopeRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3495,6 +3527,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3524,6 +3557,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3628,6 +3662,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3663,6 +3698,7 @@ paths:
               $ref: '#/components/schemas/QuoteRevisionRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3686,6 +3722,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3714,6 +3751,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3746,6 +3784,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3775,6 +3814,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3816,6 +3856,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3856,6 +3897,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3894,6 +3936,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3941,6 +3984,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4001,6 +4045,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4056,6 +4101,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -4098,6 +4144,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4128,6 +4175,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4157,6 +4205,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4231,6 +4280,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4272,6 +4322,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4322,6 +4373,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4363,6 +4415,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4391,6 +4444,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4426,6 +4480,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4567,6 +4622,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4589,6 +4645,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4611,6 +4668,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4632,6 +4690,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4663,6 +4722,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5159,6 +5219,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5190,6 +5251,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5211,6 +5273,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5226,6 +5289,7 @@ paths:
         - Product Mapping
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5259,6 +5323,7 @@ paths:
               $ref: '#/components/schemas/ProductMappingValidateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5286,6 +5351,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5313,6 +5379,7 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderCreateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5335,6 +5402,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5370,6 +5438,7 @@ paths:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5392,6 +5461,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5425,6 +5495,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5458,6 +5529,7 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderEmailRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5486,6 +5558,7 @@ paths:
         - Purchase Orders
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5525,6 +5598,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -5578,6 +5652,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5606,6 +5681,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5896,6 +5972,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5911,6 +5988,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5932,6 +6010,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5955,6 +6034,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5976,6 +6056,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6003,6 +6084,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -6024,6 +6106,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6056,6 +6139,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6087,6 +6171,7 @@ paths:
               $ref: '#/components/schemas/PatchedDjangoJobRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6107,6 +6192,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -6125,6 +6211,7 @@ paths:
         - rest
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6294,8 +6381,11 @@ paths:
   /timesheets/api/payroll/post-staff-week/:
     post:
       operationId: timesheets_api_payroll_post_staff_week_create
-      description: Post a week's timesheet to Xero Payroll.
-      summary: Post weekly timesheet to Xero Payroll
+      description: |-
+        Start posting timesheets. Returns a task_id to use with the stream endpoint.
+
+        Use GET /api/payroll/post-staff-week/stream/{task_id}/ to receive SSE progress.
+      summary: Start posting weekly timesheets to Xero Payroll
       tags:
         - timesheets
       requestBody:
@@ -6314,23 +6404,7 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PostWeekToXeroResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
+          description: No response body
   /timesheets/api/staff/:
     get:
       operationId: timesheets_api_staff_retrieve
@@ -6391,7 +6465,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
+      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
       parameters:
         - in: query
           name: start_date
@@ -6498,6 +6572,7 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6527,6 +6602,7 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -7654,6 +7730,11 @@ components:
         company_name:
           type: string
           maxLength: 255
+        company_acronym:
+          type: string
+          nullable: true
+          description: Short acronym for the company (e.g., 'MSM' for Morris Sheetmetal)
+          maxLength: 10
         is_primary:
           type: boolean
         time_markup:
@@ -7746,20 +7827,21 @@ components:
           nullable: true
           description: Xero Payroll Leave Type ID for Unpaid Leave
           maxLength: 100
-        xero_ordinary_earnings_rate_id:
+        xero_ordinary_earnings_rate_name:
           type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
+          description: Xero Payroll earnings rate name for Ordinary Time (1.0x)
           maxLength: 100
-        xero_time_half_earnings_rate_id:
+        xero_time_half_earnings_rate_name:
           type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
+          description: Xero Payroll earnings rate name for Time and a Half (1.5x)
           maxLength: 100
-        xero_double_time_earnings_rate_id:
+        xero_double_time_earnings_rate_name:
           type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Double Time (2.0x)
+          description: Xero Payroll earnings rate name for Double Time (2.0x)
+          maxLength: 100
+        xero_payroll_calendar_name:
+          type: string
+          description: Name of Xero Payroll calendar to use (e.g., 'Weekly 2025')
           maxLength: 100
         mon_start:
           type: string
@@ -7810,6 +7892,47 @@ components:
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
+        address_line1:
+          type: string
+          nullable: true
+          description: Street address line 1
+          maxLength: 255
+        address_line2:
+          type: string
+          nullable: true
+          description: Street address line 2 (optional)
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb (for NZ addresses)
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          description: City
+          maxLength: 100
+        post_code:
+          type: string
+          nullable: true
+          description: Postal/ZIP code
+          maxLength: 20
+        country:
+          type: string
+          description: Country name
+          maxLength: 100
+        company_email:
+          type: string
+          format: email
+          nullable: true
+          description: Company contact email address
+          maxLength: 254
+        company_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Company website URL
+          maxLength: 200
         shop_client_name:
           type: string
           nullable: true
@@ -7895,6 +8018,11 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        company_acronym:
+          type: string
+          nullable: true
+          description: Short acronym for the company (e.g., 'MSM' for Morris Sheetmetal)
+          maxLength: 10
         is_primary:
           type: boolean
         time_markup:
@@ -7988,20 +8116,25 @@ components:
           nullable: true
           description: Xero Payroll Leave Type ID for Unpaid Leave
           maxLength: 100
-        xero_ordinary_earnings_rate_id:
+        xero_ordinary_earnings_rate_name:
           type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
+          minLength: 1
+          description: Xero Payroll earnings rate name for Ordinary Time (1.0x)
           maxLength: 100
-        xero_time_half_earnings_rate_id:
+        xero_time_half_earnings_rate_name:
           type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
+          minLength: 1
+          description: Xero Payroll earnings rate name for Time and a Half (1.5x)
           maxLength: 100
-        xero_double_time_earnings_rate_id:
+        xero_double_time_earnings_rate_name:
           type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Double Time (2.0x)
+          minLength: 1
+          description: Xero Payroll earnings rate name for Double Time (2.0x)
+          maxLength: 100
+        xero_payroll_calendar_name:
+          type: string
+          minLength: 1
+          description: Name of Xero Payroll calendar to use (e.g., 'Weekly 2025')
           maxLength: 100
         mon_start:
           type: string
@@ -8044,6 +8177,48 @@ components:
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
+        address_line1:
+          type: string
+          nullable: true
+          description: Street address line 1
+          maxLength: 255
+        address_line2:
+          type: string
+          nullable: true
+          description: Street address line 2 (optional)
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb (for NZ addresses)
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          description: City
+          maxLength: 100
+        post_code:
+          type: string
+          nullable: true
+          description: Postal/ZIP code
+          maxLength: 20
+        country:
+          type: string
+          minLength: 1
+          description: Country name
+          maxLength: 100
+        company_email:
+          type: string
+          format: email
+          nullable: true
+          description: Company contact email address
+          maxLength: 254
+        company_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Company website URL
+          maxLength: 200
         shop_client_name:
           type: string
           nullable: true
@@ -8505,8 +8680,14 @@ components:
       type: object
       description: Response serializer for created pay run
       properties:
-        pay_run_id:
+        id:
           type: string
+          format: uuid
+          description: Django primary key
+        xero_id:
+          type: string
+          format: uuid
+          description: Xero pay run ID
         status:
           type: string
         period_start_date:
@@ -8519,11 +8700,12 @@ components:
           type: string
           format: date
       required:
-        - pay_run_id
+        - id
         - payment_date
         - period_end_date
         - period_start_date
         - status
+        - xero_id
     CustomTokenObtainPairRequest:
       type: object
       description: Custom serializer that accepts username and maps it to email
@@ -11577,6 +11759,11 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        company_acronym:
+          type: string
+          nullable: true
+          description: Short acronym for the company (e.g., 'MSM' for Morris Sheetmetal)
+          maxLength: 10
         is_primary:
           type: boolean
         time_markup:
@@ -11670,20 +11857,25 @@ components:
           nullable: true
           description: Xero Payroll Leave Type ID for Unpaid Leave
           maxLength: 100
-        xero_ordinary_earnings_rate_id:
+        xero_ordinary_earnings_rate_name:
           type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
+          minLength: 1
+          description: Xero Payroll earnings rate name for Ordinary Time (1.0x)
           maxLength: 100
-        xero_time_half_earnings_rate_id:
+        xero_time_half_earnings_rate_name:
           type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
+          minLength: 1
+          description: Xero Payroll earnings rate name for Time and a Half (1.5x)
           maxLength: 100
-        xero_double_time_earnings_rate_id:
+        xero_double_time_earnings_rate_name:
           type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Double Time (2.0x)
+          minLength: 1
+          description: Xero Payroll earnings rate name for Double Time (2.0x)
+          maxLength: 100
+        xero_payroll_calendar_name:
+          type: string
+          minLength: 1
+          description: Name of Xero Payroll calendar to use (e.g., 'Weekly 2025')
           maxLength: 100
         mon_start:
           type: string
@@ -11726,6 +11918,48 @@ components:
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
+        address_line1:
+          type: string
+          nullable: true
+          description: Street address line 1
+          maxLength: 255
+        address_line2:
+          type: string
+          nullable: true
+          description: Street address line 2 (optional)
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb (for NZ addresses)
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          description: City
+          maxLength: 100
+        post_code:
+          type: string
+          nullable: true
+          description: Postal/ZIP code
+          maxLength: 20
+        country:
+          type: string
+          minLength: 1
+          description: Country name
+          maxLength: 100
+        company_email:
+          type: string
+          format: email
+          nullable: true
+          description: Company contact email address
+          maxLength: 254
+        company_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Company website URL
+          maxLength: 200
         shop_client_name:
           type: string
           nullable: true
@@ -12223,8 +12457,14 @@ components:
       type: object
       description: Serializer representing details from a Xero pay run.
       properties:
-        pay_run_id:
+        id:
           type: string
+          format: uuid
+          description: Django primary key
+        xero_id:
+          type: string
+          format: uuid
+          description: Xero pay run ID
         payroll_calendar_id:
           type: string
           nullable: true
@@ -12243,13 +12483,14 @@ components:
           type: string
           nullable: true
       required:
-        - pay_run_id
+        - id
         - pay_run_status
         - pay_run_type
         - payment_date
         - payroll_calendar_id
         - period_end_date
         - period_start_date
+        - xero_id
     PayRunForWeekResponse:
       type: object
       description: Response serializer when fetching pay run data for a week.
@@ -12270,102 +12511,59 @@ components:
       type: object
       description: Response payload after refreshing cached pay runs.
       properties:
+        synced:
+          type: boolean
         fetched:
           type: integer
+          description: Number of pay runs fetched from Xero
         created:
           type: integer
+          description: Number of new pay runs created locally
         updated:
           type: integer
+          description: Number of existing pay runs updated
       required:
         - created
         - fetched
+        - synced
         - updated
     PayRunSyncResponseRequest:
       type: object
       description: Response payload after refreshing cached pay runs.
       properties:
+        synced:
+          type: boolean
         fetched:
           type: integer
+          description: Number of pay runs fetched from Xero
         created:
           type: integer
+          description: Number of new pay runs created locally
         updated:
           type: integer
+          description: Number of existing pay runs updated
       required:
         - created
         - fetched
+        - synced
         - updated
     PostWeekToXeroRequest:
       type: object
-      description: Request serializer for posting weekly timesheet to Xero
+      description: Request serializer for posting weekly timesheets to Xero
       properties:
-        staff_id:
-          type: string
-          format: uuid
-          description: Staff member UUID
+        staff_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of staff member UUIDs
         week_start_date:
           type: string
           format: date
           description: Monday of the week (YYYY-MM-DD)
       required:
-        - staff_id
+        - staff_ids
         - week_start_date
-    PostWeekToXeroResponse:
-      type: object
-      description: Response serializer for posted timesheet
-      properties:
-        success:
-          type: boolean
-        xero_timesheet_id:
-          type: string
-          nullable: true
-        xero_leave_ids:
-          type: array
-          items:
-            type: string
-          nullable: true
-        entries_posted:
-          type: integer
-        work_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        other_leave_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        annual_sick_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        unpaid_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        errors:
-          type: array
-          items:
-            type: string
-      required:
-        - annual_sick_hours
-        - entries_posted
-        - errors
-        - other_leave_hours
-        - success
-        - unpaid_hours
-        - work_hours
-        - xero_timesheet_id
     PreviewQuoteResponse:
       type: object
       description: Serializer for preview quote response.

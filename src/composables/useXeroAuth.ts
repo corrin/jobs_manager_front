@@ -19,35 +19,36 @@ type XeroSseEvent = {
   overall_progress?: number
 }
 
+// Shared state (singleton) - all useXeroAuth() calls share these refs
+const entities = ref<string[]>([])
+const entityStats = reactive<
+  Record<string, { status: string; lastSync: string; recordsUpdated: number }>
+>({})
+const log = ref<
+  Array<{
+    datetime: string
+    message: string
+    severity: string
+    entity?: string
+    progress?: number
+    recordsUpdated?: number
+    status?: string
+  }>
+>([])
+const logOpen = ref(false)
+const isAuthenticated = ref(false)
+const syncing = ref(false)
+const loading = ref(true)
+const error = ref('')
+const eventSource = ref<EventSource | null>(null)
+const overallProgress = ref(0)
+const entityProgress = ref(0)
+const currentEntity = ref('')
+const syncStatus = ref<string | null>(null)
+const syncErrorMessages = ref<string[]>([])
+
 export function useXeroAuth() {
   const router = useRouter()
-
-  const entities = ref<string[]>([])
-  const entityStats = reactive<
-    Record<string, { status: string; lastSync: string; recordsUpdated: number }>
-  >({})
-  const log = ref<
-    Array<{
-      datetime: string
-      message: string
-      severity: string
-      entity?: string
-      progress?: number
-      recordsUpdated?: number
-      status?: string
-    }>
-  >([])
-  const logOpen = ref(false)
-  const isAuthenticated = ref(false)
-  const syncing = ref(false)
-  const loading = ref(true)
-  const error = ref('')
-  const eventSource = ref<EventSource | null>(null)
-  const overallProgress = ref(0)
-  const entityProgress = ref(0)
-  const currentEntity = ref('')
-  const syncStatus = ref<string | null>(null)
-  const syncErrorMessages = ref<string[]>([])
 
   function formatEntityName(entity: string) {
     return entity
@@ -138,8 +139,13 @@ export function useXeroAuth() {
     error.value = ''
     try {
       const pingRes = await axios.get(`${getApiBaseUrl()}/api/xero/ping`, { withCredentials: true })
-      isAuthenticated.value = !!(pingRes.data && pingRes.data.connected)
+      console.log('[Xero Debug] Ping response:', pingRes.data)
+      const shouldAuth = !!(pingRes.data && pingRes.data.connected)
+      console.log('[Xero Debug] Setting isAuthenticated to:', shouldAuth)
+      isAuthenticated.value = shouldAuth
+      console.log('[Xero Debug] isAuthenticated.value is now:', isAuthenticated.value)
       if (!isAuthenticated.value) {
+        console.log('[Xero Debug] Early return - not authenticated')
         loading.value = false
         return
       }
@@ -163,7 +169,8 @@ export function useXeroAuth() {
         currentEntity.value = ''
         syncing.value = false
       }
-    } catch {
+    } catch (err) {
+      console.log('[Xero Debug] Catch block triggered, error:', err)
       error.value = 'Failed to load Xero sync status.'
       isAuthenticated.value = false
     } finally {

@@ -357,6 +357,7 @@ const AWSInstanceStatusResponse = z
 const CompanyDefaults = z
   .object({
     company_name: z.string().max(255),
+    company_acronym: z.string().max(10).nullish(),
     is_primary: z.boolean().optional(),
     time_markup: z.number().gt(-1000).lt(1000).optional(),
     materials_markup: z.number().gt(-1000).lt(1000).optional(),
@@ -374,9 +375,10 @@ const CompanyDefaults = z
     xero_sick_leave_type_id: z.string().max(100).nullish(),
     xero_other_leave_type_id: z.string().max(100).nullish(),
     xero_unpaid_leave_type_id: z.string().max(100).nullish(),
-    xero_ordinary_earnings_rate_id: z.string().max(100).nullish(),
-    xero_time_half_earnings_rate_id: z.string().max(100).nullish(),
-    xero_double_time_earnings_rate_id: z.string().max(100).nullish(),
+    xero_ordinary_earnings_rate_name: z.string().max(100).optional(),
+    xero_time_half_earnings_rate_name: z.string().max(100).optional(),
+    xero_double_time_earnings_rate_name: z.string().max(100).optional(),
+    xero_payroll_calendar_name: z.string().max(100).optional(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -391,6 +393,14 @@ const CompanyDefaults = z
     updated_at: z.string().datetime({ offset: true }),
     last_xero_sync: z.string().datetime({ offset: true }).nullish(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
+    address_line1: z.string().max(255).nullish(),
+    address_line2: z.string().max(255).nullish(),
+    suburb: z.string().max(100).nullish(),
+    city: z.string().max(100).nullish(),
+    post_code: z.string().max(20).nullish(),
+    country: z.string().max(100).optional(),
+    company_email: z.string().max(254).email().nullish(),
+    company_url: z.string().max(200).url().nullish(),
     shop_client_name: z.string().max(255).nullish(),
     test_client_name: z.string().max(255).nullish(),
     billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
@@ -402,6 +412,7 @@ const CompanyDefaults = z
 const CompanyDefaultsRequest = z
   .object({
     company_name: z.string().min(1).max(255),
+    company_acronym: z.string().max(10).nullish(),
     is_primary: z.boolean().optional(),
     time_markup: z.number().gt(-1000).lt(1000).optional(),
     materials_markup: z.number().gt(-1000).lt(1000).optional(),
@@ -419,9 +430,10 @@ const CompanyDefaultsRequest = z
     xero_sick_leave_type_id: z.string().max(100).nullish(),
     xero_other_leave_type_id: z.string().max(100).nullish(),
     xero_unpaid_leave_type_id: z.string().max(100).nullish(),
-    xero_ordinary_earnings_rate_id: z.string().max(100).nullish(),
-    xero_time_half_earnings_rate_id: z.string().max(100).nullish(),
-    xero_double_time_earnings_rate_id: z.string().max(100).nullish(),
+    xero_ordinary_earnings_rate_name: z.string().min(1).max(100).optional(),
+    xero_time_half_earnings_rate_name: z.string().min(1).max(100).optional(),
+    xero_double_time_earnings_rate_name: z.string().min(1).max(100).optional(),
+    xero_payroll_calendar_name: z.string().min(1).max(100).optional(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -434,6 +446,14 @@ const CompanyDefaultsRequest = z
     fri_end: z.string().optional(),
     last_xero_sync: z.string().datetime({ offset: true }).nullish(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
+    address_line1: z.string().max(255).nullish(),
+    address_line2: z.string().max(255).nullish(),
+    suburb: z.string().max(100).nullish(),
+    city: z.string().max(100).nullish(),
+    post_code: z.string().max(20).nullish(),
+    country: z.string().min(1).max(100).optional(),
+    company_email: z.string().max(254).email().nullish(),
+    company_url: z.string().max(200).url().nullish(),
     shop_client_name: z.string().max(255).nullish(),
     test_client_name: z.string().max(255).nullish(),
     billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
@@ -445,6 +465,7 @@ const CompanyDefaultsRequest = z
 const PatchedCompanyDefaultsRequest = z
   .object({
     company_name: z.string().min(1).max(255),
+    company_acronym: z.string().max(10).nullable(),
     is_primary: z.boolean(),
     time_markup: z.number().gt(-1000).lt(1000),
     materials_markup: z.number().gt(-1000).lt(1000),
@@ -462,9 +483,10 @@ const PatchedCompanyDefaultsRequest = z
     xero_sick_leave_type_id: z.string().max(100).nullable(),
     xero_other_leave_type_id: z.string().max(100).nullable(),
     xero_unpaid_leave_type_id: z.string().max(100).nullable(),
-    xero_ordinary_earnings_rate_id: z.string().max(100).nullable(),
-    xero_time_half_earnings_rate_id: z.string().max(100).nullable(),
-    xero_double_time_earnings_rate_id: z.string().max(100).nullable(),
+    xero_ordinary_earnings_rate_name: z.string().min(1).max(100),
+    xero_time_half_earnings_rate_name: z.string().min(1).max(100),
+    xero_double_time_earnings_rate_name: z.string().min(1).max(100),
+    xero_payroll_calendar_name: z.string().min(1).max(100),
     mon_start: z.string(),
     mon_end: z.string(),
     tue_start: z.string(),
@@ -477,6 +499,14 @@ const PatchedCompanyDefaultsRequest = z
     fri_end: z.string(),
     last_xero_sync: z.string().datetime({ offset: true }).nullable(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
+    address_line1: z.string().max(255).nullable(),
+    address_line2: z.string().max(255).nullable(),
+    suburb: z.string().max(100).nullable(),
+    city: z.string().max(100).nullable(),
+    post_code: z.string().max(20).nullable(),
+    country: z.string().min(1).max(100),
+    company_email: z.string().max(254).email().nullable(),
+    company_url: z.string().max(200).url().nullable(),
     shop_client_name: z.string().max(255).nullable(),
     test_client_name: z.string().max(255).nullable(),
     billable_threshold_green: z.number().gt(-1000).lt(1000),
@@ -2621,7 +2651,8 @@ const JobsListResponse = z
   .passthrough()
 const PayRunDetails = z
   .object({
-    pay_run_id: z.string(),
+    id: z.string().uuid(),
+    xero_id: z.string().uuid(),
     payroll_calendar_id: z.string().nullable(),
     period_start_date: z.string(),
     period_end_date: z.string(),
@@ -2640,7 +2671,8 @@ const PayRunForWeekResponse = z
 const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
 const CreatePayRunResponse = z
   .object({
-    pay_run_id: z.string(),
+    id: z.string().uuid(),
+    xero_id: z.string().uuid(),
     status: z.string(),
     period_start_date: z.string(),
     period_end_date: z.string(),
@@ -2649,6 +2681,7 @@ const CreatePayRunResponse = z
   .passthrough()
 const PayRunSyncResponseRequest = z
   .object({
+    synced: z.boolean(),
     fetched: z.number().int(),
     created: z.number().int(),
     updated: z.number().int(),
@@ -2656,25 +2689,16 @@ const PayRunSyncResponseRequest = z
   .passthrough()
 const PayRunSyncResponse = z
   .object({
+    synced: z.boolean(),
     fetched: z.number().int(),
     created: z.number().int(),
     updated: z.number().int(),
   })
   .passthrough()
 const PostWeekToXeroRequest = z
-  .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
-  .passthrough()
-const PostWeekToXeroResponse = z
   .object({
-    success: z.boolean(),
-    xero_timesheet_id: z.string().nullable(),
-    xero_leave_ids: z.array(z.string()).nullish(),
-    entries_posted: z.number().int(),
-    work_hours: z.number().gt(-100000000).lt(100000000),
-    other_leave_hours: z.number().gt(-100000000).lt(100000000),
-    annual_sick_hours: z.number().gt(-100000000).lt(100000000),
-    unpaid_hours: z.number().gt(-100000000).lt(100000000),
-    errors: z.array(z.string()),
+    staff_ids: z.array(z.string().uuid()),
+    week_start_date: z.string(),
   })
   .passthrough()
 const ModernStaff = z
@@ -3078,7 +3102,6 @@ export const schemas = {
   PayRunSyncResponseRequest,
   PayRunSyncResponse,
   PostWeekToXeroRequest,
-  PostWeekToXeroResponse,
   ModernStaff,
   StaffListResponse,
   WeeklyStaffDataWeeklyHours,
@@ -3154,7 +3177,7 @@ Returns:
   {
     method: 'get',
     path: '/accounting/api/reports/sales-forecast/',
-    alias: 'accounting_api_reports_sales_forecast_retrieve',
+    alias: 'sales_forecast_list',
     description: `Returns monthly sales comparison between Xero invoices and Job Manager revenue for all months with data`,
     requestFormat: 'json',
     response: z
@@ -3185,7 +3208,7 @@ Returns:
   {
     method: 'get',
     path: '/accounting/api/reports/sales-forecast/:month/',
-    alias: 'accounting_api_reports_sales_forecast_retrieve_2',
+    alias: 'sales_forecast_month_detail',
     description: `Returns detailed invoice and job data for a specific month, showing matched pairs and unmatched items`,
     requestFormat: 'json',
     parameters: [
@@ -7333,7 +7356,9 @@ Returns:
     method: 'post',
     path: '/timesheets/api/payroll/post-staff-week/',
     alias: 'timesheets_api_payroll_post_staff_week_create',
-    description: `Post a week&#x27;s timesheet to Xero Payroll.`,
+    description: `Start posting timesheets. Returns a task_id to use with the stream endpoint.
+
+Use GET /api/payroll/post-staff-week/stream/{task_id}/ to receive SSE progress.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -7342,17 +7367,7 @@ Returns:
         schema: PostWeekToXeroRequest,
       },
     ],
-    response: PostWeekToXeroResponse,
-    errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
-      {
-        status: 500,
-        schema: ClientErrorResponse,
-      },
-    ],
+    response: z.void(),
   },
   {
     method: 'get',
