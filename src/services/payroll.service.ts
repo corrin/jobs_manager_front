@@ -3,13 +3,59 @@
 import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-import axios from '@/plugins/axios'
+import axios, { getApiBaseUrl } from '@/plugins/axios'
 
 export type CreatePayRunResponse = z.infer<typeof schemas.CreatePayRunResponse>
-export type PostStaffWeekResponse = z.infer<typeof schemas.PostWeekToXeroResponse>
 export type PayRunDetails = z.infer<typeof schemas.PayRunDetails>
 export type PayRunForWeekResponse = z.infer<typeof schemas.PayRunForWeekResponse>
 export type PayRunSyncResult = z.infer<typeof schemas.PayRunSyncResponse>
+
+// Response from POST /api/payroll/post-staff-week/ (not in schema yet)
+interface PostStaffWeekStartResponse {
+  task_id: string
+  stream_url: string
+}
+
+// SSE event types from the backend
+export interface PostStaffWeekStartEvent {
+  event: 'start'
+  total: number
+}
+
+export interface PostStaffWeekProgressEvent {
+  event: 'progress'
+  staff_name: string
+  current: number
+  total: number
+}
+
+export interface PostStaffWeekCompleteEvent {
+  event: 'complete'
+  staff_name: string
+  success: boolean
+  work_hours?: string
+  error?: string
+}
+
+export interface PostStaffWeekDoneEvent {
+  event: 'done'
+  successful: number
+  failed: number
+}
+
+export type PostStaffWeekSSEEvent =
+  | PostStaffWeekStartEvent
+  | PostStaffWeekProgressEvent
+  | PostStaffWeekCompleteEvent
+  | PostStaffWeekDoneEvent
+
+export interface PostStaffWeekCallbacks {
+  onStart?: (event: PostStaffWeekStartEvent) => void
+  onProgress?: (event: PostStaffWeekProgressEvent) => void
+  onComplete?: (event: PostStaffWeekCompleteEvent) => void
+  onDone?: (event: PostStaffWeekDoneEvent) => void
+  onError?: (error: Error) => void
+}
 
 /**
  * Create a new pay run for the specified week.
@@ -26,21 +72,78 @@ export async function createPayRun(weekStartDate: string): Promise<CreatePayRunR
 }
 
 /**
- * Post a staff member's weekly timesheet to Xero Payroll.
+ * Post multiple staff members' weekly timesheets to Xero Payroll with SSE streaming.
  *
- * @param staffId - UUID of the staff member
+ * Uses the same pattern as Xero sync:
+ * 1. POST to start the job → returns task_id and stream_url
+ * 2. Connect via EventSource to receive progress events
+ *
+ * @param staffIds - Array of staff member UUIDs
  * @param weekStartDate - Monday of the week (YYYY-MM-DD format)
- * @returns Posting results including hours breakdown and any errors
+ * @param callbacks - Optional callbacks for SSE events (start, progress, complete, done, error)
+ * @returns Promise that resolves when the stream completes
  */
 export async function postStaffWeek(
-  staffId: string,
+  staffIds: string[],
   weekStartDate: string,
-): Promise<PostStaffWeekResponse> {
-  const response = await api.timesheets_api_payroll_post_staff_week_create({
-    staff_id: staffId,
-    week_start_date: weekStartDate,
+  callbacks?: PostStaffWeekCallbacks,
+): Promise<PostStaffWeekDoneEvent> {
+  // Step 1: Start the job
+  const startResponse = await axios.post<PostStaffWeekStartResponse>(
+    '/timesheets/api/payroll/post-staff-week/',
+    {
+      staff_ids: staffIds,
+      week_start_date: weekStartDate,
+    },
+  )
+
+  const { stream_url } = startResponse.data
+
+  // Step 2: Connect to SSE stream using EventSource (matches Xero sync pattern)
+  // Prefix with API base URL since frontend/backend may be on different origins
+  const sseUrl = `${getApiBaseUrl()}${stream_url}`
+
+  return new Promise((resolve, reject) => {
+    const eventSource = new EventSource(sseUrl, { withCredentials: true })
+    let doneEvent: PostStaffWeekDoneEvent | null = null
+
+    eventSource.onmessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data) as PostStaffWeekSSEEvent
+
+        switch (data.event) {
+          case 'start':
+            callbacks?.onStart?.(data)
+            break
+          case 'progress':
+            callbacks?.onProgress?.(data)
+            break
+          case 'complete':
+            callbacks?.onComplete?.(data)
+            break
+          case 'done':
+            doneEvent = data
+            callbacks?.onDone?.(data)
+            eventSource.close()
+            resolve(data)
+            break
+        }
+      } catch (parseError) {
+        console.warn('Failed to parse SSE event:', event.data, parseError)
+      }
+    }
+
+    eventSource.onerror = () => {
+      eventSource.close()
+      if (doneEvent) {
+        // Already received done event, this is just the stream closing
+        return
+      }
+      const error = new Error('Connection to payroll stream lost')
+      callbacks?.onError?.(error)
+      reject(error)
+    }
   })
-  return response as PostStaffWeekResponse
 }
 
 /**

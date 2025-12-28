@@ -375,9 +375,10 @@ const CompanyDefaults = z
     xero_sick_leave_type_id: z.string().max(100).nullish(),
     xero_other_leave_type_id: z.string().max(100).nullish(),
     xero_unpaid_leave_type_id: z.string().max(100).nullish(),
-    xero_ordinary_earnings_rate_id: z.string().max(100).nullish(),
-    xero_time_half_earnings_rate_id: z.string().max(100).nullish(),
-    xero_double_time_earnings_rate_id: z.string().max(100).nullish(),
+    xero_ordinary_earnings_rate_name: z.string().max(100).optional(),
+    xero_time_half_earnings_rate_name: z.string().max(100).optional(),
+    xero_double_time_earnings_rate_name: z.string().max(100).optional(),
+    xero_payroll_calendar_name: z.string().max(100).optional(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -429,9 +430,10 @@ const CompanyDefaultsRequest = z
     xero_sick_leave_type_id: z.string().max(100).nullish(),
     xero_other_leave_type_id: z.string().max(100).nullish(),
     xero_unpaid_leave_type_id: z.string().max(100).nullish(),
-    xero_ordinary_earnings_rate_id: z.string().max(100).nullish(),
-    xero_time_half_earnings_rate_id: z.string().max(100).nullish(),
-    xero_double_time_earnings_rate_id: z.string().max(100).nullish(),
+    xero_ordinary_earnings_rate_name: z.string().min(1).max(100).optional(),
+    xero_time_half_earnings_rate_name: z.string().min(1).max(100).optional(),
+    xero_double_time_earnings_rate_name: z.string().min(1).max(100).optional(),
+    xero_payroll_calendar_name: z.string().min(1).max(100).optional(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -481,9 +483,10 @@ const PatchedCompanyDefaultsRequest = z
     xero_sick_leave_type_id: z.string().max(100).nullable(),
     xero_other_leave_type_id: z.string().max(100).nullable(),
     xero_unpaid_leave_type_id: z.string().max(100).nullable(),
-    xero_ordinary_earnings_rate_id: z.string().max(100).nullable(),
-    xero_time_half_earnings_rate_id: z.string().max(100).nullable(),
-    xero_double_time_earnings_rate_id: z.string().max(100).nullable(),
+    xero_ordinary_earnings_rate_name: z.string().min(1).max(100),
+    xero_time_half_earnings_rate_name: z.string().min(1).max(100),
+    xero_double_time_earnings_rate_name: z.string().min(1).max(100),
+    xero_payroll_calendar_name: z.string().min(1).max(100),
     mon_start: z.string(),
     mon_end: z.string(),
     tue_start: z.string(),
@@ -2693,19 +2696,9 @@ const PayRunSyncResponse = z
   })
   .passthrough()
 const PostWeekToXeroRequest = z
-  .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
-  .passthrough()
-const PostWeekToXeroResponse = z
   .object({
-    success: z.boolean(),
-    xero_timesheet_id: z.string().nullable(),
-    xero_leave_ids: z.array(z.string()).nullish(),
-    entries_posted: z.number().int(),
-    work_hours: z.number().gt(-100000000).lt(100000000),
-    other_leave_hours: z.number().gt(-100000000).lt(100000000),
-    annual_sick_hours: z.number().gt(-100000000).lt(100000000),
-    unpaid_hours: z.number().gt(-100000000).lt(100000000),
-    errors: z.array(z.string()),
+    staff_ids: z.array(z.string().uuid()),
+    week_start_date: z.string(),
   })
   .passthrough()
 const ModernStaff = z
@@ -3109,7 +3102,6 @@ export const schemas = {
   PayRunSyncResponseRequest,
   PayRunSyncResponse,
   PostWeekToXeroRequest,
-  PostWeekToXeroResponse,
   ModernStaff,
   StaffListResponse,
   WeeklyStaffDataWeeklyHours,
@@ -7364,7 +7356,9 @@ Returns:
     method: 'post',
     path: '/timesheets/api/payroll/post-staff-week/',
     alias: 'timesheets_api_payroll_post_staff_week_create',
-    description: `Post a week&#x27;s timesheet to Xero Payroll.`,
+    description: `Start posting timesheets. Returns a task_id to use with the stream endpoint.
+
+Use GET /api/payroll/post-staff-week/stream/{task_id}/ to receive SSE progress.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -7373,17 +7367,7 @@ Returns:
         schema: PostWeekToXeroRequest,
       },
     ],
-    response: PostWeekToXeroResponse,
-    errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
-      {
-        status: 500,
-        schema: ClientErrorResponse,
-      },
-    ],
+    response: z.void(),
   },
   {
     method: 'get',

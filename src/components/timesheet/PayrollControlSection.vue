@@ -94,8 +94,15 @@
         variant="default"
         size="sm"
       >
-        <Send class="h-4 w-4 mr-2" />
-        {{ posting ? 'Posting...' : 'Post All to Xero' }}
+        <Send class="h-4 w-4 mr-2" :class="{ 'animate-pulse': posting }" />
+        <template v-if="posting && postingProgress">
+          Posting {{ postingProgress.current }}/{{ postingProgress.total }}
+          <span v-if="postingProgress.currentStaffName" class="ml-1 text-xs opacity-75">
+            ({{ postingProgress.currentStaffName }})
+          </span>
+        </template>
+        <template v-else-if="posting"> Posting... </template>
+        <template v-else> Post All to Xero </template>
       </Button>
 
       <!-- Continue in Xero Button -->
@@ -153,12 +160,19 @@ import {
 } from 'lucide-vue-next'
 import { format, addDays, parseISO } from 'date-fns'
 
+interface PostingProgress {
+  current: number
+  total: number
+  currentStaffName: string | null
+}
+
 interface Props {
   weekStartDate: string // YYYY-MM-DD format (Monday)
   payRunStatus?: string | null // 'Draft' | 'Posted' | null
   paymentDate?: string | null // YYYY-MM-DD format
   creating?: boolean
   posting?: boolean
+  postingProgress?: PostingProgress | null
   warning?: string | null
   payrollError?: string | null
   refreshing?: boolean
@@ -170,6 +184,7 @@ const props = withDefaults(defineProps<Props>(), {
   paymentDate: null,
   creating: false,
   posting: false,
+  postingProgress: null,
   warning: null,
   payrollError: null,
   refreshing: false,

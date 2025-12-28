@@ -126,6 +126,7 @@
           :payment-date="paymentDate"
           :creating="creatingPayRun"
           :posting="postingAll"
+          :posting-progress="postingProgress"
           :warning="payRunWarning"
           :payroll-error="payrollError"
           :refreshing="refreshingPayRuns"
@@ -297,6 +298,7 @@ import {
   postStaffWeek,
   fetchPayRunForWeek,
   refreshPayRuns,
+  type PostStaffWeekCompleteEvent,
 } from '@/services/payroll.service'
 import { schemas } from '@/api/generated/api'
 import { debugLog } from '../utils/debug'
@@ -331,7 +333,7 @@ const initialWeekStart = route.query.week
 const selectedWeekStart = ref(initialWeekStart)
 const weekStartDate = computed(() => dateService.getWeekRange(selectedWeekStart.value).startDate)
 
-const payrollMode = ref(false)
+const payrollMode = ref(true)
 const showWeeklyMetricsModal = ref(false)
 const showWeekPicker = ref(false)
 
@@ -345,6 +347,14 @@ const payrollError = ref<string | null>(null)
 const refreshingPayRuns = ref(false)
 const postedAllToXero = ref(false)
 let payRunLookupRequestId = 0
+
+// Posting progress state
+const postingProgress = ref<{
+  current: number
+  total: number
+  currentStaffName: string | null
+  failedStaff: Array<{ staffName: string; error?: string }>
+} | null>(null)
 
 function resetPayRunState() {
   payRunLookupRequestId += 1
@@ -390,7 +400,7 @@ async function loadPayRunForCurrentWeek() {
     console.error('Pay run lookup failed:', err)
 
     toast.error('Unable to load pay run', {
-      description: 'Something went wrong. Please try again or contact support.',
+      description: 'Something went wrong. Please try again or contact Corrin.',
     })
   }
 }
@@ -601,9 +611,9 @@ async function handleCreatePayRun() {
   } catch (err: unknown) {
     console.error('Create pay run failed:', err)
 
-    payrollError.value = 'Failed to create pay run. Please try again or contact support.'
+    payrollError.value = 'Failed to create pay run. Please try again or contact Corrin.'
     toast.error('Failed to create pay run', {
-      description: 'Something went wrong. Please try again or contact support.',
+      description: 'Something went wrong. Please try again or contact Corrin.',
     })
   } finally {
     creatingPayRun.value = false
@@ -625,9 +635,9 @@ async function handleRefreshPayRuns() {
   } catch (err: unknown) {
     console.error('Refresh pay runs failed:', err)
 
-    payrollError.value = 'Failed to refresh pay runs. Please try again or contact support.'
+    payrollError.value = 'Failed to refresh pay runs. Please try again or contact Corrin.'
     toast.error('Failed to refresh pay runs', {
-      description: 'Something went wrong. Please try again or contact support.',
+      description: 'Something went wrong. Please try again or contact Corrin.',
     })
   } finally {
     refreshingPayRuns.value = false
@@ -639,6 +649,8 @@ async function handlePostAllToXero() {
 
   postingAll.value = true
   payrollError.value = null
+  postingProgress.value = null
+
   const staffList = weeklyData.value.staff_data || []
   if (!staffList.length) {
     postingAll.value = false
@@ -648,6 +660,7 @@ async function handlePostAllToXero() {
     debugLog('Post all aborted: no staff_data in weekly payload', weeklyData.value)
     return
   }
+
   const weekStart = weekStartDate.value || weeklyData.value?.start_date || null
 
   if (!weekStart) {
@@ -662,20 +675,17 @@ async function handlePostAllToXero() {
     return
   }
 
-  const staffTargets: Array<{ staff: (typeof staffList)[number]; staffId: string }> = []
-
+  // Collect all valid staff IDs
+  const staffIds: string[] = []
   for (const staff of staffList) {
-    const staffId = staff.staff_id
-
-    if (!staffId) {
+    if (staff.staff_id) {
+      staffIds.push(staff.staff_id)
+    } else {
       debugLog('Skipping staff with missing identifier', staff)
-      continue
     }
-
-    staffTargets.push({ staff, staffId })
   }
 
-  if (!staffTargets.length) {
+  if (!staffIds.length) {
     postingAll.value = false
     toast.error('No staff IDs available', {
       description: 'Unable to find staff identifiers for payroll posting. Please refresh.',
@@ -684,37 +694,74 @@ async function handlePostAllToXero() {
     return
   }
 
-  let successCount = 0
+  // Track failed staff for error reporting
+  const failedStaff: Array<{ staffName: string; error?: string }> = []
 
   try {
-    for (const { staff, staffId } of staffTargets) {
-      const result = await postStaffWeek(staffId, weekStart)
-
-      if (!result.success) {
-        // Log technical details and fail early
-        console.error('Post staff week failed:', result.errors)
-        throw new Error('Failed to post staff to Xero')
-      }
-
-      successCount++
-      debugLog(`Posted ${staff.name}:`, result)
-    }
-
-    toast.success('All staff posted successfully', {
-      description: `${successCount} staff members posted to Xero`,
+    const result = await postStaffWeek(staffIds, weekStart, {
+      onStart: (event) => {
+        postingProgress.value = {
+          current: 0,
+          total: event.total,
+          currentStaffName: null,
+          failedStaff: [],
+        }
+        debugLog('Starting batch post:', event)
+      },
+      onProgress: (event) => {
+        if (postingProgress.value) {
+          postingProgress.value = {
+            ...postingProgress.value,
+            current: event.current,
+            currentStaffName: event.staff_name,
+          }
+        }
+        debugLog('Progress:', event)
+      },
+      onComplete: (event: PostStaffWeekCompleteEvent) => {
+        if (!event.success) {
+          failedStaff.push({
+            staffName: event.staff_name,
+            error: event.error,
+          })
+          if (postingProgress.value) {
+            postingProgress.value = {
+              ...postingProgress.value,
+              failedStaff: [...failedStaff],
+            }
+          }
+        }
+        debugLog('Complete:', event)
+      },
+      onDone: (event) => {
+        debugLog('Batch post done:', event)
+      },
     })
-    postedAllToXero.value = true
+
+    const totalPosted = result.successful + result.failed
+    if (result.failed > 0) {
+      payrollError.value = `Failed to post ${result.failed} of ${totalPosted} staff members to Xero.`
+      toast.error('Some staff failed to post', {
+        description: `${result.successful} succeeded, ${result.failed} failed`,
+      })
+      postedAllToXero.value = false
+    } else {
+      toast.success('All staff posted successfully', {
+        description: `${result.successful} staff members posted to Xero`,
+      })
+      postedAllToXero.value = true
+    }
   } catch (err: unknown) {
-    // Log technical details for debugging
     console.error('Payroll post failed:', err)
 
-    payrollError.value = 'Unable to post to Xero. Please try again or contact support.'
+    payrollError.value = 'Unable to post to Xero. Please try again or contact Corrin.'
     toast.error('Unable to post to Xero', {
-      description: 'Something went wrong. Please try again or contact support.',
+      description: 'Something went wrong. Please try again or contact Corrin.',
     })
     postedAllToXero.value = false
   } finally {
     postingAll.value = false
+    postingProgress.value = null
   }
 }
 
