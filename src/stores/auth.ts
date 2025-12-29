@@ -34,6 +34,16 @@ export const useAuthStore = defineStore('auth', () => {
     return `${user.value.preferred_name || user.value.first_name} ${user.value.last_name}`.trim()
   })
 
+  /** The default route path based on user role (office staff vs workshop) */
+  const defaultRoutePath = computed(() =>
+    user.value?.is_office_staff ? '/kanban' : '/kanban/workshop',
+  )
+
+  /** The default route name based on user role (office staff vs workshop) */
+  const defaultRouteName = computed(() =>
+    user.value?.is_office_staff ? 'kanban' : 'workshop-kanban',
+  )
+
   const clearError = (): void => {
     error.value = null
   }
@@ -146,6 +156,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     isAuthenticated,
     fullName,
+    defaultRoutePath,
+    defaultRouteName,
 
     login,
     logout,
