@@ -13,7 +13,7 @@
         <div class="user-date">{{ today }}</div>
       </div>
       <ul class="tab-list">
-        <li v-for="tab in tabs" :key="tab.name">
+        <li v-for="tab in tabs" :key="tab.key">
           <RouterLink
             :to="{ name: tab.route }"
             class="tab-link"
@@ -42,17 +42,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAppLayout } from '@/composables/useAppLayout'
-import {
-  Users,
-  Building2,
-  CalendarClock,
-  Archive,
-  Bot,
-  AlertTriangle,
-  Brain /* icon for AI Providers */,
-  Server,
-  DollarSign,
-} from 'lucide-vue-next'
+import { adminPages } from '@/config/adminPages'
 import { debugLog } from '../utils/debug'
 
 const { userInfo } = useAppLayout()
@@ -76,74 +66,18 @@ const today = new Date().toLocaleDateString('en-NZ', {
   day: 'numeric',
 })
 
-const tabs = computed(() => [
-  {
-    name: 'Staff',
-    key: 'staff',
-    label: 'Staff',
-    route: 'admin-staff',
-    icon: Users,
-  },
-  {
-    name: 'Company',
-    key: 'company',
-    label: 'Company',
-    route: 'admin-company',
-    icon: Building2,
-  },
-  {
-    name: 'ArchiveJobs',
-    key: 'archive-jobs',
-    label: 'Archive Jobs',
-    route: 'admin-archive-jobs',
-    icon: Archive,
-  },
-  {
-    name: 'MonthEnd',
-    key: 'month-end',
-    label: 'Month-End',
-    route: 'admin-month-end',
-    icon: CalendarClock,
-  },
-  {
-    name: 'Errors',
-    key: 'errors',
-    label: 'Errors',
-    route: 'admin-errors',
-    icon: AlertTriangle,
-  },
-  {
-    name: 'DjangoJobs',
-    key: 'django-jobs',
-    label: 'Django Jobs',
-    route: 'admin-django-jobs',
-    icon: Bot,
-  },
-  {
-    name: 'AIProviders',
-    key: 'ai-providers',
-    label: 'AI Providers',
-    route: 'admin-ai-providers',
-    icon: Brain,
-  },
-  {
-    name: 'PayrollCategories',
-    key: 'payroll-categories',
-    label: 'Payroll Categories',
-    route: 'admin-payroll-categories',
-    icon: DollarSign,
-  },
-  {
-    name: 'ManageUAT',
-    key: 'uat',
-    label: 'Manage UAT',
-    route: 'admin-uat',
-    icon: Server,
-  },
-])
+// Use centralized admin pages config
+const tabs = computed(() =>
+  adminPages.map((page) => ({
+    key: page.key,
+    label: page.label,
+    route: page.name,
+    icon: page.icon,
+  })),
+)
 
-function isActive(tab: string) {
-  return route.name === `admin-${tab}`
+function isActive(key: string) {
+  return route.name === `admin-${key}`
 }
 </script>
 
