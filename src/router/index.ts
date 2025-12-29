@@ -9,7 +9,10 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: () => useAuthStore().defaultRoutePath,
+      redirect: () => {
+        const authStore = useAuthStore()
+        return authStore.isAuthenticated ? authStore.defaultRoutePath : '/login'
+      },
     },
     {
       path: '/login',
@@ -387,6 +390,8 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
+  // is_office_staff controls PERMISSIONS (what user can access, backend-enforced)
+  // This is different from device type which controls UI PRESENTATION
   if (!to.meta.allowWorkshopStaff && !authStore.user?.is_office_staff) {
     toast.error('You are not allowed to visit this page.', {
       description: 'Please try again or contact Corrin if you think this is a mistake.',

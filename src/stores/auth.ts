@@ -4,6 +4,7 @@ import axios from '@/plugins/axios'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { debugLog } from '@/utils/debug'
+import { isComputer } from '@/utils/deviceType'
 import type { z } from 'zod'
 
 type User = z.infer<typeof schemas.UserProfile>
@@ -34,15 +35,10 @@ export const useAuthStore = defineStore('auth', () => {
     return `${user.value.preferred_name || user.value.first_name} ${user.value.last_name}`.trim()
   })
 
-  /** The default route path based on user role (office staff vs workshop) */
-  const defaultRoutePath = computed(() =>
-    user.value?.is_office_staff ? '/kanban' : '/kanban/workshop',
-  )
-
-  /** The default route name based on user role (office staff vs workshop) */
-  const defaultRouteName = computed(() =>
-    user.value?.is_office_staff ? 'kanban' : 'workshop-kanban',
-  )
+  // Device type controls UI PRESENTATION (which interface to show)
+  // This is different from is_office_staff which controls PERMISSIONS
+  const defaultRoutePath = computed(() => (isComputer.value ? '/kanban' : '/kanban/workshop'))
+  const defaultRouteName = computed(() => (isComputer.value ? 'kanban' : 'workshop-kanban'))
 
   const clearError = (): void => {
     error.value = null
