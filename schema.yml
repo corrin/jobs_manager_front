@@ -6552,8 +6552,11 @@ paths:
   /timesheets/api/payroll/post-staff-week/:
     post:
       operationId: timesheets_api_payroll_post_staff_week_create
-      description: Post a week's timesheet to Xero Payroll.
-      summary: Post weekly timesheet to Xero Payroll
+      description: |-
+        Start posting timesheets. Returns a task_id to use with the stream endpoint.
+
+        Use GET /api/payroll/post-staff-week/stream/{task_id}/ to receive SSE progress.
+      summary: Start posting weekly timesheets to Xero Payroll
       tags:
         - timesheets
       requestBody:
@@ -6572,23 +6575,7 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PostWeekToXeroResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
+          description: No response body
   /timesheets/api/staff/:
     get:
       operationId: timesheets_api_staff_retrieve
@@ -6649,7 +6636,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
+      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
       parameters:
         - in: query
           name: start_date
@@ -12837,76 +12824,21 @@ components:
         - name
     PostWeekToXeroRequest:
       type: object
-      description: Request serializer for posting weekly timesheet to Xero
+      description: Request serializer for posting weekly timesheets to Xero
       properties:
-        staff_id:
-          type: string
-          format: uuid
-          description: Staff member UUID
+        staff_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of staff member UUIDs
         week_start_date:
           type: string
           format: date
           description: Monday of the week (YYYY-MM-DD)
       required:
-        - staff_id
+        - staff_ids
         - week_start_date
-    PostWeekToXeroResponse:
-      type: object
-      description: Response serializer for posted timesheet
-      properties:
-        success:
-          type: boolean
-        xero_timesheet_id:
-          type: string
-          nullable: true
-        xero_leave_ids:
-          type: array
-          items:
-            type: string
-          nullable: true
-        entries_posted:
-          type: integer
-        work_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        other_leave_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        annual_sick_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        unpaid_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        errors:
-          type: array
-          items:
-            type: string
-      required:
-        - annual_sick_hours
-        - entries_posted
-        - errors
-        - other_leave_hours
-        - success
-        - unpaid_hours
-        - work_hours
-        - xero_timesheet_id
     PreviewQuoteResponse:
       type: object
       description: Serializer for preview quote response.
