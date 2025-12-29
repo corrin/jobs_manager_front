@@ -9,13 +9,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: () => {
-        if (useAuthStore().user?.is_office_staff) {
-          return '/kanban'
-        } else {
-          return '/kanban/workshop'
-        }
-      },
+      redirect: () => useAuthStore().defaultRoutePath,
     },
     {
       path: '/login',
@@ -372,7 +366,7 @@ router.beforeEach(async (to, from, next) => {
       await authStore.initializeAuth()
     }
     if (authStore.isAuthenticated) {
-      next(authStore.user?.is_office_staff ? { name: 'kanban' } : { name: 'workshop-kanban' })
+      next({ name: authStore.defaultRouteName })
       return
     }
   }

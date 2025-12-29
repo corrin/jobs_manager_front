@@ -169,14 +169,7 @@ onMounted(async () => {
   }
 
   if (authStore.isAuthenticated) {
-    switch (authStore.user?.is_office_staff) {
-      case true:
-        await router.push({ name: 'kanban' })
-        break
-      case false:
-        await router.push({ name: 'workshop-kanban' })
-        break
-    }
+    await router.push({ name: authStore.defaultRouteName })
   }
 })
 </script>
