@@ -14,7 +14,11 @@
       </div>
       <ul class="tab-list">
         <li v-for="tab in tabs" :key="tab.name">
-          <RouterLink :to="{ name: tab.route }" class="tab-link" :class="isActive(tab.key) ? 'tab-link--active' : ''">
+          <RouterLink
+            :to="{ name: tab.route }"
+            class="tab-link"
+            :class="isActive(tab.key) ? 'tab-link--active' : ''"
+          >
             <span v-if="tab.icon" class="tab-icon">
               <component :is="tab.icon" />
             </span>
@@ -47,6 +51,7 @@ import {
   AlertTriangle,
   Brain /* icon for AI Providers */,
   Server,
+  DollarSign,
 } from 'lucide-vue-next'
 import { debugLog } from '../utils/debug'
 
@@ -120,6 +125,13 @@ const tabs = computed(() => [
     label: 'AI Providers',
     route: 'admin-ai-providers',
     icon: Brain,
+  },
+  {
+    name: 'PayrollCategories',
+    key: 'payroll-categories',
+    label: 'Payroll Categories',
+    route: 'admin-payroll-categories',
+    icon: DollarSign,
   },
   {
     name: 'ManageUAT',
