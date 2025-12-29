@@ -202,6 +202,16 @@ const router = createRouter({
           },
         },
         {
+          path: 'payroll-categories',
+          name: 'admin-payroll-categories',
+          component: () => import('@/views/AdminPayrollCategoriesView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresSuperUser: true,
+            title: 'Payroll Categories - Jobs Manager',
+          },
+        },
+        {
           path: 'uat',
           name: 'admin-uat',
           component: () => import('@/views/UATManagementView.vue'),

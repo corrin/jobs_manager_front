@@ -371,13 +371,6 @@ const CompanyDefaults = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
     gdrive_quotes_folder_id: z.string().max(100).nullish(),
     xero_tenant_id: z.string().max(100).nullish(),
-    xero_annual_leave_type_id: z.string().max(100).nullish(),
-    xero_sick_leave_type_id: z.string().max(100).nullish(),
-    xero_other_leave_type_id: z.string().max(100).nullish(),
-    xero_unpaid_leave_type_id: z.string().max(100).nullish(),
-    xero_ordinary_earnings_rate_name: z.string().max(100).optional(),
-    xero_time_half_earnings_rate_name: z.string().max(100).optional(),
-    xero_double_time_earnings_rate_name: z.string().max(100).optional(),
     xero_payroll_calendar_name: z.string().max(100).optional(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
@@ -426,13 +419,6 @@ const CompanyDefaultsRequest = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
     gdrive_quotes_folder_id: z.string().max(100).nullish(),
     xero_tenant_id: z.string().max(100).nullish(),
-    xero_annual_leave_type_id: z.string().max(100).nullish(),
-    xero_sick_leave_type_id: z.string().max(100).nullish(),
-    xero_other_leave_type_id: z.string().max(100).nullish(),
-    xero_unpaid_leave_type_id: z.string().max(100).nullish(),
-    xero_ordinary_earnings_rate_name: z.string().min(1).max(100).optional(),
-    xero_time_half_earnings_rate_name: z.string().min(1).max(100).optional(),
-    xero_double_time_earnings_rate_name: z.string().min(1).max(100).optional(),
     xero_payroll_calendar_name: z.string().min(1).max(100).optional(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
@@ -479,13 +465,6 @@ const PatchedCompanyDefaultsRequest = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullable(),
     gdrive_quotes_folder_id: z.string().max(100).nullable(),
     xero_tenant_id: z.string().max(100).nullable(),
-    xero_annual_leave_type_id: z.string().max(100).nullable(),
-    xero_sick_leave_type_id: z.string().max(100).nullable(),
-    xero_other_leave_type_id: z.string().max(100).nullable(),
-    xero_unpaid_leave_type_id: z.string().max(100).nullable(),
-    xero_ordinary_earnings_rate_name: z.string().min(1).max(100),
-    xero_time_half_earnings_rate_name: z.string().min(1).max(100),
-    xero_double_time_earnings_rate_name: z.string().min(1).max(100),
     xero_payroll_calendar_name: z.string().min(1).max(100),
     mon_start: z.string(),
     mon_end: z.string(),
@@ -600,6 +579,56 @@ const AppErrorRequest = z
     resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
     resolved_by: z.string().uuid().nullish(),
   })
+  .passthrough()
+const PayrollCategory = z
+  .object({
+    id: z.number().int(),
+    name: z.string().max(50),
+    display_name: z.string().max(100),
+    job_name_pattern: z.string().max(100).nullish(),
+    rate_multiplier: z.number().gt(-100).lt(100).nullish(),
+    posts_to_xero: z.boolean().optional(),
+    uses_leave_api: z.boolean().optional(),
+    xero_leave_type_name: z.string().max(100).nullish(),
+    xero_earnings_rate_name: z.string().max(100).nullish(),
+  })
+  .passthrough()
+const PayrollCategoryCreateUpdateRequest = z
+  .object({
+    name: z.string().min(1).max(50),
+    display_name: z.string().min(1).max(100),
+    job_name_pattern: z.string().max(100).nullish(),
+    rate_multiplier: z.number().gt(-100).lt(100).nullish(),
+    posts_to_xero: z.boolean().optional(),
+    uses_leave_api: z.boolean().optional(),
+    xero_leave_type_name: z.string().max(100).nullish(),
+    xero_earnings_rate_name: z.string().max(100).nullish(),
+  })
+  .passthrough()
+const PayrollCategoryCreateUpdate = z
+  .object({
+    name: z.string().max(50),
+    display_name: z.string().max(100),
+    job_name_pattern: z.string().max(100).nullish(),
+    rate_multiplier: z.number().gt(-100).lt(100).nullish(),
+    posts_to_xero: z.boolean().optional(),
+    uses_leave_api: z.boolean().optional(),
+    xero_leave_type_name: z.string().max(100).nullish(),
+    xero_earnings_rate_name: z.string().max(100).nullish(),
+  })
+  .passthrough()
+const PatchedPayrollCategoryCreateUpdateRequest = z
+  .object({
+    name: z.string().min(1).max(50),
+    display_name: z.string().min(1).max(100),
+    job_name_pattern: z.string().max(100).nullable(),
+    rate_multiplier: z.number().gt(-100).lt(100).nullable(),
+    posts_to_xero: z.boolean(),
+    uses_leave_api: z.boolean(),
+    xero_leave_type_name: z.string().max(100).nullable(),
+    xero_earnings_rate_name: z.string().max(100).nullable(),
+  })
+  .partial()
   .passthrough()
 const XeroDocumentSuccessResponse = z
   .object({
@@ -2643,7 +2672,7 @@ const ModernTimesheetJob = z
     status: Status7b9Enum.optional(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     has_actual_costset: z.boolean(),
-    leave_type: z.string(),
+    leave_type: z.string().nullable(),
   })
   .passthrough()
 const JobsListResponse = z
@@ -2855,6 +2884,10 @@ export const schemas = {
   AppError,
   PaginatedAppErrorList,
   AppErrorRequest,
+  PayrollCategory,
+  PayrollCategoryCreateUpdateRequest,
+  PayrollCategoryCreateUpdate,
+  PatchedPayrollCategoryCreateUpdateRequest,
   XeroDocumentSuccessResponse,
   XeroDocumentErrorResponse,
   XeroQuoteCreateRequest,
@@ -3920,6 +3953,117 @@ Endpoints:
       },
     ],
     response: AppError,
+  },
+  {
+    method: 'get',
+    path: '/api/workflow/payroll-categories/',
+    alias: 'api_workflow_payroll_categories_list',
+    description: `API endpoint for PayrollCategory CRUD operations.
+
+Provides standard CRUD for managing payroll category mappings
+that link job types and work rates to Xero payroll posting behavior.`,
+    requestFormat: 'json',
+    response: z.array(PayrollCategory),
+  },
+  {
+    method: 'post',
+    path: '/api/workflow/payroll-categories/',
+    alias: 'api_workflow_payroll_categories_create',
+    description: `API endpoint for PayrollCategory CRUD operations.
+
+Provides standard CRUD for managing payroll category mappings
+that link job types and work rates to Xero payroll posting behavior.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PayrollCategoryCreateUpdateRequest,
+      },
+    ],
+    response: PayrollCategoryCreateUpdate,
+  },
+  {
+    method: 'get',
+    path: '/api/workflow/payroll-categories/:id/',
+    alias: 'api_workflow_payroll_categories_retrieve',
+    description: `API endpoint for PayrollCategory CRUD operations.
+
+Provides standard CRUD for managing payroll category mappings
+that link job types and work rates to Xero payroll posting behavior.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.number().int(),
+      },
+    ],
+    response: PayrollCategory,
+  },
+  {
+    method: 'put',
+    path: '/api/workflow/payroll-categories/:id/',
+    alias: 'api_workflow_payroll_categories_update',
+    description: `API endpoint for PayrollCategory CRUD operations.
+
+Provides standard CRUD for managing payroll category mappings
+that link job types and work rates to Xero payroll posting behavior.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PayrollCategoryCreateUpdateRequest,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.number().int(),
+      },
+    ],
+    response: PayrollCategoryCreateUpdate,
+  },
+  {
+    method: 'patch',
+    path: '/api/workflow/payroll-categories/:id/',
+    alias: 'api_workflow_payroll_categories_partial_update',
+    description: `API endpoint for PayrollCategory CRUD operations.
+
+Provides standard CRUD for managing payroll category mappings
+that link job types and work rates to Xero payroll posting behavior.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedPayrollCategoryCreateUpdateRequest,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.number().int(),
+      },
+    ],
+    response: PayrollCategoryCreateUpdate,
+  },
+  {
+    method: 'delete',
+    path: '/api/workflow/payroll-categories/:id/',
+    alias: 'api_workflow_payroll_categories_destroy',
+    description: `API endpoint for PayrollCategory CRUD operations.
+
+Provides standard CRUD for managing payroll category mappings
+that link job types and work rates to Xero payroll posting behavior.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.number().int(),
+      },
+    ],
+    response: z.void(),
   },
   {
     method: 'post',
