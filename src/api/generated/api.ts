@@ -2725,9 +2725,19 @@ const PayRunSyncResponse = z
   })
   .passthrough()
 const PostWeekToXeroRequest = z
+  .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
+  .passthrough()
+const PostWeekToXeroResponse = z
   .object({
-    staff_ids: z.array(z.string().uuid()),
-    week_start_date: z.string(),
+    success: z.boolean(),
+    xero_timesheet_id: z.string().nullable(),
+    xero_leave_ids: z.array(z.string()).nullish(),
+    entries_posted: z.number().int(),
+    work_hours: z.number().gt(-100000000).lt(100000000),
+    other_leave_hours: z.number().gt(-100000000).lt(100000000),
+    annual_sick_hours: z.number().gt(-100000000).lt(100000000),
+    unpaid_hours: z.number().gt(-100000000).lt(100000000),
+    errors: z.array(z.string()),
   })
   .passthrough()
 const ModernStaff = z
@@ -3135,6 +3145,7 @@ export const schemas = {
   PayRunSyncResponseRequest,
   PayRunSyncResponse,
   PostWeekToXeroRequest,
+  PostWeekToXeroResponse,
   ModernStaff,
   StaffListResponse,
   WeeklyStaffDataWeeklyHours,
@@ -7500,9 +7511,7 @@ Returns:
     method: 'post',
     path: '/timesheets/api/payroll/post-staff-week/',
     alias: 'timesheets_api_payroll_post_staff_week_create',
-    description: `Start posting timesheets. Returns a task_id to use with the stream endpoint.
-
-Use GET /api/payroll/post-staff-week/stream/{task_id}/ to receive SSE progress.`,
+    description: `Post a week&#x27;s timesheet to Xero Payroll.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -7511,7 +7520,17 @@ Use GET /api/payroll/post-staff-week/stream/{task_id}/ to receive SSE progress.`
         schema: PostWeekToXeroRequest,
       },
     ],
-    response: z.void(),
+    response: PostWeekToXeroResponse,
+    errors: [
+      {
+        status: 400,
+        schema: ClientErrorResponse,
+      },
+      {
+        status: 500,
+        schema: ClientErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',
