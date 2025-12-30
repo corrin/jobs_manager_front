@@ -657,7 +657,7 @@ async function handleCreateLine(line: CostLine) {
         unit_cost: line.unit_cost,
         unit_rev: line.unit_rev,
         accounting_date: toLocalDateString(),
-        ext_refs: line.ext_refs || {},
+        ext_refs: (line.ext_refs as Record<string, unknown>) || {},
         meta: { source: 'manual_adjustment' },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),

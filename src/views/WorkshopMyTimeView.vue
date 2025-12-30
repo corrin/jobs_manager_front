@@ -513,10 +513,11 @@ function getCalendarEventModal(): CalendarViewEventModalRef | null {
   if (!instance) return null
   const publicRefs = instance.$refs as Record<string, unknown> | undefined
   const internalRefs = (instance as { $?: { refs?: Record<string, unknown> } }).$?.refs
+  const instanceRecord = instance as unknown as Record<string, unknown>
   const modal =
     (publicRefs?.eventModal as CalendarViewEventModalRef | undefined) ??
     (internalRefs?.eventModal as CalendarViewEventModalRef | undefined) ??
-    ((instance as Record<string, unknown>).eventModal as CalendarViewEventModalRef | undefined)
+    (instanceRecord.eventModal as CalendarViewEventModalRef | undefined)
   return modal ?? null
 }
 
