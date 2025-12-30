@@ -22,7 +22,6 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Clock3,
   Shuffle,
   Pencil,
   Ban,
@@ -51,9 +50,7 @@ type CalendarViewEventModalRef = {
 }
 type CalendarViewInstance = (ComponentPublicInstance & { $refs?: Record<string, unknown> }) | null
 
-const anchorDate = ref(new Date())
 const selectedDate = ref(formatDateKey(new Date()))
-const isWeekLoading = ref(false)
 const isDayLoading = ref(false)
 const isSubmitting = ref(false)
 const editingEntryId = ref<string | null>(null)
@@ -87,21 +84,6 @@ const DEFAULT_SLOT_MINUTES = 30
 const calendarViewRef = ref<CalendarViewInstance>(null)
 let calendarModalSuppressionFrame: number | null = null
 
-const weekStart = computed(() => startOfWeek(anchorDate.value))
-const weekDays = computed(() => {
-  const start = new Date(weekStart.value)
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(start)
-    d.setDate(start.getDate() + i)
-    const key = formatDateKey(d)
-    return {
-      key,
-      label: formatDayLabel(d),
-      title: formatFullDate(d),
-    }
-  })
-})
-
 const selectedEntries = computed(() => dailyData.value[selectedDate.value]?.entries ?? [])
 const filteredJobs = computed(() => {
   const term = jobSearch.value.trim().toLowerCase()
@@ -133,15 +115,6 @@ const formDurationHours = computed(() =>
   calculateDurationHours(formState.startTime, formState.endTime),
 )
 
-function startOfWeek(date: Date) {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = day === 0 ? -6 : 1 - day
-  d.setDate(d.getDate() + diff)
-  d.setHours(0, 0, 0, 0)
-  return d
-}
-
 function formatDateKey(date: Date): string {
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
@@ -150,10 +123,6 @@ function formatDateKey(date: Date): string {
 
 function parseDateKey(key: string): Date {
   return new Date(`${key}T00:00:00`)
-}
-
-function formatDayLabel(date: Date): string {
-  return date.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric' })
 }
 
 function formatFullDate(date: Date): string {
@@ -434,12 +403,6 @@ async function loadJobs() {
   }
 }
 
-async function loadWeek() {
-  isWeekLoading.value = true
-  await Promise.all(weekDays.value.map((day) => loadDay(day.key, true)))
-  isWeekLoading.value = false
-}
-
 async function loadDay(dateKey: string, silent = false) {
   const existing = dailyData.value[dateKey] || { entries: [], summary: null }
   dailyData.value = {
@@ -539,13 +502,9 @@ function selectDay(dateKey: string) {
   selectedDate.value = dateKey
 }
 
-function shiftWeek(delta: number) {
-  const newAnchor = new Date(anchorDate.value)
-  newAnchor.setDate(newAnchor.getDate() + delta * 7)
-  anchorDate.value = newAnchor
-
+function shiftDay(delta: number) {
   const currentSelected = parseDateKey(selectedDate.value)
-  currentSelected.setDate(currentSelected.getDate() + delta * 7)
+  currentSelected.setDate(currentSelected.getDate() + delta)
   selectedDate.value = formatDateKey(currentSelected)
 }
 
@@ -596,14 +555,6 @@ function scheduleModalSuppression() {
   }
   calendarModalSuppressionFrame = window.requestAnimationFrame(attempt)
 }
-
-watch(
-  weekDays,
-  () => {
-    void loadWeek()
-  },
-  { immediate: true },
-)
 
 watch(
   selectedDate,
@@ -664,15 +615,15 @@ onBeforeUnmount(() => {
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <Button variant="ghost" size="sm" class="h-9" @click="shiftWeek(-1)">
+            <Button variant="ghost" size="sm" class="h-9" @click="shiftDay(-1)">
               <ChevronLeft class="h-4 w-4 mr-1" />
-              Previous week
+              Previous day
             </Button>
             <Badge variant="outline" class="px-3 py-1 text-sm">
-              Week of {{ formatFullDate(weekStart) }}
+              {{ formatFullDate(parseDateKey(selectedDate)) }}
             </Badge>
-            <Button variant="ghost" size="sm" class="h-9" @click="shiftWeek(1)">
-              Next week
+            <Button variant="ghost" size="sm" class="h-9" @click="shiftDay(1)">
+              Next day
               <ChevronRight class="h-4 w-4 ml-1" />
             </Button>
           </div>
@@ -680,67 +631,6 @@ onBeforeUnmount(() => {
       </header>
 
       <main class="flex-1 max-h-none min-h-full px-4 py-4 sm:px-6 space-y-4">
-        <Card>
-          <CardHeader class="flex items-center justify-between">
-            <CardTitle class="flex items-center gap-2">
-              <Clock3 class="h-5 w-5" />
-              Week overview
-            </CardTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              class="h-8 w-8"
-              :disabled="isWeekLoading"
-              @click="loadWeek"
-            >
-              <RefreshCcw class="h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
-              <button
-                v-for="day in weekDays"
-                :key="day.key"
-                class="text-left rounded-lg border bg-card px-3 py-3 transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
-                :class="selectedDate === day.key ? 'border-primary ring-2 ring-primary/20' : ''"
-                @click="selectDay(day.key)"
-              >
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-xs text-muted-foreground">{{ day.label }}</p>
-                    <p class="text-sm font-semibold">{{ day.title }}</p>
-                  </div>
-                  <Badge v-if="selectedDate === day.key" variant="secondary" class="text-xs"
-                    >Selected</Badge
-                  >
-                </div>
-                <div class="mt-2 text-sm text-muted-foreground flex items-center gap-2">
-                  <span class="font-semibold text-foreground">
-                    {{
-                      dailyData[day.key]?.summary?.total_hours != null
-                        ? dailyData[day.key]?.summary?.total_hours.toFixed(2)
-                        : '0.00'
-                    }}
-                    h
-                  </span>
-                  <span class="text-muted-foreground/70">·</span>
-                  <span>
-                    {{
-                      dailyData[day.key]?.entries
-                        ? new Set(dailyData[day.key]?.entries.map((e) => e.job_id)).size
-                        : 0
-                    }}
-                    jobs
-                  </span>
-                </div>
-                <div v-if="dailyData[day.key]?.loading || isWeekLoading" class="mt-2">
-                  <Skeleton class="h-2 w-full" />
-                </div>
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-
         <Card class="h-auto">
           <CardHeader class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
