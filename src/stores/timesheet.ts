@@ -8,12 +8,16 @@ import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import { FeatureFlagsService } from '@/services/feature-flags.service'
 import { validateFields } from '@/utils/contractValidation'
+import {
+  type RateMultiplierMetaRecord,
+  getRateMultiplierFromMeta,
+  setRateMultiplierOnMeta,
+} from '@/utils/wageRateMultiplier'
 
-type CostLineMeta = {
+type CostLineMeta = RateMultiplierMetaRecord & {
   date?: string
   staff_id?: string
   is_billable?: boolean
-  rate_multiplier?: number
 }
 type CostLine = z.infer<typeof schemas.CostLine>
 type Staff = z.infer<typeof schemas.ModernStaff>
@@ -425,12 +429,14 @@ export const useTimesheetStore = defineStore('timesheet', () => {
         unit_cost: entryData.wageRate,
         unit_rev: entryData.chargeOutRate,
         accounting_date: accountingDate,
-        meta: {
-          staff_id: selectedStaffId.value,
-          date: selectedDate.value,
-          is_billable: entryData.isBillable,
-          rate_multiplier: entryData.rateMultiplier || 1.0,
-        },
+        meta: setRateMultiplierOnMeta(
+          {
+            staff_id: selectedStaffId.value,
+            date: selectedDate.value,
+            is_billable: entryData.isBillable,
+          },
+          entryData.rateMultiplier || 1.0,
+        ),
       }
 
       const newCostLine = (await api.job_rest_jobs_cost_sets_actual_cost_lines_create(
@@ -490,11 +496,15 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       if (updates.isBillable !== undefined || updates.rateMultiplier !== undefined) {
         const existingLine = lines.value.find((line) => line.id === entryId)
         const existingMeta = existingLine?.meta as CostLineMeta | undefined
-        updatePayload.meta = {
+        const mergedMeta = {
           ...existingMeta,
           ...(updates.isBillable !== undefined && { is_billable: updates.isBillable }),
-          ...(updates.rateMultiplier !== undefined && { rate_multiplier: updates.rateMultiplier }),
         }
+        const fallbackMultiplier = getRateMultiplierFromMeta(existingMeta)
+        updatePayload.meta = setRateMultiplierOnMeta(
+          mergedMeta,
+          updates.rateMultiplier !== undefined ? updates.rateMultiplier : fallbackMultiplier,
+        )
       }
 
       const updatedCostLine = (await api.job_rest_cost_lines_partial_update(updatePayload, {

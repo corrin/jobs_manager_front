@@ -755,6 +755,7 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/CompanyDefaultsRequest'
+        required: true
       security:
         - cookieAuth: []
       responses:
@@ -804,36 +805,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CompanyDefaults'
-          description: ''
-  /api/company-defaults/schema/:
-    get:
-      operationId: api_company_defaults_schema_retrieve
-      description: Return schema metadata for CompanyDefaults fields.
-      tags:
-        - api
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompanyDefaultsSchema'
-              examples:
-                ExampleResponse:
-                  value:
-                    sections:
-                      - key: general
-                        title: General Settings
-                        order: 1
-                        fields:
-                          - key: company_name
-                            label: Company Name
-                            type: text
-                            required: true
-                            help_text: ''
-                            section: general
-                  summary: Example Response
           description: ''
   /api/workflow/ai-providers/:
     get:
@@ -1139,7 +1110,6 @@ paths:
         - api
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1173,7 +1143,6 @@ paths:
         - api
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1209,7 +1178,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1245,7 +1213,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1253,13 +1220,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/AppError'
           description: ''
-  /api/workflow/xero-pay-items/:
+  /api/workflow/payroll-categories/:
     get:
-      operationId: api_workflow_xero_pay_items_list
+      operationId: api_workflow_payroll_categories_list
       description: |-
-        API endpoint for Xero pay items (earnings rates and leave types).
+        API endpoint for PayrollCategory CRUD operations.
 
-        Read-only - these are synced from Xero, not created locally.
+        Provides standard CRUD for managing payroll category mappings
+        that link job types and work rates to Xero payroll posting behavior.
       tags:
         - api
       security:
@@ -1271,22 +1239,52 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/XeroPayItem'
+                  $ref: '#/components/schemas/PayrollCategory'
           description: ''
-  /api/workflow/xero-pay-items/{id}/:
-    get:
-      operationId: api_workflow_xero_pay_items_retrieve
+    post:
+      operationId: api_workflow_payroll_categories_create
       description: |-
-        API endpoint for Xero pay items (earnings rates and leave types).
+        API endpoint for PayrollCategory CRUD operations.
 
-        Read-only - these are synced from Xero, not created locally.
+        Provides standard CRUD for managing payroll category mappings
+        that link job types and work rates to Xero payroll posting behavior.
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollCategoryCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollCategoryCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollCategoryCreateUpdateRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollCategoryCreateUpdate'
+          description: ''
+  /api/workflow/payroll-categories/{id}/:
+    get:
+      operationId: api_workflow_payroll_categories_retrieve
+      description: |-
+        API endpoint for PayrollCategory CRUD operations.
+
+        Provides standard CRUD for managing payroll category mappings
+        that link job types and work rates to Xero payroll posting behavior.
       parameters:
         - in: path
           name: id
           schema:
-            type: string
-            format: uuid
-          description: A UUID string identifying this Xero Pay Item.
+            type: integer
+          description: A unique integer value identifying this Payroll Category.
           required: true
       tags:
         - api
@@ -1297,8 +1295,102 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/XeroPayItem'
+                $ref: '#/components/schemas/PayrollCategory'
           description: ''
+    put:
+      operationId: api_workflow_payroll_categories_update
+      description: |-
+        API endpoint for PayrollCategory CRUD operations.
+
+        Provides standard CRUD for managing payroll category mappings
+        that link job types and work rates to Xero payroll posting behavior.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this Payroll Category.
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollCategoryCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollCategoryCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollCategoryCreateUpdateRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollCategoryCreateUpdate'
+          description: ''
+    patch:
+      operationId: api_workflow_payroll_categories_partial_update
+      description: |-
+        API endpoint for PayrollCategory CRUD operations.
+
+        Provides standard CRUD for managing payroll category mappings
+        that link job types and work rates to Xero payroll posting behavior.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this Payroll Category.
+          required: true
+      tags:
+        - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollCategoryCreateUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollCategoryCreateUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollCategoryCreateUpdateRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollCategoryCreateUpdate'
+          description: ''
+    delete:
+      operationId: api_workflow_payroll_categories_destroy
+      description: |-
+        API endpoint for PayrollCategory CRUD operations.
+
+        Provides standard CRUD for managing payroll category mappings
+        that link job types and work rates to Xero payroll posting behavior.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this Payroll Category.
+          required: true
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/xero/create_invoice/{job_id}:
     post:
       operationId: api_xero_create_invoice_create
@@ -1314,7 +1406,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1355,7 +1446,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1408,7 +1498,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1454,7 +1543,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1495,7 +1583,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1530,7 +1617,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1600,7 +1686,6 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1630,7 +1715,6 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2531,6 +2615,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
+  /job/api/company_defaults/:
+    get:
+      operationId: job_api_company_defaults_retrieve
+      description: |-
+        API endpoint to fetch company default settings.
+        Retrieves the singleton CompanyDefaults instance.
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
   /job/api/job/{job_id}/assignment:
     post:
       operationId: job_api_job_assignment_create
@@ -2666,7 +2763,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2701,7 +2797,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -2723,7 +2818,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -2765,7 +2859,6 @@ paths:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2801,7 +2894,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3288,7 +3380,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3408,7 +3499,6 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3433,7 +3523,6 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3468,7 +3557,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3498,7 +3586,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3533,7 +3620,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3573,7 +3659,6 @@ paths:
               $ref: '#/components/schemas/PatchedJobDeltaEnvelopeRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3602,7 +3687,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3632,7 +3716,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3737,7 +3820,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3773,7 +3855,6 @@ paths:
               $ref: '#/components/schemas/QuoteRevisionRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3797,7 +3878,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3826,7 +3906,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3859,7 +3938,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3889,7 +3967,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3931,7 +4008,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3972,7 +4048,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4011,7 +4086,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -4059,7 +4133,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4120,7 +4193,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4176,7 +4248,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -4219,7 +4290,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4250,7 +4320,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4280,7 +4349,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4355,7 +4423,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4397,7 +4464,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4448,7 +4514,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4490,7 +4555,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4519,7 +4583,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4555,7 +4618,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4697,7 +4759,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4720,7 +4781,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4743,7 +4803,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4765,7 +4824,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4797,7 +4855,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6286,7 +6343,6 @@ paths:
         - rest
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6340,8 +6396,16 @@ paths:
   /timesheets/api/payroll/pay-runs/:
     get:
       operationId: timesheets_api_payroll_pay_runs_retrieve
-      description: Return all pay runs for the configured payroll calendar.
-      summary: List pay runs
+      description: Return pay run data for the requested week if it exists.
+      summary: Get pay run for a week
+      parameters:
+        - in: query
+          name: week_start_date
+          schema:
+            type: string
+            format: date
+          description: Monday of the week (YYYY-MM-DD)
+          required: true
       tags:
         - timesheets
       security:
@@ -6351,7 +6415,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PayRunListResponse'
+                $ref: '#/components/schemas/PayRunForWeekResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
         '500':
           content:
@@ -6526,7 +6596,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
+      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
       parameters:
         - in: query
           name: start_date
@@ -6545,6 +6615,59 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WeeklyTimesheetData'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientErrorResponse'
+          description: ''
+    post:
+      operationId: timesheets_api_weekly_create
+      description: |-
+        Submit paid absence request.
+
+        Expected payload:
+        {
+            "staff_id": "uuid",
+            "start_date": "YYYY-MM-DD",
+            "end_date": "YYYY-MM-DD",
+            "leave_type": "annual|sick|other",
+            "hours_per_day": 8.0,
+            "description": "Optional description"
+        }
+      summary: Submit paid absence
+      tags:
+        - timesheets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: {}
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              additionalProperties: {}
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: {}
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
           description: ''
         '400':
           content:
@@ -6580,7 +6703,6 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6610,7 +6732,6 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -7737,7 +7858,7 @@ components:
       properties:
         company_name:
           type: string
-          readOnly: true
+          maxLength: 255
         company_acronym:
           type: string
           nullable: true
@@ -7815,20 +7936,10 @@ components:
           nullable: true
           description: The Xero tenant ID to use for this company
           maxLength: 100
-        xero_shortcode:
-          type: string
-          nullable: true
-          description: Xero organisation shortcode for deep linking (e.g., '!8-5Xl')
-          maxLength: 20
         xero_payroll_calendar_name:
           type: string
           description: Name of Xero Payroll calendar to use (e.g., 'Weekly 2025')
           maxLength: 100
-        xero_payroll_calendar_id:
-          type: string
-          format: uuid
-          nullable: true
-          description: Cached Xero Payroll calendar ID (set by xero --setup command)
         mon_start:
           type: string
           format: time
@@ -8000,6 +8111,10 @@ components:
     CompanyDefaultsRequest:
       type: object
       properties:
+        company_name:
+          type: string
+          minLength: 1
+          maxLength: 255
         company_acronym:
           type: string
           nullable: true
@@ -8078,21 +8193,11 @@ components:
           nullable: true
           description: The Xero tenant ID to use for this company
           maxLength: 100
-        xero_shortcode:
-          type: string
-          nullable: true
-          description: Xero organisation shortcode for deep linking (e.g., '!8-5Xl')
-          maxLength: 20
         xero_payroll_calendar_name:
           type: string
           minLength: 1
           description: Name of Xero Payroll calendar to use (e.g., 'Weekly 2025')
           maxLength: 100
-        xero_payroll_calendar_id:
-          type: string
-          format: uuid
-          nullable: true
-          description: Cached Xero Payroll calendar ID (set by xero --setup command)
         mon_start:
           type: string
           format: time
@@ -8225,16 +8330,8 @@ components:
           exclusiveMinimum: true
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
-    CompanyDefaultsSchema:
-      type: object
-      description: Serializer for the complete schema response.
-      properties:
-        sections:
-          type: array
-          items:
-            $ref: '#/components/schemas/SettingsSection'
       required:
-        - sections
+        - company_name
     CompleteJob:
       type: object
       properties:
@@ -8357,12 +8454,6 @@ components:
           type: boolean
           description: Indicates whether this line is approved or not by an office
             staff (when the line is created by a workshop worker)
-        xero_pay_item:
-          type: string
-          format: uuid
-          nullable: true
-          description: The Xero pay item for this time entry (leave type, earnings
-            rate, etc.)
         total_cost:
           type: number
           format: double
@@ -8447,12 +8538,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-        xero_pay_item:
-          type: string
-          format: uuid
-          nullable: true
-          description: The Xero pay item for this time entry (leave type, earnings
-            rate, etc.)
       required:
         - accounting_date
         - created_at
@@ -8499,12 +8584,6 @@ components:
         meta:
           type: object
           additionalProperties: {}
-        xero_pay_item:
-          type: string
-          format: uuid
-          nullable: true
-          description: The Xero pay item for this time entry (leave type, earnings
-            rate, etc.)
       required:
         - accounting_date
         - kind
@@ -8575,12 +8654,6 @@ components:
           type: boolean
           description: Indicates whether this line is approved or not by an office
             staff (when the line is created by a workshop worker)
-        xero_pay_item:
-          type: string
-          format: uuid
-          nullable: true
-          description: The Xero pay item for this time entry (leave type, earnings
-            rate, etc.)
       required:
         - accounting_date
         - kind
@@ -8692,9 +8765,6 @@ components:
         payment_date:
           type: string
           format: date
-        xero_url:
-          type: string
-          description: Deep link to pay run in Xero
       required:
         - id
         - payment_date
@@ -8702,7 +8772,6 @@ components:
         - period_start_date
         - status
         - xero_id
-        - xero_url
     CustomTokenObtainPairRequest:
       type: object
       description: Custom serializer that accepts username and maps it to email
@@ -9535,26 +9604,17 @@ components:
           readOnly: true
         shop_job:
           type: boolean
-          description: Indicates if this is a shop job (belongs to shop client).
+          description: Indicates if this is a shop job (no client).
           readOnly: true
         rejected_flag:
           type: boolean
           description: Indicates if this job was rejected (shown in Archived with
             rejected styling)
-        default_xero_pay_item_id:
-          type: string
-          format: uuid
-          nullable: true
-        default_xero_pay_item_name:
-          type: string
-          readOnly: true
-          nullable: true
       required:
         - charge_out_rate
         - client_name
         - contact_name
         - created_at
-        - default_xero_pay_item_name
         - fully_invoiced
         - id
         - invoices
@@ -10341,15 +10401,6 @@ components:
           $ref: '#/components/schemas/JobClientHeader'
         quoted:
           type: boolean
-        default_xero_pay_item_id:
-          type: string
-          format: uuid
-          readOnly: true
-          nullable: true
-        default_xero_pay_item_name:
-          type: string
-          readOnly: true
-          nullable: true
         job_number:
           type: integer
           maximum: 2147483647
@@ -10402,8 +10453,6 @@ components:
             rejected styling)
       required:
         - client
-        - default_xero_pay_item_id
-        - default_xero_pay_item_name
         - job_id
         - job_number
         - name
@@ -11353,16 +11402,12 @@ components:
           type: number
           format: double
           minimum: 0
-        xero_pay_item_id:
-          type: string
-          format: uuid
       required:
         - date
         - description
         - hours
         - job_id
         - staff_id
-        - xero_pay_item_id
     ModernTimesheetEntryPostResponse:
       type: object
       description: Serializer for timesheet entry POST response
@@ -11422,18 +11467,9 @@ components:
           nullable: true
           description: Get leave type if this is a payroll leave job
           readOnly: true
-        default_xero_pay_item_id:
-          type: string
-          format: uuid
-          readOnly: true
-        default_xero_pay_item_name:
-          type: string
-          readOnly: true
       required:
         - charge_out_rate
         - client_name
-        - default_xero_pay_item_id
-        - default_xero_pay_item_name
         - has_actual_costset
         - id
         - job_number
@@ -11786,6 +11822,10 @@ components:
     PatchedCompanyDefaultsRequest:
       type: object
       properties:
+        company_name:
+          type: string
+          minLength: 1
+          maxLength: 255
         company_acronym:
           type: string
           nullable: true
@@ -11864,21 +11904,11 @@ components:
           nullable: true
           description: The Xero tenant ID to use for this company
           maxLength: 100
-        xero_shortcode:
-          type: string
-          nullable: true
-          description: Xero organisation shortcode for deep linking (e.g., '!8-5Xl')
-          maxLength: 20
         xero_payroll_calendar_name:
           type: string
           minLength: 1
           description: Name of Xero Payroll calendar to use (e.g., 'Weekly 2025')
           maxLength: 100
-        xero_payroll_calendar_id:
-          type: string
-          format: uuid
-          nullable: true
-          description: Cached Xero Payroll calendar ID (set by xero --setup command)
         mon_start:
           type: string
           format: time
@@ -12052,12 +12082,6 @@ components:
         meta:
           type: object
           additionalProperties: {}
-        xero_pay_item:
-          type: string
-          format: uuid
-          nullable: true
-          description: The Xero pay item for this time entry (leave type, earnings
-            rate, etc.)
     PatchedDjangoJobRequest:
       type: object
       properties:
@@ -12116,6 +12140,55 @@ components:
           minLength: 1
         metadata:
           description: Extra data like streaming status, processing time, etc.
+    PatchedPayrollCategoryCreateUpdateRequest:
+      type: object
+      description: Serializer for creating and updating PayrollCategory instances.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Internal identifier (e.g., 'annual_leave', 'work_ordinary')
+          maxLength: 50
+        display_name:
+          type: string
+          minLength: 1
+          description: Human-readable name (e.g., 'Annual Leave', 'Ordinary Time')
+          maxLength: 100
+        job_name_pattern:
+          type: string
+          nullable: true
+          description: Substring to match in job name (e.g., 'annual leave'). Case-insensitive.
+            Leave blank for work rate categories.
+          maxLength: 100
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Rate multiplier for work entries (e.g., 1.0, 1.5, 2.0). Leave
+            blank for leave type categories.
+        posts_to_xero:
+          type: boolean
+          description: Whether entries in this category are posted to Xero payroll
+        uses_leave_api:
+          type: boolean
+          description: True = use Xero Leave API (for leave with balances). False
+            = use Xero Timesheets API.
+        xero_leave_type_name:
+          type: string
+          nullable: true
+          description: Xero Leave Type name (looked up at runtime to get ID). Required
+            if uses_leave_api=True.
+          maxLength: 100
+        xero_earnings_rate_name:
+          type: string
+          nullable: true
+          description: Xero Earnings Rate name (looked up at runtime to get ID). Required
+            if uses_leave_api=False and posts_to_xero=True.
+          maxLength: 100
     PatchedPurchaseOrderUpdateRequest:
       type: object
       description: Serializer for updating purchase orders.
@@ -12455,17 +12528,25 @@ components:
           type: string
           nullable: true
           maxLength: 255
+        start_time:
+          type: string
+          format: time
+          nullable: true
+        end_time:
+          type: string
+          format: time
+          nullable: true
         is_billable:
           type: boolean
-        rate_multiplier:
+        wage_rate_multiplier:
           type: number
           format: double
           maximum: 100
           minimum: 0.1
           exclusiveMaximum: true
-    PayRunListItem:
+    PayRunDetails:
       type: object
-      description: Serializer for a pay run in the list response.
+      description: Serializer representing details from a Xero pay run.
       properties:
         id:
           type: string
@@ -12475,6 +12556,9 @@ components:
           type: string
           format: uuid
           description: Xero pay run ID
+        payroll_calendar_id:
+          type: string
+          nullable: true
         period_start_date:
           type: string
           format: date
@@ -12486,27 +12570,34 @@ components:
           format: date
         pay_run_status:
           type: string
-        xero_url:
+        pay_run_type:
           type: string
-          description: Deep link to pay run in Xero
+          nullable: true
       required:
         - id
         - pay_run_status
+        - pay_run_type
         - payment_date
+        - payroll_calendar_id
         - period_end_date
         - period_start_date
         - xero_id
-        - xero_url
-    PayRunListResponse:
+    PayRunForWeekResponse:
       type: object
-      description: Response serializer for listing all pay runs.
+      description: Response serializer when fetching pay run data for a week.
       properties:
-        pay_runs:
-          type: array
-          items:
-            $ref: '#/components/schemas/PayRunListItem'
+        exists:
+          type: boolean
+        pay_run:
+          allOf:
+            - $ref: '#/components/schemas/PayRunDetails'
+          nullable: true
+        warning:
+          type: string
+          nullable: true
       required:
-        - pay_runs
+        - exists
+        - pay_run
     PayRunSyncResponse:
       type: object
       description: Response payload after refreshing cached pay runs.
@@ -12547,6 +12638,162 @@ components:
         - fetched
         - synced
         - updated
+    PayrollCategory:
+      type: object
+      description: Serializer for reading PayrollCategory instances.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Internal identifier (e.g., 'annual_leave', 'work_ordinary')
+          maxLength: 50
+        display_name:
+          type: string
+          description: Human-readable name (e.g., 'Annual Leave', 'Ordinary Time')
+          maxLength: 100
+        job_name_pattern:
+          type: string
+          nullable: true
+          description: Substring to match in job name (e.g., 'annual leave'). Case-insensitive.
+            Leave blank for work rate categories.
+          maxLength: 100
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Rate multiplier for work entries (e.g., 1.0, 1.5, 2.0). Leave
+            blank for leave type categories.
+        posts_to_xero:
+          type: boolean
+          description: Whether entries in this category are posted to Xero payroll
+        uses_leave_api:
+          type: boolean
+          description: True = use Xero Leave API (for leave with balances). False
+            = use Xero Timesheets API.
+        xero_leave_type_name:
+          type: string
+          nullable: true
+          description: Xero Leave Type name (looked up at runtime to get ID). Required
+            if uses_leave_api=True.
+          maxLength: 100
+        xero_earnings_rate_name:
+          type: string
+          nullable: true
+          description: Xero Earnings Rate name (looked up at runtime to get ID). Required
+            if uses_leave_api=False and posts_to_xero=True.
+          maxLength: 100
+      required:
+        - display_name
+        - id
+        - name
+    PayrollCategoryCreateUpdate:
+      type: object
+      description: Serializer for creating and updating PayrollCategory instances.
+      properties:
+        name:
+          type: string
+          description: Internal identifier (e.g., 'annual_leave', 'work_ordinary')
+          maxLength: 50
+        display_name:
+          type: string
+          description: Human-readable name (e.g., 'Annual Leave', 'Ordinary Time')
+          maxLength: 100
+        job_name_pattern:
+          type: string
+          nullable: true
+          description: Substring to match in job name (e.g., 'annual leave'). Case-insensitive.
+            Leave blank for work rate categories.
+          maxLength: 100
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Rate multiplier for work entries (e.g., 1.0, 1.5, 2.0). Leave
+            blank for leave type categories.
+        posts_to_xero:
+          type: boolean
+          description: Whether entries in this category are posted to Xero payroll
+        uses_leave_api:
+          type: boolean
+          description: True = use Xero Leave API (for leave with balances). False
+            = use Xero Timesheets API.
+        xero_leave_type_name:
+          type: string
+          nullable: true
+          description: Xero Leave Type name (looked up at runtime to get ID). Required
+            if uses_leave_api=True.
+          maxLength: 100
+        xero_earnings_rate_name:
+          type: string
+          nullable: true
+          description: Xero Earnings Rate name (looked up at runtime to get ID). Required
+            if uses_leave_api=False and posts_to_xero=True.
+          maxLength: 100
+      required:
+        - display_name
+        - name
+    PayrollCategoryCreateUpdateRequest:
+      type: object
+      description: Serializer for creating and updating PayrollCategory instances.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Internal identifier (e.g., 'annual_leave', 'work_ordinary')
+          maxLength: 50
+        display_name:
+          type: string
+          minLength: 1
+          description: Human-readable name (e.g., 'Annual Leave', 'Ordinary Time')
+          maxLength: 100
+        job_name_pattern:
+          type: string
+          nullable: true
+          description: Substring to match in job name (e.g., 'annual leave'). Case-insensitive.
+            Leave blank for work rate categories.
+          maxLength: 100
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Rate multiplier for work entries (e.g., 1.0, 1.5, 2.0). Leave
+            blank for leave type categories.
+        posts_to_xero:
+          type: boolean
+          description: Whether entries in this category are posted to Xero payroll
+        uses_leave_api:
+          type: boolean
+          description: True = use Xero Leave API (for leave with balances). False
+            = use Xero Timesheets API.
+        xero_leave_type_name:
+          type: string
+          nullable: true
+          description: Xero Leave Type name (looked up at runtime to get ID). Required
+            if uses_leave_api=True.
+          maxLength: 100
+        xero_earnings_rate_name:
+          type: string
+          nullable: true
+          description: Xero Earnings Rate name (looked up at runtime to get ID). Required
+            if uses_leave_api=False and posts_to_xero=True.
+          maxLength: 100
+      required:
+        - display_name
+        - name
     PostWeekToXeroRequest:
       type: object
       description: Request serializer for posting weekly timesheets to Xero
@@ -13822,51 +14069,6 @@ components:
         - job_number
         - title
         - updated_at
-    SettingsField:
-      type: object
-      description: Serializer for individual field metadata.
-      properties:
-        key:
-          type: string
-        label:
-          type: string
-        type:
-          type: string
-        required:
-          type: boolean
-        help_text:
-          type: string
-        section:
-          type: string
-        read_only:
-          type: boolean
-      required:
-        - help_text
-        - key
-        - label
-        - read_only
-        - required
-        - section
-        - type
-    SettingsSection:
-      type: object
-      description: Serializer for a section containing fields.
-      properties:
-        key:
-          type: string
-        title:
-          type: string
-        order:
-          type: integer
-        fields:
-          type: array
-          items:
-            $ref: '#/components/schemas/SettingsField'
-      required:
-        - fields
-        - key
-        - order
-        - title
     SourceEnum:
       enum:
         - purchase_order
@@ -15307,13 +15509,6 @@ components:
           readOnly: true
           description: Indicates whether this line is approved or not by an office
             staff (when the line is created by a workshop worker)
-        xero_pay_item:
-          type: string
-          format: uuid
-          readOnly: true
-          nullable: true
-          description: The Xero pay item for this time entry (leave type, earnings
-            rate, etc.)
         total_cost:
           type: number
           format: double
@@ -15350,10 +15545,6 @@ components:
           format: double
           description: Get staff wage rate from metadata staff_id
           readOnly: true
-        xero_pay_item_name:
-          type: string
-          readOnly: true
-          minLength: 1
       required:
         - accounting_date
         - approved
@@ -15378,8 +15569,6 @@ components:
         - xero_expense_id
         - xero_last_modified
         - xero_last_synced
-        - xero_pay_item
-        - xero_pay_item_name
         - xero_time_id
     TokenObtainPairResponse:
       type: object
@@ -15661,14 +15850,7 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        total_bereavement_leave_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        weekly_cost:
+        total_other_leave_hours:
           type: number
           format: double
           maximum: 100000000
@@ -15681,16 +15863,15 @@ components:
         - staff_id
         - status
         - total_annual_leave_hours
-        - total_bereavement_leave_hours
         - total_billable_hours
         - total_billed_hours
         - total_hours
+        - total_other_leave_hours
         - total_overtime_1_5x_hours
         - total_overtime_2x_hours
         - total_scheduled_hours
         - total_sick_leave_hours
         - total_unbilled_hours
-        - weekly_cost
         - weekly_hours
     WeeklyStaffDataWeeklyHours:
       type: object
@@ -15769,7 +15950,7 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        bereavement_leave_hours:
+        other_leave_hours:
           type: number
           format: double
           maximum: 100000000
@@ -15778,11 +15959,11 @@ components:
           exclusiveMinimum: true
       required:
         - annual_leave_hours
-        - bereavement_leave_hours
         - billable_hours
         - billed_hours
         - day
         - hours
+        - other_leave_hours
         - overtime_1_5x_hours
         - overtime_2x_hours
         - scheduled_hours
@@ -15933,10 +16114,20 @@ components:
           type: string
           format: date
           readOnly: true
+        start_time:
+          type: string
+          format: time
+          readOnly: true
+          nullable: true
+        end_time:
+          type: string
+          format: time
+          readOnly: true
+          nullable: true
         is_billable:
           type: boolean
           readOnly: true
-        rate_multiplier:
+        wage_rate_multiplier:
           type: number
           format: double
           maximum: 100
@@ -15957,14 +16148,16 @@ components:
         - client_name
         - created_at
         - description
+        - end_time
         - hours
         - id
         - is_billable
         - job_id
         - job_name
         - job_number
-        - rate_multiplier
+        - start_time
         - updated_at
+        - wage_rate_multiplier
     WorkshopTimesheetEntryRequestRequest:
       type: object
       description: Serializer validating workshop timesheet create requests.
@@ -15985,10 +16178,18 @@ components:
           type: string
           nullable: true
           maxLength: 255
+        start_time:
+          type: string
+          format: time
+          nullable: true
+        end_time:
+          type: string
+          format: time
+          nullable: true
         is_billable:
           type: boolean
           default: true
-        rate_multiplier:
+        wage_rate_multiplier:
           type: number
           format: double
           maximum: 100
@@ -16223,64 +16424,6 @@ components:
           type: integer
       required:
         - items
-    XeroPayItem:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        xero_id:
-          type: string
-          description: Xero's UUID for this pay item
-          maxLength: 50
-        xero_tenant_id:
-          type: string
-          description: Xero tenant this pay item belongs to
-          maxLength: 255
-        name:
-          type: string
-          description: Display name (e.g., 'Ordinary Time', 'Annual Leave')
-          maxLength: 100
-        uses_leave_api:
-          type: boolean
-          description: True = Xero Leave API, False = Xero Timesheets API
-        multiplier:
-          type: number
-          format: double
-          maximum: 100
-          minimum: -100
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          nullable: true
-          description: Rate multiplier from Xero (1.0, 1.5, 2.0, etc.). NULL for leave
-            types.
-        xero_last_modified:
-          type: string
-          format: date-time
-          nullable: true
-          description: Last modified timestamp from Xero
-        xero_last_synced:
-          type: string
-          format: date-time
-          nullable: true
-          description: When we last synced this record from Xero
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-        - created_at
-        - id
-        - name
-        - updated_at
-        - uses_leave_api
-        - xero_id
-        - xero_tenant_id
     XeroQuote:
       type: object
       description: Simplified Quote serializer for xero_quote field

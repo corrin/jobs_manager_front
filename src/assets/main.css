@@ -413,3 +413,14 @@ body {
 .drag-handle:active {
   cursor: grabbing;
 }
+
+/* Workshop calendar: force light-blue blocks regardless of vendor classes */
+.vc-calendar .event-transition {
+  background-color: rgb(224 242 254) !important; /* sky-100 */
+  border-left: 4px solid rgb(14 165 233) !important; /* sky-500 */
+  color: rgb(30 41 59) !important; /* slate-800 */
+}
+
+.vc-calendar .event-transition:hover {
+  background-color: rgb(186 230 253) !important; /* sky-200 */
+}
