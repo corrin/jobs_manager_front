@@ -26,7 +26,8 @@ describe('useTimesheetEntryGrid', () => {
     } as unknown as Parameters<typeof createEntryFromRow>[0])
 
     expect(entry.rateMultiplier).toBe(1.5)
-    expect(entry.meta?.rate_multiplier).toBe(1.5)
+    expect(entry.meta?.wage_rate_multiplier).toBe(1.5)
+    expect(entry.meta?.rate_multiplier).toBeUndefined()
     expect(entry.wage).toBe(90) // 2 hours * 30 wageRate * 1.5x
   })
 
@@ -57,7 +58,8 @@ describe('useTimesheetEntryGrid', () => {
     } as unknown as Parameters<typeof createEntryFromRow>[0])
 
     expect(entry.rateMultiplier).toBe(2)
-    expect(entry.meta?.rate_multiplier).toBe(2)
+    expect(entry.meta?.wage_rate_multiplier).toBe(2)
+    expect(entry.meta?.rate_multiplier).toBeUndefined()
     expect(entry.wage).toBe(100)
   })
 })

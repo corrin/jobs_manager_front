@@ -6,6 +6,11 @@ import { jobService } from '../services/job.service'
 import { useJobsStore } from '../stores/jobs'
 import type { TimesheetEntryWithMeta, TimesheetEntryJobSelectionItem } from '../constants/timesheet'
 import { toast } from 'vue-sonner'
+import {
+  getRateMultiplierFromMeta,
+  setRateMultiplierOnMeta,
+  type RateMultiplierMetaRecord,
+} from '../utils/wageRateMultiplier'
 
 // Use the generated schemas
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
@@ -165,17 +170,19 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       total_cost: calculatedWage,
       total_rev: 0,
       ext_refs: {},
-      meta: {
-        date,
-        staff_id: staffMember.id,
-        rate_type: 'Ord',
-        rate_multiplier: rateMultiplier,
-        is_billable: true,
-        job_id: '',
-        job_number: 0,
-        job_name: '',
-        client_name: '',
-      },
+      meta: setRateMultiplierOnMeta(
+        {
+          date,
+          staff_id: staffMember.id,
+          rate_type: 'Ord',
+          is_billable: true,
+          job_id: '',
+          job_number: 0,
+          job_name: '',
+          client_name: '',
+        },
+        rateMultiplier,
+      ),
       job_id: '',
       jobId: '',
       job_number: 0,
@@ -302,7 +309,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
 
     // Type guard for meta object
     const metaObj = costLine.meta && typeof costLine.meta === 'object' ? costLine.meta : {}
-    const metaRec = metaObj as Record<string, unknown>
+    const metaRec = metaObj as RateMultiplierMetaRecord
 
     // Extract wage rate from unit_cost (which should be the staff wage rate)
     const wageRate = costLine.unit_cost ?? 0
@@ -339,9 +346,8 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     const dateValue =
       typeof metaRec['date'] === 'string' ? (metaRec['date'] as string) : costLine.accounting_date
 
-    // Get rate multiplier from backend data (rate_multiplier in meta)
-    const backendRateMultiplier =
-      typeof metaRec['rate_multiplier'] === 'number' ? (metaRec['rate_multiplier'] as number) : 1.0
+    // Get rate multiplier from backend data (preferring wage_rate_multiplier)
+    const backendRateMultiplier = getRateMultiplierFromMeta(metaRec)
     const hours = costLine.quantity ?? 0
 
     // ✅ ALWAYS USE CORRECT FORMULA: hours × rate_multiplier × staff_wage_rate
@@ -387,9 +393,8 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       total_rev: costLine.total_rev || 0,
       ext_refs: costLine.ext_refs || {},
       meta: {
-        ...metaObj,
+        ...setRateMultiplierOnMeta(metaRec, backendRateMultiplier),
         staff_id: staffId,
-        rate_multiplier: backendRateMultiplier,
         job_id: resolvedJobId,
         job_number: resolvedJobNumber,
         job_name: resolvedJobName,

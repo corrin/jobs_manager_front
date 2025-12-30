@@ -1098,8 +1098,10 @@ const WorkshopTimesheetEntry = z
     description: z.string(),
     hours: z.number().gt(-100000).lt(100000),
     accounting_date: z.string(),
+    start_time: z.string().nullable(),
+    end_time: z.string().nullable(),
     is_billable: z.boolean(),
-    rate_multiplier: z.number().gt(-100).lt(100),
+    wage_rate_multiplier: z.number().gt(-100).lt(100),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
   })
@@ -1126,8 +1128,10 @@ const WorkshopTimesheetEntryRequestRequest = z
     accounting_date: z.string(),
     hours: z.number().gte(0.01).lt(100000),
     description: z.string().max(255).nullish(),
+    start_time: z.string().nullish(),
+    end_time: z.string().nullish(),
     is_billable: z.boolean().optional().default(true),
-    rate_multiplier: z.number().gte(0.1).lt(100).optional().default(1),
+    wage_rate_multiplier: z.number().gte(0.1).lt(100).optional().default(1),
   })
   .passthrough()
 const PatchedWorkshopTimesheetEntryUpdateRequest = z
@@ -1137,8 +1141,10 @@ const PatchedWorkshopTimesheetEntryUpdateRequest = z
     accounting_date: z.string(),
     hours: z.number().gte(0.01).lt(100000),
     description: z.string().max(255).nullable(),
+    start_time: z.string().nullable(),
+    end_time: z.string().nullable(),
     is_billable: z.boolean(),
-    rate_multiplier: z.number().gte(0.1).lt(100),
+    wage_rate_multiplier: z.number().gte(0.1).lt(100),
   })
   .partial()
   .passthrough()
@@ -1155,8 +1161,8 @@ const PatchedCostLineCreateUpdateRequest = z
     unit_cost: z.number().gt(-100000000).lt(100000000),
     unit_rev: z.number().gt(-100000000).lt(100000000),
     accounting_date: z.string(),
-    ext_refs: z.unknown(),
-    meta: z.unknown(),
+    ext_refs: z.object({}).partial().passthrough(),
+    meta: z.object({}).partial().passthrough(),
   })
   .partial()
   .passthrough()
@@ -1168,8 +1174,8 @@ const CostLineCreateUpdate = z
     unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
     accounting_date: z.string(),
-    ext_refs: z.unknown().optional(),
-    meta: z.unknown().optional(),
+    ext_refs: z.object({}).partial().passthrough().optional(),
+    meta: z.object({}).partial().passthrough().optional(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
   })
@@ -1524,8 +1530,8 @@ const CostLineCreateUpdateRequest = z
     unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
     accounting_date: z.string(),
-    ext_refs: z.unknown().optional(),
-    meta: z.unknown().optional(),
+    ext_refs: z.object({}).partial().passthrough().optional(),
+    meta: z.object({}).partial().passthrough().optional(),
   })
   .passthrough()
 const QuoteRevisionsList = z
@@ -4933,6 +4939,15 @@ Query Parameters:
         schema: ClientErrorResponse,
       },
     ],
+  },
+  {
+    method: 'get',
+    path: '/job/api/company_defaults/',
+    alias: 'job_api_company_defaults_retrieve',
+    description: `API endpoint to fetch company default settings.
+Retrieves the singleton CompanyDefaults instance.`,
+    requestFormat: 'json',
+    response: z.void(),
   },
   {
     method: 'post',
