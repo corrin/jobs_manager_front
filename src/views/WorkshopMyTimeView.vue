@@ -552,9 +552,11 @@ function shiftWeek(delta: number) {
 function getCalendarEventModal(): CalendarViewEventModalRef | null {
   const instance = calendarViewRef.value
   if (!instance) return null
-  const refs = instance.$refs as Record<string, unknown> | undefined
+  const publicRefs = instance.$refs as Record<string, unknown> | undefined
+  const internalRefs = (instance as { $?: { refs?: Record<string, unknown> } }).$?.refs
   const modal =
-    (refs?.eventModal as CalendarViewEventModalRef | undefined) ??
+    (publicRefs?.eventModal as CalendarViewEventModalRef | undefined) ??
+    (internalRefs?.eventModal as CalendarViewEventModalRef | undefined) ??
     ((instance as Record<string, unknown>).eventModal as CalendarViewEventModalRef | undefined)
   return modal ?? null
 }
@@ -649,7 +651,7 @@ onBeforeUnmount(() => {
 
 <template>
   <AppLayout>
-    <div class="flex flex-col h-full min-h-0 bg-muted/10">
+    <div class="flex flex-col min-h-full bg-muted/10">
       <header class="border-b bg-background/95 backdrop-blur">
         <div
           class="px-4 py-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
@@ -677,7 +679,7 @@ onBeforeUnmount(() => {
         </div>
       </header>
 
-      <main class="flex-1 min-h-0 overflow-y-auto px-4 py-4 sm:px-6 space-y-4">
+      <main class="flex-1 max-h-none min-h-full px-4 py-4 sm:px-6 space-y-4">
         <Card>
           <CardHeader class="flex items-center justify-between">
             <CardTitle class="flex items-center gap-2">
@@ -739,7 +741,7 @@ onBeforeUnmount(() => {
           </CardContent>
         </Card>
 
-        <Card class="h-full">
+        <Card class="h-auto">
           <CardHeader class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle class="flex items-center gap-2">
@@ -886,8 +888,8 @@ onBeforeUnmount(() => {
                   </p>
                   <CalendarView
                     ref="calendarViewRef"
-                    class="h-[640px] w-full overflow-hidden rounded-xl border bg-white shadow-sm"
-                    height="640px"
+                    class="workshop-calendar w-full rounded-xl border bg-white shadow-sm"
+                    height="auto"
                     :initial-date="parseDateKey(selectedDate)"
                     initial-view="day"
                     time-format="24h"
@@ -920,8 +922,10 @@ onBeforeUnmount(() => {
     "
   >
     <DrawerOverlay />
-    <DrawerContent class="max-h-[85vh]">
-      <div class="mx-auto w-full max-w-3xl">
+    <DrawerContent
+      class="flex !h-[90vh] !max-h-[90vh] min-h-0 flex-col overflow-hidden sm:!h-auto sm:!max-h-[85vh]"
+    >
+      <div class="mx-auto flex h-full w-full max-w-3xl flex-col min-h-0">
         <DrawerHeader>
           <DrawerTitle class="text-xl font-semibold">
             {{ editingEntryId ? 'Edit entry' : 'Add entry' }}
@@ -931,7 +935,7 @@ onBeforeUnmount(() => {
             {{ formatFullDate(parseDateKey(selectedDate)) }}</DrawerDescription
           >
         </DrawerHeader>
-        <div class="px-4 pb-4 overflow-y-auto max-h-[calc(85vh-120px)]">
+        <div class="drawer-scroll flex-1 overflow-y-auto px-4 pb-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
             <div class="text-sm font-medium text-foreground flex flex-col gap-1 sm:col-span-2">
               <span>Job</span>
@@ -1104,20 +1108,22 @@ onBeforeUnmount(() => {
     "
   >
     <DrawerOverlay />
-    <DrawerContent class="max-h-[85vh]">
-      <div class="mx-auto w-full max-w-4xl">
+    <DrawerContent
+      class="flex !h-[90vh] !max-h-[90vh] min-h-0 flex-col overflow-hidden sm:!h-auto sm:!max-h-[85vh]"
+    >
+      <div class="mx-auto flex h-full w-full max-w-4xl flex-col min-h-0">
         <DrawerHeader>
           <DrawerTitle class="text-xl font-semibold">Select a job</DrawerTitle>
           <DrawerDescription>Search by job number, name, or client</DrawerDescription>
         </DrawerHeader>
-        <div class="px-4 pb-4 space-y-3">
+        <div class="drawer-scroll flex-1 overflow-y-auto px-4 pb-4 space-y-3">
           <input
             v-model="jobSearch"
             type="text"
             placeholder="Search jobs..."
             class="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          <div class="overflow-auto rounded-md border max-h-[50vh]">
+          <div class="overflow-x-auto rounded-md border">
             <table class="min-w-full text-sm">
               <thead class="bg-muted sticky top-0">
                 <tr>
