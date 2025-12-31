@@ -4,6 +4,7 @@ import { schemas } from '../api/generated/api'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 import { z } from 'zod'
 import { debugLog } from '@/utils/debug'
+import { getJobActualHours, getJobEstimatedHours } from '@/utils/costLineMeta'
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type FullJob = z.infer<typeof schemas.Job>
@@ -114,9 +115,10 @@ export function useTimesheetSummary() {
 
   const getEstimatedHours = (job: FullJob) => {
     debugLog('Received job:', job)
-    if (!job) return 0
-    return job.latest_estimate.cost_lines.reduce((sum, line) => sum + (line.quantity || 0), 0)
+    return getJobEstimatedHours(job)
   }
+
+  const getActualHours = (job: FullJob) => getJobActualHours(job)
 
   return {
     loading,
@@ -134,5 +136,6 @@ export function useTimesheetSummary() {
     getStatusVariant,
     getStatusLabel,
     getEstimatedHours,
+    getActualHours,
   }
 }
