@@ -10,7 +10,7 @@
             </h1>
           </div>
           <div
-            v-if="loading"
+            v-if="loading || schemaLoading"
             class="flex flex-col items-center justify-center"
             style="height: 60vh"
           >
@@ -20,36 +20,16 @@
             </div>
           </div>
           <div v-else class="flex flex-col items-center justify-center" style="height: 60vh">
-            <div class="grid grid-cols-3 gap-6 mb-6 w-full max-w-3xl">
-              <button
-                class="section-btn"
-                data-automation-id="AdminCompanyView-general-button"
-                @click="openSection('general')"
-              >
-                <Settings class="w-12 h-12 mb-2" />
-                <span>General</span>
-              </button>
-              <button class="section-btn" @click="openSection('google')">
-                <FileText class="w-12 h-12 mb-2" />
-                <span>Google Sheets</span>
-              </button>
-              <button class="section-btn" @click="openSection('xero')">
-                <Link2 class="w-12 h-12 mb-2" />
-                <span>Xero Integration</span>
-              </button>
-            </div>
             <div class="grid grid-cols-3 gap-6 w-full max-w-3xl">
-              <button class="section-btn" @click="openSection('kpi')">
-                <BarChart3 class="w-12 h-12 mb-2" />
-                <span>KPI & Thresholds</span>
-              </button>
-              <button class="section-btn" @click="openSection('working_hours')">
-                <Clock class="w-12 h-12 mb-2" />
-                <span>Working Hours</span>
-              </button>
-              <button class="section-btn" @click="openAIProvidersDialog">
-                <Sparkles class="w-12 h-12 mb-2" />
-                <span>AI Providers</span>
+              <button
+                v-for="section in orderedSections"
+                :key="section.key"
+                class="section-btn"
+                :data-automation-id="`AdminCompanyView-${section.key}-button`"
+                @click="openSection(section.key)"
+              >
+                <component :is="section.icon" class="w-12 h-12 mb-2" />
+                <span>{{ section.title }}</span>
               </button>
             </div>
           </div>
@@ -89,16 +69,7 @@ import AppLayout from '../components/AppLayout.vue'
 import { Button } from '../components/ui/button'
 import { ref, onMounted } from 'vue'
 import type { AIProvider } from '../services/admin-company-defaults-service'
-import {
-  Building2,
-  Save,
-  Settings,
-  FileText,
-  Link2,
-  BarChart3,
-  Sparkles,
-  Clock,
-} from 'lucide-vue-next'
+import { Building2, Save } from 'lucide-vue-next'
 import AIProvidersDialog from '../components/AIProvidersDialog.vue'
 import SectionModal from '../components/SectionModal.vue'
 import {
@@ -110,15 +81,21 @@ import type {
   PatchedCompanyDefaults,
 } from '../services/admin-company-defaults-service'
 import { toast } from 'vue-sonner'
+import { useSettingsSchema } from '@/composables/useSettingsSchema'
 
-type SectionKey = 'xero' | 'general' | 'google' | 'kpi' | 'ai' | 'working_hours'
+const {
+  orderedSections,
+  isLoading: schemaLoading,
+  loadSchema,
+  getSpecialHandler,
+} = useSettingsSchema()
 
 const companyDefaults = ref<CompanyDefaults>({} as CompanyDefaults)
 const form = ref<CompanyDefaults>({} as CompanyDefaults)
 const aiProviders = ref<AIProvider[]>([])
 const loading = ref(true)
 const showAIProvidersDialog = ref(false)
-const modalSection = ref<SectionKey | null>(null)
+const modalSection = ref<string | null>(null)
 
 debugLog('[AdminCompanyView] companyDefaults:', companyDefaults.value)
 debugLog('[AdminCompanyView] form:', form.value)
@@ -207,8 +184,15 @@ function onProvidersUpdate(providers: AIProvider[]) {
   aiProviders.value = providers
   debugLog('[AdminCompanyView] aiProviders updated to:', aiProviders.value)
 }
-function openSection(section: string) {
-  modalSection.value = section as SectionKey
+function openSection(sectionKey: string) {
+  const handler = getSpecialHandler(sectionKey)
+
+  if (handler === 'ai_providers') {
+    openAIProvidersDialog()
+    return
+  }
+
+  modalSection.value = sectionKey
 }
 function closeSection() {
   modalSection.value = null
@@ -216,7 +200,9 @@ function closeSection() {
 function onSectionUpdate(newData: Partial<CompanyDefaults>) {
   Object.assign(form.value, newData)
 }
-onMounted(fetchDefaults)
+onMounted(async () => {
+  await Promise.all([loadSchema(), fetchDefaults()])
+})
 </script>
 
 <style scoped>

@@ -720,6 +720,7 @@ import {
   Wrench,
   GraduationCap,
   Clock3,
+  Users,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAppLayout } from '@/composables/useAppLayout'

@@ -89,8 +89,8 @@
             <div v-if="staff.weekly_hours[idx].annual_leave_hours" class="text-xs lg:text-sm">
               Annual Leave: {{ formatHours(staff.weekly_hours[idx].annual_leave_hours) }}h
             </div>
-            <div v-if="staff.weekly_hours[idx].other_leave_hours" class="text-xs lg:text-sm">
-              Other Leave: {{ formatHours(staff.weekly_hours[idx].other_leave_hours) }}h
+            <div v-if="staff.weekly_hours[idx].bereavement_leave_hours" class="text-xs lg:text-sm">
+              Bereavement Leave: {{ formatHours(staff.weekly_hours[idx].bereavement_leave_hours) }}h
             </div>
           </div>
           <div
@@ -210,12 +210,14 @@ const hasLeave = (idx: number): boolean => {
   return (
     (day.sick_leave_hours || 0) > 0 ||
     (day.annual_leave_hours || 0) > 0 ||
-    (day.other_leave_hours || 0) > 0
+    (day.bereavement_leave_hours || 0) > 0
   )
 }
 
 const getTotalLeave = (idx: number): number => {
   const day = props.staff.weekly_hours[idx]
-  return (day.sick_leave_hours || 0) + (day.annual_leave_hours || 0) + (day.other_leave_hours || 0)
+  return (
+    (day.sick_leave_hours || 0) + (day.annual_leave_hours || 0) + (day.bereavement_leave_hours || 0)
+  )
 }
 </script>
