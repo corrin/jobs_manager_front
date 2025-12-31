@@ -17,6 +17,8 @@ import {
 import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
 import axios from '@/plugins/axios'
+import { jobService } from '@/services/job.service'
+import { useTimesheetSummary } from '@/composables/useTimesheetSummary'
 import {
   AlertTriangle,
   CalendarDays,
@@ -33,7 +35,7 @@ import {
 import CalendarView, { useCalendarStore, type CalendarEvent } from '@kodeglot/vue-calendar'
 import '@kodeglot/vue-calendar/style.css'
 import dayjs from 'dayjs'
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import type { ComponentPublicInstance } from 'vue'
 import { toast } from 'vue-sonner'
 import type { z } from 'zod'
@@ -41,6 +43,7 @@ import type { z } from 'zod'
 type WorkshopTimesheetEntry = z.infer<typeof schemas.WorkshopTimesheetEntry>
 type WorkshopTimesheetSummary = z.infer<typeof schemas.WorkshopTimesheetSummary>
 type JobsListResponse = z.infer<typeof schemas.JobsListResponse>
+type Job = z.infer<typeof schemas.Job>
 type CalendarViewEventModalRef = {
   openModal?: (date: Date) => void
   openEditModal?: (event: Record<string, unknown>) => void
@@ -49,6 +52,12 @@ type CalendarViewEventModalRef = {
   [key: string]: unknown
 }
 type CalendarViewInstance = (ComponentPublicInstance & { $refs?: Record<string, unknown> }) | null
+type JobBudgetMeta = {
+  job: Job
+  estimatedHours: number
+  actualHours: number
+  overBudget: boolean
+}
 
 const selectedDate = ref(formatDateKey(new Date()))
 const isDayLoading = ref(false)
@@ -84,7 +93,19 @@ const DEFAULT_SLOT_MINUTES = 30
 const calendarViewRef = ref<CalendarViewInstance>(null)
 let calendarModalSuppressionFrame: number | null = null
 
+const { getEstimatedHours, getActualHours } = useTimesheetSummary()
+const jobBudgetMeta = ref<Map<string, JobBudgetMeta>>(new Map())
+
 const selectedEntries = computed(() => dailyData.value[selectedDate.value]?.entries ?? [])
+const selectedJobIds = computed(() =>
+  [
+    ...new Set(
+      selectedEntries.value
+        .map((entry) => entry.job_id)
+        .filter((id): id is string => typeof id === 'string' && Boolean(id)),
+    ),
+  ].sort(),
+)
 const filteredJobs = computed(() => {
   const term = jobSearch.value.trim().toLowerCase()
   if (!term) return jobs.value
@@ -103,6 +124,26 @@ const selectedDaySummary = computed(() => {
     hours: day.summary?.total_hours ?? 0,
   }
 })
+const selectedDayBudgetMeta = computed(() =>
+  selectedJobIds.value
+    .map((jobId) => {
+      const meta = jobBudgetMeta.value.get(jobId)
+      if (!meta) return null
+      return { jobId, ...meta }
+    })
+    .filter((meta): meta is { jobId: string } & JobBudgetMeta => meta !== null),
+)
+const overBudgetJobs = computed(() => selectedDayBudgetMeta.value.filter((meta) => meta.overBudget))
+const overBudgetTooltip = computed(() => {
+  if (overBudgetJobs.value.length === 0) return ''
+
+  return overBudgetJobs.value
+    .map(
+      (meta) =>
+        `#${meta.job.job_number} ${meta.job.name}: ${formatHoursValue(meta.actualHours)}h / ${formatHoursValue(meta.estimatedHours)}h`,
+    )
+    .join('\n')
+})
 const requiresLegacyFallback = computed(() =>
   selectedEntries.value.some((entry) => !entry.start_time || !entry.end_time),
 )
@@ -111,6 +152,23 @@ const calendarEventPayloads = computed<CalendarEvent[]>(() =>
     .filter((entry) => entry.start_time && entry.end_time)
     .map((entry) => toCalendarEvent(entry)),
 )
+const calendarEventTooltipMap = computed(() => {
+  const map = new Map<string, string>()
+  calendarEventPayloads.value.forEach((event) => {
+    const metadata = (event as { metadata?: Record<string, unknown> }).metadata || {}
+    const tooltipFromMetadata =
+      typeof metadata.budgetTooltip === 'string' ? (metadata.budgetTooltip as string) : null
+    const tooltipFromEvent =
+      typeof (event as Record<string, unknown>).tooltip === 'string'
+        ? ((event as Record<string, unknown>).tooltip as string)
+        : null
+    const tooltip = tooltipFromMetadata || tooltipFromEvent
+    if (tooltip) {
+      map.set(String(event.id), tooltip)
+    }
+  })
+  return map
+})
 const formDurationHours = computed(() =>
   calculateDurationHours(formState.startTime, formState.endTime),
 )
@@ -180,6 +238,12 @@ function calculateDurationHours(startTime: string, endTime: string): number {
   return Math.round((minutes / 60) * 100) / 100
 }
 
+function formatHoursValue(hours: number): string {
+  const safe = Number.isFinite(hours) ? hours : 0
+  const rounded = Math.round(safe * 10) / 10
+  return rounded.toFixed(1)
+}
+
 function formatEventTitle(entry: WorkshopTimesheetEntry): string {
   const jobNumber = entry.job_number ? `#${entry.job_number}` : ''
   const jobName = entry.job_name || 'Job'
@@ -200,20 +264,36 @@ function defaultTimeRange(startTime?: string) {
   return normalizeTimeRange(start, end)
 }
 
+function getJobBudgetState(jobId?: string | null): JobBudgetMeta | null {
+  if (!jobId) return null
+  return jobBudgetMeta.value.get(jobId) ?? null
+}
+
 function toCalendarEvent(entry: WorkshopTimesheetEntry): CalendarEvent {
   const dateKey = entry.accounting_date || selectedDate.value
   const startIso = combineDateTime(dateKey, entry.start_time ?? '00:00').toISOString()
   const endIso = combineDateTime(dateKey, entry.end_time ?? '00:00').toISOString()
+  const budgetMeta = getJobBudgetState(entry.job_id)
+  const overBudget = budgetMeta?.overBudget ?? false
+  const budgetTooltip =
+    budgetMeta && budgetMeta.overBudget
+      ? `Over estimate: ${formatHoursValue(budgetMeta.actualHours)}h / ${formatHoursValue(budgetMeta.estimatedHours)}h`
+      : ''
   return {
     id: entry.id,
     title: formatEventTitle(entry),
     start: startIso,
     end: endIso,
-    tailwindColor: 'sky',
+    tailwindColor: overBudget ? 'red' : 'sky',
     metadata: {
       entryId: entry.id,
       jobId: entry.job_id,
+      overBudget,
+      budgetTooltip: budgetTooltip || undefined,
+      estimatedHours: budgetMeta?.estimatedHours,
+      actualHours: budgetMeta?.actualHours,
     },
+    ...(budgetTooltip ? { tooltip: budgetTooltip } : {}),
   }
 }
 
@@ -432,11 +512,76 @@ async function loadDay(dateKey: string, silent = false) {
   }
 }
 
+async function refreshJobBudgets(jobIds: string[]): Promise<void> {
+  if (!jobIds || jobIds.length === 0) {
+    jobBudgetMeta.value = new Map()
+    return
+  }
+
+  try {
+    const results = await Promise.all(
+      jobIds.map(async (jobId) => {
+        try {
+          const response = await jobService.getJob(jobId)
+          const job = response.data.job
+          const estimatedHours = Math.max(0, getEstimatedHours(job) || 0)
+          const actualHours = Math.max(0, getActualHours(job) || 0)
+          return {
+            jobId,
+            meta: {
+              job,
+              estimatedHours,
+              actualHours,
+              overBudget: estimatedHours > 0 && actualHours > estimatedHours,
+            },
+          }
+        } catch (error) {
+          console.error('Failed to load job hours for workshop timesheets', error)
+          return { jobId, meta: null }
+        }
+      }),
+    )
+
+    const next = new Map<string, JobBudgetMeta>()
+    results.forEach(({ jobId, meta }) => {
+      if (meta) {
+        next.set(jobId, meta)
+      } else {
+        const existing = jobBudgetMeta.value.get(jobId)
+        if (existing) next.set(jobId, existing)
+      }
+    })
+
+    jobBudgetMeta.value = next
+  } catch (error) {
+    console.error('Failed to refresh job budget data', error)
+  }
+}
+
 function clearCalendarEvents() {
   trackedCalendarEventIds.value.forEach((id) => {
     calendarStore.deleteEvent(id)
   })
   trackedCalendarEventIds.value = new Set<string>()
+}
+
+function applyEventTooltips() {
+  if (typeof document === 'undefined') return
+  void nextTick(() => {
+    const tooltipMap = calendarEventTooltipMap.value
+    trackedCalendarEventIds.value.forEach((id) => {
+      const element = document.querySelector(`[data-event-id="${id}"]`)
+      if (!(element instanceof HTMLElement)) return
+      const tooltip = tooltipMap.get(String(id))
+      if (tooltip) {
+        element.setAttribute('title', tooltip)
+        element.setAttribute('aria-label', `Calendar event (${tooltip})`)
+      } else {
+        element.removeAttribute('title')
+        element.setAttribute('aria-label', 'Calendar event')
+      }
+    })
+  })
 }
 
 function syncCalendarStoreEvents() {
@@ -445,20 +590,23 @@ function syncCalendarStoreEvents() {
     return
   }
   const desiredEvents = calendarEventPayloads.value
-  const desiredIds = new Set<string>(desiredEvents.map((event) => event.id))
+  const desiredIds = new Set<string>(desiredEvents.map((event) => String(event.id)))
   trackedCalendarEventIds.value.forEach((id) => {
     if (!desiredIds.has(id)) {
       calendarStore.deleteEvent(id)
     }
   })
   desiredEvents.forEach((event) => {
-    if (trackedCalendarEventIds.value.has(event.id)) {
-      calendarStore.updateEvent(event)
+    const eventId = String(event.id)
+    const normalizedEvent = { ...event, id: eventId }
+    if (trackedCalendarEventIds.value.has(eventId)) {
+      calendarStore.updateEvent(normalizedEvent)
     } else {
-      calendarStore.addEvent(event)
+      calendarStore.addEvent(normalizedEvent)
     }
   })
   trackedCalendarEventIds.value = desiredIds
+  applyEventTooltips()
 }
 
 function handleCalendarOpenEventModal(date?: Date | string | null) {
@@ -558,6 +706,14 @@ function scheduleModalSuppression() {
 }
 
 watch(
+  selectedJobIds,
+  (jobIds) => {
+    void refreshJobBudgets(jobIds)
+  },
+  { immediate: true },
+)
+
+watch(
   selectedDate,
   (dateKey) => {
     if (!dailyData.value[dateKey]) {
@@ -638,6 +794,15 @@ onBeforeUnmount(() => {
               <CardTitle class="flex items-center gap-2">
                 <CalendarDays class="h-5 w-5" />
                 {{ formatFullDate(parseDateKey(selectedDate)) }}
+                <Badge
+                  v-if="overBudgetJobs.length"
+                  variant="destructive"
+                  class="flex items-center gap-1"
+                  :title="overBudgetTooltip"
+                >
+                  <AlertTriangle class="h-4 w-4" />
+                  Over hours
+                </Badge>
               </CardTitle>
               <p class="text-sm text-muted-foreground">
                 {{ selectedDaySummary.hours.toFixed(2) }} h · {{ selectedDaySummary.jobs }} jobs
