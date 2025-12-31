@@ -1,7 +1,7 @@
 <template>
   <Dialog :open="true" @update:open="emit('close')">
     <DialogContent
-      class="max-w-md animate-in fade-in-0 zoom-in-95"
+      :class="['animate-in fade-in-0 zoom-in-95', hasEmbedded ? 'max-w-3xl' : 'max-w-md']"
       data-automation-id="SectionModal-content"
     >
       <DialogHeader>
@@ -12,7 +12,7 @@
         <DialogDescription> Edit company defaults for {{ sectionTitle }} </DialogDescription>
       </DialogHeader>
       <form @submit.prevent class="flex flex-col gap-4 mt-2">
-        <template v-if="props.section === 'working_hours'">
+        <template v-if="isWorkingHours">
           <div v-for="day in workingDays" :key="day.key" class="working-hours-day-wrapper">
             <div class="working-hours-day-label">
               <component :is="Clock" class="w-4 h-4 text-indigo-400 mr-1" />
@@ -102,6 +102,14 @@
           </template>
         </template>
         <p v-if="error" class="text-red-600 text-xs mt-1">{{ error }}</p>
+
+        <!-- Embedded components (registered in embeddedComponentRegistry.ts) -->
+        <template v-if="embeddedComponents.length > 0">
+          <div class="border-t pt-4 mt-4">
+            <component v-for="(comp, idx) in embeddedComponents" :key="idx" :is="comp" />
+          </div>
+        </template>
+
         <div class="flex justify-end gap-2 mt-2">
           <Button
             type="button"
@@ -127,30 +135,16 @@ import Button from '@/components/ui/button/Button.vue'
 import Input from '@/components/ui/input/Input.vue'
 import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
 import Calendar from '@/components/ui/calendar/Calendar.vue'
-import {
-  Settings,
-  FileText,
-  Link2,
-  BarChart3,
-  Sparkles,
-  Calendar as CalendarIcon,
-  DollarSign,
-  Hash,
-  User,
-  File,
-  Key,
-  ArrowLeft,
-  Clock,
-  Percent,
-  TrendingUp,
-  Folder,
-} from 'lucide-vue-next'
+import { ArrowLeft, Clock, HelpCircle } from 'lucide-vue-next'
 import { ref, computed, watch } from 'vue'
 import { CalendarDateTime, parseDateTime } from '@internationalized/date'
 import { debugLog } from '@/utils/debug'
+import { useSettingsSchema } from '@/composables/useSettingsSchema'
+import { getEmbeddedComponents, hasEmbeddedComponents } from '@/utils/embeddedComponentRegistry'
 
-type SectionKey = keyof typeof sectionMap
-const props = defineProps<{ section: SectionKey; form: Record<string, unknown> }>()
+const props = defineProps<{ section: string; form: Record<string, unknown> }>()
+
+const { getSectionByKey, getFieldsForSection, getSpecialHandler } = useSettingsSchema()
 const emit = defineEmits(['close', 'update'])
 const localForm = ref({ ...props.form })
 
@@ -272,102 +266,17 @@ function toCalendarDate(
   )
 }
 
-const sectionMap = {
-  general: {
-    title: 'General',
-    icon: Settings,
-    fields: [
-      { key: 'company_name', label: 'Company Name', icon: User, type: 'text' },
-      { key: 'charge_out_rate', label: 'Charge Out Rate', icon: DollarSign, type: 'number' },
-      { key: 'wage_rate', label: 'Wage Rate', icon: DollarSign, type: 'number' },
-      { key: 'time_markup', label: 'Time Markup', icon: Percent, type: 'number' },
-      { key: 'materials_markup', label: 'Materials Markup', icon: Percent, type: 'number' },
-      { key: 'starting_job_number', label: 'Starting Job Number', icon: Hash, type: 'number' },
-      { key: 'po_prefix', label: 'PO Prefix', icon: Hash, type: 'text' },
-      { key: 'shop_client_name', label: 'Shop Client Name', icon: User, type: 'text' },
-    ],
-  },
-  google: {
-    title: 'Google Sheets',
-    icon: FileText,
-    fields: [
-      {
-        key: 'master_quote_template_url',
-        label: 'Master Quote Template URL',
-        icon: File,
-        type: 'text',
-      },
-      {
-        key: 'master_quote_template_id',
-        label: 'Master Quote Template ID',
-        icon: Key,
-        type: 'text',
-      },
-      {
-        key: 'gdrive_quotes_folder_url',
-        label: 'GDrive Quotes Folder URL',
-        icon: Folder,
-        type: 'text',
-      },
-      { key: 'gdrive_quotes_folder_id', label: 'GDrive Quotes Folder ID', icon: Key, type: 'text' },
-    ],
-  },
-  xero: {
-    title: 'Xero Integration',
-    icon: Link2,
-    fields: [
-      { key: 'xero_tenant_id', label: 'Xero Tenant ID', icon: Key, type: 'text' },
-      { key: 'last_xero_sync', label: 'Last Xero Sync', icon: CalendarIcon, type: 'date' },
-      { key: 'last_xero_deep_sync', label: 'Last Deep Sync', icon: CalendarIcon, type: 'date' },
-    ],
-  },
-  kpi: {
-    title: 'KPI & Thresholds',
-    icon: BarChart3,
-    fields: [
-      {
-        key: 'billable_threshold_green',
-        label: 'Billable Green',
-        icon: TrendingUp,
-        type: 'number',
-      },
-      {
-        key: 'billable_threshold_amber',
-        label: 'Billable Amber',
-        icon: TrendingUp,
-        type: 'number',
-      },
-      { key: 'daily_gp_target', label: 'Daily GP Target', icon: DollarSign, type: 'number' },
-      { key: 'shop_hours_target_percentage', label: 'Shop Hours %', icon: Percent, type: 'number' },
-    ],
-  },
-  ai: {
-    title: 'AI Providers',
-    icon: Sparkles,
-    fields: [],
-  },
-  working_hours: {
-    title: 'Working Hours',
-    icon: CalendarIcon,
-    fields: [
-      { key: 'mon_start', label: 'Monday Start', icon: Clock, type: 'text' },
-      { key: 'mon_end', label: 'Monday End', icon: Clock, type: 'text' },
-      { key: 'tue_start', label: 'Tuesday Start', icon: Clock, type: 'text' },
-      { key: 'tue_end', label: 'Tuesday End', icon: Clock, type: 'text' },
-      { key: 'wed_start', label: 'Wednesday Start', icon: Clock, type: 'text' },
-      { key: 'wed_end', label: 'Wednesday End', icon: Clock, type: 'text' },
-      { key: 'thu_start', label: 'Thursday Start', icon: Clock, type: 'text' },
-      { key: 'thu_end', label: 'Thursday End', icon: Clock, type: 'text' },
-      { key: 'fri_start', label: 'Friday Start', icon: Clock, type: 'text' },
-      { key: 'fri_end', label: 'Friday End', icon: Clock, type: 'text' },
-    ],
-  },
-}
-
-const sectionTitle = computed(() => sectionMap[props.section]?.title || '')
-const sectionIcon = computed(() => sectionMap[props.section]?.icon || Settings)
-const sectionFields = computed(() => sectionMap[props.section]?.fields || [])
+// Get section data from schema
+const currentSection = computed(() => getSectionByKey(props.section))
+const sectionTitle = computed(() => currentSection.value?.title || '')
+const sectionIcon = computed(() => currentSection.value?.icon || HelpCircle)
+const sectionFields = computed(() => getFieldsForSection(props.section))
+const isWorkingHours = computed(() => getSpecialHandler(props.section) === 'working_hours')
 const error = ref('')
+
+// Embedded components for this section
+const embeddedComponents = computed(() => getEmbeddedComponents(props.section))
+const hasEmbedded = computed(() => hasEmbeddedComponents(props.section))
 
 watch(
   localForm,

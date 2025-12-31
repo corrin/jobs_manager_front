@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Bot,
   Brain,
-  DollarSign,
   Server,
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
@@ -59,13 +58,6 @@ const adminPagesConfig = [
     title: 'AI Providers',
     icon: Brain,
     view: 'AdminAIProvidersView',
-  },
-  {
-    key: 'payroll-categories',
-    label: 'Payroll Categories',
-    title: 'Payroll Categories',
-    icon: DollarSign,
-    view: 'AdminPayrollCategoriesView',
   },
   { key: 'uat', label: 'Manage UAT', title: 'Manage UAT', icon: Server, view: 'UATManagementView' },
 ] as const
