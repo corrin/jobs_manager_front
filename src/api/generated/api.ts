@@ -373,6 +373,7 @@ const CompanyDefaults = z
     xero_tenant_id: z.string().max(100).nullish(),
     xero_shortcode: z.string().max(20).nullish(),
     xero_payroll_calendar_name: z.string().max(100).optional(),
+    xero_payroll_calendar_id: z.string().uuid().nullish(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -422,6 +423,7 @@ const CompanyDefaultsRequest = z
     xero_tenant_id: z.string().max(100).nullish(),
     xero_shortcode: z.string().max(20).nullish(),
     xero_payroll_calendar_name: z.string().min(1).max(100).optional(),
+    xero_payroll_calendar_id: z.string().uuid().nullish(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -469,6 +471,7 @@ const PatchedCompanyDefaultsRequest = z
     xero_tenant_id: z.string().max(100).nullable(),
     xero_shortcode: z.string().max(20).nullable(),
     xero_payroll_calendar_name: z.string().min(1).max(100),
+    xero_payroll_calendar_id: z.string().uuid().nullable(),
     mon_start: z.string(),
     mon_end: z.string(),
     tue_start: z.string(),
@@ -600,6 +603,20 @@ const AppErrorRequest = z
     resolved: z.boolean().optional(),
     resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
     resolved_by: z.string().uuid().nullish(),
+  })
+  .passthrough()
+const XeroPayItem = z
+  .object({
+    id: z.string().uuid(),
+    xero_id: z.string().max(50),
+    xero_tenant_id: z.string().max(255),
+    name: z.string().max(100),
+    uses_leave_api: z.boolean(),
+    multiplier: z.number().gt(-100).lt(100).nullish(),
+    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
+    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
 const XeroDocumentSuccessResponse = z
@@ -1127,8 +1144,8 @@ const PatchedCostLineCreateUpdateRequest = z
     unit_cost: z.number().gt(-100000000).lt(100000000),
     unit_rev: z.number().gt(-100000000).lt(100000000),
     accounting_date: z.string(),
-    ext_refs: z.unknown(),
-    meta: z.unknown(),
+    ext_refs: z.object({}).partial().passthrough(),
+    meta: z.object({}).partial().passthrough(),
   })
   .partial()
   .passthrough()
@@ -1140,8 +1157,8 @@ const CostLineCreateUpdate = z
     unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
     accounting_date: z.string(),
-    ext_refs: z.unknown().optional(),
-    meta: z.unknown().optional(),
+    ext_refs: z.object({}).partial().passthrough().optional(),
+    meta: z.object({}).partial().passthrough().optional(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
   })
@@ -1410,6 +1427,8 @@ const Job = z
     xero_invoices: z.array(XeroInvoice),
     shop_job: z.boolean(),
     rejected_flag: z.boolean().optional(),
+    default_xero_pay_item_id: z.string().uuid().nullish(),
+    default_xero_pay_item_name: z.string().nullable(),
   })
   .passthrough()
 const JobEvent = z
@@ -1496,8 +1515,8 @@ const CostLineCreateUpdateRequest = z
     unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
     accounting_date: z.string(),
-    ext_refs: z.unknown().optional(),
-    meta: z.unknown().optional(),
+    ext_refs: z.object({}).partial().passthrough().optional(),
+    meta: z.object({}).partial().passthrough().optional(),
   })
   .passthrough()
 const QuoteRevisionsList = z
@@ -1638,6 +1657,8 @@ const JobHeaderResponse = z
     job_id: z.string().uuid(),
     client: JobClientHeader,
     quoted: z.boolean(),
+    default_xero_pay_item_id: z.string().uuid().nullable(),
+    default_xero_pay_item_name: z.string().nullable(),
     job_number: z.number().int().gte(-2147483648).lte(2147483647),
     name: z.string().max(100),
     status: Status7b9Enum.optional(),
@@ -2650,25 +2671,18 @@ const ModernTimesheetJob = z
 const JobsListResponse = z
   .object({ jobs: z.array(ModernTimesheetJob), total_count: z.number().int() })
   .passthrough()
-const PayRunDetails = z
+const PayRunListItem = z
   .object({
     id: z.string().uuid(),
     xero_id: z.string().uuid(),
-    payroll_calendar_id: z.string().nullable(),
     period_start_date: z.string(),
     period_end_date: z.string(),
     payment_date: z.string(),
     pay_run_status: z.string(),
-    pay_run_type: z.string().nullable(),
+    xero_url: z.string(),
   })
   .passthrough()
-const PayRunForWeekResponse = z
-  .object({
-    exists: z.boolean(),
-    pay_run: PayRunDetails.nullable(),
-    warning: z.string().nullish(),
-  })
-  .passthrough()
+const PayRunListResponse = z.object({ pay_runs: z.array(PayRunListItem) }).passthrough()
 const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
 const CreatePayRunResponse = z
   .object({
@@ -2859,6 +2873,7 @@ export const schemas = {
   AppError,
   PaginatedAppErrorList,
   AppErrorRequest,
+  XeroPayItem,
   XeroDocumentSuccessResponse,
   XeroDocumentErrorResponse,
   XeroQuoteCreateRequest,
@@ -3099,8 +3114,8 @@ export const schemas = {
   DailyTimesheetSummary,
   ModernTimesheetJob,
   JobsListResponse,
-  PayRunDetails,
-  PayRunForWeekResponse,
+  PayRunListItem,
+  PayRunListResponse,
   CreatePayRunRequest,
   CreatePayRunResponse,
   PayRunSyncResponseRequest,
@@ -3932,6 +3947,33 @@ Endpoints:
       },
     ],
     response: AppError,
+  },
+  {
+    method: 'get',
+    path: '/api/workflow/xero-pay-items/',
+    alias: 'api_workflow_xero_pay_items_list',
+    description: `API endpoint for Xero pay items (earnings rates and leave types).
+
+Read-only - these are synced from Xero, not created locally.`,
+    requestFormat: 'json',
+    response: z.array(XeroPayItem),
+  },
+  {
+    method: 'get',
+    path: '/api/workflow/xero-pay-items/:id/',
+    alias: 'api_workflow_xero_pay_items_retrieve',
+    description: `API endpoint for Xero pay items (earnings rates and leave types).
+
+Read-only - these are synced from Xero, not created locally.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: XeroPayItem,
   },
   {
     method: 'post',
@@ -7293,21 +7335,10 @@ Returns:
     method: 'get',
     path: '/timesheets/api/payroll/pay-runs/',
     alias: 'timesheets_api_payroll_pay_runs_retrieve',
-    description: `Return pay run data for the requested week if it exists.`,
+    description: `Return all pay runs for the configured payroll calendar.`,
     requestFormat: 'json',
-    parameters: [
-      {
-        name: 'week_start_date',
-        type: 'Query',
-        schema: z.string(),
-      },
-    ],
-    response: PayRunForWeekResponse,
+    response: PayRunListResponse,
     errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
       {
         status: 500,
         schema: ClientErrorResponse,

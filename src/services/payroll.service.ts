@@ -6,8 +6,8 @@ import type { z } from 'zod'
 import axios, { getApiBaseUrl } from '@/plugins/axios'
 
 export type CreatePayRunResponse = z.infer<typeof schemas.CreatePayRunResponse>
-export type PayRunDetails = z.infer<typeof schemas.PayRunDetails>
-export type PayRunForWeekResponse = z.infer<typeof schemas.PayRunForWeekResponse>
+export type PayRunListItem = z.infer<typeof schemas.PayRunListItem>
+export type PayRunListResponse = z.infer<typeof schemas.PayRunListResponse>
 export type PayRunSyncResult = z.infer<typeof schemas.PayRunSyncResponse>
 
 // Response from POST /api/payroll/post-staff-week/ (not in schema yet)
@@ -147,27 +147,27 @@ export async function postStaffWeek(
 }
 
 /**
- * Fetch the pay run (if any) that already exists for a given week.
+ * Fetch all pay runs for the configured payroll calendar.
+ * Returns pay runs sorted by period_end_date descending (newest first).
  *
- * @param weekStartDate - Monday of the requested week (YYYY-MM-DD)
- * @returns Whether a pay run exists and its details when present.
+ * Used to determine:
+ * 1. Pay run status for a specific week (filter by period dates)
+ * 2. Default week to show (latest Draft, or week after latest Posted)
+ * 3. Whether current week can have a pay run posted (only weeks after latest Posted)
+ *
+ * @returns List of all pay runs
  */
-export async function fetchPayRunForWeek(weekStartDate: string): Promise<PayRunForWeekResponse> {
-  const response = await api.timesheets_api_payroll_pay_runs_retrieve({
-    queries: { week_start_date: weekStartDate },
-  })
-  return response as PayRunForWeekResponse
+export async function fetchAllPayRuns(): Promise<PayRunListResponse> {
+  const response = await api.timesheets_api_payroll_pay_runs_retrieve()
+  return response as PayRunListResponse
 }
 
 /**
  * Refresh cached pay runs from Xero and return synchronization stats.
  *
- * @param weekStartDate - Monday of the requested week (YYYY-MM-DD)
  * @returns Counts of fetched/created/updated pay runs from Xero.
  */
-export async function refreshPayRuns(weekStartDate: string): Promise<PayRunSyncResult> {
-  const response = await axios.post('/timesheets/api/payroll/pay-runs/refresh', {
-    week_start_date: weekStartDate,
-  })
+export async function refreshPayRuns(): Promise<PayRunSyncResult> {
+  const response = await axios.post('/timesheets/api/payroll/pay-runs/refresh', {})
   return response.data as PayRunSyncResult
 }
