@@ -930,7 +930,7 @@ async function onCopyFromEstimate() {
     }
 
     // Copy each estimate line to quote
-    const createdLines: z.infer<typeof schemas.CostLineCreateUpdate>[] = []
+    const createdLines: CostLine[] = []
     for (const estimateLine of estimateLines) {
       const createPayload = {
         kind: estimateLine.kind as 'material' | 'time' | 'adjust',
@@ -948,7 +948,7 @@ async function onCopyFromEstimate() {
     }
 
     // Update local state temporarily until refresh completes
-    costLines.value = createdLines as CostLine[]
+    costLines.value = createdLines
 
     // Refresh quote data to get updated summary (will fetch full CostLine objects)
     await refreshQuoteData()
