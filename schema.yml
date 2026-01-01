@@ -23,6 +23,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -58,6 +59,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -73,6 +75,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -88,6 +91,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -106,6 +110,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -162,6 +167,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -238,6 +244,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -260,6 +267,7 @@ paths:
         - accounting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2610,18 +2618,16 @@ paths:
   /job/api/company_defaults/:
     get:
       operationId: job_api_company_defaults_retrieve
-      description: Fetch company default settings.
+      description: |-
+        API endpoint to fetch company default settings.
+        Retrieves the singleton CompanyDefaults instance.
       tags:
-        - Jobs
+        - job
       security:
         - cookieAuth: []
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompanyDefaultsJobDetail'
-          description: ''
+          description: No response body
   /job/api/job/{job_id}/assignment:
     post:
       operationId: job_api_job_assignment_create
@@ -5345,6 +5351,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5376,6 +5383,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5397,6 +5405,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5412,6 +5421,7 @@ paths:
         - Product Mapping
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5445,6 +5455,7 @@ paths:
               $ref: '#/components/schemas/ProductMappingValidateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5472,6 +5483,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5499,6 +5511,7 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderCreateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5521,6 +5534,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5556,6 +5570,7 @@ paths:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5578,6 +5593,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5611,6 +5627,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5644,6 +5661,7 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderEmailRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5672,6 +5690,7 @@ paths:
         - Purchase Orders
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5711,6 +5730,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -5764,6 +5784,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -5792,6 +5813,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6082,6 +6104,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6097,6 +6120,7 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6118,6 +6142,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6141,6 +6166,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6162,6 +6188,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6189,6 +6216,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -6210,6 +6238,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6242,6 +6271,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6273,6 +6303,7 @@ paths:
               $ref: '#/components/schemas/PatchedDjangoJobRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6293,6 +6324,7 @@ paths:
         - quoting
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body

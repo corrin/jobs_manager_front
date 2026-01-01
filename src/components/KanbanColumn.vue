@@ -32,6 +32,8 @@
           :is-dragging="isDragging"
           :is-movement-mode-active="isMovementModeActive"
           :is-job-selected-for-movement="isJobSelectedForMovement?.(job.id) ?? false"
+          :mobile-selected-staff-id="mobileSelectedStaffId"
+          :enable-tap-assign="enableTapAssign"
           @click="$emit('job-click', job)"
           @job-ready="$emit('job-ready', $event)"
           @card-ready="$emit('card-ready', $event)"
@@ -158,6 +160,8 @@ interface KanbanColumnProps {
   isArchive?: boolean
   isMovementModeActive?: boolean
   isJobSelectedForMovement?: (jobId: string) => boolean
+  mobileSelectedStaffId?: string | null
+  enableTapAssign?: boolean
 }
 
 interface KanbanColumnEmits {
@@ -178,6 +182,8 @@ const props = withDefaults(defineProps<KanbanColumnProps>(), {
   isArchive: false,
   isMovementModeActive: false,
   isJobSelectedForMovement: () => false,
+  mobileSelectedStaffId: null,
+  enableTapAssign: false,
 })
 
 // Normalize status to handle both string and object formats
