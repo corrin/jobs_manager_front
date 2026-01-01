@@ -12,10 +12,11 @@
       'staff-drop-target': isStaffDragOver,
       'staff-operation-loading': isAssigningStaff || isUnassigningStaff,
       'staff-operation-success': operationSuccess,
+      'tap-assign-ready': enableTapAssign && mobileSelectedStaffId,
     }"
     :data-id="job.id || ''"
     :data-job-id="job.id || ''"
-    @click="handleClick"
+    @click="handleCardClick"
     @dragover="handleDragOver"
     @drop="handleDrop"
     @dragenter="handleDragEnter"
@@ -26,6 +27,10 @@
       class="absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-200"
       :class="isJobSelectedForMovement ? 'bg-blue-500' : 'bg-blue-300 opacity-60'"
     ></div>
+
+    <div v-if="enableTapAssign && mobileSelectedStaffId" class="tap-assign-banner">
+      Tap to assign
+    </div>
 
     <!-- Loading/Success indicator for staff operations -->
     <div
@@ -171,12 +176,16 @@ const props = withDefaults(
     isStaffDragTarget?: boolean
     isMovementModeActive?: boolean
     isJobSelectedForMovement?: boolean
+    mobileSelectedStaffId?: string | null
+    enableTapAssign?: boolean
   }>(),
   {
     isDragging: false,
     isStaffDragTarget: false,
     isMovementModeActive: false,
     isJobSelectedForMovement: false,
+    mobileSelectedStaffId: null,
+    enableTapAssign: false,
   },
 )
 
@@ -237,37 +246,7 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
 
   const staffId = dragData
 
-  const payload: AssignJobRequest = {
-    job_id: props.job.id,
-    staff_id: staffId,
-  }
-
-  if (staffId && props.job.id) {
-    isAssigningStaff.value = true
-    operationSuccess.value = false
-
-    try {
-      await api.job_api_job_assignment_create(payload, {
-        params: {
-          job_id: props.job.id,
-        },
-      })
-
-      // Show success indicator
-      isAssigningStaff.value = false
-      operationSuccess.value = true
-
-      // Hide success indicator after 1.5 seconds
-      setTimeout(() => {
-        operationSuccess.value = false
-      }, 1500)
-
-      emit('staff-assigned', { staffId, jobId: props.job.id })
-    } catch (error) {
-      isAssigningStaff.value = false
-      console.error('Error assigning staff to job:', error)
-    }
-  }
+  await assignStaffToJob(staffId)
 }
 
 const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<void> => {
@@ -303,6 +282,53 @@ const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<
 }
 
 const { handleClick } = useJobCard(props.job, emit)
+
+const assignStaffToJob = async (staffId: string | null): Promise<void> => {
+  if (!staffId || !props.job.id) {
+    return
+  }
+
+  if (isAssigningStaff.value) {
+    return
+  }
+
+  const payload: AssignJobRequest = {
+    job_id: props.job.id,
+    staff_id: staffId,
+  }
+
+  isAssigningStaff.value = true
+  operationSuccess.value = false
+
+  try {
+    await api.job_api_job_assignment_create(payload, {
+      params: {
+        job_id: props.job.id,
+      },
+    })
+
+    isAssigningStaff.value = false
+    operationSuccess.value = true
+
+    setTimeout(() => {
+      operationSuccess.value = false
+    }, 1500)
+
+    emit('staff-assigned', { staffId, jobId: props.job.id })
+  } catch (error) {
+    isAssigningStaff.value = false
+    console.error('Error assigning staff to job:', error)
+  }
+}
+
+const handleCardClick = async (): Promise<void> => {
+  if (props.enableTapAssign && props.mobileSelectedStaffId) {
+    await assignStaffToJob(props.mobileSelectedStaffId)
+    return
+  }
+
+  handleClick()
+}
 
 const descriptionOrName = computed(() => {
   const d = (props.job.description || '').trim()
@@ -342,6 +368,7 @@ onMounted(() => {
   min-height: 120px;
   height: auto;
   align-self: start;
+  position: relative;
   transition:
     box-shadow 0.15s,
     border-color 0.15s;
@@ -396,6 +423,25 @@ onMounted(() => {
   border-color: #3b82f6 !important;
   transform: scale(1.02);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.tap-assign-ready {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.4);
+}
+
+.tap-assign-banner {
+  position: absolute;
+  bottom: 0.35rem;
+  right: 0.35rem;
+  background: rgba(37, 99, 235, 0.9);
+  color: #fff;
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
 }
 
 .staff-item {

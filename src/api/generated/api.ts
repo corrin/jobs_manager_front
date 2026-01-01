@@ -894,14 +894,6 @@ const ClientSearchResponse = z
     total_pages: z.number().int(),
   })
   .passthrough()
-const CompanyDefaultsJobDetail = z
-  .object({
-    materials_markup: z.number(),
-    time_markup: z.number(),
-    charge_out_rate: z.number(),
-    wage_rate: z.number(),
-  })
-  .passthrough()
 const AssignJobRequest = z.object({ staff_id: z.string().uuid() }).passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
@@ -1469,6 +1461,14 @@ const JobEvent = z
     delta_checksum: z.string(),
     can_undo: z.boolean(),
     undo_description: z.string().nullable(),
+  })
+  .passthrough()
+const CompanyDefaultsJobDetail = z
+  .object({
+    materials_markup: z.number(),
+    time_markup: z.number(),
+    charge_out_rate: z.number(),
+    wage_rate: z.number(),
   })
   .passthrough()
 const JobData = z
@@ -2918,7 +2918,6 @@ export const schemas = {
   SupplierPickupAddressRequest,
   PatchedSupplierPickupAddressRequest,
   ClientSearchResponse,
-  CompanyDefaultsJobDetail,
   AssignJobRequest,
   AssignJobResponse,
   CompleteJob,
@@ -2989,6 +2988,7 @@ export const schemas = {
   XeroInvoice,
   Job,
   JobEvent,
+  CompanyDefaultsJobDetail,
   JobData,
   JobDetailResponse,
   JobDeltaEnvelopeRequest,
@@ -4944,9 +4944,10 @@ Query Parameters:
     method: 'get',
     path: '/job/api/company_defaults/',
     alias: 'job_api_company_defaults_retrieve',
-    description: `Fetch company default settings.`,
+    description: `API endpoint to fetch company default settings.
+Retrieves the singleton CompanyDefaults instance.`,
     requestFormat: 'json',
-    response: CompanyDefaultsJobDetail,
+    response: z.void(),
   },
   {
     method: 'post',
