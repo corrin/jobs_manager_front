@@ -33,14 +33,17 @@
 
         <div class="flex-1 flex flex-col px-2 sm:px-4 lg:px-6 py-1 md:py-2">
           <div class="mb-2 md:mb-3 w-full">
-            <div
-              class="staff-panel-container"
-              :class="{
-                'md:sticky md:top-2 md:z-20': isDesktop,
-              }"
-            >
+            <div v-if="isDesktop" class="flex justify-center px-2">
+              <div class="w-full max-w-6xl">
+                <StaffPanel
+                  :active-filters="activeStaffFilters"
+                  @staff-filter-changed="handleStaffFilterChanged"
+                />
+              </div>
+            </div>
+            <div v-else class="staff-panel-container">
               <div class="staff-panel-scroll">
-                <div v-if="!isDesktop" class="mobile-assign-info">
+                <div class="mobile-assign-info">
                   <div class="text-xs text-gray-600">
                     <span class="font-semibold text-gray-900">Quick assign:</span>
                     Tap <span class="font-semibold">Assign</span> on a teammate, then tap a job
@@ -63,7 +66,7 @@
                 <StaffPanel
                   class="staff-panel-inline"
                   :active-filters="activeStaffFilters"
-                  :enable-mobile-quick-assign="!isDesktop"
+                  :enable-mobile-quick-assign="true"
                   :active-mobile-assign-staff-id="mobileAssignStaffId"
                   @staff-filter-changed="handleStaffFilterChanged"
                   @mobile-assign-select="handleMobileAssignSelect"
@@ -628,14 +631,6 @@ onUnmounted(() => {
 
 .staff-panel-scroll :deep(.staff-scroll-list .staff-item) {
   flex: 0 0 auto;
-}
-
-@media (min-width: 768px) {
-  .staff-panel-scroll :deep(.staff-scroll-list) {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    min-width: max-content;
-  }
 }
 
 @media (max-width: 767px) {
