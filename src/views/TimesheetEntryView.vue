@@ -795,24 +795,42 @@ const enhancedJobs = ref<Map<string, Job>>(new Map())
 // Function to load enhanced job data ONLY for jobs with timesheet entries
 const loadEnhancedJobData = async (jobIds: string[]) => {
   try {
-    debugLog('Loading enhanced job data for jobs with timesheet entries:', jobIds.length, 'jobs')
+    // Filter to only jobs we haven't loaded yet
+    const jobsToLoad = jobIds.filter((id) => !enhancedJobs.value.has(id))
 
-    for (const jobId of jobIds) {
-      if (!enhancedJobs.value.has(jobId)) {
-        try {
-          const fullJobResponse = await jobService.getJob(jobId)
-          const fullJob = fullJobResponse.data.job
-          enhancedJobs.value.set(jobId, fullJob)
-          debugLog('Loaded enhanced job data:', {
-            jobId,
-            jobNumber: fullJob.job_number,
-            latest_estimate: fullJob.latest_estimate?.summary,
-            latest_quote: fullJob.latest_quote?.summary,
-            estimated_hours: fullJob.estimated_hours,
-          })
-        } catch (err) {
-          debugLog('Failed to load enhanced job data for:', jobId, err)
-        }
+    if (jobsToLoad.length === 0) {
+      debugLog('All enhanced job data already loaded')
+      return
+    }
+
+    debugLog(
+      'Loading enhanced job data for jobs with timesheet entries:',
+      jobsToLoad.length,
+      'jobs',
+    )
+
+    // Load all jobs in parallel instead of sequentially
+    const results = await Promise.allSettled(
+      jobsToLoad.map(async (jobId) => {
+        const fullJobResponse = await jobService.getJob(jobId)
+        return { jobId, job: fullJobResponse.data.job }
+      }),
+    )
+
+    // Process results
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        const { jobId, job } = result.value
+        enhancedJobs.value.set(jobId, job)
+        debugLog('Loaded enhanced job data:', {
+          jobId,
+          jobNumber: job.job_number,
+          latest_estimate: job.latest_estimate?.summary,
+          latest_quote: job.latest_quote?.summary,
+          estimated_hours: job.estimated_hours,
+        })
+      } else {
+        debugLog('Failed to load enhanced job data:', result.reason)
       }
     }
   } catch (err) {
@@ -1745,10 +1763,9 @@ onMounted(async () => {
 
     debugLog('Initializing optimized timesheet...')
 
-    await timesheetStore.initialize()
-    await timesheetStore.loadStaff()
-    await timesheetStore.loadJobs()
-    await companyDefaultsStore.loadCompanyDefaults()
+    // initialize() already calls loadStaff, loadJobs, loadCompanyDefaults in parallel
+    // No need to call them again - that was causing duplicate API calls
+    await Promise.all([timesheetStore.initialize(), companyDefaultsStore.loadCompanyDefaults()])
     debugLog('Company Defaults store value: ', companyDefaultsStore.companyDefaults)
 
     let validStaffId = selectedStaffId.value

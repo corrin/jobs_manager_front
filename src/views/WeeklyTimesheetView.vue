@@ -124,6 +124,7 @@
           :week-start-date="weekStartDate"
           :pay-run-status="payRunStatus"
           :payment-date="paymentDate"
+          :xero-url="xeroUrl"
           :creating="creatingPayRun"
           :posting="postingAll"
           :posting-progress="postingProgress"
@@ -131,6 +132,9 @@
           :payroll-error="payrollError"
           :refreshing="refreshingPayRuns"
           :post-success="postedAllToXero"
+          :posting-blocked="!canPostCurrentWeek"
+          :posting-blocked-reason="postingBlockedReason"
+          :has-draft="currentWeekHasDraft"
           @create-pay-run="handleCreatePayRun"
           @post-all-to-xero="handlePostAllToXero"
           @refresh-pay-runs="handleRefreshPayRuns"
@@ -296,9 +300,10 @@ import { fetchWeeklyOverview } from '@/services/weekly-timesheet.service'
 import {
   createPayRun,
   postStaffWeek,
-  fetchPayRunForWeek,
+  fetchAllPayRuns,
   refreshPayRuns,
   type PostStaffWeekCompleteEvent,
+  type PayRunListItem,
 } from '@/services/payroll.service'
 import { schemas } from '@/api/generated/api'
 import { debugLog } from '../utils/debug'
@@ -337,16 +342,19 @@ const payrollMode = ref(true)
 const showWeeklyMetricsModal = ref(false)
 const showWeekPicker = ref(false)
 
+// All pay runs (for default week calculation, current week status, and posting restrictions)
+const allPayRuns = ref<PayRunListItem[]>([])
+
 // Payroll state
 const payRunStatus = ref<string | null>(null)
 const paymentDate = ref<string | null>(null)
+const xeroUrl = ref<string | null>(null)
 const creatingPayRun = ref(false)
 const postingAll = ref(false)
 const payRunWarning = ref<string | null>(null)
 const payrollError = ref<string | null>(null)
 const refreshingPayRuns = ref(false)
 const postedAllToXero = ref(false)
-let payRunLookupRequestId = 0
 
 // Posting progress state
 const postingProgress = ref<{
@@ -357,52 +365,73 @@ const postingProgress = ref<{
 } | null>(null)
 
 function resetPayRunState() {
-  payRunLookupRequestId += 1
   payRunStatus.value = null
   paymentDate.value = null
+  xeroUrl.value = null
   payRunWarning.value = null
 }
 
-async function loadPayRunForCurrentWeek() {
+function loadPayRunForCurrentWeek() {
   if (!payrollMode.value || !weekStartDate.value) {
     resetPayRunState()
     return
   }
 
-  payRunStatus.value = null
-  paymentDate.value = null
-  const currentRequestId = ++payRunLookupRequestId
+  // Find pay run matching the current week from cached list
+  const currentWeekStart = weekStartDate.value
+  const payRun = allPayRuns.value.find((pr) => pr.period_start_date === currentWeekStart)
 
-  try {
-    const response = await fetchPayRunForWeek(weekStartDate.value)
-
-    if (currentRequestId !== payRunLookupRequestId) {
-      return
-    }
-
-    payRunWarning.value = response.warning ?? null
-
-    if (response.exists && response.pay_run) {
-      payRunStatus.value = response.pay_run.pay_run_status
-      paymentDate.value = response.pay_run.payment_date
-      debugLog('Loaded existing pay run:', response.pay_run)
-    } else {
-      resetPayRunState()
-      debugLog(`No pay run found for week starting ${weekStartDate.value}`)
-    }
-  } catch (err: unknown) {
-    if (currentRequestId !== payRunLookupRequestId) {
-      return
-    }
-
+  if (payRun) {
+    payRunStatus.value = payRun.pay_run_status
+    paymentDate.value = payRun.payment_date
+    xeroUrl.value = payRun.xero_url
+    debugLog('Found pay run for current week:', payRun)
+  } else {
     resetPayRunState()
-
-    console.error('Pay run lookup failed:', err)
-
-    toast.error('Unable to load pay run', {
-      description: 'Something went wrong. Please try again or contact Corrin.',
-    })
+    debugLog(`No pay run found for week starting ${currentWeekStart}`)
   }
+}
+
+// Load all pay runs (for default week calculation, current week status, and posting restrictions)
+async function loadAllPayRuns(): Promise<PayRunListItem[]> {
+  try {
+    const result = await fetchAllPayRuns()
+    allPayRuns.value = result.pay_runs
+    debugLog('Loaded all pay runs:', result.pay_runs.length, 'items')
+    return result.pay_runs
+  } catch (err: unknown) {
+    console.error('Failed to fetch pay runs:', err)
+    // Non-critical error - allow page to function without restriction data (fail-open)
+    allPayRuns.value = []
+    return []
+  }
+}
+
+// Calculate the default week based on pay runs
+function calculateDefaultWeek(payRuns: PayRunListItem[]): Date {
+  // If query param exists, use that (user explicitly navigated to a week)
+  if (route.query.week) {
+    return normalizeToWeekStart(route.query.week as string)
+  }
+
+  // Find the latest Draft pay run (if any)
+  const latestDraft = payRuns.find((pr) => pr.pay_run_status === 'Draft')
+  if (latestDraft) {
+    // Default to the week of the latest Draft
+    return normalizeToWeekStart(latestDraft.period_start_date)
+  }
+
+  // Find the latest Posted pay run (if any)
+  const latestPosted = payRuns.find((pr) => pr.pay_run_status === 'Posted')
+  if (latestPosted) {
+    // Default to week AFTER the latest Posted
+    const endDate = createLocalDate(latestPosted.period_end_date)
+    endDate.setDate(endDate.getDate() + 1)
+    return normalizeToWeekStart(endDate)
+  }
+
+  // Default to current week
+  return normalizeToWeekStart(new Date())
 }
 
 // Use timesheet store for weekend functionality
@@ -474,6 +503,39 @@ const displayDays = computed<DisplayDay[]>(() => {
 })
 
 const displayDayIndexes = computed<number[]>(() => displayDays.value.map((day) => day.idx))
+
+// Find the latest Posted pay run from the list
+const latestPostedPayRun = computed(() => {
+  return allPayRuns.value.find((pr) => pr.pay_run_status === 'Posted') ?? null
+})
+
+// Posting restrictions based on latest posted pay run
+const canPostCurrentWeek = computed(() => {
+  // If no posted pay runs exist, posting is allowed
+  if (!latestPostedPayRun.value) {
+    return true
+  }
+
+  // Get the end date of the currently selected week
+  const currentWeekEnd = dateService.getWeekRange(selectedWeekStart.value).endDate
+
+  // Can post if current week ends AFTER the latest posted period
+  return currentWeekEnd > latestPostedPayRun.value.period_end_date
+})
+
+const postingBlockedReason = computed(() => {
+  if (canPostCurrentWeek.value) return null
+  if (!latestPostedPayRun.value?.period_end_date) return null
+
+  const latestEndDate = latestPostedPayRun.value.period_end_date
+  const formattedDate = dateService.formatDisplayDate(latestEndDate)
+  return `Cannot post: A pay run has already been posted for the week ending ${formattedDate}. You can only post pay runs for weeks after this date.`
+})
+
+// Check if current week has a Draft pay run (allows overwriting)
+const currentWeekHasDraft = computed(() => {
+  return payRunStatus.value === 'Draft'
+})
 
 watch(
   () => payrollMode.value,
@@ -621,17 +683,17 @@ async function handleCreatePayRun() {
 }
 
 async function handleRefreshPayRuns() {
-  if (!weekStartDate.value) return
-
   refreshingPayRuns.value = true
   payrollError.value = null
   try {
-    const result = await refreshPayRuns(weekStartDate.value)
+    const result = await refreshPayRuns()
     toast.success('Pay runs refreshed', {
       description: `Fetched ${result.fetched}, created ${result.created}, updated ${result.updated}`,
     })
     debugLog('Pay runs synced from Xero:', result)
-    await loadPayRunForCurrentWeek()
+    // Reload all pay runs and update current week status
+    await loadAllPayRuns()
+    loadPayRunForCurrentWeek()
   } catch (err: unknown) {
     console.error('Refresh pay runs failed:', err)
 
@@ -765,7 +827,22 @@ async function handlePostAllToXero() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Fetch all pay runs first (needed for default week calculation and restrictions)
+  const payRuns = await loadAllPayRuns()
+
+  // If no query param, set the default week based on pay runs
+  if (!route.query.week) {
+    const defaultWeek = calculateDefaultWeek(payRuns)
+    selectedWeekStart.value = defaultWeek
+    // Update URL to reflect the calculated week
+    router.replace({ query: { week: dateService.getWeekRange(defaultWeek).startDate } })
+  }
+
+  // Load current week's pay run status from cached list
+  loadPayRunForCurrentWeek()
+
+  // Then load the timesheet data
   loadData()
 })
 </script>

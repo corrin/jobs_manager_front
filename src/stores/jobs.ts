@@ -342,6 +342,8 @@ export const useJobsStore = defineStore('jobs', () => {
       quote_acceptance_date: job.quote_acceptance_date ?? null,
       paid: Boolean(job.paid),
       price_cap: job.price_cap ?? null,
+      default_xero_pay_item_id: job.default_xero_pay_item_id ?? null,
+      default_xero_pay_item_name: job.default_xero_pay_item_name ?? null,
     }
   }
 
