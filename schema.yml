@@ -102,7 +102,7 @@ paths:
           description: ''
   /accounting/api/reports/sales-forecast/:
     get:
-      operationId: accounting_api_reports_sales_forecast_retrieve
+      operationId: sales_forecast_list
       description: Returns monthly sales comparison between Xero invoices and Job
         Manager revenue for all months with data
       summary: Get monthly sales forecast data
@@ -143,6 +143,91 @@ paths:
                           example: 5.48
           description: ''
         '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+          description: ''
+  /accounting/api/reports/sales-forecast/{month}/:
+    get:
+      operationId: sales_forecast_month_detail
+      description: Returns detailed invoice and job data for a specific month, showing
+        matched pairs and unmatched items
+      summary: Get month detail for sales forecast
+      parameters:
+        - in: path
+          name: month
+          schema:
+            type: string
+          required: true
+      tags:
+        - accounting
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  month:
+                    type: string
+                    example: 2025-01
+                  month_label:
+                    type: string
+                    example: Jan 2025
+                  rows:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        client_name:
+                          type: string
+                        job_number:
+                          type: integer
+                          nullable: true
+                        job_name:
+                          type: string
+                          nullable: true
+                        invoice_numbers:
+                          type: string
+                          nullable: true
+                        total_invoiced:
+                          type: number
+                        job_revenue:
+                          type: number
+                        variance:
+                          type: number
+                        job_id:
+                          type: string
+                          format: uuid
+                          nullable: true
+                        job_start_date:
+                          type: string
+                          format: date
+                          nullable: true
+                        total_xero_all_time:
+                          type: number
+                          nullable: true
+                        total_jm_all_time:
+                          type: number
+                          nullable: true
+                        variance_all_time:
+                          type: number
+                          nullable: true
+                        note:
+                          type: string
+                          nullable: true
+          description: ''
+        '400':
           content:
             application/json:
               schema:
@@ -721,6 +806,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompanyDefaults'
           description: ''
+  /api/company-defaults/schema/:
+    get:
+      operationId: api_company_defaults_schema_retrieve
+      description: Return schema metadata for CompanyDefaults fields.
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyDefaultsSchema'
+              examples:
+                ExampleResponse:
+                  value:
+                    sections:
+                      - key: general
+                        title: General Settings
+                        order: 1
+                        fields:
+                          - key: company_name
+                            label: Company Name
+                            type: text
+                            required: true
+                            help_text: ''
+                            section: general
+                  summary: Example Response
+          description: ''
   /api/workflow/ai-providers/:
     get:
       operationId: api_workflow_ai_providers_list
@@ -1138,6 +1253,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AppError'
+          description: ''
+  /api/workflow/xero-pay-items/:
+    get:
+      operationId: api_workflow_xero_pay_items_list
+      description: |-
+        API endpoint for Xero pay items (earnings rates and leave types).
+
+        Read-only - these are synced from Xero, not created locally.
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/XeroPayItem'
+          description: ''
+  /api/workflow/xero-pay-items/{id}/:
+    get:
+      operationId: api_workflow_xero_pay_items_retrieve
+      description: |-
+        API endpoint for Xero pay items (earnings rates and leave types).
+
+        Read-only - these are synced from Xero, not created locally.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Xero Pay Item.
+          required: true
+      tags:
+        - api
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroPayItem'
           description: ''
   /api/xero/create_invoice/{job_id}:
     post:
@@ -1655,6 +1816,70 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
+  /clients/addresses/validate/:
+    post:
+      operationId: clients_addresses_validate_create
+      description: Validate an address and return structured candidates.
+      tags:
+        - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  description: Freetext address to validate
+              required:
+                - address
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  candidates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        formatted_address:
+                          type: string
+                        street:
+                          type: string
+                        suburb:
+                          type: string
+                        city:
+                          type: string
+                        state:
+                          type: string
+                        postal_code:
+                          type: string
+                        country:
+                          type: string
+                        google_place_id:
+                          type: string
+                        latitude:
+                          type: number
+                        longitude:
+                          type: number
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                description: Missing or invalid address
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                description: Google API unavailable or not configured
+          description: ''
   /clients/all/:
     get:
       operationId: clients_all_list
@@ -2040,22 +2265,256 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
+  /clients/pickup-addresses/:
+    get:
+      operationId: clients_pickup_addresses_list
+      description: List all pickup addresses, optionally filtered by supplier_id.
+      parameters:
+        - in: query
+          name: supplier_id
+          schema:
+            type: string
+            format: uuid
+          description: Filter addresses by supplier UUID
+      tags:
+        - clients
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SupplierPickupAddress'
+          description: ''
+    post:
+      operationId: clients_pickup_addresses_create
+      description: |-
+        ViewSet for SupplierPickupAddress CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/pickup-addresses/           - list all addresses
+        - POST   /api/clients/pickup-addresses/           - create address
+        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
+        - PUT    /api/clients/pickup-addresses/<id>/      - full update
+        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
+        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - supplier_id: Filter addresses by supplier (client) UUID
+      tags:
+        - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPickupAddress'
+          description: ''
+  /clients/pickup-addresses/{id}/:
+    get:
+      operationId: clients_pickup_addresses_retrieve
+      description: |-
+        ViewSet for SupplierPickupAddress CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/pickup-addresses/           - list all addresses
+        - POST   /api/clients/pickup-addresses/           - create address
+        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
+        - PUT    /api/clients/pickup-addresses/<id>/      - full update
+        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
+        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - supplier_id: Filter addresses by supplier (client) UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Supplier Pickup Address.
+          required: true
+      tags:
+        - clients
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPickupAddress'
+          description: ''
+    put:
+      operationId: clients_pickup_addresses_update
+      description: |-
+        ViewSet for SupplierPickupAddress CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/pickup-addresses/           - list all addresses
+        - POST   /api/clients/pickup-addresses/           - create address
+        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
+        - PUT    /api/clients/pickup-addresses/<id>/      - full update
+        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
+        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - supplier_id: Filter addresses by supplier (client) UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Supplier Pickup Address.
+          required: true
+      tags:
+        - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplierPickupAddressRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPickupAddress'
+          description: ''
+    patch:
+      operationId: clients_pickup_addresses_partial_update
+      description: |-
+        ViewSet for SupplierPickupAddress CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/pickup-addresses/           - list all addresses
+        - POST   /api/clients/pickup-addresses/           - create address
+        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
+        - PUT    /api/clients/pickup-addresses/<id>/      - full update
+        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
+        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - supplier_id: Filter addresses by supplier (client) UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Supplier Pickup Address.
+          required: true
+      tags:
+        - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplierPickupAddressRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplierPickupAddressRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplierPickupAddressRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplierPickupAddress'
+          description: ''
+    delete:
+      operationId: clients_pickup_addresses_destroy
+      description: |-
+        ViewSet for SupplierPickupAddress CRUD operations.
+
+        Endpoints:
+        - GET    /api/clients/pickup-addresses/           - list all addresses
+        - POST   /api/clients/pickup-addresses/           - create address
+        - GET    /api/clients/pickup-addresses/<id>/      - retrieve address
+        - PUT    /api/clients/pickup-addresses/<id>/      - full update
+        - PATCH  /api/clients/pickup-addresses/<id>/      - partial update
+        - DELETE /api/clients/pickup-addresses/<id>/      - soft delete (sets is_active=False)
+
+        Query Parameters:
+        - supplier_id: Filter addresses by supplier (client) UUID
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Supplier Pickup Address.
+          required: true
+      tags:
+        - clients
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /clients/search/:
     get:
       operationId: clients_search_retrieve
-      description: Searches clients by name following early return pattern.
+      description: Lists/searches clients with pagination and sorting.
       summary: Search clients
       parameters:
         - in: query
-          name: limit
+          name: page
           schema:
             type: integer
-          description: Max results (default 10, max 50)
+          description: Page number (default 1)
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+          description: Results per page (default 50)
         - in: query
           name: q
           schema:
             type: string
-          description: Search query (min 3 chars, case-insensitive substring match)
+          description: Search query (case-insensitive substring match). If empty, returns
+            all clients.
+        - in: query
+          name: sort_by
+          schema:
+            type: string
+          description: Field to sort by (default 'name')
+        - in: query
+          name: sort_dir
+          schema:
+            type: string
+          description: "Sort direction: 'asc' or 'desc' (default 'asc')"
       tags:
         - Clients
       security:
@@ -2625,6 +3084,196 @@ paths:
               schema:
                 $ref: '#/components/schemas/FetchStatusValuesResponse'
           description: ''
+  /job/api/jobs/workshop:
+    get:
+      operationId: job_api_jobs_workshop_list
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkshopJob'
+          description: ''
+  /job/api/workshop/timesheets/:
+    get:
+      operationId: job_api_workshop_timesheets_retrieve
+      description: Return all timesheet entries for the staff member on a given date.
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+          description: Optional date (YYYY-MM-DD). Defaults to today.
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopTimesheetListResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    post:
+      operationId: job_api_workshop_timesheets_create
+      description: Create a new timesheet entry for the authenticated staff.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkshopTimesheetEntryRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkshopTimesheetEntryRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkshopTimesheetEntryRequestRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopTimesheetEntry'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    patch:
+      operationId: job_api_workshop_timesheets_partial_update
+      description: Update an existing timesheet entry belonging to the staff member.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkshopTimesheetEntryUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkshopTimesheetEntryUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkshopTimesheetEntryUpdateRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkshopTimesheetEntry'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+    delete:
+      operationId: job_api_workshop_timesheets_destroy
+      description: Delete a timesheet entry belonging to the staff member.
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /job/job/{job_id}/workshop-pdf/:
     get:
       operationId: job_job_workshop_pdf_retrieve
@@ -2682,6 +3331,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CostLineCreateUpdate'
+          description: ''
+  /job/rest/cost_lines/{cost_line_id}/approve/:
+    post:
+      operationId: approveCostLine
+      description: |-
+        Approve an existing CostLine
+
+        POST /job/rest/cost_lines/<cost_line_id>/approve
+      parameters:
+        - in: path
+          name: cost_line_id
+          schema:
+            type: string
+          description: ID of the CostLine to approve
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineApprovalResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
           description: ''
   /job/rest/cost_lines/{cost_line_id}/delete/:
     delete:
@@ -4933,6 +5619,81 @@ paths:
               schema:
                 $ref: '#/components/schemas/PurchaseOrderEmailResponse'
           description: ''
+  /purchasing/rest/purchase-orders/{po_id}/events/:
+    get:
+      operationId: listPurchaseOrderEvents
+      description: List all events/comments for a purchase order.
+      parameters:
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Purchase Orders
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderEventsResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+    post:
+      operationId: createPurchaseOrderEvent
+      description: Create a new event/comment on a purchase order.
+      parameters:
+        - in: path
+          name: po_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Purchase Orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEventCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEventCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PurchaseOrderEventCreateRequest'
+        required: true
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderEventCreateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
   /purchasing/rest/purchase-orders/{po_id}/lines/{line_id}/allocations/delete/:
     post:
       operationId: deleteAllocation
@@ -5580,16 +6341,8 @@ paths:
   /timesheets/api/payroll/pay-runs/:
     get:
       operationId: timesheets_api_payroll_pay_runs_retrieve
-      description: Return pay run data for the requested week if it exists.
-      summary: Get pay run for a week
-      parameters:
-        - in: query
-          name: week_start_date
-          schema:
-            type: string
-            format: date
-          description: Monday of the week (YYYY-MM-DD)
-          required: true
+      description: Return all pay runs for the configured payroll calendar.
+      summary: List pay runs
       tags:
         - timesheets
       security:
@@ -5599,13 +6352,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PayRunForWeekResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
+                $ref: '#/components/schemas/PayRunListResponse'
           description: ''
         '500':
           content:
@@ -5696,8 +6443,11 @@ paths:
   /timesheets/api/payroll/post-staff-week/:
     post:
       operationId: timesheets_api_payroll_post_staff_week_create
-      description: Post a week's timesheet to Xero Payroll.
-      summary: Post weekly timesheet to Xero Payroll
+      description: |-
+        Start posting timesheets. Returns a task_id to use with the stream endpoint.
+
+        Use GET /api/payroll/post-staff-week/stream/{task_id}/ to receive SSE progress.
+      summary: Start posting weekly timesheets to Xero Payroll
       tags:
         - timesheets
       requestBody:
@@ -5716,23 +6466,7 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PostWeekToXeroResponse'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
+          description: No response body
   /timesheets/api/staff/:
     get:
       operationId: timesheets_api_staff_retrieve
@@ -5812,59 +6546,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WeeklyTimesheetData'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-    post:
-      operationId: timesheets_api_weekly_create
-      description: |-
-        Submit paid absence request.
-
-        Expected payload:
-        {
-            "staff_id": "uuid",
-            "start_date": "YYYY-MM-DD",
-            "end_date": "YYYY-MM-DD",
-            "leave_type": "annual|sick|other",
-            "hours_per_day": 8.0,
-            "description": "Optional description"
-        }
-      summary: Submit paid absence
-      tags:
-        - timesheets
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: {}
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              additionalProperties: {}
-          multipart/form-data:
-            schema:
-              type: object
-              additionalProperties: {}
-      security:
-        - cookieAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
           description: ''
         '400':
           content:
@@ -6963,14 +7644,26 @@ components:
         - name
     ClientSearchResponse:
       type: object
-      description: Serializer for client search response
+      description: Serializer for paginated client search response
       properties:
         results:
           type: array
           items:
             $ref: '#/components/schemas/ClientSearchResult'
+        count:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total_pages:
+          type: integer
       required:
+        - count
+        - page
+        - page_size
         - results
+        - total_pages
     ClientSearchResult:
       type: object
       description: Serializer for individual client search result
@@ -7046,6 +7739,11 @@ components:
         company_name:
           type: string
           maxLength: 255
+        company_acronym:
+          type: string
+          nullable: true
+          description: Short acronym for the company (e.g., 'MSM' for Morris Sheetmetal)
+          maxLength: 10
         is_primary:
           type: boolean
         time_markup:
@@ -7118,41 +7816,20 @@ components:
           nullable: true
           description: The Xero tenant ID to use for this company
           maxLength: 100
-        xero_annual_leave_type_id:
+        xero_shortcode:
           type: string
           nullable: true
-          description: Xero Payroll Leave Type ID for Annual Leave
-          maxLength: 100
-        xero_sick_leave_type_id:
+          description: Xero organisation shortcode for deep linking (e.g., '!8-5Xl')
+          maxLength: 20
+        xero_payroll_calendar_name:
           type: string
-          nullable: true
-          description: Xero Payroll Leave Type ID for Sick Leave
+          description: Name of Xero Payroll calendar to use (e.g., 'Weekly 2025')
           maxLength: 100
-        xero_other_leave_type_id:
+        xero_payroll_calendar_id:
           type: string
+          format: uuid
           nullable: true
-          description: Xero Payroll Leave Type ID for Other Leave
-          maxLength: 100
-        xero_unpaid_leave_type_id:
-          type: string
-          nullable: true
-          description: Xero Payroll Leave Type ID for Unpaid Leave
-          maxLength: 100
-        xero_ordinary_earnings_rate_id:
-          type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
-          maxLength: 100
-        xero_time_half_earnings_rate_id:
-          type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
-          maxLength: 100
-        xero_double_time_earnings_rate_id:
-          type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Double Time (2.0x)
-          maxLength: 100
+          description: Cached Xero Payroll calendar ID (set by xero --setup command)
         mon_start:
           type: string
           format: time
@@ -7202,6 +7879,47 @@ components:
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
+        address_line1:
+          type: string
+          nullable: true
+          description: Street address line 1
+          maxLength: 255
+        address_line2:
+          type: string
+          nullable: true
+          description: Street address line 2 (optional)
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb (for NZ addresses)
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          description: City
+          maxLength: 100
+        post_code:
+          type: string
+          nullable: true
+          description: Postal/ZIP code
+          maxLength: 20
+        country:
+          type: string
+          description: Country name
+          maxLength: 100
+        company_email:
+          type: string
+          format: email
+          nullable: true
+          description: Company contact email address
+          maxLength: 254
+        company_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Company website URL
+          maxLength: 200
         shop_client_name:
           type: string
           nullable: true
@@ -7287,6 +8005,11 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        company_acronym:
+          type: string
+          nullable: true
+          description: Short acronym for the company (e.g., 'MSM' for Morris Sheetmetal)
+          maxLength: 10
         is_primary:
           type: boolean
         time_markup:
@@ -7360,41 +8083,21 @@ components:
           nullable: true
           description: The Xero tenant ID to use for this company
           maxLength: 100
-        xero_annual_leave_type_id:
+        xero_shortcode:
           type: string
           nullable: true
-          description: Xero Payroll Leave Type ID for Annual Leave
-          maxLength: 100
-        xero_sick_leave_type_id:
+          description: Xero organisation shortcode for deep linking (e.g., '!8-5Xl')
+          maxLength: 20
+        xero_payroll_calendar_name:
           type: string
-          nullable: true
-          description: Xero Payroll Leave Type ID for Sick Leave
+          minLength: 1
+          description: Name of Xero Payroll calendar to use (e.g., 'Weekly 2025')
           maxLength: 100
-        xero_other_leave_type_id:
+        xero_payroll_calendar_id:
           type: string
+          format: uuid
           nullable: true
-          description: Xero Payroll Leave Type ID for Other Leave
-          maxLength: 100
-        xero_unpaid_leave_type_id:
-          type: string
-          nullable: true
-          description: Xero Payroll Leave Type ID for Unpaid Leave
-          maxLength: 100
-        xero_ordinary_earnings_rate_id:
-          type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
-          maxLength: 100
-        xero_time_half_earnings_rate_id:
-          type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
-          maxLength: 100
-        xero_double_time_earnings_rate_id:
-          type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Double Time (2.0x)
-          maxLength: 100
+          description: Cached Xero Payroll calendar ID (set by xero --setup command)
         mon_start:
           type: string
           format: time
@@ -7436,6 +8139,48 @@ components:
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
+        address_line1:
+          type: string
+          nullable: true
+          description: Street address line 1
+          maxLength: 255
+        address_line2:
+          type: string
+          nullable: true
+          description: Street address line 2 (optional)
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb (for NZ addresses)
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          description: City
+          maxLength: 100
+        post_code:
+          type: string
+          nullable: true
+          description: Postal/ZIP code
+          maxLength: 20
+        country:
+          type: string
+          minLength: 1
+          description: Country name
+          maxLength: 100
+        company_email:
+          type: string
+          format: email
+          nullable: true
+          description: Company contact email address
+          maxLength: 254
+        company_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Company website URL
+          maxLength: 200
         shop_client_name:
           type: string
           nullable: true
@@ -7487,6 +8232,16 @@ components:
           description: Target percentage of hours worked in shop jobs
       required:
         - company_name
+    CompanyDefaultsSchema:
+      type: object
+      description: Serializer for the complete schema response.
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettingsSection'
+      required:
+        - sections
     CompleteJob:
       type: object
       properties:
@@ -7605,6 +8360,16 @@ components:
           type: string
           format: date-time
           nullable: true
+        approved:
+          type: boolean
+          description: Indicates whether this line is approved or not by an office
+            staff (when the line is created by a workshop worker)
+        xero_pay_item:
+          type: string
+          format: uuid
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
         total_cost:
           type: number
           format: double
@@ -7623,6 +8388,23 @@ components:
         - total_cost
         - total_rev
         - updated_at
+    CostLineApprovalResponse:
+      type: object
+      description: Serializer for non-material cost line approval responses.
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        line:
+          $ref: '#/components/schemas/CostLine'
+      required:
+        - line
+        - success
+    CostLineApprovalResult:
+      oneOf:
+        - $ref: '#/components/schemas/StockConsumeResponse'
+        - $ref: '#/components/schemas/CostLineApprovalResponse'
     CostLineCreateUpdate:
       type: object
       description: Serializer for CostLine creation and updates - full write capabilities
@@ -7659,9 +8441,11 @@ components:
           format: date
           description: The date this cost should be attributed to for accounting purposes
         ext_refs:
-          description: External references (e.g., time entry IDs, material IDs)
+          type: object
+          additionalProperties: {}
         meta:
-          description: Additional metadata - structure varies by kind (see class docstring)
+          type: object
+          additionalProperties: {}
         created_at:
           type: string
           format: date-time
@@ -7670,6 +8454,12 @@ components:
           type: string
           format: date-time
           readOnly: true
+        xero_pay_item:
+          type: string
+          format: uuid
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
       required:
         - accounting_date
         - created_at
@@ -7711,9 +8501,17 @@ components:
           format: date
           description: The date this cost should be attributed to for accounting purposes
         ext_refs:
-          description: External references (e.g., time entry IDs, material IDs)
+          type: object
+          additionalProperties: {}
         meta:
-          description: Additional metadata - structure varies by kind (see class docstring)
+          type: object
+          additionalProperties: {}
+        xero_pay_item:
+          type: string
+          format: uuid
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
       required:
         - accounting_date
         - kind
@@ -7780,6 +8578,16 @@ components:
           type: string
           format: date-time
           nullable: true
+        approved:
+          type: boolean
+          description: Indicates whether this line is approved or not by an office
+            staff (when the line is created by a workshop worker)
+        xero_pay_item:
+          type: string
+          format: uuid
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
       required:
         - accounting_date
         - kind
@@ -7872,8 +8680,14 @@ components:
       type: object
       description: Response serializer for created pay run
       properties:
-        pay_run_id:
+        id:
           type: string
+          format: uuid
+          description: Django primary key
+        xero_id:
+          type: string
+          format: uuid
+          description: Xero pay run ID
         status:
           type: string
         period_start_date:
@@ -7886,11 +8700,12 @@ components:
           type: string
           format: date
       required:
-        - pay_run_id
+        - id
         - payment_date
         - period_end_date
         - period_start_date
         - status
+        - xero_id
     CustomTokenObtainPairRequest:
       type: object
       description: Custom serializer that accepts username and maps it to email
@@ -8723,17 +9538,26 @@ components:
           readOnly: true
         shop_job:
           type: boolean
-          description: Indicates if this is a shop job (no client).
+          description: Indicates if this is a shop job (belongs to shop client).
           readOnly: true
         rejected_flag:
           type: boolean
-          description: Indicates if this job was rejected (shown in Recently Completed
-            with rejected styling)
+          description: Indicates if this job was rejected (shown in Archived with
+            rejected styling)
+        default_xero_pay_item_id:
+          type: string
+          format: uuid
+          nullable: true
+        default_xero_pay_item_name:
+          type: string
+          readOnly: true
+          nullable: true
       required:
         - charge_out_rate
         - client_name
         - contact_name
         - created_at
+        - default_xero_pay_item_name
         - fully_invoiced
         - id
         - invoices
@@ -9520,6 +10344,15 @@ components:
           $ref: '#/components/schemas/JobClientHeader'
         quoted:
           type: boolean
+        default_xero_pay_item_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        default_xero_pay_item_name:
+          type: string
+          readOnly: true
+          nullable: true
         job_number:
           type: integer
           maximum: 2147483647
@@ -9568,10 +10401,12 @@ components:
           type: boolean
         rejected_flag:
           type: boolean
-          description: Indicates if this job was rejected (shown in Recently Completed
-            with rejected styling)
+          description: Indicates if this job was rejected (shown in Archived with
+            rejected styling)
       required:
         - client
+        - default_xero_pay_item_id
+        - default_xero_pay_item_name
         - job_id
         - job_number
         - name
@@ -10583,11 +11418,21 @@ components:
           readOnly: true
         leave_type:
           type: string
-          description: Get leave type if this is a payroll job
+          nullable: true
+          description: Get leave type if this is a payroll leave job
+          readOnly: true
+        default_xero_pay_item_id:
+          type: string
+          format: uuid
+          readOnly: true
+        default_xero_pay_item_name:
+          type: string
           readOnly: true
       required:
         - charge_out_rate
         - client_name
+        - default_xero_pay_item_id
+        - default_xero_pay_item_name
         - has_actual_costset
         - id
         - job_number
@@ -10944,6 +11789,11 @@ components:
           type: string
           minLength: 1
           maxLength: 255
+        company_acronym:
+          type: string
+          nullable: true
+          description: Short acronym for the company (e.g., 'MSM' for Morris Sheetmetal)
+          maxLength: 10
         is_primary:
           type: boolean
         time_markup:
@@ -11017,41 +11867,21 @@ components:
           nullable: true
           description: The Xero tenant ID to use for this company
           maxLength: 100
-        xero_annual_leave_type_id:
+        xero_shortcode:
           type: string
           nullable: true
-          description: Xero Payroll Leave Type ID for Annual Leave
-          maxLength: 100
-        xero_sick_leave_type_id:
+          description: Xero organisation shortcode for deep linking (e.g., '!8-5Xl')
+          maxLength: 20
+        xero_payroll_calendar_name:
           type: string
-          nullable: true
-          description: Xero Payroll Leave Type ID for Sick Leave
+          minLength: 1
+          description: Name of Xero Payroll calendar to use (e.g., 'Weekly 2025')
           maxLength: 100
-        xero_other_leave_type_id:
+        xero_payroll_calendar_id:
           type: string
+          format: uuid
           nullable: true
-          description: Xero Payroll Leave Type ID for Other Leave
-          maxLength: 100
-        xero_unpaid_leave_type_id:
-          type: string
-          nullable: true
-          description: Xero Payroll Leave Type ID for Unpaid Leave
-          maxLength: 100
-        xero_ordinary_earnings_rate_id:
-          type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Ordinary Time (1.0x)
-          maxLength: 100
-        xero_time_half_earnings_rate_id:
-          type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Time and a Half (1.5x)
-          maxLength: 100
-        xero_double_time_earnings_rate_id:
-          type: string
-          nullable: true
-          description: Xero Payroll earnings rate ID for Double Time (2.0x)
-          maxLength: 100
+          description: Cached Xero Payroll calendar ID (set by xero --setup command)
         mon_start:
           type: string
           format: time
@@ -11093,6 +11923,48 @@ components:
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
+        address_line1:
+          type: string
+          nullable: true
+          description: Street address line 1
+          maxLength: 255
+        address_line2:
+          type: string
+          nullable: true
+          description: Street address line 2 (optional)
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb (for NZ addresses)
+          maxLength: 100
+        city:
+          type: string
+          nullable: true
+          description: City
+          maxLength: 100
+        post_code:
+          type: string
+          nullable: true
+          description: Postal/ZIP code
+          maxLength: 20
+        country:
+          type: string
+          minLength: 1
+          description: Country name
+          maxLength: 100
+        company_email:
+          type: string
+          format: email
+          nullable: true
+          description: Company contact email address
+          maxLength: 254
+        company_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Company website URL
+          maxLength: 200
         shop_client_name:
           type: string
           nullable: true
@@ -11178,9 +12050,17 @@ components:
           format: date
           description: The date this cost should be attributed to for accounting purposes
         ext_refs:
-          description: External references (e.g., time entry IDs, material IDs)
+          type: object
+          additionalProperties: {}
         meta:
-          description: Additional metadata - structure varies by kind (see class docstring)
+          type: object
+          additionalProperties: {}
+        xero_pay_item:
+          type: string
+          format: uuid
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
     PatchedDjangoJobRequest:
       type: object
       properties:
@@ -11247,6 +12127,10 @@ components:
           type: string
           format: uuid
           nullable: true
+        pickup_address_id:
+          type: string
+          format: uuid
+          nullable: true
         reference:
           type: string
           maxLength: 255
@@ -11296,10 +12180,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -11309,7 +12189,7 @@ components:
           format: date
           nullable: true
           description: Date staff member left employment (null for current employees)
-        is_staff:
+        is_office_staff:
           type: boolean
         is_superuser:
           type: boolean
@@ -11394,8 +12274,6 @@ components:
           type: string
           format: binary
           writeOnly: true
-          nullable: true
-        raw_ims_data:
           nullable: true
     PatchedStockItemRequest:
       type: object
@@ -11483,15 +12361,123 @@ components:
         is_active:
           type: boolean
           description: False when quantity reaches zero or item is fully consumed/transformed
-    PayRunDetails:
+    PatchedSupplierPickupAddressRequest:
       type: object
-      description: Serializer representing details from a Xero pay run.
+      description: Serializer for SupplierPickupAddress model (delivery/pickup locations).
       properties:
-        pay_run_id:
+        client:
           type: string
-        payroll_calendar_id:
+          format: uuid
+          description: The supplier this pickup address belongs to
+        name:
+          type: string
+          minLength: 1
+          description: Friendly name for this address (e.g., 'Main Warehouse', 'City
+            Branch')
+          maxLength: 255
+        street:
+          type: string
+          minLength: 1
+          description: Street address including unit/suite number
+          maxLength: 255
+        suburb:
           type: string
           nullable: true
+          description: Suburb or neighbourhood (e.g., Thorndon, Northcote Point)
+          maxLength: 100
+        city:
+          type: string
+          minLength: 1
+          description: City (e.g., Wellington, Auckland)
+          maxLength: 100
+        state:
+          type: string
+          nullable: true
+          description: State or province
+          maxLength: 100
+        postal_code:
+          type: string
+          nullable: true
+          description: Postal or ZIP code
+          maxLength: 20
+        country:
+          type: string
+          minLength: 1
+          description: Country name
+          maxLength: 100
+        google_place_id:
+          type: string
+          nullable: true
+          description: Google Place ID for this address
+          maxLength: 255
+        latitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Latitude coordinate
+        longitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Longitude coordinate
+        is_primary:
+          type: boolean
+          description: Indicates if this is the primary pickup address for the supplier
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes (e.g., opening hours, access instructions)
+    PatchedWorkshopTimesheetEntryUpdateRequest:
+      type: object
+      description: Serializer validating workshop timesheet update (PATCH) requests.
+      properties:
+        entry_id:
+          type: string
+          format: uuid
+        job_id:
+          type: string
+          format: uuid
+        accounting_date:
+          type: string
+          format: date
+        hours:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: 0.01
+          exclusiveMaximum: true
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        is_billable:
+          type: boolean
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: 0.1
+          exclusiveMaximum: true
+    PayRunListItem:
+      type: object
+      description: Serializer for a pay run in the list response.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Django primary key
+        xero_id:
+          type: string
+          format: uuid
+          description: Xero pay run ID
         period_start_date:
           type: string
           format: date
@@ -11503,133 +12489,84 @@ components:
           format: date
         pay_run_status:
           type: string
-        pay_run_type:
+        xero_url:
           type: string
-          nullable: true
+          description: Deep link to pay run in Xero
       required:
-        - pay_run_id
+        - id
         - pay_run_status
-        - pay_run_type
         - payment_date
-        - payroll_calendar_id
         - period_end_date
         - period_start_date
-    PayRunForWeekResponse:
+        - xero_id
+        - xero_url
+    PayRunListResponse:
       type: object
-      description: Response serializer when fetching pay run data for a week.
+      description: Response serializer for listing all pay runs.
       properties:
-        exists:
-          type: boolean
-        pay_run:
-          allOf:
-            - $ref: '#/components/schemas/PayRunDetails'
-          nullable: true
-        warning:
-          type: string
-          nullable: true
+        pay_runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayRunListItem'
       required:
-        - exists
-        - pay_run
+        - pay_runs
     PayRunSyncResponse:
       type: object
       description: Response payload after refreshing cached pay runs.
       properties:
+        synced:
+          type: boolean
         fetched:
           type: integer
+          description: Number of pay runs fetched from Xero
         created:
           type: integer
+          description: Number of new pay runs created locally
         updated:
           type: integer
+          description: Number of existing pay runs updated
       required:
         - created
         - fetched
+        - synced
         - updated
     PayRunSyncResponseRequest:
       type: object
       description: Response payload after refreshing cached pay runs.
       properties:
+        synced:
+          type: boolean
         fetched:
           type: integer
+          description: Number of pay runs fetched from Xero
         created:
           type: integer
+          description: Number of new pay runs created locally
         updated:
           type: integer
+          description: Number of existing pay runs updated
       required:
         - created
         - fetched
+        - synced
         - updated
     PostWeekToXeroRequest:
       type: object
-      description: Request serializer for posting weekly timesheet to Xero
+      description: Request serializer for posting weekly timesheets to Xero
       properties:
-        staff_id:
-          type: string
-          format: uuid
-          description: Staff member UUID
+        staff_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: List of staff member UUIDs
         week_start_date:
           type: string
           format: date
           description: Monday of the week (YYYY-MM-DD)
       required:
-        - staff_id
+        - staff_ids
         - week_start_date
-    PostWeekToXeroResponse:
-      type: object
-      description: Response serializer for posted timesheet
-      properties:
-        success:
-          type: boolean
-        xero_timesheet_id:
-          type: string
-          nullable: true
-        xero_leave_ids:
-          type: array
-          items:
-            type: string
-          nullable: true
-        entries_posted:
-          type: integer
-        work_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        other_leave_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        annual_sick_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        unpaid_hours:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        errors:
-          type: array
-          items:
-            type: string
-      required:
-        - annual_sick_hours
-        - entries_posted
-        - errors
-        - other_leave_hours
-        - success
-        - unpaid_hours
-        - work_hours
-        - xero_timesheet_id
     PreviewQuoteResponse:
       type: object
       description: Serializer for preview quote response.
@@ -11872,6 +12809,10 @@ components:
           type: string
           format: uuid
           nullable: true
+        pickup_address_id:
+          type: string
+          format: uuid
+          nullable: true
         reference:
           type: string
           maxLength: 255
@@ -11892,6 +12833,10 @@ components:
       description: Serializer for creating purchase orders.
       properties:
         supplier_id:
+          type: string
+          format: uuid
+          nullable: true
+        pickup_address_id:
           type: string
           format: uuid
           nullable: true
@@ -11944,6 +12889,12 @@ components:
           type: string
           format: uuid
           nullable: true
+        pickup_address_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Delivery/pickup address for this purchase order
+          readOnly: true
         supplier:
           type: string
           readOnly: true
@@ -11958,9 +12909,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderLine'
+        pickup_address:
+          allOf:
+            - $ref: '#/components/schemas/SupplierPickupAddress'
+          readOnly: true
+          nullable: true
       required:
         - id
         - lines
+        - pickup_address
+        - pickup_address_id
         - po_number
         - supplier
         - supplier_has_xero_id
@@ -12006,6 +12964,71 @@ components:
           type: string
       required:
         - success
+    PurchaseOrderEvent:
+      type: object
+      description: Serializer for PurchaseOrderEvent model - read-only for frontend.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        staff:
+          type: string
+          readOnly: true
+      required:
+        - description
+        - id
+        - staff
+    PurchaseOrderEventCreateRequest:
+      type: object
+      description: Serializer for purchase order event creation request.
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+        - description
+    PurchaseOrderEventCreateResponse:
+      type: object
+      description: Serializer for purchase order event creation response.
+      properties:
+        success:
+          type: boolean
+        event:
+          $ref: '#/components/schemas/PurchaseOrderEvent'
+      required:
+        - event
+        - success
+    PurchaseOrderEventsResponse:
+      type: object
+      description: Serializer for purchase order events list response.
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseOrderEvent'
+      required:
+        - events
+    PurchaseOrderJob:
+      type: object
+      description: Serializer for job info within a purchase order listing.
+      properties:
+        job_number:
+          type: string
+        name:
+          type: string
+        client:
+          type: string
+      required:
+        - client
+        - job_number
+        - name
     PurchaseOrderLine:
       type: object
       description: Serializer for PurchaseOrderLine model.
@@ -12310,8 +13333,13 @@ components:
           type: string
           format: uuid
           nullable: true
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/PurchaseOrderJob'
       required:
         - id
+        - jobs
         - order_date
         - po_number
         - status
@@ -12322,6 +13350,10 @@ components:
       description: Serializer for updating purchase orders.
       properties:
         supplier_id:
+          type: string
+          format: uuid
+          nullable: true
+        pickup_address_id:
           type: string
           format: uuid
           nullable: true
@@ -12793,6 +13825,48 @@ components:
         - job_number
         - title
         - updated_at
+    SettingsField:
+      type: object
+      description: Serializer for individual field metadata.
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        type:
+          type: string
+        required:
+          type: boolean
+        help_text:
+          type: string
+        section:
+          type: string
+      required:
+        - help_text
+        - key
+        - label
+        - required
+        - section
+        - type
+    SettingsSection:
+      type: object
+      description: Serializer for a section containing fields.
+      properties:
+        key:
+          type: string
+        title:
+          type: string
+        order:
+          type: integer
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettingsField'
+      required:
+        - fields
+        - key
+        - order
+        - title
     SourceEnum:
       enum:
         - purchase_order
@@ -12845,10 +13919,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -12858,7 +13928,7 @@ components:
           format: date
           nullable: true
           description: Date staff member left employment (null for current employees)
-        is_staff:
+        is_office_staff:
           type: boolean
         is_superuser:
           type: boolean
@@ -12951,8 +14021,6 @@ components:
           items:
             type: integer
           description: Specific permissions for this user.
-        raw_ims_data:
-          nullable: true
         icon_url:
           type: string
           nullable: true
@@ -12996,10 +14064,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -13009,7 +14073,7 @@ components:
           format: date
           nullable: true
           description: Date staff member left employment (null for current employees)
-        is_staff:
+        is_office_staff:
           type: boolean
         is_superuser:
           type: boolean
@@ -13104,8 +14168,6 @@ components:
           type: string
           format: binary
           writeOnly: true
-          nullable: true
-        raw_ims_data:
           nullable: true
       required:
         - email
@@ -13396,10 +14458,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        ims_payroll_id:
-          type: string
-          nullable: true
-          maxLength: 100
         xero_user_id:
           type: string
           nullable: true
@@ -13409,7 +14467,7 @@ components:
           format: date
           nullable: true
           description: Date staff member left employment (null for current employees)
-        is_staff:
+        is_office_staff:
           type: boolean
         is_superuser:
           type: boolean
@@ -13494,8 +14552,6 @@ components:
           type: string
           format: binary
           writeOnly: true
-          nullable: true
-        raw_ims_data:
           nullable: true
       required:
         - email
@@ -13827,6 +14883,185 @@ components:
         - missing_staff
         - partial_staff
         - total_staff
+    SupplierPickupAddress:
+      type: object
+      description: Serializer for SupplierPickupAddress model (delivery/pickup locations).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        client:
+          type: string
+          format: uuid
+          description: The supplier this pickup address belongs to
+        name:
+          type: string
+          description: Friendly name for this address (e.g., 'Main Warehouse', 'City
+            Branch')
+          maxLength: 255
+        street:
+          type: string
+          description: Street address including unit/suite number
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb or neighbourhood (e.g., Thorndon, Northcote Point)
+          maxLength: 100
+        city:
+          type: string
+          description: City (e.g., Wellington, Auckland)
+          maxLength: 100
+        state:
+          type: string
+          nullable: true
+          description: State or province
+          maxLength: 100
+        postal_code:
+          type: string
+          nullable: true
+          description: Postal or ZIP code
+          maxLength: 20
+        country:
+          type: string
+          description: Country name
+          maxLength: 100
+        google_place_id:
+          type: string
+          nullable: true
+          description: Google Place ID for this address
+          maxLength: 255
+        latitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Latitude coordinate
+        longitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Longitude coordinate
+        is_primary:
+          type: boolean
+          description: Indicates if this is the primary pickup address for the supplier
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes (e.g., opening hours, access instructions)
+        is_active:
+          type: boolean
+          readOnly: true
+          description: Soft delete flag - inactive addresses are hidden from normal
+            queries
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        formatted_address:
+          type: string
+          readOnly: true
+      required:
+        - city
+        - client
+        - created_at
+        - formatted_address
+        - id
+        - is_active
+        - name
+        - street
+        - updated_at
+    SupplierPickupAddressRequest:
+      type: object
+      description: Serializer for SupplierPickupAddress model (delivery/pickup locations).
+      properties:
+        client:
+          type: string
+          format: uuid
+          description: The supplier this pickup address belongs to
+        name:
+          type: string
+          minLength: 1
+          description: Friendly name for this address (e.g., 'Main Warehouse', 'City
+            Branch')
+          maxLength: 255
+        street:
+          type: string
+          minLength: 1
+          description: Street address including unit/suite number
+          maxLength: 255
+        suburb:
+          type: string
+          nullable: true
+          description: Suburb or neighbourhood (e.g., Thorndon, Northcote Point)
+          maxLength: 100
+        city:
+          type: string
+          minLength: 1
+          description: City (e.g., Wellington, Auckland)
+          maxLength: 100
+        state:
+          type: string
+          nullable: true
+          description: State or province
+          maxLength: 100
+        postal_code:
+          type: string
+          nullable: true
+          description: Postal or ZIP code
+          maxLength: 20
+        country:
+          type: string
+          minLength: 1
+          description: Country name
+          maxLength: 100
+        google_place_id:
+          type: string
+          nullable: true
+          description: Google Place ID for this address
+          maxLength: 255
+        latitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Latitude coordinate
+        longitude:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Longitude coordinate
+        is_primary:
+          type: boolean
+          description: Indicates if this is the primary pickup address for the supplier
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes (e.g., opening hours, access instructions)
+      required:
+        - city
+        - client
+        - name
+        - street
     SupplierPriceStatusItem:
       type: object
       description: Single supplier price status row.
@@ -14067,6 +15302,18 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        approved:
+          type: boolean
+          readOnly: true
+          description: Indicates whether this line is approved or not by an office
+            staff (when the line is created by a workshop worker)
+        xero_pay_item:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
         total_cost:
           type: number
           format: double
@@ -14106,9 +15353,9 @@ components:
         xero_pay_item_name:
           type: string
           readOnly: true
-          minLength: 1
       required:
         - accounting_date
+        - approved
         - charge_out_rate
         - client_name
         - created_at
@@ -14130,6 +15377,7 @@ components:
         - xero_expense_id
         - xero_last_modified
         - xero_last_synced
+        - xero_pay_item
         - xero_pay_item_name
         - xero_time_id
     TokenObtainPairResponse:
@@ -14239,15 +15487,22 @@ components:
         fullName:
           type: string
           readOnly: true
-        is_staff:
+        is_office_staff:
           type: boolean
           readOnly: true
+        is_superuser:
+          type: boolean
+          readOnly: true
+          title: Superuser status
+          description: Designates that this user has all permissions without explicitly
+            assigning them.
       required:
         - email
         - first_name
         - fullName
         - id
-        - is_staff
+        - is_office_staff
+        - is_superuser
         - last_name
         - preferred_name
         - username
@@ -14405,7 +15660,7 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        total_other_leave_hours:
+        total_bereavement_leave_hours:
           type: number
           format: double
           maximum: 100000000
@@ -14418,10 +15673,10 @@ components:
         - staff_id
         - status
         - total_annual_leave_hours
+        - total_bereavement_leave_hours
         - total_billable_hours
         - total_billed_hours
         - total_hours
-        - total_other_leave_hours
         - total_overtime_1_5x_hours
         - total_overtime_2x_hours
         - total_scheduled_hours
@@ -14505,7 +15760,7 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        other_leave_hours:
+        bereavement_leave_hours:
           type: number
           format: double
           maximum: 100000000
@@ -14514,11 +15769,11 @@ components:
           exclusiveMinimum: true
       required:
         - annual_leave_hours
+        - bereavement_leave_hours
         - billable_hours
         - billed_hours
         - day
         - hours
-        - other_leave_hours
         - overtime_1_5x_hours
         - overtime_2x_hours
         - scheduled_hours
@@ -14593,6 +15848,36 @@ components:
         - summary_stats
         - week_days
         - weekly_summary
+    WorkshopJob:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        job_number:
+          type: integer
+        client_name:
+          type: string
+        contact_person:
+          type: string
+          nullable: true
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/KanbanJobPerson'
+      required:
+        - client_name
+        - contact_person
+        - description
+        - id
+        - job_number
+        - name
+        - people
     WorkshopPDFResponse:
       type: object
       description: Serializer for workshop PDF generation response
@@ -14603,6 +15888,150 @@ components:
         message:
           type: string
           description: Error message if applicable
+    WorkshopTimesheetEntry:
+      type: object
+      description: Serializer used to expose simplified workshop timesheet entries.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        job_id:
+          type: string
+          format: uuid
+          readOnly: true
+        job_number:
+          type: integer
+          readOnly: true
+        job_name:
+          type: string
+          readOnly: true
+        client_name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        hours:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: -100000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+        accounting_date:
+          type: string
+          format: date
+          readOnly: true
+        is_billable:
+          type: boolean
+          readOnly: true
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - accounting_date
+        - client_name
+        - created_at
+        - description
+        - hours
+        - id
+        - is_billable
+        - job_id
+        - job_name
+        - job_number
+        - rate_multiplier
+        - updated_at
+    WorkshopTimesheetEntryRequestRequest:
+      type: object
+      description: Serializer validating workshop timesheet create requests.
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        accounting_date:
+          type: string
+          format: date
+        hours:
+          type: number
+          format: double
+          maximum: 100000
+          minimum: 0.01
+          exclusiveMaximum: true
+        description:
+          type: string
+          nullable: true
+          maxLength: 255
+        is_billable:
+          type: boolean
+          default: true
+        rate_multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: 0.1
+          exclusiveMaximum: true
+          default: 1.00
+      required:
+        - accounting_date
+        - hours
+        - job_id
+    WorkshopTimesheetListResponse:
+      type: object
+      description: Serializer describing the GET response payload for workshop timesheets.
+      properties:
+        date:
+          type: string
+          format: date
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkshopTimesheetEntry'
+        summary:
+          $ref: '#/components/schemas/WorkshopTimesheetSummary'
+      required:
+        - date
+        - entries
+        - summary
+    WorkshopTimesheetSummary:
+      type: object
+      description: Serializer for the aggregated summary in workshop timesheets.
+      properties:
+        total_hours:
+          type: number
+          format: double
+        billable_hours:
+          type: number
+          format: double
+        non_billable_hours:
+          type: number
+          format: double
+        total_cost:
+          type: number
+          format: double
+        total_revenue:
+          type: number
+          format: double
+      required:
+        - billable_hours
+        - non_billable_hours
+        - total_cost
+        - total_hours
+        - total_revenue
     XeroDocumentErrorResponse:
       type: object
       description: Standardized serializer for a failed Xero document operation.
@@ -14785,6 +16214,64 @@ components:
           type: integer
       required:
         - items
+    XeroPayItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        xero_id:
+          type: string
+          description: Xero's UUID for this pay item
+          maxLength: 50
+        xero_tenant_id:
+          type: string
+          description: Xero tenant this pay item belongs to
+          maxLength: 255
+        name:
+          type: string
+          description: Display name (e.g., 'Ordinary Time', 'Annual Leave')
+          maxLength: 100
+        uses_leave_api:
+          type: boolean
+          description: True = Xero Leave API, False = Xero Timesheets API
+        multiplier:
+          type: number
+          format: double
+          maximum: 100
+          minimum: -100
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Rate multiplier from Xero (1.0, 1.5, 2.0, etc.). NULL for leave
+            types.
+        xero_last_modified:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last modified timestamp from Xero
+        xero_last_synced:
+          type: string
+          format: date-time
+          nullable: true
+          description: When we last synced this record from Xero
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created_at
+        - id
+        - name
+        - updated_at
+        - uses_leave_api
+        - xero_id
+        - xero_tenant_id
     XeroQuote:
       type: object
       description: Simplified Quote serializer for xero_quote field

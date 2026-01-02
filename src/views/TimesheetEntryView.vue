@@ -1696,7 +1696,7 @@ const loadTimesheetData = async () => {
         xeroPayItemName: line.xero_pay_item_name,
         isNewRow: false,
         isModified: false,
-      }
+      } as TimesheetEntryViewRow
     })
 
     const staffData = timesheetStore.staff.find((s) => s.id === selectedStaffId.value)

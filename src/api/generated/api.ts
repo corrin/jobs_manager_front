@@ -209,10 +209,9 @@ const Staff = z
     last_name: z.string().max(30),
     preferred_name: z.string().max(30).nullish(),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
-    ims_payroll_id: z.string().max(100).nullish(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
-    is_staff: z.boolean().optional(),
+    is_office_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
     password_needs_reset: z.boolean().optional(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
@@ -228,7 +227,6 @@ const Staff = z
     last_login: z.string().datetime({ offset: true }).nullable(),
     groups: z.array(z.number().int()).optional(),
     user_permissions: z.array(z.number().int()).optional(),
-    raw_ims_data: z.unknown().nullish(),
     icon_url: z.string().nullable(),
   })
   .passthrough()
@@ -239,10 +237,9 @@ const StaffCreateRequest = z
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
-    ims_payroll_id: z.string().max(100).nullish(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
-    is_staff: z.boolean().optional(),
+    is_office_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
     password_needs_reset: z.boolean().optional(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
@@ -259,7 +256,6 @@ const StaffCreateRequest = z
     user_permissions: z.array(z.number().int()).optional(),
     password: z.string().min(1).max(128),
     icon: z.instanceof(File).nullish(),
-    raw_ims_data: z.unknown().nullish(),
   })
   .passthrough()
 const StaffRequest = z
@@ -269,10 +265,9 @@ const StaffRequest = z
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
     wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
-    ims_payroll_id: z.string().max(100).nullish(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
-    is_staff: z.boolean().optional(),
+    is_office_staff: z.boolean().optional(),
     is_superuser: z.boolean().optional(),
     password_needs_reset: z.boolean().optional(),
     hours_mon: z.number().gt(-100).lt(100).optional(),
@@ -286,7 +281,6 @@ const StaffRequest = z
     user_permissions: z.array(z.number().int()).optional(),
     password: z.string().min(1).max(128).optional(),
     icon: z.instanceof(File).nullish(),
-    raw_ims_data: z.unknown().nullish(),
   })
   .passthrough()
 const PatchedStaffRequest = z
@@ -296,10 +290,9 @@ const PatchedStaffRequest = z
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullable(),
     wage_rate: z.number().gt(-100000000).lt(100000000),
-    ims_payroll_id: z.string().max(100).nullable(),
     xero_user_id: z.string().max(255).nullable(),
     date_left: z.string().nullable(),
-    is_staff: z.boolean(),
+    is_office_staff: z.boolean(),
     is_superuser: z.boolean(),
     password_needs_reset: z.boolean(),
     hours_mon: z.number().gt(-100).lt(100),
@@ -313,7 +306,6 @@ const PatchedStaffRequest = z
     user_permissions: z.array(z.number().int()),
     password: z.string().min(1).max(128),
     icon: z.instanceof(File).nullable(),
-    raw_ims_data: z.unknown().nullable(),
   })
   .partial()
   .passthrough()
@@ -350,7 +342,8 @@ const UserProfile = z
     last_name: z.string(),
     preferred_name: z.string().nullable(),
     fullName: z.string(),
-    is_staff: z.boolean(),
+    is_office_staff: z.boolean(),
+    is_superuser: z.boolean(),
   })
   .passthrough()
 const AWSInstanceStatusResponse = z
@@ -364,6 +357,7 @@ const AWSInstanceStatusResponse = z
 const CompanyDefaults = z
   .object({
     company_name: z.string().max(255),
+    company_acronym: z.string().max(10).nullish(),
     is_primary: z.boolean().optional(),
     time_markup: z.number().gt(-1000).lt(1000).optional(),
     materials_markup: z.number().gt(-1000).lt(1000).optional(),
@@ -377,13 +371,9 @@ const CompanyDefaults = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
     gdrive_quotes_folder_id: z.string().max(100).nullish(),
     xero_tenant_id: z.string().max(100).nullish(),
-    xero_annual_leave_type_id: z.string().max(100).nullish(),
-    xero_sick_leave_type_id: z.string().max(100).nullish(),
-    xero_other_leave_type_id: z.string().max(100).nullish(),
-    xero_unpaid_leave_type_id: z.string().max(100).nullish(),
-    xero_ordinary_earnings_rate_id: z.string().max(100).nullish(),
-    xero_time_half_earnings_rate_id: z.string().max(100).nullish(),
-    xero_double_time_earnings_rate_id: z.string().max(100).nullish(),
+    xero_shortcode: z.string().max(20).nullish(),
+    xero_payroll_calendar_name: z.string().max(100).optional(),
+    xero_payroll_calendar_id: z.string().uuid().nullish(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -398,6 +388,14 @@ const CompanyDefaults = z
     updated_at: z.string().datetime({ offset: true }),
     last_xero_sync: z.string().datetime({ offset: true }).nullish(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
+    address_line1: z.string().max(255).nullish(),
+    address_line2: z.string().max(255).nullish(),
+    suburb: z.string().max(100).nullish(),
+    city: z.string().max(100).nullish(),
+    post_code: z.string().max(20).nullish(),
+    country: z.string().max(100).optional(),
+    company_email: z.string().max(254).email().nullish(),
+    company_url: z.string().max(200).url().nullish(),
     shop_client_name: z.string().max(255).nullish(),
     test_client_name: z.string().max(255).nullish(),
     billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
@@ -409,6 +407,7 @@ const CompanyDefaults = z
 const CompanyDefaultsRequest = z
   .object({
     company_name: z.string().min(1).max(255),
+    company_acronym: z.string().max(10).nullish(),
     is_primary: z.boolean().optional(),
     time_markup: z.number().gt(-1000).lt(1000).optional(),
     materials_markup: z.number().gt(-1000).lt(1000).optional(),
@@ -422,13 +421,9 @@ const CompanyDefaultsRequest = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
     gdrive_quotes_folder_id: z.string().max(100).nullish(),
     xero_tenant_id: z.string().max(100).nullish(),
-    xero_annual_leave_type_id: z.string().max(100).nullish(),
-    xero_sick_leave_type_id: z.string().max(100).nullish(),
-    xero_other_leave_type_id: z.string().max(100).nullish(),
-    xero_unpaid_leave_type_id: z.string().max(100).nullish(),
-    xero_ordinary_earnings_rate_id: z.string().max(100).nullish(),
-    xero_time_half_earnings_rate_id: z.string().max(100).nullish(),
-    xero_double_time_earnings_rate_id: z.string().max(100).nullish(),
+    xero_shortcode: z.string().max(20).nullish(),
+    xero_payroll_calendar_name: z.string().min(1).max(100).optional(),
+    xero_payroll_calendar_id: z.string().uuid().nullish(),
     mon_start: z.string().optional(),
     mon_end: z.string().optional(),
     tue_start: z.string().optional(),
@@ -441,6 +436,14 @@ const CompanyDefaultsRequest = z
     fri_end: z.string().optional(),
     last_xero_sync: z.string().datetime({ offset: true }).nullish(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
+    address_line1: z.string().max(255).nullish(),
+    address_line2: z.string().max(255).nullish(),
+    suburb: z.string().max(100).nullish(),
+    city: z.string().max(100).nullish(),
+    post_code: z.string().max(20).nullish(),
+    country: z.string().min(1).max(100).optional(),
+    company_email: z.string().max(254).email().nullish(),
+    company_url: z.string().max(200).url().nullish(),
     shop_client_name: z.string().max(255).nullish(),
     test_client_name: z.string().max(255).nullish(),
     billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
@@ -452,6 +455,7 @@ const CompanyDefaultsRequest = z
 const PatchedCompanyDefaultsRequest = z
   .object({
     company_name: z.string().min(1).max(255),
+    company_acronym: z.string().max(10).nullable(),
     is_primary: z.boolean(),
     time_markup: z.number().gt(-1000).lt(1000),
     materials_markup: z.number().gt(-1000).lt(1000),
@@ -465,13 +469,9 @@ const PatchedCompanyDefaultsRequest = z
     gdrive_quotes_folder_url: z.string().max(200).url().nullable(),
     gdrive_quotes_folder_id: z.string().max(100).nullable(),
     xero_tenant_id: z.string().max(100).nullable(),
-    xero_annual_leave_type_id: z.string().max(100).nullable(),
-    xero_sick_leave_type_id: z.string().max(100).nullable(),
-    xero_other_leave_type_id: z.string().max(100).nullable(),
-    xero_unpaid_leave_type_id: z.string().max(100).nullable(),
-    xero_ordinary_earnings_rate_id: z.string().max(100).nullable(),
-    xero_time_half_earnings_rate_id: z.string().max(100).nullable(),
-    xero_double_time_earnings_rate_id: z.string().max(100).nullable(),
+    xero_shortcode: z.string().max(20).nullable(),
+    xero_payroll_calendar_name: z.string().min(1).max(100),
+    xero_payroll_calendar_id: z.string().uuid().nullable(),
     mon_start: z.string(),
     mon_end: z.string(),
     tue_start: z.string(),
@@ -484,6 +484,14 @@ const PatchedCompanyDefaultsRequest = z
     fri_end: z.string(),
     last_xero_sync: z.string().datetime({ offset: true }).nullable(),
     last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
+    address_line1: z.string().max(255).nullable(),
+    address_line2: z.string().max(255).nullable(),
+    suburb: z.string().max(100).nullable(),
+    city: z.string().max(100).nullable(),
+    post_code: z.string().max(20).nullable(),
+    country: z.string().min(1).max(100),
+    company_email: z.string().max(254).email().nullable(),
+    company_url: z.string().max(200).url().nullable(),
     shop_client_name: z.string().max(255).nullable(),
     test_client_name: z.string().max(255).nullable(),
     billable_threshold_green: z.number().gt(-1000).lt(1000),
@@ -493,6 +501,25 @@ const PatchedCompanyDefaultsRequest = z
   })
   .partial()
   .passthrough()
+const SettingsField = z
+  .object({
+    key: z.string(),
+    label: z.string(),
+    type: z.string(),
+    required: z.boolean(),
+    help_text: z.string(),
+    section: z.string(),
+  })
+  .passthrough()
+const SettingsSection = z
+  .object({
+    key: z.string(),
+    title: z.string(),
+    order: z.number().int(),
+    fields: z.array(SettingsField),
+  })
+  .passthrough()
+const CompanyDefaultsSchema = z.object({ sections: z.array(SettingsSection) }).passthrough()
 const ProviderTypeEnum = z.enum(['Claude', 'Gemini', 'Mistral'])
 const AIProvider = z
   .object({
@@ -576,6 +603,20 @@ const AppErrorRequest = z
     resolved: z.boolean().optional(),
     resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
     resolved_by: z.string().uuid().nullish(),
+  })
+  .passthrough()
+const XeroPayItem = z
+  .object({
+    id: z.string().uuid(),
+    xero_id: z.string().max(50),
+    xero_tenant_id: z.string().max(255),
+    name: z.string().max(100),
+    uses_leave_api: z.boolean(),
+    multiplier: z.number().gt(-100).lt(100).nullish(),
+    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
+    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
   })
   .passthrough()
 const XeroDocumentSuccessResponse = z
@@ -776,7 +817,72 @@ const JobContactUpdateRequest = z
     notes: z.string().nullable(),
   })
   .passthrough()
-const ClientSearchResponse = z.object({ results: z.array(ClientSearchResult) }).passthrough()
+const SupplierPickupAddress = z
+  .object({
+    id: z.string().uuid(),
+    client: z.string().uuid(),
+    name: z.string().max(255),
+    street: z.string().max(255),
+    suburb: z.string().max(100).nullish(),
+    city: z.string().max(100),
+    state: z.string().max(100).nullish(),
+    postal_code: z.string().max(20).nullish(),
+    country: z.string().max(100).optional(),
+    google_place_id: z.string().max(255).nullish(),
+    latitude: z.number().gt(-1000).lt(1000).nullish(),
+    longitude: z.number().gt(-1000).lt(1000).nullish(),
+    is_primary: z.boolean().optional(),
+    notes: z.string().nullish(),
+    is_active: z.boolean(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+    formatted_address: z.string(),
+  })
+  .passthrough()
+const SupplierPickupAddressRequest = z
+  .object({
+    client: z.string().uuid(),
+    name: z.string().min(1).max(255),
+    street: z.string().min(1).max(255),
+    suburb: z.string().max(100).nullish(),
+    city: z.string().min(1).max(100),
+    state: z.string().max(100).nullish(),
+    postal_code: z.string().max(20).nullish(),
+    country: z.string().min(1).max(100).optional(),
+    google_place_id: z.string().max(255).nullish(),
+    latitude: z.number().gt(-1000).lt(1000).nullish(),
+    longitude: z.number().gt(-1000).lt(1000).nullish(),
+    is_primary: z.boolean().optional(),
+    notes: z.string().nullish(),
+  })
+  .passthrough()
+const PatchedSupplierPickupAddressRequest = z
+  .object({
+    client: z.string().uuid(),
+    name: z.string().min(1).max(255),
+    street: z.string().min(1).max(255),
+    suburb: z.string().max(100).nullable(),
+    city: z.string().min(1).max(100),
+    state: z.string().max(100).nullable(),
+    postal_code: z.string().max(20).nullable(),
+    country: z.string().min(1).max(100),
+    google_place_id: z.string().max(255).nullable(),
+    latitude: z.number().gt(-1000).lt(1000).nullable(),
+    longitude: z.number().gt(-1000).lt(1000).nullable(),
+    is_primary: z.boolean(),
+    notes: z.string().nullable(),
+  })
+  .partial()
+  .passthrough()
+const ClientSearchResponse = z
+  .object({
+    results: z.array(ClientSearchResult),
+    count: z.number().int(),
+    page: z.number().int(),
+    page_size: z.number().int(),
+    total_pages: z.number().int(),
+  })
+  .passthrough()
 const AssignJobRequest = z.object({ staff_id: z.string().uuid() }).passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
@@ -960,6 +1066,71 @@ const FetchStatusValuesResponse = z
   })
   .partial()
   .passthrough()
+const WorkshopJob = z
+  .object({
+    id: z.string().uuid(),
+    name: z.string(),
+    description: z.string().nullable(),
+    job_number: z.number().int(),
+    client_name: z.string(),
+    contact_person: z.string().nullable(),
+    people: z.array(KanbanJobPerson),
+  })
+  .passthrough()
+const WorkshopTimesheetEntry = z
+  .object({
+    id: z.string().uuid(),
+    job_id: z.string().uuid(),
+    job_number: z.number().int(),
+    job_name: z.string(),
+    client_name: z.string(),
+    description: z.string(),
+    hours: z.number().gt(-100000).lt(100000),
+    accounting_date: z.string(),
+    is_billable: z.boolean(),
+    rate_multiplier: z.number().gt(-100).lt(100),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+  })
+  .passthrough()
+const WorkshopTimesheetSummary = z
+  .object({
+    total_hours: z.number(),
+    billable_hours: z.number(),
+    non_billable_hours: z.number(),
+    total_cost: z.number(),
+    total_revenue: z.number(),
+  })
+  .passthrough()
+const WorkshopTimesheetListResponse = z
+  .object({
+    date: z.string(),
+    entries: z.array(WorkshopTimesheetEntry),
+    summary: WorkshopTimesheetSummary,
+  })
+  .passthrough()
+const WorkshopTimesheetEntryRequestRequest = z
+  .object({
+    job_id: z.string().uuid(),
+    accounting_date: z.string(),
+    hours: z.number().gte(0.01).lt(100000),
+    description: z.string().max(255).nullish(),
+    is_billable: z.boolean().optional().default(true),
+    rate_multiplier: z.number().gte(0.1).lt(100).optional().default(1),
+  })
+  .passthrough()
+const PatchedWorkshopTimesheetEntryUpdateRequest = z
+  .object({
+    entry_id: z.string().uuid(),
+    job_id: z.string().uuid(),
+    accounting_date: z.string(),
+    hours: z.number().gte(0.01).lt(100000),
+    description: z.string().max(255).nullable(),
+    is_billable: z.boolean(),
+    rate_multiplier: z.number().gte(0.1).lt(100),
+  })
+  .partial()
+  .passthrough()
 const WorkshopPDFResponse = z
   .object({ status: z.string(), message: z.string() })
   .partial()
@@ -973,8 +1144,9 @@ const PatchedCostLineCreateUpdateRequest = z
     unit_cost: z.number().gt(-100000000).lt(100000000),
     unit_rev: z.number().gt(-100000000).lt(100000000),
     accounting_date: z.string(),
-    ext_refs: z.unknown(),
-    meta: z.unknown(),
+    ext_refs: z.object({}).partial().passthrough(),
+    meta: z.object({}).partial().passthrough(),
+    xero_pay_item: z.string().uuid().nullable(),
   })
   .partial()
   .passthrough()
@@ -986,12 +1158,52 @@ const CostLineCreateUpdate = z
     unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
     accounting_date: z.string(),
+    ext_refs: z.object({}).partial().passthrough().optional(),
+    meta: z.object({}).partial().passthrough().optional(),
+    created_at: z.string().datetime({ offset: true }),
+    updated_at: z.string().datetime({ offset: true }),
+    xero_pay_item: z.string().uuid().nullish(),
+  })
+  .passthrough()
+const CostLine = z
+  .object({
+    id: z.string().uuid(),
+    kind: Kind332Enum,
+    desc: z.string().max(255).optional(),
+    quantity: z.number().gt(-10000000).lt(10000000).optional(),
+    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
+    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
     ext_refs: z.unknown().optional(),
     meta: z.unknown().optional(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
+    accounting_date: z.string(),
+    xero_time_id: z.string().max(255).nullish(),
+    xero_expense_id: z.string().max(255).nullish(),
+    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
+    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
+    approved: z.boolean().optional(),
+    xero_pay_item: z.string().uuid().nullish(),
+    total_cost: z.number(),
+    total_rev: z.number(),
   })
   .passthrough()
+const StockConsumeResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
+    line: CostLine,
+  })
+  .passthrough()
+const CostLineApprovalResponse = z
+  .object({
+    success: z.boolean(),
+    message: z.string().optional(),
+    line: CostLine,
+  })
+  .passthrough()
+const CostLineApprovalResult = z.union([StockConsumeResponse, CostLineApprovalResponse])
 const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
 const BrokenFKReference = z
   .object({
@@ -1100,27 +1312,6 @@ const CostSetSummary = z
     rev: z.number(),
     hours: z.number(),
     profitMargin: z.number(),
-  })
-  .passthrough()
-const CostLine = z
-  .object({
-    id: z.string().uuid(),
-    kind: Kind332Enum,
-    desc: z.string().max(255).optional(),
-    quantity: z.number().gt(-10000000).lt(10000000).optional(),
-    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
-    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
-    ext_refs: z.unknown().optional(),
-    meta: z.unknown().optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    accounting_date: z.string(),
-    xero_time_id: z.string().max(255).nullish(),
-    xero_expense_id: z.string().max(255).nullish(),
-    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
-    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
-    total_cost: z.number(),
-    total_rev: z.number(),
   })
   .passthrough()
 const CostSet = z
@@ -1239,6 +1430,8 @@ const Job = z
     xero_invoices: z.array(XeroInvoice),
     shop_job: z.boolean(),
     rejected_flag: z.boolean().optional(),
+    default_xero_pay_item_id: z.string().uuid().nullish(),
+    default_xero_pay_item_name: z.string().nullable(),
   })
   .passthrough()
 const JobEvent = z
@@ -1325,8 +1518,9 @@ const CostLineCreateUpdateRequest = z
     unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
     unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
     accounting_date: z.string(),
-    ext_refs: z.unknown().optional(),
-    meta: z.unknown().optional(),
+    ext_refs: z.object({}).partial().passthrough().optional(),
+    meta: z.object({}).partial().passthrough().optional(),
+    xero_pay_item: z.string().uuid().nullish(),
   })
   .passthrough()
 const QuoteRevisionsList = z
@@ -1467,6 +1661,8 @@ const JobHeaderResponse = z
     job_id: z.string().uuid(),
     client: JobClientHeader,
     quoted: z.boolean(),
+    default_xero_pay_item_id: z.string().uuid().nullable(),
+    default_xero_pay_item_name: z.string().nullable(),
     job_number: z.number().int().gte(-2147483648).lte(2147483647),
     name: z.string().max(100),
     status: Status7b9Enum.optional(),
@@ -1831,6 +2027,8 @@ const TimesheetCostLine = z
     xero_expense_id: z.string().nullable(),
     xero_last_modified: z.string().datetime({ offset: true }).nullable(),
     xero_last_synced: z.string().datetime({ offset: true }).nullable(),
+    approved: z.boolean(),
+    xero_pay_item: z.string().uuid().nullable(),
     total_cost: z.number(),
     total_rev: z.number(),
     job_id: z.string(),
@@ -1839,7 +2037,7 @@ const TimesheetCostLine = z
     client_name: z.string(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     wage_rate: z.number(),
-    xero_pay_item_name: z.string().min(1),
+    xero_pay_item_name: z.string(),
   })
   .passthrough()
 const ModernTimesheetStaff = z
@@ -1993,6 +2191,9 @@ const ProductMappingValidateResponse = z
     updated_products_count: z.number().int().optional(),
   })
   .passthrough()
+const PurchaseOrderJob = z
+  .object({ job_number: z.string(), name: z.string(), client: z.string() })
+  .passthrough()
 const PurchaseOrderList = z
   .object({
     id: z.string().uuid(),
@@ -2001,6 +2202,7 @@ const PurchaseOrderList = z
     order_date: z.string(),
     supplier: z.string(),
     supplier_id: z.string().uuid().nullable(),
+    jobs: z.array(PurchaseOrderJob),
   })
   .passthrough()
 const PurchaseOrderLineCreateRequest = z
@@ -2022,6 +2224,7 @@ const PurchaseOrderLineCreateRequest = z
 const PurchaseOrderCreateRequest = z
   .object({
     supplier_id: z.string().uuid().nullable(),
+    pickup_address_id: z.string().uuid().nullable(),
     reference: z.string().max(255),
     order_date: z.string().nullable(),
     expected_delivery: z.string().nullable(),
@@ -2048,6 +2251,7 @@ const PurchaseOrderLineCreate = z
 const PurchaseOrderCreate = z
   .object({
     supplier_id: z.string().uuid().nullable(),
+    pickup_address_id: z.string().uuid().nullable(),
     reference: z.string().max(255),
     order_date: z.string().nullable(),
     expected_delivery: z.string().nullable(),
@@ -2104,10 +2308,12 @@ const PurchaseOrderDetail = z
     expected_delivery: z.string().nullish(),
     online_url: z.string().max(500).url().nullish(),
     xero_id: z.string().uuid().nullish(),
+    pickup_address_id: z.string().uuid().nullable(),
     supplier: z.string(),
     supplier_id: z.string().nullable(),
     supplier_has_xero_id: z.boolean(),
     lines: z.array(PurchaseOrderLine),
+    pickup_address: SupplierPickupAddress.nullable(),
   })
   .passthrough()
 const PurchaseOrderLineUpdateRequest = z
@@ -2130,6 +2336,7 @@ const PurchaseOrderLineUpdateRequest = z
 const PatchedPurchaseOrderUpdateRequest = z
   .object({
     supplier_id: z.string().uuid().nullable(),
+    pickup_address_id: z.string().uuid().nullable(),
     reference: z.string().max(255),
     expected_delivery: z.string().nullable(),
     status: z.string().max(50),
@@ -2158,6 +2365,7 @@ const PurchaseOrderLineUpdate = z
 const PurchaseOrderUpdate = z
   .object({
     supplier_id: z.string().uuid().nullable(),
+    pickup_address_id: z.string().uuid().nullable(),
     reference: z.string().max(255),
     expected_delivery: z.string().nullable(),
     status: z.string().max(50),
@@ -2219,6 +2427,24 @@ const PurchaseOrderEmailResponse = z
     message: z.string().optional(),
   })
   .passthrough()
+const PurchaseOrderEvent = z
+  .object({
+    id: z.string().uuid(),
+    description: z.string(),
+    timestamp: z.string().datetime({ offset: true }).optional(),
+    staff: z.string(),
+  })
+  .passthrough()
+const PurchaseOrderEventsResponse = z.object({ events: z.array(PurchaseOrderEvent) }).passthrough()
+const PurchasingErrorResponse = z
+  .object({ error: z.string(), details: z.string().optional() })
+  .passthrough()
+const PurchaseOrderEventCreateRequest = z
+  .object({ description: z.string().min(1).max(500) })
+  .passthrough()
+const PurchaseOrderEventCreateResponse = z
+  .object({ success: z.boolean(), event: PurchaseOrderEvent })
+  .passthrough()
 const AllocationTypeEnum = z.enum(['job', 'stock'])
 const AllocationDeleteRequest = z
   .object({
@@ -2235,9 +2461,6 @@ const AllocationDeleteResponse = z
     job_name: z.string().optional(),
     updated_received_quantity: z.number().optional(),
   })
-  .passthrough()
-const PurchasingErrorResponse = z
-  .object({ error: z.string(), details: z.string().optional() })
   .passthrough()
 const SourceEnum = z.enum(['purchase_order', 'split_from_stock', 'manual', 'product_catalog'])
 const StockItem = z
@@ -2297,14 +2520,6 @@ const StockConsumeRequest = z
     quantity: z.number().gte(0).lt(100000000),
     unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
     unit_rev: z.number().gt(-100000000).lt(100000000).nullish(),
-  })
-  .passthrough()
-const StockConsumeResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string().optional(),
-    remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
-    line: CostLine,
   })
   .passthrough()
 const SupplierPriceStatusItem = z
@@ -2456,34 +2671,31 @@ const ModernTimesheetJob = z
     status: Status7b9Enum.optional(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     has_actual_costset: z.boolean(),
-    leave_type: z.string(),
+    leave_type: z.string().nullable(),
+    default_xero_pay_item_id: z.string().uuid(),
+    default_xero_pay_item_name: z.string(),
   })
   .passthrough()
 const JobsListResponse = z
   .object({ jobs: z.array(ModernTimesheetJob), total_count: z.number().int() })
   .passthrough()
-const PayRunDetails = z
+const PayRunListItem = z
   .object({
-    pay_run_id: z.string(),
-    payroll_calendar_id: z.string().nullable(),
+    id: z.string().uuid(),
+    xero_id: z.string().uuid(),
     period_start_date: z.string(),
     period_end_date: z.string(),
     payment_date: z.string(),
     pay_run_status: z.string(),
-    pay_run_type: z.string().nullable(),
+    xero_url: z.string(),
   })
   .passthrough()
-const PayRunForWeekResponse = z
-  .object({
-    exists: z.boolean(),
-    pay_run: PayRunDetails.nullable(),
-    warning: z.string().nullish(),
-  })
-  .passthrough()
+const PayRunListResponse = z.object({ pay_runs: z.array(PayRunListItem) }).passthrough()
 const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
 const CreatePayRunResponse = z
   .object({
-    pay_run_id: z.string(),
+    id: z.string().uuid(),
+    xero_id: z.string().uuid(),
     status: z.string(),
     period_start_date: z.string(),
     period_end_date: z.string(),
@@ -2492,6 +2704,7 @@ const CreatePayRunResponse = z
   .passthrough()
 const PayRunSyncResponseRequest = z
   .object({
+    synced: z.boolean(),
     fetched: z.number().int(),
     created: z.number().int(),
     updated: z.number().int(),
@@ -2499,25 +2712,16 @@ const PayRunSyncResponseRequest = z
   .passthrough()
 const PayRunSyncResponse = z
   .object({
+    synced: z.boolean(),
     fetched: z.number().int(),
     created: z.number().int(),
     updated: z.number().int(),
   })
   .passthrough()
 const PostWeekToXeroRequest = z
-  .object({ staff_id: z.string().uuid(), week_start_date: z.string() })
-  .passthrough()
-const PostWeekToXeroResponse = z
   .object({
-    success: z.boolean(),
-    xero_timesheet_id: z.string().nullable(),
-    xero_leave_ids: z.array(z.string()).nullish(),
-    entries_posted: z.number().int(),
-    work_hours: z.number().gt(-100000000).lt(100000000),
-    other_leave_hours: z.number().gt(-100000000).lt(100000000),
-    annual_sick_hours: z.number().gt(-100000000).lt(100000000),
-    unpaid_hours: z.number().gt(-100000000).lt(100000000),
-    errors: z.array(z.string()),
+    staff_ids: z.array(z.string().uuid()),
+    week_start_date: z.string(),
   })
   .passthrough()
 const ModernStaff = z
@@ -2549,7 +2753,7 @@ const WeeklyStaffDataWeeklyHours = z
     overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
     sick_leave_hours: z.number().gt(-100000000).lt(100000000),
     annual_leave_hours: z.number().gt(-100000000).lt(100000000),
-    other_leave_hours: z.number().gt(-100000000).lt(100000000),
+    bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklyStaffData = z
@@ -2568,7 +2772,7 @@ const WeeklyStaffData = z
     total_overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
     total_sick_leave_hours: z.number().gt(-100000000).lt(100000000),
     total_annual_leave_hours: z.number().gt(-100000000).lt(100000000),
-    total_other_leave_hours: z.number().gt(-100000000).lt(100000000),
+    total_bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklySummary = z
@@ -2665,6 +2869,9 @@ export const schemas = {
   CompanyDefaults,
   CompanyDefaultsRequest,
   PatchedCompanyDefaultsRequest,
+  SettingsField,
+  SettingsSection,
+  CompanyDefaultsSchema,
   ProviderTypeEnum,
   AIProvider,
   AIProviderCreateUpdateRequest,
@@ -2674,6 +2881,7 @@ export const schemas = {
   AppError,
   PaginatedAppErrorList,
   AppErrorRequest,
+  XeroPayItem,
   XeroDocumentSuccessResponse,
   XeroDocumentErrorResponse,
   XeroQuoteCreateRequest,
@@ -2694,6 +2902,9 @@ export const schemas = {
   ClientDuplicateErrorResponse,
   JobContactResponse,
   JobContactUpdateRequest,
+  SupplierPickupAddress,
+  SupplierPickupAddressRequest,
+  PatchedSupplierPickupAddressRequest,
   ClientSearchResponse,
   AssignJobRequest,
   AssignJobResponse,
@@ -2723,10 +2934,20 @@ export const schemas = {
   FetchJobsByColumnResponse,
   FetchJobsResponse,
   FetchStatusValuesResponse,
+  WorkshopJob,
+  WorkshopTimesheetEntry,
+  WorkshopTimesheetSummary,
+  WorkshopTimesheetListResponse,
+  WorkshopTimesheetEntryRequestRequest,
+  PatchedWorkshopTimesheetEntryUpdateRequest,
   WorkshopPDFResponse,
   Kind332Enum,
   PatchedCostLineCreateUpdateRequest,
   CostLineCreateUpdate,
+  CostLine,
+  StockConsumeResponse,
+  CostLineApprovalResponse,
+  CostLineApprovalResult,
   CostLineErrorResponse,
   BrokenFKReference,
   BrokenJSONReference,
@@ -2741,7 +2962,6 @@ export const schemas = {
   JobRestErrorResponse,
   CostSetKindEnum,
   CostSetSummary,
-  CostLine,
   CostSet,
   JobFileStatusEnum,
   JobFile,
@@ -2850,6 +3070,7 @@ export const schemas = {
   ProductMappingListResponse,
   ProductMappingValidateRequest,
   ProductMappingValidateResponse,
+  PurchaseOrderJob,
   PurchaseOrderList,
   PurchaseOrderLineCreateRequest,
   PurchaseOrderCreateRequest,
@@ -2871,16 +3092,19 @@ export const schemas = {
   AllocationDetailsResponse,
   PurchaseOrderEmailRequest,
   PurchaseOrderEmailResponse,
+  PurchaseOrderEvent,
+  PurchaseOrderEventsResponse,
+  PurchasingErrorResponse,
+  PurchaseOrderEventCreateRequest,
+  PurchaseOrderEventCreateResponse,
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
-  PurchasingErrorResponse,
   SourceEnum,
   StockItem,
   StockItemRequest,
   PatchedStockItemRequest,
   StockConsumeRequest,
-  StockConsumeResponse,
   SupplierPriceStatusItem,
   SupplierPriceStatusResponse,
   XeroItem,
@@ -2898,14 +3122,13 @@ export const schemas = {
   DailyTimesheetSummary,
   ModernTimesheetJob,
   JobsListResponse,
-  PayRunDetails,
-  PayRunForWeekResponse,
+  PayRunListItem,
+  PayRunListResponse,
   CreatePayRunRequest,
   CreatePayRunResponse,
   PayRunSyncResponseRequest,
   PayRunSyncResponse,
   PostWeekToXeroRequest,
-  PostWeekToXeroResponse,
   ModernStaff,
   StaffListResponse,
   WeeklyStaffDataWeeklyHours,
@@ -2981,7 +3204,7 @@ Returns:
   {
     method: 'get',
     path: '/accounting/api/reports/sales-forecast/',
-    alias: 'accounting_api_reports_sales_forecast_retrieve',
+    alias: 'sales_forecast_list',
     description: `Returns monthly sales comparison between Xero invoices and Job Manager revenue for all months with data`,
     requestFormat: 'json',
     response: z
@@ -3005,6 +3228,54 @@ Returns:
     errors: [
       {
         status: 500,
+        schema: z.object({ error: z.string() }).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/sales-forecast/:month/',
+    alias: 'sales_forecast_month_detail',
+    description: `Returns detailed invoice and job data for a specific month, showing matched pairs and unmatched items`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'month',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z
+      .object({
+        month: z.string(),
+        month_label: z.string(),
+        rows: z.array(
+          z
+            .object({
+              date: z.string(),
+              client_name: z.string(),
+              job_number: z.number().int().nullable(),
+              job_name: z.string().nullable(),
+              invoice_numbers: z.string().nullable(),
+              total_invoiced: z.number(),
+              job_revenue: z.number(),
+              variance: z.number(),
+              job_id: z.string().uuid().nullable(),
+              job_start_date: z.string().nullable(),
+              total_xero_all_time: z.number().nullable(),
+              total_jm_all_time: z.number().nullable(),
+              variance_all_time: z.number().nullable(),
+              note: z.string().nullable(),
+            })
+            .partial()
+            .passthrough(),
+        ),
+      })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
         schema: z.object({ error: z.string() }).partial().passthrough(),
       },
     ],
@@ -3379,6 +3650,14 @@ Returns:
   },
   {
     method: 'get',
+    path: '/api/company-defaults/schema/',
+    alias: 'api_company_defaults_schema_retrieve',
+    description: `Return schema metadata for CompanyDefaults fields.`,
+    requestFormat: 'json',
+    response: CompanyDefaultsSchema,
+  },
+  {
+    method: 'get',
     path: '/api/workflow/ai-providers/',
     alias: 'api_workflow_ai_providers_list',
     description: `API endpoint that allows AI Providers to be viewed or edited.
@@ -3676,6 +3955,33 @@ Endpoints:
       },
     ],
     response: AppError,
+  },
+  {
+    method: 'get',
+    path: '/api/workflow/xero-pay-items/',
+    alias: 'api_workflow_xero_pay_items_list',
+    description: `API endpoint for Xero pay items (earnings rates and leave types).
+
+Read-only - these are synced from Xero, not created locally.`,
+    requestFormat: 'json',
+    response: z.array(XeroPayItem),
+  },
+  {
+    method: 'get',
+    path: '/api/workflow/xero-pay-items/:id/',
+    alias: 'api_workflow_xero_pay_items_retrieve',
+    description: `API endpoint for Xero pay items (earnings rates and leave types).
+
+Read-only - these are synced from Xero, not created locally.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: XeroPayItem,
   },
   {
     method: 'post',
@@ -4044,6 +4350,52 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
     ],
   },
   {
+    method: 'post',
+    path: '/clients/addresses/validate/',
+    alias: 'clients_addresses_validate_create',
+    description: `Validate an address and return structured candidates.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ address: z.string() }).passthrough(),
+      },
+    ],
+    response: z
+      .object({
+        candidates: z.array(
+          z
+            .object({
+              formatted_address: z.string(),
+              street: z.string(),
+              suburb: z.string(),
+              city: z.string(),
+              state: z.string(),
+              postal_code: z.string(),
+              country: z.string(),
+              google_place_id: z.string(),
+              latitude: z.number(),
+              longitude: z.number(),
+            })
+            .partial()
+            .passthrough(),
+        ),
+      })
+      .partial()
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        schema: z.unknown(),
+      },
+      {
+        status: 503,
+        schema: z.unknown(),
+      },
+    ],
+  },
+  {
     method: 'get',
     path: '/clients/all/',
     alias: 'clients_all_list',
@@ -4306,18 +4658,188 @@ Query Parameters:
   },
   {
     method: 'get',
-    path: '/clients/search/',
-    alias: 'clients_search_retrieve',
-    description: `Searches clients by name following early return pattern.`,
+    path: '/clients/pickup-addresses/',
+    alias: 'clients_pickup_addresses_list',
+    description: `List all pickup addresses, optionally filtered by supplier_id.`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'limit',
+        name: 'supplier_id',
+        type: 'Query',
+        schema: z.string().uuid().optional(),
+      },
+    ],
+    response: z.array(SupplierPickupAddress),
+  },
+  {
+    method: 'post',
+    path: '/clients/pickup-addresses/',
+    alias: 'clients_pickup_addresses_create',
+    description: `ViewSet for SupplierPickupAddress CRUD operations.
+
+Endpoints:
+- GET    /api/clients/pickup-addresses/           - list all addresses
+- POST   /api/clients/pickup-addresses/           - create address
+- GET    /api/clients/pickup-addresses/&lt;id&gt;/      - retrieve address
+- PUT    /api/clients/pickup-addresses/&lt;id&gt;/      - full update
+- PATCH  /api/clients/pickup-addresses/&lt;id&gt;/      - partial update
+- DELETE /api/clients/pickup-addresses/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- supplier_id: Filter addresses by supplier (client) UUID`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: SupplierPickupAddressRequest,
+      },
+    ],
+    response: SupplierPickupAddress,
+  },
+  {
+    method: 'get',
+    path: '/clients/pickup-addresses/:id/',
+    alias: 'clients_pickup_addresses_retrieve',
+    description: `ViewSet for SupplierPickupAddress CRUD operations.
+
+Endpoints:
+- GET    /api/clients/pickup-addresses/           - list all addresses
+- POST   /api/clients/pickup-addresses/           - create address
+- GET    /api/clients/pickup-addresses/&lt;id&gt;/      - retrieve address
+- PUT    /api/clients/pickup-addresses/&lt;id&gt;/      - full update
+- PATCH  /api/clients/pickup-addresses/&lt;id&gt;/      - partial update
+- DELETE /api/clients/pickup-addresses/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- supplier_id: Filter addresses by supplier (client) UUID`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: SupplierPickupAddress,
+  },
+  {
+    method: 'put',
+    path: '/clients/pickup-addresses/:id/',
+    alias: 'clients_pickup_addresses_update',
+    description: `ViewSet for SupplierPickupAddress CRUD operations.
+
+Endpoints:
+- GET    /api/clients/pickup-addresses/           - list all addresses
+- POST   /api/clients/pickup-addresses/           - create address
+- GET    /api/clients/pickup-addresses/&lt;id&gt;/      - retrieve address
+- PUT    /api/clients/pickup-addresses/&lt;id&gt;/      - full update
+- PATCH  /api/clients/pickup-addresses/&lt;id&gt;/      - partial update
+- DELETE /api/clients/pickup-addresses/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- supplier_id: Filter addresses by supplier (client) UUID`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: SupplierPickupAddressRequest,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: SupplierPickupAddress,
+  },
+  {
+    method: 'patch',
+    path: '/clients/pickup-addresses/:id/',
+    alias: 'clients_pickup_addresses_partial_update',
+    description: `ViewSet for SupplierPickupAddress CRUD operations.
+
+Endpoints:
+- GET    /api/clients/pickup-addresses/           - list all addresses
+- POST   /api/clients/pickup-addresses/           - create address
+- GET    /api/clients/pickup-addresses/&lt;id&gt;/      - retrieve address
+- PUT    /api/clients/pickup-addresses/&lt;id&gt;/      - full update
+- PATCH  /api/clients/pickup-addresses/&lt;id&gt;/      - partial update
+- DELETE /api/clients/pickup-addresses/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- supplier_id: Filter addresses by supplier (client) UUID`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedSupplierPickupAddressRequest,
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: SupplierPickupAddress,
+  },
+  {
+    method: 'delete',
+    path: '/clients/pickup-addresses/:id/',
+    alias: 'clients_pickup_addresses_destroy',
+    description: `ViewSet for SupplierPickupAddress CRUD operations.
+
+Endpoints:
+- GET    /api/clients/pickup-addresses/           - list all addresses
+- POST   /api/clients/pickup-addresses/           - create address
+- GET    /api/clients/pickup-addresses/&lt;id&gt;/      - retrieve address
+- PUT    /api/clients/pickup-addresses/&lt;id&gt;/      - full update
+- PATCH  /api/clients/pickup-addresses/&lt;id&gt;/      - partial update
+- DELETE /api/clients/pickup-addresses/&lt;id&gt;/      - soft delete (sets is_active&#x3D;False)
+
+Query Parameters:
+- supplier_id: Filter addresses by supplier (client) UUID`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
+  },
+  {
+    method: 'get',
+    path: '/clients/search/',
+    alias: 'clients_search_retrieve',
+    description: `Lists/searches clients with pagination and sorting.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'page',
+        type: 'Query',
+        schema: z.number().int().optional(),
+      },
+      {
+        name: 'page_size',
         type: 'Query',
         schema: z.number().int().optional(),
       },
       {
         name: 'q',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'sort_by',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'sort_dir',
         type: 'Query',
         schema: z.string().optional(),
       },
@@ -4719,6 +5241,126 @@ Expected JSON:
   },
   {
     method: 'get',
+    path: '/job/api/jobs/workshop',
+    alias: 'job_api_jobs_workshop_list',
+    requestFormat: 'json',
+    response: z.array(WorkshopJob),
+  },
+  {
+    method: 'get',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_retrieve',
+    description: `Return all timesheet entries for the staff member on a given date.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'date',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
+    response: WorkshopTimesheetListResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_create',
+    description: `Create a new timesheet entry for the authenticated staff.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: WorkshopTimesheetEntryRequestRequest,
+      },
+    ],
+    response: WorkshopTimesheetEntry,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'patch',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_partial_update',
+    description: `Update an existing timesheet entry belonging to the staff member.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedWorkshopTimesheetEntryUpdateRequest,
+      },
+    ],
+    response: WorkshopTimesheetEntry,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 403,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'delete',
+    path: '/job/api/workshop/timesheets/',
+    alias: 'job_api_workshop_timesheets_destroy',
+    description: `Delete a timesheet entry belonging to the staff member.`,
+    requestFormat: 'json',
+    response: z.void(),
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 403,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 404,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/job/job/:job_id/workshop-pdf/',
     alias: 'job_job_workshop_pdf_retrieve',
     description: `Generate and return a workshop PDF for printing.`,
@@ -4752,6 +5394,33 @@ Dynamically infers the stock adjustment based on quantity change`,
       },
     ],
     response: CostLineCreateUpdate,
+  },
+  {
+    method: 'post',
+    path: '/job/rest/cost_lines/:cost_line_id/approve/',
+    alias: 'approveCostLine',
+    description: `Approve an existing CostLine
+
+POST /job/rest/cost_lines/&lt;cost_line_id&gt;/approve`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cost_line_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: CostLineApprovalResult,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }).passthrough(),
+      },
+    ],
   },
   {
     method: 'delete',
@@ -6201,6 +6870,57 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
     ],
   },
   {
+    method: 'get',
+    path: '/purchasing/rest/purchase-orders/:po_id/events/',
+    alias: 'listPurchaseOrderEvents',
+    description: `List all events/comments for a purchase order.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: PurchaseOrderEventsResponse,
+    errors: [
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/purchasing/rest/purchase-orders/:po_id/events/',
+    alias: 'createPurchaseOrderEvent',
+    description: `Create a new event/comment on a purchase order.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ description: z.string().min(1).max(500) }).passthrough(),
+      },
+      {
+        name: 'po_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: PurchaseOrderEventCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: PurchasingErrorResponse,
+      },
+      {
+        status: 404,
+        schema: PurchasingErrorResponse,
+      },
+    ],
+  },
+  {
     method: 'post',
     path: '/purchasing/rest/purchase-orders/:po_id/lines/:line_id/allocations/delete/',
     alias: 'deleteAllocation',
@@ -6623,21 +7343,10 @@ Returns:
     method: 'get',
     path: '/timesheets/api/payroll/pay-runs/',
     alias: 'timesheets_api_payroll_pay_runs_retrieve',
-    description: `Return pay run data for the requested week if it exists.`,
+    description: `Return all pay runs for the configured payroll calendar.`,
     requestFormat: 'json',
-    parameters: [
-      {
-        name: 'week_start_date',
-        type: 'Query',
-        schema: z.string(),
-      },
-    ],
-    response: PayRunForWeekResponse,
+    response: PayRunListResponse,
     errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
       {
         status: 500,
         schema: ClientErrorResponse,
@@ -6698,7 +7407,9 @@ Returns:
     method: 'post',
     path: '/timesheets/api/payroll/post-staff-week/',
     alias: 'timesheets_api_payroll_post_staff_week_create',
-    description: `Post a week&#x27;s timesheet to Xero Payroll.`,
+    description: `Start posting timesheets. Returns a task_id to use with the stream endpoint.
+
+Use GET /api/payroll/post-staff-week/stream/{task_id}/ to receive SSE progress.`,
     requestFormat: 'json',
     parameters: [
       {
@@ -6707,17 +7418,7 @@ Returns:
         schema: PostWeekToXeroRequest,
       },
     ],
-    response: PostWeekToXeroResponse,
-    errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
-      {
-        status: 500,
-        schema: ClientErrorResponse,
-      },
-    ],
+    response: z.void(),
   },
   {
     method: 'get',
@@ -6775,41 +7476,6 @@ Returns:
       },
     ],
     response: WeeklyTimesheetData,
-    errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
-      {
-        status: 500,
-        schema: ClientErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/timesheets/api/weekly/',
-    alias: 'timesheets_api_weekly_create',
-    description: `Submit paid absence request.
-
-Expected payload:
-{
-    &quot;staff_id&quot;: &quot;uuid&quot;,
-    &quot;start_date&quot;: &quot;YYYY-MM-DD&quot;,
-    &quot;end_date&quot;: &quot;YYYY-MM-DD&quot;,
-    &quot;leave_type&quot;: &quot;annual|sick|other&quot;,
-    &quot;hours_per_day&quot;: 8.0,
-    &quot;description&quot;: &quot;Optional description&quot;
-}`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({}).partial().passthrough(),
-      },
-    ],
-    response: z.object({}).partial().passthrough(),
     errors: [
       {
         status: 400,
