@@ -6559,59 +6559,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
-    post:
-      operationId: timesheets_api_weekly_create
-      description: |-
-        Submit paid absence request.
-
-        Expected payload:
-        {
-            "staff_id": "uuid",
-            "start_date": "YYYY-MM-DD",
-            "end_date": "YYYY-MM-DD",
-            "leave_type": "annual|sick|other",
-            "hours_per_day": 8.0,
-            "description": "Optional description"
-        }
-      summary: Submit paid absence
-      tags:
-        - timesheets
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: {}
-          application/x-www-form-urlencoded:
-            schema:
-              type: object
-              additionalProperties: {}
-          multipart/form-data:
-            schema:
-              type: object
-              additionalProperties: {}
-      security:
-        - cookieAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ClientErrorResponse'
-          description: ''
   /xero-errors/:
     get:
       operationId: xero_errors_list
@@ -8417,6 +8364,12 @@ components:
           type: boolean
           description: Indicates whether this line is approved or not by an office
             staff (when the line is created by a workshop worker)
+        xero_pay_item:
+          type: string
+          format: uuid
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
         total_cost:
           type: number
           format: double
@@ -8501,6 +8454,12 @@ components:
           type: string
           format: date-time
           readOnly: true
+        xero_pay_item:
+          type: string
+          format: uuid
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
       required:
         - accounting_date
         - created_at
@@ -8547,6 +8506,12 @@ components:
         meta:
           type: object
           additionalProperties: {}
+        xero_pay_item:
+          type: string
+          format: uuid
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
       required:
         - accounting_date
         - kind
@@ -8617,6 +8582,12 @@ components:
           type: boolean
           description: Indicates whether this line is approved or not by an office
             staff (when the line is created by a workshop worker)
+        xero_pay_item:
+          type: string
+          format: uuid
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
       required:
         - accounting_date
         - kind
@@ -11450,9 +11421,18 @@ components:
           nullable: true
           description: Get leave type if this is a payroll leave job
           readOnly: true
+        default_xero_pay_item_id:
+          type: string
+          format: uuid
+          readOnly: true
+        default_xero_pay_item_name:
+          type: string
+          readOnly: true
       required:
         - charge_out_rate
         - client_name
+        - default_xero_pay_item_id
+        - default_xero_pay_item_name
         - has_actual_costset
         - id
         - job_number
@@ -12075,6 +12055,12 @@ components:
         meta:
           type: object
           additionalProperties: {}
+        xero_pay_item:
+          type: string
+          format: uuid
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
     PatchedDjangoJobRequest:
       type: object
       properties:
@@ -15321,6 +15307,13 @@ components:
           readOnly: true
           description: Indicates whether this line is approved or not by an office
             staff (when the line is created by a workshop worker)
+        xero_pay_item:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: The Xero pay item for this time entry (leave type, earnings
+            rate, etc.)
         total_cost:
           type: number
           format: double
@@ -15357,6 +15350,9 @@ components:
           format: double
           description: Get staff wage rate from metadata staff_id
           readOnly: true
+        xero_pay_item_name:
+          type: string
+          readOnly: true
       required:
         - accounting_date
         - approved
@@ -15381,6 +15377,8 @@ components:
         - xero_expense_id
         - xero_last_modified
         - xero_last_synced
+        - xero_pay_item
+        - xero_pay_item_name
         - xero_time_id
     TokenObtainPairResponse:
       type: object

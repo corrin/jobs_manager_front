@@ -7,6 +7,7 @@ import { toLocalDateString } from '@/utils/dateUtils'
 import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import { FeatureFlagsService } from '@/services/feature-flags.service'
+import { validateFields } from '@/utils/contractValidation'
 
 type CostLineMeta = {
   date?: string
@@ -20,6 +21,7 @@ type Job = z.infer<typeof schemas.ModernTimesheetJob>
 type WeeklyOverviewData = z.infer<typeof schemas.WeeklyTimesheetData>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
 type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdateRequest>
+type XeroPayItem = z.infer<typeof schemas.XeroPayItem>
 
 export const useTimesheetStore = defineStore('timesheet', () => {
   const lines = ref<CostLine[]>([])
@@ -29,6 +31,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
   const staff = ref<Staff[]>([])
   const jobs = ref<Job[]>([])
+  const xeroPayItems = ref<XeroPayItem[]>([])
   const currentWeekData = ref<WeeklyOverviewData | null>(null)
   const selectedDate = ref<string>(toLocalDateString())
   const selectedStaffId = ref<string>('')
@@ -233,7 +236,13 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   }
 
   async function initialize() {
-    await Promise.all([loadStaff(), loadJobs(), loadCompanyDefaults(), initializeFeatureFlags()])
+    await Promise.all([
+      loadStaff(),
+      loadJobs(),
+      loadXeroPayItems(),
+      loadCompanyDefaults(),
+      initializeFeatureFlags(),
+    ])
 
     if (staff.value.length > 0 && !selectedStaffId.value) {
       selectedStaffId.value = staff.value[0].id
@@ -297,15 +306,42 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
     try {
       const response = await api.timesheets_api_jobs_retrieve()
+
+      // Fail early if backend contract is broken
+      validateFields(
+        response.jobs,
+        ['default_xero_pay_item_id', 'default_xero_pay_item_name'],
+        'ModernTimesheetJob',
+      )
+
       jobs.value = response.jobs
     } catch (err) {
-      error.value = 'Failed to load jobs'
-      debugLog('Error loading jobs:', err)
-      jobs.value = []
-      toast.error('Error loading jobs: ' + ((err as Error)?.message ?? 'Unknown error'))
+      const message = err instanceof Error ? err.message : 'Failed to load jobs'
+      toast.error(message)
+      throw err
     } finally {
       loading.value = false
     }
+  }
+
+  async function loadXeroPayItems() {
+    try {
+      const items = await api.api_workflow_xero_pay_items_list()
+      xeroPayItems.value = items
+      debugLog('Loaded Xero pay items:', items.length)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load Xero pay items'
+      toast.error(message)
+      throw err
+    }
+  }
+
+  function getPayItemByMultiplier(multiplier: number): XeroPayItem | null {
+    // Find pay item matching the multiplier (with small tolerance for floating point)
+    return (
+      xeroPayItems.value.find((item) => Math.abs((item.multiplier ?? 1.0) - multiplier) < 0.01) ??
+      null
+    )
   }
 
   async function loadTimeLines() {
@@ -544,6 +580,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
     staff,
     jobs,
+    xeroPayItems,
     currentWeekData,
     selectedDate,
     selectedStaffId,
@@ -575,6 +612,8 @@ export const useTimesheetStore = defineStore('timesheet', () => {
     updateWeekConfiguration,
     loadStaff,
     loadJobs,
+    loadXeroPayItems,
+    getPayItemByMultiplier,
     loadCompanyDefaults,
     loadTimeLines,
     loadWeeklyOverview,

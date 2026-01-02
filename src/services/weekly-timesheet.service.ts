@@ -21,29 +21,6 @@ export async function fetchWeeklyOverview(startDate?: string): Promise<WeeklyTim
 }
 
 /**
- * Submit a paid absence.
- */
-export async function submitPaidAbsence(params: {
-  staff_id: string
-  start_date: string
-  end_date: string
-  leave_type: 'annual' | 'sick' | 'other'
-  hours_per_day?: number
-  notes?: string
-}): Promise<{ success: boolean; messages?: string[] }> {
-  const payload = {
-    staff_id: params.staff_id,
-    start_date: params.start_date,
-    end_date: params.end_date,
-    leave_type: params.leave_type,
-    hours_per_day: params.hours_per_day ?? 8,
-    description: params.notes ?? '',
-  }
-  const response = await api.timesheets_api_weekly_create({ body: payload })
-  return response as { success: boolean; messages?: string[] }
-}
-
-/**
  * Get the current week’s start/end dates.
  */
 export function getCurrentWeekRange(): { startDate: string; endDate: string } {
@@ -96,7 +73,6 @@ export function formatPercentage(percentage: number): string {
 
 export default {
   fetchWeeklyOverview,
-  submitPaidAbsence,
   getCurrentWeekRange,
   getWeekRange,
   formatDateRange,

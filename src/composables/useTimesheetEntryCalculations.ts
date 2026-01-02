@@ -209,6 +209,8 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       bill: 0,
       billable: true,
       approved: false,
+      xero_pay_item: null,
+      xero_pay_item_name: '',
     }
   }
 
@@ -429,6 +431,8 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       billable:
         typeof metaRec['is_billable'] === 'boolean' ? (metaRec['is_billable'] as boolean) : true,
       approved: costLine.approved ?? false,
+      xero_pay_item: costLine.xero_pay_item ?? null,
+      xero_pay_item_name: costLine.xero_pay_item_name ?? '',
     }
   }
 
