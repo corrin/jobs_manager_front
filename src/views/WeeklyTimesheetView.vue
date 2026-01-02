@@ -834,7 +834,18 @@ async function handlePostAllToXero() {
 }
 
 onMounted(async () => {
-  // Fetch all pay runs first (needed for default week calculation and restrictions)
+  // If no week param, sync pay runs from Xero first (ensures fresh data for default week)
+  if (!route.query.week) {
+    try {
+      await refreshPayRuns()
+      debugLog('Pay runs synced from Xero on initial load')
+    } catch (err) {
+      console.error('Failed to sync pay runs from Xero:', err)
+      toast.error('Failed to sync pay runs from Xero')
+    }
+  }
+
+  // Fetch all pay runs (needed for default week calculation and restrictions)
   const payRuns = await loadAllPayRuns()
 
   // If no query param, set the default week based on pay runs
