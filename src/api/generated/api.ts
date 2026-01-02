@@ -2037,7 +2037,7 @@ const TimesheetCostLine = z
     client_name: z.string(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     wage_rate: z.number(),
-    xero_pay_item_name: z.string(),
+    xero_pay_item_name: z.string().min(1),
   })
   .passthrough()
 const ModernTimesheetStaff = z
