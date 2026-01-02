@@ -1327,6 +1327,7 @@ async function handleSaveEntry(entry: TimesheetEntryViewRow): Promise<void> {
       unit_cost: entryRow.wageRate,
       unit_rev: entryRow.chargeOutRate,
       accounting_date: date,
+      xero_pay_item: entryRow.xeroPayItemId,
       meta: {
         staff_id: staffId,
         date: date,
@@ -1411,6 +1412,8 @@ async function softRefreshRow(entry: TimesheetEntryViewRow): Promise<void> {
     const normalizedClientName = line.client_name || ''
     const normalizedJobName = line.job_name || ''
     const normalizedChargeOutRate = line.charge_out_rate || 0
+    const xeroPayItemId = line.xero_pay_item ?? undefined
+    const xeroPayItemName = line.xero_pay_item_name ?? undefined
 
     const merged = {
       id: line.id,
@@ -1439,6 +1442,10 @@ async function softRefreshRow(entry: TimesheetEntryViewRow): Promise<void> {
       rateMultiplier,
       isNewRow: false,
       isModified: false,
+      xeroPayItemId,
+      xeroPayItemName,
+      xero_pay_item: xeroPayItemId ?? null,
+      xero_pay_item_name: xeroPayItemName ?? '',
     } as unknown as TimesheetEntryViewRow
 
     // Update the grid

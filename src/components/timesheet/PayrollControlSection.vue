@@ -102,13 +102,37 @@
       </div>
     </div>
 
+    <!-- Creation Blocked Banner -->
+    <div
+      v-if="!payRunExists && !canCreatePayRun && draftWeekStart"
+      class="bg-amber-50 border border-amber-200 rounded-md p-3 flex items-start space-x-2 text-amber-800"
+    >
+      <AlertTriangle class="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-600">
+          Cannot Create Pay Run
+        </p>
+        <p class="text-sm leading-snug">
+          A draft already exists for {{ formatWeekRange(draftWeekStart) }}.
+        </p>
+        <Button
+          variant="link"
+          size="sm"
+          class="text-amber-700 hover:text-amber-900 p-0 h-auto mt-1"
+          @click="$emit('navigateToDraft')"
+        >
+          Go to draft week
+        </Button>
+      </div>
+    </div>
+
     <!-- Action Buttons -->
     <div class="flex items-center space-x-2 flex-wrap gap-2">
       <!-- Create Pay Run Button -->
       <Button
         v-if="!payRunExists && !postingBlocked"
         @click="$emit('createPayRun')"
-        :disabled="creating"
+        :disabled="creating || !canCreatePayRun"
         variant="default"
         size="sm"
         class="bg-blue-600 hover:bg-blue-700 text-white"
@@ -138,9 +162,9 @@
         <template v-else> Post All to Xero </template>
       </Button>
 
-      <!-- View in Xero Button (shown when Posted or after successful post) -->
+      <!-- View in Xero Button -->
       <Button
-        v-if="xeroUrl && (isPosted || postSuccess)"
+        v-if="xeroUrl"
         variant="secondary"
         size="sm"
         class="bg-green-600 hover:bg-green-700 text-white"
@@ -213,7 +237,7 @@ interface Props {
   postSuccess?: boolean
   postingBlocked?: boolean // True if a newer pay run has been posted
   postingBlockedReason?: string | null // Message explaining why posting is blocked
-  hasDraft?: boolean // True if current week has a Draft pay run
+  draftWeekStart?: string | null // Week start date of existing draft (null if no draft exists)
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -229,7 +253,7 @@ const props = withDefaults(defineProps<Props>(), {
   postSuccess: false,
   postingBlocked: false,
   postingBlockedReason: null,
-  hasDraft: false,
+  draftWeekStart: null,
 })
 
 defineEmits<{
@@ -237,11 +261,18 @@ defineEmits<{
   postAllToXero: []
   refreshPayRuns: []
   dismissError: []
+  navigateToDraft: []
 }>()
 
 const payRunExists = computed(() => props.payRunStatus !== null)
 const isPosted = computed(() => props.payRunStatus === 'Posted')
 const canPost = computed(() => payRunExists.value && !isPosted.value && !props.postingBlocked)
+
+// Draft is for this week if draftWeekStart matches current week
+const hasDraft = computed(() => props.draftWeekStart === props.weekStartDate)
+
+// Can create if no draft exists elsewhere (draft is for this week or no draft at all)
+const canCreatePayRun = computed(() => !props.draftWeekStart || hasDraft.value)
 
 function formatWeekRange(weekStart: string): string {
   const start = parseISO(weekStart)

@@ -264,7 +264,7 @@ export function useXeroAuth() {
         return
       }
       if (typeof data.overall_progress === 'number') {
-        overallProgress.value = data.overall_progress
+        overallProgress.value = Math.min(data.overall_progress, 100)
       }
       if (data.entity && data.entity !== 'sync') {
         if (!entities.value.includes(data.entity)) {
@@ -277,7 +277,7 @@ export function useXeroAuth() {
         }
         currentEntity.value = data.entity
         if (typeof data.entity_progress === 'number') {
-          entityProgress.value = data.entity_progress
+          entityProgress.value = Math.min(data.entity_progress, 100)
           entityStats[data.entity].status = data.status || 'In Progress'
         }
         if (typeof data.records_updated === 'number') {

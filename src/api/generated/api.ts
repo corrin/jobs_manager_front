@@ -1146,6 +1146,7 @@ const PatchedCostLineCreateUpdateRequest = z
     accounting_date: z.string(),
     ext_refs: z.object({}).partial().passthrough(),
     meta: z.object({}).partial().passthrough(),
+    xero_pay_item: z.string().uuid().nullable(),
   })
   .partial()
   .passthrough()
@@ -1161,6 +1162,7 @@ const CostLineCreateUpdate = z
     meta: z.object({}).partial().passthrough().optional(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
+    xero_pay_item: z.string().uuid().nullish(),
   })
   .passthrough()
 const CostLine = z
@@ -1181,6 +1183,7 @@ const CostLine = z
     xero_last_modified: z.string().datetime({ offset: true }).nullish(),
     xero_last_synced: z.string().datetime({ offset: true }).nullish(),
     approved: z.boolean().optional(),
+    xero_pay_item: z.string().uuid().nullish(),
     total_cost: z.number(),
     total_rev: z.number(),
   })
@@ -1517,6 +1520,7 @@ const CostLineCreateUpdateRequest = z
     accounting_date: z.string(),
     ext_refs: z.object({}).partial().passthrough().optional(),
     meta: z.object({}).partial().passthrough().optional(),
+    xero_pay_item: z.string().uuid().nullish(),
   })
   .passthrough()
 const QuoteRevisionsList = z
@@ -2024,6 +2028,7 @@ const TimesheetCostLine = z
     xero_last_modified: z.string().datetime({ offset: true }).nullable(),
     xero_last_synced: z.string().datetime({ offset: true }).nullable(),
     approved: z.boolean(),
+    xero_pay_item: z.string().uuid().nullable(),
     total_cost: z.number(),
     total_rev: z.number(),
     job_id: z.string(),
@@ -2032,6 +2037,7 @@ const TimesheetCostLine = z
     client_name: z.string(),
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     wage_rate: z.number(),
+    xero_pay_item_name: z.string(),
   })
   .passthrough()
 const ModernTimesheetStaff = z
@@ -2666,6 +2672,8 @@ const ModernTimesheetJob = z
     charge_out_rate: z.number().gt(-100000000).lt(100000000),
     has_actual_costset: z.boolean(),
     leave_type: z.string().nullable(),
+    default_xero_pay_item_id: z.string().uuid(),
+    default_xero_pay_item_name: z.string(),
   })
   .passthrough()
 const JobsListResponse = z
@@ -7468,41 +7476,6 @@ Returns:
       },
     ],
     response: WeeklyTimesheetData,
-    errors: [
-      {
-        status: 400,
-        schema: ClientErrorResponse,
-      },
-      {
-        status: 500,
-        schema: ClientErrorResponse,
-      },
-    ],
-  },
-  {
-    method: 'post',
-    path: '/timesheets/api/weekly/',
-    alias: 'timesheets_api_weekly_create',
-    description: `Submit paid absence request.
-
-Expected payload:
-{
-    &quot;staff_id&quot;: &quot;uuid&quot;,
-    &quot;start_date&quot;: &quot;YYYY-MM-DD&quot;,
-    &quot;end_date&quot;: &quot;YYYY-MM-DD&quot;,
-    &quot;leave_type&quot;: &quot;annual|sick|other&quot;,
-    &quot;hours_per_day&quot;: 8.0,
-    &quot;description&quot;: &quot;Optional description&quot;
-}`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({}).partial().passthrough(),
-      },
-    ],
-    response: z.object({}).partial().passthrough(),
     errors: [
       {
         status: 400,

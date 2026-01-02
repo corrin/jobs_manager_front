@@ -134,11 +134,12 @@
           :post-success="postedAllToXero"
           :posting-blocked="!canPostCurrentWeek"
           :posting-blocked-reason="postingBlockedReason"
-          :has-draft="currentWeekHasDraft"
+          :draft-week-start="draftWeekStart"
           @create-pay-run="handleCreatePayRun"
           @post-all-to-xero="handlePostAllToXero"
           @refresh-pay-runs="handleRefreshPayRuns"
           @dismiss-error="payrollError = null"
+          @navigate-to-draft="handleNavigateToDraft"
         />
 
         <!-- Loading Spinner -->
@@ -394,17 +395,13 @@ function loadPayRunForCurrentWeek() {
 
 // Load all pay runs (for default week calculation, current week status, and posting restrictions)
 async function loadAllPayRuns(): Promise<PayRunListItem[]> {
-  try {
-    const result = await fetchAllPayRuns()
-    allPayRuns.value = result.pay_runs
-    debugLog('Loaded all pay runs:', result.pay_runs.length, 'items')
-    return result.pay_runs
-  } catch (err: unknown) {
-    console.error('Failed to fetch pay runs:', err)
-    // Non-critical error - allow page to function without restriction data (fail-open)
-    allPayRuns.value = []
-    return []
-  }
+  const result = await fetchAllPayRuns().catch((err) => {
+    toast.error('Failed to load pay runs')
+    throw err
+  })
+  allPayRuns.value = result.pay_runs
+  debugLog('Loaded all pay runs:', result.pay_runs.length, 'items')
+  return result.pay_runs
 }
 
 // Calculate the default week based on pay runs
@@ -532,9 +529,10 @@ const postingBlockedReason = computed(() => {
   return `Cannot post: A pay run has already been posted for the week ending ${formattedDate}. You can only post pay runs for weeks after this date.`
 })
 
-// Check if current week has a Draft pay run (allows overwriting)
-const currentWeekHasDraft = computed(() => {
-  return payRunStatus.value === 'Draft'
+// Get the week start date of an existing draft (if any) - component derives all draft logic from this
+const draftWeekStart = computed(() => {
+  const draft = allPayRuns.value.find((pr) => pr.pay_run_status === 'Draft')
+  return draft?.period_start_date ?? null
 })
 
 watch(
@@ -706,6 +704,14 @@ async function handleRefreshPayRuns() {
   }
 }
 
+function handleNavigateToDraft() {
+  if (draftWeekStart.value) {
+    selectedWeekStart.value = createLocalDate(draftWeekStart.value)
+    router.push({ query: { week: draftWeekStart.value } })
+    loadData()
+  }
+}
+
 async function handlePostAllToXero() {
   if (!weeklyData.value) return
 
@@ -828,7 +834,18 @@ async function handlePostAllToXero() {
 }
 
 onMounted(async () => {
-  // Fetch all pay runs first (needed for default week calculation and restrictions)
+  // If no week param, sync pay runs from Xero first (ensures fresh data for default week)
+  if (!route.query.week) {
+    try {
+      await refreshPayRuns()
+      debugLog('Pay runs synced from Xero on initial load')
+    } catch (err) {
+      console.error('Failed to sync pay runs from Xero:', err)
+      toast.error('Failed to sync pay runs from Xero')
+    }
+  }
+
+  // Fetch all pay runs (needed for default week calculation and restrictions)
   const payRuns = await loadAllPayRuns()
 
   // If no query param, set the default week based on pay runs

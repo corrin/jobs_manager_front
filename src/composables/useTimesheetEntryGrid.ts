@@ -1,6 +1,7 @@
 import { ref, computed, nextTick, type Ref, createApp } from 'vue'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
+import { useTimesheetStore } from '@/stores/timesheet'
 import type {
   GridApi,
   ColDef,
@@ -58,6 +59,7 @@ export function useTimesheetEntryGrid(
   const loading = ref(false)
   const selectedRowIndex = ref(-1)
   const calculations = useTimesheetEntryCalculations(companyDefaults)
+  const timesheetStore = useTimesheetStore()
   const columnDefs = ref<ColDef<TimesheetEntryGridRow, unknown>[]>([
     {
       headerName: 'Job',
@@ -156,6 +158,13 @@ export function useTimesheetEntryGrid(
         const displayText = rate === 'Ord' ? 'Ord' : rate === 'Unpaid' ? 'Unpaid' : `${rate}x`
         return `<span style="color: ${colors[rate as keyof typeof colors]}; font-weight: 500;">${displayText}</span>`
       },
+    },
+    {
+      headerName: 'Pay Item',
+      field: 'xeroPayItemName',
+      width: 120,
+      editable: false,
+      cellStyle: { color: '#6B7280', fontSize: '13px' },
     },
     {
       headerName: 'Wage',
@@ -566,6 +575,10 @@ export function useTimesheetEntryGrid(
     } else {
       rateMultiplier = multiplierFromRate
     }
+
+    // Look up pay item by multiplier for Xero integration
+    const payItemForMultiplier = timesheetStore.getPayItemByMultiplier(rateMultiplier)
+
     const staffIdCandidate =
       rowData.staffId ?? toStringSafe(meta.staff_id, '') ?? currentStaffRef.value?.id ?? ''
     const staffId = staffIdCandidate || ''
@@ -642,6 +655,11 @@ export function useTimesheetEntryGrid(
       xero_expense_id: rowData.xero_expense_id ?? null,
       xero_last_modified: rowData.xero_last_modified ?? null,
       xero_last_synced: rowData.xero_last_synced ?? null,
+      xeroPayItemId:
+        payItemForMultiplier?.id ?? rowData.xeroPayItemId ?? rowData.xero_pay_item ?? undefined,
+      xeroPayItemName: payItemForMultiplier?.name ?? rowData.xeroPayItemName ?? undefined,
+      xero_pay_item:
+        payItemForMultiplier?.id ?? rowData.xeroPayItemId ?? rowData.xero_pay_item ?? null,
     }
   }
 
