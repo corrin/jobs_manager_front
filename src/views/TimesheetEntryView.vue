@@ -1692,6 +1692,8 @@ const loadTimesheetData = async () => {
         chargeOutRate: normalizedChargeOutRate,
         charge_out_rate: normalizedChargeOutRate,
         rateMultiplier,
+        xeroPayItemId: line.xero_pay_item,
+        xeroPayItemName: line.xero_pay_item_name,
         isNewRow: false,
         isModified: false,
       }
