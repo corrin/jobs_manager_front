@@ -15353,6 +15353,7 @@ components:
         xero_pay_item_name:
           type: string
           readOnly: true
+          minLength: 1
       required:
         - accounting_date
         - approved
