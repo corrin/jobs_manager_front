@@ -655,11 +655,9 @@ export function useTimesheetEntryGrid(
       xero_expense_id: rowData.xero_expense_id ?? null,
       xero_last_modified: rowData.xero_last_modified ?? null,
       xero_last_synced: rowData.xero_last_synced ?? null,
-      xeroPayItemId:
-        payItemForMultiplier?.id ?? rowData.xeroPayItemId ?? rowData.xero_pay_item ?? undefined,
-      xeroPayItemName: payItemForMultiplier?.name ?? rowData.xeroPayItemName ?? undefined,
-      xero_pay_item:
-        payItemForMultiplier?.id ?? rowData.xeroPayItemId ?? rowData.xero_pay_item ?? null,
+      xeroPayItemId: payItemForMultiplier?.id ?? undefined,
+      xeroPayItemName: payItemForMultiplier?.name ?? undefined,
+      xero_pay_item: payItemForMultiplier?.id ?? null,
     }
   }
 
