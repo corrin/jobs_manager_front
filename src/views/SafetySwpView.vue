@@ -389,6 +389,7 @@ async function loadDocuments() {
     await store.loadSWPs()
   } catch (err) {
     console.error('Failed to load SWPs:', err)
+    toast.error('Failed to load safety procedures')
   }
 }
 

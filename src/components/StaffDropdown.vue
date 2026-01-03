@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { toast } from 'vue-sonner'
 import { ChevronDown } from 'lucide-vue-next'
 import { useStaffApi } from '@/composables/useStaffApi'
 import { schemas } from '@/api/generated/api'
@@ -69,6 +70,7 @@ const loadStaffOptions = async (): Promise<void> => {
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load staff options'
     console.error('Error loading staff options:', err)
+    toast.error('Failed to load staff members')
   } finally {
     isLoading.value = false
   }

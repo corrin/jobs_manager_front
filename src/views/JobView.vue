@@ -339,6 +339,7 @@ onMounted(async () => {
     jobsStore.setHeader(headerResponse)
   } catch (error) {
     console.error('Failed to fetch job header:', error)
+    toast.error('Failed to load job details')
   } finally {
     loadingJob.value = false
   }

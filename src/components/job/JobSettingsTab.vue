@@ -262,6 +262,25 @@
               />
             </div>
 
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Default Pay Item</label>
+              <select
+                :value="localJobData.default_xero_pay_item_id || ''"
+                data-automation-id="JobSettingsTab-default-pay-item"
+                @change="handlePayItemChange($event)"
+                @blur="handleBlurFlush"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
+                <option value="">Select a pay item...</option>
+                <option v-for="payItem in xeroPayItems" :key="payItem.id" :value="payItem.id">
+                  {{ payItem.name }}
+                </option>
+              </select>
+              <p class="mt-1 text-xs text-gray-500">
+                Default Xero pay item for timesheet entries on this job
+              </p>
+            </div>
+
             <div class="flex-grow">
               <RichTextEditor
                 :model-value="(localJobData.notes as string) || ''"
@@ -372,6 +391,18 @@ onMounted(async () => {
         jobStatusChoices.value = []
       }
     })(),
+
+    // Load Xero pay items for the dropdown
+    (async () => {
+      try {
+        const payItems = await api.api_workflow_xero_pay_items_list()
+        xeroPayItems.value = payItems
+      } catch {
+        console.error('Failed to load Xero pay items')
+        toast.error('Failed to load Xero pay items')
+        xeroPayItems.value = []
+      }
+    })(),
   ])
 
   // Only set isInitializing to false after all loading is complete
@@ -479,6 +510,10 @@ const jobStatusChoices = ref<{ value: string; label: string }[]>([])
 const isInitializing = ref(true)
 const isSyncingFromStore = ref(false)
 
+// Xero pay items for the dropdown
+type XeroPayItem = z.infer<typeof schemas.XeroPayItem>
+const xeroPayItems = ref<XeroPayItem[]>([])
+
 // Readiness flags for preventing premature saves
 const basicInfoHydrated = ref(false)
 const isHydratingBasicInfo = ref(false)
@@ -584,6 +619,24 @@ const handlePriceCapInput = (event: Event) => {
   }
 }
 
+// Handle default pay item change
+const handlePayItemChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  const value = target.value
+
+  // Find the selected pay item to get its name
+  const selectedPayItem = xeroPayItems.value.find((item) => item.id === value)
+
+  // Update local data - use null for empty selection
+  localJobData.value.default_xero_pay_item_id = value || null
+  localJobData.value.default_xero_pay_item_name = selectedPayItem?.name || null
+
+  // Queue autosave change
+  if (!isInitializing.value) {
+    autosave.queueChange('default_xero_pay_item_id', value || null)
+  }
+}
+
 watch(
   () => jobData.value,
   async (newJobData) => {
@@ -606,6 +659,8 @@ watch(
         paid: false,
         rejected_flag: false,
         price_cap: null,
+        default_xero_pay_item_id: null,
+        default_xero_pay_item_name: null,
         // Include basic info fields - will be updated when basicInfo loads
         description: null,
         delivery_date: null,
@@ -639,6 +694,8 @@ watch(
       quote_acceptance_date: newJobData.quote_acceptance_date,
       paid: newJobData.paid,
       price_cap: newJobData.price_cap ?? null,
+      default_xero_pay_item_id: newJobData.default_xero_pay_item_id ?? null,
+      default_xero_pay_item_name: newJobData.default_xero_pay_item_name ?? null,
     }
 
     // Preserve existing basic info fields when updating with header data
@@ -658,6 +715,7 @@ watch(
       order_number: normalizeNullable(localJobData.value.order_number),
       notes: normalizeNullable(localJobData.value.notes),
       price_cap: localJobData.value.price_cap ?? null,
+      default_xero_pay_item_id: localJobData.value.default_xero_pay_item_id ?? null,
       // Include separated fields for delta consistency (only id fields, not name)
       client_id: localJobData.value.client?.id ?? null,
       contact_id: localJobData.value.contact_id ?? null,
@@ -1035,6 +1093,7 @@ const autosave = createJobAutosave({
       quote_acceptance_date: data.quote_acceptance_date,
       paid: data.paid,
       price_cap: data.price_cap ?? null,
+      default_xero_pay_item_id: data.default_xero_pay_item_id ?? null,
       description: data.description || null,
       order_number: data.order_number || null,
       notes: data.notes || null,
@@ -1226,6 +1285,18 @@ const autosave = createJobAutosave({
           localJobData.value.price_cap = serverJobDetail.price_cap ?? null
           headerPatch.price_cap = serverJobDetail.price_cap ?? null
         }
+        if (touchedKeys.includes('default_xero_pay_item_id')) {
+          nextBaseline.default_xero_pay_item_id = serverJobDetail.default_xero_pay_item_id ?? null
+          nextBaseline.default_xero_pay_item_name =
+            serverJobDetail.default_xero_pay_item_name ?? null
+          localJobData.value.default_xero_pay_item_id =
+            serverJobDetail.default_xero_pay_item_id ?? null
+          localJobData.value.default_xero_pay_item_name =
+            serverJobDetail.default_xero_pay_item_name ?? null
+          headerPatch.default_xero_pay_item_id = serverJobDetail.default_xero_pay_item_id ?? null
+          headerPatch.default_xero_pay_item_name =
+            serverJobDetail.default_xero_pay_item_name ?? null
+        }
         if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
           nextBaseline.client = {
             id: serverJobDetail.client_id ?? '',
@@ -1329,6 +1400,18 @@ const autosave = createJobAutosave({
           nextBaseline.price_cap = priceCapVal
           localJobData.value.price_cap = priceCapVal
           headerPatch.price_cap = priceCapVal
+        }
+        if (touchedKeys.includes('default_xero_pay_item_id')) {
+          const payItemId = coerceNullableString(partialPayload.default_xero_pay_item_id)
+          // Find the pay item name from our loaded list
+          const payItem = xeroPayItems.value.find((item) => item.id === payItemId)
+          const payItemName = payItem?.name ?? null
+          nextBaseline.default_xero_pay_item_id = payItemId
+          nextBaseline.default_xero_pay_item_name = payItemName
+          localJobData.value.default_xero_pay_item_id = payItemId
+          localJobData.value.default_xero_pay_item_name = payItemName
+          headerPatch.default_xero_pay_item_id = payItemId
+          headerPatch.default_xero_pay_item_name = payItemName
         }
         if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
           const clientId = coerceNullableString(partialPayload.client_id) ?? ''

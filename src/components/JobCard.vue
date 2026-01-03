@@ -154,6 +154,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { toast } from 'vue-sonner'
 import StaffAvatar from '@/components/StaffAvatar.vue'
 import { useJobCard } from '@/composables/useJobCard'
 import { schemas } from '@/api/generated/api'
@@ -266,6 +267,7 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
     } catch (error) {
       isAssigningStaff.value = false
       console.error('Error assigning staff to job:', error)
+      toast.error('Failed to assign staff to job')
     }
   }
 }
@@ -298,6 +300,7 @@ const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<
     } catch (error) {
       isUnassigningStaff.value = false
       console.error('Error unassigning staff from job:', error)
+      toast.error('Failed to remove staff from job')
     }
   }
 }

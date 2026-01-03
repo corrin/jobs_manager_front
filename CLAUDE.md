@@ -113,17 +113,25 @@ jobs.value[id] = updatedJob
 
 ### Error Handling
 
+25. **Every `console.error` must either throw or toast** - Users must be notified of errors, not just developers. If you log an error with `console.error`, you must also either `throw` (so the caller handles it) or show a `toast.error()` to the user.
+
 ```typescript
-// ✅ Correct - structured response
-const result = await service.updateJob(id, data)
-if (result.success) {
-  toast.success('Saved')
-} else {
-  toast.error(result.error)
+// ✅ Correct - toast notifies user
+} catch (error) {
+  console.error('Failed to save:', error)
+  toast.error('Failed to save changes')
 }
 
-// ❌ Wrong - raw throw
-await api.updateJob(id, data) // Unhandled exception
+// ✅ Correct - throw lets caller handle
+} catch (error) {
+  console.error('Failed to save:', error)
+  throw error
+}
+
+// ❌ Wrong - silent failure, user sees nothing
+} catch (error) {
+  console.error('Failed to save:', error)
+}
 ```
 
 ---

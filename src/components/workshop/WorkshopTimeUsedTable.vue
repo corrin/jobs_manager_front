@@ -52,6 +52,7 @@ async function loadStaff() {
     )
   } catch (error) {
     console.error('Failed to load staff data:', error)
+    toast.error('Failed to load staff data')
   }
 }
 

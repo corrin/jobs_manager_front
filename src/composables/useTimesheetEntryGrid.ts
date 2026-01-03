@@ -1,4 +1,5 @@
 import { ref, computed, nextTick, type Ref, createApp } from 'vue'
+import { toast } from 'vue-sonner'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 import { useTimesheetStore } from '@/stores/timesheet'
@@ -420,6 +421,7 @@ export function useTimesheetEntryGrid(
       }
     } catch (error) {
       console.error('Error in handleCellValueChanged:', error)
+      toast.error('Failed to save changes')
       if (isApiAlive(event.api)) {
         event.api.refreshCells({ rowNodes: [event.node], force: true })
       }
@@ -483,6 +485,7 @@ export function useTimesheetEntryGrid(
           options?.resolveStaffById?.(rowData.staffId || '') || currentStaffRef.value || undefined
         if (!staffData) {
           console.error('Cannot add new row on Enter without staff data')
+          toast.error('Unable to add row - staff data not loaded')
           break
         }
 
@@ -849,6 +852,7 @@ export function useTimesheetEntryGrid(
     // MUST use actual staff data - NO FALLBACKS
     if (!staffData) {
       console.error('❌ addNewRow called without staffData - this will cause wage rate issues')
+      toast.error('Unable to add row - staff data not loaded')
       return
     }
 
@@ -889,6 +893,7 @@ export function useTimesheetEntryGrid(
         addNewRow(staffId, undefined, staffData)
       } else {
         console.error('❌ Cannot add new row without staffData')
+        toast.error('Unable to add row - staff data not loaded')
       }
       return true
     }
