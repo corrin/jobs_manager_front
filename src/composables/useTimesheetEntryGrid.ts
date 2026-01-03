@@ -617,6 +617,17 @@ export function useTimesheetEntryGrid(
     const accountingDate = rowData.accounting_date ?? dateValue
     const normalizedId = typeof rowData.id === 'string' && rowData.id.length > 0 ? rowData.id : ''
 
+    // TODO: Future - make pay item a dropdown that drives multiplier (pay item becomes source of truth)
+    // For now: multiplier drives pay item, EXCEPT when multiplier is 1.0 use job's default
+    const finalXeroPayItemId =
+      rateMultiplier !== 1.0
+        ? (payItemForMultiplier?.id ?? null)
+        : (rowData.xeroPayItemId ?? rowData.xero_pay_item ?? null)
+    const finalXeroPayItemName =
+      rateMultiplier !== 1.0
+        ? (payItemForMultiplier?.name ?? null)
+        : (rowData.xeroPayItemName ?? rowData.xero_pay_item_name ?? null)
+
     return {
       ...rowData,
       id: normalizedId,
@@ -658,9 +669,9 @@ export function useTimesheetEntryGrid(
       xero_expense_id: rowData.xero_expense_id ?? null,
       xero_last_modified: rowData.xero_last_modified ?? null,
       xero_last_synced: rowData.xero_last_synced ?? null,
-      xeroPayItemId: payItemForMultiplier?.id ?? undefined,
-      xeroPayItemName: payItemForMultiplier?.name ?? undefined,
-      xero_pay_item: payItemForMultiplier?.id ?? null,
+      xeroPayItemId: finalXeroPayItemId ?? undefined,
+      xeroPayItemName: finalXeroPayItemName ?? undefined,
+      xero_pay_item: finalXeroPayItemId,
     }
   }
 
