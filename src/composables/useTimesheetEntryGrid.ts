@@ -18,6 +18,7 @@ import type {
 } from 'ag-grid-community'
 import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
+import { TimesheetEntryRateCellEditor } from '@/components/timesheet/TimesheetEntryRateCellEditor'
 import { formatCurrency } from '@/utils/string-formatting'
 import { toLocalDateString } from '@/utils/dateUtils'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
@@ -144,10 +145,7 @@ export function useTimesheetEntryGrid(
       field: 'rate',
       width: 90,
       editable: true,
-      cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: ['Ord', '1.5', '2.0', 'Unpaid'],
-      },
+      cellEditor: TimesheetEntryRateCellEditor,
       cellRenderer: (params: AgICellRendererParams) => {
         const rate = params.value || 'Ord'
         const colors = {

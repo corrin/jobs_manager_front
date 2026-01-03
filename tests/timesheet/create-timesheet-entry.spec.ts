@@ -260,13 +260,15 @@ async function enterHours(page: Page, rowId: string, hours: string): Promise<voi
  */
 async function setRateMultiplier(page: Page, rowId: string, rate: string): Promise<void> {
   const rateCell = gridCell(page, rowId, 'rate')
+
+  // Click to open the rate dropdown editor
   await rateCell.click()
   await page.waitForTimeout(300)
 
-  // AG Grid select editor - click the option in the dropdown list
-  const selectOption = page.locator(`.ag-select-list-item`).filter({ hasText: rate })
-  await selectOption.waitFor({ timeout: 5000 })
-  await selectOption.click()
+  // Wait for dropdown to appear and click the option using automation ID
+  const rateOption = autoId(page, `TimesheetEntryRateCellEditor-option-${rate}`)
+  await rateOption.waitFor({ timeout: 5000 })
+  await rateOption.click()
   await page.waitForTimeout(500)
 }
 
