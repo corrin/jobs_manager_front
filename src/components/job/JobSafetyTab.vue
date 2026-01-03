@@ -210,8 +210,8 @@ async function loadDocuments() {
   try {
     await store.loadJobJSAs(props.jobId)
   } catch (e) {
-    // Error is already set in store
     console.error('Failed to load JSAs:', e)
+    toast.error('Failed to load job safety analyses')
   }
 }
 

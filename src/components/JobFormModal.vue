@@ -47,6 +47,7 @@ import DialogTitle from '@/components/ui/dialog/DialogTitle.vue'
 import Button from '@/components/ui/button/Button.vue'
 import Input from '@/components/ui/input/Input.vue'
 import { ref, watch } from 'vue'
+import { toast } from 'vue-sonner'
 import { createDjangoJob, updateDjangoJob } from '@/services/django-jobs-service'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
@@ -99,6 +100,7 @@ async function submitForm() {
     emit('saved')
   } catch (error) {
     console.error('Error submitting form:', error)
+    toast.error('Failed to save job')
   } finally {
     isLoading.value = false
   }

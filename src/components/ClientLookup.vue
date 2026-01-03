@@ -75,23 +75,15 @@
         <div
           :class="[
             'px-3 py-2 rounded-md text-xs font-medium flex items-center space-x-1',
-            hasValidXeroId ||
-            (props.supplierLookup.value && props.supplierLookup.has_xero_id) ||
-            forceXero
+            xeroValid
               ? 'bg-green-100 text-green-800 border border-green-200'
               : 'bg-red-100 text-red-800 border border-red-200',
           ]"
           :title="hasValidXeroId ? 'Client has Xero ID' : 'Client missing Xero ID'"
+          :data-automation-id="xeroValid ? 'ClientLookup-xero-valid' : 'ClientLookup-xero-invalid'"
           v-if="!searchMode"
         >
-          <component
-            :is="
-              hasValidXeroId || (props.supplierLookup.value && props.supplierLookup.has_xero_id)
-                ? CheckCircle
-                : XCircle
-            "
-            class="w-3 h-3"
-          />
+          <component :is="xeroValid ? CheckCircle : XCircle" class="w-3 h-3" />
           <span>Xero</span>
         </div>
       </div>
@@ -114,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { Plus, CheckCircle, XCircle } from 'lucide-vue-next'
 import { useClientLookup } from '@/composables/useClientLookup'
 import CreateClientModal from '@/components/CreateClientModal.vue'
@@ -130,16 +122,15 @@ const props = withDefaults(
     placeholder?: string
     required?: boolean
     modelValue?: string
-    supplierLookup?: { has_xero_id?: boolean; value: boolean }
+    supplierLookup?: { value: boolean }
     searchMode?: boolean
     editMode?: boolean
-    forceXero?: boolean
   }>(),
   {
     placeholder: 'Search for a client...',
     required: false,
     modelValue: '',
-    supplierLookup: () => ({ has_xero_id: false, value: false }),
+    supplierLookup: () => ({ value: false }),
     searchMode: false,
   },
 )
@@ -162,6 +153,9 @@ const {
   hideSuggestions,
   preserveSelectedClient,
 } = useClientLookup()
+
+// Simple check: does the selected client have a Xero ID?
+const xeroValid = computed(() => hasValidXeroId.value)
 
 const showCreateModal = ref(false)
 const inputEl = ref<HTMLInputElement | null>(null) // Template ref for the input element

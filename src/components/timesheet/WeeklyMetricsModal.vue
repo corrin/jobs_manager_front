@@ -257,6 +257,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { toast } from 'vue-sonner'
 import { Search } from 'lucide-vue-next'
 import Dialog from '../ui/dialog/Dialog.vue'
 import DialogContent from '../ui/dialog/DialogContent.vue'
@@ -401,6 +402,7 @@ const loadJobs = async () => {
     console.log(`📊 Loaded ${jobs.value.length} jobs for week: ${props.weekDate || 'current'}`)
   } catch (error) {
     console.error('❌ Error loading jobs:', error)
+    toast.error('Failed to load weekly metrics')
     jobs.value = []
   } finally {
     isLoading.value = false

@@ -337,10 +337,16 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   }
 
   function getPayItemByMultiplier(multiplier: number): XeroPayItem | null {
-    // Find pay item matching the multiplier (with small tolerance for floating point)
+    // For ordinary time (1.0), explicitly look for "Ordinary Time" by name
+    if (Math.abs(multiplier - 1.0) < 0.01) {
+      return xeroPayItems.value.find((item) => item.name === 'Ordinary Time') ?? null
+    }
+
+    // For other multipliers, only match items with an explicit multiplier (not null/undefined)
     return (
-      xeroPayItems.value.find((item) => Math.abs((item.multiplier ?? 1.0) - multiplier) < 0.01) ??
-      null
+      xeroPayItems.value.find(
+        (item) => item.multiplier != null && Math.abs(item.multiplier - multiplier) < 0.01,
+      ) ?? null
     )
   }
 

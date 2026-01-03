@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { z } from 'zod'
+import { toast } from 'vue-sonner'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { debugLog } from '@/utils/debug'
@@ -47,6 +48,7 @@ export function useClientLookup() {
       console.error('Error searching clients:', error)
       suggestions.value = []
       showSuggestions.value = false
+      toast.error('Failed to search clients')
     } finally {
       isLoading.value = false
     }
@@ -71,6 +73,7 @@ export function useClientLookup() {
     } catch (error) {
       console.error('Error loading client contacts:', error)
       contacts.value = []
+      toast.error('Failed to load client contacts')
     }
   }
 

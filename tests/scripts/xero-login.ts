@@ -50,14 +50,24 @@ async function main() {
     await page.goto(`${frontendUrl}/xero`)
     await page.waitForLoadState('networkidle')
 
-    // Check if already logged in (Start Sync / Disconnect buttons visible)
+    // Wait for loading to complete - one of these buttons will appear:
+    // - "Login with Xero" if not connected
+    // - "Start Sync" / "Disconnect" if connected
+    console.log('Waiting for Xero connection status to load...')
+    const loginButton = page.getByRole('button', { name: /login with xero/i })
     const startSyncButton = page.getByRole('button', { name: /start sync/i })
     const disconnectButton = page.getByRole('button', { name: /disconnect/i })
 
-    const isAlreadyConnected = await Promise.race([
-      startSyncButton.isVisible().catch(() => false),
-      disconnectButton.isVisible().catch(() => false),
+    // Wait for any of these buttons to become visible (loading complete)
+    await Promise.race([
+      loginButton.waitFor({ state: 'visible', timeout: 30000 }),
+      startSyncButton.waitFor({ state: 'visible', timeout: 30000 }),
+      disconnectButton.waitFor({ state: 'visible', timeout: 30000 }),
     ])
+
+    // Now check which state we're in
+    const isAlreadyConnected =
+      (await startSyncButton.isVisible()) || (await disconnectButton.isVisible())
 
     if (isAlreadyConnected) {
       console.log('Already connected to Xero - no login needed')
@@ -67,7 +77,6 @@ async function main() {
 
     // Click Login with Xero button
     console.log('Not connected, clicking Login with Xero...')
-    const loginButton = page.getByRole('button', { name: /login with xero/i })
     await loginButton.click()
 
     // Wait for Xero login form

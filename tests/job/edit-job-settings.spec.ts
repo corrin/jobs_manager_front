@@ -554,4 +554,63 @@ test.describe.serial('edit job', () => {
 
     console.log('All 3 reloads completed with no data drift')
   })
+
+  test('change default pay item', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
+    await page.goto(sharedEditJobUrl)
+    await page.waitForLoadState('networkidle')
+
+    await autoId(page, 'JobViewTabs-jobSettings').click()
+    await autoId(page, 'JobSettingsTab-default-pay-item').waitFor({ timeout: 10000 })
+    await waitForSettingsInitialized(page)
+
+    await test.step('verify pay item dropdown is visible and has options', async () => {
+      const payItemSelect = autoId(page, 'JobSettingsTab-default-pay-item')
+      await expect(payItemSelect).toBeVisible()
+
+      // Verify dropdown has at least "Ordinary time" option
+      const options = payItemSelect.locator('option')
+      const optionCount = await options.count()
+      expect(optionCount).toBeGreaterThan(1) // More than just the placeholder
+    })
+
+    await test.step('select a different pay item', async () => {
+      const payItemSelect = autoId(page, 'JobSettingsTab-default-pay-item')
+
+      // Get available options (skip the first "Select a pay item..." placeholder)
+      const options = payItemSelect.locator('option')
+      const optionCount = await options.count()
+
+      // Find and select a non-empty option (not the placeholder)
+      let selectedValue = ''
+      for (let i = 1; i < optionCount; i++) {
+        const optionValue = await options.nth(i).getAttribute('value')
+        if (optionValue) {
+          selectedValue = optionValue
+          break
+        }
+      }
+
+      expect(selectedValue).not.toBe('')
+      await payItemSelect.selectOption(selectedValue)
+      await payItemSelect.blur()
+    })
+
+    await test.step('wait for autosave', async () => {
+      await waitForAutosave(page)
+    })
+
+    await test.step('verify pay item was saved', async () => {
+      // Get the current value before reload
+      const payItemSelect = autoId(page, 'JobSettingsTab-default-pay-item')
+      const savedValue = await payItemSelect.inputValue()
+      expect(savedValue).not.toBe('')
+
+      await page.reload()
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-default-pay-item').waitFor({ timeout: 10000 })
+
+      const payItemSelectAfter = autoId(page, 'JobSettingsTab-default-pay-item')
+      await expect(payItemSelectAfter).toHaveValue(savedValue)
+    })
+  })
 })
