@@ -35,29 +35,76 @@ test('test can call backend API directly', async ({ authenticatedPage: page }) =
   console.log(`Test client name from API: ${data.test_client_name}`)
 })
 
-test('test company defaults via app store', async ({ authenticatedPage: page }) => {
-  // The app loads company defaults on startup (see App.vue onMounted)
-  // We can verify this by navigating to the admin company page and checking the General settings
-
+test('test company defaults edit and save', async ({ authenticatedPage: page }) => {
   // Navigate to the admin company page
   await page.goto('/admin/company')
 
-  // Wait for the card-based UI to load and click on "General" to see the form
-  await page.waitForSelector('[data-automation-id="AdminCompanyView-general-button"]', {
+  // Wait for the section buttons to load
+  await page.waitForSelector('[data-automation-id="AdminCompanyView-company-button"]', {
     timeout: 15000,
   })
-  await page.click('[data-automation-id="AdminCompanyView-general-button"]')
 
-  // Wait for the General settings form to load with input fields
-  await page.waitForSelector('input', { timeout: 15000 })
+  // Click Company section to open modal
+  await page.click('[data-automation-id="AdminCompanyView-company-button"]')
 
-  // Take a screenshot for debugging
-  await page.screenshot({ path: 'test-results/company-defaults-general.png' })
+  // Wait for modal to open
+  await page.waitForSelector('[data-automation-id="SectionModal-content"]', { timeout: 10000 })
 
-  // Verify the page loaded properly by checking for company-related content
-  // The Company Defaults page should have loaded and display form fields
-  const hasInputs = await page.locator('input').count()
-  expect(hasInputs).toBeGreaterThan(0)
+  // Find the company name input (first text input in the modal)
+  const companyNameInput = page
+    .locator('[data-automation-id="SectionModal-content"] input[type="text"]')
+    .first()
+  await expect(companyNameInput).toBeVisible()
 
-  console.log(`App successfully loaded company defaults page with ${hasInputs} input fields`)
+  // Get the original value
+  const originalValue = await companyNameInput.inputValue()
+  console.log(`Original company name: ${originalValue}`)
+
+  // Change to a test value with timestamp
+  const testValue = `Test Company ${Date.now()}`
+  await companyNameInput.clear()
+  await companyNameInput.fill(testValue)
+  console.log(`Changed company name to: ${testValue}`)
+
+  // Close the modal
+  await page.click('button:has-text("Close")')
+
+  // Wait for modal to close
+  await expect(page.locator('[data-automation-id="SectionModal-content"]')).not.toBeVisible({
+    timeout: 5000,
+  })
+
+  // Click Save All
+  await page.click('button:has-text("Save All")')
+
+  // Wait for save to complete (toast appears)
+  await page.waitForTimeout(1500)
+
+  // Reopen the Company section
+  await page.click('[data-automation-id="AdminCompanyView-company-button"]')
+  await page.waitForSelector('[data-automation-id="SectionModal-content"]', { timeout: 10000 })
+
+  // Verify the value persisted
+  const savedValue = await page
+    .locator('[data-automation-id="SectionModal-content"] input[type="text"]')
+    .first()
+    .inputValue()
+  console.log(`Saved company name: ${savedValue}`)
+  expect(savedValue).toBe(testValue)
+
+  // Restore original value
+  const inputToRestore = page
+    .locator('[data-automation-id="SectionModal-content"] input[type="text"]')
+    .first()
+  await inputToRestore.clear()
+  await inputToRestore.fill(originalValue)
+
+  // Close modal and save
+  await page.click('button:has-text("Close")')
+  await expect(page.locator('[data-automation-id="SectionModal-content"]')).not.toBeVisible({
+    timeout: 5000,
+  })
+  await page.click('button:has-text("Save All")')
+
+  console.log(`Restored company name to: ${originalValue}`)
 })
