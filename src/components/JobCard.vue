@@ -77,62 +77,75 @@
         #{{ job.job_number }}
       </span>
 
-      <!-- Staff avatars next to job number (unchanged behavior) -->
-      <div
-        ref="jobStaffContainerRef"
-        class="flex gap-1 items-center min-h-5 p-1 rounded transition-colors"
-        :class="{
-          'bg-blue-50 border border-blue-300': isStaffDragTarget,
-          'bg-gray-50 border border-dashed border-gray-300':
-            (!job.people || job.people.length === 0) && !isStaffDragTarget,
-        }"
-      >
+      <div class="flex items-center gap-1">
+        <!-- Staff avatars next to job number (unchanged behavior) -->
         <div
-          v-for="staff in job.people || []"
-          :key="staff.id"
-          class="relative staff-avatar-container"
-          @mouseenter="hoveredStaffId = staff.id"
-          @mouseleave="hoveredStaffId = null"
+          ref="jobStaffContainerRef"
+          class="flex gap-1 items-center min-h-5 p-1 rounded transition-colors"
+          :class="{
+            'bg-blue-50 border border-blue-300': isStaffDragTarget,
+            'bg-gray-50 border border-dashed border-gray-300':
+              (!job.people || job.people.length === 0) && !isStaffDragTarget,
+          }"
         >
-          <StaffAvatar
-            :staff="staff"
-            size="small"
-            :title="staff.display_name"
-            :data-staff-id="staff.id"
-            class="cursor-pointer transition-all duration-200"
-            :class="{ 'opacity-75 scale-95': hoveredStaffId === staff.id }"
-          />
-          <!-- X indicator on hover -->
           <div
-            v-if="hoveredStaffId === staff.id"
-            @click="(event) => handleStaffClick(staff, event)"
-            @mousedown.stop.prevent
-            @mouseup.stop.prevent
-            @dragstart.stop.prevent
-            @drag.stop.prevent
-            class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md z-10"
-            :title="`Remove ${staff.display_name} from job`"
-            style="pointer-events: auto; user-select: none"
+            v-for="staff in job.people || []"
+            :key="staff.id"
+            class="relative staff-avatar-container"
+            @mouseenter="hoveredStaffId = staff.id"
+            @mouseleave="hoveredStaffId = null"
           >
-            <svg
-              class="w-2.5 h-2.5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+            <StaffAvatar
+              :staff="staff"
+              size="small"
+              :title="staff.display_name"
+              :data-staff-id="staff.id"
+              class="cursor-pointer transition-all duration-200"
+              :class="{ 'opacity-75 scale-95': hoveredStaffId === staff.id }"
+            />
+            <!-- X indicator on hover -->
+            <div
+              v-if="hoveredStaffId === staff.id"
+              @click="(event) => handleStaffClick(staff, event)"
+              @mousedown.stop.prevent
+              @mouseup.stop.prevent
+              @dragstart.stop.prevent
+              @drag.stop.prevent
+              class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md z-10"
+              :title="`Remove ${staff.display_name} from job`"
+              style="pointer-events: auto; user-select: none"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="3"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+              <svg
+                class="w-2.5 h-2.5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="3"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+          </div>
+          <div v-if="!job.people || job.people.length === 0" class="text-[10px] text-gray-400 px-1">
+            +
           </div>
         </div>
-        <div v-if="!job.people || job.people.length === 0" class="text-[10px] text-gray-400 px-1">
-          +
-        </div>
+
+        <button
+          type="button"
+          class="lg:hidden inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 active:scale-95"
+          aria-label="Change job status"
+          title="Change job status"
+          @pointerdown.stop
+          @click.stop="emit('status-change', job)"
+        >
+          <Settings2 class="h-4 w-4" />
+        </button>
       </div>
     </div>
 
@@ -160,6 +173,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
+import { Settings2 } from 'lucide-vue-next'
 import StaffAvatar from '@/components/StaffAvatar.vue'
 import { useJobCard } from '@/composables/useJobCard'
 import { schemas } from '@/api/generated/api'
@@ -197,6 +211,7 @@ const emit = defineEmits<{
   'card-ready': [payload: { jobId: string; element: HTMLElement }]
   'staff-assigned': [payload: { staffId: string; jobId: string }]
   'staff-unassigned': [payload: { staffId: string; jobId: string }]
+  'status-change': [job: KanbanJob]
 }>()
 
 const jobStaffContainerRef = ref<HTMLElement>()

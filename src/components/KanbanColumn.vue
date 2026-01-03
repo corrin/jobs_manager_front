@@ -40,6 +40,7 @@
           @job-selected-for-movement="$emit('job-selected-for-movement', $event)"
           @staff-assigned="$emit('staff-assigned', $event)"
           @staff-unassigned="$emit('staff-unassigned', $event)"
+          @status-change="$emit('status-change', $event)"
         />
 
         <!-- Only show empty state for non-draft columns or when not loading -->
@@ -173,6 +174,7 @@ interface KanbanColumnEmits {
   (e: 'job-selected-for-movement', job: KanbanJob): void
   (e: 'staff-assigned', payload: { staffId: string; jobId: string }): void
   (e: 'staff-unassigned', payload: { staffId: string; jobId: string }): void
+  (e: 'status-change', job: KanbanJob): void
 }
 
 const props = withDefaults(defineProps<KanbanColumnProps>(), {
