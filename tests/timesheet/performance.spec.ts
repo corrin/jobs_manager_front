@@ -54,12 +54,9 @@ test.describe('timesheet entry performance', () => {
     const firstStaffRow = page.locator('[data-automation-id^="StaffRow-name-"]').first()
     await firstStaffRow.waitFor({ timeout: 10000 })
 
-    // Get the staff ID from the row
-    const staffRowId = await firstStaffRow
-      .locator('xpath=ancestor::tr[@data-automation-id]')
-      .first()
-      .getAttribute('data-automation-id')
-    const staffId = staffRowId?.replace('StaffRow-', '') || ''
+    // Get the staff ID directly from the element's automation ID
+    const automationId = await firstStaffRow.getAttribute('data-automation-id')
+    const staffId = automationId?.replace('StaffRow-name-', '') || ''
 
     console.log(`\n=== Navigating to timesheet entry for staff: ${staffId} ===\n`)
 
@@ -71,7 +68,7 @@ test.describe('timesheet entry performance', () => {
     await page.goto(`/timesheets/entry?date=${weekday}&staffId=${staffId}`)
 
     // Wait for grid to appear (indicates data loaded)
-    const grid = page.locator('.ag-grid-vue')
+    const grid = page.locator('.ag-theme-custom')
     await grid.waitFor({ state: 'visible', timeout: 60000 })
 
     // Wait for loading spinner to disappear
@@ -166,16 +163,13 @@ test.describe('timesheet entry performance', () => {
 
     const firstStaffRow = page.locator('[data-automation-id^="StaffRow-name-"]').first()
     await firstStaffRow.waitFor({ timeout: 10000 })
-    const staffRowId = await firstStaffRow
-      .locator('xpath=ancestor::tr[@data-automation-id]')
-      .first()
-      .getAttribute('data-automation-id')
-    const staffId = staffRowId?.replace('StaffRow-', '') || ''
+    const automationId = await firstStaffRow.getAttribute('data-automation-id')
+    const staffId = automationId?.replace('StaffRow-name-', '') || ''
 
     apiTiming.length = 0
 
     await page.goto(`/timesheets/entry?date=${weekday}&staffId=${staffId}`)
-    await page.locator('.ag-grid-vue').waitFor({ state: 'visible', timeout: 60000 })
+    await page.locator('.ag-theme-custom').waitFor({ state: 'visible', timeout: 60000 })
     await page.waitForFunction(() => !document.querySelector('.animate-spin'), { timeout: 60000 })
 
     console.log('\n=== API REQUEST TIMELINE ===\n')
@@ -223,6 +217,6 @@ test.describe('timesheet entry performance', () => {
       console.log('\nWARNING: Requests appear to be mostly sequential - could be parallelized!')
     }
 
-    expect(page.locator('.ag-grid-vue')).toBeVisible()
+    expect(page.locator('.ag-theme-custom')).toBeVisible()
   })
 })
