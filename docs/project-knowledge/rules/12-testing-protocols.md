@@ -676,6 +676,38 @@ export function renderWithProviders(
 }
 ```
 
+## Utility Scripts
+
+### Xero OAuth Login (`tests/scripts/xero-login.ts`)
+
+Automates the Xero OAuth login flow for development/testing. Useful when you need to re-authenticate with Xero without manually clicking through the OAuth flow.
+
+**Usage:**
+
+```bash
+npx tsx tests/scripts/xero-login.ts           # headless (default)
+npx tsx tests/scripts/xero-login.ts --visible # show browser
+```
+
+**What it does:**
+
+1. Logs into the app using `E2E_TEST_USERNAME` / `E2E_TEST_PASSWORD`
+2. Navigates to `/xero`
+3. If already connected (sees "Start Sync" / "Disconnect"), exits early
+4. Otherwise clicks "Login with Xero" and completes OAuth flow
+5. Handles MFA (waits up to 2 minutes for phone approval)
+6. Clicks through the Xero consent page
+
+**Required `.env` variables:**
+
+```
+E2E_TEST_USERNAME=your-app-user@example.com
+E2E_TEST_PASSWORD=your-app-password
+XERO_USERNAME=your-xero-email@example.com
+XERO_PASSWORD=your-xero-password
+VITE_FRONTEND_BASE_URL=https://your-frontend-url
+```
+
 ## Related References
 
 - See: [07-component-architecture.md](./07-component-architecture.md)

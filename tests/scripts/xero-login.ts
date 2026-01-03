@@ -2,7 +2,8 @@
  * Xero OAuth Login Utility
  *
  * Usage:
- *   npx ts-node tests/scripts/xero-login.ts
+ *   npx tsx tests/scripts/xero-login.ts           # headless (default)
+ *   npx tsx tests/scripts/xero-login.ts --visible # show browser
  */
 
 import { chromium } from '@playwright/test'
@@ -16,6 +17,7 @@ async function main() {
   const appUsername = process.env.E2E_TEST_USERNAME
   const appPassword = process.env.E2E_TEST_PASSWORD
   const frontendUrl = process.env.VITE_FRONTEND_BASE_URL
+  const headless = !process.argv.includes('--visible')
 
   if (!xeroUsername || !xeroPassword) {
     console.error('XERO_USERNAME and XERO_PASSWORD must be set in .env')
@@ -32,7 +34,7 @@ async function main() {
     process.exit(1)
   }
 
-  const browser = await chromium.launch({ headless: false })
+  const browser = await chromium.launch({ headless })
   const page = await browser.newPage()
 
   try {
