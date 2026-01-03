@@ -44,7 +44,7 @@ test.describe('create job with new xero client', () => {
     await expect(clientInput).toHaveValue(newClientName)
 
     // Verify the Xero badge shows green (client has Xero ID)
-    const xeroIndicator = page.locator('.bg-green-100:has-text("Xero")')
+    const xeroIndicator = autoId(page, 'ClientLookup-xero-valid')
     await expect(xeroIndicator).toBeVisible({ timeout: 10000 })
 
     console.log(`Client "${newClientName}" created with Xero ID`)
@@ -140,7 +140,7 @@ test.describe('create job with new xero client', () => {
     await page.waitForTimeout(1000)
 
     // Verify the Xero badge shows green
-    const xeroIndicator = page.locator('.bg-green-100:has-text("Xero")')
+    const xeroIndicator = autoId(page, 'ClientLookup-xero-valid')
     await expect(xeroIndicator).toBeVisible({ timeout: 10000 })
 
     console.log(`Client "${newClientName}" created with Xero ID via modal`)
