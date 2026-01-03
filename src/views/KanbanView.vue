@@ -136,6 +136,7 @@
                       @sortable-ready="handleSortableReady"
                       @staff-assigned="handleStaffAssigned"
                       @staff-unassigned="handleStaffUnassigned"
+                      @status-change="openStatusDrawer"
                       class="kanban-column"
                     />
                   </div>
@@ -171,6 +172,7 @@
                       @sortable-ready="handleSortableReady"
                       @staff-assigned="handleStaffAssigned"
                       @staff-unassigned="handleStaffUnassigned"
+                      @status-change="openStatusDrawer"
                       class="kanban-column-responsive"
                     />
                   </div>
@@ -197,6 +199,7 @@
                       @sortable-ready="handleSortableReady"
                       @staff-assigned="handleStaffAssigned"
                       @staff-unassigned="handleStaffUnassigned"
+                      @status-change="openStatusDrawer"
                       class="w-full"
                     />
                   </div>
@@ -216,6 +219,81 @@
       @search="handleAdvancedSearchFromDialog"
       @clear-filters="clearFilters"
     />
+
+    <Drawer v-model:open="statusDrawerOpen">
+      <DrawerContent class="max-h-[85vh]">
+        <div class="mx-auto w-full max-w-md">
+          <DrawerHeader>
+            <DrawerTitle>Update Job Status</DrawerTitle>
+            <DrawerDescription v-if="statusDrawerJob">
+              Job #{{ statusDrawerJob.job_number }} - {{ statusDrawerJob.client_name }}
+            </DrawerDescription>
+            <DrawerDescription v-else>Select a job to update.</DrawerDescription>
+          </DrawerHeader>
+
+          <div v-if="statusDrawerJob" class="px-4 pb-4 space-y-4">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs text-slate-500">Current status</p>
+                  <p class="text-sm font-semibold text-slate-900">
+                    {{ currentStatusLabel }}
+                  </p>
+                </div>
+                <span
+                  class="text-xs font-semibold text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-full"
+                >
+                  {{ currentStatusLabel }}
+                </span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                v-for="option in statusOptions"
+                :key="option.key"
+                type="button"
+                class="group w-full text-left border rounded-xl p-3 transition"
+                :class="
+                  option.key === currentStatusKey
+                    ? 'border-blue-500 bg-blue-50 shadow-sm'
+                    : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                "
+                :disabled="isStatusUpdating"
+                @click="applyJobStatus(option.key)"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="text-sm font-semibold text-slate-900">{{ option.label }}</div>
+                    <div v-if="option.tooltip" class="text-xs text-slate-500 mt-1">
+                      {{ option.tooltip }}
+                    </div>
+                  </div>
+                  <div class="mt-0.5">
+                    <Loader2
+                      v-if="statusUpdateKey === option.key"
+                      class="h-4 w-4 animate-spin text-blue-600"
+                    />
+                    <Check
+                      v-else-if="option.key === currentStatusKey"
+                      class="h-4 w-4 text-blue-600"
+                    />
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <p class="text-xs text-slate-500">Tap a status to update. Changes save immediately.</p>
+          </div>
+
+          <DrawerFooter>
+            <DrawerClose as-child>
+              <Button variant="outline">Close</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </div>
+      </DrawerContent>
+    </Drawer>
   </AppLayout>
 </template>
 
@@ -223,12 +301,22 @@
 import { ref, onUnmounted, onMounted, nextTick, watch, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { useMediaQuery } from '@vueuse/core'
-import { Search } from 'lucide-vue-next'
+import { Search, Check, Loader2 } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
 import KanbanColumn from '@/components/KanbanColumn.vue'
 import AppLayout from '@/components/AppLayout.vue'
 import StaffPanel from '@/components/StaffPanel.vue'
 import AdvancedSearchDialog from '@/components/AdvancedSearchDialog.vue'
+import { Button } from '@/components/ui/button'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import { useOptimizedKanban } from '@/composables/useOptimizedKanban'
 import { useOptimizedDragAndDrop } from '../composables/useOptimizedDragAndDrop'
 import { useJobsStore } from '@/stores/jobs'
@@ -238,6 +326,12 @@ import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
+type KanbanJob = z.infer<typeof schemas.KanbanJob>
+type StatusOption = {
+  key: string
+  label: string
+  tooltip?: string
+}
 
 const jobsStore = useJobsStore()
 const isDesktop = useMediaQuery('(min-width: 768px)')
@@ -245,6 +339,9 @@ const route = useRoute()
 const mobileAssignStaffId = ref<string | null>(null)
 const mobileAssignStaffName = ref('')
 const isTapAssignActive = computed(() => !isDesktop.value && Boolean(mobileAssignStaffId.value))
+const statusDrawerOpen = ref(false)
+const statusDrawerJob = ref<KanbanJob | null>(null)
+const statusUpdateKey = ref<string | null>(null)
 
 const syncAllowScrollMeta = () => {
   route.meta.allowScroll = !isDesktop.value
@@ -265,6 +362,13 @@ watch(
   },
   { immediate: true },
 )
+
+watch(statusDrawerOpen, (open) => {
+  if (!open) {
+    statusDrawerJob.value = null
+    statusUpdateKey.value = null
+  }
+})
 
 const handleMobileAssignSelect = (staff: KanbanStaff) => {
   if (isDesktop.value) {
@@ -298,6 +402,7 @@ const {
   advancedFilters,
   activeStaffFilters,
   selectedMobileStatus,
+  statusChoices,
 
   visibleStatusChoices,
 
@@ -322,6 +427,85 @@ const {
     }, 100)
   })
 })
+
+const openStatusDrawer = (job: KanbanJob) => {
+  statusDrawerJob.value = job
+  statusDrawerOpen.value = true
+}
+
+const resolveJobStatus = (job: KanbanJob | null): string => {
+  if (!job) return ''
+  return String(job.status_key || job.status || '')
+}
+
+const formatStatusLabel = (statusKey: string): string => {
+  if (!statusKey) return 'Unknown'
+  return statusKey
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+const currentStatusKey = computed(() => resolveJobStatus(statusDrawerJob.value))
+
+const statusOptions = computed<StatusOption[]>(() => {
+  const seen = new Set<string>()
+  const options: StatusOption[] = []
+  const addOption = (option: StatusOption) => {
+    if (seen.has(option.key)) return
+    seen.add(option.key)
+    options.push(option)
+  }
+
+  visibleStatusChoices.value.forEach((choice) => addOption(choice))
+  statusChoices.value.forEach((choice) => addOption(choice))
+
+  const current = currentStatusKey.value
+  if (current && !seen.has(current)) {
+    addOption({ key: current, label: formatStatusLabel(current), tooltip: 'Current status' })
+  }
+
+  return options
+})
+
+const statusLabelMap = computed(() => {
+  const map = new Map<string, StatusOption>()
+  statusOptions.value.forEach((option) => map.set(option.key, option))
+  return map
+})
+
+const currentStatusLabel = computed(() => {
+  const key = currentStatusKey.value
+  return statusLabelMap.value.get(key)?.label ?? formatStatusLabel(key)
+})
+
+const isStatusUpdating = computed(() => statusUpdateKey.value !== null)
+
+const applyJobStatus = async (statusKey: string) => {
+  if (!statusDrawerJob.value || !statusKey || isStatusUpdating.value) return
+
+  const jobId = statusDrawerJob.value.id
+  if (!jobId) return
+
+  if (statusKey === currentStatusKey.value) {
+    statusDrawerOpen.value = false
+    return
+  }
+
+  statusUpdateKey.value = statusKey
+  const label = statusLabelMap.value.get(statusKey)?.label ?? formatStatusLabel(statusKey)
+  const updated = await updateJobStatus(jobId, statusKey)
+
+  if (updated) {
+    toast.success(`Status updated to ${label}`)
+    statusDrawerOpen.value = false
+  } else {
+    toast.error('Failed to update job status')
+  }
+
+  statusUpdateKey.value = null
+}
 
 const mobileColumnsScroller = ref<HTMLElement | null>(null)
 const mobileColumnRefs = new Map<string, HTMLElement>()
@@ -451,7 +635,7 @@ const { isDragging, initializeSortable, destroyAllSortables } = useOptimizedDrag
       if (fromStatus !== toStatus) {
         const actualStatus = KanbanCategorizationService.getDefaultStatusForColumn(toStatus)
         // First update the status
-        updateJobStatus(jobId, actualStatus)
+        void updateJobStatus(jobId, actualStatus)
         // Then reorder to the correct position if we have positioning info
         if (beforeId || afterId) {
           setTimeout(() => {
