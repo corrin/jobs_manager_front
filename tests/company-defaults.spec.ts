@@ -48,12 +48,13 @@ test('test company defaults edit and save', async ({ authenticatedPage: page }) 
   await page.click('[data-automation-id="AdminCompanyView-company-button"]')
 
   // Wait for modal to open
-  await page.waitForSelector('[data-automation-id="SectionModal-content"]', { timeout: 10000 })
+  const modal = page.locator('[data-automation-id="SectionModal-content"]')
+  await expect(modal).toBeVisible({ timeout: 10000 })
 
-  // Find the company name input (first text input in the modal)
-  const companyNameInput = page
-    .locator('[data-automation-id="SectionModal-content"] input[type="text"]')
-    .first()
+  // Find the company name input
+  const companyNameInput = page.locator(
+    '[data-automation-id="SectionModal-company-field-company_name"]',
+  )
   await expect(companyNameInput).toBeVisible()
 
   // Get the original value
@@ -67,15 +68,13 @@ test('test company defaults edit and save', async ({ authenticatedPage: page }) 
   console.log(`Changed company name to: ${testValue}`)
 
   // Close the modal
-  await page.click('button:has-text("Close")')
+  await page.click('[data-automation-id="SectionModal-company-close-button"]')
 
   // Wait for modal to close
-  await expect(page.locator('[data-automation-id="SectionModal-content"]')).not.toBeVisible({
-    timeout: 5000,
-  })
+  await expect(modal).not.toBeVisible({ timeout: 5000 })
 
   // Click Save All
-  await page.click('button:has-text("Save All")')
+  await page.click('[data-automation-id="AdminCompanyView-save-all-button"]')
 
   // Wait for save to complete (toast appears)
   await page.waitForTimeout(1500)
@@ -85,26 +84,21 @@ test('test company defaults edit and save', async ({ authenticatedPage: page }) 
   await page.waitForSelector('[data-automation-id="SectionModal-content"]', { timeout: 10000 })
 
   // Verify the value persisted
-  const savedValue = await page
-    .locator('[data-automation-id="SectionModal-content"] input[type="text"]')
-    .first()
-    .inputValue()
+  const savedInput = page.locator('[data-automation-id="SectionModal-company-field-company_name"]')
+  const savedValue = await savedInput.inputValue()
   console.log(`Saved company name: ${savedValue}`)
   expect(savedValue).toBe(testValue)
 
   // Restore original value
-  const inputToRestore = page
-    .locator('[data-automation-id="SectionModal-content"] input[type="text"]')
-    .first()
-  await inputToRestore.clear()
-  await inputToRestore.fill(originalValue)
+  await savedInput.clear()
+  await savedInput.fill(originalValue)
 
   // Close modal and save
-  await page.click('button:has-text("Close")')
+  await page.click('[data-automation-id="SectionModal-company-close-button"]')
   await expect(page.locator('[data-automation-id="SectionModal-content"]')).not.toBeVisible({
     timeout: 5000,
   })
-  await page.click('button:has-text("Save All")')
+  await page.click('[data-automation-id="AdminCompanyView-save-all-button"]')
 
   console.log(`Restored company name to: ${originalValue}`)
 })

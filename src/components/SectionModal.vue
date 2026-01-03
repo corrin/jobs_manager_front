@@ -51,6 +51,7 @@
                 v-model="localForm[field.key] as string | number | undefined"
                 :type="field.type"
                 class="flex-1 h-8 text-xs"
+                :data-automation-id="`SectionModal-${section}-field-${field.key}`"
                 :step="
                   field.key === 'time_markup' || field.key === 'materials_markup'
                     ? 'any'
@@ -114,6 +115,7 @@
           <Button
             type="button"
             variant="outline"
+            :data-automation-id="`SectionModal-${section}-close-button`"
             @click="emit('close')"
             class="flex items-center gap-1"
           >

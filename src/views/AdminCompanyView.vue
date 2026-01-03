@@ -38,6 +38,7 @@
               type="button"
               variant="default"
               class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 flex items-center gap-2 text-base font-semibold rounded shadow"
+              data-automation-id="AdminCompanyView-save-all-button"
               @click="saveAll"
             >
               <Save class="w-5 h-5" /> Save All
