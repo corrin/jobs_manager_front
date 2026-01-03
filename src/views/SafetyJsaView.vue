@@ -133,6 +133,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { toast } from 'vue-sonner'
 import {
   Search,
   ShieldCheck,
@@ -184,6 +185,7 @@ async function loadDocuments() {
     await store.loadAllJSAs()
   } catch (e) {
     console.error('Failed to load JSAs:', e)
+    toast.error('Failed to load job safety analyses')
   }
 }
 

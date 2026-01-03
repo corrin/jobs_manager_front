@@ -293,52 +293,12 @@
               </router-link>
               <div class="border-t border-gray-200 my-1"></div>
               <router-link
-                to="/admin/staff"
+                v-for="page in adminPages"
+                :key="page.key"
+                :to="`/admin/${page.key}`"
                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
               >
-                <Users class="w-4 h-4 mr-2" /> Staff
-              </router-link>
-              <router-link
-                to="/admin/company"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-              >
-                <Building2 class="w-4 h-4 mr-2" /> Company
-              </router-link>
-              <router-link
-                to="/admin/archive-jobs"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-              >
-                <Archive class="w-4 h-4 mr-2" /> Archive Jobs
-              </router-link>
-              <router-link
-                to="/admin/month-end"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-              >
-                <CalendarClock class="w-4 h-4 mr-2" /> Month-End
-              </router-link>
-              <router-link
-                to="/admin/errors"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-              >
-                <X class="w-4 h-4 mr-2" /> App Errors
-              </router-link>
-              <router-link
-                to="/admin/django-jobs"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-              >
-                <Cog class="w-4 h-4 mr-2" /> Django Jobs
-              </router-link>
-              <router-link
-                to="/admin/ai-providers"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-              >
-                <Brain class="w-4 h-4 mr-2" /> AI Providers
-              </router-link>
-              <router-link
-                to="/admin/uat"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-              >
-                <Server class="w-4 h-4 mr-2" /> Manage UAT
+                <component :is="page.icon" class="w-4 h-4 mr-2" /> {{ page.label }}
               </router-link>
             </div>
           </Transition>
@@ -715,60 +675,13 @@
                     </router-link>
                     <div class="border-t border-gray-200 my-1 mx-2"></div>
                     <router-link
-                      to="/admin/staff"
+                      v-for="page in adminPages"
+                      :key="page.key"
+                      :to="`/admin/${page.key}`"
                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       @click="closeMobileMenu"
                     >
-                      <Users class="w-4 h-4 mr-2" /> Staff
-                    </router-link>
-                    <router-link
-                      to="/admin/company"
-                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      @click="closeMobileMenu"
-                    >
-                      <Building2 class="w-4 h-4 mr-2" /> Company
-                    </router-link>
-                    <router-link
-                      to="/admin/archive-jobs"
-                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      @click="closeMobileMenu"
-                    >
-                      <Archive class="w-4 h-4 mr-2" /> Archive Jobs
-                    </router-link>
-                    <router-link
-                      to="/admin/month-end"
-                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      @click="closeMobileMenu"
-                    >
-                      <CalendarClock class="w-4 h-4 mr-2" /> Month-End
-                    </router-link>
-                    <router-link
-                      to="/admin/errors"
-                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      @click="closeMobileMenu"
-                    >
-                      <X class="w-4 h-4 mr-2" /> App Errors
-                    </router-link>
-                    <router-link
-                      to="/admin/django-jobs"
-                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      @click="closeMobileMenu"
-                    >
-                      <Cog class="w-4 h-4 mr-2" /> Django Jobs
-                    </router-link>
-                    <router-link
-                      to="/admin/ai-providers"
-                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      @click="closeMobileMenu"
-                    >
-                      <Brain class="w-4 h-4 mr-2" /> AI Providers
-                    </router-link>
-                    <router-link
-                      to="/admin/uat"
-                      class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      @click="closeMobileMenu"
-                    >
-                      <Server class="w-4 h-4 mr-2" /> Manage UAT
+                      <component :is="page.icon" class="w-4 h-4 mr-2" /> {{ page.label }}
                     </router-link>
                   </div>
                 </Transition>
@@ -799,14 +712,7 @@ import {
   UploadCloud,
   Link2,
   Settings,
-  Users,
-  Building2,
-  Archive,
-  CalendarClock,
   Clock,
-  Server,
-  Cog,
-  Brain,
   AlertTriangle,
   TrendingUp,
   ShieldCheck,
@@ -814,9 +720,11 @@ import {
   Wrench,
   GraduationCap,
   Clock3,
+  Users,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAppLayout } from '@/composables/useAppLayout'
+import { adminPages } from '@/config/adminPages'
 
 const activeDropdown = ref<string | null>(null)
 const showMobileMenu = ref(false)

@@ -1,6 +1,8 @@
 import { ref, computed, nextTick, type Ref, createApp } from 'vue'
+import { toast } from 'vue-sonner'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
+import { useTimesheetStore } from '@/stores/timesheet'
 import type {
   GridApi,
   ColDef,
@@ -16,6 +18,7 @@ import type {
 } from 'ag-grid-community'
 import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
+import { TimesheetEntryRateCellEditor } from '@/components/timesheet/TimesheetEntryRateCellEditor'
 import { formatCurrency } from '@/utils/string-formatting'
 import { toLocalDateString } from '@/utils/dateUtils'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
@@ -63,6 +66,7 @@ export function useTimesheetEntryGrid(
   const loading = ref(false)
   const selectedRowIndex = ref(-1)
   const calculations = useTimesheetEntryCalculations(companyDefaults)
+  const timesheetStore = useTimesheetStore()
   const columnDefs = ref<ColDef<TimesheetEntryGridRow, unknown>[]>([
     {
       headerName: 'Job',
@@ -146,10 +150,7 @@ export function useTimesheetEntryGrid(
       field: 'rate',
       width: 90,
       editable: true,
-      cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: ['Ord', '1.5', '2.0', 'Unpaid'],
-      },
+      cellEditor: TimesheetEntryRateCellEditor,
       cellRenderer: (params: AgICellRendererParams) => {
         const rate = params.value || 'Ord'
         const colors = {
@@ -161,6 +162,13 @@ export function useTimesheetEntryGrid(
         const displayText = rate === 'Ord' ? 'Ord' : rate === 'Unpaid' ? 'Unpaid' : `${rate}x`
         return `<span style="color: ${colors[rate as keyof typeof colors]}; font-weight: 500;">${displayText}</span>`
       },
+    },
+    {
+      headerName: 'Pay Item',
+      field: 'xeroPayItemName',
+      width: 120,
+      editable: false,
+      cellStyle: { color: '#6B7280', fontSize: '13px' },
     },
     {
       headerName: 'Wage',
@@ -416,6 +424,7 @@ export function useTimesheetEntryGrid(
       }
     } catch (error) {
       console.error('Error in handleCellValueChanged:', error)
+      toast.error('Failed to save changes')
       if (isApiAlive(event.api)) {
         event.api.refreshCells({ rowNodes: [event.node], force: true })
       }
@@ -479,6 +488,7 @@ export function useTimesheetEntryGrid(
           options?.resolveStaffById?.(rowData.staffId || '') || currentStaffRef.value || undefined
         if (!staffData) {
           console.error('Cannot add new row on Enter without staff data')
+          toast.error('Unable to add row - staff data not loaded')
           break
         }
 
@@ -571,6 +581,10 @@ export function useTimesheetEntryGrid(
     } else {
       rateMultiplier = multiplierFromRate
     }
+
+    // Look up pay item by multiplier for Xero integration
+    const payItemForMultiplier = timesheetStore.getPayItemByMultiplier(rateMultiplier)
+
     const staffIdCandidate =
       rowData.staffId ?? toStringSafe(meta.staff_id, '') ?? currentStaffRef.value?.id ?? ''
     const staffId = staffIdCandidate || ''
@@ -605,6 +619,17 @@ export function useTimesheetEntryGrid(
     const updatedAt = rowData.updated_at ?? createdAt
     const accountingDate = rowData.accounting_date ?? dateValue
     const normalizedId = typeof rowData.id === 'string' && rowData.id.length > 0 ? rowData.id : ''
+
+    // TODO: Future - make pay item a dropdown that drives multiplier (pay item becomes source of truth)
+    // For now: multiplier drives pay item, EXCEPT when multiplier is 1.0 use job's default
+    const finalXeroPayItemId =
+      rateMultiplier !== 1.0
+        ? (payItemForMultiplier?.id ?? null)
+        : (rowData.xeroPayItemId ?? rowData.xero_pay_item ?? null)
+    const finalXeroPayItemName =
+      rateMultiplier !== 1.0
+        ? (payItemForMultiplier?.name ?? null)
+        : (rowData.xeroPayItemName ?? rowData.xero_pay_item_name ?? null)
 
     return {
       ...rowData,
@@ -647,6 +672,9 @@ export function useTimesheetEntryGrid(
       xero_expense_id: rowData.xero_expense_id ?? null,
       xero_last_modified: rowData.xero_last_modified ?? null,
       xero_last_synced: rowData.xero_last_synced ?? null,
+      xeroPayItemId: finalXeroPayItemId ?? undefined,
+      xeroPayItemName: finalXeroPayItemName ?? undefined,
+      xero_pay_item: finalXeroPayItemId,
     }
   }
 
@@ -838,6 +866,7 @@ export function useTimesheetEntryGrid(
     // MUST use actual staff data - NO FALLBACKS
     if (!staffData) {
       console.error('❌ addNewRow called without staffData - this will cause wage rate issues')
+      toast.error('Unable to add row - staff data not loaded')
       return
     }
 
@@ -878,6 +907,7 @@ export function useTimesheetEntryGrid(
         addNewRow(staffId, undefined, staffData)
       } else {
         console.error('❌ Cannot add new row without staffData')
+        toast.error('Unable to add row - staff data not loaded')
       }
       return true
     }

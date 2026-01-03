@@ -32,11 +32,20 @@ export const TimesheetEntryWithMetaSchema = schemas.TimesheetCostLine.extend({
   staffId: z.string().optional(),
   staffName: z.string().optional(),
   date: z.string().optional(),
+  xeroPayItemId: z.string().uuid().optional(),
+  xeroPayItemName: z.string().optional(),
 })
 
 export type TimesheetEntryWithMeta = z.infer<typeof TimesheetEntryWithMetaSchema>
 
 export type TimesheetEntryJobSelectionItem = Pick<
   z.infer<typeof schemas.ModernTimesheetJob>,
-  'id' | 'job_number' | 'name' | 'client_name' | 'status' | 'charge_out_rate'
+  | 'id'
+  | 'job_number'
+  | 'name'
+  | 'client_name'
+  | 'status'
+  | 'charge_out_rate'
+  | 'default_xero_pay_item_id'
+  | 'default_xero_pay_item_name'
 >

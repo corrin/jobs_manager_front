@@ -159,3 +159,221 @@ test.describe.serial('timesheet entry operations', () => {
     expect(timeExpenses).toBeGreaterThan(0)
   })
 })
+
+// ============================================================================
+// Test Suite: Xero Pay Item Validation
+// ============================================================================
+
+/**
+ * Get the pay item value from a timesheet entry row
+ */
+async function getPayItemValue(page: Page, rowId: string): Promise<string> {
+  const cell = gridCell(page, rowId, 'xeroPayItemName')
+  return (await cell.textContent()) || ''
+}
+
+/**
+ * Navigate to timesheet entry view for the first staff member
+ */
+async function navigateToTimesheetEntry(page: Page): Promise<void> {
+  const weekday = getWeekdayDate()
+  await page.goto(`/timesheets/daily?date=${weekday}`)
+  await page.waitForLoadState('networkidle')
+
+  const firstStaffName = page.locator('[data-automation-id^="StaffRow-name-"]').first()
+  await firstStaffName.waitFor({ timeout: 10000 })
+  await firstStaffName.click()
+
+  await page.waitForURL('**/timesheets/entry**')
+  await page.waitForLoadState('networkidle')
+  await page.waitForTimeout(1000)
+}
+
+/**
+ * Add a new timesheet entry row and return its row ID
+ */
+async function addNewEntryRow(page: Page): Promise<string> {
+  await autoId(page, 'TimesheetEntryView-add-entry').click()
+  await page.waitForTimeout(500)
+
+  const newRow = page.locator('.ag-row[row-id^="temp_"]').first()
+  await newRow.waitFor({ timeout: 10000 })
+  const rowId = await newRow.getAttribute('row-id')
+  if (!rowId) throw new Error('Failed to get row-id from new row')
+  return rowId
+}
+
+/**
+ * Select a job by searching for its name in the job dropdown
+ */
+async function selectJobByName(page: Page, rowId: string, jobName: string): Promise<void> {
+  await gridCell(page, rowId, 'jobNumber').click()
+  await page.waitForTimeout(300)
+
+  const jobSearchInput = autoId(page, 'TimesheetEntryJobCellEditor-job-search')
+  await jobSearchInput.waitFor({ timeout: 5000 })
+  await jobSearchInput.fill(jobName)
+  await page.waitForTimeout(500)
+
+  // Click the first matching option in the dropdown
+  const dropdown = autoId(page, 'TimesheetEntryJobCellEditor-dropdown')
+  await dropdown.waitFor({ timeout: 5000 })
+  const firstOption = dropdown
+    .locator('[data-automation-id^="TimesheetEntryJobCellEditor-option-"]')
+    .first()
+  await firstOption.waitFor({ timeout: 5000 })
+  await firstOption.click()
+  await page.waitForTimeout(500)
+}
+
+/**
+ * Select a job by its job number
+ */
+async function selectJobByNumber(page: Page, rowId: string, jobNumber: string): Promise<void> {
+  await gridCell(page, rowId, 'jobNumber').click()
+  await page.waitForTimeout(300)
+
+  const jobSearchInput = autoId(page, 'TimesheetEntryJobCellEditor-job-search')
+  await jobSearchInput.waitFor({ timeout: 5000 })
+  await jobSearchInput.fill(jobNumber)
+  await page.waitForTimeout(500)
+
+  const jobOption = autoId(page, `TimesheetEntryJobCellEditor-option-${jobNumber}`)
+  await jobOption.waitFor({ timeout: 5000 })
+  await jobOption.click()
+  await page.waitForTimeout(500)
+}
+
+/**
+ * Enter hours in the hours cell
+ */
+async function enterHours(page: Page, rowId: string, hours: string): Promise<void> {
+  await gridCell(page, rowId, 'hours').click()
+  await page.waitForTimeout(200)
+  await page.keyboard.type(hours)
+  await page.keyboard.press('Enter')
+  await page.waitForTimeout(500)
+}
+
+/**
+ * Change the rate multiplier for an entry
+ */
+async function setRateMultiplier(page: Page, rowId: string, rate: string): Promise<void> {
+  const rateCell = gridCell(page, rowId, 'rate')
+
+  // Click to open the rate dropdown editor
+  await rateCell.click()
+  await page.waitForTimeout(300)
+
+  // Wait for dropdown to appear and click the option using automation ID
+  const rateOption = autoId(page, `TimesheetEntryRateCellEditor-option-${rate}`)
+  await rateOption.waitFor({ timeout: 5000 })
+  await rateOption.click()
+  await page.waitForTimeout(500)
+}
+
+test.describe.serial('xero pay item validation', () => {
+  let testJobNumber: string
+
+  test.beforeAll(async ({ browser }) => {
+    const context = await browser.newContext()
+    const page = await context.newPage()
+
+    // Login
+    const username = process.env.E2E_TEST_USERNAME
+    const password = process.env.E2E_TEST_PASSWORD
+    await page.goto('/login')
+    await page.locator('#username').fill(username!)
+    await page.locator('#password').fill(password!)
+    await page.getByRole('button', { name: 'Sign In' }).click()
+    await page.waitForURL('**/kanban')
+
+    // Create a test job for pay item testing
+    const jobUrl = await createTestJob(page, 'PayItem')
+    console.log(`Created job for pay item tests at: ${jobUrl}`)
+
+    // Extract job number
+    await page.goto(jobUrl.split('?')[0])
+    await page.waitForLoadState('networkidle')
+    const jobNumberElement = autoId(page, 'JobView-job-number').first()
+    await jobNumberElement.waitFor({ timeout: 10000 })
+    const jobNumberText = await jobNumberElement.innerText()
+    const match = jobNumberText.match(/#(\d+)/)
+    testJobNumber = match ? match[1] : ''
+    console.log(`Extracted job number for pay item tests: ${testJobNumber}`)
+    if (!testJobNumber) {
+      throw new Error(`Failed to extract job number from: "${jobNumberText}"`)
+    }
+
+    await context.close()
+  })
+
+  test('annual leave job defaults to Annual Leave pay item', async ({
+    authenticatedPage: page,
+  }) => {
+    await navigateToTimesheetEntry(page)
+    const rowId = await addNewEntryRow(page)
+    console.log(`Created new row for Annual Leave test: ${rowId}`)
+
+    // Select the Annual Leave job by searching for its name
+    await selectJobByName(page, rowId, 'Annual Leave')
+
+    // Enter hours
+    await enterHours(page, rowId, '4')
+
+    // Wait for autosave
+    await page.waitForTimeout(2000)
+
+    // Validate the pay item is "Annual Leave"
+    const payItem = await getPayItemValue(page, rowId)
+    console.log(`Annual Leave entry pay item: "${payItem}"`)
+    expect(payItem).toBe('Annual Leave')
+  })
+
+  test('regular job defaults to Ordinary Time pay item', async ({ authenticatedPage: page }) => {
+    await navigateToTimesheetEntry(page)
+    const rowId = await addNewEntryRow(page)
+    console.log(`Created new row for regular job test: ${rowId}`)
+
+    // Select the test job by number
+    await selectJobByNumber(page, rowId, testJobNumber)
+
+    // Enter hours (rate defaults to 'Ord')
+    await enterHours(page, rowId, '2')
+
+    // Wait for autosave
+    await page.waitForTimeout(2000)
+
+    // Validate the pay item is "Ordinary Time"
+    const payItem = await getPayItemValue(page, rowId)
+    console.log(`Regular job entry pay item: "${payItem}"`)
+    expect(payItem).toBe('Ordinary Time')
+  })
+
+  test('changing rate to 2.0 updates pay item to Double Time', async ({
+    authenticatedPage: page,
+  }) => {
+    await navigateToTimesheetEntry(page)
+
+    // Find the entry we created in the previous test by looking for our test job number
+    const entryRow = page
+      .locator('.ag-row')
+      .filter({ has: page.locator(`[col-id="jobNumber"]:has-text("${testJobNumber}")`) })
+      .first()
+    await entryRow.waitFor({ timeout: 10000 })
+    const rowId = await entryRow.getAttribute('row-id')
+    if (!rowId) throw new Error('Failed to find the regular job entry row')
+    console.log(`Found regular job entry row: ${rowId}`)
+
+    // Change the rate to 2.0
+    await setRateMultiplier(page, rowId, '2.0')
+
+    // Wait for the pay item to update
+    await page.waitForTimeout(1000)
+
+    // Validate the pay item changed to "Double Time"
+    const payItem = await getPayItemValue(page, rowId)
+    console.log(`After rate change to 2.0, pay item: "${payItem}"`)
+    expect(payItem).toBe('Double Time')
+  })
+})

@@ -430,6 +430,8 @@ export class TimesheetEntryJobCellEditor implements ICellEditor {
       rowData.job_name = normalizedJobName
       rowData.chargeOutRate = normalizedChargeOutRate
       rowData.charge_out_rate = normalizedChargeOutRate
+      rowData.xeroPayItemId = job.default_xero_pay_item_id ?? null
+      rowData.xeroPayItemName = job.default_xero_pay_item_name ?? null
       // Based on backend Job model: special jobs are shop jobs (non-billable)
       rowData.billable = status !== 'special'
 

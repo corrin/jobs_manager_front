@@ -159,6 +159,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { toast } from 'vue-sonner'
 import StaffAvatar from '@/components/StaffAvatar.vue'
 import { useJobCard } from '@/composables/useJobCard'
 import { schemas } from '@/api/generated/api'
@@ -246,7 +247,38 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
 
   const staffId = dragData
 
-  await assignStaffToJob(staffId)
+  const payload: AssignJobRequest = {
+    job_id: props.job.id,
+    staff_id: staffId,
+  }
+
+  if (staffId && props.job.id) {
+    isAssigningStaff.value = true
+    operationSuccess.value = false
+
+    try {
+      await api.job_api_job_assignment_create(payload, {
+        params: {
+          job_id: props.job.id,
+        },
+      })
+
+      // Show success indicator
+      isAssigningStaff.value = false
+      operationSuccess.value = true
+
+      // Hide success indicator after 1.5 seconds
+      setTimeout(() => {
+        operationSuccess.value = false
+      }, 1500)
+
+      emit('staff-assigned', { staffId, jobId: props.job.id })
+    } catch (error) {
+      isAssigningStaff.value = false
+      console.error('Error assigning staff to job:', error)
+      toast.error('Failed to assign staff to job')
+    }
+  }
 }
 
 const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<void> => {
@@ -277,6 +309,7 @@ const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<
     } catch (error) {
       isUnassigningStaff.value = false
       console.error('Error unassigning staff from job:', error)
+      toast.error('Failed to remove staff from job')
     }
   }
 }

@@ -10,7 +10,7 @@
             </h1>
           </div>
           <div
-            v-if="loading"
+            v-if="loading || schemaLoading"
             class="flex flex-col items-center justify-center"
             style="height: 60vh"
           >
@@ -20,36 +20,16 @@
             </div>
           </div>
           <div v-else class="flex flex-col items-center justify-center" style="height: 60vh">
-            <div class="grid grid-cols-3 gap-6 mb-6 w-full max-w-3xl">
-              <button
-                class="section-btn"
-                data-automation-id="AdminCompanyView-general-button"
-                @click="openSection('general')"
-              >
-                <Settings class="w-12 h-12 mb-2" />
-                <span>General</span>
-              </button>
-              <button class="section-btn" @click="openSection('google')">
-                <FileText class="w-12 h-12 mb-2" />
-                <span>Google Sheets</span>
-              </button>
-              <button class="section-btn" @click="openSection('xero')">
-                <Link2 class="w-12 h-12 mb-2" />
-                <span>Xero Integration</span>
-              </button>
-            </div>
             <div class="grid grid-cols-3 gap-6 w-full max-w-3xl">
-              <button class="section-btn" @click="openSection('kpi')">
-                <BarChart3 class="w-12 h-12 mb-2" />
-                <span>KPI & Thresholds</span>
-              </button>
-              <button class="section-btn" @click="openSection('working_hours')">
-                <Clock class="w-12 h-12 mb-2" />
-                <span>Working Hours</span>
-              </button>
-              <button class="section-btn" @click="openAIProvidersDialog">
-                <Sparkles class="w-12 h-12 mb-2" />
-                <span>AI Providers</span>
+              <button
+                v-for="section in orderedSections"
+                :key="section.key"
+                class="section-btn"
+                :data-automation-id="`AdminCompanyView-${section.key}-button`"
+                @click="openSection(section.key)"
+              >
+                <component :is="section.icon" class="w-12 h-12 mb-2" />
+                <span>{{ section.title }}</span>
               </button>
             </div>
           </div>
@@ -58,6 +38,7 @@
               type="button"
               variant="default"
               class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 flex items-center gap-2 text-base font-semibold rounded shadow"
+              data-automation-id="AdminCompanyView-save-all-button"
               @click="saveAll"
             >
               <Save class="w-5 h-5" /> Save All
@@ -89,16 +70,7 @@ import AppLayout from '../components/AppLayout.vue'
 import { Button } from '../components/ui/button'
 import { ref, onMounted } from 'vue'
 import type { AIProvider } from '../services/admin-company-defaults-service'
-import {
-  Building2,
-  Save,
-  Settings,
-  FileText,
-  Link2,
-  BarChart3,
-  Sparkles,
-  Clock,
-} from 'lucide-vue-next'
+import { Building2, Save } from 'lucide-vue-next'
 import AIProvidersDialog from '../components/AIProvidersDialog.vue'
 import SectionModal from '../components/SectionModal.vue'
 import {
@@ -110,15 +82,22 @@ import type {
   PatchedCompanyDefaults,
 } from '../services/admin-company-defaults-service'
 import { toast } from 'vue-sonner'
+import { useSettingsSchema } from '@/composables/useSettingsSchema'
 
-type SectionKey = 'xero' | 'general' | 'google' | 'kpi' | 'ai' | 'working_hours'
+const {
+  orderedSections,
+  sections,
+  isLoading: schemaLoading,
+  loadSchema,
+  getSpecialHandler,
+} = useSettingsSchema()
 
 const companyDefaults = ref<CompanyDefaults>({} as CompanyDefaults)
 const form = ref<CompanyDefaults>({} as CompanyDefaults)
 const aiProviders = ref<AIProvider[]>([])
 const loading = ref(true)
 const showAIProvidersDialog = ref(false)
-const modalSection = ref<SectionKey | null>(null)
+const modalSection = ref<string | null>(null)
 
 debugLog('[AdminCompanyView] companyDefaults:', companyDefaults.value)
 debugLog('[AdminCompanyView] form:', form.value)
@@ -146,43 +125,25 @@ async function saveAll() {
     debugLog('[AdminCompanyView] saveAll() called with form.value:', form.value)
     debugLog('[AdminCompanyView] saveAll() AI providers specifically:', aiProviders.value)
 
-    // Create a clean payload excluding read-only fields
-    const payload: Partial<PatchedCompanyDefaults> = {
-      company_name: form.value.company_name,
-      ai_providers: aiProviders.value,
-      is_primary: form.value.is_primary,
-      time_markup: form.value.time_markup,
-      materials_markup: form.value.materials_markup,
-      charge_out_rate: form.value.charge_out_rate,
-      wage_rate: form.value.wage_rate,
-      starting_job_number: form.value.starting_job_number,
-      starting_po_number: form.value.starting_po_number,
-      po_prefix: form.value.po_prefix,
-      master_quote_template_url: form.value.master_quote_template_url,
-      master_quote_template_id: form.value.master_quote_template_id,
-      gdrive_quotes_folder_url: form.value.gdrive_quotes_folder_url,
-      gdrive_quotes_folder_id: form.value.gdrive_quotes_folder_id,
-      xero_tenant_id: form.value.xero_tenant_id,
-      mon_start: form.value.mon_start,
-      mon_end: form.value.mon_end,
-      tue_start: form.value.tue_start,
-      tue_end: form.value.tue_end,
-      wed_start: form.value.wed_start,
-      wed_end: form.value.wed_end,
-      thu_start: form.value.thu_start,
-      thu_end: form.value.thu_end,
-      fri_start: form.value.fri_start,
-      fri_end: form.value.fri_end,
-      last_xero_sync: form.value.last_xero_sync,
-      last_xero_deep_sync: form.value.last_xero_deep_sync,
-      shop_client_name: form.value.shop_client_name,
-      billable_threshold_green: form.value.billable_threshold_green,
-      billable_threshold_amber: form.value.billable_threshold_amber,
-      daily_gp_target: form.value.daily_gp_target,
-      shop_hours_target_percentage: form.value.shop_hours_target_percentage,
+    // Build payload dynamically from schema - only include writable fields
+    const payload: Partial<PatchedCompanyDefaults> = {}
+
+    // Get all writable field keys from schema
+    for (const section of sections.value) {
+      for (const field of section.fields) {
+        if (!field.readOnly) {
+          const key = field.key as keyof CompanyDefaults
+          if (key in form.value) {
+            ;(payload as Record<string, unknown>)[key] = form.value[key]
+          }
+        }
+      }
     }
 
-    debugLog('[AdminCompanyView] saveAll() clean payload:', payload)
+    // AI providers are handled separately (not in schema fields)
+    payload.ai_providers = aiProviders.value
+
+    debugLog('[AdminCompanyView] saveAll() dynamic payload:', payload)
 
     await updateCompanyDefaults(payload)
     toast.success('Company defaults saved successfully!')
@@ -207,8 +168,15 @@ function onProvidersUpdate(providers: AIProvider[]) {
   aiProviders.value = providers
   debugLog('[AdminCompanyView] aiProviders updated to:', aiProviders.value)
 }
-function openSection(section: string) {
-  modalSection.value = section as SectionKey
+function openSection(sectionKey: string) {
+  const handler = getSpecialHandler(sectionKey)
+
+  if (handler === 'ai_providers') {
+    openAIProvidersDialog()
+    return
+  }
+
+  modalSection.value = sectionKey
 }
 function closeSection() {
   modalSection.value = null
@@ -216,7 +184,9 @@ function closeSection() {
 function onSectionUpdate(newData: Partial<CompanyDefaults>) {
   Object.assign(form.value, newData)
 }
-onMounted(fetchDefaults)
+onMounted(async () => {
+  await Promise.all([loadSchema(), fetchDefaults()])
+})
 </script>
 
 <style scoped>

@@ -21,8 +21,6 @@
                     label="Client"
                     :required="true"
                     placeholder="Search for a client..."
-                    :supplier-lookup="{ value: false }"
-                    :force-xero="forceXero"
                   />
                   <p v-if="errors.client_id" class="mt-1 text-sm text-red-600">
                     {{ errors.client_id }}
@@ -313,7 +311,6 @@ const formData = ref<JobCreateData>({
 const selectedClient = ref<ClientSearchResult | null>(null)
 const selectedContact = ref<ClientContact | null>(null)
 const contactDisplayName = ref('')
-const forceXero = ref(false)
 
 const errors = ref<Record<string, string>>({})
 const isSubmitting = ref(false)
@@ -510,7 +507,6 @@ onMounted(() => {
       ? JSON.parse(localStorage.getItem('selectedClient') as string)
       : null
     handleClientSelection(selectedClient.value)
-    forceXero.value = true
     localStorage.removeItem('jobCreationFormData')
     localStorage.removeItem('hasJobCreationError')
     localStorage.removeItem('selectedClient')

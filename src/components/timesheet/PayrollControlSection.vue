@@ -71,13 +71,68 @@
       </button>
     </div>
 
+    <!-- Posting Blocked Banner -->
+    <div
+      v-if="postingBlocked && postingBlockedReason"
+      class="bg-amber-50 border border-amber-200 rounded-md p-3 flex items-start space-x-2 text-amber-800"
+    >
+      <Lock class="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-600">
+          Posting Restricted
+        </p>
+        <p class="text-sm leading-snug">
+          {{ postingBlockedReason }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Draft Warning Banner -->
+    <div
+      v-if="hasDraft && !postingBlocked"
+      class="bg-blue-50 border border-blue-200 rounded-md p-3 flex items-start space-x-2 text-blue-800"
+    >
+      <AlertCircle class="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-wide text-blue-600">Draft Exists</p>
+        <p class="text-sm leading-snug">
+          A draft pay run already exists for this week. Posting will overwrite it with the latest
+          hours.
+        </p>
+      </div>
+    </div>
+
+    <!-- Creation Blocked Banner -->
+    <div
+      v-if="!payRunExists && !canCreatePayRun && draftWeekStart"
+      class="bg-amber-50 border border-amber-200 rounded-md p-3 flex items-start space-x-2 text-amber-800"
+    >
+      <AlertTriangle class="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+      <div>
+        <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-600">
+          Cannot Create Pay Run
+        </p>
+        <p class="text-sm leading-snug">
+          A draft already exists for {{ formatWeekRange(draftWeekStart) }}.
+        </p>
+        <Button
+          variant="link"
+          size="sm"
+          class="text-amber-700 hover:text-amber-900 p-0 h-auto mt-1"
+          @click="$emit('navigateToDraft')"
+        >
+          Go to draft week
+        </Button>
+      </div>
+    </div>
+
     <!-- Action Buttons -->
     <div class="flex items-center space-x-2 flex-wrap gap-2">
       <!-- Create Pay Run Button -->
       <Button
-        v-if="!payRunExists"
+        v-if="!payRunExists && !postingBlocked"
         @click="$emit('createPayRun')"
-        :disabled="creating"
+        :disabled="creating || !canCreatePayRun"
         variant="default"
         size="sm"
         class="bg-blue-600 hover:bg-blue-700 text-white"
@@ -88,11 +143,12 @@
 
       <!-- Post All to Xero Button -->
       <Button
-        v-if="payRunExists && !postSuccess"
+        v-if="payRunExists && !isPosted && !postSuccess"
         @click="$emit('postAllToXero')"
         :disabled="!canPost || posting"
         variant="default"
         size="sm"
+        :class="hasDraft ? 'bg-amber-600 hover:bg-amber-700' : ''"
       >
         <Send class="h-4 w-4 mr-2" :class="{ 'animate-pulse': posting }" />
         <template v-if="posting && postingProgress">
@@ -102,19 +158,20 @@
           </span>
         </template>
         <template v-else-if="posting"> Posting... </template>
+        <template v-else-if="hasDraft"> Overwrite Draft </template>
         <template v-else> Post All to Xero </template>
       </Button>
 
-      <!-- Continue in Xero Button -->
+      <!-- View in Xero Button -->
       <Button
-        v-else-if="payRunExists && postSuccess"
+        v-if="xeroUrl"
         variant="secondary"
         size="sm"
         class="bg-green-600 hover:bg-green-700 text-white"
-        @click="continueInXero"
+        @click="openInXero"
       >
         <ExternalLink class="h-4 w-4 mr-2" />
-        Continue in Xero
+        View in Xero
       </Button>
 
       <!-- Help Text -->
@@ -170,6 +227,7 @@ interface Props {
   weekStartDate: string // YYYY-MM-DD format (Monday)
   payRunStatus?: string | null // 'Draft' | 'Posted' | null
   paymentDate?: string | null // YYYY-MM-DD format
+  xeroUrl?: string | null // URL to view pay run in Xero
   creating?: boolean
   posting?: boolean
   postingProgress?: PostingProgress | null
@@ -177,11 +235,15 @@ interface Props {
   payrollError?: string | null
   refreshing?: boolean
   postSuccess?: boolean
+  postingBlocked?: boolean // True if a newer pay run has been posted
+  postingBlockedReason?: string | null // Message explaining why posting is blocked
+  draftWeekStart?: string | null // Week start date of existing draft (null if no draft exists)
 }
 
 const props = withDefaults(defineProps<Props>(), {
   payRunStatus: null,
   paymentDate: null,
+  xeroUrl: null,
   creating: false,
   posting: false,
   postingProgress: null,
@@ -189,6 +251,9 @@ const props = withDefaults(defineProps<Props>(), {
   payrollError: null,
   refreshing: false,
   postSuccess: false,
+  postingBlocked: false,
+  postingBlockedReason: null,
+  draftWeekStart: null,
 })
 
 defineEmits<{
@@ -196,13 +261,18 @@ defineEmits<{
   postAllToXero: []
   refreshPayRuns: []
   dismissError: []
+  navigateToDraft: []
 }>()
-
-const XERO_TIMESHEETS_URL = 'https://go.xero.com/app/timesheets'
 
 const payRunExists = computed(() => props.payRunStatus !== null)
 const isPosted = computed(() => props.payRunStatus === 'Posted')
-const canPost = computed(() => payRunExists.value && !isPosted.value)
+const canPost = computed(() => payRunExists.value && !isPosted.value && !props.postingBlocked)
+
+// Draft is for this week if draftWeekStart matches current week
+const hasDraft = computed(() => props.draftWeekStart === props.weekStartDate)
+
+// Can create if no draft exists elsewhere (draft is for this week or no draft at all)
+const canCreatePayRun = computed(() => !props.draftWeekStart || hasDraft.value)
 
 function formatWeekRange(weekStart: string): string {
   const start = parseISO(weekStart)
@@ -226,7 +296,9 @@ function getStatusIcon(status: string) {
   return AlertCircle
 }
 
-function continueInXero() {
-  window.open(XERO_TIMESHEETS_URL, '_blank', 'noopener')
+function openInXero() {
+  if (props.xeroUrl) {
+    window.open(props.xeroUrl, '_blank', 'noopener')
+  }
 }
 </script>

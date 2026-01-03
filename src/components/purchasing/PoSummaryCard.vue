@@ -52,8 +52,7 @@ const emit = defineEmits<{
 }>()
 
 const supplierLookup = reactive({
-  has_xero_id: props.po.supplier_has_xero_id,
-  value: true,
+  value: true, // indicates supplier mode vs client mode
 })
 
 // ✅ 2. Add autosave logic

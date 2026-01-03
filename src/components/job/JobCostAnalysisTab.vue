@@ -154,6 +154,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, reactive } from 'vue'
+import { toast } from 'vue-sonner'
 import { ArrowUp, ArrowDown, CheckCircle, AlertTriangle, XCircle } from 'lucide-vue-next'
 import { api } from '../../api/client'
 import { formatCurrency } from '@/utils/string-formatting'
@@ -214,6 +215,7 @@ async function loadAll() {
       !!resp.quote && ((resp.quote.cost ?? 0) > 0 || (resp.quote.rev ?? 0) > 0)
   } catch (error) {
     console.error('Failed to load cost summary:', error)
+    toast.error('Failed to load cost analysis')
     Object.assign(estimate, zeroSummary())
     Object.assign(quote, zeroSummary())
     Object.assign(actual, zeroSummary())

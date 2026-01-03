@@ -222,6 +222,7 @@
 <script setup lang="ts">
 import { ref, onUnmounted, onMounted, nextTick, watch, computed } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
+import { toast } from 'vue-sonner'
 import { Search } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
 import KanbanColumn from '@/components/KanbanColumn.vue'
@@ -402,6 +403,7 @@ const handleStaffAssigned = async (payload: { staffId: string; jobId: string }) 
     console.log(`✅ Staff ${payload.staffId} assigned to job ${payload.jobId}`)
   } catch (error) {
     console.error('Error handling staff assignment:', error)
+    toast.error('Failed to update job assignments')
   }
 }
 
@@ -426,6 +428,7 @@ const handleStaffUnassigned = async (payload: { staffId: string; jobId: string }
     console.log(`✅ Staff ${payload.staffId} unassigned from job ${payload.jobId}`)
   } catch (error) {
     console.error('Error handling staff unassignment:', error)
+    toast.error('Failed to update job assignments')
   }
 }
 
@@ -437,6 +440,7 @@ const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
     await handleAdvancedSearch()
   } catch (error) {
     console.error('Error performing advanced search from dialog:', error)
+    toast.error('Search failed')
   }
 }
 

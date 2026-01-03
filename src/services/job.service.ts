@@ -29,6 +29,7 @@ async function updateJobHeaderPartial(
       'delivery_date',
       'quote_acceptance_date',
       'price_cap',
+      'default_xero_pay_item_id',
       // include 'contact_name' if ever present
       'contact_name',
     ])
@@ -98,6 +99,9 @@ async function updateJobHeaderPartial(
             break
           case 'price_cap':
             beforeValues[field] = currentJob.data.job.price_cap
+            break
+          case 'default_xero_pay_item_id':
+            beforeValues[field] = currentJob.data.job.default_xero_pay_item_id
             break
           default:
             beforeValues[field] = (currentJob.data.job as Record<string, unknown>)[field]

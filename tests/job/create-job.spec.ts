@@ -1,5 +1,10 @@
 import { test, expect } from '../fixtures/auth'
-import { autoId, dismissToasts, TEST_CLIENT_NAME } from '../fixtures/helpers'
+import {
+  autoId,
+  dismissToasts,
+  TEST_CLIENT_NAME,
+  waitForSettingsInitialized,
+} from '../fixtures/helpers'
 
 /**
  * Sequential test cases for job creation.
@@ -172,4 +177,82 @@ test.describe.serial('create job', () => {
       })
     })
   }
+})
+
+test.describe('new job default pay item', () => {
+  test('newly created job defaults to Ordinary time pay item', async ({
+    authenticatedPage: page,
+  }) => {
+    const timestamp = Date.now()
+    const jobName = `Default Pay Item Test ${timestamp}`
+
+    await test.step('create a new job', async () => {
+      await autoId(page, 'AppNavbar-create-job').click()
+      await page.waitForURL('**/jobs/create')
+
+      // Select client
+      const clientInput = autoId(page, 'ClientLookup-input')
+      await clientInput.fill('ABC')
+      await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
+      await page.getByRole('option', { name: new RegExp(TEST_CLIENT_NAME) }).click()
+
+      // Enter job name
+      await autoId(page, 'JobCreateView-name-input').fill(jobName)
+
+      // Select contact - open modal and create or select one
+      await autoId(page, 'ContactSelector-modal-button').click({ timeout: 10000 })
+      await autoId(page, 'ContactSelectionModal-container').waitFor({ timeout: 10000 })
+
+      // Check if there are existing contacts to select
+      const selectButtons = autoId(page, 'ContactSelectionModal-select-button')
+      const hasExistingContacts = (await selectButtons.count()) > 0
+
+      if (hasExistingContacts) {
+        // Select the first existing contact
+        await selectButtons.first().click()
+      } else {
+        // Create a new contact
+        const submitButton = autoId(page, 'ContactSelectionModal-submit')
+        await expect(submitButton).toHaveText('Create Contact', { timeout: 10000 })
+        await autoId(page, 'ContactSelectionModal-name-input').fill(`Test Contact ${timestamp}`)
+        await autoId(page, 'ContactSelectionModal-email-input').fill(`test${timestamp}@example.com`)
+        await submitButton.click()
+      }
+
+      await autoId(page, 'ContactSelectionModal-container').waitFor({
+        state: 'hidden',
+        timeout: 10000,
+      })
+
+      // Set ballpark estimates
+      await autoId(page, 'JobCreateView-estimated-materials').fill('100')
+      await autoId(page, 'JobCreateView-estimated-time').fill('2')
+
+      // Submit
+      await dismissToasts(page)
+      await autoId(page, 'JobCreateView-submit').click({ force: true })
+
+      // Wait for redirect to job page
+      await page.waitForURL('**/jobs/*', { timeout: 10000 })
+    })
+
+    await test.step('navigate to job settings and verify default pay item', async () => {
+      // Navigate to Job Settings tab
+      await autoId(page, 'JobViewTabs-jobSettings').click()
+      await autoId(page, 'JobSettingsTab-default-pay-item').waitFor({ timeout: 10000 })
+      await waitForSettingsInitialized(page)
+
+      // Verify the default pay item is "Ordinary time"
+      const payItemSelect = autoId(page, 'JobSettingsTab-default-pay-item')
+
+      // Get the selected option text
+      const selectedOption = payItemSelect.locator('option:checked')
+      const selectedText = await selectedOption.textContent()
+
+      console.log(`Default pay item for new job: "${selectedText}"`)
+
+      // Verify it's "Ordinary Time" (the expected default)
+      expect(selectedText).toBe('Ordinary Time')
+    })
+  })
 })

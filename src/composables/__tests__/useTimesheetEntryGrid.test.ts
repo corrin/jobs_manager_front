@@ -1,9 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, beforeEach } from 'vitest'
 import { ref } from 'vue'
+import { createPinia, setActivePinia } from 'pinia'
 
 import { useTimesheetEntryGrid } from '../useTimesheetEntryGrid'
 
 describe('useTimesheetEntryGrid', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
   it('applies the rate multiplier when calculating wage', () => {
     const companyDefaults = ref(null)
     const jobs = ref<Record<string, unknown>[]>([])

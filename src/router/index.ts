@@ -3,13 +3,17 @@ import { useAuthStore } from '@/stores/auth'
 import LoginView from '@/views/LoginView.vue'
 import KanbanView from '@/views/KanbanView.vue'
 import { toast } from 'vue-sonner'
+import { adminPages, defaultAdminPage } from '@/config/adminPages'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: () => useAuthStore().defaultRoutePath,
+      redirect: () => {
+        const authStore = useAuthStore()
+        return authStore.isAuthenticated ? authStore.defaultRoutePath : '/login'
+      },
     },
     {
       path: '/login',
@@ -126,99 +130,16 @@ const router = createRouter({
       component: () => import('@/views/AdminView.vue'),
       meta: { requiresAuth: true, requiresSuperUser: true, title: 'Admin - Jobs Manager' },
       children: [
-        {
-          path: 'staff',
-          name: 'admin-staff',
-          component: () => import('@/views/AdminStaffView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresSuperUser: true,
-            title: 'Staff Admin - Jobs Manager',
-          },
-        },
-        {
-          path: 'company',
-          name: 'admin-company',
-          component: () => import('@/views/AdminCompanyView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresSuperUser: true,
-            title: 'Company Defaults - Jobs Manager',
-          },
-        },
-        {
-          path: 'django-jobs',
-          name: 'admin-django-jobs',
-          component: () => import('@/views/AdminDjangoJobsView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresSuperUser: true,
-            title: 'Django Jobs - Jobs Manager',
-          },
-        },
-        {
-          path: 'archive-jobs',
-          name: 'admin-archive-jobs',
-          component: () => import('@/views/AdminArchiveJobsView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresSuperUser: true,
-            title: 'Archive Jobs - Jobs Manager',
-          },
-        },
-        {
-          path: 'month-end',
-          name: 'admin-month-end',
-          component: () => import('@/views/AdminMonthEnd.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresSuperUser: true,
-            title: 'Month-End - Jobs Manager',
-          },
-        },
-        {
-          path: 'errors',
-          name: 'admin-errors',
-          component: () => import('@/views/AdminErrorView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresSuperUser: true,
-            title: 'Errors - Jobs Manager',
-          },
-        },
-        {
-          path: 'ai-providers',
-          name: 'admin-ai-providers',
-          component: () => import('@/views/AdminAIProvidersView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresSuperUser: true,
-            title: 'AI Providers - Jobs Manager',
-          },
-        },
-        {
-          path: 'payroll-categories',
-          name: 'admin-payroll-categories',
-          component: () => import('@/views/AdminPayrollCategoriesView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresSuperUser: true,
-            title: 'Payroll Categories - Jobs Manager',
-          },
-        },
-        {
-          path: 'uat',
-          name: 'admin-uat',
-          component: () => import('@/views/UATManagementView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresSuperUser: true,
-            title: 'Manage UAT - Jobs Manager',
-          },
-        },
+        // Generated from adminPages config (single source of truth)
+        ...adminPages.map((page) => ({
+          path: page.key,
+          name: page.name,
+          component: page.component,
+          meta: { title: page.title },
+        })),
         {
           path: '',
-          redirect: { name: 'admin-staff' },
+          redirect: { name: defaultAdminPage.name },
         },
       ],
     },
@@ -388,6 +309,8 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
+  // is_office_staff controls PERMISSIONS (what user can access, backend-enforced)
+  // This is different from device type which controls UI PRESENTATION
   if (!to.meta.allowWorkshopStaff && !authStore.user?.is_office_staff) {
     toast.error('You are not allowed to visit this page.', {
       description: 'Please try again or contact Corrin if you think this is a mistake.',

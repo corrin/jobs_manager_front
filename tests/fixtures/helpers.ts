@@ -226,7 +226,7 @@ export async function createTestPurchaseOrder(page: Page): Promise<string> {
   await page.waitForTimeout(3000)
 
   // Verify Xero badge is green
-  const xeroIndicator = page.locator('.bg-green-100:has-text("Xero")')
+  const xeroIndicator = autoId(page, 'ClientLookup-xero-valid')
   await expect(xeroIndicator).toBeVisible({ timeout: 10000 })
 
   // Add reference

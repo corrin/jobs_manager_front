@@ -30,6 +30,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue'
+import { toast } from 'vue-sonner'
 import { ChevronDown } from 'lucide-vue-next'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
@@ -72,6 +73,7 @@ const loadClientOptions = async (): Promise<void> => {
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Failed to load client options'
     console.error('Error loading client options:', err)
+    toast.error('Failed to load clients')
   } finally {
     isLoading.value = false
   }
