@@ -6,11 +6,9 @@ import { jobService } from '../services/job.service'
 import { useJobsStore } from '../stores/jobs'
 import type { TimesheetEntryWithMeta, TimesheetEntryJobSelectionItem } from '../constants/timesheet'
 import { toast } from 'vue-sonner'
-import {
-  getRateMultiplierFromMeta,
-  setRateMultiplierOnMeta,
-  type RateMultiplierMetaRecord,
-} from '../utils/wageRateMultiplier'
+type RateMultiplierMetaRecord = Record<string, unknown> & {
+  wage_rate_multiplier?: number
+}
 
 // Use the generated schemas
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
@@ -170,19 +168,17 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       total_cost: calculatedWage,
       total_rev: 0,
       ext_refs: {},
-      meta: setRateMultiplierOnMeta(
-        {
-          date,
-          staff_id: staffMember.id,
-          rate_type: 'Ord',
-          is_billable: true,
-          job_id: '',
-          job_number: 0,
-          job_name: '',
-          client_name: '',
-        },
-        rateMultiplier,
-      ),
+      meta: {
+        date,
+        staff_id: staffMember.id,
+        rate_type: 'Ord',
+        is_billable: true,
+        job_id: '',
+        job_number: 0,
+        job_name: '',
+        client_name: '',
+        wage_rate_multiplier: rateMultiplier,
+      },
       job_id: '',
       jobId: '',
       job_number: 0,
@@ -348,8 +344,7 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     const dateValue =
       typeof metaRec['date'] === 'string' ? (metaRec['date'] as string) : costLine.accounting_date
 
-    // Get rate multiplier from backend data (preferring wage_rate_multiplier)
-    const backendRateMultiplier = getRateMultiplierFromMeta(metaRec)
+    const backendRateMultiplier = metaRec.wage_rate_multiplier as number
     const hours = costLine.quantity ?? 0
 
     // ✅ ALWAYS USE CORRECT FORMULA: hours × rate_multiplier × staff_wage_rate
@@ -395,7 +390,8 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
       total_rev: costLine.total_rev || 0,
       ext_refs: costLine.ext_refs || {},
       meta: {
-        ...setRateMultiplierOnMeta(metaRec, backendRateMultiplier),
+        ...metaRec,
+        wage_rate_multiplier: backendRateMultiplier,
         staff_id: staffId,
         job_id: resolvedJobId,
         job_number: resolvedJobNumber,

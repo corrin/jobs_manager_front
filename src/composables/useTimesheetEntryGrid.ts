@@ -25,11 +25,9 @@ import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCa
 import { type TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 import TimesheetActionsCell from '@/components/timesheet/TimesheetActionsCell.vue'
-import {
-  getRateMultiplierFromMeta,
-  setRateMultiplierOnMeta,
-  type RateMultiplierMetaRecord,
-} from '@/utils/wageRateMultiplier'
+type RateMultiplierMetaRecord = Record<string, unknown> & {
+  wage_rate_multiplier?: number
+}
 
 type TimesheetEntryStaffMember = {
   id: string
@@ -537,7 +535,7 @@ export function useTimesheetEntryGrid(
   }
 
   function createEntryFromRowData(rowData: TimesheetEntryGridRow): TimesheetEntry {
-    let meta: RateMultiplierMetaRecord =
+    const meta: RateMultiplierMetaRecord =
       rowData.meta && typeof rowData.meta === 'object'
         ? ({ ...(rowData.meta as Record<string, unknown>) } as RateMultiplierMetaRecord)
         : ({} as RateMultiplierMetaRecord)
@@ -565,22 +563,7 @@ export function useTimesheetEntryGrid(
     const metaRateType = toStringSafe(meta.rate_type, '')
     const rate = (rowData.rate ?? (metaRateType || 'Ord')) as string
 
-    const metaMultiplier = getRateMultiplierFromMeta(meta, NaN)
-    const multiplierFromRate = calculations.getRateMultiplier(rate)
-
-    let rateMultiplier: number
-    if (rowData.rate != null) {
-      rateMultiplier = multiplierFromRate
-    } else if (
-      typeof rowData.rateMultiplier === 'number' &&
-      Number.isFinite(rowData.rateMultiplier)
-    ) {
-      rateMultiplier = rowData.rateMultiplier
-    } else if (!Number.isNaN(metaMultiplier)) {
-      rateMultiplier = metaMultiplier
-    } else {
-      rateMultiplier = multiplierFromRate
-    }
+    const rateMultiplier = calculations.getRateMultiplier(rate)
 
     // Look up pay item by multiplier for Xero integration
     const payItemForMultiplier = timesheetStore.getPayItemByMultiplier(rateMultiplier)
@@ -604,7 +587,7 @@ export function useTimesheetEntryGrid(
       formula: `${hours} x ${rateMultiplier} x ${wageRate} = ${calculatedWage}`,
     })
 
-    meta = setRateMultiplierOnMeta(meta, rateMultiplier)
+    meta.wage_rate_multiplier = rateMultiplier
     meta.staff_id = staffId
     meta.rate_type = rate
     meta.is_billable = billable
