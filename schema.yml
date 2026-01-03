@@ -755,7 +755,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/CompanyDefaultsRequest'
-        required: true
       security:
         - cookieAuth: []
       responses:
@@ -7738,7 +7737,7 @@ components:
       properties:
         company_name:
           type: string
-          maxLength: 255
+          readOnly: true
         company_acronym:
           type: string
           nullable: true
@@ -8001,10 +8000,6 @@ components:
     CompanyDefaultsRequest:
       type: object
       properties:
-        company_name:
-          type: string
-          minLength: 1
-          maxLength: 255
         company_acronym:
           type: string
           nullable: true
@@ -8230,8 +8225,6 @@ components:
           exclusiveMinimum: true
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
-      required:
-        - company_name
     CompanyDefaultsSchema:
       type: object
       description: Serializer for the complete schema response.
@@ -11356,12 +11349,16 @@ components:
           type: number
           format: double
           minimum: 0
+        xero_pay_item_id:
+          type: string
+          format: uuid
       required:
         - date
         - description
         - hours
         - job_id
         - staff_id
+        - xero_pay_item_id
     ModernTimesheetEntryPostResponse:
       type: object
       description: Serializer for timesheet entry POST response
@@ -11785,10 +11782,6 @@ components:
     PatchedCompanyDefaultsRequest:
       type: object
       properties:
-        company_name:
-          type: string
-          minLength: 1
-          maxLength: 255
         company_acronym:
           type: string
           nullable: true
@@ -13841,10 +13834,13 @@ components:
           type: string
         section:
           type: string
+        read_only:
+          type: boolean
       required:
         - help_text
         - key
         - label
+        - read_only
         - required
         - section
         - type

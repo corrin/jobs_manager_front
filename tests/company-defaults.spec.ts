@@ -51,21 +51,23 @@ test('test company defaults edit and save', async ({ authenticatedPage: page }) 
   const modal = page.locator('[data-automation-id="SectionModal-content"]')
   await expect(modal).toBeVisible({ timeout: 10000 })
 
-  // Find the company name input
-  const companyNameInput = page.locator(
-    '[data-automation-id="SectionModal-company-field-company_name"]',
+  // Find the company email input (company_name is readonly)
+  const companyEmailInput = page.locator(
+    '[data-automation-id="SectionModal-company-field-company_email"]',
   )
-  await expect(companyNameInput).toBeVisible()
+  await expect(companyEmailInput).toBeVisible()
 
   // Get the original value
-  const originalValue = await companyNameInput.inputValue()
-  console.log(`Original company name: ${originalValue}`)
+  const originalValue = await companyEmailInput.inputValue()
+  console.log(`Original company email: ${originalValue}`)
 
   // Change to a test value with timestamp
-  const testValue = `Test Company ${Date.now()}`
-  await companyNameInput.clear()
-  await companyNameInput.fill(testValue)
-  console.log(`Changed company name to: ${testValue}`)
+  const testValue = `test${Date.now()}@example.com`
+  await companyEmailInput.clear()
+  await companyEmailInput.fill(testValue)
+  await page.keyboard.press('Tab') // Blur to ensure v-model syncs
+  await page.waitForTimeout(500) // Wait for Vue reactivity to propagate
+  console.log(`Changed company email to: ${testValue}`)
 
   // Close the modal
   await page.click('[data-automation-id="SectionModal-company-close-button"]')
@@ -84,9 +86,9 @@ test('test company defaults edit and save', async ({ authenticatedPage: page }) 
   await page.waitForSelector('[data-automation-id="SectionModal-content"]', { timeout: 10000 })
 
   // Verify the value persisted
-  const savedInput = page.locator('[data-automation-id="SectionModal-company-field-company_name"]')
+  const savedInput = page.locator('[data-automation-id="SectionModal-company-field-company_email"]')
   const savedValue = await savedInput.inputValue()
-  console.log(`Saved company name: ${savedValue}`)
+  console.log(`Saved company email: ${savedValue}`)
   expect(savedValue).toBe(testValue)
 
   // Restore original value
@@ -100,5 +102,5 @@ test('test company defaults edit and save', async ({ authenticatedPage: page }) 
   })
   await page.click('[data-automation-id="AdminCompanyView-save-all-button"]')
 
-  console.log(`Restored company name to: ${originalValue}`)
+  console.log(`Restored company email to: ${originalValue}`)
 })

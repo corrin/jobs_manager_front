@@ -50,6 +50,7 @@ export const SettingsSchemaService = {
           help_text: field.help_text,
           section: field.section,
           icon: getFieldIcon(field.key),
+          readOnly: field.read_only,
         }))
 
         return {
