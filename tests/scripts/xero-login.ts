@@ -31,7 +31,7 @@ export async function ensureXeroConnected(): Promise<void> {
     throw new Error('VITE_FRONTEND_BASE_URL must be set in .env')
   }
 
-  const browser = await chromium.launch({ headless: false })
+  const browser = await chromium.launch({ headless: true })
   const page = await browser.newPage()
 
   try {
