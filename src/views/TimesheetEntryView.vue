@@ -587,11 +587,9 @@ import { z } from 'zod'
 import { debugLog } from '@/utils/debug'
 import { toLocalDateString } from '@/utils/dateUtils'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
-import {
-  getRateMultiplierFromMeta,
-  setRateMultiplierOnMeta,
-  type RateMultiplierMetaRecord,
-} from '@/utils/wageRateMultiplier'
+type RateMultiplierMetaRecord = Record<string, unknown> & {
+  wage_rate_multiplier?: number
+}
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type Staff = z.infer<typeof schemas.ModernStaff>
@@ -1333,15 +1331,13 @@ async function handleSaveEntry(entry: TimesheetEntryViewRow): Promise<void> {
       unit_rev: entryRow.chargeOutRate,
       accounting_date: date,
       xero_pay_item: entryRow.xeroPayItemId,
-      meta: setRateMultiplierOnMeta(
-        {
-          staff_id: staffId,
-          date: date,
-          is_billable: entryRow.billable,
-          created_from_timesheet: true,
-        },
-        entryRow.rateMultiplier,
-      ),
+      meta: {
+        staff_id: staffId,
+        date: date,
+        is_billable: entryRow.billable,
+        created_from_timesheet: true,
+        wage_rate_multiplier: entryRow.rateMultiplier,
+      },
     }
 
     let savedLine
@@ -1402,7 +1398,7 @@ async function softRefreshRow(entry: TimesheetEntryViewRow): Promise<void> {
     const hours = line.quantity
     const staffWageRate = line.wage_rate || line.unit_cost
     const metaRecord = toMetaRecord(line.meta) as RateMultiplierMetaRecord | null
-    const rateMultiplier = getRateMultiplierFromMeta(metaRecord ?? undefined)
+    const rateMultiplier = metaRecord?.wage_rate_multiplier as number
 
     const calculatedWage =
       hours > 0 && staffWageRate > 0
@@ -1642,7 +1638,7 @@ const loadTimesheetData = async () => {
       const hours = line.quantity
       const staffWageRate = line.wage_rate || line.unit_cost
       const metaRecord = toMetaRecord(line.meta) as RateMultiplierMetaRecord | null
-      const rateMultiplier = getRateMultiplierFromMeta(metaRecord ?? undefined)
+      const rateMultiplier = metaRecord?.wage_rate_multiplier as number
 
       // Always calculate wage with correct formula: hours * rate_multiplier * staff_wage_rate
       const calculatedWage =
