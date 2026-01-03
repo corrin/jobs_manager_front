@@ -16,6 +16,7 @@ export interface ResolvedSettingsField {
   help_text: string
   section: string
   icon: Component
+  readOnly: boolean
 }
 
 export interface ResolvedSettingsSection {
