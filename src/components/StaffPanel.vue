@@ -8,7 +8,12 @@
       <div v-else-if="error" class="text-red-500 text-center py-4">
         Error loading staff: {{ error }}
       </div>
-      <div v-else ref="staffListRef" class="flex flex-wrap justify-center gap-2 max-w-full">
+      <div
+        v-else
+        ref="staffListRef"
+        class="staff-scroll-list flex flex-wrap justify-center gap-2 max-w-full"
+        :class="{ 'mobile-assign-grid': enableMobileQuickAssign }"
+      >
         <div
           v-for="staff in staffMembers"
           :key="staff.id"
@@ -17,6 +22,8 @@
             'scale-105 ring-2 ring-blue-400 ring-offset-1 rounded-lg': activeFilters.includes(
               staff.id,
             ),
+            'mobile-assign-selected':
+              enableMobileQuickAssign && activeMobileAssignStaffId === staff.id,
           }"
           :data-staff-id="staff.id"
           draggable="true"
@@ -33,6 +40,17 @@
             class="text-xs text-gray-600 text-center max-w-[60px] truncate pointer-events-none"
             >{{ staff.display_name.split(' ')[0] }}</span
           >
+          <button
+            v-if="enableMobileQuickAssign"
+            type="button"
+            class="mobile-assign-trigger"
+            :class="{
+              'mobile-assign-trigger--active': activeMobileAssignStaffId === staff.id,
+            }"
+            @click.stop="handleMobileAssign(staff)"
+          >
+            {{ activeMobileAssignStaffId === staff.id ? 'Selected' : 'Assign' }}
+          </button>
         </div>
       </div>
     </div>
@@ -53,15 +71,20 @@ type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
 
 interface Props {
   activeFilters?: string[]
+  enableMobileQuickAssign?: boolean
+  activeMobileAssignStaffId?: string | null
 }
 
 interface Emits {
   (e: 'staff-filter-changed', staffIds: string[]): void
   (e: 'staff-panel-ready', element: HTMLElement): void
+  (e: 'mobile-assign-select', staff: KanbanStaff): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   activeFilters: () => [],
+  enableMobileQuickAssign: false,
+  activeMobileAssignStaffId: null,
 })
 
 const emit = defineEmits<Emits>()
@@ -160,6 +183,10 @@ onMounted(() => {
     }
   })
 })
+
+const handleMobileAssign = (staff: KanbanStaff): void => {
+  emit('mobile-assign-select', staff)
+}
 </script>
 
 <style scoped>
@@ -172,11 +199,37 @@ onMounted(() => {
   cursor: grabbing;
 }
 
-.staff-item * {
-  pointer-events: none;
-}
-
 .staff-item:hover {
   transform: scale(1.05);
+}
+
+.mobile-assign-trigger {
+  pointer-events: auto;
+  margin-top: 0.15rem;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.7);
+  color: #1d4ed8;
+  background: rgba(219, 234, 254, 0.7);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.mobile-assign-trigger--active {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.mobile-assign-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  justify-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.mobile-assign-selected {
+  border: 2px solid #1d4ed8;
 }
 </style>

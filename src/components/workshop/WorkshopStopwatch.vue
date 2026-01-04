@@ -58,13 +58,24 @@ async function recordStopwatchTime() {
 
   isRecording.value = true
   try {
-    const accountingDate = new Date().toISOString().slice(0, 10)
+    const endDate = new Date()
+    const startDate = new Date(endDate.getTime() - elapsedSeconds.value * 1000)
+    const accountingDate = startDate.toISOString().slice(0, 10)
+    const formatTime = (date: Date) =>
+      `${date.getHours().toString().padStart(2, '0')}:${date
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`
+    const start_time = formatTime(startDate)
+    const end_time = formatTime(endDate)
     const description = `Recorded from workshop stopwatch${props.jobName ? ` for ${props.jobName}` : ''}`
     const rateMultiplierOrd = 1 // 'Ord' multiplier
 
     await api.job_api_workshop_timesheets_create({
       job_id: props.jobId,
       accounting_date: accountingDate,
+      start_time,
+      end_time,
       hours,
       description,
       is_billable: true,

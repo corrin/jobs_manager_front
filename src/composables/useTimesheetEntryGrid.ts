@@ -25,6 +25,9 @@ import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCa
 import { type TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 import TimesheetActionsCell from '@/components/timesheet/TimesheetActionsCell.vue'
+type RateMultiplierMetaRecord = Record<string, unknown> & {
+  wage_rate_multiplier?: number
+}
 
 type TimesheetEntryStaffMember = {
   id: string
@@ -532,10 +535,10 @@ export function useTimesheetEntryGrid(
   }
 
   function createEntryFromRowData(rowData: TimesheetEntryGridRow): TimesheetEntry {
-    const meta =
+    const meta: RateMultiplierMetaRecord =
       rowData.meta && typeof rowData.meta === 'object'
-        ? { ...(rowData.meta as Record<string, unknown>) }
-        : ({} as Record<string, unknown>)
+        ? ({ ...(rowData.meta as Record<string, unknown>) } as RateMultiplierMetaRecord)
+        : ({} as RateMultiplierMetaRecord)
 
     const hours = toNumber(rowData.hours ?? rowData.quantity, 0)
     const wageRate = effectiveWageRateForRow(rowData)
@@ -560,22 +563,7 @@ export function useTimesheetEntryGrid(
     const metaRateType = toStringSafe(meta.rate_type, '')
     const rate = (rowData.rate ?? (metaRateType || 'Ord')) as string
 
-    const metaMultiplier = toNumber(meta.rate_multiplier, NaN)
-    const multiplierFromRate = calculations.getRateMultiplier(rate)
-
-    let rateMultiplier: number
-    if (rowData.rate != null) {
-      rateMultiplier = multiplierFromRate
-    } else if (
-      typeof rowData.rateMultiplier === 'number' &&
-      Number.isFinite(rowData.rateMultiplier)
-    ) {
-      rateMultiplier = rowData.rateMultiplier
-    } else if (!Number.isNaN(metaMultiplier)) {
-      rateMultiplier = metaMultiplier
-    } else {
-      rateMultiplier = multiplierFromRate
-    }
+    const rateMultiplier = calculations.getRateMultiplier(rate)
 
     // Look up pay item by multiplier for Xero integration
     const payItemForMultiplier = timesheetStore.getPayItemByMultiplier(rateMultiplier)
@@ -599,9 +587,9 @@ export function useTimesheetEntryGrid(
       formula: `${hours} x ${rateMultiplier} x ${wageRate} = ${calculatedWage}`,
     })
 
+    meta.wage_rate_multiplier = rateMultiplier
     meta.staff_id = staffId
     meta.rate_type = rate
-    meta.rate_multiplier = rateMultiplier
     meta.is_billable = billable
     meta.date = dateValue
     meta.job_id = jobId

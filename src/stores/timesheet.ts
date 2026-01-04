@@ -8,12 +8,11 @@ import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import { FeatureFlagsService } from '@/services/feature-flags.service'
 import { validateFields } from '@/utils/contractValidation'
-
-type CostLineMeta = {
+type CostLineMeta = Record<string, unknown> & {
   date?: string
   staff_id?: string
   is_billable?: boolean
-  rate_multiplier?: number
+  wage_rate_multiplier?: number
 }
 type CostLine = z.infer<typeof schemas.CostLine>
 type Staff = z.infer<typeof schemas.ModernStaff>
@@ -418,6 +417,19 @@ export const useTimesheetStore = defineStore('timesheet', () => {
 
       // Use generated API to create time entry
       const accountingDate = selectedDate.value || toLocalDateString()
+      const costLineMeta: CostLineMeta = {
+        staff_id: selectedStaffId.value,
+        date: selectedDate.value,
+        is_billable: entryData.isBillable,
+      }
+
+      if (
+        typeof entryData.rateMultiplier === 'number' &&
+        Number.isFinite(entryData.rateMultiplier)
+      ) {
+        costLineMeta.wage_rate_multiplier = entryData.rateMultiplier
+      }
+
       const costLineData = {
         kind: 'time' as const,
         desc: entryData.description,
@@ -425,12 +437,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
         unit_cost: entryData.wageRate,
         unit_rev: entryData.chargeOutRate,
         accounting_date: accountingDate,
-        meta: {
-          staff_id: selectedStaffId.value,
-          date: selectedDate.value,
-          is_billable: entryData.isBillable,
-          rate_multiplier: entryData.rateMultiplier || 1.0,
-        },
+        meta: costLineMeta,
       }
 
       const newCostLine = (await api.job_rest_jobs_cost_sets_actual_cost_lines_create(
@@ -490,11 +497,14 @@ export const useTimesheetStore = defineStore('timesheet', () => {
       if (updates.isBillable !== undefined || updates.rateMultiplier !== undefined) {
         const existingLine = lines.value.find((line) => line.id === entryId)
         const existingMeta = existingLine?.meta as CostLineMeta | undefined
-        updatePayload.meta = {
+        const mergedMeta: CostLineMeta = {
           ...existingMeta,
           ...(updates.isBillable !== undefined && { is_billable: updates.isBillable }),
-          ...(updates.rateMultiplier !== undefined && { rate_multiplier: updates.rateMultiplier }),
         }
+        if (updates.rateMultiplier !== undefined) {
+          mergedMeta.wage_rate_multiplier = updates.rateMultiplier
+        }
+        updatePayload.meta = mergedMeta
       }
 
       const updatedCostLine = (await api.job_rest_cost_lines_partial_update(updatePayload, {

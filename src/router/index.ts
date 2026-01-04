@@ -94,6 +94,7 @@ const router = createRouter({
         requiresAuth: true,
         allowWorkshopStaff: true,
         title: 'My Time - Workshop Timesheets',
+        allowScroll: true,
       },
     },
     {

@@ -587,6 +587,9 @@ import { z } from 'zod'
 import { debugLog } from '@/utils/debug'
 import { toLocalDateString } from '@/utils/dateUtils'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
+type RateMultiplierMetaRecord = Record<string, unknown> & {
+  wage_rate_multiplier?: number
+}
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type Staff = z.infer<typeof schemas.ModernStaff>
@@ -1332,8 +1335,8 @@ async function handleSaveEntry(entry: TimesheetEntryViewRow): Promise<void> {
         staff_id: staffId,
         date: date,
         is_billable: entryRow.billable,
-        rate_multiplier: entryRow.rateMultiplier,
         created_from_timesheet: true,
+        wage_rate_multiplier: entryRow.rateMultiplier,
       },
     }
 
@@ -1394,11 +1397,8 @@ async function softRefreshRow(entry: TimesheetEntryViewRow): Promise<void> {
 
     const hours = line.quantity
     const staffWageRate = line.wage_rate || line.unit_cost
-    const metaRecord = toMetaRecord(line.meta)
-    const rateMultiplier =
-      typeof metaRecord?.['rate_multiplier'] === 'number'
-        ? (metaRecord['rate_multiplier'] as number)
-        : 1.0
+    const metaRecord = toMetaRecord(line.meta) as RateMultiplierMetaRecord | null
+    const rateMultiplier = metaRecord?.wage_rate_multiplier as number
 
     const calculatedWage =
       hours > 0 && staffWageRate > 0
@@ -1637,11 +1637,8 @@ const loadTimesheetData = async () => {
     timeEntries.value = response.cost_lines.map((line: TimesheetCostLine) => {
       const hours = line.quantity
       const staffWageRate = line.wage_rate || line.unit_cost
-      const metaRecord = toMetaRecord(line.meta)
-      const rateMultiplier =
-        typeof metaRecord?.['rate_multiplier'] === 'number'
-          ? (metaRecord['rate_multiplier'] as number)
-          : 1.0
+      const metaRecord = toMetaRecord(line.meta) as RateMultiplierMetaRecord | null
+      const rateMultiplier = metaRecord?.wage_rate_multiplier as number
 
       // Always calculate wage with correct formula: hours * rate_multiplier * staff_wage_rate
       const calculatedWage =
