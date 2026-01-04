@@ -19,6 +19,7 @@ import { schemas } from '@/api/generated/api'
 import axios from '@/plugins/axios'
 import { jobService } from '@/services/job.service'
 import { useTimesheetSummary } from '@/composables/useTimesheetSummary'
+import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
 import {
   AlertTriangle,
   CalendarDays,
@@ -44,6 +45,7 @@ type WorkshopTimesheetEntry = z.infer<typeof schemas.WorkshopTimesheetEntry>
 type WorkshopTimesheetSummary = z.infer<typeof schemas.WorkshopTimesheetSummary>
 type JobsListResponse = z.infer<typeof schemas.JobsListResponse>
 type Job = z.infer<typeof schemas.Job>
+type WorkingDayStartKey = 'mon_start' | 'tue_start' | 'wed_start' | 'thu_start' | 'fri_start'
 type CalendarViewEventModalRef = {
   openModal?: (date: Date) => void
   openEditModal?: (event: Record<string, unknown>) => void
@@ -92,6 +94,8 @@ const trackedCalendarEventIds = ref<Set<string>>(new Set())
 const DEFAULT_SLOT_MINUTES = 30
 const calendarViewRef = ref<CalendarViewInstance>(null)
 let calendarModalSuppressionFrame: number | null = null
+
+const companyDefaultsStore = useCompanyDefaultsStore()
 
 const { getEstimatedHours, getActualHours } = useTimesheetSummary()
 const jobBudgetMeta = ref<Map<string, JobBudgetMeta>>(new Map())
@@ -172,6 +176,13 @@ const calendarEventTooltipMap = computed(() => {
 const formDurationHours = computed(() =>
   calculateDurationHours(formState.startTime, formState.endTime),
 )
+const WORKING_DAY_START_KEYS: Record<number, WorkingDayStartKey> = {
+  1: 'mon_start',
+  2: 'tue_start',
+  3: 'wed_start',
+  4: 'thu_start',
+  5: 'fri_start',
+}
 
 function formatDateKey(date: Date): string {
   const d = new Date(date)
@@ -195,6 +206,26 @@ function ensureTimeWithSeconds(time: string): string {
 function formatTimeInputValue(time?: string | null): string {
   if (!time) return ''
   return time.slice(0, 5)
+}
+
+function getDefaultDayStartTime(dateKey = selectedDate.value): string {
+  const fallback = '08:00'
+  const defaults = companyDefaultsStore.companyDefaults
+  if (!defaults) return fallback
+  const dayIndex = dayjs(dateKey).day()
+  const startKey = WORKING_DAY_START_KEYS[dayIndex]
+  if (!startKey) return fallback
+  const startValue = defaults[startKey]
+  return formatTimeInputValue(startValue) || fallback
+}
+
+function getLatestEntryEndTime(entries: WorkshopTimesheetEntry[]): string | null {
+  const endMinutes = entries
+    .map((entry) => formatTimeInputValue(entry.end_time))
+    .filter((time): time is string => Boolean(time))
+    .map((time) => minutesFromTime(time))
+  if (endMinutes.length === 0) return null
+  return minutesToTime(Math.max(...endMinutes))
 }
 
 function minutesFromTime(time: string): number {
@@ -259,9 +290,16 @@ function formatEventTitle(entry: WorkshopTimesheetEntry): string {
 }
 
 function defaultTimeRange(startTime?: string) {
-  const start = startTime || '08:00'
+  const start = startTime || getDefaultDayStartTime()
   const end = minutesToTime(minutesFromTime(start) + DEFAULT_SLOT_MINUTES)
   return normalizeTimeRange(start, end)
+}
+
+function defaultNewEntryRange(range?: { start?: string; end?: string }) {
+  const startValue =
+    range?.start ?? getLatestEntryEndTime(selectedEntries.value) ?? getDefaultDayStartTime()
+  const endValue = range?.end ?? minutesToTime(minutesFromTime(startValue) + DEFAULT_SLOT_MINUTES)
+  return normalizeTimeRange(startValue, endValue)
 }
 
 function getJobBudgetState(jobId?: string | null): JobBudgetMeta | null {
@@ -376,10 +414,8 @@ function applyTimeRange(startTime: string, endTime: string) {
 
 function openCreateForm(range?: { start?: string; end?: string }) {
   resetForm()
-  const defaults = defaultTimeRange(range?.start)
-  const startValue = range?.start ?? defaults.start
-  const endValue = range?.end ?? defaults.end
-  applyTimeRange(startValue, endValue)
+  const defaults = defaultNewEntryRange(range)
+  applyTimeRange(defaults.start, defaults.end)
   isFormOpen.value = true
 }
 
@@ -748,6 +784,9 @@ watch(
 onMounted(() => {
   calendarStore.currentDate = parseDateKey(selectedDate.value)
   void loadJobs()
+  if (!companyDefaultsStore.isLoaded && !companyDefaultsStore.isLoading) {
+    void companyDefaultsStore.loadCompanyDefaults()
+  }
   scheduleModalSuppression()
 })
 
