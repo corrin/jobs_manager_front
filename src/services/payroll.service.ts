@@ -31,10 +31,14 @@ export interface PostStaffWeekProgressEvent {
 
 export interface PostStaffWeekCompleteEvent {
   event: 'complete'
+  staff_id: string
   staff_name: string
   success: boolean
   work_hours?: string
-  error?: string
+  errors?: string[]
+  skipped?: boolean
+  reason?: string
+  has_entries?: boolean
 }
 
 export interface PostStaffWeekDoneEvent {
