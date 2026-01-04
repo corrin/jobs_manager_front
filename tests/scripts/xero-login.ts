@@ -3,6 +3,8 @@
  *
  * Usage:
  *   npx ts-node tests/scripts/xero-login.ts
+ *
+ * Also exports ensureXeroConnected() for use in global-setup.ts
  */
 
 import { chromium } from '@playwright/test'
@@ -10,7 +12,7 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-async function main() {
+export async function ensureXeroConnected(): Promise<void> {
   const xeroUsername = process.env.XERO_USERNAME
   const xeroPassword = process.env.XERO_PASSWORD
   const appUsername = process.env.E2E_TEST_USERNAME
@@ -18,21 +20,18 @@ async function main() {
   const frontendUrl = process.env.VITE_FRONTEND_BASE_URL
 
   if (!xeroUsername || !xeroPassword) {
-    console.error('XERO_USERNAME and XERO_PASSWORD must be set in .env')
-    process.exit(1)
+    throw new Error('XERO_USERNAME and XERO_PASSWORD must be set in .env')
   }
 
   if (!appUsername || !appPassword) {
-    console.error('E2E_TEST_USERNAME and E2E_TEST_PASSWORD must be set in .env')
-    process.exit(1)
+    throw new Error('E2E_TEST_USERNAME and E2E_TEST_PASSWORD must be set in .env')
   }
 
   if (!frontendUrl) {
-    console.error('VITE_FRONTEND_BASE_URL must be set in .env')
-    process.exit(1)
+    throw new Error('VITE_FRONTEND_BASE_URL must be set in .env')
   }
 
-  const browser = await chromium.launch({ headless: false })
+  const browser = await chromium.launch({ headless: true })
   const page = await browser.newPage()
 
   try {
@@ -121,4 +120,11 @@ async function main() {
   }
 }
 
-main().catch(console.error)
+// Run directly if called as a script
+const isMainModule = import.meta.url === `file://${process.argv[1]}`
+if (isMainModule) {
+  ensureXeroConnected().catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+}

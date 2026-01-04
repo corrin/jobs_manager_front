@@ -93,6 +93,13 @@
         {{ formatHours(staff.total_billable_hours) }}h
       </span>
     </td>
+
+    <!-- Cost Column -->
+    <td class="px-1.5 lg:px-2 py-1.5 lg:py-2 text-center">
+      <span class="text-sm lg:text-base font-medium text-gray-900">
+        {{ formatCurrency(staff.weekly_cost) }}
+      </span>
+    </td>
   </tr>
 
   <!-- Expanded Hour Type Breakdown Rows -->
@@ -121,6 +128,7 @@
         >
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
+      <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
     </tr>
 
     <!-- Unbilled Time -->
@@ -146,6 +154,7 @@
           >{{ formatHours(staff.total_unbilled_hours) }}h</span
         >
       </td>
+      <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
     </tr>
 
@@ -173,6 +182,7 @@
         >
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
+      <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
     </tr>
 
     <!-- 2x Time -->
@@ -198,6 +208,7 @@
           >{{ formatHours(staff.total_overtime_2x_hours) }}h</span
         >
       </td>
+      <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
     </tr>
 
@@ -225,6 +236,7 @@
         >
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
+      <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
     </tr>
 
     <!-- Annual Leave -->
@@ -251,6 +263,7 @@
         >
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
+      <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
     </tr>
   </template>
 </template>
@@ -259,6 +272,7 @@
 import { ref } from 'vue'
 import { ChevronRight, Check, X, Heart, Plane } from 'lucide-vue-next'
 import { formatHours } from '@/services/weekly-timesheet.service'
+import { formatCurrency } from '@/utils/string-formatting'
 import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
 

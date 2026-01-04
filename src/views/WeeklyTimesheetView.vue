@@ -135,7 +135,6 @@
           :posting-blocked="!canPostCurrentWeek"
           :posting-blocked-reason="postingBlockedReason"
           :draft-week-start="draftWeekStart"
-          @create-pay-run="handleCreatePayRun"
           @post-all-to-xero="handlePostAllToXero"
           @refresh-pay-runs="handleRefreshPayRuns"
           @dismiss-error="payrollError = null"
@@ -222,6 +221,13 @@
                     >
                       {{ payrollMode ? 'Billable Hours' : 'Billable %' }}
                     </th>
+                    <th
+                      v-if="payrollMode"
+                      class="w-24 px-1.5 py-1.5 lg:py-2 text-center text-xs sm:text-sm lg:text-base font-medium text-gray-500 uppercase tracking-wider"
+                      title="Approximate cost based on wage rates - Xero has actual values"
+                    >
+                      Cost (approx)
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
@@ -245,6 +251,37 @@
                     />
                   </template>
                 </tbody>
+                <tfoot v-if="payrollMode" class="bg-gray-100 border-t-2 border-gray-300">
+                  <tr>
+                    <td class="px-1.5 lg:px-2 py-2 lg:py-3">
+                      <span class="text-sm lg:text-base font-bold text-gray-900">Total</span>
+                    </td>
+                    <td
+                      v-for="idx in displayDayIndexes"
+                      :key="`total-${idx}`"
+                      class="px-1 py-2 lg:py-3 text-center"
+                    >
+                      <span class="text-sm lg:text-base font-bold text-gray-900">
+                        {{ formatHours(getDailyTotalHours(idx)) }}
+                      </span>
+                    </td>
+                    <td class="px-1.5 lg:px-2 py-2 lg:py-3 text-center">
+                      <span class="text-sm lg:text-base font-bold text-gray-900">
+                        {{ formatHours(getTotalHours()) }}
+                      </span>
+                    </td>
+                    <td class="px-1.5 lg:px-2 py-2 lg:py-3 text-center">
+                      <span class="text-sm lg:text-base font-bold text-gray-900">
+                        {{ formatHours(getTotalBillableHours()) }}h
+                      </span>
+                    </td>
+                    <td class="px-1.5 lg:px-2 py-2 lg:py-3 text-center">
+                      <span class="text-sm lg:text-base font-bold text-gray-900">
+                        {{ formatCurrency(getTotalCost()) }}
+                      </span>
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
@@ -297,7 +334,8 @@ import {
   formatToLocalString,
   navigateWeek as navigateWeekDate,
 } from '@/services/date.service'
-import { fetchWeeklyOverview } from '@/services/weekly-timesheet.service'
+import { fetchWeeklyOverview, formatHours } from '@/services/weekly-timesheet.service'
+import { formatCurrency } from '@/utils/string-formatting'
 import {
   createPayRun,
   postStaffWeek,
@@ -466,9 +504,7 @@ const sortedStaffData = computed(() => {
   if (!weeklyData.value?.staff_data) return []
 
   return [...weeklyData.value.staff_data].sort((a: WeeklyStaffData, b: WeeklyStaffData) => {
-    const nameA = (a.staff_name as string) || ''
-    const nameB = (b.staff_name as string) || ''
-    return nameA.localeCompare(nameB)
+    return a.name.localeCompare(b.name)
   })
 })
 const displayDays = computed<DisplayDay[]>(() => {
@@ -562,6 +598,29 @@ watch(
 function formatDisplayDateRange(): string {
   if (!weeklyData.value) return ''
   return dateService.formatDateRange(weeklyData.value.start_date, weeklyData.value.end_date)
+}
+
+// Total row helper functions
+function getDailyTotalHours(dayIndex: number): number {
+  if (!weeklyData.value?.staff_data) return 0
+  return weeklyData.value.staff_data.reduce((sum, staff) => {
+    return sum + (staff.weekly_hours[dayIndex]?.hours ?? 0)
+  }, 0)
+}
+
+function getTotalHours(): number {
+  if (!weeklyData.value?.staff_data) return 0
+  return weeklyData.value.staff_data.reduce((sum, staff) => sum + staff.total_hours, 0)
+}
+
+function getTotalBillableHours(): number {
+  if (!weeklyData.value?.staff_data) return 0
+  return weeklyData.value.staff_data.reduce((sum, staff) => sum + staff.total_billable_hours, 0)
+}
+
+function getTotalCost(): number {
+  if (!weeklyData.value?.staff_data) return 0
+  return weeklyData.value.staff_data.reduce((sum, staff) => sum + staff.weekly_cost, 0)
 }
 
 // Core data loader with enhanced error handling
@@ -662,6 +721,7 @@ async function handleCreatePayRun() {
 
     payRunStatus.value = result.status
     paymentDate.value = result.payment_date
+    xeroUrl.value = result.xero_url ?? null
 
     toast.success('Pay run created successfully', {
       description: `Payment date: ${result.payment_date}`,
@@ -762,8 +822,9 @@ async function handlePostAllToXero() {
     return
   }
 
-  // Track failed staff for error reporting
+  // Track failed and skipped staff for reporting
   const failedStaff: Array<{ staffName: string; error?: string }> = []
+  const skippedInactiveWithEntries: string[] = []
 
   try {
     const result = await postStaffWeek(staffIds, weekStart, {
@@ -788,15 +849,26 @@ async function handlePostAllToXero() {
       },
       onComplete: (event: PostStaffWeekCompleteEvent) => {
         if (!event.success) {
+          const errorMsg = event.errors?.join('; ') || 'Unknown error'
           failedStaff.push({
             staffName: event.staff_name,
-            error: event.error,
+            error: errorMsg,
           })
           if (postingProgress.value) {
             postingProgress.value = {
               ...postingProgress.value,
               failedStaff: [...failedStaff],
             }
+          }
+          // Log detailed error to console for debugging
+          console.error(`Failed to post timesheet for ${event.staff_name}:`, errorMsg)
+        } else if (event.skipped) {
+          if (event.has_entries) {
+            // Track inactive staff with entries that were skipped
+            skippedInactiveWithEntries.push(event.staff_name)
+            console.warn(`Skipped inactive staff with entries: ${event.staff_name}`)
+          } else {
+            debugLog(`Skipped inactive staff (no entries): ${event.staff_name}`)
           }
         }
         debugLog('Complete:', event)
@@ -808,16 +880,28 @@ async function handlePostAllToXero() {
 
     const totalPosted = result.successful + result.failed
     if (result.failed > 0) {
-      payrollError.value = `Failed to post ${result.failed} of ${totalPosted} staff members to Xero.`
+      const failedNames = failedStaff.map((s) => s.staffName).join(', ')
+      payrollError.value = `Failed to post ${result.failed} of ${totalPosted} staff members to Xero: ${failedNames}`
       toast.error('Some staff failed to post', {
-        description: `${result.successful} succeeded, ${result.failed} failed`,
+        description: failedNames,
       })
       postedAllToXero.value = false
     } else {
       toast.success('All staff posted successfully', {
-        description: `${result.successful} staff members posted to Xero`,
+        description: `${result.successful} staff members posted to Xero. Creating pay run...`,
       })
       postedAllToXero.value = true
+
+      // Automatically create the pay run after successful posting
+      await handleCreatePayRun()
+    }
+
+    // Warn about inactive staff with entries that were skipped
+    if (skippedInactiveWithEntries.length > 0) {
+      const names = skippedInactiveWithEntries.join(', ')
+      toast.warning('Inactive staff with time entries', {
+        description: `${names} - hours not posted to Xero`,
+      })
     }
   } catch (err: unknown) {
     console.error('Payroll post failed:', err)
