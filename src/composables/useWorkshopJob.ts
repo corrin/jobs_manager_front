@@ -8,7 +8,7 @@ import type { z } from 'zod'
 type Job = z.infer<typeof schemas.Job>
 
 type SpeedQuality = {
-  key: 'fast' | 'quality' | 'balanced'
+  key: 'fast' | 'quality' | 'normal'
   label: string
   variant: 'default' | 'secondary' | 'destructive'
 }

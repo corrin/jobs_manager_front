@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import CalendarView from '@kodeglot/vue-calendar'
-import type { ComponentPublicInstance, Ref } from 'vue'
+import type { ComponentPublicInstance } from 'vue'
 
 type CalendarViewInstance = (ComponentPublicInstance & { $refs?: Record<string, unknown> }) | null
 
 interface Props {
   initialDate: Date
-  calendarViewRef: Ref<CalendarViewInstance>
+  onCalendarReady: (instance: CalendarViewInstance | null) => void
   onOpenEventModal: (date?: Date | string | null) => void
   onEventClick: (event: { id?: string; metadata?: Record<string, unknown> } | null) => void
   onDateChange: (newDate: Date) => void
@@ -17,7 +17,7 @@ defineProps<Props>()
 
 <template>
   <CalendarView
-    :ref="calendarViewRef"
+    :ref="(instance) => onCalendarReady(instance as CalendarViewInstance)"
     class="workshop-calendar w-full rounded-xl border bg-white shadow-sm"
     height="auto"
     :initial-date="initialDate"
