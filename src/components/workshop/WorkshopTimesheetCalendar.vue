@@ -17,7 +17,7 @@ defineProps<Props>()
 
 <template>
   <CalendarView
-    :ref="(instance) => onCalendarReady(instance as CalendarViewInstance)"
+    :ref="(instance: CalendarViewInstance | null) => onCalendarReady(instance)"
     class="workshop-calendar w-full rounded-xl border bg-white shadow-sm"
     height="auto"
     :initial-date="initialDate"

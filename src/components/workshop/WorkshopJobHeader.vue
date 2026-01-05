@@ -6,14 +6,9 @@ import WorkshopStopwatch from '@/components/workshop/WorkshopStopwatch.vue'
 import { schemas } from '@/api/generated/api'
 import { ArrowLeft, Building2, Gauge, Hash, UserRound } from 'lucide-vue-next'
 import type { z } from 'zod'
+import type { SpeedQuality } from '@/composables/useWorkshopJob'
 
 type Job = z.infer<typeof schemas.Job>
-type SpeedQuality = {
-  key: 'fast' | 'quality' | 'balanced'
-  label: string
-  variant: 'default' | 'secondary' | 'destructive'
-}
-
 interface Props {
   job: Job | null
   speedQuality: SpeedQuality | null
