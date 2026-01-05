@@ -85,6 +85,14 @@ export function useWorkshopTimesheetForm(options: {
     return normalizeTimeRange(startValue, endValue, DEFAULT_SLOT_MINUTES)
   }
 
+  function getLastUsedJobId(entries: WorkshopTimesheetEntry[]): string | null {
+    for (let i = entries.length - 1; i >= 0; i -= 1) {
+      const jobId = entries[i]?.job_id
+      if (jobId) return jobId
+    }
+    return null
+  }
+
   function rateLabelFromMultiplier(multiplier?: number | null): string {
     if (!multiplier || multiplier === 1) return 'Ord'
     const rounded = Math.round(multiplier * 10) / 10
@@ -125,6 +133,10 @@ export function useWorkshopTimesheetForm(options: {
 
   function openCreateForm(range?: { start?: string; end?: string }) {
     resetForm()
+    const lastJobId = getLastUsedJobId(selectedEntries.value)
+    if (lastJobId) {
+      formState.jobId = lastJobId
+    }
     const defaults = defaultNewEntryRange(range)
     applyTimeRange(defaults.start, defaults.end)
     isFormOpen.value = true
