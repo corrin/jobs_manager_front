@@ -101,6 +101,10 @@ const {
   onSelectDay: selectDay,
 })
 
+const setCalendarViewRef = (instance: typeof calendarViewRef.value) => {
+  calendarViewRef.value = instance
+}
+
 const companyDefaultsStore = useCompanyDefaultsStore()
 
 watch(
@@ -181,7 +185,7 @@ onMounted(() => {
                 </p>
                 <WorkshopTimesheetCalendar
                   :initial-date="parseDateKey(selectedDate)"
-                  :calendar-view-ref="calendarViewRef"
+                  :on-calendar-ready="setCalendarViewRef"
                   :on-open-event-modal="handleCalendarOpenEventModal"
                   :on-event-click="handleCalendarEventClick"
                   :on-date-change="handleCalendarDateChange"
