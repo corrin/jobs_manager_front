@@ -386,8 +386,8 @@ const CompanyDefaults = z
     fri_end: z.string().optional(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
-    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
-    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullish(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
     address_line1: z.string().max(255).nullish(),
     address_line2: z.string().max(255).nullish(),
     suburb: z.string().max(100).nullish(),
@@ -433,6 +433,8 @@ const CompanyDefaultsRequest = z
     thu_end: z.string(),
     fri_start: z.string(),
     fri_end: z.string(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
     address_line1: z.string().max(255).nullable(),
     address_line2: z.string().max(255).nullable(),
     suburb: z.string().max(100).nullable(),
@@ -479,6 +481,8 @@ const PatchedCompanyDefaultsRequest = z
     thu_end: z.string(),
     fri_start: z.string(),
     fri_end: z.string(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
     address_line1: z.string().max(255).nullable(),
     address_line2: z.string().max(255).nullable(),
     suburb: z.string().max(100).nullable(),
@@ -879,14 +883,6 @@ const ClientSearchResponse = z
     total_pages: z.number().int(),
   })
   .passthrough()
-const CompanyDefaultsJobDetail = z
-  .object({
-    materials_markup: z.number(),
-    time_markup: z.number(),
-    charge_out_rate: z.number(),
-    wage_rate: z.number(),
-  })
-  .passthrough()
 const AssignJobRequest = z.object({ staff_id: z.string().uuid() }).passthrough()
 const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
 const CompleteJob = z
@@ -1091,10 +1087,8 @@ const WorkshopTimesheetEntry = z
     description: z.string(),
     hours: z.number().gt(-100000).lt(100000),
     accounting_date: z.string(),
-    start_time: z.string().nullable(),
-    end_time: z.string().nullable(),
     is_billable: z.boolean(),
-    wage_rate_multiplier: z.number().gt(-100).lt(100),
+    rate_multiplier: z.number().gt(-100).lt(100),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
   })
@@ -1121,10 +1115,8 @@ const WorkshopTimesheetEntryRequestRequest = z
     accounting_date: z.string(),
     hours: z.number().gte(0.01).lt(100000),
     description: z.string().max(255).nullish(),
-    start_time: z.string().nullish(),
-    end_time: z.string().nullish(),
     is_billable: z.boolean().optional().default(true),
-    wage_rate_multiplier: z.number().gte(0.1).lt(100).optional().default(1),
+    rate_multiplier: z.number().gte(0.1).lt(100).optional().default(1),
   })
   .passthrough()
 const PatchedWorkshopTimesheetEntryUpdateRequest = z
@@ -1134,10 +1126,8 @@ const PatchedWorkshopTimesheetEntryUpdateRequest = z
     accounting_date: z.string(),
     hours: z.number().gte(0.01).lt(100000),
     description: z.string().max(255).nullable(),
-    start_time: z.string().nullable(),
-    end_time: z.string().nullable(),
     is_billable: z.boolean(),
-    wage_rate_multiplier: z.number().gte(0.1).lt(100),
+    rate_multiplier: z.number().gte(0.1).lt(100),
   })
   .partial()
   .passthrough()
@@ -1459,6 +1449,14 @@ const JobEvent = z
     delta_checksum: z.string(),
     can_undo: z.boolean(),
     undo_description: z.string().nullable(),
+  })
+  .passthrough()
+const CompanyDefaultsJobDetail = z
+  .object({
+    materials_markup: z.number(),
+    time_markup: z.number(),
+    charge_out_rate: z.number(),
+    wage_rate: z.number(),
   })
   .passthrough()
 const JobData = z
@@ -2703,6 +2701,7 @@ const CreatePayRunResponse = z
     period_start_date: z.string(),
     period_end_date: z.string(),
     payment_date: z.string(),
+    xero_url: z.string(),
   })
   .passthrough()
 const PayRunSyncResponseRequest = z
@@ -2757,6 +2756,7 @@ const WeeklyStaffDataWeeklyHours = z
     sick_leave_hours: z.number().gt(-100000000).lt(100000000),
     annual_leave_hours: z.number().gt(-100000000).lt(100000000),
     bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
+    daily_cost: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklyStaffData = z
@@ -2776,6 +2776,7 @@ const WeeklyStaffData = z
     total_sick_leave_hours: z.number().gt(-100000000).lt(100000000),
     total_annual_leave_hours: z.number().gt(-100000000).lt(100000000),
     total_bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
+    weekly_cost: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklySummary = z
@@ -2909,7 +2910,6 @@ export const schemas = {
   SupplierPickupAddressRequest,
   PatchedSupplierPickupAddressRequest,
   ClientSearchResponse,
-  CompanyDefaultsJobDetail,
   AssignJobRequest,
   AssignJobResponse,
   CompleteJob,
@@ -2980,6 +2980,7 @@ export const schemas = {
   XeroInvoice,
   Job,
   JobEvent,
+  CompanyDefaultsJobDetail,
   JobData,
   JobDetailResponse,
   JobDeltaEnvelopeRequest,
@@ -4854,14 +4855,6 @@ Query Parameters:
         schema: ClientErrorResponse,
       },
     ],
-  },
-  {
-    method: 'get',
-    path: '/job/api/company_defaults/',
-    alias: 'job_api_company_defaults_retrieve',
-    description: `Fetch company default settings.`,
-    requestFormat: 'json',
-    response: CompanyDefaultsJobDetail,
   },
   {
     method: 'post',

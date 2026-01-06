@@ -1139,6 +1139,7 @@ paths:
         - api
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1172,6 +1173,7 @@ paths:
         - api
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1207,6 +1209,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1242,6 +1245,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1310,6 +1314,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1350,6 +1355,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1402,6 +1408,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -1447,6 +1454,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1487,6 +1495,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1521,6 +1530,7 @@ paths:
         - Xero
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1590,6 +1600,7 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -1619,6 +1630,7 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2519,21 +2531,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
-  /job/api/company_defaults/:
-    get:
-      operationId: job_api_company_defaults_retrieve
-      description: Fetch company default settings.
-      tags:
-        - Jobs
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CompanyDefaultsJobDetail'
-          description: ''
   /job/api/job/{job_id}/assignment:
     post:
       operationId: job_api_job_assignment_create
@@ -2669,6 +2666,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2703,6 +2701,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -2724,6 +2723,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -2765,6 +2765,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdateRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -2800,6 +2801,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3286,6 +3288,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3405,6 +3408,7 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3429,6 +3433,7 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3463,6 +3468,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3492,6 +3498,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3526,6 +3533,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3565,6 +3573,7 @@ paths:
               $ref: '#/components/schemas/PatchedJobDeltaEnvelopeRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3593,6 +3602,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3622,6 +3632,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3726,6 +3737,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3761,6 +3773,7 @@ paths:
               $ref: '#/components/schemas/QuoteRevisionRequest'
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3784,6 +3797,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3812,6 +3826,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3844,6 +3859,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3873,6 +3889,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3914,6 +3931,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -3954,6 +3972,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -3992,6 +4011,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '201':
           content:
@@ -4039,6 +4059,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4099,6 +4120,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4154,6 +4176,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '204':
           description: No response body
@@ -4196,6 +4219,7 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4226,6 +4250,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4255,6 +4280,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4329,6 +4355,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4370,6 +4397,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4420,6 +4448,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4461,6 +4490,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4489,6 +4519,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4524,6 +4555,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4665,6 +4697,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4687,6 +4720,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4709,6 +4743,7 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4730,6 +4765,7 @@ paths:
         - job
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -4761,6 +4797,7 @@ paths:
         required: true
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6249,6 +6286,7 @@ paths:
         - rest
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6542,6 +6580,7 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -6571,6 +6610,7 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
+        - {}
       responses:
         '200':
           content:
@@ -7830,13 +7870,11 @@ components:
         last_xero_sync:
           type: string
           format: date-time
-          readOnly: true
           nullable: true
           description: The last time Xero data was synchronized
         last_xero_deep_sync:
           type: string
           format: date-time
-          readOnly: true
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
@@ -7933,8 +7971,6 @@ components:
       required:
         - company_name
         - created_at
-        - last_xero_deep_sync
-        - last_xero_sync
         - updated_at
     CompanyDefaultsJobDetail:
       type: object
@@ -8087,6 +8123,17 @@ components:
         fri_end:
           type: string
           format: time
+        last_xero_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: The last time Xero data was synchronized
+        last_xero_deep_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: The last time a deep Xero sync was performed (looking back
+            90 days)
         address_line1:
           type: string
           nullable: true
@@ -8645,6 +8692,9 @@ components:
         payment_date:
           type: string
           format: date
+        xero_url:
+          type: string
+          description: Deep link to pay run in Xero
       required:
         - id
         - payment_date
@@ -8652,6 +8702,7 @@ components:
         - period_start_date
         - status
         - xero_id
+        - xero_url
     CustomTokenObtainPairRequest:
       type: object
       description: Custom serializer that accepts username and maps it to email
@@ -11858,6 +11909,17 @@ components:
         fri_end:
           type: string
           format: time
+        last_xero_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: The last time Xero data was synchronized
+        last_xero_deep_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: The last time a deep Xero sync was performed (looking back
+            90 days)
         address_line1:
           type: string
           nullable: true
@@ -12393,17 +12455,9 @@ components:
           type: string
           nullable: true
           maxLength: 255
-        start_time:
-          type: string
-          format: time
-          nullable: true
-        end_time:
-          type: string
-          format: time
-          nullable: true
         is_billable:
           type: boolean
-        wage_rate_multiplier:
+        rate_multiplier:
           type: number
           format: double
           maximum: 100
@@ -15614,6 +15668,13 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        weekly_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - billable_percentage
         - name
@@ -15629,6 +15690,7 @@ components:
         - total_scheduled_hours
         - total_sick_leave_hours
         - total_unbilled_hours
+        - weekly_cost
         - weekly_hours
     WeeklyStaffDataWeeklyHours:
       type: object
@@ -15714,11 +15776,19 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        daily_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - annual_leave_hours
         - bereavement_leave_hours
         - billable_hours
         - billed_hours
+        - daily_cost
         - day
         - hours
         - overtime_1_5x_hours
@@ -15871,20 +15941,10 @@ components:
           type: string
           format: date
           readOnly: true
-        start_time:
-          type: string
-          format: time
-          readOnly: true
-          nullable: true
-        end_time:
-          type: string
-          format: time
-          readOnly: true
-          nullable: true
         is_billable:
           type: boolean
           readOnly: true
-        wage_rate_multiplier:
+        rate_multiplier:
           type: number
           format: double
           maximum: 100
@@ -15905,16 +15965,14 @@ components:
         - client_name
         - created_at
         - description
-        - end_time
         - hours
         - id
         - is_billable
         - job_id
         - job_name
         - job_number
-        - start_time
+        - rate_multiplier
         - updated_at
-        - wage_rate_multiplier
     WorkshopTimesheetEntryRequestRequest:
       type: object
       description: Serializer validating workshop timesheet create requests.
@@ -15935,18 +15993,10 @@ components:
           type: string
           nullable: true
           maxLength: 255
-        start_time:
-          type: string
-          format: time
-          nullable: true
-        end_time:
-          type: string
-          format: time
-          nullable: true
         is_billable:
           type: boolean
           default: true
-        wage_rate_multiplier:
+        rate_multiplier:
           type: number
           format: double
           maximum: 100
