@@ -625,6 +625,7 @@ function getTotalCost(): number {
 
 // Core data loader with enhanced error handling
 async function loadData(): Promise<void> {
+  console.log('[WeeklyTimesheet] loadData: starting')
   loading.value = true
   error.value = null
   postedAllToXero.value = false
@@ -635,7 +636,13 @@ async function loadData(): Promise<void> {
     const { startDate } = dateService.getWeekRange(selectedWeekStart.value)
 
     // Fetch weekly data (includes all payroll breakdown regardless of mode)
+    console.time('[WeeklyTimesheet] fetchWeeklyOverview API call')
     weeklyData.value = await fetchWeeklyOverview(startDate)
+    console.timeEnd('[WeeklyTimesheet] fetchWeeklyOverview API call')
+    console.log(
+      '[WeeklyTimesheet] loadData: data received, staff count:',
+      weeklyData.value?.staff_data?.length,
+    )
 
     // Validate response structure
     if (!weeklyData.value?.week_days || !Array.isArray(weeklyData.value.week_days)) {
@@ -918,10 +925,14 @@ async function handlePostAllToXero() {
 }
 
 onMounted(async () => {
+  console.time('[WeeklyTimesheet] total mount')
+
   // If no week param, sync pay runs from Xero first (ensures fresh data for default week)
   if (!route.query.week) {
     try {
+      console.time('[WeeklyTimesheet] refreshPayRuns')
       await refreshPayRuns()
+      console.timeEnd('[WeeklyTimesheet] refreshPayRuns')
       debugLog('Pay runs synced from Xero on initial load')
     } catch (err) {
       console.error('Failed to sync pay runs from Xero:', err)
@@ -930,21 +941,31 @@ onMounted(async () => {
   }
 
   // Fetch all pay runs (needed for default week calculation and restrictions)
+  console.time('[WeeklyTimesheet] loadAllPayRuns')
   const payRuns = await loadAllPayRuns()
+  console.timeEnd('[WeeklyTimesheet] loadAllPayRuns')
 
   // If no query param, set the default week based on pay runs
   if (!route.query.week) {
+    console.time('[WeeklyTimesheet] calculateDefaultWeek')
     const defaultWeek = calculateDefaultWeek(payRuns)
+    console.timeEnd('[WeeklyTimesheet] calculateDefaultWeek')
     selectedWeekStart.value = defaultWeek
     // Update URL to reflect the calculated week
     router.replace({ query: { week: dateService.getWeekRange(defaultWeek).startDate } })
   }
 
   // Load current week's pay run status from cached list
+  console.time('[WeeklyTimesheet] loadPayRunForCurrentWeek')
   loadPayRunForCurrentWeek()
+  console.timeEnd('[WeeklyTimesheet] loadPayRunForCurrentWeek')
 
   // Then load the timesheet data
-  loadData()
+  console.time('[WeeklyTimesheet] loadData')
+  await loadData()
+  console.timeEnd('[WeeklyTimesheet] loadData')
+
+  console.timeEnd('[WeeklyTimesheet] total mount')
 })
 </script>
 
