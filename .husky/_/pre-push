@@ -9,4 +9,4 @@ if [ -f "$SIMPLE_GIT_HOOKS_RC" ]; then
     . "$SIMPLE_GIT_HOOKS_RC"
 fi
 
-npm run lint; npm run type-check
+npm run test:unit && npm run lint && npm run type-check

@@ -1139,7 +1139,6 @@ paths:
         - api
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1173,7 +1172,6 @@ paths:
         - api
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1209,7 +1207,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1245,7 +1242,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1314,7 +1310,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1355,7 +1350,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1408,7 +1402,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -1454,7 +1447,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1495,7 +1487,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1530,7 +1521,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1600,7 +1590,6 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1630,7 +1619,6 @@ paths:
         - app-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2531,6 +2519,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientErrorResponse'
           description: ''
+  /job/api/company_defaults/:
+    get:
+      operationId: job_api_company_defaults_retrieve
+      description: Fetch company default settings.
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyDefaultsJobDetail'
+          description: ''
   /job/api/job/{job_id}/assignment:
     post:
       operationId: job_api_job_assignment_create
@@ -2666,7 +2669,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2701,7 +2703,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -2723,7 +2724,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -2765,7 +2765,6 @@ paths:
               $ref: '#/components/schemas/PatchedJobQuoteChatUpdateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -2801,7 +2800,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3288,7 +3286,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3408,7 +3405,6 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3433,7 +3429,6 @@ paths:
         - Data Quality
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3468,7 +3463,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3498,7 +3492,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3533,7 +3526,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3573,7 +3565,6 @@ paths:
               $ref: '#/components/schemas/PatchedJobDeltaEnvelopeRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3602,7 +3593,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3632,7 +3622,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3737,7 +3726,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3773,7 +3761,6 @@ paths:
               $ref: '#/components/schemas/QuoteRevisionRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3797,7 +3784,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3826,7 +3812,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3859,7 +3844,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3889,7 +3873,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -3931,7 +3914,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -3972,7 +3954,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4011,7 +3992,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -4059,7 +4039,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4120,7 +4099,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4176,7 +4154,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -4219,7 +4196,6 @@ paths:
         - Job Files
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4250,7 +4226,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4280,7 +4255,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4355,7 +4329,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4397,7 +4370,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4448,7 +4420,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4490,7 +4461,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4519,7 +4489,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4555,7 +4524,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4697,7 +4665,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4720,7 +4687,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4743,7 +4709,6 @@ paths:
         - Jobs
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4765,7 +4730,6 @@ paths:
         - job
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -4797,7 +4761,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6286,7 +6249,6 @@ paths:
         - rest
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6580,7 +6542,6 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6610,7 +6571,6 @@ paths:
         - xero-errors
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -12455,9 +12415,17 @@ components:
           type: string
           nullable: true
           maxLength: 255
+        start_time:
+          type: string
+          format: time
+          nullable: true
+        end_time:
+          type: string
+          format: time
+          nullable: true
         is_billable:
           type: boolean
-        rate_multiplier:
+        wage_rate_multiplier:
           type: number
           format: double
           maximum: 100
@@ -15776,11 +15744,19 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        daily_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - annual_leave_hours
         - bereavement_leave_hours
         - billable_hours
         - billed_hours
+        - daily_cost
         - day
         - hours
         - overtime_1_5x_hours
@@ -15933,10 +15909,20 @@ components:
           type: string
           format: date
           readOnly: true
+        start_time:
+          type: string
+          format: time
+          readOnly: true
+          nullable: true
+        end_time:
+          type: string
+          format: time
+          readOnly: true
+          nullable: true
         is_billable:
           type: boolean
           readOnly: true
-        rate_multiplier:
+        wage_rate_multiplier:
           type: number
           format: double
           maximum: 100
@@ -15957,14 +15943,16 @@ components:
         - client_name
         - created_at
         - description
+        - end_time
         - hours
         - id
         - is_billable
         - job_id
         - job_name
         - job_number
-        - rate_multiplier
+        - start_time
         - updated_at
+        - wage_rate_multiplier
     WorkshopTimesheetEntryRequestRequest:
       type: object
       description: Serializer validating workshop timesheet create requests.
@@ -15985,10 +15973,18 @@ components:
           type: string
           nullable: true
           maxLength: 255
+        start_time:
+          type: string
+          format: time
+          nullable: true
+        end_time:
+          type: string
+          format: time
+          nullable: true
         is_billable:
           type: boolean
           default: true
-        rate_multiplier:
+        wage_rate_multiplier:
           type: number
           format: double
           maximum: 100

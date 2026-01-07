@@ -32,50 +32,115 @@
         </div>
 
         <div class="flex-1 flex flex-col px-2 sm:px-4 lg:px-6 py-1 md:py-2">
-          <div class="mb-2 md:mb-3 flex justify-center">
-            <div class="flex justify-center w-full">
-              <StaffPanel
-                :active-filters="activeStaffFilters"
-                @staff-filter-changed="handleStaffFilterChanged"
-              />
+          <div class="mb-2 md:mb-3 w-full">
+            <div v-if="isDesktop" class="flex justify-center px-2">
+              <div class="w-full max-w-6xl">
+                <StaffPanel
+                  :active-filters="activeStaffFilters"
+                  @staff-filter-changed="handleStaffFilterChanged"
+                />
+              </div>
+            </div>
+            <div v-else class="staff-panel-container">
+              <div class="staff-panel-scroll">
+                <div class="mobile-assign-info">
+                  <div class="text-xs text-gray-600">
+                    <span class="font-semibold text-gray-900">Quick assign:</span>
+                    Tap <span class="font-semibold">Assign</span> on a teammate, then tap a job
+                    card.
+                  </div>
+                  <div
+                    v-if="mobileAssignStaffId"
+                    class="flex items-center justify-between text-xs text-blue-900 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1 mt-2"
+                  >
+                    <span>Assigning to {{ mobileAssignStaffName }}</span>
+                    <button
+                      type="button"
+                      class="text-blue-600 font-semibold hover:text-blue-800"
+                      @click="clearMobileAssignSelection"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                </div>
+                <StaffPanel
+                  class="staff-panel-inline"
+                  :active-filters="activeStaffFilters"
+                  :enable-mobile-quick-assign="true"
+                  :active-mobile-assign-staff-id="mobileAssignStaffId"
+                  @staff-filter-changed="handleStaffFilterChanged"
+                  @mobile-assign-select="handleMobileAssignSelect"
+                />
+              </div>
             </div>
           </div>
 
           <div class="flex-1 flex flex-col space-y-1 md:space-y-2">
-            <div class="block md:hidden">
-              <select
-                v-model="selectedMobileStatus"
-                class="w-full p-3 text-base border border-grey-300 rounded-lg bg-white text-grey-900 font-medium shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            <div class="md:hidden space-y-3">
+              <div
+                class="sticky top-0 z-30 bg-white/95 backdrop-blur border border-grey-200 rounded-2xl shadow-sm p-3 space-y-2 mobile-status-toolbar"
               >
-                <option
-                  v-for="status in visibleStatusChoices"
-                  :key="status.key"
-                  :value="status.key"
+                <div class="flex items-center justify-between text-xs font-semibold text-grey-500">
+                  <span>Focused Column</span>
+                  <span class="uppercase tracking-wide"
+                    >{{ visibleStatusChoices.length }} total</span
+                  >
+                </div>
+                <select
+                  v-model="selectedMobileStatus"
+                  class="w-full p-2.5 text-sm border border-grey-300 rounded-lg bg-white text-grey-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  {{ status.label }} ({{ getJobsByStatus(status.key).length }})
-                </option>
-              </select>
-            </div>
+                  <option
+                    v-for="status in visibleStatusChoices"
+                    :key="status.key"
+                    :value="status.key"
+                  >
+                    {{ status.label }} ({{ getJobsByStatus(status.key).length }})
+                  </option>
+                </select>
 
-            <div class="block md:hidden">
-              <div class="flex justify-centre px-4">
-                <KanbanColumn
-                  v-if="
-                    selectedMobileStatus &&
-                    visibleStatusChoices.find((s) => s.key === selectedMobileStatus)
-                  "
-                  :key="selectedMobileStatus"
-                  :status="visibleStatusChoices.find((s) => s.key === selectedMobileStatus)!"
-                  :jobs="getSortedJobsByStatus(selectedMobileStatus)"
-                  :is-loading="isLoading"
-                  :is-dragging="isDragging"
-                  @job-click="viewJob"
-                  @load-more="loadMoreJobs(selectedMobileStatus)"
-                  @sortable-ready="handleSortableReady"
-                  @staff-assigned="handleStaffAssigned"
-                  @staff-unassigned="handleStaffUnassigned"
-                  class="kanban-column w-full max-w-md mx-auto"
-                />
+                <div class="flex gap-2 overflow-x-auto mobile-status-pills">
+                  <button
+                    v-for="status in visibleStatusChoices"
+                    :key="status.key"
+                    type="button"
+                    class="mobile-status-pill"
+                    :class="{ 'mobile-status-pill--active': selectedMobileStatus === status.key }"
+                    @click="selectMobileStatus(status.key)"
+                  >
+                    <span class="truncate">{{ status.label }}</span>
+                    <span class="mobile-status-pill__count">{{
+                      getJobsByStatus(status.key).length
+                    }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="mobile-columns-wrapper">
+                <div ref="mobileColumnsScroller" class="mobile-columns-scroller">
+                  <div
+                    v-for="status in visibleStatusChoices"
+                    :key="status.key"
+                    class="mobile-column-panel"
+                    :ref="(el) => setMobileColumnRef(status.key, el as HTMLElement | null)"
+                  >
+                    <KanbanColumn
+                      :status="status"
+                      :jobs="getSortedJobsByStatus(status.key)"
+                      :is-loading="isLoading"
+                      :is-dragging="isDragging"
+                      :mobile-selected-staff-id="mobileAssignStaffId"
+                      :enable-tap-assign="isTapAssignActive"
+                      @job-click="viewJob"
+                      @load-more="loadMoreJobs(status.key)"
+                      @sortable-ready="handleSortableReady"
+                      @staff-assigned="handleStaffAssigned"
+                      @staff-unassigned="handleStaffUnassigned"
+                      @status-change="openStatusDrawer"
+                      class="kanban-column"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -100,11 +165,14 @@
                       :jobs="getSortedJobsByStatus(status.key)"
                       :is-loading="isLoading"
                       :is-dragging="isDragging"
+                      :mobile-selected-staff-id="mobileAssignStaffId"
+                      :enable-tap-assign="isTapAssignActive"
                       @job-click="viewJob"
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
                       @staff-assigned="handleStaffAssigned"
                       @staff-unassigned="handleStaffUnassigned"
+                      @status-change="openStatusDrawer"
                       class="kanban-column-responsive"
                     />
                   </div>
@@ -124,11 +192,14 @@
                       :jobs="getSortedJobsByStatus(status.key)"
                       :is-loading="isLoading"
                       :is-dragging="isDragging"
+                      :mobile-selected-staff-id="mobileAssignStaffId"
+                      :enable-tap-assign="isTapAssignActive"
                       @job-click="viewJob"
                       @load-more="loadMoreJobs(status.key)"
                       @sortable-ready="handleSortableReady"
                       @staff-assigned="handleStaffAssigned"
                       @staff-unassigned="handleStaffUnassigned"
+                      @status-change="openStatusDrawer"
                       class="w-full"
                     />
                   </div>
@@ -148,24 +219,170 @@
       @search="handleAdvancedSearchFromDialog"
       @clear-filters="clearFilters"
     />
+
+    <Drawer v-model:open="statusDrawerOpen">
+      <DrawerContent class="max-h-[85vh]">
+        <div class="mx-auto w-full max-w-md">
+          <DrawerHeader>
+            <DrawerTitle>Update Job Status</DrawerTitle>
+            <DrawerDescription v-if="statusDrawerJob">
+              Job #{{ statusDrawerJob.job_number }} - {{ statusDrawerJob.client_name }}
+            </DrawerDescription>
+            <DrawerDescription v-else>Select a job to update.</DrawerDescription>
+          </DrawerHeader>
+
+          <div v-if="statusDrawerJob" class="px-4 pb-4 space-y-4">
+            <div class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs text-slate-500">Current status</p>
+                  <p class="text-sm font-semibold text-slate-900">
+                    {{ currentStatusLabel }}
+                  </p>
+                </div>
+                <span
+                  class="text-xs font-semibold text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-full"
+                >
+                  {{ currentStatusLabel }}
+                </span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                v-for="option in statusOptions"
+                :key="option.key"
+                type="button"
+                class="group w-full text-left border rounded-xl p-3 transition"
+                :class="
+                  option.key === currentStatusKey
+                    ? 'border-blue-500 bg-blue-50 shadow-sm'
+                    : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                "
+                :disabled="isStatusUpdating"
+                @click="applyJobStatus(option.key)"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <div>
+                    <div class="text-sm font-semibold text-slate-900">{{ option.label }}</div>
+                    <div v-if="option.tooltip" class="text-xs text-slate-500 mt-1">
+                      {{ option.tooltip }}
+                    </div>
+                  </div>
+                  <div class="mt-0.5">
+                    <Loader2
+                      v-if="statusUpdateKey === option.key"
+                      class="h-4 w-4 animate-spin text-blue-600"
+                    />
+                    <Check
+                      v-else-if="option.key === currentStatusKey"
+                      class="h-4 w-4 text-blue-600"
+                    />
+                  </div>
+                </div>
+              </button>
+            </div>
+
+            <p class="text-xs text-slate-500">Tap a status to update. Changes save immediately.</p>
+          </div>
+
+          <DrawerFooter>
+            <DrawerClose as-child>
+              <Button variant="outline">Close</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </div>
+      </DrawerContent>
+    </Drawer>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted, onMounted, nextTick } from 'vue'
+import { ref, onUnmounted, onMounted, nextTick, watch, computed } from 'vue'
 import { toast } from 'vue-sonner'
-import { Search } from 'lucide-vue-next'
+import { useMediaQuery } from '@vueuse/core'
+import { Search, Check, Loader2 } from 'lucide-vue-next'
+import { useRoute } from 'vue-router'
 import KanbanColumn from '@/components/KanbanColumn.vue'
 import AppLayout from '@/components/AppLayout.vue'
 import StaffPanel from '@/components/StaffPanel.vue'
 import AdvancedSearchDialog from '@/components/AdvancedSearchDialog.vue'
+import { Button } from '@/components/ui/button'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import { useOptimizedKanban } from '@/composables/useOptimizedKanban'
 import { useOptimizedDragAndDrop } from '../composables/useOptimizedDragAndDrop'
 import { useJobsStore } from '@/stores/jobs'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { AdvancedFilters } from '@/constants/advanced-filters'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
+
+type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
+type KanbanJob = z.infer<typeof schemas.KanbanJob>
+type StatusOption = {
+  key: string
+  label: string
+  tooltip?: string
+}
 
 const jobsStore = useJobsStore()
+const isDesktop = useMediaQuery('(min-width: 768px)')
+const route = useRoute()
+const mobileAssignStaffId = ref<string | null>(null)
+const mobileAssignStaffName = ref('')
+const isTapAssignActive = computed(() => !isDesktop.value && Boolean(mobileAssignStaffId.value))
+const statusDrawerOpen = ref(false)
+const statusDrawerJob = ref<KanbanJob | null>(null)
+const statusUpdateKey = ref<string | null>(null)
+
+const syncAllowScrollMeta = () => {
+  route.meta.allowScroll = !isDesktop.value
+}
+
+const clearMobileAssignSelection = () => {
+  mobileAssignStaffId.value = null
+  mobileAssignStaffName.value = ''
+}
+
+watch(
+  isDesktop,
+  (value) => {
+    syncAllowScrollMeta()
+    if (value) {
+      clearMobileAssignSelection()
+    }
+  },
+  { immediate: true },
+)
+
+watch(statusDrawerOpen, (open) => {
+  if (!open) {
+    statusDrawerJob.value = null
+    statusUpdateKey.value = null
+  }
+})
+
+const handleMobileAssignSelect = (staff: KanbanStaff) => {
+  if (isDesktop.value) {
+    return
+  }
+
+  if (mobileAssignStaffId.value === staff.id) {
+    clearMobileAssignSelection()
+    return
+  }
+
+  mobileAssignStaffId.value = staff.id
+  mobileAssignStaffName.value = staff.display_name
+}
 
 onMounted(() => {
   jobsStore.setCurrentContext('kanban')
@@ -175,6 +392,8 @@ onUnmounted(() => {
   if (jobsStore.currentContext === 'kanban') {
     jobsStore.setCurrentContext(null)
   }
+  route.meta.allowScroll = false
+  clearMobileAssignSelection()
 })
 
 const {
@@ -183,6 +402,7 @@ const {
   advancedFilters,
   activeStaffFilters,
   selectedMobileStatus,
+  statusChoices,
 
   visibleStatusChoices,
 
@@ -206,6 +426,144 @@ const {
       ensureDraftColumnInitialized()
     }, 100)
   })
+})
+
+const openStatusDrawer = (job: KanbanJob) => {
+  statusDrawerJob.value = job
+  statusDrawerOpen.value = true
+}
+
+const resolveJobStatus = (job: KanbanJob | null): string => {
+  if (!job) return ''
+  return String(job.status_key || job.status || '')
+}
+
+const formatStatusLabel = (statusKey: string): string => {
+  if (!statusKey) return 'Unknown'
+  return statusKey
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
+const currentStatusKey = computed(() => resolveJobStatus(statusDrawerJob.value))
+
+const statusOptions = computed<StatusOption[]>(() => {
+  const seen = new Set<string>()
+  const options: StatusOption[] = []
+  const addOption = (option: StatusOption) => {
+    if (seen.has(option.key)) return
+    seen.add(option.key)
+    options.push(option)
+  }
+
+  visibleStatusChoices.value.forEach((choice) => addOption(choice))
+  statusChoices.value.forEach((choice) => addOption(choice))
+
+  const current = currentStatusKey.value
+  if (current && !seen.has(current)) {
+    addOption({ key: current, label: formatStatusLabel(current), tooltip: 'Current status' })
+  }
+
+  return options
+})
+
+const statusLabelMap = computed(() => {
+  const map = new Map<string, StatusOption>()
+  statusOptions.value.forEach((option) => map.set(option.key, option))
+  return map
+})
+
+const currentStatusLabel = computed(() => {
+  const key = currentStatusKey.value
+  return statusLabelMap.value.get(key)?.label ?? formatStatusLabel(key)
+})
+
+const isStatusUpdating = computed(() => statusUpdateKey.value !== null)
+
+const applyJobStatus = async (statusKey: string) => {
+  if (!statusDrawerJob.value || !statusKey || isStatusUpdating.value) return
+
+  const jobId = statusDrawerJob.value.id
+  if (!jobId) return
+
+  if (statusKey === currentStatusKey.value) {
+    statusDrawerOpen.value = false
+    return
+  }
+
+  statusUpdateKey.value = statusKey
+  const label = statusLabelMap.value.get(statusKey)?.label ?? formatStatusLabel(statusKey)
+  const updated = await updateJobStatus(jobId, statusKey)
+
+  if (updated) {
+    toast.success(`Status updated to ${label}`)
+    statusDrawerOpen.value = false
+  } else {
+    toast.error('Failed to update job status')
+  }
+
+  statusUpdateKey.value = null
+}
+
+const mobileColumnsScroller = ref<HTMLElement | null>(null)
+const mobileColumnRefs = new Map<string, HTMLElement>()
+
+const setMobileColumnRef = (statusKey: string, element: HTMLElement | null) => {
+  if (!element) {
+    mobileColumnRefs.delete(statusKey)
+    return
+  }
+  mobileColumnRefs.set(statusKey, element)
+}
+
+const selectMobileStatus = (statusKey: string) => {
+  if (statusKey) {
+    selectedMobileStatus.value = statusKey
+  }
+}
+
+const scrollMobileColumnIntoView = (statusKey: string) => {
+  if (!statusKey || !mobileColumnsScroller.value) {
+    return
+  }
+
+  const container = mobileColumnsScroller.value
+  const targetColumn = mobileColumnRefs.get(statusKey)
+
+  if (!targetColumn) {
+    return
+  }
+
+  const targetOffset = targetColumn.offsetLeft - container.offsetLeft
+  const centeredPosition = targetOffset - (container.clientWidth - targetColumn.clientWidth) / 2
+
+  container.scrollTo({
+    left: Math.max(0, centeredPosition),
+    behavior: 'smooth',
+  })
+}
+
+watch(
+  selectedMobileStatus,
+  (statusKey) => {
+    if (!statusKey) {
+      return
+    }
+    nextTick(() => {
+      scrollMobileColumnIntoView(statusKey)
+    })
+  },
+  { flush: 'post', immediate: true },
+)
+
+watch(mobileColumnsScroller, (scroller) => {
+  if (scroller && selectedMobileStatus.value) {
+    nextTick(() => {
+      scrollMobileColumnIntoView(selectedMobileStatus.value)
+    })
+  }
 })
 
 // Staff assignment handler with granular revalidation
@@ -277,7 +635,7 @@ const { isDragging, initializeSortable, destroyAllSortables } = useOptimizedDrag
       if (fromStatus !== toStatus) {
         const actualStatus = KanbanCategorizationService.getDefaultStatusForColumn(toStatus)
         // First update the status
-        updateJobStatus(jobId, actualStatus)
+        void updateJobStatus(jobId, actualStatus)
         // Then reorder to the correct position if we have positioning info
         if (beforeId || afterId) {
           setTimeout(() => {
@@ -419,6 +777,134 @@ onUnmounted(() => {
   min-width: 320px;
   max-width: 400px;
   width: 100%;
+}
+
+.staff-panel-container {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 1.5rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  padding: 0.5rem 0.75rem 1rem;
+}
+
+.staff-panel-scroll {
+  overflow-x: auto;
+  padding: 0 0.25rem 0.5rem;
+}
+
+.staff-panel-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.staff-panel-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.6);
+  border-radius: 999px;
+}
+
+.staff-panel-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.staff-panel-scroll :deep(.staff-scroll-list) {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  padding-bottom: 0.25rem;
+}
+
+.staff-panel-scroll :deep(.staff-scroll-list .staff-item) {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 767px) {
+  .staff-panel-scroll {
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 220px;
+  }
+}
+
+.mobile-assign-info {
+  margin-bottom: 0.5rem;
+}
+
+.mobile-status-toolbar {
+  backdrop-filter: blur(8px);
+}
+
+.mobile-status-pills {
+  scrollbar-width: none;
+  padding-bottom: 0.25rem;
+}
+
+.mobile-status-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+  background-color: rgba(255, 255, 255, 0.8);
+  color: #1d4ed8;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.mobile-status-pill--active {
+  background-color: #1d4ed8;
+  color: #fff;
+  border-color: #1d4ed8;
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.35);
+}
+
+.mobile-status-pill__count {
+  font-weight: 700;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.mobile-columns-wrapper {
+  position: relative;
+}
+
+.mobile-columns-scroller {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 0.5rem 0.25rem 1.5rem;
+  scrollbar-width: thin;
+}
+
+.mobile-columns-scroller::-webkit-scrollbar {
+  height: 6px;
+}
+
+.mobile-columns-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mobile-columns-scroller::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 999px;
+}
+
+.mobile-column-panel {
+  flex: 0 0 calc(100vw - 3rem);
+  scroll-snap-align: center;
+  max-width: 420px;
+}
+
+@media (min-width: 480px) {
+  .mobile-column-panel {
+    flex-basis: calc(100vw - 6rem);
+  }
 }
 
 @media (max-width: 767px) {

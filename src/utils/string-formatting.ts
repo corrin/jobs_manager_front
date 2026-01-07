@@ -144,3 +144,15 @@ export function exportToCsv(headers: string[], rows: unknown[][], filename: stri
   const csvContent = toCsvString(headers, rows)
   downloadCsv(csvContent, filename)
 }
+
+/**
+ * Humanizes error messages by converting technical values to readable formats.
+ * - Converts milliseconds to seconds (e.g., "60000ms" -> "60 seconds")
+ * @param message - The error message to humanize
+ * @returns Human-readable error message
+ */
+export function humanizeErrorMessage(message: string): string {
+  if (!message) return message
+  // Convert "60000ms" or "60000 ms" to "60 seconds"
+  return message.replace(/(\d+)\s?ms\b/g, (_, ms) => `${Math.round(Number(ms) / 1000)} seconds`)
+}

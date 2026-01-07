@@ -294,9 +294,10 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
   })
 
   // Optimistic job status update
-  const updateJobStatusOptimistic = async (jobId: string, newStatus: string): Promise<void> => {
+  const updateJobStatusOptimistic = async (jobId: string, newStatus: string): Promise<boolean> => {
     debugLog(`🔄 Starting status update: Job ${jobId} -> ${newStatus}`)
 
+    error.value = null
     // Find the job in current columns
     let sourceColumnId: string | null = null
     let job: KanbanJob | null = null
@@ -313,7 +314,8 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
 
     if (!job || !sourceColumnId) {
       debugLog(`❌ Job ${jobId} not found for status update`)
-      return
+      error.value = 'Job not found for status update'
+      return false
     }
 
     // Determine target column
@@ -333,6 +335,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       debugLog(`🔄 Revalidating columns: ${columnsToRevalidate.join(', ')}`)
       await revalidateColumns(columnsToRevalidate)
       debugLog(`✅ Status update and revalidation completed`)
+      return true
     } catch (err) {
       debugLog(`❌ Failed to update job ${jobId} status:`, err)
       error.value = err instanceof Error ? err.message : 'Failed to update job status'
@@ -347,6 +350,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       } catch (revalidateErr) {
         debugLog(`❌ Emergency revalidation also failed:`, revalidateErr)
       }
+      return false
     }
   }
 

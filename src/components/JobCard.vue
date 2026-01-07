@@ -12,10 +12,11 @@
       'staff-drop-target': isStaffDragOver,
       'staff-operation-loading': isAssigningStaff || isUnassigningStaff,
       'staff-operation-success': operationSuccess,
+      'tap-assign-ready': enableTapAssign && mobileSelectedStaffId,
     }"
     :data-id="job.id || ''"
     :data-job-id="job.id || ''"
-    @click="handleClick"
+    @click="handleCardClick"
     @dragover="handleDragOver"
     @drop="handleDrop"
     @dragenter="handleDragEnter"
@@ -26,6 +27,10 @@
       class="absolute top-1 right-1 w-2 h-2 rounded-full transition-all duration-200"
       :class="isJobSelectedForMovement ? 'bg-blue-500' : 'bg-blue-300 opacity-60'"
     ></div>
+
+    <div v-if="enableTapAssign && mobileSelectedStaffId" class="tap-assign-banner">
+      Tap to assign
+    </div>
 
     <!-- Loading/Success indicator for staff operations -->
     <div
@@ -72,62 +77,75 @@
         #{{ job.job_number }}
       </span>
 
-      <!-- Staff avatars next to job number (unchanged behavior) -->
-      <div
-        ref="jobStaffContainerRef"
-        class="flex gap-1 items-center min-h-5 p-1 rounded transition-colors"
-        :class="{
-          'bg-blue-50 border border-blue-300': isStaffDragTarget,
-          'bg-gray-50 border border-dashed border-gray-300':
-            (!job.people || job.people.length === 0) && !isStaffDragTarget,
-        }"
-      >
+      <div class="flex items-center gap-1">
+        <!-- Staff avatars next to job number (unchanged behavior) -->
         <div
-          v-for="staff in job.people || []"
-          :key="staff.id"
-          class="relative staff-avatar-container"
-          @mouseenter="hoveredStaffId = staff.id"
-          @mouseleave="hoveredStaffId = null"
+          ref="jobStaffContainerRef"
+          class="flex gap-1 items-center min-h-5 p-1 rounded transition-colors"
+          :class="{
+            'bg-blue-50 border border-blue-300': isStaffDragTarget,
+            'bg-gray-50 border border-dashed border-gray-300':
+              (!job.people || job.people.length === 0) && !isStaffDragTarget,
+          }"
         >
-          <StaffAvatar
-            :staff="staff"
-            size="small"
-            :title="staff.display_name"
-            :data-staff-id="staff.id"
-            class="cursor-pointer transition-all duration-200"
-            :class="{ 'opacity-75 scale-95': hoveredStaffId === staff.id }"
-          />
-          <!-- X indicator on hover -->
           <div
-            v-if="hoveredStaffId === staff.id"
-            @click="(event) => handleStaffClick(staff, event)"
-            @mousedown.stop.prevent
-            @mouseup.stop.prevent
-            @dragstart.stop.prevent
-            @drag.stop.prevent
-            class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md z-10"
-            :title="`Remove ${staff.display_name} from job`"
-            style="pointer-events: auto; user-select: none"
+            v-for="staff in job.people || []"
+            :key="staff.id"
+            class="relative staff-avatar-container"
+            @mouseenter="hoveredStaffId = staff.id"
+            @mouseleave="hoveredStaffId = null"
           >
-            <svg
-              class="w-2.5 h-2.5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+            <StaffAvatar
+              :staff="staff"
+              size="small"
+              :title="staff.display_name"
+              :data-staff-id="staff.id"
+              class="cursor-pointer transition-all duration-200"
+              :class="{ 'opacity-75 scale-95': hoveredStaffId === staff.id }"
+            />
+            <!-- X indicator on hover -->
+            <div
+              v-if="hoveredStaffId === staff.id"
+              @click="(event) => handleStaffClick(staff, event)"
+              @mousedown.stop.prevent
+              @mouseup.stop.prevent
+              @dragstart.stop.prevent
+              @drag.stop.prevent
+              class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md z-10"
+              :title="`Remove ${staff.display_name} from job`"
+              style="pointer-events: auto; user-select: none"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="3"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+              <svg
+                class="w-2.5 h-2.5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="3"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+          </div>
+          <div v-if="!job.people || job.people.length === 0" class="text-[10px] text-gray-400 px-1">
+            +
           </div>
         </div>
-        <div v-if="!job.people || job.people.length === 0" class="text-[10px] text-gray-400 px-1">
-          +
-        </div>
+
+        <button
+          type="button"
+          class="lg:hidden inline-flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white/90 text-gray-500 shadow-sm transition hover:border-gray-300 hover:text-gray-700 active:scale-95"
+          aria-label="Change job status"
+          title="Change job status"
+          @pointerdown.stop
+          @click.stop="emit('status-change', job)"
+        >
+          <Settings2 class="h-4 w-4" />
+        </button>
       </div>
     </div>
 
@@ -155,6 +173,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
+import { Settings2 } from 'lucide-vue-next'
 import StaffAvatar from '@/components/StaffAvatar.vue'
 import { useJobCard } from '@/composables/useJobCard'
 import { schemas } from '@/api/generated/api'
@@ -172,12 +191,16 @@ const props = withDefaults(
     isStaffDragTarget?: boolean
     isMovementModeActive?: boolean
     isJobSelectedForMovement?: boolean
+    mobileSelectedStaffId?: string | null
+    enableTapAssign?: boolean
   }>(),
   {
     isDragging: false,
     isStaffDragTarget: false,
     isMovementModeActive: false,
     isJobSelectedForMovement: false,
+    mobileSelectedStaffId: null,
+    enableTapAssign: false,
   },
 )
 
@@ -188,6 +211,7 @@ const emit = defineEmits<{
   'card-ready': [payload: { jobId: string; element: HTMLElement }]
   'staff-assigned': [payload: { staffId: string; jobId: string }]
   'staff-unassigned': [payload: { staffId: string; jobId: string }]
+  'status-change': [job: KanbanJob]
 }>()
 
 const jobStaffContainerRef = ref<HTMLElement>()
@@ -238,38 +262,7 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
 
   const staffId = dragData
 
-  const payload: AssignJobRequest = {
-    job_id: props.job.id,
-    staff_id: staffId,
-  }
-
-  if (staffId && props.job.id) {
-    isAssigningStaff.value = true
-    operationSuccess.value = false
-
-    try {
-      await api.job_api_job_assignment_create(payload, {
-        params: {
-          job_id: props.job.id,
-        },
-      })
-
-      // Show success indicator
-      isAssigningStaff.value = false
-      operationSuccess.value = true
-
-      // Hide success indicator after 1.5 seconds
-      setTimeout(() => {
-        operationSuccess.value = false
-      }, 1500)
-
-      emit('staff-assigned', { staffId, jobId: props.job.id })
-    } catch (error) {
-      isAssigningStaff.value = false
-      console.error('Error assigning staff to job:', error)
-      toast.error('Failed to assign staff to job')
-    }
-  }
+  await assignStaffToJob(staffId)
 }
 
 const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<void> => {
@@ -306,6 +299,53 @@ const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<
 }
 
 const { handleClick } = useJobCard(props.job, emit)
+
+const assignStaffToJob = async (staffId: string | null): Promise<void> => {
+  if (!staffId || !props.job.id) {
+    return
+  }
+
+  if (isAssigningStaff.value) {
+    return
+  }
+
+  const payload: AssignJobRequest = {
+    job_id: props.job.id,
+    staff_id: staffId,
+  }
+
+  isAssigningStaff.value = true
+  operationSuccess.value = false
+
+  try {
+    await api.job_api_job_assignment_create(payload, {
+      params: {
+        job_id: props.job.id,
+      },
+    })
+
+    isAssigningStaff.value = false
+    operationSuccess.value = true
+
+    setTimeout(() => {
+      operationSuccess.value = false
+    }, 1500)
+
+    emit('staff-assigned', { staffId, jobId: props.job.id })
+  } catch (error) {
+    isAssigningStaff.value = false
+    console.error('Error assigning staff to job:', error)
+  }
+}
+
+const handleCardClick = async (): Promise<void> => {
+  if (props.enableTapAssign && props.mobileSelectedStaffId) {
+    await assignStaffToJob(props.mobileSelectedStaffId)
+    return
+  }
+
+  handleClick()
+}
 
 const descriptionOrName = computed(() => {
   const d = (props.job.description || '').trim()
@@ -345,6 +385,7 @@ onMounted(() => {
   min-height: 120px;
   height: auto;
   align-self: start;
+  position: relative;
   transition:
     box-shadow 0.15s,
     border-color 0.15s;
@@ -399,6 +440,25 @@ onMounted(() => {
   border-color: #3b82f6 !important;
   transform: scale(1.02);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.tap-assign-ready {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.4);
+}
+
+.tap-assign-banner {
+  position: absolute;
+  bottom: 0.35rem;
+  right: 0.35rem;
+  background: rgba(37, 99, 235, 0.9);
+  color: #fff;
+  font-size: 0.6rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
 }
 
 .staff-item {
