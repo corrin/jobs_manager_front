@@ -13,7 +13,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Single worker to avoid parallel database conflicts
   reporter: [
-    ['html'],
+    ['html', { open: 'never' }], // Don't auto-open report (blocks process)
     ['list', { printSteps: true }], // Show steps and console output
   ],
 

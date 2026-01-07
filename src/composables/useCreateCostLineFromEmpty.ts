@@ -5,6 +5,7 @@ import { schemas } from '../api/generated/api'
 import type { z } from 'zod'
 import { debugLog } from '../utils/debug'
 import { toLocalDateString } from '../utils/dateUtils'
+import { useJobsStore } from '../stores/jobs'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
@@ -24,6 +25,7 @@ export interface UseCreateCostLineFromEmptyOptions {
 
 export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOptions) {
   const { costLines, jobId, costSetKind, onSuccess, beforeCreate } = options
+  const jobsStore = useJobsStore()
 
   /**
    * Create a cost line from an empty line that meets baseline criteria
@@ -39,6 +41,7 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
     try {
       const now = new Date().toISOString()
       const accountingDate = toLocalDateString()
+      const jobHeader = jobsStore.headersById[jobId]
       const createPayload: CostLineCreateUpdate = {
         kind: line.kind as 'material' | 'time' | 'adjust',
         desc: line.desc || '',
@@ -50,6 +53,7 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
         meta: (line.meta as Record<string, unknown>) || {},
         created_at: now,
         updated_at: now,
+        xero_pay_item: line.kind === 'time' ? (jobHeader?.default_xero_pay_item_id ?? null) : null,
       }
 
       const created = await costlineService.createCostLine(jobId, costSetKind, createPayload)

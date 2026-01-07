@@ -140,6 +140,8 @@ function collectAndAppendTimings() {
   console.log(`   Run ID: ${runId} | ${allActions.length} actions → ${aggregateFile}`)
 }
 
+const LOCK_FILE = '/tmp/playwright-e2e.lock'
+
 export default async function globalTeardown() {
   // Collect timing data first (before restoring DB clears test-results)
   try {
@@ -149,6 +151,11 @@ export default async function globalTeardown() {
   }
 
   const scriptPath = path.join(__dirname, 'restore-db.sh')
-  console.log('\n🔄 Restoring database after tests...')
+  console.log('Restoring database after tests...')
   execSync(`bash "${scriptPath}"`, { stdio: 'inherit' })
+
+  // Remove lock file
+  if (fs.existsSync(LOCK_FILE)) {
+    fs.unlinkSync(LOCK_FILE)
+  }
 }

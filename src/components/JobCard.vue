@@ -262,38 +262,7 @@ const handleDrop = async (event: DragEvent): Promise<void> => {
 
   const staffId = dragData
 
-  const payload: AssignJobRequest = {
-    job_id: props.job.id,
-    staff_id: staffId,
-  }
-
-  if (staffId && props.job.id) {
-    isAssigningStaff.value = true
-    operationSuccess.value = false
-
-    try {
-      await api.job_api_job_assignment_create(payload, {
-        params: {
-          job_id: props.job.id,
-        },
-      })
-
-      // Show success indicator
-      isAssigningStaff.value = false
-      operationSuccess.value = true
-
-      // Hide success indicator after 1.5 seconds
-      setTimeout(() => {
-        operationSuccess.value = false
-      }, 1500)
-
-      emit('staff-assigned', { staffId, jobId: props.job.id })
-    } catch (error) {
-      isAssigningStaff.value = false
-      console.error('Error assigning staff to job:', error)
-      toast.error('Failed to assign staff to job')
-    }
-  }
+  await assignStaffToJob(staffId)
 }
 
 const handleStaffClick = async (staff: KanbanJobPerson, event?: Event): Promise<void> => {

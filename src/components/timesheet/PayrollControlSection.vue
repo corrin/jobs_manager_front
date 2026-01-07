@@ -128,24 +128,11 @@
 
     <!-- Action Buttons -->
     <div class="flex items-center space-x-2 flex-wrap gap-2">
-      <!-- Create Pay Run Button -->
+      <!-- Post to Xero & Create Pay Run Button -->
       <Button
         v-if="!payRunExists && !postingBlocked"
-        @click="$emit('createPayRun')"
-        :disabled="creating || !canCreatePayRun"
-        variant="default"
-        size="sm"
-        class="bg-blue-600 hover:bg-blue-700 text-white"
-      >
-        <CalendarPlus class="h-4 w-4 mr-2" />
-        {{ creating ? 'Creating...' : 'Create Pay Run' }}
-      </Button>
-
-      <!-- Post All to Xero Button -->
-      <Button
-        v-if="payRunExists && !isPosted && !postSuccess"
         @click="$emit('postAllToXero')"
-        :disabled="!canPost || posting"
+        :disabled="posting || creating"
         variant="default"
         size="sm"
         :class="hasDraft ? 'bg-amber-600 hover:bg-amber-700' : ''"
@@ -157,9 +144,10 @@
             ({{ postingProgress.currentStaffName }})
           </span>
         </template>
-        <template v-else-if="posting"> Posting... </template>
+        <template v-else-if="posting"> Posting timesheets... </template>
+        <template v-else-if="creating"> Creating pay run... </template>
         <template v-else-if="hasDraft"> Overwrite Draft </template>
-        <template v-else> Post All to Xero </template>
+        <template v-else> Post to Xero </template>
       </Button>
 
       <!-- View in Xero Button -->
@@ -175,8 +163,8 @@
       </Button>
 
       <!-- Help Text -->
-      <div v-if="!payRunExists" class="text-xs text-gray-500">
-        Create a pay run before posting staff hours to Xero
+      <div v-if="!payRunExists && !postingBlocked" class="text-xs text-gray-500">
+        Posts timesheets and creates a draft pay run in Xero
       </div>
       <div v-else-if="isPosted" class="text-xs text-gray-500 flex items-center">
         <Lock class="h-3 w-3 mr-1" />
@@ -205,7 +193,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Calendar,
-  CalendarPlus,
   Send,
   CheckCircle2,
   Lock,
@@ -257,7 +244,6 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 defineEmits<{
-  createPayRun: []
   postAllToXero: []
   refreshPayRuns: []
   dismissError: []
@@ -266,7 +252,6 @@ defineEmits<{
 
 const payRunExists = computed(() => props.payRunStatus !== null)
 const isPosted = computed(() => props.payRunStatus === 'Posted')
-const canPost = computed(() => payRunExists.value && !isPosted.value && !props.postingBlocked)
 
 // Draft is for this week if draftWeekStart matches current week
 const hasDraft = computed(() => props.draftWeekStart === props.weekStartDate)

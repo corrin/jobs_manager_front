@@ -2703,6 +2703,7 @@ const CreatePayRunResponse = z
     period_start_date: z.string(),
     period_end_date: z.string(),
     payment_date: z.string(),
+    xero_url: z.string(),
   })
   .passthrough()
 const PayRunSyncResponseRequest = z
@@ -2757,6 +2758,7 @@ const WeeklyStaffDataWeeklyHours = z
     sick_leave_hours: z.number().gt(-100000000).lt(100000000),
     annual_leave_hours: z.number().gt(-100000000).lt(100000000),
     bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
+    daily_cost: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklyStaffData = z
@@ -2776,6 +2778,7 @@ const WeeklyStaffData = z
     total_sick_leave_hours: z.number().gt(-100000000).lt(100000000),
     total_annual_leave_hours: z.number().gt(-100000000).lt(100000000),
     total_bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
+    weekly_cost: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklySummary = z
