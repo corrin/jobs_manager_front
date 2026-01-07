@@ -344,7 +344,11 @@ export function useTimesheetEntryCalculations(companyDefaults: Ref<CompanyDefaul
     const dateValue =
       typeof metaRec['date'] === 'string' ? (metaRec['date'] as string) : costLine.accounting_date
 
-    const backendRateMultiplier = metaRec.wage_rate_multiplier as number
+    const backendRateMultiplier =
+      typeof metaRec.wage_rate_multiplier === 'number' &&
+      !Number.isNaN(metaRec.wage_rate_multiplier)
+        ? metaRec.wage_rate_multiplier
+        : 1.0
     const hours = costLine.quantity ?? 0
 
     // ✅ ALWAYS USE CORRECT FORMULA: hours × rate_multiplier × staff_wage_rate

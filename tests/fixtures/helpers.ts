@@ -131,8 +131,11 @@ export const gridCell = (page: Page, rowId: string, colId: string) =>
  */
 export async function dismissToasts(page: Page) {
   const toasts = page.locator('[data-sonner-toast]')
-  const toastCount = await toasts.count()
-  if (toastCount > 0) {
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const toastCount = await toasts.count()
+    if (toastCount === 0) return
+
     console.log(`Dismissing ${toastCount} toast(s)...`)
     for (let i = 0; i < toastCount; i++) {
       const toast = toasts.nth(i)
@@ -144,6 +147,7 @@ export async function dismissToasts(page: Page) {
       }
       await page.waitForTimeout(100)
     }
+
     await page.waitForTimeout(300)
   }
 }
@@ -270,6 +274,7 @@ export async function createTestJob(page: Page, jobNameSuffix: string): Promise<
   await clientInput.fill('ABC')
   await page.waitForTimeout(500) // Give search time to trigger
   await autoId(page, 'ClientLookup-results').waitFor({ timeout: 10000 })
+
   await page.getByRole('option', { name: new RegExp(TEST_CLIENT_NAME) }).click()
   await expect(clientInput).toHaveValue(TEST_CLIENT_NAME)
 
@@ -296,6 +301,7 @@ export async function createTestJob(page: Page, jobNameSuffix: string): Promise<
   }
 
   await autoId(page, 'ContactSelectionModal-container').waitFor({ state: 'hidden', timeout: 10000 })
+  await dismissToasts(page)
 
   // Set pricing method to T&M and submit
   await autoId(page, 'JobCreateView-pricing-method').selectOption('time_materials')

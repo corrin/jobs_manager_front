@@ -1,10 +1,13 @@
-import { execSync } from 'child_process'
+import { spawnSync } from 'child_process'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import * as fs from 'fs'
+import os from 'os'
 import AdmZip from 'adm-zip'
+import { getBackupsDir, getDbConfig } from './db-backup-utils'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const LOCK_FILE = path.join(os.tmpdir(), 'playwright-e2e.lock')
 
 interface TraceAction {
   runId: string
@@ -99,7 +102,6 @@ function collectAndAppendTimings() {
   const runId = Math.random().toString(36).substring(2, 10)
   const runDate = new Date().toISOString()
 
-  // Find all trace.zip files
   const traces: string[] = []
   for (const entry of fs.readdirSync(testResultsDir, { withFileTypes: true })) {
     if (entry.isDirectory()) {
@@ -110,14 +112,13 @@ function collectAndAppendTimings() {
 
   if (traces.length === 0) return
 
-  console.log(`\n📊 Collecting timing data from ${traces.length} trace(s)...`)
+  console.log(`\n[trace] Collecting timing data from ${traces.length} trace(s)...`)
 
   let allActions: TraceAction[] = []
   for (const trace of traces) {
     allActions = allActions.concat(extractTimingFromTrace(trace, runId, runDate))
   }
 
-  // Append to aggregate CSV
   const header = 'run_id,run_date,test_name,type,action,selector,duration_ms,error\n'
   const rows = allActions
     .map((a) =>
@@ -137,24 +138,59 @@ function collectAndAppendTimings() {
   const needsHeader = !fs.existsSync(aggregateFile)
   fs.appendFileSync(aggregateFile, (needsHeader ? header : '') + rows + '\n')
 
-  console.log(`   Run ID: ${runId} | ${allActions.length} actions → ${aggregateFile}`)
+  console.log(`[trace] Run ID: ${runId} | ${allActions.length} actions -> ${aggregateFile}`)
 }
 
-const LOCK_FILE = '/tmp/playwright-e2e.lock'
+function restoreDatabase() {
+  console.log('\n[db] Restoring database after tests...')
+  const dbConfig = getDbConfig()
+  const backupDir = getBackupsDir()
+  const latestBackupPath = path.join(backupDir, '.latest_backup')
+
+  if (!fs.existsSync(latestBackupPath)) {
+    console.warn('[db] No backup found. Skipping restore.')
+    return
+  }
+
+  const backupFile = fs.readFileSync(latestBackupPath, 'utf8').trim()
+  if (!backupFile || !fs.existsSync(backupFile)) {
+    console.warn(`[db] Backup file not found: ${backupFile}. Skipping restore.`)
+    return
+  }
+
+  const inputFd = fs.openSync(backupFile, 'r')
+  const result = spawnSync(
+    'mysql',
+    [
+      '-h',
+      dbConfig.host,
+      '-P',
+      dbConfig.port,
+      '-u',
+      dbConfig.user,
+      `-p${dbConfig.password}`,
+      dbConfig.database,
+    ],
+    { stdio: [inputFd, 'inherit', 'inherit'] },
+  )
+  fs.closeSync(inputFd)
+
+  if (result.status !== 0) {
+    throw new Error(`Database restore failed (exit code ${result.status}).`)
+  }
+
+  console.log('[db] Database restored successfully.')
+}
 
 export default async function globalTeardown() {
-  // Collect timing data first (before restoring DB clears test-results)
   try {
     collectAndAppendTimings()
   } catch (e) {
     console.error('Failed to collect timing data:', e)
   }
 
-  const scriptPath = path.join(__dirname, 'restore-db.sh')
-  console.log('Restoring database after tests...')
-  execSync(`bash "${scriptPath}"`, { stdio: 'inherit' })
+  restoreDatabase()
 
-  // Remove lock file
   if (fs.existsSync(LOCK_FILE)) {
     fs.unlinkSync(LOCK_FILE)
   }

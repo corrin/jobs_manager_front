@@ -6,6 +6,7 @@ import axios from '@/plugins/axios'
 import type { z } from 'zod'
 
 type JobFile = z.infer<typeof schemas.JobFile>
+const PREVIEW_UNAVAILABLE_MESSAGE = 'Preview unavailable for this file'
 
 export function useJobAttachments(jobId: Ref<string>) {
   const attachments = ref<JobFile[]>([])
@@ -100,7 +101,7 @@ export function useJobAttachments(jobId: Ref<string>) {
     const id = String(file.id)
     if (previewUrls.value.has(id)) return
     if (!file.download_url) {
-      toast.error('Preview unavailable for this file')
+      toast.error(PREVIEW_UNAVAILABLE_MESSAGE)
       return
     }
     const loadingSet = new Set(previewLoading.value)
@@ -118,7 +119,7 @@ export function useJobAttachments(jobId: Ref<string>) {
       const errSet = new Set(previewErrors.value)
       errSet.add(id)
       previewErrors.value = errSet
-      toast.error('Preview unavailable for this file')
+      toast.error(PREVIEW_UNAVAILABLE_MESSAGE)
     } finally {
       const loadingSetDone = new Set(previewLoading.value)
       loadingSetDone.delete(id)

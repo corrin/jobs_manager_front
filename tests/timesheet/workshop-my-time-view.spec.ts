@@ -57,9 +57,12 @@ async function getHeaderDateLabel(page: Page): Promise<string> {
 
 async function selectJobInPicker(page: Page, jobNumber: string): Promise<void> {
   await autoId(page, 'WorkshopTimesheetEntryDrawer-job-picker').click()
-  await expect(page.getByText('Select a job')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('heading', { name: 'Select a job' })).toBeVisible({
+    timeout: 10000,
+  })
 
   const searchInput = autoId(page, 'WorkshopJobPickerDrawer-search')
+  await expect(searchInput).toBeVisible({ timeout: 10000 })
   await searchInput.fill(jobNumber)
 
   const jobRow = page.locator('tbody tr').filter({ hasText: `#${jobNumber}` })
