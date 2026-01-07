@@ -335,7 +335,7 @@ import {
   navigateWeek as navigateWeekDate,
 } from '@/services/date.service'
 import { fetchWeeklyOverview, formatHours } from '@/services/weekly-timesheet.service'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, humanizeErrorMessage } from '@/utils/string-formatting'
 import {
   createPayRun,
   postStaffWeek,
@@ -661,7 +661,8 @@ async function loadData(): Promise<void> {
       )
     }
   } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const rawMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = humanizeErrorMessage(rawMessage)
     error.value = `Failed to load weekly timesheet data. Please try again. ${errorMessage}`
 
     debugLog('Error while loading weekly timesheet data:', {
