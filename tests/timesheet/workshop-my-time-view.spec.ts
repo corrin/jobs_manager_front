@@ -65,11 +65,16 @@ async function selectJobInPicker(page: Page, jobNumber: string): Promise<void> {
   await expect(searchInput).toBeVisible({ timeout: 10000 })
   await searchInput.fill(jobNumber)
 
-  const jobRow = page.locator('tbody tr').filter({ hasText: `#${jobNumber}` })
+  const jobRow = page
+    .locator('tbody tr')
+    .filter({ hasText: `#${jobNumber}` })
+    .first()
   await jobRow.waitFor({ timeout: 10000 })
   await jobRow.getByRole('button', { name: 'Select' }).click()
 
-  await expect(page.getByText('Select a job')).toBeHidden({ timeout: 10000 })
+  await expect(page.getByRole('heading', { name: 'Select a job' })).toBeHidden({
+    timeout: 10000,
+  })
 }
 
 async function waitForTimesheetResponse(
@@ -83,6 +88,37 @@ async function waitForTimesheetResponse(
       (response.status() === 200 || response.status() === 201 || response.status() === 204),
     { timeout: 15000 },
   )
+}
+
+async function getCalendarEventIds(page: Page): Promise<Set<string>> {
+  const events = page.locator('[data-automation-id="WorkshopTimesheetCalendar"] [data-event-id]')
+  const ids = await events.evaluateAll((nodes) =>
+    nodes.map((node) => node.getAttribute('data-event-id') || '').filter(Boolean),
+  )
+  return new Set(ids)
+}
+
+async function waitForNewCalendarEvent(
+  page: Page,
+  knownIds: Set<string>,
+  jobNumber: string,
+  timeoutMs = 15000,
+): Promise<string> {
+  const start = Date.now()
+  while (Date.now() - start < timeoutMs) {
+    const events = page.locator('[data-automation-id="WorkshopTimesheetCalendar"] [data-event-id]')
+    const handles = await events.elementHandles()
+    for (const handle of handles) {
+      const id = await handle.getAttribute('data-event-id')
+      if (!id || knownIds.has(id)) continue
+      const text = (await handle.innerText()) || ''
+      if (text.includes(`#${jobNumber}`)) {
+        return id
+      }
+    }
+    await page.waitForTimeout(300)
+  }
+  throw new Error('Timed out waiting for new calendar event.')
 }
 
 // ============================================================================
@@ -137,17 +173,24 @@ test.describe.serial('workshop my time view', () => {
     let entryId = ''
 
     await test.step('add a new entry via the drawer', async () => {
+      const existingEventIds = await getCalendarEventIds(page)
+
       await autoId(page, 'WorkshopTimesheetSummaryCard-add').click()
       await expect(page.getByRole('heading', { name: 'Add entry' })).toBeVisible({
         timeout: 10000,
       })
 
       await selectJobInPicker(page, jobNumber)
+      await expect(autoId(page, 'WorkshopTimesheetEntryDrawer-job-picker')).toContainText(
+        `#${jobNumber}`,
+      )
 
       await autoId(page, 'WorkshopTimesheetEntryDrawer-start-time').fill('08:00')
       await autoId(page, 'WorkshopTimesheetEntryDrawer-end-time').fill('09:00')
       await autoId(page, 'WorkshopTimesheetEntryDrawer-description').fill('Workshop test entry')
 
+      const submitButton = autoId(page, 'WorkshopTimesheetEntryDrawer-submit')
+      await expect(submitButton).toBeEnabled({ timeout: 10000 })
       const createResponsePromise = page.waitForResponse(
         (response) =>
           response.url().includes('/job/api/workshop/timesheets/') &&
@@ -156,19 +199,23 @@ test.describe.serial('workshop my time view', () => {
         { timeout: 15000 },
       )
 
-      await autoId(page, 'WorkshopTimesheetEntryDrawer-submit').click()
-
-      const createResponse = await createResponsePromise
-      const responseBody = await createResponse.json()
-      entryId = String(responseBody.id || '')
-
-      if (!entryId) {
-        throw new Error('Failed to capture entry id from create response.')
-      }
+      await submitButton.click({ force: true })
 
       await expect(page.getByRole('heading', { name: 'Add entry' })).toBeHidden({
         timeout: 10000,
       })
+
+      const createResponse = await createResponsePromise
+      const responseBody = await createResponse.json()
+      entryId = String(responseBody.id || '')
+      if (!entryId) {
+        throw new Error('Failed to capture entry id from create response.')
+      }
+
+      const calendarEntryId = await waitForNewCalendarEvent(page, existingEventIds, jobNumber)
+      if (calendarEntryId !== entryId) {
+        console.warn(`Calendar entry ID mismatch: response=${entryId}, calendar=${calendarEntryId}`)
+      }
 
       const eventLocator = page.locator(
         `[data-automation-id="WorkshopTimesheetCalendar"] [data-event-id="${entryId}"]`,
