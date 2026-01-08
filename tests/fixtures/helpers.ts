@@ -132,24 +132,22 @@ export const gridCell = (page: Page, rowId: string, colId: string) =>
 export async function dismissToasts(page: Page) {
   const toasts = page.locator('[data-sonner-toast]')
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const toastCount = await toasts.count()
-    if (toastCount === 0) return
+  const toastCount = await toasts.count()
+  if (toastCount === 0) return
 
-    console.log(`Dismissing ${toastCount} toast(s)...`)
-    for (let i = 0; i < toastCount; i++) {
-      const toast = toasts.nth(i)
-      const closeBtn = toast.locator('button[aria-label="Close toast"]')
-      if (await closeBtn.count()) {
-        await closeBtn.click()
-      } else {
-        await toast.click()
-      }
-      await page.waitForTimeout(100)
+  for (let i = 0; i < toastCount; i++) {
+    const toast = toasts.nth(i)
+    const closeBtn = toast.locator('button[aria-label="Close toast"]')
+    if (await closeBtn.count()) {
+      await closeBtn.click()
+    } else {
+      await toast.click()
     }
 
-    await page.waitForTimeout(300)
+    await page.waitForTimeout(100)
   }
+
+  await page.waitForTimeout(300)
 }
 
 /**
