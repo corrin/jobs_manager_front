@@ -7,10 +7,39 @@
  * Also exports ensureXeroConnected() for use in global-setup.ts
  */
 
-import { chromium } from '@playwright/test'
+import { chromium, type Browser } from '@playwright/test'
 import dotenv from 'dotenv'
 
 dotenv.config()
+
+async function launchBrowserWithFallback(): Promise<Browser> {
+  try {
+    return await chromium.launch({ headless: true })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    const isPermissionError = message.includes('spawn EPERM')
+    const preferredChannel = process.env.PLAYWRIGHT_BROWSER_CHANNEL
+
+    if (!isPermissionError && !preferredChannel) {
+      throw error
+    }
+
+    const channelsToTry = preferredChannel ? [preferredChannel] : ['msedge', 'chrome']
+
+    for (const channel of channelsToTry) {
+      try {
+        console.log(`[xero] Retrying Chromium launch with channel: ${channel}`)
+        return await chromium.launch({ headless: true, channel })
+      } catch (channelError) {
+        const channelMessage =
+          channelError instanceof Error ? channelError.message : String(channelError)
+        console.warn(`[xero] Failed to launch with channel ${channel}: ${channelMessage}`)
+      }
+    }
+
+    throw error
+  }
+}
 
 export async function ensureXeroConnected(): Promise<void> {
   const xeroUsername = process.env.XERO_USERNAME
@@ -31,7 +60,7 @@ export async function ensureXeroConnected(): Promise<void> {
     throw new Error('VITE_FRONTEND_BASE_URL must be set in .env')
   }
 
-  const browser = await chromium.launch({ headless: true })
+  const browser = await launchBrowserWithFallback()
   const page = await browser.newPage()
 
   try {

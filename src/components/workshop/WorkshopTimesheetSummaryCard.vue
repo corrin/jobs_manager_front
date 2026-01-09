@@ -46,13 +46,19 @@ const emit = defineEmits<{
           variant="outline"
           size="sm"
           class="h-9"
+          data-automation-id="WorkshopTimesheetSummaryCard-refresh"
           :disabled="isDayLoading"
           @click="emit('refresh')"
         >
           <RefreshCcw class="h-4 w-4 mr-1" />
           Refresh day
         </Button>
-        <Button size="sm" class="h-9" @click="emit('add')">
+        <Button
+          size="sm"
+          class="h-9"
+          data-automation-id="WorkshopTimesheetSummaryCard-add"
+          @click="emit('add')"
+        >
           <Plus class="h-4 w-4 mr-1" />
           Add entry
         </Button>

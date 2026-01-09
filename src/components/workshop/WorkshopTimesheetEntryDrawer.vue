@@ -90,6 +90,7 @@ const isBillable = computed({
     <DrawerOverlay />
     <DrawerContent
       class="flex !h-[90vh] !max-h-[90vh] min-h-0 flex-col overflow-hidden sm:!h-auto sm:!max-h-[85vh]"
+      data-automation-id="WorkshopTimesheetEntryDrawer"
     >
       <div class="mx-auto flex h-full w-full max-w-3xl flex-col min-h-0">
         <DrawerHeader>
@@ -106,6 +107,7 @@ const isBillable = computed({
               <span>Job</span>
               <button
                 class="rounded-md border px-3 h-[44px] text-left text-sm bg-muted/40 hover:bg-muted/70 transition-colors flex items-center justify-between"
+                data-automation-id="WorkshopTimesheetEntryDrawer-job-picker"
                 @click="onOpenJobPicker"
               >
                 <span class="truncate">
@@ -123,6 +125,7 @@ const isBillable = computed({
                 v-model="startTime"
                 type="time"
                 class="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                data-automation-id="WorkshopTimesheetEntryDrawer-start-time"
               />
             </label>
             <label class="text-sm font-medium text-foreground flex flex-col gap-1">
@@ -131,6 +134,7 @@ const isBillable = computed({
                 v-model="endTime"
                 type="time"
                 class="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                data-automation-id="WorkshopTimesheetEntryDrawer-end-time"
               />
             </label>
             <div
@@ -187,6 +191,7 @@ const isBillable = computed({
               <select
                 v-model="rateMultiplier"
                 class="w-full rounded-md border px-3 h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                data-automation-id="WorkshopTimesheetEntryDrawer-rate"
               >
                 <option value="Ord">Ord</option>
                 <option value="1.5">1.5</option>
@@ -196,7 +201,12 @@ const isBillable = computed({
             <label class="text-sm font-medium text-foreground flex flex-col gap-1">
               <span>Billable</span>
               <div class="flex items-center gap-2 h-[44px]">
-                <input type="checkbox" class="h-4 w-4 accent-primary" v-model="isBillable" />
+                <input
+                  type="checkbox"
+                  class="h-4 w-4 accent-primary"
+                  data-automation-id="WorkshopTimesheetEntryDrawer-billable"
+                  v-model="isBillable"
+                />
                 <span>Billable</span>
               </div>
             </label>
@@ -207,6 +217,7 @@ const isBillable = computed({
                 rows="3"
                 class="mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="What was done"
+                data-automation-id="WorkshopTimesheetEntryDrawer-description"
               />
             </label>
           </div>
@@ -219,6 +230,7 @@ const isBillable = computed({
               size="sm"
               class="h-9"
               :disabled="isSubmitting || isDayLoading"
+              data-automation-id="WorkshopTimesheetEntryDrawer-delete"
               @click="onDeleteEntry"
             >
               <Trash2 class="mr-2 h-4 w-4" />
@@ -226,7 +238,13 @@ const isBillable = computed({
             </Button>
             <div class="ml-auto flex items-center gap-2">
               <DrawerClose as-child>
-                <Button variant="outline" size="sm" class="h-9" @click="onResetForm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-9"
+                  data-automation-id="WorkshopTimesheetEntryDrawer-cancel"
+                  @click="onResetForm"
+                >
                   <Ban class="mr-2 h-4 w-4" />
                   Cancel
                 </Button>
@@ -235,6 +253,7 @@ const isBillable = computed({
                 size="sm"
                 class="h-9"
                 :disabled="isSubmitting || isDayLoading"
+                data-automation-id="WorkshopTimesheetEntryDrawer-submit"
                 @click="onSubmit"
               >
                 <Save class="mr-2 h-4 w-4" />

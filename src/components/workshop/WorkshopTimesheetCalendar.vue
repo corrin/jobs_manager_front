@@ -19,6 +19,7 @@ defineProps<Props>()
   <CalendarView
     :ref="(instance: CalendarViewInstance | null) => onCalendarReady(instance)"
     class="workshop-calendar w-full rounded-xl border bg-white shadow-sm"
+    data-automation-id="WorkshopTimesheetCalendar"
     height="auto"
     :initial-date="initialDate"
     initial-view="day"

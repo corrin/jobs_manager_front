@@ -193,7 +193,10 @@ const handleSaveContact = async () => {
   })
 
   if (success) {
-    toast.success(`Contact ${isEditing.value ? 'updated' : 'created'} successfully!`)
+    toast.success(`Contact ${isEditing.value ? 'updated' : 'created'} successfully!`, {
+      dismissible: true,
+      position: 'bottom-left',
+    })
   } else {
     toast.error(
       `Failed to ${isEditing.value ? 'update' : 'create'} contact. Please check the form and try again.`,

@@ -6488,7 +6488,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
+      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
       parameters:
         - in: query
           name: start_date
@@ -7830,11 +7830,13 @@ components:
         last_xero_sync:
           type: string
           format: date-time
+          readOnly: true
           nullable: true
           description: The last time Xero data was synchronized
         last_xero_deep_sync:
           type: string
           format: date-time
+          readOnly: true
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
@@ -7931,6 +7933,8 @@ components:
       required:
         - company_name
         - created_at
+        - last_xero_deep_sync
+        - last_xero_sync
         - updated_at
     CompanyDefaultsJobDetail:
       type: object
@@ -8083,17 +8087,6 @@ components:
         fri_end:
           type: string
           format: time
-        last_xero_sync:
-          type: string
-          format: date-time
-          nullable: true
-          description: The last time Xero data was synchronized
-        last_xero_deep_sync:
-          type: string
-          format: date-time
-          nullable: true
-          description: The last time a deep Xero sync was performed (looking back
-            90 days)
         address_line1:
           type: string
           nullable: true
@@ -11869,17 +11862,6 @@ components:
         fri_end:
           type: string
           format: time
-        last_xero_sync:
-          type: string
-          format: date-time
-          nullable: true
-          description: The last time Xero data was synchronized
-        last_xero_deep_sync:
-          type: string
-          format: date-time
-          nullable: true
-          description: The last time a deep Xero sync was performed (looking back
-            90 days)
         address_line1:
           type: string
           nullable: true

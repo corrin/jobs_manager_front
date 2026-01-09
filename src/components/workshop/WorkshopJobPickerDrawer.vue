@@ -35,6 +35,7 @@ const emit = defineEmits<{
     <DrawerOverlay />
     <DrawerContent
       class="flex !h-[90vh] !max-h-[90vh] min-h-0 flex-col overflow-hidden sm:!h-auto sm:!max-h-[85vh]"
+      data-automation-id="WorkshopJobPickerDrawer"
     >
       <div class="mx-auto flex h-full w-full max-w-4xl flex-col min-h-0">
         <DrawerHeader>
@@ -47,6 +48,7 @@ const emit = defineEmits<{
             type="text"
             placeholder="Search jobs..."
             class="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            data-automation-id="WorkshopJobPickerDrawer-search"
             @input="emit('update:jobSearch', ($event.target as HTMLInputElement).value)"
           />
           <div class="overflow-x-auto rounded-md border">
@@ -65,7 +67,12 @@ const emit = defineEmits<{
                   <td class="px-3 py-2">{{ job.name }}</td>
                   <td class="px-3 py-2">{{ job.client_name || '-' }}</td>
                   <td class="px-3 py-2">
-                    <Button size="sm" class="h-8 px-3" @click="emit('select', job.id)">
+                    <Button
+                      size="sm"
+                      class="h-8 px-3"
+                      :data-automation-id="`WorkshopJobPickerDrawer-select-${job.id}`"
+                      @click="emit('select', job.id)"
+                    >
                       Select
                     </Button>
                   </td>

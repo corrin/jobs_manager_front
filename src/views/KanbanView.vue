@@ -299,8 +299,8 @@
 
 <script setup lang="ts">
 import { ref, onUnmounted, onMounted, nextTick, watch, computed } from 'vue'
-import { toast } from 'vue-sonner'
 import { useMediaQuery } from '@vueuse/core'
+import { toast } from 'vue-sonner'
 import { Search, Check, Loader2 } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
 import KanbanColumn from '@/components/KanbanColumn.vue'
