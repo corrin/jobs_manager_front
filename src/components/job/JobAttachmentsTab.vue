@@ -239,7 +239,7 @@ import { schemas } from '@/api/generated/api'
 import { formatFileSize, formatDate } from '@/utils/string-formatting'
 import type { z } from 'zod'
 import { debugLog } from '@/utils/debug'
-import axios from 'axios'
+import axios from '@/plugins/axios'
 
 type JobFile = z.infer<typeof schemas.JobFile> & {
   thumbnailError?: boolean

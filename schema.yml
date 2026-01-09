@@ -1540,6 +1540,68 @@ paths:
               schema:
                 $ref: '#/components/schemas/XeroDocumentErrorResponse'
           description: ''
+  /api/xero/disconnect/:
+    post:
+      operationId: api_xero_disconnect_create
+      description: Disconnects from Xero by clearing the token from cache and database.
+      tags:
+        - Xero
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroPingResponse'
+          description: ''
+  /api/xero/ping/:
+    get:
+      operationId: api_xero_ping_retrieve
+      description: Check if the user is authenticated with Xero.
+      tags:
+        - Xero
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroPingResponse'
+          description: ''
+  /api/xero/sync/:
+    post:
+      operationId: api_xero_sync_create
+      description: Start a Xero sync as a background task.
+      tags:
+        - Xero
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroSyncStartResponse'
+          description: ''
+  /api/xero/sync-info/:
+    get:
+      operationId: api_xero_sync_info_retrieve
+      description: Get current sync status and last sync times for all entities.
+      tags:
+        - Xero
+      security:
+        - cookieAuth: []
+        - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/XeroSyncInfoResponse'
+          description: ''
   /app-errors/:
     get:
       operationId: app_errors_list
@@ -5125,6 +5187,19 @@ paths:
       description: Fetches all timesheet entries (CostLines) for a specific staff
         member and date.
       summary: Get timesheet entries for a staff member on a specific date
+      parameters:
+        - in: query
+          name: date
+          schema:
+            type: string
+          description: Date in YYYY-MM-DD format
+          required: true
+        - in: query
+          name: staff_id
+          schema:
+            type: string
+          description: UUID of the staff member
+          required: true
       tags:
         - job
       security:
@@ -6488,7 +6563,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
+      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
       parameters:
         - in: query
           name: start_date
@@ -7830,13 +7905,11 @@ components:
         last_xero_sync:
           type: string
           format: date-time
-          readOnly: true
           nullable: true
           description: The last time Xero data was synchronized
         last_xero_deep_sync:
           type: string
           format: date-time
-          readOnly: true
           nullable: true
           description: The last time a deep Xero sync was performed (looking back
             90 days)
@@ -7933,8 +8006,6 @@ components:
       required:
         - company_name
         - created_at
-        - last_xero_deep_sync
-        - last_xero_sync
         - updated_at
     CompanyDefaultsJobDetail:
       type: object
@@ -8087,6 +8158,17 @@ components:
         fri_end:
           type: string
           format: time
+        last_xero_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: The last time Xero data was synchronized
+        last_xero_deep_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: The last time a deep Xero sync was performed (looking back
+            90 days)
         address_line1:
           type: string
           nullable: true
@@ -11862,6 +11944,17 @@ components:
         fri_end:
           type: string
           format: time
+        last_xero_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: The last time Xero data was synchronized
+        last_xero_deep_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: The last time a deep Xero sync was performed (looking back
+            90 days)
         address_line1:
           type: string
           nullable: true
@@ -16259,6 +16352,14 @@ components:
         - uses_leave_api
         - xero_id
         - xero_tenant_id
+    XeroPingResponse:
+      type: object
+      description: Serializer for Xero ping response.
+      properties:
+        connected:
+          type: boolean
+      required:
+        - connected
     XeroQuote:
       type: object
       description: Simplified Quote serializer for xero_quote field
@@ -16282,6 +16383,40 @@ components:
             total line.
       required:
         - breakdown
+    XeroSyncInfoResponse:
+      type: object
+      description: Serializer for Xero sync info response.
+      properties:
+        last_syncs:
+          type: object
+          additionalProperties: {}
+        sync_range:
+          type: string
+        sync_in_progress:
+          type: boolean
+        error:
+          type: string
+        redirect_to_auth:
+          type: boolean
+      required:
+        - last_syncs
+        - sync_in_progress
+        - sync_range
+    XeroSyncStartResponse:
+      type: object
+      description: Serializer for start Xero sync response.
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        task_id:
+          type: string
+        error:
+          type: string
+      required:
+        - message
+        - status
   securitySchemes:
     cookieAuth:
       type: apiKey
