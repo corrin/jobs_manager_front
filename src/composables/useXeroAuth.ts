@@ -1,9 +1,9 @@
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
-import { getApiBaseUrl } from '../plugins/axios'
+import { getApiBaseUrl } from '@/plugins/axios'
+import { api } from '@/api/client'
 import { toast } from 'vue-sonner'
-import { debugLog } from '../utils/debug'
+import { debugLog } from '@/utils/debug'
 
 type XeroSseEvent = {
   datetime: string
@@ -106,15 +106,20 @@ export function useXeroAuth() {
     const url = `${apiBase}/api/xero/authenticate/?next=${next}`
     window.location.href = url
   }
-  function logoutXero() {
-    const apiBase = import.meta.env.VITE_API_BASE_URL || ''
-    const url = `${apiBase}/api/xero/disconnect/`
-    window.location.href = url
+  async function logoutXero() {
+    try {
+      await api.api_xero_disconnect_create(undefined)
+      isAuthenticated.value = false
+      router.push('/')
+    } catch (err) {
+      console.error('Failed to disconnect from Xero:', err)
+      toast.error('Failed to disconnect from Xero')
+    }
   }
 
   async function ensureAuth(): Promise<boolean> {
     try {
-      await axios.get(`${getApiBaseUrl()}/api/xero/ping`, { withCredentials: true })
+      await api.api_xero_ping_retrieve()
       return true
     } catch (err: unknown) {
       if (
@@ -138,9 +143,9 @@ export function useXeroAuth() {
     loading.value = true
     error.value = ''
     try {
-      const pingRes = await axios.get(`${getApiBaseUrl()}/api/xero/ping`, { withCredentials: true })
-      console.log('[Xero Debug] Ping response:', pingRes.data)
-      const shouldAuth = !!(pingRes.data && pingRes.data.connected)
+      const pingRes = await api.api_xero_ping_retrieve()
+      console.log('[Xero Debug] Ping response:', pingRes)
+      const shouldAuth = !!(pingRes && pingRes.connected)
       console.log('[Xero Debug] Setting isAuthenticated to:', shouldAuth)
       isAuthenticated.value = shouldAuth
       console.log('[Xero Debug] isAuthenticated.value is now:', isAuthenticated.value)
@@ -149,19 +154,16 @@ export function useXeroAuth() {
         loading.value = false
         return
       }
-      const res = await axios.get(`${getApiBaseUrl()}/api/xero/sync-info/`, {
-        withCredentials: true,
-      })
-      const data = res.data
-      entities.value = data.entities || Object.keys(data.last_syncs || {})
+      const syncInfo = await api.api_xero_sync_info_retrieve()
+      entities.value = Object.keys(syncInfo.last_syncs || {})
       for (const entity of entities.value) {
         entityStats[entity] = {
           status: 'Pending',
-          lastSync: data.last_syncs?.[entity] || '-',
+          lastSync: (syncInfo.last_syncs as Record<string, string>)?.[entity] || '-',
           recordsUpdated: 0,
         }
       }
-      if (data.sync_in_progress) {
+      if (syncInfo.sync_in_progress) {
         startSSE()
       } else {
         overallProgress.value = 0
@@ -181,18 +183,20 @@ export function useXeroAuth() {
   async function startSync() {
     error.value = ''
     try {
-      const res = await axios.post(
-        `${getApiBaseUrl()}/api/xero/sync/`,
-        {},
-        { withCredentials: true },
-      )
-      if (res.status === 401) {
+      const res = await api.api_xero_sync_create(undefined)
+      if (!res || res.status !== 'success') throw new Error('Failed to start sync')
+      startSSE()
+    } catch (err: unknown) {
+      // Check for 401 unauthorized
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        (err as { response?: { status?: number } }).response?.status === 401
+      ) {
         isAuthenticated.value = false
         return
       }
-      if (!res.data || res.data.status !== 'success') throw new Error('Failed to start sync')
-      startSSE()
-    } catch {
       error.value = 'Failed to start Xero sync.'
     }
   }
@@ -217,6 +221,8 @@ export function useXeroAuth() {
       entityStats[entity].status = 'Pending'
       entityStats[entity].recordsUpdated = 0
     }
+    // SSE endpoint - intentionally excluded from OpenAPI schema
+    // OpenAPI doesn't support SSE well; must use EventSource API directly
     const sseUrl = `${getApiBaseUrl()}/api/xero/sync-stream/`
     eventSource.value = new EventSource(sseUrl, { withCredentials: true })
     eventSource.value.onmessage = (event: MessageEvent) => {

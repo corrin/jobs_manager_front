@@ -1,5 +1,4 @@
 import { api } from '@/api/client'
-import axios from 'axios'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 
@@ -10,8 +9,6 @@ export type Job = z.infer<typeof schemas.Job>
 export type LinkQuoteSheetRequest = z.infer<typeof schemas.LinkQuoteSheetRequest>
 export type QuoteImportStatusResponse = z.infer<typeof schemas.QuoteImportStatusResponse>
 export type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
-// QuoteImportPreviewResponse -> PreviewQuoteResponse (new quote sync system)
-// QuoteImportResponse -> ApplyQuoteResponse (new quote sync system)
 
 class QuoteService {
   async linkQuote(jobId: string, templateUrl?: string): Promise<QuoteSpreadsheet | null> {
@@ -37,40 +34,6 @@ class QuoteService {
 
   getSheetUrl(job: Job): string | null {
     return job?.quote_sheet?.sheet_url || null
-  }
-
-  // File upload endpoints (not available in Zodios API yet)
-  async previewQuoteImport(jobId: string, file: File): Promise<PreviewQuoteResponse> {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const response = await axios.post(`/job/rest/jobs/${jobId}/quote/import/preview/`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-
-    return schemas.PreviewQuoteResponse.parse(response.data)
-  }
-
-  async importQuote(
-    jobId: string,
-    file: File,
-    skipValidation: boolean = false,
-  ): Promise<ApplyQuoteResponse> {
-    const formData = new FormData()
-    formData.append('file', file)
-    if (skipValidation) {
-      formData.append('skip_validation', 'true')
-    }
-
-    const response = await axios.post(`/job/rest/jobs/${jobId}/quote/import/`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-
-    return schemas.ApplyQuoteResponse.parse(response.data)
   }
 
   async getQuoteStatus(jobId: string): Promise<QuoteImportStatusResponse> {
