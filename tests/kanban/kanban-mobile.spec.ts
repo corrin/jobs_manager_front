@@ -19,11 +19,13 @@ const labelToStatusKey = (label: string): string =>
 
 const pickAssignableStaff = async (card: Locator, staffItems: Locator) => {
   const assignedIds = new Set(
-    await card.locator('[data-staff-id]').evaluateAll((nodes) =>
-      nodes
-        .map((node) => node.getAttribute('data-staff-id'))
-        .filter((value): value is string => Boolean(value)),
-    ),
+    await card
+      .locator('[data-staff-id]')
+      .evaluateAll((nodes) =>
+        nodes
+          .map((node) => node.getAttribute('data-staff-id'))
+          .filter((value): value is string => Boolean(value)),
+      ),
   )
 
   const staffCount = await staffItems.count()
@@ -69,7 +71,11 @@ const pickStatusButton = async (
     const normalizedLabel = labelText.replace(/\d+/g, '').replace(/\s+/g, ' ').trim()
     const normalizedCurrent = currentLabel.replace(/\d+/g, '').replace(/\s+/g, ' ').trim()
 
-    if (normalizedLabel && normalizedLabel !== normalizedCurrent && normalizedLabel !== 'Archived') {
+    if (
+      normalizedLabel &&
+      normalizedLabel !== normalizedCurrent &&
+      normalizedLabel !== 'Archived'
+    ) {
       return { button, label: normalizedLabel }
     }
   }
@@ -93,10 +99,7 @@ test.describe.serial('kanban mobile', () => {
     const currentLabel = ((await statusBlock.locator('p').nth(1).textContent()) || '').trim()
     expect(currentLabel).not.toBe('')
 
-    const { button: targetButton, label: targetLabel } = await pickStatusButton(
-      page,
-      currentLabel,
-    )
+    const { button: targetButton, label: targetLabel } = await pickStatusButton(page, currentLabel)
     const targetKey = labelToStatusKey(targetLabel)
 
     await targetButton.click()
@@ -107,9 +110,7 @@ test.describe.serial('kanban mobile', () => {
     const targetPill = page.locator('.mobile-status-pill', { hasText: targetLabel }).first()
     await targetPill.click()
 
-    const targetCard = page
-      .locator(`[data-status="${targetKey}"] [data-job-id="${jobId}"]`)
-      .first()
+    const targetCard = page.locator(`[data-status="${targetKey}"] [data-job-id="${jobId}"]`).first()
     await expect(targetCard).toBeVisible({ timeout: 15000 })
   })
 

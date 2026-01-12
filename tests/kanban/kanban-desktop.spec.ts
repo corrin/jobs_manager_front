@@ -15,7 +15,9 @@ const getVisibleJobCard = (page: Page, jobId: string): Locator =>
 const getVisibleColumns = (page: Page): Locator => page.locator('[data-status]:visible')
 
 const getJobColumn = (page: Page, jobId: string): Locator =>
-  getVisibleColumns(page).filter({ has: getVisibleJobCard(page, jobId) }).first()
+  getVisibleColumns(page)
+    .filter({ has: getVisibleJobCard(page, jobId) })
+    .first()
 
 const pickTargetColumn = async (
   page: Page,
@@ -62,11 +64,13 @@ const dragCardToColumn = async (page: Page, card: Locator, column: Locator) => {
 
 const pickAssignableStaff = async (card: Locator, staffItems: Locator) => {
   const assignedIds = new Set(
-    await card.locator('[data-staff-id]').evaluateAll((nodes) =>
-      nodes
-        .map((node) => node.getAttribute('data-staff-id'))
-        .filter((value): value is string => Boolean(value)),
-    ),
+    await card
+      .locator('[data-staff-id]')
+      .evaluateAll((nodes) =>
+        nodes
+          .map((node) => node.getAttribute('data-staff-id'))
+          .filter((value): value is string => Boolean(value)),
+      ),
   )
 
   const staffCount = await staffItems.count()
@@ -95,7 +99,10 @@ test.describe.serial('kanban desktop', () => {
     const sourceColumn = getJobColumn(page, jobId)
     const sourceStatus = await sourceColumn.getAttribute('data-status')
 
-    const { column: targetColumn, status: targetStatus } = await pickTargetColumn(page, sourceStatus)
+    const { column: targetColumn, status: targetStatus } = await pickTargetColumn(
+      page,
+      sourceStatus,
+    )
 
     const statusResponse = page.waitForResponse((response) => {
       return (
@@ -114,7 +121,10 @@ test.describe.serial('kanban desktop', () => {
     ).toBeVisible({ timeout: 15000 })
   })
 
-  test('assign staff to job card via drag', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
+  test('assign staff to job card via drag', async ({
+    authenticatedPage: page,
+    sharedEditJobUrl,
+  }) => {
     const jobId = getJobIdFromUrl(sharedEditJobUrl)
 
     await page.goto('/kanban')

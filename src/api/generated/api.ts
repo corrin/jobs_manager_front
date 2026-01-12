@@ -386,8 +386,8 @@ const CompanyDefaults = z
     fri_end: z.string().optional(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
-    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
-    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullish(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
     address_line1: z.string().max(255).nullish(),
     address_line2: z.string().max(255).nullish(),
     suburb: z.string().max(100).nullish(),
@@ -433,6 +433,8 @@ const CompanyDefaultsRequest = z
     thu_end: z.string(),
     fri_start: z.string(),
     fri_end: z.string(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
     address_line1: z.string().max(255).nullable(),
     address_line2: z.string().max(255).nullable(),
     suburb: z.string().max(100).nullable(),
@@ -479,6 +481,8 @@ const PatchedCompanyDefaultsRequest = z
     thu_end: z.string(),
     fri_start: z.string(),
     fri_end: z.string(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
     address_line1: z.string().max(255).nullable(),
     address_line2: z.string().max(255).nullable(),
     suburb: z.string().max(100).nullable(),
@@ -2703,7 +2707,6 @@ const CreatePayRunResponse = z
     period_start_date: z.string(),
     period_end_date: z.string(),
     payment_date: z.string(),
-    xero_url: z.string(),
   })
   .passthrough()
 const PayRunSyncResponseRequest = z
@@ -2758,7 +2761,6 @@ const WeeklyStaffDataWeeklyHours = z
     sick_leave_hours: z.number().gt(-100000000).lt(100000000),
     annual_leave_hours: z.number().gt(-100000000).lt(100000000),
     bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
-    daily_cost: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklyStaffData = z
@@ -2778,7 +2780,6 @@ const WeeklyStaffData = z
     total_sick_leave_hours: z.number().gt(-100000000).lt(100000000),
     total_annual_leave_hours: z.number().gt(-100000000).lt(100000000),
     total_bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
-    weekly_cost: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklySummary = z
