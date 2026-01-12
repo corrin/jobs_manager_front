@@ -386,8 +386,8 @@ const CompanyDefaults = z
     fri_end: z.string().optional(),
     created_at: z.string().datetime({ offset: true }),
     updated_at: z.string().datetime({ offset: true }),
-    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
-    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullish(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
     address_line1: z.string().max(255).nullish(),
     address_line2: z.string().max(255).nullish(),
     suburb: z.string().max(100).nullish(),
@@ -433,6 +433,8 @@ const CompanyDefaultsRequest = z
     thu_end: z.string(),
     fri_start: z.string(),
     fri_end: z.string(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
     address_line1: z.string().max(255).nullable(),
     address_line2: z.string().max(255).nullable(),
     suburb: z.string().max(100).nullable(),
@@ -479,6 +481,8 @@ const PatchedCompanyDefaultsRequest = z
     thu_end: z.string(),
     fri_start: z.string(),
     fri_end: z.string(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
     address_line1: z.string().max(255).nullable(),
     address_line2: z.string().max(255).nullable(),
     suburb: z.string().max(100).nullable(),
@@ -637,6 +641,24 @@ const XeroDocumentErrorResponse = z
   })
   .passthrough()
 const XeroQuoteCreateRequest = z.object({ breakdown: z.boolean() }).passthrough()
+const XeroPingResponse = z.object({ connected: z.boolean() }).passthrough()
+const XeroSyncStartResponse = z
+  .object({
+    status: z.string(),
+    message: z.string(),
+    task_id: z.string().optional(),
+    error: z.string().optional(),
+  })
+  .passthrough()
+const XeroSyncInfoResponse = z
+  .object({
+    last_syncs: z.object({}).partial().passthrough(),
+    sync_range: z.string(),
+    sync_in_progress: z.boolean(),
+    error: z.string().optional(),
+    redirect_to_auth: z.boolean().optional(),
+  })
+  .passthrough()
 const ClientDetailResponse = z
   .object({
     id: z.string(),
@@ -2891,6 +2913,9 @@ export const schemas = {
   XeroDocumentSuccessResponse,
   XeroDocumentErrorResponse,
   XeroQuoteCreateRequest,
+  XeroPingResponse,
+  XeroSyncStartResponse,
+  XeroSyncInfoResponse,
   ClientDetailResponse,
   ClientErrorResponse,
   ClientJobHeader,
@@ -4164,6 +4189,38 @@ Read-only - these are synced from Xero, not created locally.`,
         schema: XeroDocumentErrorResponse,
       },
     ],
+  },
+  {
+    method: 'post',
+    path: '/api/xero/disconnect/',
+    alias: 'api_xero_disconnect_create',
+    description: `Disconnects from Xero by clearing the token from cache and database.`,
+    requestFormat: 'json',
+    response: z.object({ connected: z.boolean() }).passthrough(),
+  },
+  {
+    method: 'get',
+    path: '/api/xero/ping/',
+    alias: 'api_xero_ping_retrieve',
+    description: `Check if the user is authenticated with Xero.`,
+    requestFormat: 'json',
+    response: z.object({ connected: z.boolean() }).passthrough(),
+  },
+  {
+    method: 'get',
+    path: '/api/xero/sync-info/',
+    alias: 'api_xero_sync_info_retrieve',
+    description: `Get current sync status and last sync times for all entities.`,
+    requestFormat: 'json',
+    response: XeroSyncInfoResponse,
+  },
+  {
+    method: 'post',
+    path: '/api/xero/sync/',
+    alias: 'api_xero_sync_create',
+    description: `Start a Xero sync as a background task.`,
+    requestFormat: 'json',
+    response: XeroSyncStartResponse,
   },
   {
     method: 'get',
@@ -6599,6 +6656,18 @@ Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.`,
     alias: 'job_rest_timesheet_entries_retrieve',
     description: `Fetches all timesheet entries (CostLines) for a specific staff member and date.`,
     requestFormat: 'json',
+    parameters: [
+      {
+        name: 'date',
+        type: 'Query',
+        schema: z.string(),
+      },
+      {
+        name: 'staff_id',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
     response: ModernTimesheetEntryGetResponse,
     errors: [
       {

@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { api } from '../api/client'
 import { debugLog } from '../utils/debug'
 import { schemas } from '../api/generated/api'
-import axios from 'axios'
+import axios from '@/plugins/axios'
 import type { z } from 'zod'
 
 // Type definitions

@@ -1,5 +1,4 @@
 import { api } from '@/api/client'
-import axios from 'axios'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 import { debugLog } from '@/utils/debug'
@@ -15,13 +14,9 @@ export const getTimesheetEntries = async (
   date: string,
 ): Promise<TimesheetEntriesResponse> => {
   try {
-    const response = await axios.get('/job/rest/timesheet/entries/', {
-      params: {
-        staff_id: staffId,
-        date,
-      },
+    return await api.job_rest_timesheet_entries_retrieve({
+      queries: { staff_id: staffId, date },
     })
-    return schemas.ModernTimesheetEntryGetResponse.parse(response.data)
   } catch (error) {
     debugLog('Error fetching timesheet entries:', error)
     throw error
