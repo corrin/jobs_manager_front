@@ -97,7 +97,7 @@
     <!-- Cost Column -->
     <td class="px-1.5 lg:px-2 py-1.5 lg:py-2 text-center">
       <span class="text-sm lg:text-base font-medium text-gray-900">
-        {{ formatCurrency(staff.weekly_cost) }}
+        {{ formatCurrency(normalizeWeeklyCost(staff.weekly_cost)) }}
       </span>
     </td>
   </tr>
@@ -277,9 +277,10 @@ import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
 
 type WeeklyStaffData = z.infer<typeof schemas.WeeklyStaffData>
+type WeeklyStaffDataWithCost = WeeklyStaffData & { weekly_cost?: number | null }
 
 interface Props {
-  staff: WeeklyStaffData
+  staff: WeeklyStaffDataWithCost
   visibleIndexes: number[]
 }
 
@@ -298,5 +299,9 @@ function getInitials(name: string): string {
     .join('')
     .toUpperCase()
     .slice(0, 2)
+}
+
+function normalizeWeeklyCost(value: WeeklyStaffDataWithCost['weekly_cost']): number {
+  return typeof value === 'number' ? value : 0
 }
 </script>
