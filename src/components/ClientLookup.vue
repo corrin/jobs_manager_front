@@ -265,12 +265,16 @@ const createQuickClient = async (clientName: string) => {
       searchQuery.value = newClient.name
       emit('update:modelValue', newClient.name)
 
-      toast.success(`Client "${clientName}" created successfully!`)
+      toast.success(`Client "${clientName}" created successfully!`, {
+        position: 'bottom-left',
+      })
     } else {
       throw new Error(result.message || 'Failed to create client')
     }
   } catch (error) {
-    toast.error(`Failed to create client: ${error instanceof Error ? error.message : error}`)
+    toast.error(`Failed to create client: ${error instanceof Error ? error.message : error}`, {
+      position: 'bottom-left',
+    })
     console.error('Quick client creation error:', error)
   } finally {
     isCreatingQuickClient.value = false

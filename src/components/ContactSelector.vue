@@ -195,7 +195,7 @@ const handleSaveContact = async () => {
   if (success) {
     toast.success(`Contact ${isEditing.value ? 'updated' : 'created'} successfully!`, {
       dismissible: true,
-      position: 'bottom-left',
+      position: 'top-left',
     })
   } else {
     toast.error(
