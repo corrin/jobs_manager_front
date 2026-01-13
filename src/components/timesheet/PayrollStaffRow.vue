@@ -277,7 +277,7 @@ import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
 
 type WeeklyStaffData = z.infer<typeof schemas.WeeklyStaffData>
-type WeeklyStaffDataWithCost = WeeklyStaffData & { weekly_cost?: number | null }
+type WeeklyStaffDataWithCost = WeeklyStaffData & { weekly_cost: number }
 
 interface Props {
   staff: WeeklyStaffDataWithCost
@@ -301,7 +301,9 @@ function getInitials(name: string): string {
     .slice(0, 2)
 }
 
-function normalizeWeeklyCost(value: WeeklyStaffDataWithCost['weekly_cost']): number {
+function normalizeWeeklyCost(
+  value: WeeklyStaffDataWithCost['weekly_cost'] | null | undefined,
+): number {
   return typeof value === 'number' ? value : 0
 }
 </script>
