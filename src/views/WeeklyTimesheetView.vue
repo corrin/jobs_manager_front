@@ -740,10 +740,8 @@ async function handleCreatePayRun() {
 
     payRunStatus.value = result.status
     paymentDate.value = result.payment_date
-    const xeroUrlValue =
-      typeof (result as { xero_url?: unknown }).xero_url === 'string'
-        ? (result as { xero_url?: string }).xero_url
-        : null
+    const xeroUrlRaw = (result as { xero_url?: unknown }).xero_url
+    const xeroUrlValue: string | null = typeof xeroUrlRaw === 'string' ? xeroUrlRaw : null
     xeroUrl.value = xeroUrlValue
 
     toast.success('Pay run created successfully', {
