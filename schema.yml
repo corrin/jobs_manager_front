@@ -8727,9 +8727,6 @@ components:
         payment_date:
           type: string
           format: date
-        xero_url:
-          type: string
-          description: Deep link to pay run in Xero
       required:
         - id
         - payment_date
@@ -8737,7 +8734,6 @@ components:
         - period_start_date
         - status
         - xero_id
-        - xero_url
     CustomTokenObtainPairRequest:
       type: object
       description: Custom serializer that accepts username and maps it to email
@@ -15711,13 +15707,6 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        weekly_cost:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
       required:
         - billable_percentage
         - name
@@ -15733,7 +15722,6 @@ components:
         - total_scheduled_hours
         - total_sick_leave_hours
         - total_unbilled_hours
-        - weekly_cost
         - weekly_hours
     WeeklyStaffDataWeeklyHours:
       type: object
@@ -15819,19 +15807,11 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        daily_cost:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
       required:
         - annual_leave_hours
         - bereavement_leave_hours
         - billable_hours
         - billed_hours
-        - daily_cost
         - day
         - hours
         - overtime_1_5x_hours

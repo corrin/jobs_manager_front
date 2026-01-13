@@ -352,6 +352,7 @@ import { z } from 'zod'
 
 type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
 type WeeklyStaffData = z.infer<typeof schemas.WeeklyStaffData>
+type WeeklyStaffDataWithCost = WeeklyStaffData & { weekly_cost?: number | null }
 type WeekDaySeed = { idx: number; dow: number; date: string }
 type DisplayDay = WeekDaySeed & {
   name: string
@@ -503,9 +504,15 @@ const visibleDayIndexes = computed<number[]>(() => {
 const sortedStaffData = computed(() => {
   if (!weeklyData.value?.staff_data) return []
 
-  return [...weeklyData.value.staff_data].sort((a: WeeklyStaffData, b: WeeklyStaffData) => {
-    return a.name.localeCompare(b.name)
-  })
+  return [...weeklyData.value.staff_data]
+    .map((staff) => {
+      const raw = staff as WeeklyStaffDataWithCost & Record<string, unknown>
+      const weeklyCost = typeof raw.weekly_cost === 'number' ? raw.weekly_cost : null
+      return { ...staff, weekly_cost: weeklyCost }
+    })
+    .sort((a: WeeklyStaffDataWithCost, b: WeeklyStaffDataWithCost) => {
+      return a.name.localeCompare(b.name)
+    })
 })
 const displayDays = computed<DisplayDay[]>(() => {
   if (!weeklyData.value?.week_days || !Array.isArray(weeklyData.value.week_days)) {
@@ -620,7 +627,11 @@ function getTotalBillableHours(): number {
 
 function getTotalCost(): number {
   if (!weeklyData.value?.staff_data) return 0
-  return weeklyData.value.staff_data.reduce((sum, staff) => sum + staff.weekly_cost, 0)
+  return weeklyData.value.staff_data.reduce((sum, staff) => {
+    const raw = staff as WeeklyStaffDataWithCost & Record<string, unknown>
+    const weeklyCost = typeof raw.weekly_cost === 'number' ? raw.weekly_cost : 0
+    return sum + weeklyCost
+  }, 0)
 }
 
 // Core data loader with enhanced error handling
@@ -729,7 +740,9 @@ async function handleCreatePayRun() {
 
     payRunStatus.value = result.status
     paymentDate.value = result.payment_date
-    xeroUrl.value = result.xero_url ?? null
+    const xeroUrlRaw = (result as { xero_url?: unknown }).xero_url
+    const xeroUrlValue: string | null = typeof xeroUrlRaw === 'string' ? xeroUrlRaw : null
+    xeroUrl.value = xeroUrlValue
 
     toast.success('Pay run created successfully', {
       description: `Payment date: ${result.payment_date}`,

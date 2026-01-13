@@ -28,6 +28,7 @@
             @dragover.prevent="handleDragOver"
             @dragenter.prevent="handleDragEnter"
             @dragleave="handleDragLeave"
+            data-automation-id="JobAttachmentsTab-dropzone"
             :class="[
               'border-2 border-dashed rounded-lg p-8 text-center transition-all duration-300 cursor-pointer',
               isDragOver
@@ -57,6 +58,7 @@
             ref="fileInput"
             type="file"
             multiple
+            data-automation-id="JobAttachmentsTab-file-input"
             @change="handleFileChange"
             accept="image/*,.pdf,.doc,.docx,.txt"
             class="hidden"
