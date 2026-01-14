@@ -34,6 +34,7 @@
                 <SelectItem value="Claude">Anthropic (Claude)</SelectItem>
                 <SelectItem value="Gemini">Google (Gemini)</SelectItem>
                 <SelectItem value="Mistral">Mistral</SelectItem>
+                <SelectItem value="OpenAI">OpenAI</SelectItem>
               </SelectContent>
             </Select>
             <p v-if="errors.provider_type" class="text-red-500 text-sm mt-1">
@@ -130,7 +131,7 @@ const baseSchema = z
   .object({
     id: z.number().optional().nullable(),
     name: z.string().min(1, 'Name is required'),
-    provider_type: z.enum(['Claude', 'Gemini', 'Mistral'], {
+    provider_type: z.enum(['Claude', 'Gemini', 'Mistral', 'OpenAI'], {
       required_error: 'Provider type is required',
     }),
     model_name: z.string().optional(),

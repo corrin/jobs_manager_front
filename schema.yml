@@ -23,7 +23,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -59,7 +58,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -75,7 +73,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -91,7 +88,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -110,7 +106,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -167,7 +162,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -244,7 +238,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -267,7 +260,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1563,7 +1555,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1594,7 +1585,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5332,7 +5322,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5364,7 +5353,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5386,7 +5374,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5402,7 +5389,6 @@ paths:
         - Product Mapping
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5436,7 +5422,6 @@ paths:
               $ref: '#/components/schemas/ProductMappingValidateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5464,7 +5449,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5492,7 +5476,6 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderCreateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5515,7 +5498,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5551,7 +5533,6 @@ paths:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5574,7 +5555,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5608,7 +5588,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5642,7 +5621,6 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderEmailRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5671,7 +5649,6 @@ paths:
         - Purchase Orders
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5711,7 +5688,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -5765,7 +5741,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5794,7 +5769,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6085,7 +6059,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6101,7 +6074,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6123,7 +6095,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6147,7 +6118,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6169,7 +6139,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6197,7 +6166,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -6219,7 +6187,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6252,7 +6219,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6284,7 +6250,6 @@ paths:
               $ref: '#/components/schemas/PatchedDjangoJobRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6305,7 +6270,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
@@ -6563,7 +6527,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
+      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
       parameters:
         - in: query
           name: start_date
@@ -6677,6 +6641,7 @@ components:
             * `Claude` - Anthropic
             * `Gemini` - Google
             * `Mistral` - Mistral
+            * `OpenAI` - Openai
         model_name:
           type: string
           description: Specific model name (e.g., gemini-2.5-flash-lite-preview-06-17)
@@ -6707,6 +6672,7 @@ components:
             * `Claude` - Anthropic
             * `Gemini` - Google
             * `Mistral` - Mistral
+            * `OpenAI` - Openai
         model_name:
           type: string
           description: Specific model name (e.g., gemini-2.5-flash-lite-preview-06-17)
@@ -6737,6 +6703,7 @@ components:
             * `Claude` - Anthropic
             * `Gemini` - Google
             * `Mistral` - Mistral
+            * `OpenAI` - Openai
         model_name:
           type: string
           description: Specific model name (e.g., gemini-2.5-flash-lite-preview-06-17)
@@ -6772,6 +6739,7 @@ components:
             * `Claude` - Anthropic
             * `Gemini` - Google
             * `Mistral` - Mistral
+            * `OpenAI` - Openai
         model_name:
           type: string
           description: Specific model name (e.g., gemini-2.5-flash-lite-preview-06-17)
@@ -8727,6 +8695,9 @@ components:
         payment_date:
           type: string
           format: date
+        xero_url:
+          type: string
+          description: Deep link to pay run in Xero
       required:
         - id
         - payment_date
@@ -8734,6 +8705,7 @@ components:
         - period_start_date
         - status
         - xero_id
+        - xero_url
     CustomTokenObtainPairRequest:
       type: object
       description: Custom serializer that accepts username and maps it to email
@@ -11748,6 +11720,7 @@ components:
             * `Claude` - Anthropic
             * `Gemini` - Google
             * `Mistral` - Mistral
+            * `OpenAI` - Openai
         model_name:
           type: string
           description: Specific model name (e.g., gemini-2.5-flash-lite-preview-06-17)
@@ -12814,11 +12787,13 @@ components:
         - Claude
         - Gemini
         - Mistral
+        - OpenAI
       type: string
       description: |-
         * `Claude` - Anthropic
         * `Gemini` - Google
         * `Mistral` - Mistral
+        * `OpenAI` - Openai
     PurchaseOrderAllocationsResponse:
       type: object
       description: Serializer for purchase order allocations response.
@@ -15707,6 +15682,13 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        weekly_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - billable_percentage
         - name
@@ -15722,6 +15704,7 @@ components:
         - total_scheduled_hours
         - total_sick_leave_hours
         - total_unbilled_hours
+        - weekly_cost
         - weekly_hours
     WeeklyStaffDataWeeklyHours:
       type: object
@@ -15807,11 +15790,19 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        daily_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - annual_leave_hours
         - bereavement_leave_hours
         - billable_hours
         - billed_hours
+        - daily_cost
         - day
         - hours
         - overtime_1_5x_hours

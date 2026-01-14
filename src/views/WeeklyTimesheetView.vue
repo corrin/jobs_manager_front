@@ -352,7 +352,7 @@ import { z } from 'zod'
 
 type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
 type WeeklyStaffData = z.infer<typeof schemas.WeeklyStaffData>
-type WeeklyStaffDataWithCost = WeeklyStaffData & { weekly_cost?: number | null }
+type WeeklyStaffDataWithCost = WeeklyStaffData & { weekly_cost: number }
 type WeekDaySeed = { idx: number; dow: number; date: string }
 type DisplayDay = WeekDaySeed & {
   name: string
@@ -507,7 +507,7 @@ const sortedStaffData = computed(() => {
   return [...weeklyData.value.staff_data]
     .map((staff) => {
       const raw = staff as WeeklyStaffDataWithCost & Record<string, unknown>
-      const weeklyCost = typeof raw.weekly_cost === 'number' ? raw.weekly_cost : null
+      const weeklyCost = typeof raw.weekly_cost === 'number' ? raw.weekly_cost : 0
       return { ...staff, weekly_cost: weeklyCost }
     })
     .sort((a: WeeklyStaffDataWithCost, b: WeeklyStaffDataWithCost) => {
