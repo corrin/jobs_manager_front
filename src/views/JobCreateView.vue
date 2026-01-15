@@ -77,7 +77,7 @@
                       class="block text-sm font-medium mb-2"
                       :class="formData.estimated_materials >= 0 ? 'text-gray-700' : 'text-red-600'"
                     >
-                      Ballpark materials ($) *
+                      Ballpark materials retail ($) *
                     </label>
                     <input
                       id="estimated_materials"
@@ -94,7 +94,7 @@
                             ? 'border-gray-300'
                             : 'border-red-300 bg-red-50',
                       ]"
-                      placeholder="Enter materials cost"
+                      placeholder="Enter retail price for materials"
                       @keydown="filterNumericInput"
                     />
                     <p v-if="errors.estimated_materials" class="mt-1 text-sm text-red-600">
