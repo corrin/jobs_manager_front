@@ -29,21 +29,24 @@ export default async function globalSetup() {
   const backupFile = path.join(backupDir, `backup_${formatTimestamp(new Date())}.sql`)
   const outputFd = fs.openSync(backupFile, 'w')
 
-  const result = spawnSync(
-    'mysqldump',
-    [
-      '-h',
-      dbConfig.host,
-      '-P',
-      dbConfig.port,
-      '-u',
-      dbConfig.user,
-      `-p${dbConfig.password}`,
-      '--column-statistics=0',
-      dbConfig.database,
-    ],
-    { stdio: ['ignore', outputFd, 'inherit'] },
-  )
+  // Check if mysqldump supports --column-statistics (MySQL 8.x only, not MariaDB)
+  const versionCheck = spawnSync('mysqldump', ['--version'], { encoding: 'utf8' })
+  const isMySQL8 =
+    versionCheck.stdout?.includes('MySQL') && !versionCheck.stdout?.includes('MariaDB')
+
+  const mysqldumpArgs = [
+    '-h',
+    dbConfig.host,
+    '-P',
+    dbConfig.port,
+    '-u',
+    dbConfig.user,
+    `-p${dbConfig.password}`,
+    ...(isMySQL8 ? ['--column-statistics=0'] : []),
+    dbConfig.database,
+  ]
+
+  const result = spawnSync('mysqldump', mysqldumpArgs, { stdio: ['ignore', outputFd, 'inherit'] })
 
   fs.closeSync(outputFd)
 

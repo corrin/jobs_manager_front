@@ -12943,6 +12943,12 @@ components:
           nullable: true
           description: Delivery/pickup address for this purchase order
           readOnly: true
+        created_by_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Staff member who created this purchase order
+          readOnly: true
         supplier:
           type: string
           readOnly: true
@@ -12962,7 +12968,12 @@ components:
             - $ref: '#/components/schemas/SupplierPickupAddress'
           readOnly: true
           nullable: true
+        created_by_name:
+          type: string
+          readOnly: true
       required:
+        - created_by_id
+        - created_by_name
         - id
         - lines
         - pickup_address
@@ -13381,11 +13392,19 @@ components:
           type: string
           format: uuid
           nullable: true
+        created_by_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_by_name:
+          type: string
         jobs:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderJob'
       required:
+        - created_by_id
+        - created_by_name
         - id
         - jobs
         - order_date

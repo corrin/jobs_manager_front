@@ -70,6 +70,8 @@ const po = ref<PurchaseOrderDetail>({
   lines: [],
   online_url: undefined,
   xero_id: undefined,
+  created_by_id: null,
+  created_by_name: '',
 })
 
 const save = async () => {

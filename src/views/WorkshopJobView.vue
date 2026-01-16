@@ -27,7 +27,7 @@ function navigateBack() {
     router.back()
     return
   }
-  router.push({ name: 'workshop-kanban' })
+  router.push({ name: 'kanban' })
 }
 const {
   attachments,

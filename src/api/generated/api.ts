@@ -2227,6 +2227,8 @@ const PurchaseOrderList = z
     order_date: z.string(),
     supplier: z.string(),
     supplier_id: z.string().uuid().nullable(),
+    created_by_id: z.string().uuid().nullable(),
+    created_by_name: z.string(),
     jobs: z.array(PurchaseOrderJob),
   })
   .passthrough()
@@ -2334,11 +2336,13 @@ const PurchaseOrderDetail = z
     online_url: z.string().max(500).url().nullish(),
     xero_id: z.string().uuid().nullish(),
     pickup_address_id: z.string().uuid().nullable(),
+    created_by_id: z.string().uuid().nullable(),
     supplier: z.string(),
     supplier_id: z.string().nullable(),
     supplier_has_xero_id: z.boolean(),
     lines: z.array(PurchaseOrderLine),
     pickup_address: SupplierPickupAddress.nullable(),
+    created_by_name: z.string(),
   })
   .passthrough()
 const PurchaseOrderLineUpdateRequest = z
