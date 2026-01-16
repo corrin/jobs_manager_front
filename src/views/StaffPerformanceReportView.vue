@@ -2,7 +2,7 @@
   <AppLayout>
     <div class="w-full h-full flex flex-col overflow-hidden">
       <div class="flex-1 overflow-y-auto p-0">
-        <div class="max-w-7xl mx-auto py-8 px-2 md:px-8 h-full flex flex-col gap-6">
+        <div class="max-w-7xl mx-auto py-8 px-2 md:px-8 flex flex-col gap-6">
           <!-- Header -->
           <div class="flex items-center justify-between mb-4">
             <h1 class="text-3xl font-extrabold text-indigo-700 flex items-center gap-3">
@@ -141,9 +141,6 @@
             class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden"
           >
             <div class="px-4 py-5 sm:p-6">
-              <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Staff Performance Details
-              </h3>
               <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                   <thead class="bg-gray-50">

@@ -45,6 +45,7 @@
               <th class="p-3 text-left font-semibold">Jobs</th>
               <th class="p-3 text-left font-semibold">Supplier</th>
               <th class="p-3 text-left font-semibold">Date</th>
+              <th class="p-3 text-left font-semibold">Created By</th>
               <th class="p-3 text-left font-semibold">Status</th>
               <th class="p-3 w-24 text-center font-semibold">Actions</th>
             </tr>
@@ -67,6 +68,9 @@
               <td class="p-3">{{ formatJobs(po.jobs) }}</td>
               <td class="p-3">{{ po.supplier }}</td>
               <td class="p-3">{{ formatDate(po.order_date) }}</td>
+              <td class="p-3" :data-automation-id="`PurchaseOrderView-created-by-${po.id}`">
+                {{ po.created_by_name || '—' }}
+              </td>
               <td class="p-3">
                 <span :class="getStatusClass(normalizeStatus(po.status))">
                   {{ formatStatus(normalizeStatus(po.status)) }}

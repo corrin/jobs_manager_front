@@ -219,6 +219,16 @@ const statusOptions: { value: Status; label: string }[] = [
         </div>
       </div>
 
+      <div class="flex flex-col gap-1 mt-4" v-if="!isCreateMode">
+        <Label>Created By</Label>
+        <Input
+          :model-value="po.created_by_name || ''"
+          disabled
+          class="bg-gray-50"
+          data-automation-id="PoSummaryCard-created-by"
+        />
+      </div>
+
       <div class="flex flex-col gap-2 mt-4" v-if="!isCreateMode">
         <div class="flex flex-col items-center gap-1">
           <Label for="status">Status</Label>

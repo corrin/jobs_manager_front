@@ -1,7 +1,11 @@
 <template>
   <AppLayout>
     <div class="flex flex-col min-h-screen mt-5 md:mt-15 lg:mt-0">
-      <div class="flex-shrink-0 p-3 sm:p-4 lg:p-6 pt-2 sm:pt-3 md:pt-1 lg:pt-6">
+      <!-- Workshop Mode -->
+      <WorkshopModeView v-if="isWorkshopMode" />
+
+      <!-- Office Mode -->
+      <div v-if="isOfficeMode" class="flex-shrink-0 p-3 sm:p-4 lg:p-6 pt-2 sm:pt-3 md:pt-1 lg:pt-6">
         <div class="mb-2 md:mb-3 space-y-2">
           <div
             class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 w-full"
@@ -212,6 +216,7 @@
     </div>
 
     <AdvancedSearchDialog
+      v-if="isOfficeMode"
       :is-open="showAdvancedSearchDialog"
       :filters="advancedFilters"
       :is-loading="isLoading"
@@ -320,6 +325,8 @@ import {
 import { useOptimizedKanban } from '@/composables/useOptimizedKanban'
 import { useOptimizedDragAndDrop } from '../composables/useOptimizedDragAndDrop'
 import { useJobsStore } from '@/stores/jobs'
+import { useBoardMode } from '@/composables/useBoardMode'
+import WorkshopModeView from '@/components/board/WorkshopModeView.vue'
 import { KanbanCategorizationService } from '@/services/kanban-categorization.service'
 import type { AdvancedFilters } from '@/constants/advanced-filters'
 import { schemas } from '@/api/generated/api'
@@ -334,6 +341,7 @@ type StatusOption = {
 }
 
 const jobsStore = useJobsStore()
+const { isWorkshopMode, isOfficeMode } = useBoardMode()
 const isDesktop = useMediaQuery('(min-width: 768px)')
 const route = useRoute()
 const mobileAssignStaffId = ref<string | null>(null)

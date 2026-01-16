@@ -305,7 +305,9 @@
         </div>
       </div>
 
-      <div class="flex items-center">
+      <div class="flex items-center space-x-3">
+        <WorkshopOfficeToggle />
+
         <div class="hidden md:flex lg:hidden items-center space-x-2">
           <span class="text-gray-700 text-xs">{{ userInfo.displayName?.split(' ')[0] }}</span>
           <button
@@ -725,6 +727,7 @@ import {
 import { toast } from 'vue-sonner'
 import { useAppLayout } from '@/composables/useAppLayout'
 import { adminPages } from '@/config/adminPages'
+import WorkshopOfficeToggle from '@/components/board/WorkshopOfficeToggle.vue'
 
 const activeDropdown = ref<string | null>(null)
 const showMobileMenu = ref(false)
@@ -742,8 +745,8 @@ const isOfficeStaff = computed(() => !!userInfo.value?.is_office_staff)
 
 const kanbanNav = computed(() =>
   isOfficeStaff.value
-    ? { label: 'Workshop Kanban', to: '/kanban/workshop' }
-    : { label: 'Kanban', to: '/kanban' },
+    ? { label: 'Kanban Board', to: '/kanban' }
+    : { label: 'Kanban Board', to: '/kanban' },
 )
 
 const toggleDropdown = (dropdown: string) => {

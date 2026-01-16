@@ -4,7 +4,6 @@ import axios from '@/plugins/axios'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { debugLog } from '@/utils/debug'
-import { isComputer } from '@/utils/deviceType'
 import type { z } from 'zod'
 
 type User = z.infer<typeof schemas.UserProfile>
@@ -37,8 +36,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Device type controls UI PRESENTATION (which interface to show)
   // This is different from is_office_staff which controls PERMISSIONS
-  const defaultRoutePath = computed(() => (isComputer.value ? '/kanban' : '/kanban/workshop'))
-  const defaultRouteName = computed(() => (isComputer.value ? 'kanban' : 'workshop-kanban'))
+  // The Board page now handles mode switching internally via useBoardMode
+  const defaultRoutePath = computed(() => '/kanban')
+  const defaultRouteName = computed(() => 'kanban')
 
   const clearError = (): void => {
     error.value = null

@@ -225,7 +225,11 @@ const router = createRouter({
       path: '/reports/staff-performance',
       name: 'staff-performance-report',
       component: () => import('@/views/StaffPerformanceReportView.vue'),
-      meta: { requiresAuth: true, title: 'Staff Performance Report - Jobs Manager' },
+      meta: {
+        requiresAuth: true,
+        title: 'Staff Performance Report - Jobs Manager',
+        allowScroll: true,
+      },
     },
     {
       path: '/reports/sales-forecast',
@@ -262,16 +266,6 @@ const router = createRouter({
       name: 'safety-swp',
       component: () => import('@/views/SafetySwpView.vue'),
       meta: { requiresAuth: true, title: 'Safe Work Procedures - Jobs Manager' },
-    },
-    {
-      path: '/kanban/workshop',
-      name: 'workshop-kanban',
-      component: () => import('@/views/WorkshopKanbanView.vue'),
-      meta: {
-        requiresAuth: true,
-        allowWorkshopStaff: true,
-        title: 'Workshop Kanban - Jobs Manager',
-      },
     },
   ],
 })
