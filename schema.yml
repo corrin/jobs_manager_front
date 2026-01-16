@@ -23,7 +23,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -59,7 +58,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -75,7 +73,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -91,7 +88,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -110,7 +106,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -167,7 +162,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -244,7 +238,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -267,7 +260,6 @@ paths:
         - accounting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1563,7 +1555,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -1594,7 +1585,6 @@ paths:
         - Xero
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5332,7 +5322,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5364,7 +5353,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5386,7 +5374,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5402,7 +5389,6 @@ paths:
         - Product Mapping
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5436,7 +5422,6 @@ paths:
               $ref: '#/components/schemas/ProductMappingValidateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5464,7 +5449,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5492,7 +5476,6 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderCreateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5515,7 +5498,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5551,7 +5533,6 @@ paths:
               $ref: '#/components/schemas/PatchedPurchaseOrderUpdateRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5574,7 +5555,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5608,7 +5588,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5642,7 +5621,6 @@ paths:
               $ref: '#/components/schemas/PurchaseOrderEmailRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5671,7 +5649,6 @@ paths:
         - Purchase Orders
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5711,7 +5688,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -5765,7 +5741,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -5794,7 +5769,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6085,7 +6059,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6101,7 +6074,6 @@ paths:
         - purchasing
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6123,7 +6095,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6147,7 +6118,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6169,7 +6139,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6197,7 +6166,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '201':
           content:
@@ -6219,7 +6187,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6252,7 +6219,6 @@ paths:
         required: true
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6284,7 +6250,6 @@ paths:
               $ref: '#/components/schemas/PatchedDjangoJobRequest'
       security:
         - cookieAuth: []
-        - {}
       responses:
         '200':
           content:
@@ -6305,7 +6270,6 @@ paths:
         - quoting
       security:
         - cookieAuth: []
-        - {}
       responses:
         '204':
           description: No response body
