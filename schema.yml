@@ -5811,6 +5811,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/PurchasingErrorResponse'
           description: ''
+  /purchasing/rest/purchase-orders/last-number/:
+    get:
+      operationId: getLastPurchaseOrderNumber
+      description: Return the most recent purchase order number.
+      tags:
+        - purchasing
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderLastNumberResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
   /purchasing/rest/stock/:
     get:
       operationId: purchasing_rest_stock_list
@@ -6549,7 +6570,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
+      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
       parameters:
         - in: query
           name: start_date
@@ -13074,6 +13095,13 @@ components:
         - client
         - job_number
         - name
+    PurchaseOrderLastNumberResponse:
+      type: object
+      description: Serializer for last purchase order number response.
+      properties:
+        last_po_number:
+          type: string
+          nullable: true
     PurchaseOrderLine:
       type: object
       description: Serializer for PurchaseOrderLine model.
