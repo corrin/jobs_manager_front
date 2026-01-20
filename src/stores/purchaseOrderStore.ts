@@ -48,6 +48,61 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     }
   }
 
+  async function fetchLastPoNumber(): Promise<string | null> {
+    // Try dedicated endpoint first (if backend provides it)
+    try {
+      const response = await api.getLastPurchaseOrderNumber()
+      const apiValue =
+        response?.last_po_number ??
+        // fallback field names in case backend returns a simpler payload
+        (response as Record<string, unknown>)?.po_number ??
+        (response as Record<string, unknown>)?.last ??
+        null
+      if (apiValue) {
+        debugLog('Fetched last PO number from endpoint:', apiValue)
+        return String(apiValue)
+      }
+    } catch (err) {
+      debugLog('Last PO number endpoint unavailable, falling back to list data', err)
+    }
+
+    // Fallback: use loaded orders or fetch them if missing
+    if (!orders.value.length) {
+      try {
+        await fetchOrders()
+      } catch (err) {
+        debugLog('Failed to load orders for last PO number fallback', err)
+        return null
+      }
+    }
+
+    const extractNumericSuffix = (value: string): number | null => {
+      const match = value.match(/(\d+)(?!.*\d)/)
+      if (!match) return null
+      const parsed = Number(match[1])
+      return Number.isNaN(parsed) ? null : parsed
+    }
+
+    const lastFromList = orders.value.reduce<string | null>((current, po) => {
+      if (!po.po_number) return current
+      if (!current) return po.po_number
+
+      const currentNum = extractNumericSuffix(current)
+      const candidateNum = extractNumericSuffix(po.po_number)
+
+      if (currentNum === null && candidateNum === null) {
+        // If neither parse cleanly, keep the existing (first seen)
+        return current
+      }
+      if (currentNum === null) return po.po_number
+      if (candidateNum === null) return current
+
+      return candidateNum > currentNum ? po.po_number : current
+    }, null)
+
+    return lastFromList
+  }
+
   async function fetchOne(id: string) {
     if (!id) {
       throw new Error('Purchase order ID is required')
@@ -161,5 +216,6 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     fetchPurchaseOrderPdf,
     emailPurchaseOrder,
     reloadPoOnConflict,
+    fetchLastPoNumber,
   }
 })

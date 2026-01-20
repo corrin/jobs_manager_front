@@ -2489,6 +2489,10 @@ const AllocationDeleteResponse = z
     updated_received_quantity: z.number().optional(),
   })
   .passthrough()
+const PurchaseOrderLastNumberResponse = z
+  .object({ last_po_number: z.string().nullable() })
+  .partial()
+  .passthrough()
 const SourceEnum = z.enum(['purchase_order', 'split_from_stock', 'manual', 'product_catalog'])
 const StockItem = z
   .object({
@@ -3133,6 +3137,7 @@ export const schemas = {
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
+  PurchaseOrderLastNumberResponse,
   SourceEnum,
   StockItem,
   StockItemRequest,
@@ -5089,7 +5094,7 @@ Expected JSON:
   {
     method: 'delete',
     path: '/job/api/jobs/:job_id/quote-chat/:message_id/',
-    alias: 'quote_chat_delete_one',
+    alias: 'job_api_jobs_quote_chat_destroy_2',
     description: `Delete an individual chat message.`,
     requestFormat: 'json',
     parameters: [
@@ -7075,6 +7080,20 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         status: 404,
         schema: PurchasingErrorResponse,
       },
+      {
+        status: 500,
+        schema: PurchasingErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/purchasing/rest/purchase-orders/last-number/',
+    alias: 'getLastPurchaseOrderNumber',
+    description: `Return the most recent purchase order number.`,
+    requestFormat: 'json',
+    response: z.object({ last_po_number: z.string().nullable() }).partial().passthrough(),
+    errors: [
       {
         status: 500,
         schema: PurchasingErrorResponse,

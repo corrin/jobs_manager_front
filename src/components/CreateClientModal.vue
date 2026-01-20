@@ -175,6 +175,7 @@ import { z } from 'zod'
 import type { Client } from '@/composables/useClientLookup'
 import { schemas } from '@/api/generated/api'
 import { isAxiosError } from 'axios'
+import { normalizeOptionalString } from '@/utils/sanitize'
 
 // Use generated types from Zodios API
 type ClientCreateRequestSchema = typeof schemas.ClientCreateRequest
@@ -355,9 +356,10 @@ const handleCancel = () => {
 const cleanOptionalFields = (data: ClientFormPayload): ClientFormPayload => {
   return {
     ...data,
-    email: data.email?.trim() || undefined,
-    phone: data.phone?.trim() || undefined,
-    address: data.address?.trim() || undefined,
+    name: data.name.trim(),
+    email: normalizeOptionalString(data.email),
+    phone: normalizeOptionalString(data.phone),
+    address: normalizeOptionalString(data.address),
   }
 }
 const handleClientResponse = (

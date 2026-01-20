@@ -2825,7 +2825,7 @@ paths:
                 $ref: '#/components/schemas/JobQuoteChatUpdate'
           description: ''
     delete:
-      operationId: quote_chat_delete_one
+      operationId: job_api_jobs_quote_chat_destroy_2
       description: Delete an individual chat message.
       parameters:
         - in: path
@@ -5804,6 +5804,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+  /purchasing/rest/purchase-orders/last-number/:
+    get:
+      operationId: getLastPurchaseOrderNumber
+      description: Return the most recent purchase order number.
+      tags:
+        - purchasing
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderLastNumberResponse'
           description: ''
         '500':
           content:
@@ -13068,6 +13089,13 @@ components:
         - client
         - job_number
         - name
+    PurchaseOrderLastNumberResponse:
+      type: object
+      description: Serializer for last purchase order number response.
+      properties:
+        last_po_number:
+          type: string
+          nullable: true
     PurchaseOrderLine:
       type: object
       description: Serializer for PurchaseOrderLine model.
