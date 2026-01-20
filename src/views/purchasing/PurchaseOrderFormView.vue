@@ -15,9 +15,28 @@ s
 
       <!-- Main Content -->
       <div v-else class="flex flex-col lg:flex-row gap-6">
+        <div
+          v-if="isCreateMode"
+          class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col gap-1"
+        >
+          <div class="text-sm text-slate-700 flex justify-between">
+            <span class="font-semibold">Creating new purchase order</span>
+            <span v-if="isLoadingLastPoNumber" class="text-slate-500">Loading last PO...</span>
+            <span v-else-if="lastPoNumber" class="text-slate-600">
+              Last #: <span class="font-semibold text-slate-900">{{ lastPoNumber }}</span>
+            </span>
+            <span v-else-if="lastPoNumberError" class="text-red-600">PO number unavailable</span>
+            <span v-else class="text-slate-500">No previous PO found</span>
+          </div>
+          <div v-if="nextPoNumber" class="text-xs text-slate-500">
+            Next likely number: <span class="font-semibold text-slate-800">{{ nextPoNumber }}</span>
+          </div>
+          <div class="text-xs text-slate-500">Draft is saved locally until you publish.</div>
+        </div>
+
         <PoSummaryCard
           :po="po"
-          :is-create-mode="false"
+          :is-create-mode="isCreateMode"
           :show-actions="canShowActions"
           :sync-enabled="canSync"
           :supplier-readonly="!canEditSupplier"
@@ -118,9 +137,24 @@ s
       </div>
 
       <!-- Comments Section -->
-      <PoCommentsSection v-if="orderId" :po-id="orderId" />
+      <PoCommentsSection v-if="orderId && !isCreateMode" :po-id="orderId" />
 
-      <div class="flex flex-wrap gap-2 justify-end">
+      <div
+        v-if="isCreateMode"
+        class="flex flex-wrap gap-2 justify-end"
+        data-automation-id="PurchaseOrderFormView-create-actions"
+      >
+        <Button variant="outline" @click="clearCreateDraft">Discard Draft</Button>
+        <Button :disabled="isPublishing" @click="publishDraft">
+          <div v-if="isPublishing" class="flex items-center gap-2">
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            Publishing...
+          </div>
+          <span v-else>Publish PO</span>
+        </Button>
+      </div>
+
+      <div v-else class="flex flex-wrap gap-2 justify-end">
         <Button aria-label="Close" @click="close" data-automation-id="PurchaseOrderFormView-close"
           >Close</Button
         >
@@ -174,7 +208,9 @@ type PurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
 
 const route = useRoute()
 const router = useRouter()
-const orderId = route.params.id as string
+const orderIdParam = route.params.id as string | undefined
+const orderId = orderIdParam ?? 'new'
+const isCreateMode = computed(() => orderId === 'new')
 const store = usePurchaseOrderStore()
 const xeroItemStore = useXeroItemStore()
 const receiptStore = useDeliveryReceiptStore()
@@ -188,25 +224,33 @@ const isLoadingJobs = ref(false)
 const existingAllocations = ref<Record<string, AllocationItem[]>>({})
 const stockHoldingJobId = ref<string | null>(null)
 const isSavingReceipt = ref(false)
+const isPublishing = ref(false)
+const CREATE_DRAFT_KEY = 'po-create-draft-full'
+const lastPoNumber = ref<string | null>(null)
+const isLoadingLastPoNumber = ref(false)
+const lastPoNumberError = ref<string | null>(null)
 
-const po = ref<PurchaseOrder>({
-  id: '',
-  po_number: '',
-  supplier: '',
-  supplier_id: null,
-  supplier_has_xero_id: false,
-  pickup_address_id: null,
-  pickup_address: null,
-  reference: '',
-  order_date: '',
-  expected_delivery: '',
-  status: 'draft',
-  lines: [],
-  online_url: undefined,
-  xero_id: undefined,
-  created_by_id: null,
-  created_by_name: '',
-} as PurchaseOrder)
+const createEmptyPo = (): PurchaseOrder =>
+  ({
+    id: '',
+    po_number: '',
+    supplier: '',
+    supplier_id: null,
+    supplier_has_xero_id: false,
+    pickup_address_id: null,
+    pickup_address: null,
+    reference: '',
+    order_date: '',
+    expected_delivery: '',
+    status: 'draft',
+    lines: [],
+    online_url: undefined,
+    xero_id: undefined,
+    created_by_id: null,
+    created_by_name: '',
+  }) as PurchaseOrder
+
+const po = ref<PurchaseOrder>(createEmptyPo())
 
 const linesToDelete = ref<string[]>([])
 const supplierEmailCache = ref<Record<string, string | null>>({})
@@ -220,13 +264,76 @@ const canEditSupplier = computed(() => !isPoDeleted.value && !isPoSubmitted.valu
 const canEditLineItems = computed(() => !isPoDeleted.value && !isPoSubmitted.value)
 const canEditJobs = computed(() => !isPoDeleted.value) // Jobs can be edited even when submitted
 const canEditStatus = computed(() => !isPoDeleted.value) // Status can be changed even when submitted
-const canShowActions = computed(() => !isPoDeleted.value) // Actions available except when deleted
+const canShowActions = computed(() => !isPoDeleted.value && !isCreateMode.value) // Hide actions on draft create
 const defaultRetailRate = computed(() => receiptStore.getDefaultRetailRate())
 
 // Check if any lines have TBC pricing (costs not yet confirmed)
 const hasUnknownCosts = computed(() => {
   return po.value.lines.some((line) => line.price_tbc === true)
 })
+
+const nextPoNumber = computed(() => {
+  if (!lastPoNumber.value) return null
+  const match = lastPoNumber.value.match(/^(.*?)(\d+)\s*$/)
+  if (!match) return null
+  const prefix = match[1]
+  const numberPart = match[2]
+  const incremented = (Number(numberPart) || 0) + 1
+  return `${prefix}${incremented.toString().padStart(numberPart.length, '0')}`
+})
+
+const persistCreateDraft = () => {
+  if (!isCreateMode.value || typeof localStorage === 'undefined') return
+  try {
+    const payload = {
+      ...po.value,
+      savedAt: Date.now(),
+    }
+    localStorage.setItem(CREATE_DRAFT_KEY, JSON.stringify(payload))
+  } catch (err) {
+    debugLog('Failed to persist PO create draft', err)
+  }
+}
+
+const restoreCreateDraft = () => {
+  if (!isCreateMode.value || typeof localStorage === 'undefined') return
+  try {
+    const raw = localStorage.getItem(CREATE_DRAFT_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as Partial<PurchaseOrder> & { savedAt?: number }
+
+    po.value = {
+      ...po.value,
+      ...parsed,
+      lines: parsed.lines ?? [],
+    }
+    originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
+  } catch (err) {
+    debugLog('Failed to restore PO create draft', err)
+  }
+}
+
+const clearCreateDraft = () => {
+  if (typeof localStorage === 'undefined') return
+  localStorage.removeItem(CREATE_DRAFT_KEY)
+  po.value = createEmptyPo()
+  originalLines.value = []
+}
+
+const refreshLastPoNumber = async () => {
+  if (!isCreateMode.value) return
+  isLoadingLastPoNumber.value = true
+  lastPoNumberError.value = null
+  try {
+    const latest = await store.fetchLastPoNumber()
+    lastPoNumber.value = latest
+  } catch (err) {
+    lastPoNumberError.value =
+      err instanceof Error ? err.message : 'Failed to load last purchase order number'
+  } finally {
+    isLoadingLastPoNumber.value = false
+  }
+}
 
 async function fetchJobs() {
   if (isLoadingJobs.value) return
@@ -266,7 +373,7 @@ async function fetchJobs() {
 }
 
 async function loadExistingAllocations() {
-  if (!orderId) return
+  if (!orderId || isCreateMode.value) return
 
   try {
     const response = await receiptStore
@@ -280,6 +387,7 @@ async function loadExistingAllocations() {
 }
 
 async function loadJobsForReceipt() {
+  if (isCreateMode.value) return
   try {
     const { stockHolding } = await receiptStore.fetchJobs()
     stockHoldingJobId.value = stockHolding?.id || null
@@ -290,6 +398,11 @@ async function loadJobsForReceipt() {
 }
 
 async function load() {
+  if (isCreateMode.value) {
+    debugLog('Create mode - skipping server load, using local draft')
+    return
+  }
+
   if (!orderId) {
     error.value = 'Purchase order ID is required'
     return
@@ -342,6 +455,12 @@ async function load() {
 }
 
 async function saveSummary() {
+  if (isCreateMode.value) {
+    persistCreateDraft()
+    toast.success('Draft saved locally')
+    return
+  }
+
   if (isPoDeleted.value) {
     toast.error('Cannot save changes - this purchase order has been deleted')
     return
@@ -582,6 +701,13 @@ function isValidLine(line: PurchaseOrderLine) {
 }
 
 async function saveLines() {
+  if (isCreateMode.value) {
+    originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
+    persistCreateDraft()
+    toast.success('Draft saved locally')
+    return
+  }
+
   if (isPoDeleted.value) {
     debugLog('Cannot save - PO is deleted')
     toast.error('Cannot save changes - this purchase order has been deleted')
@@ -735,6 +861,64 @@ async function saveLines() {
   }
 }
 
+const buildCreatePayload = () => {
+  const validLines = po.value.lines.filter(isValidLine)
+
+  return {
+    supplier_id: po.value.supplier_id || null,
+    pickup_address_id: po.value.pickup_address_id || null,
+    reference: po.value.reference ?? '',
+    order_date: po.value.order_date || null,
+    expected_delivery: po.value.expected_delivery || null,
+    lines: validLines.map((line) => ({
+      job_id: line.job_id || null,
+      description: line.description || '',
+      quantity: line.quantity || 0,
+      unit_cost: line.unit_cost ?? null,
+      price_tbc: line.price_tbc ?? false,
+      item_code: line.item_code || '',
+      metal_type: line.metal_type || '',
+      alloy: line.alloy || '',
+      specifics: line.specifics || '',
+      location: line.location || '',
+      dimensions: line.dimensions || '',
+    })),
+  }
+}
+
+const publishDraft = async () => {
+  if (!isCreateMode.value) return
+  if (isPublishing.value) return
+
+  const payload = buildCreatePayload()
+
+  if (!payload.lines.length) {
+    toast.error('Add at least one valid line before publishing')
+    return
+  }
+
+  if (!payload.supplier_id) {
+    toast.error('Select a supplier before publishing')
+    return
+  }
+
+  try {
+    isPublishing.value = true
+    toast.info('Creating purchase order...', { id: 'po-publish' })
+    const res = await store.createOrder(payload)
+    toast.dismiss('po-publish')
+    toast.success('Purchase order created')
+    clearCreateDraft()
+    router.push(`/purchasing/po/${res.id}`)
+  } catch (err) {
+    toast.dismiss('po-publish')
+    const errorMessage = extractErrorMessage(err, 'Failed to create purchase order')
+    toast.error(errorMessage)
+  } finally {
+    isPublishing.value = false
+  }
+}
+
 async function syncWithXero() {
   if (isSyncing.value) return
 
@@ -885,6 +1069,13 @@ async function emailPurchaseOrder() {
 }
 
 async function close() {
+  if (isCreateMode.value) {
+    persistCreateDraft()
+    toast.success('Draft saved locally')
+    router.push('/purchasing/po')
+    return
+  }
+
   if (isPoDeleted.value) {
     debugLog('Closing without save - PO is deleted')
     router.push('/purchasing/po')
@@ -951,6 +1142,7 @@ async function close() {
 }
 
 const canSync = computed(() => {
+  if (isCreateMode.value) return false
   if (!po.value.supplier_has_xero_id) return false
 
   return po.value.lines.some(
@@ -1142,16 +1334,31 @@ const handleAllocationDeleted = async (data: { allocationId: string; allocationT
 
 onMounted(async () => {
   try {
-    await Promise.all([
-      xeroItemStore.fetchItems(),
-      fetchJobs(),
-      load(),
-      loadJobsForReceipt(),
-      loadExistingAllocations(),
-    ])
+    if (isCreateMode.value) {
+      restoreCreateDraft()
+      await Promise.all([xeroItemStore.fetchItems(), fetchJobs(), refreshLastPoNumber()])
+    } else {
+      await Promise.all([
+        xeroItemStore.fetchItems(),
+        fetchJobs(),
+        load(),
+        loadJobsForReceipt(),
+        loadExistingAllocations(),
+      ])
+    }
   } catch (err) {
     debugLog('Error during component initialization:', err)
   }
+
+  watch(
+    () => [po.value.reference, po.value.expected_delivery, po.value.pickup_address_id],
+    () => {
+      if (isCreateMode.value) {
+        persistCreateDraft()
+      }
+    },
+    { deep: true },
+  )
 
   watch(
     () => po.value.lines,
@@ -1207,6 +1414,10 @@ onMounted(async () => {
   watch(
     () => [po.value.supplier, po.value.supplier_id],
     (newVals, oldVals) => {
+      if (isCreateMode.value) {
+        persistCreateDraft()
+        return
+      }
       if (newVals[0] && (newVals[0] !== oldVals?.[0] || newVals[1] !== oldVals?.[1])) {
         if (debounceTimer) clearTimeout(debounceTimer)
         debounceTimer = setTimeout(async () => {

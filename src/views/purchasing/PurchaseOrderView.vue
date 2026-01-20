@@ -220,7 +220,7 @@ const formatJobs = (jobs: PurchaseOrderJob[]) => {
 }
 
 const openRow = (id: string) => router.push(`/purchasing/po/${id}`)
-const goToCreate = () => router.push('/purchasing/po/create')
+const goToCreate = () => router.push('/purchasing/po/new')
 const createFromQuote = () => router.push('/purchasing/po/create-from-quote')
 
 const deletePo = async (id: string) => {
