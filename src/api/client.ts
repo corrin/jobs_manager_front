@@ -2,6 +2,7 @@ import { Zodios } from '@zodios/core'
 import axios from 'axios'
 import { endpoints } from './generated/api'
 import { debugLog } from '../utils/debug'
+import { trimStringsDeep } from '../utils/sanitize'
 import {
   isJobEndpoint,
   isJobMutationEndpoint,
@@ -80,6 +81,14 @@ axios.defaults.withCredentials = true
 // Add ETag interceptors to the client axios instance
 axios.interceptors.request.use(
   (config) => {
+    // Normalize outbound payloads so every string field is trimmed before hitting the API
+    if (config.data !== undefined) {
+      config.data = trimStringsDeep(config.data)
+    }
+    if (config.params !== undefined) {
+      config.params = trimStringsDeep(config.params)
+    }
+
     // Add bearer token if using bearer auth
     if (import.meta.env.VITE_AUTH_METHOD === 'bearer') {
       const token = localStorage.getItem('auth_token')

@@ -5089,6 +5089,26 @@ Expected JSON:
     response: z.object({ content: z.string(), metadata: z.unknown() }).partial().passthrough(),
   },
   {
+    method: 'delete',
+    path: '/job/api/jobs/:job_id/quote-chat/:message_id/',
+    alias: 'job_api_jobs_quote_chat_destroy_2',
+    description: `Delete an individual chat message.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'message_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.void(),
+  },
+  {
     method: 'post',
     path: '/job/api/jobs/:job_id/quote-chat/interaction/',
     alias: 'job_api_jobs_quote_chat_interaction_create',

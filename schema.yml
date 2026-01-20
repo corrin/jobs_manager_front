@@ -2824,6 +2824,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobQuoteChatUpdate'
           description: ''
+    delete:
+      operationId: job_api_jobs_quote_chat_destroy_2
+      description: Delete an individual chat message.
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: message_id
+          schema:
+            type: string
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /job/api/jobs/{job_id}/quote-chat/interaction/:
     post:
       operationId: job_api_jobs_quote_chat_interaction_create
@@ -6527,7 +6549,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
+      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
       parameters:
         - in: query
           name: start_date
