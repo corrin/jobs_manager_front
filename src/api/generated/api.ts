@@ -2227,9 +2227,8 @@ const PurchaseOrderList = z
     order_date: z.string(),
     supplier: z.string(),
     supplier_id: z.string().uuid().nullable(),
-    created_by_id: z.string().uuid().nullable(),
-    created_by_name: z.string(),
     jobs: z.array(PurchaseOrderJob),
+    created_by_name: z.string().nullable(),
   })
   .passthrough()
 const PurchaseOrderLineCreateRequest = z
@@ -2336,13 +2335,12 @@ const PurchaseOrderDetail = z
     online_url: z.string().max(500).url().nullish(),
     xero_id: z.string().uuid().nullish(),
     pickup_address_id: z.string().uuid().nullable(),
-    created_by_id: z.string().uuid().nullable(),
     supplier: z.string(),
     supplier_id: z.string().nullable(),
     supplier_has_xero_id: z.boolean(),
     lines: z.array(PurchaseOrderLine),
     pickup_address: SupplierPickupAddress.nullable(),
-    created_by_name: z.string(),
+    created_by_name: z.string().nullable(),
   })
   .passthrough()
 const PurchaseOrderLineUpdateRequest = z
@@ -5042,7 +5040,7 @@ Response format matches job_quote_chat_plan.md specification.`,
   {
     method: 'delete',
     path: '/job/api/jobs/:job_id/quote-chat/',
-    alias: 'job_api_jobs_quote_chat_destroy',
+    alias: 'quote_chat_delete_all',
     description: `Delete all chat messages for a job (start fresh).`,
     requestFormat: 'json',
     parameters: [
@@ -5087,6 +5085,26 @@ Expected JSON:
       },
     ],
     response: z.object({ content: z.string(), metadata: z.unknown() }).partial().passthrough(),
+  },
+  {
+    method: 'delete',
+    path: '/job/api/jobs/:job_id/quote-chat/:message_id/',
+    alias: 'quote_chat_delete_one',
+    description: `Delete an individual chat message.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'message_id',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: z.void(),
   },
   {
     method: 'post',
