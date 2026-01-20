@@ -46,28 +46,8 @@
             <label class="flex items-center gap-2 text-sm font-medium">
               <component :is="field.icon" class="w-4 h-4 text-indigo-400" />
               <span class="w-36">{{ field.label }}</span>
-              <Input
-                v-if="field.type === 'text' || field.type === 'number'"
-                v-model="localForm[field.key] as string | number | undefined"
-                :type="field.type"
-                class="flex-1 h-8 text-xs"
-                :class="{ 'bg-gray-100 cursor-not-allowed': field.readOnly }"
-                :data-automation-id="`SectionModal-${section}-field-${field.key}`"
-                :readonly="field.readOnly"
-                :step="
-                  field.key === 'time_markup' || field.key === 'materials_markup'
-                    ? 'any'
-                    : undefined
-                "
-                :min="
-                  field.key === 'time_markup' || field.key === 'materials_markup' ? 0 : undefined
-                "
-                :max="
-                  field.key === 'time_markup' || field.key === 'materials_markup' ? 1 : undefined
-                "
-              />
               <Checkbox
-                v-else-if="field.type === 'boolean'"
+                v-if="field.type === 'boolean'"
                 v-model="localForm[field.key] as boolean | null | undefined"
               />
               <div v-else-if="field.type === 'date'" class="flex-1 relative">
@@ -101,6 +81,29 @@
                   </div>
                 </transition>
               </div>
+              <Input
+                v-else
+                v-model="localForm[field.key] as string | number | undefined"
+                :type="field.type === 'number' ? 'number' : 'text'"
+                class="flex-1 h-8 text-xs"
+                :class="[
+                  { 'bg-gray-100 cursor-not-allowed': field.readOnly },
+                  logFallbackInput(field),
+                ]"
+                :data-automation-id="`SectionModal-${section}-field-${field.key}`"
+                :readonly="field.readOnly"
+                :step="
+                  field.key === 'time_markup' || field.key === 'materials_markup'
+                    ? 'any'
+                    : undefined
+                "
+                :min="
+                  field.key === 'time_markup' || field.key === 'materials_markup' ? 0 : undefined
+                "
+                :max="
+                  field.key === 'time_markup' || field.key === 'materials_markup' ? 1 : undefined
+                "
+              />
             </label>
           </template>
         </template>
@@ -156,6 +159,16 @@ const localForm = ref({ ...props.form })
 debugLog('SectionModal props.section:', props.section, 'type:', typeof props.section)
 debugLog('SectionModal props.form:', props.form)
 debugLog('SectionModal localForm initial:', localForm.value)
+
+// Log when fallback input is rendered for non-text/number types
+function logFallbackInput(field: { key: string; type: string; label: string }) {
+  if (field.type !== 'text' && field.type !== 'number') {
+    console.log(
+      `[SectionModal] Fallback Input rendered for field "${field.key}" (type: ${field.type}, label: ${field.label})`,
+    )
+  }
+  return {} // Return empty object for class binding
+}
 
 watch(
   () => props.form,

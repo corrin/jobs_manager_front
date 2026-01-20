@@ -6,14 +6,24 @@ test('test can call backend API directly', async ({ authenticatedPage: page }) =
     throw new Error('VITE_API_BASE_URL must be set in .env')
   }
 
-  // Use the page's request context which shares cookies/state with the browser
-  // Cookie-based auth is handled automatically by the browser session
-  const response = await page.request.get(`${apiBaseUrl}/api/company-defaults/`, {
-    headers: {
-      'ngrok-skip-browser-warning': 'true',
-      Accept: 'application/json',
-    },
-  })
+  // Get auth method and build headers accordingly
+  const authMethod = process.env.VITE_AUTH_METHOD
+  const headers: Record<string, string> = {
+    'ngrok-skip-browser-warning': 'true',
+    Accept: 'application/json',
+  }
+
+  // For bearer auth, retrieve token from localStorage and add Authorization header
+  // For cookie auth, the browser session handles auth automatically via page.request
+  if (authMethod === 'bearer') {
+    const token = await page.evaluate(() => localStorage.getItem('auth_token'))
+    if (!token) {
+      throw new Error('No auth token found in localStorage after login')
+    }
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const response = await page.request.get(`${apiBaseUrl}/api/company-defaults/`, { headers })
 
   console.log(`API response status: ${response.status()}`)
 
