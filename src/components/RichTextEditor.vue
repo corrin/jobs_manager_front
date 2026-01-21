@@ -18,7 +18,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type Quill from 'quill'
-import RangeStatic from 'quill'
+import type { Range } from 'quill'
 
 interface Props {
   id?: string
@@ -100,7 +100,7 @@ const setupEventHandlers = () => {
     emit('update:modelValue', content)
   })
 
-  quill.on('selection-change', (range: RangeStatic | null) => {
+  quill.on('selection-change', (range: Range | null) => {
     if (range) {
       emit('focus')
     } else {

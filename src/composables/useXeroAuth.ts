@@ -223,7 +223,15 @@ export function useXeroAuth() {
     }
     // SSE endpoint - intentionally excluded from OpenAPI schema
     // OpenAPI doesn't support SSE well; must use EventSource API directly
-    const sseUrl = `${getApiBaseUrl()}/api/xero/sync-stream/`
+    // EventSource cannot send Authorization headers. When using bearer auth,
+    // pass token as query param. With cookie auth, withCredentials handles it.
+    let sseUrl = `${getApiBaseUrl()}/api/xero/sync-stream/`
+    if (import.meta.env.VITE_AUTH_METHOD === 'bearer') {
+      const token = localStorage.getItem('auth_token')
+      if (token) {
+        sseUrl += `?token=${encodeURIComponent(token)}`
+      }
+    }
     eventSource.value = new EventSource(sseUrl, { withCredentials: true })
     eventSource.value.onmessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data) as XeroSseEvent

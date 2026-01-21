@@ -43,6 +43,10 @@ const pickAssignableStaff = async (card: Locator, staffItems: Locator) => {
 const openMobileKanban = async (page: Page) => {
   await page.setViewportSize(mobileViewport)
   await page.goto('/kanban')
+  // Force office mode - mobile defaults to workshop mode, but this test suite
+  // specifically tests the office kanban on mobile viewport
+  await page.evaluate(() => sessionStorage.setItem('boardMode', 'office'))
+  await page.reload()
   await page.waitForLoadState('networkidle')
 }
 
