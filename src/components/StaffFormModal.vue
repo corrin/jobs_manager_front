@@ -321,6 +321,7 @@ import { schemas } from '../api/generated/api'
 import { useStaffApi } from '@/composables/useStaffApi'
 import { UserIcon, LockIcon, ClockIcon } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import { normalizeOptionalString } from '@/utils/sanitize'
 
 type Staff = z.infer<typeof schemas.Staff>
 
@@ -507,13 +508,16 @@ async function submitForm() {
   )
 
   // Prepare base data - shared between validation and API call
+  const lastLogin = normalizeOptionalString(form.value.last_login)
+  const dateJoined = normalizeOptionalString(form.value.date_joined)
+
   const baseData: Record<string, unknown> = {
-    first_name: form.value.first_name,
-    last_name: form.value.last_name,
-    preferred_name: form.value.preferred_name || null,
-    email: form.value.email,
+    first_name: form.value.first_name.trim(),
+    last_name: form.value.last_name.trim(),
+    preferred_name: normalizeOptionalString(form.value.preferred_name),
+    email: form.value.email.trim(),
     wage_rate: form.value.wage_rate,
-    xero_user_id: form.value.xero_user_id || null,
+    xero_user_id: normalizeOptionalString(form.value.xero_user_id),
     is_office_staff: form.value.is_office_staff,
     is_superuser: form.value.is_superuser,
     hours_mon: form.value.hours_mon,
@@ -527,6 +531,7 @@ async function submitForm() {
     groups:
       form.value.groups && form.value.groups.trim()
         ? form.value.groups
+            .trim()
             .split(',')
             .map((g) => Number(g.trim()))
             .filter((g) => !isNaN(g))
@@ -534,15 +539,14 @@ async function submitForm() {
     user_permissions:
       form.value.user_permissions && form.value.user_permissions.trim()
         ? form.value.user_permissions
+            .trim()
             .split(',')
             .map((p) => Number(p.trim()))
             .filter((p) => !isNaN(p))
         : [],
     // Handle datetime fields - only include if valid
-    ...(form.value.last_login &&
-      form.value.last_login.trim() && { last_login: form.value.last_login }),
-    ...(form.value.date_joined &&
-      form.value.date_joined.trim() && { date_joined: form.value.date_joined }),
+    ...(lastLogin && { last_login: lastLogin }),
+    ...(dateJoined && { date_joined: dateJoined }),
   }
 
   // Add password if provided
