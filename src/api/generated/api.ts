@@ -2227,8 +2227,9 @@ const PurchaseOrderList = z
     order_date: z.string(),
     supplier: z.string(),
     supplier_id: z.string().uuid().nullable(),
+    created_by_id: z.string().uuid().nullable(),
+    created_by_name: z.string(),
     jobs: z.array(PurchaseOrderJob),
-    created_by_name: z.string().nullable(),
   })
   .passthrough()
 const PurchaseOrderLineCreateRequest = z
@@ -2335,12 +2336,13 @@ const PurchaseOrderDetail = z
     online_url: z.string().max(500).url().nullish(),
     xero_id: z.string().uuid().nullish(),
     pickup_address_id: z.string().uuid().nullable(),
+    created_by_id: z.string().uuid().nullable(),
     supplier: z.string(),
     supplier_id: z.string().nullable(),
     supplier_has_xero_id: z.boolean(),
     lines: z.array(PurchaseOrderLine),
     pickup_address: SupplierPickupAddress.nullable(),
-    created_by_name: z.string().nullable(),
+    created_by_name: z.string(),
   })
   .passthrough()
 const PurchaseOrderLineUpdateRequest = z
@@ -6873,13 +6875,13 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
   },
   {
     method: 'get',
-    path: '/purchasing/rest/purchase-orders/:id/',
+    path: '/purchasing/rest/purchase-orders/:po_id/',
     alias: 'retrievePurchaseOrder',
     description: `Get purchase order details including lines.`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'po_id',
         type: 'Path',
         schema: z.string().uuid(),
       },
@@ -6888,7 +6890,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
   },
   {
     method: 'patch',
-    path: '/purchasing/rest/purchase-orders/:id/',
+    path: '/purchasing/rest/purchase-orders/:po_id/',
     alias: 'purchasing_rest_purchase_orders_partial_update',
     description: `Update purchase order.
 
@@ -6901,7 +6903,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         schema: PatchedPurchaseOrderUpdateRequest,
       },
       {
-        name: 'id',
+        name: 'po_id',
         type: 'Path',
         schema: z.string().uuid(),
       },

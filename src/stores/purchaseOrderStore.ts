@@ -57,7 +57,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 
     try {
       const response = await api.retrievePurchaseOrder({
-        params: { id },
+        params: { po_id: id },
       })
       return response
     } catch (err) {
@@ -76,7 +76,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
 
     try {
       const response = await api.purchasing_rest_purchase_orders_partial_update(data, {
-        params: { id: id },
+        params: { po_id: id },
       })
       return response
     } catch (err) {

@@ -195,3 +195,9 @@ export default async function globalTeardown() {
     fs.unlinkSync(LOCK_FILE)
   }
 }
+
+// Auto-run when executed directly (not imported as module)
+const isDirectRun = process.argv[1]?.includes('global-teardown')
+if (isDirectRun) {
+  globalTeardown()
+}

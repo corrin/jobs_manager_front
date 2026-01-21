@@ -47,7 +47,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
     error.value = null
 
     try {
-      const response = await api.retrievePurchaseOrder({ params: { id } })
+      const response = await api.retrievePurchaseOrder({ params: { po_id: id } })
       return response
     } catch (err) {
       const errorMessage = handleApiError(err, `Failed to fetch purchase order ${id}`)
