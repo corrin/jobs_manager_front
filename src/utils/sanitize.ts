@@ -52,6 +52,8 @@ export function trimStringsDeep<T>(input: T): T {
 
 /**
  * Normalize a string-like field by trimming and returning undefined when empty.
+ * Undefined is used because Zod schemas expect string | undefined for optional fields.
+ * When serialized to JSON, undefined is omitted, which Django backends treat as null.
  */
 export function normalizeOptionalString(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined
