@@ -115,8 +115,8 @@
                 {{ po.created_by_name || '—' }}
               </td>
               <td class="p-3">
-                <span :class="getStatusClass(normalizeStatus(po.status))">
-                  {{ formatStatus(normalizeStatus(po.status)) }}
+                <span :class="getStatusClass(normalizeStatus(po.status), po.isLocalDraft)">
+                  {{ formatStatus(normalizeStatus(po.status), po.isLocalDraft) }}
                 </span>
               </td>
               <td class="p-3 flex justify-center gap-2">
@@ -171,25 +171,29 @@ import Pagination from '@/components/ui/pagination/Pagination.vue'
 import { toast } from 'vue-sonner'
 import { schemas } from '@/api/generated/api'
 import { listPoDrafts, deletePoDraft } from '@/composables/usePoDrafts'
+import type { z } from 'zod'
 
 const statusOptions = schemas.PurchaseOrderDetailStatusEnum.options
 type PurchaseOrderStatus = (typeof statusOptions)[number]
+type PurchaseOrderList = z.infer<typeof schemas.PurchaseOrderList>
+type PurchaseOrderRow = PurchaseOrderList & { isLocalDraft?: boolean }
 
 const router = useRouter()
 const store = usePurchaseOrderStore()
 const orders = computed(() => store.orders)
 const drafts = ref(listPoDrafts())
-const combinedOrders = computed(() => {
-  const mappedDrafts = drafts.value.map((draft) => ({
+const combinedOrders = computed<PurchaseOrderRow[]>(() => {
+  const mappedDrafts: PurchaseOrderRow[] = drafts.value.map((draft) => ({
     id: `draft-${draft.draftId}`,
     po_number: draft.po_number || draft.reference || draft.label || 'Local Draft',
-    status: 'local_draft' as PurchaseOrderStatus,
+    status: 'draft' as PurchaseOrderStatus,
     order_date: draft.order_date || new Date().toISOString(),
     supplier: draft.supplier || 'Local draft',
-    supplier_id: draft.supplier_id,
+    supplier_id: draft.supplier_id ?? null,
     created_by_id: null,
     created_by_name: 'Local Draft',
     jobs: [],
+    isLocalDraft: true,
   }))
   return [...mappedDrafts, ...orders.value]
 })
@@ -243,7 +247,6 @@ watch(searchTerm, () => {
 
 const statusLabels: Record<PurchaseOrderStatus, string> = {
   draft: 'Draft',
-  local_draft: 'Local Draft',
   submitted: 'Submitted to Supplier',
   partially_received: 'Partially Received',
   fully_received: 'Fully Received',
@@ -252,16 +255,19 @@ const statusLabels: Record<PurchaseOrderStatus, string> = {
 
 const statusClasses: Record<PurchaseOrderStatus, string> = {
   draft: 'px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800',
-  local_draft: 'px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-800',
   submitted: 'px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800',
   partially_received: 'px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800',
   fully_received: 'px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800',
   deleted: 'px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800',
 }
 
-const formatStatus = (status: PurchaseOrderStatus) => statusLabels[status] ?? status
+const formatStatus = (status: PurchaseOrderStatus, isLocalDraft?: boolean) =>
+  isLocalDraft ? 'Local Draft' : statusLabels[status] ?? status
 
-const getStatusClass = (status: PurchaseOrderStatus) => statusClasses[status] ?? statusClasses.draft
+const getStatusClass = (status: PurchaseOrderStatus, isLocalDraft?: boolean) =>
+  isLocalDraft
+    ? 'px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-800'
+    : statusClasses[status] ?? statusClasses.draft
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-NZ', {

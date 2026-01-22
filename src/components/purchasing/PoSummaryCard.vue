@@ -119,7 +119,6 @@ function formatDate(dateString: string | null | undefined): string {
 }
 
 const statusOptions: { value: Status; label: string }[] = [
-  { value: 'local_draft', label: 'Local Draft' },
   { value: 'draft', label: 'Draft' },
   { value: 'submitted', label: 'Submitted to Supplier' },
   { value: 'partially_received', label: 'Partially Received' },
@@ -138,7 +137,7 @@ const statusOptions: { value: Status; label: string }[] = [
 
     <CardContent>
       <div class="flex flex-col gap-1">
-        <template v-if="po.status === 'draft' || po.status === 'local_draft' || isCreateMode">
+        <template v-if="po.status === 'draft' || isCreateMode">
           <ClientLookup
             :supplier-lookup="supplierLookup"
             id="supplier"

@@ -195,6 +195,8 @@ type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailRespo
 type ClientContact = z.infer<typeof schemas.ClientContact>
 type PurchaseOrderEmailResponseWithLegacy = PurchaseOrderEmailResponse & { email?: string }
 type PurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
+type PurchaseOrderLineCreate = z.input<typeof schemas.PurchaseOrderLineCreateRequest>
+type PurchaseOrderCreatePayload = z.input<typeof schemas.PurchaseOrderCreateRequest>
 
 const route = useRoute()
 const router = useRouter()
@@ -222,6 +224,37 @@ const isLoadingLastPoNumber = ref(false)
 const lastPoNumberError = ref<string | null>(null)
 const lastDraftSavedAt = ref<Date | null>(null)
 
+const mapLineToDraft = (line: PurchaseOrderLine): PurchaseOrderLineCreate => ({
+  job_id: line.job_id || null,
+  description: line.description || '',
+  quantity: line.quantity ?? 0,
+  unit_cost: line.unit_cost ?? null,
+  price_tbc: line.price_tbc ?? false,
+  item_code: line.item_code || '',
+  metal_type: (line.metal_type as string | undefined) || '',
+  alloy: line.alloy || '',
+  specifics: line.specifics || '',
+  location: line.location || '',
+  dimensions: line.dimensions || '',
+})
+
+const mapDraftLineToPoLine = (line: PurchaseOrderLineCreate): PurchaseOrderLine => ({
+  id: '',
+  description: line.description || '',
+  quantity: line.quantity ?? 0,
+  dimensions: line.dimensions || undefined,
+  unit_cost: line.unit_cost ?? null,
+  price_tbc: line.price_tbc ?? false,
+  supplier_item_code: undefined,
+  item_code: line.item_code || '',
+  received_quantity: undefined,
+  metal_type: (line.metal_type as string | undefined) || undefined,
+  alloy: line.alloy || undefined,
+  specifics: line.specifics || undefined,
+  location: line.location || undefined,
+  job_id: line.job_id ?? null,
+})
+
 const createEmptyPo = (): PurchaseOrder =>
   ({
     id: '',
@@ -234,7 +267,7 @@ const createEmptyPo = (): PurchaseOrder =>
     reference: '',
     order_date: '',
     expected_delivery: '',
-    status: 'local_draft',
+    status: 'draft',
     lines: [],
     online_url: undefined,
     xero_id: undefined,
@@ -280,19 +313,19 @@ const persistCreateDraft = () => {
     if (!po.value.po_number) {
       po.value.po_number = nextPoNumber.value || 'Local Draft'
     }
-    const draftId =
+    const draftIdToPersist =
       draftId.value ||
       (route.query.draft as string | undefined) ||
       (po.value.id && po.value.id !== 'new' ? po.value.id : undefined)
 
     const savedId = savePoDraft({
-      draftId,
+      draftId: draftIdToPersist,
       supplier_id: po.value.supplier_id ?? null,
       pickup_address_id: po.value.pickup_address_id ?? null,
       reference: po.value.reference ?? '',
       order_date: po.value.order_date || null,
       expected_delivery: po.value.expected_delivery || null,
-      lines: po.value.lines ?? [],
+      lines: (po.value.lines ?? []).map(mapLineToDraft),
       label: po.value.reference || po.value.supplier || 'Untitled PO',
       supplier: po.value.supplier || '',
       po_number: po.value.po_number,
@@ -311,14 +344,17 @@ const persistCreateDraft = () => {
 const restoreCreateDraft = () => {
   if (!isCreateMode.value || typeof localStorage === 'undefined') return
   try {
-    const targetDraft = (draftId.value && getPoDraft(draftId.value)) || listPoDrafts().at(0) || null
+    const drafts = listPoDrafts()
+    const targetDraft = (draftId.value && getPoDraft(draftId.value)) || drafts[0] || null
     if (!targetDraft) return
 
     po.value = {
       ...po.value,
       ...targetDraft,
-      lines: targetDraft.lines ?? [],
+      lines: (targetDraft.lines ?? []).map(mapDraftLineToPoLine),
       po_number: targetDraft.po_number || po.value.po_number || nextPoNumber.value || 'Local Draft',
+      order_date: targetDraft.order_date || '',
+      expected_delivery: targetDraft.expected_delivery || '',
     }
     originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
   } catch (err) {
@@ -340,7 +376,7 @@ const ensureCreateDraft = () => {
 const clearCreateDraft = () => {
   if (typeof localStorage === 'undefined') return
   const targetId =
-    draftId.value || (route.query.draft as string | undefined) || listPoDrafts().at(0)?.draftId
+    draftId.value || (route.query.draft as string | undefined) || listPoDrafts()[0]?.draftId
   if (targetId) {
     deletePoDraft(targetId)
   }
@@ -896,7 +932,7 @@ async function saveLines() {
   }
 }
 
-const buildCreatePayload = () => {
+const buildCreatePayload = (): PurchaseOrderCreatePayload => {
   const validLines = po.value.lines.filter(isValidLine)
 
   return {
@@ -905,19 +941,7 @@ const buildCreatePayload = () => {
     reference: po.value.reference ?? '',
     order_date: po.value.order_date || null,
     expected_delivery: po.value.expected_delivery || null,
-    lines: validLines.map((line) => ({
-      job_id: line.job_id || null,
-      description: line.description || '',
-      quantity: line.quantity || 0,
-      unit_cost: line.unit_cost ?? null,
-      price_tbc: line.price_tbc ?? false,
-      item_code: line.item_code || '',
-      metal_type: line.metal_type || '',
-      alloy: line.alloy || '',
-      specifics: line.specifics || '',
-      location: line.location || '',
-      dimensions: line.dimensions || '',
-    })),
+    lines: validLines.map(mapLineToDraft),
   }
 }
 
@@ -927,7 +951,7 @@ const publishDraft = async () => {
 
   const payload = buildCreatePayload()
 
-  if (!payload.lines.length) {
+  if (!payload.lines || !payload.lines.length) {
     toast.error('Add at least one valid line before publishing')
     return
   }
