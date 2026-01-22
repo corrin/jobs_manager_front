@@ -15,28 +15,9 @@ s
 
       <!-- Main Content -->
       <div v-else class="flex flex-col lg:flex-row gap-6">
-        <div
-          v-if="isCreateMode"
-          class="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 flex flex-col gap-1"
-        >
-          <div class="text-sm text-slate-700 flex justify-between">
-            <span class="font-semibold">Creating new purchase order</span>
-            <span v-if="isLoadingLastPoNumber" class="text-slate-500">Loading last PO...</span>
-            <span v-else-if="lastPoNumber" class="text-slate-600">
-              Last #: <span class="font-semibold text-slate-900">{{ lastPoNumber }}</span>
-            </span>
-            <span v-else-if="lastPoNumberError" class="text-red-600">PO number unavailable</span>
-            <span v-else class="text-slate-500">No previous PO found</span>
-          </div>
-          <div v-if="nextPoNumber" class="text-xs text-slate-500">
-            Next likely number: <span class="font-semibold text-slate-800">{{ nextPoNumber }}</span>
-          </div>
-          <div class="text-xs text-slate-500">Draft is saved locally until you publish.</div>
-        </div>
-
         <PoSummaryCard
           :po="po"
-          :is-create-mode="isCreateMode"
+          :is-create-mode="false"
           :show-actions="canShowActions"
           :sync-enabled="canSync"
           :supplier-readonly="!canEditSupplier"
@@ -138,6 +119,14 @@ s
 
       <!-- Comments Section -->
       <PoCommentsSection v-if="orderId && !isCreateMode" :po-id="orderId" />
+      <Card v-else class="mt-2">
+        <CardHeader>
+          <h3 class="font-semibold text-sm">Comments</h3>
+        </CardHeader>
+        <CardContent class="text-sm text-slate-600">
+          Comments will be available after this PO is published.
+        </CardContent>
+      </Card>
 
       <div
         v-if="isCreateMode"
@@ -194,6 +183,7 @@ import { schemas } from '@/api/generated/api'
 import { onPoConcurrencyRetry } from '@/composables/usePoConcurrencyEvents'
 import { openGmailCompose } from '@/utils/email'
 import type { z } from 'zod'
+import { getPoDraft, savePoDraft, deletePoDraft, listPoDrafts } from '@/composables/usePoDrafts'
 
 // Import types from generated API schemas
 type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
@@ -209,6 +199,8 @@ type PurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
 const route = useRoute()
 const router = useRouter()
 const orderIdParam = route.params.id as string | undefined
+const draftIdParam = (route.query.draft as string | undefined) || undefined
+const draftId = ref<string | undefined>(draftIdParam)
 const orderId = orderIdParam ?? 'new'
 const isCreateMode = computed(() => orderId === 'new')
 const store = usePurchaseOrderStore()
@@ -225,15 +217,15 @@ const existingAllocations = ref<Record<string, AllocationItem[]>>({})
 const stockHoldingJobId = ref<string | null>(null)
 const isSavingReceipt = ref(false)
 const isPublishing = ref(false)
-const CREATE_DRAFT_KEY = 'po-create-draft-full'
 const lastPoNumber = ref<string | null>(null)
 const isLoadingLastPoNumber = ref(false)
 const lastPoNumberError = ref<string | null>(null)
+const lastDraftSavedAt = ref<Date | null>(null)
 
 const createEmptyPo = (): PurchaseOrder =>
   ({
     id: '',
-    po_number: '',
+    po_number: 'Local Draft',
     supplier: '',
     supplier_id: null,
     supplier_has_xero_id: false,
@@ -242,7 +234,7 @@ const createEmptyPo = (): PurchaseOrder =>
     reference: '',
     order_date: '',
     expected_delivery: '',
-    status: 'draft',
+    status: 'local_draft',
     lines: [],
     online_url: undefined,
     xero_id: undefined,
@@ -264,7 +256,7 @@ const canEditSupplier = computed(() => !isPoDeleted.value && !isPoSubmitted.valu
 const canEditLineItems = computed(() => !isPoDeleted.value && !isPoSubmitted.value)
 const canEditJobs = computed(() => !isPoDeleted.value) // Jobs can be edited even when submitted
 const canEditStatus = computed(() => !isPoDeleted.value) // Status can be changed even when submitted
-const canShowActions = computed(() => !isPoDeleted.value && !isCreateMode.value) // Hide actions on draft create
+const canShowActions = computed(() => !isPoDeleted.value) // Keep actions visible for consistent UI
 const defaultRetailRate = computed(() => receiptStore.getDefaultRetailRate())
 
 // Check if any lines have TBC pricing (costs not yet confirmed)
@@ -285,11 +277,32 @@ const nextPoNumber = computed(() => {
 const persistCreateDraft = () => {
   if (!isCreateMode.value || typeof localStorage === 'undefined') return
   try {
-    const payload = {
-      ...po.value,
-      savedAt: Date.now(),
+    if (!po.value.po_number) {
+      po.value.po_number = nextPoNumber.value || 'Local Draft'
     }
-    localStorage.setItem(CREATE_DRAFT_KEY, JSON.stringify(payload))
+    const draftId =
+      draftId.value ||
+      (route.query.draft as string | undefined) ||
+      (po.value.id && po.value.id !== 'new' ? po.value.id : undefined)
+
+    const savedId = savePoDraft({
+      draftId,
+      supplier_id: po.value.supplier_id ?? null,
+      pickup_address_id: po.value.pickup_address_id ?? null,
+      reference: po.value.reference ?? '',
+      order_date: po.value.order_date || null,
+      expected_delivery: po.value.expected_delivery || null,
+      lines: po.value.lines ?? [],
+      label: po.value.reference || po.value.supplier || 'Untitled PO',
+      supplier: po.value.supplier || '',
+      po_number: po.value.po_number,
+    })
+
+    if (!draftId.value && savedId) {
+      draftId.value = savedId
+      router.replace({ query: { ...route.query, draft: savedId } })
+    }
+    lastDraftSavedAt.value = new Date()
   } catch (err) {
     debugLog('Failed to persist PO create draft', err)
   }
@@ -298,14 +311,14 @@ const persistCreateDraft = () => {
 const restoreCreateDraft = () => {
   if (!isCreateMode.value || typeof localStorage === 'undefined') return
   try {
-    const raw = localStorage.getItem(CREATE_DRAFT_KEY)
-    if (!raw) return
-    const parsed = JSON.parse(raw) as Partial<PurchaseOrder> & { savedAt?: number }
+    const targetDraft = (draftId.value && getPoDraft(draftId.value)) || listPoDrafts().at(0) || null
+    if (!targetDraft) return
 
     po.value = {
       ...po.value,
-      ...parsed,
-      lines: parsed.lines ?? [],
+      ...targetDraft,
+      lines: targetDraft.lines ?? [],
+      po_number: targetDraft.po_number || po.value.po_number || nextPoNumber.value || 'Local Draft',
     }
     originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
   } catch (err) {
@@ -313,11 +326,30 @@ const restoreCreateDraft = () => {
   }
 }
 
+const ensureCreateDraft = () => {
+  if (!isCreateMode.value) return
+  if (draftId.value) {
+    // Already have an id, just persist current state to refresh updatedAt
+    persistCreateDraft()
+    return
+  }
+  // Create a new empty draft entry immediately so it shows on the list
+  persistCreateDraft()
+}
+
 const clearCreateDraft = () => {
   if (typeof localStorage === 'undefined') return
-  localStorage.removeItem(CREATE_DRAFT_KEY)
+  const targetId =
+    draftId.value || (route.query.draft as string | undefined) || listPoDrafts().at(0)?.draftId
+  if (targetId) {
+    deletePoDraft(targetId)
+  }
+  draftId.value = undefined
   po.value = createEmptyPo()
   originalLines.value = []
+  const nextQuery = { ...route.query }
+  delete (nextQuery as Record<string, unknown>).draft
+  router.replace({ query: nextQuery })
 }
 
 const refreshLastPoNumber = async () => {
@@ -327,6 +359,9 @@ const refreshLastPoNumber = async () => {
   try {
     const latest = await store.fetchLastPoNumber()
     lastPoNumber.value = latest
+    if (!po.value.po_number && latest) {
+      po.value.po_number = nextPoNumber.value || latest
+    }
   } catch (err) {
     lastPoNumberError.value =
       err instanceof Error ? err.message : 'Failed to load last purchase order number'
@@ -1336,6 +1371,7 @@ onMounted(async () => {
   try {
     if (isCreateMode.value) {
       restoreCreateDraft()
+      ensureCreateDraft()
       await Promise.all([xeroItemStore.fetchItems(), fetchJobs(), refreshLastPoNumber()])
     } else {
       await Promise.all([
