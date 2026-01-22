@@ -42,6 +42,8 @@ export function trimStringsDeep<T>(input: T): T {
   if (isPlainObject(input)) {
     const result: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(input)) {
+      // Strip undefined values for cleaner JSON payloads
+      if (value === undefined) continue
       result[key] = trimStringsDeep(value)
     }
     return result as T

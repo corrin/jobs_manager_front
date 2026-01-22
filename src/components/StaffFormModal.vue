@@ -510,14 +510,14 @@ async function submitForm() {
   // Prepare base data - shared between validation and API call
   const lastLogin = normalizeOptionalString(form.value.last_login)
   const dateJoined = normalizeOptionalString(form.value.date_joined)
+  const preferredName = normalizeOptionalString(form.value.preferred_name)
+  const xeroUserId = normalizeOptionalString(form.value.xero_user_id)
 
   const baseData: Record<string, unknown> = {
     first_name: form.value.first_name.trim(),
     last_name: form.value.last_name.trim(),
-    preferred_name: normalizeOptionalString(form.value.preferred_name),
     email: form.value.email.trim(),
     wage_rate: form.value.wage_rate,
-    xero_user_id: normalizeOptionalString(form.value.xero_user_id),
     is_office_staff: form.value.is_office_staff,
     is_superuser: form.value.is_superuser,
     hours_mon: form.value.hours_mon,
@@ -544,7 +544,9 @@ async function submitForm() {
             .map((p) => Number(p.trim()))
             .filter((p) => !isNaN(p))
         : [],
-    // Handle datetime fields - only include if valid
+    // Handle optional fields - only include if they have a value
+    ...(preferredName && { preferred_name: preferredName }),
+    ...(xeroUserId && { xero_user_id: xeroUserId }),
     ...(lastLogin && { last_login: lastLogin }),
     ...(dateJoined && { date_joined: dateJoined }),
   }
