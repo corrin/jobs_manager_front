@@ -184,9 +184,9 @@ test.describe('timesheet entry performance', () => {
     // Visualize timeline
     for (const req of apiTiming.sort((a, b) => a.start - b.start)) {
       const relStart = req.start - minStart
-      const duration = req.end - req.start
+      const duration = Math.max(0, req.end - req.start)
       const shortUrl = req.url.split('?')[0].substring(0, 50)
-      const bar = '█'.repeat(Math.ceil(duration / 100))
+      const bar = '█'.repeat(Math.min(50, Math.ceil(duration / 100)))
       console.log(
         `${relStart.toString().padStart(5)}ms: ${shortUrl.padEnd(50)} |${bar}| ${duration}ms`,
       )
