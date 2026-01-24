@@ -31,7 +31,6 @@ coverage
 activate_env.sh
 check_env.js
 ENV_SETUP.md
-.nvmrc
 
 *.tsbuildinfo
 
