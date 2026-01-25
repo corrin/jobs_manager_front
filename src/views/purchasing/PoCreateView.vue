@@ -61,9 +61,27 @@ import { toast } from 'vue-sonner'
 import { debugLog } from '@/utils/debug'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-
-type PurchaseOrderDetail = z.infer<typeof schemas.PurchaseOrderDetail>
-type PurchaseOrderCreatePayload = z.infer<typeof schemas.PurchaseOrderCreate>
+type BackendStatus = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
+type UiStatus = BackendStatus | 'local_draft'
+type PurchaseOrderDetail = {
+  id: string
+  po_number: string
+  supplier: string
+  supplier_id: string | null
+  supplier_has_xero_id: boolean
+  pickup_address_id: string | null
+  pickup_address: unknown
+  reference?: string | null
+  order_date?: string | null
+  expected_delivery?: string | null
+  status?: UiStatus
+  lines: unknown[]
+  online_url?: string
+  xero_id?: string
+  created_by_id: string | null
+  created_by_name: string
+}
+type PurchaseOrderCreatePayload = z.input<typeof schemas.PurchaseOrderCreateRequest>
 
 const router = useRouter()
 const store = usePurchaseOrderStore()
@@ -76,17 +94,17 @@ const DRAFT_STORAGE_KEY = 'po-create-draft'
 let draftSaveTimer: ReturnType<typeof setTimeout> | null = null
 
 const po = ref<PurchaseOrderDetail>({
+  id: '',
   po_number: '',
   supplier: '',
   supplier_has_xero_id: false,
   supplier_id: null,
   pickup_address_id: null,
-  pickup_address: {} as PurchaseOrderDetail['pickup_address'],
+  pickup_address: null,
   reference: '',
-  expected_delivery: '',
-  status: 'draft',
-  id: '',
-  order_date: '',
+  expected_delivery: null,
+  status: 'local_draft',
+  order_date: null,
   lines: [],
   online_url: undefined,
   xero_id: undefined,

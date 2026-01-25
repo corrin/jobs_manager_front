@@ -39,43 +39,73 @@
         v-if="drafts.length"
         class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3"
       >
-        <div class="flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-slate-800">Local drafts</h2>
-          <span class="text-xs text-slate-500">{{ drafts.length }} saved locally</span>
-        </div>
-        <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-          <div
-            v-for="draft in drafts"
-            :key="draft.draftId"
-            class="rounded-lg border border-slate-200 bg-white p-3 flex flex-col gap-2 shadow-sm"
-          >
-            <div class="flex items-center justify-between">
-              <div class="text-sm font-semibold text-slate-900">
-                {{ draft.reference || draft.label || 'Untitled PO' }}
+        <button
+          class="w-full flex items-center justify-between text-left hover:text-slate-800"
+          @click="draftsOpen = !draftsOpen"
+        >
+          <div class="flex items-center gap-2">
+            <ChevronDown
+              class="w-4 h-4 text-slate-500 transition-transform"
+              :class="{ 'rotate-180': draftsOpen }"
+            />
+            <h2 class="text-sm font-semibold text-slate-800">Local drafts</h2>
+            <span class="text-xs text-slate-500">{{ drafts.length }} saved locally</span>
+          </div>
+        </button>
+
+        <transition name="fade">
+          <div v-show="draftsOpen" class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <div
+              v-for="draft in drafts"
+              :key="draft.draftId"
+              class="rounded-xl border border-slate-200 bg-white p-4 flex flex-col gap-3 shadow-sm hover:shadow-md transition w-full max-w-md"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <div class="space-y-1 min-w-0">
+                  <p class="text-xs uppercase tracking-wide text-slate-500">PO #</p>
+                  <p class="text-base font-semibold text-slate-900 truncate">
+                    {{ draft.po_number || draft.reference || 'Local Draft' }}
+                  </p>
+                  <p class="text-sm text-slate-700 truncate">
+                    {{ draft.reference || draft.label || 'Untitled PO' }}
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="text-[11px] text-slate-500">Saved</p>
+                  <p class="text-[11px] font-medium text-slate-600">
+                    {{ new Date(draft.updatedAt).toLocaleString() }}
+                  </p>
+                </div>
               </div>
-              <span class="text-[11px] text-slate-500">
-                {{ new Date(draft.updatedAt).toLocaleString() }}
-              </span>
-            </div>
-            <div class="text-xs text-slate-600">
-              Supplier:
-              <span class="font-medium">{{ draft.supplier_id ? 'Selected' : 'Not set' }}</span>
-            </div>
-            <div class="flex gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                class="flex-1"
-                @click="openDraft(draft.draftId)"
-              >
-                Resume
-              </Button>
-              <Button size="sm" variant="outline" @click="deleteDraft(draft.draftId)">
-                Delete
-              </Button>
+              <div class="flex items-center gap-2 text-xs text-slate-600 flex-wrap">
+                <span class="px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                  Supplier: {{ draft.supplier || (draft.supplier_id ? 'Selected' : 'Not set') }}
+                </span>
+                <span
+                  class="px-2 py-1 rounded-full"
+                  :class="
+                    draft.lines?.length
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-slate-100 text-slate-600'
+                  "
+                >
+                  {{ draft.lines?.length || 0 }} lines
+                </span>
+              </div>
+              <div class="flex items-center justify-start gap-2 pt-1">
+                <Button size="sm" class="px-4" @click="openDraft(draft.draftId)">Resume</Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  class="px-3 whitespace-nowrap"
+                  @click="deleteDraft(draft.draftId)"
+                >
+                  Delete
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        </transition>
       </div>
 
       <div
@@ -163,9 +193,17 @@ import { debugLog } from '@/utils/debug'
 
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
-import { FileText, Pencil, Trash2, PlusCircle, FileSpreadsheet, Search } from 'lucide-vue-next'
+import {
+  FileText,
+  Pencil,
+  Trash2,
+  PlusCircle,
+  FileSpreadsheet,
+  Search,
+  ChevronDown,
+} from 'lucide-vue-next'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
-import { computed, onMounted, ref, watch, onActivated } from 'vue'
+import { computed, onMounted, ref, watch, onActivated, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import Pagination from '@/components/ui/pagination/Pagination.vue'
 import { toast } from 'vue-sonner'
@@ -173,8 +211,8 @@ import { schemas } from '@/api/generated/api'
 import { listPoDrafts, deletePoDraft } from '@/composables/usePoDrafts'
 import type { z } from 'zod'
 
-const statusOptions = schemas.PurchaseOrderDetailStatusEnum.options
-type PurchaseOrderStatus = (typeof statusOptions)[number]
+type BackendPurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
+type UiPurchaseOrderStatus = BackendPurchaseOrderStatus | 'local_draft'
 type PurchaseOrderList = z.infer<typeof schemas.PurchaseOrderList>
 type PurchaseOrderRow = PurchaseOrderList & { isLocalDraft?: boolean }
 
@@ -182,11 +220,17 @@ const router = useRouter()
 const store = usePurchaseOrderStore()
 const orders = computed(() => store.orders)
 const drafts = ref(listPoDrafts())
+const draftsOpen = ref(true)
+
+const refreshDrafts = () => {
+  drafts.value = listPoDrafts()
+  debugLog('PO list: refreshed local drafts', { count: drafts.value.length })
+}
 const combinedOrders = computed<PurchaseOrderRow[]>(() => {
   const mappedDrafts: PurchaseOrderRow[] = drafts.value.map((draft) => ({
     id: `draft-${draft.draftId}`,
     po_number: draft.po_number || draft.reference || draft.label || 'Local Draft',
-    status: 'draft' as PurchaseOrderStatus,
+    status: 'draft',
     order_date: draft.order_date || new Date().toISOString(),
     supplier: draft.supplier || 'Local draft',
     supplier_id: draft.supplier_id ?? null,
@@ -202,9 +246,17 @@ const page = ref(1)
 const pageSize = 11
 const searchTerm = ref('')
 
-const normalizeStatus = (status?: string): PurchaseOrderStatus => {
-  if (status && statusOptions.includes(status as PurchaseOrderStatus)) {
-    return status as PurchaseOrderStatus
+const onStorage = (event: StorageEvent) => {
+  if (event.key === 'po-drafts') {
+    refreshDrafts()
+  }
+}
+
+const normalizeStatus = (status?: string): UiPurchaseOrderStatus => {
+  if (status === 'local_draft') return 'local_draft'
+  const options = schemas.PurchaseOrderDetailStatusEnum.options
+  if (status && options.includes(status as BackendPurchaseOrderStatus)) {
+    return status as BackendPurchaseOrderStatus
   }
   return 'draft'
 }
@@ -237,6 +289,7 @@ const pagedOrders = computed(() => {
 watch(
   () => orders.value.length,
   () => {
+    refreshDrafts()
     if (page.value > totalPages.value) page.value = 1
   },
 )
@@ -245,7 +298,7 @@ watch(searchTerm, () => {
   page.value = 1
 })
 
-const statusLabels: Record<PurchaseOrderStatus, string> = {
+const statusLabels: Record<BackendPurchaseOrderStatus, string> = {
   draft: 'Draft',
   submitted: 'Submitted to Supplier',
   partially_received: 'Partially Received',
@@ -253,7 +306,7 @@ const statusLabels: Record<PurchaseOrderStatus, string> = {
   deleted: 'Deleted',
 }
 
-const statusClasses: Record<PurchaseOrderStatus, string> = {
+const statusClasses: Record<BackendPurchaseOrderStatus, string> = {
   draft: 'px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800',
   submitted: 'px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800',
   partially_received: 'px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800',
@@ -261,13 +314,13 @@ const statusClasses: Record<PurchaseOrderStatus, string> = {
   deleted: 'px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800',
 }
 
-const formatStatus = (status: PurchaseOrderStatus, isLocalDraft?: boolean) =>
-  isLocalDraft ? 'Local Draft' : statusLabels[status] ?? status
+const formatStatus = (status: UiPurchaseOrderStatus, isLocalDraft?: boolean) =>
+  isLocalDraft ? 'Local Draft' : (statusLabels[status as BackendPurchaseOrderStatus] ?? status)
 
-const getStatusClass = (status: PurchaseOrderStatus, isLocalDraft?: boolean) =>
+const getStatusClass = (status: UiPurchaseOrderStatus, isLocalDraft?: boolean) =>
   isLocalDraft
     ? 'px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-800'
-    : statusClasses[status] ?? statusClasses.draft
+    : (statusClasses[status as BackendPurchaseOrderStatus] ?? statusClasses.draft)
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-NZ', {
@@ -286,14 +339,21 @@ const formatJobs = (jobs: PurchaseOrderJob[]) => {
   return `${jobs[0].job_number} +${jobs.length - 1} others`
 }
 
-const openRow = (id: string) => router.push(`/purchasing/po/${id}`)
+const openRow = (id: string) => {
+  if (id.startsWith('draft-')) {
+    openDraft(id.replace('draft-', ''))
+    return
+  }
+  router.push(`/purchasing/po/${id}`)
+}
 const goToCreate = () => router.push('/purchasing/po/new')
 const createFromQuote = () => router.push('/purchasing/po/create-from-quote')
-const openDraft = (id: string) => router.push({ path: '/purchasing/po/new', query: { draft: id } })
+const openDraft = (id: string) =>
+  router.push({ path: '/purchasing/po/new', query: { draft: id } }).then(() => refreshDrafts())
 
 const deleteDraft = (id: string) => {
   deletePoDraft(id)
-  drafts.value = listPoDrafts()
+  refreshDrafts()
   toast.success('Draft removed')
 }
 
@@ -329,14 +389,19 @@ const deletePo = async (id: string) => {
   }
 }
 
-const isPoDeleted = (status: PurchaseOrderStatus) => status === 'deleted'
+const isPoDeleted = (status: UiPurchaseOrderStatus) => status === 'deleted'
 
 onMounted(() => {
   store.fetchOrders()
-  drafts.value = listPoDrafts()
+  refreshDrafts()
+  window.addEventListener('storage', onStorage)
 })
 
 onActivated(() => {
-  drafts.value = listPoDrafts()
+  refreshDrafts()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('storage', onStorage)
 })
 </script>

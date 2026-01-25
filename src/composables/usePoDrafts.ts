@@ -21,7 +21,12 @@ function getStorage(): PoDraft[] {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as PoDraft[]
-    return Array.isArray(parsed) ? parsed.filter((d) => d && d.draftId) : []
+    const filtered = Array.isArray(parsed) ? parsed.filter((d) => d && d.draftId) : []
+    debugLog('po-drafts:get', {
+      rawCount: Array.isArray(parsed) ? parsed.length : 0,
+      filtered: filtered.length,
+    })
+    return filtered
   } catch (err) {
     debugLog('Failed to parse PO drafts', err)
     return []
@@ -32,6 +37,7 @@ function setStorage(drafts: PoDraft[]) {
   if (typeof localStorage === 'undefined') return
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(drafts))
+    debugLog('po-drafts:set', { count: drafts.length })
   } catch (err) {
     debugLog('Failed to persist PO drafts', err)
   }
@@ -49,6 +55,7 @@ export function savePoDraft(draft: Partial<PoDraft> & { draftId?: string }) {
   const drafts = getStorage()
   const now = Date.now()
   const nextDraft: PoDraft = {
+    ...draft,
     draftId: draft.draftId || uuidv4(),
     updatedAt: now,
     supplier_id: draft.supplier_id ?? null,
@@ -59,7 +66,6 @@ export function savePoDraft(draft: Partial<PoDraft> & { draftId?: string }) {
     expected_delivery: draft.expected_delivery ?? null,
     lines: draft.lines ?? [],
     po_number: draft.po_number ?? '',
-    ...draft,
   }
 
   const existingIdx = drafts.findIndex((d) => d.draftId === nextDraft.draftId)
@@ -70,6 +76,7 @@ export function savePoDraft(draft: Partial<PoDraft> & { draftId?: string }) {
   }
 
   setStorage(drafts)
+  debugLog('po-drafts:save', { draftId: nextDraft.draftId, total: drafts.length })
   return nextDraft.draftId
 }
 

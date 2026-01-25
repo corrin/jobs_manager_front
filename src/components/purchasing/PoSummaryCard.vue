@@ -22,14 +22,30 @@ import {
 } from 'lucide-vue-next'
 import ClientLookup from '@/components/ClientLookup.vue'
 import PickupAddressSelector from '@/components/purchasing/PickupAddressSelector.vue'
-import { schemas } from '@/api/generated/api'
-import { z } from 'zod'
-import { reactive, watch } from 'vue' // ✅ 1. Import watch
+import { reactive, watch, computed } from 'vue' // ✅ 1. Import watch
 
-type Status = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
-type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
+type BackendStatus = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
+type UiStatus = BackendStatus | 'local_draft'
+type PurchaseOrder = {
+  id: string
+  po_number: string
+  supplier: string
+  supplier_id: string | null
+  supplier_has_xero_id: boolean
+  pickup_address_id: string | null
+  pickup_address: unknown
+  reference?: string | null
+  order_date?: string | null
+  expected_delivery?: string | null
+  status?: UiStatus
+  lines: unknown[]
+  online_url?: string | null
+  xero_id?: string | null
+  created_by_id: string | null
+  created_by_name: string
+}
 
-const props = defineProps<{
+const { po, isCreateMode, showActions, syncEnabled, supplierReadonly } = defineProps<{
   po: PurchaseOrder
   isCreateMode?: boolean
   showActions?: boolean
@@ -43,7 +59,7 @@ const emit = defineEmits<{
   'update:pickup_address_id': [v: string | null]
   'update:reference': [v: string]
   'update:expected_delivery': [v: string]
-  'update:status': [v: Status]
+  'update:status': [v: UiStatus]
   save: []
   'sync-xero': []
   'view-xero': []
@@ -54,6 +70,9 @@ const emit = defineEmits<{
 const supplierLookup = reactive({
   value: true, // indicates supplier mode vs client mode
 })
+
+const poStatus = computed<UiStatus>(() => (po.status ?? 'draft') as UiStatus)
+const editableStatuses: UiStatus[] = ['draft', 'local_draft']
 
 // ✅ 2. Add autosave logic
 let autosaveTimer: number | undefined = undefined
@@ -70,10 +89,10 @@ function scheduleSave() {
 
 // Supplier changes are patched separately in the parent view to avoid firing saves mid-lookup
 watch(
-  () => [props.po.reference, props.po.expected_delivery, props.po.status],
+  () => [po.reference, po.expected_delivery, po.status],
   (newValues, oldValues) => {
     // Trigger autosave only on changes after the initial load, and not in create mode
-    if (oldValues && !props.isCreateMode) {
+    if (oldValues && !isCreateMode) {
       scheduleSave()
     }
   },
@@ -88,7 +107,7 @@ function onReferenceUpdate(value: string | number) {
   emit('update:reference', typeof value === 'number' ? String(value) : value)
 }
 
-function onStatusUpdate(value: Status) {
+function onStatusUpdate(value: UiStatus) {
   emit('update:status', value)
 }
 
@@ -118,7 +137,8 @@ function formatDate(dateString: string | null | undefined): string {
   }
 }
 
-const statusOptions: { value: Status; label: string }[] = [
+const statusOptions: { value: UiStatus; label: string }[] = [
+  { value: 'local_draft', label: 'Local Draft' },
   { value: 'draft', label: 'Draft' },
   { value: 'submitted', label: 'Submitted to Supplier' },
   { value: 'partially_received', label: 'Partially Received' },
@@ -137,7 +157,7 @@ const statusOptions: { value: Status; label: string }[] = [
 
     <CardContent>
       <div class="flex flex-col gap-1">
-        <template v-if="po.status === 'draft' || isCreateMode">
+        <template v-if="(editableStatuses.includes(poStatus) || isCreateMode) && !supplierReadonly">
           <ClientLookup
             :supplier-lookup="supplierLookup"
             id="supplier"
@@ -235,7 +255,7 @@ const statusOptions: { value: Status; label: string }[] = [
           <Select
             id="status"
             :modelValue="po.status || null"
-            @update:modelValue="(value) => onStatusUpdate(value as Status)"
+            @update:modelValue="(value) => onStatusUpdate(value as UiStatus)"
           >
             <SelectTrigger data-automation-id="PoSummaryCard-status-trigger">
               <SelectValue />

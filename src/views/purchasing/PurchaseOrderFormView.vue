@@ -1,4 +1,3 @@
-s
 <template>
   <AppLayout>
     <div class="p-4 md:p-8 flex flex-col gap-4">
@@ -134,13 +133,6 @@ s
         data-automation-id="PurchaseOrderFormView-create-actions"
       >
         <Button variant="outline" @click="clearCreateDraft">Discard Draft</Button>
-        <Button :disabled="isPublishing" @click="publishDraft">
-          <div v-if="isPublishing" class="flex items-center gap-2">
-            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            Publishing...
-          </div>
-          <span v-else>Publish PO</span>
-        </Button>
       </div>
 
       <div v-else class="flex flex-wrap gap-2 justify-end">
@@ -187,16 +179,34 @@ import { getPoDraft, savePoDraft, deletePoDraft, listPoDrafts } from '@/composab
 
 // Import types from generated API schemas
 type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
-type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
 type Job = z.infer<typeof schemas.JobForPurchasing>
 type AllocationItem = z.infer<typeof schemas.AllocationItem>
 type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocationRequest>
 type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailResponse>
 type ClientContact = z.infer<typeof schemas.ClientContact>
 type PurchaseOrderEmailResponseWithLegacy = PurchaseOrderEmailResponse & { email?: string }
-type PurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
+type BackendPurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
+type UiPurchaseOrderStatus = BackendPurchaseOrderStatus | 'local_draft'
 type PurchaseOrderLineCreate = z.input<typeof schemas.PurchaseOrderLineCreateRequest>
 type PurchaseOrderCreatePayload = z.input<typeof schemas.PurchaseOrderCreateRequest>
+type LocalPurchaseOrder = {
+  id: string
+  po_number: string
+  supplier: string
+  supplier_id: string | null
+  supplier_has_xero_id: boolean
+  pickup_address_id: string | null
+  pickup_address: unknown
+  reference?: string | null | undefined
+  order_date?: string | null | undefined
+  expected_delivery?: string | null | undefined
+  status?: UiPurchaseOrderStatus
+  lines: PurchaseOrderLine[]
+  online_url?: string | null
+  xero_id?: string | null
+  created_by_id: string | null
+  created_by_name: string
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -218,7 +228,6 @@ const isLoadingJobs = ref(false)
 const existingAllocations = ref<Record<string, AllocationItem[]>>({})
 const stockHoldingJobId = ref<string | null>(null)
 const isSavingReceipt = ref(false)
-const isPublishing = ref(false)
 const lastPoNumber = ref<string | null>(null)
 const isLoadingLastPoNumber = ref(false)
 const lastPoNumberError = ref<string | null>(null)
@@ -255,27 +264,26 @@ const mapDraftLineToPoLine = (line: PurchaseOrderLineCreate): PurchaseOrderLine 
   job_id: line.job_id ?? null,
 })
 
-const createEmptyPo = (): PurchaseOrder =>
-  ({
-    id: '',
-    po_number: 'Local Draft',
-    supplier: '',
-    supplier_id: null,
-    supplier_has_xero_id: false,
-    pickup_address_id: null,
-    pickup_address: null,
-    reference: '',
-    order_date: '',
-    expected_delivery: '',
-    status: 'draft',
-    lines: [],
-    online_url: undefined,
-    xero_id: undefined,
-    created_by_id: null,
-    created_by_name: '',
-  }) as PurchaseOrder
+const createEmptyPo = (): LocalPurchaseOrder => ({
+  id: '',
+  po_number: 'Local Draft',
+  supplier: '',
+  supplier_id: null,
+  supplier_has_xero_id: false,
+  pickup_address_id: null,
+  pickup_address: null,
+  reference: '',
+  order_date: null,
+  expected_delivery: null,
+  status: 'local_draft',
+  lines: [],
+  online_url: undefined,
+  xero_id: undefined,
+  created_by_id: null,
+  created_by_name: '',
+})
 
-const po = ref<PurchaseOrder>(createEmptyPo())
+const po = ref<LocalPurchaseOrder>(createEmptyPo())
 
 const linesToDelete = ref<string[]>([])
 const supplierEmailCache = ref<Record<string, string | null>>({})
@@ -283,6 +291,8 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 const isPoDeleted = computed(() => po.value.status === 'deleted')
 const isPoSubmitted = computed(() => po.value.status === 'submitted')
+const isPromoting = ref(false)
+const blockDraftPersist = ref(false)
 
 // More granular permissions
 const canEditSupplier = computed(() => !isPoDeleted.value && !isPoSubmitted.value)
@@ -307,10 +317,56 @@ const nextPoNumber = computed(() => {
   return `${prefix}${incremented.toString().padStart(numberPart.length, '0')}`
 })
 
+// When the backend last PO number arrives, assign the next number to drafts that still show the placeholder
+watch(
+  nextPoNumber,
+  (val) => {
+    if (!isCreateMode.value) return
+    if (
+      val &&
+      (po.value.po_number === 'Local Draft' || !po.value.po_number) &&
+      po.value.supplier_id
+    ) {
+      po.value.po_number = val
+      persistCreateDraft()
+    }
+  },
+  { immediate: false },
+)
+
+// Autosave supplier updates; once supplier is set, treat draft as 'draft' status and persist locally
+watch(
+  () => [po.value.supplier_id, po.value.supplier],
+  async () => {
+    if (!isCreateMode.value) return
+    if (po.value.supplier_id) {
+      po.value.status = 'draft'
+      if (
+        po.value.po_number === 'Local Draft' ||
+        po.value.po_number === '' ||
+        po.value.po_number === undefined
+      ) {
+        po.value.po_number = nextPoNumber.value || po.value.po_number || 'Local Draft'
+      }
+      await promoteDraftToBackend()
+    }
+    persistCreateDraft()
+  },
+  { deep: false },
+)
+
 const persistCreateDraft = () => {
   if (!isCreateMode.value || typeof localStorage === 'undefined') return
+  if (blockDraftPersist.value) {
+    debugLog('Skipping local draft persist (blocked due to promotion)')
+    return
+  }
   try {
-    if (!po.value.po_number) {
+    if (
+      !po.value.po_number ||
+      po.value.po_number === 'Local Draft' ||
+      po.value.po_number === undefined
+    ) {
       po.value.po_number = nextPoNumber.value || 'Local Draft'
     }
     const draftIdToPersist =
@@ -371,6 +427,72 @@ const ensureCreateDraft = () => {
   }
   // Create a new empty draft entry immediately so it shows on the list
   persistCreateDraft()
+}
+
+const removeDraftLocally = () => {
+  const drafts = listPoDrafts()
+  const targetId =
+    draftId.value ||
+    (route.query.draft as string | undefined) ||
+    drafts.find(
+      (d) =>
+        d.po_number === po.value.po_number ||
+        (po.value.reference && d.reference === po.value.reference),
+    )?.draftId
+
+  if (targetId) {
+    deletePoDraft(targetId)
+    // Notify other views (list) to refresh their in-memory draft cache
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'po-drafts', storageArea: localStorage }),
+    )
+  }
+  draftId.value = undefined
+}
+
+const promoteDraftToBackend = async () => {
+  if (!isCreateMode.value || isPromoting.value) return
+  if (!po.value.supplier_id) return
+
+  try {
+    isPromoting.value = true
+    blockDraftPersist.value = true
+    const payload: PurchaseOrderCreatePayload = {
+      supplier_id: po.value.supplier_id,
+      pickup_address_id: po.value.pickup_address_id ?? null,
+      reference: po.value.reference ?? '',
+      order_date: po.value.order_date || null,
+      expected_delivery: po.value.expected_delivery || null,
+      lines: (po.value.lines ?? []).map((line) => ({
+        job_id: line.job_id ?? null,
+        description: line.description || '',
+        quantity: line.quantity ?? 0,
+        unit_cost: line.unit_cost ?? null,
+        price_tbc: line.price_tbc ?? false,
+        item_code: line.item_code || '',
+        metal_type: (line.metal_type as string | undefined) || undefined,
+        alloy: line.alloy || undefined,
+        specifics: line.specifics || undefined,
+        location: line.location || undefined,
+        dimensions: line.dimensions || undefined,
+      })),
+    }
+
+    const created = await store.createOrder(payload)
+    // Drop local draft and redirect to the real PO
+    removeDraftLocally()
+    toast.success('Purchase order created')
+    router.replace(`/purchasing/po/${created.id}`)
+  } catch (err) {
+    debugLog('Failed to promote local draft to backend', err)
+    toast.error('Failed to create purchase order. Please try again.')
+  } finally {
+    isPromoting.value = false
+    // If promotion failed, allow draft saves again
+    if (!router.currentRoute.value.path.includes('/purchasing/po/')) {
+      blockDraftPersist.value = false
+    }
+  }
 }
 
 const clearCreateDraft = () => {
@@ -540,8 +662,12 @@ async function saveSummary() {
   const updateData = {
     reference: po.value.reference,
     expected_delivery: po.value.expected_delivery,
-    status: po.value.status,
   } as Record<string, unknown>
+
+  const currentStatus = po.value.status as UiPurchaseOrderStatus | undefined
+  if (currentStatus && currentStatus !== 'local_draft') {
+    updateData.status = currentStatus
+  }
 
   if (canEditSupplier.value) {
     if (po.value.supplier) {
@@ -599,7 +725,7 @@ function handlePickupAddressChange(addressId: string | null) {
   saveSummary()
 }
 
-function handleStatusChange(newStatus: PurchaseOrderStatus) {
+function handleStatusChange(newStatus: UiPurchaseOrderStatus) {
   if (!canEditStatus.value) return
 
   // Block setting to fully_received if there are TBC items
@@ -929,52 +1055,6 @@ async function saveLines() {
       'Failed to save lines. Changes have been reverted: ' +
         extractErrorMessage(error, 'Unknown error'),
     )
-  }
-}
-
-const buildCreatePayload = (): PurchaseOrderCreatePayload => {
-  const validLines = po.value.lines.filter(isValidLine)
-
-  return {
-    supplier_id: po.value.supplier_id || null,
-    pickup_address_id: po.value.pickup_address_id || null,
-    reference: po.value.reference ?? '',
-    order_date: po.value.order_date || null,
-    expected_delivery: po.value.expected_delivery || null,
-    lines: validLines.map(mapLineToDraft),
-  }
-}
-
-const publishDraft = async () => {
-  if (!isCreateMode.value) return
-  if (isPublishing.value) return
-
-  const payload = buildCreatePayload()
-
-  if (!payload.lines || !payload.lines.length) {
-    toast.error('Add at least one valid line before publishing')
-    return
-  }
-
-  if (!payload.supplier_id) {
-    toast.error('Select a supplier before publishing')
-    return
-  }
-
-  try {
-    isPublishing.value = true
-    toast.info('Creating purchase order...', { id: 'po-publish' })
-    const res = await store.createOrder(payload)
-    toast.dismiss('po-publish')
-    toast.success('Purchase order created')
-    clearCreateDraft()
-    router.push(`/purchasing/po/${res.id}`)
-  } catch (err) {
-    toast.dismiss('po-publish')
-    const errorMessage = extractErrorMessage(err, 'Failed to create purchase order')
-    toast.error(errorMessage)
-  } finally {
-    isPublishing.value = false
   }
 }
 
@@ -1352,9 +1432,11 @@ const updatePoStatusAfterReceipt = async () => {
       totalReceived += line.received_quantity || 0
     }
 
-    // Determine new status
-    const currentStatus = (po.value.status ?? 'draft') as PurchaseOrderStatus
-    let newStatus: PurchaseOrderStatus = currentStatus
+    // Determine new status (backend-only statuses)
+    const currentStatus = (
+      po.value.status === 'local_draft' || !po.value.status ? 'draft' : po.value.status
+    ) as BackendPurchaseOrderStatus
+    let newStatus: BackendPurchaseOrderStatus = currentStatus
     if (totalReceived >= totalOrdered) {
       // Block fully_received if there are TBC items
       if (hasUnknownCosts.value) {
