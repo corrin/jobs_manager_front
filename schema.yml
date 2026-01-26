@@ -10365,6 +10365,15 @@ components:
           format: uuid
         client:
           $ref: '#/components/schemas/JobClientHeader'
+        contact_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        contact_name:
+          type: string
+          readOnly: true
+          nullable: true
         quoted:
           type: boolean
         default_xero_pay_item_id:
@@ -10428,6 +10437,8 @@ components:
             rejected styling)
       required:
         - client
+        - contact_id
+        - contact_name
         - default_xero_pay_item_id
         - default_xero_pay_item_name
         - job_id
