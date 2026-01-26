@@ -333,18 +333,21 @@ const jobHeader = computed(() => jobsStore.headersById[jobId.value] ?? null)
 onMounted(async () => {
   loadingJob.value = true
   try {
-    const headerResponse = await api.job_rest_jobs_header_retrieve({
-      params: { job_id: jobId.value },
-    })
-    jobsStore.setHeader(headerResponse)
+    await Promise.all([
+      (async () => {
+        const headerResponse = await api.job_rest_jobs_header_retrieve({
+          params: { job_id: jobId.value },
+        })
+        jobsStore.setHeader(headerResponse)
+      })(),
+      companyDefaultsStore.loadCompanyDefaults(),
+    ])
   } catch (error) {
-    console.error('Failed to fetch job header:', error)
+    console.error('Failed to load job data:', error)
     toast.error('Failed to load job details')
   } finally {
     loadingJob.value = false
   }
-
-  await companyDefaultsStore.loadCompanyDefaults()
 })
 
 // Check if this is a newly created job (redirected from creation)
