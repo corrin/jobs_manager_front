@@ -324,24 +324,22 @@ watch(
     await loadContactsOnly(clientId)
     if (token !== loadToken) return // request antigo, ignora
 
-    // Regra de seleção:
-    // 1) Se temos initialId → selecione-o (mudança programática, sem emitir)
-    // 2) Senão → se houver primary → selecione (programático)
-    // 3) Senão → deixe vazio
+    // Selection priority:
+    // 1) If initialId provided → select that contact
+    // 2) Else if primary contact exists → select primary
+    // 3) Else → clear selection
     const decideAndSelect = () => {
       const choose =
         (initialId && contacts.value.find((c: ClientContact) => c.id === initialId)) ||
         (!initialId && findPrimaryContact()) ||
         null
 
-      suppressEmit.value = true
       if (choose) {
         // Use setSelectedContact to avoid closing modal during auto-selection
         setSelectedContact(choose)
       } else {
         clearFromComposable()
       }
-      suppressEmit.value = false
     }
 
     decideAndSelect()
