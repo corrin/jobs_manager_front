@@ -295,10 +295,24 @@ const error = ref('')
 const embeddedComponents = computed(() => getEmbeddedComponents(props.section))
 const hasEmbedded = computed(() => hasEmbeddedComponents(props.section))
 
+// Normalize URL: add https:// if missing
+function normalizeUrl(url: string): string {
+  if (!url) return url
+  if (/^https?:\/\//i.test(url)) return url
+  return `https://${url}`
+}
+
 watch(
   localForm,
   (val) => {
-    emit('update', { ...val })
+    // Normalize URL fields before emitting
+    const normalized = { ...val }
+    for (const field of sectionFields.value) {
+      if (field.type === 'url' && normalized[field.key]) {
+        normalized[field.key] = normalizeUrl(normalized[field.key] as string)
+      }
+    }
+    emit('update', normalized)
   },
   { deep: true },
 )
