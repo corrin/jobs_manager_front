@@ -36,6 +36,11 @@ export const test = base.extend<AuthFixtures, WorkerFixtures>({
     // Wait for redirect to kanban (default landing page after login)
     await page.waitForURL('**/kanban')
 
+    // Enable debug logging if DEBUG env var is set
+    if (process.env.DEBUG === 'true') {
+      await page.evaluate(() => localStorage.setItem('debug', 'true'))
+    }
+
     // Pass the authenticated page to the test
     await use(page)
   },
