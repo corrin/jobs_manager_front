@@ -1684,6 +1684,8 @@ const JobHeaderResponse = z
   .object({
     job_id: z.string().uuid(),
     client: JobClientHeader,
+    contact_id: z.string().uuid().nullable(),
+    contact_name: z.string().nullable(),
     quoted: z.boolean(),
     default_xero_pay_item_id: z.string().uuid().nullable(),
     default_xero_pay_item_name: z.string().nullable(),
