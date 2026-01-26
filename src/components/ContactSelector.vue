@@ -257,6 +257,12 @@ const selectPrimaryContact = async () => {
 
   // Find and select the primary contact (without closing modal)
   const primaryContact = findPrimaryContact()
+  console.log('selectPrimaryContact:', {
+    contactsLength: contacts.value.length,
+    primaryContact,
+    currentSelectedContact: selectedContact.value,
+    sameReference: primaryContact === selectedContact.value,
+  })
   if (primaryContact) {
     debugLog('Found primary contact:', primaryContact)
     setSelectedContact(primaryContact)
