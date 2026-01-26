@@ -257,7 +257,7 @@ const selectPrimaryContact = async () => {
 
   // Find and select the primary contact (without closing modal)
   const primaryContact = findPrimaryContact()
-  console.log('selectPrimaryContact:', {
+  debugLog('selectPrimaryContact:', {
     contactsLength: contacts.value.length,
     primaryContact,
     currentSelectedContact: selectedContact.value,
@@ -266,11 +266,17 @@ const selectPrimaryContact = async () => {
   if (primaryContact) {
     debugLog('Found primary contact:', primaryContact)
     setSelectedContact(primaryContact)
+    // Explicitly emit for JobCreateView - decideAndSelect uses suppressEmit but
+    // selectPrimaryContact is called by parent components that need the emit
+    emitUpdates()
   } else {
     debugLog('No primary contact found', {
       totalContacts: contacts.value.length,
       contacts: contacts.value,
     })
+    clearFromComposable()
+    // Also emit for clearing case so parent knows contact was cleared
+    emitUpdates()
   }
 }
 
@@ -328,18 +334,22 @@ watch(
     // 1) If initialId provided → select that contact
     // 2) Else if primary contact exists → select primary
     // 3) Else → clear selection
+    // NOTE: suppressEmit=true prevents API calls during initialization/client change
+    // (auto-selection should not trigger saves - only user actions should)
     const decideAndSelect = () => {
       const choose =
         (initialId && contacts.value.find((c: ClientContact) => c.id === initialId)) ||
         (!initialId && findPrimaryContact()) ||
         null
 
+      suppressEmit.value = true
       if (choose) {
         // Use setSelectedContact to avoid closing modal during auto-selection
         setSelectedContact(choose)
       } else {
         clearFromComposable()
       }
+      suppressEmit.value = false
     }
 
     decideAndSelect()
