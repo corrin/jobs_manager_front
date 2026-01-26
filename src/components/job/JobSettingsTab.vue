@@ -1026,6 +1026,24 @@ const handleClientUpdated = (updatedClient: Client) => {
 
 const handleContactSelected = async (contact: ClientContact | null) => {
   if (contact) {
+    // During initialization, only update local data - don't make API calls
+    // This prevents ETag changes during hydration that would cause conflicts
+    if (isInitializing.value) {
+      localJobData.value.contact_id = contact.id
+      localJobData.value.contact_name = contact.name
+      contactDisplayValue.value = contact.name
+      return
+    }
+
+    // Skip API call if contact is already set to this value
+    // This prevents unnecessary API calls when user re-selects the same contact
+    if (localJobData.value.contact_id === contact.id) {
+      // Still update display value in case it's stale
+      localJobData.value.contact_name = contact.name
+      contactDisplayValue.value = contact.name
+      return
+    }
+
     localJobData.value.contact_id = contact.id
     localJobData.value.contact_name = contact.name
     contactDisplayValue.value = contact.name
