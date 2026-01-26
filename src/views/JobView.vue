@@ -339,14 +339,32 @@ onMounted(async () => {
           params: { job_id: jobId.value },
         })
         jobsStore.setHeader(headerResponse)
+        // #2: After setHeader
+        debugLog('[JobView] header set', {
+          store: jobsStore.headersById[jobId.value],
+          computed: jobHeader.value,
+        })
       })(),
-      companyDefaultsStore.loadCompanyDefaults(),
+      (async () => {
+        await companyDefaultsStore.loadCompanyDefaults()
+        // #1: After loadCompanyDefaults
+        debugLog('[JobView] defaults loaded', {
+          store: companyDefaultsStore.companyDefaults,
+          computed: companyDefaults.value,
+        })
+      })(),
     ])
   } catch (error) {
     console.error('Failed to load job data:', error)
     toast.error('Failed to load job details')
   } finally {
     loadingJob.value = false
+    // #3: In finally - render check
+    debugLog('[JobView] render check', {
+      jobHeader: jobHeader.value,
+      companyDefaults: companyDefaults.value,
+      activeTab: activeTab.value,
+    })
   }
 })
 
@@ -354,6 +372,8 @@ onMounted(async () => {
 const isNewJob = computed(() => route.query.new === 'true')
 const defaultTab: JobTabKey = isNewJob.value ? 'quote' : 'actual'
 const { activeTab, setTab } = useJobTabs(defaultTab)
+// #4: After useJobTabs
+debugLog('[JobView] tabs init', { activeTab: activeTab.value, defaultTab })
 
 const localJobName = ref('')
 const localClientName = ref('')
