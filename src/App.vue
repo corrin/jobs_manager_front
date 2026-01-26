@@ -21,13 +21,13 @@ debugLog(useFeatureFlags().isCostingApiEnabled)
 
 onMounted(async () => {
   try {
-    await authStore.initializeAuth()
-    const companyDefaultsStore = useCompanyDefaultsStore()
-
-    debugLog('[App] Before loading company defaults:', companyDefaultsStore.companyDefaults)
-    await companyDefaultsStore.loadCompanyDefaults()
-
-    debugLog('[App] After loading company defaults:', companyDefaultsStore.companyDefaults)
+    const isAuthenticated = await authStore.initializeAuth()
+    if (isAuthenticated) {
+      const companyDefaultsStore = useCompanyDefaultsStore()
+      debugLog('[App] Before loading company defaults:', companyDefaultsStore.companyDefaults)
+      await companyDefaultsStore.loadCompanyDefaults()
+      debugLog('[App] After loading company defaults:', companyDefaultsStore.companyDefaults)
+    }
   } catch (error) {
     debugLog('Failed to initialize auth or company defaults on app start:', error)
   }
