@@ -1,9 +1,13 @@
-// Debug logging - enable via: VITE_DEBUG=true npm run test:e2e
+// Debug logging - enable via localStorage.setItem('debug', 'true')
 const isDevelopment = import.meta.env.MODE === 'development'
-const envDebug = import.meta.env.VITE_DEBUG === 'true'
 
 function isEnabled(): boolean {
-  return isDevelopment || envDebug
+  if (isDevelopment) return true
+  try {
+    return localStorage.getItem('debug') === 'true'
+  } catch {
+    return false
+  }
 }
 
 export function debugLog(...args: unknown[]): void {
