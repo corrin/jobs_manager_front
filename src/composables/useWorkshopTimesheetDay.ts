@@ -3,6 +3,7 @@ import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
 import { toast } from 'vue-sonner'
 import type { z } from 'zod'
+import { toLocalDateString } from '@/utils/dateUtils'
 
 type WorkshopTimesheetEntry = z.infer<typeof schemas.WorkshopTimesheetEntry>
 type WorkshopTimesheetSummary = z.infer<typeof schemas.WorkshopTimesheetSummary>
@@ -19,9 +20,7 @@ type DailyData = Record<
 export type WorkingDayStartKey = 'mon_start' | 'tue_start' | 'wed_start' | 'thu_start' | 'fri_start'
 
 export function formatDateKey(date: Date): string {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  return d.toISOString().slice(0, 10)
+  return toLocalDateString(date)
 }
 
 export function parseDateKey(key: string): Date {

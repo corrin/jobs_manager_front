@@ -1,7 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import LoginView from '@/views/LoginView.vue'
-import KanbanView from '@/views/KanbanView.vue'
 import { toast } from 'vue-sonner'
 import { adminPages, defaultAdminPage } from '@/config/adminPages'
 
@@ -18,7 +16,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginView,
+      component: () => import('@/views/LoginView.vue'),
       meta: {
         requiresGuest: true,
         allowWorkshopStaff: true,
@@ -28,7 +26,7 @@ const router = createRouter({
     {
       path: '/kanban',
       name: 'kanban',
-      component: KanbanView,
+      component: () => import('@/views/KanbanView.vue'),
       meta: {
         requiresAuth: true,
         allowWorkshopStaff: true,

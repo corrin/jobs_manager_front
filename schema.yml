@@ -5505,13 +5505,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/PurchaseOrderCreate'
           description: ''
-  /purchasing/rest/purchase-orders/{id}/:
+  /purchasing/rest/purchase-orders/{po_id}/:
     get:
       operationId: retrievePurchaseOrder
       description: Get purchase order details including lines.
       parameters:
         - in: path
-          name: id
+          name: po_id
           schema:
             type: string
             format: uuid
@@ -5535,7 +5535,7 @@ paths:
         Concurrency is controlled in this endpoint (ETag/If-Match).
       parameters:
         - in: path
-          name: id
+          name: po_id
           schema:
             type: string
             format: uuid
@@ -10386,6 +10386,15 @@ components:
           format: uuid
         client:
           $ref: '#/components/schemas/JobClientHeader'
+        contact_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        contact_name:
+          type: string
+          readOnly: true
+          nullable: true
         quoted:
           type: boolean
         default_xero_pay_item_id:
@@ -10449,6 +10458,8 @@ components:
             rejected styling)
       required:
         - client
+        - contact_id
+        - contact_name
         - default_xero_pay_item_id
         - default_xero_pay_item_name
         - job_id

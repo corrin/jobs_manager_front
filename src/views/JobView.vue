@@ -333,24 +333,47 @@ const jobHeader = computed(() => jobsStore.headersById[jobId.value] ?? null)
 onMounted(async () => {
   loadingJob.value = true
   try {
-    const headerResponse = await api.job_rest_jobs_header_retrieve({
-      params: { job_id: jobId.value },
-    })
-    jobsStore.setHeader(headerResponse)
+    await Promise.all([
+      (async () => {
+        const headerResponse = await api.job_rest_jobs_header_retrieve({
+          params: { job_id: jobId.value },
+        })
+        jobsStore.setHeader(headerResponse)
+        // #2: After setHeader
+        debugLog('[JobView] header set', {
+          store: jobsStore.headersById[jobId.value],
+          computed: jobHeader.value,
+        })
+      })(),
+      (async () => {
+        await companyDefaultsStore.loadCompanyDefaults()
+        // #1: After loadCompanyDefaults
+        debugLog('[JobView] defaults loaded', {
+          store: companyDefaultsStore.companyDefaults,
+          computed: companyDefaults.value,
+        })
+      })(),
+    ])
   } catch (error) {
-    console.error('Failed to fetch job header:', error)
+    console.error('Failed to load job data:', error)
     toast.error('Failed to load job details')
   } finally {
     loadingJob.value = false
+    // #3: In finally - render check
+    debugLog('[JobView] render check', {
+      jobHeader: jobHeader.value,
+      companyDefaults: companyDefaults.value,
+      activeTab: activeTab.value,
+    })
   }
-
-  await companyDefaultsStore.loadCompanyDefaults()
 })
 
 // Check if this is a newly created job (redirected from creation)
 const isNewJob = computed(() => route.query.new === 'true')
 const defaultTab: JobTabKey = isNewJob.value ? 'quote' : 'actual'
 const { activeTab, setTab } = useJobTabs(defaultTab)
+// #4: After useJobTabs
+debugLog('[JobView] tabs init', { activeTab: activeTab.value, defaultTab })
 
 const localJobName = ref('')
 const localClientName = ref('')

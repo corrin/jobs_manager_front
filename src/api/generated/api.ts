@@ -1684,6 +1684,8 @@ const JobHeaderResponse = z
   .object({
     job_id: z.string().uuid(),
     client: JobClientHeader,
+    contact_id: z.string().uuid().nullable(),
+    contact_name: z.string().nullable(),
     quoted: z.boolean(),
     default_xero_pay_item_id: z.string().uuid().nullable(),
     default_xero_pay_item_name: z.string().nullable(),
@@ -6880,13 +6882,13 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
   },
   {
     method: 'get',
-    path: '/purchasing/rest/purchase-orders/:id/',
+    path: '/purchasing/rest/purchase-orders/:po_id/',
     alias: 'retrievePurchaseOrder',
     description: `Get purchase order details including lines.`,
     requestFormat: 'json',
     parameters: [
       {
-        name: 'id',
+        name: 'po_id',
         type: 'Path',
         schema: z.string().uuid(),
       },
@@ -6895,7 +6897,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
   },
   {
     method: 'patch',
-    path: '/purchasing/rest/purchase-orders/:id/',
+    path: '/purchasing/rest/purchase-orders/:po_id/',
     alias: 'purchasing_rest_purchase_orders_partial_update',
     description: `Update purchase order.
 
@@ -6908,7 +6910,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         schema: PatchedPurchaseOrderUpdateRequest,
       },
       {
-        name: 'id',
+        name: 'po_id',
         type: 'Path',
         schema: z.string().uuid(),
       },

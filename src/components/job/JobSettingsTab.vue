@@ -1026,6 +1026,17 @@ const handleClientUpdated = (updatedClient: Client) => {
 
 const handleContactSelected = async (contact: ClientContact | null) => {
   if (contact) {
+    // Skip API call if contact is already set to this value
+    // This handles:
+    // - Scenario 4: Client change - backend sets contact in response, no duplicate API call needed
+    // - User re-selecting the same contact
+    if (localJobData.value.contact_id === contact.id) {
+      // Still update display value in case it's stale
+      localJobData.value.contact_name = contact.name
+      contactDisplayValue.value = contact.name
+      return
+    }
+
     localJobData.value.contact_id = contact.id
     localJobData.value.contact_name = contact.name
     contactDisplayValue.value = contact.name
@@ -1312,6 +1323,16 @@ const autosave = createJobAutosave({
             id: serverJobDetail.client_id ?? '',
             name: serverJobDetail.client_name ?? '',
           }
+
+          // Backend auto-sets contact when client changes - update from response
+          // This prevents a redundant API call when ContactSelector emits
+          if (serverJobDetail.contact_id !== undefined) {
+            nextBaseline.contact_id = serverJobDetail.contact_id ?? null
+            nextBaseline.contact_name = serverJobDetail.contact_name ?? null
+            localJobData.value.contact_id = serverJobDetail.contact_id ?? null
+            localJobData.value.contact_name = serverJobDetail.contact_name ?? null
+            contactDisplayValue.value = serverJobDetail.contact_name ?? ''
+          }
         }
         if (touchedKeys.includes('contact_id')) {
           nextBaseline.contact_id = serverJobDetail.contact_id ?? null
@@ -1421,6 +1442,9 @@ const autosave = createJobAutosave({
           nextBaseline.client_name = clientName
           localJobData.value.client = { id: clientId, name: clientName }
           headerPatch.client = { id: clientId, name: clientName }
+
+          // Note: When no serverJobDetail, we can't get the auto-set contact
+          // The ContactSelector will re-fetch contacts for the new client
         }
         if (touchedKeys.includes('contact_id')) {
           const contactId = coerceNullableString(partialPayload.contact_id)
@@ -1431,6 +1455,7 @@ const autosave = createJobAutosave({
           const contactName = coerceNullableString(partialPayload.contact_name)
           nextBaseline.contact_name = contactName
           localJobData.value.contact_name = contactName
+          contactDisplayValue.value = contactName ?? ''
         }
       }
 

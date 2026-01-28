@@ -613,7 +613,7 @@ async function load() {
   }
 
   try {
-    const data = await api.retrievePurchaseOrder({ params: { id: orderId } })
+    const data = await api.retrievePurchaseOrder({ params: { po_id: orderId } })
     po.value = data
     originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
 
