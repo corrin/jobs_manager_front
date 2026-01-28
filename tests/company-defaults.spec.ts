@@ -7,7 +7,7 @@ test('test can call backend API directly', async ({ authenticatedPage: page }) =
   }
 
   // Get auth method and build headers accordingly
-  const authMethod = process.env.VITE_AUTH_METHOD
+  const authMethod = process.env.VITE_AUTH_METHOD || 'bearer'
   const headers: Record<string, string> = {
     'ngrok-skip-browser-warning': 'true',
     Accept: 'application/json',

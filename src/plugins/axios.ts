@@ -18,6 +18,8 @@ export const getApiBaseUrl = () => {
   return env.VITE_API_BASE_URL as string
 }
 
+const AUTH_METHOD = import.meta.env.VITE_AUTH_METHOD || 'bearer'
+
 axios.defaults.baseURL = getApiBaseUrl()
 axios.defaults.timeout = 60000
 axios.defaults.withCredentials = true
@@ -25,7 +27,7 @@ axios.defaults.withCredentials = true
 axios.interceptors.request.use(
   (config) => {
     // Add bearer token if using bearer auth
-    if (import.meta.env.VITE_AUTH_METHOD === 'bearer') {
+    if (AUTH_METHOD === 'bearer') {
       const token = localStorage.getItem('auth_token')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`

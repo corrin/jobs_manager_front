@@ -5,6 +5,8 @@ import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 import axios, { getApiBaseUrl } from '@/plugins/axios'
 
+const AUTH_METHOD = import.meta.env.VITE_AUTH_METHOD || 'bearer'
+
 export type CreatePayRunResponse = z.infer<typeof schemas.CreatePayRunResponse>
 export type PayRunListItem = z.infer<typeof schemas.PayRunListItem>
 export type PayRunListResponse = z.infer<typeof schemas.PayRunListResponse>
@@ -107,7 +109,7 @@ export async function postStaffWeek(
   // Prefix with API base URL since frontend/backend may be on different origins
   // EventSource cannot send Authorization headers - pass token via query param for bearer auth
   let sseUrl = `${getApiBaseUrl()}${stream_url}`
-  if (import.meta.env.VITE_AUTH_METHOD === 'bearer') {
+  if (AUTH_METHOD === 'bearer') {
     const token = localStorage.getItem('auth_token')
     if (token) {
       const separator = sseUrl.includes('?') ? '&' : '?'

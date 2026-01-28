@@ -5,6 +5,8 @@ import { api } from '@/api/client'
 import { toast } from 'vue-sonner'
 import { debugLog } from '@/utils/debug'
 
+const AUTH_METHOD = import.meta.env.VITE_AUTH_METHOD || 'bearer'
+
 type XeroSseEvent = {
   datetime: string
   message: string
@@ -226,7 +228,7 @@ export function useXeroAuth() {
     // EventSource cannot send Authorization headers. When using bearer auth,
     // pass token as query param. With cookie auth, withCredentials handles it.
     let sseUrl = `${getApiBaseUrl()}/api/xero/sync-stream/`
-    if (import.meta.env.VITE_AUTH_METHOD === 'bearer') {
+    if (AUTH_METHOD === 'bearer') {
       const token = localStorage.getItem('auth_token')
       if (token) {
         sseUrl += `?token=${encodeURIComponent(token)}`

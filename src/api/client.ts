@@ -73,6 +73,9 @@ function getApiBaseUrl() {
   return import.meta.env.VITE_API_BASE_URL
 }
 
+// Default to bearer when not explicitly set; ngrok/cross-origin runs need tokens
+const AUTH_METHOD = import.meta.env.VITE_AUTH_METHOD || 'bearer'
+
 // Configure axios instance for the client
 axios.defaults.baseURL = getApiBaseUrl()
 axios.defaults.timeout = 60000
@@ -90,7 +93,7 @@ axios.interceptors.request.use(
     }
 
     // Add bearer token if using bearer auth
-    if (import.meta.env.VITE_AUTH_METHOD === 'bearer') {
+    if (AUTH_METHOD === 'bearer') {
       const token = localStorage.getItem('auth_token')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
