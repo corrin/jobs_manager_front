@@ -189,23 +189,9 @@ type BackendPurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStat
 type UiPurchaseOrderStatus = BackendPurchaseOrderStatus | 'local_draft'
 type PurchaseOrderLineCreate = z.input<typeof schemas.PurchaseOrderLineCreateRequest>
 type PurchaseOrderCreatePayload = z.input<typeof schemas.PurchaseOrderCreateRequest>
-type LocalPurchaseOrder = {
-  id: string
-  po_number: string
-  supplier: string
-  supplier_id: string | null
-  supplier_has_xero_id: boolean
-  pickup_address_id: string | null
-  pickup_address: unknown
-  reference?: string | null | undefined
-  order_date?: string | null | undefined
-  expected_delivery?: string | null | undefined
+type LocalPurchaseOrder = Omit<z.infer<typeof schemas.PurchaseOrderDetail>, 'status' | 'lines'> & {
   status?: UiPurchaseOrderStatus
   lines: PurchaseOrderLine[]
-  online_url?: string | null
-  xero_id?: string | null
-  created_by_id: string | null
-  created_by_name: string
 }
 
 const route = useRoute()

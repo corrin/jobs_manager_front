@@ -22,27 +22,14 @@ import {
 } from 'lucide-vue-next'
 import ClientLookup from '@/components/ClientLookup.vue'
 import PickupAddressSelector from '@/components/purchasing/PickupAddressSelector.vue'
-import { reactive, watch, computed } from 'vue' // ✅ 1. Import watch
+import { reactive, watch, computed } from 'vue'
+import { schemas } from '@/api/generated/api'
+import type { z } from 'zod'
 
-type BackendStatus = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
+type BackendStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
 type UiStatus = BackendStatus | 'local_draft'
-type PurchaseOrder = {
-  id: string
-  po_number: string
-  supplier: string
-  supplier_id: string | null
-  supplier_has_xero_id: boolean
-  pickup_address_id: string | null
-  pickup_address: unknown
-  reference?: string | null
-  order_date?: string | null
-  expected_delivery?: string | null
+type PurchaseOrder = Omit<z.infer<typeof schemas.PurchaseOrderDetail>, 'status'> & {
   status?: UiStatus
-  lines: unknown[]
-  online_url?: string | null
-  xero_id?: string | null
-  created_by_id: string | null
-  created_by_name: string
 }
 
 const { po, isCreateMode, showActions, syncEnabled, supplierReadonly } = defineProps<{
@@ -74,7 +61,6 @@ const supplierLookup = reactive({
 const poStatus = computed<UiStatus>(() => (po.status ?? 'draft') as UiStatus)
 const editableStatuses: UiStatus[] = ['draft', 'local_draft']
 
-// ✅ 2. Add autosave logic
 let autosaveTimer: number | undefined = undefined
 
 function scheduleSave() {
@@ -96,7 +82,7 @@ watch(
       scheduleSave()
     }
   },
-  { deep: true }, // 'deep' ensures we watch for changes inside the 'po' object
+  { deep: true },
 )
 
 function onExpectedDeliveryUpdate(value: string) {

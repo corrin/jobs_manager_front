@@ -61,25 +61,10 @@ import { toast } from 'vue-sonner'
 import { debugLog } from '@/utils/debug'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-type BackendStatus = 'draft' | 'submitted' | 'partially_received' | 'fully_received' | 'deleted'
+type BackendStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
 type UiStatus = BackendStatus | 'local_draft'
-type PurchaseOrderDetail = {
-  id: string
-  po_number: string
-  supplier: string
-  supplier_id: string | null
-  supplier_has_xero_id: boolean
-  pickup_address_id: string | null
-  pickup_address: unknown
-  reference?: string | null
-  order_date?: string | null
-  expected_delivery?: string | null
+type PurchaseOrderDetail = Omit<z.infer<typeof schemas.PurchaseOrderDetail>, 'status'> & {
   status?: UiStatus
-  lines: unknown[]
-  online_url?: string
-  xero_id?: string
-  created_by_id: string | null
-  created_by_name: string
 }
 type PurchaseOrderCreatePayload = z.input<typeof schemas.PurchaseOrderCreateRequest>
 
