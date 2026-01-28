@@ -56,7 +56,7 @@
               :default-retail-rate="defaultRetailRate"
               :stock-holding-job-id="stockHoldingJobId || undefined"
               :po-status="po.status"
-              :po-id="po.id"
+              :po-id="poIdValue"
               @update:lines="canEditLineItems || canEditJobs ? (po.lines = $event) : null"
               @add-line="handleAddLineEvent"
               @delete-line="deleteLine"
@@ -146,7 +146,7 @@
     <PoPdfDialog
       :open="showPdfDialog"
       :purchase-order-id="orderId"
-      :po-number="po.po_number"
+      :po-number="poNumberValue"
       @update:open="showPdfDialog = $event"
     />
   </AppLayout>
@@ -175,6 +175,11 @@ import { schemas } from '@/api/generated/api'
 import { onPoConcurrencyRetry } from '@/composables/usePoConcurrencyEvents'
 import { openGmailCompose } from '@/utils/email'
 import type { z } from 'zod'
+import type {
+  BackendPurchaseOrderStatus,
+  PurchaseOrderDetail,
+  UiPurchaseOrderStatus,
+} from '@/types/purchase-order.types'
 import { getPoDraft, savePoDraft, deletePoDraft, listPoDrafts } from '@/composables/usePoDrafts'
 
 // Import types from generated API schemas
@@ -185,11 +190,9 @@ type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocationReques
 type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailResponse>
 type ClientContact = z.infer<typeof schemas.ClientContact>
 type PurchaseOrderEmailResponseWithLegacy = PurchaseOrderEmailResponse & { email?: string }
-type BackendPurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
-type UiPurchaseOrderStatus = BackendPurchaseOrderStatus | 'local_draft'
 type PurchaseOrderLineCreate = z.input<typeof schemas.PurchaseOrderLineCreateRequest>
 type PurchaseOrderCreatePayload = z.input<typeof schemas.PurchaseOrderCreateRequest>
-type LocalPurchaseOrder = Omit<z.infer<typeof schemas.PurchaseOrderDetail>, 'status' | 'lines'> & {
+type LocalPurchaseOrder = Omit<PurchaseOrderDetail, 'status' | 'lines'> & {
   status?: UiPurchaseOrderStatus
   lines: PurchaseOrderLine[]
 }
@@ -270,6 +273,10 @@ const createEmptyPo = (): LocalPurchaseOrder => ({
 })
 
 const po = ref<LocalPurchaseOrder>(createEmptyPo())
+const poIdValue = computed(() => (typeof po.value.id === 'string' ? po.value.id : ''))
+const poNumberValue = computed(() =>
+  typeof po.value.po_number === 'string' ? po.value.po_number : undefined,
+)
 
 const linesToDelete = ref<string[]>([])
 const supplierEmailCache = ref<Record<string, string | null>>({})
@@ -359,18 +366,31 @@ const persistCreateDraft = () => {
       draftId.value ||
       (route.query.draft as string | undefined) ||
       (po.value.id && po.value.id !== 'new' ? po.value.id : undefined)
+    const draftIdValue = typeof draftIdToPersist === 'string' ? draftIdToPersist : undefined
+    const supplierId = typeof po.value.supplier_id === 'string' ? po.value.supplier_id : null
+    const pickupAddressId =
+      typeof po.value.pickup_address_id === 'string' ? po.value.pickup_address_id : null
+    const reference =
+      typeof po.value.reference === 'string' || typeof po.value.reference === 'number'
+        ? String(po.value.reference)
+        : ''
+    const orderDate = typeof po.value.order_date === 'string' ? po.value.order_date : null
+    const expectedDelivery =
+      typeof po.value.expected_delivery === 'string' ? po.value.expected_delivery : null
+    const supplierName = typeof po.value.supplier === 'string' ? po.value.supplier : ''
+    const poNumber = typeof po.value.po_number === 'string' ? po.value.po_number : undefined
 
     const savedId = savePoDraft({
-      draftId: draftIdToPersist,
-      supplier_id: po.value.supplier_id ?? null,
-      pickup_address_id: po.value.pickup_address_id ?? null,
-      reference: po.value.reference ?? '',
-      order_date: po.value.order_date || null,
-      expected_delivery: po.value.expected_delivery || null,
+      draftId: draftIdValue,
+      supplier_id: supplierId,
+      pickup_address_id: pickupAddressId,
+      reference,
+      order_date: orderDate,
+      expected_delivery: expectedDelivery,
       lines: (po.value.lines ?? []).map(mapLineToDraft),
-      label: po.value.reference || po.value.supplier || 'Untitled PO',
-      supplier: po.value.supplier || '',
-      po_number: po.value.po_number,
+      label: reference || supplierName || 'Untitled PO',
+      supplier: supplierName,
+      po_number: poNumber,
     })
 
     if (!draftId.value && savedId) {
@@ -443,12 +463,22 @@ const promoteDraftToBackend = async () => {
   try {
     isPromoting.value = true
     blockDraftPersist.value = true
+    const supplierId = typeof po.value.supplier_id === 'string' ? po.value.supplier_id : null
+    const pickupAddressId =
+      typeof po.value.pickup_address_id === 'string' ? po.value.pickup_address_id : null
+    const reference =
+      typeof po.value.reference === 'string' || typeof po.value.reference === 'number'
+        ? String(po.value.reference)
+        : ''
+    const orderDate = typeof po.value.order_date === 'string' ? po.value.order_date : null
+    const expectedDelivery =
+      typeof po.value.expected_delivery === 'string' ? po.value.expected_delivery : null
     const payload: PurchaseOrderCreatePayload = {
-      supplier_id: po.value.supplier_id,
-      pickup_address_id: po.value.pickup_address_id ?? null,
-      reference: po.value.reference ?? '',
-      order_date: po.value.order_date || null,
-      expected_delivery: po.value.expected_delivery || null,
+      supplier_id: supplierId,
+      pickup_address_id: pickupAddressId,
+      reference,
+      order_date: orderDate,
+      expected_delivery: expectedDelivery,
       lines: (po.value.lines ?? []).map((line) => ({
         job_id: line.job_id ?? null,
         description: line.description || '',
@@ -1089,13 +1119,14 @@ async function syncWithXero() {
 }
 
 function viewInXero() {
-  if (!po.value.online_url) {
+  const onlineUrl = typeof po.value.online_url === 'string' ? po.value.online_url : undefined
+  if (!onlineUrl) {
     toast.error('No Xero URL available. Please sync with Xero first.')
     return
   }
 
   try {
-    window.open(po.value.online_url, '_blank', 'noopener,noreferrer')
+    window.open(onlineUrl, '_blank', 'noopener,noreferrer')
     toast.success('Opened Purchase Order in Xero')
   } catch (error) {
     debugLog('Failed to open Xero URL:', error)
@@ -1116,7 +1147,7 @@ function emailPo() {
 }
 
 async function resolveSupplierEmail(): Promise<string | null> {
-  const supplierId = po.value.supplier_id
+  const supplierId = typeof po.value.supplier_id === 'string' ? po.value.supplier_id : null
   if (!supplierId) {
     return null
   }
@@ -1354,12 +1385,18 @@ const handleReceiptSave = async (payload: {
     return
   }
 
+  const poId = typeof po.value.id === 'string' ? po.value.id : ''
+  if (!poId) {
+    debugLog('Invalid purchase order id for receipt save')
+    return
+  }
+
   const map: Record<string, DeliveryAllocation[]> = { [lineId]: consolidated }
-  const request = transformDeliveryReceiptForAPI(po.value.id, map)
+  const request = transformDeliveryReceiptForAPI(poId, map)
 
   try {
     debugLog('Saving receipt for line:', lineId, 'with NEW allocations:', consolidated)
-    await receiptStore.submitDeliveryReceipt(po.value.id, request.allocations)
+    await receiptStore.submitDeliveryReceipt(poId, request.allocations)
     toast.success('Receipt saved')
 
     await Promise.all([load(), loadExistingAllocations()])
@@ -1384,10 +1421,10 @@ const handleReceiptSave = async (payload: {
 
       // Concurrency errors are handled by the store with toast and reload
       // Just set up the retry listener
-      const unsubscribe = onPoConcurrencyRetry(po.value.id, async () => {
+      const unsubscribe = onPoConcurrencyRetry(poId, async () => {
         unsubscribe() // Clean up listener
         try {
-          await receiptStore.submitDeliveryReceipt(po.value.id, request.allocations)
+          await receiptStore.submitDeliveryReceipt(poId, request.allocations)
           toast.success('Receipt saved')
           await Promise.all([load(), loadExistingAllocations()]) // Reload to show latest data
           await updatePoStatusAfterReceipt()
@@ -1550,8 +1587,10 @@ onMounted(async () => {
         if (debounceTimer) clearTimeout(debounceTimer)
         debounceTimer = setTimeout(async () => {
           try {
+            const supplierId =
+              typeof po.value.supplier_id === 'string' ? po.value.supplier_id : null
             await store.patch(orderId, {
-              supplier_id: po.value.supplier_id ?? null,
+              supplier_id: supplierId,
             })
             toast.success('Supplier updated')
             await load()

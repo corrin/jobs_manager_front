@@ -23,17 +23,10 @@ import {
 import ClientLookup from '@/components/ClientLookup.vue'
 import PickupAddressSelector from '@/components/purchasing/PickupAddressSelector.vue'
 import { reactive, watch, computed } from 'vue'
-import { schemas } from '@/api/generated/api'
-import type { z } from 'zod'
-
-type BackendStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
-type UiStatus = BackendStatus | 'local_draft'
-type PurchaseOrder = Omit<z.infer<typeof schemas.PurchaseOrderDetail>, 'status'> & {
-  status?: UiStatus
-}
+import type { PurchaseOrderWithUiStatus, UiPurchaseOrderStatus } from '@/types/purchase-order.types'
 
 const { po, isCreateMode, showActions, syncEnabled, supplierReadonly } = defineProps<{
-  po: PurchaseOrder
+  po: PurchaseOrderWithUiStatus
   isCreateMode?: boolean
   showActions?: boolean
   syncEnabled?: boolean
@@ -46,7 +39,7 @@ const emit = defineEmits<{
   'update:pickup_address_id': [v: string | null]
   'update:reference': [v: string]
   'update:expected_delivery': [v: string]
-  'update:status': [v: UiStatus]
+  'update:status': [v: UiPurchaseOrderStatus]
   save: []
   'sync-xero': []
   'view-xero': []
@@ -58,8 +51,25 @@ const supplierLookup = reactive({
   value: true, // indicates supplier mode vs client mode
 })
 
-const poStatus = computed<UiStatus>(() => (po.status ?? 'draft') as UiStatus)
-const editableStatuses: UiStatus[] = ['draft', 'local_draft']
+const poStatus = computed<UiPurchaseOrderStatus>(
+  () => (po.status ?? 'draft') as UiPurchaseOrderStatus,
+)
+const editableStatuses: UiPurchaseOrderStatus[] = ['draft', 'local_draft']
+const supplierValue = computed(() => (typeof po.supplier === 'string' ? po.supplier : ''))
+const supplierIdValue = computed(() => (typeof po.supplier_id === 'string' ? po.supplier_id : ''))
+const pickupAddressIdValue = computed(() =>
+  typeof po.pickup_address_id === 'string' ? po.pickup_address_id : '',
+)
+const referenceValue = computed(() =>
+  typeof po.reference === 'string' || typeof po.reference === 'number' ? String(po.reference) : '',
+)
+const expectedDeliveryValue = computed(() =>
+  typeof po.expected_delivery === 'string' ? po.expected_delivery : null,
+)
+const createdByNameValue = computed(() =>
+  typeof po.created_by_name === 'string' ? po.created_by_name : '',
+)
+const orderDateValue = computed(() => (typeof po.order_date === 'string' ? po.order_date : null))
 
 let autosaveTimer: number | undefined = undefined
 
@@ -93,7 +103,7 @@ function onReferenceUpdate(value: string | number) {
   emit('update:reference', typeof value === 'number' ? String(value) : value)
 }
 
-function onStatusUpdate(value: UiStatus) {
+function onStatusUpdate(value: UiPurchaseOrderStatus) {
   emit('update:status', value)
 }
 
@@ -123,7 +133,7 @@ function formatDate(dateString: string | null | undefined): string {
   }
 }
 
-const statusOptions: { value: UiStatus; label: string }[] = [
+const statusOptions: { value: UiPurchaseOrderStatus; label: string }[] = [
   { value: 'local_draft', label: 'Local Draft' },
   { value: 'draft', label: 'Draft' },
   { value: 'submitted', label: 'Submitted to Supplier' },
@@ -147,7 +157,7 @@ const statusOptions: { value: UiStatus; label: string }[] = [
           <ClientLookup
             :supplier-lookup="supplierLookup"
             id="supplier"
-            :model-value="po.supplier"
+            :model-value="supplierValue"
             required
             placeholder="Search supplier…"
             @update:selected-client="onSupplierSelected"
@@ -161,7 +171,7 @@ const statusOptions: { value: UiStatus; label: string }[] = [
           <div class="flex items-center gap-2">
             <Input
               id="supplier-readonly"
-              :model-value="po.supplier || ''"
+              :model-value="supplierValue"
               disabled
               class="flex-1 px-2 py-1 text-sm"
               placeholder="No supplier selected"
@@ -188,9 +198,9 @@ const statusOptions: { value: UiStatus; label: string }[] = [
           label="Pickup Address"
           placeholder="Select pickup location"
           :optional="true"
-          :supplier-id="po.supplier_id"
-          :supplier-name="po.supplier"
-          :initial-address-id="po.pickup_address_id || ''"
+          :supplier-id="supplierIdValue"
+          :supplier-name="supplierValue"
+          :initial-address-id="pickupAddressIdValue"
           @update:model-value="onPickupAddressUpdate"
         />
       </div>
@@ -199,7 +209,7 @@ const statusOptions: { value: UiStatus; label: string }[] = [
         <Label for="reference">Reference</Label>
         <Input
           id="reference"
-          :model-value="po.reference || ''"
+          :model-value="referenceValue"
           @update:model-value="onReferenceUpdate"
           class="w-full"
           data-automation-id="PoSummaryCard-reference"
@@ -212,14 +222,14 @@ const statusOptions: { value: UiStatus; label: string }[] = [
             <label class="text-sm font-medium">Order Date</label>
             <Button variant="outline" class="justify-start font-normal w-full bg-gray-50" disabled>
               <CalendarIcon class="mr-2 h-4 w-4" />
-              {{ formatDate(po.order_date) || 'Today' }}
+              {{ formatDate(orderDateValue) || 'Today' }}
             </Button>
           </div>
         </div>
         <div class="flex flex-col gap-2">
           <DatePicker
             label="Expected Delivery"
-            :modelValue="po.expected_delivery || null"
+            :modelValue="expectedDeliveryValue"
             @update:modelValue="(value) => onExpectedDeliveryUpdate(value || '')"
           />
         </div>
@@ -228,7 +238,7 @@ const statusOptions: { value: UiStatus; label: string }[] = [
       <div class="flex flex-col gap-1 mt-4" v-if="!isCreateMode">
         <Label>Created By</Label>
         <Input
-          :model-value="po.created_by_name || ''"
+          :model-value="createdByNameValue"
           disabled
           class="bg-gray-50"
           data-automation-id="PoSummaryCard-created-by"
@@ -241,7 +251,7 @@ const statusOptions: { value: UiStatus; label: string }[] = [
           <Select
             id="status"
             :modelValue="po.status || null"
-            @update:modelValue="(value) => onStatusUpdate(value as UiStatus)"
+            @update:modelValue="(value) => onStatusUpdate(value as UiPurchaseOrderStatus)"
           >
             <SelectTrigger data-automation-id="PoSummaryCard-status-trigger">
               <SelectValue />

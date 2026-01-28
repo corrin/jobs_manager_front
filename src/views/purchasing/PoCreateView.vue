@@ -61,11 +61,7 @@ import { toast } from 'vue-sonner'
 import { debugLog } from '@/utils/debug'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
-type BackendStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
-type UiStatus = BackendStatus | 'local_draft'
-type PurchaseOrderDetail = Omit<z.infer<typeof schemas.PurchaseOrderDetail>, 'status'> & {
-  status?: UiStatus
-}
+import type { PurchaseOrderWithUiStatus } from '@/types/purchase-order.types'
 type PurchaseOrderCreatePayload = z.input<typeof schemas.PurchaseOrderCreateRequest>
 
 const router = useRouter()
@@ -78,7 +74,7 @@ const lastDraftSavedAt = ref<Date | null>(null)
 const DRAFT_STORAGE_KEY = 'po-create-draft'
 let draftSaveTimer: ReturnType<typeof setTimeout> | null = null
 
-const po = ref<PurchaseOrderDetail>({
+const po = ref<PurchaseOrderWithUiStatus>({
   id: '',
   po_number: '',
   supplier: '',
@@ -145,7 +141,7 @@ const restoreDraft = () => {
   try {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY)
     if (!raw) return
-    const parsed = JSON.parse(raw) as Partial<PurchaseOrderDetail> & { savedAt?: number }
+    const parsed = JSON.parse(raw) as Partial<PurchaseOrderWithUiStatus> & { savedAt?: number }
 
     po.value = {
       ...po.value,
@@ -215,11 +211,20 @@ const save = async () => {
   try {
     await refreshLastPoNumber()
 
+    const supplierId = typeof po.value.supplier_id === 'string' ? po.value.supplier_id : null
+    const reference =
+      typeof po.value.reference === 'string' || typeof po.value.reference === 'number'
+        ? String(po.value.reference)
+        : ''
+    const orderDate = typeof po.value.order_date === 'string' ? po.value.order_date : null
+    const expectedDelivery =
+      typeof po.value.expected_delivery === 'string' ? po.value.expected_delivery : null
+
     const payload: PurchaseOrderCreatePayload = {
-      supplier_id: po.value.supplier_id || null,
-      reference: po.value.reference ?? '',
-      order_date: po.value.order_date || null,
-      expected_delivery: po.value.expected_delivery || null,
+      supplier_id: supplierId,
+      reference,
+      order_date: orderDate,
+      expected_delivery: expectedDelivery,
       lines: [],
     }
     const res = await store.createOrder(payload)
