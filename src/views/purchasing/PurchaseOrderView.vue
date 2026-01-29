@@ -36,79 +36,6 @@
       </div>
 
       <div
-        v-if="drafts.length"
-        class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3"
-      >
-        <button
-          class="w-full flex items-center justify-between text-left hover:text-slate-800"
-          @click="draftsOpen = !draftsOpen"
-        >
-          <div class="flex items-center gap-2">
-            <ChevronDown
-              class="w-4 h-4 text-slate-500 transition-transform"
-              :class="{ 'rotate-180': draftsOpen }"
-            />
-            <h2 class="text-sm font-semibold text-slate-800">Local drafts</h2>
-            <span class="text-xs text-slate-500">{{ drafts.length }} saved locally</span>
-          </div>
-        </button>
-
-        <transition name="fade">
-          <div v-show="draftsOpen" class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            <div
-              v-for="draft in drafts"
-              :key="draft.draftId"
-              class="rounded-xl border border-slate-200 bg-white p-4 flex flex-col gap-3 shadow-sm hover:shadow-md transition w-full max-w-md"
-            >
-              <div class="flex items-start justify-between gap-2">
-                <div class="space-y-1 min-w-0">
-                  <p class="text-xs uppercase tracking-wide text-slate-500">PO #</p>
-                  <p class="text-base font-semibold text-slate-900 truncate">
-                    {{ draft.po_number || draft.reference || 'Local Draft' }}
-                  </p>
-                  <p class="text-sm text-slate-700 truncate">
-                    {{ draft.reference || draft.label || 'Untitled PO' }}
-                  </p>
-                </div>
-                <div class="text-right">
-                  <p class="text-[11px] text-slate-500">Saved</p>
-                  <p class="text-[11px] font-medium text-slate-600">
-                    {{ new Date(draft.updatedAt).toLocaleString() }}
-                  </p>
-                </div>
-              </div>
-              <div class="flex items-center gap-2 text-xs text-slate-600 flex-wrap">
-                <span class="px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                  Supplier: {{ draft.supplier || (draft.supplier_id ? 'Selected' : 'Not set') }}
-                </span>
-                <span
-                  class="px-2 py-1 rounded-full"
-                  :class="
-                    draft.lines?.length
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'bg-slate-100 text-slate-600'
-                  "
-                >
-                  {{ draft.lines?.length || 0 }} lines
-                </span>
-              </div>
-              <div class="flex items-center justify-start gap-2 pt-1">
-                <Button size="sm" class="px-4" @click="openDraft(draft.draftId)">Resume</Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  class="px-3 whitespace-nowrap"
-                  @click="deleteDraft(draft.draftId)"
-                >
-                  Delete
-                </Button>
-              </div>
-            </div>
-          </div>
-        </transition>
-      </div>
-
-      <div
         class="overflow-y-auto max-h-[70.3vh] lg:max-h-[80vh] xl:max-h-[85vh] rounded-2xl shadow-lg border"
       >
         <table class="min-w-full text-sm">
@@ -129,6 +56,7 @@
               :key="po.id"
               class="border-b hover:bg-slate-50"
               :class="{ 'opacity-60 bg-red-50': isPoDeleted(normalizeStatus(po.status)) }"
+              :data-automation-id="`PurchaseOrderView-row-${po.id}`"
             >
               <td class="p-3">
                 <a
@@ -145,7 +73,10 @@
                 {{ po.created_by_name || '—' }}
               </td>
               <td class="p-3">
-                <span :class="getStatusClass(normalizeStatus(po.status), po.isLocalDraft)">
+                <span
+                  :class="getStatusClass(normalizeStatus(po.status), po.isLocalDraft)"
+                  :data-automation-id="`PurchaseOrderView-status-${po.id}`"
+                >
                   {{ formatStatus(normalizeStatus(po.status), po.isLocalDraft) }}
                 </span>
               </td>
@@ -193,15 +124,7 @@ import { debugLog } from '@/utils/debug'
 
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
-import {
-  FileText,
-  Pencil,
-  Trash2,
-  PlusCircle,
-  FileSpreadsheet,
-  Search,
-  ChevronDown,
-} from 'lucide-vue-next'
+import { FileText, Pencil, Trash2, PlusCircle, FileSpreadsheet, Search } from 'lucide-vue-next'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
 import { computed, onMounted, ref, watch, onActivated, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
@@ -220,7 +143,6 @@ const router = useRouter()
 const store = usePurchaseOrderStore()
 const orders = computed(() => store.orders)
 const drafts = ref(listPoDrafts())
-const draftsOpen = ref(true)
 
 const refreshDrafts = () => {
   drafts.value = listPoDrafts()

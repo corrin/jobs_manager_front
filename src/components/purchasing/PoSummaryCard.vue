@@ -148,6 +148,9 @@ const statusOptions: { value: UiPurchaseOrderStatus; label: string }[] = [
     <CardHeader v-if="!isCreateMode">
       <h2 class="font-semibold" data-automation-id="PoSummaryCard-po-number">
         PO #{{ po.po_number }}
+        <span v-if="po.status === 'local_draft'" class="text-xs text-slate-500 ml-2">
+          (Suggested)
+        </span>
       </h2>
     </CardHeader>
 

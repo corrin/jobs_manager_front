@@ -132,7 +132,24 @@
         class="flex flex-wrap gap-2 justify-end"
         data-automation-id="PurchaseOrderFormView-create-actions"
       >
-        <Button variant="outline" @click="clearCreateDraft">Discard Draft</Button>
+        <Button
+          variant="outline"
+          @click="clearCreateDraft"
+          data-automation-id="PurchaseOrderFormView-discard-draft"
+        >
+          Discard Draft
+        </Button>
+        <Button
+          :disabled="isPublishing"
+          @click="publishDraft"
+          data-automation-id="PurchaseOrderFormView-publish"
+        >
+          <div v-if="isPublishing" class="flex items-center gap-2">
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            Publishing...
+          </div>
+          <span v-else>Publish PO</span>
+        </Button>
       </div>
 
       <div v-else class="flex flex-wrap gap-2 justify-end">
@@ -255,7 +272,7 @@ const mapDraftLineToPoLine = (line: PurchaseOrderLineCreate): PurchaseOrderLine 
 
 const createEmptyPo = (): LocalPurchaseOrder => ({
   id: '',
-  po_number: 'Local Draft',
+  po_number: '',
   supplier: '',
   supplier_id: null,
   supplier_has_xero_id: false,
@@ -1500,8 +1517,8 @@ onMounted(async () => {
   try {
     if (isCreateMode.value) {
       restoreCreateDraft()
-      ensureCreateDraft()
       await Promise.all([xeroItemStore.fetchItems(), fetchJobs(), refreshLastPoNumber()])
+      ensureCreateDraft()
     } else {
       await Promise.all([
         xeroItemStore.fetchItems(),

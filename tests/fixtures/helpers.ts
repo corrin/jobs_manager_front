@@ -212,7 +212,7 @@ export async function createTestPurchaseOrder(page: Page): Promise<string> {
   const supplierName = `E2E Test Supplier ${randomSuffix}`
 
   // Navigate to create PO page
-  await page.goto('/purchasing/po/create')
+  await page.goto('/purchasing/po/new')
   await page.waitForLoadState('networkidle')
 
   // Create a new supplier using Ctrl+Enter
@@ -234,16 +234,21 @@ export async function createTestPurchaseOrder(page: Page): Promise<string> {
   // Add reference
   await autoId(page, 'PoSummaryCard-reference').fill(`E2E Test Ref ${randomSuffix}`)
 
-  // Save the PO - wait for the API response
+  // Add a valid line so publish is allowed
+  await autoId(page, 'PoLinesTable-add-line').click()
+  await autoId(page, 'PoLinesTable-description-0').fill(`E2E line ${randomSuffix}`)
+  await autoId(page, 'PoLinesTable-unit-cost-0').fill('10')
+
+  // Publish the PO - wait for the API response
   const savePromise = page.waitForResponse(
     (response) =>
       response.url().includes('/purchasing/rest/purchase-orders') &&
       response.request().method() === 'POST' &&
-      response.status() === 201,
+      (response.status() === 200 || response.status() === 201),
     { timeout: 30000 },
   )
 
-  await autoId(page, 'PoCreateView-save').click()
+  await autoId(page, 'PurchaseOrderFormView-publish').click()
   await savePromise
 
   // Wait for redirect to PO form
