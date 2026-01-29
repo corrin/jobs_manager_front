@@ -172,7 +172,7 @@
 <script setup lang="ts">
 import { debugLog } from '@/utils/debug'
 
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, onBeforeUnmount } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -302,6 +302,7 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const isPoDeleted = computed(() => po.value.status === 'deleted')
 const isPoSubmitted = computed(() => po.value.status === 'submitted')
 const isPromoting = ref(false)
+const isPublishing = ref(false)
 const blockDraftPersist = ref(false)
 
 // More granular permissions
@@ -347,7 +348,7 @@ watch(
 // Autosave supplier updates; once supplier is set, treat draft as 'draft' status and persist locally
 watch(
   () => [po.value.supplier_id, po.value.supplier],
-  async () => {
+  () => {
     if (!isCreateMode.value) return
     if (po.value.supplier_id) {
       po.value.status = 'draft'
@@ -358,7 +359,6 @@ watch(
       ) {
         po.value.po_number = nextPoNumber.value || po.value.po_number || 'Local Draft'
       }
-      await promoteDraftToBackend()
     }
     persistCreateDraft()
   },
@@ -525,6 +525,28 @@ const promoteDraftToBackend = async () => {
     if (!router.currentRoute.value.path.includes('/purchasing/po/')) {
       blockDraftPersist.value = false
     }
+  }
+}
+
+const publishDraft = async () => {
+  if (!isCreateMode.value || isPublishing.value) return
+
+  if (!po.value.supplier_id) {
+    toast.error('Select a supplier before publishing')
+    return
+  }
+
+  const validLines = (po.value.lines ?? []).filter(isValidLine)
+  if (!validLines.length) {
+    toast.error('Add at least one valid line before publishing')
+    return
+  }
+
+  try {
+    isPublishing.value = true
+    await promoteDraftToBackend()
+  } finally {
+    isPublishing.value = false
   }
 }
 
@@ -1620,5 +1642,11 @@ onMounted(async () => {
     },
     { deep: true },
   )
+})
+
+onBeforeUnmount(() => {
+  if (isCreateMode.value) {
+    persistCreateDraft()
+  }
 })
 </script>
