@@ -177,6 +177,9 @@ const refreshLastPoNumber = async () => {
 
   try {
     const latest = await store.fetchLastPoNumber()
+
+    if (!latest) throw new Error()
+
     lastPoNumber.value = latest
   } catch (err) {
     lastPoNumberError.value = err instanceof Error ? err.message : 'Failed to load last PO number'
