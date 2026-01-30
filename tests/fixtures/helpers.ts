@@ -4,7 +4,10 @@ import { appendFileSync, existsSync, mkdirSync } from 'fs'
 import path from 'path'
 
 // Test data constants
-export const TEST_CLIENT_NAME = 'ABC Carpet Cleaning TEST IGNORE'
+const DEFAULT_TEST_CLIENT_NAME = 'ABC Carpet Cleaning TEST IGNORE'
+const envTestClientName = process.env.TEST_CLIENT_NAME?.trim()
+export const TEST_CLIENT_NAME =
+  envTestClientName && envTestClientName.length > 0 ? envTestClientName : DEFAULT_TEST_CLIENT_NAME
 
 // Network logging state
 let networkRunId: string | null = null
