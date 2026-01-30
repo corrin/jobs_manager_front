@@ -65,7 +65,7 @@ export class QuoteChatService {
 
   async clearChatHistory(jobId: string): Promise<void> {
     try {
-      await api.quote_chat_delete_all(undefined, { params: { job_id: jobId } })
+      await api.job_api_jobs_quote_chat_destroy(undefined, { params: { job_id: jobId } })
     } catch (error) {
       debugLog('Failed to clear chat history:', error)
       throw error

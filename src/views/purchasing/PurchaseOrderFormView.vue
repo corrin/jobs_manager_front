@@ -1,4 +1,3 @@
-s
 <template>
   <AppLayout>
     <div class="p-4 md:p-8 flex flex-col gap-4">
@@ -57,7 +56,7 @@ s
               :default-retail-rate="defaultRetailRate"
               :stock-holding-job-id="stockHoldingJobId || undefined"
               :po-status="po.status"
-              :po-id="po.id"
+              :po-id="poIdValue"
               @update:lines="canEditLineItems || canEditJobs ? (po.lines = $event) : null"
               @add-line="handleAddLineEvent"
               @delete-line="deleteLine"
@@ -118,9 +117,42 @@ s
       </div>
 
       <!-- Comments Section -->
-      <PoCommentsSection v-if="orderId" :po-id="orderId" />
+      <PoCommentsSection v-if="orderId && !isCreateMode" :po-id="orderId" />
+      <Card v-else class="mt-2">
+        <CardHeader>
+          <h3 class="font-semibold text-sm">Comments</h3>
+        </CardHeader>
+        <CardContent class="text-sm text-slate-600">
+          Comments will be available after this PO is published.
+        </CardContent>
+      </Card>
 
-      <div class="flex flex-wrap gap-2 justify-end">
+      <div
+        v-if="isCreateMode"
+        class="flex flex-wrap gap-2 justify-end"
+        data-automation-id="PurchaseOrderFormView-create-actions"
+      >
+        <Button
+          variant="outline"
+          @click="clearCreateDraft"
+          data-automation-id="PurchaseOrderFormView-discard-draft"
+        >
+          Discard Draft
+        </Button>
+        <Button
+          :disabled="isPublishing"
+          @click="publishDraft"
+          data-automation-id="PurchaseOrderFormView-publish"
+        >
+          <div v-if="isPublishing" class="flex items-center gap-2">
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            Publishing...
+          </div>
+          <span v-else>Publish PO</span>
+        </Button>
+      </div>
+
+      <div v-else class="flex flex-wrap gap-2 justify-end">
         <Button aria-label="Close" @click="close" data-automation-id="PurchaseOrderFormView-close"
           >Close</Button
         >
@@ -131,7 +163,7 @@ s
     <PoPdfDialog
       :open="showPdfDialog"
       :purchase-order-id="orderId"
-      :po-number="po.po_number"
+      :po-number="poNumberValue"
       @update:open="showPdfDialog = $event"
     />
   </AppLayout>
@@ -140,7 +172,7 @@ s
 <script setup lang="ts">
 import { debugLog } from '@/utils/debug'
 
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed, onBeforeUnmount } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -160,21 +192,35 @@ import { schemas } from '@/api/generated/api'
 import { onPoConcurrencyRetry } from '@/composables/usePoConcurrencyEvents'
 import { openGmailCompose } from '@/utils/email'
 import type { z } from 'zod'
+import type {
+  BackendPurchaseOrderStatus,
+  PurchaseOrderDetail,
+  UiPurchaseOrderStatus,
+} from '@/types/purchase-order.types'
+import { getPoDraft, savePoDraft, deletePoDraft, listPoDrafts } from '@/composables/usePoDrafts'
 
 // Import types from generated API schemas
 type PurchaseOrderLine = z.infer<typeof schemas.PurchaseOrderLine>
-type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderDetail>
 type Job = z.infer<typeof schemas.JobForPurchasing>
 type AllocationItem = z.infer<typeof schemas.AllocationItem>
 type DeliveryAllocation = z.infer<typeof schemas.DeliveryReceiptAllocationRequest>
 type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailResponse>
 type ClientContact = z.infer<typeof schemas.ClientContact>
 type PurchaseOrderEmailResponseWithLegacy = PurchaseOrderEmailResponse & { email?: string }
-type PurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
+type PurchaseOrderLineCreate = z.input<typeof schemas.PurchaseOrderLineCreateRequest>
+type PurchaseOrderCreatePayload = z.input<typeof schemas.PurchaseOrderCreateRequest>
+type LocalPurchaseOrder = Omit<PurchaseOrderDetail, 'status' | 'lines'> & {
+  status?: UiPurchaseOrderStatus
+  lines: PurchaseOrderLine[]
+}
 
 const route = useRoute()
 const router = useRouter()
-const orderId = route.params.id as string
+const orderIdParam = route.params.id as string | undefined
+const draftIdParam = (route.query.draft as string | undefined) || undefined
+const draftId = ref<string | undefined>(draftIdParam)
+const orderId = orderIdParam ?? 'new'
+const isCreateMode = computed(() => orderId === 'new')
 const store = usePurchaseOrderStore()
 const xeroItemStore = useXeroItemStore()
 const receiptStore = useDeliveryReceiptStore()
@@ -188,8 +234,43 @@ const isLoadingJobs = ref(false)
 const existingAllocations = ref<Record<string, AllocationItem[]>>({})
 const stockHoldingJobId = ref<string | null>(null)
 const isSavingReceipt = ref(false)
+const lastPoNumber = ref<string | null>(null)
+const isLoadingLastPoNumber = ref(false)
+const lastPoNumberError = ref<string | null>(null)
+const lastDraftSavedAt = ref<Date | null>(null)
 
-const po = ref<PurchaseOrder>({
+const mapLineToDraft = (line: PurchaseOrderLine): PurchaseOrderLineCreate => ({
+  job_id: line.job_id || null,
+  description: line.description || '',
+  quantity: line.quantity ?? 0,
+  unit_cost: line.unit_cost ?? null,
+  price_tbc: line.price_tbc ?? false,
+  item_code: line.item_code || '',
+  metal_type: (line.metal_type as string | undefined) || '',
+  alloy: line.alloy || '',
+  specifics: line.specifics || '',
+  location: line.location || '',
+  dimensions: line.dimensions || '',
+})
+
+const mapDraftLineToPoLine = (line: PurchaseOrderLineCreate): PurchaseOrderLine => ({
+  id: '',
+  description: line.description || '',
+  quantity: line.quantity ?? 0,
+  dimensions: line.dimensions || undefined,
+  unit_cost: line.unit_cost ?? null,
+  price_tbc: line.price_tbc ?? false,
+  supplier_item_code: undefined,
+  item_code: line.item_code || '',
+  received_quantity: undefined,
+  metal_type: (line.metal_type as string | undefined) || undefined,
+  alloy: line.alloy || undefined,
+  specifics: line.specifics || undefined,
+  location: line.location || undefined,
+  job_id: line.job_id ?? null,
+})
+
+const createEmptyPo = (): LocalPurchaseOrder => ({
   id: '',
   po_number: '',
   supplier: '',
@@ -198,15 +279,21 @@ const po = ref<PurchaseOrder>({
   pickup_address_id: null,
   pickup_address: null,
   reference: '',
-  order_date: '',
-  expected_delivery: '',
-  status: 'draft',
+  order_date: null,
+  expected_delivery: null,
+  status: 'local_draft',
   lines: [],
   online_url: undefined,
   xero_id: undefined,
   created_by_id: null,
   created_by_name: '',
-} as PurchaseOrder)
+})
+
+const po = ref<LocalPurchaseOrder>(createEmptyPo())
+const poIdValue = computed(() => (typeof po.value.id === 'string' ? po.value.id : ''))
+const poNumberValue = computed(() =>
+  typeof po.value.po_number === 'string' ? po.value.po_number : undefined,
+)
 
 const linesToDelete = ref<string[]>([])
 const supplierEmailCache = ref<Record<string, string | null>>({})
@@ -214,19 +301,287 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 const isPoDeleted = computed(() => po.value.status === 'deleted')
 const isPoSubmitted = computed(() => po.value.status === 'submitted')
+const isPromoting = ref(false)
+const isPublishing = ref(false)
+const blockDraftPersist = ref(false)
 
 // More granular permissions
 const canEditSupplier = computed(() => !isPoDeleted.value && !isPoSubmitted.value)
 const canEditLineItems = computed(() => !isPoDeleted.value && !isPoSubmitted.value)
 const canEditJobs = computed(() => !isPoDeleted.value) // Jobs can be edited even when submitted
 const canEditStatus = computed(() => !isPoDeleted.value) // Status can be changed even when submitted
-const canShowActions = computed(() => !isPoDeleted.value) // Actions available except when deleted
+const canShowActions = computed(() => !isPoDeleted.value) // Keep actions visible for consistent UI
 const defaultRetailRate = computed(() => receiptStore.getDefaultRetailRate())
 
 // Check if any lines have TBC pricing (costs not yet confirmed)
 const hasUnknownCosts = computed(() => {
   return po.value.lines.some((line) => line.price_tbc === true)
 })
+
+const nextPoNumber = computed(() => {
+  if (!lastPoNumber.value) return null
+  const match = lastPoNumber.value.match(/^(.*?)(\d+)\s*$/)
+  if (!match) return null
+  const prefix = match[1]
+  const numberPart = match[2]
+  const incremented = (Number(numberPart) || 0) + 1
+  return `${prefix}${incremented.toString().padStart(numberPart.length, '0')}`
+})
+
+// When the backend last PO number arrives, assign the next number to drafts that still show the placeholder
+watch(
+  nextPoNumber,
+  (val) => {
+    if (!isCreateMode.value) return
+    if (
+      val &&
+      (po.value.po_number === 'Local Draft' || !po.value.po_number) &&
+      po.value.supplier_id
+    ) {
+      po.value.po_number = val
+      persistCreateDraft()
+    }
+  },
+  { immediate: false },
+)
+
+// Autosave supplier updates; once supplier is set, treat draft as 'draft' status and persist locally
+watch(
+  () => [po.value.supplier_id, po.value.supplier],
+  () => {
+    if (!isCreateMode.value) return
+    if (po.value.supplier_id) {
+      po.value.status = 'draft'
+      if (
+        po.value.po_number === 'Local Draft' ||
+        po.value.po_number === '' ||
+        po.value.po_number === undefined
+      ) {
+        po.value.po_number = nextPoNumber.value || po.value.po_number || 'Local Draft'
+      }
+    }
+    persistCreateDraft()
+  },
+  { deep: false },
+)
+
+const persistCreateDraft = () => {
+  if (!isCreateMode.value || typeof localStorage === 'undefined') return
+  if (blockDraftPersist.value) {
+    debugLog('Skipping local draft persist (blocked due to promotion)')
+    return
+  }
+  try {
+    if (
+      !po.value.po_number ||
+      po.value.po_number === 'Local Draft' ||
+      po.value.po_number === undefined
+    ) {
+      po.value.po_number = nextPoNumber.value || 'Local Draft'
+    }
+    const draftIdToPersist =
+      draftId.value ||
+      (route.query.draft as string | undefined) ||
+      (po.value.id && po.value.id !== 'new' ? po.value.id : undefined)
+    const draftIdValue = typeof draftIdToPersist === 'string' ? draftIdToPersist : undefined
+    const supplierId = typeof po.value.supplier_id === 'string' ? po.value.supplier_id : null
+    const pickupAddressId =
+      typeof po.value.pickup_address_id === 'string' ? po.value.pickup_address_id : null
+    const reference =
+      typeof po.value.reference === 'string' || typeof po.value.reference === 'number'
+        ? String(po.value.reference)
+        : ''
+    const orderDate = typeof po.value.order_date === 'string' ? po.value.order_date : null
+    const expectedDelivery =
+      typeof po.value.expected_delivery === 'string' ? po.value.expected_delivery : null
+    const supplierName = typeof po.value.supplier === 'string' ? po.value.supplier : ''
+    const poNumber = typeof po.value.po_number === 'string' ? po.value.po_number : undefined
+
+    const savedId = savePoDraft({
+      draftId: draftIdValue,
+      supplier_id: supplierId,
+      pickup_address_id: pickupAddressId,
+      reference,
+      order_date: orderDate,
+      expected_delivery: expectedDelivery,
+      lines: (po.value.lines ?? []).map(mapLineToDraft),
+      label: reference || supplierName || 'Untitled PO',
+      supplier: supplierName,
+      po_number: poNumber,
+    })
+
+    if (!draftId.value && savedId) {
+      draftId.value = savedId
+      router.replace({ query: { ...route.query, draft: savedId } })
+    }
+    lastDraftSavedAt.value = new Date()
+  } catch (err) {
+    debugLog('Failed to persist PO create draft', err)
+  }
+}
+
+const restoreCreateDraft = () => {
+  if (!isCreateMode.value || typeof localStorage === 'undefined') return
+  try {
+    const drafts = listPoDrafts()
+    const targetDraft = (draftId.value && getPoDraft(draftId.value)) || drafts[0] || null
+    if (!targetDraft) return
+
+    po.value = {
+      ...po.value,
+      ...targetDraft,
+      lines: (targetDraft.lines ?? []).map(mapDraftLineToPoLine),
+      po_number: targetDraft.po_number || po.value.po_number || nextPoNumber.value || 'Local Draft',
+      order_date: targetDraft.order_date || '',
+      expected_delivery: targetDraft.expected_delivery || '',
+    }
+    originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
+  } catch (err) {
+    debugLog('Failed to restore PO create draft', err)
+  }
+}
+
+const ensureCreateDraft = () => {
+  if (!isCreateMode.value) return
+  if (draftId.value) {
+    // Already have an id, just persist current state to refresh updatedAt
+    persistCreateDraft()
+    return
+  }
+  // Create a new empty draft entry immediately so it shows on the list
+  persistCreateDraft()
+}
+
+const removeDraftLocally = () => {
+  const drafts = listPoDrafts()
+  const targetId =
+    draftId.value ||
+    (route.query.draft as string | undefined) ||
+    drafts.find(
+      (d) =>
+        d.po_number === po.value.po_number ||
+        (po.value.reference && d.reference === po.value.reference),
+    )?.draftId
+
+  if (targetId) {
+    deletePoDraft(targetId)
+    // Notify other views (list) to refresh their in-memory draft cache
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: 'po-drafts', storageArea: localStorage }),
+    )
+  }
+  draftId.value = undefined
+}
+
+const promoteDraftToBackend = async () => {
+  if (!isCreateMode.value || isPromoting.value) return
+  if (!po.value.supplier_id) return
+
+  try {
+    isPromoting.value = true
+    blockDraftPersist.value = true
+    const supplierId = typeof po.value.supplier_id === 'string' ? po.value.supplier_id : null
+    const pickupAddressId =
+      typeof po.value.pickup_address_id === 'string' ? po.value.pickup_address_id : null
+    const reference =
+      typeof po.value.reference === 'string' || typeof po.value.reference === 'number'
+        ? String(po.value.reference)
+        : ''
+    const orderDate = typeof po.value.order_date === 'string' ? po.value.order_date : null
+    const expectedDelivery =
+      typeof po.value.expected_delivery === 'string' ? po.value.expected_delivery : null
+    const payload: PurchaseOrderCreatePayload = {
+      supplier_id: supplierId,
+      pickup_address_id: pickupAddressId,
+      reference,
+      order_date: orderDate,
+      expected_delivery: expectedDelivery,
+      lines: (po.value.lines ?? []).filter(isValidLine).map((line) => ({
+        job_id: line.job_id ?? null,
+        description: line.description || '',
+        quantity: line.quantity ?? 0,
+        unit_cost: line.unit_cost ?? null,
+        price_tbc: line.price_tbc ?? false,
+        item_code: line.item_code || '',
+        metal_type: (line.metal_type as string | undefined) || undefined,
+        alloy: line.alloy || undefined,
+        specifics: line.specifics || undefined,
+        location: line.location || undefined,
+        dimensions: line.dimensions || undefined,
+      })),
+    }
+
+    const created = await store.createOrder(payload)
+    // Drop local draft and redirect to the real PO
+    removeDraftLocally()
+    toast.success('Purchase order created')
+    router.replace(`/purchasing/po/${created.id}`)
+  } catch (err) {
+    debugLog('Failed to promote local draft to backend', err)
+    toast.error('Failed to create purchase order. Please try again.')
+  } finally {
+    isPromoting.value = false
+    // If promotion failed, allow draft saves again
+    if (!router.currentRoute.value.path.includes('/purchasing/po/')) {
+      blockDraftPersist.value = false
+    }
+  }
+}
+
+const publishDraft = async () => {
+  if (!isCreateMode.value || isPublishing.value) return
+
+  if (!po.value.supplier_id) {
+    toast.error('Select a supplier before publishing')
+    return
+  }
+
+  const validLines = (po.value.lines ?? []).filter(isValidLine)
+  if (!validLines.length) {
+    toast.error('Add at least one valid line before publishing')
+    return
+  }
+
+  try {
+    isPublishing.value = true
+    await promoteDraftToBackend()
+  } finally {
+    isPublishing.value = false
+  }
+}
+
+const clearCreateDraft = () => {
+  if (typeof localStorage === 'undefined') return
+  const targetId =
+    draftId.value || (route.query.draft as string | undefined) || listPoDrafts()[0]?.draftId
+  if (targetId) {
+    deletePoDraft(targetId)
+  }
+  draftId.value = undefined
+  po.value = createEmptyPo()
+  originalLines.value = []
+  const nextQuery = { ...route.query }
+  delete (nextQuery as Record<string, unknown>).draft
+  router.replace({ query: nextQuery })
+}
+
+const refreshLastPoNumber = async () => {
+  if (!isCreateMode.value) return
+  isLoadingLastPoNumber.value = true
+  lastPoNumberError.value = null
+  try {
+    const latest = await store.fetchLastPoNumber()
+    lastPoNumber.value = latest
+    if (!po.value.po_number && latest) {
+      po.value.po_number = nextPoNumber.value || latest
+    }
+  } catch (err) {
+    lastPoNumberError.value =
+      err instanceof Error ? err.message : 'Failed to load last purchase order number'
+  } finally {
+    isLoadingLastPoNumber.value = false
+  }
+}
 
 async function fetchJobs() {
   if (isLoadingJobs.value) return
@@ -266,7 +621,7 @@ async function fetchJobs() {
 }
 
 async function loadExistingAllocations() {
-  if (!orderId) return
+  if (!orderId || isCreateMode.value) return
 
   try {
     const response = await receiptStore
@@ -280,6 +635,7 @@ async function loadExistingAllocations() {
 }
 
 async function loadJobsForReceipt() {
+  if (isCreateMode.value) return
   try {
     const { stockHolding } = await receiptStore.fetchJobs()
     stockHoldingJobId.value = stockHolding?.id || null
@@ -290,6 +646,11 @@ async function loadJobsForReceipt() {
 }
 
 async function load() {
+  if (isCreateMode.value) {
+    debugLog('Create mode - skipping server load, using local draft')
+    return
+  }
+
   if (!orderId) {
     error.value = 'Purchase order ID is required'
     return
@@ -342,6 +703,12 @@ async function load() {
 }
 
 async function saveSummary() {
+  if (isCreateMode.value) {
+    persistCreateDraft()
+    toast.success('Draft saved locally')
+    return
+  }
+
   if (isPoDeleted.value) {
     toast.error('Cannot save changes - this purchase order has been deleted')
     return
@@ -350,8 +717,12 @@ async function saveSummary() {
   const updateData = {
     reference: po.value.reference,
     expected_delivery: po.value.expected_delivery,
-    status: po.value.status,
   } as Record<string, unknown>
+
+  const currentStatus = po.value.status as UiPurchaseOrderStatus | undefined
+  if (currentStatus && currentStatus !== 'local_draft') {
+    updateData.status = currentStatus
+  }
 
   if (canEditSupplier.value) {
     if (po.value.supplier) {
@@ -409,7 +780,7 @@ function handlePickupAddressChange(addressId: string | null) {
   saveSummary()
 }
 
-function handleStatusChange(newStatus: PurchaseOrderStatus) {
+function handleStatusChange(newStatus: UiPurchaseOrderStatus) {
   if (!canEditStatus.value) return
 
   // Block setting to fully_received if there are TBC items
@@ -582,6 +953,13 @@ function isValidLine(line: PurchaseOrderLine) {
 }
 
 async function saveLines() {
+  if (isCreateMode.value) {
+    originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
+    persistCreateDraft()
+    toast.success('Draft saved locally')
+    return
+  }
+
   if (isPoDeleted.value) {
     debugLog('Cannot save - PO is deleted')
     toast.error('Cannot save changes - this purchase order has been deleted')
@@ -780,13 +1158,14 @@ async function syncWithXero() {
 }
 
 function viewInXero() {
-  if (!po.value.online_url) {
+  const onlineUrl = typeof po.value.online_url === 'string' ? po.value.online_url : undefined
+  if (!onlineUrl) {
     toast.error('No Xero URL available. Please sync with Xero first.')
     return
   }
 
   try {
-    window.open(po.value.online_url, '_blank', 'noopener,noreferrer')
+    window.open(onlineUrl, '_blank', 'noopener,noreferrer')
     toast.success('Opened Purchase Order in Xero')
   } catch (error) {
     debugLog('Failed to open Xero URL:', error)
@@ -807,7 +1186,7 @@ function emailPo() {
 }
 
 async function resolveSupplierEmail(): Promise<string | null> {
-  const supplierId = po.value.supplier_id
+  const supplierId = typeof po.value.supplier_id === 'string' ? po.value.supplier_id : null
   if (!supplierId) {
     return null
   }
@@ -885,6 +1264,13 @@ async function emailPurchaseOrder() {
 }
 
 async function close() {
+  if (isCreateMode.value) {
+    persistCreateDraft()
+    toast.success('Draft saved locally')
+    router.push('/purchasing/po')
+    return
+  }
+
   if (isPoDeleted.value) {
     debugLog('Closing without save - PO is deleted')
     router.push('/purchasing/po')
@@ -951,6 +1337,7 @@ async function close() {
 }
 
 const canSync = computed(() => {
+  if (isCreateMode.value) return false
   if (!po.value.supplier_has_xero_id) return false
 
   return po.value.lines.some(
@@ -1037,12 +1424,18 @@ const handleReceiptSave = async (payload: {
     return
   }
 
+  const poId = typeof po.value.id === 'string' ? po.value.id : ''
+  if (!poId) {
+    debugLog('Invalid purchase order id for receipt save')
+    return
+  }
+
   const map: Record<string, DeliveryAllocation[]> = { [lineId]: consolidated }
-  const request = transformDeliveryReceiptForAPI(po.value.id, map)
+  const request = transformDeliveryReceiptForAPI(poId, map)
 
   try {
     debugLog('Saving receipt for line:', lineId, 'with NEW allocations:', consolidated)
-    await receiptStore.submitDeliveryReceipt(po.value.id, request.allocations)
+    await receiptStore.submitDeliveryReceipt(poId, request.allocations)
     toast.success('Receipt saved')
 
     await Promise.all([load(), loadExistingAllocations()])
@@ -1067,10 +1460,10 @@ const handleReceiptSave = async (payload: {
 
       // Concurrency errors are handled by the store with toast and reload
       // Just set up the retry listener
-      const unsubscribe = onPoConcurrencyRetry(po.value.id, async () => {
+      const unsubscribe = onPoConcurrencyRetry(poId, async () => {
         unsubscribe() // Clean up listener
         try {
-          await receiptStore.submitDeliveryReceipt(po.value.id, request.allocations)
+          await receiptStore.submitDeliveryReceipt(poId, request.allocations)
           toast.success('Receipt saved')
           await Promise.all([load(), loadExistingAllocations()]) // Reload to show latest data
           await updatePoStatusAfterReceipt()
@@ -1101,9 +1494,11 @@ const updatePoStatusAfterReceipt = async () => {
       totalReceived += line.received_quantity || 0
     }
 
-    // Determine new status
-    const currentStatus = (po.value.status ?? 'draft') as PurchaseOrderStatus
-    let newStatus: PurchaseOrderStatus = currentStatus
+    // Determine new status (backend-only statuses)
+    const currentStatus = (
+      po.value.status === 'local_draft' || !po.value.status ? 'draft' : po.value.status
+    ) as BackendPurchaseOrderStatus
+    let newStatus: BackendPurchaseOrderStatus = currentStatus
     if (totalReceived >= totalOrdered) {
       // Block fully_received if there are TBC items
       if (hasUnknownCosts.value) {
@@ -1142,16 +1537,32 @@ const handleAllocationDeleted = async (data: { allocationId: string; allocationT
 
 onMounted(async () => {
   try {
-    await Promise.all([
-      xeroItemStore.fetchItems(),
-      fetchJobs(),
-      load(),
-      loadJobsForReceipt(),
-      loadExistingAllocations(),
-    ])
+    if (isCreateMode.value) {
+      restoreCreateDraft()
+      await Promise.all([xeroItemStore.fetchItems(), fetchJobs(), refreshLastPoNumber()])
+      ensureCreateDraft()
+    } else {
+      await Promise.all([
+        xeroItemStore.fetchItems(),
+        fetchJobs(),
+        load(),
+        loadJobsForReceipt(),
+        loadExistingAllocations(),
+      ])
+    }
   } catch (err) {
     debugLog('Error during component initialization:', err)
   }
+
+  watch(
+    () => [po.value.reference, po.value.expected_delivery, po.value.pickup_address_id],
+    () => {
+      if (isCreateMode.value) {
+        persistCreateDraft()
+      }
+    },
+    { deep: true },
+  )
 
   watch(
     () => po.value.lines,
@@ -1207,12 +1618,18 @@ onMounted(async () => {
   watch(
     () => [po.value.supplier, po.value.supplier_id],
     (newVals, oldVals) => {
+      if (isCreateMode.value) {
+        persistCreateDraft()
+        return
+      }
       if (newVals[0] && (newVals[0] !== oldVals?.[0] || newVals[1] !== oldVals?.[1])) {
         if (debounceTimer) clearTimeout(debounceTimer)
         debounceTimer = setTimeout(async () => {
           try {
+            const supplierId =
+              typeof po.value.supplier_id === 'string' ? po.value.supplier_id : null
             await store.patch(orderId, {
-              supplier_id: po.value.supplier_id ?? null,
+              supplier_id: supplierId,
             })
             toast.success('Supplier updated')
             await load()
@@ -1225,5 +1642,11 @@ onMounted(async () => {
     },
     { deep: true },
   )
+})
+
+onBeforeUnmount(() => {
+  if (isCreateMode.value) {
+    persistCreateDraft()
+  }
 })
 </script>
