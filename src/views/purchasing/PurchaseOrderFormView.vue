@@ -496,7 +496,7 @@ const promoteDraftToBackend = async () => {
       reference,
       order_date: orderDate,
       expected_delivery: expectedDelivery,
-      lines: (po.value.lines ?? []).map((line) => ({
+      lines: (po.value.lines ?? []).filter(isValidLine).map((line) => ({
         job_id: line.job_id ?? null,
         description: line.description || '',
         quantity: line.quantity ?? 0,
