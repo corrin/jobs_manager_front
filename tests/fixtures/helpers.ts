@@ -227,8 +227,19 @@ export async function createTestPurchaseOrder(page: Page): Promise<string> {
   await autoId(page, 'ClientLookup-create-new').waitFor({ timeout: 5000 })
   await supplierInput.press('Control+Enter')
 
-  // Wait for supplier creation
-  await page.waitForTimeout(3000)
+  // Auto-promotion happens once supplier is set; wait for create response + redirect
+  const createPromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/purchasing/rest/purchase-orders') &&
+      response.request().method() === 'POST' &&
+      (response.status() === 200 || response.status() === 201),
+    { timeout: 30000 },
+  )
+
+  await createPromise
+
+  // Wait for redirect to PO form
+  await page.waitForURL(/\/purchasing\/po\/[a-f0-9-]+$/, { timeout: 20000 })
 
   // Verify Xero badge is green
   const xeroIndicator = autoId(page, 'ClientLookup-xero-valid')
@@ -237,25 +248,10 @@ export async function createTestPurchaseOrder(page: Page): Promise<string> {
   // Add reference
   await autoId(page, 'PoSummaryCard-reference').fill(`E2E Test Ref ${randomSuffix}`)
 
-  // Add a valid line so publish is allowed
+  // Add a valid line so receipt flows have data
   await autoId(page, 'PoLinesTable-add-line').click()
   await autoId(page, 'PoLinesTable-description-0').fill(`E2E line ${randomSuffix}`)
   await autoId(page, 'PoLinesTable-unit-cost-0').fill('10')
-
-  // Publish the PO - wait for the API response
-  const savePromise = page.waitForResponse(
-    (response) =>
-      response.url().includes('/purchasing/rest/purchase-orders') &&
-      response.request().method() === 'POST' &&
-      (response.status() === 200 || response.status() === 201),
-    { timeout: 30000 },
-  )
-
-  await autoId(page, 'PurchaseOrderFormView-publish').click()
-  await savePromise
-
-  // Wait for redirect to PO form
-  await page.waitForURL(/\/purchasing\/po\/[a-f0-9-]+$/, { timeout: 15000 })
 
   const poUrl = page.url()
   console.log(`Created PO at: ${poUrl}`)

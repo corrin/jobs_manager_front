@@ -12,59 +12,75 @@
         <Button @click="load" class="mt-2" variant="outline" size="sm"> Try Again </Button>
       </div>
 
-      <!-- Main Content -->
-      <div v-else class="flex flex-col lg:flex-row gap-6">
-        <PoSummaryCard
-          :po="po"
-          :is-create-mode="false"
-          :show-actions="canShowActions"
-          :sync-enabled="canSync"
-          :supplier-readonly="!canEditSupplier"
-          :class="{
-            'opacity-75': isPoDeleted,
-            'opacity-90': isPoSubmitted,
-          }"
-          @update:supplier="canEditSupplier ? (po.supplier = $event) : null"
-          @update:supplier_id="canEditSupplier ? (po.supplier_id = $event) : null"
-          @update:pickup_address_id="handlePickupAddressChange($event)"
-          @update:reference="!isPoDeleted ? (po.reference = $event) : null"
-          @update:expected_delivery="!isPoDeleted ? (po.expected_delivery = $event) : null"
-          @update:status="handleStatusChange"
-          @save="saveSummary"
-          @sync-xero="syncWithXero"
-          @view-xero="viewInXero"
-          @print="printPo"
-          @email="emailPo"
-        />
-        <Card
-          class="flex-1 flex flex-col"
-          :class="{
-            'opacity-75': isPoDeleted,
-            'opacity-90': isPoSubmitted,
-          }"
+      <div v-else>
+        <div
+          v-if="isCreateMode"
+          class="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500 mb-2"
         >
-          <CardHeader>
-            <h2 class="font-semibold">Line Items</h2>
-          </CardHeader>
-          <CardContent class="flex-1 flex flex-col">
-            <PoLinesTable
-              :lines="po.lines"
-              :jobs="jobs"
-              :read-only="!canEditLineItems"
-              :jobs-read-only="!canEditJobs"
-              :existing-allocations="existingAllocations"
-              :default-retail-rate="defaultRetailRate"
-              :stock-holding-job-id="stockHoldingJobId || undefined"
-              :po-status="po.status"
-              :po-id="poIdValue"
-              @update:lines="canEditLineItems || canEditJobs ? (po.lines = $event) : null"
-              @add-line="handleAddLineEvent"
-              @delete-line="deleteLine"
-              @receipt:save="handleReceiptSave"
-              @allocation-deleted="handleAllocationDeleted"
-            />
-          </CardContent>
-        </Card>
+          <span>Draft auto-saves and will be created automatically once a supplier is set.</span>
+          <Button
+            variant="outline"
+            @click="clearCreateDraft"
+            data-automation-id="PurchaseOrderFormView-discard-draft"
+          >
+            Discard Draft
+          </Button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex flex-col lg:flex-row gap-6">
+          <PoSummaryCard
+            :po="po"
+            :is-create-mode="isCreateMode"
+            :show-actions="canShowActions"
+            :sync-enabled="canSync"
+            :supplier-readonly="!canEditSupplier"
+            :class="{
+              'opacity-75': isPoDeleted,
+              'opacity-90': isPoSubmitted,
+            }"
+            @update:supplier="canEditSupplier ? (po.supplier = $event) : null"
+            @update:supplier_id="canEditSupplier ? (po.supplier_id = $event) : null"
+            @update:pickup_address_id="handlePickupAddressChange($event)"
+            @update:reference="!isPoDeleted ? (po.reference = $event) : null"
+            @update:expected_delivery="!isPoDeleted ? (po.expected_delivery = $event) : null"
+            @update:status="handleStatusChange"
+            @save="saveSummary"
+            @sync-xero="syncWithXero"
+            @view-xero="viewInXero"
+            @print="printPo"
+            @email="emailPo"
+          />
+          <Card
+            class="flex-1 flex flex-col"
+            :class="{
+              'opacity-75': isPoDeleted,
+              'opacity-90': isPoSubmitted,
+            }"
+          >
+            <CardHeader>
+              <h2 class="font-semibold">Line Items</h2>
+            </CardHeader>
+            <CardContent class="flex-1 flex flex-col">
+              <PoLinesTable
+                :lines="po.lines"
+                :jobs="jobs"
+                :read-only="!canEditLineItems"
+                :jobs-read-only="!canEditJobs"
+                :existing-allocations="existingAllocations"
+                :default-retail-rate="defaultRetailRate"
+                :stock-holding-job-id="stockHoldingJobId || undefined"
+                :po-status="po.status"
+                :po-id="poIdValue"
+                @update:lines="canEditLineItems || canEditJobs ? (po.lines = $event) : null"
+                @add-line="handleAddLineEvent"
+                @delete-line="deleteLine"
+                @receipt:save="handleReceiptSave"
+                @allocation-deleted="handleAllocationDeleted"
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <!-- Deleted PO Warning Banner - Horizontal below cards -->
@@ -123,36 +139,11 @@
           <h3 class="font-semibold text-sm">Comments</h3>
         </CardHeader>
         <CardContent class="text-sm text-slate-600">
-          Comments will be available after this PO is published.
+          Comments will be available after this PO is created.
         </CardContent>
       </Card>
 
-      <div
-        v-if="isCreateMode"
-        class="flex flex-wrap gap-2 justify-end"
-        data-automation-id="PurchaseOrderFormView-create-actions"
-      >
-        <Button
-          variant="outline"
-          @click="clearCreateDraft"
-          data-automation-id="PurchaseOrderFormView-discard-draft"
-        >
-          Discard Draft
-        </Button>
-        <Button
-          :disabled="isPublishing"
-          @click="publishDraft"
-          data-automation-id="PurchaseOrderFormView-publish"
-        >
-          <div v-if="isPublishing" class="flex items-center gap-2">
-            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            Publishing...
-          </div>
-          <span v-else>Publish PO</span>
-        </Button>
-      </div>
-
-      <div v-else class="flex flex-wrap gap-2 justify-end">
+      <div v-if="!isCreateMode" class="flex flex-wrap gap-2 justify-end">
         <Button aria-label="Close" @click="close" data-automation-id="PurchaseOrderFormView-close"
           >Close</Button
         >
@@ -216,11 +207,10 @@ type LocalPurchaseOrder = Omit<PurchaseOrderDetail, 'status' | 'lines'> & {
 
 const route = useRoute()
 const router = useRouter()
-const orderIdParam = route.params.id as string | undefined
 const draftIdParam = (route.query.draft as string | undefined) || undefined
 const draftId = ref<string | undefined>(draftIdParam)
-const orderId = orderIdParam ?? 'new'
-const isCreateMode = computed(() => orderId === 'new')
+const orderId = computed(() => (route.params.id as string | undefined) ?? 'new')
+const isCreateMode = computed(() => orderId.value === 'new')
 const store = usePurchaseOrderStore()
 const xeroItemStore = useXeroItemStore()
 const receiptStore = useDeliveryReceiptStore()
@@ -302,7 +292,6 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const isPoDeleted = computed(() => po.value.status === 'deleted')
 const isPoSubmitted = computed(() => po.value.status === 'submitted')
 const isPromoting = ref(false)
-const isPublishing = ref(false)
 const blockDraftPersist = ref(false)
 
 // More granular permissions
@@ -345,7 +334,7 @@ watch(
   { immediate: false },
 )
 
-// Autosave supplier updates; once supplier is set, treat draft as 'draft' status and persist locally
+// Autosave supplier updates; once supplier is set, treat draft as 'draft' and persist locally
 watch(
   () => [po.value.supplier_id, po.value.supplier],
   () => {
@@ -363,6 +352,16 @@ watch(
     persistCreateDraft()
   },
   { deep: false },
+)
+
+watch(
+  () => po.value.supplier_id,
+  async (supplierId, prevSupplierId) => {
+    if (!isCreateMode.value) return
+    if (!supplierId || supplierId === prevSupplierId) return
+    if (isPromoting.value) return
+    await promoteDraftToBackend()
+  },
 )
 
 const persistCreateDraft = () => {
@@ -528,28 +527,6 @@ const promoteDraftToBackend = async () => {
   }
 }
 
-const publishDraft = async () => {
-  if (!isCreateMode.value || isPublishing.value) return
-
-  if (!po.value.supplier_id) {
-    toast.error('Select a supplier before publishing')
-    return
-  }
-
-  const validLines = (po.value.lines ?? []).filter(isValidLine)
-  if (!validLines.length) {
-    toast.error('Add at least one valid line before publishing')
-    return
-  }
-
-  try {
-    isPublishing.value = true
-    await promoteDraftToBackend()
-  } finally {
-    isPublishing.value = false
-  }
-}
-
 const clearCreateDraft = () => {
   if (typeof localStorage === 'undefined') return
   const targetId =
@@ -621,11 +598,11 @@ async function fetchJobs() {
 }
 
 async function loadExistingAllocations() {
-  if (!orderId || isCreateMode.value) return
+  if (!orderId.value || isCreateMode.value) return
 
   try {
     const response = await receiptStore
-      .fetchExistingAllocations(orderId)
+      .fetchExistingAllocations(orderId.value)
       .catch(() => ({ allocations: {} }))
     existingAllocations.value = response.allocations || {}
   } catch (err) {
@@ -651,7 +628,7 @@ async function load() {
     return
   }
 
-  if (!orderId) {
+  if (!orderId.value) {
     error.value = 'Purchase order ID is required'
     return
   }
@@ -668,7 +645,7 @@ async function load() {
   }
 
   try {
-    const data = await api.retrievePurchaseOrder({ params: { po_id: orderId } })
+    const data = await api.retrievePurchaseOrder({ params: { po_id: orderId.value } })
     po.value = data
     originalLines.value = JSON.parse(JSON.stringify(po.value.lines))
 
@@ -736,7 +713,7 @@ async function saveSummary() {
   }
 
   try {
-    await store.patch(orderId, updateData)
+    await store.patch(orderId.value, updateData)
     toast.success('Summary saved')
     await load()
     await loadExistingAllocations()
@@ -755,10 +732,10 @@ async function saveSummary() {
       await load()
       await loadExistingAllocations()
 
-      const unsubscribe = onPoConcurrencyRetry(orderId, async () => {
+      const unsubscribe = onPoConcurrencyRetry(orderId.value, async () => {
         unsubscribe() // Clean up listener
         try {
-          await store.patch(orderId, updateData)
+          await store.patch(orderId.value, updateData)
           toast.success('Summary saved')
           await load() // Reload to show latest data
           await loadExistingAllocations()
@@ -1084,7 +1061,7 @@ async function saveLines() {
   try {
     const linesToDeleteBackup = [...linesToDelete.value]
 
-    await store.patch(orderId, {
+    await store.patch(orderId.value, {
       lines: transformedLines,
       lines_to_delete: linesToDelete.value.length ? linesToDelete.value : undefined,
     })
@@ -1126,7 +1103,7 @@ async function syncWithXero() {
 
   try {
     const data = await api.api_xero_create_purchase_order_create(undefined, {
-      params: { purchase_order_id: orderId },
+      params: { purchase_order_id: orderId.value },
     })
 
     switch (true) {
@@ -1231,7 +1208,7 @@ async function emailPurchaseOrder() {
 
     const recipientEmail = await resolveSupplierEmail()
     const emailData: PurchaseOrderEmailResponse = await store.emailPurchaseOrder(
-      orderId,
+      orderId.value,
       recipientEmail ?? undefined,
     )
 
@@ -1249,7 +1226,7 @@ async function emailPurchaseOrder() {
 
     openGmailCompose({
       to: recipientAddress,
-      subject: emailData.email_subject || `Purchase Order ${po.value.po_number || orderId}`,
+      subject: emailData.email_subject || `Purchase Order ${po.value.po_number || orderId.value}`,
       body: emailData.email_body || '',
     })
 
@@ -1515,7 +1492,7 @@ const updatePoStatusAfterReceipt = async () => {
 
     // Update status if it changed
     if (newStatus !== currentStatus) {
-      await store.patch(orderId, { status: newStatus })
+      await store.patch(orderId.value, { status: newStatus })
       po.value.status = newStatus
       toast.success(`Purchase order status updated to ${newStatus.replace('_', ' ')}`)
     }
@@ -1562,6 +1539,21 @@ onMounted(async () => {
       }
     },
     { deep: true },
+  )
+
+  watch(
+    () => orderId.value,
+    async (newId, oldId) => {
+      if (newId === oldId || newId === 'new') return
+      draftId.value = undefined
+      await Promise.all([
+        xeroItemStore.fetchItems(),
+        fetchJobs(),
+        load(),
+        loadJobsForReceipt(),
+        loadExistingAllocations(),
+      ])
+    },
   )
 
   watch(
@@ -1628,7 +1620,7 @@ onMounted(async () => {
           try {
             const supplierId =
               typeof po.value.supplier_id === 'string' ? po.value.supplier_id : null
-            await store.patch(orderId, {
+            await store.patch(orderId.value, {
               supplier_id: supplierId,
             })
             toast.success('Supplier updated')

@@ -1252,7 +1252,7 @@ const BrokenJSONReference = z
     record_id: z.string(),
     field: z.string(),
     staff_id: z.string().nullish(),
-    stock_id: z.string().nullish(),
+    stock_movement_id: z.string().nullish(),
     purchase_order_line_id: z.string().nullish(),
     issue: z.string().nullish(),
   })
@@ -5049,7 +5049,7 @@ Response format matches job_quote_chat_plan.md specification.`,
   {
     method: 'delete',
     path: '/job/api/jobs/:job_id/quote-chat/',
-    alias: 'job_api_jobs_quote_chat_destroy',
+    alias: 'quote_chat_delete_all',
     description: `Delete all chat messages for a job (start fresh).`,
     requestFormat: 'json',
     parameters: [
@@ -5098,7 +5098,7 @@ Expected JSON:
   {
     method: 'delete',
     path: '/job/api/jobs/:job_id/quote-chat/:message_id/',
-    alias: 'job_api_jobs_quote_chat_destroy_2',
+    alias: 'quote_chat_delete_one',
     description: `Delete an individual chat message.`,
     requestFormat: 'json',
     parameters: [
@@ -7127,18 +7127,7 @@ Custom Actions:
     method: 'post',
     path: '/purchasing/rest/stock/',
     alias: 'purchasing_rest_stock_create',
-    description: `ViewSet for Stock CRUD operations.
-
-Endpoints:
-- GET    /purchasing/rest/stock/              - list all active stock
-- POST   /purchasing/rest/stock/              - create stock item
-- GET    /purchasing/rest/stock/&lt;id&gt;/         - retrieve stock item
-- PUT    /purchasing/rest/stock/&lt;id&gt;/         - full update
-- PATCH  /purchasing/rest/stock/&lt;id&gt;/         - partial update
-- DELETE /purchasing/rest/stock/&lt;id&gt;/         - soft delete (sets is_active&#x3D;False)
-
-Custom Actions:
-- POST   /purchasing/rest/stock/&lt;id&gt;/consume/ - consume stock for a job`,
+    description: `Create or update stock by item_code.`,
     requestFormat: 'json',
     parameters: [
       {
