@@ -390,9 +390,8 @@ const persistCreateDraft = () => {
       typeof po.value.reference === 'string' || typeof po.value.reference === 'number'
         ? String(po.value.reference)
         : ''
-    const orderDate = typeof po.value.order_date === 'string' ? po.value.order_date : null
-    const expectedDelivery =
-      typeof po.value.expected_delivery === 'string' ? po.value.expected_delivery : null
+    const orderDate = normalizeDateOnly(po.value.order_date)
+    const expectedDelivery = normalizeDateOnly(po.value.expected_delivery)
     const supplierName = typeof po.value.supplier === 'string' ? po.value.supplier : ''
     const poNumber = typeof po.value.po_number === 'string' ? po.value.po_number : undefined
 
@@ -417,6 +416,18 @@ const persistCreateDraft = () => {
   } catch (err) {
     debugLog('Failed to persist PO create draft', err)
   }
+}
+
+const normalizeDateOnly = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (trimmed.includes('T')) {
+    const [datePart] = trimmed.split('T')
+    return datePart || null
+  }
+  // Assume already YYYY-MM-DD (or backend-compatible)
+  return trimmed
 }
 
 const restoreCreateDraft = () => {
@@ -486,9 +497,8 @@ const promoteDraftToBackend = async () => {
       typeof po.value.reference === 'string' || typeof po.value.reference === 'number'
         ? String(po.value.reference)
         : ''
-    const orderDate = typeof po.value.order_date === 'string' ? po.value.order_date : null
-    const expectedDelivery =
-      typeof po.value.expected_delivery === 'string' ? po.value.expected_delivery : null
+    const orderDate = normalizeDateOnly(po.value.order_date)
+    const expectedDelivery = normalizeDateOnly(po.value.expected_delivery)
     const payload: PurchaseOrderCreatePayload = {
       supplier_id: supplierId,
       pickup_address_id: pickupAddressId,
