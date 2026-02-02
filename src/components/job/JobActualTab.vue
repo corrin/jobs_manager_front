@@ -342,12 +342,12 @@ function isDeliveryReceiptExtRefs(extRefs: unknown): extRefs is { purchase_order
   )
 }
 
-function isStockExtRefs(extRefs: unknown): extRefs is { stock_id: string } {
+function isStockExtRefs(extRefs: unknown): extRefs is { stock_movement_id: string } {
   return (
     typeof extRefs === 'object' &&
     extRefs !== null &&
-    'stock_id' in extRefs &&
-    typeof (extRefs as Record<string, unknown>).stock_id === 'string'
+    'stock_movement_id' in extRefs &&
+    typeof (extRefs as Record<string, unknown>).stock_movement_id === 'string'
   )
 }
 
@@ -762,7 +762,7 @@ function resolveSource(
     return {
       visible: true,
       label: 'Stock',
-      onClick: () => navigateToStock(/* extRefs.stock_id */),
+      onClick: () => navigateToStock(/* extRefs.stock_movement_id */),
     }
   }
 

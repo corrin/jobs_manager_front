@@ -1252,7 +1252,7 @@ const BrokenJSONReference = z
     record_id: z.string(),
     field: z.string(),
     staff_id: z.string().nullish(),
-    stock_id: z.string().nullish(),
+    stock_movement_id: z.string().nullish(),
     purchase_order_line_id: z.string().nullish(),
     issue: z.string().nullish(),
   })
@@ -2493,6 +2493,10 @@ const AllocationDeleteResponse = z
     updated_received_quantity: z.number().optional(),
   })
   .passthrough()
+const PurchaseOrderLastNumberResponse = z
+  .object({ last_po_number: z.string().nullable() })
+  .partial()
+  .passthrough()
 const SourceEnum = z.enum(['purchase_order', 'split_from_stock', 'manual', 'product_catalog'])
 const StockItem = z
   .object({
@@ -3137,6 +3141,7 @@ export const schemas = {
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
+  PurchaseOrderLastNumberResponse,
   SourceEnum,
   StockItem,
   StockItemRequest,
@@ -7087,6 +7092,20 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
   },
   {
     method: 'get',
+    path: '/purchasing/rest/purchase-orders/last-number/',
+    alias: 'getLastPurchaseOrderNumber',
+    description: `Return the most recent purchase order number.`,
+    requestFormat: 'json',
+    response: z.object({ last_po_number: z.string().nullable() }).partial().passthrough(),
+    errors: [
+      {
+        status: 500,
+        schema: PurchasingErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
     path: '/purchasing/rest/stock/',
     alias: 'purchasing_rest_stock_list',
     description: `ViewSet for Stock CRUD operations.
@@ -7108,18 +7127,7 @@ Custom Actions:
     method: 'post',
     path: '/purchasing/rest/stock/',
     alias: 'purchasing_rest_stock_create',
-    description: `ViewSet for Stock CRUD operations.
-
-Endpoints:
-- GET    /purchasing/rest/stock/              - list all active stock
-- POST   /purchasing/rest/stock/              - create stock item
-- GET    /purchasing/rest/stock/&lt;id&gt;/         - retrieve stock item
-- PUT    /purchasing/rest/stock/&lt;id&gt;/         - full update
-- PATCH  /purchasing/rest/stock/&lt;id&gt;/         - partial update
-- DELETE /purchasing/rest/stock/&lt;id&gt;/         - soft delete (sets is_active&#x3D;False)
-
-Custom Actions:
-- POST   /purchasing/rest/stock/&lt;id&gt;/consume/ - consume stock for a job`,
+    description: `Create or update stock by item_code.`,
     requestFormat: 'json',
     parameters: [
       {

@@ -13,7 +13,7 @@ import { autoId, dismissToasts, TEST_CLIENT_NAME } from '../fixtures/helpers'
 async function createPOWithExistingSupplier(page: Page): Promise<string> {
   const randomSuffix = Math.floor(Math.random() * 100000)
 
-  await page.goto('/purchasing/po/create')
+  await page.goto('/purchasing/po/new')
   await page.waitForLoadState('networkidle')
 
   const supplierInput = autoId(page, 'ClientLookup-input')
@@ -26,15 +26,19 @@ async function createPOWithExistingSupplier(page: Page): Promise<string> {
 
   await autoId(page, 'PoSummaryCard-reference').fill(`E2E Pickup Test ${randomSuffix}`)
 
+  await autoId(page, 'PoLinesTable-add-line').click()
+  await autoId(page, 'PoLinesTable-description-0').fill(`E2E line ${randomSuffix}`)
+  await autoId(page, 'PoLinesTable-unit-cost-0').fill('10')
+
   const savePromise = page.waitForResponse(
     (response) =>
       response.url().includes('/purchasing/rest/purchase-orders') &&
       response.request().method() === 'POST' &&
-      response.status() === 201,
+      (response.status() === 200 || response.status() === 201),
     { timeout: 30000 },
   )
 
-  await autoId(page, 'PoCreateView-save').click()
+  await autoId(page, 'PurchaseOrderFormView-publish').click()
   await savePromise
 
   await page.waitForURL(/\/purchasing\/po\/[a-f0-9-]+$/, { timeout: 15000 })
@@ -410,7 +414,7 @@ test.describe('pickup address CRUD', () => {
 test.describe('pickup address without supplier', () => {
   test('shows message when no supplier selected', async ({ authenticatedPage: page }) => {
     // Go to create PO page (no supplier selected yet)
-    await page.goto('/purchasing/po/create')
+    await page.goto('/purchasing/po/new')
     await page.waitForLoadState('networkidle')
 
     // Pickup address section should not be visible without supplier
@@ -421,7 +425,7 @@ test.describe('pickup address without supplier', () => {
   })
 
   test('modal button is disabled without supplier', async ({ authenticatedPage: page }) => {
-    await page.goto('/purchasing/po/create')
+    await page.goto('/purchasing/po/new')
     await page.waitForLoadState('networkidle')
 
     // Select a supplier first
