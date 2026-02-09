@@ -84,7 +84,7 @@
               <th
                 class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Modified
+                Date
               </th>
               <th
                 v-if="showActions"
@@ -140,12 +140,12 @@
               </td>
               <td class="px-4 py-3 text-xs text-gray-500 text-center">
                 <span
-                  v-if="line.updated_at || line.created_at"
-                  :title="getFullDateTime(line.updated_at || line.created_at || '')"
+                  v-if="line.accounting_date"
+                  :title="getFullDateTime(line.accounting_date)"
                   class="hover:text-gray-700"
                   style="cursor: pointer"
                 >
-                  {{ formatModifiedDate(line.updated_at || line.created_at || '') }}
+                  {{ formatModifiedDate(line.accounting_date) }}
                 </span>
                 <span v-else class="text-gray-400">-</span>
               </td>

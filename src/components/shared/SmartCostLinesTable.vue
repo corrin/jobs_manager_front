@@ -1204,13 +1204,13 @@ const columns = computed(() => {
         }
       : null,
 
-    // Last Modified (most recent of created_at or updated_at) - compact
+    // Accounting Date - compact
     {
-      id: 'last_modified',
-      header: () => h('div', { class: 'col-10ch text-center' }, 'Modified'),
+      id: 'accounting_date',
+      header: () => h('div', { class: 'col-10ch text-center' }, 'Date'),
       cell: ({ row }: RowCtx) => {
         const line = displayLines.value[row.index]
-        const mostRecentDate = line.updated_at || line.created_at
+        const mostRecentDate = line.accounting_date
 
         if (!mostRecentDate) {
           return h('div', { class: 'col-8ch text-left text-gray-400 text-xs' }, '-')
