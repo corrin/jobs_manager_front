@@ -254,6 +254,16 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Archived Jobs Validation - Jobs Manager' },
     },
     {
+      path: '/reports/job-profitability',
+      name: 'job-profitability-report',
+      component: () => import('@/views/JobProfitabilityReportView.vue'),
+      meta: {
+        requiresAuth: true,
+        title: 'Job Profitability Report - Jobs Manager',
+        allowScroll: true,
+      },
+    },
+    {
       path: '/safety/jsa',
       name: 'safety-jsa',
       component: () => import('@/views/SafetyJsaView.vue'),
