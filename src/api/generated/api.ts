@@ -208,7 +208,8 @@ const Staff = z
     first_name: z.string().max(30),
     last_name: z.string().max(30),
     preferred_name: z.string().max(30).nullish(),
-    wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
+    base_wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
+    wage_rate: z.number().gt(-100000000).lt(100000000),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_office_staff: z.boolean().optional(),
@@ -236,7 +237,7 @@ const StaffCreateRequest = z
     first_name: z.string().min(1).max(30),
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
-    wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
+    base_wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_office_staff: z.boolean().optional(),
@@ -264,7 +265,7 @@ const StaffRequest = z
     first_name: z.string().min(1).max(30),
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullish(),
-    wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
+    base_wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
     xero_user_id: z.string().max(255).nullish(),
     date_left: z.string().nullish(),
     is_office_staff: z.boolean().optional(),
@@ -289,7 +290,7 @@ const PatchedStaffRequest = z
     first_name: z.string().min(1).max(30),
     last_name: z.string().min(1).max(30),
     preferred_name: z.string().max(30).nullable(),
-    wage_rate: z.number().gt(-100000000).lt(100000000),
+    base_wage_rate: z.number().gt(-100000000).lt(100000000),
     xero_user_id: z.string().max(255).nullable(),
     date_left: z.string().nullable(),
     is_office_staff: z.boolean(),
@@ -363,6 +364,7 @@ const CompanyDefaults = z
     materials_markup: z.number().gt(-1000).lt(1000).optional(),
     charge_out_rate: z.number().gt(-10000).lt(10000).optional(),
     wage_rate: z.number().gt(-10000).lt(10000).optional(),
+    annual_leave_loading: z.number().gt(-1000).lt(1000).optional(),
     starting_job_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
     starting_po_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
     po_prefix: z.string().max(10).optional(),
@@ -412,6 +414,7 @@ const CompanyDefaultsRequest = z
     materials_markup: z.number().gt(-1000).lt(1000),
     charge_out_rate: z.number().gt(-10000).lt(10000),
     wage_rate: z.number().gt(-10000).lt(10000),
+    annual_leave_loading: z.number().gt(-1000).lt(1000),
     starting_job_number: z.number().int().gte(-2147483648).lte(2147483647),
     starting_po_number: z.number().int().gte(-2147483648).lte(2147483647),
     po_prefix: z.string().min(1).max(10),
@@ -460,6 +463,7 @@ const PatchedCompanyDefaultsRequest = z
     materials_markup: z.number().gt(-1000).lt(1000),
     charge_out_rate: z.number().gt(-10000).lt(10000),
     wage_rate: z.number().gt(-10000).lt(10000),
+    annual_leave_loading: z.number().gt(-1000).lt(1000),
     starting_job_number: z.number().int().gte(-2147483648).lte(2147483647),
     starting_po_number: z.number().int().gte(-2147483648).lte(2147483647),
     po_prefix: z.string().min(1).max(10),
@@ -1146,7 +1150,7 @@ const WorkshopTimesheetEntryRequestRequest = z
     start_time: z.string().nullish(),
     end_time: z.string().nullish(),
     is_billable: z.boolean().optional().default(true),
-    wage_rate_multiplier: z.number().gte(0.1).lt(100).optional().default(1),
+    wage_rate_multiplier: z.number().gte(0).lt(100).optional().default(1),
   })
   .passthrough()
 const PatchedWorkshopTimesheetEntryUpdateRequest = z
@@ -1159,7 +1163,7 @@ const PatchedWorkshopTimesheetEntryUpdateRequest = z
     start_time: z.string().nullable(),
     end_time: z.string().nullable(),
     is_billable: z.boolean(),
-    wage_rate_multiplier: z.number().gte(0.1).lt(100),
+    wage_rate_multiplier: z.number().gte(0).lt(100),
   })
   .partial()
   .passthrough()
@@ -1963,6 +1967,65 @@ const MonthEndPostResponse = z
     errors: z.array(z.string()),
   })
   .passthrough()
+const CostSetMetrics = z
+  .object({
+    revenue: z.string(),
+    cost: z.string(),
+    profit: z.string(),
+    margin: z.string(),
+    hours: z.string(),
+  })
+  .passthrough()
+const JobProfitabilityItem = z
+  .object({
+    job_id: z.string(),
+    job_number: z.number().int(),
+    job_name: z.string(),
+    client_name: z.string(),
+    pricing_type: z.string(),
+    pricing_type_display: z.string(),
+    completion_date: z.string().nullable(),
+    job_value: z.string(),
+    estimate: CostSetMetrics,
+    quote: CostSetMetrics,
+    actual: CostSetMetrics,
+    profit_variance: z.string(),
+    profit_variance_pct: z.string(),
+  })
+  .passthrough()
+const JobProfitabilitySummary = z
+  .object({
+    total_jobs: z.number().int(),
+    total_revenue: z.string(),
+    total_cost: z.string(),
+    total_profit: z.string(),
+    overall_margin: z.string(),
+    avg_profit_per_job: z.string(),
+    total_baseline_profit: z.string(),
+    total_actual_profit: z.string(),
+    total_variance: z.string(),
+    tm_jobs: z.number().int(),
+    fp_jobs: z.number().int(),
+    profitable_jobs: z.number().int(),
+    unprofitable_jobs: z.number().int(),
+  })
+  .passthrough()
+const FiltersApplied = z
+  .object({
+    start_date: z.string(),
+    end_date: z.string(),
+    min_value: z.string().nullish(),
+    max_value: z.string().nullish(),
+    pricing_type: z.string().nullish(),
+  })
+  .passthrough()
+const JobProfitabilityReportResponse = z
+  .object({
+    jobs: z.array(JobProfitabilityItem),
+    summary: JobProfitabilitySummary,
+    filters_applied: FiltersApplied,
+  })
+  .passthrough()
 const GenerateControlsRequestRequest = z
   .object({
     hazards: z.array(z.string().min(1)),
@@ -2492,6 +2555,10 @@ const AllocationDeleteResponse = z
     job_name: z.string().optional(),
     updated_received_quantity: z.number().optional(),
   })
+  .passthrough()
+const PurchaseOrderLastNumberResponse = z
+  .object({ last_po_number: z.string().nullable() })
+  .partial()
   .passthrough()
 const SourceEnum = z.enum(['purchase_order', 'split_from_stock', 'manual', 'product_catalog'])
 const StockItem = z
@@ -3075,6 +3142,11 @@ export const schemas = {
   MonthEndGetResponse,
   MonthEndPostRequest,
   MonthEndPostResponse,
+  CostSetMetrics,
+  JobProfitabilityItem,
+  JobProfitabilitySummary,
+  FiltersApplied,
+  JobProfitabilityReportResponse,
   GenerateControlsRequestRequest,
   GenerateControlsResponse,
   GenerateHazardsRequestRequest,
@@ -3137,6 +3209,7 @@ export const schemas = {
   AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
+  PurchaseOrderLastNumberResponse,
   SourceEnum,
   StockItem,
   StockItemRequest,
@@ -6459,6 +6532,51 @@ POST: Processes selected jobs for month-end archiving and status updates`,
     response: MonthEndPostResponse,
   },
   {
+    method: 'get',
+    path: '/job/rest/reports/job-profitability/',
+    alias: 'job_profitability_report',
+    description: `Returns profitability data for completed/archived jobs in a date range.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'end_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+      {
+        name: 'max_value',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'min_value',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'pricing_type',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'start_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: JobProfitabilityReportResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({}).partial().passthrough(),
+      },
+      {
+        status: 500,
+        schema: z.object({}).partial().passthrough(),
+      },
+    ],
+  },
+  {
     method: 'post',
     path: '/job/rest/safety-ai/generate-controls/',
     alias: 'job_rest_safety_ai_generate_controls_create',
@@ -7079,6 +7197,20 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         status: 404,
         schema: PurchasingErrorResponse,
       },
+      {
+        status: 500,
+        schema: PurchasingErrorResponse,
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/purchasing/rest/purchase-orders/last-number/',
+    alias: 'getLastPurchaseOrderNumber',
+    description: `Return the most recent purchase order number.`,
+    requestFormat: 'json',
+    response: z.object({ last_po_number: z.string().nullable() }).partial().passthrough(),
+    errors: [
       {
         status: 500,
         schema: PurchasingErrorResponse,

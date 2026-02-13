@@ -154,7 +154,7 @@ const filteredStaff = computed(() =>
           s.last_name,
           s.preferred_name,
           s.email,
-          s.wage_rate,
+          s.base_wage_rate,
           s.xero_user_id,
           s.hours_mon,
           s.hours_tue,
