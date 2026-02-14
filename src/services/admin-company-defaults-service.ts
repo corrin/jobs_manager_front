@@ -14,5 +14,5 @@ export async function getCompanyDefaults(): Promise<CompanyDefaults> {
 export async function updateCompanyDefaults(
   payload: Partial<PatchedCompanyDefaults>,
 ): Promise<CompanyDefaults> {
-  return await api.api_company_defaults_partial_update({ body: payload })
+  return await api.api_company_defaults_partial_update(payload)
 }
