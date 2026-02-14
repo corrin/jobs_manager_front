@@ -172,7 +172,6 @@ type FetchStatusValuesResponse = z.infer<typeof schemas.FetchStatusValuesRespons
 type CompanyDefaults = z.infer<typeof schemas.CompanyDefaults>
 type PaginatedCompleteJobList = z.infer<typeof schemas.PaginatedCompleteJobList>
 type JobReorderPayload = z.infer<typeof schemas.JobReorderRequest>
-type JobReorderRequest = z.infer<typeof schemas.JobReorderRequest>
 
 /**
  * Clean job service using ONLY Zodios API
@@ -352,7 +351,7 @@ export const jobService = {
     beforeId?: string,
     afterId?: string,
     status?: string,
-  ): Promise<JobReorderRequest> {
+  ): Promise<z.infer<typeof schemas.KanbanSuccessResponse>> {
     // Defensive guards to avoid self-referencing or contradictory hints
     if (beforeId && beforeId === jobId) {
       debugLog('[jobService.reorderJob] adjusted beforeId equals jobId, clearing beforeId', {
