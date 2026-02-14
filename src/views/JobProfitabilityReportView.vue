@@ -564,9 +564,7 @@ const sortColumn = ref<SortableColumn | null>(null)
 const sortDirection = ref<'asc' | 'desc'>('asc')
 const viewMode = ref<'profit' | 'all'>('profit')
 
-const gpTarget = computed(
-  () => companyDefaultsStore.companyDefaults?.kpi_job_gp_target_percentage ?? 0,
-)
+const gpTarget = computed(() => companyDefaultsStore.companyDefaults?.job_gp_target_percentage ?? 0)
 
 const marginColorClass = (margin: number): string => {
   if (margin <= 0) return 'text-red-600'

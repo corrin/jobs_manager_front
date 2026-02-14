@@ -61,7 +61,6 @@ const KPIMonthlyTotals = z.object({
   profit_red_days: z.number().int(),
   working_days: z.number().int(),
   elapsed_workdays: z.number().int(),
-  active_workdays: z.number().int(),
   remaining_workdays: z.number().int(),
   time_revenue: z.number(),
   material_revenue: z.number(),
@@ -85,12 +84,10 @@ const KPIMonthlyTotals = z.object({
   color_shop: z.string(),
 })
 const KPIThresholds = z.object({
-  kpi_daily_billable_hours_green: z.number(),
-  kpi_daily_billable_hours_amber: z.number(),
-  kpi_daily_gp_target: z.number(),
-  kpi_daily_shop_hours_percentage: z.number(),
-  kpi_daily_profit_green: z.number(),
-  kpi_daily_profit_amber: z.number(),
+  billable_threshold_green: z.number(),
+  billable_threshold_amber: z.number(),
+  daily_gp_target: z.number(),
+  shop_hours_target: z.number(),
 })
 const KPICalendarData = z.object({
   calendar_data: z.record(KPIDayData),
@@ -367,66 +364,60 @@ const CompanyDefaults = z.object({
   company_url: z.string().max(200).url().nullish(),
   shop_client_name: z.string().max(255).nullish(),
   test_client_name: z.string().max(255).nullish(),
-  kpi_daily_billable_hours_green: z.number().gt(-1000).lt(1000).optional(),
-  kpi_daily_billable_hours_amber: z.number().gt(-1000).lt(1000).optional(),
-  kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
-  kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000).optional(),
-  kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000).optional(),
-  kpi_daily_profit_green: z.number().gt(-100000000).lt(100000000).optional(),
-  kpi_daily_profit_amber: z.number().gt(-100000000).lt(100000000).optional(),
+  billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
+  billable_threshold_amber: z.number().gt(-1000).lt(1000).optional(),
+  daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
+  shop_hours_target_percentage: z.number().gt(-1000).lt(1000).optional(),
+  job_gp_target_percentage: z.number().gt(-1000).lt(1000),
 })
-const CompanyDefaultsRequest = z
-  .object({
-    company_acronym: z.string().max(10).nullable(),
-    is_primary: z.boolean(),
-    time_markup: z.number().gt(-1000).lt(1000),
-    materials_markup: z.number().gt(-1000).lt(1000),
-    charge_out_rate: z.number().gt(-10000).lt(10000),
-    wage_rate: z.number().gt(-10000).lt(10000),
-    annual_leave_loading: z.number().gt(-1000).lt(1000),
-    financial_year_start_month: z.number().int().gte(-2147483648).lte(2147483647),
-    starting_job_number: z.number().int().gte(-2147483648).lte(2147483647),
-    starting_po_number: z.number().int().gte(-2147483648).lte(2147483647),
-    po_prefix: z.string().min(1).max(10),
-    master_quote_template_url: z.string().max(200).url().nullable(),
-    master_quote_template_id: z.string().max(100).nullable(),
-    gdrive_quotes_folder_url: z.string().max(200).url().nullable(),
-    gdrive_quotes_folder_id: z.string().max(100).nullable(),
-    xero_tenant_id: z.string().max(100).nullable(),
-    xero_shortcode: z.string().max(20).nullable(),
-    xero_payroll_calendar_name: z.string().min(1).max(100),
-    xero_payroll_calendar_id: z.string().uuid().nullable(),
-    mon_start: z.string(),
-    mon_end: z.string(),
-    tue_start: z.string(),
-    tue_end: z.string(),
-    wed_start: z.string(),
-    wed_end: z.string(),
-    thu_start: z.string(),
-    thu_end: z.string(),
-    fri_start: z.string(),
-    fri_end: z.string(),
-    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
-    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
-    address_line1: z.string().max(255).nullable(),
-    address_line2: z.string().max(255).nullable(),
-    suburb: z.string().max(100).nullable(),
-    city: z.string().max(100).nullable(),
-    post_code: z.string().max(20).nullable(),
-    country: z.string().min(1).max(100),
-    company_email: z.string().max(254).email().nullable(),
-    company_url: z.string().max(200).url().nullable(),
-    shop_client_name: z.string().max(255).nullable(),
-    test_client_name: z.string().max(255).nullable(),
-    kpi_daily_billable_hours_green: z.number().gt(-1000).lt(1000),
-    kpi_daily_billable_hours_amber: z.number().gt(-1000).lt(1000),
-    kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000),
-    kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000),
-    kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000),
-    kpi_daily_profit_green: z.number().gt(-100000000).lt(100000000),
-    kpi_daily_profit_amber: z.number().gt(-100000000).lt(100000000),
-  })
-  .partial()
+const CompanyDefaultsRequest = z.object({
+  company_acronym: z.string().max(10).nullish(),
+  is_primary: z.boolean().optional(),
+  time_markup: z.number().gt(-1000).lt(1000).optional(),
+  materials_markup: z.number().gt(-1000).lt(1000).optional(),
+  charge_out_rate: z.number().gt(-10000).lt(10000).optional(),
+  wage_rate: z.number().gt(-10000).lt(10000).optional(),
+  annual_leave_loading: z.number().gt(-1000).lt(1000).optional(),
+  financial_year_start_month: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+  starting_job_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+  starting_po_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+  po_prefix: z.string().min(1).max(10).optional(),
+  master_quote_template_url: z.string().max(200).url().nullish(),
+  master_quote_template_id: z.string().max(100).nullish(),
+  gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
+  gdrive_quotes_folder_id: z.string().max(100).nullish(),
+  xero_tenant_id: z.string().max(100).nullish(),
+  xero_shortcode: z.string().max(20).nullish(),
+  xero_payroll_calendar_name: z.string().min(1).max(100).optional(),
+  xero_payroll_calendar_id: z.string().uuid().nullish(),
+  mon_start: z.string().optional(),
+  mon_end: z.string().optional(),
+  tue_start: z.string().optional(),
+  tue_end: z.string().optional(),
+  wed_start: z.string().optional(),
+  wed_end: z.string().optional(),
+  thu_start: z.string().optional(),
+  thu_end: z.string().optional(),
+  fri_start: z.string().optional(),
+  fri_end: z.string().optional(),
+  last_xero_sync: z.string().datetime({ offset: true }).nullish(),
+  last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
+  address_line1: z.string().max(255).nullish(),
+  address_line2: z.string().max(255).nullish(),
+  suburb: z.string().max(100).nullish(),
+  city: z.string().max(100).nullish(),
+  post_code: z.string().max(20).nullish(),
+  country: z.string().min(1).max(100).optional(),
+  company_email: z.string().max(254).email().nullish(),
+  company_url: z.string().max(200).url().nullish(),
+  shop_client_name: z.string().max(255).nullish(),
+  test_client_name: z.string().max(255).nullish(),
+  billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
+  billable_threshold_amber: z.number().gt(-1000).lt(1000).optional(),
+  daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
+  shop_hours_target_percentage: z.number().gt(-1000).lt(1000).optional(),
+  job_gp_target_percentage: z.number().gt(-1000).lt(1000),
+})
 const PatchedCompanyDefaultsRequest = z
   .object({
     company_acronym: z.string().max(10).nullable(),
@@ -470,13 +461,11 @@ const PatchedCompanyDefaultsRequest = z
     company_url: z.string().max(200).url().nullable(),
     shop_client_name: z.string().max(255).nullable(),
     test_client_name: z.string().max(255).nullable(),
-    kpi_daily_billable_hours_green: z.number().gt(-1000).lt(1000),
-    kpi_daily_billable_hours_amber: z.number().gt(-1000).lt(1000),
-    kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000),
-    kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000),
-    kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000),
-    kpi_daily_profit_green: z.number().gt(-100000000).lt(100000000),
-    kpi_daily_profit_amber: z.number().gt(-100000000).lt(100000000),
+    billable_threshold_green: z.number().gt(-1000).lt(1000),
+    billable_threshold_amber: z.number().gt(-1000).lt(1000),
+    daily_gp_target: z.number().gt(-100000000).lt(100000000),
+    shop_hours_target_percentage: z.number().gt(-1000).lt(1000),
+    job_gp_target_percentage: z.number().gt(-1000).lt(1000),
   })
   .partial()
 const SettingsField = z.object({
@@ -918,6 +907,7 @@ const KanbanJob = z.object({
   created_by_id: z.string().uuid().nullable(),
   created_at: z.string().nullable(),
   priority: z.number(),
+  shop_job: z.boolean(),
 })
 const AdvancedSearchResponse = z
   .object({
@@ -953,6 +943,7 @@ const KanbanColumnJob = z.object({
   created_by_id: z.string().nullable(),
   created_at: z.string().nullable(),
   priority: z.number(),
+  shop_job: z.boolean(),
   badge_label: z.string(),
   badge_color: z.string(),
 })
@@ -962,6 +953,7 @@ const FetchJobsByColumnResponse = z
     jobs: z.array(KanbanColumnJob),
     total: z.number().int(),
     filtered_count: z.number().int(),
+    has_more: z.boolean(),
     error: z.string(),
   })
   .partial()
@@ -1482,7 +1474,11 @@ const JobHeaderResponse = z.object({
   default_xero_pay_item_name: z.string().nullable(),
   job_number: z.number().int().gte(-2147483648).lte(2147483647),
   name: z.string().max(100),
+  description: z.string().nullish(),
   status: Status7b9Enum.optional(),
+  order_number: z.string().max(100).nullish(),
+  delivery_date: z.string().nullish(),
+  notes: z.string().nullish(),
   pricing_methodology: PricingMethodologyEnum.optional(),
   price_cap: z.number().gt(-100000000).lt(100000000).nullish(),
   speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
@@ -1855,6 +1851,7 @@ const ModernTimesheetSummary = z.object({
   total_cost: z.number(),
   total_revenue: z.number(),
   entry_count: z.number().int(),
+  scheduled_hours: z.number(),
 })
 const ModernTimesheetEntryGetResponse = z.object({
   cost_lines: z.array(TimesheetCostLine),
@@ -2009,31 +2006,14 @@ const PurchaseOrderCreateRequest = z
     lines: z.array(PurchaseOrderLineCreateRequest),
   })
   .partial()
-const PurchaseOrderLineCreate = z
-  .object({
-    job_id: z.string().uuid().nullable(),
-    description: z.string().max(255),
-    quantity: z.number().gt(-100000000).lt(100000000).default(0),
-    unit_cost: z.number().gt(-100000000).lt(100000000).nullable(),
-    price_tbc: z.boolean().default(false),
-    item_code: z.string().max(100),
-    metal_type: z.string().max(100),
-    alloy: z.string().max(100),
-    specifics: z.string().max(255),
-    location: z.string().max(255),
-    dimensions: z.string().max(255),
-  })
-  .partial()
-const PurchaseOrderCreate = z
-  .object({
-    supplier_id: z.string().uuid().nullable(),
-    pickup_address_id: z.string().uuid().nullable(),
-    reference: z.string().max(255),
-    order_date: z.string().nullable(),
-    expected_delivery: z.string().nullable(),
-    lines: z.array(PurchaseOrderLineCreate),
-  })
-  .partial()
+const PurchaseOrderCreateResponse = z.object({
+  id: z.string().uuid(),
+  po_number: z.string(),
+})
+const PurchasingErrorResponse = z.object({
+  error: z.string(),
+  details: z.string().optional(),
+})
 const PurchaseOrderDetailStatusEnum = z.enum([
   'draft',
   'submitted',
@@ -2070,6 +2050,8 @@ const PurchaseOrderLine = z.object({
   specifics: z.string().max(255).nullish(),
   location: z.string().max(255).nullish(),
   job_id: z.string().uuid().nullable(),
+  job_number: z.number().int().nullable(),
+  client_name: z.string().nullable(),
 })
 const PurchaseOrderDetail = z.object({
   id: z.string().uuid(),
@@ -2195,10 +2177,6 @@ const PurchaseOrderEvent = z.object({
 })
 const PurchaseOrderEventsResponse = z.object({
   events: z.array(PurchaseOrderEvent),
-})
-const PurchasingErrorResponse = z.object({
-  error: z.string(),
-  details: z.string().optional(),
 })
 const PurchaseOrderEventCreateRequest = z.object({
   description: z.string().min(1).max(500),
@@ -2398,6 +2376,7 @@ const ModernTimesheetJob = z.object({
   charge_out_rate: z.number().gt(-100000000).lt(100000000),
   has_actual_costset: z.boolean(),
   leave_type: z.string().nullable(),
+  estimated_hours: z.number().nullable(),
   default_xero_pay_item_id: z.string().uuid(),
   default_xero_pay_item_name: z.string(),
 })
@@ -2788,8 +2767,8 @@ export const schemas = {
   PurchaseOrderList,
   PurchaseOrderLineCreateRequest,
   PurchaseOrderCreateRequest,
-  PurchaseOrderLineCreate,
-  PurchaseOrderCreate,
+  PurchaseOrderCreateResponse,
+  PurchasingErrorResponse,
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
   BlankEnum,
@@ -2808,7 +2787,6 @@ export const schemas = {
   PurchaseOrderEmailResponse,
   PurchaseOrderEvent,
   PurchaseOrderEventsResponse,
-  PurchasingErrorResponse,
   PurchaseOrderEventCreateRequest,
   PurchaseOrderEventCreateResponse,
   AllocationTypeEnum,
@@ -6580,7 +6558,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
   {
     method: 'post',
     path: '/purchasing/rest/purchase-orders/',
-    alias: 'purchasing_rest_purchase_orders_create',
+    alias: 'createPurchaseOrder',
     description: `Create new purchase order.`,
     requestFormat: 'json',
     parameters: [
@@ -6590,7 +6568,17 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         schema: PurchaseOrderCreateRequest,
       },
     ],
-    response: PurchaseOrderCreate,
+    response: PurchaseOrderCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: PurchasingErrorResponse,
+      },
+      {
+        status: 500,
+        schema: PurchasingErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',

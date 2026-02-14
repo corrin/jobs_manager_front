@@ -242,16 +242,16 @@ const adjustmentCosts = computed(() => {
 
 const projectedExpenses = computed(() => {
   if (!props.monthlyData || !props.thresholds) return 0
-  return props.thresholds.kpi_daily_gp_target * props.monthlyData.working_days
+  return props.thresholds.daily_gp_target * props.monthlyData.working_days
 })
 
 const dailyTarget = computed(() => {
-  return props.thresholds?.kpi_daily_gp_target || 0
+  return props.thresholds?.daily_gp_target || 0
 })
 
 const monthlyTarget = computed(() => {
   if (!props.monthlyData || !props.thresholds) return 0
-  return props.thresholds.kpi_daily_gp_target * props.monthlyData.working_days
+  return props.thresholds.daily_gp_target * props.monthlyData.working_days
 })
 
 const grossProfitMargin = computed(() => {

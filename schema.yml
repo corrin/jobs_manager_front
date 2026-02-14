@@ -747,6 +747,7 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/CompanyDefaultsRequest'
+        required: true
       security:
         - cookieAuth: []
       responses:
@@ -5535,7 +5536,7 @@ paths:
                   $ref: '#/components/schemas/PurchaseOrderList'
           description: ''
     post:
-      operationId: purchasing_rest_purchase_orders_create
+      operationId: createPurchaseOrder
       description: Create new purchase order.
       tags:
         - purchasing
@@ -5553,11 +5554,23 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PurchaseOrderCreate'
+                $ref: '#/components/schemas/PurchaseOrderCreateResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
           description: ''
   /purchasing/rest/purchase-orders/{po_id}/:
     get:
@@ -8046,75 +8059,56 @@ components:
           description: Name of the test client used for testing (e.g., 'ABC Carpet
             Cleaning TEST IGNORE'). This client's name is preserved during data backports.
           maxLength: 255
-        kpi_daily_billable_hours_green:
+        billable_threshold_green:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily billable hours (green)
-          description: Daily total billable hours across all staff above which the
-            day is green
-        kpi_daily_billable_hours_amber:
+          title: Green Threshold of Billable Hours
+          description: Daily billable hours above this threshold are marked in green
+        billable_threshold_amber:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily billable hours (amber)
-          description: Daily total billable hours across all staff above which the
-            day is amber
-        kpi_daily_gp_target:
+          title: Amber Threshold of Billable Hours
+          description: Daily billable hours between this threshold and the green threshold
+            are marked in amber
+        daily_gp_target:
           type: number
           format: double
           maximum: 100000000
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily gross profit target
-          description: Daily gross profit target in dollars
-        kpi_daily_shop_hours_percentage:
+          title: Daily Goal of Gross Profit
+          description: Daily gross profit goal in dolars
+        shop_hours_target_percentage:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily shop hours percentage target
-          description: Target percentage of daily hours spent on shop (non-billable)
-            jobs
-        kpi_job_gp_target_percentage:
+          title: Hours percentage goal in Shop Jobs
+          description: Target percentage of hours worked in shop jobs
+        job_gp_target_percentage:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Target GP % per job
-          description: Target gross profit percentage for individual jobs
-        kpi_daily_profit_green:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Daily profit (green)
-          description: Daily gross profit above which the day is green
-        kpi_daily_profit_amber:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Daily profit (amber)
-          description: Daily gross profit above which the day is amber
+          title: Target GP % per Job
+          description: Target gross profit percentage for jobs
       required:
         - company_name
         - created_at
+        - job_gp_target_percentage
         - updated_at
     CompanyDefaultsJobDetail:
       type: object
@@ -8347,72 +8341,54 @@ components:
           description: Name of the test client used for testing (e.g., 'ABC Carpet
             Cleaning TEST IGNORE'). This client's name is preserved during data backports.
           maxLength: 255
-        kpi_daily_billable_hours_green:
+        billable_threshold_green:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily billable hours (green)
-          description: Daily total billable hours across all staff above which the
-            day is green
-        kpi_daily_billable_hours_amber:
+          title: Green Threshold of Billable Hours
+          description: Daily billable hours above this threshold are marked in green
+        billable_threshold_amber:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily billable hours (amber)
-          description: Daily total billable hours across all staff above which the
-            day is amber
-        kpi_daily_gp_target:
+          title: Amber Threshold of Billable Hours
+          description: Daily billable hours between this threshold and the green threshold
+            are marked in amber
+        daily_gp_target:
           type: number
           format: double
           maximum: 100000000
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily gross profit target
-          description: Daily gross profit target in dollars
-        kpi_daily_shop_hours_percentage:
+          title: Daily Goal of Gross Profit
+          description: Daily gross profit goal in dolars
+        shop_hours_target_percentage:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily shop hours percentage target
-          description: Target percentage of daily hours spent on shop (non-billable)
-            jobs
-        kpi_job_gp_target_percentage:
+          title: Hours percentage goal in Shop Jobs
+          description: Target percentage of hours worked in shop jobs
+        job_gp_target_percentage:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Target GP % per job
-          description: Target gross profit percentage for individual jobs
-        kpi_daily_profit_green:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Daily profit (green)
-          description: Daily gross profit above which the day is green
-        kpi_daily_profit_amber:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Daily profit (amber)
-          description: Daily gross profit above which the day is amber
+          title: Target GP % per Job
+          description: Target gross profit percentage for jobs
+      required:
+        - job_gp_target_percentage
     CompanyDefaultsSchema:
       type: object
       description: Serializer for the complete schema response.
@@ -9418,6 +9394,8 @@ components:
           type: integer
         filtered_count:
           type: integer
+        has_more:
+          type: boolean
         error:
           type: string
     FetchJobsResponse:
@@ -10605,8 +10583,24 @@ components:
         name:
           type: string
           maxLength: 100
+        description:
+          type: string
+          nullable: true
+          description: This becomes the first line item on the invoice
         status:
           $ref: '#/components/schemas/Status7b9Enum'
+        order_number:
+          type: string
+          nullable: true
+          maxLength: 100
+        delivery_date:
+          type: string
+          format: date
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+          description: Internal notes about the job. Not shown on the invoice.
         pricing_methodology:
           allOf:
             - $ref: '#/components/schemas/PricingMethodologyEnum'
@@ -11266,8 +11260,6 @@ components:
           type: integer
         elapsed_workdays:
           type: integer
-        active_workdays:
-          type: integer
         remaining_workdays:
           type: integer
         time_revenue:
@@ -11328,7 +11320,6 @@ components:
         color_shop:
           type: string
       required:
-        - active_workdays
         - adjustment_cost
         - adjustment_profit
         - adjustment_revenue
@@ -11386,31 +11377,23 @@ components:
       type: object
       description: Serializer for KPI thresholds
       properties:
-        kpi_daily_billable_hours_green:
+        billable_threshold_green:
           type: number
           format: double
-        kpi_daily_billable_hours_amber:
+        billable_threshold_amber:
           type: number
           format: double
-        kpi_daily_gp_target:
+        daily_gp_target:
           type: number
           format: double
-        kpi_daily_shop_hours_percentage:
-          type: number
-          format: double
-        kpi_daily_profit_green:
-          type: number
-          format: double
-        kpi_daily_profit_amber:
+        shop_hours_target:
           type: number
           format: double
       required:
-        - kpi_daily_billable_hours_amber
-        - kpi_daily_billable_hours_green
-        - kpi_daily_gp_target
-        - kpi_daily_profit_amber
-        - kpi_daily_profit_green
-        - kpi_daily_shop_hours_percentage
+        - billable_threshold_amber
+        - billable_threshold_green
+        - daily_gp_target
+        - shop_hours_target
     KanbanColumnJob:
       type: object
       description: |-
@@ -11455,6 +11438,8 @@ components:
         priority:
           type: number
           format: double
+        shop_job:
+          type: boolean
         badge_label:
           type: string
         badge_color:
@@ -11475,6 +11460,7 @@ components:
         - people
         - priority
         - rejected_flag
+        - shop_job
         - speed_quality_tradeoff
         - status
         - status_key
@@ -11535,6 +11521,8 @@ components:
         priority:
           type: number
           format: double
+        shop_job:
+          type: boolean
       required:
         - client_name
         - contact_person
@@ -11549,6 +11537,7 @@ components:
         - people
         - priority
         - rejected_flag
+        - shop_job
         - speed_quality_tradeoff
         - status
         - status_key
@@ -11824,12 +11813,15 @@ components:
           exclusiveMinimum: true
         has_actual_costset:
           type: boolean
-          description: Check if job has an actual cost set
           readOnly: true
         leave_type:
           type: string
           nullable: true
-          description: Get leave type if this is a payroll leave job
+          readOnly: true
+        estimated_hours:
+          type: number
+          format: double
+          nullable: true
           readOnly: true
         default_xero_pay_item_id:
           type: string
@@ -11843,6 +11835,7 @@ components:
         - client_name
         - default_xero_pay_item_id
         - default_xero_pay_item_name
+        - estimated_hours
         - has_actual_costset
         - id
         - job_number
@@ -11900,10 +11893,14 @@ components:
           format: double
         entry_count:
           type: integer
+        scheduled_hours:
+          type: number
+          format: double
       required:
         - billable_hours
         - entry_count
         - non_billable_hours
+        - scheduled_hours
         - total_cost
         - total_hours
         - total_revenue
@@ -12399,72 +12396,52 @@ components:
           description: Name of the test client used for testing (e.g., 'ABC Carpet
             Cleaning TEST IGNORE'). This client's name is preserved during data backports.
           maxLength: 255
-        kpi_daily_billable_hours_green:
+        billable_threshold_green:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily billable hours (green)
-          description: Daily total billable hours across all staff above which the
-            day is green
-        kpi_daily_billable_hours_amber:
+          title: Green Threshold of Billable Hours
+          description: Daily billable hours above this threshold are marked in green
+        billable_threshold_amber:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily billable hours (amber)
-          description: Daily total billable hours across all staff above which the
-            day is amber
-        kpi_daily_gp_target:
+          title: Amber Threshold of Billable Hours
+          description: Daily billable hours between this threshold and the green threshold
+            are marked in amber
+        daily_gp_target:
           type: number
           format: double
           maximum: 100000000
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily gross profit target
-          description: Daily gross profit target in dollars
-        kpi_daily_shop_hours_percentage:
+          title: Daily Goal of Gross Profit
+          description: Daily gross profit goal in dolars
+        shop_hours_target_percentage:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Daily shop hours percentage target
-          description: Target percentage of daily hours spent on shop (non-billable)
-            jobs
-        kpi_job_gp_target_percentage:
+          title: Hours percentage goal in Shop Jobs
+          description: Target percentage of hours worked in shop jobs
+        job_gp_target_percentage:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Target GP % per job
-          description: Target gross profit percentage for individual jobs
-        kpi_daily_profit_green:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Daily profit (green)
-          description: Daily gross profit above which the day is green
-        kpi_daily_profit_amber:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Daily profit (amber)
-          description: Daily gross profit above which the day is amber
+          title: Target GP % per Job
+          description: Target gross profit percentage for jobs
     PatchedCostLineCreateUpdateRequest:
       type: object
       description: Serializer for CostLine creation and updates - full write capabilities
@@ -13264,33 +13241,6 @@ components:
       required:
         - allocations
         - po_id
-    PurchaseOrderCreate:
-      type: object
-      description: Serializer for creating purchase orders.
-      properties:
-        supplier_id:
-          type: string
-          format: uuid
-          nullable: true
-        pickup_address_id:
-          type: string
-          format: uuid
-          nullable: true
-        reference:
-          type: string
-          maxLength: 255
-        order_date:
-          type: string
-          format: date
-          nullable: true
-        expected_delivery:
-          type: string
-          format: date
-          nullable: true
-        lines:
-          type: array
-          items:
-            $ref: '#/components/schemas/PurchaseOrderLineCreate'
     PurchaseOrderCreateRequest:
       type: object
       description: Serializer for creating purchase orders.
@@ -13318,6 +13268,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PurchaseOrderLineCreateRequest'
+    PurchaseOrderCreateResponse:
+      type: object
+      description: Serializer for purchase order creation response.
+      properties:
+        id:
+          type: string
+          format: uuid
+        po_number:
+          type: string
+      required:
+        - id
+        - po_number
     PurchaseOrderDetail:
       type: object
       description: Return purchase order details with related lines.
@@ -13589,59 +13551,21 @@ components:
           format: uuid
           readOnly: true
           nullable: true
+        job_number:
+          type: integer
+          readOnly: true
+          nullable: true
+        client_name:
+          type: string
+          readOnly: true
+          nullable: true
       required:
+        - client_name
         - description
         - id
         - job_id
+        - job_number
         - quantity
-    PurchaseOrderLineCreate:
-      type: object
-      description: Serializer for creating purchase order lines.
-      properties:
-        job_id:
-          type: string
-          format: uuid
-          nullable: true
-        description:
-          type: string
-          maxLength: 255
-        quantity:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          default: 0.00
-        unit_cost:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          nullable: true
-        price_tbc:
-          type: boolean
-          default: false
-        item_code:
-          type: string
-          maxLength: 100
-        metal_type:
-          type: string
-          maxLength: 100
-        alloy:
-          type: string
-          maxLength: 100
-        specifics:
-          type: string
-          maxLength: 255
-        location:
-          type: string
-          maxLength: 255
-        dimensions:
-          type: string
-          maxLength: 255
     PurchaseOrderLineCreateRequest:
       type: object
       description: Serializer for creating purchase order lines.

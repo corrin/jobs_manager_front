@@ -408,20 +408,18 @@ const utilizationTrend = computed(() => {
 const utilizationTrendDirection = computed(() => {
   if (!kpiData.value) return 'neutral'
   const avg = kpiData.value.monthly_totals.avg_billable_hours_so_far
-  const { kpi_daily_billable_hours_green, kpi_daily_billable_hours_amber } =
-    kpiData.value.thresholds
-  if (avg >= kpi_daily_billable_hours_green) return 'up'
-  if (avg >= kpi_daily_billable_hours_amber) return 'neutral'
+  const { billable_threshold_green, billable_threshold_amber } = kpiData.value.thresholds
+  if (avg >= billable_threshold_green) return 'up'
+  if (avg >= billable_threshold_amber) return 'neutral'
   return 'down'
 })
 
 const utilizationVariant = computed(() => {
   if (!kpiData.value) return 'default'
   const avg = kpiData.value.monthly_totals.avg_billable_hours_so_far
-  const { kpi_daily_billable_hours_green, kpi_daily_billable_hours_amber } =
-    kpiData.value.thresholds
-  if (avg >= kpi_daily_billable_hours_green) return 'success'
-  if (avg >= kpi_daily_billable_hours_amber) return 'warning'
+  const { billable_threshold_green, billable_threshold_amber } = kpiData.value.thresholds
+  if (avg >= billable_threshold_green) return 'success'
+  if (avg >= billable_threshold_amber) return 'warning'
   return 'danger'
 })
 
