@@ -61,7 +61,7 @@ const emit = defineEmits<{
               </p>
               <div class="mt-2 flex flex-wrap gap-2 text-xs">
                 <span class="rounded-full bg-muted px-2 py-0.5">
-                  {{ displayRate(safeRateMultiplier(entry.rate_multiplier)) }}
+                  {{ displayRate(safeRateMultiplier(entry.wage_rate_multiplier)) }}
                 </span>
                 <span
                   class="rounded-full px-2 py-0.5 font-semibold"
