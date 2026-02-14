@@ -106,20 +106,29 @@
             </div>
           </div>
           <div class="flex gap-2">
-            <div class="w-1/2">
-              <label class="block text-sm font-medium mb-1" for="wage_rate"
-                >Wage Rate (NZD/hour)</label
+            <div class="w-1/3">
+              <label class="block text-sm font-medium mb-1" for="base_wage_rate"
+                >Base Wage Rate (NZD/hour)</label
               >
               <Input
-                id="wage_rate"
-                v-model="form.wage_rate"
+                id="base_wage_rate"
+                v-model="form.base_wage_rate"
                 type="number"
-                placeholder="Wage Rate"
+                placeholder="Base Wage Rate"
                 min="0"
                 step="0.01"
               />
             </div>
-            <div class="w-1/2">
+            <div class="w-1/3">
+              <label class="block text-sm font-medium mb-1">Costing Rate (NZD/hour)</label>
+              <Input
+                :model-value="staff?.wage_rate ?? '—'"
+                type="text"
+                disabled
+                class="bg-gray-100 text-gray-500"
+              />
+            </div>
+            <div class="w-1/3">
               <label class="block text-sm font-medium mb-1" for="xero_user_id">Xero User ID</label>
               <Input id="xero_user_id" v-model="form.xero_user_id" placeholder="Xero User ID" />
             </div>
@@ -369,7 +378,7 @@ const form = ref({
   email: '',
   password: '',
   password_confirmation: '',
-  wage_rate: 0,
+  base_wage_rate: 0,
   xero_user_id: '',
   icon: null as File | null,
   hours_mon: 0,
@@ -417,9 +426,9 @@ watch(
     console.log('StaffFormModal - Props staff changed:', staff)
     if (staff) {
       console.log(
-        'StaffFormModal - Staff wage_rate from props:',
-        staff.wage_rate,
-        typeof staff.wage_rate,
+        'StaffFormModal - Staff base_wage_rate from props:',
+        staff.base_wage_rate,
+        typeof staff.base_wage_rate,
       )
       form.value = {
         first_name: staff.first_name,
@@ -428,7 +437,7 @@ watch(
         email: staff.email,
         password: '',
         password_confirmation: '',
-        wage_rate: staff.wage_rate || 0,
+        base_wage_rate: staff.base_wage_rate || 0,
         xero_user_id: staff.xero_user_id || '',
         icon: null,
         hours_mon: staff.hours_mon || 0,
@@ -452,9 +461,9 @@ watch(
       }
       console.log('StaffFormModal - Form populated with:', form.value)
       console.log(
-        'StaffFormModal - Form wage_rate after parsing:',
-        form.value.wage_rate,
-        typeof form.value.wage_rate,
+        'StaffFormModal - Form base_wage_rate after parsing:',
+        form.value.base_wage_rate,
+        typeof form.value.base_wage_rate,
       )
     } else {
       form.value = {
@@ -464,7 +473,7 @@ watch(
         email: '',
         password: '',
         password_confirmation: '',
-        wage_rate: 0,
+        base_wage_rate: 0,
         xero_user_id: '',
         icon: null,
         hours_mon: 0,
@@ -502,9 +511,9 @@ async function submitForm() {
 
   console.log('StaffFormModal - Submitting form with data:', form.value)
   console.log(
-    'StaffFormModal - Form wage_rate before validation:',
-    form.value.wage_rate,
-    typeof form.value.wage_rate,
+    'StaffFormModal - Form base_wage_rate before validation:',
+    form.value.base_wage_rate,
+    typeof form.value.base_wage_rate,
   )
 
   // Prepare base data - shared between validation and API call
@@ -517,7 +526,7 @@ async function submitForm() {
     first_name: form.value.first_name.trim(),
     last_name: form.value.last_name.trim(),
     email: form.value.email.trim(),
-    wage_rate: form.value.wage_rate,
+    base_wage_rate: form.value.base_wage_rate,
     is_office_staff: form.value.is_office_staff,
     is_superuser: form.value.is_superuser,
     hours_mon: form.value.hours_mon,
