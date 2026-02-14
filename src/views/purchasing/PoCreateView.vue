@@ -49,7 +49,7 @@ import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 
 type PurchaseOrderDetail = z.infer<typeof schemas.PurchaseOrderDetail>
-type PurchaseOrderCreatePayload = z.infer<typeof schemas.PurchaseOrderCreate>
+type PurchaseOrderCreatePayload = z.infer<typeof schemas.PurchaseOrderCreateRequest>
 
 const router = useRouter()
 const store = usePurchaseOrderStore()

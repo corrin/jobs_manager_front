@@ -8,7 +8,7 @@ import type { z } from 'zod'
 
 // Type definitions
 type PurchaseOrder = z.infer<typeof schemas.PurchaseOrderList>
-type PurchaseOrderCreate = z.infer<typeof schemas.PurchaseOrderCreate>
+type PurchaseOrderCreate = z.infer<typeof schemas.PurchaseOrderCreateRequest>
 type PurchaseOrderUpdate = z.infer<typeof schemas.PatchedPurchaseOrderUpdateRequest>
 type PurchaseOrderEmailResponse = z.infer<typeof schemas.PurchaseOrderEmailResponse>
 
@@ -39,7 +39,7 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     error.value = null
 
     try {
-      const response = await api.purchasing_rest_purchase_orders_create(data)
+      const response = await api.createPurchaseOrder(data)
       return response
     } catch (err) {
       error.value = 'Failed to create purchase order'
