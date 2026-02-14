@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogContent class="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle class="text-xl font-semibold">
           Labour Breakdown - {{ monthYear }}
@@ -46,15 +46,17 @@
               <div class="space-y-2">
                 <div class="flex justify-between items-center">
                   <span class="text-gray-700">Total Labour Cost</span>
-                  <span class="font-semibold text-lg">{{ formatCurrency(totalLabourCost) }}</span>
+                  <span class="font-semibold text-lg">{{
+                    formatCurrency(totalLabourCost, { decimals: 0 })
+                  }}</span>
                 </div>
                 <div class="flex justify-between items-center text-sm text-gray-600">
                   <span class="ml-4">Shop Labour Cost</span>
-                  <span>{{ formatCurrency(shopLabourCost) }}</span>
+                  <span>{{ formatCurrency(shopLabourCost, { decimals: 0 }) }}</span>
                 </div>
                 <div class="flex justify-between items-center text-sm text-gray-600">
                   <span class="ml-4">Other Labour Cost</span>
-                  <span>{{ formatCurrency(otherLabourCost) }}</span>
+                  <span>{{ formatCurrency(otherLabourCost, { decimals: 0 }) }}</span>
                 </div>
               </div>
             </div>
@@ -66,12 +68,12 @@
                 <div class="flex justify-between items-center">
                   <span class="text-gray-700">Total Labour Revenue</span>
                   <span class="font-semibold text-lg">{{
-                    formatCurrency(totalLabourRevenue)
+                    formatCurrency(totalLabourRevenue, { decimals: 0 })
                   }}</span>
                 </div>
                 <div class="flex justify-between items-center text-sm text-gray-600">
                   <span class="ml-4">Average Rate</span>
-                  <span>{{ formatCurrency(averageLabourRate) }}/hr</span>
+                  <span>{{ formatCurrency(averageLabourRate, { decimals: 0 }) }}/hr</span>
                 </div>
               </div>
             </div>
@@ -94,7 +96,7 @@
             </div>
             <div class="text-center">
               <div class="text-2xl font-bold text-yellow-700">
-                {{ formatCurrency(labourProfitMargin) }}
+                {{ formatCurrency(labourProfitMargin, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-yellow-600">Labour Profit</div>
               <div class="text-xs text-gray-500">Revenue - Cost</div>
@@ -137,10 +139,10 @@
                   <td class="py-2 px-3 text-right">{{ formatHours(day.billable_hours) }}</td>
                   <td class="py-2 px-3 text-right">{{ formatHours(day.shop_hours) }}</td>
                   <td class="py-2 px-3 text-right">
-                    {{ formatCurrency(day.details?.staff_cost || 0) }}
+                    {{ formatCurrency(day.details?.staff_cost || 0, { decimals: 0 }) }}
                   </td>
                   <td class="py-2 px-3 text-right">
-                    {{ formatCurrency(day.details?.time_revenue || 0) }}
+                    {{ formatCurrency(day.details?.time_revenue || 0, { decimals: 0 }) }}
                   </td>
                 </tr>
               </tbody>
@@ -152,8 +154,12 @@
                     {{ formatHours(monthlyData.billable_hours) }}
                   </td>
                   <td class="py-2 px-3 text-right">{{ formatHours(totalShopHours) }}</td>
-                  <td class="py-2 px-3 text-right">{{ formatCurrency(totalLabourCost) }}</td>
-                  <td class="py-2 px-3 text-right">{{ formatCurrency(totalLabourRevenue) }}</td>
+                  <td class="py-2 px-3 text-right">
+                    {{ formatCurrency(totalLabourCost, { decimals: 0 }) }}
+                  </td>
+                  <td class="py-2 px-3 text-right">
+                    {{ formatCurrency(totalLabourRevenue, { decimals: 0 }) }}
+                  </td>
                 </tr>
               </tfoot>
             </table>

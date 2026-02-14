@@ -81,9 +81,7 @@ class KPIService {
   }
 
   formatHours(hours: number): string {
-    const wholeHours = Math.floor(hours)
-    const minutes = Math.round((hours - wholeHours) * 60)
-    return minutes > 0 ? `${wholeHours}h ${minutes}m` : `${wholeHours}h`
+    return `${Math.round(hours)}h`
   }
 
   formatPercentage(value: number): string {

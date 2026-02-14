@@ -1,289 +1,263 @@
 import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core'
 import { z } from 'zod'
 
-const KPIProfitBreakdown = z
-  .object({
-    labor_profit: z.number(),
-    material_profit: z.number(),
-    adjustment_profit: z.number(),
-  })
-  .passthrough()
-const KPIJobBreakdown = z
-  .object({
-    job_id: z.string(),
-    job_number: z.string(),
-    job_name: z.string(),
-    client_name: z.string(),
-    billable_hours: z.number(),
-    revenue: z.number(),
-    cost: z.number(),
-    profit: z.number(),
-  })
-  .passthrough()
-const KPIDetails = z
-  .object({
-    time_revenue: z.number(),
-    material_revenue: z.number(),
-    adjustment_revenue: z.number(),
-    total_revenue: z.number(),
-    staff_cost: z.number(),
-    material_cost: z.number(),
-    adjustment_cost: z.number(),
-    total_cost: z.number(),
-    profit_breakdown: KPIProfitBreakdown,
-    job_breakdown: z.array(KPIJobBreakdown),
-  })
-  .passthrough()
-const KPIDayData = z
-  .object({
-    date: z.string(),
-    day: z.number().int(),
-    holiday: z.boolean(),
-    holiday_name: z.string().optional(),
-    billable_hours: z.number(),
-    total_hours: z.number(),
-    shop_hours: z.number(),
-    shop_percentage: z.number(),
-    gross_profit: z.number(),
-    color: z.string(),
-    gp_target_achievement: z.number(),
-    details: KPIDetails,
-  })
-  .passthrough()
-const KPIMonthlyTotals = z
-  .object({
-    billable_hours: z.number(),
-    total_hours: z.number(),
-    shop_hours: z.number(),
-    gross_profit: z.number(),
-    days_green: z.number().int(),
-    days_amber: z.number().int(),
-    days_red: z.number().int(),
-    labour_green_days: z.number().int(),
-    labour_amber_days: z.number().int(),
-    labour_red_days: z.number().int(),
-    profit_green_days: z.number().int(),
-    profit_amber_days: z.number().int(),
-    profit_red_days: z.number().int(),
-    working_days: z.number().int(),
-    elapsed_workdays: z.number().int(),
-    remaining_workdays: z.number().int(),
-    time_revenue: z.number(),
-    material_revenue: z.number(),
-    adjustment_revenue: z.number(),
-    staff_cost: z.number(),
-    material_cost: z.number(),
-    adjustment_cost: z.number(),
-    material_profit: z.number(),
-    adjustment_profit: z.number(),
-    total_revenue: z.number(),
-    total_cost: z.number(),
-    elapsed_target: z.number(),
-    net_profit: z.number(),
-    billable_percentage: z.number(),
-    shop_percentage: z.number(),
-    avg_daily_gp: z.number(),
-    avg_daily_gp_so_far: z.number(),
-    avg_billable_hours_so_far: z.number(),
-    color_hours: z.string(),
-    color_gp: z.string(),
-    color_shop: z.string(),
-  })
-  .passthrough()
-const KPIThresholds = z
-  .object({
-    billable_threshold_green: z.number(),
-    billable_threshold_amber: z.number(),
-    daily_gp_target: z.number(),
-    shop_hours_target: z.number(),
-  })
-  .passthrough()
-const KPICalendarData = z
-  .object({
-    calendar_data: z.record(KPIDayData),
-    monthly_totals: KPIMonthlyTotals,
-    thresholds: KPIThresholds,
-    year: z.number().int(),
-    month: z.number().int(),
-  })
-  .passthrough()
-const StandardError = z.object({ error: z.string(), details: z.unknown().optional() }).passthrough()
-const JobAgingFinancialData = z
-  .object({
-    estimate_total: z.number(),
-    quote_total: z.number(),
-    actual_total: z.number(),
-  })
-  .passthrough()
-const JobAgingTimingData = z
-  .object({
-    created_date: z.string(),
-    created_days_ago: z.number().int(),
-    days_in_current_status: z.number().int(),
-    last_activity_date: z.string().datetime({ offset: true }).nullable(),
-    last_activity_days_ago: z.number().int().nullable(),
-    last_activity_type: z.string().nullish(),
-    last_activity_description: z.string().nullish(),
-  })
-  .passthrough()
-const JobAgingJobData = z
-  .object({
-    id: z.string(),
-    job_number: z.number().int(),
-    name: z.string(),
-    client_name: z.string(),
-    status: z.string(),
-    status_display: z.string(),
-    financial_data: JobAgingFinancialData,
-    timing_data: JobAgingTimingData,
-  })
-  .passthrough()
-const JobAgingResponse = z.object({ jobs: z.array(JobAgingJobData) }).passthrough()
-const StaffPerformanceTeamAverages = z
-  .object({
-    billable_percentage: z.number(),
-    revenue_per_hour: z.number(),
-    profit_per_hour: z.number(),
-    jobs_per_person: z.number(),
-    total_hours: z.number(),
-    billable_hours: z.number(),
-    total_revenue: z.number(),
-    total_profit: z.number(),
-  })
-  .passthrough()
-const StaffPerformanceJobBreakdown = z
-  .object({
-    job_id: z.string(),
-    job_number: z.number().int(),
-    job_name: z.string(),
-    client_name: z.string(),
-    billable_hours: z.number(),
-    non_billable_hours: z.number(),
-    total_hours: z.number(),
-    revenue: z.number(),
-    cost: z.number(),
-    profit: z.number(),
-    revenue_per_hour: z.number(),
-  })
-  .passthrough()
-const StaffPerformanceStaffData = z
-  .object({
-    staff_id: z.string(),
-    name: z.string(),
-    total_hours: z.number(),
-    billable_hours: z.number(),
-    billable_percentage: z.number(),
-    total_revenue: z.number(),
-    total_cost: z.number(),
-    profit: z.number(),
-    revenue_per_hour: z.number(),
-    profit_per_hour: z.number(),
-    jobs_worked: z.number().int(),
-    job_breakdown: z.array(StaffPerformanceJobBreakdown).optional(),
-  })
-  .passthrough()
-const StaffPerformancePeriodSummary = z
-  .object({
-    start_date: z.string(),
-    end_date: z.string(),
-    total_staff: z.number().int(),
-    period_description: z.string(),
-  })
-  .passthrough()
-const StaffPerformanceResponse = z
-  .object({
-    team_averages: StaffPerformanceTeamAverages,
-    staff: z.array(StaffPerformanceStaffData),
-    period_summary: StaffPerformancePeriodSummary,
-  })
-  .passthrough()
-const BearerTokenRequest = z
-  .object({ username: z.string().min(1), password: z.string().min(1) })
-  .passthrough()
-const BearerTokenResponse = z.object({ token: z.string() }).passthrough()
-const Staff = z
-  .object({
-    id: z.string().uuid(),
-    email: z.string().max(254).email(),
-    first_name: z.string().max(30),
-    last_name: z.string().max(30),
-    preferred_name: z.string().max(30).nullish(),
-    base_wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
-    wage_rate: z.number().gt(-100000000).lt(100000000),
-    xero_user_id: z.string().max(255).nullish(),
-    date_left: z.string().nullish(),
-    is_office_staff: z.boolean().optional(),
-    is_superuser: z.boolean().optional(),
-    password_needs_reset: z.boolean().optional(),
-    hours_mon: z.number().gt(-100).lt(100).optional(),
-    hours_tue: z.number().gt(-100).lt(100).optional(),
-    hours_wed: z.number().gt(-100).lt(100).optional(),
-    hours_thu: z.number().gt(-100).lt(100).optional(),
-    hours_fri: z.number().gt(-100).lt(100).optional(),
-    hours_sat: z.number().gt(-100).lt(100).optional(),
-    hours_sun: z.number().gt(-100).lt(100).optional(),
-    date_joined: z.string().datetime({ offset: true }),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    last_login: z.string().datetime({ offset: true }).nullable(),
-    groups: z.array(z.number().int()).optional(),
-    user_permissions: z.array(z.number().int()).optional(),
-    icon_url: z.string().nullable(),
-  })
-  .passthrough()
-const StaffCreateRequest = z
-  .object({
-    email: z.string().min(1).max(254).email(),
-    first_name: z.string().min(1).max(30),
-    last_name: z.string().min(1).max(30),
-    preferred_name: z.string().max(30).nullish(),
-    base_wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
-    xero_user_id: z.string().max(255).nullish(),
-    date_left: z.string().nullish(),
-    is_office_staff: z.boolean().optional(),
-    is_superuser: z.boolean().optional(),
-    password_needs_reset: z.boolean().optional(),
-    hours_mon: z.number().gt(-100).lt(100).optional(),
-    hours_tue: z.number().gt(-100).lt(100).optional(),
-    hours_wed: z.number().gt(-100).lt(100).optional(),
-    hours_thu: z.number().gt(-100).lt(100).optional(),
-    hours_fri: z.number().gt(-100).lt(100).optional(),
-    hours_sat: z.number().gt(-100).lt(100).optional(),
-    hours_sun: z.number().gt(-100).lt(100).optional(),
-    date_joined: z.string().datetime({ offset: true }).optional(),
-    created_at: z.string().datetime({ offset: true }).optional(),
-    last_login: z.string().datetime({ offset: true }).nullish(),
-    groups: z.array(z.number().int()).optional(),
-    user_permissions: z.array(z.number().int()).optional(),
-    password: z.string().min(1).max(128),
-    icon: z.instanceof(File).nullish(),
-  })
-  .passthrough()
-const StaffRequest = z
-  .object({
-    email: z.string().min(1).max(254).email(),
-    first_name: z.string().min(1).max(30),
-    last_name: z.string().min(1).max(30),
-    preferred_name: z.string().max(30).nullish(),
-    base_wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
-    xero_user_id: z.string().max(255).nullish(),
-    date_left: z.string().nullish(),
-    is_office_staff: z.boolean().optional(),
-    is_superuser: z.boolean().optional(),
-    password_needs_reset: z.boolean().optional(),
-    hours_mon: z.number().gt(-100).lt(100).optional(),
-    hours_tue: z.number().gt(-100).lt(100).optional(),
-    hours_wed: z.number().gt(-100).lt(100).optional(),
-    hours_thu: z.number().gt(-100).lt(100).optional(),
-    hours_fri: z.number().gt(-100).lt(100).optional(),
-    hours_sat: z.number().gt(-100).lt(100).optional(),
-    hours_sun: z.number().gt(-100).lt(100).optional(),
-    groups: z.array(z.number().int()).optional(),
-    user_permissions: z.array(z.number().int()).optional(),
-    password: z.string().min(1).max(128).optional(),
-    icon: z.instanceof(File).nullish(),
-  })
-  .passthrough()
+const KPIProfitBreakdown = z.object({
+  labor_profit: z.number(),
+  material_profit: z.number(),
+  adjustment_profit: z.number(),
+})
+const KPIJobBreakdown = z.object({
+  job_id: z.string(),
+  job_number: z.string(),
+  job_name: z.string(),
+  client_name: z.string(),
+  billable_hours: z.number(),
+  revenue: z.number(),
+  cost: z.number(),
+  profit: z.number(),
+  labour_profit: z.number(),
+  material_profit: z.number(),
+  adjustment_profit: z.number(),
+})
+const KPIDetails = z.object({
+  time_revenue: z.number(),
+  material_revenue: z.number(),
+  adjustment_revenue: z.number(),
+  total_revenue: z.number(),
+  staff_cost: z.number(),
+  material_cost: z.number(),
+  adjustment_cost: z.number(),
+  total_cost: z.number(),
+  profit_breakdown: KPIProfitBreakdown,
+  job_breakdown: z.array(KPIJobBreakdown),
+})
+const KPIDayData = z.object({
+  date: z.string(),
+  day: z.number().int(),
+  holiday: z.boolean(),
+  holiday_name: z.string().optional(),
+  billable_hours: z.number(),
+  total_hours: z.number(),
+  shop_hours: z.number(),
+  shop_percentage: z.number(),
+  gross_profit: z.number(),
+  color: z.string(),
+  gp_target_achievement: z.number(),
+  details: KPIDetails,
+})
+const KPIMonthlyTotals = z.object({
+  billable_hours: z.number(),
+  total_hours: z.number(),
+  shop_hours: z.number(),
+  gross_profit: z.number(),
+  days_green: z.number().int(),
+  days_amber: z.number().int(),
+  days_red: z.number().int(),
+  labour_green_days: z.number().int(),
+  labour_amber_days: z.number().int(),
+  labour_red_days: z.number().int(),
+  profit_green_days: z.number().int(),
+  profit_amber_days: z.number().int(),
+  profit_red_days: z.number().int(),
+  working_days: z.number().int(),
+  elapsed_workdays: z.number().int(),
+  active_workdays: z.number().int(),
+  remaining_workdays: z.number().int(),
+  time_revenue: z.number(),
+  material_revenue: z.number(),
+  adjustment_revenue: z.number(),
+  staff_cost: z.number(),
+  material_cost: z.number(),
+  adjustment_cost: z.number(),
+  material_profit: z.number(),
+  adjustment_profit: z.number(),
+  total_revenue: z.number(),
+  total_cost: z.number(),
+  elapsed_target: z.number(),
+  net_profit: z.number(),
+  billable_percentage: z.number(),
+  shop_percentage: z.number(),
+  avg_daily_gp: z.number(),
+  avg_daily_gp_so_far: z.number(),
+  avg_billable_hours_so_far: z.number(),
+  color_hours: z.string(),
+  color_gp: z.string(),
+  color_shop: z.string(),
+})
+const KPIThresholds = z.object({
+  kpi_daily_billable_hours_green: z.number(),
+  kpi_daily_billable_hours_amber: z.number(),
+  kpi_daily_gp_target: z.number(),
+  kpi_daily_shop_hours_percentage: z.number(),
+  kpi_daily_profit_green: z.number(),
+  kpi_daily_profit_amber: z.number(),
+})
+const KPICalendarData = z.object({
+  calendar_data: z.record(KPIDayData),
+  monthly_totals: KPIMonthlyTotals,
+  thresholds: KPIThresholds,
+  year: z.number().int(),
+  month: z.number().int(),
+})
+const StandardError = z.object({
+  error: z.string(),
+  details: z.unknown().optional(),
+})
+const JobAgingFinancialData = z.object({
+  estimate_total: z.number(),
+  quote_total: z.number(),
+  actual_total: z.number(),
+})
+const JobAgingTimingData = z.object({
+  created_date: z.string(),
+  created_days_ago: z.number().int(),
+  days_in_current_status: z.number().int(),
+  last_activity_date: z.string().datetime({ offset: true }).nullable(),
+  last_activity_days_ago: z.number().int().nullable(),
+  last_activity_type: z.string().nullish(),
+  last_activity_description: z.string().nullish(),
+})
+const JobAgingJobData = z.object({
+  id: z.string(),
+  job_number: z.number().int(),
+  name: z.string(),
+  client_name: z.string(),
+  status: z.string(),
+  status_display: z.string(),
+  financial_data: JobAgingFinancialData,
+  timing_data: JobAgingTimingData,
+})
+const JobAgingResponse = z.object({ jobs: z.array(JobAgingJobData) })
+const StaffPerformanceTeamAverages = z.object({
+  billable_percentage: z.number(),
+  revenue_per_hour: z.number(),
+  profit_per_hour: z.number(),
+  jobs_per_person: z.number(),
+  total_hours: z.number(),
+  billable_hours: z.number(),
+  total_revenue: z.number(),
+  total_profit: z.number(),
+})
+const StaffPerformanceJobBreakdown = z.object({
+  job_id: z.string(),
+  job_number: z.number().int(),
+  job_name: z.string(),
+  client_name: z.string(),
+  billable_hours: z.number(),
+  non_billable_hours: z.number(),
+  total_hours: z.number(),
+  revenue: z.number(),
+  cost: z.number(),
+  profit: z.number(),
+  revenue_per_hour: z.number(),
+})
+const StaffPerformanceStaffData = z.object({
+  staff_id: z.string(),
+  name: z.string(),
+  total_hours: z.number(),
+  billable_hours: z.number(),
+  billable_percentage: z.number(),
+  total_revenue: z.number(),
+  total_cost: z.number(),
+  profit: z.number(),
+  revenue_per_hour: z.number(),
+  profit_per_hour: z.number(),
+  jobs_worked: z.number().int(),
+  job_breakdown: z.array(StaffPerformanceJobBreakdown).optional(),
+})
+const StaffPerformancePeriodSummary = z.object({
+  start_date: z.string(),
+  end_date: z.string(),
+  total_staff: z.number().int(),
+  period_description: z.string(),
+})
+const StaffPerformanceResponse = z.object({
+  team_averages: StaffPerformanceTeamAverages,
+  staff: z.array(StaffPerformanceStaffData),
+  period_summary: StaffPerformancePeriodSummary,
+})
+const BearerTokenRequest = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+})
+const BearerTokenResponse = z.object({ token: z.string() })
+const Staff = z.object({
+  id: z.string().uuid(),
+  email: z.string().max(254).email(),
+  first_name: z.string().max(30),
+  last_name: z.string().max(30),
+  preferred_name: z.string().max(30).nullish(),
+  base_wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
+  wage_rate: z.number().gt(-100000000).lt(100000000),
+  xero_user_id: z.string().max(255).nullish(),
+  date_left: z.string().nullish(),
+  is_office_staff: z.boolean().optional(),
+  is_superuser: z.boolean().optional(),
+  password_needs_reset: z.boolean().optional(),
+  hours_mon: z.number().gt(-100).lt(100).optional(),
+  hours_tue: z.number().gt(-100).lt(100).optional(),
+  hours_wed: z.number().gt(-100).lt(100).optional(),
+  hours_thu: z.number().gt(-100).lt(100).optional(),
+  hours_fri: z.number().gt(-100).lt(100).optional(),
+  hours_sat: z.number().gt(-100).lt(100).optional(),
+  hours_sun: z.number().gt(-100).lt(100).optional(),
+  date_joined: z.string().datetime({ offset: true }),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  last_login: z.string().datetime({ offset: true }).nullable(),
+  groups: z.array(z.number().int()).optional(),
+  user_permissions: z.array(z.number().int()).optional(),
+  icon_url: z.string().nullable(),
+})
+const StaffCreateRequest = z.object({
+  email: z.string().min(1).max(254).email(),
+  first_name: z.string().min(1).max(30),
+  last_name: z.string().min(1).max(30),
+  preferred_name: z.string().max(30).nullish(),
+  base_wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
+  xero_user_id: z.string().max(255).nullish(),
+  date_left: z.string().nullish(),
+  is_office_staff: z.boolean().optional(),
+  is_superuser: z.boolean().optional(),
+  password_needs_reset: z.boolean().optional(),
+  hours_mon: z.number().gt(-100).lt(100).optional(),
+  hours_tue: z.number().gt(-100).lt(100).optional(),
+  hours_wed: z.number().gt(-100).lt(100).optional(),
+  hours_thu: z.number().gt(-100).lt(100).optional(),
+  hours_fri: z.number().gt(-100).lt(100).optional(),
+  hours_sat: z.number().gt(-100).lt(100).optional(),
+  hours_sun: z.number().gt(-100).lt(100).optional(),
+  date_joined: z.string().datetime({ offset: true }).optional(),
+  created_at: z.string().datetime({ offset: true }).optional(),
+  last_login: z.string().datetime({ offset: true }).nullish(),
+  groups: z.array(z.number().int()).optional(),
+  user_permissions: z.array(z.number().int()).optional(),
+  password: z.string().min(1).max(128),
+  icon: z.instanceof(File).nullish(),
+})
+const StaffRequest = z.object({
+  email: z.string().min(1).max(254).email(),
+  first_name: z.string().min(1).max(30),
+  last_name: z.string().min(1).max(30),
+  preferred_name: z.string().max(30).nullish(),
+  base_wage_rate: z.number().gt(-100000000).lt(100000000).optional(),
+  xero_user_id: z.string().max(255).nullish(),
+  date_left: z.string().nullish(),
+  is_office_staff: z.boolean().optional(),
+  is_superuser: z.boolean().optional(),
+  password_needs_reset: z.boolean().optional(),
+  hours_mon: z.number().gt(-100).lt(100).optional(),
+  hours_tue: z.number().gt(-100).lt(100).optional(),
+  hours_wed: z.number().gt(-100).lt(100).optional(),
+  hours_thu: z.number().gt(-100).lt(100).optional(),
+  hours_fri: z.number().gt(-100).lt(100).optional(),
+  hours_sat: z.number().gt(-100).lt(100).optional(),
+  hours_sun: z.number().gt(-100).lt(100).optional(),
+  groups: z.array(z.number().int()).optional(),
+  user_permissions: z.array(z.number().int()).optional(),
+  password: z.string().min(1).max(128).optional(),
+  icon: z.instanceof(File).nullish(),
+})
 const PatchedStaffRequest = z
   .object({
     email: z.string().min(1).max(254).email(),
@@ -309,19 +283,17 @@ const PatchedStaffRequest = z
     icon: z.instanceof(File).nullable(),
   })
   .partial()
-  .passthrough()
-const KanbanStaff = z
-  .object({
-    id: z.string().uuid(),
-    first_name: z.string().max(30),
-    last_name: z.string().max(30),
-    icon_url: z.string().nullable(),
-    display_name: z.string(),
-  })
-  .passthrough()
-const CustomTokenObtainPairRequest = z
-  .object({ username: z.string().min(1), password: z.string().min(1) })
-  .passthrough()
+const KanbanStaff = z.object({
+  id: z.string().uuid(),
+  first_name: z.string().max(30),
+  last_name: z.string().max(30),
+  icon_url: z.string().nullable(),
+  display_name: z.string(),
+})
+const CustomTokenObtainPairRequest = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+})
 const TokenObtainPairResponse = z
   .object({
     access: z.string(),
@@ -330,134 +302,131 @@ const TokenObtainPairResponse = z
     password_reset_url: z.string().url(),
   })
   .partial()
-  .passthrough()
-const TokenRefreshRequest = z.object({ refresh: z.string().min(1) }).passthrough()
-const TokenRefreshResponse = z.object({ access: z.string() }).partial().passthrough()
-const TokenVerifyRequest = z.object({ token: z.string().min(1) }).passthrough()
-const UserProfile = z
-  .object({
-    id: z.string().uuid(),
-    username: z.string(),
-    email: z.string().email(),
-    first_name: z.string(),
-    last_name: z.string(),
-    preferred_name: z.string().nullable(),
-    fullName: z.string(),
-    is_office_staff: z.boolean(),
-    is_superuser: z.boolean(),
-  })
-  .passthrough()
-const AWSInstanceStatusResponse = z
-  .object({
-    success: z.boolean(),
-    status: z.string().optional(),
-    error: z.string().optional(),
-    details: z.string().optional(),
-  })
-  .passthrough()
-const CompanyDefaults = z
-  .object({
-    company_name: z.string(),
-    company_acronym: z.string().max(10).nullish(),
-    is_primary: z.boolean().optional(),
-    time_markup: z.number().gt(-1000).lt(1000).optional(),
-    materials_markup: z.number().gt(-1000).lt(1000).optional(),
-    charge_out_rate: z.number().gt(-10000).lt(10000).optional(),
-    wage_rate: z.number().gt(-10000).lt(10000).optional(),
-    annual_leave_loading: z.number().gt(-1000).lt(1000).optional(),
-    financial_year_start_month: z.number().int().gte(-2147483648).lte(2147483647).optional(),
-    starting_job_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
-    starting_po_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
-    po_prefix: z.string().max(10).optional(),
-    master_quote_template_url: z.string().max(200).url().nullish(),
-    master_quote_template_id: z.string().max(100).nullish(),
-    gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
-    gdrive_quotes_folder_id: z.string().max(100).nullish(),
-    xero_tenant_id: z.string().max(100).nullish(),
-    xero_shortcode: z.string().max(20).nullish(),
-    xero_payroll_calendar_name: z.string().max(100).optional(),
-    xero_payroll_calendar_id: z.string().uuid().nullish(),
-    mon_start: z.string().optional(),
-    mon_end: z.string().optional(),
-    tue_start: z.string().optional(),
-    tue_end: z.string().optional(),
-    wed_start: z.string().optional(),
-    wed_end: z.string().optional(),
-    thu_start: z.string().optional(),
-    thu_end: z.string().optional(),
-    fri_start: z.string().optional(),
-    fri_end: z.string().optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    last_xero_sync: z.string().datetime({ offset: true }).nullish(),
-    last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
-    address_line1: z.string().max(255).nullish(),
-    address_line2: z.string().max(255).nullish(),
-    suburb: z.string().max(100).nullish(),
-    city: z.string().max(100).nullish(),
-    post_code: z.string().max(20).nullish(),
-    country: z.string().max(100).optional(),
-    company_email: z.string().max(254).email().nullish(),
-    company_url: z.string().max(200).url().nullish(),
-    shop_client_name: z.string().max(255).nullish(),
-    test_client_name: z.string().max(255).nullish(),
-    billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
-    billable_threshold_amber: z.number().gt(-1000).lt(1000).optional(),
-    daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
-    shop_hours_target_percentage: z.number().gt(-1000).lt(1000).optional(),
-    job_gp_target_percentage: z.number().gt(-1000).lt(1000),
-  })
-  .passthrough()
+const TokenRefreshRequest = z.object({ refresh: z.string().min(1) })
+const TokenRefreshResponse = z.object({ access: z.string() }).partial()
+const TokenVerifyRequest = z.object({ token: z.string().min(1) })
+const UserProfile = z.object({
+  id: z.string().uuid(),
+  username: z.string(),
+  email: z.string().email(),
+  first_name: z.string(),
+  last_name: z.string(),
+  preferred_name: z.string().nullable(),
+  fullName: z.string(),
+  is_office_staff: z.boolean(),
+  is_superuser: z.boolean(),
+})
+const AWSInstanceStatusResponse = z.object({
+  success: z.boolean(),
+  status: z.string().optional(),
+  error: z.string().optional(),
+  details: z.string().optional(),
+})
+const CompanyDefaults = z.object({
+  company_name: z.string(),
+  company_acronym: z.string().max(10).nullish(),
+  is_primary: z.boolean().optional(),
+  time_markup: z.number().gt(-1000).lt(1000).optional(),
+  materials_markup: z.number().gt(-1000).lt(1000).optional(),
+  charge_out_rate: z.number().gt(-10000).lt(10000).optional(),
+  wage_rate: z.number().gt(-10000).lt(10000).optional(),
+  annual_leave_loading: z.number().gt(-1000).lt(1000).optional(),
+  financial_year_start_month: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+  starting_job_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+  starting_po_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+  po_prefix: z.string().max(10).optional(),
+  master_quote_template_url: z.string().max(200).url().nullish(),
+  master_quote_template_id: z.string().max(100).nullish(),
+  gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
+  gdrive_quotes_folder_id: z.string().max(100).nullish(),
+  xero_tenant_id: z.string().max(100).nullish(),
+  xero_shortcode: z.string().max(20).nullish(),
+  xero_payroll_calendar_name: z.string().max(100).optional(),
+  xero_payroll_calendar_id: z.string().uuid().nullish(),
+  mon_start: z.string().optional(),
+  mon_end: z.string().optional(),
+  tue_start: z.string().optional(),
+  tue_end: z.string().optional(),
+  wed_start: z.string().optional(),
+  wed_end: z.string().optional(),
+  thu_start: z.string().optional(),
+  thu_end: z.string().optional(),
+  fri_start: z.string().optional(),
+  fri_end: z.string().optional(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  last_xero_sync: z.string().datetime({ offset: true }).nullish(),
+  last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
+  address_line1: z.string().max(255).nullish(),
+  address_line2: z.string().max(255).nullish(),
+  suburb: z.string().max(100).nullish(),
+  city: z.string().max(100).nullish(),
+  post_code: z.string().max(20).nullish(),
+  country: z.string().max(100).optional(),
+  company_email: z.string().max(254).email().nullish(),
+  company_url: z.string().max(200).url().nullish(),
+  shop_client_name: z.string().max(255).nullish(),
+  test_client_name: z.string().max(255).nullish(),
+  kpi_daily_billable_hours_green: z.number().gt(-1000).lt(1000).optional(),
+  kpi_daily_billable_hours_amber: z.number().gt(-1000).lt(1000).optional(),
+  kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
+  kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000).optional(),
+  kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000).optional(),
+  kpi_daily_profit_green: z.number().gt(-100000000).lt(100000000).optional(),
+  kpi_daily_profit_amber: z.number().gt(-100000000).lt(100000000).optional(),
+})
 const CompanyDefaultsRequest = z
   .object({
-    company_acronym: z.string().max(10).nullish(),
-    is_primary: z.boolean().optional(),
-    time_markup: z.number().gt(-1000).lt(1000).optional(),
-    materials_markup: z.number().gt(-1000).lt(1000).optional(),
-    charge_out_rate: z.number().gt(-10000).lt(10000).optional(),
-    wage_rate: z.number().gt(-10000).lt(10000).optional(),
-    annual_leave_loading: z.number().gt(-1000).lt(1000).optional(),
-    financial_year_start_month: z.number().int().gte(-2147483648).lte(2147483647).optional(),
-    starting_job_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
-    starting_po_number: z.number().int().gte(-2147483648).lte(2147483647).optional(),
-    po_prefix: z.string().min(1).max(10).optional(),
-    master_quote_template_url: z.string().max(200).url().nullish(),
-    master_quote_template_id: z.string().max(100).nullish(),
-    gdrive_quotes_folder_url: z.string().max(200).url().nullish(),
-    gdrive_quotes_folder_id: z.string().max(100).nullish(),
-    xero_tenant_id: z.string().max(100).nullish(),
-    xero_shortcode: z.string().max(20).nullish(),
-    xero_payroll_calendar_name: z.string().min(1).max(100).optional(),
-    xero_payroll_calendar_id: z.string().uuid().nullish(),
-    mon_start: z.string().optional(),
-    mon_end: z.string().optional(),
-    tue_start: z.string().optional(),
-    tue_end: z.string().optional(),
-    wed_start: z.string().optional(),
-    wed_end: z.string().optional(),
-    thu_start: z.string().optional(),
-    thu_end: z.string().optional(),
-    fri_start: z.string().optional(),
-    fri_end: z.string().optional(),
-    last_xero_sync: z.string().datetime({ offset: true }).nullish(),
-    last_xero_deep_sync: z.string().datetime({ offset: true }).nullish(),
-    address_line1: z.string().max(255).nullish(),
-    address_line2: z.string().max(255).nullish(),
-    suburb: z.string().max(100).nullish(),
-    city: z.string().max(100).nullish(),
-    post_code: z.string().max(20).nullish(),
-    country: z.string().min(1).max(100).optional(),
-    company_email: z.string().max(254).email().nullish(),
-    company_url: z.string().max(200).url().nullish(),
-    shop_client_name: z.string().max(255).nullish(),
-    test_client_name: z.string().max(255).nullish(),
-    billable_threshold_green: z.number().gt(-1000).lt(1000).optional(),
-    billable_threshold_amber: z.number().gt(-1000).lt(1000).optional(),
-    daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
-    shop_hours_target_percentage: z.number().gt(-1000).lt(1000).optional(),
-    job_gp_target_percentage: z.number().gt(-1000).lt(1000),
+    company_acronym: z.string().max(10).nullable(),
+    is_primary: z.boolean(),
+    time_markup: z.number().gt(-1000).lt(1000),
+    materials_markup: z.number().gt(-1000).lt(1000),
+    charge_out_rate: z.number().gt(-10000).lt(10000),
+    wage_rate: z.number().gt(-10000).lt(10000),
+    annual_leave_loading: z.number().gt(-1000).lt(1000),
+    financial_year_start_month: z.number().int().gte(-2147483648).lte(2147483647),
+    starting_job_number: z.number().int().gte(-2147483648).lte(2147483647),
+    starting_po_number: z.number().int().gte(-2147483648).lte(2147483647),
+    po_prefix: z.string().min(1).max(10),
+    master_quote_template_url: z.string().max(200).url().nullable(),
+    master_quote_template_id: z.string().max(100).nullable(),
+    gdrive_quotes_folder_url: z.string().max(200).url().nullable(),
+    gdrive_quotes_folder_id: z.string().max(100).nullable(),
+    xero_tenant_id: z.string().max(100).nullable(),
+    xero_shortcode: z.string().max(20).nullable(),
+    xero_payroll_calendar_name: z.string().min(1).max(100),
+    xero_payroll_calendar_id: z.string().uuid().nullable(),
+    mon_start: z.string(),
+    mon_end: z.string(),
+    tue_start: z.string(),
+    tue_end: z.string(),
+    wed_start: z.string(),
+    wed_end: z.string(),
+    thu_start: z.string(),
+    thu_end: z.string(),
+    fri_start: z.string(),
+    fri_end: z.string(),
+    last_xero_sync: z.string().datetime({ offset: true }).nullable(),
+    last_xero_deep_sync: z.string().datetime({ offset: true }).nullable(),
+    address_line1: z.string().max(255).nullable(),
+    address_line2: z.string().max(255).nullable(),
+    suburb: z.string().max(100).nullable(),
+    city: z.string().max(100).nullable(),
+    post_code: z.string().max(20).nullable(),
+    country: z.string().min(1).max(100),
+    company_email: z.string().max(254).email().nullable(),
+    company_url: z.string().max(200).url().nullable(),
+    shop_client_name: z.string().max(255).nullable(),
+    test_client_name: z.string().max(255).nullable(),
+    kpi_daily_billable_hours_green: z.number().gt(-1000).lt(1000),
+    kpi_daily_billable_hours_amber: z.number().gt(-1000).lt(1000),
+    kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000),
+    kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000),
+    kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000),
+    kpi_daily_profit_green: z.number().gt(-100000000).lt(100000000),
+    kpi_daily_profit_amber: z.number().gt(-100000000).lt(100000000),
   })
-  .passthrough()
+  .partial()
 const PatchedCompanyDefaultsRequest = z
   .object({
     company_acronym: z.string().max(10).nullable(),
@@ -501,61 +470,52 @@ const PatchedCompanyDefaultsRequest = z
     company_url: z.string().max(200).url().nullable(),
     shop_client_name: z.string().max(255).nullable(),
     test_client_name: z.string().max(255).nullable(),
-    billable_threshold_green: z.number().gt(-1000).lt(1000),
-    billable_threshold_amber: z.number().gt(-1000).lt(1000),
-    daily_gp_target: z.number().gt(-100000000).lt(100000000),
-    shop_hours_target_percentage: z.number().gt(-1000).lt(1000),
-    job_gp_target_percentage: z.number().gt(-1000).lt(1000),
+    kpi_daily_billable_hours_green: z.number().gt(-1000).lt(1000),
+    kpi_daily_billable_hours_amber: z.number().gt(-1000).lt(1000),
+    kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000),
+    kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000),
+    kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000),
+    kpi_daily_profit_green: z.number().gt(-100000000).lt(100000000),
+    kpi_daily_profit_amber: z.number().gt(-100000000).lt(100000000),
   })
   .partial()
-  .passthrough()
-const SettingsField = z
-  .object({
-    key: z.string(),
-    label: z.string(),
-    type: z.string(),
-    required: z.boolean(),
-    help_text: z.string(),
-    section: z.string(),
-    read_only: z.boolean(),
-  })
-  .passthrough()
-const SettingsSection = z
-  .object({
-    key: z.string(),
-    title: z.string(),
-    order: z.number().int(),
-    fields: z.array(SettingsField),
-  })
-  .passthrough()
-const CompanyDefaultsSchema = z.object({ sections: z.array(SettingsSection) }).passthrough()
+const SettingsField = z.object({
+  key: z.string(),
+  label: z.string(),
+  type: z.string(),
+  required: z.boolean(),
+  help_text: z.string(),
+  section: z.string(),
+  read_only: z.boolean(),
+})
+const SettingsSection = z.object({
+  key: z.string(),
+  title: z.string(),
+  order: z.number().int(),
+  fields: z.array(SettingsField),
+})
+const CompanyDefaultsSchema = z.object({ sections: z.array(SettingsSection) })
 const ProviderTypeEnum = z.enum(['Claude', 'Gemini', 'Mistral', 'OpenAI'])
-const AIProvider = z
-  .object({
-    id: z.number().int(),
-    name: z.string().max(100),
-    provider_type: ProviderTypeEnum,
-    model_name: z.string().max(100).optional(),
-    default: z.boolean().optional(),
-  })
-  .passthrough()
-const AIProviderCreateUpdateRequest = z
-  .object({
-    name: z.string().min(1).max(100),
-    provider_type: ProviderTypeEnum,
-    model_name: z.string().max(100).optional(),
-    default: z.boolean().optional(),
-    api_key: z.string().optional(),
-  })
-  .passthrough()
-const AIProviderCreateUpdate = z
-  .object({
-    name: z.string().max(100),
-    provider_type: ProviderTypeEnum,
-    model_name: z.string().max(100).optional(),
-    default: z.boolean().optional(),
-  })
-  .passthrough()
+const AIProvider = z.object({
+  id: z.number().int(),
+  name: z.string().max(100),
+  provider_type: ProviderTypeEnum,
+  model_name: z.string().max(100).optional(),
+  default: z.boolean().optional(),
+})
+const AIProviderCreateUpdateRequest = z.object({
+  name: z.string().min(1).max(100),
+  provider_type: ProviderTypeEnum,
+  model_name: z.string().max(100).optional(),
+  default: z.boolean().optional(),
+  api_key: z.string().optional(),
+})
+const AIProviderCreateUpdate = z.object({
+  name: z.string().max(100),
+  provider_type: ProviderTypeEnum,
+  model_name: z.string().max(100).optional(),
+  default: z.boolean().optional(),
+})
 const PatchedAIProviderCreateUpdateRequest = z
   .object({
     name: z.string().min(1).max(100),
@@ -565,160 +525,135 @@ const PatchedAIProviderCreateUpdateRequest = z
     api_key: z.string(),
   })
   .partial()
-  .passthrough()
-const AIProviderRequest = z
-  .object({
-    name: z.string().min(1).max(100),
-    provider_type: ProviderTypeEnum,
-    model_name: z.string().max(100).optional(),
-    default: z.boolean().optional(),
-  })
-  .passthrough()
-const AppError = z
-  .object({
-    id: z.string().uuid(),
-    timestamp: z.string().datetime({ offset: true }),
-    message: z.string(),
-    data: z.unknown().nullish(),
-    app: z.string().max(50).nullish(),
-    file: z.string().max(200).nullish(),
-    function: z.string().max(100).nullish(),
-    severity: z.number().int().gte(-2147483648).lte(2147483647).optional(),
-    job_id: z.string().uuid().nullish(),
-    user_id: z.string().uuid().nullish(),
-    resolved: z.boolean().optional(),
-    resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
-    resolved_by: z.string().uuid().nullish(),
-  })
-  .passthrough()
-const PaginatedAppErrorList = z
-  .object({
-    count: z.number().int(),
-    next: z.string().url().nullish(),
-    previous: z.string().url().nullish(),
-    results: z.array(AppError),
-  })
-  .passthrough()
-const AppErrorRequest = z
-  .object({
-    message: z.string().min(1),
-    data: z.unknown().nullish(),
-    app: z.string().max(50).nullish(),
-    file: z.string().max(200).nullish(),
-    function: z.string().max(100).nullish(),
-    severity: z.number().int().gte(-2147483648).lte(2147483647).optional(),
-    job_id: z.string().uuid().nullish(),
-    user_id: z.string().uuid().nullish(),
-    resolved: z.boolean().optional(),
-    resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
-    resolved_by: z.string().uuid().nullish(),
-  })
-  .passthrough()
-const XeroPayItem = z
-  .object({
-    id: z.string().uuid(),
-    xero_id: z.string().max(50),
-    xero_tenant_id: z.string().max(255),
-    name: z.string().max(100),
-    uses_leave_api: z.boolean(),
-    multiplier: z.number().gt(-100).lt(100).nullish(),
-    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
-    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough()
-const XeroDocumentSuccessResponse = z
-  .object({
-    success: z.boolean().optional().default(true),
-    xero_id: z.string().uuid(),
-    online_url: z.string().url().optional(),
-    messages: z.array(z.string()).optional(),
-    client: z.string().optional(),
-    total_excl_tax: z.number().gt(-10000000000).lt(10000000000).optional(),
-    total_incl_tax: z.number().gt(-10000000000).lt(10000000000).optional(),
-    action: z.string().optional(),
-  })
-  .passthrough()
-const XeroDocumentErrorResponse = z
-  .object({
-    success: z.boolean().optional().default(false),
-    error: z.string(),
-    messages: z.array(z.string()).optional(),
-    error_type: z.string().optional(),
-    redirect_to_auth: z.boolean().optional(),
-  })
-  .passthrough()
-const XeroQuoteCreateRequest = z.object({ breakdown: z.boolean() }).passthrough()
-const XeroPingResponse = z.object({ connected: z.boolean() }).passthrough()
-const XeroSyncStartResponse = z
-  .object({
-    status: z.string(),
-    message: z.string(),
-    task_id: z.string().optional(),
-    error: z.string().optional(),
-  })
-  .passthrough()
-const XeroSyncInfoResponse = z
-  .object({
-    last_syncs: z.object({}).partial().passthrough(),
-    sync_range: z.string(),
-    sync_in_progress: z.boolean(),
-    error: z.string().optional(),
-    redirect_to_auth: z.boolean().optional(),
-  })
-  .passthrough()
-const ClientDetailResponse = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    address: z.string(),
-    is_account_customer: z.boolean(),
-    is_supplier: z.boolean(),
-    xero_contact_id: z.string(),
-    xero_tenant_id: z.string(),
-    primary_contact_name: z.string(),
-    primary_contact_email: z.string(),
-    additional_contact_persons: z.array(z.unknown()).optional(),
-    all_phones: z.array(z.unknown()).optional(),
-    xero_last_modified: z.string().datetime({ offset: true }).nullable(),
-    xero_last_synced: z.string().datetime({ offset: true }).nullable(),
-    xero_archived: z.boolean(),
-    xero_merged_into_id: z.string(),
-    merged_into: z.string().nullable(),
-    django_created_at: z.string().datetime({ offset: true }),
-    django_updated_at: z.string().datetime({ offset: true }),
-    last_invoice_date: z.string().datetime({ offset: true }).nullable(),
-    total_spend: z.string(),
-  })
-  .passthrough()
-const ClientErrorResponse = z
-  .object({
-    success: z.boolean().optional().default(false),
-    error: z.string(),
-    details: z.string().optional(),
-  })
-  .passthrough()
-const ClientJobHeader = z
-  .object({
-    job_id: z.string().uuid(),
-    job_number: z.number().int(),
-    name: z.string(),
-    client: z.object({}).partial().passthrough().nullable(),
-    status: z.string(),
-    pricing_methodology: z.string().nullable(),
-    speed_quality_tradeoff: z.string(),
-    fully_invoiced: z.boolean(),
-    has_quote_in_xero: z.boolean(),
-    is_fixed_price: z.boolean(),
-    quote_acceptance_date: z.string().datetime({ offset: true }).nullable(),
-    paid: z.boolean(),
-    rejected_flag: z.boolean(),
-  })
-  .passthrough()
-const ClientJobsResponse = z.object({ results: z.array(ClientJobHeader) }).passthrough()
+const AIProviderRequest = z.object({
+  name: z.string().min(1).max(100),
+  provider_type: ProviderTypeEnum,
+  model_name: z.string().max(100).optional(),
+  default: z.boolean().optional(),
+})
+const AppError = z.object({
+  id: z.string().uuid(),
+  timestamp: z.string().datetime({ offset: true }),
+  message: z.string(),
+  data: z.unknown().nullish(),
+  app: z.string().max(50).nullish(),
+  file: z.string().max(200).nullish(),
+  function: z.string().max(100).nullish(),
+  severity: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+  job_id: z.string().uuid().nullish(),
+  user_id: z.string().uuid().nullish(),
+  resolved: z.boolean().optional(),
+  resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
+  resolved_by: z.string().uuid().nullish(),
+})
+const PaginatedAppErrorList = z.object({
+  count: z.number().int(),
+  next: z.string().url().nullish(),
+  previous: z.string().url().nullish(),
+  results: z.array(AppError),
+})
+const AppErrorRequest = z.object({
+  message: z.string().min(1),
+  data: z.unknown().nullish(),
+  app: z.string().max(50).nullish(),
+  file: z.string().max(200).nullish(),
+  function: z.string().max(100).nullish(),
+  severity: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+  job_id: z.string().uuid().nullish(),
+  user_id: z.string().uuid().nullish(),
+  resolved: z.boolean().optional(),
+  resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
+  resolved_by: z.string().uuid().nullish(),
+})
+const XeroPayItem = z.object({
+  id: z.string().uuid(),
+  xero_id: z.string().max(50),
+  xero_tenant_id: z.string().max(255),
+  name: z.string().max(100),
+  uses_leave_api: z.boolean(),
+  multiplier: z.number().gt(-100).lt(100).nullish(),
+  xero_last_modified: z.string().datetime({ offset: true }).nullish(),
+  xero_last_synced: z.string().datetime({ offset: true }).nullish(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+})
+const XeroDocumentSuccessResponse = z.object({
+  success: z.boolean().optional().default(true),
+  xero_id: z.string().uuid(),
+  online_url: z.string().url().optional(),
+  messages: z.array(z.string()).optional(),
+  client: z.string().optional(),
+  total_excl_tax: z.number().gt(-10000000000).lt(10000000000).optional(),
+  total_incl_tax: z.number().gt(-10000000000).lt(10000000000).optional(),
+  action: z.string().optional(),
+})
+const XeroDocumentErrorResponse = z.object({
+  success: z.boolean().optional().default(false),
+  error: z.string(),
+  messages: z.array(z.string()).optional(),
+  error_type: z.string().optional(),
+  redirect_to_auth: z.boolean().optional(),
+})
+const XeroQuoteCreateRequest = z.object({ breakdown: z.boolean() })
+const XeroPingResponse = z.object({ connected: z.boolean() })
+const XeroSyncStartResponse = z.object({
+  status: z.string(),
+  message: z.string(),
+  task_id: z.string().optional(),
+  error: z.string().optional(),
+})
+const XeroSyncInfoResponse = z.object({
+  last_syncs: z.object({}).partial().passthrough(),
+  sync_range: z.string(),
+  sync_in_progress: z.boolean(),
+  error: z.string().optional(),
+  redirect_to_auth: z.boolean().optional(),
+})
+const ClientDetailResponse = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  address: z.string(),
+  is_account_customer: z.boolean(),
+  is_supplier: z.boolean(),
+  xero_contact_id: z.string(),
+  xero_tenant_id: z.string(),
+  primary_contact_name: z.string(),
+  primary_contact_email: z.string(),
+  additional_contact_persons: z.array(z.unknown()).optional(),
+  all_phones: z.array(z.unknown()).optional(),
+  xero_last_modified: z.string().datetime({ offset: true }).nullable(),
+  xero_last_synced: z.string().datetime({ offset: true }).nullable(),
+  xero_archived: z.boolean(),
+  xero_merged_into_id: z.string(),
+  merged_into: z.string().nullable(),
+  django_created_at: z.string().datetime({ offset: true }),
+  django_updated_at: z.string().datetime({ offset: true }),
+  last_invoice_date: z.string().datetime({ offset: true }).nullable(),
+  total_spend: z.string(),
+})
+const ClientErrorResponse = z.object({
+  success: z.boolean().optional().default(false),
+  error: z.string(),
+  details: z.string().optional(),
+})
+const ClientJobHeader = z.object({
+  job_id: z.string().uuid(),
+  job_number: z.number().int(),
+  name: z.string(),
+  client: z.object({}).partial().passthrough().nullable(),
+  status: z.string(),
+  pricing_methodology: z.string().nullable(),
+  speed_quality_tradeoff: z.string(),
+  fully_invoiced: z.boolean(),
+  has_quote_in_xero: z.boolean(),
+  is_fixed_price: z.boolean(),
+  quote_acceptance_date: z.string().datetime({ offset: true }).nullable(),
+  paid: z.boolean(),
+  rejected_flag: z.boolean(),
+})
+const ClientJobsResponse = z.object({ results: z.array(ClientJobHeader) })
 const ClientUpdateRequest = z
   .object({
     name: z.string().min(1).max(255),
@@ -728,14 +663,11 @@ const ClientUpdateRequest = z
     is_account_customer: z.boolean(),
   })
   .partial()
-  .passthrough()
-const ClientUpdateResponse = z
-  .object({
-    success: z.boolean(),
-    client: ClientDetailResponse,
-    message: z.string(),
-  })
-  .passthrough()
+const ClientUpdateResponse = z.object({
+  success: z.boolean(),
+  client: ClientDetailResponse,
+  message: z.string(),
+})
 const PatchedClientUpdateRequest = z
   .object({
     name: z.string().min(1).max(255),
@@ -745,34 +677,29 @@ const PatchedClientUpdateRequest = z
     is_account_customer: z.boolean(),
   })
   .partial()
-  .passthrough()
-const ClientNameOnly = z.object({ id: z.string().uuid(), name: z.string() }).passthrough()
-const ClientContact = z
-  .object({
-    id: z.string().uuid(),
-    client: z.string().uuid(),
-    name: z.string().max(255),
-    email: z.string().max(254).email().nullish(),
-    phone: z.string().max(150).nullish(),
-    position: z.string().max(255).nullish(),
-    is_primary: z.boolean().optional(),
-    notes: z.string().nullish(),
-    is_active: z.boolean(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough()
-const ClientContactRequest = z
-  .object({
-    client: z.string().uuid(),
-    name: z.string().min(1).max(255),
-    email: z.string().max(254).email().nullish(),
-    phone: z.string().max(150).nullish(),
-    position: z.string().max(255).nullish(),
-    is_primary: z.boolean().optional(),
-    notes: z.string().nullish(),
-  })
-  .passthrough()
+const ClientNameOnly = z.object({ id: z.string().uuid(), name: z.string() })
+const ClientContact = z.object({
+  id: z.string().uuid(),
+  client: z.string().uuid(),
+  name: z.string().max(255),
+  email: z.string().max(254).email().nullish(),
+  phone: z.string().max(150).nullish(),
+  position: z.string().max(255).nullish(),
+  is_primary: z.boolean().optional(),
+  notes: z.string().nullish(),
+  is_active: z.boolean(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+})
+const ClientContactRequest = z.object({
+  client: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  email: z.string().max(254).email().nullish(),
+  phone: z.string().max(150).nullish(),
+  position: z.string().max(255).nullish(),
+  is_primary: z.boolean().optional(),
+  notes: z.string().nullish(),
+})
 const PatchedClientContactRequest = z
   .object({
     client: z.string().uuid(),
@@ -784,105 +711,88 @@ const PatchedClientContactRequest = z
     notes: z.string().nullable(),
   })
   .partial()
-  .passthrough()
-const ClientCreateRequest = z
-  .object({
-    name: z.string().min(1).max(255),
-    email: z.string().email().nullish(),
-    phone: z.string().max(50).nullish(),
-    address: z.string().nullish(),
-    is_account_customer: z.boolean().optional().default(true),
-  })
-  .passthrough()
-const ClientSearchResult = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    address: z.string(),
-    is_account_customer: z.boolean(),
-    is_supplier: z.boolean(),
-    xero_contact_id: z.string(),
-    last_invoice_date: z.string().datetime({ offset: true }).nullable(),
-    total_spend: z.string(),
-  })
-  .passthrough()
-const ClientCreateResponse = z
-  .object({
-    success: z.boolean(),
-    client: ClientSearchResult,
-    message: z.string(),
-  })
-  .passthrough()
-const ClientDuplicateErrorResponse = z
-  .object({
-    success: z.boolean().optional().default(false),
-    error: z.string(),
-    existing_client: z.object({}).partial().passthrough(),
-  })
-  .passthrough()
-const JobContactResponse = z
-  .object({
-    id: z.string().uuid(),
-    name: z.string(),
-    email: z.string().nullable(),
-    phone: z.string().nullable(),
-    position: z.string().nullable(),
-    is_primary: z.boolean(),
-    notes: z.string().nullable(),
-  })
-  .passthrough()
-const JobContactUpdateRequest = z
-  .object({
-    id: z.string().uuid(),
-    name: z.string().min(1),
-    email: z.string().nullable(),
-    phone: z.string().nullable(),
-    position: z.string().nullable(),
-    is_primary: z.boolean(),
-    notes: z.string().nullable(),
-  })
-  .passthrough()
-const SupplierPickupAddress = z
-  .object({
-    id: z.string().uuid(),
-    client: z.string().uuid(),
-    name: z.string().max(255),
-    street: z.string().max(255),
-    suburb: z.string().max(100).nullish(),
-    city: z.string().max(100),
-    state: z.string().max(100).nullish(),
-    postal_code: z.string().max(20).nullish(),
-    country: z.string().max(100).optional(),
-    google_place_id: z.string().max(255).nullish(),
-    latitude: z.number().gt(-1000).lt(1000).nullish(),
-    longitude: z.number().gt(-1000).lt(1000).nullish(),
-    is_primary: z.boolean().optional(),
-    notes: z.string().nullish(),
-    is_active: z.boolean(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    formatted_address: z.string(),
-  })
-  .passthrough()
-const SupplierPickupAddressRequest = z
-  .object({
-    client: z.string().uuid(),
-    name: z.string().min(1).max(255),
-    street: z.string().min(1).max(255),
-    suburb: z.string().max(100).nullish(),
-    city: z.string().min(1).max(100),
-    state: z.string().max(100).nullish(),
-    postal_code: z.string().max(20).nullish(),
-    country: z.string().min(1).max(100).optional(),
-    google_place_id: z.string().max(255).nullish(),
-    latitude: z.number().gt(-1000).lt(1000).nullish(),
-    longitude: z.number().gt(-1000).lt(1000).nullish(),
-    is_primary: z.boolean().optional(),
-    notes: z.string().nullish(),
-  })
-  .passthrough()
+const ClientCreateRequest = z.object({
+  name: z.string().min(1).max(255),
+  email: z.string().email().nullish(),
+  phone: z.string().max(50).nullish(),
+  address: z.string().nullish(),
+  is_account_customer: z.boolean().optional().default(true),
+})
+const ClientSearchResult = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  address: z.string(),
+  is_account_customer: z.boolean(),
+  is_supplier: z.boolean(),
+  xero_contact_id: z.string(),
+  last_invoice_date: z.string().datetime({ offset: true }).nullable(),
+  total_spend: z.string(),
+})
+const ClientCreateResponse = z.object({
+  success: z.boolean(),
+  client: ClientSearchResult,
+  message: z.string(),
+})
+const ClientDuplicateErrorResponse = z.object({
+  success: z.boolean().optional().default(false),
+  error: z.string(),
+  existing_client: z.object({}).partial().passthrough(),
+})
+const JobContactResponse = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  position: z.string().nullable(),
+  is_primary: z.boolean(),
+  notes: z.string().nullable(),
+})
+const JobContactUpdateRequest = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  position: z.string().nullable(),
+  is_primary: z.boolean(),
+  notes: z.string().nullable(),
+})
+const SupplierPickupAddress = z.object({
+  id: z.string().uuid(),
+  client: z.string().uuid(),
+  name: z.string().max(255),
+  street: z.string().max(255),
+  suburb: z.string().max(100).nullish(),
+  city: z.string().max(100),
+  state: z.string().max(100).nullish(),
+  postal_code: z.string().max(20).nullish(),
+  country: z.string().max(100).optional(),
+  google_place_id: z.string().max(255).nullish(),
+  latitude: z.number().gt(-1000).lt(1000).nullish(),
+  longitude: z.number().gt(-1000).lt(1000).nullish(),
+  is_primary: z.boolean().optional(),
+  notes: z.string().nullish(),
+  is_active: z.boolean(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  formatted_address: z.string(),
+})
+const SupplierPickupAddressRequest = z.object({
+  client: z.string().uuid(),
+  name: z.string().min(1).max(255),
+  street: z.string().min(1).max(255),
+  suburb: z.string().max(100).nullish(),
+  city: z.string().min(1).max(100),
+  state: z.string().max(100).nullish(),
+  postal_code: z.string().max(20).nullish(),
+  country: z.string().min(1).max(100).optional(),
+  google_place_id: z.string().max(255).nullish(),
+  latitude: z.number().gt(-1000).lt(1000).nullish(),
+  longitude: z.number().gt(-1000).lt(1000).nullish(),
+  is_primary: z.boolean().optional(),
+  notes: z.string().nullish(),
+})
 const PatchedSupplierPickupAddressRequest = z
   .object({
     client: z.string().uuid(),
@@ -900,92 +810,76 @@ const PatchedSupplierPickupAddressRequest = z
     notes: z.string().nullable(),
   })
   .partial()
-  .passthrough()
-const ClientSearchResponse = z
-  .object({
-    results: z.array(ClientSearchResult),
-    count: z.number().int(),
-    page: z.number().int(),
-    page_size: z.number().int(),
-    total_pages: z.number().int(),
-  })
-  .passthrough()
-const CompanyDefaultsJobDetail = z
-  .object({
-    materials_markup: z.number(),
-    time_markup: z.number(),
-    charge_out_rate: z.number(),
-    wage_rate: z.number(),
-  })
-  .passthrough()
-const AssignJobRequest = z.object({ staff_id: z.string().uuid() }).passthrough()
-const AssignJobResponse = z.object({ success: z.boolean(), message: z.string() }).passthrough()
-const CompleteJob = z
-  .object({
-    id: z.string().uuid(),
-    job_number: z.number().int().gte(-2147483648).lte(2147483647),
-    name: z.string().max(100),
-    client_name: z.string(),
-    updated_at: z.string().datetime({ offset: true }),
-    job_status: z.string(),
-  })
-  .passthrough()
-const PaginatedCompleteJobList = z
-  .object({
-    count: z.number().int(),
-    next: z.string().url().nullish(),
-    previous: z.string().url().nullish(),
-    results: z.array(CompleteJob),
-  })
-  .passthrough()
-const ArchiveJobsRequest = z.object({ ids: z.array(z.string().min(1)) }).passthrough()
-const ArchiveJobs = z.object({ ids: z.array(z.string()) }).passthrough()
-const JobQuoteChatHistoryResponse = z
-  .object({ success: z.boolean(), data: z.object({}).partial().passthrough() })
-  .passthrough()
+const ClientSearchResponse = z.object({
+  results: z.array(ClientSearchResult),
+  count: z.number().int(),
+  page: z.number().int(),
+  page_size: z.number().int(),
+  total_pages: z.number().int(),
+})
+const CompanyDefaultsJobDetail = z.object({
+  materials_markup: z.number(),
+  time_markup: z.number(),
+  charge_out_rate: z.number(),
+  wage_rate: z.number(),
+})
+const AssignJobRequest = z.object({ staff_id: z.string().uuid() })
+const AssignJobResponse = z.object({
+  success: z.boolean(),
+  message: z.string(),
+})
+const CompleteJob = z.object({
+  id: z.string().uuid(),
+  job_number: z.number().int().gte(-2147483648).lte(2147483647),
+  name: z.string().max(100),
+  client_name: z.string(),
+  updated_at: z.string().datetime({ offset: true }),
+  job_status: z.string(),
+})
+const PaginatedCompleteJobList = z.object({
+  count: z.number().int(),
+  next: z.string().url().nullish(),
+  previous: z.string().url().nullish(),
+  results: z.array(CompleteJob),
+})
+const ArchiveJobsRequest = z.object({ ids: z.array(z.string().min(1)) })
+const ArchiveJobs = z.object({ ids: z.array(z.string()) })
+const JobQuoteChatHistoryResponse = z.object({
+  success: z.boolean(),
+  data: z.object({}).partial().passthrough(),
+})
 const RoleEnum = z.enum(['user', 'assistant'])
-const JobQuoteChatCreateRequest = z
-  .object({
-    message_id: z.string().min(1).max(100),
-    role: RoleEnum,
-    content: z.string().min(1),
-    metadata: z.unknown().optional(),
-  })
-  .passthrough()
-const JobQuoteChat = z
-  .object({
-    message_id: z.string().max(100),
-    role: RoleEnum,
-    content: z.string(),
-    metadata: z.unknown().optional(),
-    timestamp: z.string().datetime({ offset: true }),
-  })
-  .passthrough()
-const JobQuoteChatInteractionSuccessResponse = z
-  .object({ success: z.boolean().optional().default(true), data: JobQuoteChat })
-  .passthrough()
+const JobQuoteChatCreateRequest = z.object({
+  message_id: z.string().min(1).max(100),
+  role: RoleEnum,
+  content: z.string().min(1),
+  metadata: z.unknown().optional(),
+})
+const JobQuoteChat = z.object({
+  message_id: z.string().max(100),
+  role: RoleEnum,
+  content: z.string(),
+  metadata: z.unknown().optional(),
+  timestamp: z.string().datetime({ offset: true }),
+})
+const JobQuoteChatInteractionSuccessResponse = z.object({
+  success: z.boolean().optional().default(true),
+  data: JobQuoteChat,
+})
 const PatchedJobQuoteChatUpdateRequest = z
   .object({ content: z.string().min(1), metadata: z.unknown() })
   .partial()
-  .passthrough()
-const JobQuoteChatUpdate = z
-  .object({ content: z.string(), metadata: z.unknown() })
-  .partial()
-  .passthrough()
+const JobQuoteChatUpdate = z.object({ content: z.string(), metadata: z.unknown() }).partial()
 const ModeEnum = z.enum(['CALC', 'PRICE', 'TABLE', 'AUTO'])
-const JobQuoteChatInteractionRequest = z
-  .object({
-    message: z.string().min(1).max(5000),
-    mode: ModeEnum.optional().default('AUTO'),
-  })
-  .passthrough()
-const JobQuoteChatInteractionErrorResponse = z
-  .object({
-    success: z.boolean().optional().default(false),
-    error: z.string(),
-    code: z.string().optional(),
-  })
-  .passthrough()
+const JobQuoteChatInteractionRequest = z.object({
+  message: z.string().min(1).max(5000),
+  mode: ModeEnum.optional().default('AUTO'),
+})
+const JobQuoteChatInteractionErrorResponse = z.object({
+  success: z.boolean().optional().default(false),
+  error: z.string(),
+  code: z.string().optional(),
+})
 const JobReorderRequest = z
   .object({
     before_id: z.string().uuid().nullable(),
@@ -993,44 +887,38 @@ const JobReorderRequest = z
     status: z.string().min(1).nullable(),
   })
   .partial()
-  .passthrough()
-const KanbanSuccessResponse = z
-  .object({
-    success: z.boolean().optional().default(true),
-    message: z.string(),
-  })
-  .passthrough()
-const KanbanErrorResponse = z
-  .object({ success: z.boolean().optional().default(false), error: z.string() })
-  .passthrough()
-const JobStatusUpdateRequest = z.object({ status: z.string().min(1) }).passthrough()
-const KanbanJobPerson = z
-  .object({
-    id: z.string().uuid(),
-    display_name: z.string(),
-    icon_url: z.string().url().nullable(),
-  })
-  .passthrough()
-const KanbanJob = z
-  .object({
-    id: z.string().uuid(),
-    name: z.string(),
-    description: z.string().nullable(),
-    job_number: z.number().int(),
-    client_name: z.string(),
-    contact_person: z.string(),
-    people: z.array(KanbanJobPerson),
-    status: z.string(),
-    status_key: z.string(),
-    rejected_flag: z.boolean(),
-    paid: z.boolean(),
-    fully_invoiced: z.boolean(),
-    speed_quality_tradeoff: z.string(),
-    created_by_id: z.string().uuid().nullable(),
-    created_at: z.string().nullable(),
-    priority: z.number(),
-  })
-  .passthrough()
+const KanbanSuccessResponse = z.object({
+  success: z.boolean().optional().default(true),
+  message: z.string(),
+})
+const KanbanErrorResponse = z.object({
+  success: z.boolean().optional().default(false),
+  error: z.string(),
+})
+const JobStatusUpdateRequest = z.object({ status: z.string().min(1) })
+const KanbanJobPerson = z.object({
+  id: z.string().uuid(),
+  display_name: z.string(),
+  icon_url: z.string().url().nullable(),
+})
+const KanbanJob = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  job_number: z.number().int(),
+  client_name: z.string(),
+  contact_person: z.string(),
+  people: z.array(KanbanJobPerson),
+  status: z.string(),
+  status_key: z.string(),
+  rejected_flag: z.boolean(),
+  paid: z.boolean(),
+  fully_invoiced: z.boolean(),
+  speed_quality_tradeoff: z.string(),
+  created_by_id: z.string().uuid().nullable(),
+  created_at: z.string().nullable(),
+  priority: z.number(),
+})
 const AdvancedSearchResponse = z
   .object({
     success: z.boolean().default(true),
@@ -1039,7 +927,6 @@ const AdvancedSearchResponse = z
     error: z.string(),
   })
   .partial()
-  .passthrough()
 const FetchAllJobsResponse = z
   .object({
     success: z.boolean().default(true),
@@ -1049,29 +936,26 @@ const FetchAllJobsResponse = z
     error: z.string(),
   })
   .partial()
-  .passthrough()
-const KanbanColumnJob = z
-  .object({
-    id: z.string(),
-    job_number: z.number().int(),
-    name: z.string(),
-    description: z.string().nullable(),
-    client_name: z.string(),
-    contact_person: z.string(),
-    people: z.array(KanbanJobPerson),
-    status: z.string(),
-    status_key: z.string(),
-    rejected_flag: z.boolean(),
-    paid: z.boolean(),
-    fully_invoiced: z.boolean(),
-    speed_quality_tradeoff: z.string(),
-    created_by_id: z.string().nullable(),
-    created_at: z.string().nullable(),
-    priority: z.number(),
-    badge_label: z.string(),
-    badge_color: z.string(),
-  })
-  .passthrough()
+const KanbanColumnJob = z.object({
+  id: z.string(),
+  job_number: z.number().int(),
+  name: z.string(),
+  description: z.string().nullable(),
+  client_name: z.string(),
+  contact_person: z.string(),
+  people: z.array(KanbanJobPerson),
+  status: z.string(),
+  status_key: z.string(),
+  rejected_flag: z.boolean(),
+  paid: z.boolean(),
+  fully_invoiced: z.boolean(),
+  speed_quality_tradeoff: z.string(),
+  created_by_id: z.string().nullable(),
+  created_at: z.string().nullable(),
+  priority: z.number(),
+  badge_label: z.string(),
+  badge_color: z.string(),
+})
 const FetchJobsByColumnResponse = z
   .object({
     success: z.boolean().default(true),
@@ -1081,7 +965,6 @@ const FetchJobsByColumnResponse = z
     error: z.string(),
   })
   .partial()
-  .passthrough()
 const FetchJobsResponse = z
   .object({
     success: z.boolean().default(true),
@@ -1091,7 +974,6 @@ const FetchJobsResponse = z
     error: z.string(),
   })
   .partial()
-  .passthrough()
 const FetchStatusValuesResponse = z
   .object({
     success: z.boolean().default(true),
@@ -1100,64 +982,53 @@ const FetchStatusValuesResponse = z
     error: z.string(),
   })
   .partial()
-  .passthrough()
-const WorkshopJob = z
-  .object({
-    id: z.string().uuid(),
-    name: z.string(),
-    description: z.string().nullable(),
-    job_number: z.number().int(),
-    client_name: z.string(),
-    contact_person: z.string().nullable(),
-    people: z.array(KanbanJobPerson),
-  })
-  .passthrough()
-const WorkshopTimesheetEntry = z
-  .object({
-    id: z.string().uuid(),
-    job_id: z.string().uuid(),
-    job_number: z.number().int(),
-    job_name: z.string(),
-    client_name: z.string(),
-    description: z.string(),
-    hours: z.number().gt(-100000).lt(100000),
-    accounting_date: z.string(),
-    start_time: z.string().nullable(),
-    end_time: z.string().nullable(),
-    is_billable: z.boolean(),
-    wage_rate_multiplier: z.number().gt(-100).lt(100),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough()
-const WorkshopTimesheetSummary = z
-  .object({
-    total_hours: z.number(),
-    billable_hours: z.number(),
-    non_billable_hours: z.number(),
-    total_cost: z.number(),
-    total_revenue: z.number(),
-  })
-  .passthrough()
-const WorkshopTimesheetListResponse = z
-  .object({
-    date: z.string(),
-    entries: z.array(WorkshopTimesheetEntry),
-    summary: WorkshopTimesheetSummary,
-  })
-  .passthrough()
-const WorkshopTimesheetEntryRequestRequest = z
-  .object({
-    job_id: z.string().uuid(),
-    accounting_date: z.string(),
-    hours: z.number().gte(0.01).lt(100000),
-    description: z.string().max(255).nullish(),
-    start_time: z.string().nullish(),
-    end_time: z.string().nullish(),
-    is_billable: z.boolean().optional().default(true),
-    wage_rate_multiplier: z.number().gte(0).lt(100).optional().default(1),
-  })
-  .passthrough()
+const WorkshopJob = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  job_number: z.number().int(),
+  client_name: z.string(),
+  contact_person: z.string().nullable(),
+  people: z.array(KanbanJobPerson),
+})
+const WorkshopTimesheetEntry = z.object({
+  id: z.string().uuid(),
+  job_id: z.string().uuid(),
+  job_number: z.number().int(),
+  job_name: z.string(),
+  client_name: z.string(),
+  description: z.string(),
+  hours: z.number().gt(-100000).lt(100000),
+  accounting_date: z.string(),
+  start_time: z.string().nullable(),
+  end_time: z.string().nullable(),
+  is_billable: z.boolean(),
+  wage_rate_multiplier: z.number().gt(-100).lt(100),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+})
+const WorkshopTimesheetSummary = z.object({
+  total_hours: z.number(),
+  billable_hours: z.number(),
+  non_billable_hours: z.number(),
+  total_cost: z.number(),
+  total_revenue: z.number(),
+})
+const WorkshopTimesheetListResponse = z.object({
+  date: z.string(),
+  entries: z.array(WorkshopTimesheetEntry),
+  summary: WorkshopTimesheetSummary,
+})
+const WorkshopTimesheetEntryRequestRequest = z.object({
+  job_id: z.string().uuid(),
+  accounting_date: z.string(),
+  hours: z.number().gte(0.01).lt(100000),
+  description: z.string().max(255).nullish(),
+  start_time: z.string().nullish(),
+  end_time: z.string().nullish(),
+  is_billable: z.boolean().optional().default(true),
+  wage_rate_multiplier: z.number().gte(0).lt(100).optional().default(1),
+})
 const PatchedWorkshopTimesheetEntryUpdateRequest = z
   .object({
     entry_id: z.string().uuid(),
@@ -1171,11 +1042,7 @@ const PatchedWorkshopTimesheetEntryUpdateRequest = z
     wage_rate_multiplier: z.number().gte(0).lt(100),
   })
   .partial()
-  .passthrough()
-const WorkshopPDFResponse = z
-  .object({ status: z.string(), message: z.string() })
-  .partial()
-  .passthrough()
+const WorkshopPDFResponse = z.object({ status: z.string(), message: z.string() }).partial()
 const Kind332Enum = z.enum(['time', 'material', 'adjust'])
 const PatchedCostLineCreateUpdateRequest = z
   .object({
@@ -1190,331 +1057,280 @@ const PatchedCostLineCreateUpdateRequest = z
     xero_pay_item: z.string().uuid().nullable(),
   })
   .partial()
-  .passthrough()
-const CostLineCreateUpdate = z
-  .object({
-    kind: Kind332Enum,
-    desc: z.string().max(255).optional(),
-    quantity: z.number().gt(-10000000).lt(10000000).optional(),
-    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
-    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
-    accounting_date: z.string(),
-    ext_refs: z.object({}).partial().passthrough().optional(),
-    meta: z.object({}).partial().passthrough().optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    xero_pay_item: z.string().uuid().nullish(),
-  })
-  .passthrough()
-const CostLine = z
-  .object({
-    id: z.string().uuid(),
-    kind: Kind332Enum,
-    desc: z.string().max(255).optional(),
-    quantity: z.number().gt(-10000000).lt(10000000).optional(),
-    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
-    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
-    ext_refs: z.unknown().optional(),
-    meta: z.unknown().optional(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    accounting_date: z.string(),
-    xero_time_id: z.string().max(255).nullish(),
-    xero_expense_id: z.string().max(255).nullish(),
-    xero_last_modified: z.string().datetime({ offset: true }).nullish(),
-    xero_last_synced: z.string().datetime({ offset: true }).nullish(),
-    approved: z.boolean().optional(),
-    xero_pay_item: z.string().uuid().nullish(),
-    total_cost: z.number(),
-    total_rev: z.number(),
-  })
-  .passthrough()
-const StockConsumeResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string().optional(),
-    remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
-    line: CostLine,
-  })
-  .passthrough()
-const CostLineApprovalResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string().optional(),
-    line: CostLine,
-  })
-  .passthrough()
+const CostLineCreateUpdate = z.object({
+  kind: Kind332Enum,
+  desc: z.string().max(255).optional(),
+  quantity: z.number().gt(-10000000).lt(10000000).optional(),
+  unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
+  unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
+  accounting_date: z.string(),
+  ext_refs: z.object({}).partial().passthrough().optional(),
+  meta: z.object({}).partial().passthrough().optional(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  xero_pay_item: z.string().uuid().nullish(),
+})
+const CostLine = z.object({
+  id: z.string().uuid(),
+  kind: Kind332Enum,
+  desc: z.string().max(255).optional(),
+  quantity: z.number().gt(-10000000).lt(10000000).optional(),
+  unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
+  unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
+  ext_refs: z.unknown().optional(),
+  meta: z.unknown().optional(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  accounting_date: z.string(),
+  xero_time_id: z.string().max(255).nullish(),
+  xero_expense_id: z.string().max(255).nullish(),
+  xero_last_modified: z.string().datetime({ offset: true }).nullish(),
+  xero_last_synced: z.string().datetime({ offset: true }).nullish(),
+  approved: z.boolean().optional(),
+  xero_pay_item: z.string().uuid().nullish(),
+  total_cost: z.number(),
+  total_rev: z.number(),
+})
+const StockConsumeResponse = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+  remaining_quantity: z.number().gt(-100000000).lt(100000000).optional(),
+  line: CostLine,
+})
+const CostLineApprovalResponse = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+  line: CostLine,
+})
 const CostLineApprovalResult = z.union([StockConsumeResponse, CostLineApprovalResponse])
-const CostLineErrorResponse = z.object({ error: z.string() }).passthrough()
-const BrokenFKReference = z
-  .object({
-    model: z.string(),
-    record_id: z.string(),
-    field: z.string(),
-    target_model: z.string(),
-    target_id: z.string(),
-  })
-  .passthrough()
-const BrokenJSONReference = z
-  .object({
-    model: z.string(),
-    record_id: z.string(),
-    field: z.string(),
-    staff_id: z.string().nullish(),
-    stock_id: z.string().nullish(),
-    purchase_order_line_id: z.string().nullish(),
-    issue: z.string().nullish(),
-  })
-  .passthrough()
-const BusinessRuleViolation = z
-  .object({
-    model: z.string(),
-    record_id: z.string(),
-    field: z.string(),
-    rule: z.string(),
-    expected: z.string().nullish(),
-    actual: z.string().nullish(),
-    path: z.array(z.string()).nullish(),
-    expected_path: z.string().nullish(),
-  })
-  .passthrough()
-const DataIntegritySummary = z
-  .object({
-    total_broken_fks: z.number().int(),
-    total_broken_json_refs: z.number().int(),
-    total_business_rule_violations: z.number().int(),
-    total_issues: z.number().int(),
-  })
-  .passthrough()
-const DataIntegrityResponse = z
-  .object({
-    scanned_at: z.string().datetime({ offset: true }),
-    broken_fk_references: z.array(BrokenFKReference),
-    broken_json_references: z.array(BrokenJSONReference),
-    business_rule_violations: z.array(BusinessRuleViolation),
-    summary: DataIntegritySummary,
-  })
-  .passthrough()
-const ArchivedJobIssue = z
-  .object({
-    job_id: z.string(),
-    job_number: z.string(),
-    client_name: z.string(),
-    archived_date: z.string(),
-    current_status: z.string(),
-    issue: z.string(),
-    invoice_status: z.string().nullish(),
-    outstanding_amount: z.number().gt(-100000000).lt(100000000).nullish(),
-    job_value: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const ComplianceSummary = z
-  .object({
-    not_invoiced: z.number().int(),
-    not_paid: z.number().int(),
-    not_cancelled: z.number().int(),
-    has_open_tasks: z.number().int(),
-  })
-  .passthrough()
-const ArchivedJobsComplianceResponse = z
-  .object({
-    total_archived_jobs: z.number().int(),
-    non_compliant_jobs: z.array(ArchivedJobIssue),
-    summary: ComplianceSummary,
-    checked_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough()
-const JobCreateRequest = z
-  .object({
-    name: z.string().min(1).max(255),
-    client_id: z.string().uuid(),
-    description: z.string().optional(),
-    order_number: z.string().optional(),
-    notes: z.string().optional(),
-    contact_id: z.string().uuid().nullish(),
-    pricing_methodology: z.string().nullish(),
-    estimated_materials: z.number().gte(0).lt(100000000),
-    estimated_time: z.number().gte(0).lt(100000000),
-  })
-  .passthrough()
-const JobCreateResponse = z
-  .object({
-    success: z.boolean().optional().default(true),
-    job_id: z.string(),
-    job_number: z.number().int(),
-    message: z.string(),
-  })
-  .passthrough()
-const JobRestErrorResponse = z.object({ error: z.string() }).passthrough()
+const CostLineErrorResponse = z.object({ error: z.string() })
+const BrokenFKReference = z.object({
+  model: z.string(),
+  record_id: z.string(),
+  field: z.string(),
+  target_model: z.string(),
+  target_id: z.string(),
+})
+const BrokenJSONReference = z.object({
+  model: z.string(),
+  record_id: z.string(),
+  field: z.string(),
+  staff_id: z.string().nullish(),
+  stock_id: z.string().nullish(),
+  purchase_order_line_id: z.string().nullish(),
+  issue: z.string().nullish(),
+})
+const BusinessRuleViolation = z.object({
+  model: z.string(),
+  record_id: z.string(),
+  field: z.string(),
+  rule: z.string(),
+  expected: z.string().nullish(),
+  actual: z.string().nullish(),
+  path: z.array(z.string()).nullish(),
+  expected_path: z.string().nullish(),
+})
+const DataIntegritySummary = z.object({
+  total_broken_fks: z.number().int(),
+  total_broken_json_refs: z.number().int(),
+  total_business_rule_violations: z.number().int(),
+  total_issues: z.number().int(),
+})
+const DataIntegrityResponse = z.object({
+  scanned_at: z.string().datetime({ offset: true }),
+  broken_fk_references: z.array(BrokenFKReference),
+  broken_json_references: z.array(BrokenJSONReference),
+  business_rule_violations: z.array(BusinessRuleViolation),
+  summary: DataIntegritySummary,
+})
+const ArchivedJobIssue = z.object({
+  job_id: z.string(),
+  job_number: z.string(),
+  client_name: z.string(),
+  archived_date: z.string(),
+  current_status: z.string(),
+  issue: z.string(),
+  invoice_status: z.string().nullish(),
+  outstanding_amount: z.number().gt(-100000000).lt(100000000).nullish(),
+  job_value: z.number().gt(-100000000).lt(100000000),
+})
+const ComplianceSummary = z.object({
+  not_invoiced: z.number().int(),
+  not_paid: z.number().int(),
+  not_cancelled: z.number().int(),
+  has_open_tasks: z.number().int(),
+})
+const ArchivedJobsComplianceResponse = z.object({
+  total_archived_jobs: z.number().int(),
+  non_compliant_jobs: z.array(ArchivedJobIssue),
+  summary: ComplianceSummary,
+  checked_at: z.string().datetime({ offset: true }),
+})
+const JobCreateRequest = z.object({
+  name: z.string().min(1).max(255),
+  client_id: z.string().uuid(),
+  description: z.string().optional(),
+  order_number: z.string().optional(),
+  notes: z.string().optional(),
+  contact_id: z.string().uuid().nullish(),
+  pricing_methodology: z.string().nullish(),
+  estimated_materials: z.number().gte(0).lt(100000000),
+  estimated_time: z.number().gte(0).lt(100000000),
+})
+const JobCreateResponse = z.object({
+  success: z.boolean().optional().default(true),
+  job_id: z.string(),
+  job_number: z.number().int(),
+  message: z.string(),
+})
+const JobRestErrorResponse = z.object({ error: z.string() })
 const CostSetKindEnum = z.enum(['estimate', 'quote', 'actual'])
-const CostSetSummary = z
-  .object({
-    cost: z.number(),
-    rev: z.number(),
-    hours: z.number(),
-    profitMargin: z.number(),
-  })
-  .passthrough()
-const CostSet = z
-  .object({
-    id: z.string(),
-    job: z.string().uuid(),
-    kind: CostSetKindEnum,
-    rev: z.number().int(),
-    summary: CostSetSummary,
-    created: z.string().datetime({ offset: true }),
-    cost_lines: z.array(CostLine),
-  })
-  .passthrough()
+const CostSetSummary = z.object({
+  cost: z.number(),
+  rev: z.number(),
+  hours: z.number(),
+  profitMargin: z.number(),
+})
+const CostSet = z.object({
+  id: z.string(),
+  job: z.string().uuid(),
+  kind: CostSetKindEnum,
+  rev: z.number().int(),
+  summary: CostSetSummary,
+  created: z.string().datetime({ offset: true }),
+  cost_lines: z.array(CostLine),
+})
 const JobFileStatusEnum = z.enum(['active', 'deleted'])
-const JobFile = z
-  .object({
-    id: z.string().uuid(),
-    filename: z.string().max(255),
-    mime_type: z.string().max(100).optional(),
-    uploaded_at: z.string().datetime({ offset: true }),
-    status: JobFileStatusEnum.optional(),
-    print_on_jobsheet: z.boolean().optional(),
-    size: z.number().int().nullable(),
-    download_url: z.string(),
-    thumbnail_url: z.string().nullable(),
-  })
-  .passthrough()
+const JobFile = z.object({
+  id: z.string().uuid(),
+  filename: z.string().max(255),
+  mime_type: z.string().max(100).optional(),
+  uploaded_at: z.string().datetime({ offset: true }),
+  status: JobFileStatusEnum.optional(),
+  print_on_jobsheet: z.boolean().optional(),
+  size: z.number().int().nullable(),
+  download_url: z.string(),
+  thumbnail_url: z.string().nullable(),
+})
 const PricingMethodologyEnum = z.enum(['time_materials', 'fixed_price'])
 const SpeedQualityTradeoffEnum = z.enum(['fast', 'normal', 'quality'])
-const QuoteSpreadsheet = z
-  .object({
-    id: z.string().uuid(),
-    sheet_id: z.string().max(100),
-    sheet_url: z.string().max(500).url().nullish(),
-    tab: z.string().max(100).nullish(),
-    job_id: z.string(),
-    job_number: z.number().int(),
-    job_name: z.string(),
-  })
-  .passthrough()
+const QuoteSpreadsheet = z.object({
+  id: z.string().uuid(),
+  sheet_id: z.string().max(100),
+  sheet_url: z.string().max(500).url().nullish(),
+  tab: z.string().max(100).nullish(),
+  job_id: z.string(),
+  job_number: z.number().int(),
+  job_name: z.string(),
+})
 const Status7aeEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
-const Quote = z
-  .object({
-    id: z.string().uuid(),
-    xero_id: z.string().uuid(),
-    status: Status7aeEnum.optional(),
-    date: z.string(),
-    total_excl_tax: z.number(),
-    total_incl_tax: z.number(),
-    online_url: z.string().max(200).url().nullish(),
-  })
-  .passthrough()
+const Quote = z.object({
+  id: z.string().uuid(),
+  xero_id: z.string().uuid(),
+  status: Status7aeEnum.optional(),
+  date: z.string(),
+  total_excl_tax: z.number(),
+  total_incl_tax: z.number(),
+  online_url: z.string().max(200).url().nullish(),
+})
 const Status1beEnum = z.enum(['DRAFT', 'SUBMITTED', 'AUTHORISED', 'DELETED', 'VOIDED', 'PAID'])
-const Invoice = z
-  .object({
-    id: z.string().uuid(),
-    xero_id: z.string().uuid(),
-    number: z.string().max(255),
-    status: Status1beEnum.optional(),
-    date: z.string(),
-    due_date: z.string().nullish(),
-    total_excl_tax: z.number(),
-    total_incl_tax: z.number(),
-    amount_due: z.number(),
-    tax: z.number().optional(),
-    online_url: z.string().max(200).url().nullish(),
-  })
-  .passthrough()
+const Invoice = z.object({
+  id: z.string().uuid(),
+  xero_id: z.string().uuid(),
+  number: z.string().max(255),
+  status: Status1beEnum.optional(),
+  date: z.string(),
+  due_date: z.string().nullish(),
+  total_excl_tax: z.number(),
+  total_incl_tax: z.number(),
+  amount_due: z.number(),
+  tax: z.number().optional(),
+  online_url: z.string().max(200).url().nullish(),
+})
 const XeroQuote = z
   .object({
     status: Status7aeEnum,
     online_url: z.string().max(200).url().nullable(),
   })
   .partial()
-  .passthrough()
-const XeroInvoice = z
-  .object({
-    number: z.string().max(255),
-    status: Status1beEnum.optional(),
-    online_url: z.string().max(200).url().nullish(),
-  })
-  .passthrough()
-const Job = z
-  .object({
-    id: z.string().uuid(),
-    name: z.string().max(100),
-    client_id: z.string().uuid().nullish(),
-    client_name: z.string().nullable(),
-    contact_id: z.string().uuid().nullish(),
-    contact_name: z.string().nullable(),
-    job_number: z.number().int().gte(-2147483648).lte(2147483647),
-    notes: z.string().nullish(),
-    order_number: z.string().max(100).nullish(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    description: z.string().nullish(),
-    latest_estimate: CostSet,
-    latest_quote: CostSet,
-    latest_actual: CostSet,
-    job_status: z.string(),
-    delivery_date: z.string().nullish(),
-    paid: z.boolean().optional(),
-    quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
-    job_is_valid: z.boolean().optional(),
-    job_files: z.array(JobFile).optional(),
-    charge_out_rate: z.number().gt(-100000000).lt(100000000),
-    pricing_methodology: PricingMethodologyEnum.optional(),
-    price_cap: z.number().gt(-100000000).lt(100000000).nullish(),
-    speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
-    quote_sheet: QuoteSpreadsheet.nullable(),
-    quoted: z.boolean(),
-    fully_invoiced: z.boolean(),
-    quote: Quote.nullable(),
-    invoices: z.array(Invoice),
-    xero_quote: XeroQuote.nullable(),
-    xero_invoices: z.array(XeroInvoice),
-    shop_job: z.boolean(),
-    rejected_flag: z.boolean().optional(),
-    default_xero_pay_item_id: z.string().uuid().nullish(),
-    default_xero_pay_item_name: z.string().nullable(),
-  })
-  .passthrough()
-const JobEvent = z
-  .object({
-    id: z.string().uuid(),
-    description: z.string(),
-    timestamp: z.string().datetime({ offset: true }),
-    staff: z.string().nullable(),
-    event_type: z.string(),
-    schema_version: z.number().int(),
-    change_id: z.string().uuid().nullable(),
-    delta_before: z.unknown().nullable(),
-    delta_after: z.unknown().nullable(),
-    delta_meta: z.unknown().nullable(),
-    delta_checksum: z.string(),
-    can_undo: z.boolean(),
-    undo_description: z.string().nullable(),
-  })
-  .passthrough()
-const JobData = z
-  .object({
-    job: Job,
-    events: z.array(JobEvent),
-    company_defaults: CompanyDefaultsJobDetail,
-  })
-  .passthrough()
-const JobDetailResponse = z
-  .object({ success: z.boolean().optional().default(true), data: JobData })
-  .passthrough()
-const JobDeltaEnvelopeRequest = z
-  .object({
-    change_id: z.string().uuid(),
-    actor_id: z.string().uuid().nullish(),
-    made_at: z.string().datetime({ offset: true }).nullish(),
-    job_id: z.string().uuid().nullish(),
-    fields: z.array(z.string().min(1)).min(1),
-    before: z.unknown(),
-    after: z.unknown(),
-    before_checksum: z.string().min(1),
-    etag: z.string().nullish(),
-  })
-  .passthrough()
+const XeroInvoice = z.object({
+  number: z.string().max(255),
+  status: Status1beEnum.optional(),
+  online_url: z.string().max(200).url().nullish(),
+})
+const Job = z.object({
+  id: z.string().uuid(),
+  name: z.string().max(100),
+  client_id: z.string().uuid().nullish(),
+  client_name: z.string().nullable(),
+  contact_id: z.string().uuid().nullish(),
+  contact_name: z.string().nullable(),
+  job_number: z.number().int().gte(-2147483648).lte(2147483647),
+  notes: z.string().nullish(),
+  order_number: z.string().max(100).nullish(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  description: z.string().nullish(),
+  latest_estimate: CostSet,
+  latest_quote: CostSet,
+  latest_actual: CostSet,
+  job_status: z.string(),
+  delivery_date: z.string().nullish(),
+  paid: z.boolean().optional(),
+  quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
+  job_is_valid: z.boolean().optional(),
+  job_files: z.array(JobFile).optional(),
+  charge_out_rate: z.number().gt(-100000000).lt(100000000),
+  pricing_methodology: PricingMethodologyEnum.optional(),
+  price_cap: z.number().gt(-100000000).lt(100000000).nullish(),
+  speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
+  quote_sheet: QuoteSpreadsheet.nullable(),
+  quoted: z.boolean(),
+  fully_invoiced: z.boolean(),
+  quote: Quote.nullable(),
+  invoices: z.array(Invoice),
+  xero_quote: XeroQuote.nullable(),
+  xero_invoices: z.array(XeroInvoice),
+  shop_job: z.boolean(),
+  rejected_flag: z.boolean().optional(),
+  default_xero_pay_item_id: z.string().uuid().nullish(),
+  default_xero_pay_item_name: z.string().nullable(),
+})
+const JobEvent = z.object({
+  id: z.string().uuid(),
+  description: z.string(),
+  timestamp: z.string().datetime({ offset: true }),
+  staff: z.string().nullable(),
+  event_type: z.string(),
+  schema_version: z.number().int(),
+  change_id: z.string().uuid().nullable(),
+  delta_before: z.unknown().nullable(),
+  delta_after: z.unknown().nullable(),
+  delta_meta: z.unknown().nullable(),
+  delta_checksum: z.string(),
+  can_undo: z.boolean(),
+  undo_description: z.string().nullable(),
+})
+const JobData = z.object({
+  job: Job,
+  events: z.array(JobEvent),
+  company_defaults: CompanyDefaultsJobDetail,
+})
+const JobDetailResponse = z.object({
+  success: z.boolean().optional().default(true),
+  data: JobData,
+})
+const JobDeltaEnvelopeRequest = z.object({
+  change_id: z.string().uuid(),
+  actor_id: z.string().uuid().nullish(),
+  made_at: z.string().datetime({ offset: true }).nullish(),
+  job_id: z.string().uuid().nullish(),
+  fields: z.array(z.string().min(1)).min(1),
+  before: z.unknown(),
+  after: z.unknown(),
+  before_checksum: z.string().min(1),
+  etag: z.string().nullish(),
+})
 const PatchedJobDeltaEnvelopeRequest = z
   .object({
     change_id: z.string().uuid(),
@@ -1528,157 +1344,124 @@ const PatchedJobDeltaEnvelopeRequest = z
     etag: z.string().nullable(),
   })
   .partial()
-  .passthrough()
-const JobDeleteResponse = z
-  .object({
-    success: z.boolean().optional().default(true),
-    message: z.string(),
-  })
-  .passthrough()
-const JobBasicInformationResponse = z
-  .object({
-    description: z.string().nullable(),
-    delivery_date: z.string().nullable(),
-    order_number: z.string().nullable(),
-    notes: z.string().nullable(),
-  })
-  .passthrough()
-const CostLineCreateUpdateRequest = z
-  .object({
-    kind: Kind332Enum,
-    desc: z.string().max(255).optional(),
-    quantity: z.number().gt(-10000000).lt(10000000).optional(),
-    unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
-    unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
-    accounting_date: z.string(),
-    ext_refs: z.object({}).partial().passthrough().optional(),
-    meta: z.object({}).partial().passthrough().optional(),
-    xero_pay_item: z.string().uuid().nullish(),
-  })
-  .passthrough()
-const QuoteRevisionsList = z
-  .object({
-    job_id: z.string(),
-    job_number: z.number().int(),
-    current_cost_set_rev: z.number().int(),
-    total_revisions: z.number().int(),
-    revisions: z.array(z.object({}).partial().passthrough()),
-  })
-  .passthrough()
-const QuoteRevisionRequest = z
-  .object({ reason: z.string().min(1).max(500) })
-  .partial()
-  .passthrough()
-const QuoteRevisionResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string(),
-    quote_revision: z.number().int(),
-    archived_cost_lines_count: z.number().int(),
-    job_id: z.string(),
-    error: z.string().optional(),
-  })
-  .passthrough()
-const JobCostSetSummary = z
-  .object({
-    cost: z.number(),
-    rev: z.number(),
-    hours: z.number(),
-    profitMargin: z.number().nullable(),
-  })
-  .passthrough()
-const JobCostSummaryResponse = z
-  .object({
-    estimate: JobCostSetSummary.nullable(),
-    quote: JobCostSetSummary.nullable(),
-    actual: JobCostSetSummary.nullable(),
-  })
-  .passthrough()
-const JobDeltaRejection = z
-  .object({
-    id: z.string().uuid(),
-    change_id: z.string().uuid().nullable(),
-    job_id: z.string().uuid().nullable(),
-    job_name: z.string().nullable(),
-    reason: z.string(),
-    detail: z.unknown(),
-    checksum: z.string(),
-    request_etag: z.string(),
-    request_ip: z.string().nullable(),
-    created_at: z.string().datetime({ offset: true }),
-    envelope: z.unknown(),
-    staff_id: z.string().uuid().nullable(),
-    staff_email: z.string().nullable(),
-  })
-  .passthrough()
-const JobDeltaRejectionListResponse = z
-  .object({
-    count: z.number().int(),
-    next: z.string().nullish(),
-    previous: z.string().nullish(),
-    results: z.array(JobDeltaRejection),
-  })
-  .passthrough()
-const JobEventsResponse = z.object({ events: z.array(JobEvent) }).passthrough()
-const JobEventCreateRequest = z.object({ description: z.string().min(1).max(500) }).passthrough()
-const JobEventCreateResponse = z.object({ success: z.boolean(), event: JobEvent }).passthrough()
-const JobFileErrorResponse = z
-  .object({
-    status: z.string().optional().default('error'),
-    message: z.string(),
-  })
-  .passthrough()
-const JobFileUploadRequest = z
-  .object({
-    files: z.array(z.instanceof(File)),
-    print_on_jobsheet: z.boolean().optional().default(true),
-  })
-  .passthrough()
-const UploadedFile = z
-  .object({
-    id: z.string(),
-    filename: z.string(),
-    file_path: z.string(),
-    print_on_jobsheet: z.boolean(),
-  })
-  .passthrough()
-const JobFileUploadSuccessResponse = z
-  .object({
-    status: z.string().optional().default('success'),
-    uploaded: z.array(UploadedFile),
-    message: z.string(),
-  })
-  .passthrough()
-const JobFileUploadPartialResponse = z
-  .object({
-    status: z.string(),
-    uploaded: z.array(UploadedFile),
-    errors: z.array(z.string()),
-  })
-  .passthrough()
-const JobFileRequest = z
-  .object({
-    id: z.string().uuid(),
-    filename: z.string().min(1).max(255),
-    mime_type: z.string().max(100).optional(),
-    status: JobFileStatusEnum.optional(),
-    print_on_jobsheet: z.boolean().optional(),
-  })
-  .passthrough()
-const JobFileUpdateSuccessResponse = z
-  .object({
-    status: z.string().optional().default('success'),
-    message: z.string(),
-    print_on_jobsheet: z.boolean(),
-  })
-  .passthrough()
-const JobFileThumbnailErrorResponse = z
-  .object({
-    status: z.string().optional().default('error'),
-    message: z.string(),
-  })
-  .passthrough()
-const JobClientHeader = z.object({ id: z.string().uuid(), name: z.string() }).passthrough()
+const JobDeleteResponse = z.object({
+  success: z.boolean().optional().default(true),
+  message: z.string(),
+})
+const JobBasicInformationResponse = z.object({
+  description: z.string().nullable(),
+  delivery_date: z.string().nullable(),
+  order_number: z.string().nullable(),
+  notes: z.string().nullable(),
+})
+const CostLineCreateUpdateRequest = z.object({
+  kind: Kind332Enum,
+  desc: z.string().max(255).optional(),
+  quantity: z.number().gt(-10000000).lt(10000000).optional(),
+  unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
+  unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
+  accounting_date: z.string(),
+  ext_refs: z.object({}).partial().passthrough().optional(),
+  meta: z.object({}).partial().passthrough().optional(),
+  xero_pay_item: z.string().uuid().nullish(),
+})
+const QuoteRevisionsList = z.object({
+  job_id: z.string(),
+  job_number: z.number().int(),
+  current_cost_set_rev: z.number().int(),
+  total_revisions: z.number().int(),
+  revisions: z.array(z.object({}).partial().passthrough()),
+})
+const QuoteRevisionRequest = z.object({ reason: z.string().min(1).max(500) }).partial()
+const QuoteRevisionResponse = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  quote_revision: z.number().int(),
+  archived_cost_lines_count: z.number().int(),
+  job_id: z.string(),
+  error: z.string().optional(),
+})
+const JobCostSetSummary = z.object({
+  cost: z.number(),
+  rev: z.number(),
+  hours: z.number(),
+  profitMargin: z.number().nullable(),
+})
+const JobCostSummaryResponse = z.object({
+  estimate: JobCostSetSummary.nullable(),
+  quote: JobCostSetSummary.nullable(),
+  actual: JobCostSetSummary.nullable(),
+})
+const JobDeltaRejection = z.object({
+  id: z.string().uuid(),
+  change_id: z.string().uuid().nullable(),
+  job_id: z.string().uuid().nullable(),
+  job_name: z.string().nullable(),
+  reason: z.string(),
+  detail: z.unknown(),
+  checksum: z.string(),
+  request_etag: z.string(),
+  request_ip: z.string().nullable(),
+  created_at: z.string().datetime({ offset: true }),
+  envelope: z.unknown(),
+  staff_id: z.string().uuid().nullable(),
+  staff_email: z.string().nullable(),
+})
+const JobDeltaRejectionListResponse = z.object({
+  count: z.number().int(),
+  next: z.string().nullish(),
+  previous: z.string().nullish(),
+  results: z.array(JobDeltaRejection),
+})
+const JobEventsResponse = z.object({ events: z.array(JobEvent) })
+const JobEventCreateRequest = z.object({
+  description: z.string().min(1).max(500),
+})
+const JobEventCreateResponse = z.object({
+  success: z.boolean(),
+  event: JobEvent,
+})
+const JobFileErrorResponse = z.object({
+  status: z.string().optional().default('error'),
+  message: z.string(),
+})
+const JobFileUploadRequest = z.object({
+  files: z.array(z.instanceof(File)),
+  print_on_jobsheet: z.boolean().optional().default(true),
+})
+const UploadedFile = z.object({
+  id: z.string(),
+  filename: z.string(),
+  file_path: z.string(),
+  print_on_jobsheet: z.boolean(),
+})
+const JobFileUploadSuccessResponse = z.object({
+  status: z.string().optional().default('success'),
+  uploaded: z.array(UploadedFile),
+  message: z.string(),
+})
+const JobFileUploadPartialResponse = z.object({
+  status: z.string(),
+  uploaded: z.array(UploadedFile),
+  errors: z.array(z.string()),
+})
+const JobFileRequest = z.object({
+  id: z.string().uuid(),
+  filename: z.string().min(1).max(255),
+  mime_type: z.string().max(100).optional(),
+  status: JobFileStatusEnum.optional(),
+  print_on_jobsheet: z.boolean().optional(),
+})
+const JobFileUpdateSuccessResponse = z.object({
+  status: z.string().optional().default('success'),
+  message: z.string(),
+  print_on_jobsheet: z.boolean(),
+})
+const JobFileThumbnailErrorResponse = z.object({
+  status: z.string().optional().default('error'),
+  message: z.string(),
+})
+const JobClientHeader = z.object({ id: z.string().uuid(), name: z.string() })
 const Status7b9Enum = z.enum([
   'draft',
   'awaiting_approval',
@@ -1689,191 +1472,160 @@ const Status7b9Enum = z.enum([
   'special',
   'archived',
 ])
-const JobHeaderResponse = z
-  .object({
-    job_id: z.string().uuid(),
-    client: JobClientHeader,
-    contact_id: z.string().uuid().nullable(),
-    contact_name: z.string().nullable(),
-    quoted: z.boolean(),
-    default_xero_pay_item_id: z.string().uuid().nullable(),
-    default_xero_pay_item_name: z.string().nullable(),
-    job_number: z.number().int().gte(-2147483648).lte(2147483647),
-    name: z.string().max(100),
-    status: Status7b9Enum.optional(),
-    pricing_methodology: PricingMethodologyEnum.optional(),
-    price_cap: z.number().gt(-100000000).lt(100000000).nullish(),
-    speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
-    fully_invoiced: z.boolean().optional(),
-    quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
-    paid: z.boolean().optional(),
-    rejected_flag: z.boolean().optional(),
-  })
-  .passthrough()
-const JobInvoicesResponse = z.object({ invoices: z.array(Invoice) }).passthrough()
+const JobHeaderResponse = z.object({
+  job_id: z.string().uuid(),
+  client: JobClientHeader,
+  contact_id: z.string().uuid().nullable(),
+  contact_name: z.string().nullable(),
+  quoted: z.boolean(),
+  default_xero_pay_item_id: z.string().uuid().nullable(),
+  default_xero_pay_item_name: z.string().nullable(),
+  job_number: z.number().int().gte(-2147483648).lte(2147483647),
+  name: z.string().max(100),
+  status: Status7b9Enum.optional(),
+  pricing_methodology: PricingMethodologyEnum.optional(),
+  price_cap: z.number().gt(-100000000).lt(100000000).nullish(),
+  speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
+  fully_invoiced: z.boolean().optional(),
+  quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
+  paid: z.boolean().optional(),
+  rejected_flag: z.boolean().optional(),
+})
+const JobInvoicesResponse = z.object({ invoices: z.array(Invoice) })
 const DocumentTypeEnum = z.enum(['jsa', 'swp', 'sop'])
-const SafetyDocumentList = z
-  .object({
-    id: z.string().uuid(),
-    document_type: DocumentTypeEnum,
-    document_number: z.string().max(50).nullish(),
-    job_number: z.string().nullable(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    title: z.string().max(255),
-    site_location: z.string().max(500).optional(),
-    google_doc_url: z.string().max(200).url().optional(),
-  })
-  .passthrough()
-const SafetyDocument = z
-  .object({
-    id: z.string().uuid(),
-    document_type: DocumentTypeEnum,
-    document_number: z.string().max(50).nullish(),
-    job_id: z.string().uuid().nullable(),
-    job_number: z.string().nullable(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    title: z.string().max(255),
-    company_name: z.string().max(255),
-    site_location: z.string().max(500).optional(),
-    google_doc_id: z.string(),
-    google_doc_url: z.string().url(),
-  })
-  .passthrough()
-const JobQuoteAcceptanceRequest = z
-  .object({
-    success: z.boolean(),
-    job_id: z.string().uuid(),
-    quote_acceptance_date: z.string().min(1),
-    message: z.string().min(1),
-  })
-  .passthrough()
-const JobQuoteAcceptance = z
-  .object({
-    success: z.boolean(),
-    job_id: z.string().uuid(),
-    quote_acceptance_date: z.string(),
-    message: z.string(),
-  })
-  .passthrough()
-const QuoteImportStatusResponse = z
-  .object({
-    job_id: z.string(),
-    job_name: z.string(),
-    has_quote: z.boolean(),
-    quote: CostSet.optional(),
-    revision: z.number().int().optional(),
-    created: z.string().datetime({ offset: true }).optional(),
-    summary: z.unknown().optional(),
-  })
-  .passthrough()
-const TimelineEntry = z
-  .object({
-    id: z.string().uuid(),
-    timestamp: z.string().datetime({ offset: true }),
-    entry_type: z.string(),
-    description: z.string(),
-    staff: z.string().nullish(),
-    event_type: z.string().nullish(),
-    can_undo: z.boolean().nullable(),
-    undo_description: z.string().nullable(),
-    change_id: z.string().uuid().nullish(),
-    schema_version: z.number().int().nullish(),
-    delta_before: z.unknown().nullish(),
-    delta_after: z.unknown().nullish(),
-    delta_meta: z.unknown().nullish(),
-    delta_checksum: z.string().nullish(),
-    cost_set_kind: z.string().nullish(),
-    costline_kind: z.string().nullish(),
-    quantity: z.number().gt(-10000000).lt(10000000).nullish(),
-    unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
-    unit_rev: z.number().gt(-100000000).lt(100000000).nullish(),
-    total_cost: z.number().gt(-100000000).lt(100000000).nullish(),
-    total_rev: z.number().gt(-100000000).lt(100000000).nullish(),
-    created_at: z.string().datetime({ offset: true }).nullish(),
-    updated_at: z.string().datetime({ offset: true }).nullish(),
-  })
-  .passthrough()
-const JobTimelineResponse = z.object({ timeline: z.array(TimelineEntry) }).passthrough()
-const JobUndoRequest = z
-  .object({
-    change_id: z.string().uuid(),
-    undo_change_id: z.string().uuid().nullish(),
-  })
-  .passthrough()
-const DraftLineRequest = z
-  .object({
-    kind: z.string().min(1),
-    desc: z.string().min(1),
-    quantity: z.number().gt(-100000000).lt(100000000),
-    unit_cost: z.number().gt(-100000000).lt(100000000),
-    unit_rev: z.number().gt(-100000000).lt(100000000),
-    total_cost: z.number().gt(-100000000).lt(100000000),
-    total_rev: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const QuoteChangesRequest = z
-  .object({
-    additions: z.array(DraftLineRequest),
-    updates: z.array(DraftLineRequest),
-    deletions: z.array(DraftLineRequest),
-  })
-  .passthrough()
-const ApplyQuoteResponseRequest = z
-  .object({
-    success: z.boolean(),
-    draft_lines: z.array(DraftLineRequest).optional(),
-    changes: QuoteChangesRequest.optional(),
-    error: z.string().min(1).optional(),
-  })
-  .passthrough()
-const DraftLine = z
-  .object({
-    kind: z.string(),
-    desc: z.string(),
-    quantity: z.number().gt(-100000000).lt(100000000),
-    unit_cost: z.number().gt(-100000000).lt(100000000),
-    unit_rev: z.number().gt(-100000000).lt(100000000),
-    total_cost: z.number().gt(-100000000).lt(100000000),
-    total_rev: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const QuoteChanges = z
-  .object({
-    additions: z.array(DraftLine),
-    updates: z.array(DraftLine),
-    deletions: z.array(DraftLine),
-  })
-  .passthrough()
-const ApplyQuoteResponse = z
-  .object({
-    success: z.boolean(),
-    cost_set: CostSet.nullish(),
-    draft_lines: z.array(DraftLine).optional(),
-    changes: QuoteChanges.optional(),
-    error: z.string().optional(),
-  })
-  .passthrough()
-const LinkQuoteSheetRequest = z.object({ template_url: z.string().url() }).partial().passthrough()
-const LinkQuoteSheet = z.object({ template_url: z.string().url() }).partial().passthrough()
+const SafetyDocumentList = z.object({
+  id: z.string().uuid(),
+  document_type: DocumentTypeEnum,
+  document_number: z.string().max(50).nullish(),
+  job_number: z.string().nullable(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  title: z.string().max(255),
+  site_location: z.string().max(500).optional(),
+  google_doc_url: z.string().max(200).url().optional(),
+})
+const SafetyDocument = z.object({
+  id: z.string().uuid(),
+  document_type: DocumentTypeEnum,
+  document_number: z.string().max(50).nullish(),
+  job_id: z.string().uuid().nullable(),
+  job_number: z.string().nullable(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  title: z.string().max(255),
+  company_name: z.string().max(255),
+  site_location: z.string().max(500).optional(),
+  google_doc_id: z.string(),
+  google_doc_url: z.string().url(),
+})
+const JobQuoteAcceptanceRequest = z.object({
+  success: z.boolean(),
+  job_id: z.string().uuid(),
+  quote_acceptance_date: z.string().min(1),
+  message: z.string().min(1),
+})
+const JobQuoteAcceptance = z.object({
+  success: z.boolean(),
+  job_id: z.string().uuid(),
+  quote_acceptance_date: z.string(),
+  message: z.string(),
+})
+const QuoteImportStatusResponse = z.object({
+  job_id: z.string(),
+  job_name: z.string(),
+  has_quote: z.boolean(),
+  quote: CostSet.optional(),
+  revision: z.number().int().optional(),
+  created: z.string().datetime({ offset: true }).optional(),
+  summary: z.unknown().optional(),
+})
+const TimelineEntry = z.object({
+  id: z.string().uuid(),
+  timestamp: z.string().datetime({ offset: true }),
+  entry_type: z.string(),
+  description: z.string(),
+  staff: z.string().nullish(),
+  event_type: z.string().nullish(),
+  can_undo: z.boolean().nullable(),
+  undo_description: z.string().nullable(),
+  change_id: z.string().uuid().nullish(),
+  schema_version: z.number().int().nullish(),
+  delta_before: z.unknown().nullish(),
+  delta_after: z.unknown().nullish(),
+  delta_meta: z.unknown().nullish(),
+  delta_checksum: z.string().nullish(),
+  cost_set_kind: z.string().nullish(),
+  costline_kind: z.string().nullish(),
+  quantity: z.number().gt(-10000000).lt(10000000).nullish(),
+  unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
+  unit_rev: z.number().gt(-100000000).lt(100000000).nullish(),
+  total_cost: z.number().gt(-100000000).lt(100000000).nullish(),
+  total_rev: z.number().gt(-100000000).lt(100000000).nullish(),
+  created_at: z.string().datetime({ offset: true }).nullish(),
+  updated_at: z.string().datetime({ offset: true }).nullish(),
+})
+const JobTimelineResponse = z.object({ timeline: z.array(TimelineEntry) })
+const JobUndoRequest = z.object({
+  change_id: z.string().uuid(),
+  undo_change_id: z.string().uuid().nullish(),
+})
+const DraftLineRequest = z.object({
+  kind: z.string().min(1),
+  desc: z.string().min(1),
+  quantity: z.number().gt(-100000000).lt(100000000),
+  unit_cost: z.number().gt(-100000000).lt(100000000),
+  unit_rev: z.number().gt(-100000000).lt(100000000),
+  total_cost: z.number().gt(-100000000).lt(100000000),
+  total_rev: z.number().gt(-100000000).lt(100000000),
+})
+const QuoteChangesRequest = z.object({
+  additions: z.array(DraftLineRequest),
+  updates: z.array(DraftLineRequest),
+  deletions: z.array(DraftLineRequest),
+})
+const ApplyQuoteResponseRequest = z.object({
+  success: z.boolean(),
+  draft_lines: z.array(DraftLineRequest).optional(),
+  changes: QuoteChangesRequest.optional(),
+  error: z.string().min(1).optional(),
+})
+const DraftLine = z.object({
+  kind: z.string(),
+  desc: z.string(),
+  quantity: z.number().gt(-100000000).lt(100000000),
+  unit_cost: z.number().gt(-100000000).lt(100000000),
+  unit_rev: z.number().gt(-100000000).lt(100000000),
+  total_cost: z.number().gt(-100000000).lt(100000000),
+  total_rev: z.number().gt(-100000000).lt(100000000),
+})
+const QuoteChanges = z.object({
+  additions: z.array(DraftLine),
+  updates: z.array(DraftLine),
+  deletions: z.array(DraftLine),
+})
+const ApplyQuoteResponse = z.object({
+  success: z.boolean(),
+  cost_set: CostSet.nullish(),
+  draft_lines: z.array(DraftLine).optional(),
+  changes: QuoteChanges.optional(),
+  error: z.string().optional(),
+})
+const LinkQuoteSheetRequest = z.object({ template_url: z.string().url() }).partial()
+const LinkQuoteSheet = z.object({ template_url: z.string().url() }).partial()
 const ValidationReportRequest = z
   .object({
     warnings: z.array(z.string().min(1)),
     errors: z.array(z.string().min(1)),
   })
   .partial()
-  .passthrough()
-const DiffPreviewRequest = z
-  .object({
-    additions_count: z.number().int(),
-    updates_count: z.number().int(),
-    deletions_count: z.number().int(),
-    total_changes: z.number().int(),
-    next_revision: z.number().int().optional(),
-    current_revision: z.number().int().nullish(),
-  })
-  .passthrough()
+const DiffPreviewRequest = z.object({
+  additions_count: z.number().int(),
+  updates_count: z.number().int(),
+  deletions_count: z.number().int(),
+  total_changes: z.number().int(),
+  next_revision: z.number().int().optional(),
+  current_revision: z.number().int().nullish(),
+})
 const PreviewQuoteResponseRequest = z
   .object({
     success: z.boolean(),
@@ -1885,21 +1637,17 @@ const PreviewQuoteResponseRequest = z
     diff_preview: DiffPreviewRequest.nullable(),
   })
   .partial()
-  .passthrough()
 const ValidationReport = z
   .object({ warnings: z.array(z.string()), errors: z.array(z.string()) })
   .partial()
-  .passthrough()
-const DiffPreview = z
-  .object({
-    additions_count: z.number().int(),
-    updates_count: z.number().int(),
-    deletions_count: z.number().int(),
-    total_changes: z.number().int(),
-    next_revision: z.number().int().optional(),
-    current_revision: z.number().int().nullish(),
-  })
-  .passthrough()
+const DiffPreview = z.object({
+  additions_count: z.number().int(),
+  updates_count: z.number().int(),
+  deletions_count: z.number().int(),
+  total_changes: z.number().int(),
+  next_revision: z.number().int().optional(),
+  current_revision: z.number().int().nullish(),
+})
 const PreviewQuoteResponse = z
   .object({
     success: z.boolean(),
@@ -1911,172 +1659,140 @@ const PreviewQuoteResponse = z
     diff_preview: DiffPreview.nullable(),
   })
   .partial()
-  .passthrough()
-const JobStatusChoicesResponse = z
-  .object({ statuses: z.object({}).partial().passthrough() })
-  .passthrough()
-const WeeklyMetrics = z
-  .object({
-    job_id: z.string().uuid(),
-    job_number: z.number().int(),
-    name: z.string(),
-    client: z.string().nullish(),
-    description: z.string().nullish(),
-    status: z.string(),
-    people: z.array(z.object({}).partial().passthrough()),
-    estimated_hours: z.number(),
-    actual_hours: z.number(),
-    profit: z.number(),
-  })
-  .passthrough()
-const MonthEndJobHistory = z
-  .object({
-    date: z.string(),
-    total_hours: z.number(),
-    total_dollars: z.number(),
-  })
-  .passthrough()
-const MonthEndJob = z
-  .object({
-    job_id: z.string().uuid(),
-    job_number: z.number().int(),
-    job_name: z.string(),
-    client_name: z.string(),
-    history: z.array(MonthEndJobHistory),
-    total_hours: z.number(),
-    total_dollars: z.number(),
-  })
-  .passthrough()
-const MonthEndStockHistory = z
-  .object({
-    date: z.string(),
-    material_line_count: z.number().int(),
-    material_cost: z.number(),
-  })
-  .passthrough()
-const MonthEndStockJob = z
-  .object({
-    job_id: z.string().uuid(),
-    job_number: z.number().int(),
-    job_name: z.string(),
-    history: z.array(MonthEndStockHistory),
-  })
-  .passthrough()
-const MonthEndGetResponse = z
-  .object({ jobs: z.array(MonthEndJob), stock_job: MonthEndStockJob })
-  .passthrough()
-const MonthEndPostRequest = z.object({ job_ids: z.array(z.string().uuid()) }).passthrough()
-const MonthEndPostResponse = z
-  .object({
-    processed: z.array(z.string().uuid()),
-    errors: z.array(z.string()),
-  })
-  .passthrough()
-const CostSetMetrics = z
-  .object({
-    revenue: z.string(),
-    cost: z.string(),
-    profit: z.string(),
-    margin: z.string(),
-    hours: z.string(),
-  })
-  .passthrough()
-const JobProfitabilityItem = z
-  .object({
-    job_id: z.string(),
-    job_number: z.number().int(),
-    job_name: z.string(),
-    client_name: z.string(),
-    pricing_type: z.string(),
-    pricing_type_display: z.string(),
-    completion_date: z.string().nullable(),
-    revenue: z.string(),
-    estimate: CostSetMetrics,
-    quote: CostSetMetrics,
-    actual: CostSetMetrics,
-    profit_variance: z.string(),
-    profit_variance_pct: z.string(),
-  })
-  .passthrough()
-const JobProfitabilitySummary = z
-  .object({
-    total_jobs: z.number().int(),
-    total_revenue: z.string(),
-    total_cost: z.string(),
-    total_profit: z.string(),
-    overall_margin: z.string(),
-    avg_profit_per_job: z.string(),
-    total_baseline_profit: z.string(),
-    total_variance: z.string(),
-    tm_jobs: z.number().int(),
-    fp_jobs: z.number().int(),
-    profitable_jobs: z.number().int(),
-    unprofitable_jobs: z.number().int(),
-  })
-  .passthrough()
-const FiltersApplied = z
-  .object({
-    start_date: z.string(),
-    end_date: z.string(),
-    min_value: z.string().nullish(),
-    max_value: z.string().nullish(),
-    pricing_type: z.string().nullish(),
-  })
-  .passthrough()
-const JobProfitabilityReportResponse = z
-  .object({
-    jobs: z.array(JobProfitabilityItem),
-    summary: JobProfitabilitySummary,
-    filters_applied: FiltersApplied,
-  })
-  .passthrough()
-const GenerateControlsRequestRequest = z
-  .object({
-    hazards: z.array(z.string().min(1)),
-    task_description: z.string().min(1).optional().default(''),
-  })
-  .passthrough()
-const GenerateControlsResponse = z.object({ controls: z.array(z.string()) }).passthrough()
-const GenerateHazardsRequestRequest = z
-  .object({ task_description: z.string().min(1) })
-  .passthrough()
-const GenerateHazardsResponse = z.object({ hazards: z.array(z.string()) }).passthrough()
-const ImproveDocumentRequestRequest = z
-  .object({
-    raw_text: z.string().min(1),
-    document_type: z.string().min(1).optional().default('swp'),
-  })
-  .passthrough()
-const ImproveDocumentResponse = z
-  .object({
-    title: z.string(),
-    description: z.string(),
-    site_location: z.string(),
-    ppe_requirements: z.array(z.string()),
-    tasks: z.array(z.unknown()),
-    additional_notes: z.string(),
-  })
-  .passthrough()
-const ImproveSectionRequestRequest = z
-  .object({
-    section_text: z.string().min(1),
-    section_type: z.string().min(1),
-    context: z.string().min(1).optional().default(''),
-  })
-  .passthrough()
-const ImproveSectionResponse = z.object({ improved_text: z.string() }).passthrough()
-const SafetyDocumentContentResponse = z
-  .object({
-    title: z.string(),
-    document_type: z.string(),
-    description: z.string(),
-    site_location: z.string(),
-    ppe_requirements: z.array(z.string()),
-    tasks: z.array(z.unknown()),
-    additional_notes: z.string(),
-    raw_text: z.string(),
-  })
-  .passthrough()
+const JobStatusChoicesResponse = z.object({
+  statuses: z.object({}).partial().passthrough(),
+})
+const WeeklyMetrics = z.object({
+  job_id: z.string().uuid(),
+  job_number: z.number().int(),
+  name: z.string(),
+  client: z.string().nullish(),
+  description: z.string().nullish(),
+  status: z.string(),
+  people: z.array(z.object({}).partial().passthrough()),
+  estimated_hours: z.number(),
+  actual_hours: z.number(),
+  profit: z.number(),
+})
+const MonthEndJobHistory = z.object({
+  date: z.string(),
+  total_hours: z.number(),
+  total_dollars: z.number(),
+})
+const MonthEndJob = z.object({
+  job_id: z.string().uuid(),
+  job_number: z.number().int(),
+  job_name: z.string(),
+  client_name: z.string(),
+  history: z.array(MonthEndJobHistory),
+  total_hours: z.number(),
+  total_dollars: z.number(),
+})
+const MonthEndStockHistory = z.object({
+  date: z.string(),
+  material_line_count: z.number().int(),
+  material_cost: z.number(),
+})
+const MonthEndStockJob = z.object({
+  job_id: z.string().uuid(),
+  job_number: z.number().int(),
+  job_name: z.string(),
+  history: z.array(MonthEndStockHistory),
+})
+const MonthEndGetResponse = z.object({
+  jobs: z.array(MonthEndJob),
+  stock_job: MonthEndStockJob,
+})
+const MonthEndPostRequest = z.object({ job_ids: z.array(z.string().uuid()) })
+const MonthEndPostResponse = z.object({
+  processed: z.array(z.string().uuid()),
+  errors: z.array(z.string()),
+})
+const CostSetMetrics = z.object({
+  revenue: z.string(),
+  cost: z.string(),
+  profit: z.string(),
+  margin: z.string(),
+  hours: z.string(),
+})
+const JobProfitabilityItem = z.object({
+  job_id: z.string(),
+  job_number: z.number().int(),
+  job_name: z.string(),
+  client_name: z.string(),
+  pricing_type: z.string(),
+  pricing_type_display: z.string(),
+  completion_date: z.string().nullable(),
+  revenue: z.string(),
+  estimate: CostSetMetrics,
+  quote: CostSetMetrics,
+  actual: CostSetMetrics,
+  profit_variance: z.string(),
+  profit_variance_pct: z.string(),
+})
+const JobProfitabilitySummary = z.object({
+  total_jobs: z.number().int(),
+  total_revenue: z.string(),
+  total_cost: z.string(),
+  total_profit: z.string(),
+  overall_margin: z.string(),
+  avg_profit_per_job: z.string(),
+  total_baseline_profit: z.string(),
+  total_variance: z.string(),
+  tm_jobs: z.number().int(),
+  fp_jobs: z.number().int(),
+  profitable_jobs: z.number().int(),
+  unprofitable_jobs: z.number().int(),
+})
+const FiltersApplied = z.object({
+  start_date: z.string(),
+  end_date: z.string(),
+  min_value: z.string().nullish(),
+  max_value: z.string().nullish(),
+  pricing_type: z.string().nullish(),
+})
+const JobProfitabilityReportResponse = z.object({
+  jobs: z.array(JobProfitabilityItem),
+  summary: JobProfitabilitySummary,
+  filters_applied: FiltersApplied,
+})
+const GenerateControlsRequestRequest = z.object({
+  hazards: z.array(z.string().min(1)),
+  task_description: z.string().min(1).optional().default(''),
+})
+const GenerateControlsResponse = z.object({ controls: z.array(z.string()) })
+const GenerateHazardsRequestRequest = z.object({
+  task_description: z.string().min(1),
+})
+const GenerateHazardsResponse = z.object({ hazards: z.array(z.string()) })
+const ImproveDocumentRequestRequest = z.object({
+  raw_text: z.string().min(1),
+  document_type: z.string().min(1).optional().default('swp'),
+})
+const ImproveDocumentResponse = z.object({
+  title: z.string(),
+  description: z.string(),
+  site_location: z.string(),
+  ppe_requirements: z.array(z.string()),
+  tasks: z.array(z.unknown()),
+  additional_notes: z.string(),
+})
+const ImproveSectionRequestRequest = z.object({
+  section_text: z.string().min(1),
+  section_type: z.string().min(1),
+  context: z.string().min(1).optional().default(''),
+})
+const ImproveSectionResponse = z.object({ improved_text: z.string() })
+const SafetyDocumentContentResponse = z.object({
+  title: z.string(),
+  document_type: z.string(),
+  description: z.string(),
+  site_location: z.string(),
+  ppe_requirements: z.array(z.string()),
+  tasks: z.array(z.unknown()),
+  additional_notes: z.string(),
+  raw_text: z.string(),
+})
 const SafetyDocumentContentUpdateRequest = z
   .object({
     title: z.string().min(1),
@@ -2087,184 +1803,153 @@ const SafetyDocumentContentUpdateRequest = z
     additional_notes: z.string().min(1),
   })
   .partial()
-  .passthrough()
-const SOPGenerateRequestRequest = z
-  .object({
-    title: z.string().min(1),
-    description: z.string().min(1).optional().default(''),
-    document_number: z.string().min(1).optional().default(''),
-  })
-  .passthrough()
-const SWPGenerateRequestRequest = z
-  .object({
-    document_number: z.string().max(50).optional(),
-    title: z.string().min(1).max(255),
-    description: z.string().min(1),
-    site_location: z.string().optional(),
-  })
-  .passthrough()
-const TimesheetCostLine = z
-  .object({
-    id: z.string().uuid(),
-    kind: Kind332Enum,
-    desc: z.string(),
-    quantity: z.number().gt(-10000000).lt(10000000),
-    unit_cost: z.number().gt(-100000000).lt(100000000),
-    unit_rev: z.number().gt(-100000000).lt(100000000),
-    ext_refs: z.unknown(),
-    meta: z.unknown(),
-    created_at: z.string().datetime({ offset: true }),
-    updated_at: z.string().datetime({ offset: true }),
-    accounting_date: z.string(),
-    xero_time_id: z.string().nullable(),
-    xero_expense_id: z.string().nullable(),
-    xero_last_modified: z.string().datetime({ offset: true }).nullable(),
-    xero_last_synced: z.string().datetime({ offset: true }).nullable(),
-    approved: z.boolean(),
-    xero_pay_item: z.string().uuid().nullable(),
-    total_cost: z.number(),
-    total_rev: z.number(),
-    job_id: z.string(),
-    job_number: z.number().int(),
-    job_name: z.string(),
-    client_name: z.string(),
-    charge_out_rate: z.number().gt(-100000000).lt(100000000),
-    wage_rate: z.number(),
-    xero_pay_item_name: z.string().min(1),
-  })
-  .passthrough()
-const ModernTimesheetStaff = z
-  .object({
-    id: z.string().uuid(),
-    name: z.string(),
-    firstName: z.string(),
-    lastName: z.string(),
-  })
-  .passthrough()
-const ModernTimesheetSummary = z
-  .object({
-    total_hours: z.number(),
-    billable_hours: z.number(),
-    non_billable_hours: z.number(),
-    total_cost: z.number(),
-    total_revenue: z.number(),
-    entry_count: z.number().int(),
-    scheduled_hours: z.number(),
-  })
-  .passthrough()
-const ModernTimesheetEntryGetResponse = z
-  .object({
-    cost_lines: z.array(TimesheetCostLine),
-    staff: ModernTimesheetStaff,
-    date: z.string(),
-    summary: ModernTimesheetSummary,
-  })
-  .passthrough()
-const ModernTimesheetErrorResponse = z.object({ error: z.string() }).passthrough()
-const ModernTimesheetEntryPostRequest = z
-  .object({
-    job_id: z.string().uuid(),
-    staff_id: z.string().uuid(),
-    date: z.string(),
-    hours: z.number().gte(0),
-    description: z.string().min(1).max(500),
-    is_billable: z.boolean().optional().default(true),
-    hourly_rate: z.number().gte(0).optional(),
-    xero_pay_item_id: z.string().uuid(),
-  })
-  .passthrough()
-const ModernTimesheetEntryPostResponse = z
-  .object({
-    success: z.boolean(),
-    cost_line_id: z.string().uuid().optional(),
-    message: z.string().optional(),
-  })
-  .passthrough()
-const ModernTimesheetJobGetResponse = z
-  .object({ jobs: z.array(Job), total_count: z.number().int() })
-  .passthrough()
-const ModernTimesheetDayGetResponse = z
-  .object({
-    entries: z.array(TimesheetCostLine),
-    summary: ModernTimesheetSummary,
-    date: z.string(),
-  })
-  .passthrough()
-const JobForPurchasing = z
-  .object({
-    id: z.string().uuid(),
-    job_number: z.number().int().gte(-2147483648).lte(2147483647),
-    name: z.string().max(100),
-    client_name: z.string(),
-    status: Status7b9Enum.optional(),
-    is_stock_holding: z.boolean(),
-    job_display_name: z.string(),
-  })
-  .passthrough()
-const AllJobsResponse = z
-  .object({
-    success: z.boolean(),
-    jobs: z.array(JobForPurchasing),
-    stock_holding_job_id: z.string(),
-  })
-  .passthrough()
-const DeliveryReceiptAllocationRequest = z
-  .object({
-    job_id: z.string().uuid(),
-    quantity: z.number().gt(-100000000).lt(100000000),
-    retail_rate: z.number().gt(-1000).lt(1000).optional(),
-    metadata: z.object({}).partial().passthrough().optional(),
-  })
-  .passthrough()
-const DeliveryReceiptLineRequest = z
-  .object({
-    total_received: z.number().gt(-100000000).lt(100000000),
-    allocations: z.array(DeliveryReceiptAllocationRequest),
-  })
-  .passthrough()
-const DeliveryReceiptRequest = z
-  .object({
-    purchase_order_id: z.string().uuid(),
-    allocations: z.record(DeliveryReceiptLineRequest),
-  })
-  .passthrough()
-const DeliveryReceiptResponse = z
-  .object({ success: z.boolean(), error: z.string().optional() })
-  .passthrough()
-const PurchasingJobsResponse = z
-  .object({ jobs: z.array(JobForPurchasing), total_count: z.number().int() })
-  .passthrough()
-const ProductMapping = z
-  .object({
-    id: z.string().uuid(),
-    input_hash: z.string(),
-    input_data: z.unknown(),
-    derived_key: z.string().nullable(),
-    mapped_item_code: z.string().nullable(),
-    mapped_description: z.string().nullable(),
-    mapped_metal_type: z.string().nullable(),
-    mapped_alloy: z.string().nullable(),
-    mapped_specifics: z.string().nullable(),
-    mapped_dimensions: z.string().nullable(),
-    mapped_unit_cost: z.number().gt(-100000000).lt(100000000).nullable(),
-    mapped_price_unit: z.string().nullable(),
-    parser_version: z.string().nullable(),
-    parser_confidence: z.number().gt(-10).lt(10).nullable(),
-    is_validated: z.boolean(),
-    validated_at: z.string().datetime({ offset: true }).nullable(),
-    validation_notes: z.string().nullable(),
-    item_code_is_in_xero: z.boolean(),
-    created_at: z.string().datetime({ offset: true }),
-  })
-  .passthrough()
-const ProductMappingListResponse = z
-  .object({
-    items: z.array(ProductMapping),
-    total_count: z.number().int(),
-    validated_count: z.number().int(),
-    unvalidated_count: z.number().int(),
-  })
-  .passthrough()
+const SOPGenerateRequestRequest = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1).optional().default(''),
+  document_number: z.string().min(1).optional().default(''),
+})
+const SWPGenerateRequestRequest = z.object({
+  document_number: z.string().max(50).optional(),
+  title: z.string().min(1).max(255),
+  description: z.string().min(1),
+  site_location: z.string().optional(),
+})
+const TimesheetCostLine = z.object({
+  id: z.string().uuid(),
+  kind: Kind332Enum,
+  desc: z.string(),
+  quantity: z.number().gt(-10000000).lt(10000000),
+  unit_cost: z.number().gt(-100000000).lt(100000000),
+  unit_rev: z.number().gt(-100000000).lt(100000000),
+  ext_refs: z.unknown(),
+  meta: z.unknown(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  accounting_date: z.string(),
+  xero_time_id: z.string().nullable(),
+  xero_expense_id: z.string().nullable(),
+  xero_last_modified: z.string().datetime({ offset: true }).nullable(),
+  xero_last_synced: z.string().datetime({ offset: true }).nullable(),
+  approved: z.boolean(),
+  xero_pay_item: z.string().uuid().nullable(),
+  total_cost: z.number(),
+  total_rev: z.number(),
+  job_id: z.string(),
+  job_number: z.number().int(),
+  job_name: z.string(),
+  client_name: z.string(),
+  charge_out_rate: z.number().gt(-100000000).lt(100000000),
+  wage_rate: z.number(),
+  xero_pay_item_name: z.string().min(1),
+})
+const ModernTimesheetStaff = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+})
+const ModernTimesheetSummary = z.object({
+  total_hours: z.number(),
+  billable_hours: z.number(),
+  non_billable_hours: z.number(),
+  total_cost: z.number(),
+  total_revenue: z.number(),
+  entry_count: z.number().int(),
+})
+const ModernTimesheetEntryGetResponse = z.object({
+  cost_lines: z.array(TimesheetCostLine),
+  staff: ModernTimesheetStaff,
+  date: z.string(),
+  summary: ModernTimesheetSummary,
+})
+const ModernTimesheetErrorResponse = z.object({ error: z.string() })
+const ModernTimesheetEntryPostRequest = z.object({
+  job_id: z.string().uuid(),
+  staff_id: z.string().uuid(),
+  date: z.string(),
+  hours: z.number().gte(0),
+  description: z.string().min(1).max(500),
+  is_billable: z.boolean().optional().default(true),
+  hourly_rate: z.number().gte(0).optional(),
+  xero_pay_item_id: z.string().uuid(),
+})
+const ModernTimesheetEntryPostResponse = z.object({
+  success: z.boolean(),
+  cost_line_id: z.string().uuid().optional(),
+  message: z.string().optional(),
+})
+const ModernTimesheetJobGetResponse = z.object({
+  jobs: z.array(Job),
+  total_count: z.number().int(),
+})
+const ModernTimesheetDayGetResponse = z.object({
+  entries: z.array(TimesheetCostLine),
+  summary: ModernTimesheetSummary,
+  date: z.string(),
+})
+const JobForPurchasing = z.object({
+  id: z.string().uuid(),
+  job_number: z.number().int().gte(-2147483648).lte(2147483647),
+  name: z.string().max(100),
+  client_name: z.string(),
+  status: Status7b9Enum.optional(),
+  is_stock_holding: z.boolean(),
+  job_display_name: z.string(),
+})
+const AllJobsResponse = z.object({
+  success: z.boolean(),
+  jobs: z.array(JobForPurchasing),
+  stock_holding_job_id: z.string(),
+})
+const DeliveryReceiptAllocationRequest = z.object({
+  job_id: z.string().uuid(),
+  quantity: z.number().gt(-100000000).lt(100000000),
+  retail_rate: z.number().gt(-1000).lt(1000).optional(),
+  metadata: z.object({}).partial().passthrough().optional(),
+})
+const DeliveryReceiptLineRequest = z.object({
+  total_received: z.number().gt(-100000000).lt(100000000),
+  allocations: z.array(DeliveryReceiptAllocationRequest),
+})
+const DeliveryReceiptRequest = z.object({
+  purchase_order_id: z.string().uuid(),
+  allocations: z.record(DeliveryReceiptLineRequest),
+})
+const DeliveryReceiptResponse = z.object({
+  success: z.boolean(),
+  error: z.string().optional(),
+})
+const PurchasingJobsResponse = z.object({
+  jobs: z.array(JobForPurchasing),
+  total_count: z.number().int(),
+})
+const ProductMapping = z.object({
+  id: z.string().uuid(),
+  input_hash: z.string(),
+  input_data: z.unknown(),
+  derived_key: z.string().nullable(),
+  mapped_item_code: z.string().nullable(),
+  mapped_description: z.string().nullable(),
+  mapped_metal_type: z.string().nullable(),
+  mapped_alloy: z.string().nullable(),
+  mapped_specifics: z.string().nullable(),
+  mapped_dimensions: z.string().nullable(),
+  mapped_unit_cost: z.number().gt(-100000000).lt(100000000).nullable(),
+  mapped_price_unit: z.string().nullable(),
+  parser_version: z.string().nullable(),
+  parser_confidence: z.number().gt(-10).lt(10).nullable(),
+  is_validated: z.boolean(),
+  validated_at: z.string().datetime({ offset: true }).nullable(),
+  validation_notes: z.string().nullable(),
+  item_code_is_in_xero: z.boolean(),
+  created_at: z.string().datetime({ offset: true }),
+})
+const ProductMappingListResponse = z.object({
+  items: z.array(ProductMapping),
+  total_count: z.number().int(),
+  validated_count: z.number().int(),
+  unvalidated_count: z.number().int(),
+})
 const ProductMappingValidateRequest = z
   .object({
     mapped_item_code: z.string(),
@@ -2278,30 +1963,27 @@ const ProductMappingValidateRequest = z
     validation_notes: z.string(),
   })
   .partial()
-  .passthrough()
-const ProductMappingValidateResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string(),
-    updated_products_count: z.number().int().optional(),
-  })
-  .passthrough()
-const PurchaseOrderJob = z
-  .object({ job_number: z.string(), name: z.string(), client: z.string() })
-  .passthrough()
-const PurchaseOrderList = z
-  .object({
-    id: z.string().uuid(),
-    po_number: z.string(),
-    status: z.string(),
-    order_date: z.string(),
-    supplier: z.string(),
-    supplier_id: z.string().uuid().nullable(),
-    created_by_id: z.string().uuid().nullable(),
-    created_by_name: z.string(),
-    jobs: z.array(PurchaseOrderJob),
-  })
-  .passthrough()
+const ProductMappingValidateResponse = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  updated_products_count: z.number().int().optional(),
+})
+const PurchaseOrderJob = z.object({
+  job_number: z.string(),
+  name: z.string(),
+  client: z.string(),
+})
+const PurchaseOrderList = z.object({
+  id: z.string().uuid(),
+  po_number: z.string(),
+  status: z.string(),
+  order_date: z.string(),
+  supplier: z.string(),
+  supplier_id: z.string().uuid().nullable(),
+  created_by_id: z.string().uuid().nullable(),
+  created_by_name: z.string(),
+  jobs: z.array(PurchaseOrderJob),
+})
 const PurchaseOrderLineCreateRequest = z
   .object({
     job_id: z.string().uuid().nullable(),
@@ -2317,7 +1999,6 @@ const PurchaseOrderLineCreateRequest = z
     dimensions: z.string().max(255),
   })
   .partial()
-  .passthrough()
 const PurchaseOrderCreateRequest = z
   .object({
     supplier_id: z.string().uuid().nullable(),
@@ -2328,7 +2009,6 @@ const PurchaseOrderCreateRequest = z
     lines: z.array(PurchaseOrderLineCreateRequest),
   })
   .partial()
-  .passthrough()
 const PurchaseOrderLineCreate = z
   .object({
     job_id: z.string().uuid().nullable(),
@@ -2344,7 +2024,6 @@ const PurchaseOrderLineCreate = z
     dimensions: z.string().max(255),
   })
   .partial()
-  .passthrough()
 const PurchaseOrderCreate = z
   .object({
     supplier_id: z.string().uuid().nullable(),
@@ -2355,7 +2034,6 @@ const PurchaseOrderCreate = z
     lines: z.array(PurchaseOrderLineCreate),
   })
   .partial()
-  .passthrough()
 const PurchaseOrderDetailStatusEnum = z.enum([
   'draft',
   'submitted',
@@ -2377,44 +2055,40 @@ const MetalTypeEnum = z.enum([
 ])
 const BlankEnum = z.unknown()
 const NullEnum = z.unknown()
-const PurchaseOrderLine = z
-  .object({
-    id: z.string().uuid(),
-    description: z.string().max(200),
-    quantity: z.number().gt(-100000000).lt(100000000),
-    dimensions: z.string().max(255).nullish(),
-    unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
-    price_tbc: z.boolean().optional(),
-    supplier_item_code: z.string().max(50).nullish(),
-    item_code: z.string().max(50).nullish(),
-    received_quantity: z.number().gt(-100000000).lt(100000000).optional(),
-    metal_type: z.union([MetalTypeEnum, BlankEnum, NullEnum]).nullish(),
-    alloy: z.string().max(50).nullish(),
-    specifics: z.string().max(255).nullish(),
-    location: z.string().max(255).nullish(),
-    job_id: z.string().uuid().nullable(),
-  })
-  .passthrough()
-const PurchaseOrderDetail = z
-  .object({
-    id: z.string().uuid(),
-    po_number: z.string().max(50),
-    reference: z.string().max(100).nullish(),
-    status: PurchaseOrderDetailStatusEnum.optional(),
-    order_date: z.string().optional(),
-    expected_delivery: z.string().nullish(),
-    online_url: z.string().max(500).url().nullish(),
-    xero_id: z.string().uuid().nullish(),
-    pickup_address_id: z.string().uuid().nullable(),
-    created_by_id: z.string().uuid().nullable(),
-    supplier: z.string(),
-    supplier_id: z.string().nullable(),
-    supplier_has_xero_id: z.boolean(),
-    lines: z.array(PurchaseOrderLine),
-    pickup_address: SupplierPickupAddress.nullable(),
-    created_by_name: z.string(),
-  })
-  .passthrough()
+const PurchaseOrderLine = z.object({
+  id: z.string().uuid(),
+  description: z.string().max(200),
+  quantity: z.number().gt(-100000000).lt(100000000),
+  dimensions: z.string().max(255).nullish(),
+  unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
+  price_tbc: z.boolean().optional(),
+  supplier_item_code: z.string().max(50).nullish(),
+  item_code: z.string().max(50).nullish(),
+  received_quantity: z.number().gt(-100000000).lt(100000000).optional(),
+  metal_type: z.union([MetalTypeEnum, BlankEnum, NullEnum]).nullish(),
+  alloy: z.string().max(50).nullish(),
+  specifics: z.string().max(255).nullish(),
+  location: z.string().max(255).nullish(),
+  job_id: z.string().uuid().nullable(),
+})
+const PurchaseOrderDetail = z.object({
+  id: z.string().uuid(),
+  po_number: z.string().max(50),
+  reference: z.string().max(100).nullish(),
+  status: PurchaseOrderDetailStatusEnum.optional(),
+  order_date: z.string().optional(),
+  expected_delivery: z.string().nullish(),
+  online_url: z.string().max(500).url().nullish(),
+  xero_id: z.string().uuid().nullish(),
+  pickup_address_id: z.string().uuid().nullable(),
+  created_by_id: z.string().uuid().nullable(),
+  supplier: z.string(),
+  supplier_id: z.string().nullable(),
+  supplier_has_xero_id: z.boolean(),
+  lines: z.array(PurchaseOrderLine),
+  pickup_address: SupplierPickupAddress.nullable(),
+  created_by_name: z.string(),
+})
 const PurchaseOrderLineUpdateRequest = z
   .object({
     id: z.string().uuid().nullable(),
@@ -2431,7 +2105,6 @@ const PurchaseOrderLineUpdateRequest = z
     dimensions: z.string().max(255),
   })
   .partial()
-  .passthrough()
 const PatchedPurchaseOrderUpdateRequest = z
   .object({
     supplier_id: z.string().uuid().nullable(),
@@ -2443,7 +2116,6 @@ const PatchedPurchaseOrderUpdateRequest = z
     lines: z.array(PurchaseOrderLineUpdateRequest),
   })
   .partial()
-  .passthrough()
 const PurchaseOrderLineUpdate = z
   .object({
     id: z.string().uuid().nullable(),
@@ -2460,7 +2132,6 @@ const PurchaseOrderLineUpdate = z
     dimensions: z.string().max(255),
   })
   .partial()
-  .passthrough()
 const PurchaseOrderUpdate = z
   .object({
     supplier_id: z.string().uuid().nullable(),
@@ -2472,134 +2143,117 @@ const PurchaseOrderUpdate = z
     lines: z.array(PurchaseOrderLineUpdate),
   })
   .partial()
-  .passthrough()
 const TypeC98Enum = z.enum(['stock', 'job'])
-const AllocationItem = z
-  .object({
-    type: TypeC98Enum,
-    job_id: z.string().uuid(),
-    job_name: z.string(),
-    quantity: z.number(),
-    retail_rate: z.number().optional().default(0),
-    allocation_date: z.string().datetime({ offset: true }).nullable(),
-    description: z.string(),
-    stock_location: z.string().nullish(),
-    metal_type: z.string().nullish(),
-    alloy: z.string().nullish(),
-    specifics: z.string().nullish(),
-    allocation_id: z.string().uuid().nullish(),
-  })
-  .passthrough()
-const PurchaseOrderAllocationsResponse = z
-  .object({
-    po_id: z.string().uuid(),
-    allocations: z.record(z.array(AllocationItem)),
-  })
-  .passthrough()
-const AllocationDetailsResponse = z
-  .object({
-    type: TypeC98Enum,
-    id: z.string().uuid(),
-    description: z.string(),
-    quantity: z.number(),
-    job_name: z.string(),
-    can_delete: z.boolean(),
-    consumed_by_jobs: z.number().int().optional(),
-    location: z.string().optional(),
-    unit_cost: z.number().optional(),
-    unit_revenue: z.number().optional(),
-  })
-  .passthrough()
+const AllocationItem = z.object({
+  type: TypeC98Enum,
+  job_id: z.string().uuid(),
+  job_name: z.string(),
+  quantity: z.number(),
+  retail_rate: z.number().optional().default(0),
+  allocation_date: z.string().datetime({ offset: true }).nullable(),
+  description: z.string(),
+  stock_location: z.string().nullish(),
+  metal_type: z.string().nullish(),
+  alloy: z.string().nullish(),
+  specifics: z.string().nullish(),
+  allocation_id: z.string().uuid().nullish(),
+})
+const PurchaseOrderAllocationsResponse = z.object({
+  po_id: z.string().uuid(),
+  allocations: z.record(z.array(AllocationItem)),
+})
+const AllocationDetailsResponse = z.object({
+  type: TypeC98Enum,
+  id: z.string().uuid(),
+  description: z.string(),
+  quantity: z.number(),
+  job_name: z.string(),
+  can_delete: z.boolean(),
+  consumed_by_jobs: z.number().int().optional(),
+  location: z.string().optional(),
+  unit_cost: z.number().optional(),
+  unit_revenue: z.number().optional(),
+})
 const PurchaseOrderEmailRequest = z
   .object({
     recipient_email: z.string().min(1).email(),
     message: z.string().max(1000),
   })
   .partial()
-  .passthrough()
-const PurchaseOrderEmailResponse = z
-  .object({
-    success: z.boolean(),
-    email_subject: z.string().optional(),
-    email_body: z.string().optional(),
-    pdf_url: z.string().optional(),
-    message: z.string().optional(),
-  })
-  .passthrough()
-const PurchaseOrderEvent = z
-  .object({
-    id: z.string().uuid(),
-    description: z.string(),
-    timestamp: z.string().datetime({ offset: true }).optional(),
-    staff: z.string(),
-  })
-  .passthrough()
-const PurchaseOrderEventsResponse = z.object({ events: z.array(PurchaseOrderEvent) }).passthrough()
-const PurchasingErrorResponse = z
-  .object({ error: z.string(), details: z.string().optional() })
-  .passthrough()
-const PurchaseOrderEventCreateRequest = z
-  .object({ description: z.string().min(1).max(500) })
-  .passthrough()
-const PurchaseOrderEventCreateResponse = z
-  .object({ success: z.boolean(), event: PurchaseOrderEvent })
-  .passthrough()
+const PurchaseOrderEmailResponse = z.object({
+  success: z.boolean(),
+  email_subject: z.string().optional(),
+  email_body: z.string().optional(),
+  pdf_url: z.string().optional(),
+  message: z.string().optional(),
+})
+const PurchaseOrderEvent = z.object({
+  id: z.string().uuid(),
+  description: z.string(),
+  timestamp: z.string().datetime({ offset: true }).optional(),
+  staff: z.string(),
+})
+const PurchaseOrderEventsResponse = z.object({
+  events: z.array(PurchaseOrderEvent),
+})
+const PurchasingErrorResponse = z.object({
+  error: z.string(),
+  details: z.string().optional(),
+})
+const PurchaseOrderEventCreateRequest = z.object({
+  description: z.string().min(1).max(500),
+})
+const PurchaseOrderEventCreateResponse = z.object({
+  success: z.boolean(),
+  event: PurchaseOrderEvent,
+})
 const AllocationTypeEnum = z.enum(['job', 'stock'])
-const AllocationDeleteRequest = z
-  .object({
-    allocation_type: AllocationTypeEnum,
-    allocation_id: z.string().uuid(),
-  })
-  .passthrough()
-const AllocationDeleteResponse = z
-  .object({
-    success: z.boolean(),
-    message: z.string(),
-    deleted_quantity: z.number().optional(),
-    description: z.string().optional(),
-    job_name: z.string().optional(),
-    updated_received_quantity: z.number().optional(),
-  })
-  .passthrough()
+const AllocationDeleteRequest = z.object({
+  allocation_type: AllocationTypeEnum,
+  allocation_id: z.string().uuid(),
+})
+const AllocationDeleteResponse = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  deleted_quantity: z.number().optional(),
+  description: z.string().optional(),
+  job_name: z.string().optional(),
+  updated_received_quantity: z.number().optional(),
+})
 const PurchaseOrderLastNumberResponse = z
   .object({ last_po_number: z.string().nullable() })
   .partial()
-  .passthrough()
 const SourceEnum = z.enum(['purchase_order', 'split_from_stock', 'manual', 'product_catalog'])
-const StockItem = z
-  .object({
-    id: z.string().uuid(),
-    item_code: z.string().max(255).nullish(),
-    description: z.string().max(255),
-    quantity: z.number().gt(-100000000).lt(100000000),
-    unit_cost: z.number().gt(-100000000).lt(100000000),
-    unit_revenue: z.number().gt(-100000000).lt(100000000).nullish(),
-    date: z.string().datetime({ offset: true }).optional(),
-    source: SourceEnum,
-    location: z.string().optional(),
-    metal_type: z.union([MetalTypeEnum, BlankEnum]).optional(),
-    alloy: z.string().max(50).nullish(),
-    specifics: z.string().max(255).nullish(),
-    is_active: z.boolean().optional(),
-    job_id: z.string().uuid().nullable(),
-  })
-  .passthrough()
-const StockItemRequest = z
-  .object({
-    item_code: z.string().max(255).nullish(),
-    description: z.string().min(1).max(255),
-    quantity: z.number().gt(-100000000).lt(100000000),
-    unit_cost: z.number().gt(-100000000).lt(100000000),
-    unit_revenue: z.number().gt(-100000000).lt(100000000).nullish(),
-    date: z.string().datetime({ offset: true }).optional(),
-    source: SourceEnum,
-    location: z.string().optional(),
-    metal_type: z.union([MetalTypeEnum, BlankEnum]).optional(),
-    alloy: z.string().max(50).nullish(),
-    specifics: z.string().max(255).nullish(),
-    is_active: z.boolean().optional(),
-  })
-  .passthrough()
+const StockItem = z.object({
+  id: z.string().uuid(),
+  item_code: z.string().max(255).nullish(),
+  description: z.string().max(255),
+  quantity: z.number().gt(-100000000).lt(100000000),
+  unit_cost: z.number().gt(-100000000).lt(100000000),
+  unit_revenue: z.number().gt(-100000000).lt(100000000).nullish(),
+  date: z.string().datetime({ offset: true }).optional(),
+  source: SourceEnum,
+  location: z.string().optional(),
+  metal_type: z.union([MetalTypeEnum, BlankEnum]).optional(),
+  alloy: z.string().max(50).nullish(),
+  specifics: z.string().max(255).nullish(),
+  is_active: z.boolean().optional(),
+  job_id: z.string().uuid().nullable(),
+})
+const StockItemRequest = z.object({
+  item_code: z.string().max(255).nullish(),
+  description: z.string().min(1).max(255),
+  quantity: z.number().gt(-100000000).lt(100000000),
+  unit_cost: z.number().gt(-100000000).lt(100000000),
+  unit_revenue: z.number().gt(-100000000).lt(100000000).nullish(),
+  date: z.string().datetime({ offset: true }).optional(),
+  source: SourceEnum,
+  location: z.string().optional(),
+  metal_type: z.union([MetalTypeEnum, BlankEnum]).optional(),
+  alloy: z.string().max(50).nullish(),
+  specifics: z.string().max(255).nullish(),
+  is_active: z.boolean().optional(),
+})
 const PatchedStockItemRequest = z
   .object({
     item_code: z.string().max(255).nullable(),
@@ -2616,331 +2270,275 @@ const PatchedStockItemRequest = z
     is_active: z.boolean(),
   })
   .partial()
-  .passthrough()
-const StockConsumeRequest = z
-  .object({
-    job_id: z.string().uuid(),
-    quantity: z.number().gte(0).lt(100000000),
-    unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
-    unit_rev: z.number().gt(-100000000).lt(100000000).nullish(),
-  })
-  .passthrough()
-const SupplierPriceStatusItem = z
-  .object({
-    supplier_id: z.string().uuid(),
-    supplier_name: z.string(),
-    last_uploaded_at: z.string().datetime({ offset: true }).nullable(),
-    file_name: z.string().nullable(),
-    total_products: z.number().int().nullable(),
-    changes_last_update: z.number().int().nullable(),
-  })
-  .passthrough()
-const SupplierPriceStatusResponse = z
-  .object({
-    items: z.array(SupplierPriceStatusItem),
-    total_count: z.number().int(),
-  })
-  .passthrough()
-const XeroItem = z
-  .object({
-    code: z.string(),
-    name: z.string(),
-    description: z.string().optional(),
-    sales_details: z.object({}).partial().passthrough().optional(),
-    purchase_details: z.object({}).partial().passthrough().optional(),
-  })
-  .passthrough()
-const XeroItemListResponse = z
-  .object({
-    items: z.array(XeroItem),
-    total_count: z.number().int().optional(),
-  })
-  .passthrough()
+const StockConsumeRequest = z.object({
+  job_id: z.string().uuid(),
+  quantity: z.number().gte(0).lt(100000000),
+  unit_cost: z.number().gt(-100000000).lt(100000000).nullish(),
+  unit_rev: z.number().gt(-100000000).lt(100000000).nullish(),
+})
+const SupplierPriceStatusItem = z.object({
+  supplier_id: z.string().uuid(),
+  supplier_name: z.string(),
+  last_uploaded_at: z.string().datetime({ offset: true }).nullable(),
+  file_name: z.string().nullable(),
+  total_products: z.number().int().nullable(),
+  changes_last_update: z.number().int().nullable(),
+})
+const SupplierPriceStatusResponse = z.object({
+  items: z.array(SupplierPriceStatusItem),
+  total_count: z.number().int(),
+})
+const XeroItem = z.object({
+  code: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  sales_details: z.object({}).partial().passthrough().optional(),
+  purchase_details: z.object({}).partial().passthrough().optional(),
+})
+const XeroItemListResponse = z.object({
+  items: z.array(XeroItem),
+  total_count: z.number().int().optional(),
+})
 const DjangoJobExecutionStatusEnum = z.enum(['Started execution', 'Error!', 'Executed'])
-const DjangoJobExecution = z
-  .object({
-    id: z.number().int(),
-    job_id: z.string(),
-    status: DjangoJobExecutionStatusEnum,
-    run_time: z.string().datetime({ offset: true }),
-    duration: z.number().gt(-10000000000000).lt(10000000000000).nullish(),
-    exception: z.string().max(1000).nullish(),
-    traceback: z.string().nullish(),
-  })
-  .passthrough()
-const DjangoJob = z
-  .object({
-    id: z.string().max(255),
-    next_run_time: z.string().datetime({ offset: true }).nullish(),
-    job_state: z.string(),
-  })
-  .passthrough()
-const DjangoJobRequest = z
-  .object({
-    id: z.string().min(1).max(255),
-    next_run_time: z.string().datetime({ offset: true }).nullish(),
-  })
-  .passthrough()
+const DjangoJobExecution = z.object({
+  id: z.number().int(),
+  job_id: z.string(),
+  status: DjangoJobExecutionStatusEnum,
+  run_time: z.string().datetime({ offset: true }),
+  duration: z.number().gt(-10000000000000).lt(10000000000000).nullish(),
+  exception: z.string().max(1000).nullish(),
+  traceback: z.string().nullish(),
+})
+const DjangoJob = z.object({
+  id: z.string().max(255),
+  next_run_time: z.string().datetime({ offset: true }).nullish(),
+  job_state: z.string(),
+})
+const DjangoJobRequest = z.object({
+  id: z.string().min(1).max(255),
+  next_run_time: z.string().datetime({ offset: true }).nullish(),
+})
 const PatchedDjangoJobRequest = z
   .object({
     id: z.string().min(1).max(255),
     next_run_time: z.string().datetime({ offset: true }).nullable(),
   })
   .partial()
-  .passthrough()
-const AppErrorListResponse = z
-  .object({
-    count: z.number().int(),
-    next: z.string().nullish(),
-    previous: z.string().nullish(),
-    results: z.array(AppError),
-  })
-  .passthrough()
-const JobBreakdown = z
-  .object({
-    job_id: z.string(),
-    job_number: z.number().int(),
-    job_name: z.string(),
-    client: z.string(),
-    hours: z.number(),
-    revenue: z.number(),
-    cost: z.number(),
-    is_billable: z.boolean(),
-  })
-  .passthrough()
-const StaffDailyData = z
-  .object({
-    staff_id: z.string(),
-    staff_name: z.string(),
-    staff_initials: z.string(),
-    icon_url: z.string().nullable(),
-    scheduled_hours: z.number(),
-    actual_hours: z.number(),
-    billable_hours: z.number(),
-    non_billable_hours: z.number(),
-    total_revenue: z.number(),
-    total_cost: z.number(),
-    status: z.string(),
-    status_class: z.string(),
-    billable_percentage: z.number(),
-    completion_percentage: z.number(),
-    job_breakdown: z.array(JobBreakdown),
-    entry_count: z.number().int(),
-    alerts: z.array(z.string()),
-    is_weekend: z.boolean().optional().default(false),
-    weekend_enabled: z.boolean().optional().default(false),
-  })
-  .passthrough()
-const DailyTotals = z
-  .object({
-    total_scheduled_hours: z.number(),
-    total_actual_hours: z.number(),
-    total_billable_hours: z.number(),
-    total_non_billable_hours: z.number(),
-    total_revenue: z.number(),
-    total_cost: z.number(),
-    total_entries: z.number().int(),
-    completion_percentage: z.number(),
-    billable_percentage: z.number(),
-    missing_hours: z.number(),
-  })
-  .passthrough()
-const SummaryStats = z
-  .object({
-    total_staff: z.number().int(),
-    complete_staff: z.number().int(),
-    partial_staff: z.number().int(),
-    missing_staff: z.number().int(),
-    completion_rate: z.number(),
-  })
-  .passthrough()
-const DailyTimesheetSummary = z
-  .object({
-    date: z.string(),
-    staff_data: z.array(StaffDailyData),
-    daily_totals: DailyTotals,
-    summary_stats: SummaryStats,
-    weekend_enabled: z.boolean().optional().default(false),
-    is_weekend: z.boolean().optional().default(false),
-    day_type: z.string().optional(),
-  })
-  .passthrough()
-const ModernTimesheetJob = z
-  .object({
-    id: z.string().uuid(),
-    job_number: z.number().int().gte(-2147483648).lte(2147483647),
-    name: z.string().max(100),
-    client_name: z.string().nullable(),
-    status: Status7b9Enum.optional(),
-    charge_out_rate: z.number().gt(-100000000).lt(100000000),
-    has_actual_costset: z.boolean(),
-    leave_type: z.string().nullable(),
-    default_xero_pay_item_id: z.string().uuid(),
-    default_xero_pay_item_name: z.string(),
-  })
-  .passthrough()
-const JobsListResponse = z
-  .object({ jobs: z.array(ModernTimesheetJob), total_count: z.number().int() })
-  .passthrough()
-const PayRunListItem = z
-  .object({
-    id: z.string().uuid(),
-    xero_id: z.string().uuid(),
-    period_start_date: z.string(),
-    period_end_date: z.string(),
-    payment_date: z.string(),
-    pay_run_status: z.string(),
-    xero_url: z.string(),
-  })
-  .passthrough()
-const PayRunListResponse = z.object({ pay_runs: z.array(PayRunListItem) }).passthrough()
-const CreatePayRunRequest = z.object({ week_start_date: z.string() }).passthrough()
-const CreatePayRunResponse = z
-  .object({
-    id: z.string().uuid(),
-    xero_id: z.string().uuid(),
-    status: z.string(),
-    period_start_date: z.string(),
-    period_end_date: z.string(),
-    payment_date: z.string(),
-    xero_url: z.string(),
-  })
-  .passthrough()
-const PayRunSyncResponseRequest = z
-  .object({
-    synced: z.boolean(),
-    fetched: z.number().int(),
-    created: z.number().int(),
-    updated: z.number().int(),
-  })
-  .passthrough()
-const PayRunSyncResponse = z
-  .object({
-    synced: z.boolean(),
-    fetched: z.number().int(),
-    created: z.number().int(),
-    updated: z.number().int(),
-  })
-  .passthrough()
-const PostWeekToXeroRequest = z
-  .object({
-    staff_ids: z.array(z.string().uuid()),
-    week_start_date: z.string(),
-  })
-  .passthrough()
-const ModernStaff = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    firstName: z.string(),
-    lastName: z.string(),
-    email: z.string(),
-    icon_url: z.string().nullish(),
-    wageRate: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const StaffListResponse = z
-  .object({ staff: z.array(ModernStaff), total_count: z.number().int() })
-  .passthrough()
-const WeeklyStaffDataWeeklyHours = z
-  .object({
-    day: z.string(),
-    hours: z.number().gt(-1000).lt(1000),
-    billable_hours: z.number().gt(-1000).lt(1000),
-    scheduled_hours: z.number().gt(-1000).lt(1000),
-    status: z.string(),
-    leave_type: z.string().nullish(),
-    has_leave: z.boolean().optional().default(false),
-    billed_hours: z.number().gt(-100000000).lt(100000000),
-    unbilled_hours: z.number().gt(-100000000).lt(100000000),
-    overtime_1_5x_hours: z.number().gt(-100000000).lt(100000000),
-    overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
-    sick_leave_hours: z.number().gt(-100000000).lt(100000000),
-    annual_leave_hours: z.number().gt(-100000000).lt(100000000),
-    bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
-    daily_cost: z.number().gt(-100000000).lt(100000000),
-    daily_base_cost: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const WeeklyStaffData = z
-  .object({
-    staff_id: z.string().uuid(),
-    name: z.string(),
-    weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
-    total_hours: z.number().gt(-100000000).lt(100000000),
-    total_billable_hours: z.number().gt(-100000000).lt(100000000),
-    total_scheduled_hours: z.number().gt(-100000000).lt(100000000),
-    billable_percentage: z.number().gt(-1000).lt(1000),
-    status: z.string(),
-    total_billed_hours: z.number().gt(-100000000).lt(100000000),
-    total_unbilled_hours: z.number().gt(-100000000).lt(100000000),
-    total_overtime_1_5x_hours: z.number().gt(-100000000).lt(100000000),
-    total_overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
-    total_sick_leave_hours: z.number().gt(-100000000).lt(100000000),
-    total_annual_leave_hours: z.number().gt(-100000000).lt(100000000),
-    total_bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
-    weekly_cost: z.number().gt(-100000000).lt(100000000),
-    weekly_base_cost: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const WeeklySummary = z
-  .object({
-    total_hours: z.number().gt(-100000000).lt(100000000),
-    staff_count: z.number().int(),
-    billable_percentage: z.number().gt(-1000).lt(1000).nullish(),
-  })
-  .passthrough()
-const JobMetrics = z
-  .object({
-    total_estimated_profit: z.number().gt(-100000000).lt(100000000),
-    total_actual_profit: z.number().gt(-100000000).lt(100000000),
-    total_profit: z.number().gt(-100000000).lt(100000000),
-  })
-  .passthrough()
-const WeeklyTimesheetData = z
-  .object({
-    start_date: z.string(),
-    end_date: z.string(),
-    week_days: z.array(z.string()),
-    staff_data: z.array(WeeklyStaffData),
-    weekly_summary: WeeklySummary,
-    job_metrics: JobMetrics,
-    summary_stats: SummaryStats,
-    export_mode: z.string(),
-    is_current_week: z.boolean(),
-    navigation: z.object({}).partial().passthrough().nullish(),
-    weekend_enabled: z.boolean().optional(),
-    week_type: z.string().optional(),
-  })
-  .passthrough()
-const XeroError = z
-  .object({
-    id: z.string().uuid(),
-    timestamp: z.string().datetime({ offset: true }),
-    message: z.string(),
-    data: z.unknown().nullish(),
-    app: z.string().max(50).nullish(),
-    file: z.string().max(200).nullish(),
-    function: z.string().max(100).nullish(),
-    severity: z.number().int().gte(-2147483648).lte(2147483647).optional(),
-    job_id: z.string().uuid().nullish(),
-    user_id: z.string().uuid().nullish(),
-    resolved: z.boolean().optional(),
-    resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
-    entity: z.string().max(100),
-    reference_id: z.string().max(255),
-    kind: z.string().max(50),
-    resolved_by: z.string().uuid().nullish(),
-  })
-  .passthrough()
-const PaginatedXeroErrorList = z
-  .object({
-    count: z.number().int(),
-    next: z.string().url().nullish(),
-    previous: z.string().url().nullish(),
-    results: z.array(XeroError),
-  })
-  .passthrough()
+const AppErrorListResponse = z.object({
+  count: z.number().int(),
+  next: z.string().nullish(),
+  previous: z.string().nullish(),
+  results: z.array(AppError),
+})
+const JobBreakdown = z.object({
+  job_id: z.string(),
+  job_number: z.number().int(),
+  job_name: z.string(),
+  client: z.string(),
+  hours: z.number(),
+  revenue: z.number(),
+  cost: z.number(),
+  is_billable: z.boolean(),
+})
+const StaffDailyData = z.object({
+  staff_id: z.string(),
+  staff_name: z.string(),
+  staff_initials: z.string(),
+  icon_url: z.string().nullable(),
+  scheduled_hours: z.number(),
+  actual_hours: z.number(),
+  billable_hours: z.number(),
+  non_billable_hours: z.number(),
+  total_revenue: z.number(),
+  total_cost: z.number(),
+  status: z.string(),
+  status_class: z.string(),
+  billable_percentage: z.number(),
+  completion_percentage: z.number(),
+  job_breakdown: z.array(JobBreakdown),
+  entry_count: z.number().int(),
+  alerts: z.array(z.string()),
+  is_weekend: z.boolean().optional().default(false),
+  weekend_enabled: z.boolean().optional().default(false),
+})
+const DailyTotals = z.object({
+  total_scheduled_hours: z.number(),
+  total_actual_hours: z.number(),
+  total_billable_hours: z.number(),
+  total_non_billable_hours: z.number(),
+  total_revenue: z.number(),
+  total_cost: z.number(),
+  total_entries: z.number().int(),
+  completion_percentage: z.number(),
+  billable_percentage: z.number(),
+  missing_hours: z.number(),
+})
+const SummaryStats = z.object({
+  total_staff: z.number().int(),
+  complete_staff: z.number().int(),
+  partial_staff: z.number().int(),
+  missing_staff: z.number().int(),
+  completion_rate: z.number(),
+})
+const DailyTimesheetSummary = z.object({
+  date: z.string(),
+  staff_data: z.array(StaffDailyData),
+  daily_totals: DailyTotals,
+  summary_stats: SummaryStats,
+  weekend_enabled: z.boolean().optional().default(false),
+  is_weekend: z.boolean().optional().default(false),
+  day_type: z.string().optional(),
+})
+const ModernTimesheetJob = z.object({
+  id: z.string().uuid(),
+  job_number: z.number().int().gte(-2147483648).lte(2147483647),
+  name: z.string().max(100),
+  client_name: z.string().nullable(),
+  status: Status7b9Enum.optional(),
+  charge_out_rate: z.number().gt(-100000000).lt(100000000),
+  has_actual_costset: z.boolean(),
+  leave_type: z.string().nullable(),
+  default_xero_pay_item_id: z.string().uuid(),
+  default_xero_pay_item_name: z.string(),
+})
+const JobsListResponse = z.object({
+  jobs: z.array(ModernTimesheetJob),
+  total_count: z.number().int(),
+})
+const PayRunListItem = z.object({
+  id: z.string().uuid(),
+  xero_id: z.string().uuid(),
+  period_start_date: z.string(),
+  period_end_date: z.string(),
+  payment_date: z.string(),
+  pay_run_status: z.string(),
+  xero_url: z.string(),
+})
+const PayRunListResponse = z.object({ pay_runs: z.array(PayRunListItem) })
+const CreatePayRunRequest = z.object({ week_start_date: z.string() })
+const CreatePayRunResponse = z.object({
+  id: z.string().uuid(),
+  xero_id: z.string().uuid(),
+  status: z.string(),
+  period_start_date: z.string(),
+  period_end_date: z.string(),
+  payment_date: z.string(),
+  xero_url: z.string(),
+})
+const PayRunSyncResponseRequest = z.object({
+  synced: z.boolean(),
+  fetched: z.number().int(),
+  created: z.number().int(),
+  updated: z.number().int(),
+})
+const PayRunSyncResponse = z.object({
+  synced: z.boolean(),
+  fetched: z.number().int(),
+  created: z.number().int(),
+  updated: z.number().int(),
+})
+const PostWeekToXeroRequest = z.object({
+  staff_ids: z.array(z.string().uuid()),
+  week_start_date: z.string(),
+})
+const ModernStaff = z.object({
+  id: z.string(),
+  name: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string(),
+  icon_url: z.string().nullish(),
+  wageRate: z.number().gt(-100000000).lt(100000000),
+})
+const StaffListResponse = z.object({
+  staff: z.array(ModernStaff),
+  total_count: z.number().int(),
+})
+const WeeklyStaffDataWeeklyHours = z.object({
+  day: z.string(),
+  hours: z.number().gt(-1000).lt(1000),
+  billable_hours: z.number().gt(-1000).lt(1000),
+  scheduled_hours: z.number().gt(-1000).lt(1000),
+  status: z.string(),
+  leave_type: z.string().nullish(),
+  has_leave: z.boolean().optional().default(false),
+  billed_hours: z.number().gt(-100000000).lt(100000000),
+  unbilled_hours: z.number().gt(-100000000).lt(100000000),
+  overtime_1_5x_hours: z.number().gt(-100000000).lt(100000000),
+  overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
+  sick_leave_hours: z.number().gt(-100000000).lt(100000000),
+  annual_leave_hours: z.number().gt(-100000000).lt(100000000),
+  bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
+  daily_cost: z.number().gt(-100000000).lt(100000000),
+  daily_base_cost: z.number().gt(-100000000).lt(100000000),
+})
+const WeeklyStaffData = z.object({
+  staff_id: z.string().uuid(),
+  name: z.string(),
+  weekly_hours: z.array(WeeklyStaffDataWeeklyHours),
+  total_hours: z.number().gt(-100000000).lt(100000000),
+  total_billable_hours: z.number().gt(-100000000).lt(100000000),
+  total_scheduled_hours: z.number().gt(-100000000).lt(100000000),
+  billable_percentage: z.number().gt(-1000).lt(1000),
+  status: z.string(),
+  total_billed_hours: z.number().gt(-100000000).lt(100000000),
+  total_unbilled_hours: z.number().gt(-100000000).lt(100000000),
+  total_overtime_1_5x_hours: z.number().gt(-100000000).lt(100000000),
+  total_overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
+  total_sick_leave_hours: z.number().gt(-100000000).lt(100000000),
+  total_annual_leave_hours: z.number().gt(-100000000).lt(100000000),
+  total_bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
+  weekly_cost: z.number().gt(-100000000).lt(100000000),
+  weekly_base_cost: z.number().gt(-100000000).lt(100000000),
+})
+const WeeklySummary = z.object({
+  total_hours: z.number().gt(-100000000).lt(100000000),
+  staff_count: z.number().int(),
+  billable_percentage: z.number().gt(-1000).lt(1000).nullish(),
+})
+const JobMetrics = z.object({
+  total_estimated_profit: z.number().gt(-100000000).lt(100000000),
+  total_actual_profit: z.number().gt(-100000000).lt(100000000),
+  total_profit: z.number().gt(-100000000).lt(100000000),
+})
+const WeeklyTimesheetData = z.object({
+  start_date: z.string(),
+  end_date: z.string(),
+  week_days: z.array(z.string()),
+  staff_data: z.array(WeeklyStaffData),
+  weekly_summary: WeeklySummary,
+  job_metrics: JobMetrics,
+  summary_stats: SummaryStats,
+  export_mode: z.string(),
+  is_current_week: z.boolean(),
+  navigation: z.object({}).partial().passthrough().nullish(),
+  weekend_enabled: z.boolean().optional(),
+  week_type: z.string().optional(),
+})
+const XeroError = z.object({
+  id: z.string().uuid(),
+  timestamp: z.string().datetime({ offset: true }),
+  message: z.string(),
+  data: z.unknown().nullish(),
+  app: z.string().max(50).nullish(),
+  file: z.string().max(200).nullish(),
+  function: z.string().max(100).nullish(),
+  severity: z.number().int().gte(-2147483648).lte(2147483647).optional(),
+  job_id: z.string().uuid().nullish(),
+  user_id: z.string().uuid().nullish(),
+  resolved: z.boolean().optional(),
+  resolved_timestamp: z.string().datetime({ offset: true }).nullish(),
+  entity: z.string().max(100),
+  reference_id: z.string().max(255),
+  kind: z.string().max(50),
+  resolved_by: z.string().uuid().nullish(),
+})
+const PaginatedXeroErrorList = z.object({
+  count: z.number().int(),
+  next: z.string().url().nullish(),
+  previous: z.string().url().nullish(),
+  results: z.array(XeroError),
+})
 
 export const schemas = {
   KPIProfitBreakdown,
@@ -3280,11 +2878,17 @@ const endpoints = makeApi([
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string(), details: z.unknown().optional() }).passthrough(),
+        schema: z.object({
+          error: z.string(),
+          details: z.unknown().optional(),
+        }),
       },
       {
         status: 500,
-        schema: z.object({ error: z.string(), details: z.unknown().optional() }).passthrough(),
+        schema: z.object({
+          error: z.string(),
+          details: z.unknown().optional(),
+        }),
       },
     ],
   },
@@ -3336,16 +2940,14 @@ Returns:
               variance: z.number(),
               variance_pct: z.number(),
             })
-            .partial()
-            .passthrough(),
+            .partial(),
         ),
       })
-      .partial()
-      .passthrough(),
+      .partial(),
     errors: [
       {
         status: 500,
-        schema: z.object({ error: z.string() }).partial().passthrough(),
+        schema: z.object({ error: z.string() }).partial(),
       },
     ],
   },
@@ -3384,16 +2986,14 @@ Returns:
               variance_all_time: z.number().nullable(),
               note: z.string().nullable(),
             })
-            .partial()
-            .passthrough(),
+            .partial(),
         ),
       })
-      .partial()
-      .passthrough(),
+      .partial(),
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).partial().passthrough(),
+        schema: z.object({ error: z.string() }).partial(),
       },
     ],
   },
@@ -3433,7 +3033,7 @@ Returns:
         schema: BearerTokenRequest,
       },
     ],
-    response: z.object({ token: z.string() }).passthrough(),
+    response: z.object({ token: z.string() }),
     errors: [
       {
         status: 401,
@@ -3600,10 +3200,10 @@ based on the &#x27;actual_users&#x27; query parameter.`,
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ refresh: z.string().min(1) }).passthrough(),
+        schema: z.object({ refresh: z.string().min(1) }),
       },
     ],
-    response: z.object({ access: z.string() }).partial().passthrough(),
+    response: z.object({ access: z.string() }).partial(),
     errors: [
       {
         status: 401,
@@ -3623,7 +3223,7 @@ information about a token&#x27;s fitness for a particular use.`,
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ token: z.string().min(1) }).passthrough(),
+        schema: z.object({ token: z.string().min(1) }),
       },
     ],
     response: z.void(),
@@ -4168,7 +3768,7 @@ Read-only - these are synced from Xero, not created locally.`,
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ breakdown: z.boolean() }).passthrough(),
+        schema: z.object({ breakdown: z.boolean() }),
       },
       {
         name: 'job_id',
@@ -4282,7 +3882,7 @@ Read-only - these are synced from Xero, not created locally.`,
     alias: 'api_xero_disconnect_create',
     description: `Disconnects from Xero by clearing the token from cache and database.`,
     requestFormat: 'json',
-    response: z.object({ connected: z.boolean() }).passthrough(),
+    response: z.object({ connected: z.boolean() }),
   },
   {
     method: 'get',
@@ -4290,7 +3890,7 @@ Read-only - these are synced from Xero, not created locally.`,
     alias: 'api_xero_ping_retrieve',
     description: `Check if the user is authenticated with Xero.`,
     requestFormat: 'json',
-    response: z.object({ connected: z.boolean() }).passthrough(),
+    response: z.object({ connected: z.boolean() }),
   },
   {
     method: 'get',
@@ -4508,7 +4108,7 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ address: z.string() }).passthrough(),
+        schema: z.object({ address: z.string() }),
       },
     ],
     response: z
@@ -4527,12 +4127,10 @@ Endpoint: /api/app-errors/&lt;id&gt;/`,
               latitude: z.number(),
               longitude: z.number(),
             })
-            .partial()
-            .passthrough(),
+            .partial(),
         ),
       })
-      .partial()
-      .passthrough(),
+      .partial(),
     errors: [
       {
         status: 400,
@@ -5019,7 +4617,7 @@ Query Parameters:
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ staff_id: z.string().uuid() }).passthrough(),
+        schema: z.object({ staff_id: z.string().uuid() }),
       },
       {
         name: 'job_id',
@@ -5152,10 +4750,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: z
-          .object({ content: z.string().min(1), metadata: z.unknown() })
-          .partial()
-          .passthrough(),
+        schema: z.object({ content: z.string().min(1), metadata: z.unknown() }).partial(),
       },
       {
         name: 'job_id',
@@ -5168,7 +4763,7 @@ Expected JSON:
         schema: z.string(),
       },
     ],
-    response: z.object({ content: z.string(), metadata: z.unknown() }).partial().passthrough(),
+    response: z.object({ content: z.string(), metadata: z.unknown() }).partial(),
   },
   {
     method: 'delete',
@@ -5271,7 +4866,7 @@ Expected JSON:
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ status: z.string().min(1) }).passthrough(),
+        schema: z.object({ status: z.string().min(1) }),
       },
       {
         name: 'job_id',
@@ -5591,11 +5186,11 @@ POST /job/rest/cost_lines/&lt;cost_line_id&gt;/approve`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
       {
         status: 500,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -5616,11 +5211,11 @@ POST /job/rest/cost_lines/&lt;cost_line_id&gt;/approve`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
       {
         status: 500,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -5669,7 +5264,7 @@ POST /job/rest/cost_lines/&lt;cost_line_id&gt;/approve`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -5734,7 +5329,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/link/`,
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ template_url: z.string().url() }).partial().passthrough(),
+        schema: z.object({ template_url: z.string().url() }).partial(),
       },
       {
         name: 'id',
@@ -5742,7 +5337,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/link/`,
         schema: z.string().uuid(),
       },
     ],
-    response: z.object({ template_url: z.string().url() }).partial().passthrough(),
+    response: z.object({ template_url: z.string().url() }).partial(),
   },
   {
     method: 'post',
@@ -5803,7 +5398,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -5829,7 +5424,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -5850,7 +5445,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -5871,7 +5466,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -5945,10 +5540,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: z
-          .object({ reason: z.string().min(1).max(500) })
-          .partial()
-          .passthrough(),
+        schema: z.object({ reason: z.string().min(1).max(500) }).partial(),
       },
       {
         name: 'job_id',
@@ -5975,7 +5567,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6021,7 +5613,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6042,7 +5634,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6056,7 +5648,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ description: z.string().min(1).max(500) }).passthrough(),
+        schema: z.object({ description: z.string().min(1).max(500) }),
       },
       {
         name: 'job_id',
@@ -6068,15 +5660,15 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
       {
         status: 409,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
       {
         status: 429,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6276,7 +5868,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6297,7 +5889,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6348,7 +5940,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6374,7 +5966,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6410,7 +6002,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6436,7 +6028,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6482,7 +6074,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6492,7 +6084,7 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
     alias: 'job_rest_jobs_status_choices_retrieve',
     description: `Fetch job status choices. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
     requestFormat: 'json',
-    response: z.object({ statuses: z.object({}).partial().passthrough() }).passthrough(),
+    response: z.object({ statuses: z.object({}).partial().passthrough() }),
   },
   {
     method: 'get',
@@ -6608,7 +6200,7 @@ POST: Processes selected jobs for month-end archiving and status updates`,
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ task_description: z.string().min(1) }).passthrough(),
+        schema: z.object({ task_description: z.string().min(1) }),
       },
     ],
     response: GenerateHazardsResponse,
@@ -6641,7 +6233,7 @@ POST: Processes selected jobs for month-end archiving and status updates`,
         schema: ImproveSectionRequestRequest,
       },
     ],
-    response: z.object({ improved_text: z.string() }).passthrough(),
+    response: z.object({ improved_text: z.string() }),
   },
   {
     method: 'get',
@@ -6823,15 +6415,15 @@ Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
       {
         status: 404,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
       {
         status: 500,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -6852,15 +6444,15 @@ Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.`,
     errors: [
       {
         status: 400,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
       {
         status: 404,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
       {
         status: 500,
-        schema: z.object({ error: z.string() }).passthrough(),
+        schema: z.object({ error: z.string() }),
       },
     ],
   },
@@ -7134,7 +6726,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ description: z.string().min(1).max(500) }).passthrough(),
+        schema: z.object({ description: z.string().min(1).max(500) }),
       },
       {
         name: 'po_id',
@@ -7216,7 +6808,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
     alias: 'getLastPurchaseOrderNumber',
     description: `Return the most recent purchase order number.`,
     requestFormat: 'json',
-    response: z.object({ last_po_number: z.string().nullable() }).partial().passthrough(),
+    response: z.object({ last_po_number: z.string().nullable() }).partial(),
     errors: [
       {
         status: 500,
@@ -7611,7 +7203,7 @@ Returns:
       {
         name: 'body',
         type: 'Body',
-        schema: z.object({ week_start_date: z.string() }).passthrough(),
+        schema: z.object({ week_start_date: z.string() }),
       },
     ],
     response: CreatePayRunResponse,

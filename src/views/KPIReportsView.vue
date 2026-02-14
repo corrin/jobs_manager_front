@@ -211,10 +211,10 @@
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <KPICard
                       title="Labour"
-                      :value="formatHours(kpiData.monthly_totals.billable_hours)"
-                      :subtitle="`of ${formatHours(kpiData.monthly_totals.total_hours)} total`"
-                      :percentage="utilizationPercentage + '%'"
-                      description="Billable hours"
+                      :value="`${formatHours(kpiData.monthly_totals.billable_hours)} billed`"
+                      :subtitle="`${formatHours(kpiData.monthly_totals.total_hours)} wages`"
+                      :percentage="avgBillableHoursDisplay"
+                      description="Avg daily billable hours"
                       :trend="utilizationTrend"
                       :trend-direction="utilizationTrendDirection"
                       :variant="utilizationVariant"
@@ -222,35 +222,44 @@
                       @click="showLabourModal = true"
                     />
                     <KPICard
-                      title="Materials & Adjustments"
-                      :value="formatCurrency(materialRevenue)"
-                      :percentage="materialPercentage + '%'"
-                      description="Material markup"
-                      :trend="'Rev: ' + formatCurrency(totalRevenue)"
-                      trend-direction="neutral"
+                      title="Materials"
+                      :value="
+                        formatCurrency(kpiData.monthly_totals.material_profit, { decimals: 0 })
+                      "
+                      :subtitle="[
+                        `${formatCurrency(kpiData.monthly_totals.material_revenue, { decimals: 0 })} revenue`,
+                        `${formatCurrency(kpiData.monthly_totals.material_cost, { decimals: 0 })} cost`,
+                      ]"
+                      :percentage="materialMargin"
+                      description="margin"
+                      :clickable="true"
+                      @click="showMaterialsModal = true"
+                    />
+                    <KPICard
+                      title="Adjustments"
+                      :value="
+                        formatCurrency(kpiData.monthly_totals.adjustment_profit, { decimals: 0 })
+                      "
+                      :subtitle="[
+                        `${formatCurrency(kpiData.monthly_totals.adjustment_revenue, { decimals: 0 })} revenue`,
+                        `${formatCurrency(kpiData.monthly_totals.adjustment_cost, { decimals: 0 })} cost`,
+                      ]"
+                      :percentage="adjustmentMargin"
+                      description="margin"
                       :clickable="true"
                       @click="showMaterialsModal = true"
                     />
                     <KPICard
                       title="Profit"
-                      :value="formatCurrency(kpiData.monthly_totals.net_profit)"
-                      :subtitle="`GP: ${formatCurrency(kpiData.monthly_totals.gross_profit)}`"
-                      :percentage="profitPercentage + '%'"
-                      description="Net profit"
-                      :trend="profitTrend"
-                      :trend-direction="profitTrendDirection"
-                      :variant="profitVariant"
+                      :value="formatCurrency(kpiData.monthly_totals.net_profit, { decimals: 0 })"
+                      :subtitle="[
+                        `Rev: ${formatCurrency(kpiData.monthly_totals.total_revenue, { decimals: 0 })}`,
+                        `GP: ${formatCurrency(kpiData.monthly_totals.gross_profit, { decimals: 0 })}`,
+                      ]"
+                      :percentage="profitMargin"
+                      description="net margin"
                       :clickable="true"
                       @click="showProfitModal = true"
-                    />
-                    <KPICard
-                      title="Performance"
-                      :value="performanceRating"
-                      :percentage="performancePercentage + '%'"
-                      description="Good days"
-                      :trend="performanceTrend"
-                      :trend-direction="performanceTrendDirection"
-                      :variant="performanceVariant"
                     />
                   </div>
 
@@ -386,11 +395,9 @@ async function fetchKPIData() {
   }
 }
 
-const utilizationPercentage = computed(() => {
-  if (!kpiData.value) return 0
-  const { billable_hours, total_hours } = kpiData.value.monthly_totals
-  if (total_hours === 0) return 0
-  return Math.round((billable_hours / total_hours) * 100)
+const avgBillableHoursDisplay = computed(() => {
+  if (!kpiData.value) return '0h'
+  return `${kpiData.value.monthly_totals.avg_billable_hours_so_far.toFixed(1)}h`
 })
 
 const utilizationTrend = computed(() => {
@@ -399,97 +406,47 @@ const utilizationTrend = computed(() => {
 })
 
 const utilizationTrendDirection = computed(() => {
-  const percentage = utilizationPercentage.value
-  if (percentage >= 80) return 'up'
-  if (percentage >= 60) return 'neutral'
+  if (!kpiData.value) return 'neutral'
+  const avg = kpiData.value.monthly_totals.avg_billable_hours_so_far
+  const { kpi_daily_billable_hours_green, kpi_daily_billable_hours_amber } =
+    kpiData.value.thresholds
+  if (avg >= kpi_daily_billable_hours_green) return 'up'
+  if (avg >= kpi_daily_billable_hours_amber) return 'neutral'
   return 'down'
 })
 
 const utilizationVariant = computed(() => {
-  const percentage = utilizationPercentage.value
-  if (percentage >= 80) return 'success'
-  if (percentage >= 60) return 'warning'
-  return 'danger'
-})
-
-const materialRevenue = computed(() => {
-  if (!kpiData.value) return 0
-  return Object.values(kpiData.value.calendar_data).reduce((sum, day) => {
-    return sum + (day?.details?.material_revenue || 0)
-  }, 0)
-})
-
-const totalRevenue = computed(() => {
-  if (!kpiData.value) return 0
-  return Object.values(kpiData.value.calendar_data).reduce((sum, day) => {
-    return sum + (day?.details?.total_revenue || 0)
-  }, 0)
-})
-
-const materialPercentage = computed(() => {
-  if (!kpiData.value || totalRevenue.value === 0) return 0
-  return Math.round((materialRevenue.value / totalRevenue.value) * 100)
-})
-
-const profitPercentage = computed(() => {
-  if (!kpiData.value) return 0
-  const netProfit = kpiData.value.monthly_totals.net_profit
-  if (netProfit >= 0) return `+${Math.round(netProfit)}`
-  return `${Math.round(netProfit)}`
-})
-
-const profitTrend = computed(() => {
-  if (!kpiData.value) return ''
-  return `GP: ${formatCurrency(kpiData.value.monthly_totals.gross_profit)}`
-})
-
-const profitTrendDirection = computed(() => {
-  if (!kpiData.value) return 'neutral'
-  const netProfit = kpiData.value.monthly_totals.net_profit
-  if (netProfit > 0) return 'up'
-  if (netProfit === 0) return 'neutral'
-  return 'down'
-})
-
-const profitVariant = computed(() => {
   if (!kpiData.value) return 'default'
-  const netProfit = kpiData.value.monthly_totals.net_profit
-  if (netProfit > 0) return 'success'
-  if (netProfit === 0) return 'warning'
+  const avg = kpiData.value.monthly_totals.avg_billable_hours_so_far
+  const { kpi_daily_billable_hours_green, kpi_daily_billable_hours_amber } =
+    kpiData.value.thresholds
+  if (avg >= kpi_daily_billable_hours_green) return 'success'
+  if (avg >= kpi_daily_billable_hours_amber) return 'warning'
   return 'danger'
 })
 
-const performanceRating = computed(() => {
-  if (!kpiData.value) return '0'
-  const { days_green, days_amber, days_red } = kpiData.value.monthly_totals
-  return kpiService.getPerformanceRating(days_green, days_amber, days_red)
+const materialMargin = computed(() => {
+  if (!kpiData.value || kpiData.value.monthly_totals.material_revenue === 0) return '0%'
+  const margin =
+    (kpiData.value.monthly_totals.material_profit / kpiData.value.monthly_totals.material_revenue) *
+    100
+  return `${Math.round(margin)}%`
 })
 
-const performancePercentage = computed(() => {
-  if (!kpiData.value) return 0
-  const { days_green, working_days } = kpiData.value.monthly_totals
-  if (working_days === 0) return 0
-  return Math.round((days_green / working_days) * 100)
+const adjustmentMargin = computed(() => {
+  if (!kpiData.value || kpiData.value.monthly_totals.adjustment_revenue === 0) return '0%'
+  const margin =
+    (kpiData.value.monthly_totals.adjustment_profit /
+      kpiData.value.monthly_totals.adjustment_revenue) *
+    100
+  return `${Math.round(margin)}%`
 })
 
-const performanceTrend = computed(() => {
-  if (!kpiData.value) return ''
-  const { days_green, days_amber, days_red } = kpiData.value.monthly_totals
-  return `${days_green}G ${days_amber}A ${days_red}R`
-})
-
-const performanceTrendDirection = computed(() => {
-  const percentage = performancePercentage.value
-  if (percentage >= 80) return 'up'
-  if (percentage >= 60) return 'neutral'
-  return 'down'
-})
-
-const performanceVariant = computed(() => {
-  const percentage = performancePercentage.value
-  if (percentage >= 80) return 'success'
-  if (percentage >= 60) return 'warning'
-  return 'danger'
+const profitMargin = computed(() => {
+  if (!kpiData.value || kpiData.value.monthly_totals.total_revenue === 0) return '0%'
+  const margin =
+    (kpiData.value.monthly_totals.net_profit / kpiData.value.monthly_totals.total_revenue) * 100
+  return `${Math.round(margin)}%`
 })
 
 function formatHours(hours: number): string {

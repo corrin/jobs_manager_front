@@ -10,7 +10,12 @@
 
     <div class="kpi-card__content">
       <div class="kpi-card__value">{{ value }}</div>
-      <div v-if="subtitle" class="kpi-card__subtitle">{{ subtitle }}</div>
+      <div v-if="subtitle" class="kpi-card__subtitle">
+        <template v-if="Array.isArray(subtitle)">
+          <div v-for="(line, i) in subtitle" :key="i">{{ line }}</div>
+        </template>
+        <template v-else>{{ subtitle }}</template>
+      </div>
     </div>
 
     <div v-if="percentage" class="kpi-card__footer">
@@ -29,7 +34,7 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-vue-next'
 interface Props {
   title: string
   value: string
-  subtitle?: string
+  subtitle?: string | string[]
   percentage?: string
   description?: string
   trend?: string
