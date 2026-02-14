@@ -86,11 +86,13 @@ export function capitalize(str: string): string {
  * @param value - Number to format
  * @returns Formatted currency string (e.g., "$1,234.56")
  */
-export function formatCurrency(value: number | null | undefined): string {
-  if (value === null || value === undefined) return '$0.00'
+export function formatCurrency(value: number | null | undefined, { decimals = 2 } = {}): string {
+  if (value === null || value === undefined) return decimals === 0 ? '$0' : '$0.00'
   return new Intl.NumberFormat('en-NZ', {
     style: 'currency',
     currency: 'NZD',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(value)
 }
 

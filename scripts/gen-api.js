@@ -28,6 +28,7 @@ async function main() {
       exportSchemas: true, // same as --export-schemas
       apiClientName: 'api', // generates `export const api = new Zodios(...)`
       withAlias: true,
+      additionalPropertiesDefaultValue: false, // don't add .passthrough() to every schema
     },
     prettierPath: '.prettierrc.json', // Use project's prettier config
   })

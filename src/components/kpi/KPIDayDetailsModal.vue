@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogContent class="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle class="text-xl font-semibold">
           {{ formatDateTitle(dayData?.date) }}
@@ -22,22 +22,26 @@
           <div class="space-y-2">
             <div class="flex justify-between items-center text-xs">
               <span class="text-gray-700">Labour Revenue</span>
-              <span class="font-medium">{{ formatCurrency(dayData.details.time_revenue) }}</span>
+              <span class="font-medium">{{
+                formatCurrency(dayData.details.time_revenue, { decimals: 0 })
+              }}</span>
             </div>
             <div class="flex justify-between items-center text-xs">
               <span class="text-gray-700">Material Revenue</span>
               <span class="font-medium">{{
-                formatCurrency(dayData.details.material_revenue)
+                formatCurrency(dayData.details.material_revenue, { decimals: 0 })
               }}</span>
             </div>
             <div class="flex justify-between items-center text-xs">
               <span class="text-gray-700">Adjustment Revenue</span>
-              <span class="font-medium">{{ formatCurrency(adjustmentRevenue) }}</span>
+              <span class="font-medium">{{
+                formatCurrency(adjustmentRevenue, { decimals: 0 })
+              }}</span>
             </div>
             <hr class="border-gray-300" />
             <div class="flex justify-between items-center font-bold text-xs">
               <span>Total Revenue</span>
-              <span>{{ formatCurrency(dayData.details.total_revenue) }}</span>
+              <span>{{ formatCurrency(dayData.details.total_revenue, { decimals: 0 }) }}</span>
             </div>
           </div>
         </div>
@@ -48,20 +52,24 @@
           <div class="space-y-2">
             <div class="flex justify-between items-center text-xs">
               <span class="text-gray-700">Labor Cost</span>
-              <span class="font-medium">{{ formatCurrency(dayData.details.staff_cost) }}</span>
+              <span class="font-medium">{{
+                formatCurrency(dayData.details.staff_cost, { decimals: 0 })
+              }}</span>
             </div>
             <div class="flex justify-between items-center text-xs">
               <span class="text-gray-700">Material Cost</span>
-              <span class="font-medium">{{ formatCurrency(dayData.details.material_cost) }}</span>
+              <span class="font-medium">{{
+                formatCurrency(dayData.details.material_cost, { decimals: 0 })
+              }}</span>
             </div>
             <div class="flex justify-between items-center text-xs">
               <span class="text-gray-700">Adjustment Cost</span>
-              <span class="font-medium">{{ formatCurrency(adjustmentCost) }}</span>
+              <span class="font-medium">{{ formatCurrency(adjustmentCost, { decimals: 0 }) }}</span>
             </div>
             <hr class="border-gray-300" />
             <div class="flex justify-between items-center font-bold text-xs">
               <span>Total Cost</span>
-              <span>{{ formatCurrency(dayData.details.total_cost) }}</span>
+              <span>{{ formatCurrency(dayData.details.total_cost, { decimals: 0 }) }}</span>
             </div>
           </div>
         </div>
@@ -73,19 +81,19 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div class="flex justify-between items-center text-xs">
             <span class="text-gray-700">Labor Profit</span>
-            <span class="font-medium">{{ formatCurrency(laborProfit) }}</span>
+            <span class="font-medium">{{ formatCurrency(laborProfit, { decimals: 0 }) }}</span>
           </div>
           <div class="flex justify-between items-center text-xs">
             <span class="text-gray-700">Material Profit</span>
-            <span class="font-medium">{{ formatCurrency(materialProfit) }}</span>
+            <span class="font-medium">{{ formatCurrency(materialProfit, { decimals: 0 }) }}</span>
           </div>
           <div class="flex justify-between items-center text-xs">
             <span class="text-gray-700">Adjustment Profit</span>
-            <span class="font-medium">{{ formatCurrency(adjustmentProfit) }}</span>
+            <span class="font-medium">{{ formatCurrency(adjustmentProfit, { decimals: 0 }) }}</span>
           </div>
           <div class="flex justify-between items-center font-bold text-xs">
             <span>Total Gross Profit</span>
-            <span>{{ formatCurrency(dayData.gross_profit) }}</span>
+            <span>{{ formatCurrency(dayData.gross_profit, { decimals: 0 }) }}</span>
           </div>
         </div>
       </div>
@@ -123,16 +131,16 @@
                   </button>
                 </td>
                 <td class="py-1.5 px-2 text-right">
-                  {{ formatCurrency(job.labour_profit) }}
+                  {{ formatCurrency(job.labour_profit, { decimals: 0 }) }}
                 </td>
                 <td class="py-1.5 px-2 text-right">
-                  {{ formatCurrency(job.material_profit) }}
+                  {{ formatCurrency(job.material_profit, { decimals: 0 }) }}
                 </td>
                 <td class="py-1.5 px-2 text-right">
-                  {{ formatCurrency(job.adjustment_profit) }}
+                  {{ formatCurrency(job.adjustment_profit, { decimals: 0 }) }}
                 </td>
                 <td class="py-1.5 px-2 text-right font-medium">
-                  {{ formatCurrency(job.profit) }}
+                  {{ formatCurrency(job.profit, { decimals: 0 }) }}
                 </td>
               </tr>
             </tbody>

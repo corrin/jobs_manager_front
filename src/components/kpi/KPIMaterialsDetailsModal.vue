@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogContent class="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle class="text-xl font-semibold">
           Materials & Adjustments Breakdown - {{ monthYear }}
@@ -18,21 +18,21 @@
           <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-purple-700">
-                {{ formatCurrency(materialRevenue) }}
+                {{ formatCurrency(materialRevenue, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-purple-600">Material Revenue</div>
               <div class="text-xs text-gray-500 mt-1">Material sales</div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-purple-700">
-                {{ formatCurrency(adjustmentRevenue) }}
+                {{ formatCurrency(adjustmentRevenue, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-purple-600">Adjustment Revenue</div>
               <div class="text-xs text-gray-500 mt-1">Price adjustments</div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-purple-700">
-                {{ formatCurrency(totalNonLabourRevenue) }}
+                {{ formatCurrency(totalNonLabourRevenue, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-purple-600">Total Non-Labour</div>
               <div class="text-xs text-gray-500 mt-1">Materials + Adjustments</div>
@@ -50,20 +50,22 @@
           <h3 class="font-semibold text-lg mb-4 text-red-900">Cost Breakdown</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="text-center">
-              <div class="text-3xl font-bold text-red-700">{{ formatCurrency(materialCosts) }}</div>
+              <div class="text-3xl font-bold text-red-700">
+                {{ formatCurrency(materialCosts, { decimals: 0 }) }}
+              </div>
               <div class="text-sm text-red-600">Material Costs</div>
               <div class="text-xs text-gray-500 mt-1">Cost of materials</div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-red-700">
-                {{ formatCurrency(adjustmentCosts) }}
+                {{ formatCurrency(adjustmentCosts, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-red-600">Adjustment Costs</div>
               <div class="text-xs text-gray-500 mt-1">Cost adjustments</div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-red-700">
-                {{ formatCurrency(totalNonLabourCosts) }}
+                {{ formatCurrency(totalNonLabourCosts, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-red-600">Total Non-Labour Costs</div>
               <div class="text-xs text-gray-500 mt-1">Materials + Adjustments</div>
@@ -77,7 +79,7 @@
           <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-green-700">
-                {{ formatCurrency(materialProfit) }}
+                {{ formatCurrency(materialProfit, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-green-600">Material Profit</div>
               <div class="text-xs text-gray-500 mt-1">Revenue - Cost</div>
@@ -89,14 +91,14 @@
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-green-700">
-                {{ formatCurrency(adjustmentProfit) }}
+                {{ formatCurrency(adjustmentProfit, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-green-600">Adjustment Profit</div>
               <div class="text-xs text-gray-500 mt-1">Revenue - Cost</div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-green-700">
-                {{ formatCurrency(totalNonLabourProfit) }}
+                {{ formatCurrency(totalNonLabourProfit, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-green-600">Total Non-Labour Profit</div>
               <div class="text-xs text-gray-500 mt-1">Combined profit</div>
@@ -110,20 +112,22 @@
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="text-center">
               <div class="text-3xl font-bold text-blue-700">
-                {{ formatCurrency(labourRevenue) }}
+                {{ formatCurrency(labourRevenue, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-blue-600">Labour Revenue</div>
               <div class="text-xs text-gray-500 mt-1">{{ labourPercentage }}% of total</div>
             </div>
             <div class="text-center">
               <div class="text-3xl font-bold text-blue-700">
-                {{ formatCurrency(totalNonLabourRevenue) }}
+                {{ formatCurrency(totalNonLabourRevenue, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-blue-600">Non-Labour Revenue</div>
               <div class="text-xs text-gray-500 mt-1">{{ nonLabourPercentage }}% of total</div>
             </div>
             <div class="text-center">
-              <div class="text-3xl font-bold text-blue-700">{{ formatCurrency(totalRevenue) }}</div>
+              <div class="text-3xl font-bold text-blue-700">
+                {{ formatCurrency(totalRevenue, { decimals: 0 }) }}
+              </div>
               <div class="text-sm text-blue-600">Total Revenue</div>
               <div class="text-xs text-gray-500 mt-1">100% of revenue</div>
             </div>
@@ -158,38 +162,51 @@
                     <span v-if="day.holiday" class="text-xs text-gray-500 ml-1">(Holiday)</span>
                   </td>
                   <td class="py-2 px-3 text-right">
-                    {{ formatCurrency(day.details?.material_revenue || 0) }}
+                    {{ formatCurrency(day.details?.material_revenue || 0, { decimals: 0 }) }}
                   </td>
                   <td class="py-2 px-3 text-right">
-                    {{ formatCurrency(day.details?.material_cost || 0) }}
+                    {{ formatCurrency(day.details?.material_cost || 0, { decimals: 0 }) }}
                   </td>
                   <td class="py-2 px-3 text-right">
                     {{
                       formatCurrency(
                         (day.details?.material_revenue || 0) - (day.details?.material_cost || 0),
+                        { decimals: 0 },
                       )
                     }}
                   </td>
                   <td class="py-2 px-3 text-right">
-                    {{ formatCurrency(getDayAdjustmentRevenue(day)) }}
+                    {{ formatCurrency(getDayAdjustmentRevenue(day), { decimals: 0 }) }}
                   </td>
                   <td class="py-2 px-3 text-right">
-                    {{ formatCurrency(getDayAdjustmentCost(day)) }}
+                    {{ formatCurrency(getDayAdjustmentCost(day), { decimals: 0 }) }}
                   </td>
                   <td class="py-2 px-3 text-right font-medium">
-                    {{ formatCurrency(getDayTotalNonLabour(day)) }}
+                    {{ formatCurrency(getDayTotalNonLabour(day), { decimals: 0 }) }}
                   </td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr class="border-t-2 border-gray-400 font-semibold bg-gray-100">
                   <td class="py-2 px-3">TOTAL</td>
-                  <td class="py-2 px-3 text-right">{{ formatCurrency(materialRevenue) }}</td>
-                  <td class="py-2 px-3 text-right">{{ formatCurrency(materialCosts) }}</td>
-                  <td class="py-2 px-3 text-right">{{ formatCurrency(materialProfit) }}</td>
-                  <td class="py-2 px-3 text-right">{{ formatCurrency(adjustmentRevenue) }}</td>
-                  <td class="py-2 px-3 text-right">{{ formatCurrency(adjustmentCosts) }}</td>
-                  <td class="py-2 px-3 text-right">{{ formatCurrency(totalNonLabourRevenue) }}</td>
+                  <td class="py-2 px-3 text-right">
+                    {{ formatCurrency(materialRevenue, { decimals: 0 }) }}
+                  </td>
+                  <td class="py-2 px-3 text-right">
+                    {{ formatCurrency(materialCosts, { decimals: 0 }) }}
+                  </td>
+                  <td class="py-2 px-3 text-right">
+                    {{ formatCurrency(materialProfit, { decimals: 0 }) }}
+                  </td>
+                  <td class="py-2 px-3 text-right">
+                    {{ formatCurrency(adjustmentRevenue, { decimals: 0 }) }}
+                  </td>
+                  <td class="py-2 px-3 text-right">
+                    {{ formatCurrency(adjustmentCosts, { decimals: 0 }) }}
+                  </td>
+                  <td class="py-2 px-3 text-right">
+                    {{ formatCurrency(totalNonLabourRevenue, { decimals: 0 }) }}
+                  </td>
                 </tr>
               </tfoot>
             </table>

@@ -1,6 +1,6 @@
 <template>
   <Dialog v-model:open="isOpen">
-    <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogContent class="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle class="text-xl font-semibold">
           Profit Breakdown - {{ monthYear }}
@@ -18,28 +18,30 @@
           <div class="space-y-3">
             <div class="flex justify-between items-center">
               <span class="text-gray-700">Total Revenue</span>
-              <span class="font-semibold text-lg">{{ formatCurrency(totalRevenue) }}</span>
+              <span class="font-semibold text-lg">{{
+                formatCurrency(totalRevenue, { decimals: 0 })
+              }}</span>
             </div>
             <div class="flex justify-between items-center text-sm text-gray-600">
               <span class="ml-4">- Total Costs</span>
-              <span>{{ formatCurrency(totalCosts) }}</span>
+              <span>{{ formatCurrency(totalCosts, { decimals: 0 }) }}</span>
             </div>
             <hr class="border-gray-300" />
             <div class="flex justify-between items-center">
               <span class="text-gray-700 font-medium">= Gross Profit</span>
               <span class="font-semibold text-lg text-green-600">{{
-                formatCurrency(monthlyData.gross_profit)
+                formatCurrency(monthlyData.gross_profit, { decimals: 0 })
               }}</span>
             </div>
             <div class="flex justify-between items-center text-sm text-gray-600">
               <span class="ml-4">- Projected Expenses</span>
-              <span>{{ formatCurrency(projectedExpenses) }}</span>
+              <span>{{ formatCurrency(projectedExpenses, { decimals: 0 }) }}</span>
             </div>
             <hr class="border-gray-300" />
             <div class="flex justify-between items-center">
               <span class="text-gray-900 font-semibold">= Net Profit</span>
               <span class="font-bold text-xl" :class="netProfitClass">{{
-                formatCurrency(monthlyData.net_profit)
+                formatCurrency(monthlyData.net_profit, { decimals: 0 })
               }}</span>
             </div>
           </div>
@@ -50,18 +52,20 @@
           <h3 class="font-semibold text-lg mb-4 text-blue-900">Revenue Breakdown</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="text-center">
-              <div class="text-2xl font-bold text-blue-700">{{ formatCurrency(laborRevenue) }}</div>
+              <div class="text-2xl font-bold text-blue-700">
+                {{ formatCurrency(laborRevenue, { decimals: 0 }) }}
+              </div>
               <div class="text-sm text-blue-600">Labor Revenue</div>
             </div>
             <div class="text-center">
               <div class="text-2xl font-bold text-blue-700">
-                {{ formatCurrency(materialRevenue) }}
+                {{ formatCurrency(materialRevenue, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-blue-600">Material Revenue</div>
             </div>
             <div class="text-center">
               <div class="text-2xl font-bold text-blue-700">
-                {{ formatCurrency(adjustmentRevenue) }}
+                {{ formatCurrency(adjustmentRevenue, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-blue-600">Adjustments</div>
             </div>
@@ -73,16 +77,20 @@
           <h3 class="font-semibold text-lg mb-4 text-red-900">Cost Breakdown</h3>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="text-center">
-              <div class="text-2xl font-bold text-red-700">{{ formatCurrency(laborCosts) }}</div>
+              <div class="text-2xl font-bold text-red-700">
+                {{ formatCurrency(laborCosts, { decimals: 0 }) }}
+              </div>
               <div class="text-sm text-red-600">Labor Costs</div>
             </div>
             <div class="text-center">
-              <div class="text-2xl font-bold text-red-700">{{ formatCurrency(materialCosts) }}</div>
+              <div class="text-2xl font-bold text-red-700">
+                {{ formatCurrency(materialCosts, { decimals: 0 }) }}
+              </div>
               <div class="text-sm text-red-600">Material Costs</div>
             </div>
             <div class="text-center">
               <div class="text-2xl font-bold text-red-700">
-                {{ formatCurrency(adjustmentCosts) }}
+                {{ formatCurrency(adjustmentCosts, { decimals: 0 }) }}
               </div>
               <div class="text-sm text-red-600">Adjustment Costs</div>
             </div>
@@ -102,7 +110,9 @@
               <div class="text-sm text-green-600">Net Profit Margin</div>
             </div>
             <div class="text-center">
-              <div class="text-2xl font-bold text-green-700">{{ formatCurrency(dailyTarget) }}</div>
+              <div class="text-2xl font-bold text-green-700">
+                {{ formatCurrency(dailyTarget, { decimals: 0 }) }}
+              </div>
               <div class="text-sm text-green-600">Daily GP Target</div>
             </div>
           </div>
@@ -114,7 +124,7 @@
           <div class="space-y-3">
             <div class="flex justify-between items-center">
               <span class="text-gray-700">Daily GP Target</span>
-              <span class="font-medium">{{ formatCurrency(dailyTarget) }}</span>
+              <span class="font-medium">{{ formatCurrency(dailyTarget, { decimals: 0 }) }}</span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-gray-700">Working Days</span>
@@ -122,7 +132,7 @@
             </div>
             <div class="flex justify-between items-center">
               <span class="text-gray-700">Monthly GP Target</span>
-              <span class="font-medium">{{ formatCurrency(monthlyTarget) }}</span>
+              <span class="font-medium">{{ formatCurrency(monthlyTarget, { decimals: 0 }) }}</span>
             </div>
             <hr class="border-yellow-300" />
             <div class="flex justify-between items-center">
@@ -232,16 +242,16 @@ const adjustmentCosts = computed(() => {
 
 const projectedExpenses = computed(() => {
   if (!props.monthlyData || !props.thresholds) return 0
-  return props.thresholds.daily_gp_target * props.monthlyData.working_days
+  return props.thresholds.kpi_daily_gp_target * props.monthlyData.working_days
 })
 
 const dailyTarget = computed(() => {
-  return props.thresholds?.daily_gp_target || 0
+  return props.thresholds?.kpi_daily_gp_target || 0
 })
 
 const monthlyTarget = computed(() => {
   if (!props.monthlyData || !props.thresholds) return 0
-  return props.thresholds.daily_gp_target * props.monthlyData.working_days
+  return props.thresholds.kpi_daily_gp_target * props.monthlyData.working_days
 })
 
 const grossProfitMargin = computed(() => {

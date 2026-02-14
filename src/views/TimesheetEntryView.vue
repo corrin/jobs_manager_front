@@ -1725,7 +1725,7 @@ const loadTimesheetData = async () => {
       return aTime < bTime ? -1 : aTime > bTime ? 1 : 0
     })
 
-    scheduledHours.value = response.summary.scheduled_hours
+    scheduledHours.value = response.summary.scheduled_hours as number
 
     const staffData = timesheetStore.staff.find((s) => s.id === selectedStaffId.value)
     loadData(timeEntries.value, selectedStaffId.value, staffData)
