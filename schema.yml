@@ -16058,6 +16058,13 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        weekly_base_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - billable_percentage
         - name
@@ -16073,6 +16080,7 @@ components:
         - total_scheduled_hours
         - total_sick_leave_hours
         - total_unbilled_hours
+        - weekly_base_cost
         - weekly_cost
         - weekly_hours
     WeeklyStaffDataWeeklyHours:
@@ -16166,11 +16174,19 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        daily_base_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - annual_leave_hours
         - bereavement_leave_hours
         - billable_hours
         - billed_hours
+        - daily_base_cost
         - daily_cost
         - day
         - hours

@@ -42,7 +42,7 @@
                     ></span>
                   </button>
                   <Label class="text-gray-700 text-xs sm:text-sm lg:text-base font-medium">
-                    {{ payrollMode ? 'Payroll Mode' : 'Review Mode' }}
+                    {{ payrollMode ? 'Loaded Wages' : 'Cash Wages' }}
                   </Label>
                 </div>
 
@@ -120,7 +120,7 @@
       <div class="flex-1 p-1 sm:p-2 lg:p-3 space-y-2 sm:space-y-3 lg:space-y-4">
         <!-- Payroll Control Section -->
         <PayrollControlSection
-          v-if="payrollMode && !loading && !error"
+          v-if="!loading && !error"
           :week-start-date="weekStartDate"
           :pay-run-status="payRunStatus"
           :payment-date="paymentDate"
@@ -214,15 +214,14 @@
                     <th
                       class="w-24 px-1.5 py-1.5 lg:py-2 text-center text-xs sm:text-sm lg:text-base font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      {{ payrollMode ? 'Weekly Total' : 'Total' }}
+                      Weekly Total
                     </th>
                     <th
                       class="w-28 px-1.5 py-1.5 lg:py-2 text-center text-xs sm:text-sm lg:text-base font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      {{ payrollMode ? 'Billable Hours' : 'Billable %' }}
+                      Billable Hours
                     </th>
                     <th
-                      v-if="payrollMode"
                       class="w-24 px-1.5 py-1.5 lg:py-2 text-center text-xs sm:text-sm lg:text-base font-medium text-gray-500 uppercase tracking-wider"
                       title="Approximate cost based on wage rates - Xero has actual values"
                     >
@@ -231,27 +230,15 @@
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
-                  <template v-if="payrollMode">
-                    <PayrollStaffRow
-                      v-for="staff in sortedStaffData"
-                      :key="staff.staff_id"
-                      :staff="staff"
-                      :visible-indexes="displayDayIndexes"
-                    />
-                  </template>
-                  <template v-else>
-                    <StaffWeekRow
-                      v-for="staff in sortedStaffData"
-                      :key="staff.staff_id"
-                      :staff="staff"
-                      :payroll-mode="payrollMode"
-                      :week-days="displayDays"
-                      :visible-indexes="displayDayIndexes"
-                      class="hover:bg-blue-50/50 transition-colors duration-150 border-b border-gray-100"
-                    />
-                  </template>
+                  <PayrollStaffRow
+                    v-for="staff in sortedStaffData"
+                    :key="staff.staff_id"
+                    :staff="staff"
+                    :visible-indexes="displayDayIndexes"
+                    :use-loaded-cost="payrollMode"
+                  />
                 </tbody>
-                <tfoot v-if="payrollMode" class="bg-gray-100 border-t-2 border-gray-300">
+                <tfoot class="bg-gray-100 border-t-2 border-gray-300">
                   <tr>
                     <td class="px-1.5 lg:px-2 py-2 lg:py-3">
                       <span class="text-sm lg:text-base font-bold text-gray-900">Total</span>
@@ -322,7 +309,6 @@ import {
 import AppLayout from '@/components/AppLayout.vue'
 import Button from '@/components/ui/button/Button.vue'
 import Label from '@/components/ui/label/Label.vue'
-import StaffWeekRow from '@/components/timesheet/StaffWeekRow.vue'
 import PayrollStaffRow from '@/components/timesheet/PayrollStaffRow.vue'
 import WeeklyMetricsModal from '@/components/timesheet/WeeklyMetricsModal.vue'
 import WeekPickerModal from '@/components/timesheet/WeekPickerModal.vue'
@@ -351,8 +337,6 @@ import { toast } from 'vue-sonner'
 import { z } from 'zod'
 
 type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
-type WeeklyStaffData = z.infer<typeof schemas.WeeklyStaffData>
-type WeeklyStaffDataWithCost = WeeklyStaffData & { weekly_cost: number }
 type WeekDaySeed = { idx: number; dow: number; date: string }
 type DisplayDay = WeekDaySeed & {
   name: string
@@ -412,7 +396,7 @@ function resetPayRunState() {
 }
 
 function loadPayRunForCurrentWeek() {
-  if (!payrollMode.value || !weekStartDate.value) {
+  if (!weekStartDate.value) {
     resetPayRunState()
     return
   }
@@ -486,15 +470,11 @@ const visibleDayIndexes = computed<number[]>(() => {
     date: day,
   }))
 
-  if (payrollMode.value) {
+  if (!weekendEnabled.value) {
     return raw
       .filter((seed) => seed.dow >= 1 && seed.dow <= 5)
       .sort((a, b) => a.dow - b.dow)
       .map((seed) => seed.idx)
-  }
-
-  if (!weekendEnabled.value) {
-    return raw.filter((seed) => seed.dow >= 1 && seed.dow <= 5).map((seed) => seed.idx)
   }
 
   return raw.map((seed) => seed.idx)
@@ -504,15 +484,7 @@ const visibleDayIndexes = computed<number[]>(() => {
 const sortedStaffData = computed(() => {
   if (!weeklyData.value?.staff_data) return []
 
-  return [...weeklyData.value.staff_data]
-    .map((staff) => {
-      const raw = staff as WeeklyStaffDataWithCost & Record<string, unknown>
-      const weeklyCost = typeof raw.weekly_cost === 'number' ? raw.weekly_cost : 0
-      return { ...staff, weekly_cost: weeklyCost }
-    })
-    .sort((a: WeeklyStaffDataWithCost, b: WeeklyStaffDataWithCost) => {
-      return a.name.localeCompare(b.name)
-    })
+  return [...weeklyData.value.staff_data].sort((a, b) => a.name.localeCompare(b.name))
 })
 const displayDays = computed<DisplayDay[]>(() => {
   if (!weeklyData.value?.week_days || !Array.isArray(weeklyData.value.week_days)) {
@@ -579,26 +551,11 @@ const draftWeekStart = computed(() => {
 })
 
 watch(
-  () => payrollMode.value,
-  (enabled) => {
-    if (enabled) {
-      void loadPayRunForCurrentWeek()
-    } else {
-      resetPayRunState()
-    }
-  },
-  { immediate: true },
-)
-
-watch(
   () => selectedWeekStart.value.getTime(),
   () => {
-    if (payrollMode.value) {
-      void loadPayRunForCurrentWeek()
-    } else {
-      resetPayRunState()
-    }
+    void loadPayRunForCurrentWeek()
   },
+  { immediate: true },
 )
 
 // Format the header's date range
@@ -628,9 +585,7 @@ function getTotalBillableHours(): number {
 function getTotalCost(): number {
   if (!weeklyData.value?.staff_data) return 0
   return weeklyData.value.staff_data.reduce((sum, staff) => {
-    const raw = staff as WeeklyStaffDataWithCost & Record<string, unknown>
-    const weeklyCost = typeof raw.weekly_cost === 'number' ? raw.weekly_cost : 0
-    return sum + weeklyCost
+    return sum + (payrollMode.value ? staff.weekly_cost : staff.weekly_base_cost)
   }, 0)
 }
 
@@ -707,7 +662,7 @@ function goToCurrentWeek() {
 }
 function togglePayrollMode(checked: boolean) {
   payrollMode.value = checked
-  debugLog(`Switched to ${payrollMode.value ? 'Payroll' : 'Review'} mode`)
+  debugLog(`Switched to ${payrollMode.value ? 'Loaded Wages' : 'Cash Wages'}`)
 }
 function goToDailyViewHeader(date: string) {
   router.push({ name: 'timesheet-daily', query: { date } })

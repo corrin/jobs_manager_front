@@ -2854,6 +2854,7 @@ const WeeklyStaffDataWeeklyHours = z
     annual_leave_hours: z.number().gt(-100000000).lt(100000000),
     bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
     daily_cost: z.number().gt(-100000000).lt(100000000),
+    daily_base_cost: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklyStaffData = z
@@ -2874,6 +2875,7 @@ const WeeklyStaffData = z
     total_annual_leave_hours: z.number().gt(-100000000).lt(100000000),
     total_bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
     weekly_cost: z.number().gt(-100000000).lt(100000000),
+    weekly_base_cost: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklySummary = z
