@@ -11,12 +11,27 @@
           <Menu v-if="!showMobileMenu" class="h-4 w-4" />
           <X v-else class="h-4 w-4" />
         </button>
-        <router-link
-          to="/"
-          class="text-sm md:text-sm lg:text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
-        >
-          <LayoutDashboard class="inline w-5 h-5 mr-1 align-text-bottom" /> Jobs Manager
-        </router-link>
+        <div class="flex items-center space-x-2">
+          <div class="relative">
+            <Search
+              class="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400"
+            />
+            <input
+              v-model="searchInput"
+              type="text"
+              placeholder="Search jobs..."
+              class="w-36 sm:w-48 lg:w-64 pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              @keydown.enter="submitSearch"
+            />
+          </div>
+          <button
+            @click="openAdvancedSearch"
+            class="hidden sm:flex px-2 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-md transition-all duration-200 items-center flex-shrink-0"
+          >
+            <SlidersHorizontal class="h-3.5 w-3.5 lg:mr-1" />
+            <span class="hidden lg:inline">Advanced</span>
+          </button>
+        </div>
       </div>
 
       <div class="hidden lg:flex items-center space-x-6">
@@ -710,7 +725,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import {
   ChevronDown,
   Menu,
@@ -718,7 +734,8 @@ import {
   Calendar,
   PlusCircle,
   BarChart3,
-  LayoutDashboard,
+  Search,
+  SlidersHorizontal,
   Kanban,
   FilePlus,
   ShoppingCart,
@@ -742,6 +759,37 @@ import { toast } from 'vue-sonner'
 import { useAppLayout } from '@/composables/useAppLayout'
 import { adminPages } from '@/config/adminPages'
 import WorkshopOfficeToggle from '@/components/board/WorkshopOfficeToggle.vue'
+
+const router = useRouter()
+const route = useRoute()
+const searchInput = ref((route.query.q as string) || '')
+
+const submitSearch = () => {
+  const q = searchInput.value.trim()
+  if (route.path === '/kanban') {
+    router.replace({ path: '/kanban', query: q ? { q } : {} })
+  } else {
+    router.push({ path: '/kanban', query: q ? { q } : {} })
+  }
+}
+
+const openAdvancedSearch = () => {
+  const query: Record<string, string> = { advanced: '1' }
+  const q = (route.query.q as string) || searchInput.value.trim()
+  if (q) query.q = q
+  if (route.path === '/kanban') {
+    router.replace({ path: '/kanban', query })
+  } else {
+    router.push({ path: '/kanban', query })
+  }
+}
+
+watch(
+  () => route.query.q,
+  (newQ) => {
+    searchInput.value = (newQ as string) || ''
+  },
+)
 
 const activeDropdown = ref<string | null>(null)
 const showMobileMenu = ref(false)
