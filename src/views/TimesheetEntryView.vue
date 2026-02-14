@@ -62,8 +62,11 @@
               </div>
             </div>
 
-            <div class="text-xs text-gray-700">
-              <span class="font-semibold">{{ formatHoursDisplay(todayStats.totalHours) }}h</span>
+            <div class="text-xs">
+              <span class="font-semibold" :class="hoursStatusClass">{{
+                formatHoursDisplay(todayStats.totalHours)
+              }}</span>
+              <span class="text-gray-400"> / {{ formatHoursDisplay(scheduledHours) }}h</span>
             </div>
           </div>
 
@@ -239,9 +242,11 @@
           </div>
 
           <div class="flex items-center space-x-2 ml-auto">
-            <div class="text-xs text-gray-700 mr-4">
-              <span class="font-semibold">{{ formatHoursDisplay(todayStats.totalHours) }}h</span>
-              Total
+            <div class="text-xs mr-4">
+              <span class="font-semibold" :class="hoursStatusClass">{{
+                formatHoursDisplay(todayStats.totalHours)
+              }}</span>
+              <span class="text-gray-400"> / {{ formatHoursDisplay(scheduledHours) }}h</span>
             </div>
 
             <Button
@@ -481,7 +486,12 @@
                           <div class="min-w-0">
                             <p class="text-sm text-gray-600">Total Hours</p>
                             <p class="text-lg font-semibold">
-                              {{ formatHoursDisplay(consolidatedSummary.totalHours) }}h
+                              <span :class="hoursStatusClass">{{
+                                formatHoursDisplay(consolidatedSummary.totalHours)
+                              }}</span>
+                              <span class="text-sm font-normal text-gray-400"
+                                >/ {{ formatHoursDisplay(scheduledHours) }}h</span
+                              >
                             </p>
                           </div>
                         </div>
@@ -684,6 +694,7 @@ const isInitializing = ref(true)
 const isLoadingData = ref(false) // ✅ Add loading flag to prevent duplicate calls
 
 const timeEntries = ref<TimesheetEntryViewRow[]>([])
+const scheduledHours = ref<number>(0)
 
 // Adapter to convert TimesheetEntryView data format to TimesheetCostLine format
 const adaptedTimeEntries = computed(() => {
@@ -723,6 +734,14 @@ const currentStaff = computed(() => {
 })
 
 const hasUnsavedChanges = ref(false)
+
+const hoursStatusClass = computed(() => {
+  const actual = timeEntries.value.reduce((sum, entry) => sum + getEntryHours(entry), 0)
+  const scheduled = scheduledHours.value
+  if (actual > scheduled) return 'text-red-600'
+  if (actual < scheduled) return 'text-amber-500'
+  return 'text-gray-900'
+})
 
 const todayStats = computed(() => {
   const totalHours = timeEntries.value.reduce((sum, entry) => sum + getEntryHours(entry), 0)
@@ -1698,6 +1717,15 @@ const loadTimesheetData = async () => {
         isModified: false,
       } as TimesheetEntryViewRow
     })
+
+    // Sort by creation time so entries stay in the order they were entered
+    timeEntries.value.sort((a, b) => {
+      const aTime = a.created_at ?? ''
+      const bTime = b.created_at ?? ''
+      return aTime < bTime ? -1 : aTime > bTime ? 1 : 0
+    })
+
+    scheduledHours.value = response.summary.scheduled_hours
 
     const staffData = timesheetStore.staff.find((s) => s.id === selectedStaffId.value)
     loadData(timeEntries.value, selectedStaffId.value, staffData)

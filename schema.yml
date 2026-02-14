@@ -11841,10 +11841,14 @@ components:
           format: double
         entry_count:
           type: integer
+        scheduled_hours:
+          type: number
+          format: double
       required:
         - billable_hours
         - entry_count
         - non_billable_hours
+        - scheduled_hours
         - total_cost
         - total_hours
         - total_revenue
@@ -16219,11 +16223,19 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        daily_base_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - annual_leave_hours
         - bereavement_leave_hours
         - billable_hours
         - billed_hours
+        - daily_base_cost
         - daily_cost
         - day
         - hours
