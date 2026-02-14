@@ -784,10 +784,28 @@ const openAdvancedSearch = () => {
   }
 }
 
+// When on Kanban, live-update the query param so the board filters immediately
+watch(searchInput, (val) => {
+  if (route.path === '/kanban') {
+    const q = val.trim()
+    const newQuery = { ...route.query }
+    if (q) {
+      newQuery.q = q
+    } else {
+      delete newQuery.q
+    }
+    router.replace({ query: newQuery })
+  }
+})
+
+// Sync input from URL changes (browser back/forward, external navigation)
 watch(
   () => route.query.q,
   (newQ) => {
-    searchInput.value = (newQ as string) || ''
+    const parsed = (newQ as string) || ''
+    if (parsed !== searchInput.value) {
+      searchInput.value = parsed
+    }
   },
 )
 
