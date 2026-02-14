@@ -2763,7 +2763,7 @@ paths:
                 $ref: '#/components/schemas/JobQuoteChatInteractionSuccessResponse'
           description: ''
     delete:
-      operationId: quote_chat_delete_all
+      operationId: job_api_jobs_quote_chat_destroy
       description: Delete all chat messages for a job (start fresh).
       parameters:
         - in: path
@@ -2825,7 +2825,7 @@ paths:
                 $ref: '#/components/schemas/JobQuoteChatUpdate'
           description: ''
     delete:
-      operationId: quote_chat_delete_one
+      operationId: job_api_jobs_quote_chat_destroy_2
       description: Delete an individual chat message.
       parameters:
         - in: path
@@ -6624,7 +6624,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
+      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
       parameters:
         - in: query
           name: start_date

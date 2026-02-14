@@ -171,10 +171,14 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Purchase Orders - Jobs Manager' },
     },
     {
-      path: '/purchasing/po/create',
+      path: '/purchasing/po/new',
       name: 'purchase-order-create',
-      component: () => import('@/views/purchasing/PoCreateView.vue'),
+      component: () => import('@/views/purchasing/PurchaseOrderFormView.vue'),
       meta: { requiresAuth: true, title: 'Create Purchase Order - Jobs Manager' },
+    },
+    {
+      path: '/purchasing/po/create',
+      redirect: '/purchasing/po/new',
     },
     {
       path: '/purchasing/po/create-from-quote',
