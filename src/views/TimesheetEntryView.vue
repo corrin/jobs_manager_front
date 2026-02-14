@@ -852,7 +852,6 @@ const loadEnhancedJobData = async (jobIds: string[]) => {
           jobNumber: job.job_number,
           latest_estimate: job.latest_estimate?.summary,
           latest_quote: job.latest_quote?.summary,
-          estimated_hours: job.estimated_hours,
         })
       } else {
         debugLog('Failed to load enhanced job data:', result.reason)
@@ -924,7 +923,7 @@ const activeJobsWithData = computed<ActiveJobWithData[]>(() => {
             id: jobId,
             job_number: Number(entryWithJobData.job_number) || 0,
             name: entryWithJobData.job_name || 'Unknown Job',
-            has_actual_costset: entryWithJobData.has_actual_costset || true,
+            has_actual_costset: true,
             client_name: entryWithJobData.client_name || 'Unknown Client',
             status: 'draft',
             charge_out_rate: entryWithJobData.charge_out_rate || 0,

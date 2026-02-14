@@ -15,6 +15,7 @@ export const TimesheetEntryWithMetaSchema = schemas.TimesheetCostLine.extend({
   _isSaving: z.boolean().optional(),
   isSaving: z.boolean().optional(),
   isNewRow: z.boolean().optional(),
+  isEmptyRow: z.boolean().optional(),
   isModified: z.boolean().optional(),
   jobId: z.string().optional(),
   jobNumber: z.string().optional(),
